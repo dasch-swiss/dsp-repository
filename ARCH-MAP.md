@@ -42,9 +42,10 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
 - **Key entities:** `Project`, `ProjectQuery`, `VALID_TABS`, `all_projects`,
   `project_by_shortcode`, `cover_image_url`, `ClusterRaw`, `ClusterRef`, `CollectionRef`,
   `ProjectRepository` / `FsProjectRepository`, `RecordRepository` / `FsRecordRepository`,
-  `OaiRecord`, `CachedContributorLookup`, `resolve_inputs`, `oai_handler`,
-  `set_base_url`, `build_router`, `tab_fragment_handler`, `search_fragment_handler`,
-  `record_file_handler`, `get_data_dir` / `set_data_dir`
+  `OaiRecord`, `CachedContributorLookup`, `resolve_inputs`, `records_for_shortcode`,
+  `project_oai_identifier`, `oai_handler`, `set_base_url`, `build_router`,
+  `tab_fragment_handler`, `search_fragment_handler`, `record_file_handler`, `HeadExtras`,
+  `head_extras_for_project`, `get_data_dir` / `set_data_dir`
 - **Public interface:** the HTTP routes of `dpe-server` (`/dpe/projects`, `/dpe/projects/{id}`,
   `/dpe/projects/{id}/tab/{tab}` and `/dpe/projects/search` as SSE, `/dpe/records/{shortcode}/{record_id}/file`,
   `/dpe/oai`, `/dpe/api/v2/projects[/{id}]`, `/dpe/about`, `/healthz`, `POST /telemetry/collect`); the
@@ -56,7 +57,7 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
   `modules/dpe/core/src/project.rs`, `modules/dpe/server/src/fragments.rs`,
   `modules/dpe/api-oai/src/lib.rs` (the OAI crate's whole surface; the contract it reads is
   shared/metadata's own kit)
-- **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`), shared/telemetry
+- **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/telemetry
   (`dpe-server`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio, tower /
   tower-http / tower_governor, maud, datastar, clap, figment, serde / serde_json, quick-xml,
   ureq, the OpenTelemetry stack, pyroscope, insta
@@ -77,12 +78,15 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
   - Every `<a>` enhanced by Datastar keeps a working `href` (**review**).
   - The full page and the SSE fragment render `#project-tabs` through the same function
     (**static-analysis** — a test pins it).
-  - The only sanctioned `PreEscaped` site is the Mosaic `IconData` SVG; the search-query echo in
-    `fragments.rs` stays an auto-escaped splice (**review**).
+  - `PreEscaped` has exactly three sanctioned sites: the Mosaic `IconData` SVG, the leading
+    newline the Mosaic `textarea` writes back, and the JSON-LD splice in
+    `server/src/metadata.rs`, whose only permitted input is `shared_fair`'s `script_safe_json`
+    (**static-analysis** — a test in `dpe-server` greps every file under its own `src/` so
+    `PreEscaped(` appears exactly once in the crate). The first two splice a constant. The
+    search-query echo in `fragments.rs` stays an auto-escaped splice (**review**).
   - Page, fragment and API routes live in `server/src/router.rs::build_router`; `main.rs`
     declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the
-    OTel layers on purpose. `modules/dpe/CLAUDE.md` still points at `main.rs` for all routes —
-    stale, fix on next touch (**docs-only**).
+    OTel layers on purpose.
 - **Durable state:** the corpus under `server/data/`. `projects/` has **two writers** — hand
   edits and `editor-core`'s `canonical_round_trip` test under `CANONICALIZE_PROJECT_FILES=1`,
   which is the canonical formatter, so the second writer is the intended one. `records/` has
@@ -208,26 +212,34 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
   `dpe-api-oai`; the OAI-PMH envelope, verbs, identifiers and set specs stayed there.
 - **Key entities:** `ProjectGraph`, `RecordGraph`, `PartRef`, `ResolveContext`, `AgentKind`,
   `ProjectAgent`, `RecordCreator`, `LicenseRef`, `TemporalRef`, `DisciplineRef`, `SpatialRef`,
-  `FundingRef`, `PublicationRef`, `resolve_agent`, the four writers `project_to_datacite`,
-  `project_to_dublin_core`, `record_to_datacite`, `record_to_dublin_core`, and their output
-  models `DataCiteRecord` and `DublinCoreRecord`
-- **Public interface:** the root re-exports in `src/lib.rs` (the graphs and their refs, the four
-  writers, the DataCite and Dublin Core models) plus the module paths `graph::*`,
-  `project_graph::*`, `datacite::*`, `dublin_core::*`, `record_datacite::*`,
-  `record_dublin_core::*`, `resolve::{resolve_agent, ResolvedAgent}` and the vocabulary helpers
+  `FundingRef`, `PublicationRef`, `resolve_agent`, `UrlLayout`, `Candidate`, `Link`, `LinkSet`,
+  the writers `project_to_datacite`, `project_to_dublin_core`, `record_to_datacite`,
+  `record_to_dublin_core`, `project_to_dublin_core_meta`, `project_to_schema_org` and
+  `project_to_link_set`, the embedding helper `script_safe_json`, and the output models
+  `DataCiteRecord` and `DublinCoreRecord`
+- **Public interface:** the root re-exports in `src/lib.rs` (the graphs and their refs, the
+  seven writers — each named `{subject}_to_{format}` — the DataCite and Dublin Core models)
+  plus the module paths `graph::*`,
+  `project_graph::*`, `datacite::*`, `dublin_core::*`, `dublin_core_meta::*`,
+  `record_datacite::*`, `record_dublin_core::*`, `schema_org::*`, `signposting::*`,
+  `resolve::{resolve_agent, ResolvedAgent}` and the vocabulary helpers
   in `helpers::*`. `ResolveContext::new(lookup, periods, enriched)` is the wiring point: a
   consumer adapts its own store behind `shared_metadata::ContributorLookup` and the two
   temporal tables.
 - **Local-context kit:** `shared/fair/src/lib.rs`, `shared/fair/src/graph.rs`,
-  `shared/fair/src/project_graph.rs`, `modules/dpe/api-oai/src/metadata/mod.rs` (the only
-  consumer's call site), `modules/dpe/api-oai/src/metadata/corpus.rs` (the corpus-wide tests),
-  `shared/README.md`, `docs/adr/0005-fair-landing-pages-in-the-access-area.md`
-- **Depends on:** shared/metadata; nothing else in the workspace. No third-party runtime
-  dependency at all — `serde_json` is a dev-dependency, used only by the tests to build raw
-  `"url"` values for the reading rule to parse.
-- **Used by:** modules/dpe — `dpe-api-oai` only. `dpe-core` does not and must not (the domain
-  crate never depends on the exposure engine); `dpe-server` does not yet. ADR-0005 names the
-  consumers still to come: DPE's record pages, CPE, and the Deposit Area's FAIR assessment.
+  `shared/fair/src/project_graph.rs`, `modules/dpe/api-oai/src/metadata/mod.rs` (the OAI call
+  site), `modules/dpe/api-oai/src/metadata/corpus.rs` (the corpus-wide tests),
+  `shared/README.md`, `docs/adr/0005-fair-landing-pages-in-the-access-area.md`. The kit is at
+  its seven-file budget, so the second call site, `modules/dpe/server/src/metadata.rs`, is named
+  here rather than added: it is where the landing page's writers are called and the `UrlLayout`
+  is built.
+- **Depends on:** shared/metadata, and `serde_json` at runtime (the JSON-LD writer's `Value` is
+  its output type, and `script_safe_json` serialises it); nothing else in the workspace. No
+  other third-party runtime dependency.
+- **Used by:** modules/dpe — `dpe-api-oai` (the OAI writers) and `dpe-server` (the landing
+  page's JSON-LD, meta tags and Signposting links). `dpe-core` does not and must not: the domain
+  crate never depends on the exposure engine. ADR-0005 names the consumers still to come: DPE's
+  record pages, CPE, and the Deposit Area's FAIR assessment.
 - **Boundary rules:**
   - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
     module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).

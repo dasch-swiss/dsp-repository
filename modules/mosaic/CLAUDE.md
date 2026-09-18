@@ -10,7 +10,7 @@ Mosaic is the DaSCH design system. It has two crates:
 - Components are plain functions returning `maud::Markup` — server-rendered HTML, MPA-first.
 - Each component lives in `tiles/src/components/` either as a directory (`mod.rs` + a co-located `.css`) or a single `.rs` file (e.g. `copy_button.rs`, `loading.rs`). Exported from `tiles/src/lib.rs`.
 - Variant enums derive `Clone, Copy, Default` and expose a `css_class()` that returns **complete literal class strings** (so Tailwind's content scan sees them). Multi-option tiles are builders: `name(content) -> NameBuilder` with chained setters (e.g. `.variant(…)`, `.size(…)`) and a `.build()`; each builder implements `Render` so it can be spliced into `html!` directly. Content and labels are `impl Render`, not bare `Markup` (see `docs/src/mosaic/component-api-conventions.md`).
-- The single sanctioned `PreEscaped` site is the `IconData` SVG (`icondata`).
+- The tiles library has two sanctioned `PreEscaped` sites: the `IconData` SVG (`icondata`) and the leading newline the `textarea` control emits, which HTML parsers eat and which must therefore be written back. Both splice a constant; neither takes caller content.
 - Interactivity, where needed, is CSS-only (e.g. `Tabs` uses hidden radio inputs) or a small inline handler (e.g. `copy_button`'s clipboard `onclick`).
 
 ## Adding a New Component

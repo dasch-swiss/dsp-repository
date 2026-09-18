@@ -128,8 +128,9 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
 /// `GovernorLayer` so gating is deterministic and independent of timing.
 ///
 /// Each fake is defined inside the submodule of the single test that uses it,
-/// so the source itself shows the fake cannot leak to another test. The shared
-/// harness (`test_state`, `status_of`, `NO_PUBLIC_DIR`) lives here at the top.
+/// so the source itself shows the fake cannot leak to another test.
+/// `test_state` and `NO_PUBLIC_DIR` come from `test_support`, shared with the
+/// landing-page metadata tests so both build the same app.
 #[cfg(test)]
 mod tests {
     use axum::body::Body;
@@ -137,18 +138,7 @@ mod tests {
     use axum::http::StatusCode;
     use tower::ServiceExt;
 
-    use crate::AppState;
-
-    fn test_state() -> AppState {
-        AppState {
-            fathom_site_id: None,
-            css_href: "/assets/app.css".to_string(),
-        }
-    }
-
-    // Static assets come from a nonexistent dir: these tests target redirect and
-    // OAI routes, never a real static file, so the fallback is never exercised.
-    const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
+    use crate::test_support::{test_state, NO_PUBLIC_DIR};
 
     async fn status_of(app: axum::Router, uri: &str) -> StatusCode {
         let req = Request::builder().uri(uri).body(Body::empty()).unwrap();

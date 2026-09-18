@@ -12,6 +12,7 @@ mod xml;
 use std::sync::OnceLock;
 
 pub use handlers::oai_handler;
+pub use metadata::project_oai_identifier;
 
 /// Fallback OAI-PMH base URL when neither [`set_base_url`] nor `DPE_OAI_BASE_URL` is set.
 /// The production canonical endpoint; mirrors the `DpeConfig::oai_base_url` default.

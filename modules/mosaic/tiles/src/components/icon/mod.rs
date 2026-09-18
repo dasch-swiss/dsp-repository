@@ -27,8 +27,9 @@ use maud::{html, Markup, PreEscaped};
 /// Render an SVG icon with the base `icon` class plus any `class` extras.
 ///
 /// The SVG inner markup comes from the trusted `icondata` crate, so it is
-/// emitted with `PreEscaped`. This is the only sanctioned `PreEscaped` site in
-/// the tiles library — never feed user-controlled content through it.
+/// emitted with `PreEscaped`. That and the leading newline in `form::textarea`
+/// are the two sanctioned `PreEscaped` sites in the tiles library, and both
+/// splice a constant — never feed user-controlled content through either.
 ///
 /// Icons carry no accessible name of their own: they are decorative and the
 /// name always comes from surrounding text or an `aria-label` on the enclosing

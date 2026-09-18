@@ -679,6 +679,7 @@ dependencies = [
  "pyroscope",
  "serde",
  "serde_json",
+ "shared-fair",
  "shared-metadata",
  "shared-telemetry",
  "tokio",

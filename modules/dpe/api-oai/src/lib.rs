@@ -107,6 +107,14 @@ mod base_url_tests {
         assert!(!DEFAULT_BASE_URL.contains("meta.dasch.swiss"));
     }
 
+    /// Unset — every deployment but a PR preview — the OAI payloads carry the
+    /// ARKs the corpus records. Nothing in this crate's tests sets the global,
+    /// so this is also the state every other test here runs in.
+    #[test]
+    fn the_ark_host_defaults_to_the_recorded_one() {
+        assert_eq!(super::ark_host(), shared_fair::ArkHost::Recorded);
+    }
+
     #[test]
     fn trailing_slash_is_stripped() {
         assert_eq!(

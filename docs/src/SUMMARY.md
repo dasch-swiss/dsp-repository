@@ -32,6 +32,7 @@
 - [Architecture](./editor/architecture.md)
 - [The Project Form](./editor/project-form.md)
 - [Authentication](./editor/authentication.md)
+- [Collection](./editor/collection.md)
 - [Observability](./editor/observability.md)
 - [Operations](./editor/operations.md)
 

@@ -10,6 +10,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use uuid::Uuid;
 
 /// The two roles the editor recognises.
@@ -276,7 +277,12 @@ pub struct Submission {
 }
 
 /// Where a collected record's pull request sits, as last reported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+///
+/// The wire form is the same lowercase set [`Self::as_str`] produces and the schema's `CHECK`
+/// constraint pins. `test_pull_request_state_deserializes_from_its_stored_form` holds the two
+/// together.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum PullRequestState {
     Open,
     Merged,
@@ -503,6 +509,20 @@ mod tests {
             ReviewOutcome::Withdrawn,
         ] {
             assert!(outcome.returns_the_project(), "{outcome}");
+        }
+    }
+
+    #[test]
+    fn test_pull_request_state_deserializes_from_its_stored_form() {
+        // A `#[serde(rename_all)]` change here would otherwise silently disagree with both
+        // `as_str` and the schema's `CHECK` constraint.
+        for state in [
+            PullRequestState::Open,
+            PullRequestState::Merged,
+            PullRequestState::Closed,
+        ] {
+            let wire = format!("\"{}\"", state.as_str());
+            assert_eq!(serde_json::from_str::<PullRequestState>(&wire).unwrap(), state);
         }
     }
 

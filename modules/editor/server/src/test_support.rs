@@ -115,6 +115,14 @@ pub(crate) async fn state_with(
     (state_over(db, mailer.clone(), adjust), mailer)
 }
 
+/// App state over a fresh in-memory database, configured with `token` as the collection-report
+/// bearer token. [`test_state`] configures none, so a test needing one asks for it here.
+pub(crate) async fn state_with_collection_token(label: &str, token: &str) -> (AppState, RecordingMailer) {
+    let (mut state, mailer) = test_state(label).await;
+    state.collection_token = Some(crate::config::Secret::for_test(token));
+    (state, mailer)
+}
+
 /// A fresh in-memory database for one test.
 pub(crate) async fn open_test_db(label: &str) -> Database {
     Database::open(Source::memory_for_test(label), 4, Duration::from_secs(5))
@@ -144,6 +152,9 @@ pub(crate) fn state_over(
         // Off by default: the reveal is the exception, so a test that wants it
         // has to say so, and every other test proves the ordinary path.
         reveal_login_code: false,
+        // No token configured by default, matching production's fail-closed default; a test of
+        // `POST /api/v1/collection-report` uses `state_with_collection_token` instead.
+        collection_token: None,
         // The real committed corpus, not a fixture. Every project page renders
         // from it, and a fixture of invented projects would let a change that
         // only works for invented data pass — the real set carries the
@@ -818,6 +829,16 @@ impl ApprovedRecordRepository for FaultyDatabase {
 
     async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
         ApprovedRecordRepository::mark_collected(&*self.inner, id, at).await
+    }
+
+    async fn report_collection(
+        &self,
+        id: Uuid,
+        pull_request_url: Option<&str>,
+        state: Option<editor_core::records::PullRequestState>,
+        failure: Option<&str>,
+    ) -> Result<bool> {
+        ApprovedRecordRepository::report_collection(&*self.inner, id, pull_request_url, state, failure).await
     }
 
     async fn delete(&self, id: Uuid) -> Result<bool> {

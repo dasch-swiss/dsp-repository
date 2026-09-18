@@ -1,22 +1,37 @@
 //! `GET /api/v1/approved-records` — the public read of every approved record
-//! and its accepted entity proposals.
+//! and its accepted entity proposals — and `POST /api/v1/collection-report`,
+//! the token-authenticated write the collecting workflow uses to report back.
 //!
-//! Unauthenticated: a CI poller reads this, not a signed-in user, so the
-//! handler takes no `Authenticated`/`Rdu` extractor. Enumerates with
+//! `list` is unauthenticated: a CI poller reads this, not a signed-in user, so
+//! the handler takes no `Authenticated`/`Rdu` extractor. Enumerates with
 //! [`ApprovedRecordRepository::list_all`], not `list_uncollected` — there is no
 //! state-dependent selection here for a stale advisory flag to hide, and the
 //! served set is already bounded by startup reconciliation, which deletes a
 //! record once the published set matches it.
+//!
+//! `report` is not unauthenticated, but it takes no `Authenticated`/`Rdu`
+//! extractor either: its caller is a CI job with no session to hold, so it
+//! authenticates by bearer token instead. It writes **advisory display state
+//! only** — [`editor_core::collection::CollectionStateView`] — and must never
+//! change what `list` serves. A record leaves that set only by being deleted:
+//! by the startup reconcile once the published set carries it, or by approval
+//! superseding an earlier record for the same project.
 
 use axum::extract::State;
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse};
+use chrono::Utc;
+use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, CollectionReport};
 use editor_core::records::normalize_shortcode;
-use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository};
+use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
 
+use crate::auth::secret::code_matches;
 use crate::AppState;
+
+/// Every pull request this endpoint accepts must live under this prefix, so a forged report
+/// cannot point RDU's advisory display at another site.
+const PULL_REQUEST_PREFIX: &str = "https://github.com/dasch-swiss/dsp-repository/pull/";
 
 /// `GET /api/v1/approved-records`.
 #[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "approved records list"))]
@@ -51,6 +66,108 @@ pub(crate) async fn list(State(state): State<AppState>) -> Response {
     Json(ApprovedRecordsResponse { records: views }).into_response()
 }
 
+/// `POST /api/v1/collection-report`.
+///
+/// Bodies are plain text, not the HTML page shell — the caller is a CI job, matching how
+/// `crate::csrf` answers the same beacon-shaped caller.
+#[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "collection report"))]
+pub(crate) async fn report(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(body): Json<CollectionReport>,
+) -> Response {
+    // The comparison always runs, on a presented value that is the empty string when the header
+    // is absent, so an absent token and a wrong one take the same branch and answer identically —
+    // there is no early return for "absent" ahead of it. A `None` configured token still refuses
+    // every call: a service with no verifier must not accept an empty presented one, which is why
+    // this reads the option rather than defaulting it to an empty `Secret`.
+    let presented = bearer_token(&headers).unwrap_or_default();
+    let authorized = state
+        .collection_token
+        .as_ref()
+        .is_some_and(|token| code_matches(presented, token.expose()));
+    if !authorized {
+        tracing::warn!("refused a collection report: missing or invalid bearer token");
+        return (
+            StatusCode::UNAUTHORIZED,
+            "This request was refused: the bearer token is missing or invalid.\n",
+        )
+            .into_response();
+    }
+
+    if let Err(message) = validate(&body) {
+        return (StatusCode::BAD_REQUEST, message).into_response();
+    }
+
+    // Only the first dispatch stamps `collected_at`. `mark_collected`'s `NotFound` on a second
+    // call is its contract, not an error: it means either an unknown record or one already
+    // collected, and `report_collection` below tells the two apart, so nothing is decided here.
+    if body.pull_request.is_some() {
+        match ApprovedRecordRepository::mark_collected(&*state.db, body.record, Utc::now()).await {
+            Ok(()) | Err(RepositoryError::NotFound { .. }) => {}
+            Err(error) => {
+                tracing::error!(error = %error, "could not mark a record collected");
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+    }
+
+    let updated = match ApprovedRecordRepository::report_collection(
+        &*state.db,
+        body.record,
+        body.pull_request.as_deref(),
+        body.state,
+        body.failure.as_deref(),
+    )
+    .await
+    {
+        Ok(updated) => updated,
+        Err(error) => {
+            tracing::error!(error = %error, "could not record a collection report");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+
+    if !updated {
+        return (
+            StatusCode::NOT_FOUND,
+            "No such approved record, or it has already been discarded.\n",
+        )
+            .into_response();
+    }
+
+    StatusCode::NO_CONTENT.into_response()
+}
+
+/// The token from `Authorization: Bearer <token>`, or `None` for any other shape — a missing
+/// header, a different scheme, or a value that is not valid UTF-8.
+fn bearer_token(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+}
+
+/// Rejects a report that is malformed or ambiguous, before any write. Every branch here must
+/// leave the caller applying nothing: a report failing later would otherwise commit half of a
+/// report the whole submission was supposed to stand or fall on together.
+fn validate(report: &CollectionReport) -> Result<(), &'static str> {
+    match (&report.pull_request, &report.failure) {
+        (Some(_), Some(_)) => Err("a report may not carry both a pull request and a failure"),
+        (None, None) => Err("a report must carry either a pull request or a failure"),
+        (Some(url), None) => {
+            if report.state.is_none() {
+                return Err("a pull request report must also carry a state");
+            }
+            if !url.starts_with(PULL_REQUEST_PREFIX) {
+                return Err("pull_request must be a dsp-repository pull request URL");
+            }
+            Ok(())
+        }
+        (None, Some(_)) => Ok(()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use axum::body::{to_bytes, Body};
@@ -58,13 +175,20 @@ mod tests {
     use chrono::Utc;
     use editor_core::draft::ProjectDraft;
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
-    use editor_core::records::{ApprovedRecord, PullRequestState};
-    use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository};
+    use editor_core::records::{
+        ApprovedRecord, PullRequestState, ReviewOutcome, ReviewRound, Submission, SubmissionState,
+    };
+    use editor_core::repository::{
+        ApprovedRecordRepository, EntityProposalRepository, ReviewRoundRepository, SubmissionRepository, Transition,
+    };
     use serde_json::{json, Value};
     use tower::ServiceExt;
     use uuid::Uuid;
 
-    use crate::test_support::{published_corpus, test_app, test_state};
+    use crate::test_support::{published_corpus, state_with_collection_token, test_app, test_state};
+
+    /// The bearer token these tests configure the endpoint with.
+    const TOKEN: &str = "a-collection-token";
 
     /// A project the committed published set really holds, so the payload
     /// converts to a project file without a fixture project of our own.
@@ -279,5 +403,322 @@ mod tests {
         let entities = view["entities"].as_array().expect("an entities array");
         assert_eq!(entities.len(), 1);
         assert_eq!(entities[0]["id"], "person-417");
+    }
+
+    /// Deliberately carries no `sec-fetch-site` header, matching a GitHub Actions runner: every
+    /// test below reaching a response other than 403 is itself evidence the CSRF exemption
+    /// (`crate::csrf::COLLECTION_REPORT_PATH`) is in effect for this path.
+    fn report_request(token: Option<&str>, body: &Value) -> Request<Body> {
+        let mut builder = Request::builder()
+            .method("POST")
+            .uri("/api/v1/collection-report")
+            .header("content-type", "application/json");
+        if let Some(token) = token {
+            builder = builder.header("authorization", format!("Bearer {token}"));
+        }
+        builder.body(Body::from(body.to_string())).unwrap()
+    }
+
+    async fn snapshot(state: &crate::AppState) -> Vec<ApprovedRecord> {
+        ApprovedRecordRepository::list_all(&*state.db)
+            .await
+            .expect("list should succeed")
+    }
+
+    /// A pending submission on `shortcode`, so `ReviewRoundRepository::approve` has something to
+    /// claim.
+    async fn a_pending_submission(state: &crate::AppState, shortcode: &str) -> Submission {
+        let submission = Submission {
+            id: Uuid::new_v4(),
+            shortcode: shortcode.to_string(),
+            payload: valid_payload(),
+            state: SubmissionState::InReview,
+            submitted_by: None,
+            submitted_at: Utc::now(),
+            reviewed_by: None,
+            reviewed_at: None,
+            reviewer_note: None,
+            review_state: None,
+        };
+        SubmissionRepository::create(&*state.db, &submission)
+            .await
+            .expect("seed a submission");
+        submission
+    }
+
+    #[tokio::test]
+    async fn a_valid_first_report_stamps_collected_at_and_stores_the_pull_request() {
+        let (state, _) = state_with_collection_token("collection-report-first", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/42",
+            "state": "open",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
+
+        let stored = &snapshot(&state).await[0];
+        assert!(stored.collected_at.is_some(), "the first dispatch must stamp it");
+        assert_eq!(
+            stored.pull_request_url.as_deref(),
+            Some("https://github.com/dasch-swiss/dsp-repository/pull/42")
+        );
+        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
+    }
+
+    #[tokio::test]
+    async fn a_repeated_report_refreshes_state_without_moving_collected_at() {
+        let (state, _) = state_with_collection_token("collection-report-repeat", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+
+        let opened = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/42",
+            "state": "open",
+            "failure": null,
+        });
+        test_app(&state).oneshot(report_request(Some(TOKEN), &opened)).await.unwrap();
+        let after_first = snapshot(&state).await[0].collected_at;
+
+        let merged = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/42",
+            "state": "merged",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &merged)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
+
+        let stored = &snapshot(&state).await[0];
+        assert_eq!(stored.pull_request_state, Some(PullRequestState::Merged));
+        assert_eq!(stored.collected_at, after_first, "a repeated report must not move it");
+    }
+
+    #[tokio::test]
+    async fn a_report_naming_an_unknown_record_is_rejected_whole() {
+        let (state, _) = state_with_collection_token("collection-report-unknown", TOKEN).await;
+        let untouched = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &untouched)
+            .await
+            .expect("seed a record");
+        let before = snapshot(&state).await;
+
+        let body = json!({
+            "record": Uuid::new_v4(),
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
+            "state": "open",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
+        assert_eq!(snapshot(&state).await, before, "nothing must be written for an unknown record");
+    }
+
+    #[tokio::test]
+    async fn a_report_carrying_both_a_pull_request_and_a_failure_is_rejected() {
+        let (state, _) = state_with_collection_token("collection-report-both", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let before = snapshot(&state).await;
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
+            "state": "open",
+            "failure": "boom",
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(snapshot(&state).await, before);
+    }
+
+    #[tokio::test]
+    async fn a_report_carrying_neither_a_pull_request_nor_a_failure_is_rejected() {
+        let (state, _) = state_with_collection_token("collection-report-neither", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let before = snapshot(&state).await;
+
+        let body = json!({ "record": record.id, "pullRequest": null, "state": null, "failure": null });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(snapshot(&state).await, before);
+    }
+
+    #[tokio::test]
+    async fn a_pull_request_without_a_state_is_rejected() {
+        let (state, _) = state_with_collection_token("collection-report-no-state", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let before = snapshot(&state).await;
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
+            "state": null,
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(snapshot(&state).await, before);
+    }
+
+    #[tokio::test]
+    async fn a_pull_request_on_another_host_is_rejected() {
+        let (state, _) = state_with_collection_token("collection-report-other-host", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let before = snapshot(&state).await;
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://evil.test/dasch-swiss/dsp-repository/pull/1",
+            "state": "open",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(snapshot(&state).await, before);
+    }
+
+    #[tokio::test]
+    async fn a_pull_request_on_another_github_repository_is_rejected() {
+        let (state, _) = state_with_collection_token("collection-report-other-repo", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let before = snapshot(&state).await;
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dasch-specs/pull/1",
+            "state": "open",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(snapshot(&state).await, before);
+    }
+
+    #[tokio::test]
+    async fn an_absent_token_and_a_wrong_token_produce_the_same_refusal() {
+        let (state, _) = state_with_collection_token("collection-report-token", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
+            "state": "open",
+            "failure": null,
+        });
+
+        let absent = test_app(&state).oneshot(report_request(None, &body)).await.unwrap();
+        let absent_status = absent.status();
+        let absent_body = body_bytes(absent).await;
+
+        let wrong = test_app(&state)
+            .oneshot(report_request(Some("not-the-token"), &body))
+            .await
+            .unwrap();
+        let wrong_status = wrong.status();
+        let wrong_body = body_bytes(wrong).await;
+
+        assert_eq!(absent_status, axum::http::StatusCode::UNAUTHORIZED);
+        assert_eq!(absent_status, wrong_status);
+        assert_eq!(absent_body, wrong_body);
+        assert_eq!(
+            snapshot(&state).await,
+            vec![record],
+            "an unauthorized report must write nothing"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_report_is_refused_when_no_token_is_configured() {
+        // `test_state` configures no collection token, matching production's fail-closed
+        // default: a service with no verifier must not accept an empty presented one.
+        let (state, _) = test_state("collection-report-no-token-configured").await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
+            "state": "open",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some("anything"), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn a_record_reported_closed_keeps_collected_at_and_stops_blocking_a_new_approval() {
+        let (state, _) = state_with_collection_token("collection-report-closed", TOKEN).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+
+        let body = json!({
+            "record": record.id,
+            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/9",
+            "state": "closed",
+            "failure": null,
+        });
+        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
+
+        let after_report = ApprovedRecordRepository::find_by_shortcode(&*state.db, PUBLISHED_SHORTCODE)
+            .await
+            .expect("read the record back");
+        assert_eq!(after_report.len(), 1);
+        assert!(after_report[0].collected_at.is_some(), "the first dispatch stamped it");
+
+        // A closed pull request no longer stands between the record and the published corpus,
+        // so a fresh approval must supersede it rather than be refused.
+        let submission = a_pending_submission(&state, PUBLISHED_SHORTCODE).await;
+        let new_record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        let round = ReviewRound {
+            id: Uuid::new_v4(),
+            shortcode: PUBLISHED_SHORTCODE.to_string(),
+            submission_id: submission.id,
+            outcome: ReviewOutcome::Approved,
+            note: None,
+            review_state: None,
+            actor: None,
+            at: Utc::now(),
+        };
+        let transition = ReviewRoundRepository::approve(&*state.db, submission.id, &new_record, &round)
+            .await
+            .expect("approval should succeed");
+        assert_eq!(transition, Transition::Applied);
+
+        let after_approve = ApprovedRecordRepository::find_by_shortcode(&*state.db, PUBLISHED_SHORTCODE)
+            .await
+            .expect("read the record back");
+        assert_eq!(after_approve.len(), 1);
+        assert_eq!(after_approve[0].id, new_record.id, "the closed record must be superseded");
     }
 }

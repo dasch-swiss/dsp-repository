@@ -6,11 +6,9 @@ publish = false
 
 # A dependency arrives with the code that needs it: `cargo-machete`, which `just
 # check` runs, fails a manifest listing one the crate does not use. The DataCite
-# and Dublin Core writers read the wire contract and nothing else.
+# and Dublin Core writers read the wire contract and nothing else; the JSON-LD
+# writer builds a `serde_json::Value`, and takes it from the workspace, which
+# pins `preserve_order` — insertion order is emission order for that writer.
 [dependencies]
-shared-metadata = { path = "../metadata" }
-
-# Only the tests name `serde_json`, to build the raw `"url"` values the `url`
-# reading rule parses. Taken from the workspace, which pins `preserve_order`.
-[dev-dependencies]
 serde_json = { workspace = true }
+shared-metadata = { path = "../metadata" }

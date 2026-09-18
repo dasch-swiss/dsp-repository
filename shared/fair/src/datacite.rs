@@ -50,50 +50,17 @@ pub fn project_to_datacite(graph: &ProjectGraph) -> DataCiteRecord {
         });
     }
 
-    // Titles (mandatory)
-    // Use the longer of name/officialName as primary, shorter as AlternativeTitle
-    match (graph.name.as_ref(), graph.official_name.as_ref()) {
-        (Some(name), Some(official_name)) => {
-            let (primary, alternative) = if official_name.len() >= name.len() {
-                (official_name, name)
-            } else {
-                (name, official_name)
-            };
-            datacite
-                .titles
-                .push(DataCiteTitle { title: primary.clone(), title_type: None, lang: None });
-            if primary != alternative {
-                datacite.titles.push(DataCiteTitle {
-                    title: alternative.clone(),
-                    title_type: Some("AlternativeTitle".to_string()),
-                    lang: None,
-                });
-            }
-        }
-        (None, Some(official_name)) => {
-            datacite
-                .titles
-                .push(DataCiteTitle { title: official_name.clone(), title_type: None, lang: None });
-        }
-        // Either only `name` is real, or neither is: the raw value carries the
-        // placeholder through unchanged.
-        _ => {
-            datacite
-                .titles
-                .push(DataCiteTitle { title: graph.raw_name.clone(), title_type: None, lang: None });
-        }
-    }
-
-    // Additional alternative names
-    for alt_name in &graph.alternative_names {
-        let already_present = datacite.titles.iter().any(|t| &t.title == alt_name);
-        if !already_present {
-            datacite.titles.push(DataCiteTitle {
-                title: alt_name.clone(),
-                title_type: Some("AlternativeTitle".to_string()),
-                lang: None,
-            });
-        }
+    // Titles (mandatory). The precedence — the longer of name/officialName
+    // first, the rest as AlternativeTitle — is the graph's, so the JSON-LD
+    // `name` and this one cannot pick differently.
+    let (title, alternatives) = graph.titles();
+    datacite.titles.push(DataCiteTitle { title, title_type: None, lang: None });
+    for alternative in alternatives {
+        datacite.titles.push(DataCiteTitle {
+            title: alternative,
+            title_type: Some("AlternativeTitle".to_string()),
+            lang: None,
+        });
     }
 
     // Publisher (mandatory)
@@ -175,6 +142,10 @@ pub fn project_to_datacite(graph: &ProjectGraph) -> DataCiteRecord {
 
     // Rights - with SPDX identifier
     for legal in &graph.legal_info {
+        // Placeholder only, deliberately: `helpers::real` would also drop an
+        // empty URI, and an empty `rightsURI` is in the committed OAI output.
+        // Nor is this `graph.license_uris()` — DataCite emits one entry per
+        // `legalInfo` element, duplicates included.
         let rights_uri = if !shared_metadata::is_placeholder(&legal.license_uri) {
             Some(legal.license_uri.clone())
         } else {

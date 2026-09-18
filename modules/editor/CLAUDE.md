@@ -11,6 +11,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Architecture, URL scheme and Datastar conventions**: See `docs/src/editor/architecture.md`
 - **Authentication and sessions**: See `docs/src/editor/authentication.md`
 - **The project form**: See `docs/src/editor/project-form.md`
+- **Collection (the approved-records endpoint and the report back)**: See `docs/src/editor/collection.md`
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
@@ -28,6 +29,7 @@ Routes are assembled in `server/src/router.rs`, deliberately separate from `serv
 
 - **The editor is root-mounted.** It runs on its own hostname, so there is no `/editor` prefix. A shared origin would defeat the `Sec-Fetch-Site` CSRF control.
 - **The traced/untraced split is positional.** `/healthz` and `/telemetry/collect` are declared in `build_app` *after* `build_router`'s `.layer()` calls. Moving one line silently mints a span per liveness probe; tests pin it.
+- **Machine-facing routes live under `/api/v1/`.** Everything else is a browser route serving the page shell. An `/api/v1` route returns JSON or a bare status with a plain-text body, never HTML, because its callers are CI jobs and scripts; it is declared inside `build_router` so it is traced, and it authenticates by bearer token or not at all, never by session cookie.
 
 ### Authorization
 
@@ -77,6 +79,14 @@ REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, A
 `modules/editor/web/tests/depositor_vocabulary.rs` asserts the forbidden words against **rendered markup with tags stripped**, and the E2E suite asserts them again against real pages. Both layers are needed, and the reason is structural: a rendering test exercises one view function in isolation and cannot see a string the server assembles into a slot that test left empty. Only the browser pass reads the assembled page. This is not hypothetical — it is how the "pull request" wording above survived until DEV-6917 added the browser pass.
 
 RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism named.
+
+## Collection holds two invariants
+
+`docs/src/editor/collection.md` is the contract; these two are the parts a change here can quietly break.
+
+**Reported collection state never decides what is served or published.** It may drive what RDU is shown and how a record is classified, and nothing else. `GET /api/v1/approved-records` therefore applies no filter at all — it enumerates with `ApprovedRecordRepository::list_all`, not `list_uncollected`; that method's own doc carries the reason, and a test pins it by serving a record whose pull request is live.
+
+**The editor holds no GitHub credential, in either direction.** It verifies a token CI presents to it (`EDITOR_COLLECTION_TOKEN`); it never presents one to GitHub and makes no outbound GitHub call at all.
 
 ## Observability
 

@@ -12,7 +12,9 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::proposals::{EntityProposal, ProposalDecision};
-use crate::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Session, Submission, User};
+use crate::records::{
+    ApprovedRecord, DraftRecord, LoginCode, PullRequestState, ReviewRound, Session, Submission, User,
+};
 
 /// What can go wrong in a repository call.
 ///
@@ -314,6 +316,25 @@ pub trait ApprovedRecordRepository: Send + Sync {
     /// Stamp a record as collected. Leaving it unstamped is what makes a failed
     /// collection retry on the next run.
     async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()>;
+
+    /// Record the advisory outcome of one collection attempt. May run any number of times.
+    ///
+    /// A report carries **either** a pull request and its state **or** a failure, never both;
+    /// the two write different columns. A pull request replaces the stored reference and clears
+    /// the last failure. A failure records itself and **leaves the pull request reference
+    /// alone**: it says nothing about that pull request, so erasing a reference an earlier
+    /// report established would lose a live pull request the editor still knows about.
+    ///
+    /// Never touches `collected_at` — that column belongs to [`Self::mark_collected`] alone.
+    /// `false` when `id` names no row, which covers both an unknown id and one whose record was
+    /// already discarded (see [`Self::delete`]); the caller must apply nothing else in that case.
+    async fn report_collection(
+        &self,
+        id: Uuid,
+        pull_request_url: Option<&str>,
+        state: Option<PullRequestState>,
+        failure: Option<&str>,
+    ) -> Result<bool>;
 
     /// `false` if there was no record to delete. Used when the change goes
     /// Online and the local record is discarded.

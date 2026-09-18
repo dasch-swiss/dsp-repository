@@ -203,6 +203,11 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
                 "approved records"
             )),
         )
+        // Also public in the sense of taking no `Authenticated`/`Rdu` extractor, but not
+        // unauthenticated: `crate::collection::report` checks a bearer token itself, because its
+        // caller is a CI job with no session to hold. See `crate::csrf` for the matching
+        // same-origin exemption this path needs.
+        .route("/api/v1/collection-report", post(crate::collection::report))
         // --- Authenticated routes ---
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.

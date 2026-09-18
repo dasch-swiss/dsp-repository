@@ -1019,12 +1019,70 @@ from a `*.dasch.swiss` host would make `F1-02D` pass by satisfying F-UJI's domai
 comparison while the assessor was *still* sent to production. That moves the
 metric without fixing anything. Rejected.
 
-**Out of scope.** The human-visible permalink in the project sidebar reads
-`proj.pid` from `dpe-core`'s view model, not the graph, and still shows the
-recorded ARK on a preview. It is not a machine-readable representation and
-neither assessor reads it; a person looking at a preview seeing the project's
-real PID is arguably right. Left as it is, and noted rather than silently
-skipped.
+**Left out of Phase 8, and reversed in Phase 9.** The human-visible permalink in
+the project sidebar reads `proj.pid` from `dpe-core`'s view model, not the
+graph, so it still showed the recorded ARK on a preview. Phase 8 recorded that
+as a deliberate boundary, on the argument that it is the citable identifier a
+person copies. The user rejected the exception: **a preview must be
+self-sufficient.** See Phase 9.
+
+### Phase 9 — normalise the ARK host at ingress
+
+**Why.** Phase 8 substituted inside the graph builders. That was the wrong
+layer, and it showed twice: `shared-fair` was taught about resolver
+configuration, and everything outside a machine-readable representation — the
+sidebar permalink, the `pid` in `/dpe/api/v2/projects` — still pointed at
+production. Both are the same defect: the substitution was in a *reader*.
+
+**The user gave the architectural direction:**
+
+> the sync capability will be the source for all data and this is the place
+> where these kind of substitutions should happen
+
+and, on the graph builders specifically:
+
+> what I meant is that also ProjectGraph and RecordGraph will get their data
+> from sync.
+
+`sync` is the Access Area's single writer of the archive projection; the root
+`CONTEXT.md` records that DPE, CPE and the SPARQL endpoint read through its
+ports. Normalising an identifier as data enters is ingress work, not a reader's
+concern. `sync` does not exist yet, and `dpe-core`'s corpus caches are today's
+stand-in — the one place every consumer reads through.
+
+**This is the plan's own seam, not a correction to it.** *Proposed Solution*
+already says that when the corpus readers move behind a port, the builder's
+inputs arrive through it and "`shared-fair` does not change". Phase 8 made
+`shared-fair` change. Moving to ingress restores the property the plan claimed.
+
+**Starts from `65b8b1fc`.** New commits on top; nothing at or below it amended.
+
+- [x] `dpe_core::ark`: `set_ark_resolver_base_url` / `ark_resolver_base_url`, and the two normalisation rules. Its module doc records that this is conceptually `sync`'s work, lives here only because `sync` does not exist, and moves there when it lands
+- [x] Normalise at both cache loaders — `project_cache::load_projects_from` (before `Project::from`, so the view model and the wire contract cannot disagree) and `load_all_records`. A record's `Pid` is already parsed into host, shortcode and record id, so this replaces a field rather than rewriting a string
+- [x] **Remove `ArkHost` from `shared-fair` entirely** — from `ResolveContext`, `ProjectGraph::build`, `RecordGraph::build` and `PartRef::from_record`. With the builders fed from `sync`, a substitution inside them is wrong by construction, not merely redundant
+- [x] Remove the `dpe-api-oai` process-global, the `AppState::ark_host` helper and the parameter threaded through `build_graph` and the two OAI record builders. `AppState` keeps the configured value only to decide whether to mount the `/ark:/` route
+- [x] **Nothing else changes, and that is the test of the placement.** The sidebar is not touched and is correct because `Project::from` runs on a normalised `ProjectRaw`; the JSON API is not touched and is correct because it reads the cache; both graph builders, every writer and the OAI payloads follow from the same two loaders
+- [x] Prove the ingress itself over the real corpus: `project_cache::ingress_tests` runs the loader against all 85 committed projects with a resolver set and asserts every `pid` carries it, the ARK path is untouched, the view model agrees with the wire contract, and 083D's recorded website and every `howToCite` keep the host the corpus records
+- [x] **Widen the sweep to rendered bytes.** `dpe-server`'s `served_bytes` renders the metadata head, the `Link` header, the sidebar and the JSON API document for all 85 projects, from a corpus normalised by the **real** ingress rule, and asserts no production ARK host survives outside quoted text. Renderers rather than the router because the resolver is read once when the caches load, so one process cannot serve a request with it set and another without; the ingress tests cover the loader, this covers everything downstream of it
+- [x] Prove both have teeth: making `normalise_project` a no-op must fail them. It does — the first version of the sweep applied the rule itself instead of calling it, passed under that mutation, and was changed to call the real function
+- [x] OAI byte identity against the existing baseline, unregenerated
+- [x] `operations.md`, ADR-0005's note, and Phase 8's out-of-scope note above
+- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set
+
+**One consumer is deliberately not reached.** `ProjectGraph`'s `canonical_ark`
+falls back to a shortcode-derived ARK with a hardcoded `https://ark.dasch.swiss`
+when the recorded PID is a placeholder. Ingress cannot reach it, because there is
+no ARK in the data to normalise. **No committed project has a placeholder PID (0
+of 85)**, so it is unreachable today, and once `sync` feeds the builders their
+input will always carry one. Recorded rather than worked around.
+
+**Recorded text is quoted, not asserted.** A `howToCite` sentence and a
+project's recorded website pass through as written, reusing the carve-out
+`dpe-api-oai`'s representation sweep already states. Rewriting a host inside
+curator prose is a different operation from replacing the host of an identifier
+— `with_ark_host` would truncate the sentence if asked, and its doc says so —
+and nothing reads either field as an identifier.
+
 
 ## Human Actions
 

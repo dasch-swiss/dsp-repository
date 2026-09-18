@@ -3223,3 +3223,140 @@ test proving the unset case could be steered by the environment it runs in.
   measurements would settle `F1-02D`: a preview carrying this work, and a
   `dasch.swiss` host (assessing DEV after merge, H1).
 - Everything Round 11 listed as still open remains so.
+
+## Round 18 — Phase 9: normalise the ARK host at ingress (2026-09-18)
+
+Two commits on top of `65b8b1fc`, which is pushed.
+
+| # | Chunk | Commit |
+|---|-------|--------|
+| 9.1 | `dpe_core::ark`, both cache loaders, `ArkHost` removed from `shared-fair`, the sweep and the ingress tests | `dacb339b` |
+| 9.2 | Docs, ADR note, plan Phase 9, this round | this commit |
+
+### A discarded first attempt, recorded because the difference is the point
+
+This round was first executed as *thread the resolver origin through the view
+chain to the sidebar* — four view signatures, plus a fix to the JSON API, plus
+the byte sweep. Three commits, gated green, reported. The user then gave the
+architectural direction, and it superseded all of it:
+
+> the sync capability will be the source for all data and this is the place
+> where these kind of substitutions should happen
+
+and, on the graph builders:
+
+> what I meant is that also ProjectGraph and RecordGraph will get their data
+> from sync.
+
+Those commits were never pushed, so they were discarded rather than reverted on
+top, and the branch was rebuilt from `65b8b1fc`. What survived from the attempt
+is the byte sweep and the 083D/escaping findings; what did not is every line of
+plumbing, because the plumbing was the symptom.
+
+**The difference between the two attempts is worth more than either.** Both fix
+the sidebar. The threaded version fixes it by telling four more functions about
+a resolver; the ingress version fixes it by telling none, and fixes the JSON API
+and anything not yet written at the same time. The first is the shape you reach
+by asking *where is the bug*; the second by asking *where does this fact belong*.
+
+### It is the plan's own seam, not a correction to it
+
+*Proposed Solution* already said what should have happened:
+
+> **DPE's adapter is the seam for the capability split.** Today DPE reads the
+> corpus through its own caches and hands `ProjectRaw`, `Record`s and the
+> `ResolveContext` (lookup plus tables) to the builder. When the corpus readers
+> move into their own Access-Area capability (ADR-0003; a separate plan), those
+> three arrive through a port DPE declares, and **`shared-fair` does not
+> change**.
+
+Phase 8 made `shared-fair` change — it put resolver configuration into
+`ResolveContext` and taught two builders to apply it. That is precisely what the
+seam paragraph says the capability split should never require. Ingress
+normalisation restores the property: `shared-fair` reads the graph it is handed
+and nothing more, and when `sync` hands it already-normalised inputs, nothing in
+the crate has to know.
+
+### Why `dpe-core` is not the objection I raised
+
+I had ruled `dpe-core` out on the grounds that it would put deployment
+configuration into a caching crate, against ADR-0005. That was wrong on both
+halves, and the lead's evidence settled it:
+
+- `main` already calls `dpe_core::set_show_placeholder_values` from
+  `DPE_SHOW_PLACEHOLDER_VALUES`. That *is* deployment configuration changing how
+  corpus data is presented, beside `set_data_dir` and `set_public_dir`. A
+  resolver origin is a fourth of the same kind.
+- ADR-0005's "never a process-global" is about DPE's **public base URL**, which
+  the server builds its own URLs from and which stays in `AppState`. Normalising
+  an identifier as data arrives is a different act in a different place.
+
+### What "the right placement" bought, concretely
+
+Nothing downstream was touched and everything downstream is correct:
+
+| Consumer | Change needed |
+|---|---|
+| Sidebar permalink (href + copy text) | none — `Project::from` runs on a normalised `ProjectRaw` |
+| `/dpe/api/v2/projects[/{id}]` | none — serialises the cached raw |
+| `ProjectGraph` / `RecordGraph` / `PartRef` | none — and `ArkHost` **removed** from all three |
+| Every `shared-fair` writer, JSON-LD, DataCite, DC, Signposting | none |
+| OAI payloads | none — and `dpe-api-oai`'s process-global removed |
+
+That table is the test of the placement, and it is why the sidebar needed no
+work at all. Under the threaded version the same table would have had five
+"yes" rows.
+
+### The one consumer ingress cannot reach
+
+`ProjectGraph`'s `canonical_ark` falls back to
+`https://ark.dasch.swiss/ark:/72163/1/{shortcode}` when the recorded PID is a
+placeholder. Ingress cannot normalise what is not there — there is no ARK in the
+data. **Measured: 0 of 85 committed projects have a placeholder PID**, so it is
+unreachable today, and once `sync` feeds the builders their input will always
+carry one. Recorded rather than worked around, and rather than reintroducing
+configuration into `shared-fair` to close a case that cannot occur.
+
+### Two tests, and both were checked by mutation
+
+- `project_cache::ingress_tests` runs the **loader** over all 85 committed
+  projects. Separated from the cache for the reason `record_cache` already gives
+  in the same crate: the cache is a process-global keyed on `DPE_DATA_DIR`,
+  which a test cannot vary.
+- `dpe-server`'s `served_bytes` renders the metadata head, the `Link` header,
+  the sidebar and the JSON API document for all 85, from a corpus normalised by
+  the **real** ingress rule, and asserts no production ARK host survives outside
+  quoted text.
+
+Renderers rather than the router, deliberately: the resolver is read once when
+the caches load, so no single process can serve one request with it set and
+another without. The ingress tests cover the loader; the sweep covers everything
+downstream of it.
+
+**The sweep's first version was wrong and the mutation check caught it.** It
+applied `with_ark_host` itself inside its corpus helper instead of calling
+`normalise_project`, so making the real rule a no-op left it green. It now calls
+the real function, and under the same mutation it fails on 0101 with "a
+production ARK host survives outside quoted text". `ingress_tests` fails too.
+A test that reimplements the thing it is testing is the same class of mistake as
+two places deriving an identifier differently — the `sameAs` lesson, in the test
+rather than the product.
+
+### Verification
+
+- Full check gate at each commit by detached checkout, and at the tip.
+- `cargo test` on `shared-fair`, `shared-metadata`, `dpe-api-oai`, `dpe-server`,
+  `dpe-web` and `dpe-core` green at each; `just test` exit 0 at the tip;
+  `mdbook build docs` succeeds; `just commit-lint` message check green.
+- **OAI byte identity: `compared 102158 entries`, pass**, against the existing
+  `.claude/tmp/oai-baseline-hashes.txt`, not regenerated. Load-bearing this
+  round: the record loader now rewrites `Pid::host` on every one of 50,994
+  records before any writer sees it, and with the resolver unset the OAI output
+  is unchanged to the byte.
+- The insta sidebar snapshots are unchanged — they build `Project` values
+  directly, so no cache and no resolver reach them.
+
+### Still open
+
+- No score is claimed, and nothing has been re-assessed.
+- Everything Round 11 listed as still open remains so.

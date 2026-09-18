@@ -169,5 +169,17 @@ fn load_all_records() -> Vec<Record> {
     find_records("0868", &mut cache);
     find_records("081C", &mut cache);
 
-    cache.into_values().flatten().flat_map(|(_, records)| records).collect()
+    // Ingress, as in `project_cache`: every consumer of a record — the graph
+    // builders, the OAI payloads, the file endpoint — reads this vector, so the
+    // ARK host is normalised once here. See `crate::ark`.
+    let host = crate::ark::ark_resolver_base_url();
+    cache
+        .into_values()
+        .flatten()
+        .flat_map(|(_, records)| records)
+        .map(|mut record| {
+            crate::ark::normalise_record(&mut record, host);
+            record
+        })
+        .collect()
 }

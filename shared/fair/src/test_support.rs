@@ -13,7 +13,7 @@ use shared_metadata::{
     Multilingual, Organization, Person, ProjectRaw, ProjectStatus, Record, RecordLegalInfo, RecordLicense, RecordPid,
 };
 
-use crate::graph::{ArkHost, ResolveContext};
+use crate::graph::ResolveContext;
 use crate::project_graph::ProjectGraph;
 
 /// A second small copy of `resolve.rs`'s test lookup: that one is private to
@@ -221,21 +221,16 @@ pub(crate) fn record(id: &str, label: Multilingual) -> Record {
 /// Builds a graph over ad-hoc tables, proving the builder needs no `'static`
 /// data and no process-global caches.
 pub(crate) fn build(raw: &ProjectRaw, records: &[Record]) -> ProjectGraph {
-    build_with_ark_host(raw, records, ArkHost::Recorded)
-}
-
-/// [`build`], with the host the emitted ARKs carry chosen by the caller.
-pub(crate) fn build_with_ark_host(raw: &ProjectRaw, records: &[Record], ark_host: ArkHost<'_>) -> ProjectGraph {
     let lookup = lookup();
     let periods = periods();
     let enriched = default_enrichment();
-    let ctx = ResolveContext::new(&lookup, &periods, &enriched, ark_host);
+    let ctx = ResolveContext::new(&lookup, &periods, &enriched);
     ProjectGraph::build(raw, &ctx, records)
 }
 
 pub(crate) fn build_with_enrichment(raw: &ProjectRaw, enriched: HashMap<String, EnrichedDate>) -> ProjectGraph {
     let lookup = lookup();
     let periods = periods();
-    let ctx = ResolveContext::new(&lookup, &periods, &enriched, ArkHost::Recorded);
+    let ctx = ResolveContext::new(&lookup, &periods, &enriched);
     ProjectGraph::build(raw, &ctx, &[])
 }

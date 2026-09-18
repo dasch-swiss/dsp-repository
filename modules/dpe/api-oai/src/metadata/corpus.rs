@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use shared_fair::{
     coar_access_right, project_to_datacite, project_to_datacite_json, project_to_dublin_core,
     project_to_dublin_core_meta, project_to_link_set, project_to_schema_org, record_to_datacite, record_to_dublin_core,
-    script_safe_json, ArkHost, LinkSet, ProjectGraph, RecordGraph, ResolveContext, SchemaOrgOptions, UrlLayout,
+    script_safe_json, LinkSet, ProjectGraph, RecordGraph, ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 // `coverage_name` is the same lookup-key derivation `ProjectGraph::build` uses
 // (Reference → `text`; Text map → `multilingual_value`), shared via
@@ -171,7 +171,7 @@ fn every_representation_of_a_committed_object_agrees_with_the_others() {
         !lookup.persons.is_empty(),
         "committed person corpus should load and be non-empty"
     );
-    let ctx = ResolveContext::new(&lookup, &periods, &enriched, ArkHost::Recorded);
+    let ctx = ResolveContext::new(&lookup, &periods, &enriched);
     let datacite_schema = datacite_json_validator();
 
     let mut projects = 0usize;
@@ -192,7 +192,7 @@ fn every_representation_of_a_committed_object_agrees_with_the_others() {
         let head = dump.iter().take(RECORD_SAMPLE);
         let tail = dump.iter().skip(dump.len().saturating_sub(RECORD_SAMPLE));
         for record in head.chain(tail) {
-            assert_record_representations_agree(&RecordGraph::build(record, ArkHost::Recorded), &path);
+            assert_record_representations_agree(&RecordGraph::build(record), &path);
             records += 1;
         }
     }
@@ -538,7 +538,7 @@ fn every_committed_project_embeds_a_small_json_ld_block() {
     let periods = shared_metadata::chronontology::load_from(data_dir);
     let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
     let lookup = CorpusContributorLookup::load(data_dir);
-    let ctx = ResolveContext::new(&lookup, &periods, &enriched, ArkHost::Recorded);
+    let ctx = ResolveContext::new(&lookup, &periods, &enriched);
 
     let dumps = sorted_json_files(&data_dir.join("records"));
     assert!(!dumps.is_empty(), "there should be committed record dumps");
@@ -613,11 +613,7 @@ fn rendered_representations(graph: &ProjectGraph, record: Option<&Record>) -> St
     out.push_str(&format!("{:?}", project_to_dublin_core_meta(graph)));
     out.push_str(&project_to_link_set(graph, &urls).to_header_string());
     if let Some(record) = record {
-        let ark_host = match graph.ark.split_once(ARK_PATH) {
-            Some((host, _)) => ArkHost::Substituted(host.trim_end_matches('/')),
-            None => ArkHost::Recorded,
-        };
-        let record_graph = RecordGraph::build(record, ark_host);
+        let record_graph = RecordGraph::build(record);
         out.push_str(&format!("{:?}", record_to_dublin_core(&record_graph)));
         out.push_str(&format!("{:?}", record_to_datacite(&record_graph)));
     }
@@ -668,7 +664,7 @@ fn with_no_resolver_configured_every_emitted_ark_carries_the_recorded_host() {
     let periods = shared_metadata::chronontology::load_from(data_dir);
     let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
     let lookup = CorpusContributorLookup::load(data_dir);
-    let ctx = ResolveContext::new(&lookup, &periods, &enriched, ArkHost::Recorded);
+    let ctx = ResolveContext::new(&lookup, &periods, &enriched);
 
     let mut arks = 0usize;
     for (raw, record) in projects_with_a_record() {
@@ -695,89 +691,6 @@ fn with_no_resolver_configured_every_emitted_ark_carries_the_recorded_host() {
         arks += total;
     }
     assert!(arks > 0, "the sweep should have found ARKs to check");
-}
-
-/// Set, every emitted ARK carries the configured host — and nothing but the
-/// host changes.
-///
-/// The path is the identifier: the same ARK paths, in the same order, as the
-/// unset run produces. So a substitution that re-encoded a record id, dropped a
-/// shortcode or reordered a list fails here rather than in production.
-#[test]
-fn with_a_resolver_configured_every_emitted_ark_carries_it_and_the_paths_are_untouched() {
-    let data_dir = Path::new(DATA_DIR);
-    let periods = shared_metadata::chronontology::load_from(data_dir);
-    let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
-    let lookup = CorpusContributorLookup::load(data_dir);
-    let recorded_ctx = ResolveContext::new(&lookup, &periods, &enriched, ArkHost::Recorded);
-    let preview_ctx = ResolveContext::new(&lookup, &periods, &enriched, ArkHost::Substituted(PREVIEW_ORIGIN));
-
-    for (raw, record) in projects_with_a_record() {
-        let recorded_graph = ProjectGraph::build(&raw, &recorded_ctx, record.iter());
-        let preview_graph = ProjectGraph::build(&raw, &preview_ctx, record.iter());
-        let recorded = rendered_representations(&recorded_graph, record.as_ref());
-        let preview = rendered_representations(&preview_graph, record.as_ref());
-
-        // --- the resolved identifiers ---
-        assert_eq!(
-            preview_graph.ark,
-            recorded_graph.ark.replace(RECORDED_ARK_HOST, PREVIEW_ORIGIN),
-            "{}: the resolved ARK",
-            raw.shortcode
-        );
-        // `pid` too: it feeds `sameAs`, and F-UJI folds `schema:sameAs` into the
-        // identifier pool it reads, so a recorded host left here would put the
-        // production ARK straight back into what an assessor harvests.
-        assert_eq!(
-            preview_graph.pid,
-            recorded_graph.pid.replace(RECORDED_ARK_HOST, PREVIEW_ORIGIN),
-            "{}: the recorded pid",
-            raw.shortcode
-        );
-        for (part, recorded_part) in preview_graph.parts.iter().zip(&recorded_graph.parts) {
-            assert_eq!(
-                part.ark,
-                recorded_part.ark.replace(RECORDED_ARK_HOST, PREVIEW_ORIGIN),
-                "{}: a hasPart ARK",
-                raw.shortcode
-            );
-        }
-
-        // --- only the host moves: same paths, same order, same count ---
-        assert_eq!(
-            ark_paths(&preview),
-            ark_paths(&recorded),
-            "{}: the ARK paths must be untouched",
-            raw.shortcode
-        );
-
-        // --- where the recorded host may still appear, and only there ---
-        //
-        // An ARK the corpus records as project *data* rather than as the
-        // object's identifier passes through verbatim: 083D records its own ARK
-        // as the project's `url`, which the writers emit as the research
-        // project's website. Rewriting a recorded website would be inventing a
-        // fact (ADR-0005, *Nothing is invented for a score*), and it is not an
-        // identifier an assessor reads off the described object.
-        let website_arks = [&preview_graph.website, &preview_graph.secondary_website]
-            .into_iter()
-            .flatten()
-            .filter(|site| site.url.contains(ARK_PATH))
-            .count();
-        let leftovers = preview.matches(&format!("{RECORDED_ARK_HOST}/{ARK_PATH}")).count();
-        assert_eq!(
-            leftovers, website_arks,
-            "{}: the recorded host survives only on a recorded website",
-            raw.shortcode
-        );
-        let total = preview.matches(ARK_PATH).count();
-        assert_eq!(
-            preview.matches(&format!("{PREVIEW_ORIGIN}/{ARK_PATH}")).count() + leftovers,
-            total,
-            "{}: every other emitted ARK carries the configured host",
-            raw.shortcode
-        );
-    }
 }
 
 /// The ARK the recorded data yields today: the `pid` when it is real, otherwise

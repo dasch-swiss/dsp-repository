@@ -16,7 +16,7 @@ use axum::response::{IntoResponse, Response};
 use maud::{html, Markup, PreEscaped};
 use shared_fair::{
     decide, project_to_datacite, project_to_datacite_json, project_to_dublin_core_meta, project_to_link_set,
-    project_to_schema_org, representation_to_link_set, script_safe_json, ArkHost, Decision, LinkSet, ProjectGraph,
+    project_to_schema_org, representation_to_link_set, script_safe_json, Decision, LinkSet, ProjectGraph,
     ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 use shared_metadata::{ProjectRaw, Record};
@@ -131,7 +131,7 @@ fn render<'a>(
     records: impl IntoIterator<Item = &'a Record>,
     state: &AppState,
 ) -> (Markup, HeaderMap) {
-    let graph = build_graph(raw, records, state.ark_host());
+    let graph = build_graph(raw, records);
 
     let urls = url_layout(raw, state);
     let json = script_safe_json(&project_to_schema_org(
@@ -169,13 +169,9 @@ fn render<'a>(
 /// value, so the resolve context — whose `ContributorLookup` carries no `Sync`
 /// bound — is created and dropped inside this call and can reach no await
 /// point.
-fn build_graph<'a>(
-    raw: &ProjectRaw,
-    records: impl IntoIterator<Item = &'a Record>,
-    ark_host: ArkHost<'_>,
-) -> ProjectGraph {
+fn build_graph<'a>(raw: &ProjectRaw, records: impl IntoIterator<Item = &'a Record>) -> ProjectGraph {
     let (lookup, periods, enriched) = dpe_core::resolve_inputs();
-    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched, ark_host), records)
+    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched), records)
 }
 
 /// The `Link` header for a link set, or an empty map when the HTTP layer will
@@ -207,10 +203,9 @@ fn link_header(links: &LinkSet, shortcode: &str) -> HeaderMap {
 /// why this route sits behind the per-IP limiter from its first day
 /// (`router.rs`).
 pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    let resolver = state.ark_resolver_base_url.clone();
-    representation(&id, &state, JSON_LD, move |raw, urls| {
+    representation(&id, &state, JSON_LD, |raw, urls| {
         let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
-        let graph = build_graph(raw, records.iter().copied(), crate::ark_host(resolver.as_deref()));
+        let graph = build_graph(raw, records.iter().copied());
         project_to_schema_org(&graph, urls, SchemaOrgOptions { has_part_cap: None })
     })
     .await
@@ -219,11 +214,10 @@ pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(
 /// The project's DataCite record as kernel-4 JSON, for a harvester that wants
 /// bare DataCite rather than the OAI envelope the `describedby` links to.
 pub(crate) async fn project_datacite_json_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    let resolver = state.ark_resolver_base_url.clone();
-    representation(&id, &state, DATACITE_JSON, move |raw, _urls| {
+    representation(&id, &state, DATACITE_JSON, |raw, _urls| {
         // No records: DataCite carries no part list, so building one would cost
         // a `PartRef` per record for nothing.
-        let graph = build_graph(raw, std::iter::empty(), crate::ark_host(resolver.as_deref()));
+        let graph = build_graph(raw, std::iter::empty());
         project_to_datacite_json(&project_to_datacite(&graph))
     })
     .await
@@ -357,44 +351,158 @@ mod tests {
         assert!(html.contains(r#"rel="cite-as""#), "{html}");
     }
 
-    /// The `<link>` elements and the `Link` header are one set rendered twice,
-    /// so they must agree relation for relation. Maud escapes `&` in an
-    /// attribute value and the header does not, which is the one difference.
-    /// The variable reaches the page, not just the graph: the rendered head and
-    /// the `Link` header both carry the configured resolver, and the recorded
-    /// one is gone from both.
-    #[test]
-    fn a_configured_resolver_reaches_the_rendered_page_and_the_link_header() {
+    /// **The class, not the instance.** Every byte DPE renders for a committed
+    /// project, swept for a production ARK host.
+    ///
+    /// The sidebar permalink was found by reading the code, which is how the
+    /// `sameAs` near-miss was nearly missed: a reader checks the places they
+    /// think of. This renders instead — the metadata head, the `Link` header,
+    /// the sidebar a person reads, and the JSON API's document — for all 85
+    /// committed projects, from a corpus normalised by the **real** ingress
+    /// function, so a renderer nobody thought of fails here rather than in a
+    /// preview.
+    ///
+    /// Renderers rather than the router, deliberately: the resolver is a
+    /// process-global read when the caches load, so a test cannot serve one
+    /// request with it set and another without. `dpe-core`'s
+    /// `project_cache::ingress_tests` proves the loader normalises; this proves
+    /// that nothing downstream of the loader reintroduces the recorded host.
+    mod served_bytes {
+        use dpe_core::Project;
+        use shared_metadata::ProjectRaw;
+
+        use super::*;
+
         const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
-        let state = AppState {
-            ark_resolver_base_url: Some(PREVIEW.to_string()),
-            ..test_state()
-        };
-        let (markup, headers) = render(&project(), std::iter::empty(), &state);
-        let html = markup.into_string();
+        const RECORDED_ARK_HOST: &str = "ark.dasch.swiss";
+        const COMMITTED: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/projects");
 
-        assert!(html.contains(&format!("{PREVIEW}/ark:/72163/1/")), "{html}");
-        assert!(!html.contains("ark.dasch.swiss"), "{html}");
-        let cite_as = header_links(&headers)
-            .into_iter()
-            .find(|link| link.rel == "cite-as")
-            .expect("a cite-as link");
-        assert!(cite_as.href.starts_with(PREVIEW), "{cite_as:?}");
-        // The path is the identifier and is not re-spelled by the substitution.
-        assert!(cite_as.href.ends_with("/ark:/72163/1/0001"), "{cite_as:?}");
-    }
+        /// The committed corpus as the caches would hold it on a deployment
+        /// configured with `resolver`.
+        fn corpus(resolver: Option<&str>) -> Vec<ProjectRaw> {
+            let mut raws: Vec<ProjectRaw> = std::fs::read_dir(COMMITTED)
+                .expect("the committed corpus should be readable")
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| path.extension().and_then(|e| e.to_str()) == Some("json"))
+                .map(|path| {
+                    let json = std::fs::read_to_string(&path).expect("readable");
+                    let mut raw: ProjectRaw = serde_json::from_str(&json).expect("parses");
+                    // The real ingress rule, not a copy of it: a regression in
+                    // `normalise_project` has to fail this sweep too.
+                    dpe_core::ark::normalise_project(&mut raw, resolver);
+                    raw
+                })
+                .collect();
+            raws.sort_by(|a, b| a.shortcode.cmp(&b.shortcode));
+            assert_eq!(raws.len(), 85, "the committed corpus");
+            raws
+        }
 
-    /// Unset — every deployment but a PR preview — the page is what it is
-    /// today: the recorded ARK, and no other host anywhere near one.
-    #[test]
-    fn with_no_configured_resolver_the_page_carries_the_recorded_ark() {
-        let (html, headers) = rendered(&project());
-        assert!(html.contains("https://ark.dasch.swiss/ark:/72163/1/0001"), "{html}");
-        let cite_as = header_links(&headers)
-            .into_iter()
-            .find(|link| link.rel == "cite-as")
-            .expect("a cite-as link");
-        assert_eq!(cite_as.href, "https://ark.dasch.swiss/ark:/72163/1/0001");
+        /// Everything a reader receives for one project: the metadata head, the
+        /// `Link` header, the sidebar, and the JSON API's document.
+        fn rendered(raw: &ProjectRaw) -> String {
+            let state = test_state();
+            let (markup, headers) = render(raw, std::iter::empty(), &state);
+            let mut out = markup.into_string();
+            if let Some(link) = headers.get(header::LINK) {
+                out.push_str(link.to_str().expect("ascii"));
+            }
+            out.push_str(
+                &dpe_web::pages::project::components::project_sidebar::project_sidebar(&Project::from(raw.clone()))
+                    .into_string(),
+            );
+            out.push_str(&serde_json::to_string(raw).expect("the wire contract should serialise"));
+            out
+        }
+
+        /// The recorded strings an ARK may legitimately survive inside.
+        ///
+        /// Recorded text is *quoted*, not asserted, so it passes through
+        /// verbatim — the same carve-out `dpe-api-oai`'s representation sweep
+        /// states, for the same reason (ADR-0005, *Nothing is invented for a
+        /// score*). Two fields reach a reader: `howToCite`, whose author may
+        /// have written the ARK into the sentence, and `url`, the project's
+        /// website, which 083D records as its own ARK.
+        fn quoted(raw: &ProjectRaw) -> Vec<String> {
+            let (website, secondary) = shared_metadata::utils::parse_url_value(raw.url.clone());
+            std::iter::once(raw.how_to_cite.clone())
+                .chain([website, secondary].into_iter().flatten().map(|site| site.url))
+                .filter(|text| text.contains(RECORDED_ARK_HOST))
+                .collect()
+        }
+
+        /// Maud escapes `&`, and five committed citations carry one ("Nagl, F.
+        /// & Gehr, S."), so matching the literal alone would leave their quoted
+        /// ARK looking like an asserted one.
+        fn html_escaped(text: &str) -> String {
+            text.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .replace('"', "&quot;")
+        }
+
+        fn asserted_only(rendered: &str, raw: &ProjectRaw) -> String {
+            let mut out = rendered.to_string();
+            for text in quoted(raw) {
+                out = out.replace(&text, "[QUOTED]");
+                out = out.replace(&html_escaped(&text), "[QUOTED]");
+            }
+            out
+        }
+
+        #[test]
+        fn a_configured_resolver_leaves_no_production_ark_in_the_rendered_bytes() {
+            let mut substituted = 0usize;
+            for raw in corpus(Some(PREVIEW)) {
+                let bytes = rendered(&raw);
+                assert!(
+                    !asserted_only(&bytes, &raw).contains(RECORDED_ARK_HOST),
+                    "{}: a production ARK host survives outside quoted text",
+                    raw.shortcode
+                );
+                if bytes.contains(&format!("{PREVIEW}/ark:/")) {
+                    substituted += 1;
+                }
+            }
+            // Without this the assertion above would pass on output carrying no
+            // ARK at all.
+            assert_eq!(substituted, 85, "every project should render a substituted ARK");
+        }
+
+        #[test]
+        fn with_no_resolver_configured_the_rendered_bytes_carry_the_recorded_ark() {
+            for raw in corpus(None) {
+                let bytes = rendered(&raw);
+                assert!(!bytes.contains("run.app"), "{}: a preview host leaked", raw.shortcode);
+                assert!(
+                    bytes.contains(&format!("https://{RECORDED_ARK_HOST}/ark:/")),
+                    "{}: the recorded ARK should be there",
+                    raw.shortcode
+                );
+            }
+        }
+
+        /// The sidebar specifically, since it is what prompted the sweep, and
+        /// because it is the proof that the placement is right: it was not
+        /// changed at all, and it is correct because the view model it renders
+        /// was normalised on the way in.
+        #[test]
+        fn the_sidebar_permalink_resolves_on_this_deployment() {
+            let raw = corpus(Some(PREVIEW))
+                .into_iter()
+                .find(|raw| raw.shortcode == "0803")
+                .expect("0803 is committed");
+            let html = dpe_web::pages::project::components::project_sidebar::project_sidebar(&Project::from(raw))
+                .into_string();
+            assert!(html.contains(&format!(r#"href="{PREVIEW}/ark:/72163/1/0803""#)), "href: {html}");
+            assert!(
+                html.contains(&format!(r#"data-copy-text="{PREVIEW}/ark:/72163/1/0803""#)),
+                "copy text: {html}"
+            );
+            // The displayed text is the bare identifier either way.
+            assert!(html.contains(">ark:/72163/1/0803<"), "display: {html}");
+        }
     }
 
     #[test]

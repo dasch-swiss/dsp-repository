@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use shared_metadata::temporal_enrichment::EnrichedDate;
 use shared_metadata::w3cdtf::W3cdtfRange;
-use shared_metadata::{AccessRightsType, ContributorLookup, Multilingual, Record, ARK_PATH_PREFIX};
+use shared_metadata::{AccessRightsType, ContributorLookup, Multilingual, Record};
 
 use crate::helpers::{access_rights_to_string, extract_year, license_identifier_to_label, real};
 
@@ -27,53 +27,12 @@ pub(crate) const DASCH: &str = "DaSCH";
 /// `publication_year_with_fallback` rather than resolved into either graph.
 pub(crate) const FALLBACK_PUBLICATION_YEAR: &str = "2015";
 
-/// The host every ARK a graph emits carries.
-///
-/// [`Recorded`](ArkHost::Recorded) is the default and emits the host the corpus
-/// records, which is what production, DEV and STAGE serve.
-/// [`Substituted`](ArkHost::Substituted) replaces that host — and only the
-/// host; the ARK path is the identifier and passes through untouched.
-///
-/// It exists for a deployment that is *not* the one the recorded ARK resolves
-/// to. A PR preview running unmerged code that published `ark.dasch.swiss`
-/// identifiers would send an assessor harvesting the preview to production,
-/// which runs different code, so what it assessed and what it dereferenced
-/// would be two different deployments.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum ArkHost<'a> {
-    #[default]
-    Recorded,
-    Substituted(&'a str),
-}
-
-impl ArkHost<'_> {
-    /// `ark` with its host replaced, or `ark` unchanged when there is nothing
-    /// to replace.
-    ///
-    /// A value carrying no `ark:/…` path is not an ARK — a placeholder `pid`,
-    /// most of all — and is returned verbatim rather than prefixed with a host
-    /// it never had. The substituted host is an origin with no trailing slash
-    /// (the same rule `DPE_PUBLIC_BASE_URL` is validated against), and the ARK
-    /// path always starts at `ark:/`, so exactly one separator joins them.
-    pub fn apply(self, ark: String) -> String {
-        let Self::Substituted(host) = self else {
-            return ark;
-        };
-        match ark.find(ARK_PATH_PREFIX) {
-            Some(position) => format!("{host}/{}", &ark[position..]),
-            None => ark,
-        }
-    }
-}
-
 /// Borrowed lookup tables a writer resolves against: contributor IDs,
-/// ChronOntology period timespans, and the temporal-coverage enrichment table,
-/// plus the host the emitted ARKs carry.
+/// ChronOntology period timespans, and the temporal-coverage enrichment table.
 pub struct ResolveContext<'a> {
     pub lookup: &'a dyn ContributorLookup,
     pub periods: &'a HashMap<String, W3cdtfRange>,
     pub enriched: &'a HashMap<String, EnrichedDate>,
-    pub ark_host: ArkHost<'a>,
 }
 
 impl<'a> ResolveContext<'a> {
@@ -81,9 +40,8 @@ impl<'a> ResolveContext<'a> {
         lookup: &'a dyn ContributorLookup,
         periods: &'a HashMap<String, W3cdtfRange>,
         enriched: &'a HashMap<String, EnrichedDate>,
-        ark_host: ArkHost<'a>,
     ) -> Self {
-        Self { lookup, periods, enriched, ark_host }
+        Self { lookup, periods, enriched }
     }
 }
 
@@ -163,8 +121,8 @@ pub struct RecordGraph {
     /// without the resolver in front does not dereference for a harvester
     /// (`docs/src/dpe/oai-pmh.md`, *Identifiers*).
     ///
-    /// Which resolver is in front is [`ArkHost`]'s: the recorded one unless the
-    /// deployment configured otherwise.
+    /// Which resolver is in front is settled before the record reaches this
+    /// crate: `dpe-core` normalises the host as the corpus enters its caches.
     pub ark: String,
     pub project_ark: String,
     pub title: Option<String>,
@@ -210,7 +168,7 @@ pub struct RecordGraph {
 }
 
 impl RecordGraph {
-    pub fn build(record: &Record, ark_host: ArkHost<'_>) -> Self {
+    pub fn build(record: &Record) -> Self {
         let license = &record.legal_info.license;
         let license_label = if license.license_identifier.is_empty() {
             None
@@ -219,8 +177,8 @@ impl RecordGraph {
         };
 
         Self {
-            ark: ark_host.apply(record.pid.as_url()),
-            project_ark: ark_host.apply(record.project_ark()),
+            ark: record.pid.as_url(),
+            project_ark: record.project_ark(),
             title: preferred_title(&record.label),
             alternative_titles: record
                 .label
@@ -304,9 +262,9 @@ pub struct PartRef {
 }
 
 impl PartRef {
-    pub fn from_record(record: &Record, ark_host: ArkHost<'_>) -> Self {
+    pub fn from_record(record: &Record) -> Self {
         Self {
-            ark: ark_host.apply(record.pid.as_url()),
+            ark: record.pid.as_url(),
             title: preferred_title(&record.label).unwrap_or_default(),
             file: publishable_file(record),
         }
@@ -427,7 +385,7 @@ mod tests {
     fn dasch_authorship_is_an_organization() {
         let mut record = test_record();
         record.legal_info.authorship = vec!["DaSCH".to_string()];
-        let graph = RecordGraph::build(&record, ArkHost::Recorded);
+        let graph = RecordGraph::build(&record);
         assert_eq!(
             graph.creators,
             vec![RecordCreator { name: "DaSCH".to_string(), kind: AgentKind::Organization }]
@@ -436,7 +394,7 @@ mod tests {
 
     #[test]
     fn other_authorship_is_a_person() {
-        let graph = RecordGraph::build(&test_record(), ArkHost::Recorded);
+        let graph = RecordGraph::build(&test_record());
         assert_eq!(
             graph.creators,
             vec![
@@ -457,13 +415,13 @@ mod tests {
     fn empty_authorship_yields_no_creators() {
         let mut record = test_record();
         record.legal_info.authorship = vec![];
-        let graph = RecordGraph::build(&record, ArkHost::Recorded);
+        let graph = RecordGraph::build(&record);
         assert!(graph.creators.is_empty());
     }
 
     #[test]
     fn publication_year_comes_from_date_published() {
-        let graph = RecordGraph::build(&test_record(), ArkHost::Recorded);
+        let graph = RecordGraph::build(&test_record());
         assert_eq!(graph.publication_year.as_deref(), Some("2024"));
         assert_eq!(graph.publication_year_with_fallback(), "2024");
     }
@@ -475,7 +433,7 @@ mod tests {
     fn an_unusable_date_published_yields_no_year() {
         for date_published in ["", "MISSING", "CALCULATED", "20"] {
             let record = Record { date_published: date_published.to_string(), ..test_record() };
-            let graph = RecordGraph::build(&record, ArkHost::Recorded);
+            let graph = RecordGraph::build(&record);
             assert_eq!(graph.publication_year, None, "{date_published:?}");
             assert_eq!(graph.publication_year_with_fallback(), "2015", "{date_published:?}");
         }
@@ -485,7 +443,7 @@ mod tests {
     fn empty_authorship_falls_back_to_the_dasch_organization() {
         let mut record = test_record();
         record.legal_info.authorship = vec![];
-        let graph = RecordGraph::build(&record, ArkHost::Recorded);
+        let graph = RecordGraph::build(&record);
         assert_eq!(
             graph.creators_with_fallback().into_owned(),
             vec![RecordCreator { name: "DaSCH".to_string(), kind: AgentKind::Organization }]
@@ -494,7 +452,7 @@ mod tests {
 
     #[test]
     fn the_fallback_leaves_real_authorship_alone() {
-        let graph = RecordGraph::build(&test_record(), ArkHost::Recorded);
+        let graph = RecordGraph::build(&test_record());
         assert_eq!(graph.creators_with_fallback().as_ref(), graph.creators.as_slice());
     }
 
@@ -510,7 +468,7 @@ mod tests {
             ("Other", "Other"),
         ] {
             record.type_of_data = type_of_data.to_string();
-            let graph = RecordGraph::build(&record, ArkHost::Recorded);
+            let graph = RecordGraph::build(&record);
             assert_eq!(graph.type_of_data, type_of_data);
             assert_eq!(graph.general_data_type, expected);
         }
@@ -520,7 +478,7 @@ mod tests {
     fn alternative_titles_are_sorted_and_exclude_english() {
         let mut record = test_record();
         record.label.insert("fr".to_string(), "Réponses au sondage".to_string());
-        let graph = RecordGraph::build(&record, ArkHost::Recorded);
+        let graph = RecordGraph::build(&record);
         assert_eq!(
             graph.alternative_titles,
             vec![
@@ -535,7 +493,7 @@ mod tests {
 
     #[test]
     fn alternative_titles_still_include_the_chosen_language() {
-        let graph = RecordGraph::build(&record_without_english_label(), ArkHost::Recorded);
+        let graph = RecordGraph::build(&record_without_english_label());
         assert_eq!(graph.title.as_deref(), Some("Umfrageantworten"));
         assert_eq!(
             graph.alternative_titles,
@@ -549,8 +507,8 @@ mod tests {
     #[test]
     fn part_ref_title_matches_the_graph_title() {
         for record in [test_record(), record_without_english_label()] {
-            let part = PartRef::from_record(&record, ArkHost::Recorded);
-            let graph = RecordGraph::build(&record, ArkHost::Recorded);
+            let part = PartRef::from_record(&record);
+            let graph = RecordGraph::build(&record);
             assert_eq!(part.title, graph.title.clone().unwrap_or_default());
             assert_eq!(part.ark, graph.ark);
         }
@@ -559,7 +517,7 @@ mod tests {
     #[test]
     fn part_ref_title_is_empty_without_a_label() {
         let record = Record { label: Multilingual::new(), ..test_record() };
-        assert_eq!(PartRef::from_record(&record, ArkHost::Recorded).title, "");
+        assert_eq!(PartRef::from_record(&record).title, "");
     }
 
     /// A record carrying every file field, as 0868's do.
@@ -580,9 +538,7 @@ mod tests {
 
     #[test]
     fn a_part_carries_the_file_of_a_fully_open_record() {
-        let file = PartRef::from_record(&record_with_a_file(), ArkHost::Recorded)
-            .file
-            .expect("a file");
+        let file = PartRef::from_record(&record_with_a_file()).file.expect("a file");
         assert_eq!(file.url, "https://ingest.dasch.swiss/projects/0001/assets/abc/original");
         assert_eq!(file.mime_type.as_deref(), Some("image/png"));
         assert_eq!(file.file_name.as_deref(), Some("Screenshot.png"));
@@ -595,7 +551,7 @@ mod tests {
 
     #[test]
     fn a_part_carries_no_file_when_the_record_has_none() {
-        assert_eq!(PartRef::from_record(&test_record(), ArkHost::Recorded).file, None);
+        assert_eq!(PartRef::from_record(&test_record()).file, None);
     }
 
     /// The rule that keeps a restricted record's ingest URL out of every
@@ -614,7 +570,7 @@ mod tests {
                 ..record_with_a_file()
             };
             assert_eq!(
-                PartRef::from_record(&record, ArkHost::Recorded).file,
+                PartRef::from_record(&record).file,
                 None,
                 "a file was published for access rights {access_rights:?}"
             );
@@ -625,7 +581,7 @@ mod tests {
     fn a_part_carries_no_file_without_a_url() {
         let mut record = record_with_a_file();
         record.file.as_mut().expect("a file").url = String::new();
-        assert_eq!(PartRef::from_record(&record, ArkHost::Recorded).file, None);
+        assert_eq!(PartRef::from_record(&record).file, None);
     }
 
     /// 0803's 4,062 files carry no MIME type, and 0868's project licence is not
@@ -638,7 +594,7 @@ mod tests {
         record.file.as_mut().expect("a file").file_name = Some(String::new());
         record.file.as_mut().expect("a file").file_size = None;
         record.legal_info.license.license_uri = "https://creativecommons.org/publicdomain/zero/1.0/".to_string();
-        let file = PartRef::from_record(&record, ArkHost::Recorded).file.expect("a file");
+        let file = PartRef::from_record(&record).file.expect("a file");
         assert_eq!(file.mime_type, None);
         assert_eq!(file.file_name, None);
         assert_eq!(file.file_size, None);
@@ -652,13 +608,7 @@ mod tests {
     fn a_placeholder_license_yields_no_license_for_the_file() {
         let mut record = record_with_a_file();
         record.legal_info.license.license_uri = "MISSING".to_string();
-        assert_eq!(
-            PartRef::from_record(&record, ArkHost::Recorded)
-                .file
-                .expect("a file")
-                .license_uri,
-            None
-        );
+        assert_eq!(PartRef::from_record(&record).file.expect("a file").license_uri, None);
     }
 
     #[test]
@@ -671,15 +621,12 @@ mod tests {
             }),
             ..test_record()
         };
-        assert_eq!(
-            RecordGraph::build(&record, ArkHost::Recorded).mime_type.as_deref(),
-            Some("image/jp2")
-        );
+        assert_eq!(RecordGraph::build(&record).mime_type.as_deref(), Some("image/jp2"));
     }
 
     #[test]
     fn mime_type_is_absent_without_a_file() {
-        assert_eq!(RecordGraph::build(&test_record(), ArkHost::Recorded).mime_type, None);
+        assert_eq!(RecordGraph::build(&test_record()).mime_type, None);
     }
 
     #[test]
@@ -692,7 +639,7 @@ mod tests {
             }),
             ..test_record()
         };
-        assert_eq!(RecordGraph::build(&record, ArkHost::Recorded).mime_type, None);
+        assert_eq!(RecordGraph::build(&record).mime_type, None);
     }
 
     #[test]
@@ -708,7 +655,7 @@ mod tests {
             }),
             ..test_record()
         };
-        let rendered = format!("{:?}", RecordGraph::build(&record, ArkHost::Recorded));
+        let rendered = format!("{:?}", RecordGraph::build(&record));
         assert!(!rendered.contains("ingest."));
         assert!(!rendered.contains("9ab438922efe"));
         assert!(!rendered.contains("Screenshot.png"));
@@ -719,14 +666,14 @@ mod tests {
     fn license_label_is_absent_without_an_identifier() {
         let mut record = test_record();
         record.legal_info.license.license_identifier = String::new();
-        let graph = RecordGraph::build(&record, ArkHost::Recorded);
+        let graph = RecordGraph::build(&record);
         assert_eq!(graph.license_label, None);
         assert_eq!(graph.access_rights, "Full Open Access");
     }
 
     #[test]
     fn license_identifier_and_uri_are_verbatim() {
-        let graph = RecordGraph::build(&test_record(), ArkHost::Recorded);
+        let graph = RecordGraph::build(&test_record());
         assert_eq!(graph.license_identifier, "CC-BY-4.0");
         assert_eq!(graph.license_uri, "https://creativecommons.org/licenses/by/4.0/");
         assert_eq!(
@@ -737,55 +684,9 @@ mod tests {
 
     #[test]
     fn identifiers_are_resolvable_ark_urls() {
-        let graph = RecordGraph::build(&test_record(), ArkHost::Recorded);
+        let graph = RecordGraph::build(&test_record());
         assert_eq!(graph.ark, "https://ark.dasch.swiss/ark:/72163/1/0001/record-0001");
         assert_eq!(graph.project_ark, "https://ark.dasch.swiss/ark:/72163/1/0001");
-    }
-
-    #[test]
-    fn a_recorded_host_is_emitted_unchanged() {
-        // The default, and what production, DEV and STAGE run. Every ARK a
-        // graph emits is exactly the one the corpus records.
-        let record = test_record();
-        let graph = RecordGraph::build(&record, ArkHost::Recorded);
-        assert_eq!(graph.ark, record.pid.as_url());
-        assert_eq!(graph.project_ark, record.project_ark());
-        assert_eq!(PartRef::from_record(&record, ArkHost::Recorded).ark, record.pid.as_url());
-    }
-
-    #[test]
-    fn a_substituted_host_replaces_the_host_and_not_the_path() {
-        let host = ArkHost::Substituted("https://dpe-pr-391.a.run.app");
-        let record = test_record();
-        let graph = RecordGraph::build(&record, host);
-        assert_eq!(graph.ark, "https://dpe-pr-391.a.run.app/ark:/72163/1/0001/record-0001");
-        assert_eq!(graph.project_ark, "https://dpe-pr-391.a.run.app/ark:/72163/1/0001");
-        assert_eq!(
-            PartRef::from_record(&record, host).ark,
-            "https://dpe-pr-391.a.run.app/ark:/72163/1/0001/record-0001"
-        );
-    }
-
-    #[test]
-    fn substitution_preserves_a_record_id_with_ark_unsafe_looking_characters() {
-        // `=` and `_` are ordinary in a DaSCH record id; the identifier is the
-        // path, so none of it may be touched, re-encoded or trimmed.
-        let mut record = test_record();
-        record.pid = shared_metadata::RecordPid::new("https://ark.dasch.swiss", "0803", "lklK7rVuVOmpBZYWrF8o=gh");
-        let graph = RecordGraph::build(&record, ArkHost::Substituted("http://host.docker.internal:4000"));
-        assert_eq!(
-            graph.ark,
-            "http://host.docker.internal:4000/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
-        );
-    }
-
-    #[test]
-    fn substitution_leaves_a_value_that_is_not_an_ark_alone() {
-        // A placeholder `pid` carries no `ark:/` path. Prefixing it with a host
-        // would turn a recorded non-value into something that looks resolvable.
-        let host = ArkHost::Substituted("https://preview.example.test");
-        assert_eq!(host.apply("MISSING".to_string()), "MISSING");
-        assert_eq!(host.apply(String::new()), "");
     }
 
     #[test]
@@ -796,9 +697,6 @@ mod tests {
             Multilingual::from([("de".to_string(), "Landnutzung".to_string())]),
             Multilingual::new(),
         ];
-        assert_eq!(
-            RecordGraph::build(&record, ArkHost::Recorded).keywords,
-            vec!["land use", "Landnutzung"]
-        );
+        assert_eq!(RecordGraph::build(&record).keywords, vec!["land use", "Landnutzung"]);
     }
 }

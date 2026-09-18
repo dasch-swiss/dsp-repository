@@ -84,8 +84,8 @@ fn build_response(
     lookup: &dyn ContributorLookup,
 ) -> String {
     let oai_record: OaiRecord = match entity {
-        OaiEntity::Project(ref project) => to_oai_record(project, prefix, clusters, lookup, crate::ark_host()),
-        OaiEntity::Record(ref record) => to_oai_record_from_record(record, prefix, clusters, crate::ark_host()),
+        OaiEntity::Project(ref project) => to_oai_record(project, prefix, clusters, lookup),
+        OaiEntity::Record(ref record) => to_oai_record_from_record(record, prefix, clusters),
     };
 
     let mut builder = OaiXmlBuilder::new();

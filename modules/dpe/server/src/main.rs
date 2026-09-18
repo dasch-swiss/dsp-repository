@@ -52,25 +52,6 @@ pub(crate) struct AppState {
     pub(crate) ark_resolver_base_url: Option<String>,
 }
 
-impl AppState {
-    /// The host the resolved identifiers carry, for the graph builders.
-    pub(crate) fn ark_host(&self) -> shared_fair::ArkHost<'_> {
-        ark_host(self.ark_resolver_base_url.as_deref())
-    }
-}
-
-/// A configured resolver origin as the graph builders read it.
-///
-/// Free as well as a method: the representation handlers hand their writer to
-/// `spawn_blocking`, so it may borrow nothing from the state and carries an
-/// owned copy of the configured value instead.
-pub(crate) fn ark_host(configured: Option<&str>) -> shared_fair::ArkHost<'_> {
-    match configured {
-        Some(url) => shared_fair::ArkHost::Substituted(url),
-        None => shared_fair::ArkHost::Recorded,
-    }
-}
-
 /// Query params for the project detail page: `?tab=` pre-selects the tab.
 #[derive(serde::Deserialize, Default)]
 struct TabQuery {
@@ -405,9 +386,12 @@ async fn serve() -> ExitCode {
     dpe_api_oai::set_base_url(&dpe_config.oai_base_url);
     tracing::info!(oai_base_url = %dpe_config.oai_base_url, "OAI-PMH base URL set");
 
-    // Set from the same field `AppState` carries, so the OAI payloads and the
-    // landing page beside them cannot publish different ARKs.
-    dpe_api_oai::set_ark_resolver_base_url(dpe_config.ark_resolver_base_url.as_deref());
+    // Before any cache is populated, and before `record_cache::warm` below:
+    // every consumer reads the corpus through those caches, so normalising the
+    // ARK host as data enters them is the one place that reaches all of them.
+    // Conceptually this is `sync`'s job and moves there when `sync` lands
+    // (`dpe_core::ark`).
+    dpe_core::set_ark_resolver_base_url(dpe_config.ark_resolver_base_url.as_deref());
     if let Some(ref url) = dpe_config.ark_resolver_base_url {
         tracing::info!(
             ark_resolver_base_url = %url,

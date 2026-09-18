@@ -36,6 +36,7 @@ pub use project::{
     ProjectRaw, ProjectStatus, Publication, TemporalCoverage, ACCESS_RIGHTS_VALUES, MAX_SHORTCODE_LEN,
 };
 pub use record::{
-    record_datestamp, Pid as RecordPid, Record, RecordFile, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX,
+    record_datestamp, with_ark_host, Pid as RecordPid, Record, RecordFile, RecordLegalInfo, RecordLicense,
+    ARK_PATH_PREFIX,
 };
 pub use utils::{is_placeholder, multilingual_value, Multilingual};

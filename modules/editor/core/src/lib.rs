@@ -7,6 +7,7 @@
 
 pub mod agents;
 pub mod canonical;
+pub mod collection;
 pub mod draft;
 pub mod form;
 pub mod json;

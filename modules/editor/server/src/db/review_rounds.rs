@@ -25,7 +25,9 @@
 
 use async_trait::async_trait;
 use editor_core::proposals::{ProposalDecision, ProposalStatus};
-use editor_core::records::{normalize_shortcode, ApprovedRecord, DraftRecord, ReviewOutcome, ReviewRound};
+use editor_core::records::{
+    normalize_shortcode, ApprovedRecord, DraftRecord, PullRequestState, ReviewOutcome, ReviewRound,
+};
 use editor_core::repository::{Result, ReviewRoundRepository, Transition};
 use rusqlite::{params, Row, Transaction};
 use uuid::Uuid;
@@ -112,9 +114,19 @@ impl ReviewRoundRepository for Database {
             if claim(tx, submission_id)? == Transition::AlreadyReviewed {
                 return Ok(Transition::AlreadyReviewed);
             }
+            // A record is whole-project, so a newer one fully supersedes an older one whose
+            // pull request has not gone live; the review handler refuses the approval instead
+            // once one has. Keyed on the record's own (un-normalized) shortcode, matching the
+            // INSERT below — `approved_records.shortcode` is never folded, unlike
+            // `entity_proposals.shortcode` further down.
             tx.execute(
-                "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "DELETE FROM approved_records WHERE shortcode = ?1 AND (pull_request_state IS NULL OR \
+                 pull_request_state = ?2)",
+                params![record.shortcode, PullRequestState::Closed.as_str()],
+            )?;
+            tx.execute(
+                "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at, \
+                 pull_request_url, pull_request_state, last_failure) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 params![
                     record.id.to_string(),
                     record.shortcode,
@@ -122,6 +134,9 @@ impl ReviewRoundRepository for Database {
                     record.approved_by.map(|id| id.to_string()),
                     record.approved_at,
                     record.collected_at,
+                    record.pull_request_url,
+                    record.pull_request_state.map(PullRequestState::as_str),
+                    record.last_failure,
                 ],
             )?;
             insert_round(tx, &round)?;
@@ -232,7 +247,7 @@ impl ReviewRoundRepository for Database {
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
-    use editor_core::records::{Role, Submission, SubmissionState, User};
+    use editor_core::records::{PullRequestState, Role, Submission, SubmissionState, User};
     // `EntityProposalRepository` is not `use`d here: it and `ReviewRoundRepository` both declare
     // `list_for_shortcode`, and bringing the former into scope makes every bare
     // `db.list_for_shortcode(..)` call below ambiguous. Its methods are called through the fully
@@ -302,6 +317,9 @@ mod tests {
             approved_by: approver,
             approved_at: at(13),
             collected_at: None,
+            pull_request_url: None,
+            pull_request_state: None,
+            last_failure: None,
         }
     }
 
@@ -369,6 +387,46 @@ mod tests {
             vec![record]
         );
         assert_eq!(db.list_for_shortcode("0801").await.unwrap(), vec![round]);
+    }
+
+    #[tokio::test]
+    async fn test_the_supersede_delete_agrees_with_pull_request_state_is_live() {
+        // The supersede `DELETE`'s SQL predicate and `PullRequestState::is_live` are two
+        // encodings of the same rule, and this is what holds them together: a variant added
+        // to the enum without revisiting the SQL would silently change which records survive
+        // an approval.
+        for state in [
+            None,
+            Some(PullRequestState::Closed),
+            Some(PullRequestState::Open),
+            Some(PullRequestState::Merged),
+        ] {
+            let label = state.map_or("none", PullRequestState::as_str);
+            let db = test_db(&format!("rounds-supersede-{label}")).await;
+            let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+            let submission = a_submission(&db, None).await;
+
+            let mut earlier = a_record(&submission, Some(reviewer));
+            earlier.pull_request_state = state;
+            ApprovedRecordRepository::create(&db, &earlier).await.unwrap();
+
+            let record = a_record(&submission, Some(reviewer));
+            let round = a_round(&submission, ReviewOutcome::Approved, Some(reviewer));
+            ReviewRoundRepository::approve(&db, submission.id, &record, &round)
+                .await
+                .unwrap();
+
+            let surviving = ApprovedRecordRepository::find_by_shortcode(&db, "0801").await.unwrap();
+            assert_eq!(
+                surviving.iter().any(|held| held.id == earlier.id),
+                state.is_some_and(PullRequestState::is_live),
+                "{label}: the supersede DELETE and `is_live` disagree about this state"
+            );
+            assert!(
+                surviving.iter().any(|held| held.id == record.id),
+                "{label}: the approval always writes its own record"
+            );
+        }
     }
 
     #[tokio::test]

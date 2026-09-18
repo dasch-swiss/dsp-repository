@@ -117,6 +117,15 @@ const ISSUE_REPLENISH_SECS: u64 = 30;
 const VERIFY_BURST: u32 = 30;
 const VERIFY_REPLENISH_SECS: u64 = 5;
 
+/// Per-IP budget for `GET /api/v1/approved-records`.
+///
+/// Sized for a CI poller checking in every few minutes, not a browser beacon
+/// firing on every page: a low sustained rate with a small burst to absorb a
+/// poller's retry without opening the door to a scrape of the whole table on
+/// a tight loop.
+const APPROVED_RECORDS_BURST: u32 = 5;
+const APPROVED_RECORDS_REPLENISH_SECS: u64 = 30;
+
 /// A per-IP rate limit keyed by [`RightmostXffKeyExtractor`].
 ///
 /// A macro rather than a function because the layer's type parameters come from
@@ -182,6 +191,18 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // Not rate-limited: signing out costs nothing and refusing it would
         // strand a user in a session they asked to end.
         .route("/logout", post(crate::auth::logout))
+        // Public and unauthenticated on purpose — `crate::collection::list` takes no
+        // `Authenticated`/`Rdu` extractor, which is what "public" looks like from a handler
+        // signature. Traced, unlike `/telemetry/collect`: this is the one thing a CI poller
+        // actually needs a span for.
+        .route(
+            "/api/v1/approved-records",
+            get(crate::collection::list).layer(per_ip_limit!(
+                APPROVED_RECORDS_REPLENISH_SECS,
+                APPROVED_RECORDS_BURST,
+                "approved records"
+            )),
+        )
         // --- Authenticated routes ---
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.

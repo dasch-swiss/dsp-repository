@@ -283,6 +283,14 @@ Scores for project 0862, the reference project.
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
 with, so the rows are comparable.
 
+The FAIR Champion tests named on this page by their short reference —
+*LicenseStrong*, *MetadataIdentifierFound*, *DataIdentifierFound* — are defined
+in the [FAIR Maturity Indicators
+index](https://fairmetrics.github.io/Metrics/landingpages/general/index.html),
+which is where each `FM_*` indicator a FAIR Champion result cites resolves to
+prose. It covers that set only; F-UJI's metrics are a separate set, cited in its
+own result payload as <https://doi.org/10.5281/zenodo.6461229>.
+
 Every row above is a local or preview measurement. Neither assessor has yet run
 against a *deployment* carrying the PROV-O, `identifier`, `license` and base-URL
 changes, and nothing on this page claims a score for one.

@@ -32,7 +32,8 @@ pub struct UrlLayout {
     /// The catalogue the object is listed in, for `includedInDataCatalog`.
     pub catalog: String,
     /// The machine-readable representations served beside the landing page, as
-    /// `(media type, URL)`. Empty until the representation routes exist.
+    /// `(media type, URL)`. Filled by the consuming service from its own route
+    /// table; empty for a consumer that serves none, as the OAI writers do.
     pub representations: Vec<(String, String)>,
     /// OAI `GetRecord` URLs describing the object, as `(media type, URL)`.
     /// Built from the OAI endpoint's own advertised base URL, never derived
@@ -44,8 +45,11 @@ impl UrlLayout {
     /// The representations a client can negotiate for, in the order they are
     /// offered.
     ///
-    /// Derived from the same pairs the `describedby` links are built from, so a
-    /// representation can never be linked but not negotiable, or the reverse.
+    /// Every candidate is also a `describedby` target, built from the same
+    /// pairs, so a representation can never be negotiable without being linked.
+    /// Not the converse: `describedby` additionally carries the OAI records in
+    /// [`oai_records`](Self::oai_records), which are deliberately not
+    /// negotiable.
     pub fn candidates(&self) -> Vec<Candidate> {
         self.representations
             .iter()
@@ -200,6 +204,17 @@ pub fn project_to_link_set(graph: &ProjectGraph, urls: &UrlLayout) -> LinkSet {
     LinkSet(links)
 }
 
+/// The link set a machine-readable representation carries: one `describes`
+/// pointing back at the landing page it is a representation of.
+///
+/// The counterpart of the page's `describedby` links, which is what makes the
+/// link graph symmetric between the page and its representations. Built here
+/// rather than formatted at the call site so the representation routes go
+/// through the same delimiter-guarded serialisation the page's header does.
+pub fn representation_to_link_set(urls: &UrlLayout) -> LinkSet {
+    LinkSet(vec![Link::untyped("describes", &urls.landing)])
+}
+
 #[cfg(test)]
 mod tests {
     use shared_metadata::{Attribution, ProjectRaw};
@@ -295,6 +310,17 @@ mod tests {
         assert_eq!(
             rels(&project_to_link_set(&build(&raw, &[]), &layout()), "author"),
             vec!["https://orcid.org/0000-0002-1825-0097"]
+        );
+    }
+
+    /// The other half of the page's `describedby`: a representation says which
+    /// page it is a representation of, through the same guarded serialisation.
+    #[test]
+    fn a_representation_describes_its_landing_page() {
+        let set = representation_to_link_set(&layout());
+        assert_eq!(
+            set.to_header_string(),
+            r#"<https://example.test/dpe/projects/0001>; rel="describes""#
         );
     }
 

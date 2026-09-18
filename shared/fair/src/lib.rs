@@ -14,6 +14,7 @@ pub mod dublin_core;
 pub mod dublin_core_meta;
 pub mod graph;
 pub mod helpers;
+pub mod negotiate;
 pub mod project_graph;
 pub mod record_datacite;
 pub mod record_dublin_core;
@@ -30,13 +31,14 @@ pub use dublin_core::project_to_dublin_core;
 pub use dublin_core_meta::project_to_dublin_core_meta;
 pub use graph::{AgentKind, PartRef, RecordCreator, RecordGraph, ResolveContext};
 pub use helpers::coar_access_right;
+pub use negotiate::{decide, Decision};
 pub use project_graph::{
     DisciplineRef, FundingRef, LicenseRef, ProjectAgent, ProjectGraph, PublicationRef, SpatialRef, TemporalRef,
 };
 pub use record_datacite::record_to_datacite;
 pub use record_dublin_core::record_to_dublin_core;
 pub use schema_org::{project_to_schema_org, script_safe_json, SchemaOrgOptions};
-pub use signposting::{project_to_link_set, Candidate, Link, LinkSet, UrlLayout};
+pub use signposting::{project_to_link_set, representation_to_link_set, Candidate, Link, LinkSet, UrlLayout};
 pub use types::{
     DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,
     DataCiteGeoLocation, DataCiteNameIdentifier, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights,

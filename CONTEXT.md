@@ -81,7 +81,7 @@ _Avoid_: master, source file, Preservation File (it becomes one only on ingest).
 - Share concepts, never shapes: a concept two areas need lives in `shared/`; a shape one area needs from another does not.
 - Preservation storage is exclusive to the Archive Area; no other context reaches into the sealed store (`areas/archive/CONTEXT.md` → Boundary commitments, binding once code exists).
 - Every user-facing surface is a server-rendered hypermedia application — Maud views, Datastar fragments, no client framework, no BFF, every write a `POST`, no page rendered differently by header (ADR-0004). Enforcement: static-analysis for the Datastar and no-JavaScript rules, review for the rest.
-- Every Access-Area page a persistent identifier resolves to embeds its metadata in the served HTML, carries FAIR Signposting headers, and offers each machine-readable representation at its own URL (ADR-0005). Enforcement: docs-only until DEV-7268 lands, then static-analysis.
+- Every Access-Area page a persistent identifier resolves to embeds its metadata in the served HTML, carries FAIR Signposting headers, and offers each machine-readable representation at its own URL (ADR-0005). Enforcement: static-analysis — the corpus-wide agreement test in `dpe-api-oai` for the one graph, the `Link` / `Vary` / `303` handler tests in `dpe-server` for the headers and the one negotiation step, and `check-shared-paths.sh` for `shared-fair` holding no hardcoded path into a service module, over its `src/` and `testdata/` — plus the `just fair-check` step in `REVIEW.md` (review).
 
 ## Flagged ambiguities
 

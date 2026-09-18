@@ -45,8 +45,9 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
   `OaiRecord`, `CachedContributorLookup`, `resolve_inputs`, `records_for_shortcode`,
   `project_oai_identifier`, `oai_handler`, `set_base_url`, `build_router`,
   `tab_fragment_handler`, `search_fragment_handler`, `record_file_handler`, `HeadExtras`,
-  `head_extras_for_project`, `get_data_dir` / `set_data_dir`
+  `landing_page` / `LandingPage` / `render`, `get_data_dir` / `set_data_dir`
 - **Public interface:** the HTTP routes of `dpe-server` (`/dpe/projects`, `/dpe/projects/{id}`,
+  `/dpe/projects/{id}/metadata.jsonld` and `/dpe/projects/{id}/metadata.datacite.json`,
   `/dpe/projects/{id}/tab/{tab}` and `/dpe/projects/search` as SSE, `/dpe/records/{shortcode}/{record_id}/file`,
   `/dpe/oai`, `/dpe/api/v2/projects[/{id}]`, `/dpe/about`, `/healthz`, `POST /telemetry/collect`); the
   `dpe-server serve | validate <data_dir> | healthcheck <url>` CLI; and the corpus files under
@@ -499,8 +500,17 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
 - **FAIR landing pages (ADR-0005):** every Access-Area page a persistent identifier resolves to
   embeds standards-shaped metadata in the served HTML, carries FAIR Signposting `Link` headers,
   and offers each machine-readable representation at its own URL, written from one resolved
-  graph. *Enforcement:* **docs-only** until DEV-7268 lands, then **static-analysis** (the
-  corpus-wide agreement test, the `Link` / `Vary` / `303` handler tests).
+  graph. *Enforcement:* **static-analysis** + **review**, clause by clause: one graph feeding
+  every representation by `every_representation_of_a_committed_object_agrees_with_the_others`
+  (`dpe-api-oai`); the headers and the one negotiation step by the five `dpe-server` handler
+  tests ADR-0005 names — `a_landing_page_carries_the_metadata_and_the_link_header`,
+  `the_page_links_every_representation_it_serves`,
+  `every_landing_page_answer_varies_on_accept`,
+  `a_harvester_asking_for_a_representation_is_redirected_to_it` and
+  `an_unknown_shortcode_never_redirects_whatever_it_was_asked_for`; `shared-fair` holding no
+  hardcoded path into a service module by `check-shared-paths.sh` (`just check`), which reads
+  each shared crate's `src/` and `testdata/`; and FAIRness being measured at all by
+  the `just fair-check` step in `REVIEW.md` (**review**).
 - **Data conventions:** project files are canonical (member order = `ProjectRaw` declaration
   order, no `null`, 4-space indent); every `temporalCoverage` resolves. *Enforcement:*
   **static-analysis** (`canonical_round_trip`, `every_committed_temporal_coverage_resolves`,
@@ -522,13 +532,13 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
 | A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | review → structure (ADR-0001) |
 | A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | review → structure (ADR-0001) |
 | Opening the area's Chischtli instance to read or write a graph another capability owns | A graph with two writers is a table with two writers; readers past the owner's ports freeze the owner's internal graph layout | Query through the owning capability's ports (`sync` for the archive projection); a new graph gets a new owner, not a second writer (ADR-0003) | review → structure (store handle visible to owners only) |
-| A relative path from a `shared-*` crate into `modules/<service>/` | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`) | static-analysis |
+| A relative path from a `shared-*` crate into `modules/<service>/`, in a source file or a test fixture | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`); the repo-root `justfile` is what may name a module path | static-analysis (`shared/*/src/*.rs` and `shared/*/testdata/**`) |
 | Reading `dpe_core::Project` in the editor | The view model is lossy on `url` and `clusters`; the editor must preserve both | `ProjectRaw` → draft → `ProjectRaw` | review |
 | Hardcoding a Mosaic class string (`card card-bordered`, `tooltip`) in a service's markup | Freezes the design system's CSS contract in 19 call sites; a tile rename breaks silently | Call the tile; add the missing tile (`tooltip`) rather than the string | review |
 | A `css_class()` that assembles its string at runtime | Tailwind's `source(none)` scan never sees the class; the failure is unstyled markup with no error | Complete literal strings, one per variant | docs-only (promote) |
 | A `GET` route that writes, or a Datastar-enhanced control without a no-JS path | Defeats the `Sec-Fetch-Site` CSRF control; strands the no-JavaScript user | `POST` for every write; `formaction` on row controls; the E2E suite's no-JS pass (ADR-0004) | static-analysis (editor E2E) |
 | A client-side framework, WASM bundle, client router or BFF for a new screen | Splits UI state between two runtimes; the page stops being citable by URL and readable by a machine without a client | A Maud view in the `web` crate plus a Datastar-enhanced fragment (ADR-0004) | review |
-| Rendering a landing page differently by `Accept` | Leaves machine representations without a URL to cite or link; types every error path per media type | A dedicated URL per representation, `describedby` links, a `303` from the page as the only negotiation (ADR-0005) | static-analysis (handler tests, once DEV-7268 lands) |
+| Rendering a landing page differently by `Accept` | Leaves machine representations without a URL to cite or link; types every error path per media type | A dedicated URL per representation, `describedby` links, a `303` from the page as the only negotiation (ADR-0005) | static-analysis (the four `dpe-server` handler tests that bear on *this* clause — `a_browser_gets_the_page`, `a_harvester_asking_for_a_representation_is_redirected_to_it`, `every_landing_page_answer_varies_on_accept`, `an_unknown_shortcode_never_redirects_whatever_it_was_asked_for`; ADR-0005's full list is in `## Conventions`) |
 | A second writer for a corpus file (`records/` from the server at startup) | "Who wrote this?" has no single answer; a tracked directory changes under git | One recipe (`just fetch-records`) as the writer; the server reads only | review (open) |
 
 ## Cross-cutting concerns

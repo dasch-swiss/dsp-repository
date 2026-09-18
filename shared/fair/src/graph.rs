@@ -18,6 +18,15 @@ use crate::helpers::{extract_year, license_identifier_to_label};
 /// DaSCH itself and as the mandatory-creator fallback of both graphs.
 pub(crate) const DASCH: &str = "DaSCH";
 
+/// The year both graphs report when the input carries no readable one.
+///
+/// DataCite makes `publicationYear` mandatory, so a record with no usable date
+/// still has to name a year, and this is the one the committed OAI output has
+/// always carried. It is a fallback, not a fact: only the representations
+/// DataCite's rule governs may use it, which is why it is reached through
+/// `publication_year_with_fallback` rather than resolved into either graph.
+pub(crate) const FALLBACK_PUBLICATION_YEAR: &str = "2015";
+
 /// Borrowed lookup tables a writer resolves against: contributor IDs,
 /// ChronOntology period timespans, and the temporal-coverage enrichment table.
 pub struct ResolveContext<'a> {
@@ -129,7 +138,11 @@ pub struct RecordGraph {
     pub date_created: String,
     pub date_modified: String,
     pub date_published: String,
-    pub publication_year: String,
+    /// The year `date_published` yields, or `None` when it yields none. The
+    /// mandatory-year fallback is [`RecordGraph::publication_year_with_fallback`],
+    /// not this field: resolving it here would make every writer assert a
+    /// publication year for a record that records no date.
+    pub publication_year: Option<String>,
     pub type_of_data: String,
     pub general_data_type: String,
     /// Verbatim, so a writer can still see "empty" and branch on it.
@@ -193,6 +206,19 @@ impl RecordGraph {
             publisher: record.publisher.clone(),
             mime_type: record.file.as_ref().and_then(|f| f.mime_type.clone()).filter(|m| !m.is_empty()),
         }
+    }
+
+    /// `publication_year`, or the fallback year when the record's
+    /// `date_published` yields none.
+    ///
+    /// DataCite makes `publicationYear` mandatory, so the representations that
+    /// rule governs need this and resolve it here rather than writing the
+    /// fallback out again. schema.org's `datePublished` is optional and reads
+    /// the raw `Option` instead: a landing page asserting a publication year a
+    /// project never recorded is an invented fact (ADR-0005, *Nothing is
+    /// invented for a score*), and one a FAIR assessor would read.
+    pub fn publication_year_with_fallback(&self) -> &str {
+        self.publication_year.as_deref().unwrap_or(FALLBACK_PUBLICATION_YEAR)
     }
 
     /// `creators`, or a single organizational `DaSCH` when the record has no
@@ -335,6 +361,26 @@ mod tests {
         record.legal_info.authorship = vec![];
         let graph = RecordGraph::build(&record);
         assert!(graph.creators.is_empty());
+    }
+
+    #[test]
+    fn publication_year_comes_from_date_published() {
+        let graph = RecordGraph::build(&test_record());
+        assert_eq!(graph.publication_year.as_deref(), Some("2024"));
+        assert_eq!(graph.publication_year_with_fallback(), "2024");
+    }
+
+    /// A record with no usable `datePublished` records no year. DataCite's
+    /// mandatory field reaches the fallback through the accessor; nothing else
+    /// may.
+    #[test]
+    fn an_unusable_date_published_yields_no_year() {
+        for date_published in ["", "MISSING", "CALCULATED", "20"] {
+            let record = Record { date_published: date_published.to_string(), ..test_record() };
+            let graph = RecordGraph::build(&record);
+            assert_eq!(graph.publication_year, None, "{date_published:?}");
+            assert_eq!(graph.publication_year_with_fallback(), "2015", "{date_published:?}");
+        }
     }
 
     #[test]

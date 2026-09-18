@@ -114,7 +114,7 @@ pub fn record_to_datacite(graph: &RecordGraph) -> DataCiteRecord {
         creators,
         titles,
         publisher: PUBLISHER.to_string(),
-        publication_year: graph.publication_year.clone(),
+        publication_year: graph.publication_year_with_fallback().to_string(),
         resource_type: graph.type_of_data.clone(),
         resource_type_general: graph.general_data_type.clone(),
         dates,

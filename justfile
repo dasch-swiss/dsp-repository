@@ -301,14 +301,12 @@ tailwind-pins-refresh version:
     TAILWIND_PINS=tailwind.pins verify_tailwind_pins
     git --no-pager diff -- tailwind.pins
 
-# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/,
-# gitignored); echoes its path. Bundles plugins incl. typography, so no Node/npm
-# is needed. (DEV-6642)
-#
 # The version and the SHA-256 of every release asset both come from tailwind.pins,
 # which modules/mosaic/playground/Dockerfile reads too, so neither file can drift
 # onto a version the other has not seen; bump with `just tailwind-pins-refresh
-# <version>`. The binary is verified before it is handed to a caller. (DEV-6727)
+# <version>`. The binary is verified before it is handed to a caller.
+
+# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography, so no Node/npm is needed. (DEV-6642, DEV-6727)
 [private]
 _tailwind-bin:
     #!/usr/bin/env bash

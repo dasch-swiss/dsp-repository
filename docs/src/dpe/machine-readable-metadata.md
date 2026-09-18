@@ -26,10 +26,18 @@ project.
 
 ### schema.org JSON-LD
 
-The project is a `Dataset` whose `@id` and `identifier` are its ARK, `url` its
-landing page, and `hasPart` a list of its records. `publisher` is DaSCH;
-`producer` is a `ResearchProject` node carrying the project's own name, dates,
-external website and members.
+The project is a `Dataset` whose `@id` is its ARK, `url` its landing page, and
+`hasPart` a list of its records. `publisher` is DaSCH; `producer` is a
+`ResearchProject` node carrying the project's own name, dates, external website
+and members.
+
+Two properties have a shape worth naming, both of them because an assessor reads
+them as RDF rather than as JSON:
+
+| Property | Shape | Why |
+|----------|-------|-----|
+| `identifier` | always two entries: the ARK as a `PropertyValue` with `propertyID: "ARK"`, and the landing page URL as a plain string | F-UJI reads the object identifier from `identifier.value`, so the ARK keeps the `PropertyValue` form. FAIR Champion's *MetadataIdentifierFound* reads `schema:identifier` alone and does not consider `url`, so an assessor pointed at the page needs the page's own URL here too |
+| `license` | a node object, `{"@id": "<SPDX URI>"}`; one object for a single licence, an array for several, no key for none | schema.org's remote context does not coerce `license` to `@id`, so a bare string parses as an RDF literal. FAIR Champion's *LicenseStrong* wants a Resource |
 
 > schema.org's `producer` is the research project that made the data. It is not
 > the OAIS Producer of the Deposit Area, which is the depositing agent.
@@ -239,11 +247,11 @@ Scores for project 0862, the reference project.
 | 2026-09-15 | F-UJI | 3.5.0 | `https://ark.dasch.swiss/ark:/72163/1/0862` (PROD) | 3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work |
 | 2026-09-15 | FAIR Champion | 1.1.11 | same | 6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work |
 | 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
+| 2026-09-18 | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
+| 2026-09-18 | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
 
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
-with, so the two rows are comparable. Its schema.org mapping reads the object
-identifier from `identifier.value`, which is why `identifier` is emitted as a
-`PropertyValue`.
+with, so the rows are comparable.
 
 **Two representations of one project do not fight over its resource type.**
 F-UJI's JSON-LD mapping reads `object_type` from schema.org's `@type`

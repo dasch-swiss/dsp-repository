@@ -1,7 +1,8 @@
 //! The schema.org JSON-LD description of a project.
 //!
 //! Emitted twice: embedded in the landing page's head, and as a standalone
-//! representation. The two differ only in how many `hasPart` entries they carry,
+//! representation. The two differ only in how many records they describe —
+//! under `hasPart`, and under `distribution` for those that carry a file —
 //! which is what `SchemaOrgOptions` is for.
 
 use serde_json::{json, Map, Value};
@@ -29,12 +30,15 @@ const ORCID: &str = "ORCID";
 /// How much of the graph this rendering carries.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SchemaOrgOptions {
-    /// Cap on `hasPart` entries, or `None` for all of them.
+    /// Cap on `hasPart` entries — and, over the same parts in the same order,
+    /// on `distribution` — or `None` for all of them.
     ///
     /// The embedded block caps: a project with 27,026 records would otherwise
-    /// put megabytes into every page. The complete list is harvestable from the
-    /// OAI set `project:{shortcode}` and served uncapped by the standalone
-    /// representation.
+    /// put megabytes into every page, and one with 7,716 files would add a
+    /// `DataDownload` to each of those. The two lists are capped together so
+    /// the files described are the files of the records listed. The complete
+    /// list is harvestable from the OAI set `project:{shortcode}` and served
+    /// uncapped by the standalone representation.
     pub has_part_cap: Option<usize>,
 }
 
@@ -135,6 +139,7 @@ pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: Schem
     );
 
     insert_list(&mut root, "hasPart", part_nodes(graph, opts.has_part_cap));
+    insert_list(&mut root, "distribution", distribution_nodes(graph, opts.has_part_cap));
 
     // Only when the recorded PID differs from the ARK the writers resolved,
     // which is the case a reader cannot otherwise see.
@@ -426,6 +431,50 @@ fn part_nodes(graph: &ProjectGraph, cap: Option<usize>) -> Vec<Value> {
         .collect()
 }
 
+/// One `DataDownload` per listed part whose record carries a publishable file.
+///
+/// At the root of the graph rather than on the `hasPart` node, because that is
+/// where an assessor reads it: F-UJI collects `schema:distribution` off the
+/// described object, and FAIR Champion's *DataIdentifierFound* does the same.
+///
+/// Capped with `hasPart`, over the same parts in the same order, so a reader of
+/// the embedded block sees the files of the records it lists and not of records
+/// it does not. Which parts carry a file, and which are open enough for it to
+/// be named, is [`crate::graph::PartRef`]'s decision, not this writer's.
+fn distribution_nodes(graph: &ProjectGraph, cap: Option<usize>) -> Vec<Value> {
+    graph
+        .parts
+        .iter()
+        .take(cap.unwrap_or(usize::MAX))
+        .filter_map(|part| part.file.as_ref())
+        .map(|file| {
+            let mut node = Map::new();
+            node.insert("@type".into(), json!("DataDownload"));
+            node.insert("contentUrl".into(), json!(file.url));
+            if let Some(name) = file.file_name.as_deref() {
+                node.insert("name".into(), json!(name));
+            }
+            // Omitted rather than guessed for a file whose export carries no
+            // MIME type, which is every file of project 0803.
+            if let Some(mime) = file.mime_type.as_deref() {
+                node.insert("encodingFormat".into(), json!(mime));
+            }
+            if let Some(size) = file.file_size {
+                node.insert("contentSize".into(), json!(size));
+            }
+            // The record's own licence, which the corpus records as a different
+            // licence from the project's for every file-carrying record of 0868
+            // and 0803. Both are reported as they stand; neither is resolved
+            // against the other here. A node object for the same reason the
+            // root `license` is one — a bare string parses as a literal.
+            if let Some(uri) = file.license_uri.as_deref() {
+                node.insert("license".into(), json!({ "@id": uri }));
+            }
+            Value::Object(node)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use shared_metadata::{AccessRights, AccessRightsType, Attribution, Multilingual, ProjectRaw};
@@ -590,12 +639,6 @@ mod tests {
         assert_eq!(render(&project())["datePublished"], "2008");
     }
 
-    /// No project-level download exists, so inventing one for a score is out.
-    #[test]
-    fn no_distribution_is_emitted() {
-        assert!(render(&project()).get("distribution").is_none());
-    }
-
     #[test]
     fn access_rights_drive_both_access_properties() {
         let cases = [
@@ -647,6 +690,111 @@ mod tests {
         assert_eq!(capped["hasPart"].as_array().map(Vec::len), Some(100));
         let whole = project_to_schema_org(&graph, &urls(), SchemaOrgOptions::default());
         assert_eq!(whole["hasPart"].as_array().map(Vec::len), Some(150));
+    }
+
+    /// One record with a complete file, as 0868's records carry, licensed
+    /// differently from its project, as 0868's also are.
+    fn record_with_a_file(id: &str, mime_type: Option<&str>) -> shared_metadata::Record {
+        let mut rec = record(id, Multilingual::from([("en".to_string(), format!("Record {id}"))]));
+        rec.legal_info.license.license_uri = "https://creativecommons.org/publicdomain/zero/1.0/".to_string();
+        rec.file = Some(shared_metadata::RecordFile {
+            mime_type: mime_type.map(str::to_string),
+            url: format!("https://ingest.dasch.swiss/projects/0001/assets/{id}/original"),
+            checksum: Some("9ab438922efe".to_string()),
+            file_name: Some(format!("{id}.png")),
+            file_size: Some(377_685),
+            ..shared_metadata::RecordFile::default()
+        });
+        rec
+    }
+
+    #[test]
+    fn a_file_becomes_a_data_download_at_the_root() {
+        let graph = build(&project(), &[record_with_a_file("abc", Some("image/png"))]);
+        let doc = project_to_schema_org(&graph, &urls(), SchemaOrgOptions::default());
+        assert_eq!(
+            doc["distribution"],
+            json!({
+                "@type": "DataDownload",
+                "contentUrl": "https://ingest.dasch.swiss/projects/0001/assets/abc/original",
+                "name": "abc.png",
+                "encodingFormat": "image/png",
+                "contentSize": 377_685,
+                "license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" },
+            })
+        );
+    }
+
+    /// The file's licence and the project's disagree across the corpus. Both
+    /// are reported; neither is resolved against the other.
+    #[test]
+    fn a_data_download_carries_its_own_license_not_the_projects() {
+        let graph = build(&project(), &[record_with_a_file("abc", Some("image/png"))]);
+        let doc = project_to_schema_org(&graph, &urls(), SchemaOrgOptions::default());
+        assert_eq!(doc["license"], json!({ "@id": "https://creativecommons.org/licenses/by/4.0/" }));
+        assert_eq!(
+            doc["distribution"]["license"],
+            json!({ "@id": "https://creativecommons.org/publicdomain/zero/1.0/" })
+        );
+    }
+
+    #[test]
+    fn a_file_without_a_mime_type_gets_no_encoding_format() {
+        let graph = build(&project(), &[record_with_a_file("abc", None)]);
+        let doc = project_to_schema_org(&graph, &urls(), SchemaOrgOptions::default());
+        assert_eq!(
+            doc["distribution"]["contentUrl"],
+            "https://ingest.dasch.swiss/projects/0001/assets/abc/original"
+        );
+        assert!(doc["distribution"].get("encodingFormat").is_none(), "{doc}");
+    }
+
+    /// A project with nothing to describe describes nothing. Inventing a
+    /// download for it would be inventing a fact for a score.
+    #[test]
+    fn a_project_with_no_file_to_point_at_emits_no_distribution() {
+        for records in [Vec::new(), many_records(3)] {
+            let doc = project_to_schema_org(&build(&project(), &records), &urls(), SchemaOrgOptions::default());
+            assert!(doc.get("distribution").is_none(), "{doc}");
+        }
+    }
+
+    /// The cap is shared, so the files described are the files of the records
+    /// listed. A record beyond the cap contributes neither.
+    #[test]
+    fn distribution_is_capped_with_has_part_over_the_same_parts() {
+        let records: Vec<shared_metadata::Record> = (0..150)
+            .map(|i| record_with_a_file(&format!("asset-{i:04}"), Some("image/png")))
+            .collect();
+        let graph = build(&project(), &records);
+        let capped = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { has_part_cap: Some(100) });
+        assert_eq!(capped["distribution"].as_array().map(Vec::len), Some(100));
+        assert_eq!(capped["hasPart"].as_array().map(Vec::len), Some(100));
+        let last = &capped["distribution"][99]["contentUrl"];
+        assert_eq!(last, "https://ingest.dasch.swiss/projects/0001/assets/asset-0099/original");
+        let whole = project_to_schema_org(&graph, &urls(), SchemaOrgOptions::default());
+        assert_eq!(whole["distribution"].as_array().map(Vec::len), Some(150));
+    }
+
+    /// Only some records of a project carry a file — 4 of 0803's first hundred
+    /// do — and the cap counts parts, not files.
+    #[test]
+    fn a_partly_file_carrying_project_describes_only_the_files_it_has() {
+        let mut records = many_records(9);
+        records.push(record_with_a_file("abc", Some("image/png")));
+        let graph = build(&project(), &records);
+        let doc = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { has_part_cap: Some(10) });
+        assert_eq!(doc["hasPart"].as_array().map(Vec::len), Some(10));
+        assert_eq!(doc["distribution"]["@type"], "DataDownload");
+    }
+
+    #[test]
+    fn a_restricted_records_file_is_never_advertised() {
+        let mut rec = record_with_a_file("abc", Some("image/png"));
+        rec.access_rights = "Metadata only Access".to_string();
+        let doc = project_to_schema_org(&build(&project(), &[rec]), &urls(), SchemaOrgOptions::default());
+        assert!(doc.get("distribution").is_none(), "{doc}");
+        assert!(!doc.to_string().contains("ingest."), "{doc}");
     }
 
     #[test]

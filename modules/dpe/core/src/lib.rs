@@ -8,6 +8,7 @@
 //! collection membership, contributor resolution, and the DSP-API records
 //! client.
 
+pub mod ark;
 pub mod chronontology_cache;
 pub mod cluster;
 pub mod cluster_cache;
@@ -26,6 +27,7 @@ pub mod temporal_enrichment_cache;
 pub mod utils;
 
 // Re-exports for convenience
+pub use ark::{ark_resolver_base_url, set_ark_resolver_base_url};
 pub use cluster::{ClusterRaw, ClusterRef};
 pub use collection::CollectionRef;
 pub use contributors::{load_organization, load_person, CachedContributorLookup, ResolvedContributor};

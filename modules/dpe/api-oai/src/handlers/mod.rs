@@ -332,7 +332,7 @@ fn collect_filtered_records(
                 .records_for_shortcode(&project.shortcode)
                 .into_iter()
                 .filter(|r| matches_date_filter_record(r, from, until))
-                .map(|r| to_oai_record_from_record(r, prefix, clusters, crate::ark_host()))
+                .map(|r| to_oai_record_from_record(r, prefix, clusters))
                 .collect()
         }
         SetSyntax::Cluster(id) => {
@@ -367,7 +367,7 @@ fn collect_entities(
         repo.get_all_raw()
             .iter()
             .filter(|p| matches_date_filter(p, from, until))
-            .map(|p| to_oai_record(p, prefix, clusters, lookup, crate::ark_host()))
+            .map(|p| to_oai_record(p, prefix, clusters, lookup))
             .collect()
     } else {
         Vec::new()
@@ -378,7 +378,7 @@ fn collect_entities(
             .get_all()
             .iter()
             .filter(|r| matches_date_filter_record(r, from, until))
-            .map(|r| to_oai_record_from_record(r, prefix, clusters, crate::ark_host()))
+            .map(|r| to_oai_record_from_record(r, prefix, clusters))
             .collect();
         oai_records.append(&mut record_oai);
     }
@@ -420,7 +420,7 @@ fn collect_cluster(
                 true
             }
         })
-        .map(|p| to_oai_record(p, prefix, clusters, lookup, crate::ark_host()))
+        .map(|p| to_oai_record(p, prefix, clusters, lookup))
         .collect();
 
     // Records of member projects, deduplicated by ARK suffix.
@@ -439,7 +439,7 @@ fn collect_cluster(
                 true
             }
         })
-        .map(|r| to_oai_record_from_record(r, prefix, clusters, crate::ark_host()))
+        .map(|r| to_oai_record_from_record(r, prefix, clusters))
         .collect();
     oai_records.append(&mut record_oai);
 

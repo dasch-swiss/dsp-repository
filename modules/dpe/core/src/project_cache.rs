@@ -55,12 +55,26 @@ fn shortcode_index() -> &'static HashMap<String, usize> {
 }
 
 fn load_all_projects() -> (Vec<Project>, Vec<ProjectRaw>) {
+    load_projects_from(
+        &std::path::PathBuf::from(get_data_dir()).join("projects"),
+        crate::ark::ark_resolver_base_url(),
+    )
+}
+
+/// The directory pass itself, separated from the cache so a test can run it
+/// over the committed corpus with a chosen resolver host.
+///
+/// Same reason `record_cache::index_by_shortcode` is separate: the cache is a
+/// process-global keyed on `DPE_DATA_DIR`, which a test cannot vary, so the
+/// only way to prove the ingress normalisation actually happens on load is to
+/// be able to call the loader directly.
+pub(crate) fn load_projects_from(
+    projects_dir: &std::path::Path,
+    ark_resolver: Option<&str>,
+) -> (Vec<Project>, Vec<ProjectRaw>) {
     use std::fs;
-    use std::path::PathBuf;
 
-    let projects_dir = PathBuf::from(get_data_dir()).join("projects");
-
-    let Ok(entries) = fs::read_dir(&projects_dir) else {
+    let Ok(entries) = fs::read_dir(projects_dir) else {
         tracing::warn!(dir = ?projects_dir, "failed to read projects directory");
         return (vec![], vec![]);
     };
@@ -75,7 +89,12 @@ fn load_all_projects() -> (Vec<Project>, Vec<ProjectRaw>) {
         let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
         match fs::read_to_string(&path) {
             Ok(json) => match serde_json::from_str::<ProjectRaw>(&json) {
-                Ok(raw) => {
+                Ok(mut raw) => {
+                    // Ingress: the ARK host is normalised here, before either
+                    // vector is built, so the view model and the wire contract
+                    // cannot disagree about it and no reader downstream needs
+                    // to know a resolver exists. See `crate::ark`.
+                    crate::ark::normalise_project(&mut raw, ark_resolver);
                     projects.push(Project::from(raw.clone()));
                     projects_raw.push(raw);
                 }
@@ -85,4 +104,77 @@ fn load_all_projects() -> (Vec<Project>, Vec<ProjectRaw>) {
         }
     }
     (projects, projects_raw)
+}
+
+#[cfg(test)]
+mod ingress_tests {
+    use super::*;
+
+    const COMMITTED: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data/projects");
+    const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
+
+    /// The loader normalises on the way in, over the real committed corpus.
+    ///
+    /// Run against the loader rather than the cache: the cache is a
+    /// process-global keyed on `DPE_DATA_DIR`, so a test cannot give it a
+    /// resolver. This is the wiring the whole placement rests on — if the ARK
+    /// is not normalised here, nothing downstream fixes it.
+    #[test]
+    fn a_configured_resolver_normalises_every_project_on_load() {
+        let (projects, raws) = load_projects_from(std::path::Path::new(COMMITTED), Some(PREVIEW));
+        assert_eq!(projects.len(), 85, "the committed corpus");
+        assert_eq!(projects.len(), raws.len(), "the two vectors stay index-aligned");
+
+        for (project, raw) in projects.iter().zip(&raws) {
+            assert!(
+                raw.pid.starts_with(PREVIEW),
+                "{}: the raw pid should carry the resolver, got {:?}",
+                raw.shortcode,
+                raw.pid
+            );
+            // The view model is built from the normalised raw in the same pass,
+            // which is what makes the sidebar permalink correct for free.
+            assert_eq!(project.pid, raw.pid, "{}: view model and wire contract", raw.shortcode);
+            assert!(
+                raw.pid.contains("ark:/72163/1/"),
+                "{}: the ARK path is untouched, got {:?}",
+                raw.shortcode,
+                raw.pid
+            );
+        }
+    }
+
+    /// Unset — every deployment but a PR preview — the loader changes nothing.
+    #[test]
+    fn with_no_resolver_the_loader_leaves_every_recorded_ark_alone() {
+        let (_, raws) = load_projects_from(std::path::Path::new(COMMITTED), None);
+        assert!(!raws.is_empty());
+        for raw in &raws {
+            assert!(
+                raw.pid.starts_with("https://ark.dasch.swiss/"),
+                "{}: {:?}",
+                raw.shortcode,
+                raw.pid
+            );
+        }
+    }
+
+    /// Recorded text is quoted, not asserted: 083D records its own ARK as the
+    /// project's website, and many citations mention one.
+    #[test]
+    fn recorded_text_keeps_the_host_the_corpus_records() {
+        let (_, raws) = load_projects_from(std::path::Path::new(COMMITTED), Some(PREVIEW));
+        let raw = raws.iter().find(|raw| raw.shortcode == "083D").expect("083D is committed");
+        assert!(raw.pid.starts_with(PREVIEW), "{:?}", raw.pid);
+        assert!(
+            raw.url
+                .as_ref()
+                .expect("083D records a url")
+                .to_string()
+                .contains("ark.dasch.swiss"),
+            "{:?}",
+            raw.url
+        );
+        assert!(raw.how_to_cite.contains("ark.dasch.swiss"), "{}", raw.how_to_cite);
+    }
 }

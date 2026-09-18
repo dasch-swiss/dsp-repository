@@ -8,6 +8,28 @@
 /// `72163` is DaSCH's NAAN (Name Assigning Authority Number).
 pub const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
 
+/// A resolvable ARK URL with its host replaced by `host`, or the value
+/// unchanged when it carries no ARK path and so is not one.
+///
+/// The rule lives beside [`ARK_PATH_PREFIX`], which defines where the host ends
+/// and the identifier begins, and takes the host as an argument: nothing here
+/// knows *why* a caller would substitute one, or where the value comes from.
+/// Both consumers read it from here rather than each spelling it out —
+/// `shared_fair::ArkHost::apply` for the machine-readable representations, and
+/// DPE's project sidebar for the permalink a person copies.
+///
+/// **Only a bare identifier**, never prose. The ARK path is taken to run to the
+/// end of the value, so a sentence with an ARK in the middle of it would lose
+/// everything before the ARK. Recorded free text that mentions an ARK — a
+/// `howToCite` citation — is quoted rather than asserted and is not passed
+/// through here.
+pub fn with_ark_host(ark: &str, host: &str) -> String {
+    match ark.find(ARK_PATH_PREFIX) {
+        Some(position) => format!("{}/{}", host.trim_end_matches('/'), &ark[position..]),
+        None => ark.to_string(),
+    }
+}
+
 use serde::{Deserialize, Serialize};
 
 use crate::utils::Multilingual;
@@ -254,6 +276,38 @@ mod tests {
     fn project_ark_extracted_from_pid() {
         let record = first_0803_record();
         assert_eq!(record.project_ark(), "https://ark.dasch.swiss/ark:/72163/1/0803");
+    }
+
+    #[test]
+    fn with_ark_host_replaces_the_host_and_keeps_the_path() {
+        assert_eq!(
+            with_ark_host("https://ark.dasch.swiss/ark:/72163/1/0803", "https://preview.example.test"),
+            "https://preview.example.test/ark:/72163/1/0803"
+        );
+        assert_eq!(
+            with_ark_host(
+                "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh",
+                "http://host.docker.internal:4000"
+            ),
+            "http://host.docker.internal:4000/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
+        );
+    }
+
+    #[test]
+    fn with_ark_host_leaves_a_value_that_is_not_an_ark_alone() {
+        assert_eq!(with_ark_host("MISSING", "https://preview.example.test"), "MISSING");
+        assert_eq!(with_ark_host("", "https://preview.example.test"), "");
+    }
+
+    #[test]
+    fn with_ark_host_joins_with_exactly_one_separator() {
+        // The callers validate the host as an origin, but a trailing slash here
+        // would produce `host//ark:/…` inside an identifier, so it is trimmed
+        // rather than trusted.
+        assert_eq!(
+            with_ark_host("https://ark.dasch.swiss/ark:/72163/1/0803", "https://preview.example.test/"),
+            "https://preview.example.test/ark:/72163/1/0803"
+        );
     }
 
     #[test]

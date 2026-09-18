@@ -89,7 +89,35 @@ pub(crate) async fn project_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Query(tab): axum::extract::Query<TabQuery>,
+    request_headers: axum::http::HeaderMap,
 ) -> axum::response::Response {
+    use axum::http::{header, HeaderValue};
+
+    // Every answer from this route carries it: 200 and 303, GET and HEAD. A
+    // cache — Traefik's or a browser's — must not replay a 303 to a person or
+    // the HTML to a harvester. Added once, here, so no branch can forget it.
+    let vary = [(header::VARY, HeaderValue::from_static("Accept"))];
+
+    // A header that is not ASCII is no `Accept` at all, which means HTML.
+    let accept = request_headers.get(header::ACCEPT).and_then(|value| value.to_str().ok());
+    // Built synchronously, before any await: `ContributorLookup` carries no
+    // `Sync` bound, so nothing it borrows may live across an await point.
+    // A project that does not resolve gets no metadata, no headers and no
+    // redirect; the always-200 "Project Not Found" body it already renders is
+    // unchanged.
+    let (extras, headers) = match metadata::landing_page(&id, accept, &state) {
+        // The one negotiation step ADR-0005 allows. Nothing else about this
+        // route varies by header.
+        metadata::LandingPage::Redirect(location) => {
+            return axum::response::IntoResponse::into_response((
+                axum::http::StatusCode::SEE_OTHER,
+                vary,
+                [(header::LOCATION, location)],
+            ));
+        }
+        metadata::LandingPage::Render(markup, headers) => (markup, headers),
+    };
+
     let tp = traceparent::extract_traceparent();
     // Fall back to "overview" for a missing or unrecognized tab, mirroring the
     // validation the SSE fragment handler applies against VALID_TABS.
@@ -105,14 +133,6 @@ pub(crate) async fn project_page_handler(
     let title = dpe_core::project_cache::project_by_shortcode(&id)
         .map(|p| format!("{} — DaSCH Metadata Browser", p.name))
         .unwrap_or_else(|| format!("Project {id} — DaSCH Metadata Browser"));
-    // Built synchronously, before any await: `ContributorLookup` carries no
-    // `Sync` bound, so nothing it borrows may live across an await point.
-    // A project that does not resolve gets no metadata and no headers; the
-    // always-200 "Project Not Found" body it already renders is unchanged.
-    let (extras, headers) = match metadata::head_extras_for_project(&id, &state) {
-        Some((markup, headers)) => (markup, headers),
-        None => (maud::html! {}, axum::http::HeaderMap::new()),
-    };
     let body = view::page(
         &title,
         tp.as_deref(),
@@ -122,9 +142,9 @@ pub(crate) async fn project_page_handler(
         content,
     )
     .into_string();
-    // A `Response` rather than `Html<String>`: this route now sets headers, and
-    // Phase 3 adds a `303` branch to it.
-    axum::response::IntoResponse::into_response((headers, axum::response::Html(body)))
+    // A `Response` rather than `Html<String>`: this route sets headers and has
+    // a `303` branch.
+    axum::response::IntoResponse::into_response((vary, headers, axum::response::Html(body)))
 }
 
 /// 404 fallback (after `ServeDir` finds no matching static file): the app shell

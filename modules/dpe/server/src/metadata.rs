@@ -15,9 +15,9 @@ use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use maud::{html, Markup, PreEscaped};
 use shared_fair::{
-    project_to_datacite, project_to_datacite_json, project_to_dublin_core_meta, project_to_link_set,
-    project_to_schema_org, representation_to_link_set, script_safe_json, LinkSet, ProjectGraph, ResolveContext,
-    SchemaOrgOptions, UrlLayout,
+    decide, project_to_datacite, project_to_datacite_json, project_to_dublin_core_meta, project_to_link_set,
+    project_to_schema_org, representation_to_link_set, script_safe_json, Decision, LinkSet, ProjectGraph,
+    ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 use shared_metadata::{ProjectRaw, Record};
 
@@ -66,18 +66,57 @@ const DATACITE_JSON: usize = 1;
 /// carrying the representation's own type would invite a parse.
 const PLAIN_TEXT: &str = "text/plain; charset=utf-8";
 
-/// The head markup and response headers for a project's landing page, or
-/// `None` when no project answers to `shortcode`.
+/// What the landing page route answers for one request.
+pub(crate) enum LandingPage {
+    /// Render the page, splicing this markup into the head and sending these
+    /// headers. Both are empty when no project answers to the shortcode.
+    Render(Markup, HeaderMap),
+    /// Answer `303 See Other` to this representation.
+    Redirect(HeaderValue),
+}
+
+/// The landing page's answer for one shortcode and one `Accept` header.
 ///
-/// An unresolved project gets nothing: no JSON-LD, no `Link` header, no
-/// redirect. The always-200 "Project Not Found" body it already renders is left
-/// exactly as it is.
-pub(crate) fn head_extras_for_project(shortcode: &str, state: &AppState) -> Option<(Markup, HeaderMap)> {
-    let raw = dpe_core::project_cache::project_raw_by_shortcode(shortcode)?;
+/// The `303` is the only thing on this route that varies by header: the page
+/// itself is never *rendered* differently by one (ADR-0004), and ADR-0005
+/// carves out exactly this redirect.
+///
+/// An unresolved project gets nothing: no JSON-LD, no `Link` header, and no
+/// redirect for any `Accept` value whatsoever — there is no layout, so there
+/// are structurally no candidates to redirect to. The always-200 "Project Not
+/// Found" body it already renders is left exactly as it is.
+pub(crate) fn landing_page(shortcode: &str, accept: Option<&str>, state: &AppState) -> LandingPage {
+    let Some(raw) = dpe_core::project_cache::project_raw_by_shortcode(shortcode) else {
+        return LandingPage::Render(html! {}, HeaderMap::new());
+    };
+
+    // The candidates are `UrlLayout::candidates`, built from the same rows of
+    // [`REPRESENTATIONS`] as the representation `describedby` links, so the page
+    // cannot redirect somewhere it does not link. The OAI-record `describedby`
+    // links are not candidates and are never redirect targets.
+    let urls = url_layout(raw, state);
+    if let Decision::Redirect(url) = decide(accept, &urls.candidates()) {
+        // The same failure `link_header` handles, answered the same way: a
+        // configured base URL holding a control character makes the HTTP layer
+        // refuse the value. Warn and serve the page, rather than panicking
+        // inside `Redirect::to` on the way out.
+        match HeaderValue::from_str(&url) {
+            Ok(location) => return LandingPage::Redirect(location),
+            Err(error) => {
+                tracing::warn!(
+                    shortcode = %raw.shortcode,
+                    %error,
+                    "redirect target rejected by the HTTP layer and dropped"
+                );
+            }
+        }
+    }
+
     // The canonical shortcode, not the path segment, so the record lookup and
-    // the URLs below cannot be steered by how the visitor spelled it.
+    // the URLs cannot be steered by how the visitor spelled it.
     let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
-    Some(render(raw, records.iter().copied().take(HAS_PART_CAP), state))
+    let (markup, headers) = render(raw, records.iter().copied().take(HAS_PART_CAP), state);
+    LandingPage::Render(markup, headers)
 }
 
 /// Renders one project's metadata. Separate from the lookup so that it can be
@@ -527,6 +566,109 @@ mod tests {
         assert!(headers.get(header::LINK).is_none(), "{headers:?}");
         assert!(!body.contains("application/ld+json"), "{body}");
         assert!(!body.contains("DC.title"), "{body}");
+    }
+
+    // --- the one negotiation step ---
+
+    async fn request(method: &str, uri: &str, accept: Option<&str>) -> (StatusCode, HeaderMap, String) {
+        let mut builder = Request::builder().method(method).uri(uri);
+        if let Some(accept) = accept {
+            builder = builder.header(header::ACCEPT, accept);
+        }
+        let response = corpus_app()
+            .oneshot(builder.body(Body::empty()).expect("a request"))
+            .await
+            .expect("a response");
+        let status = response.status();
+        let headers = response.headers().clone();
+        let bytes = response.into_body().collect().await.expect("a body").to_bytes();
+        (status, headers, String::from_utf8_lossy(&bytes).into_owned())
+    }
+
+    fn location(headers: &HeaderMap) -> &str {
+        headers.get(header::LOCATION).expect("a Location").to_str().expect("ascii")
+    }
+
+    fn vary(headers: &HeaderMap) -> Option<&str> {
+        headers.get(header::VARY).map(|value| value.to_str().expect("ascii"))
+    }
+
+    #[tokio::test]
+    async fn a_harvester_asking_for_a_representation_is_redirected_to_it() {
+        // The table, not a copy of it: a new row must be negotiable the moment
+        // it is linked, which is the promise `REPRESENTATIONS` makes.
+        for (accept, suffix) in REPRESENTATIONS {
+            let (status, headers, body) = request("GET", "/dpe/projects/0862", Some(accept)).await;
+            assert_eq!(status, StatusCode::SEE_OTHER, "{accept}");
+            assert_eq!(
+                location(&headers),
+                format!("https://example.test/dpe/projects/0862/{suffix}"),
+                "{accept}"
+            );
+            assert!(body.is_empty(), "{accept}: {body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_browser_gets_the_page() {
+        for accept in [None, Some("text/html,application/xhtml+xml,*/*;q=0.8"), Some("*/*")] {
+            let (status, _, body) = request("GET", "/dpe/projects/0862", accept).await;
+            assert_eq!(status, StatusCode::OK, "{accept:?}");
+            assert!(body.contains(r#"<script type="application/ld+json">"#), "{accept:?}");
+        }
+    }
+
+    /// Caches must not replay a 303 to a person or the HTML to a harvester, so
+    /// every answer from this route says what it varies on.
+    #[tokio::test]
+    async fn every_landing_page_answer_varies_on_accept() {
+        for method in ["GET", "HEAD"] {
+            for accept in [None, Some("text/html"), Some("application/ld+json")] {
+                let (_, headers, _) = request(method, "/dpe/projects/0862", accept).await;
+                assert_eq!(vary(&headers), Some("Accept"), "{method} {accept:?}");
+            }
+            // Including the page that resolves to no project at all.
+            let (_, headers, _) = request(method, "/dpe/projects/zzzz", None).await;
+            assert_eq!(vary(&headers), Some("Accept"), "{method} unknown shortcode");
+        }
+    }
+
+    #[tokio::test]
+    async fn the_redirect_target_is_the_canonical_shortcode() {
+        let (_, lower, _) = request("GET", "/dpe/projects/081c", Some("application/ld+json")).await;
+        let (_, upper, _) = request("GET", "/dpe/projects/081C", Some("application/ld+json")).await;
+        assert_eq!(location(&lower), location(&upper));
+        assert_eq!(location(&lower), "https://example.test/dpe/projects/081C/metadata.jsonld");
+    }
+
+    /// The redirect target is assembled from configuration, not from the
+    /// request, so a refusal here means an operator value the HTTP layer will
+    /// not carry. Same answer as a refused `Link` header: warn, drop, serve the
+    /// page — never a panic on the way out.
+    #[test]
+    fn a_redirect_target_the_http_layer_refuses_falls_back_to_the_page() {
+        let mut state = test_state();
+        state.public_base_url = "https://example.test\r\nX-Injected: 1".to_string();
+        let answer = landing_page("0862", Some("application/ld+json"), &state);
+        assert!(matches!(answer, LandingPage::Render(..)));
+    }
+
+    /// No project, no layout, so structurally no candidate to redirect to. The
+    /// route never produces a 4xx from `Accept` either.
+    #[tokio::test]
+    async fn an_unknown_shortcode_never_redirects_whatever_it_was_asked_for() {
+        for accept in [
+            None,
+            Some("application/ld+json"),
+            Some("text/html"),
+            Some("application/vnd.datacite.datacite+json"),
+        ] {
+            let (status, headers, body) = request("GET", "/dpe/projects/zzzz", accept).await;
+            assert_eq!(status, StatusCode::OK, "{accept:?}");
+            assert!(headers.get(header::LOCATION).is_none(), "{accept:?}: {headers:?}");
+            assert!(headers.get(header::LINK).is_none(), "{accept:?}: {headers:?}");
+            assert!(!body.contains("application/ld+json"), "{accept:?}");
+        }
     }
 
     // --- the machine-readable representations ---

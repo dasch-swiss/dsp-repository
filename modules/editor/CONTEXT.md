@@ -41,7 +41,7 @@ _Avoid_: review (ambiguous with the act and the queue page), audit entry.
 
 **Review state**:
 The per-field decisions RDU records while a round is running (`ReviewState`, field id → `FieldReview`), stored on the Submission and snapshotted into the Review round.
-_Avoid_: confusing with Project state or Submission state — three different `*State` types.
+_Avoid_: confusing with Project state or Submission state — four different `*State` types.
 
 **Decision**:
 RDU's per-field verdict on a submitted value, Accept or Revert (`review::Decision`); distinct from a Proposal decision on an Entity proposal.
@@ -55,7 +55,7 @@ The depositor's own discard of a pending Submission, recorded as a Review round 
 _Avoid_: cancel, delete.
 
 **Approved record**:
-An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting to be collected into the published corpus; the collection step (a pull request against this repository) is documented and not built.
+An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting to be collected into the published corpus; the collection step (a pull request against this repository) is documented and not built. At most one live record per project: re-approving while none of the project's records has a live pull request supersedes the old row in the same transaction, and re-approving while one does is refused.
 _Avoid_: published record (Online is the state after collection, not this), export.
 
 **Project state**:
@@ -94,7 +94,7 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 - A **Project** has at most one **Draft** and at most one **Submission** at a time, and zero or more **Review rounds**.
 - A **Submission** carries one **Review state**, which holds one **Decision** and at most one **Substitution** per changed **Field**.
 - A **Review round** ends exactly one **Submission** and snapshots its **Review state**.
-- An approve writes exactly one **Approved record**; a **Project** is **Online** once that record matches the **Published set**.
+- An approve writes exactly one **Approved record**, superseding the project's earlier one when that one has no live pull request; a **Project** is **Online** once that record matches the **Published set**.
 - A **Project** has zero or more **Entity proposals**; at most one live proposal per entity per project.
 - A **Section** groups one or more **Fields**; every contract member is either a **Field** or deliberately omitted (`OMITTED`), which a test enforces.
 

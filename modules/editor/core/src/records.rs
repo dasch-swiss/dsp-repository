@@ -275,6 +275,61 @@ pub struct Submission {
     pub review_state: Option<String>,
 }
 
+/// Where a collected record's pull request sits, as last reported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PullRequestState {
+    Open,
+    Merged,
+    Closed,
+}
+
+impl PullRequestState {
+    /// The stored form, pinned by a `CHECK` constraint in the schema.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Open => "open",
+            Self::Merged => "merged",
+            Self::Closed => "closed",
+        }
+    }
+
+    /// Whether a pull request in this state still stands between the record and
+    /// the published corpus.
+    ///
+    /// The single definition of "live". A second approved record may not be
+    /// created for a project while one of its records is live, and the supersede
+    /// `DELETE` in `ReviewRoundRepository::approve` must match exactly the
+    /// states this rejects. A variant added here without revisiting both is the
+    /// way those two silently disagree.
+    #[must_use]
+    pub const fn is_live(self) -> bool {
+        match self {
+            Self::Open | Self::Merged => true,
+            Self::Closed => false,
+        }
+    }
+}
+
+impl fmt::Display for PullRequestState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for PullRequestState {
+    type Err = UnknownVariant;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "open" => Ok(Self::Open),
+            "merged" => Ok(Self::Merged),
+            "closed" => Ok(Self::Closed),
+            other => Err(UnknownVariant { kind: "pull request state", value: other.to_string() }),
+        }
+    }
+}
+
 /// An approved record waiting to be collected into a pull request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ApprovedRecord {
@@ -288,6 +343,15 @@ pub struct ApprovedRecord {
     /// `None` while uncollected. A failed collection leaves it `None` so the
     /// next run retries it.
     pub collected_at: Option<DateTime<Utc>>,
+    /// The pull request a collection run opened for this record, `None` until
+    /// one has.
+    pub pull_request_url: Option<String>,
+    /// The pull request's state as last reported, `None` alongside
+    /// `pull_request_url`.
+    pub pull_request_state: Option<PullRequestState>,
+    /// Why the last collection attempt failed, `None` when it last succeeded
+    /// or none has run yet.
+    pub last_failure: Option<String>,
 }
 
 /// How a review round ended.

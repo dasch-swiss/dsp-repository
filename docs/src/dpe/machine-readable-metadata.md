@@ -31,14 +31,15 @@ The project is a `Dataset` whose `@id` is its ARK, `url` its landing page, and
 `ResearchProject` node carrying the project's own name, dates, external website
 and members.
 
-Two properties have a shape worth naming, both of them because an assessor reads
-them as RDF rather than as JSON:
+Four properties have a shape worth naming, mostly because an assessor reads them
+as RDF rather than as JSON:
 
 | Property | Shape | Why |
 |----------|-------|-----|
 | `identifier` | always two entries: the ARK as a `PropertyValue` with `propertyID: "ARK"`, and the landing page URL as a plain string | F-UJI reads the object identifier from `identifier.value`, so the ARK keeps the `PropertyValue` form. FAIR Champion's *MetadataIdentifierFound* reads `schema:identifier` alone and does not consider `url`, so an assessor pointed at the page needs the page's own URL here too |
 | `license` | a node object, `{"@id": "<SPDX URI>"}`; one object for a single licence, an array for several, no key for none | schema.org's remote context does not coerce `license` to `@id`, so a bare string parses as an RDF literal. FAIR Champion's *LicenseStrong* wants a Resource |
 | `prov:wasAttributedTo` | references to agents the graph already names: DaSCH, and every credited creator with an ORCID | PROV-O is the W3C vocabulary for provenance, and `creator` and `publisher` already assert exactly these agents. See *Provenance* below |
+| `distribution` | a `DataDownload` per record file, at the root of the graph, never on the `hasPart` node | Both assessors read `schema:distribution` off the described object. See *Record files* below |
 
 An agent node carries an `@id` when it has an IRI of its own — its ORCID, by the
 same rule Signposting's `author` link uses — so a statement about that agent
@@ -73,15 +74,66 @@ Two things are deliberately not emitted:
 Three rules hold throughout:
 
 - **Nothing is invented.** A value the corpus records as a Placeholder, or does
-  not record at all, yields no key. There is no project-level `distribution`,
-  because there is no project-level download.
-- **`hasPart` is capped at 100 in the embedded block.** The largest committed
-  project has 27,026 records. The complete list is harvestable from the OAI set
-  `project:{shortcode}`.
+  not record at all, yields no key. A project whose records carry no file gets
+  no `distribution`, because there is no download to describe.
+- **`hasPart` and `distribution` are capped at 100 in the embedded block**, over
+  the same records in the same order. The largest committed project has 27,026
+  records; the one with the most files has 7,716 of them. The complete list is
+  harvestable from the OAI set `project:{shortcode}`, and the standalone
+  JSON-LD representation is uncapped.
 - **Key order is the builder's.** The workspace enables `serde_json`'s
   `preserve_order`, so insertion order is emission order. `Map::remove`
   silently re-sorts the map and must not be used; `retain` or `shift_remove`
   instead.
+
+### Record files
+
+A bitstream record carries at most one file, stored by dsp-ingest at a public
+URL. Where a project's records carry files, the project's graph describes them:
+one `DataDownload` per file, at the root under `distribution`.
+
+```json
+{
+  "@type": "DataDownload",
+  "contentUrl": "https://ingest.dasch.swiss/projects/0868/assets/65x3bCZRvre-UHvpx8zyfii/original",
+  "name": "BesselianElements_MeanDeltaT.csv",
+  "encodingFormat": "text/csv",
+  "contentSize": 1331862,
+  "license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+}
+```
+
+Four rules govern what appears here:
+
+- **Only a record the corpus records as `Full Open Access`.** dsp-ingest serves
+  these URLs to anyone, so a restricted record's file is never advertised. The
+  rule is applied where the graph is built, not in the writer, so no
+  representation can be added that forgets it, and it fails closed: an access
+  level spelled in a way the builder does not recognise yields no download.
+- **`encodingFormat` only when the export records a MIME type.** Project 0803's
+  4,062 files carry none, and a guessed format would be an invented fact.
+  `name` and `contentSize` are omitted on the same terms.
+- **`license` is the record's own**, not the project's, and the two disagree
+  across the corpus: 0868 licenses the project CC BY 4.0 while all 7,716 of its
+  file-carrying records carry CC0 1.0, and 0803 disagrees the same way. A
+  download described under the root licence alone would misstate every file.
+  Both are reported as recorded; which one is right is a question about the
+  data, not about this code.
+- **No checksum.** schema.org has no standard property carrying one on a
+  `DataDownload`. The file-metadata endpoint serves it, beside the same URL —
+  see [OAI-PMH](./oai-pmh.md#file-metadata-endpoint).
+
+This does not contradict the OAI-PMH mapping, which drops the download URL. That
+decision is about fit: `dc:identifier` identifies the described resource and a
+`HasPart` `relatedIdentifier` relates resources, not bitstreams, so neither
+field could carry it. `schema:distribution` is the field that fits.
+
+**The cap bounds the page, not the assessor.** F-UJI reads the embedded block,
+then follows the `describedby` link to `/metadata.jsonld` and merges what it
+finds there, so for project 0868 it collected 100 data links from the page and
+7,716 in total. It then limits *content* analysis to five files per MIME type,
+which is why an assessment of a file-carrying project downloads a few dozen
+files and takes minutes rather than seconds.
 
 ### Dublin Core meta tags
 
@@ -268,20 +320,38 @@ Notes on the recipe:
 
 ## Assessment results
 
-Scores for project 0862, the reference project.
+Project 0862 is the reference project and carries the history. Since 2026-09-18
+two more are measured, because a score is a statement about one project's data
+and not about the software: **0868** holds the most file-carrying records in the
+committed corpus (7,716) and **0803** the second most (4,062, none with a MIME
+type). No record dump is committed for 0862, so its landing page lists no parts
+and describes no files — on a deployment carrying 0862's real records it would.
 
-| Date | Assessor | Version | Target | Result |
-|------|----------|---------|--------|--------|
-| 2026-09-15 | F-UJI | 3.5.0 | `https://ark.dasch.swiss/ark:/72163/1/0862` (PROD) | 3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work |
-| 2026-09-15 | FAIR Champion | 1.1.11 | same | 6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work |
-| 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
-| 2026-09-18 | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
-| 2026-09-18 | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
-| 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after the `identifier` and `license` fixes | **14 of 24 again.** A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting `identifier` in an array did not break F-UJI's reading of the ARK — it does not, and `F1-01D` still passes |
-| 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after PROV-O | **16 of 24.** Two metrics moved and no others: `R1.2-01M` 1/2 → 2/2 (`Found use of dedicated provenance ontologies`) and `I2-01M` 0/1 → 1/1 (`Namespace matches found -: ['http://www.w3.org/ns/prov']`). One statement earns both — PROV is a provenance ontology *and* a vocabulary F-UJI's LOD registry lists |
+| Date | Project | Assessor | Version | Target | Result |
+|------|---------|----------|---------|--------|--------|
+| 2026-09-15 | 0862 | F-UJI | 3.5.0 | `https://ark.dasch.swiss/ark:/72163/1/0862` (PROD) | 3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work |
+| 2026-09-15 | 0862 | FAIR Champion | 1.1.11 | same | 6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work |
+| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
+| 2026-09-18 | 0862 | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
+| 2026-09-18 | 0862 | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
+| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after the `identifier` and `license` fixes | **14 of 24 again.** A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting `identifier` in an array did not break F-UJI's reading of the ARK — it does not, and `F1-01D` still passes |
+| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after PROV-O | **16 of 24.** Two metrics moved and no others: `R1.2-01M` 1/2 → 2/2 (`Found use of dedicated provenance ontologies`) and `I2-01M` 0/1 → 1/1 (`Namespace matches found -: ['http://www.w3.org/ns/prov']`). One statement earns both — PROV is a provenance ontology *and* a vocabulary F-UJI's LOD registry lists |
+
+| 2026-09-18 | 0868 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0868` (local `dpe-server serve`) | **16 of 24 before `distribution`**, metric for metric identical to 0862's — a project holding 7,716 public file URLs scored what a project holding none scored |
+| 2026-09-18 | 0803 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0803` (local `dpe-server serve`) | **16 of 24 before `distribution`**, identical again |
+| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **16 of 24, unmoved metric for metric.** No record dump is committed for 0862, so it has no file to describe and nothing about it should have changed. Nothing did |
+| 2026-09-18 | 0868 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **21 of 24.** Four metrics moved: `F3-01M` 0/1 → 1/1, `A1-03D` 0/1 → 1/1, `R1-01MD` 1/4 → 3/4 (sub-tests 2 and 3), `R1.3-02D` 0/1 → 1/1. Nothing else moved. 558 s |
+| 2026-09-18 | 0803 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **18 of 24.** Two metrics moved: `F3-01M` 0/1 → 1/1 and `A1-03D` 0/1 → 1/1. `R1-01MD` stayed 1/4 and `R1.3-02D` stayed 0/1, both for one reason — 0803's export records no `mimeType`, so no `encodingFormat` is emitted, and dsp-ingest serves those files as `application/octet-stream`. 307 s |
 
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
 with, so the rows are comparable.
+
+**A score is a statement about one project's data.** The three 2026-09-18 runs
+share a build and differ only in what the projects record, which is what makes
+the spread readable: 21 where the files are typed, 18 where they are not, 16
+where there are none. The identical 16 of 24 that all three scored beforehand is
+the other half of that: it is what made the movement attributable, because there
+was no pre-existing difference between them to confound it.
 
 The FAIR Champion tests named on this page by their short reference —
 *LicenseStrong*, *MetadataIdentifierFound*, *DataIdentifierFound* — are defined
@@ -305,66 +375,81 @@ well.
 
 ### Known residuals
 
-Where the eight points F-UJI does not award go. The per-metric totals are the
-local run that scored 16 of 24; the sub-test detail is the preview run of
-2026-09-18, whose `test_debug` output records which half of a metric failed and
-why. That run differs from the current one in `I1-01M-2`, `I2-01M` and
-`R1.2-01M-2`, all three of which are fixed above; the sub-test evidence for the
-eight points below is unaffected by all three.
+Where the points F-UJI does not award go. **Per project, because the residuals
+differ per project** — the ledger used to describe 0862 and read as though it
+described the repository. Each column is the local run of 2026-09-18 after
+`distribution`, and each adds up to the 24 − score for that project. Sub-test
+attributions come from `test_debug` in those same runs.
 
-| Cause | Where the points go | Points |
-|-------|---------------------|--------|
-| No data pointer *for this project* | F3-01M, A1-03D, R1-01MD sub-tests 2 to 4, R1.3-02D | 6 |
-| ARKs are not registered with DataCite | F4-01M-2 | 1 |
-| The assessment ran against a non-production host | F1-02D | 1 |
+| Cause | Metrics | 0862 (16/24) | 0868 (21/24) | 0803 (18/24) |
+|-------|---------|-------------:|-------------:|-------------:|
+| No file to point at | `F3-01M`, `A1-03D`, `R1-01MD-2`, `R1-01MD-3`, `R1.3-02D` | 5 | — | — |
+| The files carry no MIME type | `R1-01MD-2`, `R1-01MD-3`, `R1.3-02D` | — | — | 3 |
+| No `variableMeasured` | `R1-01MD-4` | 1 | 1 | 1 |
+| ARKs are not registered with DataCite | `F4-01M-2` | 1 | 1 | 1 |
+| The assessment ran against a non-production host | `F1-02D` | 1 | 1 | 1 |
+| **Total** | | **8** | **3** | **6** |
 
-**No data pointer for this project — six points.** F-UJI distinguishes the
-metadata record from retrievable *data content*, and asks for a pointer it can
-fetch and inspect.
+**No file to point at — five points, and only where there is nothing to point
+at.** F-UJI distinguishes the metadata record from retrievable *data content*
+and asks for a pointer it can fetch and inspect. Where the records carry files,
+`distribution` supplies one and all five are earned; 0868 earns every one of
+them. Where there is no file, `R1-01MD-1` still passes on the resource type
+alone, `R1-01MD-2` comes back with an empty `data_content_descriptor`,
+`R1-01MD-3` cannot run (`NO data object content available/accessible to perform
+file descriptors (type and size) tests`), `A1-03D` skips (`Skipping protocol
+test for data since NO content (data) identifier is given in metadata`) and
+`R1.3-02D` reports `Could not perform file format checks as data content
+identifier(s) unavailable/inaccesible`.
 
-This is a fact about project 0862, not about the repository. 0862's records carry
-no file, and neither do 081C's; 0868's records carry 7,716 files with public
-URLs, and 0803's carry 4,062. So the six points below are what a project with no
-files scores, and they are not a repository-wide ceiling.
+For 0862 this is a fact about the committed corpus, not about the project. **No
+record dump is committed for 0862**, so its landing page lists no parts and
+describes no files. Project 0862 does have file-carrying records in production —
+[OAI-PMH](./oai-pmh.md#file-metadata-document) shows one, a PNG — so a
+deployment carrying them would describe them and would score these five points
+as 0868 does. "0862 did not move" is the right control for this change and not a
+ceiling on the project.
 
-For 0862 as measured there is no `distribution` to describe, and six points hang
-off that one absence. R1-01MD-1 ("minimal information about available data content")
-passes on the resource type alone. R1-01MD-2 does run and comes back with an
-empty `data_content_descriptor`, because nothing populates it; R1-01MD-3 and
-R1-01MD-4 cannot run at all — `NO data object content available/accessible to
-perform file descriptors (type and size) tests`. A1-03D skips for the same
-reason (`Skipping protocol test for data since NO content (data) identifier is
-given in metadata`), and R1.3-02D reports `Could not perform file format checks
-as data content identifier(s) unavailable/inaccesible`.
+Fabricating a download for a project that has none would earn the points and
+state something untrue, which ADR-0005 rules out. Describing the files a project
+*does* have is the opposite of that, and is what earned them here.
 
-Naming a download that this project does not have would earn the six points and
-state something untrue, which ADR-0005 rules out: nothing is invented for a
-score. That is the narrow point. Surfacing the files a project *does* have is a
-different thing entirely and is not invention.
+**The files carry no MIME type — three points, and this is a data-quality
+residual.** 0803 gained `F3-01M` and `A1-03D` like 0868, and gained nothing
+beyond them. None of its 4,062 files records a `mimeType`, so no
+`encodingFormat` is emitted — a guessed format would be invented — and F-UJI
+reports `NO info about file type available in given metadata` for every file it
+sampled. That fails `R1-01MD-2a`, which takes `R1-01MD-2` and `R1-01MD-3` with
+it, and leaves `R1.3-02D` with no format list to check. dsp-ingest serves those
+files as `application/octet-stream`, so the header fallback does not rescue it
+either. Both ends would have to change: the export would have to record the
+MIME type, and ingest would have to serve it. Neither is a change to this code.
 
-Record landing pages describe objects that *do* have retrievable content, and
-they are the right assessment target for all six.
+**No `variableMeasured` — one point, for every project.** `R1-01MD-4` asks
+whether the data content matches the measured variables or observation types the
+metadata declares, and F-UJI skips it with `NO measured variables found in
+metadata`. The DaSCH metadata schema records no such element. This used to be
+counted under the data-pointer cause, on the strength of its sub-test name;
+measuring 0868 separated them, because `-2` and `-3` moved and `-4` did not. No
+data pointer will ever earn it.
 
-**ARKs are not registered with DataCite — one point.** F4-01M-1 passes: the
-metadata is offered through a harvesting endpoint. F4-01M-2 asks for
+**ARKs are not registered with DataCite — one point.** `F4-01M-1` passes: the
+metadata is offered through a harvesting endpoint. `F4-01M-2` asks for
 registration in a major research data registry, and the ARKs are DaSCH's own.
 
-**The assessment ran against a non-production host — one point.** F1-02D is
-about a persistent identifier, and F-UJI did find one. It harvested the ARK from
-the metadata twice, once through the Signposting `cite-as` link, confirmed the
-syntax as `ark` and resolved it successfully (`resolvable_status: true`, to
-`https://repository.dasch.swiss/dpe/projects/0862`). It then discarded it:
-`Landing page domain resolved from PID found in metadata does not match with
-input URL domain -: run.app <> dasch.swiss`, followed by `PID syntax is OK but
-the PID seems to resolve to a different entity, will not use this PID for
-content negotiation` and finally `Could not find any persistent identifier for
-metadata which complies with a known PID syntax`. The PID was found, was
-well-formed and did resolve; it was rejected because the domain it resolves to
-is not the domain the assessment was run against. Every 2026-09-18 run targeted a
-non-`dasch.swiss` host, and the 2026-09-15 baseline that did target the ARK
-predates this work, when the page carried no metadata for a PID to be harvested
-from. **No run against a build carrying this work has been made from a host under
-`dasch.swiss`, so F1-02D's status there is unknown.** Assessing DEV is the
+**The assessment ran against a non-production host — one point.** `F1-02D` is
+about a persistent identifier, and F-UJI does find one. It harvested the ARK
+from the metadata, confirmed the syntax as `ark` and resolved it successfully
+(`resolvable_status: true`). It then discarded it: `Landing page domain resolved
+from PID found in metadata does not match with input URL domain`, followed by
+`PID syntax is OK but the PID seems to resolve to a different entity, will not
+use this PID for content negotiation`. The PID was found, was well-formed and
+did resolve; it was rejected because the domain it resolves to is not the domain
+the assessment ran against. Every 2026-09-18 run targeted a non-`dasch.swiss`
+host, and the 2026-09-15 baseline that did target the ARK predates this work,
+when the page carried no metadata for a PID to be harvested from. **No run
+against a build carrying this work has been made from a host under
+`dasch.swiss`, so `F1-02D`'s status there is unknown.** Assessing DEV is the
 post-merge step that would measure it.
 
 Two further residuals sit outside this arithmetic, because no F-UJI metric

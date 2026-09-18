@@ -3045,3 +3045,158 @@ One pre-existing failure, not caused by this round: `just --check --fmt
 under local `just` 1.49.0. The reformat it wants inserts a blank line into an
 unrelated wrapped comment above `_tailwind-bin`. Left alone rather than
 committed, since CI installs its own `just` and the same check passes there.
+
+## Round 17 — Phase 8: decouple previews from production ARKs (2026-09-18)
+
+Six commits on top of `bf360357`, which is pushed, so nothing at or below it was
+amended or rebased.
+
+| # | Chunk | Commit | Notes |
+|---|-------|--------|-------|
+| 8.1 | `ArkHost` and the substitution in both graph builders | `b7bc87f0` | `feat(shared-fair,dpe-api-oai)`; includes the two corpus-wide tests |
+| 8.2 | `DPE_ARK_RESOLVER_BASE_URL`, validation, `AppState`, the OAI global | `2d4aacfa` | `feat(dpe-server,dpe-api-oai)` |
+| 8.3 | The `/ark:/72163/1/{shortcode}` resolver route | `3918d1dc` | `feat(dpe-server)` |
+| 8.4 | The preview workflow, all three variables | `60e8581f` | `chore(ci)` |
+| 8.5 | The unset-default test on the OAI crate's global | `3c516d22` | `test(dpe-api-oai)` |
+| 8.6 | Docs, ADR note, plan and journal | this commit | `docs(docs)` |
+
+Checkbox "run `eng:reviewing`" is left unticked, as in every prior phase: the
+interactive session owns reviews.
+
+### `sameAs` would have defeated the whole change
+
+`ProjectGraph.pid` feeds `schema_org.rs`'s `sameAs`, emitted when the recorded
+PID differs from the resolved ARK. Today it never fires, because `canonical_ark`
+returns the `pid` whenever it is real. Substituting the host on `ark` alone
+would have made it fire for **every** project, putting
+`https://ark.dasch.swiss/…` back into the JSON-LD.
+
+That is not cosmetic. F-UJI's object-identifier collection reads `sameAs`:
+
+```python
+for identifier in (
+    list(g.objects(item, DC.identifier)) + … + list(g.objects(item, SDO.identifier))
+    + list(g.objects(item, SDO.sameAs)) + list(g.objects(item, SMA.sameAs))
+    + list(g.objects(item, SMA.url)) + list(g.objects(item, SDO.url))
+):
+```
+
+`fuji_server/helper/metadata_collector_rdf.py:523-538`, read out of the pinned
+3.5.0 image. So the production ARK would have gone straight back into the pool
+`F1-02D` reads, and the fix would have looked complete and measured as nothing.
+`pid` is substituted alongside `ark`, and the corpus test asserts it by name.
+
+This is also why the "set" test renders every representation to a string and
+counts ARK hosts in the bytes, rather than comparing `graph.ark` to an
+expectation: a field comparison would have passed with `sameAs` broken.
+
+### The 083D boundary, found by the test rather than by reading
+
+The first version of the "set" test asserted that every `ark:/72163/1/`
+occurrence in the rendered output carried the substituted host. It failed on one
+project out of 85: **083D records its own ARK as the project's `url`**, and
+`producer.url` carries it verbatim.
+
+That is the right behaviour and the test was wrong. `raw.url` is a recorded fact
+about the project — its website — not an identifier the code resolves.
+Rewriting it would be inventing a fact, which ADR-0005 rules out. 083D also
+records the ARK inside `howToCite`, which no writer emits today; the same
+reasoning would apply.
+
+The test now accounts for it explicitly: the recorded host may survive only on a
+recorded website, counted from the graph, and the count must match. A second
+project acquiring one would fail it rather than slip through.
+
+### Record ARKs: 404, decided on evidence
+
+The brief asked for a decision on evidence rather than taste. Three pieces:
+
+1. **`ark.dasch.swiss` does not resolve a record ARK to DPE at all.** Measured
+   2026-09-18: `GET https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh`
+   → `302` to `https://app.dasch.swiss/resource/0803/lklK7rVuVOmpBZYWrF8o-g`,
+   the VRE. A project ARK → `302` to
+   `https://repository.dasch.swiss/dpe/projects/0862`, which is what the new
+   route mirrors, status code included.
+2. **Nothing a project-page assessment dereferences reads a record ARK.** F-UJI
+   puts `hasPart` into `related_resources` (`metadata_mapper.py:181`,
+   `metadata_collector_rdf.py:435`) and only treats a `hasPart` as a
+   distribution — the thing it fetches — when its `rdf:type` contains
+   `MediaObject` (`metadata_collector_rdf.py:887-892`). Ours are `Dataset`.
+3. **DPE has no record landing page.** A redirect to the project page would
+   answer for a different entity, which is the very thing F-UJI warns about
+   ("the PID seems to resolve to a different entity").
+
+So the four-segment route is the whole resolver, a record ARK's five segments
+never match it, and it falls through to the site's 404. A test pins that rather
+than leaving it to be inferred from routing.
+
+### `DPE_OAI_BASE_URL` — the same defect, third instance
+
+Confirmed. It defaults to `https://repository.dasch.swiss/dpe/oai`
+(`config.rs`, and `DEFAULT_BASE_URL` in `dpe-api-oai`), and
+`cloud-run-dpe-pull-request.yml` never set it. So a preview's OAI responses
+advertised production as their `baseURL` and echoed it in every `<request>`: a
+harvester reading the preview was told to harvest production. One line in the
+same `--update-env-vars`, fixed here.
+
+### The unknown-shortcode mismatch with the brief
+
+The brief said an unknown shortcode should "behave like the landing page's
+unknown-shortcode case". The landing page answers **200** with a "Project Not
+Found" body, which cannot be mirrored here: there is no page to render, and no
+canonical URL to redirect to — echoing the raw path segment into `Location`
+would break `metadata.rs`'s rule that no identifier comes from the request path.
+The resolver answers 404. Recorded as a deliberate divergence, not an oversight.
+
+### Where the ARK host is *not* applied
+
+- **The sidebar permalink.** `project_sidebar/mod.rs` renders `proj.pid` from
+  `dpe-core`'s view model, not from the graph, so a preview still shows the
+  recorded ARK to a human reader. Not a machine-readable representation, not
+  read by either assessor, and arguably correct: a person looking at a preview
+  is being shown the project's real PID. Left alone and recorded in the plan's
+  out-of-scope note.
+- **`ProjectGraph.website` / `secondary_website` and `how_to_cite`.** Recorded
+  data, per the 083D finding above.
+
+### Two globals, and why
+
+`dpe-server` threads the value through `AppState`, which is what ADR-0005 asks
+of the Access Area's own URLs. `dpe-api-oai` reads it from a `OnceLock` beside
+the one it already keeps for its base URL, because nothing but the request
+reaches its handlers and `main` sets both from the same `DpeConfig` field. That
+adds to pre-existing debt rather than introducing a new pattern, and the
+`AppState` doc comment now covers both second copies.
+
+The OAI global takes **no environment-variable fallback**, unlike `base_url()`.
+An unset value has to mean "the recorded host" and nothing else, or the corpus
+test proving the unset case could be steered by the environment it runs in.
+
+### Verification
+
+- `cargo check --workspace --all-targets`: clean.
+- Full check gate at every commit and at the tip: `verify-checksums`,
+  `check-shared-paths`, `check-datastar-delimiters`, the maudfmt no-op check,
+  `cargo +nightly fmt --check --all`, `cargo clippy --all-features -D warnings`,
+  `cargo machete`. All pass.
+- `just test` narrowed to `shared-fair` (186), `shared-metadata` (73),
+  `dpe-api-oai` (109) and `dpe-server` (107 + 103): all pass.
+- **OAI byte identity: `compared 102158 entries`, pass.** The hash test was
+  recovered from `4cdf06d8^` into `metadata/hash_baseline.rs`, adapted to the
+  two new parameters (both `ArkHost::Recorded`), run against the existing
+  `.claude/tmp/oai-baseline-hashes.txt` — regenerated from `origin/main` at
+  `78c4a7c7` last round and **not** regenerated here — and removed again, with
+  its `mod` line.
+- `mdbook build docs`: succeeds.
+- `just --check --fmt --unstable` still fails identically on `origin/main` under
+  local `just` 1.49.0, as Round 16 recorded. Not touched. Because it is the
+  first line of `just check`'s body, the rest of the recipe is unreachable
+  locally; the gate was run as a script replicating `check` without that one
+  line, which is why the list above is spelled out.
+
+### Still open
+
+- **No score is claimed.** Nothing has been re-assessed since this change. Two
+  measurements would settle `F1-02D`: a preview carrying this work, and a
+  `dasch.swiss` host (assessing DEV after merge, H1).
+- Everything Round 11 listed as still open remains so.

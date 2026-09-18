@@ -63,6 +63,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
 | `DPE_OAI_BASE_URL` | No | `https://repository.dasch.swiss/dpe/oai` | Public base URL emitted as the OAI-PMH `baseURL` and echoed in `<request>` elements. Set per environment to match the public endpoint (e.g. `https://api.dev.dasch.swiss/dpe/oai` on DEV, `http://localhost:4000/dpe/oai` locally). See [OAI-PMH](./oai-pmh.md). |
 | `DPE_PUBLIC_BASE_URL` | No | `https://repository.dasch.swiss` | Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the `Link` header. Origin only: scheme `http` or `https`, no path, query or trailing slash. A bad value fails startup. Independent of `DPE_OAI_BASE_URL` (see the note below). |
+| `DPE_ARK_RESOLVER_BASE_URL` | No | *(none)* | Origin every emitted ARK is rewritten to carry, and the origin the deployment's own `/ark:/{naan}/{shoulder}/{shortcode}` resolver answers on. **Leave unset everywhere but a PR preview.** Unset, the ARKs are the ones the corpus records, resolving through `ark.dasch.swiss`, and no resolver route is mounted. Origin only, validated exactly as `DPE_PUBLIC_BASE_URL` is. See the note below. |
 | `DPE_OAI_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit, seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. Governs `/dpe/oai` and both machine-readable representation routes, which share one bucket. See [OAI-PMH](./oai-pmh.md) and [Machine-Readable Metadata](./machine-readable-metadata.md). |
 | `DPE_OAI_RATE_LIMIT_BURST` | No | `60` | Per-IP burst allowance on the same three routes: back-to-back requests before the sustained rate applies. |
 | `DPE_OAI_PAGE_SIZE` | No | `100` | Items per page in `ListRecords` / `ListIdentifiers` responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See [OAI-PMH](./oai-pmh.md). |
@@ -78,7 +79,15 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 >
 > **Assessing a local run from a container.** A FAIR assessor running in Docker resolves the URLs the page emits, so `DPE_PUBLIC_BASE_URL` must name a host the container can reach — `http://host.docker.internal:4000`, not `http://localhost:4000`, which inside the container is the container itself.
 >
-> **PR previews set it themselves.** `cloud-run-dpe-pull-request.yml` runs `gcloud run services update` right after the deploy, setting `DPE_PUBLIC_BASE_URL` to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Without it a preview would emit production URLs, and every typed link and the `303` target would point at a deployment that does not carry the branch's code.
+> **PR previews set all three themselves.** `cloud-run-dpe-pull-request.yml` runs `gcloud run services update` right after the deploy, setting `DPE_PUBLIC_BASE_URL`, `DPE_OAI_BASE_URL` and `DPE_ARK_RESOLVER_BASE_URL` to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the `303` target, the OAI `baseURL`, and every emitted ARK respectively.
+>
+> **Why a preview rewrites its ARKs.** A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. `DPE_ARK_RESOLVER_BASE_URL` makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.
+>
+> Only the host is rewritten. The ARK path — `ark:/72163/1/{shortcode}` — is the identifier and passes through untouched, and an ARK the corpus records as project *data* rather than as an identifier (project 083D records its own ARK as the project's website) is reported as it stands.
+>
+> The resolver answers project ARKs only, with a `302` to the landing page, mirroring `ark.dasch.swiss`. A record ARK gets a `404`: DPE serves no record landing page, and `ark.dasch.swiss` resolves a record ARK to the VRE rather than to DPE.
+>
+> **Do not set it on DEV, STAGE or PROD.** Those deployments *are* what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside `ark.dasch.swiss`.
 
 > **What the rate limit does not bound.** It bounds the request *rate*, not the
 > per-request size, and the uncapped JSON-LD representation is large: project

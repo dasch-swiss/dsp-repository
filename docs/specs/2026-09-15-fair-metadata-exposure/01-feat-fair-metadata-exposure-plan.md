@@ -978,11 +978,59 @@ question. The metadata reports the disagreement faithfully until someone decides
 reads `schema:distribution`; *DataOpenProtocol* and *DataAuthentication* should
 stay indeterminate. It is a hosted service with no CLI (human action H2).
 
+### Phase 8 — decouple preview deployments from production ARKs
+
+**Why.** A preview deployment publishes **production** ARKs. `Pid`'s host comes
+from each record's `pid` in the corpus, so every emitted ARK said
+`https://ark.dasch.swiss/…` regardless of where DPE was running. A FAIR assessor
+pointed at a preview therefore harvested an identifier that sent it to
+production — a different deployment running different code — so what it assessed
+and what it dereferenced were two different things.
+
+That is the same defect Phase 5 fixed one layer down, where `DPE_PUBLIC_BASE_URL`
+defaulted to production and previews advertised 404ing production URLs. It is
+also the entire cause of the `F1-02D` residual, which was recorded as
+institutional ("the assessment ran against a non-production host"). **It was
+not. It was a defect in our preview setup**, and this phase fixes it.
+
+**Starts from `bf360357`.** New commits on top; nothing at or below it is
+amended.
+
+- [x] `ArkHost` in `shared-fair`: `Recorded` (the default) or `Substituted(host)`. Applied once, in `ProjectGraph::build` and `RecordGraph::build` through `ResolveContext`, so `graph.ark`, `graph.project_ark` and every `PartRef` already carry the right host and every writer inherits it (ADR-0005, one resolved graph per object). Not in the writers, and not on `Pid` in `shared-metadata`, which must not know about DPE configuration
+- [x] Substitute the **host only**. The ARK path `ark:/72163/1/{shortcode}[/{record_id}]` is the identifier and passes through untouched; a value carrying no ARK path — a placeholder `pid` — is left alone
+- [x] Substitute `ProjectGraph.pid` alongside `ark`. It feeds the `sameAs` that shows a recorded PID differing from the resolved one, and F-UJI folds `schema:sameAs` into its object-identifier pool (`metadata_collector_rdf.py:530`), so leaving the recorded host there would have put the production ARK straight back into what an assessor harvests — silently defeating the whole change
+- [x] Do **not** substitute an ARK the corpus records as project *data*. Project 083D records its own ARK as the project's `url`, emitted as the research project's website; rewriting a recorded website would invent a fact (ADR-0005). The corpus test states the boundary rather than sweeping it up
+- [x] `DPE_ARK_RESOLVER_BASE_URL`, optional, defaulting to unset. Validated at startup by the same rule as `DPE_PUBLIC_BASE_URL`: `validate_public_base_url` becomes `validate_origin(variable, value)` and each caller names its own variable, so the operator is told which one refused to start. Threaded through `AppState` in `dpe-server`; read from a process-global in `dpe-api-oai` beside the one it already keeps for its base URL, both set by `main` from the same field
+- [x] A `GET /ark:/72163/1/{shortcode}` route redirecting `302` to the landing page — what `ark.dasch.swiss` answers, verified against it. **Mounted only when the variable is set**, so production, DEV and STAGE are untouched and no second ARK authority exists beside `ark.dasch.swiss`. NAAN and shoulder are literal, not captured; the target is the resolved project's shortcode, never the path segment; an unknown shortcode is a 404
+- [x] **Record ARKs are deliberately not resolved** — a 404, decided on evidence rather than taste. DPE serves no record landing page; `ark.dasch.swiss` resolves a record ARK to the VRE (`app.dasch.swiss/resource/…`) and not to DPE at all; and nothing a project-page assessment dereferences reads one — F-UJI collects `hasPart` into `related_resources` and fetches a part only when it is typed `MediaObject`, which ours are not (`metadata_collector_rdf.py:887`). A redirect to the parent would answer for a different entity
+- [x] `DPE_OAI_BASE_URL` has the same defect and is fixed here. It already existed, already defaulted to production, and the preview workflow never set it, so a preview's OAI responses advertised production as their `baseURL` and echoed it in every `<request>`
+- [x] The preview workflow sets all three in the `gcloud run services update` step that already sets `DPE_PUBLIC_BASE_URL`
+- [x] **Unset, nothing changes.** A corpus-wide, byte-level assertion that every ARK every representation emits is exactly the one the corpus records. This is what makes the change safe and is the strongest test in the set
+- [x] OAI byte identity with the variable unset, against `.claude/tmp/oai-baseline-hashes.txt`: recover the hash test from `4cdf06d8^`, confirm `compared 102158 entries`, remove it again. The baseline is not regenerated
+- [x] Set, the host is substituted and the path is not, across every representation, with the ARK paths compared against the unset run in order
+- [x] Startup rejects a malformed value, over the same cases the `DPE_PUBLIC_BASE_URL` tests use, plus a jailed load of a valid one
+- [x] Route tests: a project ARK redirects to the landing page, the target is the canonical shortcode, an unknown shortcode is 404, a record ARK is 404, and the route is absent when the variable is unset
+- [x] `operations.md`: the variable, that it is unset everywhere but PR previews, and why. `machine-readable-metadata.md`: reclassify `F1-02D` from institutional to fixed defect, **without claiming it now passes** — nothing has been re-assessed — keeping the ledger arithmetic closing for the runs it describes. ADR-0005 gains a dated note on the resolver clause and on where the "nothing is invented" boundary falls
+- [ ] Run the standing gate per commit and at the tip
+- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set
+
+**A rejected alternative, recorded so it is not re-proposed.** Serving previews
+from a `*.dasch.swiss` host would make `F1-02D` pass by satisfying F-UJI's domain
+comparison while the assessor was *still* sent to production. That moves the
+metric without fixing anything. Rejected.
+
+**Out of scope.** The human-visible permalink in the project sidebar reads
+`proj.pid` from `dpe-core`'s view model, not the graph, and still shows the
+recorded ARK on a preview. It is not a machine-readable representation and
+neither assessor reads it; a person looking at a preview seeing the project's
+real PID is arguably right. Left as it is, and noted rather than silently
+skipped.
+
 ## Human Actions
 
 | Id | Action | Who | When | Why not the agent |
 |----|--------|-----|------|-------------------|
-| H1 | Set `DPE_PUBLIC_BASE_URL` per environment in ops-deploy (DEV, TEST, STAGE, PROD) and deploy the merged DPE to DEV | Infrastructure (Lukas Stöckli or Samuel Börlin) | after the PR merges, before the post-merge verification | Deployment to shared infrastructure and a change in another repository |
+| H1 | Set `DPE_PUBLIC_BASE_URL` per environment in ops-deploy (DEV, TEST, STAGE, PROD) and deploy the merged DPE to DEV. **Do not set `DPE_ARK_RESOLVER_BASE_URL` on any of them** — it is for PR previews only, and the workflow sets it there itself | Infrastructure (Lukas Stöckli or Samuel Börlin) | after the PR merges, before the post-merge verification | Deployment to shared infrastructure and a change in another repository |
 | H2 | Run FAIR Champion (`https://tools.ostrails.eu/champion/`) against the DEV landing page for project 0862 and share the result set | Ivan Subotic | after H1, before the post-merge verification | Hosted external service with no CLI |
 | H3 | Decide whether DaSCH publishes a metadata persistence policy URL; if yes, provide it so a `persistencePolicy` link can be added | Co-Directors | anytime; not blocking | Organisational decision |
 

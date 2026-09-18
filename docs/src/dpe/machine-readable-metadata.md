@@ -256,13 +256,18 @@ not link. The converse does not hold: the two OAI-record `describedby` links are
 never candidates, because a harvester is pointed at them rather than redirected
 to them.
 
-## Two base URLs
+## Three base URLs
 
 `DPE_PUBLIC_BASE_URL` gives the site's own URLs — the landing page and the
 catalogue. `DPE_OAI_BASE_URL` gives the `describedby` targets, because that is
 the URL the OAI endpoint advertises for itself. Neither is derived from the
-other: on DEV the OAI endpoint answers on a different host. See
-[Operations](./operations.md).
+other: on DEV the OAI endpoint answers on a different host.
+
+`DPE_ARK_RESOLVER_BASE_URL` is the odd one out and is **unset everywhere but a
+PR preview**. Set, it rewrites the host of every emitted ARK to the deployment's
+own and mounts the `/ark:/` resolver that answers it, so a deployment which is
+not what the recorded ARK resolves to does not publish an identifier that sends
+an assessor somewhere else. See [Operations](./operations.md).
 
 ## How it is kept safe
 
@@ -316,6 +321,14 @@ Both environment variables are needed. `DPE_PUBLIC_BASE_URL` makes the page's
 own links point at a host the container can resolve, and `DPE_SITE_ADDR` binds
 the server on all interfaces — the default `127.0.0.1` is not reachable from a
 container under a VM-backed Docker runtime such as colima.
+
+A local run has the same identifier problem a preview has: the page publishes
+the recorded ARK, which resolves to production, while the assessment runs
+against `host.docker.internal`. That is what fails `F1-02D` in every local run
+recorded below. Adding `DPE_ARK_RESOLVER_BASE_URL=http://host.docker.internal:4000`
+makes the local run self-consistent and is the way to measure `F1-02D`. Every
+run in the table predates the variable and was made without it, so a run that
+sets it is not comparable to them metric for metric and should say so.
 
 Notes on the recipe:
 
@@ -426,13 +439,18 @@ described the repository. Each column is the local run of 2026-09-18 after
 `distribution`, and each adds up to the 24 − score for that project. Sub-test
 attributions come from `test_debug` in those same runs.
 
+One row is no longer a residual in the sense the others are. `F1-02D` was a
+defect in our own deployment setup, it is fixed, and nothing has been
+re-measured since — so it still costs the point in every column below, and the
+arithmetic still closes on the runs those columns describe.
+
 | Cause | Metrics | 0862 (16/24) | 0868 (21/24) | 0803 (18/24) |
 |-------|---------|-------------:|-------------:|-------------:|
 | No file to point at | `F3-01M`, `A1-03D`, `R1-01MD-2`, `R1-01MD-3`, `R1.3-02D` | 5 | — | — |
 | The files carry no MIME type | `R1-01MD-2`, `R1-01MD-3`, `R1.3-02D` | — | — | 3 |
 | No `variableMeasured` | `R1-01MD-4` | 1 | 1 | 1 |
 | ARKs are not registered with DataCite | `F4-01M-2` | 1 | 1 | 1 |
-| The assessment ran against a non-production host | `F1-02D` | 1 | 1 | 1 |
+| The deployment published ARKs it does not resolve | `F1-02D` | 1 | 1 | 1 |
 | **Total** | | **8** | **3** | **6** |
 
 **No file to point at — five points, and only where there is nothing to point
@@ -491,20 +509,40 @@ data pointer will ever earn it.
 metadata is offered through a harvesting endpoint. `F4-01M-2` asks for
 registration in a major research data registry, and the ARKs are DaSCH's own.
 
-**The assessment ran against a non-production host — one point.** `F1-02D` is
-about a persistent identifier, and F-UJI does find one. It harvested the ARK
-from the metadata, confirmed the syntax as `ark` and resolved it successfully
-(`resolvable_status: true`). It then discarded it: `Landing page domain resolved
-from PID found in metadata does not match with input URL domain`, followed by
-`PID syntax is OK but the PID seems to resolve to a different entity, will not
-use this PID for content negotiation`. The PID was found, was well-formed and
-did resolve; it was rejected because the domain it resolves to is not the domain
-the assessment ran against. Every 2026-09-18 run targeted a non-`dasch.swiss`
-host, and the 2026-09-15 baseline that did target the ARK predates this work,
-when the page carried no metadata for a PID to be harvested from. **No run
-against a build carrying this work has been made from a host under
-`dasch.swiss`, so `F1-02D`'s status there is unknown.** Assessing DEV is the
-post-merge step that would measure it.
+**The deployment published ARKs it does not resolve — one point. A defect, now
+fixed, not yet re-measured.** `F1-02D` is about a persistent identifier, and
+F-UJI does find one. It harvested the ARK from the metadata, confirmed the
+syntax as `ark` and resolved it successfully (`resolvable_status: true`). It
+then discarded it: `Landing page domain resolved from PID found in metadata does
+not match with input URL domain -: run.app <> dasch.swiss`, followed by `PID
+syntax is OK but the PID seems to resolve to a different entity, will not use
+this PID for content negotiation`.
+
+This was recorded as an artefact of assessing a non-production host. That
+reading was wrong. Every deployment emitted the ARK the corpus records
+regardless of where it was running, so a preview published an identifier that
+resolves to *production* — a different deployment, running different code. F-UJI
+was right to discard it: what it assessed and what the identifier pointed at
+were two different things. That is the same defect
+[`DPE_PUBLIC_BASE_URL`](./operations.md#environment-variables) fixed one layer
+down, left in place one layer up.
+
+`DPE_ARK_RESOLVER_BASE_URL` fixes it. A preview rewrites the host of every
+emitted ARK to its own and serves the `/ark:/` resolver that answers it, so the
+identifier, the page and the assessed deployment are one thing. Production, DEV
+and STAGE leave it unset and are unchanged.
+
+**No claim is made that `F1-02D` now passes.** Nothing has been re-assessed
+since the fix, and the columns above are the runs that predate it. Two things
+are still unknown and are measured, not argued: whether F-UJI's domain
+comparison is satisfied by a preview that resolves its own ARKs, and what
+`F1-02D` does against a `dasch.swiss` host, which assessing DEV after merge
+would answer.
+
+A rejected alternative, recorded so it is not re-proposed: serving previews from
+a `*.dasch.swiss` host would also satisfy F-UJI's domain comparison, and the
+assessor would *still* be sent to production. That moves the metric without
+fixing anything, which is gaming it.
 
 Two further residuals sit outside this arithmetic, because no F-UJI metric
 carries them:

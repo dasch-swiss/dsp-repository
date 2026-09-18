@@ -32,6 +32,29 @@ pub struct ProjectAgent {
     pub contributor_type: Vec<String>,
 }
 
+/// The `nameIdentifier` scheme that identifies an agent well enough to be its
+/// IRI. A GND string or a bare name does not.
+const ORCID: &str = "ORCID";
+
+impl ProjectAgent {
+    /// The agent's ORCID, when it has a usable one.
+    ///
+    /// One rule, one place. Both the JSON-LD `@id` and Signposting's `author`
+    /// link ask "does this agent have an IRI of its own", and they used to ask
+    /// it separately — with two `const ORCID` declarations and two answers. The
+    /// JSON-LD side filtered placeholders and took the first match; the link
+    /// set did neither, so a placeholder ORCID became an `author` link the
+    /// graph did not back, and an agent with two ORCIDs got two links and one
+    /// `@id`. Two representations of one graph disagreeing is what ADR-0005's
+    /// single-graph rule exists to prevent.
+    pub fn orcid(&self) -> Option<&str> {
+        self.name_identifiers
+            .iter()
+            .find(|id| id.scheme == ORCID)
+            .and_then(|id| crate::helpers::real(&id.identifier))
+    }
+}
+
 /// One `legalInfo` element, in file order.
 ///
 /// Identifier and URI stay verbatim because the two writers test them

@@ -14,10 +14,6 @@ use crate::project_graph::ProjectGraph;
 const SCHEMA_ORG_DATASET: &str = "https://schema.org/Dataset";
 const SCHEMA_ORG_ABOUT_PAGE: &str = "https://schema.org/AboutPage";
 
-/// `nameIdentifier` scheme that `rel="author"` accepts. Signposting wants an
-/// author *identifier*, so a GND or a bare name is not one.
-const ORCID: &str = "ORCID";
-
 /// Where a consuming service publishes an object.
 ///
 /// Every URL a writer emits arrives through this type. `shared-fair` holds no
@@ -173,7 +169,7 @@ impl<'a> IntoIterator for &'a LinkSet {
 /// `describedby` per description of the object, at most one `license` (so a
 /// project licensed several ways gets none, because the profile has no way to
 /// say "these apply together" — the JSON-LD still lists them all), and one
-/// `author` per creator identifier.
+/// `author` per creator that has an ORCID.
 pub fn project_to_link_set(graph: &ProjectGraph, urls: &UrlLayout) -> LinkSet {
     let mut links = vec![
         Link::untyped("cite-as", &graph.ark),
@@ -189,15 +185,14 @@ pub fn project_to_link_set(graph: &ProjectGraph, urls: &UrlLayout) -> LinkSet {
         links.push(Link::untyped("license", *only));
     }
 
-    // The same creators the JSON-LD names, so the two cannot disagree about
-    // who is credited. The `DaSCH` fallback carries no identifier and so adds
-    // no link, which is the intent: it stands in for an attribution nobody
-    // made.
+    // The same creators the JSON-LD names, through the same rule — one link per
+    // agent that has an ORCID, from `ProjectAgent::orcid`, so the two cannot
+    // disagree about who is credited or about which identifier stands for them.
+    // The `DaSCH` fallback carries no identifier and so adds no link, which is
+    // the intent: it stands in for an attribution nobody made.
     for agent in graph.creators_with_fallback().iter() {
-        for identifier in &agent.name_identifiers {
-            if identifier.scheme == ORCID {
-                links.push(Link::untyped("author", &identifier.identifier));
-            }
+        if let Some(orcid) = agent.orcid() {
+            links.push(Link::untyped("author", orcid));
         }
     }
 
@@ -311,6 +306,42 @@ mod tests {
             rels(&project_to_link_set(&build(&raw, &[]), &layout()), "author"),
             vec!["https://orcid.org/0000-0002-1825-0097"]
         );
+    }
+
+    /// The link set and the JSON-LD read one rule, so a placeholder ORCID
+    /// identifies the agent in neither. They used to disagree: the JSON-LD
+    /// filtered placeholders and the link set did not, so this exact agent got
+    /// an `author` link pointing at `MISSING` and no `@id` to match it.
+    #[test]
+    fn a_placeholder_orcid_identifies_the_agent_in_neither_representation() {
+        let mut graph = build(
+            &ProjectRaw {
+                attributions: vec![Attribution {
+                    contributor: "person-002".to_string(),
+                    contributor_type: vec!["Project Leader".to_string()],
+                }],
+                ..project()
+            },
+            &[],
+        );
+        for agent in &mut graph.creators {
+            for identifier in &mut agent.name_identifiers {
+                identifier.identifier = "MISSING".to_string();
+            }
+        }
+
+        assert!(rels(&project_to_link_set(&graph, &layout()), "author").is_empty());
+
+        let urls = UrlLayout {
+            landing: "https://example.test/dpe/projects/0001".to_string(),
+            catalog: "https://example.test/dpe/projects".to_string(),
+            representations: Vec::new(),
+            oai_records: Vec::new(),
+        };
+        let doc = crate::project_to_schema_org(&graph, &urls, crate::SchemaOrgOptions::default());
+        assert!(doc["creator"].get("@id").is_none(), "{doc}");
+        // Only the publisher is left to attribute to, so the list collapses to one.
+        assert_eq!(doc["prov:wasAttributedTo"], serde_json::json!({ "@id": "https://dasch.swiss" }));
     }
 
     /// The other half of the page's `describedby`: a representation says which

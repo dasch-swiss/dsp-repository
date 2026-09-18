@@ -22,11 +22,6 @@ const PUBLISHER_URL: &str = "https://dasch.swiss";
 /// namespace in the graph.
 const PROV_NAMESPACE: &str = "http://www.w3.org/ns/prov#";
 
-/// The `nameIdentifier` scheme that becomes an agent's `@id`. The same rule
-/// Signposting's `author` link applies: an ORCID identifies the agent, a GND
-/// string or a bare name does not.
-const ORCID: &str = "ORCID";
-
 /// How much of the graph this rendering carries.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SchemaOrgOptions {
@@ -221,20 +216,11 @@ fn conditions_of_access(graph: &ProjectGraph) -> String {
 fn attributed_to(graph: &ProjectGraph) -> Vec<Value> {
     let mut nodes = vec![json!({ "@id": PUBLISHER_URL })];
     for agent in graph.creators_with_fallback().iter() {
-        if let Some(id) = agent_id(agent) {
+        if let Some(id) = agent.orcid() {
             nodes.push(json!({ "@id": id }));
         }
     }
     nodes
-}
-
-/// The agent's own IRI, when it has one.
-fn agent_id(agent: &ProjectAgent) -> Option<&str> {
-    agent
-        .name_identifiers
-        .iter()
-        .find(|id| id.scheme == ORCID)
-        .and_then(|id| real(&id.identifier))
 }
 
 fn agent_node(agent: &ProjectAgent) -> Value {
@@ -242,7 +228,7 @@ fn agent_node(agent: &ProjectAgent) -> Value {
     // An IRI for the agent, so `prov:wasAttributedTo` can point at this node
     // rather than describe a second one. Absent for an agent with no ORCID,
     // which stays a blank node, as it was.
-    if let Some(id) = agent_id(agent) {
+    if let Some(id) = agent.orcid() {
         node.insert("@id".into(), json!(id));
     }
     node.insert(

@@ -337,6 +337,14 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
     assert_eq!(dublin_core.creators, attributed, "{file}: dc:creator");
     assert_eq!(values(&meta, "DC.creator"), attributed, "{file}: DC.creator");
 
+    // Two lists, because two questions. `orcids` is every ORCID the corpus
+    // records, which is what the JSON-LD `identifier` array reports verbatim —
+    // 0868 has an agent carrying the same ORCID twice, and an agent node says
+    // so. `identifying_orcids` is the one that *identifies* each agent, at most
+    // one per agent and never a placeholder, which is what an IRI has to be.
+    // The Signposting `author` link and the JSON-LD `@id` both answer that
+    // second question and must answer it identically; they once did not, and
+    // 0868's duplicate is the case that showed it.
     let orcids: Vec<String> = graph
         .creators_with_fallback()
         .iter()
@@ -344,7 +352,20 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
         .filter(|id| id.scheme == "ORCID")
         .map(|id| id.identifier.clone())
         .collect();
-    assert_eq!(hrefs(&links, "author"), orcids, "{file}: author links");
+    let identifying_orcids: Vec<String> = graph
+        .creators_with_fallback()
+        .iter()
+        .filter_map(|agent| agent.orcid().map(str::to_string))
+        .collect();
+    assert_eq!(hrefs(&links, "author"), identifying_orcids, "{file}: author links");
+    assert_eq!(
+        json_ld_values(&json_ld, "creator")
+            .into_iter()
+            .filter_map(|node| node.get("@id").and_then(|id| id.as_str()).map(str::to_string))
+            .collect::<Vec<_>>(),
+        identifying_orcids,
+        "{file}: JSON-LD creator @id"
+    );
     assert_eq!(
         json_ld_identifiers(&json_ld, "creator", "ORCID"),
         orcids,
@@ -432,7 +453,11 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
     assert!(json_ld.get("conditionsOfAccess").is_some(), "{file}: conditionsOfAccess");
     assert!(json_ld.get("isAccessibleForFree").is_some(), "{file}: isAccessibleForFree");
 
-    // Nothing is invented for a score: there is no project-level download.
+    // Nothing is invented for a score. This graph is built with no records
+    // (see the caller), so there is no file to describe and `distribution`
+    // must be absent — a key here would mean the writer had fabricated one
+    // rather than read it off a part. Which files a project *with* records
+    // describes is asserted in `every_committed_project_embeds_a_small_json_ld_block`.
     assert!(json_ld.get("distribution").is_none(), "{file}: distribution invented");
     // And no placeholder reaches a landing page.
     let rendered = script_safe_json(&json_ld);

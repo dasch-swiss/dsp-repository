@@ -39,12 +39,21 @@ pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: Schem
     root.insert("@context".into(), json!("https://schema.org"));
     root.insert("@type".into(), json!("Dataset"));
     root.insert("@id".into(), json!(graph.ark));
-    // A `PropertyValue`, which is the shape F-UJI reads the object identifier
-    // out of (`identifier.value` in its schema.org mapping), and which says
-    // which scheme the string belongs to.
+    // Two entries, always, so this is written as an array rather than through
+    // `insert_list`: the cardinality is fixed and does not depend on the graph.
+    //
+    // The `PropertyValue` is the shape F-UJI reads the object identifier out of
+    // (`identifier.value` in its schema.org mapping), and it says which scheme
+    // the ARK belongs to. The landing page URL sits beside it because FAIR
+    // Champion's MetadataIdentifierFound reads `schema:identifier` alone — it
+    // does not consider `url`, which already carries the same URL — so an
+    // assessor pointed at the page has nothing to match without it.
     root.insert(
         "identifier".into(),
-        json!({ "@type": "PropertyValue", "propertyID": "ARK", "value": graph.ark }),
+        json!([
+            { "@type": "PropertyValue", "propertyID": "ARK", "value": graph.ark },
+            urls.landing,
+        ]),
     );
 
     let (title, alternatives) = graph.titles();
@@ -390,9 +399,11 @@ mod tests {
         let doc = render(&project());
         assert_eq!(doc["@type"], "Dataset");
         assert_eq!(doc["@id"], "https://ark.dasch.swiss/ark:/72163/1/0001");
-        assert_eq!(doc["identifier"]["@type"], "PropertyValue");
-        assert_eq!(doc["identifier"]["propertyID"], "ARK");
-        assert_eq!(doc["identifier"]["value"], "https://ark.dasch.swiss/ark:/72163/1/0001");
+        assert_eq!(doc["identifier"][0]["@type"], "PropertyValue");
+        assert_eq!(doc["identifier"][0]["propertyID"], "ARK");
+        assert_eq!(doc["identifier"][0]["value"], "https://ark.dasch.swiss/ark:/72163/1/0001");
+        assert_eq!(doc["identifier"][1], "https://example.test/dpe/projects/0001");
+        assert_eq!(doc["identifier"].as_array().map(Vec::len), Some(2));
         assert_eq!(doc["url"], "https://example.test/dpe/projects/0001");
         assert_eq!(doc["license"], json!({ "@id": "https://creativecommons.org/licenses/by/4.0/" }));
     }

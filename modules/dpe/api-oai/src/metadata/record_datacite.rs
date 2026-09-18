@@ -155,7 +155,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         .collect();
 
     DataCiteRecord {
-        identifier: record.pid.ark_path(),
+        identifier: record.pid.as_url(),
         identifier_type: "ARK".to_string(),
         creators,
         titles,
@@ -234,9 +234,9 @@ mod tests {
     }
 
     #[test]
-    fn identifier_is_ark_path() {
+    fn identifier_is_resolvable_ark_url() {
         let dc = record_to_datacite(&test_record());
-        assert_eq!(dc.identifier, "ark:/72163/1/0001/record-0001");
+        assert_eq!(dc.identifier, "https://ark.dasch.swiss/ark:/72163/1/0001/record-0001");
         assert_eq!(dc.identifier_type, "ARK");
     }
 

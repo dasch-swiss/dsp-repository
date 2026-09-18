@@ -17,4 +17,11 @@ serde_json.workspace = true
 tracing = { workspace = true }
 
 [dev-dependencies]
+# Shape-checks the DataCite JSON writer's output against DataCite's own schema,
+# from the corpus-wide test. A dev-dependency here rather than of `shared-fair`:
+# the schema check reads the committed corpus, which lives in this module's
+# neighbour, and `shared-fair`'s dependency list is pinned to `shared-metadata`,
+# `serde` and `serde_json`. `default-features = false` drops `reqwest` and a TLS
+# stack — the schema is self-contained, so nothing is ever resolved over the net.
+jsonschema = { version = "0.56.0", default-features = false }
 tempfile = "3"

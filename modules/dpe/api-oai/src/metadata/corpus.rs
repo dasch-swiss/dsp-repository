@@ -7,9 +7,9 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use shared_fair::{
-    coar_access_right, project_to_datacite, project_to_dublin_core, project_to_dublin_core_meta, project_to_link_set,
-    project_to_schema_org, record_to_datacite, record_to_dublin_core, script_safe_json, LinkSet, ProjectGraph,
-    RecordGraph, ResolveContext, SchemaOrgOptions, UrlLayout,
+    coar_access_right, project_to_datacite, project_to_datacite_json, project_to_dublin_core,
+    project_to_dublin_core_meta, project_to_link_set, project_to_schema_org, record_to_datacite, record_to_dublin_core,
+    script_safe_json, LinkSet, ProjectGraph, RecordGraph, ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 // `coverage_name` is the same lookup-key derivation `ProjectGraph::build` uses
 // (Reference → `text`; Text map → `multilingual_value`), shared via
@@ -172,6 +172,7 @@ fn every_representation_of_a_committed_object_agrees_with_the_others() {
         "committed person corpus should load and be non-empty"
     );
     let ctx = ResolveContext::new(&lookup, &periods, &enriched);
+    let datacite_schema = datacite_json_validator();
 
     let mut projects = 0usize;
     for path in sorted_json_files(&data_dir.join("projects")) {
@@ -180,7 +181,7 @@ fn every_representation_of_a_committed_object_agrees_with_the_others() {
         // No records: `parts` feeds only `hasPart`, which the size check below
         // covers with the largest dump there is.
         let graph = ProjectGraph::build(&raw, &ctx, std::iter::empty());
-        assert_project_representations_agree(&graph, &path);
+        assert_project_representations_agree(&graph, &path, &datacite_schema);
         projects += 1;
     }
     assert!(projects > 0, "committed project corpus should not be empty");
@@ -209,18 +210,64 @@ fn test_layout() -> UrlLayout {
     }
 }
 
-fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path) {
+/// DataCite's own JSON schema, compiled once for the whole corpus run.
+///
+/// The copy is `shared/fair/testdata/schemas/`, refreshed by the
+/// `download-schemas.sh` beside it, which also records why a kernel-4.3 schema
+/// checks 4.6 output and what it patches. Compiled with no remote resolution:
+/// every `$ref` in it is local.
+///
+/// Format checking is off. This is a check of the *shape* the writer produces,
+/// and `format` is an annotation in draft-07 — the crate validates it by
+/// default, which is stricter than the specification. One committed license URI
+/// carries a trailing space, and that is a defect in the corpus, not in the
+/// writer: the XML representation and the `Link` header carry it too.
+fn datacite_json_validator() -> jsonschema::Validator {
+    const SCHEMA: &str = include_str!("../../../../../shared/fair/testdata/schemas/datacite-4.3-schema.json");
+    let schema: serde_json::Value = serde_json::from_str(SCHEMA).expect("the DataCite JSON schema should parse");
+    jsonschema::options()
+        .should_validate_formats(false)
+        .build(&schema)
+        .expect("the DataCite JSON schema should compile")
+}
+
+fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datacite_schema: &jsonschema::Validator) {
     let file = path.display();
     let datacite = project_to_datacite(graph);
+    let datacite_json = project_to_datacite_json(&datacite);
     let dublin_core = project_to_dublin_core(graph);
     let meta = project_to_dublin_core_meta(graph);
     let json_ld = project_to_schema_org(graph, &test_layout(), SchemaOrgOptions { has_part_cap: Some(100) });
     let links = project_to_link_set(graph, &test_layout());
 
+    // --- the DataCite JSON representation is a DataCite document ---
+    // The one writer whose output a third party parses to a published schema
+    // rather than to our own reading of it. Every error, not the first: a
+    // rejected document usually breaks in more than one place, and one at a
+    // time would be as many runs as there are mistakes.
+    let violations: Vec<String> = datacite_schema
+        .iter_errors(&datacite_json)
+        .map(|error| format!("  {}: {error}", error.instance_path()))
+        .collect();
+    assert!(
+        violations.is_empty(),
+        "{file}: DataCite JSON does not validate:\n{}",
+        violations.join("\n")
+    );
+
     // --- the identifier ---
     assert_eq!(json_ld["@id"], graph.ark.as_str(), "{file}: JSON-LD @id");
     assert_eq!(json_ld["identifier"]["value"], graph.ark.as_str(), "{file}: JSON-LD identifier");
     assert_eq!(datacite.identifier, graph.ark, "{file}: DataCite identifier");
+    assert_eq!(
+        datacite_json["identifiers"][0]["identifier"],
+        graph.ark.as_str(),
+        "{file}: DataCite JSON identifier"
+    );
+    assert_eq!(
+        datacite_json["identifiers"][0]["identifierType"], "ARK",
+        "{file}: DataCite JSON identifierType"
+    );
     assert_eq!(dublin_core.identifiers, vec![graph.ark.clone()], "{file}: dc:identifier");
     assert_eq!(values(&meta, "DC.identifier"), vec![graph.ark.clone()], "{file}: DC.identifier");
     assert_eq!(
@@ -236,6 +283,10 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path) {
         .chain(graph.official_name.as_deref())
         .collect();
     assert_eq!(datacite.titles[0].title, title, "{file}: DataCite primary title");
+    assert_eq!(
+        datacite_json["titles"][0]["title"], title,
+        "{file}: DataCite JSON primary title"
+    );
     // Absent rather than a placeholder, which is the meta-tag writer's rule.
     match json_ld.get("name") {
         Some(name) => assert_eq!(name, &title.as_str(), "{file}: JSON-LD name"),
@@ -257,6 +308,14 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path) {
         "{file}: DataCite creators"
     );
     assert_eq!(json_ld_names(&json_ld, "creator"), credited, "{file}: JSON-LD creators");
+    // `json_ld_names` reads a `name` member off each entry, which is what a
+    // DataCite creator carries too — the helper is about the shape, not the
+    // vocabulary.
+    assert_eq!(
+        json_ld_names(&datacite_json, "creators"),
+        credited,
+        "{file}: DataCite JSON creators"
+    );
     // Dublin Core deliberately stops at the attributed creators.
     assert_eq!(dublin_core.creators, attributed, "{file}: dc:creator");
     assert_eq!(values(&meta, "DC.creator"), attributed, "{file}: DC.creator");
@@ -307,6 +366,18 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path) {
         ),
         licensed,
         "{file}: DataCite rights URIs"
+    );
+    assert_eq!(
+        distinct(
+            json_ld_values(&datacite_json, "rightsList")
+                .into_iter()
+                .filter_map(|rights| rights.get("rightsUri")?.as_str().map(str::to_string))
+                // The same filter the XML comparison above applies: the writer
+                // emits the record's empty `rightsURI` verbatim in both shapes.
+                .filter(|uri| !uri.is_empty() && !shared_metadata::is_placeholder(uri))
+        ),
+        licensed,
+        "{file}: DataCite JSON rights URIs"
     );
     // The profile allows at most one `license` link, so several means none.
     let expected_link = if licensed.len() == 1 {

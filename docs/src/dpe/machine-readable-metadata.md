@@ -38,6 +38,34 @@ them as RDF rather than as JSON:
 |----------|-------|-----|
 | `identifier` | always two entries: the ARK as a `PropertyValue` with `propertyID: "ARK"`, and the landing page URL as a plain string | F-UJI reads the object identifier from `identifier.value`, so the ARK keeps the `PropertyValue` form. FAIR Champion's *MetadataIdentifierFound* reads `schema:identifier` alone and does not consider `url`, so an assessor pointed at the page needs the page's own URL here too |
 | `license` | a node object, `{"@id": "<SPDX URI>"}`; one object for a single licence, an array for several, no key for none | schema.org's remote context does not coerce `license` to `@id`, so a bare string parses as an RDF literal. FAIR Champion's *LicenseStrong* wants a Resource |
+| `prov:wasAttributedTo` | references to agents the graph already names: DaSCH, and every credited creator with an ORCID | PROV-O is the W3C vocabulary for provenance, and `creator` and `publisher` already assert exactly these agents. See *Provenance* below |
+
+An agent node carries an `@id` when it has an IRI of its own — its ORCID, by the
+same rule Signposting's `author` link uses — so a statement about that agent
+points at the node rather than describing a second one. The publisher's `@id` is
+`https://dasch.swiss`. An agent without an ORCID stays a blank node.
+
+### Provenance
+
+The `@context` binds `prov:` to `http://www.w3.org/ns/prov#`, and the graph
+asserts `prov:wasAttributedTo` over DaSCH and the credited creators that have an
+ORCID.
+
+Nothing here is a new fact. `creator` and `publisher` already name those agents;
+PROV-O restates that relation in the vocabulary a consumer asking about
+provenance reads. That is the line ADR-0005's "nothing is invented for a score"
+draws: re-expressing a true statement in a second standard vocabulary is
+interoperability, and asserting a fact the corpus does not record would not be.
+
+Two things are deliberately not emitted:
+
+- **`prov:generatedAtTime`.** F-UJI's own mapping treats `publication_date` that
+  way, but what the corpus records is a publication *year*, not a generation
+  time, so the statement would be approximately true at best.
+- **Attribution to a creator with no ORCID.** There is no node to point at, and
+  inlining a copy would put a second, unidentified agent in the graph — the
+  opposite of what the statement means. Naming some agents does not deny the
+  others, so the shorter statement stays true.
 
 > schema.org's `producer` is the research project that made the data. It is not
 > the OAIS Producer of the Deposit Area, which is the depositing agent.
@@ -250,12 +278,14 @@ Scores for project 0862, the reference project.
 | 2026-09-18 | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
 | 2026-09-18 | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
 | 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after the `identifier` and `license` fixes | **14 of 24 again.** A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting `identifier` in an array did not break F-UJI's reading of the ARK — it does not, and `F1-01D` still passes |
+| 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after PROV-O | **16 of 24.** Two metrics moved and no others: `R1.2-01M` 1/2 → 2/2 (`Found use of dedicated provenance ontologies`) and `I2-01M` 0/1 → 1/1 (`Namespace matches found -: ['http://www.w3.org/ns/prov']`). One statement earns both — PROV is a provenance ontology *and* a vocabulary F-UJI's LOD registry lists |
 
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
 with, so the rows are comparable.
 
-Neither assessor has yet run against a deployment carrying the `identifier`,
-`license` and base-URL fixes. Nothing on this page claims a score for one.
+Every row above is a local or preview measurement. Neither assessor has yet run
+against a *deployment* carrying the PROV-O, `identifier`, `license` and base-URL
+changes, and nothing on this page claims a score for one.
 
 **Two representations of one project do not fight over its resource type.**
 F-UJI's JSON-LD mapping reads `object_type` from schema.org's `@type`
@@ -267,18 +297,16 @@ well.
 
 ### Known residuals
 
-Where the ten points F-UJI does not award go. The per-metric totals are the
-local run that scored 14 of 24; the sub-test detail is the preview run of the
-same day, whose `test_debug` output records which half of a metric failed and
-why. The two runs differ in one sub-test only, `I1-01M-2`, which the preview lost
-to its missing base URL and which is fixed above, so the sub-test evidence
-carries over to the ten points unchanged.
+Where the eight points F-UJI does not award go. The per-metric totals are the
+local run that scored 16 of 24; the sub-test detail is the preview run of
+2026-09-18, whose `test_debug` output records which half of a metric failed and
+why. That run differs from the current one in `I1-01M-2`, `I2-01M` and
+`R1.2-01M-2`, all three of which are fixed above; the sub-test evidence for the
+eight points below is unaffected by all three.
 
 | Cause | Where the points go | Points |
 |-------|---------------------|--------|
 | No project-level data pointer | F3-01M, A1-03D, R1-01MD sub-tests 2 to 4, R1.3-02D | 6 |
-| No formal provenance vocabulary | R1.2-01M-2 | 1 |
-| Vocabularies absent from F-UJI's LOD registry | I2-01M | 1 |
 | ARKs are not registered with DataCite | F4-01M-2 | 1 |
 | The assessment ran against a non-production host | F1-02D | 1 |
 
@@ -301,26 +329,6 @@ Naming a download that does not exist would earn the six points and state
 something untrue, which ADR-0005 rules out: nothing is invented for a score.
 Record landing pages describe objects that *do* have retrievable content, and
 they are the right assessment target for all six.
-
-**No formal provenance vocabulary — one point.** R1.2-01M-1 passes: F-UJI maps
-`publication_date` to `prov:generatedAtTime` and `publisher`, `creator` and
-`contributor` to `prov:wasAttributedTo`, so the facts are present. R1.2-01M-2
-asks for provenance expressed in a formal provenance ontology and reports
-`Formal provenance metadata is unavailable`. Emitting PROV-O terms is new scope
-for a later plan, not something declined here.
-
-**I2-01M cannot be earned with these vocabularies — one point.** The test asks
-that metadata use semantic resources for its vocabulary terms. It scores 0 of 1
-while reporting `test_status: pass`, which is F-UJI's own reporting and not an
-error in the run. Of the 26 namespaces found in the structured metadata, the
-default ones are stripped first — the log names `http://schema.org` and
-`http://purl.org/dc/elements/1.1` among them, which is most of what this page
-emits. Seventeen namespaces survive and are checked, including OAI-DC, the DaSCH
-URLs, geonames, ORCID, the DataCite kernel-4 schema and creativecommons. The
-failure is registry membership: `NO known vocabulary namespace URI is found
-which is listed in the LOD registry`. Moving I2 therefore needs a
-controlled-vocabulary link F-UJI's registry recognises. That is a question of
-*which* vocabularies appear, not of how they are serialised.
 
 **ARKs are not registered with DataCite — one point.** F4-01M-1 passes: the
 metadata is offered through a harvesting endpoint. F4-01M-2 asks for

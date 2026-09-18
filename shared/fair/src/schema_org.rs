@@ -13,6 +13,19 @@ use crate::signposting::UrlLayout;
 const PUBLISHER_NAME: &str = "DaSCH";
 const PUBLISHER_URL: &str = "https://dasch.swiss";
 
+/// The W3C provenance vocabulary, bound in the context so `prov:wasAttributedTo`
+/// expands to a real IRI.
+///
+/// A prefix that is declared and never used produces no triple and expands away,
+/// so binding it alone would say nothing. The statement below is what puts the
+/// namespace in the graph.
+const PROV_NAMESPACE: &str = "http://www.w3.org/ns/prov#";
+
+/// The `nameIdentifier` scheme that becomes an agent's `@id`. The same rule
+/// Signposting's `author` link applies: an ORCID identifies the agent, a GND
+/// string or a bare name does not.
+const ORCID: &str = "ORCID";
+
 /// How much of the graph this rendering carries.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SchemaOrgOptions {
@@ -36,7 +49,7 @@ pub struct SchemaOrgOptions {
 /// statement about the data, and a `"MISSING"` one is not.
 pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: SchemaOrgOptions) -> Value {
     let mut root = Map::new();
-    root.insert("@context".into(), json!("https://schema.org"));
+    root.insert("@context".into(), json!(["https://schema.org", { "prov": PROV_NAMESPACE }]));
     root.insert("@type".into(), json!("Dataset"));
     root.insert("@id".into(), json!(graph.ark));
     // Two entries, always, so this is written as an array rather than through
@@ -95,8 +108,10 @@ pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: Schem
 
     root.insert(
         "publisher".into(),
-        json!({ "@type": "Organization", "name": PUBLISHER_NAME, "url": PUBLISHER_URL }),
+        json!({ "@id": PUBLISHER_URL, "@type": "Organization", "name": PUBLISHER_NAME, "url": PUBLISHER_URL }),
     );
+
+    insert_list(&mut root, "prov:wasAttributedTo", attributed_to(graph));
 
     insert_list(&mut root, "funder", funder_nodes(graph));
     insert_list(&mut root, "funding", funding_nodes(graph));
@@ -186,8 +201,45 @@ fn conditions_of_access(graph: &ProjectGraph) -> String {
     }
 }
 
+/// The agents this dataset's existence is ascribed to, as references to nodes the
+/// graph already carries: DaSCH, which publishes and curates it, and every
+/// credited creator that has an IRI of its own.
+///
+/// References, never copies. Inlining a second copy of a creator that has no
+/// `@id` would put a *different* blank node in the graph, and so assert a second,
+/// unidentified agent — the opposite of what the statement means. A creator
+/// without an ORCID is therefore left out: naming some agents does not deny the
+/// others, so the shorter statement is still true.
+///
+/// Nothing here is new. Both halves restate what `creator` and `publisher`
+/// already say, in the vocabulary a consumer asking about provenance reads.
+fn attributed_to(graph: &ProjectGraph) -> Vec<Value> {
+    let mut nodes = vec![json!({ "@id": PUBLISHER_URL })];
+    for agent in graph.creators_with_fallback().iter() {
+        if let Some(id) = agent_id(agent) {
+            nodes.push(json!({ "@id": id }));
+        }
+    }
+    nodes
+}
+
+/// The agent's own IRI, when it has one.
+fn agent_id(agent: &ProjectAgent) -> Option<&str> {
+    agent
+        .name_identifiers
+        .iter()
+        .find(|id| id.scheme == ORCID)
+        .and_then(|id| real(&id.identifier))
+}
+
 fn agent_node(agent: &ProjectAgent) -> Value {
     let mut node = Map::new();
+    // An IRI for the agent, so `prov:wasAttributedTo` can point at this node
+    // rather than describe a second one. Absent for an agent with no ORCID,
+    // which stays a blank node, as it was.
+    if let Some(id) = agent_id(agent) {
+        node.insert("@id".into(), json!(id));
+    }
     node.insert(
         "@type".into(),
         json!(match agent.kind {
@@ -441,6 +493,43 @@ mod tests {
         assert_eq!(creator["identifier"]["propertyID"], "ORCID");
         assert_eq!(creator["identifier"]["value"], "https://orcid.org/0000-0002-1825-0097");
         assert_eq!(creator["affiliation"]["name"], "Schweizerischer Nationalfonds");
+        // The ORCID is the node's own IRI too, so a statement about the agent can
+        // point at this node instead of describing a second one.
+        assert_eq!(creator["@id"], "https://orcid.org/0000-0002-1825-0097");
+    }
+
+    #[test]
+    fn provenance_is_attributed_to_the_publisher_and_the_identified_creators() {
+        let raw = ProjectRaw {
+            attributions: vec![Attribution {
+                contributor: "person-002".to_string(),
+                contributor_type: vec!["Project Leader".to_string()],
+            }],
+            ..project()
+        };
+        let doc = render(&raw);
+        assert_eq!(doc["@context"][1]["prov"], "http://www.w3.org/ns/prov#");
+        assert_eq!(
+            doc["prov:wasAttributedTo"],
+            json!([
+                { "@id": "https://dasch.swiss" },
+                { "@id": "https://orcid.org/0000-0002-1825-0097" }
+            ])
+        );
+        // The same agents the graph already names, by the same IRIs, so the
+        // statement adds a vocabulary and not a fact.
+        assert_eq!(doc["publisher"]["@id"], "https://dasch.swiss");
+        assert_eq!(doc["creator"]["@id"], "https://orcid.org/0000-0002-1825-0097");
+    }
+
+    #[test]
+    fn a_creator_without_an_orcid_is_left_out_of_the_attribution() {
+        // `person-001` carries no ORCID, so there is no node for the statement to
+        // point at. Attribution to the publisher alone is still true; inlining a
+        // copy would assert a second, unidentified agent.
+        let doc = render(&project());
+        assert!(doc["creator"].get("@id").is_none(), "{doc}");
+        assert_eq!(doc["prov:wasAttributedTo"], json!({ "@id": "https://dasch.swiss" }));
     }
 
     #[test]
@@ -457,7 +546,12 @@ mod tests {
         let doc = render(&project());
         assert_eq!(
             doc["publisher"],
-            json!({ "@type": "Organization", "name": "DaSCH", "url": "https://dasch.swiss" })
+            json!({
+                "@id": "https://dasch.swiss",
+                "@type": "Organization",
+                "name": "DaSCH",
+                "url": "https://dasch.swiss"
+            })
         );
     }
 

@@ -215,6 +215,27 @@ impl ProjectGraph {
         }
     }
 
+    /// The project's usable license URIs: placeholders and empties dropped,
+    /// deduplicated, in file order.
+    ///
+    /// `legal_info` keeps every element verbatim because DataCite emits one
+    /// `rightsList` entry per element and tests the URI differently. Everything
+    /// that wants "which licenses does this project carry" — the Dublin Core
+    /// `rights` URIs, the schema.org `license` list and the Signposting
+    /// cardinality rule — wants this list instead, and reading it here rather
+    /// than filtering `legal_info` again is what keeps them from disagreeing.
+    pub fn license_uris(&self) -> Vec<&str> {
+        let mut uris: Vec<&str> = Vec::new();
+        for legal in &self.legal_info {
+            let uri = legal.license_uri.as_str();
+            if uri.is_empty() || shared_metadata::is_placeholder(uri) || uris.contains(&uri) {
+                continue;
+            }
+            uris.push(uri);
+        }
+        uris
+    }
+
     /// `creators`, or a single organizational `DaSCH` when the project credits
     /// nobody as one.
     ///
@@ -334,217 +355,10 @@ fn funding_refs(raw: &ProjectRaw, ctx: &ResolveContext<'_>) -> Vec<FundingRef> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use shared_metadata::temporal_enrichment::EnrichedDate;
-    use shared_metadata::w3cdtf::{to_w3cdtf_range, W3cdtfRange};
-    use shared_metadata::{
-        AccessRights, Attribution, ContributorLookup, Grant, License, Multilingual, Organization, Person, Record,
-        RecordLegalInfo, RecordLicense, RecordPid,
-    };
+    use shared_metadata::{Attribution, Grant, Multilingual, ProjectRaw};
 
     use super::*;
-
-    /// A second small copy of `resolve.rs`'s test lookup: that one is private to
-    /// its own test module, and neither is worth a public helper.
-    #[derive(Default)]
-    struct InMemoryContributorLookup {
-        persons: HashMap<String, Person>,
-        organizations: HashMap<String, Organization>,
-    }
-
-    impl ContributorLookup for InMemoryContributorLookup {
-        fn person(&self, id: &str) -> Option<Person> {
-            self.persons.get(id).cloned()
-        }
-
-        fn organization(&self, id: &str) -> Option<Organization> {
-            self.organizations.get(id).cloned()
-        }
-    }
-
-    fn lookup() -> InMemoryContributorLookup {
-        let mut lookup = InMemoryContributorLookup::default();
-        lookup.persons.insert(
-            "person-001".to_string(),
-            Person {
-                id: "person-001".to_string(),
-                given_names: vec!["Anna".to_string()],
-                family_names: vec!["Müller".to_string()],
-                job_titles: vec![],
-                affiliations: vec![],
-                same_as: vec![],
-                email: None,
-            },
-        );
-        lookup.organizations.insert(
-            "organization-001".to_string(),
-            Organization {
-                id: "organization-001".to_string(),
-                name: "Schweizerischer Nationalfonds".to_string(),
-                same_as: vec![],
-                url: String::new(),
-                address: None,
-                email: None,
-                alternative_name: None,
-            },
-        );
-        lookup
-    }
-
-    /// A period cache keyed by bare id (as the real one is), so tests exercise
-    /// the real `/period/` URL-stripping in `timespan_for_in`.
-    fn periods() -> HashMap<String, W3cdtfRange> {
-        HashMap::from([(
-            "0vGXxVln724L".to_string(),
-            to_w3cdtf_range(Some("98"), Some("117")).expect("a valid range"),
-        )])
-    }
-
-    fn enrichment(entries: &[(&str, Option<&str>, &str)]) -> HashMap<String, EnrichedDate> {
-        entries
-            .iter()
-            .map(|(key, date, name)| {
-                (
-                    key.to_string(),
-                    EnrichedDate {
-                        date: date.map(str::to_string),
-                        original_name: name.to_string(),
-                        source: "llm".to_string(),
-                    },
-                )
-            })
-            .collect()
-    }
-
-    /// The default enrichment fixture for tests that are not specifically about
-    /// an empty or missing table. It does carry a `"Trajanic"` row with a
-    /// *different* range than the period cache, so a URL-tier test can prove the
-    /// URL wins over a same-named enrichment row.
-    fn default_enrichment() -> HashMap<String, EnrichedDate> {
-        enrichment(&[
-            ("Trajanic", Some("1111/2222"), "Trajanic"),
-            ("Bronze Age", Some("-3300/-1200"), "Bronze Age"),
-        ])
-    }
-
-    fn english(text: &str) -> Multilingual {
-        Multilingual::from([("en".to_string(), text.to_string())])
-    }
-
-    fn temporal_reference(url: &str, text: Option<&str>) -> shared_metadata::TemporalCoverage {
-        shared_metadata::TemporalCoverage::Reference(AuthorityFileReference {
-            type_: "Chronontology".to_string(),
-            url: url.to_string(),
-            text: text.map(str::to_string),
-        })
-    }
-
-    fn temporal_text(en: &str) -> shared_metadata::TemporalCoverage {
-        shared_metadata::TemporalCoverage::Text(english(en))
-    }
-
-    fn legal(identifier: &str, uri: &str) -> LegalInfo {
-        LegalInfo {
-            license: License {
-                license_identifier: identifier.to_string(),
-                license_date: "2012-08-31".to_string(),
-                license_uri: uri.to_string(),
-            },
-            copyright_holder: "Universität Basel".to_string(),
-            authorship: vec!["person-001".to_string()],
-        }
-    }
-
-    fn project() -> ProjectRaw {
-        ProjectRaw {
-            id: "0001".to_string(),
-            pid: "https://ark.dasch.swiss/ark:/72163/1/0001".to_string(),
-            name: "Rural Land Use".to_string(),
-            shortcode: "0001".to_string(),
-            official_name: "Rural Land Use in the Swiss Midlands, 1920-1950".to_string(),
-            status: ProjectStatus::Finished,
-            short_description: "Land use in the Swiss Midlands.".to_string(),
-            description: english("A study of rural land use."),
-            start_date: "2008-06-01".to_string(),
-            end_date: "2012-08-31".to_string(),
-            url: None,
-            secondary_url: None,
-            how_to_cite: "Rural Land Use (2012) DaSCH.".to_string(),
-            access_rights: AccessRights {
-                access_rights: AccessRightsType::FullOpenAccess,
-                embargo_date: None,
-            },
-            legal_info: vec![legal("CC-BY-4.0", "https://creativecommons.org/licenses/by/4.0/")],
-            data_management_plan: None,
-            data_publication_year: None,
-            type_of_data: Some(vec!["Image".to_string()]),
-            data_language: Some(vec!["de".to_string(), "fr".to_string()]),
-            clusters: None,
-            collections: None,
-            records: None,
-            keywords: vec![english("land use")],
-            disciplines: vec![],
-            temporal_coverage: vec![],
-            spatial_coverage: vec![],
-            attributions: vec![],
-            abstract_text: None,
-            contact_point: None,
-            publications: None,
-            funding: Funding::Grants(vec![]),
-            alternative_names: None,
-            documentation_material: None,
-            provenance: None,
-            additional_material: None,
-            image_credit: None,
-        }
-    }
-
-    fn record(id: &str, label: Multilingual) -> Record {
-        Record {
-            id: id.to_string(),
-            pid: RecordPid::new("https://ark.dasch.swiss", "0001", id),
-            label,
-            access_rights: "Full Open Access".to_string(),
-            legal_info: RecordLegalInfo {
-                license: RecordLicense {
-                    license_identifier: "CC-BY-4.0".to_string(),
-                    license_date: "2024-01-15".to_string(),
-                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
-                },
-                copyright_holder: "Universität Basel".to_string(),
-                authorship: vec!["Müller, Anna".to_string()],
-            },
-            how_to_cite: String::new(),
-            publisher: "DaSCH".to_string(),
-            source: String::new(),
-            description: Multilingual::new(),
-            date_created: "2024-01-15".to_string(),
-            date_modified: "2024-06-30".to_string(),
-            date_published: "2024-02-01".to_string(),
-            type_of_data: "Text".to_string(),
-            size: "2.3 GB".to_string(),
-            keywords: vec![],
-            file: None,
-        }
-    }
-
-    /// Builds a graph over ad-hoc tables, proving the builder needs no `'static`
-    /// data and no process-global caches.
-    fn build(raw: &ProjectRaw, records: &[Record]) -> ProjectGraph {
-        let lookup = lookup();
-        let periods = periods();
-        let enriched = default_enrichment();
-        let ctx = ResolveContext::new(&lookup, &periods, &enriched);
-        ProjectGraph::build(raw, &ctx, records)
-    }
-
-    fn build_with_enrichment(raw: &ProjectRaw, enriched: HashMap<String, EnrichedDate>) -> ProjectGraph {
-        let lookup = lookup();
-        let periods = periods();
-        let ctx = ResolveContext::new(&lookup, &periods, &enriched);
-        ProjectGraph::build(raw, &ctx, &[])
-    }
+    use crate::test_support::*;
 
     #[test]
     fn ark_uses_the_pid_when_it_is_real() {
@@ -562,6 +376,23 @@ mod tests {
             // The raw value survives beside the resolved one.
             assert_eq!(graph.pid, pid);
         }
+    }
+
+    #[test]
+    fn a_placeholder_empty_or_duplicate_license_uri_is_not_a_usable_one() {
+        let raw = ProjectRaw {
+            legal_info: vec![
+                legal("CC-BY-4.0", "https://creativecommons.org/licenses/by/4.0/"),
+                legal("CC-BY-4.0", "https://creativecommons.org/licenses/by/4.0/"),
+                legal("MISSING", "MISSING"),
+                legal("", ""),
+            ],
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert_eq!(graph.license_uris(), vec!["https://creativecommons.org/licenses/by/4.0/"]);
+        // `legal_info` still holds every element: DataCite emits one per element.
+        assert_eq!(graph.legal_info.len(), 4);
     }
 
     /// `build` records the attributed creators as they are; the

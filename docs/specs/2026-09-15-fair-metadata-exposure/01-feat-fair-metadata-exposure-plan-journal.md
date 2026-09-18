@@ -3086,9 +3086,32 @@ for identifier in (
 `F1-02D` reads, and the fix would have looked complete and measured as nothing.
 `pid` is substituted alongside `ark`, and the corpus test asserts it by name.
 
-This is also why the "set" test renders every representation to a string and
-counts ARK hosts in the bytes, rather than comparing `graph.ark` to an
-expectation: a field comparison would have passed with `sameAs` broken.
+#### The transferable lesson, which is bigger than this bug
+
+Note what would have happened. `graph.ark` would have been right. Every
+writer's identifier field would have been right. The `@id`, the DataCite
+`identifier`, `dc:identifier`, `cite-as` — all correct, all substituted, all
+passing. The change would have looked complete at **every level a structural
+assertion inspects**, and it would have moved nothing, because one writer
+derived a second output from a *different* field that no assertion named.
+
+That is the general shape: **a test that inspects the structure the code builds
+cannot catch a writer deriving the wrong thing from a second field.** It can
+only check the fields it was told to check, and the field it was not told about
+is exactly where this class of bug lives. The bytes a consumer actually reads
+have no such blind spot — every emitted identifier is in them, whichever field
+it came from and whichever writer emitted it.
+
+So the "set" test renders every representation to a string and counts ARK hosts
+in those bytes; the "unset" test does the same against the recorded host. A
+field comparison would have passed with `sameAs` broken. The byte sweep caught
+it on the first run, and then caught the 083D boundary below on the second —
+two findings neither of which was in the brief, from one test that declines to
+trust the code's own vocabulary.
+
+The same reasoning is why this round's OAI check is still the 102,158-entry hash
+baseline rather than a set of field assertions. It is the same instrument
+pointed at the same risk.
 
 ### The 083D boundary, found by the test rather than by reading
 

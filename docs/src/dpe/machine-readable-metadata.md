@@ -306,17 +306,21 @@ eight points below is unaffected by all three.
 
 | Cause | Where the points go | Points |
 |-------|---------------------|--------|
-| No project-level data pointer | F3-01M, A1-03D, R1-01MD sub-tests 2 to 4, R1.3-02D | 6 |
+| No data pointer *for this project* | F3-01M, A1-03D, R1-01MD sub-tests 2 to 4, R1.3-02D | 6 |
 | ARKs are not registered with DataCite | F4-01M-2 | 1 |
 | The assessment ran against a non-production host | F1-02D | 1 |
 
-**No project-level data pointer — six points.** F-UJI distinguishes the metadata
-record from retrievable *data content*, and asks for a pointer it can fetch and
-inspect. The project is what this page describes, but a DaSCH project is not a
-single downloadable artifact: its records are reachable through the application
-and through DSP-API, and nothing bundles them into one file for a client to
-retrieve. So there is no `distribution` to describe, and six points hang off that
-one absence. R1-01MD-1 ("minimal information about available data content")
+**No data pointer for this project — six points.** F-UJI distinguishes the
+metadata record from retrievable *data content*, and asks for a pointer it can
+fetch and inspect.
+
+This is a fact about project 0862, not about the repository. 0862's records carry
+no file, and neither do 081C's; 0868's records carry 7,716 files with public
+URLs, and 0803's carry 4,062. So the six points below are what a project with no
+files scores, and they are not a repository-wide ceiling.
+
+For 0862 as measured there is no `distribution` to describe, and six points hang
+off that one absence. R1-01MD-1 ("minimal information about available data content")
 passes on the resource type alone. R1-01MD-2 does run and comes back with an
 empty `data_content_descriptor`, because nothing populates it; R1-01MD-3 and
 R1-01MD-4 cannot run at all — `NO data object content available/accessible to
@@ -325,8 +329,11 @@ reason (`Skipping protocol test for data since NO content (data) identifier is
 given in metadata`), and R1.3-02D reports `Could not perform file format checks
 as data content identifier(s) unavailable/inaccesible`.
 
-Naming a download that does not exist would earn the six points and state
-something untrue, which ADR-0005 rules out: nothing is invented for a score.
+Naming a download that this project does not have would earn the six points and
+state something untrue, which ADR-0005 rules out: nothing is invented for a
+score. That is the narrow point. Surfacing the files a project *does* have is a
+different thing entirely and is not invention.
+
 Record landing pages describe objects that *do* have retrievable content, and
 they are the right assessment target for all six.
 
@@ -345,7 +352,7 @@ the PID seems to resolve to a different entity, will not use this PID for
 content negotiation` and finally `Could not find any persistent identifier for
 metadata which complies with a known PID syntax`. The PID was found, was
 well-formed and did resolve; it was rejected because the domain it resolves to
-is not the domain the assessment was run against. Both 2026-09-18 runs targeted a
+is not the domain the assessment was run against. Every 2026-09-18 run targeted a
 non-`dasch.swiss` host, and the 2026-09-15 baseline that did target the ARK
 predates this work, when the page carried no metadata for a PID to be harvested
 from. **No run against a build carrying this work has been made from a host under

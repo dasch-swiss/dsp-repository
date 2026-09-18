@@ -232,6 +232,8 @@ OAI identifiers are derived from DaSCH [ARK](https://arks.org/) identifiers:
 
 These differ from the resolvable ARK URLs (`https://ark.dasch.swiss/ark:/72163/1/...`), which appear in the metadata payloads as `dc:identifier` / DataCite `identifier`.
 
+The OAI `<identifier>` header is the **only** place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — `dc:identifier`, `dc:relation`, DataCite `identifier` and `relatedIdentifier`, and the project page's permalink link target — carries `https://ark.dasch.swiss/` so a harvester can dereference it. `Pid::as_url()` is the accessor for that form; there is deliberately no accessor returning a bare `ark:/…` path.
+
 ## Sets
 
 Selective harvesting uses the `set` argument on `ListIdentifiers` and `ListRecords`. Two kinds of sets exist: static **entity-type** sets and dynamic **project**/**cluster** sets.

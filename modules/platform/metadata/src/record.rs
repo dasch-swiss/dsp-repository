@@ -27,13 +27,11 @@ pub struct Pid {
 
 impl Pid {
     /// Returns the full ARK URL, e.g. `https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh`.
+    ///
+    /// This is the only form to expose outside the OAI `<identifier>` header: an ARK
+    /// without the resolver in front does not resolve for a harvester.
     pub fn as_url(&self) -> String {
         format!("{}/{}{}/{}", self.host, ARK_PATH_PREFIX, self.shortcode, self.record_id)
-    }
-
-    /// Returns the ARK path without host, e.g. `ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh`.
-    pub fn ark_path(&self) -> String {
-        format!("{}{}/{}", ARK_PATH_PREFIX, self.shortcode, self.record_id)
     }
 
     /// Returns the suffix after the ARK prefix, e.g. `0803/lklK7rVuVOmpBZYWrF8o=gh`.

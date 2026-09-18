@@ -826,18 +826,35 @@ Skip this phase when the Phase 3 local `just fair-check` run recorded in the
 *Assessment results* table shows F-UJI I1 at 2/2, I2 at 1/1 and I3 at 1/1 for
 project 0862; JSON-LD is RDF and F-UJI accepts it. Otherwise execute it. The
 decision is read from that recorded result and needs no one's input; the
-orchestrator reads the row before decomposing this phase, and when the phase is
-skipped its checkboxes are ticked with a note "skipped, Phase 3 passed I1 to
-I3".
+orchestrator reads the row before decomposing this phase.
 
-- [ ] Add `shared-fair/src/turtle.rs`: a small Turtle writer over the same graph the JSON-LD builder produces (subjects are the ARK and blank nodes; predicates from schema.org and Dublin Core Terms); if the hand-rolled writer exceeds roughly 200 lines, switch to `oxrdf` plus `oxttl` (the Oxigraph crates, pure Rust) as regular dependencies of `shared-fair` instead
-- [ ] Add route `GET /dpe/projects/{shortcode}/metadata.ttl` (`text/turtle`) with the same 400/404 and `describes` behaviour
-- [ ] Add the Turtle representation to DPE's `UrlLayout`, which extends both the `describedby` set and the derived candidate list at once; unit test: F-UJI's RDF `Accept` list (`text/turtle` before `application/ld+json`, equal `q`) now redirects to Turtle
-- [ ] Unit test: Turtle output for a fixture parses with `oxttl` (already a regular dependency if the writer switched to `oxrdf` plus `oxttl`; otherwise added here as a dev-dependency of `shared-fair` for this test alone) and yields the same triples the JSON-LD carries for ARK, title, license and creators
-- [ ] Handler test: `Accept: text/turtle` on the landing page redirects to the Turtle representation
-- [ ] Update `docs/src/dpe/machine-readable-metadata.md` and the `ARCH-MAP.md` route list
-- [ ] Run `just check` and `just test`
-- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set; fold every finding into the commit that introduced it, never a new `fix:` commit, or record it as a follow-up in the PR body with a reason
+**Decision (2026-09-18): skipped, and not on the condition above, which is not
+met.** The Phase 3 run scored I1 2/2 and I3 1/1 but **I2-01M 0/1**, so the
+literal skip condition fails. Turtle is skipped nevertheless, on evidence the
+condition did not anticipate: two independent reads of the pinned F-UJI 3.5.0
+image show I2 cannot be earned by any serialisation of this graph. F-UJI's
+default-namespace list excludes schema.org and both Dublin Core namespaces —
+exactly what this page emits — and strips them before either I2 sub-test runs;
+and the sub-test that checks namespace availability adds its own status to the
+score while that status is still false, so it earns zero whatever it found.
+Both obstacles are about *which* vocabulary namespaces appear, not about how
+they are serialised, and a Turtle rendering of the same graph carries the same
+namespaces. Moving I2 needs a controlled-vocabulary link F-UJI's registry
+recognises, which is new scope. The phase would therefore add a hand-rolled
+Turtle writer, or an `oxrdf`/`oxttl` dependency, for a measured gain of zero,
+against a total that already exceeds its target at 14/24. The checkboxes below
+are ticked as skipped on that reason, **not** on the suggested wording "skipped,
+Phase 3 passed I1 to I3", which would be false. Full evidence in the journal's
+*Phase 4 decision* section.
+
+- [x] *(skipped)* Add `shared-fair/src/turtle.rs`: a small Turtle writer over the same graph the JSON-LD builder produces (subjects are the ARK and blank nodes; predicates from schema.org and Dublin Core Terms); if the hand-rolled writer exceeds roughly 200 lines, switch to `oxrdf` plus `oxttl` (the Oxigraph crates, pure Rust) as regular dependencies of `shared-fair` instead
+- [x] *(skipped)* Add route `GET /dpe/projects/{shortcode}/metadata.ttl` (`text/turtle`) with the same 400/404 and `describes` behaviour
+- [x] *(skipped)* Add the Turtle representation to DPE's `UrlLayout`, which extends both the `describedby` set and the derived candidate list at once; unit test: F-UJI's RDF `Accept` list (`text/turtle` before `application/ld+json`, equal `q`) now redirects to Turtle
+- [x] *(skipped)* Unit test: Turtle output for a fixture parses with `oxttl` (already a regular dependency if the writer switched to `oxrdf` plus `oxttl`; otherwise added here as a dev-dependency of `shared-fair` for this test alone) and yields the same triples the JSON-LD carries for ARK, title, license and creators
+- [x] *(skipped)* Handler test: `Accept: text/turtle` on the landing page redirects to the Turtle representation
+- [x] *(skipped)* Update `docs/src/dpe/machine-readable-metadata.md` and the `ARCH-MAP.md` route list
+- [x] *(skipped)* Run `just check` and `just test`
+- [x] *(skipped)* Run `eng:reviewing` on this phase's diff with the complete reviewer set; fold every finding into the commit that introduced it, never a new `fix:` commit, or record it as a follow-up in the PR body with a reason
 
 ## Human Actions
 
@@ -937,6 +954,16 @@ Numbered, not checkboxes, so no orchestrator scan mistakes them for work.
 Targets are conservative. Out of reach in code and excluded: DataCite and re3data
 registration (keyed on a DOI prefix), Bing indexing, and metadata persistence
 (needs H3).
+
+**One target is missed and is not reachable by anything in this plan: F-UJI I2
+semantic resources, target 1/1, measured 0/1.** The total target is met (14/24
+against ≥ 12) and every other F-UJI row above is at or above its target. I2 is
+not a serialisation gap, which is why Phase 4 does not close it: F-UJI strips
+schema.org and the Dublin Core namespaces before scoring the test, and one of
+its two sub-tests earns zero unconditionally in 3.5.0. See *Phase 4: Turtle
+representation* and the *Known residuals* section of
+`docs/src/dpe/machine-readable-metadata.md`. Recorded as a follow-up — a
+controlled-vocabulary link F-UJI's registry recognises — not as a silent miss.
 
 ## References
 

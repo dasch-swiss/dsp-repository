@@ -437,7 +437,16 @@ fair-check url min_score="0":
     # F-UJI's own published defaults, from fuji_server/config/users.py. They
     # are not a secret: the container is reachable on loopback only and is
     # destroyed when this recipe returns.
-    result="$(curl -s --max-time 600 -u marvel:wonderwoman \
+    # 1800s, not 600s, and the reason is not slowness in general. Since the
+    # landing page advertises `schema:distribution`, an assessment of a project
+    # whose records carry files *downloads those files*: F-UJI collects every
+    # advertised distribution, takes up to five per MIME type, fetches each one
+    # and starts a Tika server per worker thread to sniff it. Runtime therefore
+    # scales with how many distinct file types a project has, where it used to
+    # be roughly constant per page. Project 0868 took 558s on 2026-09-18 and
+    # the recipe failed at the old cap with curl's exit 28. A project with no
+    # file still answers in well under a minute. Do not trim this back.
+    result="$(curl -s --max-time 1800 -u marvel:wonderwoman \
       -H 'Content-Type: application/json' \
       -d "$(jq -nc --arg url '{{ url }}' '{object_identifier: $url, test_debug: true, use_datacite: true}')" \
       "http://localhost:1071/fuji/api/v1/evaluate")"
@@ -445,9 +454,19 @@ fair-check url min_score="0":
     echo "$result" | jq -e 'has("summary")' >/dev/null \
       || { echo >&2 "error: F-UJI returned no result"; echo "$result" | head -c 2000 >&2; exit 1; }
 
+    # The table below drops `test_debug`, which is where an assessor says *why*
+    # a sub-test failed and which file it read — the evidence every attribution
+    # in the residuals ledger rests on. A run takes minutes now, so throwing it
+    # away and re-running to get it back is the wrong trade. `.claude/tmp/` is
+    # gitignored scratch, and one file per run keeps two runs comparable.
+    mkdir -p .claude/tmp
+    raw=".claude/tmp/fair-check-$(date -u +%Y%m%dT%H%M%SZ).json"
+    printf '%s' "$result" > "$raw"
+
     echo "url:              {{ url }}"
     echo "software_version: $(echo "$result" | jq -r '.software_version')"
     echo "image digest:     ${image#*@}"
+    echo "full result:      $raw"
     echo
     printf '%-14s %-6s %s\n' METRIC SCORE OUTCOME
     echo "$result" | jq -r '.results[] | [.metric_identifier, "\(.score.earned)/\(.score.total)", .test_status] | @tsv' \

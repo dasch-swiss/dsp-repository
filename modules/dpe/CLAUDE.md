@@ -21,7 +21,7 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ### Routing, head, and the page shell (`dpe-server`)
 
-`dpe-server` is the composition root. Routes are declared in `server/src/main.rs` with the native Axum router:
+`dpe-server` is the composition root. Page, fragment and API routes are declared in `server/src/router.rs` (`build_router`) with the native Axum router; `main.rs` declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the OTel layers:
 
 ```rust
 .route("/dpe/projects", get(projects_page_handler))
@@ -68,12 +68,12 @@ The scan runs once per process, so a file added while the server is running is n
 1. Add a `fn page(...) -> maud::Markup` in `web/src/pages/`
 2. Export it in `web/src/pages/mod.rs`
 3. Add a handler in `dpe-server` that loads data and renders the page inside the `page()` shell
-4. Register the route in `server/src/main.rs`
+4. Register the route in `server/src/router.rs`
 
 ### Adding a New Fragment Handler
 
 1. Add the async handler in `server/src/fragments.rs`
-2. Register the route in `server/src/main.rs`
+2. Register the route in `server/src/router.rs`
 3. Render the relevant `dpe-web` view function and `.into_string()` its `Markup`
 4. Return a `Sse` stream of `PatchElements` (and optionally `ExecuteScript`) events
 
@@ -104,7 +104,15 @@ passed inline are fine.
 
 ### Escaping
 
-Default `(expr)` splices auto-escape. The only sanctioned `PreEscaped` site is the trusted mosaic `IconData` SVG. The search-query echo (`fragments.rs`) must stay a plain auto-escaped splice — never `PreEscaped` (the one realistic XSS reintroduction).
+Default `(expr)` splices auto-escape. `PreEscaped` has exactly three sanctioned sites:
+
+1. the trusted Mosaic `IconData` SVG (`mosaic/tiles/src/components/icon/mod.rs`);
+2. the leading newline the Mosaic `textarea` writes back (`mosaic/tiles/src/components/form/textarea/mod.rs`), which an HTML parser would otherwise eat;
+3. the JSON-LD `<script>` in `server/src/metadata.rs`, whose only permitted input is `shared_fair::script_safe_json` — Maud escapes text inside `script {}`, which would corrupt the JSON, and that function has already replaced `<`, `>` and `&` with `\u00XX` escapes so nothing spliced can close the element or open a comment. A test in `dpe-server` greps every file under its own `src/` so `PreEscaped(` appears exactly once in the whole crate, on that splice.
+
+The first two splice a constant; only the third takes a value derived from data.
+
+Anything else must be an auto-escaped splice. The search-query echo (`fragments.rs`) especially: it is the one realistic XSS reintroduction.
 
 ### Styling not applying
 

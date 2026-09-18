@@ -8,17 +8,37 @@ mod config;
 mod dev_reload;
 pub(crate) mod downloads;
 pub(crate) mod fragments;
+mod metadata;
 mod page_url;
 mod router;
+#[cfg(test)]
+pub(crate) mod test_support;
 mod traceparent;
 mod view;
 
-/// Shared state for the page handlers: the (optional) Fathom site id and the
-/// resolved stylesheet href (unhashed in dev, content-hashed in release).
+/// Shared state for the page handlers: the (optional) Fathom site id, the
+/// resolved stylesheet href (unhashed in dev, content-hashed in release), and
+/// the two public base URLs the machine-readable metadata is built from.
+///
+/// State rather than process-globals for the handlers' sake: both URLs are
+/// per-deployment configuration, nothing outside the handlers needs them, and a
+/// test must be able to vary them.
 #[derive(Clone)]
 pub(crate) struct AppState {
     fathom_site_id: Option<String>,
     css_href: String,
+    /// Origin of the site itself, for landing-page and catalogue URLs.
+    pub(crate) public_base_url: String,
+    /// Origin *and path* of the OAI endpoint, for the `describedby` targets.
+    /// A separate value on purpose: on DEV the OAI endpoint answers on another
+    /// host, and neither URL is derived from the other.
+    ///
+    /// A copy, not the only holder: the OAI handler reads its own advertised
+    /// `baseURL` from a process-global that predates this state, which `main`
+    /// sets through `dpe_api_oai::set_base_url`. Both come from
+    /// `DpeConfig::oai_base_url` at startup and must never be set apart — one
+    /// endpoint cannot advertise one base URL and be linked at another.
+    pub(crate) oai_base_url: String,
 }
 
 /// Query params for the project detail page: `?tab=` pre-selects the tab.
@@ -69,7 +89,7 @@ pub(crate) async fn project_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Query(tab): axum::extract::Query<TabQuery>,
-) -> axum::response::Html<String> {
+) -> axum::response::Response {
     let tp = traceparent::extract_traceparent();
     // Fall back to "overview" for a missing or unrecognized tab, mirroring the
     // validation the SSE fragment handler applies against VALID_TABS.
@@ -85,18 +105,26 @@ pub(crate) async fn project_page_handler(
     let title = dpe_core::project_cache::project_by_shortcode(&id)
         .map(|p| format!("{} — DaSCH Metadata Browser", p.name))
         .unwrap_or_else(|| format!("Project {id} — DaSCH Metadata Browser"));
-    let head_extras = view::HeadExtras(maud::html! {});
-    axum::response::Html(
-        view::page(
-            &title,
-            tp.as_deref(),
-            &state.css_href,
-            state.fathom_site_id.as_deref(),
-            head_extras,
-            content,
-        )
-        .into_string(),
+    // Built synchronously, before any await: `ContributorLookup` carries no
+    // `Sync` bound, so nothing it borrows may live across an await point.
+    // A project that does not resolve gets no metadata and no headers; the
+    // always-200 "Project Not Found" body it already renders is unchanged.
+    let (extras, headers) = match metadata::head_extras_for_project(&id, &state) {
+        Some((markup, headers)) => (markup, headers),
+        None => (maud::html! {}, axum::http::HeaderMap::new()),
+    };
+    let body = view::page(
+        &title,
+        tp.as_deref(),
+        &state.css_href,
+        state.fathom_site_id.as_deref(),
+        view::HeadExtras(extras),
+        content,
     )
+    .into_string();
+    // A `Response` rather than `Html<String>`: this route now sets headers, and
+    // Phase 3 adds a `303` branch to it.
+    axum::response::IntoResponse::into_response((headers, axum::response::Html(body)))
 }
 
 /// 404 fallback (after `ServeDir` finds no matching static file): the app shell
@@ -342,6 +370,8 @@ async fn serve() -> ExitCode {
     let state = AppState {
         fathom_site_id: dpe_config.fathom_site_id.clone(),
         css_href: resolve_css_href(&dpe_config.public_dir),
+        public_base_url: dpe_config.public_base_url.clone(),
+        oai_base_url: dpe_config.oai_base_url.clone(),
     };
 
     // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).

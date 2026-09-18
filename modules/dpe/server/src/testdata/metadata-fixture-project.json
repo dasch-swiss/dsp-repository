@@ -1,0 +1,56 @@
+{
+    "id": "0001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0001",
+    "name": "Rural Land Use",
+    "shortcode": "0001",
+    "officialName": "Rural Land Use in the Swiss Midlands, 1920-1950",
+    "status": "Finished",
+    "shortDescription": "Land use in the Swiss Midlands.",
+    "description": {
+        "en": "A study of rural land use."
+    },
+    "startDate": "2008-06-01",
+    "endDate": "2012-08-31",
+    "secondaryURL": null,
+    "howToCite": "Rural Land Use (2012) DaSCH.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2012-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "Universität Basel",
+            "authorship": [
+                "person-001"
+            ]
+        }
+    ],
+    "dataManagementPlan": null,
+    "dataPublicationYear": null,
+    "typeOfData": [
+        "Image"
+    ],
+    "dataLanguage": [
+        "de",
+        "fr"
+    ],
+    "keywords": [
+        {
+            "en": "land use"
+        }
+    ],
+    "disciplines": [],
+    "temporalCoverage": [],
+    "spatialCoverage": [],
+    "attributions": [],
+    "contactPoint": null,
+    "funding": [],
+    "alternativeNames": null,
+    "documentationMaterial": null,
+    "additionalMaterial": null,
+    "imageCredit": null
+}

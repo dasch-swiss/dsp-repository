@@ -37,6 +37,20 @@ fn make_oai_identifier_from_pid(pid: &str) -> Option<String> {
     Some(format!("{}{}", OAI_IDENTIFIER_PREFIX, &pid[pos..]))
 }
 
+/// The OAI identifier of a project: its recorded PID when that is real,
+/// otherwise one built from the shortcode.
+///
+/// Public because the landing page links its own OAI records and must name them
+/// exactly as `GetRecord` answers to. Deriving that identifier a second time
+/// would be a second rule.
+pub fn project_oai_identifier(project: &ProjectRaw) -> String {
+    if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
+        make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
+    } else {
+        make_oai_identifier(&project.shortcode)
+    }
+}
+
 /// Parses an OAI identifier and extracts the ARK suffix.
 pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
     if !identifier.starts_with(OAI_IDENTIFIER_PREFIX) {
@@ -70,13 +84,8 @@ pub fn to_oai_record(
     // parameter, which is how the tests inject an in-memory double.
     let (_cached_lookup, periods, enriched) = dpe_core::resolve_inputs();
     let ctx = ResolveContext::new(lookup, periods, enriched);
-    let identifier = if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
-        make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
-    } else {
-        make_oai_identifier(&project.shortcode)
-    };
     let header = OaiRecordHeader {
-        identifier,
+        identifier: project_oai_identifier(project),
         datestamp: if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
             project.start_date.clone()
         } else {

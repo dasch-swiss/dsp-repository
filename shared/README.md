@@ -48,9 +48,9 @@ Only `ProjectGraph::build`, `RecordGraph::build` and `PartRef::from_record` take
 
 No web framework, no Maud, no routes: a writer returns a `String` or a `serde_json::Value`, and the consuming service turns that into a response. Nothing here knows where a page is rendered or what its URLs look like.
 
-`dpe-api-oai` is the only consumer today. Unlike the other two crates here, `shared-fair` was shared from the start rather than on a second consumer's arrival, because ADR-0005 names the ones to come: DPE's record pages and CPE in the Access Area, and the Deposit Area, where a depositor assesses a project's FAIRness before submitting it.
+Two consumers today: `dpe-api-oai` for the OAI writers, and `dpe-server` for the landing page's JSON-LD, meta tags and Signposting links. Unlike the other two crates here, `shared-fair` was shared from the start rather than on a second consumer's arrival, because ADR-0005 names the ones after those: DPE's record pages and CPE in the Access Area, and the Deposit Area, where a depositor assesses a project's FAIRness before submitting it.
 
-Dependencies: `shared-metadata`, and nothing else. No third-party runtime dependency — `serde_json` is a dev-dependency, used only by the tests to build the raw `"url"` values the reading rule parses.
+Dependencies: `shared-metadata`, and `serde_json` at runtime — the JSON-LD writer's output type is `serde_json::Value`, taken from the workspace so `preserve_order` holds. Nothing else.
 
 ## `shared-telemetry` (telemetry/)
 

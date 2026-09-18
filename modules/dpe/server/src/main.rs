@@ -3,6 +3,7 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
+mod ark;
 mod config;
 #[cfg(feature = "dev")]
 mod dev_reload;

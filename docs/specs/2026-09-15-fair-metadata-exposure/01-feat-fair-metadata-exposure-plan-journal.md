@@ -3259,6 +3259,18 @@ a resolver; the ingress version fixes it by telling none, and fixes the JSON API
 and anything not yet written at the same time. The first is the shape you reach
 by asking *where is the bug*; the second by asking *where does this fact belong*.
 
+**Count the application points, not the fixes.** That is the sharpest way to see
+it, and the discarded state is the evidence. At `ba0e0746` the substitution was
+applied in **two** places — inside the graph builders, where Phase 8 put it, and
+again in the view chain, where the sidebar fix put it — from **one** configured
+value, through two separate plumbings. Nothing was wrong with either on its own,
+and both were tested and green. But one fact applied in two places is the drift
+risk this whole phase exists to teach: the `sameAs` near-miss was two places
+deriving an identifier differently, and a second application point is the same
+hazard waiting for its third. The rule was already shared, which is the half
+that was right; the move converges the *application* onto one point at ingress,
+and every emission site becomes a plain reader of already-correct data.
+
 ### It is the plan's own seam, not a correction to it
 
 *Proposed Solution* already said what should have happened:

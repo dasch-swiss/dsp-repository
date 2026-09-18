@@ -14,9 +14,12 @@ pub const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
 /// The rule lives beside [`ARK_PATH_PREFIX`], which defines where the host ends
 /// and the identifier begins, and takes the host as an argument: nothing here
 /// knows *why* a caller would substitute one, or where the value comes from.
-/// Both consumers read it from here rather than each spelling it out —
-/// `shared_fair::ArkHost::apply` for the machine-readable representations, and
-/// DPE's project sidebar for the permalink a person copies.
+///
+/// It is applied in exactly one place — `dpe_core::ark`, as corpus data enters
+/// the caches — so every reader downstream sees an already-correct ARK and none
+/// of them has to know a resolver exists. It lives here rather than there
+/// because `shared-metadata` is the crate that owns the ARK's shape, and
+/// because `sync` will own the application when it takes over ingest.
 ///
 /// **Only a bare identifier**, never prose. The ARK path is taken to run to the
 /// end of the value, so a sentence with an ARK in the middle of it would lose

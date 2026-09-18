@@ -11,7 +11,7 @@ mod types;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
 use dpe_core::ClusterRaw;
 use shared_fair::{
-    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ProjectGraph,
+    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ProjectGraph, RecordGraph,
     ResolveContext,
 };
 pub use shared_fair::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord};
@@ -113,14 +113,16 @@ pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str, cluster
         set_specs: membership_set_specs("entityType:Record", &record.pid.shortcode, clusters),
     };
 
+    let graph = RecordGraph::build(record);
+
     let dublin_core = if metadata_prefix == "oai_dc" {
-        Some(record_to_dublin_core(record))
+        Some(record_to_dublin_core(&graph))
     } else {
         None
     };
 
     let datacite = if metadata_prefix == "oai_datacite" {
-        Some(record_to_datacite(record))
+        Some(record_to_datacite(&graph))
     } else {
         None
     };

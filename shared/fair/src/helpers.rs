@@ -1,17 +1,6 @@
 //! Shared helper functions for metadata transformation.
 
-use shared_metadata::utils::Multilingual;
 use shared_metadata::AccessRightsType;
-
-/// Extracts a value from a [`Multilingual`] map, preferring English.
-///
-/// Delegates to `shared_metadata::multilingual_value` — kept as a local alias since
-/// it is imported throughout this module tree. See that function's docs for
-/// the deterministic-fallback rationale (it backs the temporal-coverage
-/// enrichment lookup key, where collection and lookup must agree).
-pub fn get_multilingual_value(map: &Multilingual) -> Option<String> {
-    shared_metadata::multilingual_value(map)
-}
 
 /// Extracts the year from a date string (YYYY-MM-DD or YYYY).
 pub fn extract_year(date: &str) -> String {

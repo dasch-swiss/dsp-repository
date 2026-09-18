@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.6](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.5...v0.8.6) (2026-09-18)
+
+
+### Bug Fixes
+
+* **oai:** Add ARK resolver for identifiers in the payload ([78c4a7c](https://github.com/dasch-swiss/dsp-repository/commit/78c4a7c7e3f13dcf610eda9b8c2c9f5ff11db8c2))
+
+
+### Documentation
+
+* **docs:** Add the dune agent-context layer and the monorepo shape ADRs ([79dc416](https://github.com/dasch-swiss/dsp-repository/commit/79dc4168188107af9c51c65fb7ce48582840f920))
+* **docs:** Group the areas under areas/ and name the shared root shared/ ([70acb52](https://github.com/dasch-swiss/dsp-repository/commit/70acb5250ee8bbe26e4c3a6cec3ff385731e939c))
+* **mosaic-tiles,mosaic-playground,dpe-core,dpe-server,dpe-web,dpe-api-oai,platform-metadata,platform-telemetry,editor-core,editor-server,ci:** Trim comments to the convention's core (DEV-7123) ([57ce87d](https://github.com/dasch-swiss/dsp-repository/commit/57ce87db2bf12ce91e83461bc2004fd19b6f4d70))
+
+
+### Build System
+
+* **ci:** Provide commitlint-rs in the Nix dev shell ([2c63129](https://github.com/dasch-swiss/dsp-repository/commit/2c63129948603e29533b7cbc2b7076a272f672df))
+
+
+### Miscellaneous Chores
+
+* **dpe-data:** Point 0105 drawings at the migrated server ([18a8f36](https://github.com/dasch-swiss/dsp-repository/commit/18a8f36fc2320d13256de1ac958844e21cb0dc6e))
+
 ## [0.8.5](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.4...v0.8.5) (2026-09-17)
 
 

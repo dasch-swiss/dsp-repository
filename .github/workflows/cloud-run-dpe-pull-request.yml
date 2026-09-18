@@ -103,21 +103,34 @@ jobs:
 
       # A second step, not a flag on the deploy: Cloud Run assigns the service
       # URL when the service is created, so it cannot be passed to the call that
-      # creates it. Without it DPE falls back to its compiled default of
-      # https://repository.dasch.swiss, and every `describedby` link, every
-      # JSON-LD URL and the `303` target on the preview point at production,
-      # which does not carry the branch's code. One extra revision on an
-      # ephemeral preview is the right price for identifiers that are absolute
-      # and self-consistent.
+      # creates it. One extra revision on an ephemeral preview is the right
+      # price for identifiers that are absolute and self-consistent.
+      #
+      # All three variables default to production, and each one left unset makes
+      # the preview advertise a deployment that does not carry the branch's code:
+      #
+      #   DPE_PUBLIC_BASE_URL       every `describedby` link, every JSON-LD URL
+      #                             and the `303` target — which answer 404 on
+      #                             production.
+      #   DPE_OAI_BASE_URL          the OAI `baseURL` and every `<request>`
+      #                             echo, so a harvester told where to harvest
+      #                             is told production.
+      #   DPE_ARK_RESOLVER_BASE_URL every emitted ARK, so an assessor that
+      #                             dereferences the identifier it just
+      #                             harvested lands on production and assesses
+      #                             something else. It also mounts the
+      #                             preview's own `/ark:/` resolver, which is
+      #                             what makes those ARKs answer.
       #
       # The reported URL is an origin with an https scheme and no trailing
-      # slash, which is what `validate_public_base_url` requires, so it is
-      # passed through unmodified.
+      # slash, which is what `validate_origin` requires, so it is passed through
+      # unmodified. `DPE_OAI_BASE_URL` legitimately carries a path and is the
+      # one of the three that gets a suffix.
       - name: Point the preview at its own URL
         run: |
           gcloud run services update "$SERVICE_NAME" \
             --region="${{ secrets.GCP_REGION }}" \
-            --update-env-vars="DPE_PUBLIC_BASE_URL=${{ steps.deploy.outputs.url }}" \
+            --update-env-vars="DPE_PUBLIC_BASE_URL=${{ steps.deploy.outputs.url }},DPE_OAI_BASE_URL=${{ steps.deploy.outputs.url }}/dpe/oai,DPE_ARK_RESOLVER_BASE_URL=${{ steps.deploy.outputs.url }}" \
             --quiet
 
       - name: Find existing preview comment

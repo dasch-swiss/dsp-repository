@@ -856,6 +856,34 @@ Phase 3 passed I1 to I3", which would be false. Full evidence in the journal's
 - [x] *(skipped)* Run `just check` and `just test`
 - [x] *(skipped)* Run `eng:reviewing` on this phase's diff with the complete reviewer set; fold every finding into the commit that introduced it, never a new `fix:` commit, or record it as a follow-up in the PR body with a reason
 
+#### Phase 5: Fixes found by the first live assessment
+
+Added 2026-09-18, after Phases 0 to 4 had landed and the branch was pushed. The
+first assessment against a *deployed* page — the Cloud Run PR preview for #391,
+not the local run of Phase 3 — scored F-UJI 3.5.0 at **13 of 24** and FAIR
+Champion 1.1.11 at **7 of 15** passing, and surfaced three things the local run
+could not: two defects in what the JSON-LD asserts, and one deployment gap.
+Each is a fix, not an investigation. The evidence, including the assessor log
+lines that prove each one, is in the journal under *Round 11*.
+
+**This phase starts from `6f53d3c7`, which is already pushed.** Every commit
+here is a *new commit on top*; nothing at or below that SHA may be amended or
+rebased. That is the one way this phase differs from Phases 0 to 4.
+
+- [ ] Emit each schema.org `license` as an IRI node (`{"@id": "…"}`) instead of a bare string, keeping the cardinality rule: one object for a single licence, an array for several, the key omitted when the graph carries none. FAIR Champion's *LicenseStrong* reads only Resources, and schema.org's remote context does not coerce `license` to `@id`, so a string parses as a literal and the test fails with "Found the Schema license predicate, but it does not have a Resource as its value". `shared/fair/src/schema_org.rs`, the `insert_list(&mut root, "license", graph.license_uris())` call
+- [ ] Update the two unit tests in `schema_org.rs` that pin the old shape (the single-licence assertion on `doc["license"]`, and `several_licenses_become_an_array`), and the licence comparison in the corpus-wide agreement test in `modules/dpe/api-oai/src/metadata/corpus.rs`, which must now read `@id` out of the JSON-LD side
+- [ ] Add the canonical landing page URL to schema.org `identifier`, alongside the existing ARK `PropertyValue`, so the property becomes an array. FAIR Champion's *MetadataIdentifierFound* checks `schema:identifier` only — it does not consider `url` — so with the ARK alone it can only match an assessor pointed at the ARK itself. schema.org's `identifier` accepts `Text | URL | PropertyValue`, and F-UJI reads the `PropertyValue` form, so keep the ARK exactly as it is. Take the URL from the `UrlLayout` the writer already holds; never reconstruct it
+- [ ] Update the unit test asserting `doc["identifier"]["propertyID"] == "ARK"` and any corpus assertion that indexes `identifier` as a single object
+- [ ] Point the Cloud Run PR preview at its own URL: in `.github/workflows/cloud-run-dpe-pull-request.yml`, after the deploy step and before the comment steps, run `gcloud run services update "$SERVICE_NAME"` with `--region` and `--update-env-vars="DPE_PUBLIC_BASE_URL=<the deploy step's url output>"`. Without it the preview falls back to the compiled default of `https://repository.dasch.swiss`, so every `describedby` link and the `303` target point at production, which does not carry this code and answers 404. Comment *why* it is a second step: Cloud Run only knows the service URL once the service exists, and one extra revision on an ephemeral preview is the right price for identifiers that are absolute and self-consistent. The reported URL has no trailing slash and an `https` scheme, so it satisfies `validate_public_base_url` unmodified — do not post-process it
+- [ ] **Do not** add a request-host fallback in DPE as an alternative to the above. Deriving the base URL from `Host` would make `@id` and `Link` vary by how the page was reached and would put an attacker-influenceable value into an identifier — the exact thing the canonical-shortcode rule exists to prevent. If the workflow change cannot be made to work, stop and report rather than reaching for it
+- [ ] Check whether `cloud-run-editor-pull-request.yml` has the same shape and record the answer as a follow-up in the PR body; do **not** change it in this phase
+- [ ] Update `docs/src/dpe/machine-readable-metadata.md`: the property table for the new `license` and `identifier` shapes, and a row in the *Assessment results* table for the 2026-09-18 preview run (F-UJI 3.5.0, 13/24; FAIR Champion 1.1.11, 7/15), noting that it predates these fixes and that the missing base URL accounted for `I1-01M-2`
+- [ ] Update `docs/src/dpe/operations.md` to say that PR previews set `DPE_PUBLIC_BASE_URL` to their own Cloud Run URL automatically
+- [ ] Update this plan's Success Metrics rows for *LicenseStrong* and *MetadataIdentifierFound* to record that the gap was found by assessment and fixed. **Do not assert a new score anywhere** — nothing is re-measured until a preview carrying these fixes is assessed again
+- [ ] Prove OAI output is unchanged: neither JSON-LD fix touches DataCite or Dublin Core. The baseline is at `.claude/tmp/oai-baseline-hashes.txt` (102,158 entries) and must **not** be regenerated. Recover the hash test (the journal records where it was last restored from), run it, confirm it prints `compared 102158 entries`, then remove it again. A skipped test is not a passed checkpoint
+- [ ] Run the standing gate: `git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`. The `env -u GIT_DIR` is load-bearing — see the journal's side findings
+- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set; fold every finding into the commit that introduced it — but only for commits created *in this phase*, since everything at or below `6f53d3c7` is pushed
+
 ## Human Actions
 
 | Id | Action | Who | When | Why not the agent |

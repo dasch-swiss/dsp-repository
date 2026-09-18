@@ -1914,3 +1914,155 @@ Phase 4 decision section). 35 commits on `worktree-fair-assessment` from
   character width must be coprime with the limit); an enforcement claim whose
   gate cannot see the file it governs; and a commit body describing behaviour a
   later fix removed, which on a rebase-merge repo lands on `main` verbatim.
+
+## Round 11 — HANDOFF: fixes found by the first live assessment (2026-09-18)
+
+**Status: not started.** This section exists so a fresh session can continue
+cold. The work is written up as **Phase 5** in the plan file; run
+`/eng:workflows:work-orchestrate docs/specs/2026-09-15-fair-metadata-exposure/01-feat-fair-metadata-exposure-plan.md`
+and execute that phase. Everything below is the evidence and the state.
+
+### Where the branch stands
+
+- Branch `worktree-fair-assessment`, HEAD **`6f53d3c7`**, **pushed**.
+- PR **#391** (`dasch-swiss/dsp-repository`) is open, **draft**, retitled
+  `feat(dpe): machine-readable project metadata for FAIR assessment`, body
+  rewritten, `allow-many-commits` ticked. Base is `docs/adr-areas-and-shared-root`
+  (PR #399), which must merge first.
+- CI on #391 at `6f53d3c7`: **20 pass, 4 skipping, 0 pending, 0 fail.**
+- 36 commits from `f1532fac`: Phase 0 (2), Phase 1 (16), Phase 2 (10),
+  Phase 3 (7), plus one `docs(docs)` commit carrying plan + journal.
+- Phases 0–3 complete and reviewed (ten reviewers each on 1, 2 and 3; nine on 0).
+  Phase 4 skipped on evidence — see the *Phase 4 decision* section above.
+- **Everything at or below `6f53d3c7` is pushed.** Phase 5 commits go *on top*.
+  Do not amend or rebase anything at or below it.
+- A companion PR is open in ops-deploy: **dasch-swiss/ops-deploy#1435** (draft),
+  one entry setting `DPE_PUBLIC_BASE_URL` to `https://repository.{{ DEPLOY_DOMAIN }}`
+  for dev/stage/prod. That is human action H1. It does **not** cover PR previews,
+  which is why Phase 5 has its own workflow fix.
+
+### What prompted Phase 5
+
+The user deployed the PR preview and pointed both assessors at
+`https://dpe-pr-391-pbjdzenira-oa.a.run.app/dpe/projects/0862`:
+
+- **F-UJI 3.5.0: 13 of 24.** The local Phase 3 run scored 14 of 24.
+- **FAIR Champion 1.1.11: 7 of 15 passing** (LicenseWeak, QualifiedRefs,
+  MachineSyntax, MachineSemantic, MetadataIdentifierUniqe, MetadataAuthentication,
+  MetadataOpenProtocol). Baseline was 6 of 15 with 2 hollow passes; the plan
+  targets ≥ 10.
+
+Three causes, separated:
+
+**1. Missing `DPE_PUBLIC_BASE_URL` on the preview — worth exactly 1 F-UJI point.**
+It is the entire difference between 13 and 14. DPE fell back to its compiled
+default of `https://repository.dasch.swiss`, so the typed links and the `303`
+target pointed at production, which does not carry this code. F-UJI's log:
+
+```
+Found e.g. Typed Links in HTML Header linking to RDF Metadata
+  -: (application/ld+json https://repository.dasch.swiss/dpe/projects/0862/metadata.jsonld)
+WARN: Request failed, status code -: …/metadata.jsonld - 404
+```
+
+That fails `I1-01M-2` ("graph data accessible through content negotiation, typed
+links or sparql endpoint"), so I1 scored 1/2 instead of 2/2. Fixed by the
+workflow change in Phase 5.
+
+**2. `license` is emitted as a string, so it is an RDF literal, not a Resource.**
+FAIR Champion *LicenseStrong*:
+
+```
+WARN: Found the Schema license predicate, but it does not have a Resource as its
+      value. … Please update your metadata to point to a URL containing the license.
+FAILURE: No correctly structured license property was found in the metadata.
+```
+
+Verified in source: `shared/fair/src/schema_org.rs` line ~61 does
+`insert_list(&mut root, "license", graph.license_uris())`, and the unit test at
+~line 389 asserts a bare string. schema.org's remote context does not coerce
+`license` to `@id`, so nothing rescues it downstream. *LicenseStrong* is a named
+Success Metric target (baseline fail → target pass).
+
+**3. `identifier` carries only the ARK.** FAIR Champion *MetadataIdentifierFound*:
+
+```
+FAILURE: While (apparent) metadata record identifiers were found
+  (["https://ark.dasch.swiss/ark:/72163/1/0862", …]) none of them matched the
+  initial GUID provided to the test (https://dpe-pr-391-…/dpe/projects/0862).
+  Exact identifier match is required.
+```
+
+The test reads `schema:identifier` only — it does not consider `url`, which does
+already carry the landing page. Also a named Success Metric target.
+
+### What is *not* a defect
+
+- **F-UJI `F1-02D`** (persistent identifier) failed with `Landing page domain
+  resolved from PID found in metadata does not match with input URL domain
+  -: run.app <> dasch.swiss`. The ARK correctly resolves to production; the test
+  was pointed at a preview host. Same cause for FAIR Champion's
+  `MetadataIdentifierPersistent` (indeterminate). Artifacts of the target, not
+  bugs. They would behave differently against the ARK or the production URL.
+- **F3-01M, A1-03D, DataIdentifierFound, R1-01MD, R1.3-02D** — all downstream of
+  "no project-level data pointer", already a documented residual. ADR-0005 says
+  nothing is invented for a score; record landing pages are the follow-up.
+- **I2-01M** — vocabulary, not syntax. Unreachable by anything in this plan; see
+  the *Phase 4 decision* section for the two independent proofs.
+- **F4-01M-2, DiscoverableInBing, MetadataPersistence** — DataCite registration,
+  search indexing, and H3's persistence-policy URL. Out of reach by design.
+
+### A rejected alternative, recorded so it is not re-proposed
+
+Making DPE derive its base URL from the request `Host` header would "fix" the
+preview without a workflow change. **Do not do this.** It would make `@id` and
+`Link` vary by how the page was reached and would put an attacker-influenceable
+value into an identifier — precisely what the canonical-shortcode rule exists to
+prevent, and what the Phase 2 security review verified. The workflow change is
+the correct fix.
+
+### Carry-forwards a fresh session needs
+
+- **Bash guard**: this worktree's path contains `_github.com`, so any compound
+  command that also names git is rejected. One plain command per call. A heredoc
+  whose *text* mentions git is rejected too — write such content with the Write
+  or Edit tool instead.
+- **`env -u GIT_DIR` on every `git rebase --exec`.** `check-commit-count.test.sh`'s
+  `make_repo` does not clear `GIT_DIR`, so under rebase it writes into the real
+  repository — it already polluted `.git/config` and created an orphan `feature`
+  branch once this run. Cleaned up; identity now resolves from `~/.gitconfig`.
+- **Never `git stash`** — the stack is shared across worktrees and sessions. Copy
+  the two spec files to a scratch dir, restore the tracked one, remove the
+  untracked journal, rebase, copy back.
+- **Never stage or commit the plan file or the journal** during a round; the
+  session commits them at ship time. Stage code explicitly by path.
+- `git add` silently refuses paths under an `icon/` directory (macOS `Icon` rule
+  plus `core.ignorecase`); `git add -u <path>` works.
+- **Known `editor-server` flakes**, untouched by this work:
+  `test_simultaneous_wrong_guesses_cannot_outrun_the_three_strike_limit`, and
+  `db::tests::test_file_database_uses_wal_and_creates_its_siblings_in_the_directory`
+  / `db::schema::tests::test_reopening_a_file_database_keeps_its_data_and_does_not_re_migrate`
+  (these two hung a gate for ten minutes, then passed in 0.01s in isolation).
+- **`just fair-check`** needs Docker; on this machine it sets `DOCKER_CONFIG` to a
+  scratch dir itself because `~/.docker/config.json` names a `desktop` credential
+  helper that is not installed under colima. The F-UJI image is pinned to 3.5.0,
+  `sha256:3cde9d30bc148798a512b9e3a8a9ee6e63c4d09a6a33bb7651ac007c5824c687`.
+  **Do not** use `:latest` or the 4.0.0 digest — 4.0.0's published image does not
+  start (it launches a headless Chromium that is not installed in it).
+- The **OAI hash baseline** at `.claude/tmp/oai-baseline-hashes.txt` (102,158
+  entries, gitignored) is still valid and must not be regenerated. Recover the
+  hash test from history when a round needs to re-prove byte identity, run it,
+  confirm `compared 102158 entries`, then remove it. A skip is not a pass.
+
+### Still open after Phase 5
+
+- Re-assess a preview that carries the Phase 5 fixes, and record the run in the
+  *Assessment results* table. Until then, no new score may be claimed anywhere.
+- Mark PR #391 ready for review (deliberately left draft — that notifies the team
+  and is the user's call).
+- H1: merge ops-deploy#1435. H2: FAIR Champion against DEV. H3: persistence policy.
+- The follow-ups listed in the PR body, unchanged: the five `0801*` projects
+  sharing one ARK PID, `check-commit-count.test.sh`'s `GIT_DIR` mutation, the
+  `oai_datacite` golden tests pinning degraded output, I2-01M's unreachability,
+  the two `editor-server` flakes, and whether `/dpe/oai` shares the synchronous
+  handler shape fixed for the representation routes.

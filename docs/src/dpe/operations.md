@@ -83,7 +83,9 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 >
 > **Why a preview rewrites its ARKs.** A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. `DPE_ARK_RESOLVER_BASE_URL` makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.
 >
-> Only the host is rewritten. The ARK path — `ark:/72163/1/{shortcode}` — is the identifier and passes through untouched, and an ARK the corpus records as project *data* rather than as an identifier (project 083D records its own ARK as the project's website) is reported as it stands.
+> **Applied once, as corpus data enters.** `dpe-core`'s caches normalise the ARK host on load, so everything downstream — the embedded JSON-LD, the Dublin Core tags, the `Link` header, the OAI payloads, the sidebar permalink a person clicks and copies, and the `pid` in `/dpe/api/v2/projects` — is correct without any of them knowing a resolver exists. Conceptually this is the `sync` capability's work and moves there when `sync` lands; `dpe_core::ark` records that.
+>
+> Only the host is rewritten. The ARK path — `ark:/72163/1/{shortcode}` — is the identifier and passes through untouched, and **recorded text is quoted rather than asserted**: a `howToCite` citation whose author wrote the ARK into the sentence, and a project's recorded website (083D records its own ARK there), are served as written.
 >
 > The resolver answers project ARKs only, with a `302` to the landing page, mirroring `ark.dasch.swiss`. A record ARK gets a `404`: DPE serves no record landing page, and `ark.dasch.swiss` resolves a record ARK to the VRE rather than to DPE.
 >

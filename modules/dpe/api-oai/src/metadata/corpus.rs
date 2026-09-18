@@ -237,8 +237,9 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
     let datacite_json = project_to_datacite_json(&datacite);
     let dublin_core = project_to_dublin_core(graph);
     let meta = project_to_dublin_core_meta(graph);
-    let json_ld = project_to_schema_org(graph, &test_layout(), SchemaOrgOptions { has_part_cap: Some(100) });
-    let links = project_to_link_set(graph, &test_layout());
+    let urls = test_layout();
+    let json_ld = project_to_schema_org(graph, &urls, SchemaOrgOptions { has_part_cap: Some(100) });
+    let links = project_to_link_set(graph, &urls);
 
     // --- the DataCite JSON representation is a DataCite document ---
     // The one writer whose output a third party parses to a published schema
@@ -257,7 +258,23 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
 
     // --- the identifier ---
     assert_eq!(json_ld["@id"], graph.ark.as_str(), "{file}: JSON-LD @id");
-    assert_eq!(json_ld["identifier"]["value"], graph.ark.as_str(), "{file}: JSON-LD identifier");
+    // `identifier` holds two entries: the ARK as a `PropertyValue`, and the
+    // landing page URL, which is the one a FAIR assessor pointed at the page
+    // has to match. Picked by shape, not by position.
+    let identifiers = json_ld_values(&json_ld, "identifier");
+    assert_eq!(
+        identifiers
+            .iter()
+            .find(|entry| entry.get("@type").and_then(|kind| kind.as_str()) == Some("PropertyValue"))
+            .and_then(|entry| entry.get("value"))
+            .and_then(|value| value.as_str()),
+        Some(graph.ark.as_str()),
+        "{file}: JSON-LD identifier carries the ARK as a PropertyValue"
+    );
+    assert!(
+        identifiers.iter().any(|entry| entry.as_str() == Some(urls.landing.as_str())),
+        "{file}: JSON-LD identifier carries the landing page"
+    );
     assert_eq!(datacite.identifier, graph.ark, "{file}: DataCite identifier");
     assert_eq!(
         datacite_json["identifiers"][0]["identifier"],

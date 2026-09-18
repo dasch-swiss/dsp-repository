@@ -111,7 +111,17 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_l
 
     let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::not_found).with_state(state.clone()));
 
+    // The deployment's own ARK resolver, and only when it publishes ARKs that
+    // name itself. Unset — production, DEV, STAGE — the route does not exist:
+    // `ark.dasch.swiss` is the resolver there, and a second one answering the
+    // same paths on the site itself would be a second authority.
+    let ark_resolver = match state.ark_resolver_base_url {
+        Some(_) => Router::new().route(crate::ark::RESOLVER_ROUTE, get(crate::ark::resolve_project)),
+        None => Router::new(),
+    };
+
     Router::new()
+        .merge(ark_resolver)
         // --- Traced routes (declared BEFORE .layer()) ---
         .route("/", get(|| async { Redirect::permanent("/dpe/projects") }))
         .route("/dpe", get(|| async { Redirect::permanent("/dpe/projects") }))
@@ -353,6 +363,112 @@ mod tests {
             body.contains(r#"src="/assets/images/0862.webp""#),
             "0862's cover should resolve: {body}"
         );
+    }
+
+    /// The ARK resolver: present only when the deployment publishes ARKs that
+    /// name itself, and answering exactly what it publishes.
+    mod ark_resolver {
+        use axum::routing::get;
+
+        use super::{status_of, test_state, NO_PUBLIC_DIR};
+        use crate::router::{build_router, rate_limited_router_with};
+        use crate::AppState;
+
+        const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
+
+        fn app(ark_resolver_base_url: Option<&str>) -> axum::Router {
+            dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
+            let state = AppState {
+                ark_resolver_base_url: ark_resolver_base_url.map(str::to_string),
+                ..test_state()
+            };
+            build_router(
+                state,
+                NO_PUBLIC_DIR.as_ref(),
+                rate_limited_router_with(tower::layer::util::Identity::new()),
+            )
+        }
+
+        async fn location(app: axum::Router, uri: &str) -> Option<String> {
+            let req = axum::extract::Request::builder()
+                .uri(uri)
+                .body(axum::body::Body::empty())
+                .unwrap();
+            let response = tower::ServiceExt::oneshot(app, req).await.unwrap();
+            response
+                .headers()
+                .get(axum::http::header::LOCATION)
+                .map(|value| value.to_str().unwrap().to_string())
+        }
+
+        /// The whole point: an ARK the preview published resolves, on the
+        /// preview, to the preview's own landing page.
+        #[tokio::test]
+        async fn a_project_ark_redirects_to_the_landing_page() {
+            let app = app(Some(PREVIEW));
+            assert_eq!(
+                status_of(app.clone(), "/ark:/72163/1/0862").await,
+                axum::http::StatusCode::FOUND,
+                "302, as ark.dasch.swiss answers for a project ARK"
+            );
+            assert_eq!(
+                location(app, "/ark:/72163/1/0862").await.as_deref(),
+                // `public_base_url`, not the resolver origin: the resolver says
+                // where the ARK lives, the public base URL says where the site
+                // does, and a deployment may be reached at both.
+                Some("https://example.test/dpe/projects/0862")
+            );
+        }
+
+        /// The target is the resolved project's shortcode, never the path
+        /// segment — the same rule the landing page's identifiers follow.
+        #[tokio::test]
+        async fn the_target_is_the_canonical_shortcode() {
+            assert_eq!(
+                location(app(Some(PREVIEW)), "/ark:/72163/1/081c").await.as_deref(),
+                Some("https://example.test/dpe/projects/081C")
+            );
+        }
+
+        #[tokio::test]
+        async fn an_unknown_shortcode_is_not_found() {
+            assert_eq!(
+                status_of(app(Some(PREVIEW)), "/ark:/72163/1/9999").await,
+                axum::http::StatusCode::NOT_FOUND
+            );
+        }
+
+        /// A record ARK has one segment more than the route, so it never
+        /// matches and falls through to the site's 404.
+        ///
+        /// Deliberate, and measured rather than assumed: DPE serves no record
+        /// landing page, `ark.dasch.swiss` resolves a record ARK to the VRE
+        /// (`app.dasch.swiss/resource/…`) and not to DPE at all, and nothing a
+        /// FAIR assessment reads off a project page dereferences a record ARK —
+        /// F-UJI collects `hasPart` into `related_resources`, and fetches a part
+        /// only when it is typed `MediaObject`, which these are not
+        /// (`metadata_collector_rdf.py:887`). Redirecting a record ARK to its
+        /// project page would answer for a different entity.
+        #[tokio::test]
+        async fn a_record_ark_is_not_resolved() {
+            assert_eq!(
+                status_of(app(Some(PREVIEW)), "/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh").await,
+                axum::http::StatusCode::NOT_FOUND
+            );
+        }
+
+        /// Dormant in production: with nothing configured the route is not
+        /// mounted, so the path is an ordinary 404 and no second ARK authority
+        /// exists beside `ark.dasch.swiss`.
+        #[tokio::test]
+        async fn the_route_is_absent_when_no_resolver_is_configured() {
+            let app = app(None);
+            assert_eq!(
+                status_of(app.clone(), "/ark:/72163/1/0862").await,
+                axum::http::StatusCode::NOT_FOUND
+            );
+            assert_eq!(location(app, "/ark:/72163/1/0862").await, None);
+        }
     }
 
     #[tokio::test]

@@ -10,6 +10,7 @@
 
 pub mod datacite;
 pub mod dublin_core;
+pub mod dublin_core_meta;
 pub mod graph;
 pub mod helpers;
 pub mod project_graph;
@@ -24,6 +25,7 @@ pub mod types;
 
 pub use datacite::project_to_datacite;
 pub use dublin_core::project_to_dublin_core;
+pub use dublin_core_meta::project_to_dublin_core_meta;
 pub use graph::{AgentKind, PartRef, RecordCreator, RecordGraph, ResolveContext};
 pub use helpers::coar_access_right;
 pub use project_graph::{

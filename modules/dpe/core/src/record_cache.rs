@@ -16,10 +16,55 @@ static BEARER: &str = "Bearer eyJ0eXAiO...";
 type RecordCache = HashMap<String, Option<(Instant, Vec<Record>)>>;
 
 static RECORDS: OnceLock<Vec<Record>> = OnceLock::new();
+static SHORTCODE_INDEX: OnceLock<HashMap<String, Vec<&'static Record>>> = OnceLock::new();
 
 /// Return a reference to the cached record list, loading it on first call.
 pub fn all_records() -> &'static Vec<Record> {
     RECORDS.get_or_init(load_all_records)
+}
+
+/// The records of one project, in the order [`all_records`] holds them.
+///
+/// [`all_records`] is one flat vector of every record of every project (50,994
+/// today), so filtering it per request puts an O(corpus) scan on anything that
+/// needs one project's records — and a landing page needs them on every visit.
+/// The index is built once, in the shape of `project_cache`'s `SHORTCODE_INDEX`
+/// and keyed the same way (upper-cased), over references into that same vector:
+/// one pointer per record, no clone, and the order within a project is the
+/// order the flat vector already has, which is what the OAI paging over
+/// `set=project:{shortcode}` depends on.
+pub fn records_for_shortcode(shortcode: &str) -> &'static [&'static Record] {
+    const EMPTY: &[&Record] = &[];
+    shortcode_index().get(&shortcode.to_uppercase()).map_or(EMPTY, Vec::as_slice)
+}
+
+/// Loads the record list and builds the shortcode index, both of which are
+/// otherwise built on the first request that needs them.
+///
+/// Two `OnceLock`s, so warming `all_records` alone still leaves the first
+/// landing-page or set-filtered OAI request after a deploy paying for a pass
+/// over all 50,994 records. The server calls this once at startup, off the
+/// async runtime.
+pub fn warm() {
+    shortcode_index();
+}
+
+/// Groups records by upper-cased shortcode, keeping each group in input order.
+///
+/// Separate from the cache so the corpus-wide test can run it over the
+/// committed dumps and compare it against the scan it replaces; the cache
+/// itself is process-global and keyed on `DPE_DATA_DIR`, which a test cannot
+/// vary.
+pub fn index_by_shortcode(records: &[Record]) -> HashMap<String, Vec<&Record>> {
+    let mut index: HashMap<String, Vec<&Record>> = HashMap::new();
+    for record in records {
+        index.entry(record.pid.shortcode.to_uppercase()).or_default().push(record);
+    }
+    index
+}
+
+fn shortcode_index() -> &'static HashMap<String, Vec<&'static Record>> {
+    SHORTCODE_INDEX.get_or_init(|| index_by_shortcode(all_records()))
 }
 
 fn records_dir() -> std::path::PathBuf {

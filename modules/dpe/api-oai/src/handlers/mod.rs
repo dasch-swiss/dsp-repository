@@ -321,14 +321,16 @@ fn collect_filtered_records(
             include_records,
         ),
         SetSyntax::Project(shortcode) => {
-            if repo.get_by_shortcode(&shortcode).is_none() {
+            let Some(project) = repo.get_by_shortcode(&shortcode) else {
                 return Err(OaiError::BadArgument(format!("unknown project set: project:{shortcode}")));
-            }
-            // Records of this project only — no project entry.
+            };
+            // Records of this project only — no project entry. Looked up by the
+            // resolved project's canonical shortcode, not the set spec's
+            // spelling, so the existence check and the record lookup can never
+            // disagree about which project the set names.
             record_repo
-                .get_all()
-                .iter()
-                .filter(|r| r.pid.shortcode.eq_ignore_ascii_case(&shortcode))
+                .records_for_shortcode(&project.shortcode)
+                .into_iter()
                 .filter(|r| matches_date_filter_record(r, from, until))
                 .map(|r| to_oai_record_from_record(r, prefix, clusters))
                 .collect()

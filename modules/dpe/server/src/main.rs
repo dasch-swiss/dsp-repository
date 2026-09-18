@@ -320,7 +320,7 @@ async fn serve() -> ExitCode {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
     }
 
-    tokio::task::spawn_blocking(dpe_core::record_cache::all_records);
+    tokio::task::spawn_blocking(dpe_core::record_cache::warm);
 
     let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())

@@ -40,6 +40,7 @@ pub(crate) async fn projects_page_handler(
             tp.as_deref(),
             &state.css_href,
             state.fathom_site_id.as_deref(),
+            view::HeadExtras(maud::html! {}),
             content,
         )
         .into_string(),
@@ -57,6 +58,7 @@ pub(crate) async fn about_page_handler(
             tp.as_deref(),
             &state.css_href,
             state.fathom_site_id.as_deref(),
+            view::HeadExtras(maud::html! {}),
             content,
         )
         .into_string(),
@@ -83,8 +85,17 @@ pub(crate) async fn project_page_handler(
     let title = dpe_core::project_cache::project_by_shortcode(&id)
         .map(|p| format!("{} — DaSCH Metadata Browser", p.name))
         .unwrap_or_else(|| format!("Project {id} — DaSCH Metadata Browser"));
+    let head_extras = view::HeadExtras(maud::html! {});
     axum::response::Html(
-        view::page(&title, tp.as_deref(), &state.css_href, state.fathom_site_id.as_deref(), content).into_string(),
+        view::page(
+            &title,
+            tp.as_deref(),
+            &state.css_href,
+            state.fathom_site_id.as_deref(),
+            head_extras,
+            content,
+        )
+        .into_string(),
     )
 }
 
@@ -105,6 +116,7 @@ pub(crate) async fn not_found(
                 tp.as_deref(),
                 &state.css_href,
                 state.fathom_site_id.as_deref(),
+                view::HeadExtras(maud::html! {}),
                 content,
             )
             .into_string(),

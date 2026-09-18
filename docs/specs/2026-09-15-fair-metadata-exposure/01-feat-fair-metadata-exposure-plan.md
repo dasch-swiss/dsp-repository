@@ -847,6 +847,16 @@ are ticked as skipped on that reason, **not** on the suggested wording "skipped,
 Phase 3 passed I1 to I3", which would be false. Full evidence in the journal's
 *Phase 4 decision* section.
 
+**Confirmed by Phase 6, which earned I2 without a line of Turtle.** Adding one
+`prov:wasAttributedTo` statement moved I2-01M to 1/1, because PROV is a
+vocabulary F-UJI's LOD registry lists. That is precisely the controlled-vocabulary
+link this section said it would take, and it vindicates the skip: the obstacle
+was which vocabularies appear, never how they are serialised. One of the two
+mechanisms above is wrong in its detail, though — the sub-test does not add a
+false status to the score, and the default-namespace strip does not leave nothing
+to score. See the corrected reading in `docs/src/dpe/machine-readable-metadata.md`
+and in the journal's *Round 12*. The conclusion is unaffected.
+
 - [x] *(skipped)* Add `shared-fair/src/turtle.rs`: a small Turtle writer over the same graph the JSON-LD builder produces (subjects are the ARK and blank nodes; predicates from schema.org and Dublin Core Terms); if the hand-rolled writer exceeds roughly 200 lines, switch to `oxrdf` plus `oxttl` (the Oxigraph crates, pure Rust) as regular dependencies of `shared-fair` instead
 - [x] *(skipped)* Add route `GET /dpe/projects/{shortcode}/metadata.ttl` (`text/turtle`) with the same 400/404 and `describes` behaviour
 - [x] *(skipped)* Add the Turtle representation to DPE's `UrlLayout`, which extends both the `describedby` set and the derived candidate list at once; unit test: F-UJI's RDF `Accept` list (`text/turtle` before `application/ld+json`, equal `q`) now redirects to Turtle
@@ -870,19 +880,103 @@ lines that prove each one, is in the journal under *Round 11*.
 here is a *new commit on top*; nothing at or below that SHA may be amended or
 rebased. That is the one way this phase differs from Phases 0 to 4.
 
-- [ ] Emit each schema.org `license` as an IRI node (`{"@id": "…"}`) instead of a bare string, keeping the cardinality rule: one object for a single licence, an array for several, the key omitted when the graph carries none. FAIR Champion's *LicenseStrong* reads only Resources, and schema.org's remote context does not coerce `license` to `@id`, so a string parses as a literal and the test fails with "Found the Schema license predicate, but it does not have a Resource as its value". `shared/fair/src/schema_org.rs`, the `insert_list(&mut root, "license", graph.license_uris())` call
-- [ ] Update the two unit tests in `schema_org.rs` that pin the old shape (the single-licence assertion on `doc["license"]`, and `several_licenses_become_an_array`), and the licence comparison in the corpus-wide agreement test in `modules/dpe/api-oai/src/metadata/corpus.rs`, which must now read `@id` out of the JSON-LD side
-- [ ] Add the canonical landing page URL to schema.org `identifier`, alongside the existing ARK `PropertyValue`, so the property becomes an array. FAIR Champion's *MetadataIdentifierFound* checks `schema:identifier` only — it does not consider `url` — so with the ARK alone it can only match an assessor pointed at the ARK itself. schema.org's `identifier` accepts `Text | URL | PropertyValue`, and F-UJI reads the `PropertyValue` form, so keep the ARK exactly as it is. Take the URL from the `UrlLayout` the writer already holds; never reconstruct it
-- [ ] Update the unit test asserting `doc["identifier"]["propertyID"] == "ARK"` and any corpus assertion that indexes `identifier` as a single object
-- [ ] Point the Cloud Run PR preview at its own URL: in `.github/workflows/cloud-run-dpe-pull-request.yml`, after the deploy step and before the comment steps, run `gcloud run services update "$SERVICE_NAME"` with `--region` and `--update-env-vars="DPE_PUBLIC_BASE_URL=<the deploy step's url output>"`. Without it the preview falls back to the compiled default of `https://repository.dasch.swiss`, so every `describedby` link and the `303` target point at production, which does not carry this code and answers 404. Comment *why* it is a second step: Cloud Run only knows the service URL once the service exists, and one extra revision on an ephemeral preview is the right price for identifiers that are absolute and self-consistent. The reported URL has no trailing slash and an `https` scheme, so it satisfies `validate_public_base_url` unmodified — do not post-process it
-- [ ] **Do not** add a request-host fallback in DPE as an alternative to the above. Deriving the base URL from `Host` would make `@id` and `Link` vary by how the page was reached and would put an attacker-influenceable value into an identifier — the exact thing the canonical-shortcode rule exists to prevent. If the workflow change cannot be made to work, stop and report rather than reaching for it
-- [ ] Check whether `cloud-run-editor-pull-request.yml` has the same shape and record the answer as a follow-up in the PR body; do **not** change it in this phase
-- [ ] Update `docs/src/dpe/machine-readable-metadata.md`: the property table for the new `license` and `identifier` shapes, and a row in the *Assessment results* table for the 2026-09-18 preview run (F-UJI 3.5.0, 13/24; FAIR Champion 1.1.11, 7/15), noting that it predates these fixes and that the missing base URL accounted for `I1-01M-2`
-- [ ] Update `docs/src/dpe/operations.md` to say that PR previews set `DPE_PUBLIC_BASE_URL` to their own Cloud Run URL automatically
-- [ ] Update this plan's Success Metrics rows for *LicenseStrong* and *MetadataIdentifierFound* to record that the gap was found by assessment and fixed. **Do not assert a new score anywhere** — nothing is re-measured until a preview carrying these fixes is assessed again
-- [ ] Prove OAI output is unchanged: neither JSON-LD fix touches DataCite or Dublin Core. The baseline is at `.claude/tmp/oai-baseline-hashes.txt` (102,158 entries) and must **not** be regenerated. Recover the hash test (the journal records where it was last restored from), run it, confirm it prints `compared 102158 entries`, then remove it again. A skipped test is not a passed checkpoint
-- [ ] Run the standing gate: `git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`. The `env -u GIT_DIR` is load-bearing — see the journal's side findings
+- [x] Emit each schema.org `license` as an IRI node (`{"@id": "…"}`) instead of a bare string, keeping the cardinality rule: one object for a single licence, an array for several, the key omitted when the graph carries none. FAIR Champion's *LicenseStrong* reads only Resources, and schema.org's remote context does not coerce `license` to `@id`, so a string parses as a literal and the test fails with "Found the Schema license predicate, but it does not have a Resource as its value". `shared/fair/src/schema_org.rs`, the `insert_list(&mut root, "license", graph.license_uris())` call
+- [x] Update the two unit tests in `schema_org.rs` that pin the old shape (the single-licence assertion on `doc["license"]`, and `several_licenses_become_an_array`), and the licence comparison in the corpus-wide agreement test in `modules/dpe/api-oai/src/metadata/corpus.rs`, which must now read `@id` out of the JSON-LD side
+- [x] Add the canonical landing page URL to schema.org `identifier`, alongside the existing ARK `PropertyValue`, so the property becomes an array. FAIR Champion's *MetadataIdentifierFound* checks `schema:identifier` only — it does not consider `url` — so with the ARK alone it can only match an assessor pointed at the ARK itself. schema.org's `identifier` accepts `Text | URL | PropertyValue`, and F-UJI reads the `PropertyValue` form, so keep the ARK exactly as it is. Take the URL from the `UrlLayout` the writer already holds; never reconstruct it
+- [x] Update the unit test asserting `doc["identifier"]["propertyID"] == "ARK"` and any corpus assertion that indexes `identifier` as a single object
+- [x] Point the Cloud Run PR preview at its own URL: in `.github/workflows/cloud-run-dpe-pull-request.yml`, after the deploy step and before the comment steps, run `gcloud run services update "$SERVICE_NAME"` with `--region` and `--update-env-vars="DPE_PUBLIC_BASE_URL=<the deploy step's url output>"`. Without it the preview falls back to the compiled default of `https://repository.dasch.swiss`, so every `describedby` link and the `303` target point at production, which does not carry this code and answers 404. Comment *why* it is a second step: Cloud Run only knows the service URL once the service exists, and one extra revision on an ephemeral preview is the right price for identifiers that are absolute and self-consistent. The reported URL has no trailing slash and an `https` scheme, so it satisfies `validate_public_base_url` unmodified — do not post-process it
+- [x] **Do not** add a request-host fallback in DPE as an alternative to the above. Deriving the base URL from `Host` would make `@id` and `Link` vary by how the page was reached and would put an attacker-influenceable value into an identifier — the exact thing the canonical-shortcode rule exists to prevent. If the workflow change cannot be made to work, stop and report rather than reaching for it
+- [x] Check whether `cloud-run-editor-pull-request.yml` has the same shape and record the answer as a follow-up in the PR body; do **not** change it in this phase
+- [x] Update `docs/src/dpe/machine-readable-metadata.md`: the property table for the new `license` and `identifier` shapes, and a row in the *Assessment results* table for the 2026-09-18 preview run (F-UJI 3.5.0, 13/24; FAIR Champion 1.1.11, 7/15), noting that it predates these fixes and that the missing base URL accounted for `I1-01M-2`
+- [x] Update `docs/src/dpe/operations.md` to say that PR previews set `DPE_PUBLIC_BASE_URL` to their own Cloud Run URL automatically
+- [x] Update this plan's Success Metrics rows for *LicenseStrong* and *MetadataIdentifierFound* to record that the gap was found by assessment and fixed. **Do not assert a new score anywhere** — nothing is re-measured until a preview carrying these fixes is assessed again
+- [x] Prove OAI output is unchanged: neither JSON-LD fix touches DataCite or Dublin Core. The baseline is at `.claude/tmp/oai-baseline-hashes.txt` (102,158 entries) and must **not** be regenerated. Recover the hash test (the journal records where it was last restored from), run it, confirm it prints `compared 102158 entries`, then remove it again. A skipped test is not a passed checkpoint
+- [x] Run the standing gate: `git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`. The `env -u GIT_DIR` is load-bearing — see the journal's side findings
 - [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set; fold every finding into the commit that introduced it — but only for commits created *in this phase*, since everything at or below `6f53d3c7` is pushed
+
+#### Phase 6: Provenance in PROV-O
+
+Added 2026-09-18, after Phase 5 had landed. Phase 5's residuals ledger named
+`R1.2-01M-2` as a point that was reachable but out of scope: F-UJI reported
+`Formal provenance metadata is unavailable` while `R1.2-01M-1` passed, so the
+provenance *facts* were already there and only the vocabulary was missing. The
+user asked for it to be earned. The remaining causes are institutional and are
+handled outside this plan, so this is the last code change in this line of work.
+
+The sub-test is a set intersection over the namespaces F-UJI collects from the
+*parsed graph* — read out of the pinned image at
+`fuji_server/evaluators/fair_evaluator_data_provenance.py`, where
+`testProvenanceStandardsUsed` intersects a four-entry list of PROV and PAV URIs
+with `self.fuji.namespace_uri` and inspects no statement. A prefix declared in
+`@context` and never used expands away and does not register, so the only route
+that works is also the honest one: emit a real statement.
+
+**Starts from `f3d3ae9f`, like Phase 5.** New commits on top; nothing at or below
+that SHA is amended.
+
+- [x] Bind `prov:` to `http://www.w3.org/ns/prov#` in the JSON-LD `@context`, and assert `prov:wasAttributedTo` over the agents `creator` and `publisher` already name. Restating a recorded fact in a second standard vocabulary is interoperability, not invention, so ADR-0005's rule is met — but do not emit `prov:generatedAtTime`, because the corpus records a publication *year* and not a generation time
+- [x] Give an agent node an `@id` when it has an IRI of its own — the ORCID, by the same rule Signposting's `author` link applies — and the publisher `@id` its URL, so the statement references those nodes instead of describing second copies of them. A creator without an ORCID stays a blank node and is left out of the attribution: naming some agents does not deny the others, and an inlined copy would assert a second, unidentified agent
+- [x] Update the unit tests in `schema_org.rs` that pin the publisher node and the ORCID creator, and add tests for the attribution with and without an identified creator. The corpus-wide agreement test and its 64 KB embedded-block cap must still pass over the whole corpus
+- [x] Prove OAI output is unchanged: recover the hash test as in Phase 5, confirm `compared 102158 entries`, remove it again. The baseline must not be regenerated
+- [x] Measure it. `just fair-check` against a local `dpe-server serve` on `DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000` must move `FsF-R1.2-01M` from 1/2 to 2/2 with `Found use of dedicated provenance ontologies` in `test_debug`. Diff the full per-metric list against the recorded local run and report every metric that moved. If `R1.2-01M` does not move, stop and report rather than iterating toward a shape that games the intersection
+- [x] Update `docs/src/dpe/machine-readable-metadata.md`: the property table gains the PROV-O key, a *Provenance* section says what is asserted and what is deliberately not, the residuals ledger loses the causes this earns and its arithmetic still closes, and *Assessment results* gains this run as a genuine new measured score. Assert nothing about a preview or DEV run
+- [x] Update this plan's Success Metrics rows for the F-UJI targets this moves
+- [x] Run the standing gate: `git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`
+- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set
+
+#### Phase 7: Surface the files a project's records carry
+
+Added 2026-09-18, after Phase 6 had landed. The residuals ledger said the
+repository had no project-level data pointer. That was true of project 0862 and
+false of the repository: `RecordFile` exists, and the committed corpus carries
+7,716 public file URLs for project 0868 and 4,062 for 0803. The user challenged
+the residual and was right.
+
+The baselines make the case. Measured at `f50c162b`, **0862, 0868 and 0803 all
+score 16 of 24, metric for metric identical**, with `F3-01M 0/1`, `A1-03D 0/1`,
+`R1-01MD 1/4` and `R1.3-02D 0/1` in every case. A project holding 7,716 public
+file URLs scored exactly what a project holding none scored, which is direct
+evidence that the pointers were invisible to an assessor rather than merely
+unhelpful — and it means any movement afterwards is attributable, because there
+was no pre-existing difference between the three to confound it. The per-project
+runs are in the journal under *Round 14*.
+
+**Starts from `f50c162b`.** New commits on top; nothing at or below `f3d3ae9f`
+is amended.
+
+- [x] Resolve the file facts into the graph, not into a writer: `PartRef` gains an optional `FileRef` (url, MIME type, file name, byte size, the record's own licence URI), filled by `PartRef::from_record`. The acceptance criterion that only `ProjectGraph::build`, `RecordGraph::build` and `PartRef::from_record` take a `&Record` still holds, and `RecordGraph` is untouched — a record page's own `distribution` is a later plan's
+- [x] Enforce open access in the builder. A record the corpus does not record as `Full Open Access` yields no `FileRef`, so no writer can be added that advertises a restricted record's ingest URL, and an unrecognised spelling fails closed. Every file-carrying record in the corpus is fully open today, which is why this is a rule and not a filter
+- [x] Emit a root-level `distribution`: one `DataDownload` per listed part that has a file, with `contentUrl`, `name`, `contentSize`, `license` as an IRI node, and `encodingFormat` **omitted when the export records no MIME type** — 0803's 4,062 files carry none. No checksum: schema.org has no standard property for one on a `DataDownload`, and `/dpe/records/{shortcode}/{record_id}/file` already serves it
+- [x] Give each `DataDownload` the *record's* licence, not the project's. 0868's project licence is CC BY 4.0 while all 7,716 of its file-carrying records carry CC0 1.0, and 0803 disagrees the same way. A root-level download under the root licence would misstate every file. **Report both faithfully; do not resolve the disagreement in code and do not assume either is wrong** — it is an open question about the data, recorded for the user below
+- [x] Cap `distribution` with the existing `has_part_cap`, over the same parts in the same order, so the files described are the files of the records listed; uncapped in `/metadata.jsonld`
+- [x] Extend the corpus-wide 64 KB assertion on the embedded block to every committed dump rather than the largest one alone: the largest (081C) carries no file, so it measured nothing about a download. The test also asserts that at least one dump does produce one, so the budget cannot be met by emitting nothing
+- [x] Fix `RecordFile`'s doc comment, which claimed the URL is never published — the file endpoint publishes it as `downloadUrl`. The OAI-PMH rationale itself stays true and must not be contradicted: it drops the URL because `dc:identifier` identifies the described resource and `HasPart` relates resources, not bitstreams. Say in the commit body that `schema:distribution` is the field that fits, so the two decisions read as coherent
+- [x] Amend ADR-0005's *Nothing is invented for a score* clause. The principle is untouched and is restated: nothing is invented, and a project whose records carry no file still emits no `distribution`. What changes is the factual premise that no project has one, which 0868 and 0803 disprove. Record pages remain the right target for record-level tests
+- [x] Prove OAI output is unchanged: recover the hash test as in Phases 5 and 6, confirm `compared 102158 entries`, remove it again. The baseline must not be regenerated
+- [x] Measure it. `just fair-check` against a local `dpe-server serve` on `DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000`, for **0862, 0868 and 0803**, each diffed per metric against the 16 of 24 baseline. Expected, not certain: F3-01M and A1-03D move on 0868 and 0803, R1-01MD-2 moves, `-3`/`-4` depend on F-UJI's fetch surviving dsp-ingest's `405` on `HEAD`, and R1.3-02D depends on the format list. **0862 must not move at all.** If something moves that should not, report it rather than smoothing it; if a sub-test does not move, report rather than iterating toward a shape that games it
+- [x] Update `docs/src/dpe/machine-readable-metadata.md`: the property table gains `distribution`, a *Record files* section states the four rules and the OAI coherence, *Assessment results* gains a project dimension and the three new runs, and the residuals ledger becomes per-project, rewritten after measuring, with arithmetic that visibly closes for whichever project the table describes
+- [x] Raise `just fair-check`'s curl `--max-time` from 600s to 1800s, with the measured 558s for 0868 and the reason in the comment: an assessment of a file-carrying project now downloads the advertised files, so runtime scales with how many distinct MIME types a project has. `REVIEW.md` makes the recipe a review step for any `shared-fair` change, so a recipe that cannot finish against 0868 is broken for the repo's own workflow. In the same change, write the full result JSON to gitignored `.claude/tmp/` and print the path, so `test_debug` — the evidence every residual attribution rests on — survives a run that now takes minutes
+- [x] Record the egress characteristic in `docs/src/dpe/operations.md`: the bytes come from `ingest.dasch.swiss` and not from DPE, so DPE's per-IP limiter does not bound them; what an assessor actually pulls; and that this is a change in convenience, not in capability, since the same bytes were already reachable per record through the file endpoint. State no policy — rate limiting or monitoring ingest is the user's call with Infrastructure
+- [x] Update this plan's Success Metrics for what this moves, per project
+- [ ] Run the standing gate: `git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`
+- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set
+
+**Out of scope, deliberately.** DataCite `<sizes>` and `<formats>` at project
+level — the OAI documentation already rejects `<sizes>` with reasoning that
+still holds, that it describes the bitstream and not the resource. Signposting
+`rel="item"`. Record landing pages, which remain ADR-0005's next landing page
+and are where a record's own `distribution` belongs.
+
+**Open question for the user, not decided here.** Is the project licence or the
+record licence the correct statement about these files, and should one of them
+be corrected in the corpus? 0868 records CC BY 4.0 for the project and CC0 1.0
+for every file-carrying record; 0803 disagrees the same way. All 11,778
+file-carrying records are `Full Open Access`, so only the licence is in
+question. The metadata reports the disagreement faithfully until someone decides.
+
+**FAIR Champion is expected to move and was not run.** *DataIdentifierFound*
+reads `schema:distribution`; *DataOpenProtocol* and *DataAuthentication* should
+stay indeterminate. It is a hosted service with no CLI (human action H2).
 
 ## Human Actions
 
@@ -966,36 +1060,74 @@ Numbered, not checkboxes, so no orchestrator scan mistakes them for work.
 
 | Metric | Baseline (2026-09-15) | Target after Phase 3 |
 |--------|-----------------------|----------------------|
-| F-UJI total | 3 / 24 (12.5%) | ≥ 12 / 24 |
+| F-UJI total | 3 / 24 (12.5%) | ≥ 12 / 24 — 14 measured after Phase 3, 16 after Phase 6 |
 | F-UJI F2 core metadata | 0 / 2 | 2 / 2 |
 | F-UJI F4-01M-1 search-engine ingestion | 0 / 1 | 1 / 1 |
 | F-UJI I1 formal representation | 0 / 2 | 2 / 2 |
-| F-UJI I2 semantic resources | 0 / 1 | 1 / 1 |
+| F-UJI I2 semantic resources | 0 / 1 | 1 / 1 — missed by Phase 3, met in Phase 6 |
 | F-UJI I3 related entities | 0 / 1 | 1 / 1 |
 | F-UJI R1.1 license | 0 / 2 | 2 / 2 |
 | F-UJI A1-01M access level | 0 / 1 | ≥ 0.5 / 1 |
 | FAIR Champion passes | 6 / 15 (2 hollow) | ≥ 10 / 15 |
-| FAIR Champion license (strong, weak) | fail, fail | pass, pass |
-| FAIR Champion MetadataIdentifierFound | fail | pass |
+| FAIR Champion license (strong, weak) | fail, fail | pass, pass — *strong* still failed after Phase 3; fixed in Phase 5 |
+| FAIR Champion MetadataIdentifierFound | fail | pass — still failed after Phase 3; fixed in Phase 5 |
 | FAIR Champion QualifiedRefs | fail (0 of 0 triples) | pass |
+
+Two of these targets were not met by Phase 3, and no gate in Phases 0 to 4 could
+have told us: both are statements about how an assessor reads the RDF, and the
+first assessment of a *deployed* page is what surfaced them. *LicenseStrong*
+failed because `license` was emitted as a string and so parsed as a literal
+rather than a Resource; *MetadataIdentifierFound* failed because `identifier`
+carried only the ARK, and that test does not consider `url`. Phase 5 fixes both.
+Neither is re-measured here. No assessor has yet run against a build carrying
+the fixes, so no new score is claimed anywhere until one has.
 
 Targets are conservative. Out of reach in code and excluded: DataCite and re3data
 registration (keyed on a DOI prefix), Bing indexing, and metadata persistence
 (needs H3).
 
-**One target is missed and is not reachable by anything in this plan: F-UJI I2
-semantic resources, target 1/1, measured 0/1.** The total target is met (14/24
-against ≥ 12) and every other F-UJI row above is at or above its target. I2 is
-not a serialisation gap, which is why Phase 4 does not close it: F-UJI strips
-schema.org and the Dublin Core namespaces before scoring the test, and one of
-its two sub-tests earns zero unconditionally in 3.5.0. See *Phase 4: Turtle
-representation* and the *Known residuals* section of
-`docs/src/dpe/machine-readable-metadata.md`. Recorded as a follow-up — a
-controlled-vocabulary link F-UJI's registry recognises — not as a silent miss.
+**Every F-UJI target above is met.** The total is 16 of 24 against ≥ 12.
+
+One of them took two attempts, and the record of that is worth keeping.
+**F-UJI I2 semantic resources, target 1/1, measured 0/1 after Phase 3** and
+written up then as not reachable by anything in this plan. That was half right.
+I2 was never a *serialisation* gap, which is why Phase 4's Turtle writer would
+not have closed it and why skipping that phase was correct. What the write-up got
+wrong was the conclusion that nothing here could close it at all: the diagnosis
+already named the fix — a controlled-vocabulary link F-UJI's registry recognises
+— and Phase 6 supplied one incidentally, by asserting provenance in PROV-O.
+**I2-01M scores 1/1 from Phase 6 on.** See *Phase 4: Turtle representation*,
+*Phase 6: Provenance in PROV-O*, and the *Known residuals* section of
+`docs/src/dpe/machine-readable-metadata.md`, whose account of *why* I2 failed is
+corrected there.
+
+Out of reach in code and excluded, unchanged: DataCite and re3data registration,
+Bing indexing, and metadata persistence.
+
+**Phase 7 moves the targets off 0862.** Every row above is project 0862, which
+has no committed record dump and so no file to describe. Measured on 2026-09-18
+against the same build, per project:
+
+| Metric | 0862 | 0868 | 0803 |
+|--------|-----:|-----:|-----:|
+| F-UJI total | 16 / 24 | **21 / 24** | **18 / 24** |
+| F-UJI F3-01M data identifier | 0 / 1 | 1 / 1 | 1 / 1 |
+| F-UJI A1-03D data access protocol | 0 / 1 | 1 / 1 | 1 / 1 |
+| F-UJI R1-01MD data content | 1 / 4 | 3 / 4 | 1 / 4 |
+| F-UJI R1.3-02D file format | 0 / 1 | 1 / 1 | 0 / 1 |
+
+All three scored 16 of 24, metric for metric, before the change. 0862 is the
+control and did not move. 0803 stops at 18 because none of its 4,062 files
+records a `mimeType`; that is a data-quality residual, not a code one, and it is
+written up in `docs/src/dpe/machine-readable-metadata.md`.
+
+Not measured: FAIR Champion, whose *DataIdentifierFound* reads
+`schema:distribution` and is expected to move. It is a hosted service with no
+CLI (H2).
 
 ## References
 
-- The decision this plan implements: `docs/adr/0005-fair-landing-pages-in-the-access-area.md` (amended 2026-09-17 alongside this plan); the hypermedia rule it carves into: `docs/adr/0004-hypermedia-frontends.md`; the layout and layering it must respect: `docs/adr/0002-areas-at-the-repository-root.md` (amended 2026-09-17: shared root `shared/`, moved first by this plan's Phase 0), `docs/adr/0003-one-modulith-per-area.md`
+- The decision this plan implements: `docs/adr/0005-fair-landing-pages-in-the-access-area.md` (amended 2026-09-17 alongside this plan, and again 2026-09-18 by Phase 7: *Nothing is invented for a score* no longer claims that no project has a download); the hypermedia rule it carves into: `docs/adr/0004-hypermedia-frontends.md`; the layout and layering it must respect: `docs/adr/0002-areas-at-the-repository-root.md` (amended 2026-09-17: shared root `shared/`, moved first by this plan's Phase 0), `docs/adr/0003-one-modulith-per-area.md`
 - Agent-context layer to keep current: `ARCH-MAP.md` (`modules/dpe` and `shared/metadata` entries, *Conventions*, *Banned constructs*), `CONTEXT.md` (*Shared infrastructure*, *Boundary rules*), `modules/dpe/CONTEXT.md` (*Landing page*, *Machine-readable representation*), `shared/README.md`
 - Landing page handler and document shell: `modules/dpe/server/src/main.rs:66-89`, `modules/dpe/server/src/view.rs:10-64`
 - JSON handler pattern to mirror for 400/404: `modules/dpe/server/src/fragments.rs:196-209`

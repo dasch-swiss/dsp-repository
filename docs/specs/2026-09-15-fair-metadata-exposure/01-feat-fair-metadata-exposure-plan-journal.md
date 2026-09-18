@@ -1422,6 +1422,16 @@ required — they load no `telemetry.js`.
 
 ## Phase 4 decision — skipped, on evidence the plan's condition did not anticipate (2026-09-18, session)
 
+> **Later note (Round 13).** The skip was correct and the reasoning below on
+> *serialisation* holds: Turtle would have earned nothing. Two details did not
+> survive. I2-01M is no longer 0/1 — Phase 6 earned it with a PROV-O statement,
+> which is the controlled-vocabulary link this section itself said it would take,
+> so the condition is now met by other means. And one of the two mechanisms below
+> is wrong: the namespace strip does not leave nothing to score, and no sub-test
+> adds a false status to the score. Corrected reading in *Round 12*. The text is
+> left as written, because this section records what was known when the decision
+> was made.
+
 **Decision: Phase 4 (Turtle) is skipped.** The plan's literal skip condition is
 *not* met, and skipping is nevertheless the right call. Recorded here because the
 plan's suggested note ("skipped, Phase 3 passed I1 to I3") would be false.
@@ -1917,8 +1927,8 @@ Phase 4 decision section). 35 commits on `worktree-fair-assessment` from
 
 ## Round 11 — HANDOFF: fixes found by the first live assessment (2026-09-18)
 
-**Status: not started.** This section exists so a fresh session can continue
-cold. The work is written up as **Phase 5** in the plan file; run
+**Status: executed — see *Round 12* below.** This section exists so a fresh
+session can continue cold. The work is written up as **Phase 5** in the plan file; run
 `/eng:workflows:work-orchestrate docs/specs/2026-09-15-fair-metadata-exposure/01-feat-fair-metadata-exposure-plan.md`
 and execute that phase. Everything below is the evidence and the state.
 
@@ -2066,3 +2076,865 @@ the correct fix.
   `oai_datacite` golden tests pinning degraded output, I2-01M's unreachability,
   the two `editor-server` flakes, and whether `/dpe/oai` shares the synchronous
   handler shape fixed for the representation routes.
+
+## Round 12 — Phase 5 (2026-09-18)
+
+The three things the first live assessment found: two defects in what the JSON-LD
+asserts, and one deployment gap. Four commits on top of `f3d3ae9f`, which is
+pushed, so nothing at or below it was amended or rebased.
+
+| # | Chunk | Plan checkboxes | Commit | Notes |
+|---|-------|-----------------|--------|-------|
+| 5.1 | `license` as an IRI node; corpus test reads `@id` | 1, 2 | `a8bdad36` | `fix(shared-fair,dpe-api-oai)`; adopted from the working tree, verified, completed |
+| 5.2 | `identifier` gains the landing page URL; corpus test picks the ARK by `@type` | 3, 4 | `1a4786af` | `fix(shared-fair,dpe-api-oai)`; plus the F-UJI regression gate below |
+| 5.3 | Cloud Run preview sets `DPE_PUBLIC_BASE_URL` to its own URL | 5, 6 | `378d7dea` | `chore(ci)`; checkbox 6 is a prohibition and was honoured, not implemented |
+| 5.4 | `machine-readable-metadata.md`, `operations.md`; plan Success Metrics | 8, 9, 10 | `03585c0d` | `docs(docs)`; the plan-file edit is in the working tree, unstaged, as every round |
+| 5.5 | Editor workflow investigation | 7 | — | journal-recorded below; no code change, by instruction |
+| 5.6 | OAI byte identity; standing gate | 11, 12 | — | both green, see below |
+| 5.7 | Residuals ledger: all ten missing F-UJI points, in five causes | 8 (extended) | `1d9403f8` | `docs(docs)`; new evidence, added after 5.4 had landed — see below |
+
+Checkbox 13 (`eng:reviewing` with the complete reviewer set) is left unticked:
+the interactive session owns reviews, as in every prior phase.
+
+### The F-UJI regression guard on the `identifier` array
+
+The plan asserts F-UJI reads the `PropertyValue` form but never verifies it reads
+it *out of a list*. After 5.2, `identifier` is
+`[PropertyValue, "…/dpe/projects/0862"]`. If F-UJI 3.5.0 indexed
+`identifier.value` on the object directly, F1 would have regressed silently.
+
+Checked in the pinned image first, before spending a run.
+`fuji_server/helper/metadata_collector_rdf.py:523-538` is an rdflib graph
+traversal, not a JSON path:
+
+```python
+for identifier in (
+    list(g.objects(item, DC.identifier)) + … + list(g.objects(item, SDO.identifier))
+    + … + list(g.objects(item, SMA.url)) + list(g.objects(item, SDO.url))
+):
+    idvalue = g.value(identifier, SDO.value) or g.value(identifier, SMA.value)
+    if idvalue:
+        identifier = idvalue
+    meta["object_identifier"].append(str(identifier))
+```
+
+It iterates *every* object of `schema:identifier` and substitutes `schema:value`
+where the object is a node, so a list costs nothing. Note also that it already
+folded `SDO.url` into `object_identifier` — F-UJI had the landing page all along;
+it is FAIR Champion that reads `schema:identifier` alone.
+
+Then the empirical gate. `just fair-check` against
+`http://host.docker.internal:4000/dpe/projects/0862`, local `dpe-server serve`
+started with `DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000` and
+`DPE_SITE_ADDR=0.0.0.0:4000`, F-UJI 3.5.0 at the pinned digest. Every per-metric
+score is identical to the 2026-09-18 local row:
+
+```
+F1-01D 1/1 pass   F1-02D 0/1 fail   F2-01M 2/2 pass   F3-01M 0/1 fail
+F4-01M 1/2 pass   A1-01M 1/1 pass   A1-02M 1/1 pass   A1-03D 0/1 fail
+I1-01M 2/2 pass   I2-01M 0/1 pass   I3-01M 1/1 pass   R1-01MD 1/4 pass
+R1.1-01M 2/2 pass R1.2-01M 1/2 pass R1.3-01M 1/1 pass R1.3-02D 0/1 fail
+```
+
+**F1 passes. No regression.** The total is unchanged; it is recorded here only
+as the gate's evidence, and no new score is claimed anywhere in the
+documentation — the plan's rule holds until a preview carrying these fixes is
+assessed.
+
+An identical total is a weak signal on its own, since F1-01D passed at the
+3-of-24 baseline with no JSON-LD at all. The discriminating evidence is in the
+run's `test_debug`, which only appears when the ARK was extracted *from
+metadata*:
+
+```
+WARNING: Landing page domain resolved from PID found in metadata does not match
+         with input URL domain -:internal. <> dasch.swiss
+```
+
+and F-UJI's collected `object_identifier`, which now carries both:
+
+```
+["https://ark.dasch.swiss/ark:/72163/1/0862",
+ "http://host.docker.internal:4000/dpe/projects/0862"]
+```
+
+The licence change was confirmed the same way. R1.1 stays 2/2 and the debug log
+still reads `Found CreativeCommons license -: https://creativecommons.org/licenses/by-sa/4.0/`
+and `SUCCESS: Found SPDX license representation (spdx url, osi_approved)`, so the
+node object parses as the licence resource rather than costing the SPDX match.
+
+### Checkbox 7 — does `cloud-run-editor-pull-request.yml` have the same shape?
+
+**Structurally yes, materially no. No change is needed there, in this phase or a
+later one.**
+
+The editor preview workflow has the same skeleton: a `Deploy to Cloud Run` step
+with `id: deploy`, and a comment step reading `${{ steps.deploy.outputs.url }}`.
+What it does not have is anything to point at itself with. `editor-server` has no
+public-base-URL setting: `EDITOR_*` covers the listen address, data and public
+directories, the database, SMTP and the login limits, and nothing else. Grepping
+all of `modules/editor` for `BASE_URL`, `base_url` and `format!("http` finds
+nothing — the editor builds no absolute URL anywhere. Its login flow mails a
+*code*, not a link, so it never needs to name its own origin.
+
+The gap fixed in 5.3 is specific to a service that publishes absolute
+identifiers. The answer is carried in the orchestration report for the session to
+put in the PR body at ship, as the plan asks; the orchestrator does not edit it.
+
+### Byte identity
+
+The plan's claim is that neither JSON-LD fix touches DataCite or Dublin Core.
+Proven, not assumed.
+
+The hash test was recovered from `4cdf06d8^` (the parent of the commit that
+removed it), trimmed to `oai_output_matches_hash_baseline` and its helpers, and
+added as `modules/dpe/api-oai/src/metadata/hash_check.rs` with a
+`#[cfg(test)] mod hash_check;` line. Run with `-- --ignored`, since it is
+`#[ignore]`d for setting the process-global data dir:
+
+```
+compared 102158 entries
+took 6.6s
+test metadata::hash_check::oai_output_matches_hash_baseline ... ok
+```
+
+Both edits were then removed; the working tree is clean of them. The baseline at
+`.claude/tmp/oai-baseline-hashes.txt` was **not** regenerated.
+
+### Standing gate
+
+`git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`
+— green on every pick above `6f53d3c7`, `Successfully rebased and updated`. Run
+three times: at five picks, after chunk 5.7 added a sixth, and once more on the
+final tip `1d9403f8`.
+`f3d3ae9f` and `6f53d3c7` still resolve to the same SHAs afterwards: an
+interactive rebase fast-forwards unchanged picks, so the pushed history is
+preserved rather than rewritten. The `env -u GIT_DIR` carry-forward did its job:
+no orphan `feature` branch exists, and `git config --local --list` carries no
+`user.*` entry, which is the write that polluted the repository last time.
+
+`just commit-lint` reports all commit messages OK. Its commit-count check fails
+at 44 over a maximum of 1, which is the expected reading for this branch: PR #391
+ticks `allow-many-commits`, and the local recipe cannot see the checkbox.
+
+The rebase needs a clean tree and the plan file is tracked as of `f3d3ae9f`, so
+the carry-forward's "remove the untracked journal" is now stale. What works: copy
+the plan file to a scratch dir, `git checkout --` it, rebase, copy it back. The
+ticks survive intact.
+
+### Side findings
+
+- **The plan says "the property table" for `machine-readable-metadata.md`, but
+  the schema.org section was prose and had no table.** The Signposting table's
+  `license` row describes the `Link` header, which this phase does not change. A
+  two-row table was added to the schema.org section instead of editing the wrong
+  one, and the now-redundant sentence explaining the `PropertyValue` choice was
+  folded into it.
+- **`identifier` is written as an array literal, not through `insert_list`.** Its
+  cardinality is fixed at two and does not depend on the graph, so
+  `insert_list`'s collapse-to-scalar branch would be dead code that hides the
+  invariant. `license` still goes through `insert_list`, where the cardinality is
+  genuinely the graph's.
+- **The corpus assertion picks the ARK entry by `@type`, not by index.** Pinning
+  position would make a reordering of the two entries a test failure for no
+  reason. `test_layout()` is now bound once in that function so the landing-page
+  assertion compares against the same layout the writer was given.
+- **The top-level key-order test is unaffected.** It asserts the first five
+  *keys*, and `identifier` is still one key.
+
+### Chunk 5.7 — the residuals ledger (added after 5.4 had landed)
+
+New evidence, not a re-derivation. The user supplied the full F-UJI 3.5.0 result
+JSON for the 2026-09-18 preview run, taken with `test_debug: true`. Sub-test
+detail had never been recorded in this run: it is the first time anyone could see
+*which half* of a metric failed. *Known residuals* accounted for six of the ten
+missing points; it now accounts for all ten, in five causes rather than four, in
+a table a reader can add up.
+
+Landed as its own commit rather than folded into `03585c0d`, which had already
+been made.
+
+| Cause | Where the points go | Points |
+|-------|---------------------|--------|
+| No project-level data pointer | F3-01M, A1-03D, R1-01MD-2 to -4, R1.3-02D | 6 |
+| No formal provenance vocabulary | R1.2-01M-2 | 1 |
+| Vocabularies absent from F-UJI's LOD registry | I2-01M | 1 |
+| ARKs are not registered with DataCite | F4-01M-2 | 1 |
+| The assessment ran against a non-production host | F1-02D | 1 |
+
+Three things the doc did not previously say, and one it said wrongly.
+
+**R1-01MD's three lost points were never attributed.** They belong to the
+"no project-level data pointer" cause already named for F3-01M and A1-03D, which
+makes that cause worth six points rather than three. R1-01MD-1 passes on the
+resource type alone; R1-01MD-2 does run and returns an empty
+`data_content_descriptor`; only -3 and -4 cannot run at all.
+
+**R1.2-01M-2 was missing entirely.** F-UJI maps `publication_date` to
+`prov:generatedAtTime` and the agent fields to `prov:wasAttributedTo`, so
+R1.2-01M-1 passes on facts this page already carries; -2 wants those facts in a
+formal provenance ontology and reports `Formal provenance metadata is
+unavailable`. Recorded as new scope for a later plan, not as something declined.
+
+**F1-02D is not a DataCite-registration failure, and Round 10's fix 4 attributed
+it to that cause in error.** The preview JSON shows F-UJI harvesting the ARK from
+the metadata twice — once through the Signposting `cite-as` link — confirming the
+`ark` syntax and resolving it successfully:
+
+```json
+"persistent_identifiers": [{ "pid": "http://ark.dasch.swiss/ark:/72163/1/0862",
+  "pid_scheme": "ark", "resolved_url": "https://repository.dasch.swiss/dpe/projects/0862",
+  "resolvable_status": true }]
+```
+
+and then discarding it on a domain comparison:
+
+```
+WARNING: Landing page domain resolved from PID found in metadata does not match
+         with input URL domain -: run.app <> dasch.swiss
+WARNING: PID syntax is OK but the PID seems to resolve to a different entity,
+         will not use this PID for content negotiation
+INFO:    Could not find any persistent identifier for metadata which complies with
+         a known PID syntax
+```
+
+The PID was found, well-formed and resolvable. It was rejected because the domain
+it resolves to is not the domain the assessment ran against. The corollary is not
+"assess the ARK" but "assess from a host under `dasch.swiss`", which is exactly
+what post-merge verification step 1 does against DEV.
+
+The hedge needed one turn of precision beyond the brief's wording. "F1-02D is
+unmeasured from a `dasch.swiss` host" is not quite true: the 2026-09-15 baseline
+*did* target the ARK, and its row reports `F 2/7` with "only F1 and A1-02M
+passed", which is ambiguous about F1-02D and is not worth resolving by guessing.
+What is unambiguous is that no run against a build carrying this work has been
+made from such a host, so that is what the doc says. No pass is predicted either
+way.
+
+**The I2-01M residual's second mechanism was wrong and is dropped.** Round 10's
+fix 4 recorded two mechanisms. The first is confirmed verbatim by the JSON:
+`Removing default namespaces from 26 vocabulary namespaces found in structured
+metadata`, with `http://schema.org` and `http://purl.org/dc/elements/1.1` among
+the excluded list. But "so there is nothing left to score" does not follow —
+seventeen namespaces survive the strip and *are* checked, including OAI-DC, the
+DaSCH URLs, geonames, ORCID, the DataCite kernel-4 schema and creativecommons.
+And the second mechanism, that `testSemanticNamespaceURIsAvailable` adds a false
+status to the score and so earns zero whatever it found, is not what the output
+shows: `I2-01M-1` is explicitly unscored (`metric_test_score {total: 0,
+earned: 0}`, "This test is not scored") and `I2-01M-2` is a plain `total: 1,
+earned: 0`. The real failure is registry membership — `NO known vocabulary
+namespace URI is found which is listed in the LOD registry`. The conclusion is
+unchanged: moving I2 needs a controlled-vocabulary link F-UJI's registry
+recognises. Round 10's text is left as written, since this journal is the record
+of what was believed when; this section supersedes it.
+
+**Which run the evidence comes from.** The per-metric totals in the ledger are
+the local 14-of-24 run; the sub-test detail is the preview run of the same day.
+They differ in `I1-01M-2` alone, which the preview lost to its missing base URL
+and which this phase fixes, so the sub-test detail carries over to the ten points
+unchanged. The doc says so rather than leaving a reader to assume one run.
+
+**F4-01M-2 is a one-registry miss, not a three-registry one.** Of the registries
+F-UJI consults, two never answered: `Mendeley Data API not available` (a DNS
+resolution failure inside the container) and `Google Search Cache DB does not
+exist, see F-UJI installation instructions`. DataCite was the only one actually
+queried. Not in the doc — the conclusion there is the same either way — but worth
+recording so a later reader does not read that sub-test as a clean sweep of three
+registries. It also means the sub-test is partly a property of how the container
+is provisioned.
+
+### Side finding — `just fair-check` discards the only data that explains a score
+
+The recipe prints `metric_identifier`, `score.earned/total` and `test_status`,
+and throws the rest of the response away. Everything in this section — which
+sub-test failed, the log line that says why, the resolved PID, the namespace
+lists — was in the JSON the recipe already received and did not keep. Every
+attribution in *Known residuals* had to come from a result set captured outside
+the recipe. Worth a follow-up: keep the raw JSON, or print the sub-test rows.
+
+### Status
+
+Checkboxes 1–12 ticked. Checkbox 13 belongs to the session.
+
+## Round 13 — Phase 6: provenance in PROV-O (2026-09-18)
+
+Two commits: the documentation gaps Phase 5's ledger left, then the one code
+change that earns `R1.2-01M-2`.
+
+| # | Chunk | Plan checkboxes | Commit | Notes |
+|---|-------|-----------------|--------|-------|
+| 6.1 | The re-run row, ADR-0005 on the data-pointer cause, and its framing | Phase 5, 8 (extended) | `0de950ec` | `docs(docs)`; closes the `REVIEW.md:17` tension |
+| 6.2 | PROV-O: context, `prov:wasAttributedTo`, agent `@id`s, tests, docs | Phase 6, 1–7 | `a35f1ba7` | `feat(shared-fair)`; measured, see below |
+| 6.3 | OAI byte identity; standing gate | Phase 6, 4 and 8 | — | both green |
+
+Phase 6 checkbox 9 (`eng:reviewing`) is the session's, as always.
+
+### The sub-test is a set intersection, which is why this is one predicate
+
+Read out of the pinned 3.5.0 image,
+`fuji_server/evaluators/fair_evaluator_data_provenance.py`:
+
+```python
+provenance_namespaces = [
+    "http://www.w3.org/ns/prov", "http://www.w3.org/ns/prov#",
+    "http://purl.org/pav/", "http://purl.org/pav",
+]
+used_provenance_namespace = list(set(provenance_namespaces).intersection(set(self.fuji.namespace_uri)))
+```
+
+It never inspects the provenance statement. It asks only whether a PROV or PAV
+URI is among the namespaces F-UJI collected, and those come from the *parsed
+graph*, not from the raw `@context` — so a prefix declared and never used
+expands away and does not register. The honest route and the only working route
+are the same one: emit a real statement. That is why this is a one-predicate
+change and not a provenance modelling exercise.
+
+### What is asserted, and what is not
+
+`prov:wasAttributedTo` over DaSCH and every credited creator with an ORCID.
+Both halves restate what `creator` and `publisher` already say.
+
+Agent nodes gained an `@id` — the ORCID, by Signposting's `author` rule, and the
+publisher's URL — so the statement references those nodes rather than describing
+second copies of them. That is worth having on its own: a consumer merging this
+page with another can now see that two mentions of the same person are one node.
+
+Two omissions, both deliberate:
+
+- **`prov:generatedAtTime`.** F-UJI's own mapping treats `publication_date` that
+  way, but the corpus records a publication *year*. This run already produced one
+  fabricated-date defect — the `"2015"` `datePublished` — and one predicate that
+  is unambiguously true beats two where one is arguable.
+- **Creators without an ORCID.** No node to point at. Inlining a copy would put a
+  *different* blank node in the graph and so assert a second, unidentified agent,
+  which is the opposite of what attribution means. Naming some agents does not
+  deny the others, so the shorter statement is still true. A unit test pins both
+  the identified and the unidentified case.
+
+On ADR-0005's "nothing is invented for a score": the rule bites on asserting what
+the corpus does not record. Re-expressing a recorded fact in the W3C vocabulary
+for provenance is interoperability. The reading held throughout implementation;
+had it not, the instruction was to stop rather than proceed.
+
+### Measured: 14 to 16, and the second metric was not sought
+
+`just fair-check` against a local `dpe-server serve`, F-UJI 3.5.0 at the pinned
+digest. **Exactly two metrics moved**, verified by diffing the full per-metric
+list against the recorded local run:
+
+- `FsF-R1.2-01M` **1/2 → 2/2** — `SUCCESS: Found use of dedicated provenance ontologies`
+- `FsF-I2-01M` **0/1 → 1/1** — `SUCCESS: Namespace matches found -: ['http://www.w3.org/ns/prov']`
+
+Every other metric's earned/total is unchanged, and **no metric's `test_status`
+flipped** — `F1-02D`, `F3-01M`, `A1-03D` and `R1.3-02D` still report `fail`,
+everything else still `pass`, including `I2-01M`, which reported `pass` at 0/1
+before and reports `pass` at 1/1 now. Total **16 of 24**.
+
+What was compared, precisely: the recipe's printed `metric_identifier`,
+`earned/total` and `test_status` table for this run against the same table for
+the 14-of-24 run. Not a diff of two saved JSON documents — the recipe discards
+everything else, which is the side finding Round 12 recorded, and the earlier
+run's captured JSON was overwritten by this one's.
+
+The brief's acceptance said no other metric should move, so the I2 movement is a
+deviation and is reported as one. It is not a second change, and it is not the
+intersection being gamed. I2-01M failed on registry membership — `NO known
+vocabulary namespace URI is found which is listed in the LOD registry` — and PROV
+is both a provenance ontology and a vocabulary that registry lists. One true
+statement satisfies both tests.
+
+It is also exactly what the I2 residual predicted. That residual said moving I2
+needs "a controlled-vocabulary link F-UJI's registry recognises", and that is
+what happened. **Phase 4's decision is therefore confirmed, not contradicted**:
+Turtle could not have earned I2, because the obstacle was never serialisation.
+The residual's own diagnosis named the fix, and a phase two rounds later supplied
+it for an unrelated reason.
+
+Worth noting for a later reader: the namespace F-UJI collected is the slash form
+`http://www.w3.org/ns/prov`, truncated at the `#`. Both forms are in the
+intersection list, so either serialisation works.
+
+### Byte identity
+
+The hash test was recovered again from `4cdf06d8^`, with the write mode replaced
+by a panic this time so a regenerated baseline cannot be mistaken for a pass, and
+the absent-baseline skip replaced by a panic for the same reason.
+
+```
+compared 102158 entries
+took 6.8s
+```
+
+Both edits removed afterwards. The baseline was not regenerated.
+
+### Standing gate
+
+`git rebase --exec 'env -u GIT_DIR just check' --exec 'env -u GIT_DIR just test' 6f53d3c7`
+green over every pick, with `f3d3ae9f` and `6f53d3c7` unchanged afterwards.
+
+### Side finding — the residuals ledger is now a maintenance surface
+
+Phase 5 built a table whose arithmetic has to close at the number of unearned
+points. Phase 6 earned two of them, and the table, its lead-in sentence, two
+cause paragraphs and the *Assessment results* note all had to move together or
+the section would have contradicted itself. That is the cost of stating
+arithmetic in prose, and it is worth paying — the alternative, six of ten points
+explained and four silently missing, is what Phase 5 was called in to fix. But
+anything that earns a point from here on has to edit the ledger in the same
+commit.
+
+## Round 14 — Phase 7 baselines, then HANDOFF (2026-09-18)
+
+**Status: baselines measured and recorded; implementation not started.** Phase 7
+surfaces record file pointers as `schema:distribution`. The brief requires a
+baseline for 0868 and 0803 *before* any code, because neither has one and without
+it no post-change movement is attributable. Those two runs are done and are below.
+The orchestrator that ran them stopped there on context, so a fresh one starts
+from this section with the measurement already banked.
+
+One documentation commit landed first, `f50c162b`, which is Phase 5/6 cleanup
+rather than Phase 7: it makes the data-pointer residual say which project it is
+about, and narrows the ADR-0005 clause to "do not fabricate a download for a
+project that has none". Deliberately interim. Phase 7 rewrites that cause with
+measured numbers.
+
+### Baselines — 2026-09-18, F-UJI 3.5.0, `sha256:3cde9d30bc14…`
+
+Local `dpe-server serve`, `DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000`,
+against HEAD `f50c162b` — that is, *after* PROV-O and before any distribution
+work.
+
+| Project | Records | With a file | Total |
+|---------|--------:|------------:|-------|
+| 0862 `gotthelf` | — | 0 | 16 of 24 |
+| 0868 `solec` | 19,770 | 7,716 | **16 of 24** |
+| 0803 `incunabula` | 4,198 | 4,062 | **16 of 24** |
+
+**All three score identically, metric for metric.** Every one of them:
+
+```
+F1-01D 1/1   F1-02D 0/1   F2-01M 2/2   F3-01M 0/1
+F4-01M 1/2   A1-01M 1/1   A1-02M 1/1   A1-03D 0/1
+I1-01M 2/2   I2-01M 1/1   I3-01M 1/1   R1-01MD 1/4
+R1.1-01M 2/2 R1.2-01M 2/2 R1.3-01M 1/1 R1.3-02D 0/1
+```
+
+That is the useful result, and it is worth more than either number on its own.
+The four failing metrics — F3-01M, A1-03D, R1-01MD's three sub-tests, R1.3-02D —
+are the exact six points the residuals ledger attributes to "no data pointer for
+this project". A project holding 7,716 public file URLs scores them the same as a
+project holding none, which is direct evidence that the pointers are invisible to
+an assessor today rather than merely unhelpful. It also means any movement after
+the change is unambiguously caused by the change: there is no pre-existing
+difference between the three projects to confound it.
+
+It also fixes the comparison for **0862 must not move**. 0862's baseline is the
+same 16 of 24, so "did not move" is checkable against this table directly.
+
+### What the next orchestrator should not re-derive
+
+These come from the team lead's brief and were **not** independently verified
+here. Treat them as leads with stated provenance, not as measurements of mine.
+
+- Ingest URLs are `https://ingest.dasch.swiss/projects/{shortcode}/assets/{asset}/original`;
+  a GET returns 200 with `Content-Type` and `Content-Length` matching the
+  record's `mimeType` and `fileSize` exactly. **HEAD answers 405** and range
+  requests are ignored (a ranged GET returns the whole body, 200). Those two are
+  risks to `R1-01MD-3`/`-4`, not to F3-01M.
+- F-UJI reads `distribution` at `metadata_collector_rdf.py:884-921`: root-level
+  `SDO.distribution`/`SMA.distribution`, or a `hasPart` typed `MediaObject`. It
+  takes `contentUrl or url`, `encodingFormat or fileFormat`, `contentSize or
+  fileSize`, never checks the distribution's own type, and stringifies the size.
+  `R1-01MD-3` then downloads and compares content type and byte length
+  (`fair_evaluator_data_content_metadata.py:246-328`).
+
+### The licence disagreement — a data question, not a code question
+
+Project 0868's own licence is `https://creativecommons.org/licenses/by/4.0/deed.en`.
+All 7,716 of its file-carrying records carry
+`https://creativecommons.org/publicdomain/zero/1.0/`. 0803 disagrees the same
+way. **These are different licences, and nothing in this work should decide which
+is right.**
+
+The consequence for Phase 7 is concrete: a root-level `distribution` inherits no
+licence, so under a root `license` a reader would take the project's licence to
+govern every file, which would misstate all 7,716. Each `DataDownload` therefore
+carries its own `license` from the record's `legalInfo.license.licenseURI`.
+`DataDownload` is a `CreativeWork`, so that is valid schema.org.
+
+**For the user, as an open question:** is the project licence or the record
+licence the correct statement about these files, and should one of them be
+corrected in the corpus? The metadata will faithfully report the disagreement
+until someone decides. All 11,778 file-carrying records across both dumps are
+`Full Open Access`, so access level is not in question — only the licence.
+
+### Phase 7 must amend ADR-0005, and this is governance, not wording
+
+`docs/adr/0005-fair-landing-pages-in-the-access-area.md:16` currently reads:
+
+> **Nothing is invented for a score.** A project has no project-level download,
+> so no `distribution` is emitted; record pages are the right target for
+> data-level tests.
+
+The plan's own rule is that where plan and ADR disagree, the ADR wins and the
+plan is amended. Phase 7 emits a `distribution`, so shipping it against an
+unamended ADR would make the ADR false on the day the code lands — precisely the
+failure that rule exists to prevent.
+
+The **principle is untouched and must be restated, not weakened**: nothing is
+invented, and a project whose records carry no file still emits no
+`distribution`. What is wrong is the *premise* that no project has one. 0868
+carries 7,716 records with files and 0803 carries 4,062. Record pages remain the
+right target for record-level tests, and the rest of that sentence — DataCite
+registration, persistence policy, search indexing as residuals a code change
+cannot fix — stays true.
+
+Amend it **with the code that makes it true**, in Phase 7, not before. The team
+lead has raised with the user whether the wording is theirs to set; absent a
+decision, draft it and flag it prominently for review rather than landing it
+quietly.
+
+### Where the branch stands
+
+HEAD `7754a800`. Phase 5 complete (checkboxes 1–12; 13 is the session's),
+Phase 6 complete (1–8; 9 is the session's), Phase 7 not started beyond these
+baselines. Working tree carries the plan and the journal, modified and unstaged,
+as every round. Standing gate green as of `a35f1ba7`; `f50c162b` and `7754a800`
+are documentation-only commits on top of it, each with `just check` and
+`mdbook build docs` run but not the full rebase gate — the next orchestrator
+should run it as part of Phase 7's close.
+
+Two further documentation commits landed after the baselines, both Phase 5/6
+cleanup rather than Phase 7 work: `f50c162b` (the data-pointer residual says
+which project it is about) and `7754a800` (the FAIR Maturity Indicators index,
+linked where the FAIR Champion test names appear). The I2 knock-ons from Phase 6
+are closed across the plan, this journal and `docs/src`; the grep sweep is in the
+orchestration report.
+
+
+## Round 15 — Phase 7, record file distributions (2026-09-18)
+
+Phase 7 was written into the plan in this round; it did not exist before. The
+brief, the baselines and the licence disagreement all come from Round 14, which
+stopped deliberately before any code.
+
+### The change, in one paragraph
+
+`PartRef` gained an optional `FileRef` — url, MIME type, file name, byte size,
+and the *record's* licence URI — filled by `PartRef::from_record`, which is
+already one of the three functions permitted to take a `&Record`. `RecordGraph`
+was not touched: a record page's own `distribution` belongs to the plan that
+adds record pages, and the existing
+`the_file_pointer_is_not_carried_beyond_the_mime_type` test still holds. The
+schema.org writer emits one root-level `DataDownload` per listed part that has a
+file, capped with `hasPart` over the same parts in the same order, so the files
+described are the files of the records listed. `/metadata.jsonld` is uncapped.
+
+Open access is enforced in the builder, not in the writer. A record the corpus
+does not record as `Full Open Access` yields no `FileRef` at all, so no future
+writer can advertise a restricted record's ingest URL, and the comparison fails
+closed — `Record::access_rights` is free text, unlike a project's typed
+`AccessRightsType`, so a spelling the builder does not recognise yields nothing.
+Every file-carrying record in the corpus is fully open today, which is precisely
+why this is a rule rather than a filter: it is unenforced by the data.
+
+### What the served pages carry
+
+Measured against the local `dpe-server serve` at `162d5f4f`:
+
+| Project | Embedded block | `hasPart` | `distribution` |
+|---------|---------------:|----------:|---------------:|
+| 0862 | 6,729 B | 0 | 0 |
+| 0868 | 45,147 B | 100 | 100 |
+| 0803 | 22,986 B | 100 | 4 |
+| 081C | 14,219 B | 100 | 0 |
+
+Two things in that table are worth keeping.
+
+**0803 shows only four downloads in the embedded block** although 4,062 of its
+records carry a file, because only 4 of its *first hundred* records do. The cap
+counts parts, not files. The uncapped `/metadata.jsonld` carries all 4,062.
+
+**0862 has no committed record dump at all.** Its `hasPart` is empty, so "0862
+did not move" is a statement about the committed corpus and not about the
+project: `docs/src/dpe/oai-pmh.md` shows a real 0862 record with a PNG on
+dev-03, so a deployment carrying 0862's real records would emit distributions
+for it too. The residuals ledger now says this rather than "0862's records carry
+no file".
+
+The 64 KB budget holds with room to spare at 45 KB for the worst case, which is
+0868. The corpus test that asserts it now runs over every committed dump rather
+than the largest one alone — the largest is 081C, which carries no file, so it
+was measuring nothing about a download — and additionally asserts that at least
+one dump produces one, so the budget cannot be met by emitting nothing.
+
+### The measurement
+
+F-UJI 3.5.0, `sha256:3cde9d30bc14…`, local `dpe-server serve`,
+`DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000`, at `162d5f4f`. All three
+projects scored **16 of 24, metric for metric identical**, before the change.
+
+| Metric | 0862 | 0868 | 0803 |
+|--------|-----:|-----:|-----:|
+| F1-01D | 1/1 | 1/1 | 1/1 |
+| F1-02D | 0/1 | 0/1 | 0/1 |
+| F2-01M | 2/2 | 2/2 | 2/2 |
+| **F3-01M** | 0/1 | **1/1** | **1/1** |
+| F4-01M | 1/2 | 1/2 | 1/2 |
+| A1-01M | 1/1 | 1/1 | 1/1 |
+| A1-02M | 1/1 | 1/1 | 1/1 |
+| **A1-03D** | 0/1 | **1/1** | **1/1** |
+| I1-01M | 2/2 | 2/2 | 2/2 |
+| I2-01M | 1/1 | 1/1 | 1/1 |
+| I3-01M | 1/1 | 1/1 | 1/1 |
+| **R1-01MD** | 1/4 | **3/4** | 1/4 |
+| R1.1-01M | 2/2 | 2/2 | 2/2 |
+| R1.2-01M | 2/2 | 2/2 | 2/2 |
+| R1.3-01M | 1/1 | 1/1 | 1/1 |
+| **R1.3-02D** | 0/1 | **1/1** | 0/1 |
+| **Total** | **16/24** | **21/24** | **18/24** |
+
+**0862 did not move, metric for metric.** It is the control and it behaved like
+one. It is also the weakest of the three as evidence, because no record dump is
+committed for it — its `hasPart` is empty, so there was never anything for the
+change to do. `docs/src/dpe/oai-pmh.md` shows a real 0862 record with a PNG on
+dev-03, so a deployment carrying 0862's records would describe them too. The
+ledger now says that rather than "0862's records carry no file".
+
+**0803 stops at 18, and the reason is in its data.** It gained `F3-01M` and
+`A1-03D` like 0868 and nothing beyond. None of its 4,062 files records a
+`mimeType`, so no `encodingFormat` is emitted; F-UJI reports `NO info about file
+type available in given metadata` for every file it sampled, which fails
+`R1-01MD-2a` and takes `-2` and `-3` with it, and leaves `R1.3-02D` with no
+format list. dsp-ingest serves those files as `application/octet-stream`, so the
+header fallback does not rescue it either. Both ends would have to change. This
+is a data-quality residual and was left as one: emitting a guessed format would
+be exactly the invention ADR-0005 forbids.
+
+### Three things the measurement corrected
+
+**One. The data-pointer cause was worth five points, not six.** The ledger
+attributed `R1-01MD-2`, `-3` and `-4` to it. `-2` and `-3` moved on 0868; `-4`
+did not, and its requirement is `variableMeasured` — measured variables or
+observation types, which the DaSCH schema does not record and which no data
+pointer will ever earn. The original attribution was inferred from sub-test
+names in a `test_debug` capture, and only running the metric separated them.
+`R1-01MD-4` is now its own cause, one point, for every project. 0862's ledger is
+therefore eight points across four causes, not three, and it still closes:
+5 + 1 + 1 + 1.
+
+**Two. The embedded cap bounds the page, not the assessor.** F-UJI read the
+embedded block and then followed the `describedby` link to `/metadata.jsonld`,
+merging what it found: `Found data links in MetadataFormats.JSONLD metadata -:
+100` followed by `-: 7716`, and `Number of object content identifier found -:
+7716`. So the five points were earned off the *uncapped* representation, which
+is an argument for keeping it uncapped. The 64 KB assertion still governs the
+page, and the cap is still doing its job there.
+
+**Three. `R1-01MD-3` passing is a check on our own data.** F-UJI downloaded
+files and compared `Content-Type` and byte length against each record's
+declaration. For 0868 every sampled file matched — `Sucessfully verified content
+size ... (expected: 944.0, found: 944)`, `content type ... (expected: text/csv
+... via header text/csv)` — with mismatches only where F-UJI itself truncated at
+1,000,000 bytes. That is stronger evidence that the corpus's `fileSize` and
+`mimeType` are right than any test in this repository.
+
+The HEAD `405` and the ignored range requests, flagged in the brief as risks to
+`R1-01MD-3`/`-4`, turned out not to matter: F-UJI issues a plain GET and
+truncates client-side.
+
+### What an assessment now costs
+
+Advertising distributions makes an assessment fetch the files. The bytes come
+from `ingest.dasch.swiss`, not from DPE, so DPE's per-IP limiter does not bound
+them.
+
+| | Embedded | Bytes if all embedded are fetched | Uncapped | Bytes if all are fetched | F-UJI actually pulled | Wall clock |
+|---|---:|---:|---:|---:|---|---:|
+| 0868 | 100 | 90.9 MB | 7,716 | 2.72 GB | 26 files, 11.3 MB | 558 s |
+| 0803 | 4 | 81.9 MB | 4,062 | 139.7 GB | 6 files, 6.0 MB | 307 s |
+
+The gap between the last two columns is F-UJI's own restraint: five files per
+MIME type, each truncated at 1,000,000 bytes. Its draw scales with how many
+distinct file types a project has, not with how many records it holds — which is
+why 0803, whose files are all untyped, sampled six of 4,062. The worst-case
+columns are what an unrestrained follower would pull, and 0803's 140 GB is what
+28 MB TIFFs multiply to.
+
+`just fair-check` could not complete against 0868: its curl `--max-time 600`
+expired against a 558 s run, and `REVIEW.md` makes that recipe a review step for
+any `shared-fair` change. Raised to 1800 s, with the measurement and the reason
+in the comment so a later reader does not trim it back. The recipe now also
+writes the full result JSON to gitignored `.claude/tmp/`, because `test_debug`
+is where every attribution above comes from and a run that takes minutes should
+not throw it away.
+
+Nothing here was acted on beyond the timeout. The cap was not changed, the
+uncapped representation was not truncated, and no file was selected by size —
+picking small files to be cheap would be shaping output to the assessor, which
+is the thing this work has refused throughout.
+
+### Side finding — 0803 records no MIME type for any of its 4,062 files
+
+The most actionable thing this phase turned up, and it is about the data rather
+than the code. **Both ends are DaSCH's and both are broken**: the corpus export
+records no `mimeType` for a single one of project 0803's 4,062 file-carrying
+records, and dsp-ingest serves those files as `application/octet-stream`.
+
+The chain, from `test_debug` of the 0803 run:
+
+1. No `mimeType` in the record, so no `encodingFormat` in the `DataDownload`.
+2. `NO info about file type available in given metadata for -:
+   https://ingest.dasch.swiss/projects/0803/assets/…/original`, for every file
+   F-UJI sampled.
+3. `R1-01MD-2a` ("File size and type information are specified in metadata")
+   fails, which fails `R1-01MD-2`, which fails `R1-01MD-3`.
+4. `R1.3-02D` has no format list to check and reports nothing identified.
+5. The header fallback does not rescue it: `Could not verify content type from
+   downloaded file -: (expected: None, found: via tika
+   ['application/octet-stream'] or via header application/octet-stream)`.
+
+Three points for that project, and fixing either end earns them. More to the
+point it is a real metadata gap on real research data, independent of any score:
+nothing downstream can tell a TIFF from a CSV without fetching it.
+
+**A guessed `encodingFormat` was refused, deliberately.** The file names carry
+`.tif`, and inferring a MIME type from an extension would have earned the three
+points immediately. That is exactly the invention ADR-0005 forbids — the corpus
+does not record the type, and a metadata field that says what the repository
+guessed rather than what it knows is the failure mode this whole plan is against.
+The omission is a statement, not an oversight, and a later reader should not
+"fix" it by adding a table of extensions.
+
+**The 1,000,000-byte truncation was not the blocker**, though it is the first
+explanation anyone reaches for, because every 0803 file logged `Could not verify
+content size ... (expected: 3820444.0, found: 1000000)`. 0868's zip files logged
+the same truncation warning — `(expected: 2003814.0, found: 1000000)` — and
+`R1-01MD-3` passed there anyway. The type check is what carries that sub-test;
+the size mismatch is F-UJI truncating its own download, not a wrong `fileSize`.
+
+### Side finding — every `contentUrl` names a host with a retirement date
+
+All 11,778 published `contentUrl` values point at `ingest.dasch.swiss`. Media
+moves to Vitrinli and ingest is then retired; per the root `CONTEXT.md` Vitrinli
+is an engine library with no routes of its own, so downloads will be served by
+the Access Area's `media` capability. The host in those URLs changes.
+
+A **migration obligation**, not a defect, and smaller than it first looks:
+
+- The URLs are true today, which is the standard this plan applied throughout.
+  Publishing a currently-correct URL is not a defect.
+- They largely self-heal. `RecordFile.url` comes from the corpus export, so the
+  first export after the migration carries the new host and DPE re-serves it
+  with no code change. Nothing in `shared-fair` or the writer hardcodes ingest.
+- What does not self-heal is a third-party harvested copy. `oai-pmh.md` already
+  records this tradeoff for the file endpoint's `downloadUrl`, mitigated by the
+  consumer fetching it fresh per request. That mitigation does not apply to
+  `schema:distribution`, which exists to be harvested and cached, so this use
+  has the worse exposure of the two. An aggregator that read `/metadata.jsonld`
+  before the move holds dead links until it re-harvests.
+- Therefore: **retiring ingest carries a metadata obligation — re-export the
+  corpus, then re-publish.** Recorded in `docs/src/dpe/operations.md` where
+  whoever plans the retirement will find it.
+
+**Rejected, with the reason, so it is not re-proposed lightly.** A DPE-owned
+stable download URL redirecting to wherever the bytes live would remove the
+problem entirely. It contradicts the documented decision in
+`docs/src/dpe/oai-pmh.md` that DPE serves metadata only and does not redirect to
+bytes. That is an ADR question for a later plan, not something this phase
+decides — the same treatment Phase 5 gave the `Host`-header fallback.
+
+### Deviation — the standing rebase gate was narrowed, on evidence
+
+The plan's standing criterion is `git rebase --exec 'env -u GIT_DIR just check'
+--exec 'env -u GIT_DIR just test' 6f53d3c7`. It was run and **hung on the first
+replayed commit for 65 minutes** before being killed deliberately. This is a
+deviation, decided on evidence and authorised, not a shortcut.
+
+The evidence that it was hung rather than slow:
+
+- `editor_server-a71b43f86ca53ba5` (PID 11990) had 65 minutes of wall time and
+  **12.75 seconds of CPU**. Its parent `cargo` had 0.47 s, `just test` 0.02 s.
+- `lsof` showed it holding `/…/T/editor-db-reopen-11990/editor.sqlite3` open
+  together with its `-wal` (218 KB) and `-shm`.
+- On SIGTERM the runner named the two tests:
+  `db::schema::tests::test_reopening_a_file_database_keeps_its_data_and_does_not_re_migrate`
+  and `db::tests::test_file_database_uses_wal_and_creates_its_siblings_in_the_directory`,
+  both reported as "has been running for over 60 seconds".
+
+Neither is related to this work. **No commit in the range `6f53d3c7..HEAD`
+touches `editor-server`.** `shared-metadata` is a dependency of it and this phase
+does change that crate, but the change is a doc comment on `RecordFile`, so there
+is no behavioural path from it to those tests.
+
+What was run instead, after `git rebase --abort` restored the branch intact:
+
+- Per commit: **full `just check`**, unnarrowed — keeping fmt, clippy and the
+  repo's guard scripts, including `check-shared-paths.sh`, which enforces a
+  constraint this very work has to satisfy — and a **`just test` restricted to
+  the blast radius**: `shared-fair`, `shared-metadata`, `dpe-api-oai`,
+  `dpe-server`.
+- At the tip: **full `just check` and full `just test`**, unnarrowed, so any
+  `editor-server` breakage this branch could have caused is still caught. What
+  the narrowing costs is per-commit *attribution* for a suite no commit in the
+  range can affect, not coverage of it.
+
+The unnarrowed tip run — full `just check` and full `just test` at `8610109e` —
+passed, **including the two `editor-server` tests that hung the gate**. So the
+hang is intermittent rather than deterministic, which is why narrowing was the
+right response to it and re-running was not.
+
+### Promote the `editor-server` db flake from "known" to "blocking"
+
+It is listed as a known test flake. It has now blocked a mandatory pre-merge gate
+twice — ten minutes the first time, over an hour here — while work unrelated to
+`editor-server` waited on it. That is not a flaky assertion; it is a hang with a
+resource signature, and whoever picks it up should start from evidence:
+
+- Tests: `db::schema::tests::test_reopening_a_file_database_keeps_its_data_and_does_not_re_migrate`
+  and `db::tests::test_file_database_uses_wal_and_creates_its_siblings_in_the_directory`.
+- Fixture: `$TMPDIR/editor-db-reopen-<pid>/editor.sqlite3`, with its `-wal`
+  (218 KB observed) and `-shm` held open throughout.
+- **CPU time stays near zero while wall time runs**: 12.75 s of CPU against 65
+  minutes elapsed. It is blocked on something, not computing.
+- Intermittent: the same suite passed on the same machine minutes later.
+
+Both tests exercise reopening a file-backed SQLite database in WAL mode, and both
+hang together, which points at the fixture's lock or WAL handling rather than at
+either assertion.
+
+### 081C assessed — the control the other three could not be
+
+A fourth run, added after the first three, because the control was weaker than it
+looked. 0862 scores 16 of 24 and did not move, but **no record dump is committed
+for it at all** — `modules/dpe/server/data/records/` holds exactly three files,
+for 0803, 081C and 0868 — so its `hasPart` is empty and there was never anything
+for the change to do. It shows the change invents nothing where there is nothing
+to describe, which is true but nearly vacuous.
+
+081C is the case the rule is about: **27,026 records and not one file among
+them** (`[.[] | select(.file == null)] | length` equals the dump length). Its
+landing page emits `hasPart` 100 capped, 27,026 uncapped, and **no
+`distribution` key in either**; `DataDownload` appears nowhere in the served
+HTML.
+
+```
+FsF-F1-01D 1/1   FsF-F1-02D 0/1   FsF-F2-01M 2/2   FsF-F3-01M 0/1
+FsF-F4-01M 1/2   FsF-A1-01M 1/1   FsF-A1-02M 1/1   FsF-A1-03D 0/1
+FsF-I1-01M 2/2   FsF-I2-01M 1/1   FsF-I3-01M 1/1   FsF-R1-01MD 1/4
+FsF-R1.1-01M 2/2 FsF-R1.2-01M 2/2 FsF-R1.3-01M 1/1 FsF-R1.3-02D 0/1
+total: 16.0/24.0
+```
+
+**Metric for metric identical to 0862**, which is the result worth having: a
+project with 27,026 parts scores exactly what a project with none scores, so the
+parts themselves earn nothing and only files do. F-UJI states the absence rather
+than skipping for want of a graph — `Valid data (content) identifier missing`
+for `F3-01M`, `Skipping protocol test for data since NO content (data)
+identifier is given in metadata` for `A1-03D`, and `Could not perform file format
+checks as data content identifier(s) unavailable/inaccesible` for `R1.3-02D`.
+
+The run also exercised the `chore(ci)` change from this phase in anger: it
+printed `full result: .claude/tmp/fair-check-20260918T113302Z.json`, and the
+sub-test attributions above were read out of that file rather than from a
+re-run.

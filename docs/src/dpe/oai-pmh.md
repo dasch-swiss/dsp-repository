@@ -232,7 +232,9 @@ OAI identifiers are derived from DaSCH [ARK](https://arks.org/) identifiers:
 
 These differ from the resolvable ARK URLs (`https://ark.dasch.swiss/ark:/72163/1/...`), which appear in the metadata payloads as `dc:identifier` / DataCite `identifier`.
 
-The OAI `<identifier>` header is the **only** place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — `dc:identifier`, `dc:relation`, DataCite `identifier` and `relatedIdentifier`, and the project page's permalink link target — carries `https://ark.dasch.swiss/` so a harvester can dereference it. `Pid::as_url()` is the accessor for that form; there is deliberately no accessor returning a bare `ark:/…` path.
+The OAI `<identifier>` header is the **only** place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — `dc:identifier`, `dc:relation`, DataCite `identifier` and `relatedIdentifier`, and the project page's permalink link target — carries a resolver in front so a harvester can dereference it. `Pid::as_url()` is the accessor for that form; there is deliberately no accessor returning a bare `ark:/…` path.
+
+Which resolver is a deployment's own business. Production, DEV and STAGE all emit `https://ark.dasch.swiss/`, the host the corpus records. A PR preview sets [`DPE_ARK_RESOLVER_BASE_URL`](./operations.md#environment-variables) and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI `<identifier>` header, being host-independent already, does not change at all.
 
 ## Sets
 

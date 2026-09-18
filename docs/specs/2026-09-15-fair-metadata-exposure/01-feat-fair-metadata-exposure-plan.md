@@ -1011,7 +1011,7 @@ amended.
 - [x] Startup rejects a malformed value, over the same cases the `DPE_PUBLIC_BASE_URL` tests use, plus a jailed load of a valid one
 - [x] Route tests: a project ARK redirects to the landing page, the target is the canonical shortcode, an unknown shortcode is 404, a record ARK is 404, and the route is absent when the variable is unset
 - [x] `operations.md`: the variable, that it is unset everywhere but PR previews, and why. `machine-readable-metadata.md`: reclassify `F1-02D` from institutional to fixed defect, **without claiming it now passes** — nothing has been re-assessed — keeping the ledger arithmetic closing for the runs it describes. ADR-0005 gains a dated note on the resolver clause and on where the "nothing is invented" boundary falls
-- [ ] Run the standing gate per commit and at the tip
+- [x] Run the standing gate per commit and at the tip
 - [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set
 
 **A rejected alternative, recorded so it is not re-proposed.** Serving previews

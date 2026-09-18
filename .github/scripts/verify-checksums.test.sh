@@ -18,6 +18,11 @@
 
 set -uo pipefail
 
+# Fixtures build throwaway repositories with `git init`, which honours an
+# inherited GIT_DIR over the directory it is run in: without this, a run under
+# `git rebase --exec` or a git hook re-initializes the caller's repository.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_NAMESPACE
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./verify-checksums.sh disable=SC1091
 source "$SCRIPT_DIR/verify-checksums.sh"

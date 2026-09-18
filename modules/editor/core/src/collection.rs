@@ -9,14 +9,14 @@
 //! stored record cannot cross the boundary unnoticed.
 
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared_metadata::project::ProjectRaw;
 use uuid::Uuid;
 
 use crate::draft::ProjectDraft;
 use crate::proposals::{EntityProposal, ProposalStatus};
-use crate::records::ApprovedRecord;
+use crate::records::{ApprovedRecord, PullRequestState};
 
 /// The response body for the approved-records endpoint.
 #[derive(Debug, Clone, Serialize)]
@@ -144,6 +144,21 @@ impl CollectionStateView {
             last_failure: record.last_failure.clone(),
         }
     }
+}
+
+/// The body of `POST /api/v1/collection-report`: one record's outcome, as the collecting
+/// workflow last saw it.
+///
+/// A wire type only — the exactly-one-of-`pull_request`-or-`failure` rule and the pull request's
+/// origin are HTTP contract validation, not a domain invariant this crate enforces elsewhere, so
+/// they live in `editor-server` next to the handler that rejects a report failing them.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CollectionReport {
+    pub record: Uuid,
+    pub pull_request: Option<String>,
+    pub state: Option<PullRequestState>,
+    pub failure: Option<String>,
 }
 
 #[cfg(test)]

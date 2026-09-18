@@ -62,6 +62,11 @@ pub(crate) struct AppState {
     /// [`config::EditorConfig::reveals_login_code`] — never re-derived, so there
     /// is one answer per process and one place that decides it.
     reveal_login_code: bool,
+    /// The bearer token `POST /api/v1/collection-report` compares a presented one against,
+    /// resolved once at startup from [`config::EditorConfig::collection_token`]. `None` refuses
+    /// every call to that endpoint — a service with no configured verifier must not accept an
+    /// empty presented token.
+    collection_token: Option<config::Secret>,
     /// The published project set, read once at startup from `EDITOR_DATA_DIR`.
     ///
     /// Behind an `Arc` because `AppState` is cloned per request and this holds
@@ -615,6 +620,7 @@ async fn serve() -> ExitCode {
         mailer,
         auth: auth::AuthConfig::from(&config),
         reveal_login_code: config.reveals_login_code(),
+        collection_token: config.collection_token.clone(),
         published,
         temporal,
         agents,

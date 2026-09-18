@@ -9,6 +9,7 @@
 //! beside the data they read.
 
 pub mod datacite;
+pub mod datacite_json;
 pub mod dublin_core;
 pub mod dublin_core_meta;
 pub mod graph;
@@ -24,6 +25,7 @@ pub(crate) mod test_support;
 pub mod types;
 
 pub use datacite::project_to_datacite;
+pub use datacite_json::project_to_datacite_json;
 pub use dublin_core::project_to_dublin_core;
 pub use dublin_core_meta::project_to_dublin_core_meta;
 pub use graph::{AgentKind, PartRef, RecordCreator, RecordGraph, ResolveContext};

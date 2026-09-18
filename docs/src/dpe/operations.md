@@ -63,8 +63,8 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
 | `DPE_OAI_BASE_URL` | No | `https://repository.dasch.swiss/dpe/oai` | Public base URL emitted as the OAI-PMH `baseURL` and echoed in `<request>` elements. Set per environment to match the public endpoint (e.g. `https://api.dev.dasch.swiss/dpe/oai` on DEV, `http://localhost:4000/dpe/oai` locally). See [OAI-PMH](./oai-pmh.md). |
 | `DPE_PUBLIC_BASE_URL` | No | `https://repository.dasch.swiss` | Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the `Link` header. Origin only: scheme `http` or `https`, no path, query or trailing slash. A bad value fails startup. Independent of `DPE_OAI_BASE_URL` (see the note below). |
-| `DPE_OAI_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit on `/dpe/oai`: seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. See [OAI-PMH](./oai-pmh.md). |
-| `DPE_OAI_RATE_LIMIT_BURST` | No | `60` | Per-IP burst allowance on `/dpe/oai`: back-to-back requests before the sustained rate applies. |
+| `DPE_OAI_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit, seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. Governs `/dpe/oai` and both machine-readable representation routes, which share one bucket. See [OAI-PMH](./oai-pmh.md) and [Machine-Readable Metadata](./machine-readable-metadata.md). |
+| `DPE_OAI_RATE_LIMIT_BURST` | No | `60` | Per-IP burst allowance on the same three routes: back-to-back requests before the sustained rate applies. |
 | `DPE_OAI_PAGE_SIZE` | No | `100` | Items per page in `ListRecords` / `ListIdentifiers` responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See [OAI-PMH](./oai-pmh.md). |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g., `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
@@ -77,6 +77,13 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 > **Two base URLs, on purpose.** `DPE_PUBLIC_BASE_URL` and `DPE_OAI_BASE_URL` are set independently and neither is derived from the other. The OAI endpoint advertises its own `baseURL` in every response, and on DEV that endpoint lives on a different host (`https://api.dev.dasch.swiss/dpe/oai`) from the site (`https://repository.dev.dasch.swiss`). Set both per environment.
 >
 > **Assessing a local run from a container.** A FAIR assessor running in Docker resolves the URLs the page emits, so `DPE_PUBLIC_BASE_URL` must name a host the container can reach — `http://host.docker.internal:4000`, not `http://localhost:4000`, which inside the container is the container itself.
+
+> **What the rate limit does not bound.** It bounds the request *rate*, not the
+> per-request size, and the uncapped JSON-LD representation is large: project
+> 081C measures ~3.5 MB. At the defaults (`per_second = 1`, `burst = 60`) one IP
+> can therefore pull roughly 210 MB of transient allocation and egress in a
+> burst window, settling to ~3.5 MB/s/IP afterwards. Lower `DPE_OAI_RATE_LIMIT_BURST`
+> if that matters more than a harvester's throughput does.
 
 > **Rate limiting and reverse proxies.** The OAI (`/dpe/oai`) and telemetry (`/telemetry/collect`) rate limits key on the client IP, taken from the **rightmost** `X-Forwarded-For` entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any `X-Forwarded-For` value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to `X-Forwarded-For` would shift the trusted entry and require counting hops from the right.
 

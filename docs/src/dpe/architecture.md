@@ -73,9 +73,17 @@ Fragment endpoints are plain Axum handlers that render Maud `Markup` to HTML str
 ```
 GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
+GET /projects/{id}/metadata.*   → Machine-readable representation (JSON-LD, DataCite JSON)
 ```
 
 Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.
+
+The one exception is the landing page's `303 See Other` when `Accept` prefers a
+machine-readable representation, decided in ADR-0005
+(`docs/adr/0005-fair-landing-pages-in-the-access-area.md`). It is a
+redirect to a distinct URL, not a differently rendered page: the page itself is
+byte-identical for every `Accept` value, and every answer from the route carries
+`Vary: Accept`. See [Machine-Readable Metadata](./machine-readable-metadata.md).
 
 ## HATEOAS Tab Pattern
 

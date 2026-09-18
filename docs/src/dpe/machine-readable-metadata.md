@@ -4,13 +4,17 @@ A project's **landing page** — `/dpe/projects/{shortcode}`, the page the proje
 ARK resolves to — carries its metadata in the served HTML, so that a FAIR
 assessor or a harvester reading the page gets the same facts a person does.
 
-Three things are emitted, all built from one resolved graph per project:
+Three things are emitted in the page, and two **machine-readable
+representations** are served beside it, all built from one resolved graph per
+project:
 
 | What | Where | Vocabulary |
 |------|-------|------------|
 | A JSON-LD block | `<script type="application/ld+json">` at the end of `<head>` | schema.org `Dataset` |
 | Meta tags | `<meta name="DC.*">` in `<head>` | Dublin Core elements, plus a COAR access-right URI |
 | Typed links | `<link>` elements in `<head>` and an HTTP `Link` header | FAIR Signposting, Level 1 |
+| A JSON-LD document | `GET /dpe/projects/{shortcode}/metadata.jsonld` | schema.org `Dataset`, `hasPart` uncapped |
+| A DataCite document | `GET /dpe/projects/{shortcode}/metadata.datacite.json` | DataCite kernel 4 JSON |
 
 The graph is `shared_fair::ProjectGraph`. Every representation reads it and none
 re-derives a fact from the source data, which is what keeps them from disagreeing
@@ -73,13 +77,71 @@ The same set of typed links goes out twice, as `<link>` elements and as an RFC
 |----------|--------|-------------|
 | `cite-as` | the project's ARK | exactly 1 |
 | `type` | `https://schema.org/Dataset`, `https://schema.org/AboutPage` | 2 |
-| `describedby` | the OAI `GetRecord` URLs for `oai_datacite` and `oai_dc`, typed `application/xml` | 2 |
+| `describedby` | the two representations, typed `application/ld+json` and `application/vnd.datacite.datacite+json`, then the OAI `GetRecord` URLs for `oai_datacite` and `oai_dc`, typed `application/xml` | 4 |
 | `license` | the SPDX URI | 0 or 1: only when the project records exactly one distinct URI, because the profile allows no more. The JSON-LD still lists them all |
 | `author` | the ORCID of each credited creator | 0 or more |
 
-The `describedby` targets return an OAI-PMH envelope around the DataCite or
+Each representation answers with the other half of that: `Link: <landing page>;
+rel="describes"`.
+
+The OAI `describedby` targets return an OAI-PMH envelope around the DataCite or
 Dublin Core payload, so `application/xml` is the accurate type for them. A
-harvester wanting bare DataCite does not get it from these links.
+harvester wanting bare DataCite gets it from `metadata.datacite.json`.
+
+## The representations, and the one negotiation step
+
+```
+GET /dpe/projects/{shortcode}/metadata.jsonld        → application/ld+json
+GET /dpe/projects/{shortcode}/metadata.datacite.json → application/vnd.datacite.datacite+json
+```
+
+The JSON-LD one is the same schema.org graph the page embeds, with `hasPart`
+**uncapped** — every record, where the embedded block stops at 100. The DataCite
+one is the same record the `oai_datacite` prefix serves, in DataCite's kernel-4
+JSON shape rather than inside an OAI envelope. Its output is validated against
+DataCite's own JSON schema for every committed project by a corpus-wide test.
+
+A malformed shortcode is `400` and an unknown one `404`, both `text/plain` with
+an empty body: a client that asked for JSON-LD is a machine, and the content
+type is how it learns that what came back is not the document it asked for.
+
+Both routes share the per-IP bucket `/dpe/oai` uses, under the same
+`DPE_OAI_RATE_LIMIT_*` settings, because the uncapped JSON-LD for the largest
+committed project is a few megabytes built in memory per request. That limit
+bounds the request *rate*, not the per-request size; see
+[Operations](./operations.md) for what a burst costs. Neither route sends
+`Cache-Control` or `ETag`, consistent with the rest of DPE: the data changes
+only on deploy.
+
+**The landing page redirects to a representation when `Accept` prefers one.**
+This is the single negotiation step ADR-0005 allows, and the only thing about
+the route that varies by header — the page itself is byte-identical for every
+`Accept` value (ADR-0004, `docs/adr/0004-hypermedia-frontends.md`).
+
+| `Accept` | Result |
+|----------|--------|
+| absent, `*/*`, `text/html,*/*;q=0.8` | 200 HTML |
+| `application/ld+json` | 303 to `metadata.jsonld` |
+| `application/vnd.datacite.datacite+json` | 303 to `metadata.datacite.json` |
+| `text/turtle`, `application/json`, `application/xml`, `application/*` | 200 HTML — these are not aliases; each representation is served for its own media type and no other |
+| `text/html;q=1, application/ld+json;q=1` | 200 HTML — a tie goes to the page |
+| `*/*;q=0`, malformed, unparseable `q` | 200 HTML |
+| unknown shortcode, any `Accept` | 200 HTML "Project Not Found", never a redirect |
+
+The table above is the acceptance specification. The rules that produce it —
+how `q` is read, how wildcards count, what a hostile header costs — are written
+out once, in `shared-fair`'s `negotiate` module, and are not restated here. The
+route never produces a 4xx from `Accept`.
+
+**Every answer from the route carries `Vary: Accept`** — 200 and 303, GET and
+HEAD. Without it a cache in front of DPE could replay a 303 to a person or the
+HTML to a harvester.
+
+The candidate list and the representation `describedby` links come from the
+same `UrlLayout` rows, so the page cannot redirect to a representation it does
+not link. The converse does not hold: the two OAI-record `describedby` links are
+never candidates, because a harvester is pointed at them rather than redirected
+to them.
 
 ## Two base URLs
 
@@ -119,6 +181,55 @@ and are not restated here. What the implementation adds to them:
 A project that does not resolve gets nothing: no JSON-LD, no `Link` header, no
 redirect. The existing always-200 "Project Not Found" body is unchanged.
 
+## Measuring it: `just fair-check`
+
+```
+just fair-check <url> [min_score]
+```
+
+Starts F-UJI in a container, POSTs the URL to its evaluation API, prints the
+per-metric table with the assessor's `software_version` and the image digest,
+and exits non-zero when the total is below `min_score`. The exit code is the
+check, so a reviewer gets a pass or a fail rather than a table to read.
+
+Against a local server:
+
+```
+DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000 DPE_SITE_ADDR=0.0.0.0:4000 just dev
+just fair-check http://host.docker.internal:4000/dpe/projects/0862 12
+```
+
+Both environment variables are needed. `DPE_PUBLIC_BASE_URL` makes the page's
+own links point at a host the container can resolve, and `DPE_SITE_ADDR` binds
+the server on all interfaces — the default `127.0.0.1` is not reachable from a
+container under a VM-backed Docker runtime such as colima.
+
+Notes on the recipe:
+
+- **The image is pinned by digest**, not by `:latest`. A score is only
+  comparable against the rows below if the assessor is the same build. Bumping
+  the pin is a reviewed change, made when F-UJI publishes a release and checked
+  at least with every change to a landing page — the same discipline as the
+  Tailwind CLI pin in [Security](../security.md). There is no
+  `tailwind-pins-refresh`-style refresh recipe, because `fair-check` never runs
+  in CI.
+- **The container can reach the host's port 4000** during the run, through
+  `--add-host=host.docker.internal:host-gateway`. That is the point: F-UJI
+  fetches the URL it is given. The container is published on `127.0.0.1` only
+  and is destroyed when the recipe returns, because an API that fetches
+  arbitrary URLs should not be listening on the developer's network.
+- **`marvel` / `wonderwoman` are F-UJI's own published defaults**
+  (`fuji_server/config/users.py`), not a DaSCH credential. They are in the
+  recipe because the container is loopback-only and short-lived.
+- **`DOCKER_CONFIG` points at a scratch directory** holding a bare `{}`. A
+  developer's own `~/.docker/config.json` may name a credential helper that is
+  not on `PATH` under the active context, and `docker pull` then fails on a
+  public image that needs no credentials at all.
+- **`jq` is required**, and is in the Nix dev shell and `just install-requirements`.
+
+`REVIEW.md` carries this as a checklist step: a change to a landing page or to
+`shared-fair` runs it against project 0862 and records the result.
+
 ## Assessment results
 
 Scores for project 0862, the reference project.
@@ -127,21 +238,42 @@ Scores for project 0862, the reference project.
 |------|----------|---------|--------|--------|
 | 2026-09-15 | F-UJI | 3.5.0 | `https://ark.dasch.swiss/ark:/72163/1/0862` (PROD) | 3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work |
 | 2026-09-15 | FAIR Champion | 1.1.11 | same | 6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work |
+| 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
 
-F-UJI is run from a pinned image. The mapping this work targets was read out of
-`ghcr.io/pangaea-data-publisher/fuji@sha256:3eca94076b2272a18dcd8cddd1adad7675c2ac98a390799dd60f62369688a6fa`:
-its schema.org mapping reads the object identifier from `identifier.value`,
-which is why `identifier` is emitted as a `PropertyValue`.
+F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
+with, so the two rows are comparable. Its schema.org mapping reads the object
+identifier from `identifier.value`, which is why `identifier` is emitted as a
+`PropertyValue`.
+
+**Two representations of one project do not fight over its resource type.**
+F-UJI's JSON-LD mapping reads `object_type` from schema.org's `@type`
+(`Dataset`) and its DataCite JSON mapping from `types.resourceTypeGeneral`
+(`Project`). It merges `object_type` as a *list* and its resource-type test
+passes if **any** entry matches, so linking the DataCite representation costs
+nothing there. This was read out of the pinned image, and holds in 4.0.0 as
+well.
 
 ### Known residuals
 
 These fail by design, because the alternative would be to state something untrue.
 
 - **No project-level `distribution`.** There is no project-level download. F-UJI
-  F3 and A1-03D want one; record landing pages are the right assessment target
-  for those tests.
+  F3-01M, A1-03D and R1.3-02D want one; record landing pages are the right
+  assessment target for those tests.
 - **No DataCite registration.** The ARKs are DaSCH's own and are not registered
   with DataCite, so tests that resolve metadata through a DOI registry cannot
-  pass.
+  pass. F1-02D's sub-test is registration in a PID registry, which is the same
+  cause.
+- **I2-01M cannot be earned with these vocabularies.** The test asks that
+  metadata use semantic resources for its vocabulary terms, and it scores 0/1
+  although it reports `test_status: pass`. Two independent reads of the pinned
+  3.5.0 image explain it. Its default-namespace list excludes schema.org and
+  both Dublin Core namespaces — exactly what this page emits — and strips them
+  before either sub-test runs, so there is nothing left to score. And the
+  sub-test that checks namespace availability adds its own status to the score
+  while that status is still false, so it earns zero whatever it found. Both
+  obstacles are about *which* vocabularies appear, not about how they are
+  serialised: moving I2 needs a controlled-vocabulary link F-UJI's registry
+  recognises, which is new scope rather than a serialisation change.
 - **No metadata persistence policy URL.** A `persistencePolicy` link needs a
   published policy to point at.

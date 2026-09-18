@@ -346,29 +346,47 @@ Notes on the recipe:
 ## Assessment results
 
 Project 0862 is the reference project and carries the history. Since 2026-09-18
-two more are measured, because a score is a statement about one project's data
-and not about the software: **0868** holds the most file-carrying records in the
-committed corpus (7,716) and **0803** the second most (4,062, none with a MIME
-type). No record dump is committed for 0862, so its landing page lists no parts
-and describes no files — on a deployment carrying 0862's real records it would.
+three more are measured, because a score is a statement about one project's data
+and not about the software.
+
+**Only 3 of the 85 committed projects carry record metadata at all**, and which
+of them a score belongs to is the whole explanation for the spread:
+
+| Project | Record dump | Records | With a file | MIME types | After `distribution` |
+|---------|-------------|--------:|------------:|------------|---------------------:|
+| 0862 `gotthelf` | none committed | 0 | 0 | — | 16 of 24 |
+| 081C `hdm` | committed | 27,026 | 0 | — | 16 of 24 |
+| 0803 `incunabula` | committed | 4,198 | 4,062 | none recorded | 18 of 24 |
+| 0868 `solec` | committed | 19,770 | 7,716 | all present | 21 of 24 |
+
+Read by rung: a file pointer existing at all is worth two points (`F3-01M`,
+`A1-03D`), and the pointer carrying a MIME type is worth three more
+(`R1-01MD-2`, `R1-01MD-3`, `R1.3-02D`). 0862 and 081C score the same for
+unrelated reasons — one says nothing about records, the other describes 27,026
+of them and not one file.
+
+No record dump is committed for 0862, so its landing page lists no parts and
+describes no files — on a deployment carrying 0862's real records it would. The
+other 82 committed projects would behave as 0862 does locally, which is a fact
+about the development corpus rather than about those projects.
 
 | Date | Project | Assessor | Version | Target | Result |
 |------|---------|----------|---------|--------|--------|
-| 2026-09-15 | 0862 | F-UJI | 3.5.0 | `https://ark.dasch.swiss/ark:/72163/1/0862` (PROD) | 3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work |
-| 2026-09-15 | 0862 | FAIR Champion | 1.1.11 | same | 6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work |
-| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
-| 2026-09-18 | 0862 | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
-| 2026-09-18 | 0862 | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
-| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after the `identifier` and `license` fixes | **14 of 24 again.** A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting `identifier` in an array did not break F-UJI's reading of the ARK — it does not, and `F1-01D` still passes |
-| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after PROV-O | **16 of 24.** Two metrics moved and no others: `R1.2-01M` 1/2 → 2/2 (`Found use of dedicated provenance ontologies`) and `I2-01M` 0/1 → 1/1 (`Namespace matches found -: ['http://www.w3.org/ns/prov']`). One statement earns both — PROV is a provenance ontology *and* a vocabulary F-UJI's LOD registry lists |
+| 2026-09-15 | 0862 `gotthelf` | F-UJI | 3.5.0 | `https://ark.dasch.swiss/ark:/72163/1/0862` (PROD) | 3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work |
+| 2026-09-15 | 0862 `gotthelf` | FAIR Champion | 1.1.11 | same | 6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work |
+| 2026-09-18 | 0862 `gotthelf` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
+| 2026-09-18 | 0862 `gotthelf` | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
+| 2026-09-18 | 0862 `gotthelf` | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
+| 2026-09-18 | 0862 `gotthelf` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after the `identifier` and `license` fixes | **14 of 24 again.** A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting `identifier` in an array did not break F-UJI's reading of the ARK — it does not, and `F1-01D` still passes |
+| 2026-09-18 | 0862 `gotthelf` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after PROV-O | **16 of 24.** Two metrics moved and no others: `R1.2-01M` 1/2 → 2/2 (`Found use of dedicated provenance ontologies`) and `I2-01M` 0/1 → 1/1 (`Namespace matches found -: ['http://www.w3.org/ns/prov']`). One statement earns both — PROV is a provenance ontology *and* a vocabulary F-UJI's LOD registry lists |
 
-| 2026-09-18 | 0868 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0868` (local `dpe-server serve`) | **16 of 24 before `distribution`**, metric for metric identical to 0862's — a project holding 7,716 public file URLs scored what a project holding none scored |
-| 2026-09-18 | 0803 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0803` (local `dpe-server serve`) | **16 of 24 before `distribution`**, identical again |
-| 2026-09-18 | 0862 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **16 of 24, unmoved metric for metric.** No record dump is committed for 0862, so it has no file to describe and nothing about it should have changed. Nothing did |
-| 2026-09-18 | 0868 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **21 of 24.** Four metrics moved: `F3-01M` 0/1 → 1/1, `A1-03D` 0/1 → 1/1, `R1-01MD` 1/4 → 3/4 (sub-tests 2 and 3), `R1.3-02D` 0/1 → 1/1. Nothing else moved. 558 s |
-| 2026-09-18 | 0803 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **18 of 24.** Two metrics moved: `F3-01M` 0/1 → 1/1 and `A1-03D` 0/1 → 1/1. `R1-01MD` stayed 1/4 and `R1.3-02D` stayed 0/1, both for one reason — 0803's export records no `mimeType`, so no `encodingFormat` is emitted, and dsp-ingest serves those files as `application/octet-stream`. 307 s |
+| 2026-09-18 | 0868 `solec` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0868` (local `dpe-server serve`) | **16 of 24 before `distribution`**, metric for metric identical to 0862's — a project holding 7,716 public file URLs scored what a project holding none scored |
+| 2026-09-18 | 0803 `incunabula` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0803` (local `dpe-server serve`) | **16 of 24 before `distribution`**, identical again |
+| 2026-09-18 | 0862 `gotthelf` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **16 of 24, unmoved metric for metric.** No record dump is committed for 0862, so it has no file to describe and nothing about it should have changed. Nothing did |
+| 2026-09-18 | 0868 `solec` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **21 of 24.** Four metrics moved: `F3-01M` 0/1 → 1/1, `A1-03D` 0/1 → 1/1, `R1-01MD` 1/4 → 3/4 (sub-tests 2 and 3), `R1.3-02D` 0/1 → 1/1. Nothing else moved. 558 s |
+| 2026-09-18 | 0803 `incunabula` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **18 of 24.** Two metrics moved: `F3-01M` 0/1 → 1/1 and `A1-03D` 0/1 → 1/1. `R1-01MD` stayed 1/4 and `R1.3-02D` stayed 0/1, both for one reason — 0803's export records no `mimeType`, so no `encodingFormat` is emitted, and dsp-ingest serves those files as `application/octet-stream`. 307 s |
 
-| 2026-09-18 | 081C | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/081C` (local `dpe-server serve`) | **16 of 24, after `distribution`, metric for metric identical to 0862's.** The strong control: 27,026 records, none carrying a file, so the page emits `hasPart` and no `distribution` and the score is unmoved. F-UJI confirms the absence rather than inferring it — `Valid data (content) identifier missing` |
+| 2026-09-18 | 081C `hdm` | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/081C` (local `dpe-server serve`) | **16 of 24, after `distribution`, metric for metric identical to 0862's.** The strong control: 27,026 records, none carrying a file, so the page emits `hasPart` and no `distribution` and the score is unmoved. F-UJI confirms the absence rather than inferring it — `Valid data (content) identifier missing` |
 
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
 with, so the rows are comparable.

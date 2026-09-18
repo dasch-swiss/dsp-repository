@@ -26,6 +26,7 @@
 - [Operations](./dpe/operations.md)
 - [JSON API](./dpe/json-api.md)
 - [OAI-PMH Endpoint](./dpe/oai-pmh.md)
+- [Machine-Readable Metadata](./dpe/machine-readable-metadata.md)
 
 ## Editor
 

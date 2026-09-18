@@ -7,7 +7,7 @@
 # explicit TMPDIR template: a bare mktemp resolves to a path a sandboxed shell
 # may not be allowed to write.
 #
-# Six cases, one per distinct failure mode. The no-fire case matters most: a
+# Seven cases, one per distinct failure mode. The no-fire case matters most: a
 # false positive there would be "fixed" by deleting documentation. The nested
 # case is not redundant with the shallow ones, because the pathspecs only
 # recurse while they reach git unexpanded.
@@ -102,7 +102,14 @@ printf 'const X: &str = include_str!("../../../modules/mosaic/tiles/src/lib.rs")
 check "a path into a module added later fails" 1 "$?"
 rm -rf "$repo"
 
-# 6. Absence is an error, not zero work.
+# 6. A violation under a shared crate's testdata/ fails too — a fixture, or the
+#    script that refreshes it, is as able to name a service path as a source
+#    file is, and its pathspec is the newer half of the rule.
+check "a violation under shared testdata/ fails" 1 \
+  "$(gate_rc shared/fair/testdata/schemas/refresh.sh \
+     'XSD="../../../../modules/dpe/api-oai/src/handlers/testdata/schemas/include"')"
+
+# 7. Absence is an error, not zero work.
 repo="$(make_repo)"
 ( cd "$repo" && git rm -rq shared && git commit -qm drop && main >/dev/null 2>&1 )
 check "no shared sources at all fails" 1 "$?"

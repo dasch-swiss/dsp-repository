@@ -3350,9 +3350,27 @@ applied `with_ark_host` itself inside its corpus helper instead of calling
 `normalise_project`, so making the real rule a no-op left it green. It now calls
 the real function, and under the same mutation it fails on 0101 with "a
 production ARK host survives outside quoted text". `ingress_tests` fails too.
-A test that reimplements the thing it is testing is the same class of mistake as
-two places deriving an identifier differently — the `sameAs` lesson, in the test
-rather than the product.
+#### A test that reimplements what it tests is not a test
+
+State it generally, because the specific bug is the least useful part. A test
+that reimplements the rule it is checking asserts only that its own copy is
+self-consistent. It passes whatever the product does. It is not a weak test; it
+is not a test at all, and it is worse than none, because it occupies the place
+where a real one would go and it reads convincingly — the assertion is right,
+the corpus is real, the failure message is well written. **A reviewer reads the
+assertion. The copy is in the helper.**
+
+Two things follow, both of which this round paid for:
+
+- **The mutation check is not optional for a test that carries this much
+  weight.** Breaking the product and watching the test fail is the only evidence
+  that the test is attached to the product at all. Reading it is not; I had read
+  this one and thought it strong.
+- It is the same failure as `sameAs`, one level up. There, two places derived an
+  identifier and one was wrong. Here, two places derived the substitution — the
+  product and its test — and the test's copy hid that the product's had stopped
+  working. **One rule, one implementation, and the test calls it** is the same
+  discipline in both cases.
 
 ### Verification
 

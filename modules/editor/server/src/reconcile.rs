@@ -8,16 +8,16 @@
 //! **It makes exactly one write — deleting a record whose data the published
 //! set now carries.** That is safe by construction: the comparison authorising
 //! the delete is the proof the content is already published. Everything else is
-//! reported and left alone — a *stranded* record (already collected, still
-//! differing, because its pull request merged with reviewer edits or was closed
-//! unmerged) needs an RDU decision, and a record for a project dropped upstream
-//! may be the only surviving copy of that work.
+//! reported and left alone — a *stranded* record (its pull request merged, and
+//! the published data still differs from it: reviewer edits landed instead of
+//! the depositor's own) needs an RDU decision, and a record for a project
+//! dropped upstream may be the only surviving copy of that work.
 //!
 //! **A failure here is not fatal**, unlike [`crate::accounts::ensure_rdu`]. The
 //! cost is a stale status label; refusing to start costs the whole service.
 use editor_core::draft::ProjectDraft;
 use editor_core::published::PublishedProjects;
-use editor_core::records::ApprovedRecord;
+use editor_core::records::{ApprovedRecord, PullRequestState};
 use editor_core::repository::{ApprovedRecordRepository, RepositoryError};
 use editor_core::status::Comparison;
 
@@ -29,8 +29,8 @@ pub(crate) struct Reconciliation {
     pub online: usize,
     /// Records still waiting for the release that carries them.
     pub waiting: usize,
-    /// Collected records that still differ — a merged-with-edits or
-    /// closed-unmerged pull request. Needs an RDU decision.
+    /// Records whose pull request merged but the published data still
+    /// differs. Needs an RDU decision.
     pub stranded: usize,
     /// Records for projects the published set no longer holds.
     pub removed_upstream: usize,
@@ -103,14 +103,16 @@ pub(crate) async fn reconcile_published(
                     }
                 }
             }
-            Comparison::Differs { changed } if record.collected_at.is_some() => {
+            // Stranded iff the pull request merged and the published data still
+            // differs; every other `Differs` (open, closed, or never reported)
+            // is a normal wait for the release that carries it.
+            Comparison::Differs { changed } if record.pull_request_state == Some(PullRequestState::Merged) => {
                 summary.stranded += 1;
                 tracing::warn!(
                     project.shortcode = %record.shortcode,
                     fields = %changed.join(", "),
-                    "an approved record was collected but the published data still differs: its pull request merged \
-                     with edits or was closed unmerged. The project will read as waiting for release until RDU \
-                     resolves it"
+                    "an approved record's pull request merged but the published data still differs; RDU must \
+                     resolve which version stands"
                 );
             }
             Comparison::Differs { changed } => {
@@ -174,16 +176,16 @@ mod tests {
     /// A project the committed published set really holds.
     const PUBLISHED_SHORTCODE: &str = "0801d";
 
-    fn record(shortcode: &str, payload: &str, collected: bool) -> ApprovedRecord {
+    fn record(shortcode: &str, payload: &str, pull_request_state: Option<PullRequestState>) -> ApprovedRecord {
         ApprovedRecord {
             id: Uuid::new_v4(),
             shortcode: shortcode.to_string(),
             payload: payload.to_string(),
             approved_by: None,
             approved_at: Utc::now(),
-            collected_at: collected.then(Utc::now),
+            collected_at: Some(Utc::now()),
             pull_request_url: None,
-            pull_request_state: None,
+            pull_request_state,
             last_failure: None,
         }
     }
@@ -200,7 +202,7 @@ mod tests {
         let db = open_test_db("reconcile-online").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
-        let record = record(PUBLISHED_SHORTCODE, &payload, true);
+        let record = record(PUBLISHED_SHORTCODE, &payload, None);
         ApprovedRecordRepository::create(&db, &record).await.expect("create");
 
         let summary = reconcile_published(&db, &published).await.expect("reconciles");
@@ -225,7 +227,7 @@ mod tests {
             serde_json::from_str(&published_payload(&published, PUBLISHED_SHORTCODE)).expect("parses");
         draft.set("name", serde_json::json!("An Edited Name"));
         let payload = serde_json::to_string(&draft).expect("serializes");
-        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, false))
+        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 
@@ -244,33 +246,44 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_collected_record_that_still_differs_is_stranded_not_merely_waiting() {
-        // The sharp case: the pull request merged *with reviewer edits*, so
-        // published data can never byte-equal the record. Distinguished from
-        // waiting only by `collected_at`.
-        let db = open_test_db("reconcile-stranded").await;
-        let published = published_corpus();
-        let mut draft: ProjectDraft =
-            serde_json::from_str(&published_payload(&published, PUBLISHED_SHORTCODE)).expect("parses");
-        draft.set("name", serde_json::json!("What The Reviewer Edited Away"));
-        let payload = serde_json::to_string(&draft).expect("serializes");
-        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, true))
-            .await
-            .expect("create");
+    async fn differing_published_data_is_stranded_only_when_the_pull_request_merged() {
+        // Merged is the one `Differs` case a human must resolve: reviewer edits
+        // landed instead of the depositor's own, so published data can never
+        // byte-equal the record again on its own. Open, closed, and
+        // never-reported are all a normal wait for the release that carries
+        // the record.
+        let cases = [
+            (Some(PullRequestState::Merged), true),
+            (Some(PullRequestState::Open), false),
+            (Some(PullRequestState::Closed), false),
+            (None, false),
+        ];
 
-        let summary = reconcile_published(&db, &published).await.expect("reconciles");
-
-        assert_eq!(summary.stranded, 1, "a collected record that still differs is stranded");
-        assert_eq!(summary.waiting, 0);
-        assert!(summary.needs_attention());
-        assert_eq!(
-            ApprovedRecordRepository::find_by_shortcode(&db, PUBLISHED_SHORTCODE)
+        for (state, expect_stranded) in cases {
+            let db = open_test_db(&format!("reconcile-differs-{state:?}")).await;
+            let published = published_corpus();
+            let mut draft: ProjectDraft =
+                serde_json::from_str(&published_payload(&published, PUBLISHED_SHORTCODE)).expect("parses");
+            draft.set("name", serde_json::json!("What The Reviewer Edited Away"));
+            let payload = serde_json::to_string(&draft).expect("serializes");
+            ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, state))
                 .await
-                .expect("find")
-                .len(),
-            1,
-            "a stranded record is reported, never resolved automatically"
-        );
+                .expect("create");
+
+            let summary = reconcile_published(&db, &published).await.expect("reconciles");
+
+            assert_eq!(summary.stranded, usize::from(expect_stranded), "state {state:?}");
+            assert_eq!(summary.waiting, usize::from(!expect_stranded), "state {state:?}");
+            assert_eq!(summary.needs_attention(), expect_stranded, "state {state:?}");
+            assert_eq!(
+                ApprovedRecordRepository::find_by_shortcode(&db, PUBLISHED_SHORTCODE)
+                    .await
+                    .expect("find")
+                    .len(),
+                1,
+                "a differing record is reported, never resolved automatically, for state {state:?}"
+            );
+        }
     }
 
     #[tokio::test]
@@ -279,7 +292,7 @@ mod tests {
         let db = open_test_db("reconcile-removed").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
-        ApprovedRecordRepository::create(&db, &record("9999", &payload, true))
+        ApprovedRecordRepository::create(&db, &record("9999", &payload, None))
             .await
             .expect("create");
 
@@ -303,10 +316,10 @@ mod tests {
         let db = open_test_db("reconcile-unreadable").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
-        ApprovedRecordRepository::create(&db, &record("9998", "{ not json", true))
+        ApprovedRecordRepository::create(&db, &record("9998", "{ not json", None))
             .await
             .expect("create");
-        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, true))
+        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 
@@ -325,7 +338,7 @@ mod tests {
         let db = open_test_db("reconcile-empty-set").await;
         let published = PublishedProjects::default();
         let payload = published_payload(&published_corpus(), PUBLISHED_SHORTCODE);
-        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, true))
+        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 
@@ -356,7 +369,7 @@ mod tests {
         let db = std::sync::Arc::new(open_test_db("reconcile-list-fails").await);
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
-        ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, true))
+        ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 
@@ -392,7 +405,7 @@ mod tests {
         let db = std::sync::Arc::new(open_test_db("reconcile-already-gone").await);
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
-        ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, true))
+        ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 

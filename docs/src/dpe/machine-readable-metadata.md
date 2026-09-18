@@ -263,25 +263,80 @@ well.
 
 ### Known residuals
 
-These fail by design, because the alternative would be to state something untrue.
+Where the ten points F-UJI does not award go. The per-metric totals are the
+local run that scored 14 of 24; the sub-test detail is the preview run of the
+same day, whose `test_debug` output records which half of a metric failed and
+why. The two runs differ in one sub-test only, `I1-01M-2`, which the preview lost
+to its missing base URL and which is fixed above, so the sub-test evidence
+carries over to the ten points unchanged.
 
-- **No project-level `distribution`.** There is no project-level download. F-UJI
-  F3-01M, A1-03D and R1.3-02D want one; record landing pages are the right
-  assessment target for those tests.
-- **No DataCite registration.** The ARKs are DaSCH's own and are not registered
-  with DataCite, so tests that resolve metadata through a DOI registry cannot
-  pass. F1-02D's sub-test is registration in a PID registry, which is the same
-  cause.
-- **I2-01M cannot be earned with these vocabularies.** The test asks that
-  metadata use semantic resources for its vocabulary terms, and it scores 0/1
-  although it reports `test_status: pass`. Two independent reads of the pinned
-  3.5.0 image explain it. Its default-namespace list excludes schema.org and
-  both Dublin Core namespaces — exactly what this page emits — and strips them
-  before either sub-test runs, so there is nothing left to score. And the
-  sub-test that checks namespace availability adds its own status to the score
-  while that status is still false, so it earns zero whatever it found. Both
-  obstacles are about *which* vocabularies appear, not about how they are
-  serialised: moving I2 needs a controlled-vocabulary link F-UJI's registry
-  recognises, which is new scope rather than a serialisation change.
+| Cause | Where the points go | Points |
+|-------|---------------------|--------|
+| No project-level data pointer | F3-01M, A1-03D, R1-01MD sub-tests 2 to 4, R1.3-02D | 6 |
+| No formal provenance vocabulary | R1.2-01M-2 | 1 |
+| Vocabularies absent from F-UJI's LOD registry | I2-01M | 1 |
+| ARKs are not registered with DataCite | F4-01M-2 | 1 |
+| The assessment ran against a non-production host | F1-02D | 1 |
+
+**No project-level data pointer — six points.** There is no project-level
+download, so there is no `distribution` to describe, and six points hang off
+that one absence. R1-01MD-1 ("minimal information about available data content")
+passes on the resource type alone. R1-01MD-2 does run and comes back with an
+empty `data_content_descriptor`, because nothing populates it; R1-01MD-3 and
+R1-01MD-4 cannot run at all — `NO data object content available/accessible to
+perform file descriptors (type and size) tests`. A1-03D skips for the same
+reason (`Skipping protocol test for data since NO content (data) identifier is
+given in metadata`), and R1.3-02D reports `Could not perform file format checks
+as data content identifier(s) unavailable/inaccesible`. Record landing pages are
+the right assessment target for all six, and they are a follow-up rather than
+something this page can fix.
+
+**No formal provenance vocabulary — one point.** R1.2-01M-1 passes: F-UJI maps
+`publication_date` to `prov:generatedAtTime` and `publisher`, `creator` and
+`contributor` to `prov:wasAttributedTo`, so the facts are present. R1.2-01M-2
+asks for provenance expressed in a formal provenance ontology and reports
+`Formal provenance metadata is unavailable`. Emitting PROV-O terms is new scope
+for a later plan, not something declined here.
+
+**I2-01M cannot be earned with these vocabularies — one point.** The test asks
+that metadata use semantic resources for its vocabulary terms. It scores 0 of 1
+while reporting `test_status: pass`, which is F-UJI's own reporting and not an
+error in the run. Of the 26 namespaces found in the structured metadata, the
+default ones are stripped first — the log names `http://schema.org` and
+`http://purl.org/dc/elements/1.1` among them, which is most of what this page
+emits. Seventeen namespaces survive and are checked, including OAI-DC, the DaSCH
+URLs, geonames, ORCID, the DataCite kernel-4 schema and creativecommons. The
+failure is registry membership: `NO known vocabulary namespace URI is found
+which is listed in the LOD registry`. Moving I2 therefore needs a
+controlled-vocabulary link F-UJI's registry recognises. That is a question of
+*which* vocabularies appear, not of how they are serialised.
+
+**ARKs are not registered with DataCite — one point.** F4-01M-1 passes: the
+metadata is offered through a harvesting endpoint. F4-01M-2 asks for
+registration in a major research data registry, and the ARKs are DaSCH's own.
+
+**The assessment ran against a non-production host — one point.** F1-02D is
+about a persistent identifier, and F-UJI did find one. It harvested the ARK from
+the metadata twice, once through the Signposting `cite-as` link, confirmed the
+syntax as `ark` and resolved it successfully (`resolvable_status: true`, to
+`https://repository.dasch.swiss/dpe/projects/0862`). It then discarded it:
+`Landing page domain resolved from PID found in metadata does not match with
+input URL domain -: run.app <> dasch.swiss`, followed by `PID syntax is OK but
+the PID seems to resolve to a different entity, will not use this PID for
+content negotiation` and finally `Could not find any persistent identifier for
+metadata which complies with a known PID syntax`. The PID was found, was
+well-formed and did resolve; it was rejected because the domain it resolves to
+is not the domain the assessment was run against. Both 2026-09-18 runs targeted a
+non-`dasch.swiss` host, and the 2026-09-15 baseline that did target the ARK
+predates this work, when the page carried no metadata for a PID to be harvested
+from. **No run against a build carrying this work has been made from a host under
+`dasch.swiss`, so F1-02D's status there is unknown.** Assessing DEV is the
+post-merge step that would measure it.
+
+Two further residuals sit outside this arithmetic, because no F-UJI metric
+carries them:
+
 - **No metadata persistence policy URL.** A `persistencePolicy` link needs a
-  published policy to point at.
+  published policy to point at. FAIR Champion's *MetadataPersistence* asks for
+  one.
+- **Not indexed by a search engine.** FAIR Champion's *DiscoverableInBing*.

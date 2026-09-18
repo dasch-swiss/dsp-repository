@@ -13,8 +13,10 @@
 # Must stay a quoted array. As an unquoted string, bash expands the glob first,
 # and bash's * does not cross / where a git pathspec's does, so git would see
 # shallow filenames and every nested file would go unread while the gate passed.
-# No shared crate has a tests/ directory yet; widen this when one does.
-SHARED_PATHSPECS=('shared/*/src/*.rs')
+# Test fixtures and the scripts that refresh them count: they are shared-crate
+# files as able to name a service path as a source file is. Widen this again
+# when a shared crate grows a directory neither pathspec reaches.
+SHARED_PATHSPECS=('shared/*/src/*.rs' 'shared/*/testdata/**')
 
 # Every module under modules/. From the index, so an untracked file cannot
 # widen the rule. Wider than "service": mosaic is the design system and is

@@ -249,9 +249,13 @@ Scores for project 0862, the reference project.
 | 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/0862` (local `dpe-server serve`) | **14 of 24**, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1 |
 | 2026-09-18 | F-UJI | 3.5.0 | `https://dpe-pr-391-…run.app/dpe/projects/0862` (Cloud Run PR preview) | 13 of 24. One point below the local run, and the whole difference is `I1-01M-2`: the preview did not set `DPE_PUBLIC_BASE_URL`, so the typed links pointed at production, which does not carry this code and answered 404. Predates the `identifier`, `license` and workflow fixes |
 | 2026-09-18 | FAIR Champion | 1.1.11 | same preview | 7 of 15 passing. *LicenseStrong* and *MetadataIdentifierFound* among the failures; both are fixed by the `license` and `identifier` shapes above, and both predate them |
+| 2026-09-18 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after the `identifier` and `license` fixes | **14 of 24 again.** A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting `identifier` in an array did not break F-UJI's reading of the ARK — it does not, and `F1-01D` still passes |
 
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
 with, so the rows are comparable.
+
+Neither assessor has yet run against a deployment carrying the `identifier`,
+`license` and base-URL fixes. Nothing on this page claims a score for one.
 
 **Two representations of one project do not fight over its resource type.**
 F-UJI's JSON-LD mapping reads `object_type` from schema.org's `@type`
@@ -278,18 +282,25 @@ carries over to the ten points unchanged.
 | ARKs are not registered with DataCite | F4-01M-2 | 1 |
 | The assessment ran against a non-production host | F1-02D | 1 |
 
-**No project-level data pointer — six points.** There is no project-level
-download, so there is no `distribution` to describe, and six points hang off
-that one absence. R1-01MD-1 ("minimal information about available data content")
+**No project-level data pointer — six points.** F-UJI distinguishes the metadata
+record from retrievable *data content*, and asks for a pointer it can fetch and
+inspect. The project is what this page describes, but a DaSCH project is not a
+single downloadable artifact: its records are reachable through the application
+and through DSP-API, and nothing bundles them into one file for a client to
+retrieve. So there is no `distribution` to describe, and six points hang off that
+one absence. R1-01MD-1 ("minimal information about available data content")
 passes on the resource type alone. R1-01MD-2 does run and comes back with an
 empty `data_content_descriptor`, because nothing populates it; R1-01MD-3 and
 R1-01MD-4 cannot run at all — `NO data object content available/accessible to
 perform file descriptors (type and size) tests`. A1-03D skips for the same
 reason (`Skipping protocol test for data since NO content (data) identifier is
 given in metadata`), and R1.3-02D reports `Could not perform file format checks
-as data content identifier(s) unavailable/inaccesible`. Record landing pages are
-the right assessment target for all six, and they are a follow-up rather than
-something this page can fix.
+as data content identifier(s) unavailable/inaccesible`.
+
+Naming a download that does not exist would earn the six points and state
+something untrue, which ADR-0005 rules out: nothing is invented for a score.
+Record landing pages describe objects that *do* have retrievable content, and
+they are the right assessment target for all six.
 
 **No formal provenance vocabulary — one point.** R1.2-01M-1 passes: F-UJI maps
 `publication_date` to `prov:generatedAtTime` and `publisher`, `creator` and

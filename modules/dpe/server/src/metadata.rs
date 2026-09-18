@@ -131,7 +131,7 @@ fn render<'a>(
     records: impl IntoIterator<Item = &'a Record>,
     state: &AppState,
 ) -> (Markup, HeaderMap) {
-    let graph = build_graph(raw, records);
+    let graph = build_graph(raw, records, state.ark_host());
 
     let urls = url_layout(raw, state);
     let json = script_safe_json(&project_to_schema_org(
@@ -169,9 +169,13 @@ fn render<'a>(
 /// value, so the resolve context — whose `ContributorLookup` carries no `Sync`
 /// bound — is created and dropped inside this call and can reach no await
 /// point.
-fn build_graph<'a>(raw: &ProjectRaw, records: impl IntoIterator<Item = &'a Record>) -> ProjectGraph {
+fn build_graph<'a>(
+    raw: &ProjectRaw,
+    records: impl IntoIterator<Item = &'a Record>,
+    ark_host: ArkHost<'_>,
+) -> ProjectGraph {
     let (lookup, periods, enriched) = dpe_core::resolve_inputs();
-    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched, ArkHost::Recorded), records)
+    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched, ark_host), records)
 }
 
 /// The `Link` header for a link set, or an empty map when the HTTP layer will
@@ -203,9 +207,10 @@ fn link_header(links: &LinkSet, shortcode: &str) -> HeaderMap {
 /// why this route sits behind the per-IP limiter from its first day
 /// (`router.rs`).
 pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    representation(&id, &state, JSON_LD, |raw, urls| {
+    let resolver = state.ark_resolver_base_url.clone();
+    representation(&id, &state, JSON_LD, move |raw, urls| {
         let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
-        let graph = build_graph(raw, records.iter().copied());
+        let graph = build_graph(raw, records.iter().copied(), crate::ark_host(resolver.as_deref()));
         project_to_schema_org(&graph, urls, SchemaOrgOptions { has_part_cap: None })
     })
     .await
@@ -214,10 +219,11 @@ pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(
 /// The project's DataCite record as kernel-4 JSON, for a harvester that wants
 /// bare DataCite rather than the OAI envelope the `describedby` links to.
 pub(crate) async fn project_datacite_json_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    representation(&id, &state, DATACITE_JSON, |raw, _urls| {
+    let resolver = state.ark_resolver_base_url.clone();
+    representation(&id, &state, DATACITE_JSON, move |raw, _urls| {
         // No records: DataCite carries no part list, so building one would cost
         // a `PartRef` per record for nothing.
-        let graph = build_graph(raw, std::iter::empty());
+        let graph = build_graph(raw, std::iter::empty(), crate::ark_host(resolver.as_deref()));
         project_to_datacite_json(&project_to_datacite(&graph))
     })
     .await
@@ -354,6 +360,43 @@ mod tests {
     /// The `<link>` elements and the `Link` header are one set rendered twice,
     /// so they must agree relation for relation. Maud escapes `&` in an
     /// attribute value and the header does not, which is the one difference.
+    /// The variable reaches the page, not just the graph: the rendered head and
+    /// the `Link` header both carry the configured resolver, and the recorded
+    /// one is gone from both.
+    #[test]
+    fn a_configured_resolver_reaches_the_rendered_page_and_the_link_header() {
+        const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
+        let state = AppState {
+            ark_resolver_base_url: Some(PREVIEW.to_string()),
+            ..test_state()
+        };
+        let (markup, headers) = render(&project(), std::iter::empty(), &state);
+        let html = markup.into_string();
+
+        assert!(html.contains(&format!("{PREVIEW}/ark:/72163/1/")), "{html}");
+        assert!(!html.contains("ark.dasch.swiss"), "{html}");
+        let cite_as = header_links(&headers)
+            .into_iter()
+            .find(|link| link.rel == "cite-as")
+            .expect("a cite-as link");
+        assert!(cite_as.href.starts_with(PREVIEW), "{cite_as:?}");
+        // The path is the identifier and is not re-spelled by the substitution.
+        assert!(cite_as.href.ends_with("/ark:/72163/1/0001"), "{cite_as:?}");
+    }
+
+    /// Unset — every deployment but a PR preview — the page is what it is
+    /// today: the recorded ARK, and no other host anywhere near one.
+    #[test]
+    fn with_no_configured_resolver_the_page_carries_the_recorded_ark() {
+        let (html, headers) = rendered(&project());
+        assert!(html.contains("https://ark.dasch.swiss/ark:/72163/1/0001"), "{html}");
+        let cite_as = header_links(&headers)
+            .into_iter()
+            .find(|link| link.rel == "cite-as")
+            .expect("a cite-as link");
+        assert_eq!(cite_as.href, "https://ark.dasch.swiss/ark:/72163/1/0001");
+    }
+
     #[test]
     fn the_link_elements_and_the_link_header_are_the_same_set() {
         let (html, headers) = rendered(&project());

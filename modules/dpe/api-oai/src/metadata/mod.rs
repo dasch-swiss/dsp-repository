@@ -77,13 +77,14 @@ pub fn to_oai_record(
     metadata_prefix: &str,
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
+    ark_host: ArkHost<'_>,
 ) -> OaiRecord {
     // The temporal tables come from `resolve_inputs`, the one place in DPE that
     // says what resolution needs, so this endpoint and the landing page cannot
     // drift apart. The lookup it returns is discarded: handlers take theirs as a
     // parameter, which is how the tests inject an in-memory double.
     let (_cached_lookup, periods, enriched) = dpe_core::resolve_inputs();
-    let ctx = ResolveContext::new(lookup, periods, enriched, ArkHost::Recorded);
+    let ctx = ResolveContext::new(lookup, periods, enriched, ark_host);
     let header = OaiRecordHeader {
         identifier: project_oai_identifier(project),
         datestamp: if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
@@ -113,7 +114,12 @@ pub fn to_oai_record(
 }
 
 /// Creates an OAI record from a Record for the given metadata prefix.
-pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str, clusters: &[ClusterRaw]) -> OaiRecord {
+pub fn to_oai_record_from_record(
+    record: &Record,
+    metadata_prefix: &str,
+    clusters: &[ClusterRaw],
+    ark_host: ArkHost<'_>,
+) -> OaiRecord {
     let suffix_owned = record.pid.ark_suffix();
     let suffix = &suffix_owned;
     let header = OaiRecordHeader {
@@ -122,7 +128,7 @@ pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str, cluster
         set_specs: membership_set_specs("entityType:Record", &record.pid.shortcode, clusters),
     };
 
-    let graph = RecordGraph::build(record, ArkHost::Recorded);
+    let graph = RecordGraph::build(record, ark_host);
 
     let dublin_core = if metadata_prefix == "oai_dc" {
         Some(record_to_dublin_core(&graph))

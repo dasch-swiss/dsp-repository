@@ -12,6 +12,8 @@ use shared_metadata::{
     AccessRightsType, AuthorityFileReference, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Record,
 };
 
+#[cfg(test)]
+use crate::graph::ArkHost;
 use crate::graph::{AgentKind, PartRef, ResolveContext, DASCH, FALLBACK_PUBLICATION_YEAR};
 use crate::helpers::{extract_year, is_creator, license_identifier_to_label};
 use crate::resolve::resolve_agent;
@@ -123,8 +125,15 @@ pub struct ProjectGraph {
     /// otherwise built from the shortcode. Both writers perform that fallback
     /// today; `pid` stays beside it because the OAI identifier is derived from
     /// the raw value and a `sameAs` needs to see the two differ.
+    ///
+    /// Its host is [`ResolveContext::ark_host`]'s, which is the recorded one
+    /// unless the deployment configured otherwise.
     pub ark: String,
     pub shortcode: String,
+    /// The recorded `pid`, host-substituted alongside [`ark`](Self::ark) so the
+    /// two are comparable: the `sameAs` this feeds exists to show a recorded
+    /// PID differing from the resolved ARK as a *fact about the data*, and a
+    /// difference in host alone is a fact about the deployment.
     pub pid: String,
     /// `None` for a placeholder or empty raw value, which is exactly DataCite's
     /// `name_valid` / `official_valid` test. No preferred title is computed:
@@ -201,9 +210,14 @@ impl ProjectGraph {
         let (website, secondary_from_array) = shared_metadata::utils::parse_url_value(raw.url.clone());
 
         Self {
-            ark: canonical_ark(raw),
+            ark: ctx.ark_host.apply(canonical_ark(raw)),
             shortcode: raw.shortcode.clone(),
-            pid: raw.pid.clone(),
+            // Host-substituted like `ark`, deliberately: the `sameAs` this
+            // feeds exists to show a *recorded* PID differing from the resolved
+            // ARK, and F-UJI folds `schema:sameAs` into its object-identifier
+            // pool. Leaving the recorded host here would put the very
+            // identifier the substitution removes back into that pool.
+            pid: ctx.ark_host.apply(raw.pid.clone()),
             name: real_value(&raw.name),
             official_name: real_value(&raw.official_name),
             raw_name: raw.name.clone(),
@@ -253,7 +267,10 @@ impl ProjectGraph {
                 })
                 .collect(),
             status: raw.status.clone(),
-            parts: records.into_iter().map(PartRef::from_record).collect(),
+            parts: records
+                .into_iter()
+                .map(|record| PartRef::from_record(record, ctx.ark_host))
+                .collect(),
         }
     }
 
@@ -471,6 +488,31 @@ mod tests {
             assert_eq!(graph.ark, "https://ark.dasch.swiss/ark:/72163/1/0001", "{pid:?}");
             // The raw value survives beside the resolved one.
             assert_eq!(graph.pid, pid);
+        }
+    }
+
+    #[test]
+    fn a_substituted_host_reaches_the_ark_the_pid_and_every_part() {
+        let record = record("record-0001", english("Survey Responses"));
+        let graph = build_with_ark_host(
+            &project(),
+            std::slice::from_ref(&record),
+            ArkHost::Substituted("https://dpe-pr-391.a.run.app"),
+        );
+        assert_eq!(graph.ark, "https://dpe-pr-391.a.run.app/ark:/72163/1/0001");
+        // `pid` too, or the `sameAs` it feeds would put the recorded host back
+        // into the identifier pool an assessor reads.
+        assert_eq!(graph.pid, "https://dpe-pr-391.a.run.app/ark:/72163/1/0001");
+        assert_eq!(graph.parts[0].ark, "https://dpe-pr-391.a.run.app/ark:/72163/1/0001/record-0001");
+    }
+
+    #[test]
+    fn a_substituted_host_reaches_the_shortcode_fallback_and_leaves_a_placeholder_pid_alone() {
+        for pid in ["MISSING", "CALCULATED", ""] {
+            let raw = ProjectRaw { pid: pid.to_string(), ..project() };
+            let graph = build_with_ark_host(&raw, &[], ArkHost::Substituted("https://dpe-pr-391.a.run.app"));
+            assert_eq!(graph.ark, "https://dpe-pr-391.a.run.app/ark:/72163/1/0001", "{pid:?}");
+            assert_eq!(graph.pid, pid, "{pid:?}");
         }
     }
 
@@ -740,7 +782,13 @@ mod tests {
             ),
         ];
         let graph = build(&project(), &records);
-        assert_eq!(graph.parts, records.iter().map(PartRef::from_record).collect::<Vec<_>>());
+        assert_eq!(
+            graph.parts,
+            records
+                .iter()
+                .map(|r| PartRef::from_record(r, ArkHost::Recorded))
+                .collect::<Vec<_>>()
+        );
         assert_eq!(
             graph.parts.iter().map(|p| p.title.as_str()).collect::<Vec<_>>(),
             vec!["Survey Responses", "Feldnotizen"]

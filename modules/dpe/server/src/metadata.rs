@@ -16,7 +16,7 @@ use axum::response::{IntoResponse, Response};
 use maud::{html, Markup, PreEscaped};
 use shared_fair::{
     decide, project_to_datacite, project_to_datacite_json, project_to_dublin_core_meta, project_to_link_set,
-    project_to_schema_org, representation_to_link_set, script_safe_json, Decision, LinkSet, ProjectGraph,
+    project_to_schema_org, representation_to_link_set, script_safe_json, ArkHost, Decision, LinkSet, ProjectGraph,
     ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 use shared_metadata::{ProjectRaw, Record};
@@ -171,7 +171,7 @@ fn render<'a>(
 /// point.
 fn build_graph<'a>(raw: &ProjectRaw, records: impl IntoIterator<Item = &'a Record>) -> ProjectGraph {
     let (lookup, periods, enriched) = dpe_core::resolve_inputs();
-    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched), records)
+    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched, ArkHost::Recorded), records)
 }
 
 /// The `Link` header for a link set, or an empty map when the HTTP layer will

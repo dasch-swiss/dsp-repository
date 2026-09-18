@@ -491,54 +491,70 @@ fn assert_record_representations_agree(graph: &RecordGraph, path: &Path) {
     );
 }
 
-/// The embedded JSON-LD of the largest committed project stays small enough to
-/// sit in a `<head>`.
+/// Every committed project's embedded JSON-LD stays small enough to sit in a
+/// `<head>`.
 ///
-/// The cap is the reason: without it this project would embed 27,026 `hasPart`
-/// entries, megabytes of them, on every visit. 64 KB is a budget, not a limit
-/// anything enforces, so it is asserted here rather than left to be noticed.
+/// The cap is the reason: without it the largest project would embed 27,026
+/// `hasPart` entries, megabytes of them, on every visit, and the project with
+/// the most files would add a `DataDownload` to 7,716 of them. 64 KB is a
+/// budget, not a limit anything enforces, so it is asserted here rather than
+/// left to be noticed.
+///
+/// Every dump rather than the largest one alone: the largest carries no file at
+/// all, so measuring it says nothing about what `distribution` costs.
 #[test]
-fn the_largest_committed_project_embeds_a_small_json_ld_block() {
+fn every_committed_project_embeds_a_small_json_ld_block() {
     let data_dir = Path::new(DATA_DIR);
-    let (shortcode, dump) = sorted_json_files(&data_dir.join("records"))
-        .iter()
-        .map(|path| {
-            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
-            let shortcode = stem.strip_suffix("-records").unwrap_or(stem).to_string();
-            (shortcode, read_json::<Vec<Record>>(path))
-        })
-        .max_by_key(|(_, dump)| dump.len())
-        .expect("committed record dumps should not be empty");
-    assert!(!dump.is_empty(), "the largest committed dump should hold records");
-
-    let raw = sorted_json_files(&data_dir.join("projects"))
+    let projects: Vec<ProjectRaw> = sorted_json_files(&data_dir.join("projects"))
         .iter()
         .map(read_json::<ProjectRaw>)
-        .find(|raw| raw.shortcode.eq_ignore_ascii_case(&shortcode))
-        .unwrap_or_else(|| panic!("no committed project for the dump {shortcode}"));
+        .collect();
 
     let periods = shared_metadata::chronontology::load_from(data_dir);
     let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
     let lookup = CorpusContributorLookup::load(data_dir);
     let ctx = ResolveContext::new(&lookup, &periods, &enriched);
-    let graph = ProjectGraph::build(&raw, &ctx, dump.iter().take(100));
 
-    let embedded = script_safe_json(&project_to_schema_org(
-        &graph,
-        &test_layout(),
-        SchemaOrgOptions { has_part_cap: Some(100) },
-    ));
-    // The cap is what is being measured, so the block has to carry it.
-    assert_eq!(
-        graph.parts.len(),
-        100,
-        "the largest dump should fill the cap, or this measures nothing"
-    );
-    assert!(embedded.contains("hasPart"), "no hasPart in the embedded block");
+    let dumps = sorted_json_files(&data_dir.join("records"));
+    assert!(!dumps.is_empty(), "there should be committed record dumps");
+    let mut with_a_distribution = 0;
+
+    for path in &dumps {
+        let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+        let shortcode = stem.strip_suffix("-records").unwrap_or(stem).to_string();
+        let dump = read_json::<Vec<Record>>(path);
+        let raw = projects
+            .iter()
+            .find(|raw| raw.shortcode.eq_ignore_ascii_case(&shortcode))
+            .unwrap_or_else(|| panic!("no committed project for the dump {shortcode}"));
+
+        let graph = ProjectGraph::build(raw, &ctx, dump.iter().take(100));
+        let embedded = script_safe_json(&project_to_schema_org(
+            &graph,
+            &test_layout(),
+            SchemaOrgOptions { has_part_cap: Some(100) },
+        ));
+        // The cap is what is being measured, so the block has to carry it.
+        assert_eq!(
+            graph.parts.len(),
+            100,
+            "the dump {shortcode} should fill the cap, or this measures nothing"
+        );
+        assert!(embedded.contains("hasPart"), "no hasPart in {shortcode}'s embedded block");
+        assert!(
+            embedded.len() < 64 * 1024,
+            "the embedded JSON-LD for {shortcode} is {} bytes, over the 64 KB budget",
+            embedded.len()
+        );
+        if embedded.contains("DataDownload") {
+            with_a_distribution += 1;
+        }
+    }
+
+    // Without this the budget could be met by emitting no download at all.
     assert!(
-        embedded.len() < 64 * 1024,
-        "the embedded JSON-LD for {shortcode} is {} bytes, over the 64 KB budget",
-        embedded.len()
+        with_a_distribution > 0,
+        "no committed project's first 100 records produced a distribution, so the budget measures nothing about one"
     );
 }
 

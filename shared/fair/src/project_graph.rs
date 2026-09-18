@@ -163,12 +163,13 @@ impl ProjectGraph {
     /// Resolves one project into a graph.
     ///
     /// `records` is an iterator rather than a slice so a caller can bound what
-    /// the builder materialises. One `PartRef` per record is two small strings,
-    /// which is nothing for a project of forty records and 27,026 allocations
-    /// for the largest committed one — and the embedded JSON-LD on its landing
-    /// page caps `hasPart` at a hundred. So the landing page hands in a bounded
-    /// iterator, the standalone representation hands in all of them, and the
-    /// OAI writers, which read no part at all, hand in an empty slice.
+    /// the builder materialises. One `PartRef` per record is two small strings
+    /// plus the record's file when it has a publishable one, which is nothing
+    /// for a project of forty records and 27,026 of them for the largest
+    /// committed one — and the embedded JSON-LD on its landing page caps
+    /// `hasPart` and `distribution` at a hundred. So the landing page hands in
+    /// a bounded iterator, the standalone representation hands in all of them,
+    /// and the OAI writers, which read no part at all, hand in an empty slice.
     pub fn build<'a>(
         raw: &ProjectRaw,
         ctx: &ResolveContext<'_>,

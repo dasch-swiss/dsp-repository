@@ -93,8 +93,14 @@ pub struct RecordLegalInfo {
     pub authorship: Vec<String>,
 }
 
-/// `url` is dsp-ingest's own address — see `docs/src/dpe/oai-pmh.md` for why it is
-/// never published. `url` is the only required field: every other value is absent
+/// `url` is dsp-ingest's own address. The OAI-PMH payloads do not carry it —
+/// see `docs/src/dpe/oai-pmh.md` for why neither `dc:identifier` nor a
+/// `HasPart` `relatedIdentifier` is a field it fits in. It is published where a
+/// field does fit: as `downloadUrl` in the file-metadata endpoint's document,
+/// and, for a record the corpus records as fully open, as the `contentUrl` of a
+/// `schema:distribution` on its project's landing page.
+///
+/// `url` is the only required field: every other value is absent
 /// from some production export, and a required field that the data does not carry
 /// makes `serde_json` reject the entire dump rather than the one record.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]

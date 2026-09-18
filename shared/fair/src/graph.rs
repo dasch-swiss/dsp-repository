@@ -10,9 +10,9 @@ use std::collections::HashMap;
 
 use shared_metadata::temporal_enrichment::EnrichedDate;
 use shared_metadata::w3cdtf::W3cdtfRange;
-use shared_metadata::{ContributorLookup, Multilingual, Record};
+use shared_metadata::{AccessRightsType, ContributorLookup, Multilingual, Record};
 
-use crate::helpers::{extract_year, license_identifier_to_label};
+use crate::helpers::{access_rights_to_string, extract_year, license_identifier_to_label, real};
 
 /// The organization's own name, used both to infer that an authorship entry is
 /// DaSCH itself and as the mandatory-creator fallback of both graphs.
@@ -240,18 +240,22 @@ impl RecordGraph {
     }
 }
 
-/// A reference to a record from its parent project, an ARK and a title.
+/// A reference to a record from its parent project: an ARK, a title, and the
+/// record's file when there is one that may be published.
 ///
-/// A project's `hasPart` list needs nothing more, and the largest committed
-/// project holds 27 026 records: two strings per part rather than a whole
-/// `RecordGraph`. It derives its title through the same helper `RecordGraph`
-/// uses, which is what keeps a project page and a record page from disagreeing
-/// about a record's title.
+/// A project's `hasPart` and `distribution` lists need nothing more, and the
+/// largest committed project holds 27 026 records: two strings and a small
+/// optional struct per part rather than a whole `RecordGraph`. It derives its
+/// title through the same helper `RecordGraph` uses, which is what keeps a
+/// project page and a record page from disagreeing about a record's title.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PartRef {
     pub ark: String,
     /// Empty when the record carries no label at all.
     pub title: String,
+    /// `None` for a record with no file, and for one the corpus does not record
+    /// as fully open — see [`publishable_file`].
+    pub file: Option<FileRef>,
 }
 
 impl PartRef {
@@ -259,8 +263,54 @@ impl PartRef {
         Self {
             ark: record.pid.as_url(),
             title: preferred_title(&record.label).unwrap_or_default(),
+            file: publishable_file(record),
         }
     }
+}
+
+/// A record's file, as much of it as a download pointer needs.
+///
+/// No checksum: schema.org has no property carrying one on a `DataDownload`,
+/// and `/dpe/records/{shortcode}/{record_id}/file` already serves it beside the
+/// same URL.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FileRef {
+    /// dsp-ingest's public address for the bitstream.
+    pub url: String,
+    /// Absent from every file of some projects — 0803's 4 062 files carry no
+    /// `mimeType` at all — so a consumer has to be able to describe a file
+    /// without one.
+    pub mime_type: Option<String>,
+    pub file_name: Option<String>,
+    pub file_size: Option<u64>,
+    /// The *record's* licence, which is not always the project's: 0868 licenses
+    /// the project CC BY 4.0 and every one of its 7 716 file-carrying records
+    /// CC0 1.0. A file described under the project's licence alone would
+    /// misstate all of them, so the fact travels with the file.
+    pub license_uri: Option<String>,
+}
+
+/// The record's file when it may be advertised, and nothing otherwise.
+///
+/// dsp-ingest serves these URLs to anyone, so a record the corpus does not
+/// record as fully open must not have one published for it. The rule lives here
+/// rather than in a writer so that a writer cannot be added that forgets it,
+/// and it fails closed: an access level spelled in a way this does not
+/// recognise yields no file. `Record::access_rights` is free text, unlike a
+/// project's typed `AccessRightsType`, which is why this is a comparison and
+/// not a match.
+fn publishable_file(record: &Record) -> Option<FileRef> {
+    if record.access_rights != access_rights_to_string(&AccessRightsType::FullOpenAccess) {
+        return None;
+    }
+    let file = record.file.as_ref()?;
+    Some(FileRef {
+        url: real(&file.url)?.to_string(),
+        mime_type: file.mime_type.as_deref().and_then(real).map(str::to_string),
+        file_name: file.file_name.as_deref().and_then(real).map(str::to_string),
+        file_size: file.file_size,
+        license_uri: real(&record.legal_info.license.license_uri).map(str::to_string),
+    })
 }
 
 #[cfg(test)]
@@ -462,6 +512,97 @@ mod tests {
     fn part_ref_title_is_empty_without_a_label() {
         let record = Record { label: Multilingual::new(), ..test_record() };
         assert_eq!(PartRef::from_record(&record).title, "");
+    }
+
+    /// A record carrying every file field, as 0868's do.
+    fn record_with_a_file() -> Record {
+        Record {
+            file: Some(RecordFile {
+                mime_type: Some("image/png".to_string()),
+                url: "https://ingest.dasch.swiss/projects/0001/assets/abc/original".to_string(),
+                checksum: Some("9ab438922efe".to_string()),
+                checksum_algorithm: Some("SHA-256".to_string()),
+                file_name: Some("Screenshot.png".to_string()),
+                file_size: Some(377_685),
+                date_created: Some("2024-01-15".to_string()),
+            }),
+            ..test_record()
+        }
+    }
+
+    #[test]
+    fn a_part_carries_the_file_of_a_fully_open_record() {
+        let file = PartRef::from_record(&record_with_a_file()).file.expect("a file");
+        assert_eq!(file.url, "https://ingest.dasch.swiss/projects/0001/assets/abc/original");
+        assert_eq!(file.mime_type.as_deref(), Some("image/png"));
+        assert_eq!(file.file_name.as_deref(), Some("Screenshot.png"));
+        assert_eq!(file.file_size, Some(377_685));
+        assert_eq!(
+            file.license_uri.as_deref(),
+            Some("https://creativecommons.org/licenses/by/4.0/")
+        );
+    }
+
+    #[test]
+    fn a_part_carries_no_file_when_the_record_has_none() {
+        assert_eq!(PartRef::from_record(&test_record()).file, None);
+    }
+
+    /// The rule that keeps a restricted record's ingest URL out of every
+    /// representation: dsp-ingest serves it to anyone.
+    #[test]
+    fn a_part_carries_no_file_for_a_record_that_is_not_fully_open() {
+        for access_rights in [
+            "Open Access with Restrictions",
+            "Embargoed Access",
+            "Metadata only Access",
+            "",
+            "full open access",
+        ] {
+            let record = Record {
+                access_rights: access_rights.to_string(),
+                ..record_with_a_file()
+            };
+            assert_eq!(
+                PartRef::from_record(&record).file,
+                None,
+                "a file was published for access rights {access_rights:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_part_carries_no_file_without_a_url() {
+        let mut record = record_with_a_file();
+        record.file.as_mut().expect("a file").url = String::new();
+        assert_eq!(PartRef::from_record(&record).file, None);
+    }
+
+    /// 0803's 4,062 files carry no MIME type, and 0868's project licence is not
+    /// the licence its records carry. Both are facts about the file, absent or
+    /// dissenting, and neither is filled in.
+    #[test]
+    fn a_files_absent_and_dissenting_facts_are_reported_as_they_stand() {
+        let mut record = record_with_a_file();
+        record.file.as_mut().expect("a file").mime_type = None;
+        record.file.as_mut().expect("a file").file_name = Some(String::new());
+        record.file.as_mut().expect("a file").file_size = None;
+        record.legal_info.license.license_uri = "https://creativecommons.org/publicdomain/zero/1.0/".to_string();
+        let file = PartRef::from_record(&record).file.expect("a file");
+        assert_eq!(file.mime_type, None);
+        assert_eq!(file.file_name, None);
+        assert_eq!(file.file_size, None);
+        assert_eq!(
+            file.license_uri.as_deref(),
+            Some("https://creativecommons.org/publicdomain/zero/1.0/")
+        );
+    }
+
+    #[test]
+    fn a_placeholder_license_yields_no_license_for_the_file() {
+        let mut record = record_with_a_file();
+        record.legal_info.license.license_uri = "MISSING".to_string();
+        assert_eq!(PartRef::from_record(&record).file.expect("a file").license_uri, None);
     }
 
     #[test]

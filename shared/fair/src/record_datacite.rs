@@ -9,9 +9,10 @@ use crate::types::{
 const PUBLISHER: &str = "DaSCH";
 
 pub fn record_to_datacite(graph: &RecordGraph) -> DataCiteRecord {
-    // Creators (mandatory) - from authorship
-    let mut creators: Vec<DataCiteCreator> = graph
-        .creators
+    // Creators (mandatory) - from authorship, or the graph's organizational
+    // fallback when the record carries none
+    let creators: Vec<DataCiteCreator> = graph
+        .creators_with_fallback()
         .iter()
         .map(|creator| DataCiteCreator {
             name: creator.name.clone(),
@@ -19,13 +20,6 @@ pub fn record_to_datacite(graph: &RecordGraph) -> DataCiteRecord {
             ..Default::default()
         })
         .collect();
-    if creators.is_empty() {
-        creators.push(DataCiteCreator {
-            name: PUBLISHER.to_string(),
-            name_type: Some("Organizational".to_string()),
-            ..Default::default()
-        });
-    }
 
     // Titles (mandatory) - prefer "en", other languages as AlternativeTitles
     let mut titles: Vec<DataCiteTitle> = Vec::new();

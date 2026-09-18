@@ -5,6 +5,7 @@
 //! representation of a record reads one resolved object instead of re-deriving
 //! from `Record`.
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use shared_metadata::temporal_enrichment::EnrichedDate;
@@ -13,7 +14,9 @@ use shared_metadata::{ContributorLookup, Multilingual, Record};
 
 use crate::helpers::{extract_year, license_identifier_to_label};
 
-const DASCH: &str = "DaSCH";
+/// The organization's own name, used both to infer that an authorship entry is
+/// DaSCH itself and as the mandatory-creator fallback of both graphs.
+pub(crate) const DASCH: &str = "DaSCH";
 
 /// Borrowed lookup tables a writer resolves against: contributor IDs,
 /// ChronOntology period timespans, and the temporal-coverage enrichment table.
@@ -117,10 +120,10 @@ pub struct RecordGraph {
     /// both as the title and as an `AlternativeTitle`. That duplication is in the
     /// committed output.
     pub alternative_titles: Vec<(String, String)>,
-    /// Exactly what `authorship` holds, possibly empty. DataCite requires at
-    /// least one creator and its writer appends an organizational `DaSCH` when
-    /// this is empty; Dublin Core does not. Applying that fallback here would
-    /// change `oai_dc` output for every record with empty authorship.
+    /// Exactly what `authorship` holds, possibly empty. The mandatory-creator
+    /// fallback is [`RecordGraph::creators_with_fallback`], not this field:
+    /// applying it here would change `oai_dc` output for every record with
+    /// empty authorship.
     pub creators: Vec<RecordCreator>,
     pub description: Option<String>,
     pub date_created: String,
@@ -189,6 +192,24 @@ impl RecordGraph {
             size: record.size.clone(),
             publisher: record.publisher.clone(),
             mime_type: record.file.as_ref().and_then(|f| f.mime_type.clone()).filter(|m| !m.is_empty()),
+        }
+    }
+
+    /// `creators`, or a single organizational `DaSCH` when the record has no
+    /// authorship at all.
+    ///
+    /// DataCite makes at least one creator mandatory, so every representation
+    /// that rule governs needs this fallback and resolves it here rather than
+    /// writing it out again (ADR-0005). Dublin Core deliberately does not call
+    /// it: `oai_dc` has no such rule, and naming DaSCH as the creator of a
+    /// record nobody is credited with would invent authorship (ADR-0005,
+    /// *Nothing is invented for a score*). That is also why `build` leaves
+    /// `creators` exactly as `authorship` holds it.
+    pub fn creators_with_fallback(&self) -> Cow<'_, [RecordCreator]> {
+        if self.creators.is_empty() {
+            Cow::Owned(vec![RecordCreator { name: DASCH.to_string(), kind: AgentKind::Organization }])
+        } else {
+            Cow::Borrowed(&self.creators)
         }
     }
 }
@@ -306,14 +327,31 @@ mod tests {
         );
     }
 
-    /// The DataCite writer owns the mandatory-creator fallback; adding it here
-    /// would put a DaSCH creator into `oai_dc` too.
+    /// `build` records authorship as it is; the mandatory-creator fallback is
+    /// the accessor below, so that it cannot reach `oai_dc`.
     #[test]
     fn empty_authorship_yields_no_creators() {
         let mut record = test_record();
         record.legal_info.authorship = vec![];
         let graph = RecordGraph::build(&record);
         assert!(graph.creators.is_empty());
+    }
+
+    #[test]
+    fn empty_authorship_falls_back_to_the_dasch_organization() {
+        let mut record = test_record();
+        record.legal_info.authorship = vec![];
+        let graph = RecordGraph::build(&record);
+        assert_eq!(
+            graph.creators_with_fallback().into_owned(),
+            vec![RecordCreator { name: "DaSCH".to_string(), kind: AgentKind::Organization }]
+        );
+    }
+
+    #[test]
+    fn the_fallback_leaves_real_authorship_alone() {
+        let graph = RecordGraph::build(&test_record());
+        assert_eq!(graph.creators_with_fallback().as_ref(), graph.creators.as_slice());
     }
 
     #[test]

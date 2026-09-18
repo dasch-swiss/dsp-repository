@@ -190,3 +190,57 @@ fn every_committed_project_and_a_record_sample_survive_all_four_writers() {
     }
     assert!(records > 0, "committed record dumps should not be empty");
 }
+
+/// The shortcode index serves exactly what the scan it replaced served.
+///
+/// `records_for_shortcode` repoints the OAI `set=project:{shortcode}` filter
+/// from an O(corpus) scan of the flat record vector to an index built once. The
+/// sequence must not move: `ListRecords` pages it, and a resumption token is an
+/// offset into that page sequence. So this runs the index builder over the
+/// committed dumps — the same flat vector the cache builds from them — and
+/// compares it, record for record, against the filter expression it replaced.
+#[test]
+fn the_shortcode_index_serves_what_the_scan_served() {
+    let mut all: Vec<Record> = Vec::new();
+    let mut largest_dump = 0usize;
+    for path in sorted_json_files(&Path::new(DATA_DIR).join("records")) {
+        let json =
+            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{} should be readable: {e}", path.display()));
+        let dump = serde_json::from_str::<Vec<Record>>(&json)
+            .unwrap_or_else(|e| panic!("{} should parse: {e}", path.display()));
+        largest_dump = largest_dump.max(dump.len());
+        all.extend(dump);
+    }
+    assert!(!all.is_empty(), "committed record dumps should not be empty");
+
+    let index = dpe_core::record_cache::index_by_shortcode(&all);
+    let shortcodes: std::collections::BTreeSet<String> = all.iter().map(|r| r.pid.shortcode.to_uppercase()).collect();
+    for shortcode in &shortcodes {
+        let scanned: Vec<String> = all
+            .iter()
+            .filter(|r| r.pid.shortcode.eq_ignore_ascii_case(shortcode))
+            .map(|r| r.pid.as_url())
+            .collect();
+        let indexed: Vec<String> = index
+            .get(shortcode)
+            .unwrap_or_else(|| panic!("{shortcode} should have an index entry"))
+            .iter()
+            .map(|r| r.pid.as_url())
+            .collect();
+        assert_eq!(indexed, scanned, "index and scan disagree for {shortcode}");
+    }
+
+    // The largest committed dump is served whole out of its own entry, while the
+    // flat vector it sits in is several times longer. That difference is the
+    // scan the index removes from every `project:{shortcode}` request and from
+    // every landing page.
+    assert_eq!(
+        index.values().map(Vec::len).max(),
+        Some(largest_dump),
+        "the largest index entry should be the largest committed dump"
+    );
+    assert!(
+        all.len() > largest_dump,
+        "the flat vector should hold more than the largest dump, or the index saves nothing"
+    );
+}

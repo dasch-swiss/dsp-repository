@@ -155,7 +155,20 @@ pub struct ProjectGraph {
 }
 
 impl ProjectGraph {
-    pub fn build(raw: &ProjectRaw, ctx: &ResolveContext<'_>, records: &[Record]) -> Self {
+    /// Resolves one project into a graph.
+    ///
+    /// `records` is an iterator rather than a slice so a caller can bound what
+    /// the builder materialises. One `PartRef` per record is two small strings,
+    /// which is nothing for a project of forty records and 27,026 allocations
+    /// for the largest committed one — and the embedded JSON-LD on its landing
+    /// page caps `hasPart` at a hundred. So the landing page hands in a bounded
+    /// iterator, the standalone representation hands in all of them, and the
+    /// OAI writers, which read no part at all, hand in an empty slice.
+    pub fn build<'a>(
+        raw: &ProjectRaw,
+        ctx: &ResolveContext<'_>,
+        records: impl IntoIterator<Item = &'a Record>,
+    ) -> Self {
         let (website, secondary_from_array) = shared_metadata::utils::parse_url_value(raw.url.clone());
 
         Self {
@@ -211,7 +224,7 @@ impl ProjectGraph {
                 })
                 .collect(),
             status: raw.status.clone(),
-            parts: records.iter().map(PartRef::from_record).collect(),
+            parts: records.into_iter().map(PartRef::from_record).collect(),
         }
     }
 
@@ -234,6 +247,42 @@ impl ProjectGraph {
             uris.push(uri);
         }
         uris
+    }
+
+    /// The project's preferred title, and its alternatives in emission order.
+    ///
+    /// The precedence is DataCite's, because it was written there first: the
+    /// longer of `name` and `officialName` wins, the other becomes an
+    /// alternative, and the recorded alternative names follow, deduplicated
+    /// against everything already chosen. When neither title is real the raw
+    /// `name` carries its placeholder through, which is what the DataCite
+    /// output has always done — a writer that must not emit a placeholder
+    /// filters it out itself.
+    ///
+    /// Resolved here rather than in each writer so that "the same precedence as
+    /// DataCite" is a call rather than a second implementation.
+    pub fn titles(&self) -> (String, Vec<String>) {
+        let (primary, alternative) = match (self.name.as_ref(), self.official_name.as_ref()) {
+            (Some(name), Some(official_name)) if official_name.len() >= name.len() => {
+                (official_name.clone(), Some(name.clone()))
+            }
+            (Some(name), Some(official_name)) => (name.clone(), Some(official_name.clone())),
+            (None, Some(official_name)) => (official_name.clone(), None),
+            _ => (self.raw_name.clone(), None),
+        };
+
+        let mut alternatives = Vec::new();
+        if let Some(alternative) = alternative {
+            if alternative != primary {
+                alternatives.push(alternative);
+            }
+        }
+        for name in &self.alternative_names {
+            if *name != primary && !alternatives.contains(name) {
+                alternatives.push(name.clone());
+            }
+        }
+        (primary, alternatives)
     }
 
     /// `creators`, or a single organizational `DaSCH` when the project credits

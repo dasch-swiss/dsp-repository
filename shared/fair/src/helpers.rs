@@ -27,6 +27,32 @@ pub fn access_rights_to_string(ar: &AccessRightsType) -> &'static str {
     }
 }
 
+/// The COAR access-right term for an access level. These are the URIs a FAIR
+/// assessor recognises, and both the JSON-LD and `DC.accessRights` use this
+/// table, beside the human-readable spelling above.
+pub fn coar_access_right(ar: &AccessRightsType) -> &'static str {
+    match ar {
+        AccessRightsType::FullOpenAccess => "http://purl.org/coar/access_right/c_abf2",
+        AccessRightsType::OpenAccessWithRestrictions => "http://purl.org/coar/access_right/c_16ec",
+        AccessRightsType::EmbargoedAccess => "http://purl.org/coar/access_right/c_f1cf",
+        AccessRightsType::MetadataOnlyAccess => "http://purl.org/coar/access_right/c_14cb",
+    }
+}
+
+/// The value unless it is a placeholder or empty, in which case there is none.
+///
+/// The test every writer that must not assert a falsehood applies to a corpus
+/// string. `datacite.rs` deliberately does **not** use it: it tests the license
+/// URI for a placeholder only, keeps an empty one, and that narrower behaviour
+/// is in the committed OAI output.
+pub fn real(value: &str) -> Option<&str> {
+    if value.is_empty() || shared_metadata::is_placeholder(value) {
+        None
+    } else {
+        Some(value)
+    }
+}
+
 /// Checks whether an attribution represents a creator (principal investigator,
 /// project leader, author, or creator) using case-insensitive matching.
 pub fn is_creator(contributor_types: &[String]) -> bool {
@@ -104,8 +130,8 @@ pub fn infer_subject_scheme(url: &str) -> (Option<String>, Option<String>) {
 #[cfg(test)]
 mod tests {
     use super::{
-        extract_year, format_date_range, infer_subject_scheme, is_creator, license_identifier_to_label,
-        map_contributor_type,
+        coar_access_right, extract_year, format_date_range, infer_subject_scheme, is_creator,
+        license_identifier_to_label, map_contributor_type, real,
     };
 
     #[test]
@@ -123,6 +149,31 @@ mod tests {
         assert_eq!(extract_year("123ä5"), "123ä");
         assert_eq!(extract_year("äää"), "2015");
         assert_eq!(extract_year("202"), "2015");
+    }
+
+    /// Every level has a term, and each of the four is distinct: a FAIR
+    /// assessor reads this URI, not the human-readable spelling beside it.
+    #[test]
+    fn coar_uris_cover_every_access_level() {
+        use shared_metadata::AccessRightsType::*;
+        assert_eq!(coar_access_right(&FullOpenAccess), "http://purl.org/coar/access_right/c_abf2");
+        assert_eq!(
+            coar_access_right(&OpenAccessWithRestrictions),
+            "http://purl.org/coar/access_right/c_16ec"
+        );
+        assert_eq!(coar_access_right(&EmbargoedAccess), "http://purl.org/coar/access_right/c_f1cf");
+        assert_eq!(
+            coar_access_right(&MetadataOnlyAccess),
+            "http://purl.org/coar/access_right/c_14cb"
+        );
+    }
+
+    #[test]
+    fn real_drops_a_placeholder_and_an_empty_string() {
+        assert_eq!(real("Rural Land Use"), Some("Rural Land Use"));
+        assert_eq!(real("MISSING"), None);
+        assert_eq!(real("CALCULATED"), None);
+        assert_eq!(real(""), None);
     }
 
     #[test]

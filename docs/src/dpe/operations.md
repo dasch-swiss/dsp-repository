@@ -109,6 +109,34 @@ The DPE is lightweight — it serves static data with no database.
 - **CPU**: Minimal (SSR rendering is fast, data is cached in-memory)
 - **Disk**: Data files + static assets (~50 MB)
 
+### Landing-page metadata points at dsp-ingest
+
+A project landing page advertises its records' files as `schema:distribution`,
+each with the dsp-ingest URL that serves the bytes
+([Machine-Readable Metadata](./machine-readable-metadata.md#record-files)). A
+consumer that follows those URLs downloads from **`ingest.dasch.swiss`, not from
+DPE**, so DPE's per-IP rate limiter does not bound the traffic.
+
+How much there is to follow, for the two largest file-carrying projects in the
+committed corpus:
+
+| | In the embedded block | Bytes if all of those are fetched | In `/metadata.jsonld` | Bytes if all of those are fetched |
+|---|---:|---:|---:|---:|
+| 0868 | 100 | 90.9 MB | 7,716 | 2.72 GB |
+| 0803 | 4 | 81.9 MB | 4,062 | 139.7 GB |
+
+A well-behaved assessor pulls far less. F-UJI 3.5.0 takes at most five files per
+MIME type and truncates each download at 1,000,000 bytes, so a full assessment
+drew **26 files and 11.3 MB for 0868 (558 s)** and **6 files and 6.0 MB for 0803
+(307 s)**, measured on 2026-09-18. Its draw scales with how many distinct file
+types a project has, not with how many records it holds.
+
+This is a change in convenience rather than in capability. The same bytes were
+already reachable by enumerating the OAI-PMH set `project:{shortcode}` and
+calling `/dpe/records/{shortcode}/{record_id}/file` per record, which returns
+the same `downloadUrl`. What changed is that one request now returns every URL
+at once.
+
 ## Logging
 
 Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscriber). In production (`DPE_ENV=PROD`), logs are JSON-formatted to stdout only. In local development (`DPE_ENV=DEV`), logs are additionally exported via OTLP to Loki when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Configure levels with `RUST_LOG`:

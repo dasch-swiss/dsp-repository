@@ -34,11 +34,12 @@ use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody};
 use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalOperation, ProposalStatus};
 use editor_core::records::{
-    normalize_shortcode, ApprovedRecord, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState, User,
+    normalize_shortcode, ApprovedRecord, DraftRecord, PullRequestState, ReviewOutcome, ReviewRound, Submission,
+    SubmissionState, User,
 };
 use editor_core::repository::{
-    DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository,
-    Transition, UserRepository,
+    ApprovedRecordRepository, DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository,
+    SubmissionRepository, Transition, UserRepository,
 };
 use editor_core::review::{diff, Decision, FieldDiff, FieldReview, ReviewState};
 use editor_web::form::registry::Audience;
@@ -80,6 +81,13 @@ const FINISH_REFUSED_STORAGE: &str = "The review could not be recorded, so this 
 const FINISH_REFUSED_UNWRITABLE: &str = "The approved record could not be built from this submission, so nothing \
                                          was changed. The service needs attention before this project can be \
                                          approved.";
+/// RDU-facing: names the pull request because that is what a reviewer needs to act on this.
+const APPROVE_REFUSED_COLLECTING: &str = "This project already has an approved record whose pull request is still \
+                                          open or merged. A second one cannot be collected until that pull request \
+                                          closes — wait for it to close, then approve again.";
+/// Not the whole message: the draft error's own text, naming the offending field, is appended.
+const APPROVE_REFUSED_UNPUBLISHABLE: &str = "This project, as decided, cannot become a publishable project file, so \
+                                             it cannot be approved:";
 
 /// `GET /review` — the queue and the drafts.
 pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
@@ -459,6 +467,39 @@ async fn finish(
             let message = format!("{APPROVE_REFUSED_REJECTED_ENTITY} {}.", fields.join(", "));
             return refused(state, user, context, filter, headers, &message);
         }
+
+        // One live pull request per project: a second approved record here would collect into
+        // a second, conflicting one. `ReviewRoundRepository::approve` supersedes an earlier
+        // record on its own once its pull request is no longer live; this is the case it
+        // cannot resolve by itself, so it is refused ahead of the write instead.
+        let existing =
+            match ApprovedRecordRepository::find_by_shortcode(&*state.db, &context.submission.shortcode).await {
+                Ok(existing) => existing,
+                Err(error) => {
+                    span.record("review.outcome", "store_failed");
+                    tracing::error!(error = %error, "could not read the project's approved records");
+                    return refused(state, user, context, filter, headers, FINISH_REFUSED_STORAGE);
+                }
+            };
+        if existing
+            .iter()
+            .any(|record| record.pull_request_state.is_some_and(PullRequestState::is_live))
+        {
+            span.record("review.outcome", "collecting");
+            tracing::info!("refused an approval while an earlier approved record's pull request is still live");
+            return refused(state, user, context, filter, headers, APPROVE_REFUSED_COLLECTING);
+        }
+
+        // The gate's type-level half: a permissive draft can pass every check above
+        // and still fail to become a project file. Checked here, against the same document
+        // `approved_record` commits, so a bad field is refused before approval rather than only
+        // when something later tries to serve it.
+        if let Err(error) = decided.to_raw() {
+            span.record("review.outcome", "unpublishable");
+            tracing::info!(error = %error, "refused an approval whose decided draft is not a publishable project");
+            let message = format!("{APPROVE_REFUSED_UNPUBLISHABLE} {error}");
+            return refused(state, user, context, filter, headers, &message);
+        }
     }
 
     let round = ReviewRound {
@@ -605,6 +646,9 @@ fn approved_record(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Opt
         approved_by: Some(user.id),
         approved_at: at,
         collected_at: None,
+        pull_request_url: None,
+        pull_request_state: None,
+        last_failure: None,
     })
 }
 
@@ -2621,5 +2665,160 @@ mod tests {
             .unwrap()
             .expect("the proposal survives");
         assert_eq!(accepted.status, ProposalStatus::Accepted);
+    }
+
+    #[tokio::test]
+    async fn approving_a_project_again_supersedes_the_earlier_record() {
+        // A record is whole-project, so a newer approval fully contains an older one — the
+        // earlier row must be gone, not sitting beside it on its way to a second, conflicting
+        // pull request.
+        let (state, _) = test_state("review-approve-supersede").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let app = test_app(&state);
+
+        a_submission(&state, "0801d", None, json!({ "name": "First approval" })).await;
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+        let first = the_record(&state, "0801d").await;
+
+        a_submission(&state, "0801d", None, json!({ "name": "Second approval" })).await;
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+        let second = the_record(&state, "0801d").await;
+
+        assert_ne!(first.id, second.id, "the newer record replaced the older one");
+        assert!(second.payload.contains("Second approval"), "{}", second.payload);
+    }
+
+    #[tokio::test]
+    async fn approve_is_refused_while_an_earlier_records_pull_request_is_live() {
+        // The case the repository's own supersede cannot resolve by itself: once a pull
+        // request has gone live, a second approved record would collect into a second one that
+        // conflicts with it.
+        for live in [PullRequestState::Open, PullRequestState::Merged] {
+            let (state, _) = test_state(&format!("review-approve-collecting-{live}")).await;
+            let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+            let earlier = ApprovedRecord {
+                id: Uuid::new_v4(),
+                shortcode: "0801d".to_string(),
+                payload: "{}".to_string(),
+                approved_by: None,
+                approved_at: Utc::now(),
+                collected_at: None,
+                pull_request_url: Some("https://example.test/pr/1".to_string()),
+                pull_request_state: Some(live),
+                last_failure: None,
+            };
+            ApprovedRecordRepository::create(&*state.db, &earlier).await.unwrap();
+            let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+            let app = test_app(&state);
+
+            let body = body_string(
+                as_session(
+                    &app,
+                    post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+                    &session,
+                )
+                .await,
+            )
+            .await;
+
+            assert!(body.contains(APPROVE_REFUSED_COLLECTING), "{live}: {body}");
+            assert!(
+                !body.contains("service needs attention"),
+                "{live}: distinguishable from a storage failure: {body}"
+            );
+            assert!(
+                SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+                "{live}"
+            );
+            assert_eq!(
+                ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+                vec![earlier],
+                "{live}: the earlier record is untouched"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_storage_failure_reading_approved_records_is_not_the_live_pull_request_refusal() {
+        // The point of the design: a permanent business-rule refusal must not be reported as a
+        // transient storage failure, and a storage failure must not be reported as the
+        // business-rule refusal — RDU acts on the two very differently.
+        let db = std::sync::Arc::new(open_test_db("review-approve-collecting-storage").await);
+        let sound = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let (_, session) = a_reviewer(&sound, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&sound, "0801d", None, json!({ "name": "A New Title" })).await;
+        let faulty = state_over(
+            std::sync::Arc::new(FaultyDatabase::new(
+                db.clone(),
+                Faults {
+                    approved_records_find_by_shortcode: true,
+                    ..Faults::default()
+                },
+            )),
+            RecordingMailer::new(),
+            |_| {},
+        );
+        let app = test_app(&faulty);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+                &session,
+            )
+            .await,
+        )
+        .await;
+
+        assert!(body.contains(FINISH_REFUSED_STORAGE), "{body}");
+        assert!(
+            !body.contains(APPROVE_REFUSED_COLLECTING),
+            "distinguishable from the business-rule refusal: {body}"
+        );
+        assert!(SubmissionRepository::find(&*db, submission.id).await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn approve_is_refused_when_the_decided_draft_cannot_become_a_project_file() {
+        // A draft may omit a required field; only `to_raw` catches it. Checked here so
+        // a permissive draft is refused before an approved record exists, not later when
+        // something tries to serve it.
+        let (state, _) = test_state("review-approve-unpublishable").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", None, json!({ "name": null })).await;
+        let app = test_app(&state);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+                &session,
+            )
+            .await,
+        )
+        .await;
+
+        assert!(body.contains(APPROVE_REFUSED_UNPUBLISHABLE), "{body}");
+        assert!(
+            ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+                .await
+                .unwrap()
+                .is_empty(),
+            "no approved record was created"
+        );
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
     }
 }

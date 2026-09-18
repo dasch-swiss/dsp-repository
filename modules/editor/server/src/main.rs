@@ -14,6 +14,7 @@ use clap::{Parser, Subcommand};
 
 mod accounts;
 mod auth;
+mod collection;
 mod config;
 mod csrf;
 mod db;

@@ -197,8 +197,9 @@ CREATE TABLE approved_records (
     collected_at TEXT
 ) STRICT;
 
--- Partial index: the collection endpoint only ever asks for the uncollected
--- ones, and collected rows stay out of the index entirely.
+-- Partial index over the uncollected rows: collected rows stay out of the index
+-- entirely. It backs `list_uncollected` only. The public collection endpoint
+-- applies no filter, so nothing it serves depends on this index.
 CREATE INDEX approved_records_uncollected ON approved_records (approved_at) WHERE collected_at IS NULL;
 CREATE INDEX approved_records_shortcode ON approved_records (shortcode);
 CREATE INDEX approved_records_approved_by ON approved_records (approved_by);

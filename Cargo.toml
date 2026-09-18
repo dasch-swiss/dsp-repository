@@ -67,12 +67,12 @@ tracing-opentelemetry = "0.32"
 # Continuous profiling
 pyroscope = { version = "2.0.4", features = ["backend-pprof-rs"] }
 url = { version = "2", features = ["serde"] }
-uuid = { version = "1.23", features = ["v4", "v7"] }
+uuid = { version = "1.23", features = ["v4", "v7", "serde"] }
 http = "1.4.1"
 base64 = "0.22"
 thiserror = "2.0.12"
 quick-xml = "0.37"
-chrono = { version = "0.4" }
+chrono = { version = "0.4", features = ["serde"] }
 proptest = "1"
 # SQLite for the metadata editor. `bundled` compiles the amalgamation via `cc`,
 # which is what makes the static musl binary self-contained — the known musl

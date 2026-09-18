@@ -2,17 +2,18 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use editor_core::records::ApprovedRecord;
+use editor_core::records::{ApprovedRecord, PullRequestState};
 use editor_core::repository::{ApprovedRecordRepository, RepositoryError, Result};
 use rusqlite::{params, Row};
 use uuid::Uuid;
 
-use super::mapping::{optional_uuid_column, uuid_column};
+use super::mapping::{optional_parsed_column, optional_uuid_column, uuid_column};
 use super::Database;
 
 const ENTITY: &str = "approved record";
 
-const SELECT: &str = "SELECT id, shortcode, payload, approved_by, approved_at, collected_at FROM approved_records";
+const SELECT: &str = "SELECT id, shortcode, payload, approved_by, approved_at, collected_at, pull_request_url, \
+                       pull_request_state, last_failure FROM approved_records";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<ApprovedRecord> {
     Ok(ApprovedRecord {
@@ -22,6 +23,9 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<ApprovedRecord> {
         approved_by: optional_uuid_column(row, 3)?,
         approved_at: row.get(4)?,
         collected_at: row.get(5)?,
+        pull_request_url: row.get(6)?,
+        pull_request_state: optional_parsed_column::<PullRequestState>(row, 7)?,
+        last_failure: row.get(8)?,
     })
 }
 
@@ -31,8 +35,8 @@ impl ApprovedRecordRepository for Database {
         let record = record.clone();
         self.write(move |tx| {
             tx.execute(
-                "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at, \
+                 pull_request_url, pull_request_state, last_failure) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 params![
                     record.id.to_string(),
                     record.shortcode,
@@ -40,6 +44,9 @@ impl ApprovedRecordRepository for Database {
                     record.approved_by.map(|id| id.to_string()),
                     record.approved_at,
                     record.collected_at,
+                    record.pull_request_url,
+                    record.pull_request_state.map(PullRequestState::as_str),
+                    record.last_failure,
                 ],
             )
         })
@@ -148,6 +155,9 @@ mod tests {
             approved_by: approver,
             approved_at: approved,
             collected_at: None,
+            pull_request_url: None,
+            pull_request_state: None,
+            last_failure: None,
         }
     }
 
@@ -163,8 +173,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_uncollected_excludes_collected_records() {
-        // The public endpoint serves approved-and-uncollected only.
-        // Serving collected ones would reopen a pull request on every run.
+        // The filter this method applies, pinned on its own terms: the public endpoint
+        // applies none, so nothing it serves depends on this flag.
         let db = test_db("approved-uncollected").await;
         let first = record("0801", None, at(12));
         let second = record("0803", None, at(13));

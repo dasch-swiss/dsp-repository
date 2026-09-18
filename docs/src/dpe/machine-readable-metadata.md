@@ -368,6 +368,8 @@ and describes no files — on a deployment carrying 0862's real records it would
 | 2026-09-18 | 0868 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **21 of 24.** Four metrics moved: `F3-01M` 0/1 → 1/1, `A1-03D` 0/1 → 1/1, `R1-01MD` 1/4 → 3/4 (sub-tests 2 and 3), `R1.3-02D` 0/1 → 1/1. Nothing else moved. 558 s |
 | 2026-09-18 | 0803 | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | same local target, after `distribution` | **18 of 24.** Two metrics moved: `F3-01M` 0/1 → 1/1 and `A1-03D` 0/1 → 1/1. `R1-01MD` stayed 1/4 and `R1.3-02D` stayed 0/1, both for one reason — 0803's export records no `mimeType`, so no `encodingFormat` is emitted, and dsp-ingest serves those files as `application/octet-stream`. 307 s |
 
+| 2026-09-18 | 081C | F-UJI | 3.5.0 (`sha256:3cde9d30bc14…`) | `http://host.docker.internal:4000/dpe/projects/081C` (local `dpe-server serve`) | **16 of 24, after `distribution`, metric for metric identical to 0862's.** The strong control: 27,026 records, none carrying a file, so the page emits `hasPart` and no `distribution` and the score is unmoved. F-UJI confirms the absence rather than inferring it — `Valid data (content) identifier missing` |
+
 F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
 with, so the rows are comparable.
 
@@ -434,6 +436,15 @@ describes no files. Project 0862 does have file-carrying records in production �
 deployment carrying them would describe them and would score these five points
 as 0868 does. "0862 did not move" is the right control for this change and not a
 ceiling on the project.
+
+**081C is the strong control and 0862 the weak one.** Both score 16 of 24, metric
+for metric, and only one of them tests the rule. 0862 shows that no
+`distribution` is invented where there is nothing to describe, but only because
+it has nothing at all — no records, so no parts and no files. 081C has 27,026
+records and not one file among them, which is the case the rule is actually
+about: parts present, `hasPart` populated, `distribution` correctly absent. Its
+assessment says so directly (`Valid data (content) identifier missing`) rather
+than skipping for want of a graph.
 
 Fabricating a download for a project that has none would earn the points and
 state something untrue, which ADR-0005 rules out. Describing the files a project

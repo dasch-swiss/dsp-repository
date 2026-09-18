@@ -62,6 +62,22 @@ pub struct DpeConfig {
     /// OAI endpoint advertises its own `baseURL`, which on DEV lives on a
     /// different host. Set via `DPE_PUBLIC_BASE_URL`.
     pub public_base_url: String,
+
+    /// Origin that every emitted ARK is rewritten to carry, and the origin the
+    /// deployment's own `/ark:/…` resolver answers on.
+    ///
+    /// Unset is the default and is what production, DEV and STAGE run: the ARKs
+    /// are the ones the corpus records, resolving through `ark.dasch.swiss` to
+    /// production, and no resolver route is mounted at all.
+    ///
+    /// Set, the deployment publishes ARKs that resolve to *itself*. That is for
+    /// a deployment which is not the one the recorded ARK resolves to — a PR
+    /// preview — where publishing the recorded ARK would send an assessor to a
+    /// different deployment running different code.
+    ///
+    /// Origin only, validated exactly as [`DpeConfig::public_base_url`] is. Set
+    /// via `DPE_ARK_RESOLVER_BASE_URL`.
+    pub ark_resolver_base_url: Option<String>,
 }
 
 impl Default for DpeConfig {
@@ -75,6 +91,7 @@ impl Default for DpeConfig {
             oai_rate_limit_per_second: 1,
             oai_rate_limit_burst: 60,
             public_base_url: "https://repository.dasch.swiss".to_string(),
+            ark_resolver_base_url: None,
         }
     }
 }
@@ -90,7 +107,12 @@ impl DpeConfig {
             .merge(Env::raw().only(&["DATA_DIR"]).map(|_| "data_dir".into()))
             .extract()
             .map_err(Box::new)?;
-        validate_public_base_url(&config.public_base_url).map_err(|message| Box::new(figment::Error::from(message)))?;
+        validate_origin("DPE_PUBLIC_BASE_URL", &config.public_base_url)
+            .map_err(|message| Box::new(figment::Error::from(message)))?;
+        if let Some(ref url) = config.ark_resolver_base_url {
+            validate_origin("DPE_ARK_RESOLVER_BASE_URL", url)
+                .map_err(|message| Box::new(figment::Error::from(message)))?;
+        }
         Ok(config)
     }
 }
@@ -103,17 +125,17 @@ impl DpeConfig {
 /// produce doubled separators in an ARK-adjacent URL. Startup is the right
 /// place to refuse it; a hand-rolled check is enough for a rule this narrow and
 /// keeps the `url` crate out of the dependency list.
-fn validate_public_base_url(value: &str) -> Result<(), String> {
+fn validate_origin(variable: &str, value: &str) -> Result<(), String> {
     let host = value
         .strip_prefix("https://")
         .or_else(|| value.strip_prefix("http://"))
-        .ok_or_else(|| format!("DPE_PUBLIC_BASE_URL must start with http:// or https:// (got {value:?})"))?;
+        .ok_or_else(|| format!("{variable} must start with http:// or https:// (got {value:?})"))?;
     if host.is_empty() {
-        return Err(format!("DPE_PUBLIC_BASE_URL has no host (got {value:?})"));
+        return Err(format!("{variable} has no host (got {value:?})"));
     }
     if let Some(bad) = host.chars().find(|c| matches!(c, '/' | '?' | '#')) {
         return Err(format!(
-            "DPE_PUBLIC_BASE_URL must be an origin with no path, query or trailing slash (got {value:?}, found {bad:?})"
+            "{variable} must be an origin with no path, query or trailing slash (got {value:?}, found {bad:?})"
         ));
     }
     Ok(())
@@ -134,12 +156,48 @@ mod tests {
         assert_eq!(config.oai_rate_limit_per_second, 1);
         assert_eq!(config.oai_rate_limit_burst, 60);
         assert_eq!(config.public_base_url, "https://repository.dasch.swiss");
+        // Unset by default and everywhere but a PR preview: production, DEV and
+        // STAGE publish the ARKs the corpus records.
+        assert!(config.ark_resolver_base_url.is_none());
     }
 
     #[test]
-    fn public_base_url_accepts_an_origin() {
-        assert!(validate_public_base_url("https://repository.dasch.swiss").is_ok());
-        assert!(validate_public_base_url("http://host.docker.internal:4000").is_ok());
+    fn an_origin_is_accepted() {
+        assert!(validate_origin("DPE_PUBLIC_BASE_URL", "https://repository.dasch.swiss").is_ok());
+        assert!(validate_origin("DPE_PUBLIC_BASE_URL", "http://host.docker.internal:4000").is_ok());
+        // The shape Cloud Run reports for a PR preview, passed through unmodified.
+        assert!(validate_origin("DPE_ARK_RESOLVER_BASE_URL", "https://dpe-pr-391-pbjdzenira-oa.a.run.app").is_ok());
+    }
+
+    #[test]
+    fn the_message_names_the_variable_that_was_wrong() {
+        // Two variables share the rule, so the operator has to be told which
+        // one refused to start the process.
+        let error = validate_origin("DPE_ARK_RESOLVER_BASE_URL", "https://preview.example.test/")
+            .expect_err("a trailing slash should be rejected");
+        assert!(error.contains("DPE_ARK_RESOLVER_BASE_URL"), "{error}");
+        assert!(!error.contains("DPE_PUBLIC_BASE_URL"), "{error}");
+    }
+
+    #[test]
+    fn the_ark_resolver_base_url_is_held_to_the_same_rule() {
+        // The same cases as `public_base_url_rejects_anything_past_the_origin`,
+        // because it is the same rule: a value carrying its own path or slash
+        // would produce a doubled separator inside an ARK.
+        for bad in [
+            "https://preview.example.test/",
+            "https://preview.example.test/dpe",
+            "https://preview.example.test?x=1",
+            "https://preview.example.test#f",
+            "ftp://preview.example.test",
+            "preview.example.test",
+            "https://",
+        ] {
+            assert!(
+                validate_origin("DPE_ARK_RESOLVER_BASE_URL", bad).is_err(),
+                "{bad} should be rejected"
+            );
+        }
     }
 
     #[test]
@@ -153,14 +211,28 @@ mod tests {
             "repository.dasch.swiss",
             "https://",
         ] {
-            assert!(validate_public_base_url(bad).is_err(), "{bad} should be rejected");
+            assert!(validate_origin("DPE_PUBLIC_BASE_URL", bad).is_err(), "{bad} should be rejected");
         }
     }
 
-    // The rule is tested on `validate_public_base_url` rather than through
+    // The rejection is tested on `validate_origin` rather than through
     // `DpeConfig::load`: `figment::Jail` sets the variable in the *process*
     // environment, so a jailed test that made `load` fail would make it fail
-    // for every other test loading a config at the same moment.
+    // for every other test loading a config at the same moment. A jailed test
+    // of a *succeeding* load is fine, and there is one below.
+
+    #[test]
+    fn a_valid_ark_resolver_base_url_loads() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("DPE_ARK_RESOLVER_BASE_URL", "https://dpe-pr-391-pbjdzenira-oa.a.run.app");
+            let config = DpeConfig::load().expect("config should load");
+            assert_eq!(
+                config.ark_resolver_base_url.as_deref(),
+                Some("https://dpe-pr-391-pbjdzenira-oa.a.run.app")
+            );
+            Ok(())
+        });
+    }
 
     #[test]
     fn oai_rate_limit_burst_env_override() {

@@ -39,6 +39,35 @@ pub(crate) struct AppState {
     /// `DpeConfig::oai_base_url` at startup and must never be set apart — one
     /// endpoint cannot advertise one base URL and be linked at another.
     pub(crate) oai_base_url: String,
+    /// Origin every emitted ARK is rewritten to carry, and the origin the
+    /// `/ark:/…` resolver route answers on. `None` — the default, and what
+    /// production, DEV and STAGE run — emits the ARKs the corpus records and
+    /// mounts no resolver route at all.
+    ///
+    /// The same second-copy caveat as `oai_base_url`: `dpe-api-oai` reads its
+    /// own through a process-global that `main` sets from the same
+    /// `DpeConfig` field. Setting the two apart would let the OAI payloads
+    /// publish an ARK the landing page beside them does not.
+    pub(crate) ark_resolver_base_url: Option<String>,
+}
+
+impl AppState {
+    /// The host the resolved identifiers carry, for the graph builders.
+    pub(crate) fn ark_host(&self) -> shared_fair::ArkHost<'_> {
+        ark_host(self.ark_resolver_base_url.as_deref())
+    }
+}
+
+/// A configured resolver origin as the graph builders read it.
+///
+/// Free as well as a method: the representation handlers hand their writer to
+/// `spawn_blocking`, so it may borrow nothing from the state and carries an
+/// owned copy of the configured value instead.
+pub(crate) fn ark_host(configured: Option<&str>) -> shared_fair::ArkHost<'_> {
+    match configured {
+        Some(url) => shared_fair::ArkHost::Substituted(url),
+        None => shared_fair::ArkHost::Recorded,
+    }
 }
 
 /// Query params for the project detail page: `?tab=` pre-selects the tab.
@@ -375,6 +404,16 @@ async fn serve() -> ExitCode {
     dpe_api_oai::set_base_url(&dpe_config.oai_base_url);
     tracing::info!(oai_base_url = %dpe_config.oai_base_url, "OAI-PMH base URL set");
 
+    // Set from the same field `AppState` carries, so the OAI payloads and the
+    // landing page beside them cannot publish different ARKs.
+    dpe_api_oai::set_ark_resolver_base_url(dpe_config.ark_resolver_base_url.as_deref());
+    if let Some(ref url) = dpe_config.ark_resolver_base_url {
+        tracing::info!(
+            ark_resolver_base_url = %url,
+            "this deployment publishes ARKs that resolve to itself, and serves the /ark:/ resolver"
+        );
+    }
+
     dpe_core::set_show_placeholder_values(dpe_config.show_placeholder_values);
     if dpe_config.show_placeholder_values {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
@@ -392,6 +431,7 @@ async fn serve() -> ExitCode {
         css_href: resolve_css_href(&dpe_config.public_dir),
         public_base_url: dpe_config.public_base_url.clone(),
         oai_base_url: dpe_config.oai_base_url.clone(),
+        ark_resolver_base_url: dpe_config.ark_resolver_base_url.clone(),
     };
 
     // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).

@@ -48,6 +48,41 @@ pub(crate) fn base_url() -> &'static str {
     BASE_URL.get_or_init(|| resolve_url(std::env::var("DPE_OAI_BASE_URL").ok(), DEFAULT_BASE_URL))
 }
 
+/// The origin every emitted ARK is rewritten to carry, or `None` — the default
+/// — for the host the corpus records.
+///
+/// A process-global for the same reason [`BASE_URL`] is: nothing reaches this
+/// crate's handlers but the request, and `main` sets both from `DpeConfig` at
+/// startup. `dpe-server` threads its own copy through `AppState` instead, which
+/// is what ADR-0005 asks of the Access Area's own URLs; this is the OAI crate's
+/// pre-existing shape, and setting the two apart would let one endpoint publish
+/// an ARK the page beside it does not.
+static ARK_RESOLVER_BASE_URL: OnceLock<Option<String>> = OnceLock::new();
+
+/// Sets the ARK resolver origin at startup. Must be called before the first
+/// request; first call wins, as [`set_base_url`].
+pub fn set_ark_resolver_base_url(url: Option<&str>) {
+    let value = url
+        .map(|url| url.trim_end_matches('/').to_string())
+        .filter(|url| !url.is_empty());
+    if ARK_RESOLVER_BASE_URL.set(value).is_err() {
+        tracing::warn!(new = url, "set_ark_resolver_base_url called again but the value is already set");
+    }
+}
+
+/// The ARK host this deployment publishes.
+///
+/// Deliberately no environment-variable fallback, unlike [`base_url`]: an
+/// unset global must mean "the recorded host" and nothing else, so that the
+/// corpus tests proving the unset case cannot be steered by the environment
+/// they happen to run in.
+pub(crate) fn ark_host() -> shared_fair::ArkHost<'static> {
+    match ARK_RESOLVER_BASE_URL.get_or_init(|| None) {
+        Some(url) => shared_fair::ArkHost::Substituted(url),
+        None => shared_fair::ArkHost::Recorded,
+    }
+}
+
 #[cfg(test)]
 mod base_url_tests {
     use super::{resolve_url, DEFAULT_BASE_URL};

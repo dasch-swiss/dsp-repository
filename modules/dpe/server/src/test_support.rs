@@ -30,6 +30,7 @@ pub(crate) fn test_state() -> AppState {
         css_href: "/assets/app.css".to_string(),
         public_base_url: "https://example.test".to_string(),
         oai_base_url: "https://oai.example.test/dpe/oai".to_string(),
+        ark_resolver_base_url: None,
     }
 }
 

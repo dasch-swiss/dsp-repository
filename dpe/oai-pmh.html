@@ -413,6 +413,7 @@ https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 </tbody></table>
 </div>
 <p>These differ from the resolvable ARK URLs (<code>https://ark.dasch.swiss/ark:/72163/1/...</code>), which appear in the metadata payloads as <code>dc:identifier</code> / DataCite <code>identifier</code>.</p>
+<p>The OAI <code>&lt;identifier&gt;</code> header is the <strong>only</strong> place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — <code>dc:identifier</code>, <code>dc:relation</code>, DataCite <code>identifier</code> and <code>relatedIdentifier</code>, and the project page's permalink link target — carries <code>https://ark.dasch.swiss/</code> so a harvester can dereference it. <code>Pid::as_url()</code> is the accessor for that form; there is deliberately no accessor returning a bare <code>ark:/…</code> path.</p>
 <h2 id="sets"><a class="header" href="#sets">Sets</a></h2>
 <p>Selective harvesting uses the <code>set</code> argument on <code>ListIdentifiers</code> and <code>ListRecords</code>. Two kinds of sets exist: static <strong>entity-type</strong> sets and dynamic <strong>project</strong>/<strong>cluster</strong> sets.</p>
 <div class="table-wrapper"><table><thead><tr><th><code>setSpec</code></th><th>Contents</th><th>Notes</th></tr></thead><tbody>

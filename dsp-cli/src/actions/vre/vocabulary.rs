@@ -28,7 +28,7 @@ const COUNT_COST: &str = "--count issues one extra tree fetch per vocabulary (se
 /// List a project's vocabularies.
 ///
 /// Authentication is optional (public endpoint, D2/schema-side read). Reads
-/// `DSP_TOKEN` from the environment (env wins over cache per ADR-0007), and
+/// `DSP_TOKEN` from the environment (env wins over cache per dsp-cli/ADR-0007), and
 /// delegates all work to `run_list_impl` with injectable seams for
 /// deterministic testing.
 pub fn list(
@@ -184,7 +184,7 @@ fn run_list_impl(
 /// Describe a single vocabulary's full tree.
 ///
 /// Authentication is optional (public endpoint, D2/schema-side read). Reads
-/// `DSP_TOKEN` from the environment (env wins over cache per ADR-0007), and
+/// `DSP_TOKEN` from the environment (env wins over cache per dsp-cli/ADR-0007), and
 /// delegates all work to `run_describe_impl` with injectable seams for
 /// deterministic testing.
 pub fn describe(
@@ -379,7 +379,7 @@ fn run_describe_impl(
 /// Intentional kept-in-sync duplicate of `local_name` in `src/client/http.rs`
 /// and `src/actions/vre/resource.rs`. The client's copy is private to the
 /// client module; the action layer must not reach into client internals
-/// (ADR-0008 layering). Do NOT introduce a shared util module — the copies
+/// (dsp-cli/ADR-0008 layering). Do NOT introduce a shared util module — the copies
 /// are adjacent enough to audit on sight.
 ///
 /// `rsplit` always yields at least one element so `unwrap_or` is a no-panic

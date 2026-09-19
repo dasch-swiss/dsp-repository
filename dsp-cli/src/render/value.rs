@@ -18,7 +18,7 @@ use crate::model::{DatePoint, DateValue, FieldValues, ResourceDetail, ValueConte
 /// string; the tabular renderers feed this string into `render_table`, whose
 /// `QuoteMode::apply` → `replace_control_chars` chokepoint neutralises every
 /// cell. Reintroducing an unsanitised print path is the 2026-06-19 tsv-bug
-/// class (the ADR-0003 control-char amendment).
+/// class (the dsp-cli/ADR-0003 control-char amendment).
 pub(crate) fn render_value_content(value: &ValueContent) -> String {
     match value {
         ValueContent::Text(s) => s.clone(),

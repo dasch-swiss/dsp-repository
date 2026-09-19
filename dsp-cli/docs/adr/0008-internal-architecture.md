@@ -12,7 +12,7 @@ The primary testing seam is the client trait, with sparse `wiremock`-style integ
 3a. DSP client trait + HTTP impl        — talks to DSP-API
 3b. Renderer trait + format impls       — prose, json, csv, tsv, lines
 4. Domain models                        — Project, DataModel, ResourceType, Field, Value, ValueType
-5. Config resolution                    — flag → env var → .env → cached token (ADR-0007)
+5. Config resolution                    — flag → env var → .env → cached token (dsp-cli/ADR-0007)
 ```
 
 The action layer is the keystone. Each action function signature is roughly:
@@ -71,7 +71,7 @@ dsp-cli/
 > The cross-layer dependency rule is therefore: **client and render are sibling layers; neither may import the other; both may import util.**
 
 Single crate keeps build and test cycles simple. The library/binary split lets `cargo test` exercise everything except the very thin `main.rs`.
-The directory shape mirrors the noun-group hierarchy in ADR-0002, so navigating "where does `dsp vre data-model describe` live" is mechanical: `src/actions/vre/data_model.rs`.
+The directory shape mirrors the noun-group hierarchy in dsp-cli/ADR-0002, so navigating "where does `dsp vre data-model describe` live" is mechanical: `src/actions/vre/data_model.rs`.
 
 ## Renderer trait granularity
 
@@ -103,7 +103,7 @@ The slight cost (more trait methods as the surface grows) is bounded by the fact
 
 - **L1 (binary-only single crate).** Rejected — actions only testable via end-to-end `assert_cmd`, which is slow and friction-heavy for the dominant test mode.
 - **L3 (Cargo workspace).** Rejected for now — adds ceremony without benefit at personal-project scale.
-  The migration to L3 is mechanical when dsp-cli moves into the dsp-repository monorepo (ADR-0005): split modules into crates, declare a workspace.
+  The migration to L3 is mechanical when dsp-cli moves into the dsp-repository monorepo (dsp-cli/ADR-0005): split modules into crates, declare a workspace.
 - **T1-only test seam (wiremock everywhere).** Rejected — action-level tests become 10–100× slower; edge cases (error paths, partial data) harder to construct.
 - **Generic `render<T>` trait.** Rejected — wrong shape for prose.
 - **Action functions that own HTTP directly** (no client trait). Rejected — eliminates the fast test seam.
@@ -113,20 +113,20 @@ The slight cost (more trait methods as the surface grows) is bounded by the fact
 - `DspClient` is a trait from day one. The trait's surface co-evolves with the action layer: every new verb that needs a new endpoint adds a method to the trait.
 - `Renderer` is a trait with explicit per-noun methods. New noun-groups add new methods; each format impl gets a new method.
 - The `MetaContext` struct (server label, auth state, optional filter warning) threads through every renderer call.
-  This is the implementation site of ADR-0007's auth-state disclosure requirement.
+  This is the implementation site of dsp-cli/ADR-0007's auth-state disclosure requirement.
 - Async/tokio is not required. `reqwest::blocking` or `ureq` works fine for sequential CLI calls.
   (Specific HTTP client choice deferred to implementation; both options preserve this architecture.)
 - Sync execution + trait-object dispatch keeps compile times reasonable and stack traces readable.
 - When the migration to dsp-repository happens, the natural split is: `dsp-client` (model + client trait + HTTP impl),
   `dsp-render` (model is shared via dsp-client, renderer trait + impls live here), `dsp-cli` (clap + actions + main).
-  The current layout makes that split a directory-rename operation. The move is now a recorded decision — see ADR-0014 (PROJECT_PLAN Phase 11).
+  The current layout makes that split a directory-rename operation. The move is now a recorded decision — see dsp-cli/ADR-0014 (PROJECT_PLAN Phase 11).
 
 ## Amendment (2026-08-07, plan 035)
 
 ### Layer 4 vs layer 3a: translated domain types vs transport-shaped relay types
 
 This ADR's layer-4 contract (`src/model/`) has always held translated domain types only, but never
-said so in words. `dsp vre sparql query` ([ADR-0016](0016-sparql-passthrough.md)) is the first method
+said so in words. `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the first method
 to return something else — `SparqlResponse` (an HTTP status, a MIME string, and raw bytes) — and it
 lives in `src/client/sparql.rs`, layer 3a, not `src/model/`. Stated explicitly so the next
 `src/client/`-vs-`src/model/` call has a rule to apply rather than having to re-derive it from a plan:

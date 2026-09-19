@@ -20,7 +20,7 @@ use crate::render::{MetaContext, Renderer};
 
 /// Cache a pre-issued bearer token read from stdin.
 ///
-/// Reads a JWT from stdin, then delegates to [`run_from_line`] for the
+/// Reads a JWT from stdin, then delegates to `run_from_line` for the
 /// trim→empty-guard→decode→probe→cache→render flow.
 pub fn run(cfg: &Config, client: &dyn DspClient, renderer: &mut dyn Renderer) -> Result<(), Diagnostic> {
     let mut line = String::new();
@@ -113,7 +113,7 @@ fn run_impl(
     }
 
     // 4. Build MetaContext reflecting the post-set-token auth state using the
-    // shared ADR-0007 helper. The token was just stored in the cache as a
+    // shared dsp-cli/ADR-0007 helper. The token was just stored in the cache as a
     // Cache-origin entry with `meta.sub` as the user. Synthesize a Cache-origin
     // ResolvedToken so `read_auth_state` picks the correct branch.
     let resolved_for_meta = ResolvedToken { token: token.to_string(), origin: TokenOrigin::Cache };
@@ -539,7 +539,7 @@ mod tests {
         assert_eq!(
             renderer.set_token_auth_state.as_deref(),
             Some("authenticated as http://rdfh.ch/users/root"),
-            "auth_state should use ADR-0007 vocabulary and include the sub IRI"
+            "auth_state should use dsp-cli/ADR-0007 vocabulary and include the sub IRI"
         );
     }
 
@@ -591,7 +591,7 @@ mod tests {
         assert_eq!(
             renderer.set_token_auth_state.as_deref(),
             Some("authenticated"),
-            "auth_state should be 'authenticated' (no sub, ADR-0007 vocabulary)"
+            "auth_state should be 'authenticated' (no sub, dsp-cli/ADR-0007 vocabulary)"
         );
     }
 

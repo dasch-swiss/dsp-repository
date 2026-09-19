@@ -13,7 +13,7 @@
 //! Determinism: these tests call `Renderer::resource_describe(&detail, &meta)`
 //! directly with a hand-built `MetaContext`/`ResourceDetail`. They never go
 //! through `run_describe_impl`, which reads real env vars. See
-//! `docs/dev/testing-strategy.md` and ADR-0009.
+//! `docs/src/dsp-cli/testing-strategy.md` and dsp-cli/ADR-0009.
 //!
 //! Vocabulary guard: no raw DSP-API permission codes (`RV`, `V`, `CR`), no
 //! `knora-admin:` group names, no `knora-api:` keys in prose output. The
@@ -220,7 +220,7 @@ fn resource_describe_prose() {
 ///
 /// Locks:
 /// - `_meta` with `server`, `auth`, `exit_code`, and `note` (D3 filter_warning).
-/// - `data` is a single object (not array), ADR-0003.
+/// - `data` is a single object (not array), dsp-cli/ADR-0003.
 /// - Keys in deterministic order, `None` → JSON null.
 /// - `visibility` = `"public"`, `your_access` = `"view"` (translated tokens).
 #[test]
@@ -240,7 +240,7 @@ fn resource_describe_json() {
         ANON_FILTER_WARNING,
         "json _meta.note must equal the anonymous filter_warning"
     );
-    // data is an object, not array (ADR-0003 single-object envelope).
+    // data is an object, not array (dsp-cli/ADR-0003 single-object envelope).
     assert!(
         parsed["data"].is_object(),
         "json data must be an object for describe; got:\n{out}"

@@ -2,7 +2,7 @@
 //!
 //! Types here are the dsp-cli vocabulary for project data. DSP-API wire types
 //! live inside `src/client/http.rs` and are never exposed above the client
-//! layer. See ADR-0001 and ADR-0008.
+//! layer. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 
 /// Minimal project reference. Phase 4 expands this into the full Project model.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,7 +21,7 @@ pub struct ProjectRef {
 /// keeps the `active`/`inactive` display words as a single source of truth — the
 /// vocabulary ADR wants dsp-cli terms defined once. Wire (bool) → enum translation
 /// happens at the client boundary (`http.rs`), never here. Deliberate — not
-/// over-engineering. See ADR-0001 and ADR-0008.
+/// over-engineering. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 ///
 /// [`DumpStatus`]: crate::model::DumpStatus
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,7 +59,7 @@ pub struct ProjectDescription {
 ///
 /// Full data-model detail belongs to the future `data-model list/describe`
 /// commands. `name` is derived from the data-model's IRI by the HTTP client
-/// layer at the ADR-0001 boundary — it is NOT a server-supplied field.
+/// layer at the dsp-cli/ADR-0001 boundary — it is NOT a server-supplied field.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataModelSummary {
     /// Short name of the data-model (e.g. `beol`), derived from the IRI.
@@ -73,7 +73,7 @@ pub struct DataModelSummary {
 /// Contrast `Project` (the lean `list` index projection). Carries identity,
 /// status, description, keywords, and a data-models summary (count + names).
 /// No `serde` derive: wire deserialization stays in `src/client/http.rs`.
-/// See ADR-0001 and ADR-0008.
+/// See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectDetail {
     /// The project's IRI (e.g. `http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF`).
@@ -98,8 +98,8 @@ pub struct ProjectDetail {
 ///
 /// Rich detail (description, keywords, licences, …) belongs to the future
 /// `describe` model, not here. No `serde` derive: wire deserialization stays
-/// in `src/client/http.rs` (the private `ProjectListItemDto`). See ADR-0001
-/// and ADR-0008.
+/// in `src/client/http.rs` (the private `ProjectListItemDto`). See dsp-cli/ADR-0001
+/// and dsp-cli/ADR-0008.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Project {
     /// The project's IRI (e.g. `http://rdfh.ch/projects/0001`).

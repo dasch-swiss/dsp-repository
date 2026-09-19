@@ -36,7 +36,7 @@ The DSP-API represents these as `[{value, language}]` in the project object. See
 **Data-model summary** (`DataModelSummary`):
 A lean reference to a child data-model as surfaced by `project describe`: a short `name` (e.g. `beol`)
 and the full ontology `iri` (e.g. `http://api.dasch.swiss/ontology/0801/beol/v2`).
-The name is derived from the IRI by the HTTP client layer at the ADR-0001 boundary — it is not a server-supplied field.
+The name is derived from the IRI by the HTTP client layer at the dsp-cli/ADR-0001 boundary — it is not a server-supplied field.
 `project describe` shows count + names (e.g. `Data-models (4): beol, biblio, leibniz, newton`);
 this is distinct from `list`'s bare `data_models` count. See `model::DataModelSummary`.
 
@@ -81,7 +81,7 @@ The `is_builtin` field also appears as a `(built-in)` marker in prose output and
 
 **Resource-type summary** (`ResourceTypeSummary`):
 A lean reference to a child resource-type as surfaced by `dsp vre data-model describe`:
-a short `name` (e.g. `letter`, derived from the resource-type's IRI at the ADR-0001 client boundary — not a server-supplied field),
+a short `name` (e.g. `letter`, derived from the resource-type's IRI at the dsp-cli/ADR-0001 client boundary — not a server-supplied field),
 the full `iri` (e.g. `http://api.dasch.swiss/ontology/0801/beol/v2#letter`, expanded from the JSON-LD CURIE via the response's `@context`),
 and an optional human `label` (e.g. `Basic Letter`).
 `data-model describe` prose shows count + an aligned `name  label` list.
@@ -198,7 +198,7 @@ _Avoid_: inherited, system, knora-api (used too broadly).
 A server-produced bagit-zip archive containing a project's **structured data** and, by default, its **binary assets**.
 Triggered asynchronously by the V3 export API and downloaded once the server finishes packaging it.
 Opaque to dsp-cli — we trigger, poll, and stream the bytes to disk; we do not parse or repackage them.
-_Avoid_: export (the DSP-API verb; reserved for dsp-tools' file-driven `export-project-data` workflow — see ADR-0004), backup, archive (too generic).
+_Avoid_: export (the DSP-API verb; reserved for dsp-tools' file-driven `export-project-data` workflow — see dsp-cli/ADR-0004), backup, archive (too generic).
 
 **Dump slot (server-wide)**:
 The DSP-API holds **one dump at a time across the whole server instance** — not one per project. Only a single dump can exist at any moment.
@@ -218,7 +218,7 @@ _Avoid_: file, attachment (too loose).
 
 **SPARQL query**:
 A query written in SPARQL 1.1, DSP-API's underlying triplestore's own query language, sent raw and unabstracted via `dsp vre sparql query`
-(`POST /admin/sparql/query`, `docs/adr/0016-sparql-passthrough.md`). Unlike every other dsp-cli noun, this is not translated at the ADR-0001 boundary:
+(`POST /admin/sparql/query`, `docs/adr/0016-sparql-passthrough.md`). Unlike every other dsp-cli noun, this is not translated at the dsp-cli/ADR-0001 boundary:
 SPARQL is a W3C standard the user invokes directly, not DSP-API jargon for a domain concept. The response is the store's own document,
 byte-verbatim, in a store-negotiated media type — dsp-cli does not interpret it.
 _Avoid_ using "SPARQL"/"query" (in this sense) outside `dsp vre sparql query`'s own surface and messages — see **triplestore**, below, for the same scoping.
@@ -271,9 +271,9 @@ and printed by `dsp docs <topic>`.
 Topics are conceptual and crosscutting — they explain *what a thing is* and *how to operate the CLI*, complementing `--help` (which explains *what a single command does*).
 A topic is deliberately **not** the long form of a `--help` text. Topics are authored as markdown in `docs/topics/` and embedded into the binary at compile time (`include_str!`),
 so documentation ships version-synced with the binary and needs no network.
-Of the three documentation categories — ADRs (`docs/adr/`), developer docs (`docs/dev/`), and topics (`docs/topics/`) —
+Of the three documentation categories — ADRs (`docs/adr/`), developer docs (`docs/src/dsp-cli/` in the repository book), and topics (`docs/topics/`) —
 only **topics** are surfaced via `dsp docs`; the other two are contributor artefacts.
-See [ADR-0010](./docs/adr/0010-embedded-documentation.md).
+See [dsp-cli/ADR-0010](./docs/adr/0010-embedded-documentation.md).
 _Avoid_: page, article, manual, help-topic.
 
 ## Relationships
@@ -306,7 +306,7 @@ _Avoid_: page, article, manual, help-topic.
   `ontology` is a synonym in API contexts and a near-synonym in DaSCH-internal speech.
 - **"property" doubly overloaded** — in everyday speech, "property" gets confused with "value" (slot vs. content),
   and RDF-correctly the property *definition* would be a "property class"
-  distinct from the property *use* on instances. We sidestep both by using `field` (definition slot) and `value` (data filling it). See ADR-0001.
+  distinct from the property *use* on instances. We sidestep both by using `field` (definition slot) and `value` (data filling it). See dsp-cli/ADR-0001.
 - **"class" overloaded with OOP** — same family of problem. `resource-type` makes the schema/instance pairing (with `resource`) lexical instead of relying on context.
 - **"metadata" — reserved; not the VRE research data.** At DaSCH "metadata" means the project-level *descriptive* metadata (title, PI, funder, keywords)
   the DSP Repository / DPE publishes and OAI-PMH harvests — the legacy `dsp-meta` layer.

@@ -232,7 +232,7 @@ async fn status_403_maps_to_auth_required_with_no_relogin_wording() {
             );
             // Assert the POSITIVE property D8 cares about. A negative
             // assertion on one phrasing would also pass for "please log in
-            // again", which is exactly the regression that matters: ADR-0012
+            // again", which is exactly the regression that matters: dsp-cli/ADR-0012
             // makes exit 3 the signal an agent may act on by running
             // `dsp auth login`, so a 403 must say outright that it won't help.
             assert!(

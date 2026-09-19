@@ -41,7 +41,7 @@ fn run_impl(
         }
     }
 
-    // After logout no token remains → "anonymous" per ADR-0007 vocabulary.
+    // After logout no token remains → "anonymous" per dsp-cli/ADR-0007 vocabulary.
     // Route through the shared helper for consistency with every other command;
     // `cache` has had this server's entry removed above, so it resolves to
     // "anonymous" regardless.
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn logout_meta_auth_is_anonymous() {
-        // Guards the ADR-0007 harmonization: after logout, _meta.auth must be
+        // Guards the dsp-cli/ADR-0007 harmonization: after logout, _meta.auth must be
         // "anonymous" (no token present), not the old "not_logged_in" string.
         let dir = TempDir::new().unwrap();
         let cache_path = dir.path().join("auth.toml");
@@ -310,7 +310,7 @@ mod tests {
         assert_eq!(
             renderer.logout_auth_state.as_deref(),
             Some("anonymous"),
-            "_meta.auth after logout must be 'anonymous' (ADR-0007 vocabulary)"
+            "_meta.auth after logout must be 'anonymous' (dsp-cli/ADR-0007 vocabulary)"
         );
     }
 }

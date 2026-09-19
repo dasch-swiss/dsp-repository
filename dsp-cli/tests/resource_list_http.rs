@@ -12,7 +12,7 @@
 // The endpoint requires the `x-knora-accept-project` header to scope
 // results to a specific project and `resourceClass` to select the type.
 //
-// ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` as
+// dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` as
 // user-visible output. IRIs on the wire are boundary-translated before
 // leaving the client.
 

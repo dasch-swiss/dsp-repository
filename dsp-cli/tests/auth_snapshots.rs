@@ -116,7 +116,7 @@ fn status_env_expired_outcome() -> AuthStatusOutcome {
 }
 
 fn status_env_expired_meta() -> MetaContext {
-    // _meta.auth uses presence/origin semantics (ADR-0007): an expired env token
+    // _meta.auth uses presence/origin semantics (dsp-cli/ADR-0007): an expired env token
     // still reports "authenticated via DSP_TOKEN". The expiry detail lives in
     // the data output (AuthenticatedViaEnv.expired == true).
     MetaContext {
@@ -141,7 +141,7 @@ fn status_cache_expired_outcome() -> AuthStatusOutcome {
 }
 
 fn status_cache_expired_meta() -> MetaContext {
-    // _meta.auth uses presence/origin semantics (ADR-0007 / D3): an expired
+    // _meta.auth uses presence/origin semantics (dsp-cli/ADR-0007 / D3): an expired
     // cached token still reports "authenticated as <user>", exactly as the
     // read commands do. The expiry detail lives in the data output
     // (LoggedIn.expired == true, state == "expired").
@@ -643,7 +643,7 @@ fn auth_logout_tsv_not_cached() {
 
 /// `auth_login` × json × AuthRequired — locks down `kind: auth_required`, exit_code 3.
 ///
-/// Username must NOT appear in the rendered output (ADR-0007 / PRD criterion 7).
+/// Username must NOT appear in the rendered output (dsp-cli/ADR-0007 / PRD criterion 7).
 #[test]
 fn auth_login_json_auth_required() {
     let diag = Diagnostic::AuthRequired("Authentication failed on https://api.example.com".to_string());
@@ -685,7 +685,7 @@ fn auth_login_json_server_error() {
 /// `ProseRenderer::diagnostic` method correctly writes nothing to its writer
 /// (stdout). This snapshot locks down that contract.
 ///
-/// Username must NOT appear (ADR-0007 / PRD criterion 7).
+/// Username must NOT appear (dsp-cli/ADR-0007 / PRD criterion 7).
 #[test]
 fn auth_login_prose_auth_required() {
     let diag = Diagnostic::AuthRequired("Authentication failed on https://api.example.com".to_string());
@@ -720,7 +720,7 @@ fn set_token_outcome_minimal() -> AuthSetTokenOutcome {
 
 // Mirrors the auth_state the `set_token` action actually builds (see
 // `actions::auth::set_token::run_impl`): "authenticated as {sub}" when the JWT
-// carries a `sub`, using ADR-0007 vocabulary. Keeping the fixture in sync with
+// carries a `sub`, using dsp-cli/ADR-0007 vocabulary. Keeping the fixture in sync with
 // the action is what makes these snapshots a faithful regression detector for
 // real command output.
 fn set_token_meta() -> MetaContext {
@@ -734,7 +734,7 @@ fn set_token_meta() -> MetaContext {
 }
 
 // The minimal outcome has no `sub`, so the action falls back to "authenticated"
-// (cache token with no user, ADR-0007 vocabulary).
+// (cache token with no user, dsp-cli/ADR-0007 vocabulary).
 fn set_token_meta_minimal() -> MetaContext {
     MetaContext {
         server_label: "https://api.dev.dasch.swiss".to_string(),

@@ -12,21 +12,21 @@
 //! - **Filter fixture**: `filter: Some("let")` with `total > items.len()` so the prose header shows
 //!   "(m of total matching …)". Prose only.
 //! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`
-//!   — locks the ADR-0012 propagated-error envelope for the data-model-not-found path.
+//!   — locks the dsp-cli/ADR-0012 propagated-error envelope for the data-model-not-found path.
 //!
 //! Determinism: these tests call `Renderer::resource_types(&view, &meta)` (or
 //! `renderer.diagnostic(…)`) **directly** with a hand-built `MetaContext` /
 //! `ResourceTypeListView`. They never go through `run_list_impl`, which reads the
 //! real `DSP_TOKEN` env var. Action / auth-resolution logic is covered by the
 //! in-module action tests; these layer-4 snapshot tests cover rendering only.
-//! See `docs/dev/testing-strategy.md` and ADR-0009.
+//! See `docs/src/dsp-cli/testing-strategy.md` and dsp-cli/ADR-0009.
 //!
 //! Vocabulary guard: no `export`/`class`/`property` in this file or any .snap it
 //! generates. NOTE: checking for `ontolog` would be a false positive for IRI strings
 //! (e.g. `http://api.dasch.swiss/ontology/0801/beol/v2#letter`) — those are data
 //! values, the documented exception. Only prose (which does not render IRIs) gets
 //! the `ontolog` check; tabular/json formats render raw IRIs so the `ontolog` check
-//! is explicitly skipped there. (ADR-0001 / Step-5 learning from plan 014.)
+//! is explicitly skipped there. (dsp-cli/ADR-0001 / Step-5 learning from plan 014.)
 
 use dsp_cli::diagnostic::Diagnostic;
 use dsp_cli::model::ResourceType;
@@ -216,7 +216,7 @@ fn filter_view() -> ResourceTypeListView {
 // ── main fixture × 5 formats (anonymous) ─────────────────────────────────────
 
 /// Prose render of the main fixture. Locks the aligned column layout, label vs
-/// empty slots, no `(built-in)` marker on project-only items, and the ADR-0007
+/// empty slots, no `(built-in)` marker on project-only items, and the dsp-cli/ADR-0007
 /// footer.
 #[test]
 fn resource_type_list_prose() {
@@ -298,7 +298,7 @@ fn resource_type_list_tsv() {
 
 /// Prose render of the main fixture with `--count`. Locks the right-aligned
 /// count column (populated for Archive/letter, blank for noLabelType) and the
-/// count_caveat appended to the ADR-0007 footer.
+/// count_caveat appended to the dsp-cli/ADR-0007 footer.
 #[test]
 fn resource_type_list_prose_with_count() {
     let (buf, w) = shared_buf();
@@ -499,7 +499,7 @@ fn resource_type_list_builtins_tsv() {
 // ── empty fixture × prose + json ─────────────────────────────────────────────
 
 /// Prose render of the empty fixture. Locks the `(0):` header shape (including the
-/// data_model name), the ADR-0007 footer, and zero rows between them.
+/// data_model name), the dsp-cli/ADR-0007 footer, and zero rows between them.
 #[test]
 fn resource_type_list_prose_empty() {
     let (buf, w) = shared_buf();
@@ -558,7 +558,7 @@ fn resource_type_list_prose_filter() {
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
 ///
-/// This locks the ADR-0012 JSON envelope shape — the error path for when
+/// This locks the dsp-cli/ADR-0012 JSON envelope shape — the error path for when
 /// `run_list_impl` cannot find the named data-model and returns `NotFound`, which
 /// then propagates through the action without ever reaching `resource_types`.
 #[test]
@@ -655,7 +655,7 @@ fn resource_type_list_tsv_disclosure_on_stderr_not_stdout() {
 // ── vocabulary guard (inline) ─────────────────────────────────────────────────
 
 /// Prose output must not contain vocabulary-leaked words from the DSP-API layer.
-/// Note: prose does NOT render IRIs (ADR-0003), so "ontolog" must also not appear.
+/// Note: prose does NOT render IRIs (dsp-cli/ADR-0003), so "ontolog" must also not appear.
 /// We check prose only; tabular/json explicitly skip the "ontolog" check since
 /// those formats render raw IRIs as data values (e.g. "/ontology/" in IRI paths).
 #[test]
@@ -673,7 +673,7 @@ fn resource_type_list_prose_no_vocabulary_leak() {
         !out.to_lowercase().contains("ontolog"),
         "prose must not contain 'ontolog' (IRIs are not rendered in prose); got:\n{out}"
     );
-    // ADR-0001 banned terms: "class" and "property" must not appear.
+    // dsp-cli/ADR-0001 banned terms: "class" and "property" must not appear.
     assert!(
         !out.to_lowercase().contains("class"),
         "prose must not contain 'class' (DSP-API vocabulary leak); got:\n{out}"

@@ -2,7 +2,7 @@
 //!
 //! Topic *bodies* are deliberately NOT snapshotted: they are documentation prose
 //! that is edited often, so per-body snapshots would be brittle and carry no
-//! output-contract value (plan 018 D5 — a documented exception to ADR-0009's
+//! output-contract value (plan 018 D5 — a documented exception to dsp-cli/ADR-0009's
 //! "every (noun, verb, format) cell gets a snapshot"). These tests instead cover
 //! the stable contract surface: the topic list, topic resolution across all nine
 //! topics, and the not-found / did-you-mean error.
@@ -18,7 +18,13 @@ fn dsp() -> Command {
         // the update-check gate is already closed, but this guarantees no real
         // network call/flakiness even under an unusual terminal setup (plan
         // 031-update-check, Step 6).
-        .env("DSP_NO_UPDATE_CHECK", "1");
+        .env("DSP_NO_UPDATE_CHECK", "1")
+        // `TERM=dumb` alone does not stop clap from emitting ANSI colour when
+        // the caller's environment forces it — `NO_COLOR` and removing both
+        // `CLICOLOR` variables closes that gap (mirrors `tests/cli.rs`).
+        .env("NO_COLOR", "1")
+        .env_remove("CLICOLOR_FORCE")
+        .env_remove("CLICOLOR");
     cmd
 }
 
@@ -89,7 +95,7 @@ fn docs_json_flag_emits_topic_index() {
     insta::assert_snapshot!("docs_json_index", text);
 }
 
-/// `_meta` must be the very first key in the JSON output (ADR-0003, plan 020 D4).
+/// `_meta` must be the very first key in the JSON output (dsp-cli/ADR-0003, plan 020 D4).
 /// The assertion is byte-position: no leading whitespace is permitted before
 /// `{"_meta"`. `trim_start()` is intentionally absent — that would allow the
 /// contract to be silently weakened by leading whitespace or a BOM.

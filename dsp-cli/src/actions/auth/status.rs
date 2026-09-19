@@ -30,7 +30,7 @@ fn run_impl(
     cache_path: Option<&Path>,
     env_token: Option<String>,
 ) -> Result<(), Diagnostic> {
-    // ADR-0007 says a non-blank `DSP_TOKEN` wins regardless of cache state.
+    // dsp-cli/ADR-0007 says a non-blank `DSP_TOKEN` wins regardless of cache state.
     // A corrupt or unreadable `auth.toml` therefore must not mask the env
     // token: treat a cache-load failure as an empty cache when the env token
     // would resolve. (Matches the trim-and-empty rule in `resolve_token`.)
@@ -81,7 +81,7 @@ fn run_impl(
         None => (AuthStatusOutcome::NotLoggedIn { server: cfg.server.clone() }, None),
     };
 
-    // _meta.auth uses presence/origin semantics (ADR-0007 uniform vocabulary),
+    // _meta.auth uses presence/origin semantics (dsp-cli/ADR-0007 uniform vocabulary),
     // independent of expiry. This is the same as the read commands: an expired
     // cached token still reports "authenticated as {user}" in _meta.auth.
     // The richer expiry/not-logged-in detail lives in the data output above.
@@ -427,7 +427,7 @@ mod tests {
         assert_eq!(
             renderer.last_auth_state.as_deref(),
             Some("authenticated via DSP_TOKEN"),
-            "_meta.auth must use ADR-0007 presence/origin vocabulary (not expiry-aware)"
+            "_meta.auth must use dsp-cli/ADR-0007 presence/origin vocabulary (not expiry-aware)"
         );
     }
 
@@ -599,7 +599,7 @@ mod tests {
 
     #[test]
     fn env_token_wins_when_cache_is_corrupt() {
-        // ADR-0007: DSP_TOKEN wins regardless of cache state. A corrupt
+        // dsp-cli/ADR-0007: DSP_TOKEN wins regardless of cache state. A corrupt
         // auth.toml must not mask the env token in `dsp auth status`.
         let dir = TempDir::new().unwrap();
         let cache_path = dir.path().join("auth.toml");

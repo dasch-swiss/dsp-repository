@@ -17,7 +17,7 @@
 //! is private and reads `DSP_TOKEN` from the real env). The action path (sort,
 //! filter, auth-state derivation, cache fallback) is covered by the in-module
 //! action tests and the wiremock tests; these layer-3 snapshots cover rendering
-//! only. See `docs/dev/testing-strategy.md`.
+//! only. See `docs/src/dsp-cli/testing-strategy.md`.
 //!
 //! Realistic fixture (`realistic_projects`), returned in server order (unsorted;
 //! the renderer receives the already-sorted view, so snapshots show ascending
@@ -28,7 +28,7 @@
 //!   inactive, zero data-models, absent longname)
 //! - `0820` / `incunabula` / Active / 1 data-model / "Basel Early Book Printing"
 //!
-//! ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
+//! dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
 //! file or any .snap it generates.
 
 use dsp_cli::model::{Project, ProjectStatus};
@@ -571,7 +571,7 @@ fn project_list_json_no_vocabulary_leak() {
 
 // ── iri absent in prose, present in tsv/csv/json ──────────────────────────────
 
-/// Prose: `iri` field must NOT appear (per ADR-0003 / plan Step 3c).
+/// Prose: `iri` field must NOT appear (per dsp-cli/ADR-0003 / plan Step 3c).
 #[test]
 fn project_list_prose_no_iri() {
     let (buf, w) = shared_buf();

@@ -1,10 +1,10 @@
-//! Shared ADR-0007 auth-state disclosure helper, used by all commands that
+//! Shared dsp-cli/ADR-0007 auth-state disclosure helper, used by all commands that
 //! produce `_meta.auth`.
 
 use crate::config::{AuthCache, ResolvedToken, TokenOrigin};
 
-/// Build the ADR-0007 read-command auth-state disclosure string from token
-/// resolution. Uses ADR-0007 disclosure vocabulary ("anonymous"/"authenticated"),
+/// Build the dsp-cli/ADR-0007 read-command auth-state disclosure string from token
+/// resolution. Uses dsp-cli/ADR-0007 disclosure vocabulary ("anonymous"/"authenticated"),
 /// which is the uniform `_meta.auth` contract across all commands.
 ///
 /// Cases:

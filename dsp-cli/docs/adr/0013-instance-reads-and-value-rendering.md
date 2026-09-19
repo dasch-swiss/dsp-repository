@@ -53,7 +53,7 @@ Rationale, recorded for completeness:
 
 The `schema=complex` query parameter is a constant confined to `src/client/`; it is
 **never** a trait parameter and **never** surfaces as a user-facing flag (that would
-leak DSP-API/JSON-LD jargon — ADR-0001).
+leak DSP-API/JSON-LD jargon — dsp-cli/ADR-0001).
 
 **"Simplifying ourselves" is the value-rendering matrix.** Choosing complex means
 each matrix arm reads its datum out of a complex value object (a one-key lookup for
@@ -72,7 +72,7 @@ key (plan 023 D2).
 
 `resource list` paginates with `--page` (0-based, one page) and `--all`
 (auto-paginate until `knora-api:mayHaveMoreResults` is false), surfaced as the
-`_meta` keys `page` / `pages_fetched` / `may_have_more_results` (ADR-0003
+`_meta` keys `page` / `pages_fetched` / `may_have_more_results` (dsp-cli/ADR-0003
 amendment). `describe` returns a single Resource and does not paginate. No
 permission-aware total-count is available for `list`: both count routes — the v2
 `/v2/resources/info` and the richer v3 `GET /v3/projects/{projectIri}/resourcesPerOntology`
@@ -100,7 +100,7 @@ metadata envelope (8b behaviour). `--values` opts into the full field/value list
   is ~13 KB of complex JSON-LD). An agent burning context wants the envelope by
   default and opts into the dump deliberately. Default-off also preserves 8b's
   output byte-for-byte for callers that don't pass the flag.
-- **No schema/detail jargon.** Per ADR-0001 the flag and all help text are framed
+- **No schema/detail jargon.** Per dsp-cli/ADR-0001 the flag and all help text are framed
   around *what the user gets* (values), never the DSP-API schema names
   ("simple" / "complex") or RDF vocabulary.
 
@@ -136,7 +136,7 @@ fetched at most once) and **non-fatal**: any label fetch that fails (network,
 permission, missing) degrades to the local name (field) or the node IRI (list),
 never failing the describe. The field-name local-name derivation (prefix strip,
 `Value`-suffix strip) and all label mapping happen **at the client boundary**
-(`src/client/`), per ADR-0001 — no DSP-API/JSON-LD vocabulary reaches the model,
+(`src/client/`), per dsp-cli/ADR-0001 — no DSP-API/JSON-LD vocabulary reaches the model,
 renderer, or help layers.
 
 The `Value`-suffix convention is load-bearing: dsp-api appends `Value` to link
@@ -254,7 +254,7 @@ The single-object `data` gains a `values` key **only when `--values`
 is set** (absent otherwise — `Option`, so the 8b envelope is unchanged for
 default calls). `values` is an array of field groups `{ "field", "field_label",
 "values": [ { "value_type", …type-specific keys… } ] }`, deterministic key order
-(ADR-0003). JSON keeps full type fidelity — structured per-type keys (e.g. a date's
+(dsp-cli/ADR-0003). JSON keeps full type fidelity — structured per-type keys (e.g. a date's
 calendar/start/end, a file's width/height/url), not a pre-rendered string.
 
 **Server-text sanitisation in prose.** `--values` newly renders a large amount
@@ -265,9 +265,9 @@ ESC, the ANSI-escape vector) from every such scalar before printing, via the
 `strip_control_chars` helper (`src/util/text.rs`), which keeps `\n`/`\t` (legitimate
 in multi-line prose values). Its sibling `replace_control_chars` (which replaces
 *every* control character, incl. `\n`/`\t`, with a space) backs the tabular formats
-(`lines`/`csv`/`tsv`) — see ADR-0003. This
+(`lines`/`csv`/`tsv`) — see dsp-cli/ADR-0003. This
 is done **at the prose render layer, not the client boundary**, so **json keeps the
-raw server value verbatim** (ADR-0003 fidelity). This materially narrows the
+raw server value verbatim** (dsp-cli/ADR-0003 fidelity). This materially narrows the
 control-character/terminal-injection surface that `--values` would otherwise widen
 well beyond the single resource-label field of 8b (whose prose header / list-column
 was itself brought under `strip_control_chars` in Phase 8.5 #1) — it is a deliberate,
@@ -277,7 +277,7 @@ controls); the sanitiser covers the plain-text and label paths that do not.
 
 ### tabular
 
-**Decided: ADR-0013 option 1 (long-format value rows), shipped Phase 8.5 item 3.**
+**Decided: dsp-cli/ADR-0013 option 1 (long-format value rows), shipped Phase 8.5 item 3.**
 With `--values`, `lines`/`csv`/`tsv` render **one row per Value**. Full column
 set: `label, iri, field, field_label, value_type, value` — `label`/`iri` are the
 leading "key columns" identifying which resource the row belongs to. This
@@ -332,7 +332,7 @@ uncertain" on a transcribed word.
 **Model.** A `Value { content: ValueContent, comment: Option<String> }`
 wrapper now carries every value in `FieldValues.values` (`Vec<Value>`,
 replacing the bare `Vec<ValueContent>`). `comment` is read once at the client
-boundary in `parse_value`, per ADR-0001 — the DSP-API key name
+boundary in `parse_value`, per dsp-cli/ADR-0001 — the DSP-API key name
 `knora-api:valueHasComment` itself stays confined to `src/client/http.rs` and
 never reaches the model, renderers, or help layers.
 
@@ -380,15 +380,15 @@ unaffected either way. This is not a regression — it already happens for value
 scalars — but it is recorded here so it isn't silently undocumented for
 comments specifically.
 
-**ADR-0003 needs no amendment.** The json `comment` key is additive within the
-existing `values` array shape ADR-0003 already governs; the tabular column set
-(full vs default, `--columns` opt-in) is owned by this ADR, not ADR-0003.
+**dsp-cli/ADR-0003 needs no amendment.** The json `comment` key is additive within the
+existing `values` array shape dsp-cli/ADR-0003 already governs; the tabular column set
+(full vs default, `--columns` opt-in) is owned by this ADR, not dsp-cli/ADR-0003.
 
 ## Consequences
 
 - The `--values` flag name, the prose `Values:` layout, the json `values` array
   shape, the value-type tokens, and the `raw` fallback become **public output
-  contract** once snapshot baselines are accepted (ADR-0009). User-endorsed at plan
+  contract** once snapshot baselines are accepted (dsp-cli/ADR-0009). User-endorsed at plan
   approval.
 - `describe` with `--values` makes more than one HTTP request — the first read
   command to fan out to ontology + list-node fetches. Documented for users
@@ -398,8 +398,8 @@ existing `values` array shape ADR-0003 already governs; the tabular column set
   (resource-type describe) but sharing the `ValueType` token vocabulary.
 - `html_to_text` / `strip_control_chars` move from `src/render/html.rs` to a
   layer-neutral `src/util/` module so the client boundary can reuse `html_to_text`
-  for standoff without a client→render dependency (ADR-0008 sibling-layer rule).
-  ADR-0008 is amended in this task to record the `src/util/` home for dependency-free
+  for standoff without a client→render dependency (dsp-cli/ADR-0008 sibling-layer rule).
+  dsp-cli/ADR-0008 is amended in this task to record the `src/util/` home for dependency-free
   text helpers.
 - The tabular-value follow-up is no longer a gap: it shipped in Phase 8.5 item 3
   (see "Output shape" → "tabular", above).
@@ -426,7 +426,7 @@ knowingly broke that contract.
 controlled vocabulary's node tree. Left unrenamed, `dsp vre vocabulary describe` would describe a
 vocabulary's **nodes** while `resource describe --values` called the exact same kind of value
 `list-item` — two words for one concept in one tool. That is precisely the internal inconsistency
-this ADR's own vocabulary discipline (and ADR-0001) exists to prevent, so leaving the token
+this ADR's own vocabulary discipline (and dsp-cli/ADR-0001) exists to prevent, so leaving the token
 unrenamed once `vocabulary` existed as a noun would have been the greater cost.
 
 **Impact.** Breaking change to already-shipped output. Lands as `0.2.0` (the project's pre-1.0

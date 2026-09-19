@@ -3,7 +3,7 @@
 //! Types here are the dsp-cli vocabulary for resource-type detail data,
 //! surfaced by `dsp vre resource-type describe`. DSP-API wire types
 //! live inside `src/client/http.rs` and are never exposed above the client
-//! layer. See ADR-0001 and ADR-0008.
+//! layer. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 //!
 //! Key CONTEXT.md vocabulary: resource-type, field, value-type, cardinality,
 //! representation. Wire deserialization (DSP-API `owl:Restriction`,
@@ -19,7 +19,7 @@ use std::fmt;
 /// tagging and the prose `Data-model:` header), an optional `representation`
 /// kind (for asset types), the project/external superclass local names
 /// (`super_types`), and the full field list. No `serde` derive: wire
-/// deserialization stays in `src/client/http.rs`. See ADR-0001 / ADR-0008
+/// deserialization stays in `src/client/http.rs`. See dsp-cli/ADR-0001 / dsp-cli/ADR-0008
 /// and the CONTEXT.md "Resource Type" / "Field" / "Cardinality" /
 /// "Representation" entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,7 +65,7 @@ pub struct ResourceTypeDetail {
 /// resource-type local name, `Some` iff `value_type == ValueType::Link`),
 /// `cardinality`, a flag marking system (built-in) fields, and the source
 /// `data_model` name (for cross-DM tagging). No `serde` derive: wire
-/// deserialization stays in `src/client/http.rs`. See ADR-0001 / ADR-0008
+/// deserialization stays in `src/client/http.rs`. See dsp-cli/ADR-0001 / dsp-cli/ADR-0008
 /// and the CONTEXT.md "Field" / "Value Type" / "Cardinality" entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
@@ -107,7 +107,7 @@ pub struct Field {
 /// Named variants cover all 16 value types from the CONTEXT.md "Value Type"
 /// entry. `Other(String)` provides graceful degradation for any `objectType`
 /// outside this set (e.g. `GeomValue`, `IntervalValue`, `TextFileValue`) — the
-/// string is a kebab-cased local name derived by the client at the ADR-0001
+/// string is a kebab-cased local name derived by the client at the dsp-cli/ADR-0001
 /// boundary. `Display` writes the kebab string; `Other(s)` writes `s` verbatim
 /// (the client builds the kebab form). Does NOT derive `Copy` (has `Other(String)`).
 /// No `serde` derive.

@@ -45,7 +45,7 @@ The skill answers three questions for any agent that finds it:
 2. **How to invoke it** — `command -v dsp` falling back to `$HOME/.cargo/bin/dsp`. PATH-independent.
 3. **What to do if it's missing** — `cargo install --git https://github.com/dasch-swiss/dsp-incubator dsp-cli --force`.
 
-The skill is itself agent-facing documentation. It is *not* a replacement for `dsp docs <topic>` (ADR-0010) — the skill is a doorway into the tool; `dsp docs` is the room.
+The skill is itself agent-facing documentation. It is *not* a replacement for `dsp docs <topic>` (dsp-cli/ADR-0010) — the skill is a doorway into the tool; `dsp docs` is the room.
 
 ## Public distribution
 
@@ -62,7 +62,7 @@ be unique on crates.io); name verified available on crates.io as of 2026-06-18 (
 **Owner:** the `dasch-swiss` GitHub team, added as a crate owner — not a personal account. crates.io has no "organization
 account" concept: a crate is owned by crates.io users and/or GitHub teams. The first `cargo publish` runs under a
 maintainer's GitHub-authenticated crates.io login; `cargo owner --add github:dasch-swiss:<team>` then adds the
-`dasch-swiss` team as a co-owner. See ADR-0014 for the publish-first sequencing this decision unblocks.
+`dasch-swiss` team as a co-owner. See dsp-cli/ADR-0014 for the publish-first sequencing this decision unblocks.
 
 ### Rationale
 
@@ -113,3 +113,13 @@ Why: the plugins repo already carried a diverged, more current copy of the skill
 distribution channels guaranteed drift. The plugin marketplace is the DaSCH-wide distribution mechanism for agent
 skills, so the crate no longer needs to ship or symlink its own. The rest of this ADR (binary name, `cargo install`,
 crates.io publishing) stands unchanged; only the skill-shipping/symlink mechanism is withdrawn.
+
+## Amendment (2026-09-19) — repository moved
+
+`dsp-cli` now lives in `dasch-swiss/dsp-repository` (crate directory `dsp-cli/`), per dsp-cli/ADR-0014.
+The "Public distribution" `cargo install --git` fallback above, and the "for anyone tracking `main`
+ahead of a release" fallback in Consequences, now resolve against
+`https://github.com/dasch-swiss/dsp-repository`, not `dasch-swiss/dsp-incubator`. The "what to do if
+it's missing" fallback in "Agent discoverability: the Claude Code skill" is not updated — that whole
+mechanism was already withdrawn by the 2026-07-24 amendment above and describes a skill that no
+longer ships from either repository.

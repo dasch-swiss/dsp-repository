@@ -52,7 +52,7 @@ fn main() -> ExitCode {
     };
 
     // Runs regardless of the command's outcome (gated + rate-limited internally);
-    // the advisory is deliberately the last thing written to stderr (ADR-0015).
+    // the advisory is deliberately the last thing written to stderr (dsp-cli/ADR-0015).
     // Never touches `code` or the exit path.
     dsp_cli::update::maybe_notify(notice_fmt);
 

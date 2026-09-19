@@ -90,7 +90,7 @@ impl Default for CsvRenderer {
 
 impl Renderer for CsvRenderer {
     fn diagnostic(&mut self, diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
-        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (ADR-0012)
+        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (dsp-cli/ADR-0012)
         Ok(())
     }
 
@@ -488,7 +488,7 @@ impl Renderer for CsvRenderer {
         detail: &crate::model::ResourceDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // CSV format: `detail.values` selects the shape (ADR-0013 D1).
+        // CSV format: `detail.values` selects the shape (dsp-cli/ADR-0013 D1).
         // None → header + metadata row (all ten RESOURCE_DESCRIBE_COLUMNS), unchanged.
         // Some(fields) → header + one row per value (long-format), metadata dropped.
         match &detail.values {

@@ -15,9 +15,9 @@
 //! through `run_describe_impl`, which reads the real `DSP_TOKEN` env var. Action /
 //! auth-resolution logic is covered by the in-module action tests; these layer-4
 //! snapshot tests cover rendering only.
-//! See `docs/dev/testing-strategy.md` and learning from plan 010.
+//! See `docs/src/dsp-cli/testing-strategy.md` and learning from plan 010.
 //!
-//! ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
+//! dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
 //! file or any .snap it generates. (IRI strings contain "/ontology/" as data —
 //! the documented exception per review-guidelines.md.)
 
@@ -114,7 +114,7 @@ fn minimal_detail() -> DataModelDetail {
 /// - Label/IRI/Last-modified block (values aligned, date stripped to YYYY-MM-DD)
 /// - `Resource-types (4):` sub-list with aligned `name  label` columns
 /// - One resource-type with empty label (`letter`)
-/// - ADR-0007 footer `[anonymous on https://api.dasch.swiss]`
+/// - dsp-cli/ADR-0007 footer `[anonymous on https://api.dasch.swiss]`
 #[test]
 fn data_model_describe_prose() {
     let (buf, w) = shared_buf();
@@ -124,7 +124,7 @@ fn data_model_describe_prose() {
 }
 
 /// JSON render of the main fixture. Locks:
-/// - ADR-0003 single-object `data` envelope with `_meta` first
+/// - dsp-cli/ADR-0003 single-object `data` envelope with `_meta` first
 /// - Key order: name, iri, label, last_modified, resource_types
 /// - `last_modified` as full RFC3339 string (lossless)
 /// - `resource_types` array with per-resource-type {name, iri, label}
@@ -188,7 +188,7 @@ fn data_model_describe_tsv() {
 /// - `Label:` line omitted when None
 /// - `Last-modified:` line omitted when None
 /// - `  Resource-types (0)` with NO trailing colon or sub-list
-/// - ADR-0007 footer still present
+/// - dsp-cli/ADR-0007 footer still present
 #[test]
 fn data_model_describe_prose_empty() {
     let (buf, w) = shared_buf();
@@ -281,7 +281,7 @@ fn data_model_describe_csv_empty() {
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
 ///
-/// This locks the ADR-0012 JSON envelope shape — the error path for when the
+/// This locks the dsp-cli/ADR-0012 JSON envelope shape — the error path for when the
 /// `--data-model` name/IRI does not match any data-model in the project. The
 /// action builds the `NotFound` message with a recovery hint and propagates it
 /// via `?`; `main.rs` calls `renderer.diagnostic(…)`.

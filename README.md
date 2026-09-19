@@ -1,6 +1,6 @@
 # DSP-Repository
 
-Monorepo for the DSP Repository — the long-term archive for humanities research data. Contains the Discovery and Presentation Environment (DPE) and the Mosaic component library (design system).
+Monorepo for the DSP Repository — the long-term archive for humanities research data. Contains the Discovery and Presentation Environment (DPE), the Mosaic component library (design system), and `dsp-cli`, a command-line client for the DaSCH Service Platform (see [dsp-cli/README.md](dsp-cli/README.md)).
 
 ## Documentation
 

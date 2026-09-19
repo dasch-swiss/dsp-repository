@@ -17,9 +17,9 @@
 //! through `run_describe_impl`, which reads the real `DSP_TOKEN` env var. Action /
 //! auth-resolution logic is covered by the in-module action tests; these layer-4
 //! snapshot tests cover rendering only.
-//! See `docs/dev/testing-strategy.md` and learning from plan 010.
+//! See `docs/src/dsp-cli/testing-strategy.md` and learning from plan 010.
 //!
-//! ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
+//! dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
 //! file or any .snap it generates. (IRI strings contain "/ontology/" as data —
 //! the documented exception per review-guidelines.md.)
 
@@ -243,9 +243,10 @@ fn degraded_field_detail() -> ResourceTypeDetail {
 /// - `Fields (5):` sub-list with aligned `name  value-type  cardinality  label[ source-tag]`
 /// - Link field with `→ person` arrow notation
 /// - Cross-DM fields with `[from biblio]` tag, own-DM fields without
-/// - ADR-0007 footer `[anonymous on https://api.dasch.swiss]`
+/// - dsp-cli/ADR-0007 footer `[anonymous on https://api.dasch.swiss]`
 ///
-/// ADR-0001 vocabulary guard: IRI lines containing "/ontology/" are the documented exception.
+/// dsp-cli/ADR-0001 vocabulary guard: IRI lines containing "/ontology/" are the documented
+/// exception.
 #[test]
 fn resource_type_describe_prose() {
     let (buf, w) = shared_buf();
@@ -279,7 +280,7 @@ fn resource_type_describe_prose() {
 }
 
 /// JSON render of the main fixture. Locks:
-/// - ADR-0003 single-object `data` envelope with `_meta` first
+/// - dsp-cli/ADR-0003 single-object `data` envelope with `_meta` first
 /// - Key order: name, iri, label, data_model, representation, super_types, fields
 /// - `representation: "still-image"` string
 /// - `super_types: ["writtenSource"]` array
@@ -346,7 +347,7 @@ fn resource_type_describe_tsv() {
 /// Prose render of the main fixture with `--count`. Locks the `Instances:`
 /// line landing right after `Data-model:` (the load-bearing placement decision
 /// from the renderer step — see `src/render/prose.rs`'s `resource_type_describe`)
-/// and the count_caveat appended to the ADR-0007 footer.
+/// and the count_caveat appended to the dsp-cli/ADR-0007 footer.
 #[test]
 fn resource_type_describe_prose_with_count() {
     let (buf, w) = shared_buf();
@@ -485,7 +486,7 @@ fn resource_type_describe_tsv_stderr_with_count() {
 /// - `Extends:` line omitted when super_types is empty
 /// - `Representation:` line omitted when None
 /// - `  Fields (0)` with NO trailing colon or rows
-/// - ADR-0007 footer still present
+/// - dsp-cli/ADR-0007 footer still present
 #[test]
 fn resource_type_describe_prose_empty() {
     let (buf, w) = shared_buf();
@@ -649,7 +650,7 @@ fn resource_type_describe_prose_degraded_field() {
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
 ///
-/// This locks the ADR-0012 JSON envelope shape — the error path for when the
+/// This locks the dsp-cli/ADR-0012 JSON envelope shape — the error path for when the
 /// `--resource-type` name/IRI does not match any resource-type in the data-model.
 /// The action builds the `NotFound` message with a recovery hint and propagates it
 /// via `?`; `main.rs` calls `renderer.diagnostic(…)`.

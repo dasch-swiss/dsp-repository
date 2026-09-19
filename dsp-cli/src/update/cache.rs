@@ -1,5 +1,5 @@
 //! On-disk cache for the update check at `~/.config/dsp-cli/update_check.toml`.
-//! See ADR-0015.
+//! See dsp-cli/ADR-0015.
 //!
 //! Modeled on [`crate::config::auth_cache::AuthCache`], with two deliberate
 //! differences:

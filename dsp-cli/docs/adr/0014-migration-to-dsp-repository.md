@@ -1,12 +1,12 @@
 # Migration to dsp-repository
 
 `dsp-cli` currently lives in `dasch-swiss/dsp-incubator` as a prototype (it began as
-a private `balduinLandolt/dsp-cli` repo — see ADR-0005). Its intended permanent home
-is the `dasch-swiss/dsp-repository` Cargo workspace (ADR-0005, ADR-0008). This ADR
+a private `balduinLandolt/dsp-cli` repo — see dsp-cli/ADR-0005). Its intended permanent home
+is the `dasch-swiss/dsp-repository` Cargo workspace (dsp-cli/ADR-0005, dsp-cli/ADR-0008). This ADR
 records the **decision to migrate there and how** — sequencing, target shape, git
 history, the (open) versioning question, and convention harmonization. It does **not** execute the
 migration: the mechanical runbook is written when the migration is actually scheduled
-(PROJECT_PLAN Phase 11). ADR-0005 and ADR-0008 predicted this move and shaped the code
+(PROJECT_PLAN Phase 11). dsp-cli/ADR-0005 and dsp-cli/ADR-0008 predicted this move and shaped the code
 to make it cheap; this ADR is the concrete record of the *how*.
 
 ## Context
@@ -15,7 +15,7 @@ to make it cheap; this ADR is the concrete record of the *how*.
   crate is `dsp-cli`, owned via the `dasch-swiss` GitHub team added as a crate owner
   (crates.io has no "organization account" — crates are owned by users and/or GitHub
   teams). `dsp-cli` is available on crates.io; the name was chosen to survive this move.
-- ADR-0008 already designed the internal layout so that splitting into workspace
+- dsp-cli/ADR-0008 already designed the internal layout so that splitting into workspace
   crates is "a directory-rename operation": the natural split is `dsp-client`
   (model + client trait + HTTP impl), `dsp-render` (renderer trait + impls), and
   `dsp-cli` (clap + actions + main).
@@ -39,7 +39,7 @@ migration, not as a precondition of the first publish.
 
 ### Target shape — workspace member(s) under `modules/`
 
-Land `dsp-cli` as one or more workspace members per ADR-0008's split. Whether to land
+Land `dsp-cli` as one or more workspace members per dsp-cli/ADR-0008's split. Whether to land
 as a single crate first and split later, or do the three-crate split (`dsp-client` /
 `dsp-render` / `dsp-cli`) in the migration itself, is a **runbook-time call** — the
 current layout supports either.
@@ -95,7 +95,7 @@ Performed in the migration move (not before the 0.1.0 publish):
 - **Docs:** re-home `docs/adr/`, `docs/dev/`, `PROJECT_PLAN.md`, and `BACKLOG.md` onto
   `dsp-repository`'s `docs/src/` mdBook plus top-level `CONVENTIONS.md` / `REVIEW.md`.
   The **embedded `dsp docs` topics (`docs/topics/`) stay** — they are a binary feature
-  (compiled in via `include_str!`, ADR-0010), not contributor docs.
+  (compiled in via `include_str!`, dsp-cli/ADR-0010), not contributor docs.
 - **Agent harness:** adopt `dsp-repository`'s `.claude/` harness (plans in
   `.claude/tmp/`, `CONVENTIONS.md` / `REVIEW.md`) and retire `dsp-cli`'s `/dev:*` +
   `docs/design/plans/` workflow and bespoke skills.
@@ -122,7 +122,7 @@ survive the move unchanged; only their physical location in the docs tree change
 - Whether `dsp-cli` participates in `dsp-repository`'s synchronized workspace
   versioning is an **open question** (lean: independent version line) — see
   "Versioning" above.
-- ADR-0005's and ADR-0008's migration notes are elaborated (not contradicted) by this
+- dsp-cli/ADR-0005's and dsp-cli/ADR-0008's migration notes are elaborated (not contradicted) by this
   ADR; they predicted the move, this records its shape.
 
 ## Considered alternatives
@@ -133,4 +133,24 @@ survive the move unchanged; only their physical location in the docs tree change
 - **History import via `filter-repo` + branch + squash-PR.** Rejected — see "Git
   history": the incubator is already a superior, clone-present archive.
 - **Single crate vs three-crate split at migration time.** Not decided here — deferred
-  to the runbook; ADR-0008's layout supports either.
+  to the runbook; dsp-cli/ADR-0008's layout supports either.
+
+## Amendment (2026-09-19) — how the migration was actually executed
+
+`dsp-cli` landed in `dsp-repository` as a **root peer** of the areas — not nested
+under an area, not under `modules/` — per an amendment to root ADR-0002 that lands
+with the crate. It arrived as a **single crate** keeping its own name; the
+three-crate split considered above was not exercised. It keeps an **independent
+version line**: `0.2.1`, unchanged by the move — the `[workspace.package] version`
+in `dsp-repository`'s workspace manifest does not apply to it, resolving the
+"Versioning" question above in favour of the independent lean.
+
+Its ADRs stayed **colocated** at `dsp-cli/docs/adr/`, keeping their own 0001-series
+rather than folding into the root sequence, and are now cited qualified as
+`dsp-cli/ADR-NNNN` from everywhere, including from inside `dsp-cli/` itself, per
+root ADR-0006's citation rule.
+
+There was **no git history import**, as decided above: the crate arrived as a
+verbatim copy of `dsp-incubator` at commit `cde8b317d40bc3cf7597f5fb51a566529de9799e`.
+The incubator remains the archive of the planning history (`docs/design/`,
+`docs/PROJECT_PLAN.md`) that did not move.

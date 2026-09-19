@@ -37,7 +37,7 @@ DSP_TOKEN=<jwt>
 
 This is *technically* implicit state but is the "good kind": filesystem-anchored, visible to the user, freshly discovered per invocation.
 Same flavour as `git` discovering `.git`, `cargo` discovering `Cargo.toml`, `direnv` walking up the tree.
-It's a carve-out from ADR-0003's "no implicit session state" rule because it answers "where am I working" (visible-filesystem state),
+It's a carve-out from dsp-cli/ADR-0003's "no implicit session state" rule because it answers "where am I working" (visible-filesystem state),
 not "what context did the prior command leave me in" (invisible in-process state).
 
 Security caveat: `.env` files commonly leak secrets when committed. The CLI ships a `.env.example` template and the docs explicitly instruct gitignore.
@@ -68,7 +68,7 @@ dsp auth logout --server <s>                  # clears cached token for that ser
 v2 schema (PR #6) adds optional `user`, `acquired_at`, `expires_at` fields to `ServerEntry`. Legacy token-only entries continue to parse.
 The bump is additive and backward-compatible — no new ADR is warranted.
 - **OS keyring integration** (macOS Keychain, Linux Secret Service, Windows Credential Manager) is a v2 polish — not blocking.
-- This is **identity state**, distinct from the "session state" forbidden by ADR-0003.
+- This is **identity state**, distinct from the "session state" forbidden by dsp-cli/ADR-0003.
   Identity answers "who am I"; session would answer "what context did the prior command leave me in".
 
 ## Behaviour without auth
@@ -156,13 +156,20 @@ See `src/client/jwt.rs`'s module doc for the equivalent framing at the code leve
 This ADR's auth-state disclosure requirement (a stderr line, a prose footer, or a JSON `_meta.auth`
 key) presumes a `Renderer` to carry it. Three commands have none: `dsp docs` (empty `_meta`), `dsp
 auth token` (no `_meta` at all — the bare token is the whole output), and now `dsp vre sparql query`
-([ADR-0016](0016-sparql-passthrough.md)). Naming the carve-out explicitly here, rather than leaving
+([dsp-cli/ADR-0016](0016-sparql-passthrough.md)). Naming the carve-out explicitly here, rather than leaving
 three commands as undocumented exceptions to "every command discloses":
 
 > A no-`Renderer` command discloses nothing — there is no `_meta`, no prose footer, and no stderr
 > line to carry it.
 
 For `dsp vre sparql query` specifically: its stdout is **unsanitised store bytes by contract**
-(ADR-0016) — an accepted risk, not an oversight — and the sanitisation duty moves to the stderr prose
+(dsp-cli/ADR-0016) — an accepted risk, not an oversight — and the sanitisation duty moves to the stderr prose
 path instead, where a store rejection's text is reported (control-character-stripped and capped) on a
 non-`2xx` relay.
+
+## Amendment (2026-09-19) — no `.env.example` template
+
+The CLI no longer ships a `.env.example` template (it was not carried over in the migration to
+`dsp-repository`, dsp-cli/ADR-0014). The `.env` guidance — which variables to set and the
+gitignore caveat — now lives in [Testing Strategy](../../../docs/src/dsp-cli/testing-strategy.md#general-configuration-variables)'s
+"General configuration variables" section.

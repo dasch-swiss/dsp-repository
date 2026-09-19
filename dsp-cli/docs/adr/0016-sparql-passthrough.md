@@ -1,8 +1,8 @@
 # SPARQL passthrough as a deliberate raw-surface carve-out
 
 `dsp-cli` exists to abstract DSP-API's RDF surface behind domain-expert vocabulary
-([ADR-0001](0001-vocabulary-divergence.md)) and to render every answer through one of five formats
-([ADR-0003](0003-chaining-and-output.md)). Both assume dsp-cli knows the *shape* of the answer.
+([dsp-cli/ADR-0001](0001-vocabulary-divergence.md)) and to render every answer through one of five formats
+([dsp-cli/ADR-0003](0003-chaining-and-output.md)). Both assume dsp-cli knows the *shape* of the answer.
 DSP-API's new `POST /admin/sparql/query` (dsp-api `e4ef2e348`, 2026-08-07, DEV-6734 milestone 1)
 breaks that assumption on purpose: the caller writes arbitrary SPARQL, the store chooses the
 serialization, and the server relays status, media type and bytes untouched. The capability exists
@@ -10,8 +10,8 @@ because closing the triplestore's port removed staff's only route to questions t
 not answer; the project brief's stance is *"intelligence lives in the driver, keep the passthrough
 dumb."* dsp-cli is named the primary headless/agent client of that surface. This ADR records how
 `dsp vre sparql query` ships as a **thin, unabstracted relay**, and which of dsp-cli's usual rules it
-narrowly and explicitly suspends to do so. Depends on ADR-0001, ADR-0002, ADR-0003, ADR-0004,
-ADR-0007, ADR-0012. Amends ADR-0001, ADR-0003, ADR-0007, ADR-0008, ADR-0009, ADR-0010, ADR-0012.
+narrowly and explicitly suspends to do so. Depends on dsp-cli/ADR-0001, dsp-cli/ADR-0002, dsp-cli/ADR-0003, dsp-cli/ADR-0004,
+dsp-cli/ADR-0007, dsp-cli/ADR-0012. Amends dsp-cli/ADR-0001, dsp-cli/ADR-0003, dsp-cli/ADR-0007, dsp-cli/ADR-0008, dsp-cli/ADR-0009, dsp-cli/ADR-0010, dsp-cli/ADR-0012.
 
 Full design decisions (D1–D19) live in plan
 [035-vre-sparql-query](../design/plans/035-vre-sparql-query/implementation-plan.md); this ADR
@@ -21,11 +21,11 @@ records the load-bearing shape for future readers who won't read the plan.
 
 `dsp vre sparql query` suspends three rules dsp-cli otherwise obeys:
 
-1. **Vocabulary (ADR-0001).** The command surface still speaks CLI vocabulary, but the **payload**
+1. **Vocabulary (dsp-cli/ADR-0001).** The command surface still speaks CLI vocabulary, but the **payload**
    is raw, and the words `SPARQL` and `triplestore` are admissible in this command's help, docs and
    messages. They are not DSP-API jargon being smuggled in: SPARQL is a W3C standard the user
    invokes directly, and a user who asks for it has opted into the layer below.
-2. **Output (ADR-0003).** No `Renderer`, no `--format`, no envelope. The response body is written to
+2. **Output (dsp-cli/ADR-0003).** No `Renderer`, no `--format`, no envelope. The response body is written to
    stdout byte-verbatim — no added trailing newline, no re-encoding, no control-character stripping.
    The one deviation from pure relay is a default `Accept` of `application/sparql-results+json`,
    chosen for the headless/agent audience over the store's XML default, overridable via `--accept`
@@ -35,7 +35,7 @@ records the load-bearing shape for future readers who won't read the plan.
    `*/*` is not equivalent to a genuinely absent header (live-verified: `*/*` returns JSON from this
    store, absent `Accept` returns XML). `--accept xml` is the documented way to ask for the store's
    own default explicitly.
-3. **Exit semantics (ADR-0012).** stdout carries results only, byte-exact and **unsanitised by
+3. **Exit semantics (dsp-cli/ADR-0012).** stdout carries results only, byte-exact and **unsanitised by
    contract** — a user redirecting to a file gets exactly the bytes the store sent. A store rejection
    (any non-`2xx` outside dsp-api's own typed-error table) is reported on stderr with the store's own
    text — there sanitised (control characters stripped, kept `\n`/`\t`) and capped at 200 characters,
@@ -55,7 +55,7 @@ re-implemented in the action layer).
 `DspClient::sparql_query` returns `SparqlResponse { status: u16, content_type: Option<String>, body:
 Vec<u8> }` — the **one** method on the trait that returns a relay struct rather than a parsed domain
 model. It lives in `src/client/sparql.rs`, deliberately not `src/model/`: every `src/model/` type is
-a *translated domain* type (ADR-0008's layer-4 contract), and this is transport-shaped (an HTTP
+a *translated domain* type (dsp-cli/ADR-0008's layer-4 contract), and this is transport-shaped (an HTTP
 status and a MIME string), not a parsed model. `Debug` is hand-written (prints the body's length, not
 its bytes) so the codebase's standard `assert!(…, "{result:?}")` idiom and any `tracing::debug!(?resp)`
 never dump unsanitised, potentially large store output into logs.
@@ -97,7 +97,7 @@ shape.
 ## Consequences
 
 - A third no-Renderer command (after `dsp docs` and `dsp auth token`), so that pattern is now a real
-  category — ADR-0003 names the rule, not just a third data point.
+  category — dsp-cli/ADR-0003 names the rule, not just a third data point.
 - Raw SPARQL results are outside dsp-cli's output contract: a future change to how the store
   serializes results is not a dsp-cli breaking change.
 - `SystemAdmin` is required, and the endpoint is off by default per deployment
@@ -106,11 +106,11 @@ shape.
   asserting one (disabled flag, older dsp-api, misconfigured store dataset, wrong `--server`) — none of
   them is distinguishable from the client side, because an unregistered route returns a bare `404`.
 - The `update` half (`dsp vre sparql update`) is deferred to DEV-6734 milestone 2 (not yet started
-  server-side) and will engage ADR-0004's write-operations question separately. It is also the
+  server-side) and will engage dsp-cli/ADR-0004's write-operations question separately. It is also the
   trigger to reconsider whether `DspClient` should split into a curated trait and a raw one: one
   outlier method names a one-off exception; two would make a category.
 - `--query-file` reads one file the user authored for one logical operation — this is not the
-  file-roundtripping/bulk-from-file pattern ADR-0004 forbids, and is recorded here so it is not
+  file-roundtripping/bulk-from-file pattern dsp-cli/ADR-0004 forbids, and is recorded here so it is not
   re-argued.
 - The store's own error body is contractually opaque (dsp-api's E2E spec asserts only non-emptiness);
   dsp-cli relays it, never parses it.
@@ -134,5 +134,5 @@ shape.
 - **A separate `dsp admin` area.** Rejected — dsp-cli is a power-user tool throughout, and
   `SystemAdmin` is ordinary server-side access control, the same JWT/permission gate every command
   already obeys.
-- **Reject `--query-file` under ADR-0004.** Rejected on reading — that ADR's boundary is bulk
+- **Reject `--query-file` under dsp-cli/ADR-0004.** Rejected on reading — that ADR's boundary is bulk
   file-roundtripping, not "a command may read a file".

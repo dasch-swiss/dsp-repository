@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 1
-last_verified_commit: 8c9bde61fbf27560520a480df811785e77f21521
+last_verified_commit: c5497ca4e209a876b972d957f10b54255e20f114
 date: 2026-09-16
 ---
 
@@ -22,10 +22,13 @@ three of the four planned components hold only a `CONTEXT.md` at their target pa
 (`areas/access/cpe` has no files yet). The rest of
 ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`,
 `areas/archive/` and `areas/access/`, beside `shared/`, `mosaic/`, `vitrinli/` and
-`chischtli/` at the root, so read the globs here as current state. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
+`chischtli/` at the root, so read the globs here as current state. `dsp-cli/` is a sixth root,
+outside the `services → shared, mosaic` arrow entirely (ADR-0002 amendment): it is a client of
+every area rather than a member of one, no area depends on it, and it depends on no area
+crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `modules/editor/CONTEXT.md`,
 `modules/dpe/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
-`chischtli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
+`chischtli/CONTEXT.md`, `dsp-cli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
 
 ## Components
 
@@ -336,6 +339,35 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
 
+### dsp-cli
+
+- **Paths:** `:(glob)dsp-cli/**`
+- **Purpose:** `dsp-cli` — an AI-agent-friendly command-line client for the DaSCH Service
+  Platform: it talks to a DSP-API server using researcher vocabulary (data-models,
+  resource-types, fields) instead of DSP-API's raw RDF/JSON-LD surface. Read-only in v1,
+  covering the VRE only; the Deposit, Archive and Access moduliths are future targets, all
+  reached over the wire. A root peer of the areas (ADR-0002), not a member of one: no area
+  depends on it, and it is a client of every area.
+- **Key entities:** `DspClient`, `HttpDspClient`, `Renderer`, `Diagnostic`, `Config`
+- **Public interface:** the `dsp` command surface (`auth`; `vre project | data-model |
+  resource-type | resource | vocabulary | sparql`; `docs`); the `dsp-cli` crate published on
+  crates.io.
+- **Local-context kit:** `dsp-cli/CLAUDE.md`, `dsp-cli/CONTEXT.md`, `dsp-cli/src/cli/mod.rs`,
+  `dsp-cli/src/client/mod.rs`, `dsp-cli/src/render/mod.rs`, `dsp-cli/src/diagnostic.rs`,
+  `dsp-cli/docs/adr/0008-internal-architecture.md`
+- **Depends on:** nothing in the workspace; third-party: clap, reqwest, serde, url, insta,
+  wiremock
+- **Used by:** — (top of the dependency graph; a published binary)
+- **Boundary rules:**
+  - No dependency on an area crate (**static-analysis**, `cargo publish -p dsp-cli --dry-run`
+    in `check.yml`; **structure** after ADR-0001).
+  - A `shared-*` dependency only if that crate is itself published to crates.io (same gate).
+  - Integrates with an area over its public HTTP surface only, never by Rust import
+    (**review**).
+  - Live tests never run in the default suite (**static-analysis**,
+    `check-live-tests-ignored.sh`).
+- **Durable state:** `~/.config/dsp-cli/auth.toml` — single writer, dsp-cli.
+
 ### areas/archive (Spycherli)
 
 - **status: planned**
@@ -546,6 +578,7 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
 | A client-side framework, WASM bundle, client router or BFF for a new screen | Splits UI state between two runtimes; the page stops being citable by URL and readable by a machine without a client | A Maud view in the `web` crate plus a Datastar-enhanced fragment (ADR-0004) | review |
 | Rendering a landing page differently by `Accept` | Leaves machine representations without a URL to cite or link; types every error path per media type | A dedicated URL per representation, `describedby` links, a `303` from the page as the only negotiation (ADR-0005) | static-analysis (the four `dpe-server` handler tests that bear on *this* clause — `a_browser_gets_the_page`, `a_harvester_asking_for_a_representation_is_redirected_to_it`, `every_landing_page_answer_varies_on_accept`, `an_unknown_shortcode_never_redirects_whatever_it_was_asked_for`; ADR-0005's full list is in `## Conventions`) |
 | A second writer for a corpus file (`records/` from the server at startup) | "Who wrote this?" has no single answer; a tracked directory changes under git | One recipe (`just fetch-records`) as the writer; the server reads only | review (open) |
+| A dsp-cli dependency on an area crate | Turns the CLI into a second, out-of-process consumer of code meant to run inside one area's modulith on its own origin | Call the area's public HTTP surface, as any external client does | static-analysis (`cargo publish --dry-run`) → structure (ADR-0001) |
 
 ## Cross-cutting concerns
 
@@ -557,7 +590,8 @@ Not code components; they span the repo and are staleness-exempt here:
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
-  `verify-checksums.sh`, `check-adr-refs.sh`), release-please config
+  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`),
+  release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,
   `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`

@@ -10,7 +10,7 @@
 //! test-only helper (the tabular renderers moved to the shared engine in plan
 //! 020).
 //!
-//! **ADR-0007 disclosure/footer writers** (`render_table_disclosure`,
+//! **dsp-cli/ADR-0007 disclosure/footer writers** (`render_table_disclosure`,
 //! `render_prose_footer`): the auth-state disclosure line written by every
 //! noun method. Tabular formats (lines, csv, tsv) write it to `stderr`;
 //! prose/json carry it on stdout — via a footer (`render_prose_footer`) or the
@@ -18,7 +18,7 @@
 //! These helpers centralise the 31-site duplication without adding a new module
 //! (accepted trade-off at plan 019 design review, 2026-06-11). Since plan 030
 //! they also carry the schema-side `--count` caveat (`MetaContext.count_caveat`)
-//! alongside the ADR-0007 `filter_warning`, combined via the private
+//! alongside the dsp-cli/ADR-0007 `filter_warning`, combined via the private
 //! `disclosure_suffix` helper.
 //!
 //! **Shared table engine** (`render_table`, `TableSpec`, `TableOptions`,
@@ -58,7 +58,7 @@ pub(crate) fn csv_field(s: &str) -> String {
     }
 }
 
-/// Write the ADR-0007 auth-state disclosure line to `err` (stderr).
+/// Write the dsp-cli/ADR-0007 auth-state disclosure line to `err` (stderr).
 ///
 /// Tabular formats (lines, csv, tsv) call this once per noun method, writing
 /// `[{auth_state} on {server_label}]\n` to their stderr sink. Prose and JSON
@@ -76,7 +76,7 @@ pub(crate) fn render_table_disclosure(err: &mut dyn Write, meta: &MetaContext) -
     }
 }
 
-/// Write the ADR-0007 footer (blank line then disclosure) to `out` (stdout).
+/// Write the dsp-cli/ADR-0007 footer (blank line then disclosure) to `out` (stdout).
 ///
 /// Prose renderer calls this once per noun method. The helper owns the
 /// preceding blank line, so a prose call site is exactly one line. The
@@ -96,7 +96,7 @@ pub(crate) fn render_prose_footer(out: &mut dyn Write, meta: &MetaContext) -> io
     }
 }
 
-/// Combine `filter_warning` (ADR-0007, instance-side), `count_caveat`
+/// Combine `filter_warning` (dsp-cli/ADR-0007, instance-side), `count_caveat`
 /// (schema-side `--count`, plan 030), and `count_cost` (`vocabulary list
 /// --count` cost disclosure, plan 034) into one disclosure suffix. `None`
 /// when none are set. This is the SAME suffix both `render_table_disclosure`
@@ -137,7 +137,7 @@ pub enum HeaderMode {
 /// Per-format quoting strategy, dispatched inside `render_table`.
 ///
 /// All three formats neutralise ASCII control characters via
-/// `replace_control_chars` (ADR-0003), so a server-controlled cell can never
+/// `replace_control_chars` (dsp-cli/ADR-0003), so a server-controlled cell can never
 /// emit a raw ESC/DEL/etc. to the terminal or corrupt the delimited structure.
 /// They differ in separator and additional quoting:
 /// - `Csv` → `","`; `replace_control_chars` then RFC-4180 quoting via `csv_field`
@@ -304,7 +304,7 @@ pub(crate) const RESOURCE_DESCRIBE_COLUMNS: &[&str] = &[
 ];
 
 /// Column set for `resource describe --values` (long-format, one row per
-/// value). `label`/`iri` are the leading key columns (ADR-0013 option 1).
+/// value). `label`/`iri` are the leading key columns (dsp-cli/ADR-0013 option 1).
 pub(crate) const RESOURCE_DESCRIBE_VALUES_COLUMNS: &[&str] =
     &["label", "iri", "field", "field_label", "value_type", "value", "comment"];
 
@@ -840,7 +840,7 @@ mod tests {
         assert_eq!(String::from_utf8(buf).unwrap(), "a b\n");
     }
 
-    // ── render_table: csv/tsv control-char neutralisation (ADR-0003) ──────────
+    // ── render_table: csv/tsv control-char neutralisation (dsp-cli/ADR-0003) ──────────
 
     #[test]
     fn csv_mode_neutralises_control_chars() {

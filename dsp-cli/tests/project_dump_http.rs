@@ -342,11 +342,11 @@ async fn trigger_409_empty_body_returns_server_error() {
         matches!(err, Diagnostic::ServerError(_)),
         "409 with empty body must map to ServerError"
     );
-    // ADR-0001: user-facing error messages must not contain the DSP-API word "export".
+    // dsp-cli/ADR-0001: user-facing error messages must not contain the DSP-API word "export".
     if let Diagnostic::ServerError(msg) = &err {
         assert!(
             !msg.to_lowercase().contains("export"),
-            "ServerError message must not contain 'export' (ADR-0001): {msg}"
+            "ServerError message must not contain 'export' (dsp-cli/ADR-0001): {msg}"
         );
     }
 }

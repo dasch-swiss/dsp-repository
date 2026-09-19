@@ -3,7 +3,7 @@
 //! Types here are the dsp-cli vocabulary for data-model structure data,
 //! surfaced by `dsp vre data-model structure`. DSP-API wire types live inside
 //! `src/client/http.rs` and are never exposed above the client layer. See
-//! ADR-0001 and ADR-0008.
+//! dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 //!
 //! Key CONTEXT.md vocabulary: structure, relation. Wire deserialization
 //! (DSP-API `rdfs:subClassOf`, `owl:Restriction`, `knora-api:objectType`,
@@ -18,7 +18,7 @@ use std::fmt;
 /// A describe-shaped DETAIL struct (like `DataModelDetail`), passed directly to
 /// the renderer. Carries the baseline data-model name (for prose headers and
 /// cross-data-model tagging) and the full sorted relation list. No `serde` derive:
-/// wire deserialization stays in `src/client/http.rs`. See ADR-0001 / ADR-0008
+/// wire deserialization stays in `src/client/http.rs`. See dsp-cli/ADR-0001 / dsp-cli/ADR-0008
 /// and the CONTEXT.md "Structure" / "Relation" entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataModelStructure {
@@ -47,7 +47,7 @@ pub struct DataModelStructure {
 ///   `knora-base`, etc.).
 ///
 /// No `serde` derive: wire deserialization stays in `src/client/http.rs`. See
-/// ADR-0001 / ADR-0008 and the CONTEXT.md "Relation" entry.
+/// dsp-cli/ADR-0001 / dsp-cli/ADR-0008 and the CONTEXT.md "Relation" entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Relation {
     /// Source resource-type local name (IRI fragment, e.g. `letter`).

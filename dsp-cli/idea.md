@@ -22,7 +22,7 @@ Existing ways to interact with the DSP:
   Exposes much of the system's internal complexity and produces verbose responses that burn AI-agent context.
 
 `dsp-cli` is a third, complementary interaction surface — built for the gap between DSP-APP (human-only) and DSP-API (verbose and complex).
-It is not a replacement for either; it sits next to `dsp-tools` with a sharp scope boundary (see ADR-0004).
+It is not a replacement for either; it sits next to `dsp-tools` with a sharp scope boundary (see dsp-cli/ADR-0004).
 
 ## Vision
 
@@ -89,25 +89,25 @@ The feature scope of `dsp-cli` is not defined up front and grows over time as co
 
 Boundary with `dsp-tools`: `dsp-tools` owns file-roundtripping declarative bulk operations (project JSON, XML data, Excel inputs).
 `dsp-cli` owns per-command agent-interactive operations.
-The two tools touch some of the same data but never duplicate each other's interaction modes. See ADR-0004 for the explicit rule.
+The two tools touch some of the same data but never duplicate each other's interaction modes. See dsp-cli/ADR-0004 for the explicit rule.
 
 ## How decisions are recorded
 
 This repository is set up so that anyone — human or AI agent — entering at this file can reach every relevant artefact within one hop.
 
-- **[`CONTEXT.md`](./CONTEXT.md)** — the glossary. The vocabulary the codebase commits to, with the synonyms we avoid and the ambiguities we've flagged. Read this first.
+- **[`CONTEXT.md`](./CONTEXT.md)** — the glossary. The vocabulary the codebase commits to, with the synonyms we avoid and the ambiguities we've flagged, including the practices for maintaining the domain language. Read this first.
 - **[`docs/adr/`](./docs/adr/)** — Architecture Decision Records. Each one captures a load-bearing decision with rationale and the alternatives we rejected.
   The ADRs are not user documentation; they're the answer to "why is the code shaped this way?".
-- **[`docs/dev/`](./docs/dev/)** — contributor-facing documentation, including the practices for maintaining the domain language
-  ([`domain-language.md`](./docs/dev/domain-language.md)).
+- **[`docs/src/dsp-cli/`](../docs/src/dsp-cli/)** — contributor-facing documentation in the repository book: architecture,
+  testing strategy, and usage. See [`CLAUDE.md`](./CLAUDE.md)'s documentation index.
 - **[`docs/topics/`](./docs/topics/)** — end-user documentation, embedded into the binary and surfaced via `dsp docs <topic>`.
   Conceptual, crosscutting; the agent's encyclopaedia for the CLI.
-  v1 ships nine topics (`dsp-cli`, `dsp`, `concepts`, `identifiers`, `connecting`, `output`, `workflows`, `errors`, `dsp-tools`); see ADR-0010.
+  v1 ships nine topics (`dsp-cli`, `dsp`, `concepts`, `identifiers`, `connecting`, `output`, `workflows`, `errors`, `dsp-tools`); see dsp-cli/ADR-0010.
 - **Agent skill** — the Claude Code skill that announces `dsp-cli` to AI agents is no longer in this repo; it now lives in
-  [`dasch-claude-plugins`](https://github.com/dasch-swiss/dasch-claude-plugins) (`misc:dsp-cli`), distributed via the plugin marketplace (see ADR-0011).
+  [`dasch-claude-plugins`](https://github.com/dasch-swiss/dasch-claude-plugins) (`misc:dsp-cli`), distributed via the plugin marketplace (see dsp-cli/ADR-0011).
 
 ## Status
 
 Personal exploratory project. If it proves valuable in practice, it will migrate to the `dasch-swiss` GitHub organisation —
 most likely as a crate inside the `dsp-repository` Cargo workspace.
-Implementation language is Rust (ADR-0005); distribution during the personal phase is `cargo install --path .` (the agent skill lives in `dasch-claude-plugins`, not this repo — ADR-0011).
+Implementation language is Rust (dsp-cli/ADR-0005); distribution during the personal phase is `cargo install --path .` (the agent skill lives in `dasch-claude-plugins`, not this repo — dsp-cli/ADR-0011).

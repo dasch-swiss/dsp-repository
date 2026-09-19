@@ -2,7 +2,7 @@
 //!
 //! This module is the home for dependency-free helpers that may be imported
 //! from any layer (`client`, `render`, …) without creating a cross-layer
-//! dependency (ADR-0008). Unlike `src/client/` or `src/render/`, `src/util/`
+//! dependency (dsp-cli/ADR-0008). Unlike `src/client/` or `src/render/`, `src/util/`
 //! imports from no other `dsp-cli` layer; all layers may import from it.
 
 pub(crate) mod text;

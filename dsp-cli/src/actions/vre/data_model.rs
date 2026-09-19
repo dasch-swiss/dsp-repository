@@ -2,7 +2,7 @@
 //!
 //! Phase 5 implements `list` (the first data-model read command) establishing
 //! the per-noun `Renderer::data_models` + `DataModelListView` view-struct pattern.
-//! See ADR-0008.
+//! See dsp-cli/ADR-0008.
 
 use std::path::Path;
 
@@ -15,8 +15,8 @@ use crate::render::{DataModelListView, MetaContext, Renderer};
 
 /// List all data-models in a project.
 ///
-/// Authentication is optional (public endpoint per ADR-0007). Reads `DSP_TOKEN`
-/// from the environment (env wins over cache per ADR-0007), and delegates all
+/// Authentication is optional (public endpoint per dsp-cli/ADR-0007). Reads `DSP_TOKEN`
+/// from the environment (env wins over cache per dsp-cli/ADR-0007), and delegates all
 /// work to `run_list_impl` with injectable seams for deterministic testing.
 pub fn list(
     args: &DataModelListArgs,
@@ -115,8 +115,8 @@ fn run_list_impl(
 
 /// Describe a single data-model.
 ///
-/// Authentication is optional (public endpoint per ADR-0007). Reads `DSP_TOKEN`
-/// from the environment (env wins over cache per ADR-0007), and delegates all
+/// Authentication is optional (public endpoint per dsp-cli/ADR-0007). Reads `DSP_TOKEN`
+/// from the environment (env wins over cache per dsp-cli/ADR-0007), and delegates all
 /// work to `run_describe_impl` with injectable seams for deterministic testing.
 pub fn describe(
     args: &DataModelDescribeArgs,
@@ -137,7 +137,7 @@ pub fn describe(
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. The data-model endpoint is
-/// public (ADR-0007), so a corrupt or missing `auth.toml` must still describe
+/// public (dsp-cli/ADR-0007), so a corrupt or missing `auth.toml` must still describe
 /// anonymously.
 fn run_describe_impl(
     args: &DataModelDescribeArgs,
@@ -223,8 +223,8 @@ fn run_describe_impl(
 
 /// Show the structure of a single data-model (links + inheritance relations).
 ///
-/// Authentication is optional (public endpoint per ADR-0007). Reads `DSP_TOKEN`
-/// from the environment (env wins over cache per ADR-0007), and delegates all
+/// Authentication is optional (public endpoint per dsp-cli/ADR-0007). Reads `DSP_TOKEN`
+/// from the environment (env wins over cache per dsp-cli/ADR-0007), and delegates all
 /// work to `run_structure_impl` with injectable seams for deterministic testing.
 pub fn structure(
     args: &DataModelStructureArgs,
@@ -245,7 +245,7 @@ pub fn structure(
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. The data-model endpoint is
-/// public (ADR-0007), so a corrupt or missing `auth.toml` must still show structure
+/// public (dsp-cli/ADR-0007), so a corrupt or missing `auth.toml` must still show structure
 /// anonymously.
 fn run_structure_impl(
     args: &DataModelStructureArgs,

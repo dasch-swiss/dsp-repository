@@ -1,6 +1,6 @@
 //! Actions for `dsp vre sparql query` (plan 035).
 //!
-//! Deliberately does **not** abstract DSP-API (ADR-0016): the response body
+//! Deliberately does **not** abstract DSP-API (dsp-cli/ADR-0016): the response body
 //! is a store-authored document in a store-negotiated media type, and
 //! dsp-cli does not interpret it. This is the third no-`Renderer` command
 //! (after `dsp docs` and `dsp auth token`, D2) — its output goes to an
@@ -198,7 +198,7 @@ pub fn run(args: &SparqlQueryArgs, cfg: &Config, client: &dyn DspClient) -> Resu
 /// `Diagnostic` variant and exit code from inside `client.sparql_query` —
 /// this function's status split therefore only ever sees `Ok(SparqlResponse)`
 /// and must NOT re-implement any of D8's table (that knowledge stays in
-/// `src/client/`, per ADR-0001).
+/// `src/client/`, per dsp-cli/ADR-0001).
 ///
 /// - `env_token`/`cache_path`: injectable seams (mirrors `project::run_impl`) so unit tests never
 ///   touch the real environment or `~/.config/dsp-cli/`.

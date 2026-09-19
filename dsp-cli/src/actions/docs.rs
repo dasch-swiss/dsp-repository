@@ -5,7 +5,7 @@
 //! or a plain prose topic list, both format-agnostic, so the five-format renderer
 //! matrix does not apply and `DocsArgs` carries no `--format` flag. Output goes to
 //! an injected writer via the `run` / `run_impl` seam (the same testability pattern
-//! as `auth::status`). See ADR-0010.
+//! as `auth::status`). See dsp-cli/ADR-0010.
 //!
 //! Topics are authored as markdown under `docs/topics/` and embedded at compile
 //! time with `include_str!` — a missing file is a compile error.
@@ -28,7 +28,7 @@ pub struct Topic {
     pub body: &'static str,
 }
 
-/// The v1 topic catalog (ADR-0010, expanded by plan 018). Table order is the
+/// The v1 topic catalog (dsp-cli/ADR-0010, expanded by plan 018). Table order is the
 /// display order in the topic list; it follows a first-read progression.
 const TOPICS: &[Topic] = &[
     Topic {
@@ -93,7 +93,7 @@ pub fn run(args: &DocsArgs) -> Result<(), Diagnostic> {
 ///
 /// `_meta` is declared first so serde's insertion-order serialisation places it
 /// before `data` in the output — a load-bearing ordering guaranteed by the
-/// `preserve_order` feature on `serde_json` (ADR-0003). For `dsp docs -j` there
+/// `preserve_order` feature on `serde_json` (dsp-cli/ADR-0003). For `dsp docs -j` there
 /// is no server/auth context, so `_meta` is the empty object `{}` (plan 020 D4).
 #[derive(Serialize)]
 struct DocsJsonEnvelope<'a> {
@@ -102,7 +102,7 @@ struct DocsJsonEnvelope<'a> {
 }
 
 /// The empty `_meta` block for `dsp docs -j` (no server/auth context applies to
-/// embedded documentation). Serialises as `{}`. See plan 020 D4 and ADR-0003
+/// embedded documentation). Serialises as `{}`. See plan 020 D4 and dsp-cli/ADR-0003
 /// amendment for the empty-`_meta` carve-out.
 #[derive(Serialize)]
 struct EmptyMeta {}
@@ -136,7 +136,7 @@ fn run_impl(args: &DocsArgs, out: &mut dyn Write) -> Result<(), Diagnostic> {
 /// Uses compact `serde_json::to_string` (same style as `src/render/json.rs`) so
 /// `dsp docs -j` output is visually uniform with other `dsp … -j` commands.
 /// `_meta` is first because it is the first declared field on `DocsJsonEnvelope`
-/// (ADR-0003, plan 020 D4).
+/// (dsp-cli/ADR-0003, plan 020 D4).
 fn write_topic_index_json(out: &mut dyn Write) -> Result<(), Diagnostic> {
     let data: Vec<TopicIndexEntry<'_>> = TOPICS
         .iter()
@@ -149,7 +149,7 @@ fn write_topic_index_json(out: &mut dyn Write) -> Result<(), Diagnostic> {
     Ok(())
 }
 
-/// Exact-match topic lookup. No partial/prefix matching (ADR-0010: silent-shadowing
+/// Exact-match topic lookup. No partial/prefix matching (dsp-cli/ADR-0010: silent-shadowing
 /// risk when topics are added later).
 fn find_topic(name: &str) -> Option<&'static Topic> {
     TOPICS.iter().find(|t| t.name == name)
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn find_topic_is_exact_not_prefix() {
-        // "concept" must NOT match "concepts" (ADR-0010: no partial matching).
+        // "concept" must NOT match "concepts" (dsp-cli/ADR-0010: no partial matching).
         assert!(find_topic("concept").is_none());
         assert!(find_topic("dsp-").is_none());
     }
@@ -314,7 +314,7 @@ mod tests {
 
     #[test]
     fn all_topic_bodies_are_present_and_well_formed() {
-        // Smoke test in lieu of brittle per-body snapshots (ADR-0009 exception, plan
+        // Smoke test in lieu of brittle per-body snapshots (dsp-cli/ADR-0009 exception, plan
         // 018 D5): every catalogued body is non-empty and starts with an h1 heading.
         for t in TOPICS {
             assert!(!t.body.trim().is_empty(), "empty body for topic {}", t.name);

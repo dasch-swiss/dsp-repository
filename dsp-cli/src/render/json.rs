@@ -13,7 +13,7 @@
 //! consumer always parses one object from stdout: if `.error` is present it
 //! failed, otherwise read `.data`. The `server` lives only in `_meta` — it is
 //! not repeated inside `data`. Key order is deterministic (serde_json
-//! `preserve_order`); `_meta` is always first. See ADR-0003 and ADR-0012.
+//! `preserve_order`); `_meta` is always first. See dsp-cli/ADR-0003 and dsp-cli/ADR-0012.
 
 use std::io::{self, Write};
 
@@ -91,11 +91,11 @@ fn localized_text_array(items: &[crate::model::LocalizedText]) -> Vec<serde_json
         .collect()
 }
 
-/// Build a JSON value object for a single `ValueContent` (per ADR-0013 matrix).
+/// Build a JSON value object for a single `ValueContent` (per dsp-cli/ADR-0013 matrix).
 ///
 /// Key order is deterministic: `value_type` is always first, then type-specific
 /// keys in the order specified by the matrix. Raw server values are kept verbatim
-/// (no sanitisation — ADR-0003 fidelity; sanitisation is prose-only per D7).
+/// (no sanitisation — dsp-cli/ADR-0003 fidelity; sanitisation is prose-only per D7).
 fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
     use serde_json::Map;
     let mut m = Map::new();
@@ -197,7 +197,7 @@ fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
     serde_json::Value::Object(m)
 }
 
-/// Map a `Diagnostic` variant to its stable JSON `kind` string (per ADR-0012).
+/// Map a `Diagnostic` variant to its stable JSON `kind` string (per dsp-cli/ADR-0012).
 fn diagnostic_kind(diag: &Diagnostic) -> &'static str {
     match diag {
         Diagnostic::Usage(_) => "usage",
@@ -213,7 +213,7 @@ fn diagnostic_kind(diag: &Diagnostic) -> &'static str {
 
 impl Renderer for JsonRenderer {
     fn diagnostic(&mut self, diag: &Diagnostic, meta: &MetaContext) -> Result<(), Diagnostic> {
-        // JSON errors emit the full ADR-0012 error envelope to stdout so a JSON
+        // JSON errors emit the full dsp-cli/ADR-0012 error envelope to stdout so a JSON
         // consumer has a single stream to parse (not stdout + stderr).
         let exit_code = diag.exit_category() as u8;
         let obj = json!({
@@ -366,7 +366,7 @@ impl Renderer for JsonRenderer {
 
     fn projects(&mut self, view: &ProjectListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Build data array. Each element uses `json!` with insertion-order keys
-        // (preserve_order feature on serde_json, per ADR-0003).
+        // (preserve_order feature on serde_json, per dsp-cli/ADR-0003).
         // longname None → JSON null.
         let data: Vec<serde_json::Value> = view
             .items
@@ -396,7 +396,7 @@ impl Renderer for JsonRenderer {
     }
 
     fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
-        // `data` is a single object (ADR-0003). Deterministic key order via `json!`
+        // `data` is a single object (dsp-cli/ADR-0003). Deterministic key order via `json!`
         // (preserve_order feature ensures insertion order).
         let description: Vec<serde_json::Value> = project
             .description
@@ -442,7 +442,7 @@ impl Renderer for JsonRenderer {
     }
 
     fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
-        // ADR-0003 single-object envelope. `last_modified` is the full RFC3339
+        // dsp-cli/ADR-0003 single-object envelope. `last_modified` is the full RFC3339
         // string (lossless). `resource_types` is an array of per-resource-type
         // objects (name, iri, label).
         let resource_types: Vec<serde_json::Value> = detail
@@ -477,7 +477,7 @@ impl Renderer for JsonRenderer {
 
     fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Build data array — per-item key order via `json!` insertion order
-        // (preserve_order feature on serde_json, per ADR-0003).
+        // (preserve_order feature on serde_json, per dsp-cli/ADR-0003).
         // label None → JSON null; last_modified None → JSON null; is_builtin → bool.
         let data: Vec<serde_json::Value> = view
             .items
@@ -507,14 +507,15 @@ impl Renderer for JsonRenderer {
 
     fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Build data array — per-item key order via `json!` insertion order
-        // (preserve_order feature on serde_json, per ADR-0003).
+        // (preserve_order feature on serde_json, per dsp-cli/ADR-0003).
         // label None → JSON null; is_builtin → bool.
         //
         // `count` (plan 030) is DELIBERATELY omitted (not emitted as `null`)
         // when the item carries no count — unlike `label`'s always-present
         // null, this keeps `--count`-less output (the only case exercised by
         // today's fixtures/snapshots, since no caller sets `count` yet) byte-
-        // identical to pre-030 output. See docs/design/plans/030-resource-type-count/issues.md.
+        // identical to pre-030 output. See design plan 030-resource-type-count in the
+        // dsp-incubator archive.
         let data: Vec<serde_json::Value> = view
             .items
             .iter()
@@ -555,7 +556,7 @@ impl Renderer for JsonRenderer {
         detail: &crate::model::ResourceTypeDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // ADR-0003 single-object envelope. `_meta` first, `data` is the resource-type
+        // dsp-cli/ADR-0003 single-object envelope. `_meta` first, `data` is the resource-type
         // object. Fields array carries one object per field (name, iri, label,
         // value_type, link_target, cardinality, is_builtin, data_model).
         let fields: Vec<serde_json::Value> = detail
@@ -584,7 +585,8 @@ impl Renderer for JsonRenderer {
         // `count` (plan 030) is DELIBERATELY omitted (not emitted as `null`)
         // when `detail.count` is `None` — keeps `--count`-less output (the
         // only case exercised by today's fixtures/snapshots) byte-identical
-        // to pre-030 output. See docs/design/plans/030-resource-type-count/issues.md.
+        // to pre-030 output. See design plan 030-resource-type-count in the dsp-incubator
+        // archive.
         let mut data = json!({
             "name": detail.name,
             "iri": detail.iri,
@@ -611,7 +613,7 @@ impl Renderer for JsonRenderer {
     }
 
     fn data_model_structure(&mut self, structure: &DataModelStructure, meta: &MetaContext) -> Result<(), Diagnostic> {
-        // ADR-0003 flat-array envelope. Each element carries all 5 keys (none omitted).
+        // dsp-cli/ADR-0003 flat-array envelope. Each element carries all 5 keys (none omitted).
         // Optional values are emitted as JSON null (matching resource_type_describe lines
         // 476-485 which render None Options as null — never skip_serializing_if).
         let data: Vec<serde_json::Value> = structure
@@ -689,7 +691,7 @@ impl Renderer for JsonRenderer {
     }
 
     fn resource_describe(&mut self, detail: &ResourceDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
-        // ADR-0003 single-object envelope. `data` is an object (not array).
+        // dsp-cli/ADR-0003 single-object envelope. `data` is an object (not array).
         // Keys in deterministic order; `None` → JSON null.
         // D3: add `note` to _meta when filter_warning is Some.
         let mut meta_obj = meta_block(meta, 0);
@@ -697,7 +699,7 @@ impl Renderer for JsonRenderer {
             meta_obj["note"] = serde_json::Value::from(fw.as_str());
         }
 
-        // Build data object with explicit key ordering (preserve_order, ADR-0003).
+        // Build data object with explicit key ordering (preserve_order, dsp-cli/ADR-0003).
         let mut data = serde_json::Map::new();
         data.insert("label".into(), serde_json::Value::String(detail.label.clone()));
         data.insert("iri".into(), serde_json::Value::String(detail.iri.clone()));
@@ -842,7 +844,7 @@ impl Renderer for JsonRenderer {
     }
 
     fn vocabulary_describe(&mut self, detail: &VocabularyDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
-        // ADR-0003 single-object envelope. `nodes`/`depth` are ALWAYS present
+        // dsp-cli/ADR-0003 single-object envelope. `nodes`/`depth` are ALWAYS present
         // here (plain `usize` on `VocabularyDetail`, unlike `list`'s Option) —
         // the omit-when-absent rule above does not apply.
         //
@@ -1319,7 +1321,7 @@ mod tests {
         assert_eq!(parsed["_meta"]["server"], "https://api.test.dasch.swiss");
         assert_eq!(parsed["_meta"]["exit_code"], 0);
 
-        // data is a single object (ADR-0003)
+        // data is a single object (dsp-cli/ADR-0003)
         let data = &parsed["data"];
         assert!(data.is_object());
         assert_eq!(data["name"], "beol");

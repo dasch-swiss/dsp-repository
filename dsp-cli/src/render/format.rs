@@ -2,8 +2,8 @@
 //!
 //! `Format` is the render-layer concept that maps a user-chosen output format
 //! to a concrete renderer instance. It is also the `ValueEnum` that clap uses
-//! for the `--format` flag on the six vre leaf commands. See ADR-0003 for the
-//! output-format specification and ADR-0008 for the renderer-layer placement.
+//! for the `--format` flag on the six vre leaf commands. See dsp-cli/ADR-0003 for the
+//! output-format specification and dsp-cli/ADR-0008 for the renderer-layer placement.
 
 use clap::ValueEnum;
 
@@ -17,7 +17,7 @@ use super::{Renderer, TableOptions};
 
 /// Output format for a command.
 ///
-/// `Prose` is the default (per ADR-0003). The other variants map to the
+/// `Prose` is the default (per dsp-cli/ADR-0003). The other variants map to the
 /// machine-readable formats; their renderers began as Phase 1 stubs (only
 /// `diagnostic`) and grow per-noun methods with real data (Phase 3 `dump`,
 /// Phase 4 `projects`, Phase 5 onward).

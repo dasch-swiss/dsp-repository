@@ -2,7 +2,7 @@
 //!
 //! Phase 3 added `dump`; Phase 4 added `list` (the first read command).
 //! Phase 5 added `describe` (the first single-object read command).
-//! See ADR-0008.
+//! See dsp-cli/ADR-0008.
 
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -22,7 +22,7 @@ use crate::render::{DumpDeleteOutcome, DumpEvent, DumpOutcome, MetaContext, Proj
 /// List all projects on the DSP server.
 ///
 /// Authentication is optional (public endpoint per PRD AC 2). Reads `DSP_TOKEN`
-/// from the environment (env wins over cache per ADR-0007), and delegates all
+/// from the environment (env wins over cache per dsp-cli/ADR-0007), and delegates all
 /// work to `run_list_impl` with injectable seams for deterministic testing.
 pub fn list(
     args: &ProjectListArgs,
@@ -109,7 +109,7 @@ fn run_list_impl(
 
 /// Describe a single DSP project.
 ///
-/// Authentication is optional (public endpoint per ADR-0007). Reads `DSP_TOKEN`
+/// Authentication is optional (public endpoint per dsp-cli/ADR-0007). Reads `DSP_TOKEN`
 /// from the environment (env wins over cache), and delegates all work to
 /// `run_describe_impl` with injectable seams for deterministic testing.
 pub fn describe(
@@ -131,7 +131,7 @@ pub fn describe(
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. Project metadata is public
-/// (ADR-0007), so a corrupt or missing `auth.toml` must still describe anonymously.
+/// (dsp-cli/ADR-0007), so a corrupt or missing `auth.toml` must still describe anonymously.
 fn run_describe_impl(
     args: &ProjectDescribeArgs,
     cfg: &Config,
@@ -185,7 +185,7 @@ fn run_describe_impl(
 
 /// Trigger, poll, download, and optionally clean up a project dump.
 ///
-/// Reads `DSP_TOKEN` from the environment (env wins over cache per ADR-0007),
+/// Reads `DSP_TOKEN` from the environment (env wins over cache per dsp-cli/ADR-0007),
 /// uses the real system clock for the default output filename, and delegates
 /// all work to `run_impl` with injectable seams for deterministic testing.
 ///
@@ -260,7 +260,7 @@ fn run_impl(
     cwd: &Path,
 ) -> Result<(), Diagnostic> {
     // ── 1. Resolve token (fail fast) ──────────────────────────────────────────
-    // ADR-0007: a non-blank DSP_TOKEN wins over the cache. A corrupt/unreadable
+    // dsp-cli/ADR-0007: a non-blank DSP_TOKEN wins over the cache. A corrupt/unreadable
     // auth.toml must not mask the env token — tolerate cache-load failures only
     // when the env token would win (mirrors auth::status).
     let env_token_would_win = env_token.as_deref().map(str::trim).map(|s| !s.is_empty()).unwrap_or(false);
@@ -351,7 +351,7 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
     let create_outcome = client.create_project_dump(&cfg.server, &proj.iri, args.skip_assets, &token)?;
 
     // ── 8. Build MetaContext for the final render ─────────────────────────────
-    // Use the shared ADR-0007 helper so _meta.auth uses the same uniform
+    // Use the shared dsp-cli/ADR-0007 helper so _meta.auth uses the same uniform
     // vocabulary as all other commands (presence/origin, not validity).
     let meta = MetaContext {
         server_label: cfg.server.clone(),
@@ -4107,7 +4107,7 @@ mod tests {
     }
 
     /// Corrupt cache + no env token → still succeeds anonymously (never Err).
-    /// Locks the auth-optional fallback in run_describe_impl (ADR-0007).
+    /// Locks the auth-optional fallback in run_describe_impl (dsp-cli/ADR-0007).
     #[test]
     fn describe_corrupt_cache_falls_back_to_anonymous() {
         let dir = TempDir::new().unwrap();

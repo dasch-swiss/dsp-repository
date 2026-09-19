@@ -1,8 +1,8 @@
-//! Renderer layer (3b of ADR-0008) — output formatting.
+//! Renderer layer (3b of dsp-cli/ADR-0008) — output formatting.
 //!
 //! The `Renderer` trait has explicit per-noun methods (prose is irreducibly
 //! per-noun); each format impl is a separate struct (prose, json, lines,
-//! csv, tsv). `MetaContext` threads the auth-state disclosure from ADR-0007
+//! csv, tsv). `MetaContext` threads the auth-state disclosure from dsp-cli/ADR-0007
 //! through every call.
 //!
 //! `Format` is the user-facing enum that maps `--format` flag values to
@@ -106,7 +106,7 @@ pub struct DataModelListView {
 /// resource-type list is sub-scoped to one data-model, and the name must appear
 /// even when `items` is empty (so it cannot be derived from `items[0].iri`).
 /// Threading it through `MetaContext` was rejected — that struct is auth/server
-/// disclosure only (ADR-0007), so overloading it is a worse coupling than this
+/// disclosure only (dsp-cli/ADR-0007), so overloading it is a worse coupling than this
 /// explicit field. Tabular and JSON renderers ignore `data_model`.
 ///
 /// `Clone` is required because the test `RecordingRenderer` stores the view in
@@ -192,12 +192,12 @@ pub struct VocabularyListView {
 }
 
 /// Auth and server context attached to every rendered response.
-/// See ADR-0007.
+/// See dsp-cli/ADR-0007.
 #[derive(Debug, Clone)]
 pub struct MetaContext {
     pub server_label: String,
     pub auth_state: String,
-    /// ADR-0007 silent-filter disclosure for instance-side reads.
+    /// dsp-cli/ADR-0007 silent-filter disclosure for instance-side reads.
     ///
     /// Set to `Some(message)` by instance-side commands (`resource list`,
     /// `resource describe`) to disclose that results may be filtered by the
@@ -215,8 +215,8 @@ pub struct MetaContext {
     /// permission-filtered) and exclude deleted resources. `None` when `--count`
     /// was not used, and always `None` for every command other than
     /// resource-type list/describe. Deliberately a DISTINCT field from
-    /// `filter_warning` — a different semantic contract, not reused (see plan
-    /// docs/design/plans/030-resource-type-count/implementation-plan.md).
+    /// `filter_warning` — a different semantic contract, not reused (see design plan
+    /// 030-resource-type-count in the dsp-incubator archive).
     pub count_caveat: Option<String>,
     /// `dsp vre vocabulary list --count` cost-disclosure note (plan 034).
     ///
@@ -264,41 +264,41 @@ pub trait Renderer {
     /// Render a `dsp vre project list` result (possibly empty).
     ///
     /// `view` carries the items (post-filter, sorted), the pre-filter total,
-    /// and the filter string. `meta` carries auth/server disclosure (ADR-0007).
+    /// and the filter string. `meta` carries auth/server disclosure (dsp-cli/ADR-0007).
     fn projects(&mut self, view: &ProjectListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre project describe` result (a single project).
     ///
     /// `project` is passed directly — no view wrapper, since there is no
     /// aggregate context (no `total`/`filter`) for a single-object describe.
-    /// `meta` carries auth/server disclosure per ADR-0007.
+    /// `meta` carries auth/server disclosure per dsp-cli/ADR-0007.
     fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre data-model list` result (possibly empty).
     ///
     /// `view` carries the items (post-filter, sorted), the pre-filter total,
-    /// and the filter string. `meta` carries auth/server disclosure (ADR-0007).
+    /// and the filter string. `meta` carries auth/server disclosure (dsp-cli/ADR-0007).
     fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre data-model describe` result (a single data-model).
     ///
     /// `detail` is passed directly — no view wrapper, since there is no aggregate
     /// context (no `total`/`filter`) for a single-object describe. `meta` carries
-    /// auth/server disclosure per ADR-0007.
+    /// auth/server disclosure per dsp-cli/ADR-0007.
     fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre resource-type list` result (possibly empty).
     ///
     /// `view` carries the items (post-filter, sorted), the pre-filter total, the
     /// filter string, and the parent data-model name. `meta` carries auth/server
-    /// disclosure (ADR-0007).
+    /// disclosure (dsp-cli/ADR-0007).
     fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre resource-type describe` result (a single resource-type).
     ///
     /// `detail` is passed directly — no view wrapper, since there is no aggregate
     /// context (no `total`/`filter`) for a single-object describe. `meta` carries
-    /// auth/server disclosure per ADR-0007. Built-in field filtering is applied by
+    /// auth/server disclosure per dsp-cli/ADR-0007. Built-in field filtering is applied by
     /// the action (via `--include-builtins`) before this method is called — the
     /// renderer receives only the fields it should render.
     fn resource_type_describe(&mut self, detail: &ResourceTypeDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
@@ -309,14 +309,14 @@ pub trait Renderer {
     /// `data_model_describe`). Built-in relation filtering via `--include-builtins`
     /// is applied by the action before this method is called; the renderer receives
     /// only the relations it should render. `meta` carries auth/server disclosure
-    /// per ADR-0007.
+    /// per dsp-cli/ADR-0007.
     fn data_model_structure(&mut self, structure: &DataModelStructure, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre resource list` result (possibly empty).
     ///
     /// `view` carries the items (post-filter), the pre-filter total, the filter
     /// string, the resource type name, and the pagination state. `meta` carries
-    /// auth/server disclosure (ADR-0007) including the always-present
+    /// auth/server disclosure (dsp-cli/ADR-0007) including the always-present
     /// `filter_warning` for instance-side commands (D3).
     fn resources(&mut self, view: &ResourceListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
@@ -324,7 +324,7 @@ pub trait Renderer {
     ///
     /// `detail` is passed directly — no view wrapper, since there is no aggregate
     /// context for a single-object describe. `meta` carries auth/server disclosure
-    /// per ADR-0007 including the always-present `filter_warning` for instance-side
+    /// per dsp-cli/ADR-0007 including the always-present `filter_warning` for instance-side
     /// commands (D3).
     fn resource_describe(&mut self, detail: &ResourceDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
@@ -332,7 +332,7 @@ pub trait Renderer {
     ///
     /// `view` carries the items (post-filter, sorted by name), the pre-filter
     /// total, the filter string, and whether `--count` was requested. `meta`
-    /// carries auth/server disclosure (ADR-0007) plus the `--count` cost
+    /// carries auth/server disclosure (dsp-cli/ADR-0007) plus the `--count` cost
     /// disclosure (`MetaContext.count_cost`, plan 034).
     fn vocabularies(&mut self, view: &VocabularyListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 

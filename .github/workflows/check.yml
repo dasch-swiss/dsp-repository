@@ -6,6 +6,7 @@
 #   tailwind.pins is complete (part of `just check`; see docs/src/security.md)
 # - doc: checks that the code can be documented without errors
 # - hack: check combinations of feature flags
+# - publish-dry-run: verifies dsp-cli's crates.io packaging with `cargo publish --dry-run`
 
 name: check
 
@@ -84,6 +85,19 @@ jobs:
       # --feature-powerset runs for every combination of features
       - name: cargo hack
         run: cargo hack --feature-powerset --exclude-no-default-features check
+
+  publish-dry-run:
+    runs-on: ubuntu-latest
+    name: check / publish-dry-run / stable
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: cargo publish --dry-run
+        run: cargo publish -p dsp-cli --dry-run --locked
 
   lint-e2e:
     runs-on: ubuntu-latest

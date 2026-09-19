@@ -5,7 +5,7 @@
 //
 // The `just test-live` recipe runs exactly this command.
 //
-// ADR-0009 (testing strategy): live tests are **not** in CI. They require
+// dsp-cli/ADR-0009 (testing strategy): live tests are **not** in CI. They require
 // real environment variables pointing at a live DSP instance. Missing config
 // causes an early-return skip — never a test failure.
 //
@@ -32,26 +32,8 @@ use dsp_cli::client::DspClient;
 use dsp_cli::client::http::HttpDspClient;
 use dsp_cli::config::Config;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Read a required environment variable. Returns `None` and emits a skip
-/// message if the variable is absent or empty.
-fn require_env(name: &str) -> Option<String> {
-    match std::env::var(name) {
-        Ok(v) if !v.trim().is_empty() => Some(v),
-        _ => {
-            eprintln!("skipping live test: {name} not set");
-            None
-        }
-    }
-}
-
-/// Read an optional environment variable. Returns `None` silently if absent.
-fn optional_env(name: &str) -> Option<String> {
-    std::env::var(name).ok().filter(|v| !v.trim().is_empty())
-}
+mod common;
+use common::{optional_env, require_env};
 
 // ---------------------------------------------------------------------------
 // Live test — D4 schema checkpoint
@@ -77,6 +59,7 @@ fn optional_env(name: &str) -> Option<String> {
 ///
 /// Skips cleanly (with `eprintln!`) if required env vars are absent.
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_list_schema_field_assertion() {
     // ── 1. Collect required config ────────────────────────────────────────────
     let server_raw = match require_env("DSP_TEST_SERVER") {
@@ -325,6 +308,7 @@ fn live_resource_list_schema_field_assertion() {
 /// NOT assert any particular ordering in the results (the mocked order is
 /// deterministic regardless; only the server-side acceptance matters here).
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_list_order_by_acceptance() {
     // ── 1. Collect required config ────────────────────────────────────────────
     let server_raw = match require_env("DSP_TEST_SERVER") {

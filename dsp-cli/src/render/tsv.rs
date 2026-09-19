@@ -4,7 +4,7 @@
 //! Fields use `\t` as separator. Every ASCII control character in a value —
 //! including a literal tab or newline that would otherwise corrupt the column
 //! structure — is replaced with a space via `replace_control_chars` at the
-//! shared `QuoteMode::apply` chokepoint (ADR-0003).
+//! shared `QuoteMode::apply` chokepoint (dsp-cli/ADR-0003).
 //!
 //! Auth column sets (per PRD):
 //! - `auth_login` / `auth_status`: `server\tuser\texpires_at\tstate`
@@ -90,7 +90,7 @@ impl Default for TsvRenderer {
 
 impl Renderer for TsvRenderer {
     fn diagnostic(&mut self, diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
-        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (ADR-0012)
+        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (dsp-cli/ADR-0012)
         Ok(())
     }
 
@@ -484,7 +484,7 @@ impl Renderer for TsvRenderer {
         detail: &crate::model::ResourceDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // TSV format: `detail.values` selects the shape (ADR-0013 D1).
+        // TSV format: `detail.values` selects the shape (dsp-cli/ADR-0013 D1).
         // None → header + metadata row (all ten RESOURCE_DESCRIBE_COLUMNS), unchanged.
         // Some(fields) → header + one row per value (long-format), metadata dropped.
         match &detail.values {

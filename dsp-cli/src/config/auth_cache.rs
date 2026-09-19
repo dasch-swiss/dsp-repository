@@ -1,4 +1,4 @@
-//! On-disk token cache at `~/.config/dsp-cli/auth.toml`. See ADR-0007 and ADR-0012.
+//! On-disk token cache at `~/.config/dsp-cli/auth.toml`. See dsp-cli/ADR-0007 and dsp-cli/ADR-0012.
 //!
 //! Tokens are keyed by server URL. The file is written atomically via a
 //! `<filename>.<pid>` sibling file followed by a `rename`, so the original
@@ -61,7 +61,7 @@ impl fmt::Debug for ServerEntry {
 /// Internal layout is a `BTreeMap` (not `HashMap`) so the on-disk TOML has
 /// deterministic key order. The `toml` crate serialises a `BTreeMap<String, T>`
 /// at the root as a sequence of standalone `[key]` tables, which is the shape
-/// ADR-0007 specifies — no wrapper struct or `#[serde(flatten)]` needed.
+/// dsp-cli/ADR-0007 specifies — no wrapper struct or `#[serde(flatten)]` needed.
 #[derive(Debug, Default)]
 pub struct AuthCache {
     entries: BTreeMap<String, ServerEntry>,
@@ -72,7 +72,7 @@ impl AuthCache {
     ///
     /// Returns an error if the home directory cannot be resolved.
     pub fn default_path() -> Result<PathBuf, Diagnostic> {
-        // ADR-0007 specifies the literal `~/.config/dsp-cli/auth.toml`. Do not
+        // dsp-cli/ADR-0007 specifies the literal `~/.config/dsp-cli/auth.toml`. Do not
         // substitute `dirs::config_dir()` — that returns `~/Library/Application
         // Support/dsp-cli` on macOS, which contradicts the ADR.
         let home =
@@ -212,7 +212,7 @@ impl AuthCache {
 /// On Unix the temp file is created with mode `0600` at creation time,
 /// eliminating the brief window where the file could be readable under the
 /// caller's umask. On non-Unix the file is written without permission
-/// tightening (Windows support is a known limitation — see ADR-0007).
+/// tightening (Windows support is a known limitation — see dsp-cli/ADR-0007).
 fn write_atomically(path: &Path, contents: &str) -> Result<(), Diagnostic> {
     let tmp_path = temp_sibling_path(path)?;
 
@@ -414,7 +414,7 @@ mod tests {
 
     #[test]
     fn on_disk_shape_uses_standalone_tables() {
-        // Pins the contract from ADR-0007: each server URL is a top-level
+        // Pins the contract from dsp-cli/ADR-0007: each server URL is a top-level
         // standalone table, not an inline table. This catches the
         // `#[serde(flatten)]` / `BTreeMap` interaction risk the plan flagged.
         let dir = TempDir::new().unwrap();

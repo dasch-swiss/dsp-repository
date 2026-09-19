@@ -27,7 +27,7 @@
 // `reqwest::blocking` + `std::thread::spawn` pattern matches resource_describe_http.rs:
 // the blocking client lives and dies on its own OS thread (never on the tokio pool).
 //
-// ADR-0001 vocabulary guard: no DSP-API key names in domain-model assertions.
+// dsp-cli/ADR-0001 vocabulary guard: no DSP-API key names in domain-model assertions.
 
 use dsp_cli::client::DspClient;
 use dsp_cli::client::http::HttpDspClient;

@@ -1,7 +1,7 @@
 //! Test support helpers shared by integration tests in `tests/`.
 //!
-//! `MockDspClient` is the T2 test seam from ADR-0008 (internal architecture)
-//! and the canned-response client used by layer-2 action tests per ADR-0009
+//! `MockDspClient` is the T2 test seam from dsp-cli/ADR-0008 (internal architecture)
+//! and the canned-response client used by layer-2 action tests per dsp-cli/ADR-0009
 //! (testing strategy). Production code wires up the real HTTP `DspClient`
 //! impl; action-level integration tests wire up `MockDspClient` instead.
 //!

@@ -4,7 +4,7 @@
 //! `dsp-cli` module and may be imported from any layer (client, render, …).
 //! They live here (not in `src/render/`) so the client layer can use
 //! `html_to_text` for standoff XML stripping without creating a
-//! client → render dependency (ADR-0008).
+//! client → render dependency (dsp-cli/ADR-0008).
 //!
 //! `html_to_text` converts server-supplied HTML description text into a
 //! readable plain-text form suitable for terminal output. It is intentionally
@@ -65,7 +65,7 @@ pub(crate) fn strip_control_chars(s: &str) -> String {
 /// because those break the one-record-per-line / delimited structure. One
 /// predicate covers both pipeline-breaking (newline, tab) and terminal-control
 /// (ESC, DEL) characters without a fragile deny-list. See plan 020 D11 and
-/// ADR-0003.
+/// dsp-cli/ADR-0003.
 pub(crate) fn replace_control_chars(s: &str) -> String {
     s.chars().map(|c| if c.is_control() { ' ' } else { c }).collect()
 }
@@ -96,7 +96,7 @@ pub(crate) fn replace_control_chars(s: &str) -> String {
 /// Slices to 4 KiB **before** decoding and stripping. `sanitise_and_cap` walks
 /// its whole input before taking the first 200 characters, so handing it a
 /// 64 MiB store error would materialise two full-size copies to print 200
-/// characters — and ADR-0016 deliberately accepts that there is no client-side
+/// characters — and dsp-cli/ADR-0016 deliberately accepts that there is no client-side
 /// response ceiling, which makes a multi-MiB body an in-design input rather
 /// than a pathological one. 200 sanitised chars are at most ~800 bytes, so the
 /// slice can never truncate anything that would have been printed.

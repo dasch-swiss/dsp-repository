@@ -17,7 +17,7 @@
 //! directly with a hand-built `MetaContext`/`DataModelStructure`. They never go through
 //! the action layer. Action/auth-resolution logic is covered by action tests (Step 6).
 //!
-//! ADR-0001 vocabulary guard: no `export`/`class`/`property` in rendered prose.
+//! dsp-cli/ADR-0001 vocabulary guard: no `export`/`class`/`property` in rendered prose.
 //! (No IRI fields here at all — local names + dm names only.)
 
 use dsp_cli::model::{DataModelStructure, Relation, RelationKind};
@@ -199,7 +199,7 @@ fn cross_model_heavy_structure() -> DataModelStructure {
 /// - `→` (U+2192) arrow
 /// - `[to biblio]` tag on the cross-model link; absent on in-model rows
 /// - `[inherits]` kind marker, empty field column for inherits rows
-/// - ADR-0007 footer `[anonymous on https://api.dasch.swiss]`
+/// - dsp-cli/ADR-0007 footer `[anonymous on https://api.dasch.swiss]`
 /// - No `export`/`class`/`property` in rendered text
 #[test]
 fn data_model_structure_prose_full() {
@@ -256,7 +256,7 @@ fn data_model_structure_prose_full() {
 /// - Header `Structure: minimal  (0 relations)` (plural "relations" even when 0)
 /// - No relation rows
 /// - Blank line before footer
-/// - ADR-0007 footer still present
+/// - dsp-cli/ADR-0007 footer still present
 #[test]
 fn data_model_structure_prose_zero_relations() {
     let (buf, w) = shared_buf();
@@ -346,7 +346,7 @@ fn data_model_structure_prose_cross_model_heavy() {
 // ── json ×2 ───────────────────────────────────────────────────────────────────
 
 /// JSON render of the full-mixed fixture. Locks:
-/// - ADR-0003 `{_meta, data:[…]}` envelope
+/// - dsp-cli/ADR-0003 `{_meta, data:[…]}` envelope
 /// - Each element has all 5 keys: source, target, kind, field, target_data_model
 /// - `field: null` for inherits relations
 /// - `target_data_model: "<baseline_dm>"` for in-model targets (non-system)

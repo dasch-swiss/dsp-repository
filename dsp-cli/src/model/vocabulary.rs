@@ -4,7 +4,7 @@
 //!
 //! Types here are the dsp-cli vocabulary for DSP-API's list/list-node wire
 //! shapes. Wire (de)serialization stays in `src/client/http.rs`; nothing
-//! here derives `serde`. See ADR-0001 and ADR-0008.
+//! here derives `serde`. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 
 /// One language-tagged string, as DSP-API returns it in a list's `labels` /
 /// `comments`. ALL languages are kept (plan 034 D4) — no preferred-language

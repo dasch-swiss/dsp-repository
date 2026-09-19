@@ -3,13 +3,13 @@
 //!
 //! These are render-layer types, not domain model types. They live here rather
 //! than in `src/model/` because they flow from the action layer into the
-//! renderer/reporter, not across the client→action boundary. See ADR-0008 for
+//! renderer/reporter, not across the client→action boundary. See dsp-cli/ADR-0008 for
 //! the layer split.
 //!
 //! Note on cross-layer dependency: `DumpEvent::Polling` carries `DumpStatus`, a
 //! `model/` type, so `render/` depends on `model/`. That direction is allowed by
-//! ADR-0008 (render may reference models). `InProgress`/`Completed`/`Failed` are
-//! generic task-state words — not DSP-API-divergent vocabulary (the ADR-0001
+//! dsp-cli/ADR-0008 (render may reference models). `InProgress`/`Completed`/`Failed` are
+//! generic task-state words — not DSP-API-divergent vocabulary (the dsp-cli/ADR-0001
 //! boundary is about `ontology`/`class`/`property` terms). Accepted as a shared
 //! model type.
 

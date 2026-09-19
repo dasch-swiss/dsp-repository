@@ -104,7 +104,7 @@ fn dump_delete_outcome_other_project() -> DumpDeleteOutcome {
 }
 
 /// Fully synthetic `MetaContext` — never derived from a real token or email.
-/// Uses ADR-0007 vocabulary: "authenticated" (cache token, no user in this fixture).
+/// Uses dsp-cli/ADR-0007 vocabulary: "authenticated" (cache token, no user in this fixture).
 fn dump_meta() -> MetaContext {
     MetaContext {
         server_label: "https://api.test.dasch.swiss".to_string(),

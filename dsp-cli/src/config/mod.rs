@@ -1,6 +1,6 @@
-//! Config resolution — layer 5 of ADR-0008.
+//! Config resolution — layer 5 of dsp-cli/ADR-0008.
 //!
-//! The four-layer stack from ADR-0007: flag → env var → `.env` (CWD) →
+//! The four-layer stack from dsp-cli/ADR-0007: flag → env var → `.env` (CWD) →
 //! fail. `.env` is loaded via `dotenvy::dotenv()` at startup; no
 //! hard-coded default server.
 //!
@@ -18,7 +18,7 @@ pub use token::{ResolvedToken, TokenOrigin, resolve_token};
 
 use crate::diagnostic::Diagnostic;
 
-/// Built-in shortcut names → canonical server URLs. See ADR-0007.
+/// Built-in shortcut names → canonical server URLs. See dsp-cli/ADR-0007.
 ///
 /// Lookup is linear; a handful of entries is too small to justify a `HashMap`.
 /// Matching is case-insensitive (`PROD`, `Prod`, `prod` all resolve); a value

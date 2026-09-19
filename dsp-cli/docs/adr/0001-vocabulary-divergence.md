@@ -71,7 +71,7 @@ term does not create real-world ambiguity with the existing mass-noun usage.
 ### Deliberate raw-surface carve-out: `dsp vre sparql query`
 
 This ADR's translation duty is about DSP-API's *invented* jargon for domain concepts (`ontology` →
-data-model, `class` → resource-type). `dsp vre sparql query` ([ADR-0016](0016-sparql-passthrough.md))
+data-model, `class` → resource-type). `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md))
 is different: SPARQL is a W3C standard the user invokes **directly**, so its own vocabulary is the
 user's, not DSP-API's, and renaming it would make the command undiscoverable. The words `SPARQL` and
 `triplestore` are therefore admissible in user-facing text **only** on this command's surface and in

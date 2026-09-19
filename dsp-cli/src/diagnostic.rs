@@ -1,4 +1,4 @@
-//! Diagnostics — errors, exit codes, and logging setup. See ADR-0012.
+//! Diagnostics — errors, exit codes, and logging setup. See dsp-cli/ADR-0012.
 //!
 //! `Diagnostic` is the library-level error type. Each variant carries a stable
 //! `kind` mapped via `exit_category()` to one of the four `ExitCategory`
@@ -7,7 +7,7 @@
 use thiserror::Error;
 use tracing_subscriber::EnvFilter;
 
-/// Process exit categories. See the table in ADR-0012.
+/// Process exit categories. See the table in dsp-cli/ADR-0012.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExitCategory {
@@ -24,7 +24,7 @@ pub enum ExitCategory {
     AuthRequired = 3,
 }
 
-/// Library error type. Stable enum variants per ADR-0012.
+/// Library error type. Stable enum variants per dsp-cli/ADR-0012.
 ///
 /// `Clone` is derived so that mock test helpers can hand out
 /// `Result<_, Diagnostic>` values repeatedly without consuming them.
@@ -48,7 +48,7 @@ pub enum Diagnostic {
     /// Also carries a **relayed store rejection** from `dsp vre sparql query`:
     /// the triplestore's own `4xx` is not dsp-cli's failure to classify, so it
     /// is reported here with the store's status and its (sanitised, capped)
-    /// message. Exit category `Runtime` (1) — see ADR-0016 / plan 035 D7.
+    /// message. Exit category `Runtime` (1) — see dsp-cli/ADR-0016 / plan 035 D7.
     #[error("server error: {0}")]
     ServerError(String),
 
@@ -108,7 +108,7 @@ impl Diagnostic {
         Self::NotImplemented(msg.into())
     }
 
-    /// Maps a diagnostic to its exit category (per ADR-0012).
+    /// Maps a diagnostic to its exit category (per dsp-cli/ADR-0012).
     pub fn exit_category(&self) -> ExitCategory {
         match self {
             Self::Usage(_) => ExitCategory::Usage,
@@ -126,7 +126,7 @@ impl Diagnostic {
 
 /// Initialise the global tracing subscriber.
 ///
-/// Per ADR-0012: default level WARN; `-v` raises to INFO, `-vv` to DEBUG,
+/// Per dsp-cli/ADR-0012: default level WARN; `-v` raises to INFO, `-vv` to DEBUG,
 /// `-vvv` to TRACE; `RUST_LOG` overrides if set. Output goes to stderr.
 pub fn init_tracing(verbose: u8) {
     let filter = if let Ok(env) = std::env::var("RUST_LOG") {

@@ -3,10 +3,11 @@
 //! `Value`, `ValueContent`, `DateValue`, `DatePoint`, and `FileValue`.
 //!
 //! These types cross the client/action boundary: `ResourcePage` is the raw
-//! per-page result returned by [`DspClient::list_resources`]; `ResourceSummary`
-//! is the per-row projection that flows through the action into the renderer.
-//! `ResourceDetail` carries the full envelope metadata returned by
-//! [`DspClient::describe_resource`]. `FieldValues` and `ValueContent` carry
+//! per-page result returned by [`crate::client::DspClient::list_resources`];
+//! `ResourceSummary` is the per-row projection that flows through the action
+//! into the renderer. `ResourceDetail` carries the full envelope metadata
+//! returned by [`crate::client::DspClient::describe_resource`]. `FieldValues`
+//! and `ValueContent` carry
 //! the parsed field values (instance side), emitted when `--values` is set.
 
 /// A single resource instance, as returned by the list endpoint.
@@ -108,7 +109,7 @@ impl ResourceAccess {
 
 /// Full envelope metadata for a single resource instance.
 ///
-/// Returned by [`DspClient::describe_resource`]. Contains the resource's
+/// Returned by [`crate::client::DspClient::describe_resource`]. Contains the resource's
 /// identity, audit timestamps, ownership, and two translated permission facets
 /// (visibility and the caller's access level). The `values` field is populated
 /// only when `--values` is requested (Phase 8c); it is `None` for the default
@@ -186,7 +187,7 @@ pub struct FieldValues {
 /// The typed content of a single value (instance side).
 ///
 /// Each variant corresponds to one entry in the value-type rendering matrix
-/// (ADR-0013). Scalar arms hold a single extracted datum. `VocabularyItem` and `Link`
+/// (dsp-cli/ADR-0013). Scalar arms hold a single extracted datum. `VocabularyItem` and `Link`
 /// additionally carry a resolved label (falling back to `None` on failure). `File`
 /// covers all file-representation types. `Raw` is the long-tail fallback for any
 /// value-type not in the named set — it never causes a hard error.
@@ -316,7 +317,7 @@ pub struct FileValue {
 
 /// A single page of resource-list results from the DSP-API.
 ///
-/// Returned by [`DspClient::list_resources`]. The action accumulates pages
+/// Returned by [`crate::client::DspClient::list_resources`]. The action accumulates pages
 /// for `--all` mode; for single-page mode the action reads exactly one.
 #[derive(Debug, Clone)]
 pub struct ResourcePage {

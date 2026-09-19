@@ -2,7 +2,7 @@
 //!
 //! These are render-layer types, not domain model types. They live here rather
 //! than in `src/model/` because they flow from the action layer into the
-//! renderer, not across the client→action boundary. See ADR-0008 for the
+//! renderer, not across the client→action boundary. See dsp-cli/ADR-0008 for the
 //! layer split.
 
 use chrono::{DateTime, Utc};
@@ -32,7 +32,7 @@ pub enum AuthStatusOutcome {
         expired: bool,
     },
     /// A token was supplied via the `DSP_TOKEN` environment variable, which
-    /// overrides the cached token (ADR-0007). No user is available (the cached
+    /// overrides the cached token (dsp-cli/ADR-0007). No user is available (the cached
     /// `user` comes from the login response body, not from the token itself).
     /// Expiry is read via `client::jwt::extract_exp` for display only; if the
     /// token is not a parseable JWT, `expires_at` is `None` ("expiry unknown").

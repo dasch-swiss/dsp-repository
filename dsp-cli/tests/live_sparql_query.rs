@@ -5,7 +5,7 @@
 //
 // The `just test-live` recipe runs exactly this command.
 //
-// ADR-0009 (testing strategy): live tests are **not** in CI. They require a
+// dsp-cli/ADR-0009 (testing strategy): live tests are **not** in CI. They require a
 // real local DSP-API instance with the SPARQL passthrough enabled — no
 // deployed `api.*.dasch.swiss` environment has the route yet (§Verified API
 // facts). Missing config causes an early-return skip — never a test failure.
@@ -36,17 +36,8 @@ use dsp_cli::diagnostic::Diagnostic;
 /// `init-db-test` fixture data.
 const ANYTHING_GRAPH: &str = "http://www.knora.org/data/0001/anything";
 
-/// Read a required environment variable. Returns `None` and emits a skip
-/// message if the variable is absent or empty.
-fn require_env(name: &str) -> Option<String> {
-    match std::env::var(name) {
-        Ok(v) if !v.trim().is_empty() => Some(v),
-        _ => {
-            eprintln!("skipping live test: {name} not set");
-            None
-        }
-    }
-}
+mod common;
+use common::require_env;
 
 /// Collect `(server, token)` or `None` (with a skip message already emitted).
 fn require_server_and_token() -> Option<(String, String)> {
@@ -61,6 +52,7 @@ fn require_server_and_token() -> Option<(String, String)> {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_select_returns_parseable_sparql_json_with_bindings() {
     let Some((server, token)) = require_server_and_token() else {
         return;
@@ -102,6 +94,7 @@ fn live_select_returns_parseable_sparql_json_with_bindings() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_accept_csv_returns_a_header_row() {
     let Some((server, token)) = require_server_and_token() else {
         return;
@@ -131,6 +124,7 @@ fn live_accept_csv_returns_a_header_row() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_malformed_query_relays_as_ok_with_a_non_2xx_status() {
     let Some((server, token)) = require_server_and_token() else {
         return;
@@ -164,6 +158,7 @@ fn live_malformed_query_relays_as_ok_with_a_non_2xx_status() {
 // ---------------------------------------------------------------------------
 
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_non_admin_token_maps_to_auth_required_403() {
     let Some((server, _admin_token)) = require_server_and_token() else {
         return;

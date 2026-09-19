@@ -43,6 +43,12 @@
 
 - [Component API Conventions](./mosaic/component-api-conventions.md)
 
+## dsp-cli
+
+- [Architecture](./dsp-cli/architecture.md)
+- [Testing Strategy](./dsp-cli/testing-strategy.md)
+- [Usage](./dsp-cli/usage.md)
+
 ---
 
 # Fundamentals

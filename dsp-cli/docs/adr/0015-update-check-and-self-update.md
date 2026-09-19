@@ -13,15 +13,15 @@ when it is actually built.
 
 ## Context
 
-- **Agent-first (ADR-0001, `idea.md`).** The primary consumer is an LLM agent.
-  stdout is data (ADR-0012); an update notice is neither data nor an error, so it
+- **Agent-first (dsp-cli/ADR-0001, `idea.md`).** The primary consumer is an LLM agent.
+  stdout is data (dsp-cli/ADR-0012); an update notice is neither data nor an error, so it
   has no slot in the output — least of all the JSON `_meta`/error envelope
-  (ADR-0003, a stable contract). A background network call on every invocation
+  (dsp-cli/ADR-0003, a stable contract). A background network call on every invocation
   also adds latency and is telemetry-adjacent (it phones home).
 - **Distribution is crates.io-only.** There are no prebuilt binaries on GitHub
   Releases. Every install is a source build via `cargo install dsp-cli` (README,
-  ADR-0011). This is the load-bearing fact for the mechanism choice below.
-- **On-disk state precedent.** `~/.config/dsp-cli/auth.toml` (ADR-0007) already
+  dsp-cli/ADR-0011). This is the load-bearing fact for the mechanism choice below.
+- **On-disk state precedent.** `~/.config/dsp-cli/auth.toml` (dsp-cli/ADR-0007) already
   establishes the config directory and an atomic-write pattern
   (`src/config/auth_cache.rs`).
 - **TTY precedent.** `dsp auth login` already gates on `std::io::IsTerminal`
@@ -107,7 +107,7 @@ a cross-cutting, set-once concern; a flag would clutter every command and be
 tedious to repeat (owner's call, 2026-07-21). It is read directly via `std::env`
 in the update module (after `dotenvy::dotenv()` in `main`, so a `.env` entry is
 honored) — **not** through `Config::resolve` (which is server-only). It does **not**
-depend on the parked non-secret `dsp.toml` (ADR-0007); when/if `dsp.toml` lands, an
+depend on the parked non-secret `dsp.toml` (dsp-cli/ADR-0007); when/if `dsp.toml` lands, an
 `update_check = false` key there is a natural additional source, but the env var
 ships standalone today.
 
@@ -116,8 +116,8 @@ ships standalone today.
 The check **never** changes the command's exit code and **never** blocks fatally.
 Any error (network, timeout, parse, cache I/O, unresolvable home dir) is logged at
 `tracing::debug` and swallowed. The advisory goes to **stderr in every format**,
-never to stdout and never into the JSON `_meta`/error envelope (ADR-0012 /
-ADR-0003 stay unamended — the notice is deliberately kept out of the contract).
+never to stdout and never into the JSON `_meta`/error envelope (dsp-cli/ADR-0012 /
+dsp-cli/ADR-0003 stay unamended — the notice is deliberately kept out of the contract).
 
 ### Deferred: binary self-replace (post-migration)
 
@@ -139,7 +139,7 @@ open and why it is not walked through in 0.1.3.
   small on-disk cache file joins `auth.toml` in `~/.config/dsp-cli/`.
 - The check's correctness-sensitive logic (index parse, staleness, version
   compare, gating) is pure and unit-tested; the network path is wiremock-tested;
-  the real crates.io fetch sits behind `--features live` (ADR-0009). The advisory
+  the real crates.io fetch sits behind `--features live` (dsp-cli/ADR-0009). The advisory
   never appears in `insta` snapshots because those runs are non-TTY.
 - Self-replace remains available as a future extension without re-litigating the
   advise-only decision — it is a strictly additive, infrastructure-gated follow-on.
@@ -148,7 +148,7 @@ open and why it is not walked through in 0.1.3.
 
 - **Notice in the JSON `_meta` envelope.** Rejected — `_meta` is a stable public
   contract and an update notice is not command data; keeping it stderr-only (all
-  formats) avoids polluting the contract (ADR-0003).
+  formats) avoids polluting the contract (dsp-cli/ADR-0003).
 - **Default-on for all runs / no TTY gate.** Rejected — pollutes agent output and
   adds per-invocation latency, contradicting the agent-first premise.
 - **Per-command `--check-update` flag instead of an env var.** Rejected — a

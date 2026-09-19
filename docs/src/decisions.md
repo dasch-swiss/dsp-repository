@@ -36,3 +36,7 @@ for the full decision.
 ## Component series
 
 Listed here as components arrive with their own decision history.
+
+| Component | Decisions | Citation form |
+|---|---|---|
+| [`dsp-cli`](https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/) | its own sequence, starting at 0001 | `dsp-cli/ADR-NNNN`, also from inside `dsp-cli/` |

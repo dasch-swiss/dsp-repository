@@ -30,6 +30,9 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just tailwind-pins-refresh <version>` | Re-pin the Tailwind standalone CLI digests for a new version |
 | `just dsp-cli-run <args>` | Run the `dsp` command-line client with the given arguments |
 | `just dsp-cli-test-live` | Run dsp-cli's live tests against a reachable DSP stack (never part of `just test`) |
+| `just dsp-cli-stack-up` | Start the containerized DSP stack used by dsp-cli's live tests |
+| `just dsp-cli-stack-fixtures` | Load fixture data into the dsp-cli stack |
+| `just dsp-cli-stack-down` | Tear down the dsp-cli stack |
 | `just dsp-cli-snap-review` | Review pending insta snapshots for dsp-cli |
 
 ## Git, Commits, and Pull Requests

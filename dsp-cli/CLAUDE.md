@@ -20,9 +20,15 @@ All recipes go through `just`, run from the repository root:
 just dsp-cli-run <args>       # cargo run --bin dsp -- <args>
 just dsp-cli-test-live        # live tests (dsp-cli/ADR-0009 layer 5; needs DSP_TEST_SERVER etc.)
 just dsp-cli-snap-review      # cargo insta review
+just dsp-cli-stack-up         # start the pinned Fuseki + knora-api stack and load fixtures
+just dsp-cli-stack-fixtures   # reload fixtures into an already-running stack
+just dsp-cli-stack-down       # tear the stack down, volumes included
 just check                    # workspace-wide: fmt/clippy/lint gates, including dsp-cli
 just test                     # workspace-wide: the cheap test suite (dsp-cli/ADR-0009 layers 1-4)
 ```
+
+The stack recipes need Docker; they wrap `dsp-cli/ci/stack/`, which the `dsp-cli-drift` workflow
+uses to run the live tests in CI.
 
 Single-test recipe: `cargo test -p dsp-cli <substring>` from the repository root. Live tests
 require `--features live` and are `#[ignore]`d — see

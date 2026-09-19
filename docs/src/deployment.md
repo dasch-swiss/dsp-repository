@@ -11,6 +11,7 @@ Every push and pull request runs:
 - **check.yml** — Formatting (`maudfmt` for `html!` macros + `cargo +nightly fmt`), linting (`clippy`), third-party artifact checksums (see [Security](./security.md)), and a dsp-cli packaging dry run (`cargo publish -p dsp-cli --dry-run`)
 - **test.yml** — Runs the full test suite
 - **scout-dpe.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning (see [Security](./security.md))
+- **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
 
 ### Accessibility Testing
 
@@ -22,7 +23,52 @@ Runs on PRs and pushes to `main` that touch `modules/dpe/**` or `shared/**` — 
 
 Defined in `fuzz.yml`.
 
-Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes `tab_validation` and `query_params` targets for 10 minutes each using `cargo-fuzz` on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.
+Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes `tab_validation` and `query_params` targets for 10 minutes each using `cargo-fuzz` on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a `fuzz-crashes-{target}` artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly `latest` run uses (see below).
+
+### dsp-cli Drift Detection
+
+Defined in [`dsp-cli-drift.yml`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/dsp-cli-drift.yml).
+
+Runs dsp-cli's live test suite (dsp-cli/ADR-0009 layer 5) against a pinned, containerized dsp-api
+stack. An OpenAPI diff of DSP-API's endpoint surface cannot see a renamed or re-shaped key inside a
+JSON-LD response body, but dsp-cli deserializes exactly those bodies — running the real client
+against a real server is what catches that class of drift.
+
+Four jobs:
+
+- **`changes`** — `pull_request` only. Decides whether anything under `dsp-cli/**` changed.
+- **`pinned`** — runs the live suite against the pinned stack when `changes` says something did.
+- **`gate`** — an always-runs aggregator, green when `pinned` either passed or was legitimately
+  skipped. **`gate`, not `pinned`, is the required check**: GitHub treats a job that never ran as
+  pending rather than passing, so a required check that is conditionally skipped would block every
+  PR that doesn't touch `dsp-cli/**`. (Configuring `gate` as a required check in repository settings
+  is a follow-up action, not yet done.)
+- **`latest`** — nightly and `workflow_dispatch`, same steps against the `latest` images instead of
+  the pin. `workflow_dispatch` exists because scheduled runs are delayed under load and GitHub
+  disables a schedule after 60 days of repository inactivity, so a manual trigger is the escape
+  hatch. It still loads the fixtures and ontologies checked out at the **pinned** `API` tag from
+  `stack.env` — `latest` has no corresponding dsp-api ref to check out. So a red nightly can mean
+  either real dsp-api drift, or that the pinned fixtures no longer load into a newer API. A failure
+  in the "Load fixtures" step is the latter; a failure in the test step is the former.
+
+#### The stack
+
+Lives in [`dsp-cli/ci/stack/`](https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/ci/stack/): a `docker-compose.yml` with two services, `db` (Apache Jena Fuseki) and `api`
+(knora-api) — no sipi, no ingest — plus `load-fixtures.sh`, `token.sh`, `wait-for-api.sh`, and a
+`README.md`. `stack.env` holds two independent pins, `API` and `DB` — and **both are this
+repository's own choice, not a dsp-api release signal**; `API` sets the `knora-api` image tag and
+also the `dasch-swiss/dsp-api` tag `load-fixtures.sh` checks the fixtures and ontologies out from,
+while `DB` sets only the Fuseki image. Bumping either means editing `stack.env`, re-running the
+suite locally, and committing the result.
+
+Run the stack locally with `just dsp-cli-stack-up`, `just dsp-cli-stack-fixtures`, and
+`just dsp-cli-stack-down`.
+
+#### Signal model
+
+Same as fuzz testing above: no issue is filed automatically (GitHub Issues are disabled on this
+repository). When the nightly `latest` run goes red, a person reads the job summary — it carries the
+failing test names and the dsp-api image digest — and files a Linear issue from it.
 
 ### Reusable Actions
 
@@ -34,6 +80,8 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 | `build-editor` | Compile the metadata editor (static musl `editor-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
 | `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
+| `commit-lint` | Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap |
+| `dsp-cli-stack-test` | Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it |
 
 ### Mosaic Playground
 

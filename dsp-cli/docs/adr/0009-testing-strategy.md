@@ -85,3 +85,23 @@ is dsp-cli's contract regardless of a leaf's output shape, and `dsp vre sparql q
 relayed SPARQL response body is asserted directly in `tests/sparql_query_http.rs` and the action-layer
 unit tests, not snapshotted — the body is store-authored and store-versioned, not dsp-cli's contract
 to pin.
+
+## Amendment (2026-09-19) — C4 adopted: stack-managed tests in CI
+
+**(C4) is adopted.** Both triggers named as reasons to reconsider it have now been met: CI without
+credentials, and isolation from a shared environment. A new drift-detection CI job
+(`.github/workflows/dsp-cli-drift.yml`) runs the layer-5 live suite against a pinned, containerized
+DSP stack (`dsp-cli/ci/stack/`, plain `db`/`api` services — no sipi, no ingest) instead of an existing
+DSP environment. The pin lives in `dsp-cli/ci/stack/stack.env` and is this repository's own choice,
+not a dsp-api release signal.
+
+Live tests stay exactly as C2 described them for everyday development: `#[ignore]`d in the default
+suite, enforced by `.github/scripts/check-live-tests-ignored.sh` (run by `just check`), and skipped
+by a plain `cargo test`/`cargo nextest run`. What changes is that the drift job now also runs them
+strict (`DSP_LIVE_STRICT=1`) against the pinned stack, so the "real DSP" failure mode — most notably
+JSON-LD key drift in DSP-API response bodies, which an OpenAPI surface diff cannot see — is caught in
+CI rather than depending on developer discipline alone. The stack is stood up locally the same way
+CI stands it up, via `just dsp-cli-stack-up` / `just dsp-cli-stack-fixtures` / `just dsp-cli-stack-down`.
+
+This does not reopen (C1): the stack is disposable and pinned, not a shared always-on environment,
+which was the objection to C1.

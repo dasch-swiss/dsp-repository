@@ -1,0 +1,42 @@
+services:
+  db:
+    image: daschswiss/apache-jena-fuseki:${DB}
+    environment:
+      TZ: Europe/Zurich
+      ADMIN_PASSWORD: test
+      JVM_ARGS: -Xmx3G
+    ports:
+      - "3030:3030"
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+  api:
+    image: daschswiss/knora-api:${API}
+    environment:
+      TZ: Europe/Zurich
+      KNORA_WEBAPI_TRIPLESTORE_HOST: db
+      KNORA_WEBAPI_TRIPLESTORE_DBTYPE: fuseki
+      KNORA_WEBAPI_TRIPLESTORE_FUSEKI_USERNAME: admin
+      KNORA_WEBAPI_TRIPLESTORE_FUSEKI_PASSWORD: test
+      KNORA_WEBAPI_TRIPLESTORE_FUSEKI_REPOSITORY_NAME: dsp-repo
+      KNORA_WEBAPI_ALLOW_SPARQL_PASSTHROUGH: "true"
+      KNORA_WEBAPI_ALLOW_RELOAD_OVER_HTTP: "true"
+      KNORA_WEBAPI_KNORA_API_EXTERNAL_HOST: 0.0.0.0
+      KNORA_WEBAPI_KNORA_API_EXTERNAL_PORT: 3333
+      DSP_API_LOG_LEVEL: INFO
+      ALLOW_ERASE_PROJECTS: "true"
+    ports:
+      - "3333:3333"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "/opt/docker/scripts/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 180s

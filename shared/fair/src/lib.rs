@@ -37,7 +37,7 @@ pub use project_graph::{
 };
 pub use record_datacite::record_to_datacite;
 pub use record_dublin_core::record_to_dublin_core;
-pub use schema_org::{project_to_schema_org, script_safe_json, SchemaOrgOptions};
+pub use schema_org::{project_to_schema_org, script_safe_json, PartLimit, SchemaOrgOptions};
 pub use signposting::{project_to_link_set, representation_to_link_set, Candidate, Link, LinkSet, UrlLayout};
 pub use types::{
     DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,

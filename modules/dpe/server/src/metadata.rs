@@ -16,7 +16,7 @@ use axum::response::{IntoResponse, Response};
 use maud::{html, Markup, PreEscaped};
 use shared_fair::{
     decide, project_to_datacite, project_to_datacite_json, project_to_dublin_core_meta, project_to_link_set,
-    project_to_schema_org, representation_to_link_set, script_safe_json, Decision, LinkSet, ProjectGraph,
+    project_to_schema_org, representation_to_link_set, script_safe_json, Decision, LinkSet, PartLimit, ProjectGraph,
     ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 use shared_metadata::{ProjectRaw, Record};
@@ -29,9 +29,32 @@ use crate::AppState;
 /// this many records, so a project with 27,026 of them does not allocate a
 /// `PartRef` per record to emit a hundred, and the writer caps at the same
 /// number, so the cap holds however the graph was built. The complete list is
-/// harvestable from the OAI set `project:{shortcode}`, and the standalone
-/// JSON-LD representation serves it uncapped.
+/// harvestable from the OAI set `project:{shortcode}`; the standalone JSON-LD
+/// representation carries far more of it, bounded by [`JSON_LD_BYTE_BUDGET`]
+/// rather than by a count.
 const HAS_PART_CAP: usize = 100;
+
+/// Bytes the standalone JSON-LD representation is held to.
+///
+/// A count cannot do this job. The same 19,770 parts of project 0868 serialise
+/// to 4.74 MB under `ark.dasch.swiss` and 5.25 MB under a preview's longer
+/// host, and identifier length, licence URIs, file names and MIME types vary
+/// per project besides — so only the bytes actually produced tell us what was
+/// produced. `PartLimit::Bytes` measures them.
+///
+/// **Why a bound at all.** F-UJI truncates any download at 5,000,000 bytes and
+/// the truncated fragment is not valid JSON, so at 5.25 MB the document could
+/// not be parsed at all and `FsF-I1-01M` scored 1 of 2 on a PR preview. 0868 is
+/// a small project by DaSCH standards, so this is the normal case for a project
+/// with files, not an edge case.
+///
+/// **Why 4,000,000.** A 20% margin under that limit, because we control none of
+/// the three things that consume it: the host name a deployment serves under
+/// (half a megabyte of the difference above is host length alone), the limit a
+/// future assessor applies, and what a later field adds to every entry. Not
+/// configurable: a second value to keep in step buys nothing here, and the one
+/// number is easier to reason about than a range.
+const JSON_LD_BYTE_BUDGET: usize = 4_000_000;
 
 /// The two OAI records that describe a project, and the media type of the
 /// envelope `GetRecord` returns them in.
@@ -137,7 +160,7 @@ fn render<'a>(
     let json = script_safe_json(&project_to_schema_org(
         &graph,
         &urls,
-        SchemaOrgOptions { has_part_cap: Some(HAS_PART_CAP) },
+        SchemaOrgOptions { parts: PartLimit::Count(HAS_PART_CAP) },
     ));
     let dublin_core = project_to_dublin_core_meta(&graph);
     let links = project_to_link_set(&graph, &urls);
@@ -198,17 +221,32 @@ fn link_header(links: &LinkSet, shortcode: &str) -> HeaderMap {
 
 /// The project's schema.org graph as a standalone JSON-LD document.
 ///
-/// Uncapped, unlike the block embedded in the page: `hasPart` lists every
-/// record. For the largest committed project that is a few megabytes, which is
-/// why this route sits behind the per-IP limiter from its first day
-/// (`router.rs`).
+/// Bounded by [`JSON_LD_BYTE_BUDGET`] rather than by the page's count, so it
+/// describes as many records as fit and stays a document a consumer can parse.
+/// Still a few megabytes, which is why this route sits behind the per-IP
+/// limiter from its first day (`router.rs`).
 pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     representation(&id, &state, JSON_LD, |raw, urls| {
         let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
-        let graph = build_graph(raw, records.iter().copied());
-        project_to_schema_org(&graph, urls, SchemaOrgOptions { has_part_cap: None })
+        project_json_ld(raw, records.iter().copied(), urls)
     })
     .await
+}
+
+/// The JSON-LD representation's document, for one project over the records the
+/// caller materialised.
+///
+/// Named and separate from the handler so a test can serve it the committed
+/// corpus without the record cache, which is a process-global keyed on
+/// `DPE_DATA_DIR`. It is the function the handler runs, not a lookalike: a
+/// budget that stopped being applied has to fail the corpus test too.
+fn project_json_ld<'a>(
+    raw: &ProjectRaw,
+    records: impl IntoIterator<Item = &'a Record>,
+    urls: &UrlLayout,
+) -> serde_json::Value {
+    let graph = build_graph(raw, records);
+    project_to_schema_org(&graph, urls, SchemaOrgOptions { parts: PartLimit::Bytes(JSON_LD_BYTE_BUDGET) })
 }
 
 /// The project's DataCite record as kernel-4 JSON, for a harvester that wants
@@ -502,6 +540,128 @@ mod tests {
             );
             // The displayed text is the bare identifier either way.
             assert!(html.contains(">ark:/72163/1/0803<"), "display: {html}");
+        }
+    }
+
+    /// **The bytes `/metadata.jsonld` serves, for every committed project that
+    /// has records.**
+    ///
+    /// Byte-measured and parsed, not counted: what broke was that 5,251,715
+    /// bytes of valid JSON arrived at an assessor that stops reading at
+    /// 5,000,000, and no assertion about field values or entry counts can see
+    /// that. The same instrument as the `served_bytes` sweep above, pointed at
+    /// a different risk.
+    ///
+    /// It runs [`project_json_ld`] — the function the handler runs — over the
+    /// committed dumps read from disk, rather than through the router: the
+    /// record cache is a process-global keyed on `DPE_DATA_DIR`, and reading
+    /// the files is what lets one test cover every project.
+    mod byte_budget {
+        use super::*;
+
+        const PROJECTS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/projects");
+        const RECORDS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/records");
+
+        /// Every committed project that has a record dump, with the whole dump.
+        ///
+        /// The whole dump, not a sample: a budget tested against 100 records is
+        /// a budget that was never reached.
+        fn with_dumps() -> Vec<(ProjectRaw, Vec<Record>)> {
+            let mut out: Vec<(ProjectRaw, Vec<Record>)> = std::fs::read_dir(PROJECTS)
+                .expect("the committed corpus should be readable")
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| path.extension().and_then(|e| e.to_str()) == Some("json"))
+                .filter_map(|path| {
+                    let raw: ProjectRaw =
+                        serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("parses");
+                    let dump = std::path::Path::new(RECORDS).join(format!("{}-records.json", raw.shortcode));
+                    let records: Vec<Record> = match std::fs::read_to_string(&dump) {
+                        Ok(json) => serde_json::from_str(&json).expect("a dump should parse"),
+                        Err(_) => return None,
+                    };
+                    Some((raw, records))
+                })
+                .collect();
+            out.sort_by(|(a, _), (b, _)| a.shortcode.cmp(&b.shortcode));
+            assert_eq!(out.len(), 3, "the committed record dumps");
+            out
+        }
+
+        /// What the route writes to the socket for one project: the same
+        /// document, through the same serialiser call as `representation`.
+        fn served(raw: &ProjectRaw, records: &[Record]) -> String {
+            let state = test_state();
+            serde_json::to_string(&project_json_ld(raw, records.iter(), &url_layout(raw, &state)))
+                .expect("a Value should serialise")
+        }
+
+        #[test]
+        fn every_committed_project_is_served_under_the_budget_as_valid_json() {
+            for (raw, records) in with_dumps() {
+                let body = served(&raw, &records);
+                assert!(
+                    body.len() <= JSON_LD_BYTE_BUDGET,
+                    "{}: {} bytes, over the {JSON_LD_BYTE_BUDGET}-byte budget",
+                    raw.shortcode,
+                    body.len()
+                );
+                serde_json::from_str::<serde_json::Value>(&body)
+                    .unwrap_or_else(|e| panic!("{}: the served document should parse: {e}", raw.shortcode));
+            }
+            // 0862 has no dump, so it is not in the loop above; it is the
+            // project the assertion below proves the budget leaves alone.
+            let raw = serde_json::from_str::<ProjectRaw>(
+                &std::fs::read_to_string(std::path::Path::new(PROJECTS).join("0862_gotthelf.json")).expect("readable"),
+            )
+            .expect("parses");
+            serde_json::from_str::<serde_json::Value>(&served(&raw, &[])).expect("0862 should parse");
+        }
+
+        /// **The budget has to actually bind somewhere, or the test above
+        /// proves nothing.** 0868 is the project whose document F-UJI could not
+        /// parse, so it is the one that must come back short; 0862 records no
+        /// parts at all, so it must come back whole.
+        #[test]
+        fn the_budget_binds_on_0868_and_not_on_0862() {
+            let corpus = with_dumps();
+            let (raw, records) = corpus
+                .iter()
+                .find(|(raw, _)| raw.shortcode == "0868")
+                .expect("0868 is committed with a dump");
+
+            let state = test_state();
+            let urls = url_layout(raw, &state);
+            let graph = build_graph(raw, records.iter());
+            let unbounded =
+                serde_json::to_string(&project_to_schema_org(&graph, &urls, SchemaOrgOptions::default())).unwrap();
+            assert!(
+                unbounded.len() > JSON_LD_BYTE_BUDGET,
+                "0868 no longer exceeds the budget unbounded ({} bytes), so this measures nothing",
+                unbounded.len()
+            );
+
+            let bounded = served(raw, records);
+            assert!(bounded.len() < unbounded.len(), "0868's document should have been bounded");
+            let parts = serde_json::from_str::<serde_json::Value>(&bounded).expect("valid JSON")["hasPart"]
+                .as_array()
+                .expect("an array")
+                .len();
+            assert!(parts < graph.parts.len(), "0868 lists {parts} of {}", graph.parts.len());
+
+            // 0862 carries no records at all, so nothing about it is bounded.
+            let raw = serde_json::from_str::<ProjectRaw>(
+                &std::fs::read_to_string(std::path::Path::new(PROJECTS).join("0862_gotthelf.json")).expect("readable"),
+            )
+            .expect("parses");
+            let urls = url_layout(&raw, &state);
+            let whole = serde_json::to_string(&project_to_schema_org(
+                &build_graph(&raw, std::iter::empty()),
+                &urls,
+                SchemaOrgOptions::default(),
+            ))
+            .unwrap();
+            assert_eq!(served(&raw, &[]), whole, "0862 should be served whole");
         }
     }
 

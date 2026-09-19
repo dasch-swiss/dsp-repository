@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use shared_fair::{
     coar_access_right, project_to_datacite, project_to_datacite_json, project_to_dublin_core,
     project_to_dublin_core_meta, project_to_link_set, project_to_schema_org, record_to_datacite, record_to_dublin_core,
-    script_safe_json, LinkSet, ProjectGraph, RecordGraph, ResolveContext, SchemaOrgOptions, UrlLayout,
+    script_safe_json, LinkSet, PartLimit, ProjectGraph, RecordGraph, ResolveContext, SchemaOrgOptions, UrlLayout,
 };
 // `coverage_name` is the same lookup-key derivation `ProjectGraph::build` uses
 // (Reference → `text`; Text map → `multilingual_value`), shared via
@@ -238,7 +238,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
     let dublin_core = project_to_dublin_core(graph);
     let meta = project_to_dublin_core_meta(graph);
     let urls = test_layout();
-    let json_ld = project_to_schema_org(graph, &urls, SchemaOrgOptions { has_part_cap: Some(100) });
+    let json_ld = project_to_schema_org(graph, &urls, SchemaOrgOptions { parts: PartLimit::Count(100) });
     let links = project_to_link_set(graph, &urls);
 
     // --- the DataCite JSON representation is a DataCite document ---
@@ -557,7 +557,7 @@ fn every_committed_project_embeds_a_small_json_ld_block() {
         let embedded = script_safe_json(&project_to_schema_org(
             &graph,
             &test_layout(),
-            SchemaOrgOptions { has_part_cap: Some(100) },
+            SchemaOrgOptions { parts: PartLimit::Count(100) },
         ));
         // The cap is what is being measured, so the block has to carry it.
         assert_eq!(
@@ -606,7 +606,7 @@ fn rendered_representations(graph: &ProjectGraph, record: Option<&Record>) -> St
     let mut out = script_safe_json(&project_to_schema_org(
         graph,
         &urls,
-        SchemaOrgOptions { has_part_cap: Some(100) },
+        SchemaOrgOptions { parts: PartLimit::Count(100) },
     ));
     out.push_str(&project_to_datacite_json(&project_to_datacite(graph)).to_string());
     out.push_str(&format!("{:?}", project_to_dublin_core(graph)));

@@ -3,7 +3,9 @@
 //! Emitted twice: embedded in the landing page's head, and as a standalone
 //! representation. The two differ only in how many records they describe —
 //! under `hasPart`, and under `distribution` for those that carry a file —
-//! which is what `SchemaOrgOptions` is for.
+//! which is what [`PartLimit`] is for. The page bounds that by a count and the
+//! representation by the bytes it serialises to; both take one prefix of the
+//! same ordered part list.
 
 use serde_json::{json, Map, Value};
 
@@ -25,16 +27,43 @@ const PROV_NAMESPACE: &str = "http://www.w3.org/ns/prov#";
 /// How much of the graph this rendering carries.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SchemaOrgOptions {
-    /// Cap on `hasPart` entries — and, over the same parts in the same order,
-    /// on `distribution` — or `None` for all of them.
+    /// How many of the graph's parts this rendering describes.
+    pub parts: PartLimit,
+}
+
+/// How far down the graph's part list a rendering goes.
+///
+/// One prefix, whichever variant sets its length: `hasPart` and `distribution`
+/// are always taken over the *same* parts in the *same* order, so the files a
+/// document describes are the files of the records it lists. A reader gets a
+/// contiguous prefix of the project rather than two lists that stop in
+/// different places. What is left out is harvestable from the OAI set
+/// `project:{shortcode}`.
+#[derive(Clone, Copy, Debug, Default)]
+pub enum PartLimit {
+    /// Every part the graph carries.
     ///
-    /// The embedded block caps: a project with 27,026 records would otherwise
-    /// put megabytes into every page, and one with 7,716 files would add a
-    /// `DataDownload` to each of those. The two lists are capped together so
-    /// the files described are the files of the records listed. The complete
-    /// list is harvestable from the OAI set `project:{shortcode}` and served
-    /// uncapped by the standalone representation.
-    pub has_part_cap: Option<usize>,
+    /// Only safe where the caller knows the graph is small — a fixture, or a
+    /// project whose records were never materialised. Neither served document
+    /// uses it: the page counts and the representation measures.
+    #[default]
+    All,
+    /// At most this many parts.
+    ///
+    /// What the embedded block uses. A project with 27,026 records would
+    /// otherwise put megabytes into every page, and one with 7,716 files would
+    /// add a `DataDownload` to each of those.
+    Count(usize),
+    /// As many parts as fit, with the serialised document at or under this many
+    /// bytes.
+    ///
+    /// What the standalone representation uses. A count cannot do this job: the
+    /// same 19,770 parts serialise to 4.74 MB under one ARK host and 5.25 MB
+    /// under a longer one, and identifier length, licence URIs, file names and
+    /// MIME types all vary per project. Only the bytes actually produced are
+    /// the thing a downstream limit is applied to, so only they are measured —
+    /// see [`within_budget`].
+    Bytes(usize),
 }
 
 /// The project as a schema.org `Dataset`, in JSON-LD.
@@ -47,6 +76,43 @@ pub struct SchemaOrgOptions {
 /// not record at all, yields no key — an absent `license` is a truthful
 /// statement about the data, and a `"MISSING"` one is not.
 pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: SchemaOrgOptions) -> Value {
+    match opts.parts {
+        PartLimit::All => render(graph, urls, None),
+        PartLimit::Count(cap) => render(graph, urls, Some(cap)),
+        PartLimit::Bytes(budget) => within_budget(graph, urls, budget),
+    }
+}
+
+/// The longest prefix of the graph's parts whose document fits in `budget`
+/// bytes, and the document itself.
+///
+/// **Measured, never estimated.** The document returned is the very `Value`
+/// whose serialisation was measured, so the number checked here and the number
+/// served are one number. Adding up per-entry costs would be a second
+/// implementation of `serde_json`'s output living beside the real one, and the
+/// two would drift the first time a key changed shape.
+///
+/// Each pass scales the prefix by the ratio the last measurement gives. Treating
+/// the document's fixed part as though it scaled too makes that an
+/// under-estimate, so the second pass normally fits; `cap - 1` guarantees
+/// progress regardless, so the loop terminates for any budget. A budget too
+/// small even for a part-less document yields that document rather than
+/// nothing: there is no shorter truthful answer, and a truncated one would not
+/// be JSON.
+fn within_budget(graph: &ProjectGraph, urls: &UrlLayout, budget: usize) -> Value {
+    let mut cap = graph.parts.len();
+    loop {
+        let doc = render(graph, urls, Some(cap));
+        let len = serde_json::to_string(&doc).expect("a Value should serialise").len();
+        if len <= budget || cap == 0 {
+            return doc;
+        }
+        let scaled = (cap as u128 * budget as u128 / len as u128) as usize;
+        cap = scaled.min(cap - 1);
+    }
+}
+
+fn render(graph: &ProjectGraph, urls: &UrlLayout, cap: Option<usize>) -> Value {
     let mut root = Map::new();
     root.insert("@context".into(), json!(["https://schema.org", { "prov": PROV_NAMESPACE }]));
     root.insert("@type".into(), json!("Dataset"));
@@ -133,8 +199,8 @@ pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: Schem
         json!({ "@type": "DataCatalog", "@id": urls.catalog, "name": "DaSCH Metadata Browser", "url": urls.catalog }),
     );
 
-    insert_list(&mut root, "hasPart", part_nodes(graph, opts.has_part_cap));
-    insert_list(&mut root, "distribution", distribution_nodes(graph, opts.has_part_cap));
+    insert_list(&mut root, "hasPart", part_nodes(graph, cap));
+    insert_list(&mut root, "distribution", distribution_nodes(graph, cap));
 
     // Only when the recorded PID differs from the ARK the writers resolved,
     // which is the case a reader cannot otherwise see.
@@ -423,10 +489,12 @@ fn part_nodes(graph: &ProjectGraph, cap: Option<usize>) -> Vec<Value> {
 /// where an assessor reads it: F-UJI collects `schema:distribution` off the
 /// described object, and FAIR Champion's *DataIdentifierFound* does the same.
 ///
-/// Capped with `hasPart`, over the same parts in the same order, so a reader of
-/// the embedded block sees the files of the records it lists and not of records
-/// it does not. Which parts carry a file, and which are open enough for it to
-/// be named, is [`crate::graph::PartRef`]'s decision, not this writer's.
+/// Bounded with `hasPart`, over the same parts in the same order, so a reader
+/// sees the files of the records the document lists and not of records it does
+/// not. That holds however the bound was set — a count in the page, measured
+/// bytes in the representation — because both are one prefix. Which parts carry
+/// a file, and which are open enough for it to be named, is
+/// [`crate::graph::PartRef`]'s decision, not this writer's.
 fn distribution_nodes(graph: &ProjectGraph, cap: Option<usize>) -> Vec<Value> {
     graph
         .parts
@@ -672,7 +740,7 @@ mod tests {
     #[test]
     fn has_part_is_capped_when_a_cap_is_set_and_whole_when_it_is_not() {
         let graph = build(&project(), &many_records(150));
-        let capped = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { has_part_cap: Some(100) });
+        let capped = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { parts: PartLimit::Count(100) });
         assert_eq!(capped["hasPart"].as_array().map(Vec::len), Some(100));
         let whole = project_to_schema_org(&graph, &urls(), SchemaOrgOptions::default());
         assert_eq!(whole["hasPart"].as_array().map(Vec::len), Some(150));
@@ -753,7 +821,7 @@ mod tests {
             .map(|i| record_with_a_file(&format!("asset-{i:04}"), Some("image/png")))
             .collect();
         let graph = build(&project(), &records);
-        let capped = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { has_part_cap: Some(100) });
+        let capped = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { parts: PartLimit::Count(100) });
         assert_eq!(capped["distribution"].as_array().map(Vec::len), Some(100));
         assert_eq!(capped["hasPart"].as_array().map(Vec::len), Some(100));
         let last = &capped["distribution"][99]["contentUrl"];
@@ -769,9 +837,100 @@ mod tests {
         let mut records = many_records(9);
         records.push(record_with_a_file("abc", Some("image/png")));
         let graph = build(&project(), &records);
-        let doc = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { has_part_cap: Some(10) });
+        let doc = project_to_schema_org(&graph, &urls(), SchemaOrgOptions { parts: PartLimit::Count(10) });
         assert_eq!(doc["hasPart"].as_array().map(Vec::len), Some(10));
         assert_eq!(doc["distribution"]["@type"], "DataDownload");
+    }
+
+    /// Bytes, because bytes are what a downstream limit is applied to. The
+    /// document returned is measured as it is serialised, so this asserts on
+    /// the same number the caller writes to the socket.
+    #[test]
+    fn a_byte_budget_bounds_the_serialised_document_and_leaves_it_parseable() {
+        let graph = build(&project(), &many_records(2_000));
+        let whole = serialised(&graph, PartLimit::All);
+        let budget = whole.len() / 2;
+
+        let bounded = serialised(&graph, PartLimit::Bytes(budget));
+        assert!(bounded.len() <= budget, "{} bytes, budget {budget}", bounded.len());
+        serde_json::from_str::<Value>(&bounded).expect("a bounded document is still valid JSON");
+        // Bounding by throwing everything away would satisfy the line above and
+        // be useless: the budget is meant to be spent.
+        assert!(bounded.len() > budget * 9 / 10, "{} bytes of a {budget} budget", bounded.len());
+    }
+
+    /// The same graph and the same budget give the same bytes, every time. A
+    /// harvester comparing two fetches must not see a document that moved for
+    /// no reason.
+    #[test]
+    fn a_byte_budget_is_deterministic() {
+        let graph = build(&project(), &many_records(2_000));
+        let budget = serialised(&graph, PartLimit::All).len() / 3;
+        assert_eq!(
+            serialised(&graph, PartLimit::Bytes(budget)),
+            serialised(&graph, PartLimit::Bytes(budget))
+        );
+    }
+
+    /// One prefix, not two lists that stop in different places: a budget that
+    /// binds still describes the files of the records it lists, and no others.
+    #[test]
+    fn a_budgeted_document_describes_the_files_of_the_records_it_lists() {
+        // Every third record carries a file, as a real project's do.
+        let records: Vec<shared_metadata::Record> = (0..900)
+            .map(|i| {
+                let id = format!("asset-{i:04}");
+                if i % 3 == 0 {
+                    record_with_a_file(&id, Some("image/png"))
+                } else {
+                    record(&id, Multilingual::from([("en".to_string(), format!("Record {i}"))]))
+                }
+            })
+            .collect();
+        let graph = build(&project(), &records);
+        let doc: Value = serde_json::from_str(&serialised(
+            &graph,
+            PartLimit::Bytes(serialised(&graph, PartLimit::All).len() / 2),
+        ))
+        .expect("valid JSON");
+
+        let parts = doc["hasPart"].as_array().expect("an array").len();
+        assert!(parts < 900, "the budget should have bound, {parts} parts");
+        // The listed prefix is 0..parts, so the files described are exactly the
+        // file-carrying records inside it — one in three, rounded up.
+        assert_eq!(doc["distribution"].as_array().expect("an array").len(), parts.div_ceil(3));
+        let last = format!("asset-{:04}", (parts - 1) / 3 * 3);
+        assert!(
+            doc["distribution"].as_array().expect("an array").last().expect("a last entry")["contentUrl"]
+                .as_str()
+                .expect("a string")
+                .contains(&last),
+            "the last file should belong to a listed record"
+        );
+    }
+
+    #[test]
+    fn a_budget_no_document_could_reach_still_yields_valid_json() {
+        let graph = build(&project(), &many_records(50));
+        let bounded = serialised(&graph, PartLimit::Bytes(1));
+        // There is no shorter truthful answer than the project without its
+        // parts, and a truncated one would not be JSON — which is the failure
+        // this whole bound exists to prevent.
+        let doc: Value = serde_json::from_str(&bounded).expect("valid JSON");
+        assert!(doc.get("hasPart").is_none(), "{doc}");
+        assert_eq!(doc["@type"], "Dataset");
+    }
+
+    #[test]
+    fn a_budget_the_whole_document_fits_in_changes_nothing() {
+        let graph = build(&project(), &many_records(50));
+        let whole = serialised(&graph, PartLimit::All);
+        assert_eq!(serialised(&graph, PartLimit::Bytes(whole.len())), whole);
+    }
+
+    fn serialised(graph: &ProjectGraph, parts: PartLimit) -> String {
+        serde_json::to_string(&project_to_schema_org(graph, &urls(), SchemaOrgOptions { parts }))
+            .expect("a Value should serialise")
     }
 
     #[test]

@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - "modules/dpe/**"
-      - "modules/platform/**"
+      - "shared/**"
   workflow_dispatch:
 
 permissions:
@@ -100,6 +100,38 @@ jobs:
             --memory=512Mi
             --max-instances=1
             --cpu-throttling
+
+      # A second step, not a flag on the deploy: Cloud Run assigns the service
+      # URL when the service is created, so it cannot be passed to the call that
+      # creates it. One extra revision on an ephemeral preview is the right
+      # price for identifiers that are absolute and self-consistent.
+      #
+      # All three variables default to production, and each one left unset makes
+      # the preview advertise a deployment that does not carry the branch's code:
+      #
+      #   DPE_PUBLIC_BASE_URL       every `describedby` link, every JSON-LD URL
+      #                             and the `303` target — which answer 404 on
+      #                             production.
+      #   DPE_OAI_BASE_URL          the OAI `baseURL` and every `<request>`
+      #                             echo, so a harvester told where to harvest
+      #                             is told production.
+      #   DPE_ARK_RESOLVER_BASE_URL every emitted ARK, so an assessor that
+      #                             dereferences the identifier it just
+      #                             harvested lands on production and assesses
+      #                             something else. It also mounts the
+      #                             preview's own `/ark:/` resolver, which is
+      #                             what makes those ARKs answer.
+      #
+      # The reported URL is an origin with an https scheme and no trailing
+      # slash, which is what `validate_origin` requires, so it is passed through
+      # unmodified. `DPE_OAI_BASE_URL` legitimately carries a path and is the
+      # one of the three that gets a suffix.
+      - name: Point the preview at its own URL
+        run: |
+          gcloud run services update "$SERVICE_NAME" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --update-env-vars="DPE_PUBLIC_BASE_URL=${{ steps.deploy.outputs.url }},DPE_OAI_BASE_URL=${{ steps.deploy.outputs.url }}/dpe/oai,DPE_ARK_RESOLVER_BASE_URL=${{ steps.deploy.outputs.url }}" \
+            --quiet
 
       - name: Find existing preview comment
         uses: peter-evans/find-comment@v3

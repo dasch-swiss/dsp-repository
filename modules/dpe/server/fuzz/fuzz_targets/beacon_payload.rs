@@ -1,6 +1,6 @@
 #![no_main]
 
-use platform_telemetry::beacon::BeaconPayload;
+use shared_telemetry::beacon::BeaconPayload;
 use libfuzzer_sys::fuzz_target;
 
 // The beacon endpoint receives untrusted data from the internet via sendBeacon.

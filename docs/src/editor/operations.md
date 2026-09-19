@@ -24,7 +24,7 @@ The published project/person/organization set is **DPE's content**, not the edit
 
 That copy is the seam, and it is explicit on both sides. `EditorConfig` carries **no default** for `data_dir`: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via `ENV EDITOR_DATA_DIR`, local development via `just dev-editor`. Unset is a legitimate state while nothing reads records, and is reported as `<unset>` at startup rather than as an invented path.
 
-Moving the directory under `modules/platform/` was considered and rejected: the shared-crate rule in [Repo Structure](../repo_structure.md#shared-crates) is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.
+Moving the directory under `shared/` was considered and rejected: the shared-crate rule in [Repo Structure](../repo_structure.md#shared-crates) is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.
 
 ## CLI Commands
 

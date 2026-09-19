@@ -1,6 +1,6 @@
 use maud::{html, Markup};
-use platform_metadata::models::AuthorityFileReference;
-use platform_metadata::project::TemporalCoverage;
+use shared_metadata::models::AuthorityFileReference;
+use shared_metadata::project::TemporalCoverage;
 
 use super::CHIP_PRIMARY;
 use crate::components::{placeholder_value, should_render_value};
@@ -35,7 +35,7 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                                 span class=(CHIP_PRIMARY) { (label) }
                             }
                             TemporalCoverage::Reference(r) => {
-                                @if platform_metadata::is_placeholder(&r.url) {
+                                @if shared_metadata::is_placeholder(&r.url) {
                                     (placeholder_value(&r.url))
                                 } @else {
                                     @let label = r.text.clone().unwrap_or_else(|| r.url.clone());
@@ -59,7 +59,7 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                 h3 class="dpe-subtitle" { "Spatial Coverage" }
                 div class="flex flex-wrap gap-1.5" {
                     @for s in spatial {
-                        @if platform_metadata::is_placeholder(&s.url) { (placeholder_value(&s.url)) } @else {
+                        @if shared_metadata::is_placeholder(&s.url) { (placeholder_value(&s.url)) } @else {
                             @let label = s.text.clone().unwrap_or_else(|| s.url.clone());
                             a   href=(s.url)
                                 target="_blank"

@@ -123,7 +123,7 @@ Ranges are resolved offline (no network or LLM calls at request time), in two ti
 
 When no range resolves (a `date: null` row, or a name absent from both sources), the element is emitted with the `dateInformation` attribute only and an empty body, so the original label is never dropped.
 
-Resolution lives in `platform_metadata::temporal_coverage`, shared by the OAI-PMH mapping above, `dpe-server validate` (`just validate-data`), and the `every_committed_temporal_coverage_resolves` test — a distinct `temporalCoverage` name with no resolvable range fails `validate` (and CI) rather than only surfacing as a name-only DataCite date at request time.
+Resolution lives in `shared_metadata::temporal_coverage`, shared by the OAI-PMH mapping above, `dpe-server validate` (`just validate-data`), and the `every_committed_temporal_coverage_resolves` test — a distinct `temporalCoverage` name with no resolvable range fails `validate` (and CI) rather than only surfacing as a name-only DataCite date at request time.
 
 ### Record files
 
@@ -156,7 +156,7 @@ DataCite's `<sizes>` is not emitted either, for the same reason: it describes th
 GET /dpe/records/{shortcode}/{record_id}/file  →  200, application/json
 ```
 
-One URL, one representation. There is no content negotiation and no `?format=` parameter: the response is the JSON document below regardless of `Accept`.
+One URL, one representation. This endpoint has no `Accept` dispatch and no `?format=` parameter: the response is the JSON document below regardless of `Accept`. That is unchanged by the project landing page's `303`, which is a redirect from one URL to another and applies to `/dpe/projects/{shortcode}` alone — see [Machine-Readable Metadata](./machine-readable-metadata.md).
 
 DPE serves metadata only. It does not serve the file's bytes and does not redirect to them — the download URL is a *field* of the document, which a consumer reads and then fetches from dsp-ingest itself.
 
@@ -219,7 +219,7 @@ Values with no source are emitted as explicit `null` rather than omitted, so the
 
 One field is **absent entirely**, not `null`: **a relative path**. Assets are flat under `/projects/{shortcode}/assets/`, so there is no directory structure for a path to describe. An always-`null` field would imply a hierarchy that does not exist. Adding it later is a backward-compatible change.
 
-The endpoint is **not** rate-limited: the limiter is scoped to `/dpe/oai` alone (see *Rate limiting*). It sits beside `/dpe/projects/{id}` rather than under `/dpe/oai`, which is strictly `?verb=`-dispatched per the protocol — a REST path under it would break that contract.
+The endpoint is **not** rate-limited: the limiter covers `/dpe/oai` and the two machine-readable representation routes, and this route is deliberately outside it (see *Rate limiting*). It sits beside `/dpe/projects/{id}` rather than under `/dpe/oai`, which is strictly `?verb=`-dispatched per the protocol — a REST path under it would break that contract.
 
 ## Identifiers
 
@@ -232,7 +232,9 @@ OAI identifiers are derived from DaSCH [ARK](https://arks.org/) identifiers:
 
 These differ from the resolvable ARK URLs (`https://ark.dasch.swiss/ark:/72163/1/...`), which appear in the metadata payloads as `dc:identifier` / DataCite `identifier`.
 
-The OAI `<identifier>` header is the **only** place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — `dc:identifier`, `dc:relation`, DataCite `identifier` and `relatedIdentifier`, and the project page's permalink link target — carries `https://ark.dasch.swiss/` so a harvester can dereference it. `Pid::as_url()` is the accessor for that form; there is deliberately no accessor returning a bare `ark:/…` path.
+The OAI `<identifier>` header is the **only** place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — `dc:identifier`, `dc:relation`, DataCite `identifier` and `relatedIdentifier`, and the project page's permalink link target — carries a resolver in front so a harvester can dereference it. `Pid::as_url()` is the accessor for that form; there is deliberately no accessor returning a bare `ark:/…` path.
+
+Which resolver is a deployment's own business. Production, DEV and STAGE all emit `https://ark.dasch.swiss/`, the host the corpus records. A PR preview sets [`DPE_ARK_RESOLVER_BASE_URL`](./operations.md#environment-variables) and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI `<identifier>` header, being host-independent already, does not change at all.
 
 ## Sets
 
@@ -286,7 +288,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oa
 
 ### Rate limiting
 
-The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields `429 Too Many Requests` with a `Retry-After` header (and `X-RateLimit-*` headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via `DPE_OAI_RATE_LIMIT_PER_SECOND` and `DPE_OAI_RATE_LIMIT_BURST` (see [operations](./operations.md)).
+The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields `429 Too Many Requests` with a `Retry-After` header (and `X-RateLimit-*` headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via `DPE_OAI_RATE_LIMIT_PER_SECOND` and `DPE_OAI_RATE_LIMIT_BURST` (see [operations](./operations.md)); the same settings and the same per-IP bucket also cover the two machine-readable representation routes (see [Machine-Readable Metadata](./machine-readable-metadata.md)).
 
 ### Flow control (paging)
 

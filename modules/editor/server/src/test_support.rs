@@ -186,8 +186,8 @@ pub(crate) fn temporal_tables() -> Arc<TemporalTables> {
         .get_or_init(|| {
             let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
             Arc::new(TemporalTables {
-                periods: platform_metadata::chronontology::load_from(&dir),
-                enrichment: platform_metadata::temporal_enrichment::load_from(&dir),
+                periods: shared_metadata::chronontology::load_from(&dir),
+                enrichment: shared_metadata::temporal_enrichment::load_from(&dir),
             })
         })
         .clone()

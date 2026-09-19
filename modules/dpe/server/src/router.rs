@@ -1,5 +1,5 @@
 //! App router assembly, kept separate from `serve()` (which does I/O + global
-//! setup) so the routing — including the per-route OAI rate limiter — is
+//! setup) so the routing — including the per-route rate limiter — is
 //! unit-testable.
 
 use std::net::{IpAddr, SocketAddr};
@@ -41,12 +41,20 @@ impl KeyExtractor for RightmostXffKeyExtractor {
     }
 }
 
-/// The `/dpe/oai` route as a standalone sub-router with `limiter` applied to it.
+/// The rate-limited routes as a standalone sub-router with `limiter` applied to
+/// them: `/dpe/oai` and the two machine-readable representations of a project.
+///
+/// One layer over all three, so they share a per-IP bucket and one set of
+/// `DPE_OAI_RATE_LIMIT_*` settings. The representations belong here from their
+/// first day rather than after measurement: the JSON-LD one serves as much of
+/// `hasPart` as its byte budget allows, which is a few megabytes built in memory
+/// per request.
+///
 /// The limiter type is erased here — the result is a plain `Router<AppState>` the
 /// caller merges in — so `build_router` never has to name the `GovernorLayer`
-/// type. In production `limiter` is the real `GovernorLayer` (see [`oai_router`]);
-/// tests pass a fake to drive gating deterministically.
-pub(crate) fn oai_router_with<L>(limiter: L) -> Router<AppState>
+/// type. In production `limiter` is the real `GovernorLayer` (see
+/// [`rate_limited_router`]); tests pass a fake to drive gating deterministically.
+pub(crate) fn rate_limited_router_with<L>(limiter: L) -> Router<AppState>
 where
     L: tower::Layer<axum::routing::Route> + Clone + Send + Sync + 'static,
     L::Service: tower::Service<axum::extract::Request, Response = axum::response::Response, Error = std::convert::Infallible>
@@ -59,12 +67,22 @@ where
     use axum::routing::get;
     Router::new()
         .route("/dpe/oai", get(dpe_api_oai::oai_handler))
+        // The suffixes are `metadata::REPRESENTATIONS`' second column; that
+        // table is what builds the URLs the page links and negotiates to.
+        .route(
+            "/dpe/projects/{id}/metadata.jsonld",
+            get(crate::metadata::project_json_ld_handler),
+        )
+        .route(
+            "/dpe/projects/{id}/metadata.datacite.json",
+            get(crate::metadata::project_datacite_json_handler),
+        )
         .route_layer(limiter)
 }
 
-/// The production `/dpe/oai` sub-router, rate-limited per-IP from config.
+/// The production rate-limited sub-router, limited per-IP from config.
 /// `use_headers()` adds `X-RateLimit-*` and `Retry-After` to 429 responses.
-pub(crate) fn oai_router(config: &DpeConfig) -> Router<AppState> {
+pub(crate) fn rate_limited_router(config: &DpeConfig) -> Router<AppState> {
     use tower_governor::governor::GovernorConfigBuilder;
     use tower_governor::GovernorLayer;
 
@@ -76,15 +94,16 @@ pub(crate) fn oai_router(config: &DpeConfig) -> Router<AppState> {
         .finish()
         .expect("OAI GovernorConfig should build from valid config");
 
-    oai_router_with(GovernorLayer { config: std::sync::Arc::new(governor_conf) })
+    rate_limited_router_with(GovernorLayer { config: std::sync::Arc::new(governor_conf) })
 }
 
-/// Assemble the traced app router. `oai_router` carries the (already rate-limited)
-/// `/dpe/oai` route; passing it in — rather than a bare layer — keeps this
-/// signature free of the `GovernorLayer` trait bounds, so it stays reconstructable
-/// by hand and lets tests substitute a fake-limited OAI router. Static assets are
-/// served from `public_dir`, falling back to the app's 404 shell.
-pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_router: Router<AppState>) -> Router {
+/// Assemble the traced app router. `rate_limited` carries the (already
+/// rate-limited) `/dpe/oai` route and the two representation routes; passing it
+/// in — rather than a bare layer — keeps this signature free of the
+/// `GovernorLayer` trait bounds, so it stays reconstructable by hand and lets
+/// tests substitute a fake-limited sub-router. Static assets are served from
+/// `public_dir`, falling back to the app's 404 shell.
+pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_limited: Router<AppState>) -> Router {
     use axum::response::Redirect;
     use axum::routing::get;
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
@@ -92,7 +111,17 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
 
     let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::not_found).with_state(state.clone()));
 
+    // The deployment's own ARK resolver, and only when it publishes ARKs that
+    // name itself. Unset — production, DEV, STAGE — the route does not exist:
+    // `ark.dasch.swiss` is the resolver there, and a second one answering the
+    // same paths on the site itself would be a second authority.
+    let ark_resolver = match state.ark_resolver_base_url {
+        Some(_) => Router::new().route(crate::ark::RESOLVER_ROUTE, get(crate::ark::resolve_project)),
+        None => Router::new(),
+    };
+
     Router::new()
+        .merge(ark_resolver)
         // --- Traced routes (declared BEFORE .layer()) ---
         .route("/", get(|| async { Redirect::permanent("/dpe/projects") }))
         .route("/dpe", get(|| async { Redirect::permanent("/dpe/projects") }))
@@ -105,9 +134,10 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
             "/dpe/records/{shortcode}/{record_id}/file",
             get(crate::downloads::record_file_handler),
         )
-        // OAI-PMH (note: /dpe/oai, not /oai) — XML, must stay unbroken.
-        // Rate-limited per-IP; the limiter is scoped to this route only (see `oai_router`).
-        .merge(oai_router)
+        // OAI-PMH (note: /dpe/oai, not /oai) — XML, must stay unbroken — and
+        // the two machine-readable representations. Rate-limited per-IP; the
+        // limiter is scoped to those routes only (see `rate_limited_router`).
+        .merge(rate_limited)
         .route("/dpe/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
         .route("/dpe/projects/search", get(fragments::search_fragment_handler))
         .route("/dpe/api/v2/projects", get(fragments::projects_json_handler))
@@ -123,13 +153,15 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
 }
 
 /// Tests for the rate-limit *seam*: that the limiter is wired onto `/dpe/oai`
-/// only. The actual throttling algorithm is `tower_governor`'s and is not
+/// and the two representation routes and nothing else. The actual throttling
+/// algorithm is `tower_governor`'s and is not
 /// re-tested here. Fake layers (`AllowAll`/`DenyAll`) stand in for the real
 /// `GovernorLayer` so gating is deterministic and independent of timing.
 ///
 /// Each fake is defined inside the submodule of the single test that uses it,
-/// so the source itself shows the fake cannot leak to another test. The shared
-/// harness (`test_state`, `status_of`, `NO_PUBLIC_DIR`) lives here at the top.
+/// so the source itself shows the fake cannot leak to another test.
+/// `test_state` and `NO_PUBLIC_DIR` come from `test_support`, shared with the
+/// landing-page metadata tests so both build the same app.
 #[cfg(test)]
 mod tests {
     use axum::body::Body;
@@ -137,18 +169,7 @@ mod tests {
     use axum::http::StatusCode;
     use tower::ServiceExt;
 
-    use crate::AppState;
-
-    fn test_state() -> AppState {
-        AppState {
-            fathom_site_id: None,
-            css_href: "/assets/app.css".to_string(),
-        }
-    }
-
-    // Static assets come from a nonexistent dir: these tests target redirect and
-    // OAI routes, never a real static file, so the fallback is never exercised.
-    const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
+    use crate::test_support::{test_state, NO_PUBLIC_DIR};
 
     async fn status_of(app: axum::Router, uri: &str) -> StatusCode {
         let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
@@ -168,7 +189,7 @@ mod tests {
         use tower::{Layer, Service};
 
         use super::{status_of, test_state, NO_PUBLIC_DIR};
-        use crate::router::{build_router, oai_router_with};
+        use crate::router::{build_router, rate_limited_router_with};
 
         #[derive(Clone)]
         struct DenyAll;
@@ -207,25 +228,33 @@ mod tests {
         }
 
         #[tokio::test]
-        async fn gates_oai_only() {
+        async fn gates_oai_and_the_representations() {
             // The `/dpe` redirect is a pure handler (no data/cache access), so it is a
             // stable "not rate-limited" control that avoids the set_data_dir global.
-            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), oai_router_with(DenyAll));
-            assert_eq!(status_of(app.clone(), "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
+            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), rate_limited_router_with(DenyAll));
+            for uri in [
+                "/dpe/oai",
+                "/dpe/projects/0862/metadata.jsonld",
+                "/dpe/projects/0862/metadata.datacite.json",
+            ] {
+                assert_eq!(status_of(app.clone(), uri).await, StatusCode::TOO_MANY_REQUESTS, "{uri}");
+            }
             assert_eq!(status_of(app, "/dpe").await, StatusCode::PERMANENT_REDIRECT);
         }
 
-        /// Pins the scope: widening the limiter here would throttle downloads.
+        /// Pins the scope: widening the limiter here would throttle downloads,
+        /// and it must not reach the landing page a person reads either.
         #[tokio::test]
-        async fn does_not_gate_the_record_file_route() {
-            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), oai_router_with(DenyAll));
-            let status = status_of(app, "/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file").await;
-            assert_ne!(status, StatusCode::TOO_MANY_REQUESTS);
+        async fn does_not_gate_the_record_file_or_landing_page_routes() {
+            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), rate_limited_router_with(DenyAll));
+            for uri in ["/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file", "/dpe/projects/0862"] {
+                assert_ne!(status_of(app.clone(), uri).await, StatusCode::TOO_MANY_REQUESTS, "{uri}");
+            }
         }
     }
 
     /// `AllowAll` — a fake limiter that lets every request through unchanged.
-    /// Scoped to `allow_all::passes_oai_through`.
+    /// Scoped to `allow_all::passes_the_limited_routes_through`.
     mod allow_all {
         use std::convert::Infallible;
         use std::task::{Context, Poll};
@@ -236,7 +265,7 @@ mod tests {
         use tower::{Layer, Service};
 
         use super::{status_of, test_state, NO_PUBLIC_DIR};
-        use crate::router::{build_router, oai_router_with};
+        use crate::router::{build_router, rate_limited_router_with};
 
         #[derive(Clone)]
         struct AllowAll;
@@ -270,11 +299,14 @@ mod tests {
         }
 
         #[tokio::test]
-        async fn passes_oai_through() {
-            // With a passthrough limiter, /dpe/oai must NOT be 429 — proving the layer
-            // gates rather than hard-blocks. (The handler answers the OAI request itself.)
-            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), oai_router_with(AllowAll));
-            assert_ne!(status_of(app, "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
+        async fn passes_the_limited_routes_through() {
+            // With a passthrough limiter, the limited routes must NOT be 429 — proving
+            // the layer gates rather than hard-blocks. (Each handler answers its own
+            // request.)
+            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), rate_limited_router_with(AllowAll));
+            for uri in ["/dpe/oai", "/dpe/projects/0862/metadata.jsonld"] {
+                assert_ne!(status_of(app.clone(), uri).await, StatusCode::TOO_MANY_REQUESTS, "{uri}");
+            }
         }
     }
 
@@ -310,7 +342,7 @@ mod tests {
         };
 
         // Any record with a file, taken from the cache: the populated-metadata
-        // record is a platform-metadata test fixture and is not part of the
+        // record is a shared-metadata test fixture and is not part of the
         // served data.
         let record = dpe_core::record_cache::all_records()
             .iter()
@@ -333,14 +365,120 @@ mod tests {
         );
     }
 
+    /// The ARK resolver: present only when the deployment publishes ARKs that
+    /// name itself, and answering exactly what it publishes.
+    mod ark_resolver {
+        use axum::routing::get;
+
+        use super::{status_of, test_state, NO_PUBLIC_DIR};
+        use crate::router::{build_router, rate_limited_router_with};
+        use crate::AppState;
+
+        const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
+
+        fn app(ark_resolver_base_url: Option<&str>) -> axum::Router {
+            dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
+            let state = AppState {
+                ark_resolver_base_url: ark_resolver_base_url.map(str::to_string),
+                ..test_state()
+            };
+            build_router(
+                state,
+                NO_PUBLIC_DIR.as_ref(),
+                rate_limited_router_with(tower::layer::util::Identity::new()),
+            )
+        }
+
+        async fn location(app: axum::Router, uri: &str) -> Option<String> {
+            let req = axum::extract::Request::builder()
+                .uri(uri)
+                .body(axum::body::Body::empty())
+                .unwrap();
+            let response = tower::ServiceExt::oneshot(app, req).await.unwrap();
+            response
+                .headers()
+                .get(axum::http::header::LOCATION)
+                .map(|value| value.to_str().unwrap().to_string())
+        }
+
+        /// The whole point: an ARK the preview published resolves, on the
+        /// preview, to the preview's own landing page.
+        #[tokio::test]
+        async fn a_project_ark_redirects_to_the_landing_page() {
+            let app = app(Some(PREVIEW));
+            assert_eq!(
+                status_of(app.clone(), "/ark:/72163/1/0862").await,
+                axum::http::StatusCode::FOUND,
+                "302, as ark.dasch.swiss answers for a project ARK"
+            );
+            assert_eq!(
+                location(app, "/ark:/72163/1/0862").await.as_deref(),
+                // `public_base_url`, not the resolver origin: the resolver says
+                // where the ARK lives, the public base URL says where the site
+                // does, and a deployment may be reached at both.
+                Some("https://example.test/dpe/projects/0862")
+            );
+        }
+
+        /// The target is the resolved project's shortcode, never the path
+        /// segment — the same rule the landing page's identifiers follow.
+        #[tokio::test]
+        async fn the_target_is_the_canonical_shortcode() {
+            assert_eq!(
+                location(app(Some(PREVIEW)), "/ark:/72163/1/081c").await.as_deref(),
+                Some("https://example.test/dpe/projects/081C")
+            );
+        }
+
+        #[tokio::test]
+        async fn an_unknown_shortcode_is_not_found() {
+            assert_eq!(
+                status_of(app(Some(PREVIEW)), "/ark:/72163/1/9999").await,
+                axum::http::StatusCode::NOT_FOUND
+            );
+        }
+
+        /// A record ARK has one segment more than the route, so it never
+        /// matches and falls through to the site's 404.
+        ///
+        /// Deliberate, and measured rather than assumed: DPE serves no record
+        /// landing page, `ark.dasch.swiss` resolves a record ARK to the VRE
+        /// (`app.dasch.swiss/resource/…`) and not to DPE at all, and nothing a
+        /// FAIR assessment reads off a project page dereferences a record ARK —
+        /// F-UJI collects `hasPart` into `related_resources`, and fetches a part
+        /// only when it is typed `MediaObject`, which these are not
+        /// (`metadata_collector_rdf.py:887`). Redirecting a record ARK to its
+        /// project page would answer for a different entity.
+        #[tokio::test]
+        async fn a_record_ark_is_not_resolved() {
+            assert_eq!(
+                status_of(app(Some(PREVIEW)), "/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh").await,
+                axum::http::StatusCode::NOT_FOUND
+            );
+        }
+
+        /// Dormant in production: with nothing configured the route is not
+        /// mounted, so the path is an ordinary 404 and no second ARK authority
+        /// exists beside `ark.dasch.swiss`.
+        #[tokio::test]
+        async fn the_route_is_absent_when_no_resolver_is_configured() {
+            let app = app(None);
+            assert_eq!(
+                status_of(app.clone(), "/ark:/72163/1/0862").await,
+                axum::http::StatusCode::NOT_FOUND
+            );
+            assert_eq!(location(app, "/ark:/72163/1/0862").await, None);
+        }
+    }
+
     #[tokio::test]
-    async fn real_oai_router_builds_and_wires() {
-        // The production oai_router must build from default config (guards the
+    async fn the_real_rate_limited_router_builds_and_wires() {
+        // The production sub-router must build from default config (guards the
         // .expect()) and attach without a passthrough request tripping the limit.
-        use crate::router::{build_router, oai_router};
+        use crate::router::{build_router, rate_limited_router};
 
         let config = crate::config::DpeConfig::default();
-        let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), oai_router(&config));
+        let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), rate_limited_router(&config));
         assert_ne!(status_of(app, "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
     }
 

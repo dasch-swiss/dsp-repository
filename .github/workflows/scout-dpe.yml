@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "modules/dpe/**"
-      - "modules/platform/**"
+      - "shared/**"
       - "Cargo.lock"
 
 permissions:

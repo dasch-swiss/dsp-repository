@@ -12,8 +12,9 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] axe-core scan passes on affected pages
 - [ ] Unit tests for edge cases (invalid input, missing data)
 - [ ] New API crates follow `dpe-api-{name}` pattern (`docs/src/repo_structure.md`)
-- [ ] `dpe-core` and `platform-metadata` have no framework dependencies
-- [ ] `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory. Both fail the build, so this is a spot-check: a service dependency is a Cargo cycle, a hardcoded path is caught by `just check-platform-paths`
+- [ ] `dpe-core`, `shared-metadata` and `shared-fair` have no framework dependencies — a `shared-fair` writer returns a `String` or a `serde_json::Value`, never a response type
+- [ ] `shared-metadata` and `shared-fair` take no dependency on a service crate, and no path into a service's data directory. Both fail the build, so this is a spot-check: a service dependency is a Cargo cycle, a hardcoded path is caught by `just check-shared-paths`
+- [ ] A change to a landing page or to `shared-fair` was measured, not assumed: against a local `just dev`, run `just fair-check http://host.docker.internal:4000/dpe/projects/0862 16` and `just fair-check http://host.docker.internal:4000/dpe/projects/0868 21`, and record both scores as rows in `docs/src/dpe/machine-readable-metadata.md`. A test says the metadata is *there*; only this says it is *readable* (`docs/adr/0005-fair-landing-pages-in-the-access-area.md`). **Both projects, not just 0862**: no record dump is committed for 0862, so it emits no `distribution` and never exercises the file-describing paths. 0868 does, and takes a few minutes because the assessor downloads the files it advertises
 - [ ] CLI subcommands documented in help text
 - [ ] Documentation updated when patterns change
 - [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)
@@ -37,7 +38,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 
 - [ ] Datastar attribute patterns match conventions (`_` prefix for signals)
 - [ ] Fragment handlers in `fragments/` module, not inline
-- [ ] Contract types in `platform-metadata`, DPE's view model in `dpe-core` — not in web or API crates
+- [ ] Contract types in `shared-metadata`, DPE's view model in `dpe-core`, representation mappings in `shared-fair` — not in web or API crates
 - [ ] No non-trivial `html!` block passed directly as a function argument — bind to a `let` or extract a `fn -> Markup` helper (nested-as-arg `html!` gets mangled by `just fmt`)
 - [ ] Test files: `{feature}_tests.rs` (Rust), `{feature}.spec.ts` (Playwright)
 

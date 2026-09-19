@@ -3,13 +3,13 @@
 use std::collections::HashMap;
 
 use dpe_core::project::Project;
-use dpe_core::{ClusterRaw, ContributorLookup, ProjectRepository, RecordRepository};
-use platform_metadata::models::AuthorityFileReference;
-use platform_metadata::project::{
-    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectStatus,
-    TemporalCoverage,
+use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
+use shared_metadata::models::AuthorityFileReference;
+use shared_metadata::project::{
+    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectRaw,
+    ProjectStatus, TemporalCoverage,
 };
-use platform_metadata::{Organization, Person, Record};
+use shared_metadata::{ContributorLookup, Organization, Person, Record};
 
 #[derive(Default)]
 pub struct InMemoryContributorLookup {
@@ -96,13 +96,17 @@ pub fn incunabula_lookup() -> InMemoryContributorLookup {
         .with_organization(incunabula_organization())
 }
 
+/// Stores the wire-contract `ProjectRaw` fixtures and derives the `Project`
+/// view models from them once in `new()`.
 pub struct InMemoryProjectRepository {
     projects: Vec<Project>,
+    projects_raw: Vec<ProjectRaw>,
 }
 
 impl InMemoryProjectRepository {
-    pub fn new(projects: Vec<Project>) -> Self {
-        Self { projects }
+    pub fn new(projects_raw: Vec<ProjectRaw>) -> Self {
+        let projects = projects_raw.iter().cloned().map(Project::from).collect();
+        Self { projects, projects_raw }
     }
 }
 
@@ -114,11 +118,19 @@ impl ProjectRepository for InMemoryProjectRepository {
     fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
         self.projects.iter().find(|p| p.shortcode == shortcode)
     }
+
+    fn get_all_raw(&self) -> &[ProjectRaw] {
+        &self.projects_raw
+    }
+
+    fn get_raw_by_shortcode(&self, shortcode: &str) -> Option<&ProjectRaw> {
+        self.projects_raw.iter().find(|p| p.shortcode == shortcode)
+    }
 }
 
-/// Builds a minimal Project fixture based on the incunabula project (0803).
-pub fn incunabula_project() -> Project {
-    Project {
+/// Builds a minimal ProjectRaw fixture based on the incunabula project (0803).
+pub fn incunabula_project() -> ProjectRaw {
+    ProjectRaw {
         id: "0803".to_string(),
         pid: "https://ark.dasch.swiss/ark:/72163/1/0803".to_string(),
         name: "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre".to_string(),
@@ -127,17 +139,20 @@ pub fn incunabula_project() -> Project {
         status: ProjectStatus::Finished,
         short_description: "An art-scientific monograph of the richly illustrated early prints in Basel.".to_string(),
         description: {
-            let mut map = platform_metadata::utils::Multilingual::new();
+            let mut map = shared_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "A description of early prints in Basel.".to_string());
             map
         },
         start_date: "2008-06-01".to_string(),
         end_date: "2012-08-31".to_string(),
-        url: Some(AuthorityFileReference {
-            type_: "URL".to_string(),
-            url: "https://app.dasch.swiss/project/3ABR_2i8QYGSIDvmP9mlEw".to_string(),
-            text: None,
-        }),
+        url: Some(
+            serde_json::to_value(AuthorityFileReference {
+                type_: "URL".to_string(),
+                url: "https://app.dasch.swiss/project/3ABR_2i8QYGSIDvmP9mlEw".to_string(),
+                text: None,
+            })
+            .expect("AuthorityFileReference serializes"),
+        ),
         secondary_url: None,
         how_to_cite: "Incunabula (2012) DaSCH. ark.dasch.swiss/ark:/72163/1/0803".to_string(),
         access_rights: AccessRights {
@@ -157,22 +172,21 @@ pub fn incunabula_project() -> Project {
         data_publication_year: None,
         type_of_data: Some(vec!["Image".to_string()]),
         data_language: Some(vec!["de".to_string()]),
-        clusters: vec![],
-        collections: vec![],
-        collection_ids: vec![],
+        clusters: None,
+        collections: None,
         records: None,
         keywords: vec![{
-            let mut map = platform_metadata::utils::Multilingual::new();
+            let mut map = shared_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "Letterpress Printing".to_string());
             map
         }],
         disciplines: vec![Discipline::Text({
-            let mut map = platform_metadata::utils::Multilingual::new();
+            let mut map = shared_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "10404 Visual arts and Art history".to_string());
             map
         })],
         temporal_coverage: vec![TemporalCoverage::Text({
-            let mut map = platform_metadata::utils::Multilingual::new();
+            let mut map = shared_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "Late Middle Ages".to_string());
             map
         })],
@@ -196,7 +210,7 @@ pub fn incunabula_project() -> Project {
             },
         ],
         abstract_text: Some({
-            let mut map = platform_metadata::utils::Multilingual::new();
+            let mut map = shared_metadata::utils::Multilingual::new();
             map.insert(
                 "en".to_string(),
                 "An interdisciplinary research project on image sequences of Basel's early prints.".to_string(),
@@ -212,7 +226,7 @@ pub fn incunabula_project() -> Project {
             url: Some("https://data.snf.ch/grants/grant/120378".to_string()),
         }]),
         alternative_names: Some(vec![{
-            let mut map = platform_metadata::utils::Multilingual::new();
+            let mut map = shared_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "Incunabula".to_string());
             map
         }]),
@@ -226,8 +240,8 @@ pub fn incunabula_project() -> Project {
 /// Clones the incunabula project fixture with a distinct shortcode/id/pid, so
 /// tests can build a repository of several projects to exercise paging without a
 /// large fixture. The shortcode drives the OAI identifier, so each is unique.
-pub fn project_with_shortcode(shortcode: &str) -> Project {
-    Project {
+pub fn project_with_shortcode(shortcode: &str) -> ProjectRaw {
+    ProjectRaw {
         id: shortcode.to_string(),
         shortcode: shortcode.to_string(),
         pid: format!("https://ark.dasch.swiss/ark:/72163/1/{shortcode}"),
@@ -252,7 +266,7 @@ pub fn cluster_fixture(id: &str, name: &str, projects: &[&str]) -> ClusterRaw {
 
 /// Loads the first record from the 0803-records.json fixture.
 pub fn first_0803_record() -> Record {
-    let json = include_str!("../../../../platform/metadata/testdata/0803-records.json");
+    let json = include_str!("../../../../../shared/metadata/testdata/0803-records.json");
     let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
     record
 }

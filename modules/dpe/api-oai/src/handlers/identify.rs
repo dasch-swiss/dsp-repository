@@ -35,7 +35,7 @@ fn get_earliest_datestamp(repo: &dyn ProjectRepository) -> String {
     projects
         .iter()
         .filter_map(|p| {
-            if !platform_metadata::is_placeholder(&p.start_date) && !p.start_date.is_empty() {
+            if !shared_metadata::is_placeholder(&p.start_date) && !p.start_date.is_empty() {
                 Some(p.start_date.as_str())
             } else {
                 None

@@ -7,8 +7,8 @@
 use axum::extract::Path;
 use axum::response::IntoResponse;
 use dpe_core::record_repository::{FsRecordRepository, RecordRepository};
-use platform_metadata::RecordFile;
 use serde::Serialize;
+use shared_metadata::RecordFile;
 
 /// `Option`s serialise as explicit `null` to keep the shape stable. `path` is
 /// absent entirely — assets are flat, so a null would imply a hierarchy that does

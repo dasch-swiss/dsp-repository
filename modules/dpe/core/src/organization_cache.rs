@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use platform_metadata::Organization;
+use shared_metadata::Organization;
 
 use super::utils::get_data_dir;
 

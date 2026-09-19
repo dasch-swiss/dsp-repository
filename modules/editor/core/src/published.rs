@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
-use platform_metadata::project::ProjectRaw;
+use shared_metadata::project::ProjectRaw;
 
 /// A published project could not be read.
 ///

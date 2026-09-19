@@ -7,7 +7,7 @@
 //! serde derives: a draft stores fields as `serde_json` values, so this is
 //! built on demand and written back.
 
-use platform_metadata::utils::Multilingual;
+use shared_metadata::utils::Multilingual;
 
 /// The language tags the form offers, in the order it offers them.
 ///

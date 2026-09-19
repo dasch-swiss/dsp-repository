@@ -158,7 +158,7 @@ The requirement asks for a status and nothing else. It is rendered inside the pa
 
 The comparison **ignores ASCII case**. The published set mixes `080C` with `0801a`, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.
 
-A shortcode is validated for shape before the assignment is consulted by `platform_metadata::is_valid_shortcode`, the single copy DPE and the editor share. The rule is **ASCII alphanumeric with a 16-character bound**, not DSP-API's four hex digits (`KnoraProject.scala`): `0801a` through `0801e` are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.
+A shortcode is validated for shape before the assignment is consulted by `shared_metadata::is_valid_shortcode`, the single copy DPE and the editor share. The rule is **ASCII alphanumeric with a 16-character bound**, not DSP-API's four hex digits (`KnoraProject.scala`): `0801a` through `0801e` are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.
 
 ### Landing where you were going
 

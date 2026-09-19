@@ -21,6 +21,15 @@ One further endpoint serves JSON but is documented with the OAI-PMH endpoint, si
 
 It is not under `/dpe/api/v2/` and describes a *record* rather than a project. See [OAI-PMH → File-metadata document](./oai-pmh.md#file-metadata-document).
 
+Two more endpoints serve JSON for a project and are documented in [Machine-Readable Metadata](./machine-readable-metadata.md):
+
+| Method | Path | Returns |
+|--------|------|---------|
+| GET | `/dpe/projects/{shortcode}/metadata.jsonld` | The project as schema.org JSON-LD, `application/ld+json` |
+| GET | `/dpe/projects/{shortcode}/metadata.datacite.json` | The project as DataCite kernel-4 JSON, `application/vnd.datacite.datacite+json` |
+
+These are **standards-shaped**: their field names and structure are schema.org's and DataCite's, so a FAIR assessor or a harvester can read them without knowing anything about DPE. `/dpe/api/v2` is not — it serves the internal project shape, which is DaSCH's own and changes with the corpus. A consumer that wants interoperable metadata wants those two; a consumer that wants what DPE itself holds wants `/dpe/api/v2`.
+
 | Environment | Base URL |
 |-------------|----------|
 | Local development (`just dev`) | `http://localhost:4000` |

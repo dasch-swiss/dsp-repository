@@ -1,0 +1,21 @@
+[package]
+name = "shared-telemetry"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# The collector endpoint. The wire-contract modules (beacon, origin,
+# traceparent) stay framework-free; these are only reached from `collector`.
+axum.workspace = true
+opentelemetry.workspace = true
+tracing.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+proptest = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -4,22 +4,19 @@
 //! and DataCite 4.6 metadata formats, following the DaSCH Metadata to DataCite
 //! mapping specification.
 
-mod datacite;
-mod dublin_core;
-mod helpers;
-mod record_datacite;
-mod record_dublin_core;
-mod resolve;
+#[cfg(test)]
+mod corpus;
 mod types;
 
-use datacite::project_to_datacite;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
-use dpe_core::{ClusterRaw, ContributorLookup, Project};
-use dublin_core::project_to_dublin_core;
-use platform_metadata::{record_datestamp, Record, ARK_PATH_PREFIX};
-use record_datacite::record_to_datacite;
-use record_dublin_core::record_to_dublin_core;
-pub use types::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
+use dpe_core::ClusterRaw;
+use shared_fair::{
+    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ProjectGraph, RecordGraph,
+    ResolveContext,
+};
+pub use shared_fair::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord};
+use shared_metadata::{record_datestamp, ContributorLookup, ProjectRaw, Record, ARK_PATH_PREFIX};
+pub use types::{OaiRecord, OaiRecordHeader};
 
 // Namespace identifier for OAI record identifiers (OAI identifier format:
 // `oai:<namespace-identifier>:<local-identifier>`). This is a persistent, host-independent
@@ -38,6 +35,20 @@ pub fn make_oai_identifier(shortcode: &str) -> String {
 fn make_oai_identifier_from_pid(pid: &str) -> Option<String> {
     let pos = pid.find(ARK_PATH_PREFIX)?;
     Some(format!("{}{}", OAI_IDENTIFIER_PREFIX, &pid[pos..]))
+}
+
+/// The OAI identifier of a project: its recorded PID when that is real,
+/// otherwise one built from the shortcode.
+///
+/// Public because the landing page links its own OAI records and must name them
+/// exactly as `GetRecord` answers to. Deriving that identifier a second time
+/// would be a second rule.
+pub fn project_oai_identifier(project: &ProjectRaw) -> String {
+    if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
+        make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
+    } else {
+        make_oai_identifier(&project.shortcode)
+    }
 }
 
 /// Parses an OAI identifier and extracts the ARK suffix.
@@ -62,19 +73,20 @@ fn membership_set_specs(entity_type: &str, shortcode: &str, clusters: &[ClusterR
 
 /// Creates an OAI record from a project for the given metadata prefix.
 pub fn to_oai_record(
-    project: &Project,
+    project: &ProjectRaw,
     metadata_prefix: &str,
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
 ) -> OaiRecord {
-    let identifier = if !platform_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
-        make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
-    } else {
-        make_oai_identifier(&project.shortcode)
-    };
+    // The temporal tables come from `resolve_inputs`, the one place in DPE that
+    // says what resolution needs, so this endpoint and the landing page cannot
+    // drift apart. The lookup it returns is discarded: handlers take theirs as a
+    // parameter, which is how the tests inject an in-memory double.
+    let (_cached_lookup, periods, enriched) = dpe_core::resolve_inputs();
+    let ctx = ResolveContext::new(lookup, periods, enriched);
     let header = OaiRecordHeader {
-        identifier,
-        datestamp: if !platform_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
+        identifier: project_oai_identifier(project),
+        datestamp: if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
             project.start_date.clone()
         } else {
             "2015-01-01".to_string()
@@ -82,14 +94,17 @@ pub fn to_oai_record(
         set_specs: membership_set_specs("entityType:ResearchProject", &project.shortcode, clusters),
     };
 
+    // No records: `parts` feeds a future `hasPart`, which neither OAI writer reads.
+    let graph = ProjectGraph::build(project, &ctx, &[]);
+
     let dublin_core = if metadata_prefix == "oai_dc" {
-        Some(project_to_dublin_core(project, lookup))
+        Some(project_to_dublin_core(&graph))
     } else {
         None
     };
 
     let datacite = if metadata_prefix == "oai_datacite" {
-        Some(project_to_datacite(project, lookup))
+        Some(project_to_datacite(&graph))
     } else {
         None
     };
@@ -107,14 +122,16 @@ pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str, cluster
         set_specs: membership_set_specs("entityType:Record", &record.pid.shortcode, clusters),
     };
 
+    let graph = RecordGraph::build(record);
+
     let dublin_core = if metadata_prefix == "oai_dc" {
-        Some(record_to_dublin_core(record))
+        Some(record_to_dublin_core(&graph))
     } else {
         None
     };
 
     let datacite = if metadata_prefix == "oai_datacite" {
-        Some(record_to_datacite(record))
+        Some(record_to_datacite(&graph))
     } else {
         None
     };
@@ -139,8 +156,8 @@ pub fn matches_date_filter_record(record: &Record, from: Option<&str>, until: Op
 }
 
 /// Checks if a project matches the given date filter.
-pub fn matches_date_filter(project: &Project, from: Option<&str>, until: Option<&str>) -> bool {
-    let datestamp = if !platform_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
+pub fn matches_date_filter(project: &ProjectRaw, from: Option<&str>, until: Option<&str>) -> bool {
+    let datestamp = if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
         &project.start_date
     } else {
         "2015-01-01"
@@ -163,10 +180,6 @@ pub fn matches_date_filter(project: &Project, from: Option<&str>, until: Option<
 
 #[cfg(test)]
 mod tests {
-    use super::helpers::{
-        extract_year, format_date_range, infer_subject_scheme, is_creator, license_identifier_to_label,
-        map_contributor_type,
-    };
     use super::{make_oai_identifier, parse_oai_identifier};
 
     #[test]
@@ -185,91 +198,5 @@ mod tests {
     fn test_parse_oai_identifier_invalid() {
         let shortcode = parse_oai_identifier("invalid:identifier");
         assert_eq!(shortcode, None);
-    }
-
-    #[test]
-    fn test_extract_year() {
-        assert_eq!(extract_year("2024-01-15"), "2024");
-        assert_eq!(extract_year("2024"), "2024");
-        assert_eq!(extract_year("MISSING"), "2015");
-    }
-
-    #[test]
-    fn test_is_creator_case_insensitive() {
-        assert!(is_creator(&["Project Leader".to_string()]));
-        assert!(is_creator(&["project leader".to_string()]));
-        assert!(is_creator(&["Principal Investigator (PI)".to_string()]));
-        assert!(is_creator(&["principal investigator (pi)".to_string()]));
-        assert!(is_creator(&["Author".to_string()]));
-        assert!(is_creator(&["author".to_string()]));
-        assert!(is_creator(&["Creator".to_string()]));
-        assert!(is_creator(&["creator".to_string()]));
-        assert!(!is_creator(&["Researcher".to_string()]));
-        assert!(!is_creator(&["Data Collector".to_string()]));
-        assert!(!is_creator(&["Contributor".to_string()]));
-    }
-
-    #[test]
-    fn test_is_creator_multiple_types() {
-        assert!(is_creator(&["Researcher".to_string(), "Project Leader".to_string()]));
-        assert!(!is_creator(&["Researcher".to_string(), "Data Collector".to_string()]));
-    }
-
-    #[test]
-    fn test_format_date_range_both() {
-        assert_eq!(
-            format_date_range("2020-01-01", "2023-12-31"),
-            Some("2020-01-01/2023-12-31".to_string())
-        );
-    }
-
-    #[test]
-    fn test_format_date_range_start_only() {
-        assert_eq!(format_date_range("2020-01-01", "MISSING"), Some("2020-01-01".to_string()));
-    }
-
-    #[test]
-    fn test_format_date_range_end_only() {
-        assert_eq!(format_date_range("MISSING", "2023-12-31"), Some("2023-12-31".to_string()));
-    }
-
-    #[test]
-    fn test_format_date_range_none() {
-        assert_eq!(format_date_range("MISSING", "MISSING"), None);
-    }
-
-    #[test]
-    fn test_map_contributor_type() {
-        assert_eq!(map_contributor_type("Researcher"), "Researcher");
-        assert_eq!(map_contributor_type("researcher"), "Researcher");
-        assert_eq!(map_contributor_type("Data Collector"), "DataCollector");
-        assert_eq!(map_contributor_type("data collector"), "DataCollector");
-        assert_eq!(map_contributor_type("Unknown Role"), "Other");
-    }
-
-    #[test]
-    fn test_license_identifier_to_label() {
-        assert_eq!(
-            license_identifier_to_label("CC-BY-4.0"),
-            "Creative Commons Attribution 4.0 International"
-        );
-        assert_eq!(
-            license_identifier_to_label("CC-BY-NC-SA-4.0"),
-            "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International"
-        );
-        assert_eq!(license_identifier_to_label("UNKNOWN"), "UNKNOWN");
-    }
-
-    #[test]
-    fn test_infer_subject_scheme_gnd() {
-        let (scheme, _uri) = infer_subject_scheme("https://d-nb.info/gnd/4066562-8");
-        assert_eq!(scheme, Some("GND".to_string()));
-    }
-
-    #[test]
-    fn test_infer_subject_scheme_unknown() {
-        let (scheme, uri) = infer_subject_scheme("https://example.com/subject/123");
-        assert_eq!(scheme, None);
-        assert_eq!(uri, Some("https://example.com/subject/123".to_string()));
     }
 }

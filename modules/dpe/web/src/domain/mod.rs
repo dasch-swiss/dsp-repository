@@ -2,7 +2,7 @@
 // the project-list and single-project loaders, and the contributor resolver.
 //
 // Domain *types* live in the crates that own them — the wire contract
-// (ProjectRaw, Person, Record, …) in platform-metadata, DPE's `Project` view
+// (ProjectRaw, Person, Record, …) in shared-metadata, DPE's `Project` view
 // model in dpe-core — and are imported directly by consumers. There is no
 // re-export shim here.
 

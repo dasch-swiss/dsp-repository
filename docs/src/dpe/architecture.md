@@ -5,29 +5,35 @@ The Discovery and Presentation Environment (DPE) serves research project metadat
 ## Crate Structure
 
 ```
-platform-metadata The wire contract, shared with the editor
+shared-metadata   The wire contract, shared with the editor
                        │
-dpe-core          DPE's view model, repositories, data loading
-                  Dependencies: platform-metadata, serde, serde_json
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-     dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Maud views
-     + axum
-          │            │
-          └────────────┘
-                 │
-           dpe-server
-           Route composition
-           + Datastar
-           (binary: dpe-server)
+          ┌────────────┴───────────────┐
+          │                            │
+     shared-fair                  dpe-core
+     FAIR exposure engine:        DPE's view model, repositories, data loading
+     resolved graphs +            Dependencies: shared-metadata, serde, serde_json
+     representation writers            │
+          │                 ┌──────────┼────────────┐
+          │                 │          │            │
+          └─────────────────┤          │            │
+                            │          │            │
+                       dpe-api-oai  dpe-web   (future APIs)
+                       OAI-PMH 2.0  Maud views
+                       + axum
+                            │          │
+                            └──────────┘
+                                 │
+                            dpe-server
+                            Route composition
+                            + Datastar
+                            (binary: dpe-server)
 ```
 
-- **platform-metadata**: The research-metadata wire contract, shared with the editor and living in `modules/platform/` rather than under `modules/dpe/`.
+- **shared-metadata**: The research-metadata wire contract, shared with the editor and living in `shared/` rather than under `modules/dpe/`.
+- **shared-fair**: The FAIR exposure engine (ADR-0005) — one resolved graph per published object and one writer per representation over it, including the DataCite and Dublin Core mappings OAI-PMH uses. Lives in `shared/`, depends on shared-metadata only, and knows no routes.
 - **dpe-core**: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.
-- **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends only on platform-metadata and dpe-core.
-- **dpe-web**: A native library of [Maud](https://maud.lambda.xyz/) page and component functions (`fn -> Markup`). Imports platform-metadata and dpe-core types directly.
+- **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends on shared-metadata, dpe-core and shared-fair.
+- **dpe-web**: A native library of [Maud](https://maud.lambda.xyz/) page and component functions (`fn -> Markup`). Imports shared-metadata and dpe-core types directly.
 - **dpe-server**: Thin composition root. Wires the native Axum router, the `<head>`/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.
 
 ## Hypermedia-Driven Architecture
@@ -67,9 +73,17 @@ Fragment endpoints are plain Axum handlers that render Maud `Markup` to HTML str
 ```
 GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
+GET /projects/{id}/metadata.*   → Machine-readable representation (JSON-LD, DataCite JSON)
 ```
 
 Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.
+
+The one exception is the landing page's `303 See Other` when `Accept` prefers a
+machine-readable representation, decided in ADR-0005
+(`docs/adr/0005-fair-landing-pages-in-the-access-area.md`). It is a
+redirect to a distinct URL, not a differently rendered page: the page itself is
+byte-identical for every `Accept` value, and every answer from the route carries
+`Vary: Accept`. See [Machine-Readable Metadata](./machine-readable-metadata.md).
 
 ## HATEOAS Tab Pattern
 

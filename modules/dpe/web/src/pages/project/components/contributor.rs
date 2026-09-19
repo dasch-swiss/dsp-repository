@@ -34,7 +34,7 @@ pub fn contributor(contributor: &ResolvedContributor) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::organization::Organization;
+    use shared_metadata::organization::Organization;
 
     use super::*;
     use crate::test_support::sample_person_contributor;

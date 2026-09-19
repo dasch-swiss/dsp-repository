@@ -16,11 +16,11 @@ serde_urlencoded = "0.7"
 [dependencies.dpe-core]
 path = "../../core"
 
-[dependencies.platform-metadata]
-path = "../../../platform/metadata"
+[dependencies.shared-metadata]
+path = "../../../../shared/metadata"
 
-[dependencies.platform-telemetry]
-path = "../../../platform/telemetry"
+[dependencies.shared-telemetry]
+path = "../../../../shared/telemetry"
 
 # Prevent this from interfering with workspaces
 [workspace]

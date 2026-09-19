@@ -1,0 +1,261 @@
+//! Shared helper functions for metadata transformation.
+
+use shared_metadata::AccessRightsType;
+
+/// The year in a date string (YYYY-MM-DD or YYYY), or `None` when there is not
+/// one to read.
+///
+/// `None` rather than a fallback year: whether a missing year is worth
+/// inventing is the writer's decision, not this function's. DataCite makes
+/// `publicationYear` mandatory and falls back through
+/// `publication_year_with_fallback`; schema.org's `datePublished` is optional
+/// and omits the key instead.
+///
+/// Counts characters rather than bytes. A byte length guarding a byte slice
+/// panics on a date whose fourth byte falls inside a multi-byte character; the
+/// two counts agree on the ASCII ISO-8601 dates the corpus holds.
+pub fn extract_year(date: &str) -> Option<String> {
+    let year: String = date.chars().take(4).collect();
+    (year.chars().count() == 4 && !shared_metadata::is_placeholder(date)).then_some(year)
+}
+
+/// Converts an AccessRightsType to a human-readable string.
+pub fn access_rights_to_string(ar: &AccessRightsType) -> &'static str {
+    match ar {
+        AccessRightsType::FullOpenAccess => "Full Open Access",
+        AccessRightsType::OpenAccessWithRestrictions => "Open Access with Restrictions",
+        AccessRightsType::EmbargoedAccess => "Embargoed Access",
+        AccessRightsType::MetadataOnlyAccess => "Metadata only Access",
+    }
+}
+
+/// The COAR access-right term for an access level. These are the URIs a FAIR
+/// assessor recognises, and both the JSON-LD and `DC.accessRights` use this
+/// table, beside the human-readable spelling above.
+pub fn coar_access_right(ar: &AccessRightsType) -> &'static str {
+    match ar {
+        AccessRightsType::FullOpenAccess => "http://purl.org/coar/access_right/c_abf2",
+        AccessRightsType::OpenAccessWithRestrictions => "http://purl.org/coar/access_right/c_16ec",
+        AccessRightsType::EmbargoedAccess => "http://purl.org/coar/access_right/c_f1cf",
+        AccessRightsType::MetadataOnlyAccess => "http://purl.org/coar/access_right/c_14cb",
+    }
+}
+
+/// The value unless it is a placeholder or empty, in which case there is none.
+///
+/// The test every writer that must not assert a falsehood applies to a corpus
+/// string. `datacite.rs` deliberately does **not** use it: it tests the license
+/// URI for a placeholder only, keeps an empty one, and that narrower behaviour
+/// is in the committed OAI output.
+pub fn real(value: &str) -> Option<&str> {
+    if value.is_empty() || shared_metadata::is_placeholder(value) {
+        None
+    } else {
+        Some(value)
+    }
+}
+
+/// Checks whether an attribution represents a creator (principal investigator,
+/// project leader, author, or creator) using case-insensitive matching.
+pub fn is_creator(contributor_types: &[String]) -> bool {
+    contributor_types.iter().any(|t| {
+        let lower = t.to_lowercase();
+        lower == "project leader" || lower == "principal investigator (pi)" || lower == "author" || lower == "creator"
+    })
+}
+
+/// Maps a contributor type string to the closest DataCite contributorType
+/// vocabulary term.
+pub fn map_contributor_type(contributor_type: &str) -> &'static str {
+    match contributor_type.to_lowercase().as_str() {
+        "researcher" => "Researcher",
+        "data collector" => "DataCollector",
+        "data curator" => "DataCurator",
+        "data manager" => "DataManager",
+        "editor" => "Editor",
+        "producer" => "Producer",
+        "supervisor" => "Supervisor",
+        "sponsor" => "Sponsor",
+        "research group" => "ResearchGroup",
+        "distributor" => "Distributor",
+        "hosting institution" => "HostingInstitution",
+        "rights holder" => "RightsHolder",
+        _ => "Other",
+    }
+}
+
+/// Formats a date range from startDate and endDate.
+/// Returns "startDate/endDate" when both are valid, or just the valid one.
+pub fn format_date_range(start: &str, end: &str) -> Option<String> {
+    let has_start = !shared_metadata::is_placeholder(start) && !start.is_empty();
+    let has_end = !shared_metadata::is_placeholder(end) && !end.is_empty();
+    match (has_start, has_end) {
+        (true, true) => Some(format!("{}/{}", start, end)),
+        (true, false) => Some(start.to_string()),
+        (false, true) => Some(end.to_string()),
+        (false, false) => None,
+    }
+}
+
+/// Converts an SPDX license identifier to a human-readable label.
+pub fn license_identifier_to_label(identifier: &str) -> String {
+    match identifier {
+        "CC-BY-4.0" => "Creative Commons Attribution 4.0 International".to_string(),
+        "CC-BY-SA-4.0" => "Creative Commons Attribution-ShareAlike 4.0 International".to_string(),
+        "CC-BY-NC-4.0" => "Creative Commons Attribution-NonCommercial 4.0 International".to_string(),
+        "CC-BY-NC-SA-4.0" => "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International".to_string(),
+        "CC-BY-ND-4.0" => "Creative Commons Attribution-NoDerivatives 4.0 International".to_string(),
+        "CC-BY-NC-ND-4.0" => "Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International".to_string(),
+        "CC0-1.0" => "Creative Commons Public Domain Dedication".to_string(),
+        _ => identifier.to_string(),
+    }
+}
+
+/// Infers a subject scheme from an AuthorityFileReference URL.
+pub fn infer_subject_scheme(url: &str) -> (Option<String>, Option<String>) {
+    if url.contains("skos.um.es") || url.contains("zbw.eu/stw") {
+        (Some("STW Thesaurus for Economics".to_string()), Some(url.to_string()))
+    } else if url.contains("d-nb.info/gnd") {
+        (Some("GND".to_string()), Some("https://d-nb.info/gnd/".to_string()))
+    } else if url.contains("loc.gov") {
+        (
+            Some("LCSH".to_string()),
+            Some("http://id.loc.gov/authorities/subjects".to_string()),
+        )
+    } else if url.contains("vocab.getty.edu") {
+        (Some("AAT".to_string()), Some(url.to_string()))
+    } else {
+        (None, Some(url.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        coar_access_right, extract_year, format_date_range, infer_subject_scheme, is_creator,
+        license_identifier_to_label, map_contributor_type, real,
+    };
+
+    #[test]
+    fn test_extract_year() {
+        assert_eq!(extract_year("2024-01-15").as_deref(), Some("2024"));
+        assert_eq!(extract_year("2024").as_deref(), Some("2024"));
+        assert_eq!(extract_year("MISSING"), None);
+        assert_eq!(extract_year("CALCULATED"), None);
+        assert_eq!(extract_year(""), None);
+    }
+
+    /// The fourth byte of "123ä5" is inside the "ä", which a byte slice cannot
+    /// cut; and "äää" is six bytes but only three characters, so a byte-length
+    /// guard would have let it through to a two-character "year".
+    #[test]
+    fn extract_year_counts_characters_not_bytes() {
+        assert_eq!(extract_year("123ä5").as_deref(), Some("123ä"));
+        assert_eq!(extract_year("äää"), None);
+        assert_eq!(extract_year("202"), None);
+    }
+
+    /// Every level has a term, and each of the four is distinct: a FAIR
+    /// assessor reads this URI, not the human-readable spelling beside it.
+    #[test]
+    fn coar_uris_cover_every_access_level() {
+        use shared_metadata::AccessRightsType::*;
+        assert_eq!(coar_access_right(&FullOpenAccess), "http://purl.org/coar/access_right/c_abf2");
+        assert_eq!(
+            coar_access_right(&OpenAccessWithRestrictions),
+            "http://purl.org/coar/access_right/c_16ec"
+        );
+        assert_eq!(coar_access_right(&EmbargoedAccess), "http://purl.org/coar/access_right/c_f1cf");
+        assert_eq!(
+            coar_access_right(&MetadataOnlyAccess),
+            "http://purl.org/coar/access_right/c_14cb"
+        );
+    }
+
+    #[test]
+    fn real_drops_a_placeholder_and_an_empty_string() {
+        assert_eq!(real("Rural Land Use"), Some("Rural Land Use"));
+        assert_eq!(real("MISSING"), None);
+        assert_eq!(real("CALCULATED"), None);
+        assert_eq!(real(""), None);
+    }
+
+    #[test]
+    fn test_is_creator_case_insensitive() {
+        assert!(is_creator(&["Project Leader".to_string()]));
+        assert!(is_creator(&["project leader".to_string()]));
+        assert!(is_creator(&["Principal Investigator (PI)".to_string()]));
+        assert!(is_creator(&["principal investigator (pi)".to_string()]));
+        assert!(is_creator(&["Author".to_string()]));
+        assert!(is_creator(&["author".to_string()]));
+        assert!(is_creator(&["Creator".to_string()]));
+        assert!(is_creator(&["creator".to_string()]));
+        assert!(!is_creator(&["Researcher".to_string()]));
+        assert!(!is_creator(&["Data Collector".to_string()]));
+        assert!(!is_creator(&["Contributor".to_string()]));
+    }
+
+    #[test]
+    fn test_is_creator_multiple_types() {
+        assert!(is_creator(&["Researcher".to_string(), "Project Leader".to_string()]));
+        assert!(!is_creator(&["Researcher".to_string(), "Data Collector".to_string()]));
+    }
+
+    #[test]
+    fn test_format_date_range_both() {
+        assert_eq!(
+            format_date_range("2020-01-01", "2023-12-31"),
+            Some("2020-01-01/2023-12-31".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_date_range_start_only() {
+        assert_eq!(format_date_range("2020-01-01", "MISSING"), Some("2020-01-01".to_string()));
+    }
+
+    #[test]
+    fn test_format_date_range_end_only() {
+        assert_eq!(format_date_range("MISSING", "2023-12-31"), Some("2023-12-31".to_string()));
+    }
+
+    #[test]
+    fn test_format_date_range_none() {
+        assert_eq!(format_date_range("MISSING", "MISSING"), None);
+    }
+
+    #[test]
+    fn test_map_contributor_type() {
+        assert_eq!(map_contributor_type("Researcher"), "Researcher");
+        assert_eq!(map_contributor_type("researcher"), "Researcher");
+        assert_eq!(map_contributor_type("Data Collector"), "DataCollector");
+        assert_eq!(map_contributor_type("data collector"), "DataCollector");
+        assert_eq!(map_contributor_type("Unknown Role"), "Other");
+    }
+
+    #[test]
+    fn test_license_identifier_to_label() {
+        assert_eq!(
+            license_identifier_to_label("CC-BY-4.0"),
+            "Creative Commons Attribution 4.0 International"
+        );
+        assert_eq!(
+            license_identifier_to_label("CC-BY-NC-SA-4.0"),
+            "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International"
+        );
+        assert_eq!(license_identifier_to_label("UNKNOWN"), "UNKNOWN");
+    }
+
+    #[test]
+    fn test_infer_subject_scheme_gnd() {
+        let (scheme, _uri) = infer_subject_scheme("https://d-nb.info/gnd/4066562-8");
+        assert_eq!(scheme, Some("GND".to_string()));
+    }
+
+    #[test]
+    fn test_infer_subject_scheme_unknown() {
+        let (scheme, uri) = infer_subject_scheme("https://example.com/subject/123");
+        assert_eq!(scheme, None);
+        assert_eq!(uri, Some("https://example.com/subject/123".to_string()));
+    }
+}

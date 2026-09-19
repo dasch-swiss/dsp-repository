@@ -1,7 +1,7 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use dpe_core::{ClusterRaw, ContributorLookup, Project, ProjectRepository, RecordRepository};
-use platform_metadata::Record;
+use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
+use shared_metadata::{ContributorLookup, ProjectRaw, Record};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::error::OaiError;
@@ -52,7 +52,7 @@ fn reject_unexpected_args(params: &OaiParams) -> Result<(), OaiError> {
 }
 
 enum OaiEntity {
-    Project(Box<Project>),
+    Project(Box<ProjectRaw>),
     Record(Box<Record>),
 }
 
@@ -65,7 +65,7 @@ fn resolve_entity(
 ) -> Result<OaiEntity, OaiError> {
     let id = parse_oai_identifier(identifier).ok_or(OaiError::IdDoesNotExist)?;
 
-    if let Some(project) = repo.get_by_shortcode(&id) {
+    if let Some(project) = repo.get_raw_by_shortcode(&id) {
         return Ok(OaiEntity::Project(Box::new(project.clone())));
     }
 
@@ -98,7 +98,7 @@ fn build_response(
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::Record;
+    use shared_metadata::Record;
 
     use super::super::test_utils::{
         golden, incunabula_lookup, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
@@ -106,7 +106,7 @@ mod tests {
     use super::*;
 
     fn first_0803_record() -> Record {
-        let json = include_str!("../../../../platform/metadata/testdata/0803-records.json");
+        let json = include_str!("../../../../../shared/metadata/testdata/0803-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
         record
     }

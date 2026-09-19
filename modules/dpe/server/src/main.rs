@@ -3,22 +3,53 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
+mod ark;
 mod config;
 #[cfg(feature = "dev")]
 mod dev_reload;
 pub(crate) mod downloads;
 pub(crate) mod fragments;
+mod metadata;
 mod page_url;
 mod router;
+#[cfg(test)]
+pub(crate) mod test_support;
 mod traceparent;
 mod view;
 
-/// Shared state for the page handlers: the (optional) Fathom site id and the
-/// resolved stylesheet href (unhashed in dev, content-hashed in release).
+/// Shared state for the page handlers: the (optional) Fathom site id, the
+/// resolved stylesheet href (unhashed in dev, content-hashed in release), and
+/// the two public base URLs the machine-readable metadata is built from.
+///
+/// State rather than process-globals for the handlers' sake: both URLs are
+/// per-deployment configuration, nothing outside the handlers needs them, and a
+/// test must be able to vary them.
 #[derive(Clone)]
 pub(crate) struct AppState {
     fathom_site_id: Option<String>,
     css_href: String,
+    /// Origin of the site itself, for landing-page and catalogue URLs.
+    pub(crate) public_base_url: String,
+    /// Origin *and path* of the OAI endpoint, for the `describedby` targets.
+    /// A separate value on purpose: on DEV the OAI endpoint answers on another
+    /// host, and neither URL is derived from the other.
+    ///
+    /// A copy, not the only holder: the OAI handler reads its own advertised
+    /// `baseURL` from a process-global that predates this state, which `main`
+    /// sets through `dpe_api_oai::set_base_url`. Both come from
+    /// `DpeConfig::oai_base_url` at startup and must never be set apart — one
+    /// endpoint cannot advertise one base URL and be linked at another.
+    pub(crate) oai_base_url: String,
+    /// Origin every emitted ARK is rewritten to carry, and the origin the
+    /// `/ark:/…` resolver route answers on. `None` — the default, and what
+    /// production, DEV and STAGE run — emits the ARKs the corpus records and
+    /// mounts no resolver route at all.
+    ///
+    /// The same second-copy caveat as `oai_base_url`: `dpe-api-oai` reads its
+    /// own through a process-global that `main` sets from the same
+    /// `DpeConfig` field. Setting the two apart would let the OAI payloads
+    /// publish an ARK the landing page beside them does not.
+    pub(crate) ark_resolver_base_url: Option<String>,
 }
 
 /// Query params for the project detail page: `?tab=` pre-selects the tab.
@@ -40,6 +71,7 @@ pub(crate) async fn projects_page_handler(
             tp.as_deref(),
             &state.css_href,
             state.fathom_site_id.as_deref(),
+            view::HeadExtras(maud::html! {}),
             content,
         )
         .into_string(),
@@ -57,6 +89,7 @@ pub(crate) async fn about_page_handler(
             tp.as_deref(),
             &state.css_href,
             state.fathom_site_id.as_deref(),
+            view::HeadExtras(maud::html! {}),
             content,
         )
         .into_string(),
@@ -67,7 +100,35 @@ pub(crate) async fn project_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Query(tab): axum::extract::Query<TabQuery>,
-) -> axum::response::Html<String> {
+    request_headers: axum::http::HeaderMap,
+) -> axum::response::Response {
+    use axum::http::{header, HeaderValue};
+
+    // Every answer from this route carries it: 200 and 303, GET and HEAD. A
+    // cache — Traefik's or a browser's — must not replay a 303 to a person or
+    // the HTML to a harvester. Added once, here, so no branch can forget it.
+    let vary = [(header::VARY, HeaderValue::from_static("Accept"))];
+
+    // A header that is not ASCII is no `Accept` at all, which means HTML.
+    let accept = request_headers.get(header::ACCEPT).and_then(|value| value.to_str().ok());
+    // Built synchronously, before any await: `ContributorLookup` carries no
+    // `Sync` bound, so nothing it borrows may live across an await point.
+    // A project that does not resolve gets no metadata, no headers and no
+    // redirect; the always-200 "Project Not Found" body it already renders is
+    // unchanged.
+    let (extras, headers) = match metadata::landing_page(&id, accept, &state) {
+        // The one negotiation step ADR-0005 allows. Nothing else about this
+        // route varies by header.
+        metadata::LandingPage::Redirect(location) => {
+            return axum::response::IntoResponse::into_response((
+                axum::http::StatusCode::SEE_OTHER,
+                vary,
+                [(header::LOCATION, location)],
+            ));
+        }
+        metadata::LandingPage::Render(markup, headers) => (markup, headers),
+    };
+
     let tp = traceparent::extract_traceparent();
     // Fall back to "overview" for a missing or unrecognized tab, mirroring the
     // validation the SSE fragment handler applies against VALID_TABS.
@@ -83,9 +144,18 @@ pub(crate) async fn project_page_handler(
     let title = dpe_core::project_cache::project_by_shortcode(&id)
         .map(|p| format!("{} — DaSCH Metadata Browser", p.name))
         .unwrap_or_else(|| format!("Project {id} — DaSCH Metadata Browser"));
-    axum::response::Html(
-        view::page(&title, tp.as_deref(), &state.css_href, state.fathom_site_id.as_deref(), content).into_string(),
+    let body = view::page(
+        &title,
+        tp.as_deref(),
+        &state.css_href,
+        state.fathom_site_id.as_deref(),
+        view::HeadExtras(extras),
+        content,
     )
+    .into_string();
+    // A `Response` rather than `Html<String>`: this route sets headers and has
+    // a `303` branch.
+    axum::response::IntoResponse::into_response((vary, headers, axum::response::Html(body)))
 }
 
 /// 404 fallback (after `ServeDir` finds no matching static file): the app shell
@@ -105,6 +175,7 @@ pub(crate) async fn not_found(
                 tp.as_deref(),
                 &state.css_href,
                 state.fathom_site_id.as_deref(),
+                view::HeadExtras(maud::html! {}),
                 content,
             )
             .into_string(),
@@ -315,12 +386,25 @@ async fn serve() -> ExitCode {
     dpe_api_oai::set_base_url(&dpe_config.oai_base_url);
     tracing::info!(oai_base_url = %dpe_config.oai_base_url, "OAI-PMH base URL set");
 
+    // Before any cache is populated, and before `record_cache::warm` below:
+    // every consumer reads the corpus through those caches, so normalising the
+    // ARK host as data enters them is the one place that reaches all of them.
+    // Conceptually this is `sync`'s job and moves there when `sync` lands
+    // (`dpe_core::ark`).
+    dpe_core::set_ark_resolver_base_url(dpe_config.ark_resolver_base_url.as_deref());
+    if let Some(ref url) = dpe_config.ark_resolver_base_url {
+        tracing::info!(
+            ark_resolver_base_url = %url,
+            "this deployment publishes ARKs that resolve to itself, and serves the /ark:/ resolver"
+        );
+    }
+
     dpe_core::set_show_placeholder_values(dpe_config.show_placeholder_values);
     if dpe_config.show_placeholder_values {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
     }
 
-    tokio::task::spawn_blocking(dpe_core::record_cache::all_records);
+    tokio::task::spawn_blocking(dpe_core::record_cache::warm);
 
     let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
@@ -330,10 +414,13 @@ async fn serve() -> ExitCode {
     let state = AppState {
         fathom_site_id: dpe_config.fathom_site_id.clone(),
         css_href: resolve_css_href(&dpe_config.public_dir),
+        public_base_url: dpe_config.public_base_url.clone(),
+        oai_base_url: dpe_config.oai_base_url.clone(),
+        ark_resolver_base_url: dpe_config.ark_resolver_base_url.clone(),
     };
 
     // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).
-    let app = router::build_router(state, &dpe_config.public_dir, router::oai_router(&dpe_config));
+    let app = router::build_router(state, &dpe_config.public_dir, router::rate_limited_router(&dpe_config));
 
     // Dev-only browser live-reload (`dev` feature): wraps the page/static
     // routes declared above; the untraced routes below stay outside it.
@@ -348,7 +435,7 @@ async fn serve() -> ExitCode {
             "/telemetry/collect",
             // "dpe" names the OTel instrumentation scope (`dpe.browser`), which
             // the dashboards filter on — do not change it.
-            platform_telemetry::collector::collect_route("dpe", page_url::normalize_page_url).layer({
+            shared_telemetry::collector::collect_route("dpe", page_url::normalize_page_url).layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 
@@ -463,12 +550,12 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
     let projects_dir = data_dir.join("projects");
     // Every contributor id every project references, cross-referenced against
     // `persons/` and `organizations/` once the whole corpus has been read.
-    let mut contributor_refs: Vec<platform_metadata::ContributorRef> = Vec::new();
+    let mut contributor_refs: Vec<shared_metadata::ContributorRef> = Vec::new();
     // Temporal-coverage resolution: the same ChronOntology period cache and
     // offline enrichment table the OAI-PMH `every_committed_temporal_coverage_resolves`
     // test loads, so the two can never disagree about what counts as resolved.
-    let temporal_periods = platform_metadata::chronontology::load_from(data_dir);
-    let temporal_enrichment = platform_metadata::temporal_enrichment::load_from(data_dir);
+    let temporal_periods = shared_metadata::chronontology::load_from(data_dir);
+    let temporal_enrichment = shared_metadata::temporal_enrichment::load_from(data_dir);
     // Each distinct offending value is reported once for the whole corpus: an
     // unenriched period name shared by twenty projects is one thing to fix, not
     // twenty. Keyed on the value rather than the project, so the first file to
@@ -488,13 +575,13 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                     Ok(json) => {
                         // Parsing is the one project rule the shared checker cannot
                         // hold: it takes a `&ProjectRaw`, so it is downstream of this.
-                        match serde_json::from_str::<platform_metadata::ProjectRaw>(&json) {
+                        match serde_json::from_str::<shared_metadata::ProjectRaw>(&json) {
                             Ok(raw) => {
                                 project_count += 1;
-                                contributor_refs.extend(platform_metadata::contributor_refs(&raw));
+                                contributor_refs.extend(shared_metadata::contributor_refs(&raw));
 
                                 for finding in
-                                    platform_metadata::check_project(&raw, &temporal_periods, &temporal_enrichment)
+                                    shared_metadata::check_project(&raw, &temporal_periods, &temporal_enrichment)
                                 {
                                     if let Some(value) = &finding.value {
                                         if !reported_values.insert((finding.field, value.clone())) {
@@ -529,7 +616,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<Vec<platform_metadata::Record>>(&json) {
+                    Ok(json) => match serde_json::from_str::<Vec<shared_metadata::Record>>(&json) {
                         Ok(recs) => record_count += recs.len(),
                         Err(e) => errors.push(format!("{filename}: {e}")),
                     },
@@ -550,14 +637,14 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<platform_metadata::Person>(&json) {
+                    Ok(json) => match serde_json::from_str::<shared_metadata::Person>(&json) {
                         Ok(p) => {
                             // Guard against project roles drifting into jobTitles.
                             // A role belongs in a project's attributions
                             // (contributorType), not in a person's jobTitles, or
                             // it becomes invisible to the OAI-PMH creator logic.
                             for title in &p.job_titles {
-                                if platform_metadata::is_role_job_title(title) {
+                                if shared_metadata::is_role_job_title(title) {
                                     errors.push(format!(
                                         "{filename}: jobTitle '{title}' on {} is a project role; \
                                          move it to the project's attributions (contributorType)",
@@ -587,7 +674,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<platform_metadata::Organization>(&json) {
+                    Ok(json) => match serde_json::from_str::<shared_metadata::Organization>(&json) {
                         Ok(o) => {
                             known_org_ids.insert(o.id.clone());
                             org_count += 1;

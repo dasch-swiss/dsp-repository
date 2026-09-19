@@ -1,7 +1,7 @@
 use maud::{html, Markup};
 use mosaic_tiles::icon::{icon, Export};
 use mosaic_tiles::link::link;
-use platform_metadata::Publication;
+use shared_metadata::Publication;
 
 use crate::pages::project::components::info_card::info_card;
 
@@ -44,7 +44,7 @@ fn publication_card(pub_: &Publication) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::project::Pid;
+    use shared_metadata::project::Pid;
 
     use super::*;
 

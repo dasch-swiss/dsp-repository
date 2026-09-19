@@ -1,14 +1,14 @@
 //! Process-global cache over the ChronOntology period table.
 //!
-//! The loading and lookup logic is [`platform_metadata::chronontology`], shared
+//! The loading and lookup logic is [`shared_metadata::chronontology`], shared
 //! with the editor. What stays here is the `OnceLock` and the DPE data
 //! directory it reads: `DPE_DATA_DIR` is one service's configuration and does
 //! not belong in a shared crate.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use platform_metadata::chronontology;
-use platform_metadata::w3cdtf::W3cdtfRange;
+use shared_metadata::chronontology;
+use shared_metadata::w3cdtf::W3cdtfRange;
 
 use super::utils::get_data_dir;
 

@@ -16,12 +16,12 @@
 //! `serde_json`'s string escaping matches the committed files, so there is no
 //! custom escaping; the corpus round-trip test holds that claim up.
 //!
-//! [`Multilingual`]: platform_metadata::utils::Multilingual
+//! [`Multilingual`]: shared_metadata::utils::Multilingual
 
-use platform_metadata::project::ProjectRaw;
 use serde::Serialize;
 use serde_json::ser::PrettyFormatter;
 use serde_json::Value;
+use shared_metadata::project::ProjectRaw;
 
 use crate::draft::{DraftError, ProjectDraft};
 use crate::json::strip_null_members;
@@ -63,8 +63,8 @@ fn render(value: &Value) -> Result<String, serde_json::Error> {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::utils::Multilingual;
     use serde_json::json;
+    use shared_metadata::utils::Multilingual;
 
     use super::*;
     use crate::test_support::sample_raw;

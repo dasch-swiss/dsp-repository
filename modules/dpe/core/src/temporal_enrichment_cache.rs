@@ -1,12 +1,12 @@
 //! Process-global cache over the offline temporal-coverage enrichment table.
 //!
 //! The loading and lookup logic is
-//! [`platform_metadata::temporal_enrichment`], shared with the editor. What
+//! [`shared_metadata::temporal_enrichment`], shared with the editor. What
 //! stays here is the `OnceLock` and the DPE data directory it reads.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use platform_metadata::temporal_enrichment::{self, EnrichedDate};
+use shared_metadata::temporal_enrichment::{self, EnrichedDate};
 
 use super::utils::get_data_dir;
 
@@ -48,13 +48,13 @@ mod tests {
     /// `load_from` and asserts every filled date is valid W3CDTF. This is the
     /// guard against a typo'd range or broken JSON in the committed data file.
     ///
-    /// It lives here rather than beside `load_from` in `platform-metadata`,
-    /// because the file it reads is DPE's data directory and a platform crate
+    /// It lives here rather than beside `load_from` in `shared-metadata`,
+    /// because the file it reads is DPE's data directory and a shared crate
     /// takes no path into a service.
     #[test]
     fn committed_enrichment_table_is_valid() {
         let data_dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data"));
-        let table = platform_metadata::temporal_enrichment::load_from(data_dir);
+        let table = shared_metadata::temporal_enrichment::load_from(data_dir);
 
         assert!(!table.is_empty(), "committed enrichment table should load and be non-empty");
         for (key, entry) in &table {

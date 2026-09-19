@@ -10,8 +10,8 @@
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
-use platform_metadata::is_placeholder;
 use serde_json::Value;
+use shared_metadata::is_placeholder;
 
 use super::registry::{sections_for, Audience, Field, Section};
 

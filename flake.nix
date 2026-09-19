@@ -66,6 +66,7 @@
             pkgs.nodejs_24    # for the Playwright e2e suites (npx)
             pkgs.cargo-watch  # 8.5.3 — matches justfile pin
             pkgs.cargo-binstall
+            pkgs.jq           # `just fair-check` reads F-UJI's JSON result with it
 
           ] ++ darwinDeps;
 

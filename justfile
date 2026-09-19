@@ -22,8 +22,8 @@ install-requirements: install-e2e-requirements
     rustup toolchain install nightly --component rustfmt
     brew install cargo-binstall
     # Native build deps the Nix devShell provides via flake.nix buildInputs; without them this path
-    # has no cmake for aws-lc-sys.
-    brew install cmake pkg-config
+    # has no cmake for aws-lc-sys. `jq` is what `just fair-check` reads F-UJI's JSON result with.
+    brew install cmake pkg-config jq
     # commitlint-rs powers the commit-message gate in `just commit-lint`
     cargo binstall -y commitlint-rs@0.2.4
     cargo binstall -y cargo-watch@8.5.3
@@ -59,9 +59,9 @@ verify-checksums:
 # A shared crate must not know one service's directory layout. It compiles
 # either way, so only a grep catches it.
 
-# Verify no platform crate hardcodes a path into a service module. Run by `just check`. (DEV-7046)
-check-platform-paths:
-    bash .github/scripts/check-platform-paths.sh
+# Verify no shared crate hardcodes a path into a service module. Run by `just check`. (DEV-7046)
+check-shared-paths:
+    bash .github/scripts/check-shared-paths.sh
 
 # `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
 # fine and the control is inert, so only a grep or a browser catches it.
@@ -71,7 +71,7 @@ check-datastar-delimiters:
     bash .github/scripts/check-datastar-delimiters.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-platform-paths check-datastar-delimiters
+check: verify-checksums check-shared-paths check-datastar-delimiters
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -116,6 +116,11 @@ run:
 validate-data:
     cargo run --bin dpe-server -- validate modules/dpe/server/data
 
+# Re-download and re-patch the DataCite JSON schema the DataCite JSON writer's output is shape-checked against. The script takes the XSD directory as an argument because a shared crate may not know a module's layout; this justfile may, and passes it. (DEV-7268)
+refresh-datacite-schema:
+    bash shared/fair/testdata/schemas/download-schemas.sh \
+        modules/dpe/api-oai/src/handlers/testdata/schemas/include
+
 # Refresh the tracked OAI record dumps. Needs `bearer` in the environment (see README).
 [group('dpe')]
 fetch-records:
@@ -137,7 +142,7 @@ test:
     # Commit-advisory helpers (deterministic parts only; needs jq)
     bash .github/scripts/commit-advisory.test.sh
     bash .github/scripts/verify-checksums.test.sh
-    bash .github/scripts/check-platform-paths.test.sh
+    bash .github/scripts/check-shared-paths.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
@@ -372,6 +377,110 @@ dev:
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
     bacon serve
+
+# Score a landing page's FAIRness with F-UJI. Usage: just fair-check <url> [min_score]. Exits non-zero when the total is below min_score. (DEV-7268)
+[group('dpe')]
+fair-check url min_score="0":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # F-UJI 3.5.0, pinned by digest and not by `:latest`: the score is only
+    # comparable against the rows in docs/src/dpe/machine-readable-metadata.md
+    # if the assessor is the same build, and 3.5.0 is the version the
+    # 2026-09-15 baseline was taken with. Bumping this is a reviewed change,
+    # made when F-UJI publishes a release and checked at least with every
+    # change to a landing page, as for the Tailwind CLI pin in
+    # docs/src/security.md. There is no `tailwind-pins-refresh`-style recipe
+    # because this never runs in CI.
+    #
+    # Not `:latest` for a second reason: `:latest` is 4.0.0, which does not
+    # start in its published image. Verify a new digest starts before pinning
+    # it.
+    image="ghcr.io/pangaea-data-publisher/fuji@sha256:3cde9d30bc148798a512b9e3a8a9ee6e63c4d09a6a33bb7651ac007c5824c687"
+
+    # A scratch Docker config with no credential store. The developer's own
+    # ~/.docker/config.json may set `credsStore: desktop` while the active
+    # context is colima, and `docker pull` then dies on a missing
+    # docker-credential-desktop. The image is public, so no credentials are
+    # wanted at all.
+    DOCKER_CONFIG="$(mktemp -d)"
+    export DOCKER_CONFIG
+    echo '{}' > "$DOCKER_CONFIG/config.json"
+
+    name="fuji-fair-check-$$"
+    # Stops the container on any exit, including a failed curl or a Ctrl-C.
+    trap 'docker rm -f "$name" >/dev/null 2>&1 || true; rm -rf "$DOCKER_CONFIG"' EXIT
+
+    # Loopback only: F-UJI's API takes a URL and fetches it, so a container
+    # published on 0.0.0.0 would be an open fetcher on the developer's network.
+    # --add-host is what lets the container reach a server on the host's port
+    # 4000 on Linux, where host.docker.internal is not resolved for it.
+    docker run -d --rm --name "$name" \
+      -p 127.0.0.1:1071:1071 \
+      --add-host=host.docker.internal:host-gateway \
+      "$image" >/dev/null
+
+    # Not `curl -f`: the endpoint answers 401 without credentials, and any
+    # HTTP response at all means the server is up. 180s because F-UJI refreshes
+    # its re3data DOI table before it starts listening, which on a first run
+    # takes well over a minute.
+    up=0
+    for _ in $(seq 180); do
+      if curl -s -o /dev/null "http://localhost:1071/fuji/api/v1/metrics"; then up=1; break; fi
+      sleep 1
+    done
+    # The loop's own success is the verdict. Probing a second time would let a
+    # single blip after a successful wait be reported as "F-UJI did not answer".
+    [ "$up" = 1 ] \
+      || { echo >&2 "error: F-UJI did not answer on port 1071 within 180s"; docker logs "$name" >&2; exit 1; }
+
+    # F-UJI's own published defaults, from fuji_server/config/users.py. They
+    # are not a secret: the container is reachable on loopback only and is
+    # destroyed when this recipe returns.
+    # 1800s, not 600s, and the reason is not slowness in general. Since the
+    # landing page advertises `schema:distribution`, an assessment of a project
+    # whose records carry files *downloads those files*: F-UJI collects every
+    # advertised distribution, takes up to five per MIME type, fetches each one
+    # and starts a Tika server per worker thread to sniff it. Runtime therefore
+    # scales with how many distinct file types a project has, where it used to
+    # be roughly constant per page. Project 0868 took 558s on 2026-09-18 and
+    # the recipe failed at the old cap with curl's exit 28. A project with no
+    # file still answers in well under a minute. Do not trim this back.
+    result="$(curl -s --max-time 1800 -u marvel:wonderwoman \
+      -H 'Content-Type: application/json' \
+      -d "$(jq -nc --arg url '{{ url }}' '{object_identifier: $url, test_debug: true, use_datacite: true}')" \
+      "http://localhost:1071/fuji/api/v1/evaluate")"
+
+    echo "$result" | jq -e 'has("summary")' >/dev/null \
+      || { echo >&2 "error: F-UJI returned no result"; echo "$result" | head -c 2000 >&2; exit 1; }
+
+    # The table below drops `test_debug`, which is where an assessor says *why*
+    # a sub-test failed and which file it read — the evidence every attribution
+    # in the residuals ledger rests on. A run takes minutes now, so throwing it
+    # away and re-running to get it back is the wrong trade. `.claude/tmp/` is
+    # gitignored scratch, and one file per run keeps two runs comparable.
+    mkdir -p .claude/tmp
+    raw=".claude/tmp/fair-check-$(date -u +%Y%m%dT%H%M%SZ).json"
+    printf '%s' "$result" > "$raw"
+
+    echo "url:              {{ url }}"
+    echo "software_version: $(echo "$result" | jq -r '.software_version')"
+    echo "image digest:     ${image#*@}"
+    echo "full result:      $raw"
+    echo
+    printf '%-14s %-6s %s\n' METRIC SCORE OUTCOME
+    echo "$result" | jq -r '.results[] | [.metric_identifier, "\(.score.earned)/\(.score.total)", .test_status] | @tsv' \
+      | awk -F'\t' '{printf "%-14s %-6s %s\n", $1, $2, $3}'
+    echo
+
+    earned="$(echo "$result" | jq -r '.summary.score_earned.FAIR')"
+    total="$(echo "$result" | jq -r '.summary.score_total.FAIR')"
+    echo "total: $earned/$total (target {{ min_score }})"
+
+    # The exit code is the check, so an orchestrator or a reviewer gets a
+    # mechanical pass/fail rather than a table to read.
+    awk -v e="$earned" -v m="{{ min_score }}" 'BEGIN { exit !(e >= m) }' \
+      || { echo >&2 "error: F-UJI scored $earned, below the target of {{ min_score }}"; exit 1; }
 
 # Start the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container for local observability
 [group('dpe')]

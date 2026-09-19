@@ -17,11 +17,11 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ### Views (`dpe-web`)
 
-`dpe-web` is a plain library crate of view functions. Components live in `web/src/components/` and pages in `web/src/pages/`; each is a `fn(...) -> maud::Markup`. Split aggressively into small partials. Subdirectories group related pieces (e.g., `pages/project/components/`). There is no component macro and no re-export shim — import `platform-metadata` (contract) and `dpe-core` (view model) types directly.
+`dpe-web` is a plain library crate of view functions. Components live in `web/src/components/` and pages in `web/src/pages/`; each is a `fn(...) -> maud::Markup`. Split aggressively into small partials. Subdirectories group related pieces (e.g., `pages/project/components/`). There is no component macro and no re-export shim — import `shared-metadata` (contract) and `dpe-core` (view model) types directly.
 
 ### Routing, head, and the page shell (`dpe-server`)
 
-`dpe-server` is the composition root. Routes are declared in `server/src/main.rs` with the native Axum router:
+`dpe-server` is the composition root. Page, fragment and API routes are declared in `server/src/router.rs` (`build_router`) with the native Axum router; `main.rs` declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the OTel layers:
 
 ```rust
 .route("/dpe/projects", get(projects_page_handler))
@@ -46,7 +46,7 @@ Snapshot tests use **insta**: a failing snapshot writes a `.snap.new` file — r
 Project descriptive metadata lives as JSON under `modules/dpe/server/data/`.
 
 1. Add `<shortcode>_<slug>.json` under `projects/` (and any new `persons/person-NNN.json` / `organizations/organization-NNN.json`); pick new person/org ids by scanning existing internal `"id"` values, and reuse existing organizations rather than duplicating them.
-2. **Every `temporalCoverage` value must resolve to a structured date for OAI-PMH.** Free-text values (e.g. `{"en": "11th-15th centuries"}`) resolve against `modules/dpe/server/data/temporal-coverage-enrichment.json`, keyed by the display text. Add a row with a W3CDTF range and `"source": "llm"` (e.g. `"11th-15th centuries": {"date": "1001/1500", "original_name": "11th-15th centuries", "source": "llm"}`); if the value is not a time period, use `"date": null, "source": "unresolved"`. Both `just validate-data` (`dpe-server validate`) and the `every_committed_temporal_coverage_resolves` test enforce this, over the same `platform_metadata::temporal_coverage` resolution logic — so the two can't disagree. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
+2. **Every `temporalCoverage` value must resolve to a structured date for OAI-PMH.** Free-text values (e.g. `{"en": "11th-15th centuries"}`) resolve against `modules/dpe/server/data/temporal-coverage-enrichment.json`, keyed by the display text. Add a row with a W3CDTF range and `"source": "llm"` (e.g. `"11th-15th centuries": {"date": "1001/1500", "original_name": "11th-15th centuries", "source": "llm"}`); if the value is not a time period, use `"date": null, "source": "unresolved"`. Both `just validate-data` (`dpe-server validate`) and the `every_committed_temporal_coverage_resolves` test enforce this, over the same `shared_metadata::temporal_coverage` resolution logic — so the two can't disagree. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
 3. **Key order is canonical.** Top-level members must be in `ProjectRaw`'s field declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. `editor-core`'s `canonical_round_trip` test asserts this byte-for-byte over all 85 files, so a hand-ordered file fails it rather than `just validate-data`. Don't reorder by hand: run `CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip`, which rewrites the files with what the editor's writer produces. Adding or removing a project file also trips `the_corpus_is_the_whole_published_set` in that test; bump its count in the same commit.
 4. Run `just validate-data` (cross-references, temporal-coverage resolution) and `just test`.
 
@@ -68,12 +68,12 @@ The scan runs once per process, so a file added while the server is running is n
 1. Add a `fn page(...) -> maud::Markup` in `web/src/pages/`
 2. Export it in `web/src/pages/mod.rs`
 3. Add a handler in `dpe-server` that loads data and renders the page inside the `page()` shell
-4. Register the route in `server/src/main.rs`
+4. Register the route in `server/src/router.rs`
 
 ### Adding a New Fragment Handler
 
 1. Add the async handler in `server/src/fragments.rs`
-2. Register the route in `server/src/main.rs`
+2. Register the route in `server/src/router.rs`
 3. Render the relevant `dpe-web` view function and `.into_string()` its `Markup`
 4. Return a `Sse` stream of `PatchElements` (and optionally `ExecuteScript`) events
 
@@ -104,7 +104,15 @@ passed inline are fine.
 
 ### Escaping
 
-Default `(expr)` splices auto-escape. The only sanctioned `PreEscaped` site is the trusted mosaic `IconData` SVG. The search-query echo (`fragments.rs`) must stay a plain auto-escaped splice — never `PreEscaped` (the one realistic XSS reintroduction).
+Default `(expr)` splices auto-escape. `PreEscaped` has exactly three sanctioned sites:
+
+1. the trusted Mosaic `IconData` SVG (`mosaic/tiles/src/components/icon/mod.rs`);
+2. the leading newline the Mosaic `textarea` writes back (`mosaic/tiles/src/components/form/textarea/mod.rs`), which an HTML parser would otherwise eat;
+3. the JSON-LD `<script>` in `server/src/metadata.rs`, whose only permitted input is `shared_fair::script_safe_json` — Maud escapes text inside `script {}`, which would corrupt the JSON, and that function has already replaced `<`, `>` and `&` with `\u00XX` escapes so nothing spliced can close the element or open a comment. A test in `dpe-server` greps every file under its own `src/` so `PreEscaped(` appears exactly once in the whole crate, on that splice.
+
+The first two splice a constant; only the third takes a value derived from data.
+
+Anything else must be an auto-escaped splice. The search-query echo (`fragments.rs`) especially: it is the one realistic XSS reintroduction.
 
 ### Styling not applying
 
@@ -116,7 +124,7 @@ Default `(expr)` splices auto-escape. The only sanctioned `PreEscaped` site is t
 DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging. See `docs/src/dpe/observability.md` for the full developer guide.
 
 - **OTel middleware**: `OtelAxumLayer` creates `SPAN_KIND_SERVER` spans for HTTP requests. Use `otel.kind = "internal"` on handler-level `#[instrument]` spans.
-- **Telemetry collector**: `POST /telemetry/collect` is placed after the OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types, validation and the collector all live in the `platform-telemetry` crate (`modules/platform/telemetry`), shared with `editor-server`; `dpe-server` wires the route via `collector::collect_route("dpe", page_url::normalize_page_url)`, passing in its own `page_url` module (`server/src/page_url.rs`) — a shared crate cannot hold one service's route table (`docs/src/repo_structure.md` → Shared Crates), so each service normalizes its own `page.url` attribute.
+- **Telemetry collector**: `POST /telemetry/collect` is placed after the OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types, validation and the collector all live in the `shared-telemetry` crate (`shared/telemetry`), shared with `editor-server`; `dpe-server` wires the route via `collector::collect_route("dpe", page_url::normalize_page_url)`, passing in its own `page_url` module (`server/src/page_url.rs`) — a shared crate cannot hold one service's route table (`docs/src/repo_structure.md` → Shared Crates), so each service normalizes its own `page.url` attribute.
 - **Vendored JS**: Client-side dependencies live in `modules/dpe/public/vendor/`, tracked by `vendor/README.md`. No `package.json` or Node.js build step for the runtime.
 - **Traceparent**: The server renders `<meta name="traceparent">` in the HTML shell for client-side trace correlation, and injects a `traceparent` response header.
 

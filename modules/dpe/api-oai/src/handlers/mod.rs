@@ -19,8 +19,8 @@ use axum::extract::Query;
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use dpe_core::{
-    cluster_cache, CachedContributorLookup, ClusterRaw, ContributorLookup, FsProjectRepository, FsRecordRepository,
-    ProjectRepository, RecordRepository,
+    cluster_cache, CachedContributorLookup, ClusterRaw, FsProjectRepository, FsRecordRepository, ProjectRepository,
+    RecordRepository,
 };
 use get_record::handle_get_record;
 use identify::handle_identify;
@@ -29,6 +29,7 @@ use list_metadata_formats::handle_list_metadata_formats;
 use list_records::handle_list_records;
 use list_sets::handle_list_sets;
 use serde::Deserialize;
+use shared_metadata::ContributorLookup;
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
@@ -320,14 +321,16 @@ fn collect_filtered_records(
             include_records,
         ),
         SetSyntax::Project(shortcode) => {
-            if repo.get_by_shortcode(&shortcode).is_none() {
+            let Some(project) = repo.get_by_shortcode(&shortcode) else {
                 return Err(OaiError::BadArgument(format!("unknown project set: project:{shortcode}")));
-            }
-            // Records of this project only — no project entry.
+            };
+            // Records of this project only — no project entry. Looked up by the
+            // resolved project's canonical shortcode, not the set spec's
+            // spelling, so the existence check and the record lookup can never
+            // disagree about which project the set names.
             record_repo
-                .get_all()
-                .iter()
-                .filter(|r| r.pid.shortcode.eq_ignore_ascii_case(&shortcode))
+                .records_for_shortcode(&project.shortcode)
+                .into_iter()
                 .filter(|r| matches_date_filter_record(r, from, until))
                 .map(|r| to_oai_record_from_record(r, prefix, clusters))
                 .collect()
@@ -361,7 +364,7 @@ fn collect_entities(
     include_records: bool,
 ) -> Vec<OaiRecord> {
     let mut oai_records: Vec<OaiRecord> = if include_projects {
-        repo.get_all()
+        repo.get_all_raw()
             .iter()
             .filter(|p| matches_date_filter(p, from, until))
             .map(|p| to_oai_record(p, prefix, clusters, lookup))
@@ -404,7 +407,7 @@ fn collect_cluster(
     // by shortcode (case-insensitive).
     let mut seen_projects: Vec<String> = Vec::new();
     let mut oai_records: Vec<OaiRecord> = repo
-        .get_all()
+        .get_all_raw()
         .iter()
         .filter(|p| is_member(&p.shortcode))
         .filter(|p| matches_date_filter(p, from, until))

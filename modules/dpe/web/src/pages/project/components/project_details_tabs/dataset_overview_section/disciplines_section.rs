@@ -1,5 +1,5 @@
 use maud::{html, Markup};
-use platform_metadata::project::Discipline;
+use shared_metadata::project::Discipline;
 
 use super::CHIP_PRIMARY;
 
@@ -39,8 +39,8 @@ pub fn disciplines_section(disciplines: &[Discipline]) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::models::AuthorityFileReference;
-    use platform_metadata::utils::Multilingual;
+    use shared_metadata::models::AuthorityFileReference;
+    use shared_metadata::utils::Multilingual;
 
     use super::*;
 

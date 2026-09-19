@@ -1,4 +1,4 @@
-use platform_metadata::project::ProjectRaw;
+use shared_metadata::project::ProjectRaw;
 
 /// A committed project file used as the starting point for unit tests.
 ///

@@ -43,7 +43,7 @@ pub const DISCARD: &str = "discard";
 pub const SAME_AS_TYPES: &[&str] = &["ORCID", "GND", "URL"];
 
 /// A person's fields, in display order. Exactly `Person`'s members
-/// (`modules/platform/metadata/src/person.rs`) and no others.
+/// (`shared/metadata/src/person.rs`) and no others.
 const PERSON_FIELDS: &[Field] = &[
     Field {
         id: "givenNames",
@@ -107,7 +107,7 @@ const PERSON_FIELDS: &[Field] = &[
 ];
 
 /// An organisation's fields, in display order. Exactly `Organization`'s members
-/// (`modules/platform/metadata/src/organization.rs`) except `address`, a flat
+/// (`shared/metadata/src/organization.rs`) except `address`, a flat
 /// group of scalars that `address_group` renders and applies.
 const ORGANIZATION_FIELDS: &[Field] = &[
     Field {
@@ -503,10 +503,10 @@ fn controls(view: &EntityView<'_>) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::models::AuthorityFileReference;
-    use platform_metadata::organization::Address;
-    use platform_metadata::utils::Multilingual;
-    use platform_metadata::{Organization, Person};
+    use shared_metadata::models::AuthorityFileReference;
+    use shared_metadata::organization::Address;
+    use shared_metadata::utils::Multilingual;
+    use shared_metadata::{Organization, Person};
 
     use super::*;
 

@@ -1,5 +1,5 @@
 use opentelemetry::trace::TraceContextExt;
-use platform_telemetry::traceparent::is_valid_traceparent;
+use shared_telemetry::traceparent::is_valid_traceparent;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 /// Extract the W3C traceparent from the current OTel span context.

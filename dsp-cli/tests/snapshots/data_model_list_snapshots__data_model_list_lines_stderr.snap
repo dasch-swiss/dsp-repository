@@ -1,0 +1,5 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: buf_to_string(&err_buf)
+---
+[anonymous on api.dasch.swiss]

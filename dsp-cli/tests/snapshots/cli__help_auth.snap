@@ -1,0 +1,19 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Authentication management
+
+Usage: dsp auth [OPTIONS] <COMMAND>
+
+Commands:
+  login      Log in to a DSP server and cache the session token
+  status     Show authentication status for a DSP server
+  logout     Log out from a DSP server and clear the cached session token
+  set-token  Cache a pre-issued bearer token read from stdin
+  token      Print the resolved bearer token to stdout, for piping
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose...  Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+  -h, --help        Print help

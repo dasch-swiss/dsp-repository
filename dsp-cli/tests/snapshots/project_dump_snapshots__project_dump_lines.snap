@@ -1,0 +1,5 @@
+---
+source: tests/project_dump_snapshots.rs
+expression: buf_to_string(&buf)
+---
+./0001-20260529T120000Z.zip

@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 239
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.example.com","auth":"authenticated as user@example.com","exit_code":0},"data":{"user":"user@example.com","expires_at":"2026-06-25T12:34:56+00:00","state":"logged_in"}}

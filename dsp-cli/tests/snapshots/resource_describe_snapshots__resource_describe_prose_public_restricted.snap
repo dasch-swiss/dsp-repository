@@ -1,0 +1,15 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+Resource: Restricted View Folio
+  Type:         Page
+  IRI:          http://rdfh.ch/0803/restricted-res
+  ARK:          https://ark.stage.dasch.swiss/ark:/72163/1/0803/restricted
+  Created:      2021-06-01T10:00:00Z
+  Project:      http://rdfh.ch/projects/0803
+  Owner:        http://rdfh.ch/users/project-admin
+  Visibility:   public (restricted view)
+  Your access:  restricted view
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

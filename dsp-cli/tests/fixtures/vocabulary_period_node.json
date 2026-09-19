@@ -1,0 +1,23 @@
+{
+  "type": "ListNodeGetResponseADM",
+  "node": {
+    "nodeinfo": {
+      "id": "http://rdfh.ch/lists/0838/Wf0OE7L2Tgu7OwCrMSgIwA",
+      "name": "LowerPalaeolithic",
+      "labels": [
+        {
+          "value": "Altpaläolithikum",
+          "language": "de"
+        },
+        {
+          "value": "Lower Palaeolithic",
+          "language": "en"
+        }
+      ],
+      "comments": [],
+      "position": 0,
+      "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w"
+    },
+    "children": []
+  }
+}

@@ -1,0 +1,5 @@
+---
+source: tests/data_model_describe_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.dasch.swiss","auth":"anonymous","exit_code":0},"data":{"name":"beol","iri":"http://api.dasch.swiss/ontology/0801/beol/v2","label":"The BEOL data-model","last_modified":"2024-05-27T13:43:26.233048Z","resource_types":[{"name":"Archive","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#Archive","label":"Archive"},{"name":"basicLetter","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#basicLetter","label":"Basic Letter"},{"name":"letter","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#letter","label":null},{"name":"person","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#person","label":"Person"}]}}

@@ -1,0 +1,10 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: stdout
+---
+source	target	kind	field	target_data_model
+letter	Book	link	cites	biblio
+letter	person	link	hasSender	beol
+letter	writtenSource	inherits		beol
+manuscript	person	link	hasAuthor	beol
+manuscript	writtenSource	inherits		beol

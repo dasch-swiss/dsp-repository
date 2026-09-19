@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 725
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.dev.dasch.swiss","auth":"authenticated as http://rdfh.ch/users/jDEZpYNRSlaOM7wb55ZQpw","exit_code":0},"data":{"user":"http://rdfh.ch/users/jDEZpYNRSlaOM7wb55ZQpw","expires_at":"2026-06-25T12:34:56+00:00","state":"token_cached"}}

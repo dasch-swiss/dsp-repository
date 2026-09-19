@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+expression: out
+---
+server	user	expires_at	state
+https://api.example.com		2020-01-01T00:00:00+00:00	expired

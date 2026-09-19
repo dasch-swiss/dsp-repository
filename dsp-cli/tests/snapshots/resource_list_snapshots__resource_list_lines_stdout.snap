@@ -1,0 +1,7 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: stdout
+---
+Folio 1r	http://rdfh.ch/0803/res-folio-1r	http://ark.dasch.swiss/ark:/72163/1/0803/res-folio-1r	2023-04-10T08:00:00Z	2024-01-15T10:30:00Z	page
+Folio 1v	http://rdfh.ch/0803/res-folio-1v		2023-04-10T08:05:00Z		page
+Folio 2r	http://rdfh.ch/0803/res-folio-2r	http://ark.dasch.swiss/ark:/72163/1/0803/res-folio-2r			page

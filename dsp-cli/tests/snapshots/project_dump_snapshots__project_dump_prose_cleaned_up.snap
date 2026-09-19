@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+expression: out
+---
+Wrote ./0001-20260529T120000Z.zip (12345678 bytes).
+Cleaned up the server-side dump.

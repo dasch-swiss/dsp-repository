@@ -1,0 +1,9 @@
+---
+source: tests/project_list_snapshots.rs
+expression: out
+---
+Projects on https://api.test.dasch.swiss (1 of 1 matching "café"):
+
+  0007  cafe  Café Editions   active   · 1 data-model
+
+[anonymous on https://api.test.dasch.swiss]

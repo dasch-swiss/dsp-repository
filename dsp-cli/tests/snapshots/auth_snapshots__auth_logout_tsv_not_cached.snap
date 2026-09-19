@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+expression: buf_to_string(&buf)
+---
+server	was_cached
+https://api.example.com	false

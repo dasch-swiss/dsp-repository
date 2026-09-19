@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+expression: buf_to_string(&buf)
+---
+deleted
+true

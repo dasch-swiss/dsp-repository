@@ -1,0 +1,8 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+beol	http://api.dasch.swiss/ontology/0801/beol/v2
+biblio	http://api.dasch.swiss/ontology/0801/biblio/v2
+leibniz	http://api.dasch.swiss/ontology/0801/leibniz/v2
+newton	http://api.dasch.swiss/ontology/0801/newton/v2

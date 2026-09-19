@@ -1,0 +1,9 @@
+---
+source: tests/dump_progress_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"event":"triggered","id":"abc123"}
+{"event":"polling","elapsed_s":12,"status":"in_progress"}
+{"event":"polling","elapsed_s":28,"status":"in_progress"}
+{"event":"downloading"}
+{"event":"done","bytes":12345}

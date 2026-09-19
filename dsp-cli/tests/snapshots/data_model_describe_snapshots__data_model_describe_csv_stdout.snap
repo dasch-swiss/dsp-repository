@@ -1,0 +1,6 @@
+---
+source: tests/data_model_describe_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+name,iri,label,last_modified,resource_types
+beol,http://api.dasch.swiss/ontology/0801/beol/v2,The BEOL data-model,2024-05-27T13:43:26.233048Z,4

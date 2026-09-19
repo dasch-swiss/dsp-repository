@@ -1,0 +1,5 @@
+---
+source: tests/docs.rs
+expression: stderr
+---
+Error: not found: no documentation topic named 'concept'. Did you mean 'concepts'? Run `dsp docs` to see all topics.

@@ -1,0 +1,5 @@
+---
+source: tests/project_list_snapshots.rs
+expression: stderr
+---
+[anonymous on https://api.test.dasch.swiss]

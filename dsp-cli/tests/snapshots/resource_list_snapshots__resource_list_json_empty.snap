@@ -1,0 +1,5 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0,"page":0,"may_have_more_results":false,"note":"results may be filtered; login to see private resources"},"data":[]}

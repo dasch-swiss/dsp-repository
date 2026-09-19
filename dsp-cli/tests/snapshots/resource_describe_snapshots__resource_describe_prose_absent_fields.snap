@@ -1,0 +1,14 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+Resource: Folio 1r
+  Type:         Page
+  IRI:          http://rdfh.ch/0803/res-folio-1r
+  Created:      2023-04-10T08:00:00Z
+  Project:      http://rdfh.ch/projects/0803
+  Owner:        http://rdfh.ch/users/daisy-duck
+  Visibility:   public
+  Your access:  view
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

@@ -1,0 +1,5 @@
+---
+source: tests/docs.rs
+expression: text
+---
+{"_meta":{},"data":[{"name":"dsp-cli","summary":"What this tool is, who it's for, and its design principles."},{"name":"dsp","summary":"The DaSCH Service Platform in brief: VRE vs Repository."},{"name":"concepts","summary":"The vocabulary dsp-cli speaks (project, data-model, resource-type, …)."},{"name":"identifiers","summary":"How to name projects, data-models, and resource-types."},{"name":"connecting","summary":"Servers, environments, and authentication."},{"name":"output","summary":"Output formats, channels, and the JSON envelope."},{"name":"workflows","summary":"Chaining commands into real tasks."},{"name":"errors","summary":"Exit codes and how to recover from failures."},{"name":"dsp-tools","summary":"When to use dsp-cli versus dsp-tools."},{"name":"sparql","summary":"Raw SPARQL passthrough: `dsp vre sparql query`."}]}

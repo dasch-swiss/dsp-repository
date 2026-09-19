@@ -1,0 +1,12 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: buf_to_string(&buf)
+---
+data-models on api.dasch.swiss (4):
+
+  beol     The BEOL data-model       2024-05-27
+  biblio   Bibliographic references  
+  leibniz                            2023-11-14
+  newton                             
+
+[anonymous on api.dasch.swiss]

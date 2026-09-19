@@ -1,0 +1,11 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: out
+---
+Resource-type: EmptyThing
+  IRI:            http://api.dasch.swiss/ontology/0000/minimal/v2#EmptyThing
+  Data-model:     minimal
+
+  Fields (0)
+
+[anonymous on https://api.dasch.swiss]

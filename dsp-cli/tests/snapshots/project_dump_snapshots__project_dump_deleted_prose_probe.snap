@@ -1,0 +1,5 @@
+---
+source: tests/project_dump_snapshots.rs
+expression: out
+---
+no dump existed to delete; a probe created an in-progress dump probe-id-999 that will complete server-side

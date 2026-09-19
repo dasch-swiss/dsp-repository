@@ -1,0 +1,5 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0,"note":"results may be filtered; login to see private resources"},"data":{"label":"Logged-In-Only Folio","iri":"http://rdfh.ch/0803/logged-in-res","resource_type":"Page","ark_url":"https://ark.stage.dasch.swiss/ark:/72163/1/0803/logged-in","creation_date":"2020-03-15T08:00:00Z","last_modified":null,"attached_project":"http://rdfh.ch/projects/0803","owner":"http://rdfh.ch/users/project-member","visibility":"logged-in users","your_access":"view"}}

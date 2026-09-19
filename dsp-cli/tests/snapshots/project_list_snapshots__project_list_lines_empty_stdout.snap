@@ -1,0 +1,5 @@
+---
+source: tests/project_list_snapshots.rs
+expression: stdout
+---
+

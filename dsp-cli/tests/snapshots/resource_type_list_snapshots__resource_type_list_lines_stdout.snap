@@ -1,0 +1,7 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+Archive	http://api.dasch.swiss/ontology/0801/beol/v2#Archive
+letter	http://api.dasch.swiss/ontology/0801/beol/v2#letter
+noLabelType	http://api.dasch.swiss/ontology/0801/beol/v2#noLabelType

@@ -1,0 +1,5 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[{"name":"knora-api","iri":"http://api.knora.org/ontology/knora-api/v2","label":null,"last_modified":null,"is_builtin":true},{"name":"limc","iri":"http://api.dasch.swiss/ontology/0897/limc/v2","label":"Lexicon Iconographicum Mythologiae Classicae","last_modified":"2024-02-10T11:00:00.000000Z","is_builtin":false},{"name":"rosetta","iri":"http://api.dasch.swiss/ontology/0838/rosetta/v2","label":"Rosetta Stone project","last_modified":"2023-08-01T07:30:00.000000Z","is_builtin":false},{"name":"salsah-gui","iri":"http://api.knora.org/ontology/salsah-gui/v2","label":null,"last_modified":null,"is_builtin":true},{"name":"standoff","iri":"http://api.knora.org/ontology/standoff/v2","label":null,"last_modified":null,"is_builtin":true}]}

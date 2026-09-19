@@ -1,0 +1,22 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Manage data-models within a project.
+
+A data-model (called "ontology" in DSP-API) defines the schema for a project's resources: the resource-types, their fields, and value-types.
+
+Usage: dsp vre data-model [OPTIONS] <COMMAND>
+
+Commands:
+  list       List all data-models in a project
+  describe   Describe a single data-model
+  structure  Show the relations (links + inheritance) between a data-model's resource-types
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+  -h, --help
+          Print help (see a summary with '-h')

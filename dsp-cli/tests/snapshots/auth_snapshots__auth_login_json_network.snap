@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 624
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.example.com","auth":"anonymous","exit_code":1},"error":{"kind":"network","message":"network error: connection refused"}}

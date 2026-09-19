@@ -1,0 +1,6 @@
+---
+source: tests/data_model_describe_snapshots.rs
+expression: stdout
+---
+name,iri,label,last_modified,resource_types
+minimal,http://api.dasch.swiss/ontology/0000/minimal/v2,,,0

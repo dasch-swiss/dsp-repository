@@ -1,0 +1,7 @@
+---
+source: tests/dump_progress_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"event":"adopting","id":"existing-dump-abc"}
+{"event":"deleting","id":"dump-to-delete-xyz"}
+{"event":"probe_created","id":"probe-created-999"}

@@ -1,0 +1,8 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+epoch	http://rdfh.ch/lists/0838/epoch
+material	http://rdfh.ch/lists/0838/material
+person	http://rdfh.ch/lists/0838/person
+	http://rdfh.ch/lists/0838/unnamed01

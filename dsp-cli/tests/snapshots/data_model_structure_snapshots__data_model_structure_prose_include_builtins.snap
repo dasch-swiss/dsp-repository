@@ -1,0 +1,16 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: out
+---
+Structure: beol  (8 relations)
+
+  letter       → Book [to biblio]           cites       [link]
+  letter       → person                     hasSender   [link]
+  letter       → writtenSource                          [inherits]
+  manuscript   → person                     hasAuthor   [link]
+  manuscript   → writtenSource                          [inherits]
+  letter       → Resource                               [inherits]
+  manuscript   → StillImageRepresentation               [inherits]
+  letter       → Resource                   hasLinkTo   [link]
+
+[anonymous on https://api.dasch.swiss]

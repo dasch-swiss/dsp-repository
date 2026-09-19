@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 802
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.dev.dasch.swiss","auth":"anonymous","exit_code":3},"error":{"kind":"auth_required","message":"authentication required: token rejected by https://api.dev.dasch.swiss — it may be expired, revoked, or for a different environment"}}

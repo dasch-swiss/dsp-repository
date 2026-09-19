@@ -1,0 +1,5 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"https://api.dasch.swiss","auth":"anonymous","exit_code":1},"error":{"kind":"not_found","message":"not found: resource-type 'xyz' not found in data-model 'beol' on https://api.dasch.swiss. Run `dsp vre resource-type list --project 0801 --data-model beol --server https://api.dasch.swiss` to see available resource-types."}}

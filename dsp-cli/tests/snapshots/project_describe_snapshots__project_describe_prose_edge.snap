@@ -1,0 +1,10 @@
+---
+source: tests/project_describe_snapshots.rs
+expression: out
+---
+Project: testproject (4123)
+  IRI:        http://rdfh.ch/projects/Kx9mL4rT2pWuB6nZ
+  Status:     active
+  Data-models (0)
+
+[anonymous on https://api.dasch.swiss]

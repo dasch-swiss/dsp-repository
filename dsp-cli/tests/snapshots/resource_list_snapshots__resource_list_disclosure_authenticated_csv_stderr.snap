@@ -1,0 +1,5 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: stderr
+---
+[authenticated as daisy.duck@dasch.swiss on api.dasch.swiss] — results limited to your permissions

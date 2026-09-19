@@ -1,0 +1,12 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: out
+---
+Structure: beol  (4 relations)
+
+  letter   → Book [to biblio]          cites                [link]
+  letter   → Manuscript [to leibniz]   refersToManuscript   [link]
+  letter   → Edition                   hasEdition           [link]
+  person   → Institution [to newton]   worksAt              [link]
+
+[anonymous on https://api.dasch.swiss]

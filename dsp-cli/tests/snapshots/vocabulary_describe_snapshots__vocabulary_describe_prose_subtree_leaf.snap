@@ -1,0 +1,11 @@
+---
+source: tests/vocabulary_describe_snapshots.rs
+expression: out
+---
+Vocabulary: epoch — Period / Epoche
+Root: http://rdfh.ch/lists/0838/epoch
+1 node · 1 level · subtree of 1.2
+
+  1.2  Bronze Age   ←
+
+[anonymous on api.dasch.swiss]

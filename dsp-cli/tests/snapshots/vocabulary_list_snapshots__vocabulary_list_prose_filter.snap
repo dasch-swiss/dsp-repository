@@ -1,0 +1,9 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: out
+---
+Vocabularies on api.dasch.swiss (1 of 4 matching "epo"):
+
+  epoch  Period / Epoche
+
+[anonymous on api.dasch.swiss]

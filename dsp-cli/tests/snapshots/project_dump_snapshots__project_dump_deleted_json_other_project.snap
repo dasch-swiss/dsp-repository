@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+assertion_line: 352
+expression: out
+---
+{"_meta":{"server":"https://api.test.dasch.swiss","auth":"authenticated","exit_code":0},"data":{"deleted":false,"note":"no dump for the requested project to delete; the server's single dump slot is held by a different project (http://rdfh.ch/projects/0002)"}}

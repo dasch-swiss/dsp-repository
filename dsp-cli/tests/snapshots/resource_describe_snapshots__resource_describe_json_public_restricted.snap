@@ -1,0 +1,5 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0,"note":"results may be filtered; login to see private resources"},"data":{"label":"Restricted View Folio","iri":"http://rdfh.ch/0803/restricted-res","resource_type":"Page","ark_url":"https://ark.stage.dasch.swiss/ark:/72163/1/0803/restricted","creation_date":"2021-06-01T10:00:00Z","last_modified":null,"attached_project":"http://rdfh.ch/projects/0803","owner":"http://rdfh.ch/users/project-admin","visibility":"public (restricted view)","your_access":"restricted view"}}

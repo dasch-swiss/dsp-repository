@@ -1,0 +1,20 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: out
+---
+Resource-type: manuscript
+  Label:          Manuscript
+  Extends:        writtenSource
+  Representation: still-image
+  IRI:            http://api.dasch.swiss/ontology/0801/beol/v2#manuscript
+  Data-model:     beol
+  Instances:      1893
+
+  Fields (5):
+    title               text                 1-n  Title
+    hasAuthor           link → person        0-n  Author
+    hasText             text                 0-1  Text
+    isPartOfCollection  link → Collection    0-n  is part of  [from biblio]
+    hasURI              uri                  0-n  URI  [from biblio]
+
+[anonymous on https://api.dasch.swiss] — counts include resources you may not be permitted to see and exclude deleted resources.

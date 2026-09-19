@@ -1,0 +1,9 @@
+---
+source: tests/data_model_describe_snapshots.rs
+expression: out
+---
+Data-model: minimal
+  IRI:            http://api.dasch.swiss/ontology/0000/minimal/v2
+  Resource-types (0)
+
+[anonymous on https://api.dasch.swiss]

@@ -1,0 +1,5 @@
+---
+source: tests/auth_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Not logged in to https://api.example.com.

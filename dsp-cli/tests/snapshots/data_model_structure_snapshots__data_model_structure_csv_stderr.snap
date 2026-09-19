@@ -1,0 +1,5 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: stderr
+---
+[anonymous on https://api.dasch.swiss]

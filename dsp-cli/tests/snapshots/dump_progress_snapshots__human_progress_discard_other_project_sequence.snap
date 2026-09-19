@@ -1,0 +1,7 @@
+---
+source: tests/dump_progress_snapshots.rs
+expression: out
+---
+⚠ Discarding the existing dump for a different project (http://rdfh.ch/projects/0002) — the DSP-API holds one dump server-wide.
+Triggered dump new-dump-xyz.
+Downloading…

@@ -1,0 +1,7 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: out
+---
+Structure: minimal  (0 relations)
+
+[anonymous on https://api.dasch.swiss]

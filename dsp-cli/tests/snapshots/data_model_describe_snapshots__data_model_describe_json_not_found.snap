@@ -1,0 +1,5 @@
+---
+source: tests/data_model_describe_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"https://api.dasch.swiss","auth":"anonymous","exit_code":1},"error":{"kind":"not_found","message":"not found: data-model 'xyz' not found in project '0801' on https://api.dasch.swiss. Run `dsp vre data-model list --project 0801 --server https://api.dasch.swiss` to see available data-models."}}

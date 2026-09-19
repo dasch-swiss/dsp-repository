@@ -1,0 +1,11 @@
+---
+source: tests/resource_describe_values_snapshots.rs
+expression: stdout
+---
+field	field_label	value_type	value
+isPartOfBook	Is Part Of Book	link	→ Incunabula Testbook [http://rdfh.ch/0803/bookres123]
+hasRelatedResource	Related Resource	link	→ http://rdfh.ch/0803/anotherres456
+hasBookGenre	Book Genre	vocabulary-item	Incunabula
+hasSubject	Subject	vocabulary-item	http://rdfh.ch/lists/0803/subject-history
+hasStillImageFileValue		still-image	n6r.jp2 (2048×3072) https://iiif.dasch.swiss/0803/n6r.jp2/full/max/0/default.jpg
+hasDocumentFileValue		document	transcription.pdf https://files.dasch.swiss/0803/transcription.pdf

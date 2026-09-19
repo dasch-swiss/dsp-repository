@@ -1,0 +1,7 @@
+---
+source: tests/dump_progress_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Found existing dump existing-dump-abc; adopting it.
+Deleting dump dump-to-delete-xyz…
+No dump existed; a probe created a new in-progress dump probe-created-999 (it will complete server-side).

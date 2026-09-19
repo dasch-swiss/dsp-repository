@@ -12,6 +12,7 @@ members = [
   "modules/editor/core",
   "modules/editor/web",
   "modules/editor/server",
+  "dsp-cli",
 ]
 resolver = "3"
 

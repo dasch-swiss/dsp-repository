@@ -1,0 +1,8 @@
+---
+source: tests/project_list_snapshots.rs
+expression: out
+---
+Projects on https://api.test.dasch.swiss (0 of 4 matching "no-match-xyzzy"):
+
+
+[anonymous on https://api.test.dasch.swiss]

@@ -1,0 +1,12 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: out
+---
+Vocabularies on api.dasch.swiss (4):
+
+  epoch  Period / Epoche  · 33 nodes · 3 levels
+  material  Material  · 12 nodes · 2 levels
+  person  Person / Person  · 87 nodes · 3 levels
+    Miscellaneous  · 5 nodes · 1 level
+
+[anonymous on api.dasch.swiss] — --count issues one extra tree fetch per vocabulary (sequential; can be dozens of calls on projects with many vocabularies).

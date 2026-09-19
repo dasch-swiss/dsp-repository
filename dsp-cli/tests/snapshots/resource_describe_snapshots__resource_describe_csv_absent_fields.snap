@@ -1,0 +1,6 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: stdout
+---
+label,iri,resource_type,ark_url,creation_date,last_modified,attached_project,owner,visibility,your_access
+Folio 1r,http://rdfh.ch/0803/res-folio-1r,Page,,2023-04-10T08:00:00Z,,http://rdfh.ch/projects/0803,http://rdfh.ch/users/daisy-duck,public,view

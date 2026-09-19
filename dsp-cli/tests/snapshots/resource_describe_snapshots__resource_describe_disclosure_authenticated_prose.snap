@@ -1,0 +1,16 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+Resource: n6r
+  Type:         Page
+  IRI:          http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw
+  ARK:          https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr
+  Created:      2011-04-14T07:32:49Z
+  Modified:     2024-03-10T15:00:00Z
+  Project:      http://rdfh.ch/projects/3ABR_2i8QYGSIDvmP9mlEw
+  Owner:        http://rdfh.ch/users/IShOmBIGSnO1TXd4-Ty4Sw
+  Visibility:   public
+  Your access:  view
+
+[authenticated as daisy.duck@dasch.swiss on api.dasch.swiss] — results limited to your permissions

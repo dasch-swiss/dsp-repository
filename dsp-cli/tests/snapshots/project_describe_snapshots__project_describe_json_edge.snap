@@ -1,0 +1,5 @@
+---
+source: tests/project_describe_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"https://api.dasch.swiss","auth":"anonymous","exit_code":0},"data":{"iri":"http://rdfh.ch/projects/Kx9mL4rT2pWuB6nZ","shortcode":"4123","shortname":"testproject","longname":null,"status":"active","description":[],"keywords":[],"data_models":[]}}

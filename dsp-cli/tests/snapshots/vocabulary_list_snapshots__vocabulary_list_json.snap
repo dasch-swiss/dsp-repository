@@ -1,0 +1,5 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[{"name":"epoch","iri":"http://rdfh.ch/lists/0838/epoch","labels":[{"value":"Period","language":"en"},{"value":"Epoche","language":"de"}],"comments":[{"value":"Chronological periods used for dating find contexts.","language":"en"}]},{"name":"material","iri":"http://rdfh.ch/lists/0838/material","labels":[{"value":"Material","language":"en"}],"comments":[]},{"name":"person","iri":"http://rdfh.ch/lists/0838/person","labels":[{"value":"Person","language":"en"},{"value":"Person","language":"de"}],"comments":[{"value":"People associated with the excavation or its publication.","language":"en"}]},{"name":null,"iri":"http://rdfh.ch/lists/0838/unnamed01","labels":[{"value":"Miscellaneous","language":"en"}],"comments":[]}]}

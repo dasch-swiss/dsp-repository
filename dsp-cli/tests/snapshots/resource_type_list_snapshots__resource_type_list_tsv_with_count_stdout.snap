@@ -1,0 +1,8 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+name	iri	label	is_builtin	count
+Archive	http://api.dasch.swiss/ontology/0801/beol/v2#Archive	Archive	false	3
+letter	http://api.dasch.swiss/ontology/0801/beol/v2#letter	Letter	false	150
+noLabelType	http://api.dasch.swiss/ontology/0801/beol/v2#noLabelType		false

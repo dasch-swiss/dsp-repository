@@ -1,0 +1,5 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":1},"error":{"kind":"not_found","message":"not found: project '9999' not found on api.dasch.swiss. Run `dsp vre project list --server api.dasch.swiss` to see available projects."}}

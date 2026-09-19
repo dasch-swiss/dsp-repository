@@ -1,0 +1,6 @@
+---
+source: tests/output_format_flags_snapshots.rs
+expression: buf_to_string(&buf)
+---
+http://rdfh.ch/projects/Qt8K2mWbT0eHa1cZ
+http://rdfh.ch/projects/Hn5D0sJwR3uXf7Tb

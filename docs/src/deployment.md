@@ -109,7 +109,19 @@ On every push to `main`, [Release Please](https://github.com/googleapis/release-
 
 Which prefix produces which changelog section and version bump is defined in [Git Conventions](./git-conventions.md#commit-message-schema) — that page is the human source for the type vocabulary, and this config is the machine source.
 
-Configuration lives in `.github/release-please/config.json` and `.github/release-please/manifest.json`.
+Configuration lives in [`.github/release-please/config.json`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json) and [`.github/release-please/manifest.json`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json).
+
+#### dsp-cli
+
+`dsp-cli` is a second release-please package, configured alongside the root `"."` package in the same `config.json`. Top-level `separate-pull-requests: true` keeps the two release PRs apart, so merging a workspace release never ships `dsp-cli`, and merging the `dsp-cli` release never ships the workspace.
+
+Tag format differs by package: `dsp-cli` releases are tagged `dsp-cli-v<version>` (the package sets `include-component-in-tag: true`), while the root keeps the plain `v<version>` tag. The `dsp-cli` release branch is named `release-please--branches--main--components--dsp-cli`.
+
+**Release attribution is by path, not by commit scope.** release-please assigns a commit to a package when any file it touches sits under that package's path; the root `"."` package receives every commit unless its `exclude-paths` excludes it, and a commit is excluded from a package only when *all* of its files fall under an excluded path. The root's `exclude-paths` is `[".github", "dsp-cli"]`. The consequence — accepted and documented, not worked around — is the **double-bump rule**: a `dsp-cli` commit that also touches a root file (for example, a `Cargo.lock` dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See [Git Conventions](./git-conventions.md#scopes) for keeping `dsp-cli` commits scoped to `dsp-cli/**` where possible.
+
+A `Release-As: <version>` commit footer forces a deliberate version choice for a package, overriding the version release-please would otherwise compute. The first `dsp-cli` release from its new workspace home carries `Release-As: 0.3.0`: with `bump-minor-pre-major`, a `feat` alone would only produce `0.2.2`, which would not signal the move.
+
+Publishing `dsp-cli` to crates.io is handled by [`publish-dsp-cli.yml`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/publish-dsp-cli.yml), triggered on `release: published` and guarded by `startsWith(github.event.release.tag_name, 'dsp-cli-v')` so it never fires for a root release. It publishes via **trusted publishing** (`rust-lang/crates-io-auth-action@v1` with `permissions: id-token: write`) rather than a long-lived `CARGO_REGISTRY_TOKEN` secret, and runs in the `crates-io` GitHub environment as defence in depth. Trusted publishing requires a one-time configuration on crates.io, done by an existing crate owner, naming this repository, the workflow file, and the `crates-io` environment; authentication fails until that configuration exists.
 
 ### Documentation (GitHub Pages)
 

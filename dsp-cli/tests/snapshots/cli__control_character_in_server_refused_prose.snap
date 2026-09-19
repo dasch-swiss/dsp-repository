@@ -1,0 +1,5 @@
+---
+source: dsp-cli/tests/cli.rs
+expression: stderr
+---
+Error: usage error: refusing server value "https://x.example/[31m": it contains a control character

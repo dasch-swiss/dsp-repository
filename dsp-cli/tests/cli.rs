@@ -35,6 +35,7 @@
 mod support;
 
 use assert_cmd::Command;
+use tempfile::TempDir;
 
 /// Helper: create a `Command` for `dsp` with deterministic terminal settings.
 ///
@@ -847,4 +848,206 @@ fn sparql_query_rejects_columns_flag() {
         .assert()
         .failure()
         .code(2);
+}
+
+// ── --server scheme validation (5b) ──────────────────────────────────────────
+//
+// `Config::resolve` refuses a non-local `--server` on plain http:// before any
+// network call, in all five output formats. `dsp vre project list` reaches
+// Config::resolve first (see `dispatch_vre_project_list_no_server_exits_usage`
+// above) and supports every `FormatArgs` shortcut, so it doubles as the cell
+// for this refusal the way it already does for the missing-server usage error.
+
+#[test]
+fn insecure_http_server_refused_prose() {
+    let output = dsp()
+        .args(["vre", "project", "list", "--server", "http://api.example.org"])
+        .env_remove("DSP_ALLOW_INSECURE_SERVER")
+        .assert()
+        .failure()
+        .code(2)
+        .get_output()
+        .clone();
+    assert!(output.stdout.is_empty(), "prose refusal must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    insta::assert_snapshot!("insecure_http_refused_prose", stderr);
+}
+
+#[test]
+fn insecure_http_server_refused_json() {
+    let output = dsp()
+        .args(["vre", "project", "list", "--server", "http://api.example.org", "-j"])
+        .env_remove("DSP_ALLOW_INSECURE_SERVER")
+        .assert()
+        .failure()
+        .code(2)
+        .get_output()
+        .clone();
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        stderr.is_empty(),
+        "json refusal must go to stdout, not stderr; stderr was: {stderr}"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout did not parse as JSON: {e}; got: {stdout}"));
+    assert_eq!(parsed["error"]["kind"], "usage");
+    insta::assert_snapshot!("insecure_http_refused_json", stdout);
+}
+
+#[test]
+fn insecure_http_server_refused_csv() {
+    let output = dsp()
+        .args([
+            "vre",
+            "project",
+            "list",
+            "--server",
+            "http://api.example.org",
+            "--format",
+            "csv",
+        ])
+        .env_remove("DSP_ALLOW_INSECURE_SERVER")
+        .assert()
+        .failure()
+        .code(2)
+        .get_output()
+        .clone();
+    assert!(output.stdout.is_empty(), "csv refusal must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    insta::assert_snapshot!("insecure_http_refused_csv", stderr);
+}
+
+#[test]
+fn insecure_http_server_refused_tsv() {
+    let output = dsp()
+        .args([
+            "vre",
+            "project",
+            "list",
+            "--server",
+            "http://api.example.org",
+            "--format",
+            "tsv",
+        ])
+        .env_remove("DSP_ALLOW_INSECURE_SERVER")
+        .assert()
+        .failure()
+        .code(2)
+        .get_output()
+        .clone();
+    assert!(output.stdout.is_empty(), "tsv refusal must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    insta::assert_snapshot!("insecure_http_refused_tsv", stderr);
+}
+
+#[test]
+fn insecure_http_server_refused_lines() {
+    let output = dsp()
+        .args(["vre", "project", "list", "--server", "http://api.example.org", "-l"])
+        .env_remove("DSP_ALLOW_INSECURE_SERVER")
+        .assert()
+        .failure()
+        .code(2)
+        .get_output()
+        .clone();
+    assert!(output.stdout.is_empty(), "lines refusal must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    insta::assert_snapshot!("insecure_http_refused_lines", stderr);
+}
+
+// ── --server control-character refusal (1a) ──────────────────────────────────
+//
+// `dsp auth status` never makes a network call (pure auth-cache read), so it
+// exercises Config::resolve's control-character refusal with no live server
+// needed. HOME is pointed at a fresh TempDir, same as the
+// --allow-insecure-server precedence tests below.
+
+#[test]
+fn control_character_in_server_refused_prose() {
+    let home = TempDir::new().unwrap();
+    let output = dsp()
+        .env("HOME", home.path())
+        .args(["auth", "status", "--server", "https://x.example/\u{1b}[31m"])
+        .assert()
+        .failure()
+        .code(2)
+        .get_output()
+        .clone();
+    assert!(output.stdout.is_empty(), "prose refusal must not write to stdout");
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(!stderr.contains('\u{1b}'), "ESC leaked into diagnostic: {stderr:?}");
+    insta::assert_snapshot!("control_character_in_server_refused_prose", stderr);
+}
+
+// ── --allow-insecure-server flag / DSP_ALLOW_INSECURE_SERVER env precedence ──
+//
+// `dsp auth status` never makes a network call (pure auth-cache read), so it
+// exercises the override end-to-end (clap parsing -> Cli::allow_insecure_server
+// -> Config::resolve) with no live server needed. HOME is pointed at a fresh
+// TempDir per test so these never touch (or depend on) the real
+// ~/.config/dsp-cli/auth.toml.
+
+#[test]
+fn allow_insecure_flag_permits_insecure_http() {
+    let home = TempDir::new().unwrap();
+    dsp()
+        .env("HOME", home.path())
+        .env_remove("DSP_ALLOW_INSECURE_SERVER")
+        .args([
+            "auth",
+            "status",
+            "--server",
+            "http://api.example.org",
+            "--allow-insecure-server",
+        ])
+        .assert()
+        .success();
+}
+
+#[test]
+fn allow_insecure_env_var_1_permits_insecure_http() {
+    // DSP_ALLOW_INSECURE_SERVER=1 alone, no flag — proves the env tier works
+    // and that `1` parses (BoolishValueParser; the default clap bool parser
+    // accepts only "true"/"false" and would reject "1").
+    let home = TempDir::new().unwrap();
+    dsp()
+        .env("HOME", home.path())
+        .env("DSP_ALLOW_INSECURE_SERVER", "1")
+        .args(["auth", "status", "--server", "http://api.example.org"])
+        .assert()
+        .success();
+}
+
+#[test]
+fn allow_insecure_env_var_0_still_refuses() {
+    let home = TempDir::new().unwrap();
+    dsp()
+        .env("HOME", home.path())
+        .env("DSP_ALLOW_INSECURE_SERVER", "0")
+        .args(["auth", "status", "--server", "http://api.example.org"])
+        .assert()
+        .failure()
+        .code(2);
+}
+
+#[test]
+fn allow_insecure_flag_wins_over_conflicting_env_var() {
+    // Flag-before-env precedence (the tier ordering dsp-cli/ADR-0007 sets for
+    // every other setting, applied here too): an explicit
+    // --allow-insecure-server overrides a DSP_ALLOW_INSECURE_SERVER=0 that
+    // would otherwise refuse.
+    let home = TempDir::new().unwrap();
+    dsp()
+        .env("HOME", home.path())
+        .env("DSP_ALLOW_INSECURE_SERVER", "0")
+        .args([
+            "auth",
+            "status",
+            "--server",
+            "http://api.example.org",
+            "--allow-insecure-server",
+        ])
+        .assert()
+        .success();
 }

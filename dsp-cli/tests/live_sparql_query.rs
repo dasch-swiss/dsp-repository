@@ -43,7 +43,8 @@ use common::require_env;
 fn require_server_and_token() -> Option<(String, String)> {
     let server_raw = require_env("DSP_TEST_SERVER")?;
     let token = require_env("DSP_TOKEN")?;
-    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim()), false)
+        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
     Some((cfg.server, token))
 }
 

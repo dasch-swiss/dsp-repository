@@ -173,3 +173,25 @@ The CLI no longer ships a `.env.example` template (it was not carried over in th
 `dsp-repository`, dsp-cli/ADR-0014). The `.env` guidance — which variables to set and the
 gitignore caveat — now lives in [Testing Strategy](../../../docs/src/dsp-cli/testing-strategy.md#general-configuration-variables)'s
 "General configuration variables" section.
+
+## Amendment (2026-09-20) — plain `http://` is refused for a non-local server
+
+"Any other value is treated as a literal URL" above is no longer unconditional. A literal URL whose
+scheme is `http` and whose host is not local is now **refused** with a usage diagnostic (exit `2`),
+because an authenticated command sends a bearer token and plain HTTP puts it on the wire in
+cleartext. `https://` is always accepted, and a value that does not parse as an absolute URL is
+still passed through unchanged — there is no cleartext risk to assess on it.
+
+**Local means loopback or unspecified**, not loopback alone: the `local` shortcut above expands to
+`http://0.0.0.0:3333`, and `0.0.0.0` is the unspecified address, not a loopback one. The accepted
+set is therefore the domain `localhost`, any IPv4 or IPv6 loopback address (`127.0.0.0/8`, `::1`),
+and the unspecified addresses (`0.0.0.0`, `::`). Every built-in shortcut still resolves.
+
+The refusal is overridable by `--allow-insecure-server` or `DSP_ALLOW_INSECURE_SERVER=1`, flag
+before env, the precedence this record already sets for every other setting. The override is a
+global clap flag, so it appears in every subcommand's help. A server value containing a control
+character is refused outright, on any scheme, rather than sanitized: sanitizing the stored value
+would change the string used as the auth-cache key and sent in outgoing requests, so refusal is
+safer. The server value is still stripped of control characters (`sanitize_for_diagnostic`) when it
+appears inside a refusal message itself, so no diagnostic — this one included — can carry a raw
+byte back out.

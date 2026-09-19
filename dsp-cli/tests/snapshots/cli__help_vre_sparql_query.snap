@@ -1,5 +1,5 @@
 ---
-source: tests/cli.rs
+source: dsp-cli/tests/cli.rs
 expression: text
 ---
 Run a raw SPARQL 1.1 query against the server's triplestore.
@@ -16,6 +16,11 @@ Options:
 
   -v, --verbose...
           Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --allow-insecure-server
+          Allow a non-local --server to use insecure http:// (see `dsp docs connecting`)
+          
+          [env: DSP_ALLOW_INSECURE_SERVER=]
 
       --query <QUERY>
           The SPARQL query text. Mutually exclusive with --query-file; if neither is given, the query is read from stdin. See --help's note on shell-history/`ps` exposure

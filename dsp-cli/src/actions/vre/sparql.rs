@@ -176,7 +176,9 @@ pub fn run(args: &SparqlQueryArgs, cfg: &Config, client: &dyn DspClient) -> Resu
     };
 
     let env_token = std::env::var("DSP_TOKEN").ok();
-    let mut out = io::stdout();
+    // Wrapped in `BrokenPipeWriter` so `dsp vre sparql query ... | head` exits
+    // 0 silently instead of surfacing a broken pipe as `Diagnostic::Internal`.
+    let mut out = crate::util::BrokenPipeWriter::new(io::stdout());
 
     query(
         args,
@@ -226,10 +228,7 @@ fn query(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) if env_token_would_win => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; DSP_TOKEN is set, falling through to env token"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "DSP_TOKEN is set, falling through to env token");
             AuthCache::default()
         }
         Err(e) => return Err(e),

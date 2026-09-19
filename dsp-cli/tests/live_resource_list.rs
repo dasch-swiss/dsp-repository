@@ -76,7 +76,8 @@ fn live_resource_list_schema_field_assertion() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim()), false)
+        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     let token: Option<String> = optional_env("DSP_TOKEN");
@@ -347,7 +348,8 @@ fn live_resource_list_order_by_acceptance() {
     );
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim()), false)
+        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 3. Resolve optional token ─────────────────────────────────────────────
     let token: Option<String> = optional_env("DSP_TOKEN");

@@ -44,9 +44,12 @@ pub struct LinesRenderer {
 
 impl LinesRenderer {
     /// Creates a renderer writing to stdout (data) and stderr (disclosure).
+    ///
+    /// Stdout is wrapped in `BrokenPipeWriter` so `dsp ... | head` exits 0
+    /// silently instead of surfacing a broken pipe as `Diagnostic::Internal`.
     pub fn new() -> Self {
         Self {
-            out: Box::new(io::stdout()),
+            out: Box::new(crate::util::BrokenPipeWriter::new(io::stdout())),
             err: Box::new(io::stderr()),
             options: TableOptions::default(),
         }

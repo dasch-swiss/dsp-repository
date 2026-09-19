@@ -37,7 +37,9 @@ use crate::diagnostic::Diagnostic;
 /// `writeln!`.
 pub fn run(cfg: &Config) -> Result<(), Diagnostic> {
     let env_token = std::env::var("DSP_TOKEN").ok();
-    let mut out = std::io::stdout().lock();
+    // Wrapped in `BrokenPipeWriter` so `dsp auth token | head` exits 0
+    // silently instead of surfacing a broken pipe as `Diagnostic::Internal`.
+    let mut out = crate::util::BrokenPipeWriter::new(std::io::stdout().lock());
     run_impl(cfg, &mut out, None, env_token)
 }
 
@@ -61,10 +63,7 @@ fn run_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) if env_token_would_win => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; DSP_TOKEN is set, falling through to env token"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "DSP_TOKEN is set, falling through to env token");
             AuthCache::default()
         }
         Err(e) => return Err(e),

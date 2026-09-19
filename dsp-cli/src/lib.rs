@@ -35,10 +35,14 @@ use crate::diagnostic::Diagnostic;
 /// build a `Config` from `--server`/`DSP_SERVER` and, for login, an
 /// `HttpDspClient`.
 pub fn run(cli: Cli) -> Result<(), Diagnostic> {
+    // Captured before `match cli.command` (which moves that field out of `cli`) —
+    // `allow_insecure_server` is a global flag, not scoped to any one leaf Args.
+    let allow_insecure = cli.allow_insecure_server;
+
     match cli.command {
         TopLevel::Auth { cmd } => match cmd {
             AuthCmd::Login(args) => {
-                let cfg = Config::resolve(args.server.as_deref())?;
+                let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                 let client = HttpDspClient::new()?;
                 let fmt = args.format.resolve();
                 let opts = args.format.table_options(fmt)?;
@@ -46,21 +50,21 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                 actions::auth::login::run(&args, &cfg, &client, &mut *renderer)
             }
             AuthCmd::Status(args) => {
-                let cfg = Config::resolve(args.server.as_deref())?;
+                let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                 let fmt = args.format.resolve();
                 let opts = args.format.table_options(fmt)?;
                 let mut renderer = fmt.into_renderer_with_options(opts);
                 actions::auth::status::run(&args, &cfg, &mut *renderer)
             }
             AuthCmd::Logout(args) => {
-                let cfg = Config::resolve(args.server.as_deref())?;
+                let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                 let fmt = args.format.resolve();
                 let opts = args.format.table_options(fmt)?;
                 let mut renderer = fmt.into_renderer_with_options(opts);
                 actions::auth::logout::run(&args, &cfg, &mut *renderer)
             }
             AuthCmd::SetToken(args) => {
-                let cfg = Config::resolve(args.server.as_deref())?;
+                let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                 let client = HttpDspClient::new()?;
                 let fmt = args.format.resolve();
                 let opts = args.format.table_options(fmt)?;
@@ -68,7 +72,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                 actions::auth::set_token::run(&cfg, &client, &mut *renderer)
             }
             AuthCmd::Token(args) => {
-                let cfg = Config::resolve(args.server.as_deref())?;
+                let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                 actions::auth::token::run(&cfg)
             }
         },
@@ -76,7 +80,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
         TopLevel::Vre { cmd } => match cmd {
             VreCmd::Project { cmd } => match cmd {
                 ProjectCmd::List(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -84,7 +88,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::project::list(&args, &cfg, &client, &mut *renderer)
                 }
                 ProjectCmd::Describe(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -92,7 +96,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::project::describe(&args, &cfg, &client, &mut *renderer)
                 }
                 ProjectCmd::Dump(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -103,7 +107,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
             },
             VreCmd::DataModel { cmd } => match cmd {
                 DataModelCmd::List(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -111,7 +115,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::data_model::list(&args, &cfg, &client, &mut *renderer)
                 }
                 DataModelCmd::Describe(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -119,7 +123,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::data_model::describe(&args, &cfg, &client, &mut *renderer)
                 }
                 DataModelCmd::Structure(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -129,7 +133,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
             },
             VreCmd::ResourceType { cmd } => match cmd {
                 ResourceTypeCmd::List(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -137,7 +141,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::resource_type::list(&args, &cfg, &client, &mut *renderer)
                 }
                 ResourceTypeCmd::Describe(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -147,7 +151,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
             },
             VreCmd::Resource { cmd } => match cmd {
                 ResourceCmd::List(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -155,7 +159,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::resource::list(&args, &cfg, &client, &mut *renderer)
                 }
                 ResourceCmd::Describe(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -165,7 +169,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
             },
             VreCmd::Vocabulary { cmd } => match cmd {
                 VocabularyCmd::List(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -173,7 +177,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::vocabulary::list(&args, &cfg, &client, &mut *renderer)
                 }
                 VocabularyCmd::Describe(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     let fmt = args.format.resolve();
                     let opts = args.format.table_options(fmt)?;
@@ -185,7 +189,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
             // store-authored byte stream, not a dsp-cli-rendered view.
             VreCmd::Sparql { cmd } => match cmd {
                 SparqlCmd::Query(args) => {
-                    let cfg = Config::resolve(args.server.as_deref())?;
+                    let cfg = Config::resolve(args.server.as_deref(), allow_insecure)?;
                     let client = HttpDspClient::new()?;
                     actions::vre::sparql::run(&args, &cfg, &client)
                 }

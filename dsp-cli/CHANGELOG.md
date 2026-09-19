@@ -2,6 +2,40 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **A non-local `--server` using plain `http://` is now refused** with a usage error (exit `2`).
+  An authenticated command sends a bearer token, which plain HTTP puts on the wire in cleartext.
+  `https://` is always accepted, and so is a local address: `localhost`, any loopback address, and
+  the unspecified addresses `0.0.0.0` and `::`, which is what the `local` shortcut
+  (`http://0.0.0.0:3333`) expands to. Override with the new global `--allow-insecure-server` flag or
+  `DSP_ALLOW_INSECURE_SERVER=1`. This is the one behaviour change a 0.2.1 user can hit. A `--server`
+  value containing a control character (e.g. a raw ANSI escape) is refused outright, on any scheme.
+  See `dsp docs connecting` and the amendment to dsp-cli/ADR-0007.
+- **A closed stdout pipe exits `0` silently.** `dsp ... | head` previously exited `1` with
+  `Error: internal error: io error: Broken pipe`. Every other write error still exits `1`. See the
+  amendment to dsp-cli/ADR-0012.
+- **dsp-cli now lives in the `dsp-repository` workspace**, moved from `dsp-incubator`, and releases
+  on its own version line with its own `dsp-cli-v<version>` tags. Installation and usage are
+  unchanged. See dsp-cli/ADR-0014.
+
+### Added
+
+- `DSP-Client: dsp-cli/<version>` is sent beside `User-Agent` on every DSP-API request, so
+  server-side logs can attribute traffic to this client. The crates.io update check does not send
+  it.
+- A `warn` line when `DSP_TOKEN` comes from the process environment while `DSP_SERVER` comes from a
+  `.env` file in the working directory, so a token being sent to a server from a different context
+  is visible before the first authenticated request.
+
+### Fixed
+
+- **A malformed `auth.toml` no longer echoes token bytes.** A `toml` parse error quotes the
+  offending source line, so a truncated or corrupt cache printed a bearer-token fragment to stderr
+  at default verbosity. The warning is now body-free; the parse error is logged at `debug`.
+
 ## [0.2.1] - 2026-08-07
 
 ### Added

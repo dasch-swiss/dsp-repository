@@ -3390,3 +3390,210 @@ Two things follow, both of which this round paid for:
 
 - No score is claimed, and nothing has been re-assessed.
 - Everything Round 11 listed as still open remains so.
+
+## Round 19 — Phase 10: a byte budget for `/metadata.jsonld` (2026-09-19)
+
+Two commits on top of `4aeed1eb`, which is pushed.
+
+| # | Chunk | Commit |
+|---|-------|--------|
+| 10.1 | `PartLimit`, `within_budget`, `JSON_LD_BYTE_BUDGET`, `project_json_ld`, the unit and corpus tests | `76a867d7` |
+| 10.2 | Docs, ADR note, plan Phase 10, this round | this commit |
+
+### The defect, and the decision it overturns
+
+5,251,715 bytes served for 0868 on a PR preview, against F-UJI's 5,000,000-byte
+download limit. The fragment it kept was not valid JSON, so `FsF-I1-01M` scored
+1 of 2. The document was fine; its size was not.
+
+An earlier instruction of mine said the representation must stay uncapped,
+because the uncapped set was what earned 0868's file-pointer points. **That was
+wrong, and the same run disproves it.** F-UJI reported `Found data links in
+MetadataFormats.JSONLD metadata -: 100` — the *embedded block's* cap — never
+parsed the large document, and still earned `F3-01M` 1/1, `A1-03D` 1/1,
+`R1-01MD` 3/4 and `R1.3-02D` 1/1. The uncapped set earned nothing the capped one
+did not. Recorded as superseded in the plan, in
+`machine-readable-metadata.md`, and here.
+
+### Why a count would have been the wrong instrument
+
+The preview and the local corpus are the same 19,770 parts and they serialise to
+5.25 MB and 4.74 MB. Half a megabyte of difference is host length alone. Add
+licence URIs, file names and MIME types varying per project and any record count
+is a guess calibrated against one deployment. So `within_budget` renders a
+prefix, serialises it, measures it and **returns the very `Value` it measured**.
+
+That last clause is the Round 18 lesson applied one level down. The tempting
+implementation is per-entry accounting: measure one `hasPart` node, one
+`DataDownload`, add commas and brackets. It is faster and it is a second
+implementation of `serde_json`'s output living beside the real one — it would
+have been right on the day it was written and wrong the first time a key changed
+shape, with nothing to say so. The loop is three lines longer and cannot drift.
+
+Convergence is not a worry: the prefix is scaled by the measured ratio, treating
+the document's fixed part as though it scaled too, which makes the estimate an
+under-estimate, so the second pass fits. `cap - 1` guarantees progress whatever
+the arithmetic returns.
+
+### `hasPart` versus `distribution`: one prefix
+
+The brief asked for a decision made on what is most truthful and useful, not on
+what an assessor rewards. Both lists compete for the budget and there is a real
+case for spending it on `distribution`: a `DataDownload` is the only thing in
+the document a consumer can act on to get *data*, while a `hasPart` entry is an
+identifier and a title.
+
+It is rejected, on three grounds that are not about the assessor:
+
+1. **A prefix is a coherent partial view; two prefixes are not.** Stopping both
+   lists at the same record means the document says "these records, and the
+   files of these records". Splitting the budget means describing downloads for
+   records the document does not list — legal schema.org, since `distribution`
+   hangs off the root, but no longer a readable statement about a contiguous
+   part of the project.
+2. **One rule, not two.** The page already bounds both lists together and the
+   writer's doc comment states the invariant. Favouring distributions would keep
+   that rule in the page and break it in the representation.
+3. **Nothing is recoverable only from this document.** The complete record list
+   is the OAI set `project:{shortcode}`; each record's download URL is
+   `/dpe/records/{shortcode}/{record_id}/file`. So the question is not which
+   information survives, only which is convenient — and convenience is not worth
+   a second truncation rule.
+
+The remaining argument for distributions is that they are what F-UJI scores.
+That is the reasoning this line of work has refused elsewhere, most recently in
+rejecting a `*.dasch.swiss` preview host, and it is refused here.
+
+### Measured, locally, before and after
+
+`https://example.test` as the site host and the recorded ARK host:
+
+| Project | Records | Files | Unbounded | Served | Parts | Downloads |
+|---------|--------:|------:|----------:|-------:|------:|----------:|
+| 0868 | 19,770 | 7,716 | 4,875,959 | **3,972,504** | 16,218 | 6,107 |
+| 081C | 27,026 | 0 | 3,548,716 | 3,548,716 | 27,026 | — |
+| 0803 | 4,198 | 4,062 | 1,472,208 | 1,472,208 | 4,198 | 4,062 |
+| 0862 | 0 | 0 | 6,699 | 6,699 | — | — |
+
+**081C binds on the preview and not locally** — 4,062,336 bytes there, 3,548,716
+here, one unchanged corpus. That is the argument for measuring bytes restated as
+a fact rather than an assertion, and it is why no test asserts anything about
+081C: whether it binds is a property of the deployment.
+
+0868 lands at 99.3% of the budget, which is the proportional estimate being
+tight rather than a coincidence.
+
+All five of 0868's MIME types — `application/pdf`, `application/zip`,
+`image/png`, `text/csv`, `text/plain` — survive in the bounded prefix, so F-UJI's
+five-files-per-type content sampling has the same set to draw from and the
+egress note's assessor figures still hold.
+
+### Partiality: the first framing was wrong, and the correction is the point
+
+I first wrote "nothing standard fits, so it is documented", and reported it as
+the weakest part of the change. The lead's reply corrected it with a
+measurement, and the corrected claim is both narrower and much stronger.
+
+**Completeness is already reachable in band, over links this work built.**
+`/metadata.jsonld` answers with `Link: <landing page>; rel="describes"`; the
+landing page answers with `rel="describedby"` to the OAI `GetRecord` URLs, which
+carry the OAI endpoint's own base URL; `ListRecords` over the set
+`project:{shortcode}` follows from that by the protocol. Two hops, zero new
+vocabulary. So the true statement is not "a consumer cannot get the rest" but
+**"completeness is not expressible *in this document*"** — a different and far
+more defensible claim.
+
+The vocabulary rejection is unchanged and still stands: `numberOfItems` is on
+`ItemList`, not `Dataset`; `size` is product sizing; the pagination properties
+are printed pages; Hydra's `totalItems` and `PartialCollectionView` fit and add
+a third namespace for one integer, asserting a new fact rather than restating
+one, which is the distinction that let `prov:` in. Pointing `distribution` at
+the OAI set was rejected too: a consumer reads a `DataDownload` as data content.
+
+**The lesson is about how an absence was described.** "Nothing standard fits"
+reasons from the vocabulary outward and stops at the graph's edge. The response
+is one layer out, in the HTTP links the same change already emits, and I did not
+look there because I had framed the question as a schema.org question. An
+absence is only as real as the boundary you drew around it, and I drew it at the
+JSON document.
+
+### Who reads which document — recorded so the budget is not re-litigated
+
+The reasonable worry about a 4 MB cap is that it starves a search engine. It
+does not, and the docs now say why, with the direction stated plainly.
+
+| Consumer | Document | Its ceiling | Largest we serve |
+|---|---|---:|---:|
+| Google Dataset Search | the embedded block, in the page `<head>` | 2,097,152 B | 77,999 B (0868) — 3.7% |
+| F-UJI | the block, and `/metadata.jsonld` for `I1-01M` | 5,000,000 B | 3,972,504 B |
+| Bulk harvester | OAI set `project:{shortcode}` | none | the complete set |
+
+**Googlebot's ceiling is half the representation's budget.** Removing the bound
+to help Google would help it less: Googlebot does not fetch `/metadata.jsonld`,
+and an unbounded one would be truncated at 2 MB and unparseable.
+
+The 77,999 B is the whole landing page on a PR preview, not the JSON-LD block
+alone — which is the right comparison, since Googlebot's limit is on the file it
+crawls. Measured locally the same page is 75,717 B and its block is 45,136 B.
+Rendering the block under a preview-length public base URL gives 45,262 B, so
+host length does not account for the page/block gap; the two figures describe
+two different things and both are labelled.
+
+`JSON_LD_BYTE_BUDGET`'s doc comment deliberately does **not** cite Googlebot's
+2 MB. Googlebot never fetches that document, and naming a limit that is not
+operating on it would imply a constraint that does not exist.
+
+### The tests, and the mutations that prove they are attached
+
+`project_json_ld` is named and extracted so the corpus test calls **the function
+the handler runs**. It is not a convenience: with the document built inline in
+the handler's closure, the only honest corpus test would have had to rebuild the
+call, and a budget that stopped being applied would have passed it.
+
+- `shared-fair`: the budget bounds the serialised bytes and leaves the document
+  parseable; it is deterministic; the prefix is shared, asserted by counting
+  downloads against `parts.div_ceil(3)` over a one-in-three fixture; a budget of
+  1 still yields valid JSON; a budget the whole document fits in changes nothing.
+- `dpe-server` `byte_budget`: every committed project with a dump is under the
+  budget and parses; the budget binds on 0868 and does not on 0862. The binding
+  test asserts 0868's *unbounded* size exceeds the budget first, so a corpus that
+  shrank would fail rather than pass vacuously.
+
+**Both mutations were run.** Raising `JSON_LD_BYTE_BUDGET` to 6,000,000 fails
+`the_budget_binds_on_0868_and_not_on_0862` with "0868 no longer exceeds the
+budget unbounded (4875959 bytes), so this measures nothing". Swapping
+`PartLimit::All` back into `project_json_ld` fails both tests, the first with
+"0868: 4875959 bytes, over the 4000000-byte budget". The constant and the call
+were restored and re-run green.
+
+Note which mutation each test caught. The under-budget sweep alone passes at a
+6,000,000 budget — correctly, since the document *is* under it — and says
+nothing about whether the bound was ever exercised. The binding test is the one
+that notices. A corpus-wide invariant and a "this case is real" assertion are
+different instruments and this round needed both.
+
+### Verification
+
+- Full check gate at each commit by detached checkout, and at the tip:
+  `verify-checksums`, `check-shared-paths`, `check-datastar-delimiters`, the
+  maudfmt no-op check, `cargo +nightly fmt --check --all`,
+  `cargo clippy --all-features -D warnings`, `cargo machete`. All pass.
+- `cargo test` on `shared-fair`, `shared-metadata`, `dpe-api-oai`, `dpe-server`,
+  `dpe-web` and `dpe-core` green at each commit; `just test` exit 0 at the tip;
+  `mdbook build docs` succeeds.
+- **OAI byte identity: `compared 102158 entries`, pass**, against the existing
+  `.claude/tmp/oai-baseline-hashes.txt`, **not** regenerated. The hash test was
+  recovered from `4cdf06d8^` into `metadata/hash_baseline.rs`, run, and removed
+  again with its `mod` line. Not load-bearing this round — nothing here touches
+  an OAI writer — but run because the standing instruction is to run it.
+- `just --check --fmt --unstable` still fails identically on `origin/main` under
+  local `just` 1.49.0, as Rounds 16-18 recorded. Untouched; the gate was run as a
+  script replicating `check` without that one line, which is why the list above
+  is spelled out.
+
+### Still open
+
+- **No score is claimed and nothing has been re-assessed.** The `I1-01M`
+  regression was a preview observation; the residuals ledger's columns are local
+  runs and are unchanged.
+- Everything Round 11 listed as still open remains so.

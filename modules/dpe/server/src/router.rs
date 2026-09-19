@@ -46,9 +46,9 @@ impl KeyExtractor for RightmostXffKeyExtractor {
 ///
 /// One layer over all three, so they share a per-IP bucket and one set of
 /// `DPE_OAI_RATE_LIMIT_*` settings. The representations belong here from their
-/// first day rather than after measurement: the JSON-LD one serves an uncapped
-/// `hasPart`, which for the largest committed project is a few megabytes built
-/// in memory per request.
+/// first day rather than after measurement: the JSON-LD one serves as much of
+/// `hasPart` as its byte budget allows, which is a few megabytes built in memory
+/// per request.
 ///
 /// The limiter type is erased here — the result is a plain `Router<AppState>` the
 /// caller merges in — so `build_router` never has to name the `GovernorLayer`

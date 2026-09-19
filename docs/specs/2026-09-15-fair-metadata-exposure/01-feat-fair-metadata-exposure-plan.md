@@ -1084,6 +1084,63 @@ curator prose is a different operation from replacing the host of an identifier
 and nothing reads either field as an identifier.
 
 
+### Phase 10 — give `/metadata.jsonld` a byte budget
+
+**Why.** On a PR preview `/dpe/projects/0868/metadata.jsonld` served 5,251,715
+bytes. F-UJI truncates any download at 5,000,000 and the truncated fragment is
+not valid JSON, so it could not parse the document at all and `FsF-I1-01M`
+scored 1 of 2. The document was valid JSON as served, verified with `jq`: a size
+defect, not a serialisation defect. 0868 is a small project by DaSCH standards,
+so the unbounded representation fails for the normal case of a project with
+files.
+
+**A superseded decision, recorded with its evidence.** An earlier instruction
+held that the representation must stay uncapped, because the uncapped set was
+what earned 0868 its file-pointer points. The same preview run disproves it:
+F-UJI reported `Found data links in MetadataFormats.JSONLD metadata -: 100` —
+the embedded block's cap — never parsed the large document, and still earned
+`F3-01M` 1/1, `A1-03D` 1/1, `R1-01MD` 3/4 and `R1.3-02D` 1/1.
+
+**Starts from `4aeed1eb`.** New commits on top; nothing at or below it amended.
+
+- [x] `SchemaOrgOptions.has_part_cap: Option<usize>` becomes `parts: PartLimit`, with `All`, `Count(n)` and `Bytes(n)`. The page keeps `Count(100)`; the representation takes `Bytes(JSON_LD_BYTE_BUDGET)`
+- [x] **A byte budget, not a record cap.** The same 19,770 parts serialise to 4.74 MB under `ark.dasch.swiss` and 5.25 MB under the preview's longer host, and identifier length, licence URIs, file names and MIME types vary per project besides. A count calibrated on one deployment is wrong on the next
+- [x] **Measured, not estimated.** `within_budget` renders a prefix, serialises it, and returns the very `Value` it measured. Per-entry accounting would be a second implementation of `serde_json`'s output beside the real one — the Round 18 failure, one level down. The prefix is scaled by the measured ratio and floored at `cap - 1`, so the loop terminates for any budget and normally converges on the second pass
+- [x] `JSON_LD_BYTE_BUDGET = 4_000_000` in `dpe-server`'s `metadata.rs`, beside `HAS_PART_CAP`, with the reason in its doc comment. A 20% margin, because we control neither the host length, nor the assessor's limit, nor what a future field adds. Not configurable
+- [x] **One prefix for `hasPart` and `distribution`**, as in the page. Favouring distributions was considered and rejected: it needs two truncation rules where there is one, describes downloads for records the document does not list, and the reason to prefer them is that an assessor rewards them. Neither list is recoverable only here — the record list is the OAI set `project:{shortcode}`, and each record's download URL is `/dpe/records/{shortcode}/{record_id}/file`
+- [x] **Only the representation is bounded.** The embedded block keeps `Count(100)`; `PartLimit::All` stays for fixtures and for a graph the caller built small
+- [x] Byte-measured corpus test in `dpe-server` over `project_json_ld` — the function the handler runs, named and extracted so a budget that stops being applied fails the test too. Every committed project with a dump is under the budget and parses with `serde_json`
+- [x] The budget binds on 0868 and does not on 0862, asserted against 0868's own unbounded size so a corpus that stopped exceeding the budget fails loudly rather than passing vacuously
+- [x] Mutation-checked twice: raising the constant to 6,000,000 fails the binding test; swapping `PartLimit::All` back into `project_json_ld` fails both
+- [x] OAI byte identity against the existing baseline, unregenerated
+- [x] `machine-readable-metadata.md`: the bound, why bytes, why 4,000,000, the shared prefix, the superseded decision, that completeness is reachable in band over the `describes`/`describedby` links but not expressible inside the document, and which consumer reads which document against which ceiling. `operations.md`: the burst figure and the dsp-ingest egress table recomputed. ADR-0005 gains a dated note on the omission side of *Nothing is invented for a score*
+- [x] Run the standing gate per commit and at the tip
+- [ ] Run `eng:reviewing` on this phase's diff with the complete reviewer set
+
+**Partiality is documented, not asserted in the graph — and completeness is
+reachable in band regardless.** `/metadata.jsonld` carries
+`Link: <landing page>; rel="describes"`; the landing page carries
+`rel="describedby"` to the OAI `GetRecord` URLs, which name the OAI endpoint;
+`ListRecords` over the set `project:{shortcode}` follows by the protocol. Two
+hops, no new vocabulary. What is not possible is saying it *inside the
+document*: `numberOfItems` is on `ItemList`, `size` is product sizing, and
+Hydra's `totalItems` / `PartialCollectionView` would fit but adds a third
+namespace for one integer and asserts a new fact rather than restating one,
+which is the line `prov:` stays on the right side of. Inventing or bending a
+term is what ADR-0005 rules out. So `machine-readable-metadata.md` states it.
+
+**Which consumer reads which document, recorded so the budget is not
+re-litigated.** Google Dataset Search reads the embedded block in the page head,
+against a 2,097,152-byte Googlebot ceiling, and the largest page we serve is
+77,999 bytes — 3.7%. F-UJI reads the block and, for `I1-01M`, the bounded
+representation. A bulk harvester reads the OAI set and gets everything.
+Googlebot's ceiling is *half* the representation's budget, so removing the bound
+to help a search engine would help it less, not more.
+
+**No score is claimed.** The `I1-01M` regression was observed on the preview,
+the residuals ledger's columns are local runs, and nothing has been re-measured.
+
+
 ## Human Actions
 
 | Id | Action | Who | When | Why not the agent |

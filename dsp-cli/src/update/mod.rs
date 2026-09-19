@@ -1,6 +1,6 @@
-//! Interactive update check (advise-only). See ADR-0015
-//! (`docs/adr/0015-update-check-and-self-update.md`) and the 031 plan
-//! (`docs/design/plans/031-update-check/implementation-plan.md`).
+//! Interactive update check (advise-only). See dsp-cli/ADR-0015
+//! (`docs/adr/0015-update-check-and-self-update.md`) and design plan
+//! 031-update-check in the dsp-incubator archive.
 //!
 //! On **prose-format + interactive-TTY** runs only (unless opted out via
 //! `DSP_NO_UPDATE_CHECK`), `dsp` checks the crates.io sparse index for a
@@ -36,12 +36,12 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// At most one network fetch per this many hours; within the window the
 /// reminder still shows every interactive run, from the cached
-/// `latest_seen` (see ADR-0015 "Transport, frequency, politeness").
+/// `latest_seen` (see dsp-cli/ADR-0015 "Transport, frequency, politeness").
 pub(crate) const CHECK_INTERVAL_HOURS: i64 = 24;
 
 /// Standalone opt-out env var (set to any non-empty value to disable the
 /// check entirely). Read directly via `std::env`, not through
-/// `Config::resolve` (server-only) — see ADR-0015 "Opt-out".
+/// `Config::resolve` (server-only) — see dsp-cli/ADR-0015 "Opt-out".
 pub(crate) const OPT_OUT_ENV: &str = "DSP_NO_UPDATE_CHECK";
 
 /// Size cap on the response body read, for parity with `AuthCache`'s
@@ -124,7 +124,7 @@ pub fn fetch_latest(url: &str) -> Result<Option<semver::Version>, crate::diagnos
 /// `maybe_notify` reads the real TTY/env state and passes plain `bool`s here.
 ///
 /// Open iff the effective format is `Prose`, stderr is an interactive TTY,
-/// and the opt-out env var is not set (ADR-0015 "Where it runs and what
+/// and the opt-out env var is not set (dsp-cli/ADR-0015 "Where it runs and what
 /// gates it").
 fn gate_open(fmt: Option<crate::render::Format>, stderr_is_tty: bool, opted_out: bool) -> bool {
     matches!(fmt, Some(crate::render::Format::Prose)) && stderr_is_tty && !opted_out
@@ -145,7 +145,7 @@ fn is_stale(
 }
 
 /// Composes the two-line advisory printed to stderr. Plain language, no
-/// "crate" (ADR-0001 vocabulary — dsp-cli's user-facing surface avoids the
+/// "crate" (dsp-cli/ADR-0001 vocabulary — dsp-cli's user-facing surface avoids the
 /// word).
 fn compose_notice(current: &semver::Version, latest: &semver::Version) -> String {
     format!(
@@ -158,7 +158,7 @@ fn compose_notice(current: &semver::Version, latest: &semver::Version) -> String
 /// Swallows all errors; never alters the process exit code.
 ///
 /// The gate (format + TTY + opt-out) is evaluated before any I/O, so the
-/// common non-interactive/agent path costs nothing (ADR-0015).
+/// common non-interactive/agent path costs nothing (dsp-cli/ADR-0015).
 pub fn maybe_notify(fmt: Option<crate::render::Format>) {
     use std::io::IsTerminal;
 
@@ -201,7 +201,7 @@ fn run_check_and_notify() -> Result<(), crate::diagnostic::Diagnostic> {
 
     let latest: Option<semver::Version> = if is_stale(now, cache.last_checked, CHECK_INTERVAL_HOURS) {
         // Stamp before the fetch so the 24h backoff holds even on failure —
-        // a failed attempt still counts as an attempt (ADR-0015).
+        // a failed attempt still counts as an attempt (dsp-cli/ADR-0015).
         cache.last_checked = Some(now);
 
         let candidate = match fetch_latest(SPARSE_INDEX_URL) {
@@ -211,7 +211,7 @@ fn run_check_and_notify() -> Result<(), crate::diagnostic::Diagnostic> {
             }
             Ok(None) => resolve_cached_latest(&cache.latest_seen),
             Err(e) => {
-                // Documented non-fatal contract (ADR-0015): log at debug and
+                // Documented non-fatal contract (dsp-cli/ADR-0015): log at debug and
                 // fall back to the last-known cached version, if any.
                 tracing::debug!(error = %e, "update check fetch failed; using cached version if any");
                 resolve_cached_latest(&cache.latest_seen)

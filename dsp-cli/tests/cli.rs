@@ -49,7 +49,13 @@ fn dsp() -> Command {
         // the update-check gate is already closed, but this guarantees no real
         // network call/flakiness even under an unusual terminal setup (plan
         // 031-update-check, Step 6).
-        .env("DSP_NO_UPDATE_CHECK", "1");
+        .env("DSP_NO_UPDATE_CHECK", "1")
+        // `TERM=dumb` alone does not stop clap from emitting ANSI colour when
+        // the caller's environment forces it — `NO_COLOR` and removing both
+        // `CLICOLOR` variables closes that gap.
+        .env("NO_COLOR", "1")
+        .env_remove("CLICOLOR_FORCE")
+        .env_remove("CLICOLOR");
     cmd
 }
 
@@ -537,7 +543,7 @@ fn no_header_with_json_exits_usage() {
     // table_options then rejects --no-header on a non-csv/tsv format.
     //
     // Since plan 032 (top-level error routing), a top-level error under -j emits
-    // the ADR-0012 JSON error envelope to *stdout* (not stderr), with stderr empty.
+    // the dsp-cli/ADR-0012 JSON error envelope to *stdout* (not stderr), with stderr empty.
     let output = dsp()
         .args([
             "vre",

@@ -1,6 +1,6 @@
 //! Prose renderer — rich human-readable output.
 //!
-//! This is the default renderer (per ADR-0003). `diagnostic` and the three
+//! This is the default renderer (per dsp-cli/ADR-0003). `diagnostic` and the three
 //! auth methods produce human-readable one-liners. Per-noun methods arrive
 //! with real data: `project_dump` in Phase 3, `projects` (list) in Phase 4;
 //! the remaining noun-groups (data-models, etc.) follow in Phase 5. Prose
@@ -70,7 +70,7 @@ impl Default for ProseRenderer {
 
 impl Renderer for ProseRenderer {
     fn diagnostic(&mut self, diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
-        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (ADR-0012)
+        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (dsp-cli/ADR-0012)
         Ok(())
     }
 
@@ -187,7 +187,7 @@ impl Renderer for ProseRenderer {
 
         for item in &view.items {
             let longname = item.longname.as_deref().unwrap_or("");
-            // iri is intentionally omitted from prose (ADR-0003 / plan Step 3c).
+            // iri is intentionally omitted from prose (dsp-cli/ADR-0003 / plan Step 3c).
             // The data-models hint is right-appended to the row (same line as
             // status), per the locked PRD output format.
             write!(
@@ -244,7 +244,7 @@ impl Renderer for ProseRenderer {
         }
 
         // Description — each entry is run through html_to_text before rendering
-        // (prose-only; JSON keeps the raw value per ADR-0003). Entries whose
+        // (prose-only; JSON keeps the raw value per dsp-cli/ADR-0003). Entries whose
         // value reduces to empty text (e.g. only tags) are dropped, and the whole
         // block — including the `Description:` label — is omitted when nothing
         // visible remains, so the label never dangles with no content under it.
@@ -953,7 +953,7 @@ mod tests {
         assert!(s.contains("[en] BEOL"));
         assert!(!s.contains("<b>"), "description must not contain raw <b> tags");
         assert!(!s.contains("</b>"), "description must not contain raw </b> tags");
-        // ADR-0007 footer
+        // dsp-cli/ADR-0007 footer
         assert!(s.contains("[anonymous on api.dasch.swiss]"));
     }
 
@@ -1193,7 +1193,7 @@ mod tests {
             s.contains("data-models on https://api.test.dasch.swiss (3), incl. built-ins:"),
             "header must include count and built-ins suffix; got:\n{s}"
         );
-        // ADR-0007 footer on stdout
+        // dsp-cli/ADR-0007 footer on stdout
         assert!(s.contains("[anonymous on https://api.test.dasch.swiss]"));
         // beol row: label present + date (date portion only)
         assert!(s.contains("beol") && s.contains("The BEOL data-model") && s.contains("2024-05-27"));
@@ -1360,7 +1360,7 @@ mod tests {
         assert!(s.contains("Archive"), "Archive row missing; got:\n{s}");
         assert!(s.contains("basicLetter"), "basicLetter row missing; got:\n{s}");
         assert!(s.contains("Letter"), "Letter label missing; got:\n{s}");
-        // ADR-0007 footer
+        // dsp-cli/ADR-0007 footer
         assert!(s.contains("[anonymous on api.dasch.swiss]"), "footer missing; got:\n{s}");
         // "None" must never appear
         assert!(!s.contains("None"), "None must not appear; got:\n{s}");
@@ -1507,7 +1507,7 @@ mod tests {
             !s.contains("(built-in)"),
             "must not have (built-in) marker on project-only items; got:\n{s}"
         );
-        // ADR-0007 footer on stdout
+        // dsp-cli/ADR-0007 footer on stdout
         assert!(
             s.contains("[anonymous on https://api.test.dasch.swiss]"),
             "footer missing; got:\n{s}"
@@ -1599,7 +1599,7 @@ mod tests {
     fn resource_types_prose_with_counts() {
         // plan 030: when at least one item carries a count, a right-aligned
         // count column appears (both project and built-in rows), and the
-        // count_caveat is appended to the ADR-0007 footer suffix.
+        // count_caveat is appended to the dsp-cli/ADR-0007 footer suffix.
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let mut items = make_resource_type_fixture();
@@ -1742,7 +1742,7 @@ mod tests {
             coll_line.contains("[from biblio]"),
             "cross-DM field must show [from biblio]; got: {coll_line:?}"
         );
-        // ADR-0007 footer
+        // dsp-cli/ADR-0007 footer
         assert!(
             s.contains("[anonymous on https://api.dasch.swiss]"),
             "footer missing; got:\n{s}"

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a public, read-only, server-side rendered web application built with Maud and Axum — the metadata editor, a separate authenticated service built the same way, and the Mosaic component library (design system) both use.
+This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a public, read-only, server-side rendered web application built with Maud and Axum — the metadata editor, a separate authenticated service built the same way, the Mosaic component library (design system) both use, and `dsp-cli`, a published command-line client for the platform.
 
 ## Setup
 

@@ -2,7 +2,7 @@
 //!
 //! Types here are the dsp-cli vocabulary for data-model data. DSP-API wire types
 //! live inside `src/client/http.rs` and are never exposed above the client
-//! layer. See ADR-0001 and ADR-0008.
+//! layer. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 
 /// A data-model as shown by `dsp vre data-model list`.
 ///
@@ -10,7 +10,7 @@
 /// and `last_modified` metadata, and whether it is a platform **built-in**
 /// (inherited by every project) rather than project-defined. `name` is derived
 /// from the IRI at the client boundary — not a wire field. No `serde` derive:
-/// wire deserialization stays in `src/client/http.rs`. See ADR-0001 / ADR-0008
+/// wire deserialization stays in `src/client/http.rs`. See dsp-cli/ADR-0001 / dsp-cli/ADR-0008
 /// and the CONTEXT.md "Data Model" / "Built-in" entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataModel {
@@ -36,7 +36,7 @@ pub struct DataModel {
 /// is surfaced by the `dsp vre resource-type describe` leaf command — see
 /// `model::ResourceTypeDetail` / `Field`.
 /// `name` is derived from the resource-type's IRI by the HTTP client layer at the
-/// ADR-0001 boundary — it is NOT a server-supplied field. No `serde` derive: wire
+/// dsp-cli/ADR-0001 boundary — it is NOT a server-supplied field. No `serde` derive: wire
 /// deserialization stays in `src/client/http.rs`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceTypeSummary {
@@ -58,8 +58,8 @@ pub struct ResourceTypeSummary {
 /// VideoSegment, LinkObj) when `--include-builtins` is supplied, and callers can
 /// discriminate the two kinds. `name` is derived from the IRI fragment at the client
 /// boundary — not a wire field. No `serde` derive: wire deserialization stays in
-/// `src/client/http.rs`. See ADR-0001 / ADR-0008 and the CONTEXT.md "Resource Type" /
-/// "Built-in" entries.
+/// `src/client/http.rs`. See dsp-cli/ADR-0001 / dsp-cli/ADR-0008 and the CONTEXT.md "Resource Type"
+/// / "Built-in" entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceType {
     /// Short name of the resource-type (e.g. `letter`), derived from the IRI fragment.
@@ -87,7 +87,8 @@ pub struct ResourceType {
 /// (`name` + `iri`), the server's `label` and `last_modified`, and a **summary**
 /// (count + names) of the data-model's child resource-types — NOT their fields.
 /// No `serde` derive: wire deserialization stays in `src/client/http.rs`.
-/// See ADR-0001 / ADR-0008 and the CONTEXT.md "Data Model" / "Resource Type" entries.
+/// See dsp-cli/ADR-0001 / dsp-cli/ADR-0008 and the CONTEXT.md "Data Model" / "Resource Type"
+/// entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataModelDetail {
     /// Short name of the data-model (e.g. `beol`), derived from the IRI.

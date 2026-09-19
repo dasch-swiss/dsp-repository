@@ -89,7 +89,7 @@ impl Default for LinesRenderer {
 
 impl Renderer for LinesRenderer {
     fn diagnostic(&mut self, diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
-        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (ADR-0012)
+        eprintln!("Error: {diag}"); // errors go to stderr for non-JSON formats (dsp-cli/ADR-0012)
         Ok(())
     }
 
@@ -515,7 +515,7 @@ impl Renderer for LinesRenderer {
         detail: &crate::model::ResourceDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // Lines format: `detail.values` selects the shape (ADR-0013 D1).
+        // Lines format: `detail.values` selects the shape (dsp-cli/ADR-0013 D1).
         // None → the metadata row (single row, label TAB iri lean default), unchanged.
         // Some(fields) → one row per value (long-format), metadata row dropped.
         match &detail.values {

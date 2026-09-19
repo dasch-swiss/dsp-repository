@@ -3,7 +3,7 @@
 //! Tests call `Renderer::resource_describe` directly with hand-built `ResourceDetail`
 //! fixtures (no HTTP). All `insta` baselines are accepted after eyeballing.
 //!
-//! Coverage rule (ADR-0013): at least one of each rendered category is locked
+//! Coverage rule (dsp-cli/ADR-0013): at least one of each rendered category is locked
 //! as a public output contract the moment these snapshots are accepted:
 //!   text (formatted + unformatted), number (int + decimal), boolean,
 //!   date (single-point AND range), time, uri, color, geoname,
@@ -800,12 +800,12 @@ fn values_json_no_values_key_absent() {
     );
 }
 
-// ── Tabular formats: --values renders value rows (ADR-0013 D1/D2) ─────────────
+// ── Tabular formats: --values renders value rows (dsp-cli/ADR-0013 D1/D2) ─────────────
 //
 // Each format reuses one of the shared multi-type fixtures (a/b/c) for
 // breadth across the suite. Stdout is snapshotted in the DEFAULT columns
 // (field, field_label, value_type, value — label/iri are opt-in, D2); stderr
-// is snapshotted separately and must carry ONLY the ADR-0007 disclosure line
+// is snapshotted separately and must carry ONLY the dsp-cli/ADR-0007 disclosure line
 // (the old "values not shown" note is gone).
 
 /// Lines render of fixture A (scalars) with `--values`.
@@ -912,7 +912,7 @@ fn values_tsv() {
 // ── W1: sanitization end-to-end contract ──────────────────────────────────────
 
 /// Prose STRIPS control chars (incl. ANSI escape sequences) from server-supplied
-/// value scalars; JSON keeps them raw (ADR-0003 fidelity).
+/// value scalars; JSON keeps them raw (dsp-cli/ADR-0003 fidelity).
 ///
 /// A `ValueContent::Text` embedding a raw ANSI escape sequence is built and
 /// rendered through both renderers:
@@ -957,7 +957,7 @@ fn sanitization_prose_strips_esc_json_keeps_raw() {
         "prose must keep visible text 'end' after ESC stripping; got:\n{prose_out:?}"
     );
 
-    // ── JSON: raw ESC must be preserved (ADR-0003 fidelity) ───────────────────
+    // ── JSON: raw ESC must be preserved (dsp-cli/ADR-0003 fidelity) ───────────────────
     //
     // The JSON serializer encodes the ESC byte (0x1B) as the JSON unicode
     // escape `` — it is NOT emitted as a raw ESC byte in the JSON text.
@@ -987,7 +987,7 @@ fn sanitization_prose_strips_esc_json_keeps_raw() {
 /// The vocabulary-leak guard (`!out.contains("knora-api:")`) from the prose
 /// snapshot tests must ALSO hold in a json values test.
 ///
-/// This guards ADR-0001: rendered json output must not leak DSP-API vocabulary
+/// This guards dsp-cli/ADR-0001: rendered json output must not leak DSP-API vocabulary
 /// through a value (e.g. if a Raw fallback accidentally emits the raw CURIE key).
 #[test]
 fn json_values_no_knora_api_vocab_leak() {
@@ -1100,7 +1100,7 @@ fn tabular_values_tsv_neutralises_control_chars() {
 //
 // Spec (plan Test plan section): header row per HeaderMode (csv/tsv when on;
 // none for lines), zero data rows, no placeholder row — analogous to
-// `resource_types_csv_empty` (src/render/csv.rs). The ADR-0007 disclosure
+// `resource_types_csv_empty` (src/render/csv.rs). The dsp-cli/ADR-0007 disclosure
 // line still appears on stderr regardless of how many values there are.
 
 /// CSV: header-only, zero data rows, for `values = Some(vec![])`.

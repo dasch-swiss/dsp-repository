@@ -1,6 +1,6 @@
 //! Token resolution — resolves the effective bearer token from env or cache.
 //!
-//! See ADR-0007 for the full resolution order (flag → env → `.env` → cache).
+//! See dsp-cli/ADR-0007 for the full resolution order (flag → env → `.env` → cache).
 //! In v1 there is no `--token` flag, so the effective order is **env → cache**.
 
 use std::fmt;
@@ -46,7 +46,7 @@ impl fmt::Debug for ResolvedToken {
 
 /// Resolve the effective bearer token for `server`.
 ///
-/// Precedence per ADR-0007: a non-blank `DSP_TOKEN` env token wins over any
+/// Precedence per dsp-cli/ADR-0007: a non-blank `DSP_TOKEN` env token wins over any
 /// cached token; a blank or unset `DSP_TOKEN` falls through to the cache.
 /// Returns `None` when neither source has a token.
 ///

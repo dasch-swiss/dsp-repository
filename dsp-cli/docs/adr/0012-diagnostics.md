@@ -21,7 +21,7 @@ No other exit codes in v1. If a new category appears, it gets a code and an ADR 
 
 - **stdout** is reserved for the requested data: prose, `json`, `lines`, `csv`, `tsv`.
 - **stderr** carries: human-readable error messages (on failure), log output (always, when above the configured level),
-  and the meta line for `lines` / `csv` / `tsv` output (per ADR-0007).
+  and the meta line for `lines` / `csv` / `tsv` output (per dsp-cli/ADR-0007).
 - A successful command writes nothing to stderr by default. A failed command writes nothing to stdout in the prose / line-based formats;
   structured formats are the exception (see below).
 - Pipes only see the data: `dsp ... -l | xargs ...` works without filtering meta lines or error noise.
@@ -104,8 +104,8 @@ The binary-level error handler in `main.rs` now routes every top-level error thr
 
 ## Consequences
 
-- The `_meta` envelope from ADR-0007 carries `exit_code` so JSON consumers don't need to read the process exit code (they often can't).
-- The `kind` enum is part of the public CLI contract per ADR-0003. Snapshot tests cover representative `kind` values per format.
+- The `_meta` envelope from dsp-cli/ADR-0007 carries `exit_code` so JSON consumers don't need to read the process exit code (they often can't).
+- The `kind` enum is part of the public CLI contract per dsp-cli/ADR-0003. Snapshot tests cover representative `kind` values per format.
 - `tracing` and `tracing-subscriber` are dev/runtime dependencies from day one. No commitment to OpenTelemetry or structured log shipping; that would be a separate ADR.
 - The four exit codes are documented in `dsp docs output` so agents reading the embedded docs see them alongside the format catalogue.
 - Implementation: a single `Diagnostic` (or `DspError`) enum in `src/diagnostic.rs` carries the `kind`, message, and optional hint;
@@ -115,7 +115,7 @@ The binary-level error handler in `main.rs` now routes every top-level error thr
 
 ### Exit semantics when the payload is a store-authored error document
 
-`dsp vre sparql query` ([ADR-0016](0016-sparql-passthrough.md)) is the first command whose payload
+`dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the first command whose payload
 can itself be an error document authored by something other than dsp-cli — the triplestore's own
 rejection of a malformed query. stdout stays data-only: on any non-`2xx` relay, nothing is written to
 stdout at all. The store's own text goes to **stderr** instead, sanitised (control characters

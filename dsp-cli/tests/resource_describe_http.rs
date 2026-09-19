@@ -11,7 +11,7 @@
 // All fixture IRIs use real DaSCH project shapes (incunabula project 0803).
 // The endpoint is `GET /v2/resources/<percent-encoded-iri>?schema=complex`.
 //
-// ADR-0001 vocabulary guard: no DSP-API permission codes or group names
+// dsp-cli/ADR-0001 vocabulary guard: no DSP-API permission codes or group names
 // (`knora-admin:`, raw `RV`/`V`/`CR`) in any parsed domain-model assertion.
 // All translation happens at the client boundary.
 

@@ -41,7 +41,7 @@ Every `json` response is a single object on stdout with `_meta` first, plus **ex
 
 - `data` is an object for single-result commands and an **array** for list commands, so the envelope is uniform across the whole CLI.
   A consumer always parses one object: if `.error` is present the command failed, otherwise read `.data`.
-- The `error` block is defined by [ADR-0012](0012-diagnostics.md); the `error`-bearing form is the documented stdout exception (errors don't split across stdout/stderr).
+- The `error` block is defined by [dsp-cli/ADR-0012](0012-diagnostics.md); the `error`-bearing form is the documented stdout exception (errors don't split across stdout/stderr).
 - `server` appears only in `_meta`, never duplicated inside `data`.
 - Key order is deterministic (`serde_json` `preserve_order`); `_meta` is always first. The shape is part of the public CLI contract (stability obligation).
 
@@ -144,7 +144,7 @@ The following `_meta` keys are a stable public contract (snake_case; additive �
 exactly one of the two keys will be present, depending on the mode used.
 Consumers should branch on the presence of `pages_fetched` to distinguish `--all` output from single-page output.
 
-This amendment is **unconditional** of the simple-vs-complex response schema choice for `resource list` (deferred to ADR-0013, Phase 8c).
+This amendment is **unconditional** of the simple-vs-complex response schema choice for `resource list` (deferred to dsp-cli/ADR-0013, Phase 8c).
 The `_meta` pagination shape is stable regardless of which schema the HTTP client uses internally to decode the response.
 
 ## Amendment (2026-06-19, Phase 8.5)
@@ -171,7 +171,7 @@ both commands hand back one raw value that isn't structured data to begin with (
 A JWT is not a JSON object, so wrapping it in `{"_meta": …, "data": "<token>"}` would only get in the way of the piping idioms this command exists for
 (`export DSP_TOKEN=$(dsp auth token -s dev)`, `curl -H "Authorization: Bearer $(dsp auth token -s dev)"`).
 
-This is the CLI's **second** no-`Renderer` command after `dsp docs <topic>`; [ADR-0010](0010-embedded-documentation.md) is the precedent this amendment follows.
+This is the CLI's **second** no-`Renderer` command after `dsp docs <topic>`; [dsp-cli/ADR-0010](0010-embedded-documentation.md) is the precedent this amendment follows.
 As with `docs`, errors still go through the normal `Diagnostic`/exit-code path (`AuthRequired`, exit `3`, for a missing or locally-expired token) — only the success path is raw.
 
 ## Amendment (2026-07-21, plan 032)
@@ -184,7 +184,7 @@ Top-level errors — those caught by the binary-level handler in `main.rs`, as o
 
 ### A rule for the no-`Renderer` carve-out, not just a third example
 
-`dsp vre sparql query` ([ADR-0016](0016-sparql-passthrough.md)) is the **third** command with no
+`dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the **third** command with no
 `Renderer`, no `--format`, no `-j`/`-l`, and no `--columns`/`--no-header` — after `dsp docs` (plan
 018) and `dsp auth token` (plan 026). It goes further than either precedent: it also relays a
 store-chosen `Content-Type` and a store-chosen status, which neither prior carve-out did. Three data

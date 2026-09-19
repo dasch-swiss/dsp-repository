@@ -12,10 +12,10 @@
 //! logic below is lifted. Before printing, a **local, best-effort** expiry
 //! check is done: if the resolved token is locally detected as expired, or no
 //! token is cached for the server, the command returns
-//! [`Diagnostic::AuthRequired`] (exit `3`, ADR-0012) instead of printing
+//! [`Diagnostic::AuthRequired`] (exit `3`, dsp-cli/ADR-0012) instead of printing
 //! anything. This check is advisory only — the JWT signature is not verified
 //! (see `crate::client::jwt`) — so exit `0` means only "the token looks
-//! unexpired locally," not "the server will accept it." See ADR-0007 for the
+//! unexpired locally," not "the server will accept it." See dsp-cli/ADR-0007 for the
 //! token-resolution/precedence model this command reuses unchanged.
 
 use std::io::Write;
@@ -47,7 +47,7 @@ fn run_impl(
     cache_path: Option<&Path>,
     env_token: Option<String>,
 ) -> Result<(), Diagnostic> {
-    // ADR-0007 says a non-blank `DSP_TOKEN` wins regardless of cache state.
+    // dsp-cli/ADR-0007 says a non-blank `DSP_TOKEN` wins regardless of cache state.
     // A corrupt or unreadable `auth.toml` therefore must not mask the env
     // token: treat a cache-load failure as an empty cache when the env token
     // would resolve. (Matches the trim-and-empty rule in `resolve_token`, and
@@ -87,7 +87,7 @@ fn run_impl(
             if expired {
                 // The remedy differs by origin. A *cached* token is refreshed by
                 // `login`. But a `DSP_TOKEN` unconditionally overrides the cache
-                // (ADR-0007), so `login` would NOT fix an expired env token — the
+                // (dsp-cli/ADR-0007), so `login` would NOT fix an expired env token — the
                 // freshly-cached token stays shadowed and the command keeps
                 // exiting 3; the caller must refresh or unset `DSP_TOKEN` instead.
                 let msg = match resolved.origin {
@@ -241,7 +241,7 @@ mod tests {
         };
         // Env-origin remedy must reference DSP_TOKEN — NOT (only) `dsp auth
         // login`, which cannot fix an expired env token (DSP_TOKEN overrides the
-        // cache, ADR-0007). Guards against the origin-agnostic message regression.
+        // cache, dsp-cli/ADR-0007). Guards against the origin-agnostic message regression.
         assert!(
             msg.contains("DSP_TOKEN"),
             "env-expired message must reference DSP_TOKEN, not just the cache/login remedy: {msg}"
@@ -362,7 +362,7 @@ mod tests {
 
     #[test]
     fn corrupt_cache_with_valid_env_token_prints_env_token() {
-        // ADR-0007: DSP_TOKEN wins regardless of cache state. A corrupt
+        // dsp-cli/ADR-0007: DSP_TOKEN wins regardless of cache state. A corrupt
         // auth.toml must not mask the env token.
         let dir = TempDir::new().unwrap();
         let cache_path = dir.path().join("auth.toml");

@@ -64,7 +64,7 @@ impl PasswordSource for TtyPasswordSource {
 /// `.env` file on disk. Use it only for **local / dev / test** setups —
 /// **never a production password**. For non-interactive use against real
 /// environments, prefer a scoped, expiring token (`DSP_TOKEN`) over a
-/// durable master credential. See ADR-0007.
+/// durable master credential. See dsp-cli/ADR-0007.
 fn resolve_password(env_password: Option<String>, source: &dyn PasswordSource) -> Result<String, Diagnostic> {
     match env_password {
         Some(p) if !p.is_empty() => Ok(p),
@@ -76,8 +76,8 @@ fn resolve_password(env_password: Option<String>, source: &dyn PasswordSource) -
 ///
 /// Authenticates with the DSP-API, stores the token in the auth cache, and
 /// renders the outcome. Password resolution order: `DSP_PASSWORD` env var
-/// (local/dev only — see [`resolve_password`]), then the TTY prompt, then
-/// stdin when stdin is not a terminal (see ADR-0007).
+/// (local/dev only — see `resolve_password`), then the TTY prompt, then
+/// stdin when stdin is not a terminal (see dsp-cli/ADR-0007).
 pub fn run(
     args: &LoginArgs,
     cfg: &Config,
@@ -126,7 +126,7 @@ fn run_impl(
         None => cache.save()?,
     }
 
-    // Build the ADR-0007 auth-state via the shared helper. After a successful
+    // Build the dsp-cli/ADR-0007 auth-state via the shared helper. After a successful
     // login the token is stored in the cache as a Cache-origin token with the
     // returned user name. Synthesize a Cache-origin ResolvedToken so that
     // `read_auth_state` picks the correct branch and looks up the user from the
@@ -558,7 +558,7 @@ mod tests {
         assert_eq!(outcome.server, "https://api.test.dasch.swiss");
         assert_eq!(outcome.user, "u@x.test");
         assert_eq!(outcome.expires_at, Some(fixed_expires()));
-        // _meta.auth must reflect the post-login state using ADR-0007 vocabulary.
+        // _meta.auth must reflect the post-login state using dsp-cli/ADR-0007 vocabulary.
         assert_eq!(renderer.login_auth_state.as_deref(), Some("authenticated as u@x.test"));
     }
 
@@ -575,7 +575,7 @@ mod tests {
 
         let err = run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap_err();
         assert!(matches!(err, Diagnostic::AuthRequired(_)), "expected AuthRequired, got {err:?}");
-        // Must not include the username (ADR-0007 / PRD acceptance criterion 7).
+        // Must not include the username (dsp-cli/ADR-0007 / PRD acceptance criterion 7).
         assert!(
             !err.to_string().contains("u@x.test"),
             "error message must not contain the username; got: {err}"

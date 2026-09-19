@@ -45,13 +45,13 @@ use crate::model::{
 };
 
 // ---------------------------------------------------------------------------
-// Private wire DTOs (boundary translation — ADR-0001)
+// Private wire DTOs (boundary translation — dsp-cli/ADR-0001)
 // ---------------------------------------------------------------------------
 
 /// Private DSP-API wire type for the login response.
 ///
 /// Stays inside this module — the boundary translation to `LoginResponse`
-/// (dsp-cli vocabulary) happens below (ADR-0001).
+/// (dsp-cli vocabulary) happens below (dsp-cli/ADR-0001).
 #[derive(serde::Deserialize)]
 struct LoginApiResponse {
     token: String,
@@ -61,7 +61,7 @@ struct LoginApiResponse {
 ///
 /// `GET /admin/projects/shortcode/{sc}` | `/shortname/{n}` | `/iri/{enc-iri}`
 /// all return `{ "project": { "id": "…", "shortcode": "…", "shortname": "…", … } }`.
-/// Only the fields the CLI needs are extracted here (private, ADR-0001 boundary).
+/// Only the fields the CLI needs are extracted here (private, dsp-cli/ADR-0001 boundary).
 #[derive(serde::Deserialize)]
 struct ProjectGetApiResponse {
     project: ProjectApiDto,
@@ -79,7 +79,7 @@ struct ProjectApiDto {
 /// JSON wire shape: `{ "id": "…", "status": "in_progress"|"completed"|"failed",
 /// "errorMessage": "…", "createdAt": "…" }` (camelCase on the wire; optional
 /// fields may be absent). This DTO is private to `http.rs` — the translation to
-/// `DumpTask` (dsp-cli vocabulary) happens in `into_dump_task`. See ADR-0001.
+/// `DumpTask` (dsp-cli vocabulary) happens in `into_dump_task`. See dsp-cli/ADR-0001.
 #[derive(serde::Deserialize)]
 struct DataTaskStatusApiResponse {
     id: String,
@@ -121,7 +121,7 @@ struct V3ErrorItem {
 /// top-level JSON array of these — not wrapped in an envelope object. Only
 /// `classesAndCount` is modelled; the sibling `ontology` object (iri/label/
 /// comment) is dropped by serde since `resource_counts` flattens across
-/// ontologies (ADR-0001: translation stays in this module).
+/// ontologies (dsp-cli/ADR-0001: translation stays in this module).
 #[derive(serde::Deserialize)]
 struct OntologyAndResourceClassesDto {
     #[serde(rename = "classesAndCount", default)]
@@ -152,7 +152,7 @@ struct ResourceClassRefDto {
 /// DSP-API response envelope for the project list endpoint.
 ///
 /// `GET /admin/projects` returns `{ "projects": [ … ] }`. Only the fields the
-/// CLI needs for `project list` are extracted here (private, ADR-0001 boundary).
+/// CLI needs for `project list` are extracted here (private, dsp-cli/ADR-0001 boundary).
 #[derive(serde::Deserialize)]
 struct ProjectsListApiResponse {
     projects: Vec<ProjectListItemDto>,
@@ -161,7 +161,7 @@ struct ProjectsListApiResponse {
 /// One project item from the `GET /admin/projects` response.
 ///
 /// Only the fields needed for `project list` are modelled — serde ignores the
-/// rest (description, keywords, licences, …) by default. See ADR-0001.
+/// rest (description, keywords, licences, …) by default. See dsp-cli/ADR-0001.
 #[derive(serde::Deserialize)]
 struct ProjectListItemDto {
     id: String,
@@ -182,7 +182,7 @@ struct ProjectListItemDto {
 /// Private DSP-API wire type for the RICH single-project lookup (describe).
 ///
 /// Distinct from `ProjectApiDto` (resolve_project's lean projection) so each
-/// caller owns its own parse contract. Boundary-private (ADR-0001).
+/// caller owns its own parse contract. Boundary-private (dsp-cli/ADR-0001).
 ///
 /// Note: this endpoint is the SAME as resolve_project's (`/admin/projects/…`)
 /// but describe parses more fields. A separate DTO keeps parse contracts
@@ -345,7 +345,7 @@ struct ObjectTypeDto {
 /// Borrowed view of an `export_exists` conflict's details.
 ///
 /// Private to `http.rs` — exposing it would leak wire vocabulary ("export",
-/// "projectIri") above the client layer, violating ADR-0001.
+/// "projectIri") above the client layer, violating dsp-cli/ADR-0001.
 struct ExportExists<'a> {
     /// `errors[].details.id`, if present.
     id: Option<&'a str>,
@@ -541,7 +541,7 @@ struct ListNodeDto {
 }
 
 /// Boundary translation of the wire `{value, language}` shape into
-/// [`LocalizedText`] (ADR-0001). No language filtering or preference — all
+/// [`LocalizedText`] (dsp-cli/ADR-0001). No language filtering or preference — all
 /// languages are kept (D4).
 fn into_localized_texts(dtos: Vec<ListLabelDto>) -> Vec<LocalizedText> {
     dtos.into_iter()
@@ -706,7 +706,7 @@ fn enc(iri: &str) -> String {
 /// Reused by `resolve_project`, the ontology reads (`fetch_allentities` and the
 /// data-model / resource-type endpoints), and the dump methods to keep
 /// unexpected-status handling DRY. `401`/`403` map to `AuthRequired` (exit 3,
-/// ADR-0012) with a re-authenticate hint — the common case is a cached token
+/// dsp-cli/ADR-0012) with a re-authenticate hint — the common case is a cached token
 /// that has expired (surfaced by `dsp auth status`), which previously fell
 /// through to a bare "unexpected status 401" runtime error. Endpoints needing a
 /// tailored auth message (e.g. the dump commands' "system-administrator token"
@@ -714,7 +714,7 @@ fn enc(iri: &str) -> String {
 /// fallback for those statuses; the `login` method retains fully inline handling.
 fn map_unexpected_status(status: reqwest::StatusCode, url: &str) -> Diagnostic {
     if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
-        // ADR-0007: treat 401 and 403 alike. A read refused here is usually a
+        // dsp-cli/ADR-0007: treat 401 and 403 alike. A read refused here is usually a
         // missing or expired cached token, so point the user at re-authentication
         // rather than emitting a bare runtime error.
         Diagnostic::AuthRequired(
@@ -1008,7 +1008,7 @@ fn curie_prefix(id: &str) -> Option<&str> {
 }
 
 // ---------------------------------------------------------------------------
-// Resource list DTOs (boundary translation — ADR-0001)
+// Resource list DTOs (boundary translation — dsp-cli/ADR-0001)
 // ---------------------------------------------------------------------------
 
 /// Top-level DTO for `GET /v2/resources` responses.
@@ -1062,7 +1062,7 @@ struct ResourceListDto {
 /// One node from a resource-list `@graph` array.
 ///
 /// Only the envelope fields the list projection needs are modelled; `serde`
-/// ignores the rich value content (ADR-0001 — no DSP-API vocab above the
+/// ignores the rich value content (dsp-cli/ADR-0001 — no DSP-API vocab above the
 /// client boundary). All fields except `id` default, so a node without a
 /// type or label degrades gracefully.
 #[derive(serde::Deserialize)]
@@ -1144,7 +1144,7 @@ fn node_dto_to_summary(
     // `dev` 2026-06-17 — `creation_date` now populates). Both are still
     // `Option` because `lastModificationDate` is server-side optional (a
     // resource that has never been modified has none). The simple-vs-complex
-    // user-facing terminology is ADR-0013 (Phase 8c) scope.
+    // user-facing terminology is dsp-cli/ADR-0013 (Phase 8c) scope.
     let creation_date = creation_val.and_then(extract_string_value);
     let last_modified = last_modification_val.and_then(extract_string_value);
     ResourceSummary {
@@ -1161,9 +1161,9 @@ fn node_dto_to_summary(
 ///
 /// Named envelope fields are parsed directly; the `@context` is captured for CURIE
 /// expansion; and the `extra` catch-all captures all remaining keys (field values)
-/// for the `with_values` path (ADR-0001 boundary translation).
+/// for the `with_values` path (dsp-cli/ADR-0001 boundary translation).
 ///
-/// Wire-key to domain-field mapping (boundary translation — ADR-0001):
+/// Wire-key to domain-field mapping (boundary translation — dsp-cli/ADR-0001):
 /// - `@id` → `iri`
 /// - `@type` → `resource_type` (via `extract_resource_type`)
 /// - `rdfs:label` → `label` (via `extract_string_value`)
@@ -1698,7 +1698,7 @@ impl HttpDspClient {
 
 /// Return true iff `val` is a JSON object whose `@type` is a `knora-api:*Value`
 /// (i.e. its local name ends with `Value` and the prefix is `knora-api`).
-/// This is the key discriminant for "is this a value field?" (ADR-0013).
+/// This is the key discriminant for "is this a value field?" (dsp-cli/ADR-0013).
 fn has_value_class_type(val: &serde_json::Value) -> bool {
     let type_local = get_type_local(val);
     // Must end with "Value" and not be a bare non-CURIE literal.
@@ -1752,7 +1752,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
     match type_local {
         // ── TextValue ────────────────────────────────────────────────────────────
         "TextValue" => {
-            // Presence-based detection (Risk 7 / ADR-0013): if textValueAsXml present
+            // Presence-based detection (Risk 7 / dsp-cli/ADR-0013): if textValueAsXml present
             // → formatted (standoff); else valueAsString.
             let content = if let Some(xml) = obj.get("knora-api:textValueAsXml").and_then(|v| v.as_str()) {
                 crate::util::text::html_to_text(xml)
@@ -1930,7 +1930,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
         }
 
         // ── File values ──────────────────────────────────────────────────────────
-        // Match the whole *FileValue family by leading kind (ADR-0013).
+        // Match the whole *FileValue family by leading kind (dsp-cli/ADR-0013).
         t if t.ends_with("FileValue") => {
             let filename = obj
                 .get("knora-api:fileValueHasFilename")
@@ -1956,7 +1956,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             } else if t.starts_with("Audio") {
                 Some(ValueType::Audio)
             } else if t.starts_with("Document") || t.starts_with("Text") {
-                // TextFileValue → document (ADR-0013)
+                // TextFileValue → document (dsp-cli/ADR-0013)
                 Some(ValueType::Document)
             } else if t.starts_with("Archive") {
                 Some(ValueType::Archive)
@@ -2090,7 +2090,7 @@ impl DspClient for HttpDspClient {
             let body = response.text().unwrap_or_default();
             let preview: String = body.chars().take(200).collect();
             tracing::trace!("auth failure response body (capped): {}", preview);
-            // Username MUST NOT appear in the error message (ADR-0007 / PRD AC 7).
+            // Username MUST NOT appear in the error message (dsp-cli/ADR-0007 / PRD AC 7).
             Err(Diagnostic::AuthRequired(format!("Authentication failed on {server}")))
         } else if status == reqwest::StatusCode::NOT_FOUND {
             Err(Diagnostic::NotFound(format!(
@@ -2152,7 +2152,7 @@ impl DspClient for HttpDspClient {
         let base = server.trim_end_matches('/');
         // DSP-API calls this resource an "export" — the CLI calls it a "dump".
         // The word "export" is confined to this URL and http.rs internals only;
-        // the trait and all layers above use "dump" exclusively (ADR-0001).
+        // the trait and all layers above use "dump" exclusively (dsp-cli/ADR-0001).
         // skipAssets is a query parameter: ?skipAssets=true|false
         let url = format!("{base}/v3/projects/{}/exports?skipAssets={skip_assets}", enc(project_iri));
 
@@ -2220,7 +2220,7 @@ project owns the existing dump; cannot safely proceed"
                     }
                     // No `export_exists` error item at all (unparseable / different conflict).
                     None => Err(Diagnostic::ServerError(
-                        // ADR-0001: user-facing text — no DSP-API "export" vocabulary
+                        // dsp-cli/ADR-0001: user-facing text — no DSP-API "export" vocabulary
                         "server reported a 409 conflict whose detail could not be parsed".into(),
                     )),
                 }
@@ -2387,14 +2387,14 @@ project owns the existing dump; cannot safely proceed"
                     longname: dto.longname,
                     // `status` bool → `ProjectStatus` enum: `true` = active, `false` = inactive.
                     // Confirmed from live data: active research projects have `status: true`;
-                    // deprecated/test projects have `status: false`. See ADR-0001.
+                    // deprecated/test projects have `status: false`. See dsp-cli/ADR-0001.
                     status: if dto.status {
                         ProjectStatus::Active
                     } else {
                         ProjectStatus::Inactive
                     },
                     // `ontologies` is the DSP-API wire name; `data_models` is the dsp-cli
-                    // vocabulary (ADR-0001 boundary). The count is all we need here.
+                    // vocabulary (dsp-cli/ADR-0001 boundary). The count is all we need here.
                     data_models: dto.ontologies.len(),
                 })
                 .collect();
@@ -2659,7 +2659,7 @@ project owns the existing dump; cannot safely proceed"
         // Build the request with query params via reqwest .query() — NEVER manual
         // string interpolation, which would not URL-encode the resource-type IRI safely.
         // The DSP-API wire parameter name is "resourceClass" (unchanged — stays here at
-        // the client boundary, per ADR-0001 vocabulary divergence).
+        // the client boundary, per dsp-cli/ADR-0001 vocabulary divergence).
         let mut req = self.client.get(&url).query(&[
             ("resourceClass", resource_type_iri),
             ("page", &page.to_string()),
@@ -2753,7 +2753,7 @@ project owns the existing dump; cannot safely proceed"
                 .json()
                 .map_err(|e| Diagnostic::ServerError(format!("resource describe response could not be parsed: {e}")))?;
 
-            // Boundary translation (ADR-0001): wire DTO → domain model.
+            // Boundary translation (dsp-cli/ADR-0001): wire DTO → domain model.
             let label = dto.label.as_ref().and_then(extract_string_value).unwrap_or_default();
             let resource_type = extract_resource_type(dto.type_field.as_ref());
             let ark_url = dto.ark_url.as_ref().and_then(extract_string_value);
@@ -4888,7 +4888,7 @@ mod tests {
 
     #[test]
     fn parse_value_still_image_external_file_value() {
-        // StillImageExternalFileValue variant (ADR-0013: StillImage* → still-image).
+        // StillImageExternalFileValue variant (dsp-cli/ADR-0013: StillImage* → still-image).
         let obj = serde_json::json!({
             "@type": "knora-api:StillImageExternalFileValue",
             "knora-api:fileValueHasFilename": "external.jpg",
@@ -4991,7 +4991,7 @@ mod tests {
         );
     }
 
-    // ── TextFileValue (maps to Document per ADR-0013) ─────────────────────────────
+    // ── TextFileValue (maps to Document per dsp-cli/ADR-0013) ─────────────────────────────
 
     #[test]
     fn parse_value_text_file_value_maps_to_document() {
@@ -5145,7 +5145,7 @@ mod tests {
         );
     }
 
-    // ── Field / non-field discrimination (ADR-0013) ───────────────────────────────
+    // ── Field / non-field discrimination (dsp-cli/ADR-0013) ───────────────────────────────
 
     #[test]
     fn has_value_class_type_rejects_xsd_any_uri() {

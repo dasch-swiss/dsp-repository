@@ -1,17 +1,17 @@
 # Testing strategy
 
-`dsp-cli`'s test suite has four layers, each addressing a distinct class of failure. The primary seam is the `DspClient` trait (per ADR-0008);
+`dsp-cli`'s test suite has four layers, each addressing a distinct class of failure. The primary seam is the `DspClient` trait (per dsp-cli/ADR-0008);
 the dominant test mode is action-level tests with mocks and snapshotted output.
 Live tests against a real DSP environment are opt-in and not in CI for v1.
 
 ## Layers
 
 1. **Unit tests** — inline `#[cfg(test)]` modules for pure functions (parsing helpers, filter logic, value-type mapping, config resolution).
-2. **Action-level tests** — `tests/actions/` using a `MockDspClient` and a capturing renderer. The T2 seam from ADR-0008.
+2. **Action-level tests** — `tests/actions/` using a `MockDspClient` and a capturing renderer. The T2 seam from dsp-cli/ADR-0008.
    The bulk of the suite. Fast, deterministic, easy to write.
 3. **Snapshot tests** — `tests/snapshots/` via the `insta` crate. One snapshot per (noun, verb, format) cell with meaningful output.
    Captures prose / json / csv / tsv / lines exactly. Default for verifying output shape.
-4. **Wiremock client tests** — `tests/client/` (T1 seam from ADR-0008). Small, focused on HTTP/serialization correctness: request shape,
+4. **Wiremock client tests** — `tests/client/` (T1 seam from dsp-cli/ADR-0008). Small, focused on HTTP/serialization correctness: request shape,
    header propagation, response deserialization, retry/error paths. Fixtures are hybrid: hand-written for the "what we care about" happy paths;
    recorded from real DSP-API responses for regression cases where dsp-cli's view was wrong.
 5. **Live tests** — `tests/live/` behind a `live` cargo feature; not in CI. Hit an existing DSP environment (developer-selected via env vars).
@@ -48,7 +48,7 @@ Right trade for a personal exploratory project: drift detection when needed, no 
   the drift-detection value at personal-project scale doesn't justify the infrastructure burden.
 - **(C3) No live tests, ever.** Rejected — drift only caught in production, which is the wrong feedback loop.
 - **(C4) Locally-spun-up DSP stack as test infrastructure** (using `dsp-tools start-stack` + `dsp-tools create` as subprocess fixtures;
-  this is *not* a runtime dependency on dsp-tools and therefore not a violation of ADR-0004). **Deferred, not rejected.**
+  this is *not* a runtime dependency on dsp-tools and therefore not a violation of dsp-cli/ADR-0004). **Deferred, not rejected.**
   The cost (Docker as test dep, 10–30s container startup, coupling to dsp-tools' stack-management stability) is not justified by v1's read-only surface,
   where C2 catches the same drift more cheaply.
   Triggers to reconsider C4 in the future: needing destructive write/delete tests, wanting CI without credentials, or test isolation from a shared environment.
@@ -73,9 +73,9 @@ Right trade for a personal exploratory project: drift detection when needed, no 
 This ADR states prose snapshots as the unconditional regression detector for every `(noun, verb,
 format)` cell. Three commands are exceptions, because they have no format and no `Renderer` to begin
 with: `dsp docs`, `dsp auth token`, and now `dsp vre sparql query`
-([ADR-0016](0016-sparql-passthrough.md)). Naming the carve-out explicitly, rather than leaving it as
+([dsp-cli/ADR-0016](0016-sparql-passthrough.md)). Naming the carve-out explicitly, rather than leaving it as
 an implicit gap in the "unconditional" language above (the same undocumented-exception problem
-ADR-0007's amendment above fixes for auth-state disclosure):
+dsp-cli/ADR-0007's amendment above fixes for auth-state disclosure):
 
 > A command with no `Renderer` and no output format has no `(noun, verb, format)` snapshot cells.
 

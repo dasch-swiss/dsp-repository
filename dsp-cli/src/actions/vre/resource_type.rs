@@ -4,7 +4,7 @@
 //! `data-model list` (013) and `data-model describe` (014). The action resolves
 //! the data-model via `describe_data_model` (no new `DspClient` method) and maps
 //! `ResourceTypeSummary` → `ResourceType { is_builtin: false }`, optionally
-//! appending built-ins when `--include-builtins` is set. See ADR-0008.
+//! appending built-ins when `--include-builtins` is set. See dsp-cli/ADR-0008.
 
 use std::path::Path;
 
@@ -17,15 +17,15 @@ use crate::model::ResourceType;
 use crate::render::{MetaContext, Renderer, ResourceTypeListView};
 
 /// Disclosure note for `--count` (plan 030) — schema-side, distinct from the
-/// instance-side `MetaContext.filter_warning` (ADR-0007). Emitted via
+/// instance-side `MetaContext.filter_warning` (dsp-cli/ADR-0007). Emitted via
 /// `MetaContext.count_caveat` whenever `--count` is passed on `resource-type
 /// list`/`describe`.
 const COUNT_CAVEAT: &str = "counts include resources you may not be permitted to see and exclude deleted resources.";
 
 /// List all resource-types in a data-model.
 ///
-/// Authentication is optional (public endpoint per ADR-0007). Reads `DSP_TOKEN`
-/// from the environment (env wins over cache per ADR-0007), and delegates all
+/// Authentication is optional (public endpoint per dsp-cli/ADR-0007). Reads `DSP_TOKEN`
+/// from the environment (env wins over cache per dsp-cli/ADR-0007), and delegates all
 /// work to `run_list_impl` with injectable seams for deterministic testing.
 pub fn list(
     args: &ResourceTypeListArgs,
@@ -185,8 +185,8 @@ fn run_list_impl(
 
 /// Describe a single resource-type, including its fields and value-types.
 ///
-/// Authentication is optional (public endpoint per ADR-0007). Reads `DSP_TOKEN`
-/// from the environment (env wins over cache per ADR-0007), and delegates all
+/// Authentication is optional (public endpoint per dsp-cli/ADR-0007). Reads `DSP_TOKEN`
+/// from the environment (env wins over cache per dsp-cli/ADR-0007), and delegates all
 /// work to `run_describe_impl` with injectable seams for deterministic testing.
 pub fn describe(
     args: &ResourceTypeDescribeArgs,
@@ -286,7 +286,7 @@ fn run_describe_impl(
 
     // ── 10. Fetch the resource-type detail ────────────────────────────────────
     // On NotFound, re-frame with a resource-type list hint (keeps hint text in
-    // CLI vocab — ADR-0001; the client only knows it didn't find the class).
+    // CLI vocab — dsp-cli/ADR-0001; the client only knows it didn't find the class).
     let detail = client
         .describe_resource_type(&cfg.server, &dm_iri, resource_type, token)
         .map_err(|e| match e {

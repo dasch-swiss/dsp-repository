@@ -5,7 +5,7 @@
 //! so hardcoding is safe.
 //!
 //! DSP-API knowledge: knowing *which* ontologies are platform builtins belongs
-//! here (inside the client boundary, per ADR-0001). The **action** owns the
+//! here (inside the client boundary, per dsp-cli/ADR-0001). The **action** owns the
 //! `--include-builtins` policy: `list_data_models` is a pure single-endpoint
 //! fetch of the project's own ontologies and takes no `include_builtins`
 //! parameter. The action calls `builtin_data_models()` and extends the result
@@ -17,7 +17,7 @@ use crate::model::{DataModel, ResourceType, ValueType};
 /// `data-model list --include-builtins`. These belong to no project and are not
 /// returned by the project-scoped endpoint; their IRIs use the stable
 /// `api.knora.org` namespace (deployment-independent). DSP-API knowledge, kept
-/// inside the client boundary (ADR-0001). The action — not the client I/O
+/// inside the client boundary (dsp-cli/ADR-0001). The action — not the client I/O
 /// method — decides whether to include them.
 pub(crate) fn builtin_data_models() -> Vec<DataModel> {
     ["knora-api", "standoff", "salsah-gui"]
@@ -36,7 +36,7 @@ pub(crate) fn builtin_data_models() -> Vec<DataModel> {
 /// by `resource-type list --include-builtins`. These are the four DSP base resources
 /// a user can instantiate without defining them in a data-model. Their IRIs use the
 /// stable `api.knora.org` namespace (deployment-independent). DSP-API knowledge,
-/// kept inside the client boundary (ADR-0001).
+/// kept inside the client boundary (dsp-cli/ADR-0001).
 ///
 /// The deprecated `knora-base:Annotation` class is intentionally excluded — it is
 /// absent from dsp-tools' modern base resources, and what DaSCH domain language calls
@@ -66,7 +66,7 @@ pub(crate) fn builtin_resource_types() -> Vec<ResourceType> {
 /// response (system properties are not chased — R3). Returns `None` for any
 /// local name not in the 6-entry file-value map.
 ///
-/// DSP-API knowledge, kept inside the client boundary (ADR-0001).
+/// DSP-API knowledge, kept inside the client boundary (dsp-cli/ADR-0001).
 pub(crate) fn builtin_field_value_type(local: &str) -> Option<ValueType> {
     match local {
         "hasStillImageFileValue" => Some(ValueType::StillImage),

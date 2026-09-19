@@ -1,4 +1,4 @@
-//! CLI parsing — layer 1 of ADR-0008.
+//! CLI parsing — layer 1 of dsp-cli/ADR-0008.
 //!
 //! Produces typed argument structs from `argv`. The structs flow through the
 //! action layer; no business logic lives here.
@@ -96,7 +96,7 @@ const AFTER_HELP_SPARQL_QUERY: &str = "--accept aliases: json (default, applicat
 /// set", which would make valid calls like `dsp vre project list -j` collide
 /// with the prose default. The helper-method precedence is simpler and correct.
 ///
-/// See [ADR-0003](../../docs/adr/0003-chaining-and-output.md) for the output
+/// See [dsp-cli/ADR-0003](../../docs/adr/0003-chaining-and-output.md) for the output
 /// format specification and the design-decisions section of the 003 plan for
 /// why this is per-leaf rather than global.
 #[derive(Debug, Args)]
@@ -336,7 +336,7 @@ impl Cli {
 }
 
 // Top-level command groups — areas (`vre`, `repo`) and meta-groups
-// (`auth`, `docs`). See ADR-0006.
+// (`auth`, `docs`). See dsp-cli/ADR-0006.
 #[derive(Debug, Subcommand)]
 pub enum TopLevel {
     /// Authentication management.
@@ -437,7 +437,7 @@ pub struct LogoutArgs {
 /// Arguments for `dsp auth set-token`.
 ///
 /// No `--token` flag: the token is read from stdin to avoid leaking it into
-/// the shell history, `ps` output, or audit logs. See ADR-0007.
+/// the shell history, `ps` output, or audit logs. See dsp-cli/ADR-0007.
 #[derive(Debug, Args)]
 #[command(after_help = AFTER_HELP_AUTH_SET_TOKEN)]
 pub struct SetTokenArgs {
@@ -480,7 +480,7 @@ pub enum VreCmd {
     ///
     /// A data-model (called "ontology" in DSP-API) defines the schema for a
     /// project's resources: the resource-types, their fields, and value-types.
-    // Explicit name is load-bearing — the CLI surface is stable (ADR-0002);
+    // Explicit name is load-bearing — the CLI surface is stable (dsp-cli/ADR-0002);
     // don't strip this as "redundant with default kebab-case."
     #[command(name = "data-model")]
     DataModel {
@@ -492,7 +492,7 @@ pub enum VreCmd {
     ///
     /// A resource-type (called "class" in DSP-API) defines the structure of
     /// one kind of scholarly object: its fields, value-types, and cardinalities.
-    // Explicit name is load-bearing — the CLI surface is stable (ADR-0002);
+    // Explicit name is load-bearing — the CLI surface is stable (dsp-cli/ADR-0002);
     // don't strip this as "redundant with default kebab-case."
     #[command(name = "resource-type")]
     ResourceType {

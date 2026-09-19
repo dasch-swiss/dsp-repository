@@ -5,7 +5,7 @@
 //
 // The `just test-live` recipe runs exactly this command.
 //
-// ADR-0009 (testing strategy): live tests are **not** in CI. They require
+// dsp-cli/ADR-0009 (testing strategy): live tests are **not** in CI. They require
 // real environment variables pointing at a live DSP instance. Missing config
 // causes an early-return skip — never a test failure.
 //
@@ -25,26 +25,8 @@ use dsp_cli::client::http::HttpDspClient;
 use dsp_cli::config::Config;
 use dsp_cli::model::Representation;
 
-// ---------------------------------------------------------------------------
-// Helpers (mirror live_data_model_list.rs exactly)
-// ---------------------------------------------------------------------------
-
-/// Read a required environment variable. Returns `None` and emits a skip
-/// message if the variable is absent or empty.
-fn require_env(name: &str) -> Option<String> {
-    match std::env::var(name) {
-        Ok(v) if !v.trim().is_empty() => Some(v),
-        _ => {
-            eprintln!("skipping live test: {name} not set");
-            None
-        }
-    }
-}
-
-/// Read an optional environment variable. Returns `None` silently if absent.
-fn optional_env(name: &str) -> Option<String> {
-    std::env::var(name).ok().filter(|v| !v.trim().is_empty())
-}
+mod common;
+use common::{optional_env, require_env};
 
 // ---------------------------------------------------------------------------
 // Live test
@@ -68,6 +50,7 @@ fn optional_env(name: &str) -> Option<String> {
 ///   type via its flattened file-value restriction; verified against the live beol API per Decision
 ///   5 / R8 of the plan).
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_type_describe_returns_valid_detail() {
     // ── 1. Collect required config ────────────────────────────────────────────
     let server_raw = match require_env("DSP_TEST_SERVER") {

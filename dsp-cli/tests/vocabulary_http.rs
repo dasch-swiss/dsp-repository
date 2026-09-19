@@ -15,7 +15,7 @@
 // the Authorization header entirely; an authenticated call sends
 // `Authorization: Bearer <token>`.
 //
-// Fixtures 1–8 are hand-built (ADR-0009's "hand-written for canonical happy
+// Fixtures 1–8 are hand-built (dsp-cli/ADR-0009's "hand-written for canonical happy
 // paths" half of the hybrid-fixture rule). The two `describe_vocabulary_
 // recorded_*` tests at the bottom use real, hand-verified recordings from
 // `https://api.dasch.swiss` (geoarch project, Period vocabulary) — the
@@ -730,7 +730,7 @@ async fn describe_vocabulary_bearer_absent_when_token_is_none() {
 }
 
 // ---------------------------------------------------------------------------
-// Recorded-fixture regression tests (ADR-0009 hybrid-fixture rule)
+// Recorded-fixture regression tests (dsp-cli/ADR-0009 hybrid-fixture rule)
 // ---------------------------------------------------------------------------
 //
 // Recorded 2026-07-30, unauthenticated, body-only, from `https://api.dasch.swiss`

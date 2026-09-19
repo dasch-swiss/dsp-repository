@@ -2,7 +2,7 @@
 //!
 //! The orientation entry point is `idea.md` in the repository root; the
 //! ubiquitous-language reference is `CONTEXT.md`. The internal architecture
-//! is described in ADR-0008 (`docs/adr/0008-internal-architecture.md`).
+//! is described in dsp-cli/ADR-0008 (`docs/adr/0008-internal-architecture.md`).
 //!
 //! This crate exposes a library surface so tests can reach the action layer
 //! without going through the binary; the binary itself is `src/main.rs`.

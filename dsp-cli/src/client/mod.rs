@@ -1,10 +1,10 @@
-//! Client layer (3a of ADR-0008) — the `DspClient` trait and its HTTP impl.
+//! Client layer (3a of dsp-cli/ADR-0008) — the `DspClient` trait and its HTTP impl.
 //!
-//! The trait is the primary test seam (T2 from ADR-0009): production wires
+//! The trait is the primary test seam (T2 from dsp-cli/ADR-0009): production wires
 //! up the HTTP impl, action tests wire up `MockDspClient`. Translation
 //! between DSP-API vocabulary (ontology, class, property) and dsp-cli
 //! vocabulary (data-model, resource-type, field) happens here and *only*
-//! here — see `docs/dev/domain-language.md`.
+//! here — see `dsp-cli/CONTEXT.md`.
 
 mod builtins;
 pub mod http;
@@ -123,7 +123,7 @@ pub trait DspClient {
 
     /// Fetch the full detail of a single project (for `project describe`).
     ///
-    /// Auth is optional (project metadata is public, ADR-0007); a token is sent
+    /// Auth is optional (project metadata is public, dsp-cli/ADR-0007); a token is sent
     /// when present, mirroring `list_projects`. `project` may be an IRI,
     /// 4-hex-digit shortcode, or shortname — the classifier logic lives in the
     /// HTTP impl.
@@ -172,7 +172,7 @@ pub trait DspClient {
     ///
     /// Returns `Err(Diagnostic::NotFound(...))` when no class in the queried
     /// ontology's `@graph` matches `resource_type`. The hint message referencing
-    /// `resource-type list` is the caller's responsibility (ADR-0001: the ACTION
+    /// `resource-type list` is the caller's responsibility (dsp-cli/ADR-0001: the ACTION
     /// layer owns the hint in dsp-cli vocabulary; the client owns the wire logic).
     ///
     /// Auth is optional; `token` is forwarded as a bearer when `Some`.
@@ -382,7 +382,7 @@ pub trait DspClient {
     /// `POST /admin/sparql/query`, and relay the store's own response.
     ///
     /// This is the **one** `DspClient` method that returns a relay struct
-    /// ([`SparqlResponse`]) rather than a parsed domain model — ADR-0016 (D16).
+    /// ([`SparqlResponse`]) rather than a parsed domain model — dsp-cli/ADR-0016 (D16).
     /// dsp-cli deliberately does not interpret the response body: the status,
     /// media type and bytes are the store's own, negotiated by `accept`.
     ///

@@ -506,7 +506,7 @@ async fn bearer_absent_when_token_is_none() {
 
 /// Querying a name absent from the graph returns `Err(Diagnostic::NotFound(_))`.
 /// The error message must NOT contain "resource-type list" — that hint is the
-/// action's responsibility (ADR-0001 boundary).
+/// action's responsibility (dsp-cli/ADR-0001 boundary).
 #[tokio::test]
 async fn resource_type_not_found_returns_not_found_diagnostic() {
     let server = MockServer::start().await;
@@ -531,7 +531,7 @@ async fn resource_type_not_found_returns_not_found_diagnostic() {
     match result.unwrap_err() {
         Diagnostic::NotFound(msg) => {
             // The message must NOT mention "resource-type list" — that hint belongs
-            // to the action layer, not the client (ADR-0001).
+            // to the action layer, not the client (dsp-cli/ADR-0001).
             assert!(
                 !msg.contains("resource-type list"),
                 "client NotFound message must not contain 'resource-type list'; got: {msg}"

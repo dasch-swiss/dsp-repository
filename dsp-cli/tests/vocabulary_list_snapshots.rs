@@ -22,8 +22,8 @@
 //! go through `run_list_impl`, which reads the real `DSP_TOKEN` env var. Action /
 //! auth-resolution / sorting logic is covered by the in-module action tests; these
 //! layer-4 snapshot tests cover rendering only.
-//! See `docs/dev/testing-strategy.md`, ADR-0009, and
-//! `docs/design/plans/034-vre-vocabulary/implementation-plan.md`.
+//! See `docs/src/dsp-cli/testing-strategy.md`, dsp-cli/ADR-0009, and design plan
+//! 034-vre-vocabulary in the dsp-incubator archive.
 
 use dsp_cli::model::{LocalizedText, Vocabulary, VocabularyHeader};
 use dsp_cli::render::csv::CsvRenderer;
@@ -203,7 +203,7 @@ fn filter_view() -> VocabularyListView {
 
 /// Prose render of the main fixture. Locks the header count line, the
 /// `name  labels` layout (D13 language-join order), no per-item count suffix
-/// (no `--count`), and the ADR-0007 footer.
+/// (no `--count`), and the dsp-cli/ADR-0007 footer.
 #[test]
 fn vocabulary_list_prose() {
     let (buf, w) = shared_buf();
@@ -276,7 +276,7 @@ fn vocabulary_list_tsv() {
 // ── counted fixture (all items carry counts) ─────────────────────────────────
 
 /// Prose render of the counted fixture. Locks the per-item `· N nodes · M
-/// levels` suffix and the `count_cost` disclosure appended to the ADR-0007
+/// levels` suffix and the `count_cost` disclosure appended to the dsp-cli/ADR-0007
 /// footer.
 #[test]
 fn vocabulary_list_prose_with_count() {
@@ -380,7 +380,7 @@ fn vocabulary_list_csv_count_all_failed() {
 // ── empty fixture × prose ─────────────────────────────────────────────────────
 
 /// Prose render of the empty fixture. Locks the `(0)` header count and that
-/// the ADR-0007 footer is still present.
+/// the dsp-cli/ADR-0007 footer is still present.
 #[test]
 fn vocabulary_list_prose_empty() {
     let (buf, w) = shared_buf();

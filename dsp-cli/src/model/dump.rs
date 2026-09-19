@@ -2,14 +2,14 @@
 //!
 //! Types here are the dsp-cli vocabulary for dump tasks. DSP-API wire types
 //! (`DataTaskStatusApiResponse` etc.) live inside `src/client/http.rs` and are
-//! never exposed above the client layer. See ADR-0001 and ADR-0008.
+//! never exposed above the client layer. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 
 /// The status of a server-side dump task.
 ///
 /// Does **not** derive `serde::Deserialize` — wire deserialization
 /// (`"in_progress"` / `"completed"` / `"failed"` strings) happens via the
 /// private wire DTO in `src/client/http.rs` (Step 5), keeping serde strictly at
-/// the client boundary. See ADR-0001.
+/// the client boundary. See dsp-cli/ADR-0001.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DumpStatus {
     InProgress,
@@ -54,7 +54,7 @@ pub struct DumpTask {
 
 /// The outcome of `create_project_dump`, crossing the client→action boundary.
 ///
-/// Decision matrix (per ADR-0001, ADR-0008, ADR-0012):
+/// Decision matrix (per dsp-cli/ADR-0001, dsp-cli/ADR-0008, dsp-cli/ADR-0012):
 ///
 /// | Variant | Meaning | Typical action response |
 /// |---|---|---|
@@ -76,7 +76,7 @@ pub enum CreateDumpOutcome {
     ///
     /// `project_iri` is the occupying project's IRI **as reported by the server**
     /// in the 409 conflict body — not user-supplied or domain-derived. Carrying an
-    /// IRI *value* across layers is allowed under ADR-0001 (only the wire term
+    /// IRI *value* across layers is allowed under dsp-cli/ADR-0001 (only the wire term
     /// "projectIri" and the word "export" are banned above `src/client/`).
     ExistsForOtherProject {
         /// The existing (foreign) dump's server-assigned id.

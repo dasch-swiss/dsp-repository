@@ -1,13 +1,13 @@
 //! The [`SparqlResponse`] relay type for [`crate::client::DspClient::sparql_query`].
 //!
 //! Deliberately not in `src/model/` — every `src/model/` type is a
-//! *translated domain* type per ADR-0008's layer-4 contract, and this is
+//! *translated domain* type per dsp-cli/ADR-0008's layer-4 contract, and this is
 //! transport-shaped (an HTTP status and a MIME string), not a parsed model.
-//! See ADR-0016.
+//! See dsp-cli/ADR-0016.
 
 /// One relayed SPARQL response: the triplestore's own status, media type and bytes.
 ///
-/// Deliberately not a parsed model — ADR-0016. The body is whatever the store
+/// Deliberately not a parsed model — dsp-cli/ADR-0016. The body is whatever the store
 /// serialized, in whatever format it negotiated, and dsp-cli does not interpret it.
 #[derive(Clone)]
 pub struct SparqlResponse {

@@ -12,16 +12,16 @@
 //! - **Filter fixture**: `filter: Some("...")` with `total > items.len()` so the prose header shows
 //!   "(m of total matching …)". Prose only.
 //! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`
-//!   — locks the ADR-0012 propagated-error envelope.
+//!   — locks the dsp-cli/ADR-0012 propagated-error envelope.
 //!
 //! Determinism: these tests call `Renderer::data_models(&view, &meta)` (or
 //! `renderer.diagnostic(…)`) **directly** with a hand-built `MetaContext` /
 //! `DataModelListView`. They never go through `run_list_impl`, which reads the
 //! real `DSP_TOKEN` env var. Action / auth-resolution logic is covered by the
 //! in-module action tests; these layer-4 snapshot tests cover rendering only.
-//! See `docs/dev/testing-strategy.md` and learning from plan 010.
+//! See `docs/src/dsp-cli/testing-strategy.md` and learning from plan 010.
 //!
-//! ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
+//! dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
 //! file or any .snap it generates. (IRI strings contain "/ontology/" as data —
 //! the documented exception per review-guidelines.md.)
 
@@ -158,7 +158,7 @@ fn filter_view() -> DataModelListView {
 
 /// Prose render of the main fixture. Locks the aligned column layout,
 /// date-only display (no time component), label vs empty slots,
-/// no `(built-in)` marker, and the ADR-0007 footer.
+/// no `(built-in)` marker, and the dsp-cli/ADR-0007 footer.
 #[test]
 fn data_model_list_prose() {
     let (buf, w) = shared_buf();
@@ -343,7 +343,7 @@ fn data_model_list_builtins_tsv() {
 // ── empty fixture × prose + json ──────────────────────────────────────────────
 
 /// Prose render of the empty fixture. Locks the `(0):` header shape and the
-/// ADR-0007 footer with zero rows between them.
+/// dsp-cli/ADR-0007 footer with zero rows between them.
 #[test]
 fn data_model_list_prose_empty() {
     let (buf, w) = shared_buf();
@@ -401,7 +401,7 @@ fn data_model_list_prose_filter() {
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
 ///
-/// This locks the ADR-0012 JSON envelope shape — the error path for when
+/// This locks the dsp-cli/ADR-0012 JSON envelope shape — the error path for when
 /// `resolve_project` returns `NotFound` and it propagates through the action
 /// without ever reaching `data_models`.
 #[test]
@@ -499,7 +499,7 @@ fn data_model_list_tsv_disclosure_on_stderr_not_stdout() {
 /// Prose output must not contain vocabulary-leaked words from the DSP-API layer
 /// (except inside IRI strings, which are data and the documented exception).
 /// Note: checking for "ontolog" would be a false positive since IRIs in prose
-/// are NOT rendered (ADR-0003) — but JSON/CSV/TSV do render IRIs as data.
+/// are NOT rendered (dsp-cli/ADR-0003) — but JSON/CSV/TSV do render IRIs as data.
 /// We check prose only (no IRI rendered) and check that the word "export" never
 /// appears anywhere.
 #[test]
@@ -517,7 +517,7 @@ fn data_model_list_prose_no_vocabulary_leak() {
         !out.to_lowercase().contains("ontolog"),
         "prose must not contain 'ontolog' (IRIs are not rendered in prose); got:\n{out}"
     );
-    // ADR-0001 banned terms: "class" and "property" must not appear in user-facing
+    // dsp-cli/ADR-0001 banned terms: "class" and "property" must not appear in user-facing
     // prose data rows (DSP-API vocabulary must not leak through the translation
     // boundary). The fixture labels ("The BEOL data-model", "Bibliographic
     // references") do not contain these words, so this is safe to assert verbatim.

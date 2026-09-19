@@ -55,3 +55,28 @@ Between areas, the rules are:
 - "Deposit Area" is the canonical name from here on; earlier design material that says "Ingest Area" means this area, and the root `CONTEXT.md` records the rename under Flagged ambiguities.
 
 Enforced by: Bazel `visibility` per area once ADR-0001 lands (structure). Until then `.github/scripts/check-shared-paths.sh` covers the shared half (static-analysis), and a service-to-service import is caught only in review (review).
+
+## Amendment (2026-09-19) — dsp-cli joins as a sixth root
+
+`dsp-cli/` becomes the sixth root directory, alongside `areas/`, `shared/`, `mosaic/`, `vitrinli/` and `chischtli/`: the platform's command-line client, talking to the VRE over DSP-API today and, over the wire, to the Deposit, Archive and Access moduliths once they exist. Unlike Mosaic, Vitrinli and Chischtli — each a root peer because more than one area depends on it — dsp-cli is used by no area; it is a client of every area, integrating with each over its public HTTP surface exactly as areas integrate with each other. That is a different rationale from the "used by more than one area" test the other three root peers satisfy (line 20), so it earns its own clause rather than riding on theirs.
+
+This carves dsp-cli out of the dependency-arrow sentence at line 29: an area never depends on `dsp-cli`, and `dsp-cli` depends on no area crate. A `shared-*` dependency is permitted only if that crate is itself published to crates.io — `cargo publish` rejects a path dependency on an unpublished crate, and every `shared-*` crate is `publish = false` today, so none is currently reachable from `dsp-cli` — because a future need to share a concept between an area and dsp-cli must be met by publishing the shared crate (or vendoring the concept), not by a path dependency `cargo publish -p dsp-cli --dry-run` would reject anyway.
+
+A command-line client is not a user-facing surface in ADR-0004's sense: ADR-0004 scopes itself to "every capability with a screen in any area's modulith", and a terminal program has no screen in that sense. ADR-0004's Consequences carries a one-line note pointing back here.
+
+dsp-cli lands at the repository root now, independent of DEV-7268: DEV-7268 is the `modules/` → `areas/` move this ADR's other sections describe, and dsp-cli's arrival at the root neither depends on nor waits for it.
+
+Added to Considered Options:
+
+- **`modules/dsp-cli/`** (dsp-cli/ADR-0014's original placement guess) — rejected: `modules/` is itself removed by this ADR, so the crate would move twice.
+- **A new `tools/` root** — rejected: a root-level category for one member states nothing that `dsp-cli/` itself does not already state.
+- **Inside an area, as a capability** — rejected: dsp-cli talks to every area over the wire, and an area's members are capabilities of its one modulith (ADR-0003); dsp-cli is neither a capability of one area nor owned by one.
+
+Added to Consequences:
+
+- After ADR-0001 removes the root `Cargo.toml` and `Cargo.lock` this workspace uses today, `dsp-cli/Cargo.toml` plus a `dsp-cli/Cargo.lock` remain the publishing manifest — dsp-cli is the one crate here that publishes to crates.io.
+- dsp-cli's live tests (needing a running DSP stack) become a `manual`, `no-remote-exec` Bazel test target once Bazel builds this repository — never part of the default `bazel test //...`.
+- The drift stack (a pinned dsp-api + fuseki stack running dsp-cli's live tests in CI) stays a local-execution job, not a remote-executed one, for the same reason: it needs a live network stack Bazel's remote execution does not provide.
+- dsp-cli/ADR-0014 names this ADR in its own dated amendment ("how the migration was actually executed"); this is the other end of that link.
+
+Enforced by: `cargo publish -p dsp-cli --dry-run` in `check.yml` for the no-unpublished-path-dependency rule (static-analysis), becoming Bazel `visibility` after ADR-0001 (structure); review for the over-the-wire-only integration rule and the placement rationale.

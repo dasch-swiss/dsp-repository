@@ -15,12 +15,12 @@
 //! with a hand-built `MetaContext`/`ResourceListView`. They never go through
 //! `run_list_impl`, which reads the real `DSP_TOKEN` env var. Action /
 //! auth-resolution logic is covered by the in-module action tests; these layer-3
-//! snapshot tests cover rendering only. See `docs/dev/testing-strategy.md` and
-//! ADR-0009.
+//! snapshot tests cover rendering only. See `docs/src/dsp-cli/testing-strategy.md` and
+//! dsp-cli/ADR-0009.
 //!
 //! Vocabulary guard: no `export`/`class`/`property`/`ontolog` in prose output.
 //! Tabular/json formats render raw IRIs so the `ontolog` check is skipped there
-//! (the documented exception — ADR-0001 / plan 022 learning from plan 014).
+//! (the documented exception — dsp-cli/ADR-0001 / plan 022 learning from plan 014).
 
 use dsp_cli::model::ResourceSummary;
 use dsp_cli::render::csv::CsvRenderer;
@@ -585,7 +585,7 @@ fn resource_list_tsv_disclosure_on_stderr_not_stdout() {
 // ── vocabulary guard (inline) ─────────────────────────────────────────────────
 
 /// Prose output must not contain DSP-API vocabulary leaks.
-/// Note: prose does NOT render IRIs (ADR-0003), so "ontolog" must not appear.
+/// Note: prose does NOT render IRIs (dsp-cli/ADR-0003), so "ontolog" must not appear.
 #[test]
 fn resource_list_prose_no_vocabulary_leak() {
     let (buf, w) = shared_buf();

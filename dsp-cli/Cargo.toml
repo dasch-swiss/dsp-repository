@@ -5,11 +5,8 @@ edition = "2024"
 rust-version = "1.92"
 description = "AI-agent-friendly command-line interface for the DaSCH Service Platform (DSP)"
 license = "Apache-2.0"
-# Deliberately still the repo root, not a `dsp-cli` subdir link: publish-first sequencing
-# (ADR-0014) publishes 0.1.0 from dsp-incubator before the dsp-repository migration; this
-# metadata gets bumped as part of that later move, not before.
-repository = "https://github.com/dasch-swiss/dsp-incubator"
-homepage = "https://github.com/dasch-swiss/dsp-incubator/tree/main/dsp-cli"
+repository = "https://github.com/dasch-swiss/dsp-repository"
+homepage = "https://github.com/dasch-swiss/dsp-repository/tree/main/dsp-cli"
 authors = ["Balduin Landolt <balduin.landolt@dasch.swiss>"]
 readme = "README.md"
 keywords = ["dasch", "dsp", "cli", "digital-humanities", "rdf"]
@@ -17,7 +14,7 @@ categories = ["command-line-utilities", "api-bindings"]
 # Allowlist (not an exclude list): only what the packaged crate needs to compile and
 # describe itself. docs/topics/*.md are include_str!'d at compile time
 # (src/actions/docs.rs) and must ship; Cargo.toml/Cargo.lock are auto-included by cargo.
-# See ADR-0011 (crates.io publishing decision).
+# See dsp-cli/ADR-0011 (crates.io publishing decision).
 include = ["src/**/*", "docs/topics/*.md", "README.md", "LICENSE", "CHANGELOG.md"]
 
 [[bin]]
@@ -29,18 +26,18 @@ name = "dsp_cli"
 path = "src/lib.rs"
 
 [features]
-# Live tests against a real DSP environment. Not in CI (ADR-0009).
+# Live tests against a real DSP environment. Not in CI (dsp-cli/ADR-0009).
 live = []
 
 [dependencies]
 clap = { version = "4", features = ["derive", "env"] }
-thiserror = "2"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-serde = { version = "1", features = ["derive"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+serde = { workspace = true }
 # preserve_order keeps JSON object keys in insertion order, so the `_meta`-first
 # envelope is a deterministic contract rather than a BTreeMap alpha-sort accident.
-serde_json = { version = "1", features = ["preserve_order"] }
+serde_json = { workspace = true }
 dotenvy = "0.15"
 dirs = "5"
 toml = "0.8"
@@ -52,15 +49,17 @@ percent-encoding = "2"
 # Prompts for passwords without echoing; falls back to stdin pipe when not a TTY.
 rpassword = "7"
 # Timestamps for token acquired_at / expires_at in the auth cache; serde+clock features for serialisation and Utc::now().
+# Kept crate-local rather than workspace-inherited: the root workspace.dependencies entry
+# leaves default-features on, and default-features cannot be overridden alongside workspace = true.
 chrono = { version = "0.4", default-features = false, features = ["serde", "clock"] }
 # JWT decoding to extract the exp claim from login response tokens (signature validation disabled — token is freshly issued by the server we just authenticated to).
 # v10 no longer bundles a crypto backend: exactly one of `rust_crypto`/`aws_lc_rs` must be chosen. `rust_crypto` is pure Rust (no C toolchain — consistent with the rustls choice above). The production path (`insecure_decode`) never touches it; the tests' `encode` helper does.
 jsonwebtoken = { version = "10", features = ["rust_crypto"] }
-# Compares the built-in CARGO_PKG_VERSION to the fetched latest version from crates.io (update check, ADR-0015).
+# Compares the built-in CARGO_PKG_VERSION to the fetched latest version from crates.io (update check, dsp-cli/ADR-0015).
 semver = "1"
 
 [dev-dependencies]
-insta = { version = "1", features = ["yaml"] }
+insta = { workspace = true }
 wiremock = "0.6"
 tempfile = "3"
 assert_cmd = "2"
@@ -68,6 +67,8 @@ predicates = "3"
 # Async runtime required by wiremock's MockServer; reqwest::blocking is safe inside #[tokio::test] (spawns its own OS thread).
 tokio = { version = "1", default-features = false, features = ["rt", "macros"] }
 
+# Cargo ignores a member's [profile.*] table inside a workspace and prints a warning saying so;
+# this section still governs `cargo install dsp-cli` from crates.io, where this manifest is the root.
 [profile.release]
 lto = "thin"
 strip = "symbols"

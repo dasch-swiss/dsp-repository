@@ -20,7 +20,7 @@ Pre-1.0 (`0.x.y`) means the public surface is not yet stable; breaking changes m
   store negotiated. A non-2xx relay (the store's own rejection, or a dsp-api-side failure) reports on
   stderr instead, exit `1` (or `2`/`3` for a subset of dsp-api's own typed failures) — stdout stays
   empty on failure. New `dsp docs sparql` topic. See `docs/adr/0016-sparql-passthrough.md` and
-  amendments to ADR-0001, ADR-0003, ADR-0007, ADR-0008, ADR-0009, ADR-0010, ADR-0012.
+  amendments to dsp-cli/ADR-0001, dsp-cli/ADR-0003, dsp-cli/ADR-0007, dsp-cli/ADR-0008, dsp-cli/ADR-0009, dsp-cli/ADR-0010, dsp-cli/ADR-0012.
 
 ### Changed
 
@@ -29,7 +29,7 @@ Pre-1.0 (`0.x.y`) means the public surface is not yet stable; breaking changes m
   prose values (`strip_control_chars`) drop C1 characters, and tabular cells
   (`replace_control_chars`, used by `lines`/`csv`/`tsv`) replace them with a space. The reason is
   `U+009B`, the single-character form of `ESC [` (CSI) — an ASCII-only filter left a working terminal
-  control introducer in server-supplied text, so ADR-0007's sanitisation guarantee was narrower than
+  control introducer in server-supplied text, so dsp-cli/ADR-0007's sanitisation guarantee was narrower than
   documented. Server data containing C1 characters (vanishingly rare in practice, and not valid in
   XML 1.0 content) will now render with those characters removed or spaced rather than passed
   through. Surfaced by the plan-035 review.
@@ -67,7 +67,7 @@ Pre-1.0 (`0.x.y`) means the public surface is not yet stable; breaking changes m
   (`misc/skills/dsp-cli/`), distributed via the plugin marketplace. Consequently:
   `skill/SKILL.md` was deleted; the `just install` recipe was removed (it only installed
   the binary and symlinked the skill); the crate's `include` allowlist no longer packages
-  the skill; and the `skill/SKILL.md` ↔ clap drift-guard test was removed. ADR-0011
+  the skill; and the `skill/SKILL.md` ↔ clap drift-guard test was removed. dsp-cli/ADR-0011
   amended. No CLI-surface change.
 
 ## [0.1.6] - 2026-07-24
@@ -89,19 +89,19 @@ Pre-1.0 (`0.x.y`) means the public surface is not yet stable; breaking changes m
 
 ### Fixed
 
-- `-j` now emits the structured JSON error envelope (`{"_meta": …, "error": {"kind": …}}`) to stdout for top-level errors (previously a prose `Error: …` line to stderr, even under `-j`); every other format is unchanged (`Error: …` to stderr). `_meta` includes the resolved server when it could be determined from `--server`/`-s` or `DSP_SERVER`, and always includes `exit_code`. See ADR-0012 and ADR-0003 amendments.
+- `-j` now emits the structured JSON error envelope (`{"_meta": …, "error": {"kind": …}}`) to stdout for top-level errors (previously a prose `Error: …` line to stderr, even under `-j`); every other format is unchanged (`Error: …` to stderr). `_meta` includes the resolved server when it could be determined from `--server`/`-s` or `DSP_SERVER`, and always includes `exit_code`. See dsp-cli/ADR-0012 and dsp-cli/ADR-0003 amendments.
 
 ## [0.1.3] - 2026-07-21
 
 ### Added
 
-- Interactive update check: on prose-format, interactive-TTY runs (unless opted out), `dsp` checks the crates.io sparse index for a newer published version and, if one exists, prints a two-line advisory to **stderr** recommending `cargo install dsp-cli` (also mentions `cargo install-update -a` for `cargo-update` users). At most one network fetch per 24h, cached at `~/.config/dsp-cli/update_check.toml`; within the window the reminder still shows every interactive run from the cache. The check never touches stdout, the JSON `_meta`/error envelope, or the exit code, and is entirely invisible to agents and scripts — it is gated on effective format `Prose` **and** an interactive stderr TTY, so `-j`/`-l`/`--format` non-prose runs and any piped/non-interactive invocation never trigger it. Any check failure is swallowed (logged at `tracing::debug` only). Set `DSP_NO_UPDATE_CHECK` to any non-empty value to disable it entirely. See ADR-0015.
+- Interactive update check: on prose-format, interactive-TTY runs (unless opted out), `dsp` checks the crates.io sparse index for a newer published version and, if one exists, prints a two-line advisory to **stderr** recommending `cargo install dsp-cli` (also mentions `cargo install-update -a` for `cargo-update` users). At most one network fetch per 24h, cached at `~/.config/dsp-cli/update_check.toml`; within the window the reminder still shows every interactive run from the cache. The check never touches stdout, the JSON `_meta`/error envelope, or the exit code, and is entirely invisible to agents and scripts — it is gated on effective format `Prose` **and** an interactive stderr TTY, so `-j`/`-l`/`--format` non-prose runs and any piped/non-interactive invocation never trigger it. Any check failure is swallowed (logged at `tracing::debug` only). Set `DSP_NO_UPDATE_CHECK` to any non-empty value to disable it entirely. See dsp-cli/ADR-0015.
 
 ## [0.1.2] - 2026-07-20
 
 ### Added
 
-- `--count` flag (default off) on `dsp vre resource-type list` and `dsp vre resource-type describe`, adding per-resource-type instance counts via one extra call to the v3 `GET /v3/projects/{projectIri}/resourcesPerOntology` route. `list --count` adds a `count` column (all five output formats — prose gets a right-aligned COUNT column, json a `count` key, csv/tsv auto-show the column, lines opts in via `--columns count`); `describe --count` adds an `Instances:` line (prose + json only — tabular formats already omit every resource-type-level scalar, so `count` follows the same precedent). Counts are non-deleted but **not** permission-filtered (unlike `resource list`, which is) — a disclosure note is emitted whenever `--count` is used (prose footer, `_meta.note` in json, a stderr line for lines/csv/tsv), via a new `MetaContext.count_caveat` field distinct from the existing ADR-0007 `filter_warning`. Supersedes the previously-backlogged standalone `dsp vre resource count` idea (see `docs/BACKLOG.md`); the v3-route decision and unfiltered-count semantics are recorded in ADR-0013.
+- `--count` flag (default off) on `dsp vre resource-type list` and `dsp vre resource-type describe`, adding per-resource-type instance counts via one extra call to the v3 `GET /v3/projects/{projectIri}/resourcesPerOntology` route. `list --count` adds a `count` column (all five output formats — prose gets a right-aligned COUNT column, json a `count` key, csv/tsv auto-show the column, lines opts in via `--columns count`); `describe --count` adds an `Instances:` line (prose + json only — tabular formats already omit every resource-type-level scalar, so `count` follows the same precedent). Counts are non-deleted but **not** permission-filtered (unlike `resource list`, which is) — a disclosure note is emitted whenever `--count` is used (prose footer, `_meta.note` in json, a stderr line for lines/csv/tsv), via a new `MetaContext.count_caveat` field distinct from the existing dsp-cli/ADR-0007 `filter_warning`. Supersedes the previously-backlogged standalone `dsp vre resource count` idea (see `docs/BACKLOG.md`); the v3-route decision and unfiltered-count semantics are recorded in dsp-cli/ADR-0013.
 
 ## [0.1.1] - 2026-07-17
 
@@ -129,7 +129,7 @@ below accumulated during pre-release development.
 - crates.io publish metadata in `Cargo.toml`: `homepage`, `keywords`, `categories`, `rust-version` (MSRV 1.92), and a package
   `include` allowlist (`src/**/*`, `docs/topics/*.md`, `skill/SKILL.md`, `README.md`, `LICENSE`, `CHANGELOG.md`) so the packaged
   crate ships only what it needs to compile and describe itself; `publish = false` removed. Verified with `cargo package --list`
-  and a clean `cargo publish --dry-run`. ADR-0011 amended: crates.io publishing is now a recorded decision — owner is the
+  and a clean `cargo publish --dry-run`. dsp-cli/ADR-0011 amended: crates.io publishing is now a recorded decision — owner is the
   `dasch-swiss` GitHub team (added as a crate owner post-publish, not a personal account), publishing starts at 0.1.0.
 - Install docs (`README.md`, `skill/SKILL.md`) now prefer `cargo install dsp-cli` as the primary install path, framed as
   available once 0.1.0 is published to crates.io; `cargo install --git ...` remains documented as the pre-publish / from-source
@@ -145,7 +145,7 @@ below accumulated during pre-release development.
   - **csv / tsv** — all tabular formats now replace every ASCII control character (C0 incl. tab/newline, plus DEL) with a space, joining `lines` (which already did).
     Previously `csv` quoted per RFC-4180 but passed control characters through,
     and `tsv` was identity — so an embedded ESC reached the terminal raw and (for `tsv`) an embedded tab/newline silently corrupted columns.
-    This revises the earlier "csv/tsv preserve fidelity" stance (ADR-0003 amended,
+    This revises the earlier "csv/tsv preserve fidelity" stance (dsp-cli/ADR-0003 amended,
     Phase 8.5); the fidelity cost is negligible (tabular columns are single-line by DSP convention) and `-j` (json) remains for full fidelity.
     `json` is unchanged — `serde_json` escapes all C0 (incl. ESC) as `\uXXXX`, so a raw escape never reaches the terminal.
   - Internal: the shared tabular control-char helper `lines_field` was renamed `replace_control_chars` and relocated to `src/util/text.rs` beside its prose sibling
@@ -165,29 +165,29 @@ below accumulated during pre-release development.
 - `dsp vre project dump` no longer downloads (or, with `--replace`/`--delete`,
   destroys) another project's dump when the DSP-API's single server-wide dump slot is occupied by a different project.
   The command now detects the owning project from the conflict and refuses, or — with `--replace --discard-other-project` — explicitly discards it.
-  See plan 008 and ADR-0001 (vocabulary), ADR-0012 (diagnostics).
+  See plan 008 and dsp-cli/ADR-0001 (vocabulary), dsp-cli/ADR-0012 (diagnostics).
 - `dsp auth status` no longer fails with a cache-load error when `DSP_TOKEN` is set but `auth.toml` is corrupt or unreadable.
-  ADR-0007 says the env token wins regardless of cache state, so a broken cache now falls through to env-auth status.
+  dsp-cli/ADR-0007 says the env token wins regardless of cache state, so a broken cache now falls through to env-auth status.
 - `AuthCache::load_from` rejects oversized cache files (> 1 MiB) before reading them into memory.
   Protects against a misconfigured symlink at `~/.config/dsp-cli/auth.toml` pointing at a huge file.
 - `AuthCache::save` now best-effort removes the `auth.toml.<pid>` temp sibling when the atomic-rename step fails,
   so failed writes do not leave temp-file residue in `~/.config/dsp-cli/`.
-- Error message for an unparseable dump-conflict (409) response no longer leaks DSP-API "export" vocabulary (ADR-0001).
+- Error message for an unparseable dump-conflict (409) response no longer leaks DSP-API "export" vocabulary (dsp-cli/ADR-0001).
 - `skill/SKILL.md` (the agent-facing skill shipped alongside the binary,
-  ADR-0011) verified against the actual command surface and corrected: documents the `--discard-other-project` dump flag and the one-slot cross-project guard (were undocumented);
+  dsp-cli/ADR-0011) verified against the actual command surface and corrected: documents the `--discard-other-project` dump flag and the one-slot cross-project guard (were undocumented);
   fixes the `data-model list` column list (`last-modified` → `last_modified`,
   adds the missing `is_builtin` — a copied `--columns last-modified` would have failed); documents the global `-v`/`--verbose` flag; and removes DSP-API vocabulary leaks
   ("export", "ontology/ontologies") from agent-facing prose,
-  leaving the term only in the deliberate `dsp-cli`↔DSP-API mapping table (ADR-0001).
+  leaving the term only in the deliberate `dsp-cli`↔DSP-API mapping table (dsp-cli/ADR-0001).
 
 ### Changed
 
-- `_meta.auth` JSON field now uses unified ADR-0007 vocabulary across all commands: `anonymous` (no token), `authenticated via DSP_TOKEN` (env token),
+- `_meta.auth` JSON field now uses unified dsp-cli/ADR-0007 vocabulary across all commands: `anonymous` (no token), `authenticated via DSP_TOKEN` (env token),
   `authenticated as <user>` (cached token with user), or `authenticated` (cached token, no user).
   Previously `dsp auth status`, `dsp auth login`, `dsp auth set-token`, `dsp auth logout`,
   and `dsp vre project dump` emitted the older `logged_in…` / `not_logged_in` family of strings.
   This is a breaking change to the JSON output contract for those five commands; the read commands (`project list/describe`, `data-model *`,
-  `resource-type *`) already used the ADR-0007 vocabulary and are unchanged.
+  `resource-type *`) already used the dsp-cli/ADR-0007 vocabulary and are unchanged.
   Expiry semantics are unchanged: `_meta.auth` reflects token presence/origin,
   not validity — an expired cached token still reports `authenticated as <user>` (the richer expiry detail remains in `auth status`'s data output).
 - `dsp vre` commands' `--project` help text now lists all three project identifiers (shortcode, shortname, IRI), matching `dsp vre project dump`.
@@ -197,11 +197,11 @@ below accumulated during pre-release development.
 - The JSON error `kind` enum gained two new stable values: `conflict` (a server-side resource is busy or already exists — e.g. a dump already in progress) and `io` (a local
   filesystem operation the user requested failed — e.g. writing the dump file).
   Both map to exit code `1`; the four exit codes are unchanged.
-  This is an additive change — existing consumers that ignore unknown kinds are unaffected. ADR-0012 amended.
+  This is an additive change — existing consumers that ignore unknown kinds are unaffected. dsp-cli/ADR-0012 amended.
 - JSON output uses a uniform envelope: `{"_meta": {…}, "data": …}` on success and `{"_meta": {…}, "error": {…}}` on failure,
   with `_meta` always first and deterministic key order.
   The payload is nested under `data` (an object for single results, an array for lists) so the shape generalises to list commands; `server` is no longer duplicated outside `_meta`.
-  See ADR-0003.
+  See dsp-cli/ADR-0003.
 - Server-shortcut matching is now case-insensitive (`PROD` resolves like `prod`); literal URLs still pass through with original casing.
 - Server-shortcut table updated: dropped the decommissioned `test`, added live `dev` (`https://api.dev.dasch.swiss`) and `demo` (`https://api.demo.dasch.swiss`).
   Reachability verified via `GET /health`.
@@ -217,14 +217,14 @@ below accumulated during pre-release development.
   row only, plus a stderr note pointing to `prose`/`json`.
   Full column set: `label, iri, field, field_label, value_type, value`; the compact default (no `--columns`) is `field, field_label, value_type, value`
   — the resource's `label`/`iri` are constant across every row of a single-resource describe, so they are opt-in via `--columns` rather than repeated by default.
-  `prose`/`json` `--values` behaviour is unchanged (they add a values section on top of the metadata envelope; tabular `--values` shows values only). See ADR-0013.
+  `prose`/`json` `--values` behaviour is unchanged (they add a values section on top of the metadata envelope; tabular `--values` shows values only). See dsp-cli/ADR-0013.
 
 - `dsp vre resource describe --values` now surfaces per-value comments (`knora-api:valueHasComment` — DSP-API's optional free-text annotation on any value,
   e.g. "reading uncertain"). `prose` always renders a value's comment on an indented line under the value when present (sanitised via the same
   control-character stripping as every other prose scalar). `json` always carries a `comment` key on a value object, but only when the value has one —
   omitted, never `null`, otherwise, so every existing json snapshot is unaffected. Tabular (`csv`/`tsv`/`lines`) adds `comment` to the full column set
   (`--columns label,iri,field,field_label,value_type,value,comment`) but not the compact default — opt-in, since comments are empirically rare and a
-  default trailing column would usually be empty. No new flag: comment surfacing rides on the existing `--values`/`--columns` mechanisms. See ADR-0013.
+  default trailing column would usually be empty. No new flag: comment surfacing rides on the existing `--values`/`--columns` mechanisms. See dsp-cli/ADR-0013.
 
 - `dsp auth token` — print the resolved bearer token to stdout for piping (exit 3 if none is cached or it is locally detected as expired).
 
@@ -240,8 +240,8 @@ below accumulated during pre-release development.
   `lines`) render one row per value (see the tabular `--values` entry above).
   Resolving field and list-item labels triggers additional server requests (one per project ontology,
   one per distinct list node) that are deduplicated and graceful: any label fetch that fails degrades to the local field name or node IRI rather than aborting the describe.
-  Prose output runs every server-supplied scalar through control-character sanitisation before printing; json keeps raw server values verbatim (ADR-0003 fidelity).
-  See ADR-0013 (instance reads and value rendering).
+  Prose output runs every server-supplied scalar through control-character sanitisation before printing; json keeps raw server values verbatim (dsp-cli/ADR-0003 fidelity).
+  See dsp-cli/ADR-0013 (instance reads and value rendering).
 
 - `dsp vre resource describe --resource <internal-iri> [-p/--project <guard>] [--format <f> | -j | -l] --server <s>` — fetch the metadata envelope of a single resource by its
   internal IRI (ARK addressing is not supported in v1).
@@ -251,7 +251,7 @@ below accumulated during pre-release development.
   Both facets are derived at the client boundary from the server's permission data; raw ACL strings and `knora-admin:` group names never appear in output. `-p`/`--project` is an
   optional cross-project guard: when supplied,
   the command fails if the resource's attached project does not match.
-  Filter-disclosure note in output (ADR-0007): anonymous callers see "results may be filtered; login to see private resources"; authenticated callers see "results limited to your
+  Filter-disclosure note in output (dsp-cli/ADR-0007): anonymous callers see "results may be filtered; login to see private resources"; authenticated callers see "results limited to your
   permissions".
   Five output formats; tabular columns: `label`, `iri`, `resource_type`, `ark_url`, `creation_date`, `last_modified`, `attached_project`, `owner`, `visibility`, `your_access`.
   Uses `GET /v2/resources/<iri>?schema=complex` (complex schema for all resource reads, per plan 023 D4).
@@ -262,8 +262,8 @@ below accumulated during pre-release development.
   skipping the scan). `--data-model` narrows the scan to a single data-model and resolves cross-data-model name ambiguity.
   Pagination: `--page N` fetches one page (default page 0); `--all` fetches all pages and accumulates the results. Five output formats.
   Filter-disclosure note in output: anonymous callers see "results may be filtered; login to see private resources"; authenticated callers see "results limited to your
-  permissions" (ADR-0007).
-  JSON `_meta` pagination keys: `page` + `may_have_more_results` (single-page mode) or `pages_fetched` + `may_have_more_results` (--all mode) — see ADR-0003 amendment.
+  permissions" (dsp-cli/ADR-0007).
+  JSON `_meta` pagination keys: `page` + `may_have_more_results` (single-page mode) or `pages_fetched` + `may_have_more_results` (--all mode) — see dsp-cli/ADR-0003 amendment.
   The command uses the full resource representation,
   so output includes `creation_date` and `last_modified` columns; `last_modified` is absent for resources that have never been modified (server-side optional).
 
@@ -275,7 +275,7 @@ below accumulated during pre-release development.
 - `--columns=X,Y,Z` — select and reorder output columns for `csv`, `tsv`, and `lines` output (Phase 6.6). User order wins; duplicates are rejected as a usage error.
   On `lines`, selects from the full column set (overrides the lean default subset). Not supported for `json` or `prose` — exits with a usage error and a hint.
   Valid column names per command are listed in `--help` under `Columns (--columns):`.
-  See ADR-0003 amendment for the rename rationale (`--fields` → `--columns`) and the full contract.
+  See dsp-cli/ADR-0003 amendment for the rename rationale (`--fields` → `--columns`) and the full contract.
 
 - `--no-header` and `--header-only` — header-control flags for `csv` and `tsv` output (Phase 6.6). `--no-header` suppresses the header row,
   enabling row-level concatenation across invocations (`--format csv --no-header >> all.csv`). `--header-only` emits only the header row and exits 0; note the server fetch still
@@ -285,7 +285,7 @@ below accumulated during pre-release development.
 - `dsp docs -j` — machine-readable JSON topic index (Phase 6.6).
   Emits the standard envelope `{"_meta": {}, "data": [{"name": …, "summary": …}, …]}` with one entry per topic (name + summary only; bodies remain
   raw markdown via `dsp docs <topic>`).
-  `_meta` is the empty object `{}` — no server or auth context applies to embedded documentation; this is the one command with an empty `_meta` (see ADR-0003 amendment).
+  `_meta` is the empty object `{}` — no server or auth context applies to embedded documentation; this is the one command with an empty `_meta` (see dsp-cli/ADR-0003 amendment).
   `-j` conflicts with the `<topic>` positional and `--pager` (clap-level, exit 2). Uses the same compact `serde_json::to_string` style as all other `-j` output.
   Implemented via derived `Serialize` structs (`DocsJsonEnvelope` + `TopicIndexEntry`) in `src/actions/docs.rs`; the no-`Renderer` design (plan 018 D1) is unchanged.
 
@@ -293,10 +293,10 @@ below accumulated during pre-release development.
   the topic's raw markdown to stdout; `--pager` pages it through `$PAGER` (default `less`).
   Topic resolution is strict exact-match — an unknown name exits `1` (not found) with a "did you mean …" suggestion for close typos and a pointer to `dsp docs`.
   Nine topics ship, embedded at compile time via `include_str!`: `dsp-cli`, `dsp`, `concepts`, `identifiers`, `connecting`, `output`, `workflows`, `errors`, `dsp-tools`.
-  This expands ADR-0010's original six-topic catalog (amended in the same change) with three operational topics — `workflows`, `identifiers`,
+  This expands dsp-cli/ADR-0010's original six-topic catalog (amended in the same change) with three operational topics — `workflows`, `identifiers`,
   `errors` — that teach an agent how to *operate* the CLI, not just describe it.
   `dsp docs` is the one command with neither a network client nor a `--format` flag (its output is format-agnostic markdown).
-  Note: the `errors`/`output` topics document current behaviour — errors print as prose to stderr in every format; the structured JSON error envelope (ADR-0012) is implemented in
+  Note: the `errors`/`output` topics document current behaviour — errors print as prose to stderr in every format; the structured JSON error envelope (dsp-cli/ADR-0012) is implemented in
   the renderer but not yet wired into the binary.
 
 - `dsp vre data-model structure --project <p> --data-model <dm> [--include-builtins] [--format …] --server <s>` — edge-centric relations overview for a data-model: emits a flat
@@ -307,7 +307,7 @@ below accumulated during pre-release development.
   data-model and only reused* here are omitted (no sibling-ontology fetch); the common case — a field defined in this data-model pointing to a resource-type in a sibling — is
   fully covered via the `[to <dm>]` cross-model tag.
 
-- `dsp auth status` now emits the auth-state disclosure line to stderr for the `lines`/`csv`/`tsv` formats (uses the unified ADR-0007 disclosure vocabulary,
+- `dsp auth status` now emits the auth-state disclosure line to stderr for the `lines`/`csv`/`tsv` formats (uses the unified dsp-cli/ADR-0007 disclosure vocabulary,
   e.g. `[authenticated via DSP_TOKEN on <server>]`, aligned with `dsp vre project list` by the `_meta.auth` harmonization below).
 
 - `dsp vre resource-type describe --project <p> --data-model <m> --resource-type <name|IRI> [--include-builtins] --server <s>` — the v1 leaf read command: shows a resource-type's
@@ -337,11 +337,11 @@ below accumulated during pre-release development.
   Five output formats: `prose` (default), `json`, `lines`, `tsv`, `csv`.
   Prose shows a `Data-model: <name>` header, a label/value block (label, IRI, last-modified as a date),
   and the resource-types as an aligned `name  label` list under a `Resource-types (N):` header (the names are the identifiers to pass to the future `resource-type describe`); JSON
-  is the ADR-0003 single-object envelope with a `resource_types` array carrying each resource-type's `name`,
+  is the dsp-cli/ADR-0003 single-object envelope with a `resource_types` array carrying each resource-type's `name`,
   `iri` (CURIE-expanded to a full IRI via the response `@context`),
   and `label`; the tabular formats carry the data-model's scalar fields with `resource_types` as a count (a nested list can't fit a cell), mirroring `project describe`.
   An unknown `--data-model` yields a `not_found` error with a "run `data-model list`" hint.
-  Authentication is optional per ADR-0007 (the endpoint is public); the auth-state disclosure (prose footer / `_meta.auth` / stderr line) mirrors the other read commands.
+  Authentication is optional per dsp-cli/ADR-0007 (the endpoint is public); the auth-state disclosure (prose footer / `_meta.auth` / stderr line) mirrors the other read commands.
   Establishes the `DataModelDetail` + `ResourceTypeSummary` models and the `Renderer::data_model_describe` method; first command to read `/v2/ontologies/allentities` and to
   surface resource-types. (Inter-resource-type relations — the link graph — are deferred to a separate planned view; see `docs/PROJECT_PLAN.md`.)
 
@@ -351,7 +351,7 @@ below accumulated during pre-release development.
   By default only project-defined data models are shown; `--include-builtins` adds the three platform built-ins (`knora-api`, `standoff`, `salsah-gui`) to the output.
   Five output formats: `prose` (default), `json`, `lines`, `tsv`, `csv`.
   Columns: `name`, `iri`, `label` (the human-readable English label from the ontology JSON-LD metadata), and `last-modified` (ISO-8601 timestamp, date-only in `prose`).
-  ADR-0007 auth-state disclosure: prose footer, `_meta.auth` in JSON, stderr disclosure line for `lines`/`tsv`/`csv`.
+  dsp-cli/ADR-0007 auth-state disclosure: prose footer, `_meta.auth` in JSON, stderr disclosure line for `lines`/`tsv`/`csv`.
   First command to expose the built-in vs project-defined distinction; establishes the `DataModelListView` view-struct and `Renderer::data_models` method,
   and the `/v2/ontologies/metadata` JSON-LD read pattern.
 
@@ -366,20 +366,20 @@ below accumulated during pre-release development.
   command), and the description value is kept raw (lossless).
   The tabular formats are scalar projections consistent with `project list`: `csv` and `tsv` emit shortcode, shortname, longname, status, data-model count,
   and IRI; `lines` emits shortcode, shortname, and longname (tab-separated, no header).
-  Authentication is optional per ADR-0007: a cached or env token is sent when present; anonymous callers see the same public metadata.
+  Authentication is optional per dsp-cli/ADR-0007: a cached or env token is sent when present; anonymous callers see the same public metadata.
   The auth-state disclosure (prose footer / `_meta.auth` / stderr line) mirrors `project list`.
-  First describe (single-object) command; the `data` JSON payload is a single object (not an array), per ADR-0003.
+  First describe (single-object) command; the `data` JSON payload is a single object (not an array), per dsp-cli/ADR-0003.
 
 - `dsp vre project list [--filter <text>] --server <s>` — list all projects on a DSP server. `--filter` (short: none; argument is a plain substring) matches case-insensitively
   against shortcode, shortname, and longname; filtering is client-side.
   Five output formats are supported: `prose` (default), `json`, `lines`, `tsv`, `csv`.
-  Auth-state disclosure per ADR-0007: the prose footer and the `_meta.auth` JSON field use the `anonymous` / `authenticated as <user>` vocabulary from `read_auth_state`; the
+  Auth-state disclosure per dsp-cli/ADR-0007: the prose footer and the `_meta.auth` JSON field use the `anonymous` / `authenticated as <user>` vocabulary from `read_auth_state`; the
   `lines`/`tsv`/`csv` formats emit a `[<auth-state> on <server>]` line to stderr (data stays on stdout).
   The first read command; establishes the per-noun `Renderer::projects` + `ProjectListView` view-struct pattern.
 
 - `--discard-other-project` flag for `dsp vre project dump`: when used with `--replace`,
   discards a dump that belongs to a different project to free the single server-wide slot. `--replace` refuses cross-project without it.
-  Requires `--replace`; conflicts with `--delete`. See plan 008 and ADR-0001.
+  Requires `--replace`; conflicts with `--delete`. See plan 008 and dsp-cli/ADR-0001.
 - `dsp auth set-token --server <s>` — cache a pre-issued bearer JWT (read from stdin) after verifying it against the server; fills the gap where `DSP_TOKEN` overrides but never
   persists a token.
 - `dsp vre project dump` — trigger, poll, and download a project Dump (a server-produced bagit-zip archive containing all project data and, by default, its binary assets).
@@ -398,7 +398,7 @@ below accumulated during pre-release development.
   Downloads are written atomically (temp file renamed on success; no partial file on failure).
   Output for all five formats covered by `insta` snapshots; HTTP paths covered by `wiremock` tests; one `--features live` test (skipped without a configured admin token + test
   project).
-  See ADR-0007 (auth/bearer token resolution), ADR-0008 (architecture), ADR-0012 (new `conflict` and `io` diagnostic kinds used by this command).
+  See dsp-cli/ADR-0007 (auth/bearer token resolution), dsp-cli/ADR-0008 (architecture), dsp-cli/ADR-0012 (new `conflict` and `io` diagnostic kinds used by this command).
 - `DSP_TOKEN` env var now overrides the cached token (bearer auth) — login is skipped when it is set.
   `dsp auth status` reports when `DSP_TOKEN` is in effect (`_meta.auth: "authenticated via DSP_TOKEN"` in JSON, prose equivalent in default format) and shows the token's
   expiry when the JWT `exp` claim is readable.
@@ -415,14 +415,14 @@ below accumulated during pre-release development.
 - `AuthCache` module at `src/config/auth_cache.rs` — load/save helpers for the
   on-disk token cache at `~/.config/dsp-cli/auth.toml` (file mode `0600` on Unix,
   server-URL-keyed TOML). Now consumed by the `dsp auth` commands listed above. See
-  [ADR-0007](docs/adr/0007-auth-and-environments.md).
+  [dsp-cli/ADR-0007](docs/adr/0007-auth-and-environments.md).
 - `--format` / `-j` / `-l` flags on the six `dsp vre` data commands (`project {list,describe}`, `data-model {list,describe}`, `resource-type {list,describe}`).
   Flags parse and dispatch to one of five renderer stubs (`prose` default, plus `json`, `lines`, `csv`, `tsv`) — no rendering behaviour yet; that lands with real data in Phase 3.
-  See [ADR-0003](docs/adr/0003-chaining-and-output.md) and [ADR-0008](docs/adr/0008-internal-architecture.md).
+  See [dsp-cli/ADR-0003](docs/adr/0003-chaining-and-output.md) and [dsp-cli/ADR-0008](docs/adr/0008-internal-architecture.md).
 - `Config` resolution layer: resolves the active DSP server from `--server` flag, `DSP_SERVER` environment variable,
   or a `.env` file in the current working directory (loaded via `dotenvy`).
   Supports the built-in shortcuts (`prod`, `stage`, `dev`, `demo`, `rdu`, `ls-prod`, `ls-test`, `local`, case-insensitive); any other value is treated as a literal URL.
-  Module only — wiring into action signatures lands incrementally as each command is implemented. See [ADR-0007](docs/adr/0007-auth-and-environments.md).
+  Module only — wiring into action signatures lands incrementally as each command is implemented. See [dsp-cli/ADR-0007](docs/adr/0007-auth-and-environments.md).
 - Nested clap subcommand structure for `auth` (`login`, `status`, `logout`), `vre` (`project`, `data-model`, `resource-type` — each with `list` and `describe`), and `docs`.
   The `auth` subcommands now dispatch to real implementations (see the top entry); `vre` and `docs` remain help-text-only and return `Diagnostic::not_implemented`.
 - Design phase: 12 ADRs covering vocabulary divergence, command shape, chaining and output, dsp-tools boundary, language choice (Rust), top-level shape, auth/environments,

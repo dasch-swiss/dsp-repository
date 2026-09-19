@@ -40,10 +40,10 @@ A doc topic that would just be the long version of a `--help` text does not belo
 | `concepts` | The domain vocabulary: project, data-model, resource-type, field, value, value-type, built-in, representation. End-user form of `CONTEXT.md`. Includes the "we say data-model where DSP-API says ontology" mapping. |
 | `connecting` | High-level auth + environments model. Why there's no default server. How `.env` is loaded. The auth-state disclosure. The browser-token-harvest flow (read `localStorage.ACCESS_TOKEN`, feed via `DSP_TOKEN` / `dsp auth set-token`). (Flag-level details remain in `--help`.) |
 | `output` | The output philosophy: prose by default, structured formats for piping, the JSON envelope, stdout-vs-stderr, the auth-state disclosure footer. (Per-format flag details remain in `--help`.) |
-| `dsp-tools` | When to use `dsp-cli` vs `dsp-tools`. End-user form of ADR-0004's boundary rule. **Deliberately brief** — a signpost, not a tutorial. |
+| `dsp-tools` | When to use `dsp-cli` vs `dsp-tools`. End-user form of dsp-cli/ADR-0004's boundary rule. **Deliberately brief** — a signpost, not a tutorial. |
 | `workflows` | *(added)* End-to-end command-chain playbooks: how to compose the stateless commands (read output A → extract an identifier → build command B). The agent's how-to-chain reference. |
 | `identifiers` | *(added)* How to name things across commands: the three-way project identifier (shortcode/shortname/IRI), name-or-IRI for data-models and resource-types, CURIEs, IRIs/ARKs, and how to lift identifiers from output. |
-| `errors` | *(added)* The diagnostic contract: exit codes (0/1/2/3), the stable `error.kind` values, and per-kind recovery. End-user/agent form of ADR-0012. |
+| `errors` | *(added)* The diagnostic contract: exit codes (0/1/2/3), the stable `error.kind` values, and per-kind recovery. End-user/agent form of dsp-cli/ADR-0012. |
 
 Topics explicitly *not* included: anything that mirrors a single command's behaviour (would duplicate `--help`).
 
@@ -130,7 +130,7 @@ docs/
 - `docs/topics/` becomes a versioned part of the source tree; every PR that changes user-facing behaviour considers whether a topic needs updating.
 - A future docs website (when/if we publish) is *generated* from `docs/topics/*.md`; the embedded version stays canonical.
 - The binary embeds documentation, which is one of its features rather than dead weight — every user gets offline-capable, version-synced docs as part of installing the tool.
-- `dsp docs` is a new top-level meta-group alongside `dsp auth`, per ADR-0006. The reserved structure accommodated this without ADR amendment.
+- `dsp docs` is a new top-level meta-group alongside `dsp auth`, per dsp-cli/ADR-0006. The reserved structure accommodated this without ADR amendment.
 - Documentation discipline is now part of the development loop: changing user-facing behaviour without updating relevant topics
   produces stale docs that ship in the very next binary.
 
@@ -139,8 +139,16 @@ docs/
 ### Topic catalogue: 9 → 10, `sparql` added
 
 A new topic, `sparql`, joins the catalogue (`dsp docs sparql`) — see
-[ADR-0016](0016-sparql-passthrough.md) for the command it documents. It carries what `--help` cannot:
+[dsp-cli/ADR-0016](0016-sparql-passthrough.md) for the command it documents. It carries what `--help` cannot:
 the off-by-default availability per deployment, the `--accept` alias table and Fuseki's silent
 fallback behaviour, the guardrails (timeout, size caps, concurrency) as the client sees them, the
 exit-code contract, the `SystemAdmin` requirement, and the advice to scope queries with an explicit
 `GRAPH`. Cross-linked from `concepts` and `workflows`.
+
+## Amendment (2026-09-19) — developer documentation moved to the repository book
+
+The table above still shows developer documentation living at "repo root + `docs/dev/`" — that was
+accurate for the `dsp-incubator` prototype and is left as the historical record. Since the migration
+to `dsp-repository` (dsp-cli/ADR-0014), it lives at `dsp-cli/README.md` plus `docs/src/dsp-cli/` in
+the repository book, surfaced the same way (git / GitHub browse, plus `mdbook` rendering). The
+category and its exclusion from `dsp docs` are otherwise unchanged.

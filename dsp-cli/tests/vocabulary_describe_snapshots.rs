@@ -28,8 +28,8 @@
 //! Determinism: these tests call `Renderer::vocabulary_describe(&detail, &meta)`
 //! **directly** with a hand-built `MetaContext` / `VocabularyDetail`. They never go
 //! through `run_describe_impl`, which reads the real `DSP_TOKEN` env var.
-//! See `docs/dev/testing-strategy.md`, ADR-0009, and
-//! `docs/design/plans/034-vre-vocabulary/implementation-plan.md`.
+//! See `docs/src/dsp-cli/testing-strategy.md`, dsp-cli/ADR-0009, and design plan
+//! 034-vre-vocabulary in the dsp-incubator archive.
 
 use dsp_cli::model::{LocalizedText, VocabularyDetail, VocabularyHeader, VocabularyNode, VocabularyTree};
 use dsp_cli::render::csv::CsvRenderer;
@@ -220,7 +220,7 @@ fn leaf_subtree_detail() -> VocabularyDetail {
 /// (name/labels), the `Root:` IRI line, the `N nodes · M levels` summary with
 /// no subtree/requested-node note, the DFS-numbered + indented node list
 /// (D13 label-join order, D11 path derivation not directly visible here but
-/// exercised via the number/indent), and the ADR-0007 footer.
+/// exercised via the number/indent), and the dsp-cli/ADR-0007 footer.
 #[test]
 fn vocabulary_describe_prose() {
     let (buf, w) = shared_buf();

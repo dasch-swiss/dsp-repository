@@ -2,7 +2,7 @@
 //!
 //! Types here are the dsp-cli vocabulary for auth data. DSP-API wire types
 //! (e.g. `LoginApiResponse`) live inside `src/client/http.rs` and are never
-//! exposed above the client layer. See ADR-0001 and ADR-0008.
+//! exposed above the client layer. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 
 /// The result of a successful login call, expressed in dsp-cli vocabulary.
 ///

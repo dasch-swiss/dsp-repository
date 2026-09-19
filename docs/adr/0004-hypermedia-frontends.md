@@ -31,5 +31,6 @@ FAIR is the fourth reason, and it is what ADR-0005 builds on: FAIR assessors and
 - Accessibility is a server-side concern and lives in the Mosaic tiles, which is why the tiles carry the semantic methods and the a11y suites run on tile changes.
 - A capability that needs rich client behaviour argues for a contained enhancement inside one fragment, not for a framework; if that argument ever fails, the decision to revisit is this ADR, not a dependency added in one crate.
 - Machine-readable metadata is a head-and-headers concern of the landing page plus dedicated URLs (ADR-0005), which only a server-rendered page can satisfy by construction.
+- (2026-09-19) A command-line client is outside this decision's scope; see ADR-0002's dsp-cli clause.
 
 Enforced by: `check-datastar-delimiters.sh` and the editor's no-JavaScript E2E pass (static-analysis) for the enhancement rules; review for the absence of a client framework and a BFF (review).

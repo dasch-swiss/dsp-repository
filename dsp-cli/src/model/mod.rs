@@ -1,9 +1,9 @@
-//! Domain models — layer 4 of ADR-0008.
+//! Domain models — layer 4 of dsp-cli/ADR-0008.
 //!
 //! Vocabulary follows `CONTEXT.md`: `Project`, `DataModel`, `ResourceType`,
 //! `Resource`, `Field`, `Value`, `ValueType`, `BuiltIn`. DSP-API wire types
-//! (`OntologyDto` etc.) live in `crate::client`, not here. See
-//! `docs/dev/domain-language.md`.
+//! (`OntologyDto` etc.) live in `crate::client`, not here — see
+//! `dsp-cli/CONTEXT.md`.
 
 pub mod auth;
 pub mod data_model;

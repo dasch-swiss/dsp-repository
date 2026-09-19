@@ -5,7 +5,7 @@
 //
 // The `just test-live` recipe runs exactly this command.
 //
-// ADR-0009 (testing strategy): live tests are **not** in CI. They require
+// dsp-cli/ADR-0009 (testing strategy): live tests are **not** in CI. They require
 // real environment variables pointing at a live DSP instance. Missing config
 // causes an early-return skip — never a test failure.
 //
@@ -46,26 +46,8 @@ use dsp_cli::client::DspClient;
 use dsp_cli::client::http::HttpDspClient;
 use dsp_cli::config::Config;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Read a required environment variable. Returns `None` and emits a skip
-/// message if the variable is absent or empty.
-fn require_env(name: &str) -> Option<String> {
-    match std::env::var(name) {
-        Ok(v) if !v.trim().is_empty() => Some(v),
-        _ => {
-            eprintln!("skipping live test: {name} not set");
-            None
-        }
-    }
-}
-
-/// Read an optional environment variable. Returns `None` silently if absent.
-fn optional_env(name: &str) -> Option<String> {
-    std::env::var(name).ok().filter(|v| !v.trim().is_empty())
-}
+mod common;
+use common::{optional_env, require_env};
 
 // ---------------------------------------------------------------------------
 // Live test — describe_resource envelope field assertion
@@ -93,6 +75,7 @@ fn optional_env(name: &str) -> Option<String> {
 /// Skips cleanly (with `eprintln!`) if required env vars are absent or the
 /// resource list is empty.
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_describe_envelope_field_assertion() {
     // ── 1. Collect required config ────────────────────────────────────────────
     let server_raw = match require_env("DSP_TEST_SERVER") {
@@ -352,7 +335,7 @@ fn live_resource_describe_envelope_field_assertion() {
 /// **Per-value comment NOTE:**
 /// Per-value comments (`knora-api:valueHasComment`) are empirically rare — absent
 /// from every sampled 0810-project class and from this `incunabula:Page` resource
-/// (per ADR-0013's empirical note). This test does **not** assert a comment is
+/// (per dsp-cli/ADR-0013's empirical note). This test does **not** assert a comment is
 /// present. The authoritative parse/render coverage for per-value comments is the
 /// wiremock fixture in `tests/resource_describe_values_http.rs`
 /// (`value_with_comment_is_parsed_end_to_end`); this live test is best-effort only.
@@ -360,6 +343,7 @@ fn live_resource_describe_envelope_field_assertion() {
 /// Skips cleanly (with `eprintln!`) if required env vars are absent or
 /// the resource is inaccessible.
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_describe_values() {
     // ── 1. Collect required config ────────────────────────────────────────────
     let server_raw = match require_env("DSP_TEST_SERVER") {
@@ -582,6 +566,7 @@ fn live_resource_describe_values() {
 /// Skips cleanly (`eprintln!`, not a failure) if the resource is inaccessible —
 /// e.g. `DSP_TEST_SERVER` does not point at a server carrying the 0810 project.
 #[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_describe_values_standoff() {
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,

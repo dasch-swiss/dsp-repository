@@ -100,11 +100,11 @@ async fn login_401_returns_auth_required_without_username_leak() {
         err
     );
 
-    // ADR-0007 / PRD AC 7: username MUST NOT appear in the error message.
+    // dsp-cli/ADR-0007 / PRD AC 7: username MUST NOT appear in the error message.
     if let Diagnostic::AuthRequired(msg) = &err {
         assert!(
             !msg.contains("user@example.com"),
-            "error message must not leak the username (ADR-0007 regression guard), got: {msg}"
+            "error message must not leak the username (dsp-cli/ADR-0007 regression guard), got: {msg}"
         );
     }
 }
@@ -165,11 +165,11 @@ async fn login_403_returns_auth_required_without_username_leak() {
         err
     );
 
-    // ADR-0007 / PRD AC 7: username MUST NOT appear in the error message.
+    // dsp-cli/ADR-0007 / PRD AC 7: username MUST NOT appear in the error message.
     if let Diagnostic::AuthRequired(msg) = &err {
         assert!(
             !msg.contains("user@example.com"),
-            "error message must not leak the username (ADR-0007 regression guard), got: {msg}"
+            "error message must not leak the username (dsp-cli/ADR-0007 regression guard), got: {msg}"
         );
     }
 }
@@ -271,7 +271,7 @@ async fn login_200_with_iri_sends_iri_key() {
 
 #[tokio::test]
 async fn login_401_with_username_returns_auth_required_without_identifier_leak() {
-    // The non-disclosure guarantee (ADR-0007 / PRD AC 7) must hold for every
+    // The non-disclosure guarantee (dsp-cli/ADR-0007 / PRD AC 7) must hold for every
     // identifier type, not just email — the error message is identifier-agnostic.
     let server = MockServer::start().await;
 
@@ -302,11 +302,11 @@ async fn login_401_with_username_returns_auth_required_without_identifier_leak()
         err
     );
 
-    // ADR-0007 / PRD AC 7: the identifier MUST NOT appear in the error message.
+    // dsp-cli/ADR-0007 / PRD AC 7: the identifier MUST NOT appear in the error message.
     if let Diagnostic::AuthRequired(msg) = &err {
         assert!(
             !msg.contains("jdoe"),
-            "error message must not leak the username (ADR-0007 regression guard), got: {msg}"
+            "error message must not leak the username (dsp-cli/ADR-0007 regression guard), got: {msg}"
         );
     }
 }

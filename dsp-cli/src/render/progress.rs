@@ -5,7 +5,7 @@
 //! - Two impls (Human, JSON) vs five renderers keeps it right-sized — stderr is non-data output so
 //!   prose/lines/csv/tsv all share the human reporter.
 //! - Isolates the novel "multi-line polling progress to stderr" concern from the renderer's stdout
-//!   concerns (endorsed in the Step 6 rationale, ADR-0008).
+//!   concerns (endorsed in the Step 6 rationale, dsp-cli/ADR-0008).
 //!
 //! Returning `Result` is intentional: stderr writes can fail (e.g. the other
 //! end of a pipe closed unexpectedly). The action treats a stderr-write failure
@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(v["event"], "discarding_other_project_dump");
         assert_eq!(v["id"], "foreign-dump-id");
         assert_eq!(v["project_iri"], "http://rdfh.ch/projects/0002");
-        // Must NOT use camelCase "projectIri" key (ADR-0001).
+        // Must NOT use camelCase "projectIri" key (dsp-cli/ADR-0001).
         assert!(v.get("projectIri").is_none(), "JSON must not use camelCase 'projectIri'");
     }
 }

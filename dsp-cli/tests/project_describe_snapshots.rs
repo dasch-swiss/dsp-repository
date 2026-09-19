@@ -10,7 +10,7 @@
 //! `run_describe_impl` is private and reads `DSP_TOKEN` from the real env).
 //! The action path (auth resolution, cache fallback) is covered by the in-module
 //! action tests; these snapshot tests cover rendering only.
-//! See `docs/dev/testing-strategy.md` and the learning from plan 010.
+//! See `docs/src/dsp-cli/testing-strategy.md` and the learning from plan 010.
 //!
 //! Main fixture (beol): realistic beol-shaped project grounded in the live API.
 //! - IRI uses a random-suffix form (NOT shortcode-derived) as the real API does.
@@ -23,9 +23,9 @@
 //!
 //! Error cell: `diagnostic` called directly on a JsonRenderer with a
 //! `Diagnostic::NotFound` carrying the describe-specific recovery hint message.
-//! Locks the ADR-0012 JSON error envelope shape + the hint sentence.
+//! Locks the dsp-cli/ADR-0012 JSON error envelope shape + the hint sentence.
 //!
-//! ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
+//! dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
 //! file or any .snap it generates. (IRI strings contain "/ontology/" as data
 //! — the documented exception per review-guidelines.md — but the word must not
 //! appear as dsp-cli vocabulary in rendered labels or keys.)
@@ -121,7 +121,7 @@ fn edge_detail() -> ProjectDetail {
 /// Prose render of the beol fixture. Locks the label/value block layout,
 /// the `Data-models (4): beol, biblio, leibniz, newton` line, the
 /// HTML-converted description (plain text with links as `text (url)`,
-/// tags stripped, control chars removed), and the ADR-0007 footer.
+/// tags stripped, control chars removed), and the dsp-cli/ADR-0007 footer.
 /// Header is `Project: <shortname> (<shortcode>)`; longname is a `Name:` field.
 #[test]
 fn project_describe_prose() {
@@ -132,7 +132,7 @@ fn project_describe_prose() {
 }
 
 /// JSON render of the beol fixture. Locks the single-object `data` shape
-/// (ADR-0003), the deterministic key order, `longname` as a string (not null),
+/// (dsp-cli/ADR-0003), the deterministic key order, `longname` as a string (not null),
 /// the `description` array with `{value, language}` elements, the `keywords`
 /// array, and the `data_models` array with `{name, iri}` elements.
 #[test]
@@ -278,7 +278,7 @@ fn project_describe_json_edge() {
 /// propagates from `client.describe_project(…)?` via `?` in `run_describe_impl`
 /// and is rendered by the generic `diagnostic` method — `project_describe` never
 /// sees it. Snapshotting here locks:
-/// - The ADR-0012 JSON envelope shape (`_meta.error.kind`, `_meta.error.message`).
+/// - The dsp-cli/ADR-0012 JSON envelope shape (`_meta.error.kind`, `_meta.error.message`).
 /// - The describe-specific not-found message + the recovery hint sentence.
 #[test]
 fn project_describe_json_not_found() {

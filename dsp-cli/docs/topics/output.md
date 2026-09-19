@@ -148,10 +148,11 @@ human-readable; csv/tsv is machine-parseable).
 ```
 
 No server or auth context applies to embedded documentation, so `_meta` is
-literally `{}`. This is the one command whose `_meta` is empty (see
-`dsp docs output` → The JSON envelope for the usual `_meta` shape; ADR-0003
-documents the empty-`_meta` carve-out). `-j` conflicts with a specific topic
-positional and with `--pager` — it exists only for the no-arg index form.
+literally `{}`. This is the one command whose `_meta` is empty — see
+`dsp docs output` → The JSON envelope for the usual `_meta` shape; the empty
+form here is a deliberate carve-out, not an omission. `-j` conflicts with a
+specific topic positional and with `--pager` — it exists only for the no-arg
+index form.
 Topic bodies stay raw markdown and are never JSON-wrapped.
 
 ## Errors and output

@@ -2,7 +2,7 @@
 //!
 //! Phase 8a implements `list` — the first instance-side read command. Introduces
 //! pagination (`--page` / `--all`) and the first real use of
-//! `MetaContext.filter_warning` (ADR-0007 silent-filter disclosure). Class-IRI
+//! `MetaContext.filter_warning` (dsp-cli/ADR-0007 silent-filter disclosure). Class-IRI
 //! resolution follows D1 (plan 022): full-IRI bypass, optional `--data-model`
 //! scope, bare-name scan across all project data-models.
 //!
@@ -31,7 +31,7 @@ struct ResourceTypeRef {
 /// List resource instances of a given type within a project.
 ///
 /// Authentication is optional (instance-side read; anonymous callers see only
-/// publicly-visible resources per ADR-0007). Reads `DSP_TOKEN` from the
+/// publicly-visible resources per dsp-cli/ADR-0007). Reads `DSP_TOKEN` from the
 /// environment and delegates all work to `run_list_impl` with injectable seams
 /// for deterministic testing.
 pub fn list(
@@ -390,7 +390,7 @@ fn resolve_order_by_property(
 ///
 /// Intentional kept-in-sync duplicate of `local_name` in `src/client/http.rs`.
 /// The client's `local_name` is private to the client module; the action layer
-/// must not reach into client internals (ADR-0008 layering). Do NOT introduce a
+/// must not reach into client internals (dsp-cli/ADR-0008 layering). Do NOT introduce a
 /// shared util module — the two copies are adjacent enough to audit on sight.
 ///
 /// `rsplit` always yields at least one element so `unwrap_or` is a no-panic
@@ -406,7 +406,7 @@ fn local_name(iri: &str) -> String {
 /// Describe a single resource by its internal IRI.
 ///
 /// Authentication is optional (instance-side read; anonymous callers see only
-/// publicly-visible resources per ADR-0007). Reads `DSP_TOKEN` from the
+/// publicly-visible resources per dsp-cli/ADR-0007). Reads `DSP_TOKEN` from the
 /// environment and delegates all work to `run_describe_impl` with injectable
 /// seams for deterministic testing.
 pub fn describe(

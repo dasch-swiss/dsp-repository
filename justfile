@@ -33,6 +33,8 @@ install-requirements: install-e2e-requirements
     cargo binstall -y bacon@3.23.0
     cargo binstall -y maudfmt@0.1.8
     cargo binstall -y cargo-machete@0.9.2
+    cargo binstall -y cargo-nextest@0.9.144
+    cargo binstall -y cargo-deny@0.20.2
 
 # Install Playwright browsers for E2E tests
 install-e2e-requirements: _check-node
@@ -77,8 +79,15 @@ check-datastar-delimiters:
 check-adr-refs:
     bash .github/scripts/check-adr-refs.sh
 
+# A live test needs a DSP stack, and without #[ignore] it runs — and passes
+# vacuously via its own early-return skip — under a plain test invocation.
+
+# Verify every dsp-cli live test is #[ignore]d. Run by `just check`. (DEV-7330)
+check-live-tests-ignored:
+    bash .github/scripts/check-live-tests-ignored.sh
+
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-datastar-delimiters check-adr-refs
+check: verify-checksums check-shared-paths check-datastar-delimiters check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -152,6 +161,7 @@ test:
     bash .github/scripts/check-shared-paths.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
     bash .github/scripts/check-adr-refs.test.sh
+    bash .github/scripts/check-live-tests-ignored.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":
@@ -664,3 +674,30 @@ lint-e2e: _check-node
     cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
     cd modules/editor/web-e2e-tests && npx @biomejs/biome check .
+
+###################
+# dsp-cli targets
+###################
+
+# Run the CLI with the given arguments (debug build).
+[group('dsp-cli')]
+dsp-cli-run *args:
+    cargo run -p dsp-cli --bin dsp -- {{ args }}
+
+# Needs a reachable DSP stack and the environment variables the live tests read
+# (DSP_TEST_SERVER, DSP_TEST_USER, DSP_TEST_PASSWORD, DSP_TEST_PROJECT,
+# DSP_TEST_CLASS_IRI, DSP_TEST_NON_ADMIN_TOKEN, DSP_TOKEN, and optionally
+# DSP_TEST_ORDER_BY_IRI). DSP_LIVE_STRICT=1 makes a missing required variable
+# panic instead of the test quietly skipping. `live_update_check` is excluded:
+# it calls out to crates.io to check for a newer dsp-cli release, not a DSP
+# stack, so it does not belong in a run gated on stack reachability.
+
+# Run the dsp-cli live tests (layer 5, dsp-cli/ADR-0009).
+[group('dsp-cli')]
+dsp-cli-test-live:
+    DSP_LIVE_STRICT=1 cargo nextest run -p dsp-cli --features live --run-ignored only -E 'binary(/^live_/) & !binary(live_update_check)'
+
+# Review pending insta snapshots for dsp-cli.
+[group('dsp-cli')]
+dsp-cli-snap-review:
+    cargo insta review -p dsp-cli

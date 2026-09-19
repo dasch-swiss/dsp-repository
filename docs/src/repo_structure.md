@@ -4,7 +4,7 @@
 
 This repository is a Rust workspace structured as a monorepo. The service and design-system crates are organized as subdirectories within the `modules/` directory; the crates shared by more than one service sit in `shared/`, a sibling of it at the repository root.
 
-Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: `ARCH-MAP.md` at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), `CONTEXT.md` at the root plus one per bounded context (`modules/editor/CONTEXT.md`, `modules/dpe/CONTEXT.md`, `areas/archive/CONTEXT.md`) and one per shared engine (`vitrinli/CONTEXT.md`, `chischtli/CONTEXT.md`), holding the domain vocabulary, and `docs/adr/` (architecture decision records). Six ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under `areas/` (`areas/deposit/`, `areas/archive/`, `areas/access/`), replacing `modules/` at the root, beside `shared/`, `mosaic/`, `vitrinli/` and `chischtli/` (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root `docs/adr/`, a root-level component's own decision history lives in its own `docs/adr/`, and a bare `ADR-NNNN` names the root series while `<component>/ADR-NNNN` names a component's (ADR-0006). All six are accepted; until the migration lands, this page describes the layout as it is.
+Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: `ARCH-MAP.md` at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), `CONTEXT.md` at the root plus one per bounded context (`modules/editor/CONTEXT.md`, `modules/dpe/CONTEXT.md`, `areas/archive/CONTEXT.md`) and one per shared engine (`vitrinli/CONTEXT.md`, `chischtli/CONTEXT.md`), holding the domain vocabulary, and `docs/adr/` (architecture decision records). Six ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under `areas/` (`areas/deposit/`, `areas/archive/`, `areas/access/`), replacing `modules/` at the root, beside `shared/`, `mosaic/`, `vitrinli/`, `chischtli/` and `dsp-cli/` (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root `docs/adr/`, a root-level component's own decision history lives in its own `docs/adr/`, and a bare `ADR-NNNN` names the root series while `<component>/ADR-NNNN` names a component's (ADR-0006). All six are accepted; until the migration lands, this page describes the layout as it is.
 
 ```txt
 modules/
@@ -33,14 +33,17 @@ shared/                        # Crates shared by more than one service
 ├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
 ├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
 └── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
+
+dsp-cli/                       # Command-line client for the DaSCH Service Platform (crate: dsp-cli); a root peer, not a service
 ```
 
 ## Crate and Folder Naming Convention
 
-**Crate names** follow the `{module}-{role}` pattern. **Folder names** strip the module prefix, keeping only the role part.
+**Crate names** follow the `{module}-{role}` pattern. **Folder names** strip the module prefix, keeping only the role part. `dsp-cli` is an explicit exception: it is a single crate named after the product it publishes, not after a module-plus-role pair, and its folder keeps the crate's full name.
 
 | Crate | Folder | Role |
 |-------|--------|------|
+| `dsp-cli` | `dsp-cli` | Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002) |
 | `dpe-core` | `dpe/core` | DPE's view model, caches and repositories over the shared contract (zero framework deps) |
 | `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core`, `shared-metadata` and `shared-fair` only) |
 | `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |

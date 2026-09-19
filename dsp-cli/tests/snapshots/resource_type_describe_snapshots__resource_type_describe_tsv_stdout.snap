@@ -1,0 +1,10 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+name	value_type	link_target	cardinality	label	is_builtin	data_model
+title	text		1-n	Title	false	beol
+hasAuthor	link	person	0-n	Author	false	beol
+hasText	text		0-1	Text	false	beol
+isPartOfCollection	link	Collection	0-n	is part of	false	biblio
+hasURI	uri		0-n	URI	false	biblio

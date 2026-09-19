@@ -1,0 +1,5 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[{"name":"beol","iri":"http://api.dasch.swiss/ontology/0801/beol/v2","label":"The BEOL data-model","last_modified":"2024-05-27T13:43:26.233048Z","is_builtin":false},{"name":"biblio","iri":"http://api.dasch.swiss/ontology/0801/biblio/v2","label":"Bibliographic references","last_modified":null,"is_builtin":false},{"name":"leibniz","iri":"http://api.dasch.swiss/ontology/0801/leibniz/v2","label":null,"last_modified":"2023-11-14T09:15:00.000000Z","is_builtin":false},{"name":"newton","iri":"http://api.dasch.swiss/ontology/0801/newton/v2","label":null,"last_modified":null,"is_builtin":false}]}

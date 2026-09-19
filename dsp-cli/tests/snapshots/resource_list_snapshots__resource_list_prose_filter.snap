@@ -1,0 +1,9 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: out
+---
+resources of type page on api.dasch.swiss (1 of 3 matching "folio 2"):
+
+  Folio 2r  http://rdfh.ch/0803/res-folio-2r
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

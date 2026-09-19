@@ -1,0 +1,45 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Run a raw SPARQL 1.1 query against the server's triplestore.
+
+See also: dsp docs sparql
+
+Usage: dsp vre sparql query [OPTIONS]
+
+Options:
+  -s, --server <SERVER>
+          DSP server URL or shortcut (e.g. `https://api.example.org` or `prod`). Can also be set via the `DSP_SERVER` environment variable or a `.env` file
+          
+          [env: DSP_SERVER=]
+
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --query <QUERY>
+          The SPARQL query text. Mutually exclusive with --query-file; if neither is given, the query is read from stdin. See --help's note on shell-history/`ps` exposure
+
+      --query-file <QUERY_FILE>
+          Path to a file containing the SPARQL query text. Mutually exclusive with --query. A leading-dash path is accepted as-is (`--query-file -foo.rq`), via `allow_hyphen_values`
+
+      --accept <ACCEPT>
+          Requested response media type: an alias (json/xml/csv/tsv/turtle/ ntriples/jsonld) or a raw media type containing '/'. Defaults to `json` (application/sparql-results+json) — the store's own default, with no Accept sent, is XML. See --help for the full alias table and the Fuseki silent-fallback caveat
+
+      --timeout <TIMEOUT>
+          Client-side request timeout, in whole seconds. Bounds the request DOWN from the server's own guardrail; it cannot raise it. Default: 3600 (one hour) — the server's own ~135s deadline is what ends a slow query in practice
+          
+          [default: 3600]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+--accept aliases: json (default, application/sparql-results+json), xml (application/sparql-results+xml), csv (text/csv), tsv (text/tab-separated-values), turtle (text/turtle), ntriples (application/n-triples), jsonld (application/ld+json). A value containing '/' is forwarded verbatim as a raw media type.
+
+Caveat: Fuseki does not 406 on an Accept it cannot satisfy — it silently falls back to its own default serialization (application/sparql-results+xml), so a wrong --accept shows up as unexpected output, not as an error.
+
+Requires a system-administrator (SystemAdmin) token.
+
+--query-file accepts a leading-dash path as-is (allow_hyphen_values).
+
+--query on the command line is the LEAST private input: it lands in shell history and is readable via `ps`/`/proc/<pid>/cmdline` for the life of the process, AND dsp-api logs the full query text together with your username on every call. Prefer stdin or --query-file for anything sensitive. See also: dsp docs sparql

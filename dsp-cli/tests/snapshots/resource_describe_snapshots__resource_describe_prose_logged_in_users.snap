@@ -1,0 +1,15 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+Resource: Logged-In-Only Folio
+  Type:         Page
+  IRI:          http://rdfh.ch/0803/logged-in-res
+  ARK:          https://ark.stage.dasch.swiss/ark:/72163/1/0803/logged-in
+  Created:      2020-03-15T08:00:00Z
+  Project:      http://rdfh.ch/projects/0803
+  Owner:        http://rdfh.ch/users/project-member
+  Visibility:   logged-in users
+  Your access:  view
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

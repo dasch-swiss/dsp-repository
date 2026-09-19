@@ -1,0 +1,5 @@
+---
+source: tests/project_describe_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.dasch.swiss","auth":"anonymous","exit_code":0},"data":{"iri":"http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF","shortcode":"0801","shortname":"beol","longname":"Bernoulli-Euler Online","status":"active","description":[{"value":"<b>BEOL</b> — early modern mathematics.","language":"en"}],"keywords":["Bernoulli","Euler","Mathematics"],"data_models":[{"name":"beol","iri":"http://api.dasch.swiss/ontology/0801/beol/v2"},{"name":"biblio","iri":"http://api.dasch.swiss/ontology/0801/biblio/v2"},{"name":"leibniz","iri":"http://api.dasch.swiss/ontology/0801/leibniz/v2"},{"name":"newton","iri":"http://api.dasch.swiss/ontology/0801/newton/v2"}]}}

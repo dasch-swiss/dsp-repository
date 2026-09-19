@@ -1,0 +1,5 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[{"name":"Archive","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#Archive","label":"Archive","is_builtin":false},{"name":"letter","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#letter","label":"Letter","is_builtin":false},{"name":"noLabelType","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#noLabelType","label":null,"is_builtin":false}]}

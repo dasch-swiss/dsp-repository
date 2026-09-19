@@ -1,0 +1,5 @@
+---
+source: tests/resource_describe_values_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0,"note":"results may be filtered; login to see private resources"},"data":{"label":"n6r","iri":"http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw","resource_type":"Page","ark_url":"https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr","creation_date":"2011-04-14T07:32:49Z","last_modified":"2024-03-10T15:00:00Z","attached_project":"http://rdfh.ch/projects/3ABR_2i8QYGSIDvmP9mlEw","owner":"http://rdfh.ch/users/IShOmBIGSnO1TXd4-Ty4Sw","visibility":"public","your_access":"view","values":[{"field":"hasTranscription","field_label":"Transcription","values":[{"value_type":"text","text":"some transcription","comment":"reading uncertain"}]}]}}

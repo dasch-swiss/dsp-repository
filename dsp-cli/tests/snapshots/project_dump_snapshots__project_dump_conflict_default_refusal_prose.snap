@@ -1,0 +1,5 @@
+---
+source: tests/project_dump_snapshots.rs
+expression: out
+---
+

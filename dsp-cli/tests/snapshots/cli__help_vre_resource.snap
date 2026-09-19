@@ -1,0 +1,21 @@
+---
+source: tests/cli.rs
+expression: text
+---
+List resource instances within a project.
+
+Fetches the actual data instances (scholarly objects) stored in the DSP server for a given resource-type, with optional pagination. See also: dsp docs concepts
+
+Usage: dsp vre resource [OPTIONS] <COMMAND>
+
+Commands:
+  list      List resource instances of a given type within a project
+  describe  Fetch the envelope metadata of a single resource by its internal IRI
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+  -h, --help
+          Print help (see a summary with '-h')

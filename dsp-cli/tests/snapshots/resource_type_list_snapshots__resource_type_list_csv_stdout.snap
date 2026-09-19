@@ -1,0 +1,8 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: stdout
+---
+name,iri,label,is_builtin
+Archive,http://api.dasch.swiss/ontology/0801/beol/v2#Archive,Archive,false
+letter,http://api.dasch.swiss/ontology/0801/beol/v2#letter,Letter,false
+noLabelType,http://api.dasch.swiss/ontology/0801/beol/v2#noLabelType,,false

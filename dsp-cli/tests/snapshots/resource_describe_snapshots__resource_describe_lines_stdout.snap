@@ -1,0 +1,5 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: stdout
+---
+n6r	http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw

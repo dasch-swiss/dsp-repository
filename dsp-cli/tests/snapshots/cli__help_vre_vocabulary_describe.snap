@@ -1,0 +1,64 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Describe a single vocabulary's full tree.
+
+See also: dsp docs concepts
+
+Usage: dsp vre vocabulary describe [OPTIONS]
+
+Options:
+  -s, --server <SERVER>
+          DSP server URL or shortcut (e.g. `https://api.example.org` or `prod`). Can also be set via the `DSP_SERVER` environment variable or a `.env` file
+          
+          [env: DSP_SERVER=]
+
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+  -p, --project <PROJECT>
+          Shortcode, shortname, or IRI of the project. Required only when --vocabulary is a bare name (a full IRI needs no project)
+
+      --vocabulary <VOCABULARY>
+          Name or IRI of the vocabulary (or one of its nodes) to describe
+
+      --subtree
+          Narrow output to the addressed node's own branch. Requires a node IRI (a bare name or a root IRI is a usage error)
+
+      --format <FORMAT>
+          Output format (default: prose)
+
+          Possible values:
+          - prose: Rich human-readable prose output with contextual hints (default)
+          - json:  Newline-delimited JSON (one object per line)
+          - lines: One identifier per line, for shell pipeline consumption
+          - csv:   Comma-separated values with a header row
+          - tsv:   Tab-separated values with a header row
+          
+          [default: prose]
+
+  -j, --json
+          Shortcut for --format=json
+
+  -l, --lines
+          Shortcut for --format=lines
+
+      --columns <COLS>
+          Output columns for tabular formats (csv, tsv, lines): comma-separated list that selects and reorders columns. Valid names are listed in the Columns line below. Duplicates are rejected
+
+      --no-header
+          Omit the csv/tsv header row, e.g. appending rows to an existing file
+
+      --header-only
+          Emit only the csv/tsv header row, no data rows. Note: the command still contacts the server
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+Columns (--columns): node_iri, number, name, label_en, label_de, label_fr, label_it, label_rm, label, comment_en, comment_de, comment_fr, comment_it, comment_rm, comment, path, position, depth, parent_iri
+
+Emits the WHOLE vocabulary tree with no depth limit and no pagination — the largest vocabulary on prod has ~4400 nodes.
+`number` is a 1-based dotted outline in DFS order; it is NOT a sort key (`1.10` sorts before `1.2` lexicographically) — never re-sort tabular output on this column.
+A node IRI (e.g. pasted from `resource describe --values`) resolves upward to its vocabulary automatically; the addressed node is marked in prose/json output (not in tabular columns — match on node_iri instead).
+--subtree narrows output to the addressed node's own branch; it requires a node IRI — a bare name or a root IRI with --subtree is a usage error.

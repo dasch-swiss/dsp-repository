@@ -1,0 +1,12 @@
+---
+source: tests/resource_describe_values_snapshots.rs
+expression: stdout
+---
+hasPagenum	Page Number	text	n6r
+hasComment	Comment	text	This is a text value with stripped standoff.
+hasSequenceNumber	Sequence Number	integer	42
+hasMeasurement	Measurement	decimal	3.14159
+isPublished	Is Published	boolean	true
+hasPublicationDate	Publication Date	date	1489 CE (GREGORIAN)
+hasKeyword	Keyword	text	incunabula
+hasKeyword	Keyword	text	manuscript

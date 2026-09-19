@@ -1,0 +1,15 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: out
+---
+Resource-type: manuscript
+  Label:          Manuscript
+  Extends:        writtenSource
+  IRI:            http://api.dasch.swiss/ontology/0801/beol/v2#manuscript
+  Data-model:     beol
+
+  Fields (2):
+    title               text  1-n  Title
+    unknownBiblioField  —     0-n    [from biblio]
+
+[anonymous on https://api.dasch.swiss]

@@ -1,0 +1,8 @@
+---
+source: tests/project_list_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+0512	sandbox	
+0801	beol	Bernoulli-Euler Online
+0820	incunabula	Basel Early Book Printing
+0918	roud	Gustave Roud

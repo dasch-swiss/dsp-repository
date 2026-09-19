@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+assertion_line: 307
+expression: out
+---
+{"_meta":{"server":"https://api.test.dasch.swiss","auth":"authenticated","exit_code":0},"data":{"deleted":false,"note":"no dump existed to delete; a probe created an in-progress dump probe-id-999 that will complete server-side"}}

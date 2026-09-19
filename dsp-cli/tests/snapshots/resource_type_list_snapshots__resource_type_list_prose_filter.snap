@@ -1,0 +1,9 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: out
+---
+resource-types in beol on api.dasch.swiss (1 of 3 matching "let"):
+
+  letter  Letter
+
+[anonymous on api.dasch.swiss]

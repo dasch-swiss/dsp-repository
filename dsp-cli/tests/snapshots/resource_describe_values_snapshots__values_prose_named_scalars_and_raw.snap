@@ -1,0 +1,32 @@
+---
+source: tests/resource_describe_values_snapshots.rs
+expression: out
+---
+Resource: n6r
+  Type:         Page
+  IRI:          http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw
+  ARK:          https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr
+  Created:      2011-04-14T07:32:49Z
+  Modified:     2024-03-10T15:00:00Z
+  Project:      http://rdfh.ch/projects/3ABR_2i8QYGSIDvmP9mlEw
+  Owner:        http://rdfh.ch/users/IShOmBIGSnO1TXd4-Ty4Sw
+  Visibility:   public
+  Your access:  view
+
+Values:
+  Copying Date (hasCopyingDate)
+    1489 CE – 1490 CE (GREGORIAN)
+  Timestamp (hasTimestamp)
+    2024-03-10T15:00:00Z
+  External URI (hasExternalUri)
+    https://www.example.com/resource
+  Color (hasColor)
+    #ff3300
+  Location (hasLocation)
+    2661552
+  Duration (hasDuration)
+    PT10S
+  hasStillImageFileValue
+    sentinel
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

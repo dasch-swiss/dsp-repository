@@ -1,0 +1,21 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: out
+---
+Resource-type: manuscript
+  Label:          Manuscript
+  Extends:        writtenSource
+  Representation: still-image
+  IRI:            http://api.dasch.swiss/ontology/0801/beol/v2#manuscript
+  Data-model:     beol
+
+  Fields (7):
+    title                   text                 1-n  Title
+    hasAuthor               link → person        0-n  Author
+    hasText                 text                 0-1  Text
+    isPartOfCollection      link → Collection    0-n  is part of  [from biblio]
+    hasURI                  uri                  0-n  URI  [from biblio]
+    arkUrl                  uri                  1      (built-in)
+    hasStillImageFileValue  still-image          1      (built-in)
+
+[anonymous on https://api.dasch.swiss]

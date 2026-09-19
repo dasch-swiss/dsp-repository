@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+assertion_line: 427
+expression: out
+---
+{"_meta":{"server":"https://api.test.dasch.swiss","auth":"authenticated","exit_code":1},"error":{"kind":"conflict","message":"conflict: the server's single dump slot is held by a different project (http://rdfh.ch/projects/0002); re-run with --replace --discard-other-project to discard that project's dump and create this one's"}}

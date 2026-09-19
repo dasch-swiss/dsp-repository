@@ -1,0 +1,5 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0,"pages_fetched":2,"may_have_more_results":false,"note":"results may be filtered; login to see private resources"},"data":[{"label":"Folio 1r","iri":"http://rdfh.ch/0803/res-folio-1r","ark_url":"http://ark.dasch.swiss/ark:/72163/1/0803/res-folio-1r","creation_date":"2023-04-10T08:00:00Z","last_modified":"2024-01-15T10:30:00Z","resource_type":"page"},{"label":"Folio 1v","iri":"http://rdfh.ch/0803/res-folio-1v","ark_url":null,"creation_date":"2023-04-10T08:05:00Z","last_modified":null,"resource_type":"page"},{"label":"Folio 2r","iri":"http://rdfh.ch/0803/res-folio-2r","ark_url":"http://ark.dasch.swiss/ark:/72163/1/0803/res-folio-2r","creation_date":null,"last_modified":null,"resource_type":"page"}]}

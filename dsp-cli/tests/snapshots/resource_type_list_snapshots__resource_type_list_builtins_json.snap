@@ -1,0 +1,5 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[{"name":"Archive","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#Archive","label":"Archive","is_builtin":false},{"name":"AudioSegment","iri":"http://api.knora.org/ontology/knora-api/v2#AudioSegment","label":"Audio Annotation","is_builtin":true},{"name":"letter","iri":"http://api.dasch.swiss/ontology/0801/beol/v2#letter","label":"Letter","is_builtin":false},{"name":"LinkObj","iri":"http://api.knora.org/ontology/knora-api/v2#LinkObj","label":"Link Object","is_builtin":true},{"name":"Region","iri":"http://api.knora.org/ontology/knora-api/v2#Region","label":"Region","is_builtin":true},{"name":"VideoSegment","iri":"http://api.knora.org/ontology/knora-api/v2#VideoSegment","label":"Video Annotation","is_builtin":true}]}

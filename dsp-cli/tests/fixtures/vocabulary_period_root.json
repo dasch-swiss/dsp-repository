@@ -1,0 +1,689 @@
+{
+  "type": "ListGetResponseADM",
+  "list": {
+    "listinfo": {
+      "id": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+      "projectIri": "http://rdfh.ch/projects/n0eRr0vWTDOArdaBAZ-jQQ",
+      "name": "epoch",
+      "labels": [
+        {
+          "value": "A3 Period",
+          "language": "de"
+        },
+        {
+          "value": "Period",
+          "language": "en"
+        }
+      ],
+      "comments": [
+        {
+          "value": "Datierung (Epoche)",
+          "language": "de"
+        },
+        {
+          "value": "Dating (period)",
+          "language": "en"
+        }
+      ],
+      "isRootNode": true
+    },
+    "children": [
+      {
+        "id": "http://rdfh.ch/lists/0838/rNUta2f7TK2f8S6DF-FmjQ",
+        "name": "b1HI8VRyTpOizUObYMau0w-8vd12qi8w995bp9s9ncn8",
+        "labels": [
+          {
+            "value": "Erdzeitalter",
+            "language": "de"
+          },
+          {
+            "value": "Geological time scale",
+            "language": "en"
+          }
+        ],
+        "comments": [],
+        "position": 0,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": []
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/foE57VWOSKWv2UNb7LSOKQ",
+        "name": "0838-yi78lo33yq0xvwrdzxynq",
+        "labels": [
+          {
+            "value": "Pleistozän",
+            "language": "de"
+          },
+          {
+            "value": "Pleistocene",
+            "language": "en"
+          }
+        ],
+        "comments": [],
+        "position": 1,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": []
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/_Ig_v8h2Rb6kYFdY5AEzqQ",
+        "name": "0838-yq2m71pkb8gozkgwuyd0v",
+        "labels": [
+          {
+            "value": "Holozän",
+            "language": "de"
+          },
+          {
+            "value": "Holocene",
+            "language": "en"
+          }
+        ],
+        "comments": [],
+        "position": 2,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": []
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/B5smJsuTRP-ZlO4kA7l9XA",
+        "name": "Palaeolithic",
+        "labels": [
+          {
+            "value": "Paläolithikum",
+            "language": "de"
+          },
+          {
+            "value": "Palaeolithic",
+            "language": "en"
+          }
+        ],
+        "comments": [],
+        "position": 3,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/Wf0OE7L2Tgu7OwCrMSgIwA",
+            "name": "LowerPalaeolithic",
+            "labels": [
+              {
+                "value": "Altpaläolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Lower Palaeolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/JK4rbYU_TgSafVGT35tmVQ",
+            "name": "MiddlePalaeolithic",
+            "labels": [
+              {
+                "value": "Mittelpaläolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Middle Palaeolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/CsyfnsvzTEersh_HUe_qLw",
+            "name": "UpperPalaeolithic",
+            "labels": [
+              {
+                "value": "Jungpaläolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Upper Palaeolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 2,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/aooqfC-ZQoyGdEAqIdNhwg",
+            "name": "LatePalaeolithic",
+            "labels": [
+              {
+                "value": "Epipaläolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Epipalaeolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 3,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/5BX41xBnTfm-0tyLmvoiWA",
+        "name": "Mesolithic",
+        "labels": [
+          {
+            "value": "Mesolithikum",
+            "language": "de"
+          },
+          {
+            "value": "Mesolithic",
+            "language": "en"
+          }
+        ],
+        "comments": [
+          {
+            "value": "None",
+            "language": "en"
+          },
+          {
+            "value": "None",
+            "language": "de"
+          }
+        ],
+        "position": 4,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/--2VDZlcRcG3aMR_Xf7UHA",
+            "name": "EarlyMesolithic",
+            "labels": [
+              {
+                "value": "Frühmesolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Early Mesolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/OrPxV515SYCv-LZzN2Uchg",
+            "name": "LateMesolithic",
+            "labels": [
+              {
+                "value": "Spätmesolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Late Mesolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/o1VQb_9vQhS7u8x2S9D0iQ",
+        "name": "Neolithic",
+        "labels": [
+          {
+            "value": "Neolithikum",
+            "language": "de"
+          },
+          {
+            "value": "Neolithic",
+            "language": "en"
+          }
+        ],
+        "comments": [
+          {
+            "value": "None",
+            "language": "en"
+          },
+          {
+            "value": "None",
+            "language": "de"
+          }
+        ],
+        "position": 5,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/ha-FQUgTQN6iz3H6xJn2zw",
+            "name": "EarlyNeolithic",
+            "labels": [
+              {
+                "value": "Frühneolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Early Neolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/LODxlQd4RhibaZYX5fk9mA",
+            "name": "MiddleNeolithic",
+            "labels": [
+              {
+                "value": "Mittelneolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Middle Neolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/IfZg_SFlSo6OZmTE2x0sWQ",
+            "name": "UpperNeolithic",
+            "labels": [
+              {
+                "value": "Spätneolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Upper Neolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 2,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/ZsVjdOHhQhiTR19Gvo3tvw",
+            "name": "LateNeolithic",
+            "labels": [
+              {
+                "value": "Endneolithikum",
+                "language": "de"
+              },
+              {
+                "value": "Late Neolithic",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 3,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/J3j6A3BATZS4JlWOI00asw",
+        "name": "BronzeAge",
+        "labels": [
+          {
+            "value": "Bronzezeit",
+            "language": "de"
+          },
+          {
+            "value": "Bronze Age",
+            "language": "en"
+          }
+        ],
+        "comments": [
+          {
+            "value": "None",
+            "language": "en"
+          },
+          {
+            "value": "None",
+            "language": "de"
+          }
+        ],
+        "position": 6,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/9yVNTwfxRaiX7q14bvnwdw",
+            "name": "EarlyBronzeAge",
+            "labels": [
+              {
+                "value": "Frühbronzezeit",
+                "language": "de"
+              },
+              {
+                "value": "Early Bronze Age",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/PRaJHiZiTtWt6PlROX7SGw",
+            "name": "MiddleBronzeAge",
+            "labels": [
+              {
+                "value": "Mittelbronzezeit",
+                "language": "de"
+              },
+              {
+                "value": "Middle Bronze Age",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/wzzBquC4ShK6Uyw3kzP-iA",
+            "name": "LateBronzeAge",
+            "labels": [
+              {
+                "value": "Spätbronzezeit",
+                "language": "de"
+              },
+              {
+                "value": "Late Bronze Age",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 2,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/_GR5gZ6KQh-Zc8m-yfyUbQ",
+        "name": "IronAge",
+        "labels": [
+          {
+            "value": "Eisenzeit",
+            "language": "de"
+          },
+          {
+            "value": "Iron Age",
+            "language": "en"
+          }
+        ],
+        "comments": [
+          {
+            "value": "None",
+            "language": "en"
+          },
+          {
+            "value": "None",
+            "language": "de"
+          }
+        ],
+        "position": 7,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/UgPy7jr9TAuGXuJBGEQoEQ",
+            "name": "EarlyIronAge",
+            "labels": [
+              {
+                "value": "Frühe Eisenzeit",
+                "language": "de"
+              },
+              {
+                "value": "Early Iron Age",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/f-gThGI-QpOuCgiK2MmFRg",
+            "name": "LateIronAge",
+            "labels": [
+              {
+                "value": "Späte Eisenzeit",
+                "language": "de"
+              },
+              {
+                "value": "Late Iron Age",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/Pn9S3P9XTQ6z9CCw66fQpQ",
+        "name": "RomanPeriod",
+        "labels": [
+          {
+            "value": "Römische Epoche",
+            "language": "de"
+          },
+          {
+            "value": "Roman Period",
+            "language": "en"
+          }
+        ],
+        "comments": [
+          {
+            "value": "None",
+            "language": "en"
+          },
+          {
+            "value": "None",
+            "language": "de"
+          }
+        ],
+        "position": 8,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/wL2GxtjOS4aY2dIsWbNRaQ",
+            "name": "EarlyRoman",
+            "labels": [
+              {
+                "value": "Frührömisch / Römische Kaiserzeit",
+                "language": "de"
+              },
+              {
+                "value": "Early Roman Period",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/OyJWu0NYQyay2xtziJkbsA",
+            "name": "Late Roman",
+            "labels": [
+              {
+                "value": "Spätrömisch / Spätantike",
+                "language": "de"
+              },
+              {
+                "value": "Late Roman Period",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/UErx_UMBS4m71nmD5Vk9Fg",
+        "name": "MiddleAges",
+        "labels": [
+          {
+            "value": "Mittelalter",
+            "language": "de"
+          },
+          {
+            "value": "Middle Ages",
+            "language": "en"
+          }
+        ],
+        "comments": [
+          {
+            "value": "None",
+            "language": "en"
+          },
+          {
+            "value": "None",
+            "language": "de"
+          }
+        ],
+        "position": 9,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/aSkAdV3OTouScG43yKY0kQ",
+            "name": "EarlyMiddleAges",
+            "labels": [
+              {
+                "value": "Frühmittelalter",
+                "language": "de"
+              },
+              {
+                "value": "Early Middle Ages",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/KENBTUfLROC42f7IYqqUkw",
+            "name": "HighMiddleAges",
+            "labels": [
+              {
+                "value": "Hochmittelalter",
+                "language": "de"
+              },
+              {
+                "value": "High Middle Ages",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/e9qbg9rvQla6dNd2gPi2Ww",
+            "name": "LateMiddleAges",
+            "labels": [
+              {
+                "value": "Spätmittelalter",
+                "language": "de"
+              },
+              {
+                "value": "Late Middle Ages",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 2,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "http://rdfh.ch/lists/0838/qKiyx9SqQ_ypPGKgK9uAAw",
+        "name": "ModernAge",
+        "labels": [
+          {
+            "value": "Neuzeit",
+            "language": "de"
+          },
+          {
+            "value": "Modern Age",
+            "language": "en"
+          }
+        ],
+        "comments": [],
+        "position": 10,
+        "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+        "children": [
+          {
+            "id": "http://rdfh.ch/lists/0838/-XkEG3FATueSvvkvkndacA",
+            "name": "0838-adt1afxovliblud4srb48",
+            "labels": [
+              {
+                "value": "Frühe Neuzeit",
+                "language": "de"
+              },
+              {
+                "value": "Early modern period",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 0,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          },
+          {
+            "id": "http://rdfh.ch/lists/0838/VVTEI1pORiCGMCB1UMUdYg",
+            "name": "0838-aoautqctuaka1up6kzp3q6",
+            "labels": [
+              {
+                "value": "Moderne",
+                "language": "de"
+              },
+              {
+                "value": "Modernity",
+                "language": "en"
+              }
+            ],
+            "comments": [],
+            "position": 1,
+            "hasRootNode": "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

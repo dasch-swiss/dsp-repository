@@ -1,0 +1,81 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Trigger and download a project dump (a server-produced bagit-zip archive).
+
+Connects to the DSP server, triggers a server-side dump of the specified project, polls until the dump is ready, and downloads the resulting bagit-zip archive to a local file. Binary assets (images, audio, video, etc.) are included by default; pass `--skip-assets` to download only the structured RDF data.
+
+**Requires a system-administrator token.** Obtain one via `dsp auth login --server <server>` or set the `DSP_TOKEN` environment variable.
+
+Usage: dsp vre project dump [OPTIONS]
+
+Options:
+  -s, --server <SERVER>
+          DSP server URL or shortcut (e.g. `https://api.example.org` or `prod`). Can also be set via the `DSP_SERVER` environment variable or a `.env` file
+          
+          [env: DSP_SERVER=]
+
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+  -p, --project <PROJECT>
+          Shortcode, shortname, or IRI of the project to dump
+
+      --skip-assets
+          Skip binary assets (images, audio, video, etc.); download only the project's structured RDF data. Assets are included by default
+
+  -o, --output <OUTPUT>
+          Write the dump to this path instead of the default `./<shortcode>-<timestamp>.zip`
+
+      --force
+          Overwrite an existing output file. Without this flag, the command refuses to overwrite an existing path
+
+      --cleanup
+          Delete the server-side dump after a successful download
+
+      --timeout <TIMEOUT>
+          Abort if the dump has not completed within this many seconds (must be at least 1)
+          
+          [default: 3600]
+
+      --replace
+          Discard this project's existing dump and create a fresh one. If the server's single dump slot is held by a **different** project, this refuses unless `--discard-other-project` is also given
+
+      --delete
+          Remove this project's dump without downloading. If the slot is held by a different project, this is a no-op (it never removes another project's dump)
+
+      --discard-other-project
+          Only valid with `--replace`. The DSP-API holds one dump server-wide; if the slot is held by a **different** project, also discard *that* project's dump to make room. Without this, `--replace` refuses when the slot belongs to another project. (Distinct from `--force`, which only governs overwriting the local output file.)
+
+      --format <FORMAT>
+          Output format (default: prose)
+
+          Possible values:
+          - prose: Rich human-readable prose output with contextual hints (default)
+          - json:  Newline-delimited JSON (one object per line)
+          - lines: One identifier per line, for shell pipeline consumption
+          - csv:   Comma-separated values with a header row
+          - tsv:   Tab-separated values with a header row
+          
+          [default: prose]
+
+  -j, --json
+          Shortcut for --format=json
+
+  -l, --lines
+          Shortcut for --format=lines
+
+      --columns <COLS>
+          Output columns for tabular formats (csv, tsv, lines): comma-separated list that selects and reorders columns. Valid names are listed in the Columns line below. Duplicates are rejected
+
+      --no-header
+          Omit the csv/tsv header row, e.g. appending rows to an existing file
+
+      --header-only
+          Emit only the csv/tsv header row, no data rows. Note: the command still contacts the server
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+Columns (--columns): path  (--delete mode: deleted)

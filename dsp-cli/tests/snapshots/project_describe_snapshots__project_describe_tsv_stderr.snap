@@ -1,0 +1,5 @@
+---
+source: tests/project_describe_snapshots.rs
+expression: buf_to_string(&err_buf)
+---
+[anonymous on https://api.dasch.swiss]

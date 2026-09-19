@@ -1,0 +1,5 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0,"note":"results may be filtered; login to see private resources"},"data":{"label":"Folio 1r","iri":"http://rdfh.ch/0803/res-folio-1r","resource_type":"Page","ark_url":null,"creation_date":"2023-04-10T08:00:00Z","last_modified":null,"attached_project":"http://rdfh.ch/projects/0803","owner":"http://rdfh.ch/users/daisy-duck","visibility":"public","your_access":"view"}}

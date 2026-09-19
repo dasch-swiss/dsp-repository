@@ -1,0 +1,77 @@
+---
+source: tests/cli.rs
+expression: text
+---
+List resource instances of a given type within a project.
+
+Fetches the actual data instances stored in DSP for a resource-type. Supports single-page (`--page N`) and all-pages (`--all`) modes. Authentication is optional; anonymous callers see only public resources.
+
+See also: dsp docs concepts
+
+Usage: dsp vre resource list [OPTIONS]
+
+Options:
+  -s, --server <SERVER>
+          DSP server URL or shortcut (e.g. `https://api.example.org` or `prod`). Can also be set via the `DSP_SERVER` environment variable or a `.env` file
+          
+          [env: DSP_SERVER=]
+
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+  -p, --project <PROJECT>
+          Shortcode, shortname, or IRI of the project
+
+      --resource-type <RESOURCE_TYPE>
+          Name or full IRI of the resource-type to list instances of. A bare name triggers a scan across all project data-models; use `--data-model` or a full IRI (`://` heuristic) to skip the scan
+
+      --data-model <DATA_MODEL>
+          Name or IRI of the data-model to scope the resource-type search. Optional; narrows the bare-name scan to one data-model
+
+      --page <PAGE>
+          Page number to fetch (zero-based). Cannot be combined with `--all`. Defaults to page 0 when neither `--page` nor `--all` is given
+
+      --all
+          Fetch all pages until the server reports no more results. Cannot be combined with `--page`
+
+      --filter <FILTER>
+          Filter resources by case-insensitive substring over the label
+
+      --order-by <ORDER_BY>
+          Field name (e.g. `title`) or full field IRI to sort by (ascending). A bare field name is resolved to the resource-type's field IRI; a full IRI (contains `://`) is passed to the server verbatim. Targets project-defined fields; ascending order only
+
+      --format <FORMAT>
+          Output format (default: prose)
+
+          Possible values:
+          - prose: Rich human-readable prose output with contextual hints (default)
+          - json:  Newline-delimited JSON (one object per line)
+          - lines: One identifier per line, for shell pipeline consumption
+          - csv:   Comma-separated values with a header row
+          - tsv:   Tab-separated values with a header row
+          
+          [default: prose]
+
+  -j, --json
+          Shortcut for --format=json
+
+  -l, --lines
+          Shortcut for --format=lines
+
+      --columns <COLS>
+          Output columns for tabular formats (csv, tsv, lines): comma-separated list that selects and reorders columns. Valid names are listed in the Columns line below. Duplicates are rejected
+
+      --no-header
+          Omit the csv/tsv header row, e.g. appending rows to an existing file
+
+      --header-only
+          Emit only the csv/tsv header row, no data rows. Note: the command still contacts the server
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+Columns (--columns): label, iri, ark_url, creation_date, last_modified, resource_type
+
+Scan behaviour: a bare --resource-type name (no ://) scans all project data-models; use --data-model or a full IRI to skip the scan. See also: `dsp docs concepts`
+
+--order-by: field name (e.g. title) or full field IRI; sorts ascending; targets project-defined fields (full IRI passed verbatim; bare name resolved to its field IRI)

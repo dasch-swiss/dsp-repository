@@ -1,0 +1,48 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Log out from a DSP server and clear the cached session token
+
+Usage: dsp auth logout [OPTIONS]
+
+Options:
+  -s, --server <SERVER>
+          DSP server URL or shortcut (e.g. `https://api.example.org` or `prod`). Can also be set via the `DSP_SERVER` environment variable or a `.env` file
+          
+          [env: DSP_SERVER=]
+
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --format <FORMAT>
+          Output format (default: prose)
+
+          Possible values:
+          - prose: Rich human-readable prose output with contextual hints (default)
+          - json:  Newline-delimited JSON (one object per line)
+          - lines: One identifier per line, for shell pipeline consumption
+          - csv:   Comma-separated values with a header row
+          - tsv:   Tab-separated values with a header row
+          
+          [default: prose]
+
+  -j, --json
+          Shortcut for --format=json
+
+  -l, --lines
+          Shortcut for --format=lines
+
+      --columns <COLS>
+          Output columns for tabular formats (csv, tsv, lines): comma-separated list that selects and reorders columns. Valid names are listed in the Columns line below. Duplicates are rejected
+
+      --no-header
+          Omit the csv/tsv header row, e.g. appending rows to an existing file
+
+      --header-only
+          Emit only the csv/tsv header row, no data rows. Note: the command still contacts the server
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+Columns (--columns): server, was_cached

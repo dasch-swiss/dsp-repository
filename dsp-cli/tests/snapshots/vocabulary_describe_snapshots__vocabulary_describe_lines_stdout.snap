@@ -1,0 +1,10 @@
+---
+source: tests/vocabulary_describe_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+http://rdfh.ch/lists/0838/prehistory	1
+http://rdfh.ch/lists/0838/stoneAge	1.1
+http://rdfh.ch/lists/0838/neolithic	1.1.1
+http://rdfh.ch/lists/0838/bronzeAge	1.2
+http://rdfh.ch/lists/0838/antiquity	2
+http://rdfh.ch/lists/0838/modernPeriod	3

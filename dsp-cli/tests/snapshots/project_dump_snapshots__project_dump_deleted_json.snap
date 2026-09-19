@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+assertion_line: 244
+expression: buf_to_string(&buf)
+---
+{"_meta":{"server":"https://api.test.dasch.swiss","auth":"authenticated","exit_code":0},"data":{"deleted":true}}

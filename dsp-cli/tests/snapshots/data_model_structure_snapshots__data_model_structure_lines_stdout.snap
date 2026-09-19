@@ -1,0 +1,9 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: stdout
+---
+letter	Book	link	cites
+letter	person	link	hasSender
+letter	writtenSource	inherits	
+manuscript	person	link	hasAuthor
+manuscript	writtenSource	inherits

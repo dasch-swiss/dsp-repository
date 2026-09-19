@@ -1,0 +1,6 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: stdout
+---
+label,iri,resource_type,ark_url,creation_date,last_modified,attached_project,owner,visibility,your_access
+n6r,http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw,Page,https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr,2011-04-14T07:32:49Z,2024-03-10T15:00:00Z,http://rdfh.ch/projects/3ABR_2i8QYGSIDvmP9mlEw,http://rdfh.ch/users/IShOmBIGSnO1TXd4-Ty4Sw,public,view

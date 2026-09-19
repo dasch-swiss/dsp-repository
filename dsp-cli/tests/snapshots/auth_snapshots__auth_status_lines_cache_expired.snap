@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 448
+expression: buf_to_string(&buf)
+---
+https://api.example.com

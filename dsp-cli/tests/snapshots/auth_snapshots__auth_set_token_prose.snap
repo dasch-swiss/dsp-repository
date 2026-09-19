@@ -1,0 +1,5 @@
+---
+source: tests/auth_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Cached token for https://api.dev.dasch.swiss as http://rdfh.ch/users/jDEZpYNRSlaOM7wb55ZQpw. Token expires 2026-06-25 12:34 UTC.

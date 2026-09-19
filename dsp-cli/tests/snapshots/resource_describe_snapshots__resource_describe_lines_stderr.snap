@@ -1,0 +1,5 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: stderr
+---
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

@@ -1,0 +1,12 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Vocabularies on api.dasch.swiss (4):
+
+  epoch  Period / Epoche
+  material  Material
+  person  Person / Person
+    Miscellaneous
+
+[anonymous on api.dasch.swiss]

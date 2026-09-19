@@ -1,0 +1,15 @@
+---
+source: tests/resource_describe_snapshots.rs
+expression: out
+---
+Resource: Private Folio
+  Type:         Page
+  IRI:          http://rdfh.ch/0803/private-res
+  ARK:          https://ark.stage.dasch.swiss/ark:/72163/1/0803/private
+  Created:      2022-01-10T12:00:00Z
+  Project:      http://rdfh.ch/projects/0803
+  Owner:        http://rdfh.ch/users/project-admin
+  Visibility:   project members only
+  Your access:  manage
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

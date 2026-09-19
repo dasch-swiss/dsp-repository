@@ -1,0 +1,16 @@
+---
+source: tests/data_model_describe_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Data-model: beol
+  Label:          The BEOL data-model
+  IRI:            http://api.dasch.swiss/ontology/0801/beol/v2
+  Last-modified:  2024-05-27
+
+  Resource-types (4):
+    Archive      Archive
+    basicLetter  Basic Letter
+    letter       
+    person       Person
+
+[anonymous on https://api.dasch.swiss]

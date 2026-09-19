@@ -1,0 +1,12 @@
+---
+source: tests/resource_describe_values_snapshots.rs
+expression: stdout
+---
+field,field_label,value_type,value
+hasCopyingDate,Copying Date,date,1489 CE – 1490 CE (GREGORIAN)
+hasTimestamp,Timestamp,time,2024-03-10T15:00:00Z
+hasExternalUri,External URI,uri,https://www.example.com/resource
+hasColor,Color,color,#ff3300
+hasLocation,Location,geoname,2661552
+hasDuration,Duration,interval,PT10S
+hasStillImageFileValue,,text,sentinel

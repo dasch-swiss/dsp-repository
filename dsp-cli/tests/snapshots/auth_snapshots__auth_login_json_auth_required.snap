@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 609
+expression: out.clone()
+---
+{"_meta":{"server":"https://api.example.com","auth":"anonymous","exit_code":3},"error":{"kind":"auth_required","message":"authentication required: Authentication failed on https://api.example.com"}}

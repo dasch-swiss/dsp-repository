@@ -1,0 +1,8 @@
+---
+source: tests/dump_progress_snapshots.rs
+expression: out
+---
+{"event":"discarding_other_project_dump","id":"foreign-dump-abc","project_iri":"http://rdfh.ch/projects/0002"}
+{"event":"triggered","id":"new-dump-xyz"}
+{"event":"downloading"}
+{"event":"done","bytes":98765}

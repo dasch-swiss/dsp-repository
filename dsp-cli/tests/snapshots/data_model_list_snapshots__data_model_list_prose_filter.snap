@@ -1,0 +1,9 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: out
+---
+data-models on api.dasch.swiss (1 of 4 matching "beol"):
+
+  beol  The BEOL data-model  2024-05-27
+
+[anonymous on api.dasch.swiss]

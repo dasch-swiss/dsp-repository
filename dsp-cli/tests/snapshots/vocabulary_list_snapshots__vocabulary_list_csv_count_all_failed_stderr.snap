@@ -1,0 +1,5 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: buf_to_string(&err_buf)
+---
+[anonymous on api.dasch.swiss] — --count issues one extra tree fetch per vocabulary (sequential; can be dozens of calls on projects with many vocabularies). 4 of 4 per-vocabulary tree fetches failed; affected rows show no node/depth counts.

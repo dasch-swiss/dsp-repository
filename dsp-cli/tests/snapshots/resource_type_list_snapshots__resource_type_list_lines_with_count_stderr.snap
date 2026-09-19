@@ -1,0 +1,5 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: buf_to_string(&err_buf)
+---
+[anonymous on api.dasch.swiss] — counts include resources you may not be permitted to see and exclude deleted resources.

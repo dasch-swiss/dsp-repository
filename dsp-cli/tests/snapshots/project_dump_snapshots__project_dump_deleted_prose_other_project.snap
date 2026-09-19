@@ -1,0 +1,5 @@
+---
+source: tests/project_dump_snapshots.rs
+expression: out
+---
+no dump for the requested project to delete; the server's single dump slot is held by a different project (http://rdfh.ch/projects/0002)

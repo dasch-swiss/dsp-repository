@@ -1,0 +1,5 @@
+---
+source: tests/auth_snapshots.rs
+expression: out.clone()
+---
+

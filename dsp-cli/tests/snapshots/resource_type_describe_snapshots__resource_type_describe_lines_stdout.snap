@@ -1,0 +1,9 @@
+---
+source: tests/resource_type_describe_snapshots.rs
+expression: buf_to_string(&out_buf)
+---
+title	http://api.dasch.swiss/ontology/0801/beol/v2#title
+hasAuthor	http://api.dasch.swiss/ontology/0801/beol/v2#hasAuthor
+hasText	http://api.dasch.swiss/ontology/0801/beol/v2#hasText
+isPartOfCollection	http://api.dasch.swiss/ontology/0801/biblio/v2#isPartOfCollection
+hasURI	http://api.dasch.swiss/ontology/0801/biblio/v2#hasURI

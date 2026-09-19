@@ -1,0 +1,8 @@
+---
+source: tests/dump_progress_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Triggered dump abc123.
+polling… 12s elapsed (in_progress)
+polling… 28s elapsed (in_progress)
+Downloading…

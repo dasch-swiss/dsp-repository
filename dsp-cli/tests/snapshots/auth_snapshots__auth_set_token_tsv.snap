@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+expression: buf_to_string(&buf)
+---
+server	user	expires_at	state
+https://api.dev.dasch.swiss	http://rdfh.ch/users/jDEZpYNRSlaOM7wb55ZQpw	2026-06-25T12:34:56+00:00	token_cached

@@ -1,0 +1,11 @@
+---
+source: tests/vocabulary_describe_snapshots.rs
+expression: stdout
+---
+node_iri	number	label_en	label_de	label_fr	label_it	label_rm	label
+http://rdfh.ch/lists/0838/prehistory	1	Prehistory	Vorgeschichte	Préhistoire	Preistoria		
+http://rdfh.ch/lists/0838/stoneAge	1.1	Stone Age	Steinzeit				
+http://rdfh.ch/lists/0838/neolithic	1.1.1	Neolithic					
+http://rdfh.ch/lists/0838/bronzeAge	1.2						Bronze Age
+http://rdfh.ch/lists/0838/antiquity	2	Antiquity					
+http://rdfh.ch/lists/0838/modernPeriod	3	Modern Period

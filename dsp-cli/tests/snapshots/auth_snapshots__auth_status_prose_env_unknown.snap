@@ -1,0 +1,5 @@
+---
+source: tests/auth_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Authenticated to https://api.example.com via DSP_TOKEN. Token expiry unknown.

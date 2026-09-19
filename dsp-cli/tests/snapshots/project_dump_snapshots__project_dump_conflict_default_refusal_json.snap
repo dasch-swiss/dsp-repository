@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+assertion_line: 383
+expression: out
+---
+{"_meta":{"server":"https://api.test.dasch.swiss","auth":"authenticated","exit_code":1},"error":{"kind":"conflict","message":"conflict: no dump exists for the requested project; the server holds a single dump and it currently belongs to a different project (http://rdfh.ch/projects/0002). Re-run with --replace --discard-other-project to discard that dump and create this project's, or wait for it to be removed."}}

@@ -1,0 +1,6 @@
+---
+source: tests/resource_describe_values_snapshots.rs
+expression: out
+---
+field,value,comment
+hasTranscription,some transcription,reading uncertain

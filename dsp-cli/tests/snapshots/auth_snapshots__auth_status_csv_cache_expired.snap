@@ -1,0 +1,7 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 457
+expression: buf_to_string(&buf)
+---
+server,user,expires_at,state
+https://api.example.com,user@example.com,2020-01-01T00:00:00+00:00,expired

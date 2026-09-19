@@ -1,0 +1,5 @@
+---
+source: tests/data_model_structure_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"https://api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[{"source":"letter","target":"Book","kind":"link","field":"cites","target_data_model":"biblio"},{"source":"letter","target":"person","kind":"link","field":"hasSender","target_data_model":"beol"},{"source":"letter","target":"writtenSource","kind":"inherits","field":null,"target_data_model":"beol"},{"source":"manuscript","target":"person","kind":"link","field":"hasAuthor","target_data_model":"beol"},{"source":"manuscript","target":"writtenSource","kind":"inherits","field":null,"target_data_model":"beol"}]}

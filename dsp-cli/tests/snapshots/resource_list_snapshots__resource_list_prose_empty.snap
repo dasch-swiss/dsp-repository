@@ -1,0 +1,7 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: out
+---
+resources of type page on api.dasch.swiss (0):
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

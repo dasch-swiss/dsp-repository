@@ -1,0 +1,11 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: buf_to_string(&buf)
+---
+resource-types in beol on api.dasch.swiss (3):
+
+  Archive      Archive    3
+  letter       Letter   150
+  noLabelType              
+
+[anonymous on api.dasch.swiss] — counts include resources you may not be permitted to see and exclude deleted resources.

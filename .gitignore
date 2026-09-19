@@ -64,3 +64,8 @@ modules/dpe/server/data/records/*-records.json
 
 # Python bytecode cache
 __pycache__/
+
+# dsp-cli reads its server URL and credentials from a per-directory .env
+# (dsp-cli/ADR-0007), so those files never belong in the repository.
+dsp-cli/.env
+dsp-cli/.env.*

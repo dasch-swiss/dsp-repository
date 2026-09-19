@@ -1,0 +1,9 @@
+---
+source: tests/project_list_snapshots.rs
+expression: out
+---
+Projects on https://api.test.dasch.swiss (1 of 4 matching "online"):
+
+  0801  beol  Bernoulli-Euler Online  active   · 4 data-models
+
+[anonymous on https://api.test.dasch.swiss]

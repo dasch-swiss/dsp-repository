@@ -1,0 +1,12 @@
+---
+source: tests/project_list_snapshots.rs
+expression: out
+---
+Projects on https://api.test.dasch.swiss (4):
+
+  0512  sandbox                                inactive
+  0801  beol        Bernoulli-Euler Online     active   · 4 data-models
+  0820  incunabula  Basel Early Book Printing  active   · 1 data-model
+  0918  roud        Gustave Roud               active   · 2 data-models
+
+[authenticated as alice@example.com on https://api.test.dasch.swiss]

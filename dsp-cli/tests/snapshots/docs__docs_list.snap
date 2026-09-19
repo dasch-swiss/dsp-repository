@@ -1,0 +1,18 @@
+---
+source: tests/docs.rs
+expression: text
+---
+Available documentation topics:
+
+  dsp-cli      What this tool is, who it's for, and its design principles.
+  dsp          The DaSCH Service Platform in brief: VRE vs Repository.
+  concepts     The vocabulary dsp-cli speaks (project, data-model, resource-type, …).
+  identifiers  How to name projects, data-models, and resource-types.
+  connecting   Servers, environments, and authentication.
+  output       Output formats, channels, and the JSON envelope.
+  workflows    Chaining commands into real tasks.
+  errors       Exit codes and how to recover from failures.
+  dsp-tools    When to use dsp-cli versus dsp-tools.
+  sparql       Raw SPARQL passthrough: `dsp vre sparql query`.
+
+Run `dsp docs <topic>` to read one.

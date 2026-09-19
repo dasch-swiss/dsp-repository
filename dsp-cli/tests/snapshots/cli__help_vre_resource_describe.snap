@@ -1,0 +1,69 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Fetch the envelope metadata of a single resource by its internal IRI.
+
+Returns the resource's label, resource-type, IRI, ARK URL, creation and last-modification dates, owning project, owner, visibility, and your access level. Field values (the actual data) are omitted by default; pass `--values` to include them.
+
+Use `--resource` with the resource's internal IRI. ARK addressing is not supported in v1 — use the internal IRI directly. Optionally, supply `--project` to guard that the resource belongs to the expected project.
+
+Authentication is optional; anonymous callers see only public resources.
+
+See also: dsp docs concepts
+
+Usage: dsp vre resource describe [OPTIONS]
+
+Options:
+  -s, --server <SERVER>
+          DSP server URL or shortcut (e.g. `https://api.example.org` or `prod`). Can also be set via the `DSP_SERVER` environment variable or a `.env` file
+          
+          [env: DSP_SERVER=]
+
+  -v, --verbose...
+          Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --resource <RESOURCE>
+          Internal IRI of the resource to describe (e.g. `http://rdfh.ch/0803/AbCdEf`). ARK addressing is not supported in v1 — use the internal IRI directly. Run `dsp vre resource list` to discover resource IRIs
+
+  -p, --project <PROJECT>
+          Shortcode, shortname, or IRI of the expected project. When given, the command fails with a usage error unless the resource's attached project matches this value. Omit to describe a resource regardless of project
+
+      --values
+          Include the resource's field values in the output (off by default; metadata envelope only when omitted). In `prose` and `json` this adds a values section on top of the metadata; in tabular formats (`csv`, `tsv`, `lines`) the output becomes one row per value instead of the metadata row. Resolving field and vocabulary-item labels requires additional server requests. See also: `dsp docs concepts`
+
+      --format <FORMAT>
+          Output format (default: prose)
+
+          Possible values:
+          - prose: Rich human-readable prose output with contextual hints (default)
+          - json:  Newline-delimited JSON (one object per line)
+          - lines: One identifier per line, for shell pipeline consumption
+          - csv:   Comma-separated values with a header row
+          - tsv:   Tab-separated values with a header row
+          
+          [default: prose]
+
+  -j, --json
+          Shortcut for --format=json
+
+  -l, --lines
+          Shortcut for --format=lines
+
+      --columns <COLS>
+          Output columns for tabular formats (csv, tsv, lines): comma-separated list that selects and reorders columns. Valid names are listed in the Columns line below. Duplicates are rejected
+
+      --no-header
+          Omit the csv/tsv header row, e.g. appending rows to an existing file
+
+      --header-only
+          Emit only the csv/tsv header row, no data rows. Note: the command still contacts the server
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+Columns (--columns): label, iri, resource_type, ark_url, creation_date, last_modified, attached_project, owner, visibility, your_access
+Columns (--columns) with --values: label, iri, field, field_label, value_type, value, comment
+Default columns with --values: field, field_label, value_type, value
+
+See also: `dsp docs concepts`

@@ -1,0 +1,13 @@
+---
+source: tests/resource_list_snapshots.rs
+expression: out
+---
+resources of type page on api.dasch.swiss (3):
+
+  Folio 1r  http://rdfh.ch/0803/res-folio-1r
+  Folio 1v  http://rdfh.ch/0803/res-folio-1v
+  Folio 2r  http://rdfh.ch/0803/res-folio-2r
+
+  more results available (use --all to fetch all pages)
+
+[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources

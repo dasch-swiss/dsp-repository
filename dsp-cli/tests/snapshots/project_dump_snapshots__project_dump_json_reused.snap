@@ -1,0 +1,6 @@
+---
+source: tests/project_dump_snapshots.rs
+assertion_line: 224
+expression: out
+---
+{"_meta":{"server":"https://api.test.dasch.swiss","auth":"authenticated","exit_code":0},"data":{"path":"./0001-20260529T120000Z.zip","bytes":12345678,"cleaned_up":false,"reused":true,"created_at":"2026-05-20T14:03:00+00:00"}}

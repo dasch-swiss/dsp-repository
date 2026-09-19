@@ -1,0 +1,7 @@
+---
+source: tests/output_format_flags_snapshots.rs
+expression: buf_to_string(&buf)
+---
+name,iri,value_type
+hasText,http://api.dasch.swiss/ontology/0801/beol/v2#hasText,text
+createdBy,http://api.dasch.swiss/ontology/0801/beol/v2#createdBy,link

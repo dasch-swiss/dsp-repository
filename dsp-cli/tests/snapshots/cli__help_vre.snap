@@ -1,0 +1,20 @@
+---
+source: tests/cli.rs
+expression: text
+---
+Virtual Research Environment (VRE) operations
+
+Usage: dsp vre [OPTIONS] <COMMAND>
+
+Commands:
+  project        Manage DSP projects
+  data-model     Manage data-models within a project
+  resource-type  Manage resource-types within a data-model
+  resource       List resource instances within a project
+  vocabulary     Manage controlled vocabularies within a project (DSP-API "list")
+  sparql         Raw SPARQL 1.1 query passthrough to the server's own triplestore
+  help           Print this message or the help of the given subcommand(s)
+
+Options:
+  -v, --verbose...  Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+  -h, --help        Print help

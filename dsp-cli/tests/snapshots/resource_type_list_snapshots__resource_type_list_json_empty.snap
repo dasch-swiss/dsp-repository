@@ -1,0 +1,5 @@
+---
+source: tests/resource_type_list_snapshots.rs
+expression: out
+---
+{"_meta":{"server":"api.dasch.swiss","auth":"anonymous","exit_code":0},"data":[]}

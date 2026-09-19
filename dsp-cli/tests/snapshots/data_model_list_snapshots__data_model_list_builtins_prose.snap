@@ -1,0 +1,13 @@
+---
+source: tests/data_model_list_snapshots.rs
+expression: out
+---
+data-models on api.dasch.swiss (5), incl. built-ins:
+
+  knora-api   (built-in)                                    
+  limc        Lexicon Iconographicum Mythologiae Classicae  2024-02-10
+  rosetta     Rosetta Stone project                         2023-08-01
+  salsah-gui  (built-in)                                    
+  standoff    (built-in)                                    
+
+[anonymous on api.dasch.swiss]

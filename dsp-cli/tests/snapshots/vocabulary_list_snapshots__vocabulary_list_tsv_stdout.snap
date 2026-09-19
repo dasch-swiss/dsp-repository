@@ -1,0 +1,9 @@
+---
+source: tests/vocabulary_list_snapshots.rs
+expression: stdout
+---
+name	iri	label_en	label_de	label_fr	label_it	label_rm	label
+epoch	http://rdfh.ch/lists/0838/epoch	Period	Epoche				
+material	http://rdfh.ch/lists/0838/material	Material					
+person	http://rdfh.ch/lists/0838/person	Person	Person				
+	http://rdfh.ch/lists/0838/unnamed01	Miscellaneous

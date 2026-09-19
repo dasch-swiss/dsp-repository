@@ -1,0 +1,16 @@
+---
+source: tests/vocabulary_describe_snapshots.rs
+expression: buf_to_string(&buf)
+---
+Vocabulary: epoch — Period / Epoche
+Root: http://rdfh.ch/lists/0838/epoch
+6 nodes · 3 levels
+
+  1  Prehistory / Vorgeschichte / Préhistoire / Preistoria
+    1.1  Stone Age / Steinzeit
+      1.1.1  Neolithic
+    1.2  Bronze Age
+  2  Antiquity
+  3  Modern Period
+
+[anonymous on api.dasch.swiss]

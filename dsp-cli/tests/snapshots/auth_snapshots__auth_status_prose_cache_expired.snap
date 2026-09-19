@@ -1,0 +1,6 @@
+---
+source: tests/auth_snapshots.rs
+assertion_line: 430
+expression: buf_to_string(&buf)
+---
+Logged in to https://api.example.com as user@example.com. Token expired 2020-01-01 00:00 UTC.

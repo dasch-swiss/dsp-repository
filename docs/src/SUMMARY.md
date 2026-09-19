@@ -27,6 +27,7 @@
 - [JSON API](./dpe/json-api.md)
 - [OAI-PMH Endpoint](./dpe/oai-pmh.md)
 - [Machine-Readable Metadata](./dpe/machine-readable-metadata.md)
+- [FAIR Principles](./dpe/fair-principles.md)
 
 ## Editor
 

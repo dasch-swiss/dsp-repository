@@ -593,7 +593,7 @@ arithmetic still closes on the runs those columns describe.
 | No file to point at | `F3-01M`, `A1-03D`, `R1-01MD-2`, `R1-01MD-3`, `R1.3-02D` | 5 | — | — |
 | The files carry no MIME type | `R1-01MD-2`, `R1-01MD-3`, `R1.3-02D` | — | — | 3 |
 | No `variableMeasured` | `R1-01MD-4` | 1 | 1 | 1 |
-| ARKs are not registered with DataCite | `F4-01M-2` | 1 | 1 | 1 |
+| ARKs are not registered with DataCite (permanent) | `F4-01M-2` | 1 | 1 | 1 |
 | The deployment published ARKs it does not resolve | `F1-02D` | 1 | 1 | 1 |
 | **Total** | | **8** | **3** | **6** |
 
@@ -649,9 +649,13 @@ counted under the data-pointer cause, on the strength of its sub-test name;
 measuring 0868 separated them, because `-2` and `-3` moved and `-4` did not. No
 data pointer will ever earn it.
 
-**ARKs are not registered with DataCite — one point.** `F4-01M-1` passes: the
-metadata is offered through a harvesting endpoint. `F4-01M-2` asks for
-registration in a major research data registry, and the ARKs are DaSCH's own.
+**ARKs are not registered with DataCite — one point, permanently.** `F4-01M-1`
+passes: the metadata is offered through a harvesting endpoint. `F4-01M-2` asks
+for registration in a major research data registry, and the ARKs are DaSCH's
+own. DaSCH mints no DOIs and will not — every resource carries an ARK, so parity
+would run to hundreds of thousands of them — so this point is a standing
+consequence of the identifier scheme rather than an open item; see [FAIR
+Principles](./fair-principles.md#f4).
 
 **The deployment published ARKs it does not resolve — one point. A defect, now
 fixed, not yet re-measured.** `F1-02D` is about a persistent identifier, and

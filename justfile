@@ -70,8 +70,15 @@ check-shared-paths:
 check-datastar-delimiters:
     bash .github/scripts/check-datastar-delimiters.sh
 
+# A wrong ADR citation reads fine in prose and compiles fine as code, so only
+# a grep over the whole tree catches a renumbered or never-written record.
+
+# Verify every ADR reference resolves to a record. Run by `just check`. (DEV-7330)
+check-adr-refs:
+    bash .github/scripts/check-adr-refs.sh
+
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-datastar-delimiters
+check: verify-checksums check-shared-paths check-datastar-delimiters check-adr-refs
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -144,6 +151,7 @@ test:
     bash .github/scripts/verify-checksums.test.sh
     bash .github/scripts/check-shared-paths.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
+    bash .github/scripts/check-adr-refs.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":

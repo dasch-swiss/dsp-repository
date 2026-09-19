@@ -9,6 +9,7 @@
 - [Workflows and Conventions](./workflows.md)
 - [Git Conventions](./git-conventions.md)
 - [Project Structure and Code Organization](./repo_structure.md)
+- [Decision Records](./decisions.md)
 - [Release, Deployment and Versioning](./deployment.md)
 - [Security](./security.md)
 

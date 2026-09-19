@@ -518,11 +518,15 @@ ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`
   **static-analysis** (`canonical_round_trip`, `every_committed_temporal_coverage_resolves`,
   `just validate-data`).
 - **Colocated docs:** each service module carries a `CLAUDE.md` (agent runbook), except the
-  `shared-*` crates, which share `shared/README.md` one directory up; each bounded
-  context, and each shared engine with its own vocabulary (Vitrinli, Chischtli), a `CONTEXT.md`;
-  authoritative prose lives in `docs/src/`; system-wide decisions in
-  `docs/adr/`, context-internal ones under the context's own `docs/adr/` once it has one.
-  *Enforcement:* **docs-only**.
+  `shared-*` crates, which share `shared/README.md` one directory up; each bounded context, and
+  any root-level component with its own vocabulary (Vitrinli, Chischtli), a `CONTEXT.md`;
+  authoritative prose lives in `docs/src/`; system-wide decisions in `docs/adr/`, and any
+  root-level component with its own decision history keeps its own `docs/adr/` under the
+  component directory, with its own sequence from 0001 — a bare `ADR-NNNN` always names a root
+  ADR, a component ADR is always cited qualified as `<component>/ADR-NNNN`, also from inside that
+  component (ADR-0006).
+  *Enforcement:* **docs-only** for the runbook and vocabulary docs; **static-analysis**
+  (`check-adr-refs.sh`, `just check`) for the citation rule.
 - **Local-context kit budget:** ≤7 files per component. *Enforcement:* **docs-only**.
 - **Commits:** `type(scope): subject`, scope = crate name or `dpe-data` / `ci` / `deps` / `docs`;
   one commit per PR. *Enforcement:* **static-analysis** (`just commit-lint`, the `gate` job).
@@ -553,7 +557,7 @@ Not code components; they span the repo and are staleness-exempt here:
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
-  `verify-checksums.sh`), release-please config
+  `verify-checksums.sh`, `check-adr-refs.sh`), release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,
   `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`

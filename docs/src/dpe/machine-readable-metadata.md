@@ -13,7 +13,7 @@ project:
 | A JSON-LD block | `<script type="application/ld+json">` at the end of `<head>` | schema.org `Dataset` |
 | Meta tags | `<meta name="DC.*">` in `<head>` | Dublin Core elements, plus a COAR access-right URI |
 | Typed links | `<link>` elements in `<head>` and an HTTP `Link` header | FAIR Signposting, Level 1 |
-| A JSON-LD document | `GET /dpe/projects/{shortcode}/metadata.jsonld` | schema.org `Dataset`, `hasPart` uncapped |
+| A JSON-LD document | `GET /dpe/projects/{shortcode}/metadata.jsonld` | schema.org `Dataset`, `hasPart` bounded by bytes |
 | A DataCite document | `GET /dpe/projects/{shortcode}/metadata.datacite.json` | DataCite kernel 4 JSON |
 
 The graph is `shared_fair::ProjectGraph`. Every representation reads it and none
@@ -76,11 +76,12 @@ Three rules hold throughout:
 - **Nothing is invented.** A value the corpus records as a Placeholder, or does
   not record at all, yields no key. A project whose records carry no file gets
   no `distribution`, because there is no download to describe.
-- **`hasPart` and `distribution` are capped at 100 in the embedded block**, over
-  the same records in the same order. The largest committed project has 27,026
-  records; the one with the most files has 7,716 of them. The complete list is
-  harvestable from the OAI set `project:{shortcode}`, and the standalone
-  JSON-LD representation is uncapped.
+- **`hasPart` and `distribution` are one prefix**, over the same records in the
+  same order, wherever the prefix stops. The embedded block stops at 100; the
+  standalone JSON-LD representation stops at a byte budget and carries far more.
+  The largest committed project has 27,026 records; the one with the most files
+  has 7,716 of them. The complete list is harvestable from the OAI set
+  `project:{shortcode}`.
 - **Key order is the builder's.** The workspace enables `serde_json`'s
   `preserve_order`, so insertion order is emission order. `Map::remove`
   silently re-sorts the map and must not be used; `retain` or `shift_remove`
@@ -155,10 +156,13 @@ that is an ADR question, not a detail of this page.
 
 **The cap bounds the page, not the assessor.** F-UJI reads the embedded block,
 then follows the `describedby` link to `/metadata.jsonld` and merges what it
-finds there, so for project 0868 it collected 100 data links from the page and
-7,716 in total. It then limits *content* analysis to five files per MIME type,
+finds there, so for project 0868 a local run collected 100 data links from the
+page and 7,716 in total, from a representation that was then unbounded. It
+limits *content* analysis to five files per MIME type whatever it collected,
 which is why an assessment of a file-carrying project downloads a few dozen
-files and takes minutes rather than seconds.
+files and takes minutes rather than seconds. A bounded representation changes
+the first number and not the second — see [A byte
+budget](#a-byte-budget).
 
 ### Dublin Core meta tags
 
@@ -209,7 +213,8 @@ GET /dpe/projects/{shortcode}/metadata.datacite.json → application/vnd.datacit
 ```
 
 The JSON-LD one is the same schema.org graph the page embeds, with `hasPart`
-**uncapped** — every record, where the embedded block stops at 100. The DataCite
+**bounded by bytes rather than by a count** — as many records as fit in 4 MB,
+where the embedded block stops at 100. See *A byte budget* below. The DataCite
 one is the same record the `oai_datacite` prefix serves, in DataCite's kernel-4
 JSON shape rather than inside an OAI envelope. Its output is validated against
 DataCite's own JSON schema for every committed project by a corpus-wide test.
@@ -219,8 +224,8 @@ an empty body: a client that asked for JSON-LD is a machine, and the content
 type is how it learns that what came back is not the document it asked for.
 
 Both routes share the per-IP bucket `/dpe/oai` uses, under the same
-`DPE_OAI_RATE_LIMIT_*` settings, because the uncapped JSON-LD for the largest
-committed project is a few megabytes built in memory per request. That limit
+`DPE_OAI_RATE_LIMIT_*` settings, because the JSON-LD for the largest committed
+project is a few megabytes built in memory per request. That limit
 bounds the request *rate*, not the per-request size; see
 [Operations](./operations.md) for what a burst costs. Neither route sends
 `Cache-Control` or `ETag`, consistent with the rest of DPE: the data changes
@@ -255,6 +260,116 @@ same `UrlLayout` rows, so the page cannot redirect to a representation it does
 not link. The converse does not hold: the two OAI-record `describedby` links are
 never candidates, because a harvester is pointed at them rather than redirected
 to them.
+
+### A byte budget
+
+**The JSON-LD representation is bounded by the bytes it serialises to**, not by
+a record count: `JSON_LD_BYTE_BUDGET`, 4,000,000, in `dpe-server`'s
+`metadata.rs`. The document served is always at or under it and is always valid
+JSON. It is never truncated mid-structure; what the budget removes is whole
+entries from the end of the part list.
+
+**Why there is a bound.** Without one, `/dpe/projects/0868/metadata.jsonld`
+served 5,251,715 bytes on a PR preview. F-UJI truncates any download at
+5,000,000 bytes, and the truncated fragment is not valid JSON, so it could not
+parse the document at all:
+
+```
+WARNING: Downloaded content has been TRUNCATED by F-UJI since it is larger than: -: 5000000
+WARNING: Given JSON-LD seems to be invalid JSON
+```
+
+`FsF-I1-01M` scored 1 of 2 on that run for that reason alone. The document was
+valid JSON as served — verified with `jq` — so this was a size defect and not a
+serialisation defect. **0868 is a small project by DaSCH standards**, so an
+unbounded representation fails for the normal case of a project with files, not
+for an edge case: a `hasPart` entry costs roughly 150 bytes and a `DataDownload`
+roughly 290, which puts the 5,000,000 ceiling at about 33,000 file-less records
+or about 20,000 once ~40% carry files.
+
+**Why bytes and not a count.** The same 19,770 parts of 0868 serialise to 4.74 MB
+under `ark.dasch.swiss` and 5.25 MB under a preview's longer Cloud Run host.
+Identifier length, licence URIs, file names and MIME types vary per project
+besides. A count calibrated against one deployment is wrong on the next, so the
+implementation renders a prefix, serialises it, measures it, and returns the
+very document it measured. Nothing is estimated from entry counts.
+
+**Why 4,000,000.** A 20% margin under F-UJI's limit. We control none of the three
+things that consume it: the host name a deployment serves under, the limit a
+future assessor applies, and what a later field adds to every entry. It is a
+constant rather than a setting, because a second value to keep in step would buy
+nothing.
+
+**`hasPart` and `distribution` share one prefix.** When the budget binds, the
+document describes records 1..*k* and the files of those records, and not the
+files of records it does not list — the same invariant the embedded block's cap
+already holds. Spending the budget preferentially on `distribution` was
+considered and rejected: it would need two truncation rules where there is one,
+it would describe downloads for unlisted records, and the reason to prefer
+distributions is that an assessor rewards them, which is not a reason this work
+accepts. Neither list is recoverable only from this document — the complete
+record list is the OAI set `project:{shortcode}`, and each record's download URL
+is [`/dpe/records/{shortcode}/{record_id}/file`](./oai-pmh.md#file-metadata-endpoint).
+
+**A superseded decision, recorded rather than dropped.** This page previously
+held that the representation must stay uncapped, because the uncapped set was
+what earned `F3-01M`, `A1-03D`, `R1-01MD` and `R1.3-02D` for 0868. The preview
+run disproves it. In the same run that failed to parse the document, F-UJI
+reported:
+
+```
+INFO: Found data links in MetadataFormats.JSONLD metadata -: 100
+SUCCESS: Number of object content identifier found -: 100
+```
+
+One hundred — the embedded block's cap. It never parsed the large document and
+still earned `F3-01M` 1/1, `A1-03D` 1/1, `R1-01MD` 3/4 and `R1.3-02D` 1/1 from
+those hundred entries. The uncapped set earned nothing the capped one did not.
+
+**The document does not say it is bounded. Completeness is reachable from it
+anyway, in band, over links it already carries.** A consumer holding only the
+JSON-LD has `Link: <landing page>; rel="describes"` on the response. The landing
+page answers with `rel="describedby"` to the OAI `GetRecord` URLs for this
+project, which carry the OAI endpoint's own base URL; `ListRecords` over the set
+`project:{shortcode}` follows from that by the protocol. So the path from the
+bounded document to the complete record list is two hops and no new vocabulary.
+
+What is true is narrower than "nothing standard fits", and worth stating
+precisely: **completeness is not expressible *in this document*.** schema.org
+has no property meaning "this collection is partial, and *n* entries exist" —
+`numberOfItems` is defined on `ItemList` and not on `Dataset`, and `size` is
+product sizing. Hydra's `totalItems` and `PartialCollectionView` are designed
+for exactly this and were rejected: a third namespace for one integer, asserting
+a new fact rather than restating an existing one, which is the line `prov:`
+stays on the right side of. Inventing a term, or bending one, is what ADR-0005
+rules out.
+
+A consumer that reads the document alone should therefore not assume it is
+exhaustive; one that follows its links does not have to assume anything.
+
+### Who reads which document, and what each one can take
+
+The budget is one representation's bound, not a bound on what DaSCH publishes.
+Which consumer reads which document, and how much of its own ceiling that
+document uses:
+
+| Consumer | Document it reads | Its ceiling | Largest we serve |
+|---|---|---:|---:|
+| Google Dataset Search | the embedded block, in the landing page's `<head>` (`Count(100)`) | 2,097,152 B | 77,999 B (0868) — 3.7% |
+| F-UJI | the embedded block for the file-pointer metrics, `/metadata.jsonld` for `I1-01M` | 5,000,000 B | 3,972,504 B, bounded |
+| A bulk harvester | the OAI set `project:{shortcode}` | none; it paginates | the complete set |
+
+[Googlebot crawls the first 2 MB of a supported file
+type](https://developers.google.com/search/docs/crawling-indexing/googlebot),
+and the file it crawls is the landing page HTML with the block inside it — the
+77,999 B above is that whole page, measured on a PR preview (75,717 B locally).
+
+**Note the direction. Googlebot's ceiling is half the JSON-LD representation's
+budget.** Removing the bound to give a search engine more would not: Googlebot
+does not fetch `/metadata.jsonld`, and if it did, an unbounded document would be
+truncated at 2 MB and unparseable — less use to Google than the bounded one, not
+more. The embedded block is what Google reads, it is capped by count, and at
+3.7% of the limit it has room the byte budget does not constrain.
 
 ## Three base URLs
 
@@ -430,6 +545,35 @@ F-UJI's JSON-LD mapping reads `object_type` from schema.org's `@type`
 passes if **any** entry matches, so linking the DataCite representation costs
 nothing there. This was read out of the pinned image, and holds in 4.0.0 as
 well.
+
+### One observation from a PR preview, not in the table above
+
+**`I1-01M` scored 1 of 2 on a preview because `/metadata.jsonld` was too large
+to parse** — 5,251,715 bytes against F-UJI's 5,000,000-byte download limit. That
+is a preview observation and belongs in none of the columns below, which are
+local runs. It is the defect [A byte budget](#a-byte-budget) fixes, and **no
+re-measurement has been made**: nothing here claims that `I1-01M` now scores 2
+of 2. The same run is the evidence that bounding the representation costs
+nothing, because it earned `F3-01M`, `A1-03D`, `R1-01MD`'s two file sub-tests
+and `R1.3-02D` from the embedded block's 100 entries while failing to parse the
+large document at all.
+
+The four committed projects' representations, measured locally with the recorded
+ARK host and a short site host, before and after the budget:
+
+| Project | Records | Files | Unbounded | Served | Parts listed | Downloads listed |
+|---------|--------:|------:|----------:|-------:|-------------:|-----------------:|
+| 0868 `solec` | 19,770 | 7,716 | 4,875,959 | **3,972,504** | 16,218 | 6,107 |
+| 081C `hdm` | 27,026 | 0 | 3,548,716 | 3,548,716 | 27,026 | — |
+| 0803 `incunabula` | 4,198 | 4,062 | 1,472,208 | 1,472,208 | 4,198 | 4,062 |
+| 0862 `gotthelf` | 0 | 0 | 6,699 | 6,699 | — | — |
+
+**The same code under a different host gives different numbers, which is the
+whole argument for measuring bytes.** On the preview, whose Cloud Run host is
+much longer than either the recorded ARK host or a local one, the same four
+documents measured 5,251,715, 4,062,336, 1,552,096 and 6,825 — so 081C binds
+there and does not bind locally, from one unchanged corpus. A record count
+calibrated on either host would be wrong on the other.
 
 ### Known residuals
 

@@ -993,9 +993,11 @@ mod tests {
     }
 
     /// 0803, not 0862: only three committed projects have records at all, and
-    /// the point of this route is the part list the embedded block caps.
+    /// the point of this route is the part list the embedded block caps. 0803's
+    /// whole graph fits the byte budget, so this asserts the count; whether the
+    /// budget holds for a project that does not fit is `byte_budget`'s job.
     #[tokio::test]
-    async fn the_json_ld_representation_is_the_uncapped_graph() {
+    async fn the_json_ld_representation_carries_the_whole_graph_when_it_fits() {
         let (status, headers, body) = get("/dpe/projects/0803/metadata.jsonld").await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(content_type(&headers), REPRESENTATIONS[JSON_LD].0);
@@ -1010,7 +1012,7 @@ mod tests {
         let parts = doc["hasPart"].as_array().map_or(0, Vec::len);
         let records = dpe_core::record_cache::records_for_shortcode("0803").len();
         assert!(records > HAS_PART_CAP, "0803 should have more records than the cap");
-        assert_eq!(parts, records, "hasPart should be uncapped here");
+        assert_eq!(parts, records, "0803 fits the budget, so no part is left out");
 
         // The embedded block on the same project's page is the capped one.
         let (_, _, page) = get("/dpe/projects/0803").await;

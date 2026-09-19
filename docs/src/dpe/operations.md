@@ -92,11 +92,16 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 > **Do not set it on DEV, STAGE or PROD.** Those deployments *are* what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside `ark.dasch.swiss`.
 
 > **What the rate limit does not bound.** It bounds the request *rate*, not the
-> per-request size, and the uncapped JSON-LD representation is large: project
-> 081C measures ~3.5 MB. At the defaults (`per_second = 1`, `burst = 60`) one IP
-> can therefore pull roughly 210 MB of transient allocation and egress in a
-> burst window, settling to ~3.5 MB/s/IP afterwards. Lower `DPE_OAI_RATE_LIMIT_BURST`
-> if that matters more than a harvester's throughput does.
+> per-request size, and the JSON-LD representation is large. Its own byte budget
+> caps it at 4,000,000 bytes ([Machine-Readable
+> Metadata](./machine-readable-metadata.md#a-byte-budget)), and locally the two
+> largest committed projects measure 3,972,504 bytes (0868, at the budget) and
+> 3,548,716 bytes (081C, under it). At the defaults (`per_second = 1`,
+> `burst = 60`) one IP can therefore pull at most ~240 MB of transient allocation
+> and egress in a burst window, settling to ~4 MB/s/IP afterwards. The budget is
+> what makes that a *bound* rather than an observation: before it, the figure
+> grew with the corpus. Lower `DPE_OAI_RATE_LIMIT_BURST` if that matters more
+> than a harvester's throughput does.
 
 > **Rate limiting and reverse proxies.** The OAI (`/dpe/oai`) and telemetry (`/telemetry/collect`) rate limits key on the client IP, taken from the **rightmost** `X-Forwarded-For` entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any `X-Forwarded-For` value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to `X-Forwarded-For` would shift the trusted entry and require counting hops from the right.
 
@@ -133,14 +138,24 @@ committed corpus:
 
 | | In the embedded block | Bytes if all of those are fetched | In `/metadata.jsonld` | Bytes if all of those are fetched |
 |---|---:|---:|---:|---:|
-| 0868 | 100 | 90.9 MB | 7,716 | 2.72 GB |
+| 0868 | 100 | 90.9 MB | 6,107 of 7,716 | 945.0 MB |
 | 0803 | 4 | 81.9 MB | 4,062 | 139.7 GB |
 
-A well-behaved assessor pulls far less. F-UJI 3.5.0 takes at most five files per
-MIME type and truncates each download at 1,000,000 bytes, so a full assessment
-drew **26 files and 11.3 MB for 0868 (558 s)** and **6 files and 6.0 MB for 0803
-(307 s)**, measured on 2026-09-18. Its draw scales with how many distinct file
-types a project has, not with how many records it holds.
+The `/metadata.jsonld` figures are now bounded by the representation's
+[byte budget](./machine-readable-metadata.md#a-byte-budget), which is why 0868's
+list stops short of its 7,716 files and its total fell from 2.72 GB. Both are
+measured locally; a deployment on a longer host lists a shorter prefix and draws
+less. 0803's whole graph fits the budget, so nothing about it changed.
+
+A well-behaved assessor pulls far less, and the bound does not change what it
+pulls. F-UJI 3.5.0 takes at most five files per MIME type and truncates each
+download at 1,000,000 bytes, so a full assessment drew **26 files and 11.3 MB
+for 0868 (558 s)** and **6 files and 6.0 MB for 0803 (307 s)**, measured on
+2026-09-18 against the then-unbounded representation. All five of 0868's MIME
+types — `application/pdf`, `application/zip`, `image/png`, `text/csv`,
+`text/plain` — still appear inside the bounded prefix, so the same sampling has
+the same set to draw from. Its draw scales with how many distinct file types a
+project has, not with how many records it holds.
 
 This is a change in convenience rather than in capability. The same bytes were
 already reachable by enumerating the OAI-PMH set `project:{shortcode}` and

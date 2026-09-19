@@ -92,10 +92,7 @@ async fn resolve_by_shortcode_sends_no_authorization_header() {
     .expect("blocking thread should not panic");
 
     // Inspect received requests and assert no Authorization header was sent.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "expected exactly one request");
     assert!(
         !received[0].headers.contains_key("authorization"),
@@ -199,10 +196,7 @@ async fn resolve_by_iri_sends_no_authorization_header() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "expected exactly one request");
     assert!(
         !received[0].headers.contains_key("authorization"),

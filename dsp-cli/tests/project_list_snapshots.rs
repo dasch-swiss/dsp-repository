@@ -24,8 +24,8 @@
 //! shortcode order `0512 / 0801 / 0820 / 0918`):
 //! - `0801` / `beol` / Active / 4 data-models / "Bernoulli-Euler Online"
 //! - `0918` / `roud` / Active / 2 data-models / "Gustave Roud"
-//! - `0512` / `sandbox` / Inactive / 0 data-models / longname `None`
-//!   (legitimate field states: inactive, zero data-models, absent longname)
+//! - `0512` / `sandbox` / Inactive / 0 data-models / longname `None` (legitimate field states:
+//!   inactive, zero data-models, absent longname)
 //! - `0820` / `incunabula` / Active / 1 data-model / "Basel Early Book Printing"
 //!
 //! ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
@@ -85,14 +85,7 @@ fn realistic_projects() -> Vec<Project> {
             Active,
             2,
         ),
-        project(
-            "http://rdfh.ch/projects/Zc6F1hYpQ2kMe8Vn",
-            "0512",
-            "sandbox",
-            None,
-            Inactive,
-            0,
-        ),
+        project("http://rdfh.ch/projects/Zc6F1hYpQ2kMe8Vn", "0512", "sandbox", None, Inactive, 0),
         project(
             "http://rdfh.ch/projects/Hn5D0sJwR3uXf7Tb",
             "0820",
@@ -148,11 +141,7 @@ fn apply_filter(all: Vec<Project>, filter: &str) -> (Vec<Project>, usize) {
         .filter(|p| {
             p.shortcode.to_lowercase().contains(&needle)
                 || p.shortname.to_lowercase().contains(&needle)
-                || p.longname
-                    .as_deref()
-                    .unwrap_or("")
-                    .to_lowercase()
-                    .contains(&needle)
+                || p.longname.as_deref().unwrap_or("").to_lowercase().contains(&needle)
         })
         .collect();
     (sorted(items), total)
@@ -162,32 +151,20 @@ fn apply_filter(all: Vec<Project>, filter: &str) -> (Vec<Project>, usize) {
 fn full_view() -> ProjectListView {
     let items = sorted(realistic_projects());
     let total = items.len();
-    ProjectListView {
-        items,
-        total,
-        filter: None,
-    }
+    ProjectListView { items, total, filter: None }
 }
 
 /// Realistic fixture filtered by `"online"` — matches only `beol`
 /// ("Bernoulli-Euler Online"), so the count line reads "1 of 4 matching".
 fn filtered_view() -> ProjectListView {
     let (items, total) = apply_filter(realistic_projects(), "online");
-    ProjectListView {
-        items,
-        total,
-        filter: Some("online".to_string()),
-    }
+    ProjectListView { items, total, filter: Some("online".to_string()) }
 }
 
 /// Realistic fixture with a non-matching filter → empty result.
 fn empty_view() -> ProjectListView {
     let (items, total) = apply_filter(realistic_projects(), "no-match-xyzzy");
-    ProjectListView {
-        items,
-        total,
-        filter: Some("no-match-xyzzy".to_string()),
-    }
+    ProjectListView { items, total, filter: Some("no-match-xyzzy".to_string()) }
 }
 
 // ── cells: realistic fixture × 5 formats (anonymous) ─────────────────────────
@@ -285,10 +262,7 @@ fn project_list_json_empty() {
     let mut r = JsonRenderer::with_writer(w);
     r.projects(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        out.contains("\"data\":[]"),
-        "json empty must contain '\"data\":[]'; got: {out}"
-    );
+    assert!(out.contains("\"data\":[]"), "json empty must contain '\"data\":[]'; got: {out}");
     insta::assert_snapshot!(out);
 }
 
@@ -302,10 +276,7 @@ fn project_list_lines_empty() {
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
     // No data rows on stdout.
-    assert!(
-        stdout.is_empty(),
-        "lines empty must have no stdout data rows; got: {stdout:?}"
-    );
+    assert!(stdout.is_empty(), "lines empty must have no stdout data rows; got: {stdout:?}");
     // Disclosure still on stderr.
     assert!(
         stderr.contains("[anonymous on"),
@@ -371,8 +342,7 @@ fn project_list_csv_empty() {
 fn project_list_prose_authenticated() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.projects(&full_view(), &authed_meta("alice@example.com"))
-        .unwrap();
+    r.projects(&full_view(), &authed_meta("alice@example.com")).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("authenticated as alice@example.com"),
@@ -386,8 +356,7 @@ fn project_list_prose_authenticated() {
 fn project_list_json_authenticated() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.projects(&full_view(), &authed_meta("alice@example.com"))
-        .unwrap();
+    r.projects(&full_view(), &authed_meta("alice@example.com")).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("authenticated as alice@example.com"),
@@ -431,11 +400,7 @@ fn csv_escaping_view() -> ProjectListView {
         ),
     ]);
     let total = items.len();
-    ProjectListView {
-        items,
-        total,
-        filter: None,
-    }
+    ProjectListView { items, total, filter: None }
 }
 
 /// CSV quoting: comma → wrapped; leading `=` → wrapped (formula-injection
@@ -495,11 +460,7 @@ fn project_list_prose_filter_non_ascii() {
         1,
     )];
     let (items, total) = apply_filter(all, "café");
-    let view = ProjectListView {
-        items,
-        total,
-        filter: Some("café".to_string()),
-    };
+    let view = ProjectListView { items, total, filter: Some("café".to_string()) };
 
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
@@ -631,10 +592,7 @@ fn project_list_tsv_has_iri() {
     let mut r = TsvRenderer::with_writers(out_w, err_w);
     r.projects(&full_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&out_buf);
-    assert!(
-        out.contains("iri"),
-        "tsv must have iri column in header; got: {out}"
-    );
+    assert!(out.contains("iri"), "tsv must have iri column in header; got: {out}");
     assert!(
         out.contains("http://rdfh.ch/projects/"),
         "tsv must have iri values in data rows; got: {out}"
@@ -649,10 +607,7 @@ fn project_list_csv_has_iri() {
     let mut r = CsvRenderer::with_writers(out_w, err_w);
     r.projects(&full_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&out_buf);
-    assert!(
-        out.contains("iri"),
-        "csv must have iri column in header; got: {out}"
-    );
+    assert!(out.contains("iri"), "csv must have iri column in header; got: {out}");
     assert!(
         out.contains("http://rdfh.ch/projects/"),
         "csv must have iri values in data rows; got: {out}"
@@ -666,10 +621,7 @@ fn project_list_json_has_iri() {
     let mut r = JsonRenderer::with_writer(w);
     r.projects(&full_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        out.contains("\"iri\""),
-        "json must have iri key; got: {out}"
-    );
+    assert!(out.contains("\"iri\""), "json must have iri key; got: {out}");
     assert!(
         out.contains("http://rdfh.ch/projects/"),
         "json must have iri values; got: {out}"

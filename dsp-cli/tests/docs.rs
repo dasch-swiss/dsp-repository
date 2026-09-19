@@ -39,13 +39,7 @@ const TOPIC_NAMES: &[&str] = &[
 
 #[test]
 fn docs_lists_all_topics() {
-    let output = dsp()
-        .arg("docs")
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().arg("docs").assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     for name in TOPIC_NAMES {
         assert!(text.contains(name), "topic list missing '{name}'");
@@ -55,19 +49,10 @@ fn docs_lists_all_topics() {
 
 #[test]
 fn docs_prints_topic_body_to_stdout() {
-    let output = dsp()
-        .args(["docs", "concepts"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["docs", "concepts"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     assert!(text.starts_with("# "), "topic body should be raw markdown");
-    assert!(
-        text.contains("data-model"),
-        "concepts should mention data-model"
-    );
+    assert!(text.contains("data-model"), "concepts should mention data-model");
 }
 
 #[test]
@@ -81,10 +66,7 @@ fn docs_every_topic_resolves() {
 fn docs_unknown_topic_exits_one_with_suggestion() {
     let assert = dsp().args(["docs", "concept"]).assert().failure().code(1);
     let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
-    assert!(
-        stderr.contains("Did you mean 'concepts'?"),
-        "stderr was: {stderr}"
-    );
+    assert!(stderr.contains("Did you mean 'concepts'?"), "stderr was: {stderr}");
     insta::assert_snapshot!("docs_not_found_with_suggestion", stderr);
 }
 
@@ -102,13 +84,7 @@ fn docs_far_unknown_topic_exits_one_without_suggestion() {
 /// Snapshot covers the full output shape (plan 020 step 6 test plan).
 #[test]
 fn docs_json_flag_emits_topic_index() {
-    let output = dsp()
-        .args(["docs", "-j"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["docs", "-j"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     insta::assert_snapshot!("docs_json_index", text);
 }
@@ -119,13 +95,7 @@ fn docs_json_flag_emits_topic_index() {
 /// contract to be silently weakened by leading whitespace or a BOM.
 #[test]
 fn docs_json_meta_is_first_key() {
-    let output = dsp()
-        .args(["docs", "-j"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["docs", "-j"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     assert!(
         text.starts_with(r#"{"_meta""#),
@@ -137,22 +107,12 @@ fn docs_json_meta_is_first_key() {
 /// but without any body content.
 #[test]
 fn docs_json_contains_all_topics_name_and_summary_no_body() {
-    let output = dsp()
-        .args(["docs", "-j"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["docs", "-j"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(text.trim()).unwrap();
 
     let data = parsed["data"].as_array().expect("data must be an array");
-    assert_eq!(
-        data.len(),
-        TOPIC_NAMES.len(),
-        "data array length must match TOPIC_NAMES"
-    );
+    assert_eq!(data.len(), TOPIC_NAMES.len(), "data array length must match TOPIC_NAMES");
 
     for (i, name) in TOPIC_NAMES.iter().enumerate() {
         assert_eq!(data[i]["name"], *name, "name mismatch at index {i}");
@@ -172,19 +132,11 @@ fn docs_json_contains_all_topics_name_and_summary_no_body() {
 /// `dsp docs <topic> -j` exits 2 (clap-level conflict).
 #[test]
 fn docs_topic_and_json_conflicts_exits_two() {
-    dsp()
-        .args(["docs", "concepts", "-j"])
-        .assert()
-        .failure()
-        .code(2);
+    dsp().args(["docs", "concepts", "-j"]).assert().failure().code(2);
 }
 
 /// `dsp docs -j --pager` exits 2 (clap-level conflict).
 #[test]
 fn docs_json_and_pager_conflicts_exits_two() {
-    dsp()
-        .args(["docs", "-j", "--pager"])
-        .assert()
-        .failure()
-        .code(2);
+    dsp().args(["docs", "-j", "--pager"]).assert().failure().code(2);
 }

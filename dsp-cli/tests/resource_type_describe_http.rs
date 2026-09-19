@@ -202,8 +202,8 @@ fn happy_fixture() -> serde_json::Value {
 /// Assertions:
 /// - name = "Doc", label = Some("Document"), representation = Some(StillImage)
 /// - super_types = ["Base"] (system super `knora-api:StillImageRepresentation` dropped)
-/// - project fields: hasTitle (text, One) then linksTo (link → Target, ZeroOrMore)
-///   (ordered by guiOrder 1, 2)
+/// - project fields: hasTitle (text, One) then linksTo (link → Target, ZeroOrMore) (ordered by
+///   guiOrder 1, 2)
 /// - link-value twin `linksToValue` is DROPPED
 /// - built-in `arkUrl` IS present with is_builtin=true (client returns full set)
 /// - `linksTo.link_target == Some("Target")`
@@ -231,15 +231,8 @@ async fn happy_path_describe_doc_resource_type() {
 
     // Identity
     assert_eq!(detail.name, "Doc", "name must be the class local name");
-    assert_eq!(
-        detail.label.as_deref(),
-        Some("Document"),
-        "label must match rdfs:label"
-    );
-    assert_eq!(
-        detail.data_model, "test",
-        "data_model must be derived from IRI"
-    );
+    assert_eq!(detail.label.as_deref(), Some("Document"), "label must match rdfs:label");
+    assert_eq!(detail.data_model, "test", "data_model must be derived from IRI");
     assert_eq!(detail.iri, format!("{TEST_NS}Doc"), "IRI must be expanded");
 
     // Representation
@@ -268,37 +261,16 @@ async fn happy_path_describe_doc_resource_type() {
     );
 
     let has_title = &project_fields[0];
-    assert_eq!(
-        has_title.name, "hasTitle",
-        "first project field must be hasTitle (guiOrder=1)"
-    );
-    assert_eq!(
-        has_title.value_type,
-        ValueType::Text,
-        "hasTitle must have value_type Text"
-    );
-    assert_eq!(
-        has_title.cardinality,
-        Cardinality::One,
-        "hasTitle must have cardinality One"
-    );
+    assert_eq!(has_title.name, "hasTitle", "first project field must be hasTitle (guiOrder=1)");
+    assert_eq!(has_title.value_type, ValueType::Text, "hasTitle must have value_type Text");
+    assert_eq!(has_title.cardinality, Cardinality::One, "hasTitle must have cardinality One");
     assert_eq!(has_title.label.as_deref(), Some("Title"), "hasTitle label");
     assert!(!has_title.is_builtin, "hasTitle must not be builtin");
-    assert_eq!(
-        has_title.link_target, None,
-        "text field must have link_target None"
-    );
+    assert_eq!(has_title.link_target, None, "text field must have link_target None");
 
     let links_to = &project_fields[1];
-    assert_eq!(
-        links_to.name, "linksTo",
-        "second project field must be linksTo (guiOrder=2)"
-    );
-    assert_eq!(
-        links_to.value_type,
-        ValueType::Link,
-        "linksTo must have value_type Link"
-    );
+    assert_eq!(links_to.name, "linksTo", "second project field must be linksTo (guiOrder=2)");
+    assert_eq!(links_to.value_type, ValueType::Link, "linksTo must have value_type Link");
     assert_eq!(
         links_to.link_target.as_deref(),
         Some("Target"),
@@ -422,28 +394,13 @@ async fn cardinality_and_value_type_mapping() {
 
     // guiOrder=1: intField — One, integer
     assert_eq!(fields[0].name, "intField");
-    assert_eq!(
-        fields[0].value_type,
-        ValueType::Integer,
-        "intField must map to Integer"
-    );
-    assert_eq!(
-        fields[0].cardinality,
-        Cardinality::One,
-        "owl:cardinality=1 → One"
-    );
-    assert_eq!(
-        fields[0].link_target, None,
-        "non-link field must have None link_target"
-    );
+    assert_eq!(fields[0].value_type, ValueType::Integer, "intField must map to Integer");
+    assert_eq!(fields[0].cardinality, Cardinality::One, "owl:cardinality=1 → One");
+    assert_eq!(fields[0].link_target, None, "non-link field must have None link_target");
 
     // guiOrder=2: dateField — ZeroOrOne, date
     assert_eq!(fields[1].name, "dateField");
-    assert_eq!(
-        fields[1].value_type,
-        ValueType::Date,
-        "dateField must map to Date"
-    );
+    assert_eq!(fields[1].value_type, ValueType::Date, "dateField must map to Date");
     assert_eq!(
         fields[1].cardinality,
         Cardinality::ZeroOrOne,
@@ -452,11 +409,7 @@ async fn cardinality_and_value_type_mapping() {
 
     // guiOrder=3: uriField — OneOrMore, uri
     assert_eq!(fields[2].name, "uriField");
-    assert_eq!(
-        fields[2].value_type,
-        ValueType::Uri,
-        "uriField must map to Uri"
-    );
+    assert_eq!(fields[2].value_type, ValueType::Uri, "uriField must map to Uri");
     assert_eq!(
         fields[2].cardinality,
         Cardinality::OneOrMore,
@@ -490,16 +443,9 @@ async fn bearer_present_when_token_is_some() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok when token is Some, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok when token is Some, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -544,15 +490,9 @@ async fn bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     // At least one request (the primary allentities call).
-    assert!(
-        !received.is_empty(),
-        "at least one request must have been made"
-    );
+    assert!(!received.is_empty(), "at least one request must have been made");
     // The first request (primary allentities) must not have an Authorization header.
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -641,8 +581,8 @@ async fn server_error_500_returns_server_error_diagnostic() {
 /// Scenario:
 /// - `test:Doc` class has a restriction on `sib:reusedField` (no node in test graph).
 /// - A second mock endpoint for `sib` returns a graph with `sib:reusedField`.
-/// - Assert: the returned field has value_type uri, label Some("Reused"),
-///   data_model Some("sib"), and is NOT built-in.
+/// - Assert: the returned field has value_type uri, label Some("Reused"), data_model Some("sib"),
+///   and is NOT built-in.
 #[tokio::test]
 async fn two_ontology_sibling_fetch_resolves_field() {
     let server = MockServer::start().await;
@@ -717,11 +657,7 @@ async fn two_ontology_sibling_fetch_resolves_field() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok with sibling fetch, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok with sibling fetch, got: {:?}", result);
     let detail = result.unwrap();
 
     // Find `reusedField` in the returned fields.
@@ -1021,11 +957,7 @@ async fn field_with_prefix_absent_from_context_degrades_gracefully() {
     .expect("blocking thread should not panic");
 
     // Must return Ok — missing prefix is non-fatal (no panic, no hard error).
-    assert!(
-        result.is_ok(),
-        "missing @context prefix must not cause Err; got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "missing @context prefix must not cause Err; got: {:?}", result);
     let detail = result.unwrap();
 
     // The degraded field must still be present.
@@ -1155,10 +1087,7 @@ async fn bearer_token_forwarded_to_sibling_fetch() {
     );
 
     // Verify both requests received the bearer token.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
 
     // Both mocks expect exactly 1 call each; wiremock will fail if either misses.
     // Additionally verify each received request carries the Authorization header.

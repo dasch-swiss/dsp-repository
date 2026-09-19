@@ -10,17 +10,14 @@ use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 
+use crate::actions::auth_state::read_auth_state;
 use crate::cli::{ProjectDescribeArgs, ProjectDumpArgs, ProjectListArgs};
 use crate::client::DspClient;
 use crate::config::{AuthCache, Config, resolve_token};
 use crate::diagnostic::Diagnostic;
 use crate::model::{CreateDumpOutcome, DumpStatus};
 use crate::render::progress::ProgressReporter;
-use crate::render::{
-    DumpDeleteOutcome, DumpEvent, DumpOutcome, MetaContext, ProjectListView, Renderer,
-};
-
-use crate::actions::auth_state::read_auth_state;
+use crate::render::{DumpDeleteOutcome, DumpEvent, DumpOutcome, MetaContext, ProjectListView, Renderer};
 
 /// List all projects on the DSP server.
 ///
@@ -39,10 +36,10 @@ pub fn list(
 
 /// Internal entry point for `list` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry point before calling
+///   this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. This differs deliberately from
@@ -91,11 +88,7 @@ fn run_list_impl(
         projects.retain(|p| {
             p.shortcode.to_lowercase().contains(&lower)
                 || p.shortname.to_lowercase().contains(&lower)
-                || p.longname
-                    .as_deref()
-                    .unwrap_or("")
-                    .to_lowercase()
-                    .contains(&lower)
+                || p.longname.as_deref().unwrap_or("").to_lowercase().contains(&lower)
         });
     }
 
@@ -103,11 +96,7 @@ fn run_list_impl(
     projects.sort_by(|a, b| a.shortcode.cmp(&b.shortcode));
 
     // ── 8. Build view + meta and render ──────────────────────────────────────
-    let view = ProjectListView {
-        items: projects,
-        total,
-        filter: args.filter.clone(),
-    };
+    let view = ProjectListView { items: projects, total, filter: args.filter.clone() };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -135,10 +124,10 @@ pub fn describe(
 
 /// Internal entry point for `describe` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry point before
+///   calling this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. Project metadata is public
@@ -152,9 +141,10 @@ fn run_describe_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
     let cache_result = match cache_path {
@@ -209,8 +199,8 @@ pub fn dump(
     reporter: &mut dyn ProgressReporter,
 ) -> Result<(), Diagnostic> {
     let env_token = std::env::var("DSP_TOKEN").ok();
-    let cwd = std::env::current_dir()
-        .map_err(|e| Diagnostic::Io(format!("could not determine current directory: {e}")))?;
+    let cwd =
+        std::env::current_dir().map_err(|e| Diagnostic::Io(format!("could not determine current directory: {e}")))?;
     run_impl(
         args,
         cfg,
@@ -244,18 +234,18 @@ enum DumpMode {
 
 /// Internal entry point with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `dump` entry
-///   point before calling this, so tests never touch process env).
-/// - `sleeper`: a `Fn(Duration)` called between poll attempts; tests use a
-///   no-op `|_| {}` so the logical clock advances without real wall-clock time.
-/// - `now`: used only to build the default output filename; the poll-loop
-///   timeout is an explicit logical accumulator independent of this.
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
-/// - `cwd`: the base directory for the default output path when `--output` is
-///   not specified. The public `dump` entry point passes the real process CWD
-///   (obtained via `std::env::current_dir()`); tests pass an explicit
-///   `TempDir` path so they never mutate process-global state.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `dump` entry point before calling
+///   this, so tests never touch process env).
+/// - `sleeper`: a `Fn(Duration)` called between poll attempts; tests use a no-op `|_| {}` so the
+///   logical clock advances without real wall-clock time.
+/// - `now`: used only to build the default output filename; the poll-loop timeout is an explicit
+///   logical accumulator independent of this.
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
+/// - `cwd`: the base directory for the default output path when `--output` is not specified. The
+///   public `dump` entry point passes the real process CWD (obtained via
+///   `std::env::current_dir()`); tests pass an explicit `TempDir` path so they never mutate
+///   process-global state.
 #[allow(clippy::too_many_arguments)]
 fn run_impl(
     args: &ProjectDumpArgs,
@@ -273,11 +263,7 @@ fn run_impl(
     // ADR-0007: a non-blank DSP_TOKEN wins over the cache. A corrupt/unreadable
     // auth.toml must not mask the env token — tolerate cache-load failures only
     // when the env token would win (mirrors auth::status).
-    let env_token_would_win = env_token
-        .as_deref()
-        .map(str::trim)
-        .map(|s| !s.is_empty())
-        .unwrap_or(false);
+    let env_token_would_win = env_token.as_deref().map(str::trim).map(|s| !s.is_empty()).unwrap_or(false);
 
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
@@ -305,9 +291,10 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
     let token = resolved.token.clone();
 
     // ── 2. --project required ─────────────────────────────────────────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 3. Derive mode from args ──────────────────────────────────────────────
     let mode = if args.delete {
@@ -361,8 +348,7 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
     };
 
     // ── 7. Create (probe) the dump ────────────────────────────────────────────
-    let create_outcome =
-        client.create_project_dump(&cfg.server, &proj.iri, args.skip_assets, &token)?;
+    let create_outcome = client.create_project_dump(&cfg.server, &proj.iri, args.skip_assets, &token)?;
 
     // ── 8. Build MetaContext for the final render ─────────────────────────────
     // Use the shared ADR-0007 helper so _meta.auth uses the same uniform
@@ -386,9 +372,7 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
             reporter,
             &token,
             &proj.iri,
-            output_path.ok_or_else(|| {
-                Diagnostic::Internal("output_path unexpectedly None in Default mode".into())
-            })?,
+            output_path.ok_or_else(|| Diagnostic::Internal("output_path unexpectedly None in Default mode".into()))?,
             &meta,
             sleeper,
         ),
@@ -402,22 +386,11 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
             &token,
             &proj.iri,
             args.skip_assets,
-            output_path.ok_or_else(|| {
-                Diagnostic::Internal("output_path unexpectedly None in Replace mode".into())
-            })?,
+            output_path.ok_or_else(|| Diagnostic::Internal("output_path unexpectedly None in Replace mode".into()))?,
             &meta,
             sleeper,
         ),
-        DumpMode::Delete => handle_delete(
-            create_outcome,
-            cfg,
-            client,
-            renderer,
-            reporter,
-            &token,
-            &proj.iri,
-            &meta,
-        ),
+        DumpMode::Delete => handle_delete(create_outcome, cfg, client, renderer, reporter, &token, &proj.iri, &meta),
     }
 }
 
@@ -442,9 +415,7 @@ fn recreated_dump_ids(
         CreateDumpOutcome::Exists { .. } => Err(Diagnostic::Conflict(
             "the dump was recreated before it could be replaced; try again".into(),
         )),
-        CreateDumpOutcome::ExistsForOtherProject {
-            project_iri: racer, ..
-        } => Err(Diagnostic::Conflict(format!(
+        CreateDumpOutcome::ExistsForOtherProject { project_iri: racer, .. } => Err(Diagnostic::Conflict(format!(
             "the dump slot was claimed by another project ({racer}) \
 before this one could be created; try again"
         ))),
@@ -478,26 +449,13 @@ fn handle_default(
 ) -> Result<(), Diagnostic> {
     match create_outcome {
         CreateDumpOutcome::Created(task) => {
-            reporter.report(&DumpEvent::Triggered {
-                id: task.id.clone(),
-            })?;
+            reporter.report(&DumpEvent::Triggered { id: task.id.clone() })?;
             let created_at = task.created_at;
             let id = task.id;
-            poll_until_done(
-                client,
-                cfg,
-                reporter,
-                token,
-                project_iri,
-                &id,
-                args.timeout,
-                sleeper,
-            )?;
+            poll_until_done(client, cfg, reporter, token, project_iri, &id, args.timeout, sleeper)?;
             reporter.report(&DumpEvent::Downloading)?;
-            let bytes =
-                stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
-            let cleaned_up =
-                run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
+            let bytes = stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
+            let cleaned_up = run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
             reporter.report(&DumpEvent::Done { bytes })?;
             renderer.project_dump(
                 &DumpOutcome {
@@ -510,19 +468,17 @@ fn handle_default(
                 meta,
             )
         }
-        CreateDumpOutcome::ExistsForOtherProject {
-            project_iri: foreign_iri,
-            ..
-        } => Err(Diagnostic::Conflict(format!(
-            "no dump exists for the requested project; the server holds a single \
+        CreateDumpOutcome::ExistsForOtherProject { project_iri: foreign_iri, .. } => {
+            Err(Diagnostic::Conflict(format!(
+                "no dump exists for the requested project; the server holds a single \
 dump and it currently belongs to a different project ({foreign_iri}). Re-run \
 with --replace --discard-other-project to discard that dump and create this \
 project's, or wait for it to be removed."
-        ))),
+            )))
+        }
         CreateDumpOutcome::Exists { id } => {
             // Fetch current status to decide what to do.
-            let status_task =
-                client.get_project_dump_status(&cfg.server, project_iri, &id, token)?;
+            let status_task = client.get_project_dump_status(&cfg.server, project_iri, &id, token)?;
             match status_task.status {
                 DumpStatus::Failed => Err(Diagnostic::Conflict(format!(
                     "the existing dump failed: {}; re-run with --replace to discard \
@@ -532,16 +488,8 @@ and create a fresh one, or --delete to remove it",
                 DumpStatus::Completed => {
                     reporter.report(&DumpEvent::Adopting { id: id.clone() })?;
                     reporter.report(&DumpEvent::Downloading)?;
-                    let bytes = stream_dump_to_path(
-                        client,
-                        &cfg.server,
-                        project_iri,
-                        &id,
-                        token,
-                        &output_path,
-                    )?;
-                    let cleaned_up =
-                        run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
+                    let bytes = stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
+                    let cleaned_up = run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
                     reporter.report(&DumpEvent::Done { bytes })?;
                     renderer.project_dump(
                         &DumpOutcome {
@@ -557,27 +505,10 @@ and create a fresh one, or --delete to remove it",
                 DumpStatus::InProgress => {
                     reporter.report(&DumpEvent::Adopting { id: id.clone() })?;
                     let created_at = status_task.created_at;
-                    poll_until_done(
-                        client,
-                        cfg,
-                        reporter,
-                        token,
-                        project_iri,
-                        &id,
-                        args.timeout,
-                        sleeper,
-                    )?;
+                    poll_until_done(client, cfg, reporter, token, project_iri, &id, args.timeout, sleeper)?;
                     reporter.report(&DumpEvent::Downloading)?;
-                    let bytes = stream_dump_to_path(
-                        client,
-                        &cfg.server,
-                        project_iri,
-                        &id,
-                        token,
-                        &output_path,
-                    )?;
-                    let cleaned_up =
-                        run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
+                    let bytes = stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
+                    let cleaned_up = run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
                     reporter.report(&DumpEvent::Done { bytes })?;
                     renderer.project_dump(
                         &DumpOutcome {
@@ -621,26 +552,13 @@ fn handle_replace(
 ) -> Result<(), Diagnostic> {
     let (id, created_at) = match create_outcome {
         CreateDumpOutcome::Created(task) => {
-            reporter.report(&DumpEvent::Triggered {
-                id: task.id.clone(),
-            })?;
+            reporter.report(&DumpEvent::Triggered { id: task.id.clone() })?;
             let created_at = task.created_at;
             let id = task.id;
-            poll_until_done(
-                client,
-                cfg,
-                reporter,
-                token,
-                project_iri,
-                &id,
-                args.timeout,
-                sleeper,
-            )?;
+            poll_until_done(client, cfg, reporter, token, project_iri, &id, args.timeout, sleeper)?;
             reporter.report(&DumpEvent::Downloading)?;
-            let bytes =
-                stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
-            let cleaned_up =
-                run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
+            let bytes = stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
+            let cleaned_up = run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
             reporter.report(&DumpEvent::Done { bytes })?;
             return renderer.project_dump(
                 &DumpOutcome {
@@ -653,10 +571,7 @@ fn handle_replace(
                 meta,
             );
         }
-        CreateDumpOutcome::ExistsForOtherProject {
-            id: foreign_id,
-            project_iri: foreign_iri,
-        } => {
+        CreateDumpOutcome::ExistsForOtherProject { id: foreign_id, project_iri: foreign_iri } => {
             if !args.discard_other_project {
                 return Err(Diagnostic::Conflict(format!(
                     "the server's single dump slot is held by a different project \
@@ -664,10 +579,9 @@ fn handle_replace(
 project's dump and create this one's"
                 )));
             }
-            // --discard-other-project given: status-check the FOREIGN dump via its OWN iri (intentional —
-            // never the requested project's iri).
-            let foreign =
-                client.get_project_dump_status(&cfg.server, &foreign_iri, &foreign_id, token)?;
+            // --discard-other-project given: status-check the FOREIGN dump via its OWN iri
+            // (intentional — never the requested project's iri).
+            let foreign = client.get_project_dump_status(&cfg.server, &foreign_iri, &foreign_id, token)?;
             match foreign.status {
                 DumpStatus::InProgress => {
                     return Err(Diagnostic::Conflict(format!(
@@ -682,20 +596,17 @@ progress; it cannot be discarded until it finishes — wait and retry"
                     })?;
                     client.delete_project_dump(&cfg.server, &foreign_iri, &foreign_id, token)?;
                     // Recreate for the REQUESTED project (outer project_iri).
-                    let create2 =
-                        client.create_project_dump(&cfg.server, project_iri, skip_assets, token)?;
+                    let create2 = client.create_project_dump(&cfg.server, project_iri, skip_assets, token)?;
                     recreated_dump_ids(create2)?
                 }
             }
         }
         CreateDumpOutcome::Exists { id } => {
-            let status_task =
-                client.get_project_dump_status(&cfg.server, project_iri, &id, token)?;
+            let status_task = client.get_project_dump_status(&cfg.server, project_iri, &id, token)?;
             match status_task.status {
                 DumpStatus::InProgress => {
                     return Err(Diagnostic::Conflict(
-                        "a dump is already in progress; it cannot be replaced until it finishes"
-                            .into(),
+                        "a dump is already in progress; it cannot be replaced until it finishes".into(),
                     ));
                 }
                 DumpStatus::Completed | DumpStatus::Failed => {
@@ -703,8 +614,7 @@ progress; it cannot be discarded until it finishes — wait and retry"
                     reporter.report(&DumpEvent::Deleting { id: id.clone() })?;
                     client.delete_project_dump(&cfg.server, project_iri, &id, token)?;
                     // Re-create — may race with another client.
-                    let create2 =
-                        client.create_project_dump(&cfg.server, project_iri, skip_assets, token)?;
+                    let create2 = client.create_project_dump(&cfg.server, project_iri, skip_assets, token)?;
                     recreated_dump_ids(create2)?
                 }
             }
@@ -712,16 +622,7 @@ progress; it cannot be discarded until it finishes — wait and retry"
     };
 
     reporter.report(&DumpEvent::Triggered { id: id.clone() })?;
-    poll_until_done(
-        client,
-        cfg,
-        reporter,
-        token,
-        project_iri,
-        &id,
-        args.timeout,
-        sleeper,
-    )?;
+    poll_until_done(client, cfg, reporter, token, project_iri, &id, args.timeout, sleeper)?;
     reporter.report(&DumpEvent::Downloading)?;
     let bytes = stream_dump_to_path(client, &cfg.server, project_iri, &id, token, &output_path)?;
     let cleaned_up = run_cleanup(args.cleanup, client, &cfg.server, project_iri, &id, token);
@@ -743,9 +644,9 @@ progress; it cannot be discarded until it finishes — wait and retry"
 /// - `Exists{id}`:
 ///   - `Completed`/`Failed` → Deleting → delete → `project_dump_deleted{deleted:true}`.
 ///   - `InProgress` → `Conflict`.
-/// - `Created(task)` → nothing existed; a probe created a new in-progress dump.
-///   Discloses via `ProbeCreated` event, emits `project_dump_deleted{deleted:false}`.
-///   Does NOT attempt to delete the in-progress dump (would 409).
+/// - `Created(task)` → nothing existed; a probe created a new in-progress dump. Discloses via
+///   `ProbeCreated` event, emits `project_dump_deleted{deleted:false}`. Does NOT attempt to delete
+///   the in-progress dump (would 409).
 #[allow(clippy::too_many_arguments)]
 fn handle_delete(
     create_outcome: CreateDumpOutcome,
@@ -758,10 +659,7 @@ fn handle_delete(
     meta: &MetaContext,
 ) -> Result<(), Diagnostic> {
     match create_outcome {
-        CreateDumpOutcome::ExistsForOtherProject {
-            project_iri: foreign_iri,
-            ..
-        } => renderer.project_dump_deleted(
+        CreateDumpOutcome::ExistsForOtherProject { project_iri: foreign_iri, .. } => renderer.project_dump_deleted(
             &DumpDeleteOutcome {
                 deleted: false,
                 note: Some(format!(
@@ -772,8 +670,7 @@ single dump slot is held by a different project ({foreign_iri})"
             meta,
         ),
         CreateDumpOutcome::Exists { id } => {
-            let status_task =
-                client.get_project_dump_status(&cfg.server, project_iri, &id, token)?;
+            let status_task = client.get_project_dump_status(&cfg.server, project_iri, &id, token)?;
             match status_task.status {
                 DumpStatus::InProgress => Err(Diagnostic::Conflict(
                     "the dump is in progress and cannot be deleted until it finishes".into(),
@@ -781,13 +678,7 @@ single dump slot is held by a different project ({foreign_iri})"
                 DumpStatus::Completed | DumpStatus::Failed => {
                     reporter.report(&DumpEvent::Deleting { id: id.clone() })?;
                     client.delete_project_dump(&cfg.server, project_iri, &id, token)?;
-                    renderer.project_dump_deleted(
-                        &DumpDeleteOutcome {
-                            deleted: true,
-                            note: None,
-                        },
-                        meta,
-                    )
+                    renderer.project_dump_deleted(&DumpDeleteOutcome { deleted: true, note: None }, meta)
                 }
             }
         }
@@ -800,21 +691,13 @@ single dump slot is held by a different project ({foreign_iri})"
 that will complete server-side",
                 task.id
             );
-            reporter.report(&DumpEvent::ProbeCreated {
-                id: task.id.clone(),
-            })?;
+            reporter.report(&DumpEvent::ProbeCreated { id: task.id.clone() })?;
             tracing::warn!(
                 id = %task.id,
                 "delete mode: no existing dump found; probe created in-progress dump \
             that will complete server-side"
             );
-            renderer.project_dump_deleted(
-                &DumpDeleteOutcome {
-                    deleted: false,
-                    note: Some(note),
-                },
-                meta,
-            )
+            renderer.project_dump_deleted(&DumpDeleteOutcome { deleted: false, note: Some(note) }, meta)
         }
     }
 }
@@ -909,10 +792,9 @@ fn run_cleanup(
 /// filesystem failure. See `Diagnostic::Io` for the design rationale.
 ///
 /// Implementation:
-/// 1. Create a sibling temp file `<final>.<pid>.partial` with `O_EXCL` so no
-///    concurrent writer is clobbered.
-/// 2. On Unix, restrict the file to owner-only (`0o600`) — dumps may hold
-///    sensitive research data.
+/// 1. Create a sibling temp file `<final>.<pid>.partial` with `O_EXCL` so no concurrent writer is
+///    clobbered.
+/// 2. On Unix, restrict the file to owner-only (`0o600`) — dumps may hold sensitive research data.
 /// 3. Stream the download into the temp file.
 /// 4. `flush()` + `sync_all()` before rename to avoid truncated archives.
 /// 5. `rename(temp, final)` — sibling temp guarantees same-filesystem, no EXDEV.
@@ -930,9 +812,9 @@ fn stream_dump_to_path(
     // Guard: a path like `/` or an empty path has no file_name component and
     // would silently produce a degenerate temp name. Fail fast instead. Bind
     // the file name here so the invariant is structural (no later unwrap).
-    let file_name = final_path.file_name().ok_or_else(|| {
-        Diagnostic::Usage(format!("invalid --output path: {}", final_path.display()))
-    })?;
+    let file_name = final_path
+        .file_name()
+        .ok_or_else(|| Diagnostic::Usage(format!("invalid --output path: {}", final_path.display())))?;
 
     let temp_path = {
         let pid = std::process::id();
@@ -960,12 +842,9 @@ fn stream_dump_to_path(
         open_opts.mode(0o600);
     }
 
-    let mut file = open_opts.open(&temp_path).map_err(|e| {
-        Diagnostic::Io(format!(
-            "failed to create temp file {}: {e}",
-            temp_path.display()
-        ))
-    })?;
+    let mut file = open_opts
+        .open(&temp_path)
+        .map_err(|e| Diagnostic::Io(format!("failed to create temp file {}: {e}", temp_path.display())))?;
 
     // Stream download into the temp file.
     let result = client.download_project_dump(server, project_iri, dump_id, token, &mut file);
@@ -983,18 +862,12 @@ fn stream_dump_to_path(
     // a buffered or interrupted write.
     file.flush().map_err(|e| {
         let _ = std::fs::remove_file(&temp_path);
-        Diagnostic::Io(format!(
-            "failed to flush temp file {}: {e}",
-            temp_path.display()
-        ))
+        Diagnostic::Io(format!("failed to flush temp file {}: {e}", temp_path.display()))
     })?;
 
     file.sync_all().map_err(|e| {
         let _ = std::fs::remove_file(&temp_path);
-        Diagnostic::Io(format!(
-            "failed to sync temp file {}: {e}",
-            temp_path.display()
-        ))
+        Diagnostic::Io(format!("failed to sync temp file {}: {e}", temp_path.display()))
     })?;
 
     // Rename temp → final (sibling temp ⇒ same filesystem ⇒ no EXDEV).
@@ -1041,16 +914,12 @@ mod tests {
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
     use crate::model::{
-        CreateDumpOutcome, DataModelSummary, DumpStatus, DumpTask, Project, ProjectDescription,
-        ProjectDetail, ProjectRef, ProjectStatus,
+        CreateDumpOutcome, DataModelSummary, DumpStatus, DumpTask, Project, ProjectDescription, ProjectDetail,
+        ProjectRef, ProjectStatus,
     };
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::progress::ProgressReporter;
-    use crate::render::{
-        DumpDeleteOutcome, DumpEvent, DumpOutcome, Format, MetaContext, ProjectListView, Renderer,
-    };
+    use crate::render::{DumpDeleteOutcome, DumpEvent, DumpOutcome, Format, MetaContext, ProjectListView, Renderer};
 
     // ── MockDspClient ─────────────────────────────────────────────────────────
 
@@ -1179,11 +1048,7 @@ mod tests {
             self
         }
 
-        fn with_create_exists_other_project(
-            mut self,
-            id: impl Into<String>,
-            project_iri: impl Into<String>,
-        ) -> Self {
+        fn with_create_exists_other_project(mut self, id: impl Into<String>, project_iri: impl Into<String>) -> Self {
             self.create_result = Some(Ok(CreateDumpOutcome::ExistsForOtherProject {
                 id: id.into(),
                 project_iri: project_iri.into(),
@@ -1201,20 +1066,14 @@ mod tests {
             self
         }
 
-        fn with_poll_sequence(
-            mut self,
-            seq: impl IntoIterator<Item = Result<DumpTask, Diagnostic>>,
-        ) -> Self {
+        fn with_poll_sequence(mut self, seq: impl IntoIterator<Item = Result<DumpTask, Diagnostic>>) -> Self {
             self.poll_sequence = RefCell::new(seq.into_iter().collect());
             self
         }
 
         /// Set a status sequence used for `get_project_dump_status` in the
         /// Exists path (first pop from this, then falls back to poll_sequence).
-        fn with_status_sequence(
-            mut self,
-            seq: impl IntoIterator<Item = Result<DumpTask, Diagnostic>>,
-        ) -> Self {
+        fn with_status_sequence(mut self, seq: impl IntoIterator<Item = Result<DumpTask, Diagnostic>>) -> Self {
             self.status_sequence = RefCell::new(seq.into_iter().collect());
             self
         }
@@ -1239,10 +1098,7 @@ mod tests {
             self
         }
 
-        fn with_describe_project_result(
-            mut self,
-            result: Result<ProjectDetail, Diagnostic>,
-        ) -> Self {
+        fn with_describe_project_result(mut self, result: Result<ProjectDetail, Diagnostic>) -> Self {
             self.describe_project_result = Some(result);
             self
         }
@@ -1302,9 +1158,9 @@ mod tests {
             _token: &str,
         ) -> Result<CreateDumpOutcome, Diagnostic> {
             *self.create_calls.borrow_mut() += 1;
-            self.call_log.borrow_mut().push(CallRecord::Create {
-                project_iri: project_iri.to_string(),
-            });
+            self.call_log
+                .borrow_mut()
+                .push(CallRecord::Create { project_iri: project_iri.to_string() });
             self.create_skip_assets.set(Some(skip_assets));
             // On the second+ call, pop from create_sequence if available.
             if *self.create_calls.borrow() > 1
@@ -1330,17 +1186,14 @@ mod tests {
             // Poll = came from poll_sequence.
             let from_status = self.status_sequence.borrow_mut().pop_front();
             if let Some(result) = from_status {
-                self.call_log
-                    .borrow_mut()
-                    .push(CallRecord::Status(project_iri.to_string()));
+                self.call_log.borrow_mut().push(CallRecord::Status(project_iri.to_string()));
                 return result;
             }
             *self.poll_calls.borrow_mut() += 1;
             self.call_log.borrow_mut().push(CallRecord::Poll);
-            self.poll_sequence
-                .borrow_mut()
-                .pop_front()
-                .expect("poll_sequence exhausted — test bug: provide enough entries or let the logical clock fire first")
+            self.poll_sequence.borrow_mut().pop_front().expect(
+                "poll_sequence exhausted — test bug: provide enough entries or let the logical clock fire first",
+            )
         }
 
         fn download_project_dump(
@@ -1370,24 +1223,18 @@ mod tests {
             _token: &str,
         ) -> Result<(), Diagnostic> {
             *self.delete_calls.borrow_mut() += 1;
-            self.call_log
-                .borrow_mut()
-                .push(CallRecord::Delete(project_iri.to_string()));
+            self.call_log.borrow_mut().push(CallRecord::Delete(project_iri.to_string()));
             self.delete_result
                 .clone()
                 .expect("delete_result must be set when delete_project_dump is called")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             *self.list_projects_calls.borrow_mut() += 1;
             *self.list_projects_token.borrow_mut() = Some(token.map(str::to_owned));
-            self.call_log.borrow_mut().push(CallRecord::ListProjects {
-                token: token.map(str::to_owned),
-            });
+            self.call_log
+                .borrow_mut()
+                .push(CallRecord::ListProjects { token: token.map(str::to_owned) });
             match &self.list_projects_result {
                 Some(r) => r.clone(),
                 None => Err(Diagnostic::NotImplemented(
@@ -1402,8 +1249,7 @@ mod tests {
             project: &str,
             token: Option<&str>,
         ) -> Result<crate::model::ProjectDetail, Diagnostic> {
-            *self.describe_project_call.borrow_mut() =
-                Some((project.to_owned(), token.map(str::to_owned)));
+            *self.describe_project_call.borrow_mut() = Some((project.to_owned(), token.map(str::to_owned)));
             match &self.describe_project_result {
                 Some(r) => r.clone(),
                 None => Err(Diagnostic::NotImplemented(
@@ -1545,51 +1391,27 @@ mod tests {
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn project_dump(
-            &mut self,
-            outcome: &DumpOutcome,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_dump(&mut self, outcome: &DumpOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.dump_outcome = Some(DumpOutcome {
                 path: outcome.path.clone(),
                 bytes: outcome.bytes,
@@ -1601,34 +1423,20 @@ mod tests {
             Ok(())
         }
 
-        fn project_dump_deleted(
-            &mut self,
-            outcome: &DumpDeleteOutcome,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
-            self.dump_deleted_outcome = Some(DumpDeleteOutcome {
-                deleted: outcome.deleted,
-                note: outcome.note.clone(),
-            });
+        fn project_dump_deleted(&mut self, outcome: &DumpDeleteOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
+            self.dump_deleted_outcome =
+                Some(DumpDeleteOutcome { deleted: outcome.deleted, note: outcome.note.clone() });
             self.dump_deleted_meta = Some(meta.clone());
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            view: &ProjectListView,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, view: &ProjectListView, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.projects_view = Some((view.items.clone(), view.total, view.filter.clone()));
             self.projects_meta = Some(meta.clone());
             Ok(())
         }
 
-        fn project_describe(
-            &mut self,
-            project: &ProjectDetail,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.describe_detail = Some(project.clone());
             self.describe_meta = Some(meta.clone());
             Ok(())
@@ -1735,22 +1543,15 @@ mod tests {
         fn report(&mut self, event: &DumpEvent) -> Result<(), Diagnostic> {
             match event {
                 DumpEvent::Triggered { id } => self.events.push(EventRecord::Triggered(id.clone())),
-                DumpEvent::Polling { elapsed_secs, .. } => {
-                    self.events.push(EventRecord::Polling(*elapsed_secs))
-                }
+                DumpEvent::Polling { elapsed_secs, .. } => self.events.push(EventRecord::Polling(*elapsed_secs)),
                 DumpEvent::Downloading => self.events.push(EventRecord::Downloading),
                 DumpEvent::Done { bytes } => self.events.push(EventRecord::Done(*bytes)),
                 DumpEvent::Adopting { id } => self.events.push(EventRecord::Adopting(id.clone())),
                 DumpEvent::Deleting { id } => self.events.push(EventRecord::Deleting(id.clone())),
-                DumpEvent::ProbeCreated { id } => {
-                    self.events.push(EventRecord::ProbeCreated(id.clone()))
-                }
-                DumpEvent::DiscardingOtherProjectDump { id, project_iri } => {
-                    self.events.push(EventRecord::DiscardingOtherProjectDump {
-                        id: id.clone(),
-                        project_iri: project_iri.clone(),
-                    })
-                }
+                DumpEvent::ProbeCreated { id } => self.events.push(EventRecord::ProbeCreated(id.clone())),
+                DumpEvent::DiscardingOtherProjectDump { id, project_iri } => self
+                    .events
+                    .push(EventRecord::DiscardingOtherProjectDump { id: id.clone(), project_iri: project_iri.clone() }),
             }
             Ok(())
         }
@@ -1804,9 +1605,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: "https://api.test.dasch.swiss".to_string(),
-        };
+        let cfg = Config { server: "https://api.test.dasch.swiss".to_string() };
         (args, cfg)
     }
 
@@ -1852,20 +1651,14 @@ mod tests {
         assert!(!outcome.cleaned_up);
 
         // The output file must exist on disk and be non-empty after a happy-path run.
-        assert!(
-            outcome.path.exists(),
-            "output file must exist after happy-path download"
-        );
+        assert!(outcome.path.exists(), "output file must exist after happy-path download");
         assert!(
             outcome.path.metadata().unwrap().len() > 0,
             "output file must be non-empty after happy-path download"
         );
 
         // Reporter saw: Triggered, Polling(0), Downloading, Done
-        assert_eq!(
-            reporter.events[0],
-            EventRecord::Triggered("dump-id-42".to_string())
-        );
+        assert_eq!(reporter.events[0], EventRecord::Triggered("dump-id-42".to_string()));
         assert_eq!(reporter.events[1], EventRecord::Polling(0));
         assert_eq!(reporter.events[2], EventRecord::Downloading);
         assert_eq!(reporter.events[3], EventRecord::Done(19));
@@ -1899,9 +1692,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: "https://api.test.dasch.swiss".to_string(),
-        };
+        let cfg = Config { server: "https://api.test.dasch.swiss".to_string() };
 
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
@@ -1997,25 +1788,14 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::Usage(_)),
-            "expected Usage, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::Usage(_)), "expected Usage, got {err:?}");
         assert!(
             err.to_string().contains("refusing to overwrite"),
             "message should mention overwrite refusal: {err}"
         );
         // Assert no client method was called.
-        assert_eq!(
-            *client.resolve_calls.borrow(),
-            0,
-            "resolve_project must not be called"
-        );
-        assert_eq!(
-            *client.create_calls.borrow(),
-            0,
-            "create must not be called"
-        );
+        assert_eq!(*client.resolve_calls.borrow(), 0, "resolve_project must not be called");
+        assert_eq!(*client.create_calls.borrow(), 0, "create must not be called");
     }
 
     #[test]
@@ -2043,9 +1823,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: "https://api.test.dasch.swiss".to_string(),
-        };
+        let cfg = Config { server: "https://api.test.dasch.swiss".to_string() };
 
         let client = MockDspClient::new().with_resolve_project(Ok(make_project_ref()));
         let mut renderer = RecordingRenderer::new();
@@ -2072,10 +1850,7 @@ mod tests {
         .unwrap_err();
 
         // Guard fires after resolve but before trigger: unconditional assertions.
-        assert!(
-            matches!(err, Diagnostic::Usage(_)),
-            "expected Usage, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::Usage(_)), "expected Usage, got {err:?}");
         assert!(
             err.to_string().contains("refusing to overwrite"),
             "message should mention overwrite refusal: {err}"
@@ -2117,20 +1892,9 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::AuthRequired(_)),
-            "expected AuthRequired, got {err:?}"
-        );
-        assert_eq!(
-            *client.resolve_calls.borrow(),
-            0,
-            "resolve must not be called"
-        );
-        assert_eq!(
-            *client.create_calls.borrow(),
-            0,
-            "trigger must not be called"
-        );
+        assert!(matches!(err, Diagnostic::AuthRequired(_)), "expected AuthRequired, got {err:?}");
+        assert_eq!(*client.resolve_calls.borrow(), 0, "resolve must not be called");
+        assert_eq!(*client.create_calls.borrow(), 0, "trigger must not be called");
     }
 
     #[test]
@@ -2161,10 +1925,7 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::Conflict(_)),
-            "expected Conflict, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::Conflict(_)), "expected Conflict, got {err:?}");
     }
 
     #[test]
@@ -2200,19 +1961,13 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::ServerError(_)),
-            "expected ServerError, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::ServerError(_)), "expected ServerError, got {err:?}");
         let msg = err.to_string();
         assert!(
             msg.contains("server-side dump failed"),
             "message should mention dump failure: {msg}"
         );
-        assert!(
-            msg.contains("out of disk space"),
-            "message should include error_message: {msg}"
-        );
+        assert!(msg.contains("out of disk space"), "message should include error_message: {msg}");
     }
 
     #[test]
@@ -2224,9 +1979,8 @@ mod tests {
         args.timeout = 1;
 
         // Provide a long enough poll sequence that exhaustion won't fire first.
-        let in_progress: Vec<Result<DumpTask, Diagnostic>> = (0..100)
-            .map(|_| Ok(make_dump_task(DumpStatus::InProgress)))
-            .collect();
+        let in_progress: Vec<Result<DumpTask, Diagnostic>> =
+            (0..100).map(|_| Ok(make_dump_task(DumpStatus::InProgress))).collect();
 
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
@@ -2255,10 +2009,7 @@ mod tests {
             "expected ServerError timeout, got {err:?}"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("did not complete"),
-            "message should mention timeout: {msg}"
-        );
+        assert!(msg.contains("did not complete"), "message should mention timeout: {msg}");
         assert!(
             msg.contains("may still be running"),
             "message should contain user-visible hint 'may still be running': {msg}"
@@ -2296,10 +2047,7 @@ mod tests {
         .unwrap();
 
         let outcome = renderer.dump_outcome.unwrap();
-        assert!(
-            outcome.cleaned_up,
-            "cleanup success should set cleaned_up=true"
-        );
+        assert!(outcome.cleaned_up, "cleanup success should set cleaned_up=true");
     }
 
     #[test]
@@ -2334,10 +2082,7 @@ mod tests {
         .unwrap();
 
         let outcome = renderer.dump_outcome.unwrap();
-        assert!(
-            !outcome.cleaned_up,
-            "cleanup error should set cleaned_up=false"
-        );
+        assert!(!outcome.cleaned_up, "cleanup error should set cleaned_up=false");
     }
 
     #[test]
@@ -2370,14 +2115,8 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::Network(_)),
-            "expected Network error, got {err:?}"
-        );
-        assert!(
-            !out_path.exists(),
-            "target file must not exist after download error"
-        );
+        assert!(matches!(err, Diagnostic::Network(_)), "expected Network error, got {err:?}");
+        assert!(!out_path.exists(), "target file must not exist after download error");
     }
 
     #[test]
@@ -2385,10 +2124,7 @@ mod tests {
         let now = Utc.with_ymd_and_hms(2026, 5, 29, 12, 0, 0).unwrap();
         let base = std::path::Path::new("/tmp/test-base");
         let path = default_output_path(base, "0001", now);
-        assert_eq!(
-            path,
-            PathBuf::from("/tmp/test-base/0001-20260529T120000Z.zip")
-        );
+        assert_eq!(path, PathBuf::from("/tmp/test-base/0001-20260529T120000Z.zip"));
     }
 
     #[test]
@@ -2465,9 +2201,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: "https://api.test.dasch.swiss".to_string(),
-        };
+        let cfg = Config { server: "https://api.test.dasch.swiss".to_string() };
 
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
@@ -2543,10 +2277,7 @@ mod tests {
         // The .partial temp should have been cleaned up.
         let pid = std::process::id();
         let temp = dir.path().join(format!("dump_dir.{pid}.partial"));
-        assert!(
-            !temp.exists(),
-            "temp file should be cleaned up after rename failure"
-        );
+        assert!(!temp.exists(), "temp file should be cleaned up after rename failure");
     }
 
     // ── Fix 4: download_error Io variant ─────────────────────────────────────
@@ -2584,14 +2315,8 @@ mod tests {
         .unwrap_err();
 
         // The error must propagate unchanged and no output file must exist.
-        assert!(
-            !err.to_string().is_empty(),
-            "error message must be non-empty"
-        );
-        assert!(
-            !out_path.exists(),
-            "target file must not exist after download error ({err:?})"
-        );
+        assert!(!err.to_string().is_empty(), "error message must be non-empty");
+        assert!(!out_path.exists(), "target file must not exist after download error ({err:?})");
     }
 
     #[test]
@@ -2717,18 +2442,12 @@ mod tests {
 
         let outcome = renderer.dump_outcome.unwrap();
         assert!(!outcome.reused, "fresh dump must have reused:false");
-        assert_eq!(
-            outcome.created_at,
-            Some(ts),
-            "created_at must be populated from task"
-        );
+        assert_eq!(outcome.created_at, Some(ts), "created_at must be populated from task");
         assert_eq!(outcome.bytes, 7); // b"zipdata".len()
         // Call sequence: Resolve, Create, Status/Poll, Download
         let log = client.call_log();
         assert!(log.contains(&CallRecord::Resolve));
-        assert!(log.contains(&CallRecord::Create {
-            project_iri: "http://rdfh.ch/projects/0001".to_string(),
-        }));
+        assert!(log.contains(&CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }));
         assert!(log.contains(&CallRecord::Poll));
         assert!(log.contains(&CallRecord::Download));
     }
@@ -2773,23 +2492,14 @@ mod tests {
 
         let outcome = renderer.dump_outcome.unwrap();
         assert!(outcome.reused, "adopted dump must have reused:true");
-        assert_eq!(
-            outcome.created_at,
-            Some(ts),
-            "created_at must come from status"
-        );
+        assert_eq!(outcome.created_at, Some(ts), "created_at must come from status");
         // Reporter: Adopting, Downloading, Done (no Triggered, no Polling)
         assert!(
-            reporter
-                .events
-                .contains(&EventRecord::Adopting("existing-id".into())),
+            reporter.events.contains(&EventRecord::Adopting("existing-id".into())),
             "must report Adopting"
         );
         assert!(
-            !reporter
-                .events
-                .iter()
-                .any(|e| matches!(e, EventRecord::Triggered(_))),
+            !reporter.events.iter().any(|e| matches!(e, EventRecord::Triggered(_))),
             "must NOT report Triggered when adopting"
         );
         // Call sequence: Resolve, Create, Status, Download
@@ -2797,14 +2507,9 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve);
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            }
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }
         );
-        assert_eq!(
-            log[2],
-            CallRecord::Status("http://rdfh.ch/projects/0001".to_string())
-        );
+        assert_eq!(log[2], CallRecord::Status("http://rdfh.ch/projects/0001".to_string()));
         assert_eq!(log[3], CallRecord::Download);
     }
 
@@ -2855,14 +2560,13 @@ mod tests {
         let outcome = renderer.dump_outcome.unwrap();
         assert!(outcome.reused);
         assert_eq!(outcome.created_at, Some(ts));
-        // Full call sequence: Resolve, Create, Status, Poll (in_progress), Poll (completed), Download
+        // Full call sequence: Resolve, Create, Status, Poll (in_progress), Poll (completed),
+        // Download
         let log = client.call_log();
         assert_eq!(log[0], CallRecord::Resolve, "first call must be Resolve");
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            },
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() },
             "second call must be Create"
         );
         assert_eq!(
@@ -2870,16 +2574,8 @@ mod tests {
             CallRecord::Status("http://rdfh.ch/projects/0001".to_string()),
             "third call must be Status"
         );
-        assert_eq!(
-            log[3],
-            CallRecord::Poll,
-            "fourth call must be Poll (in_progress)"
-        );
-        assert_eq!(
-            log[4],
-            CallRecord::Poll,
-            "fifth call must be Poll (completed)"
-        );
+        assert_eq!(log[3], CallRecord::Poll, "fourth call must be Poll (in_progress)");
+        assert_eq!(log[4], CallRecord::Poll, "fifth call must be Poll (completed)");
         assert_eq!(log[5], CallRecord::Download, "sixth call must be Download");
         assert_eq!(log.len(), 6, "must be exactly 6 calls");
         // Adopting must be reported before any Polling event.
@@ -2938,22 +2634,10 @@ mod tests {
             "failed existing dump must yield Conflict"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("existing dump failed"),
-            "message must mention failure: {msg}"
-        );
-        assert!(
-            msg.contains("disk full"),
-            "message must include server error: {msg}"
-        );
-        assert!(
-            msg.contains("--replace"),
-            "message must hint at --replace: {msg}"
-        );
-        assert!(
-            msg.contains("--delete"),
-            "message must hint at --delete: {msg}"
-        );
+        assert!(msg.contains("existing dump failed"), "message must mention failure: {msg}");
+        assert!(msg.contains("disk full"), "message must include server error: {msg}");
+        assert!(msg.contains("--replace"), "message must hint at --replace: {msg}");
+        assert!(msg.contains("--delete"), "message must hint at --delete: {msg}");
     }
 
     // --- Replace mode ---
@@ -3047,9 +2731,7 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve, "first call must be Resolve");
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            },
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() },
             "second call must be Create"
         );
         assert_eq!(
@@ -3064,30 +2746,20 @@ mod tests {
         );
         assert_eq!(
             log[4],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            },
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() },
             "fifth call must be Create (2nd)"
         );
         assert_eq!(log[5], CallRecord::Poll, "sixth call must be Poll");
-        assert_eq!(
-            log[6],
-            CallRecord::Download,
-            "seventh call must be Download"
-        );
+        assert_eq!(log[6], CallRecord::Download, "seventh call must be Download");
         assert_eq!(log.len(), 7, "must be exactly 7 calls");
         // Deleting event must have been reported
         assert!(
-            reporter
-                .events
-                .contains(&EventRecord::Deleting("old-id".into())),
+            reporter.events.contains(&EventRecord::Deleting("old-id".into())),
             "must report Deleting for the old dump"
         );
         // Triggered must have been reported for the second (new) dump
         assert!(
-            reporter
-                .events
-                .contains(&EventRecord::Triggered("new-id".into())),
+            reporter.events.contains(&EventRecord::Triggered("new-id".into())),
             "must report Triggered for the new dump; events: {:?}",
             reporter.events
         );
@@ -3160,9 +2832,7 @@ mod tests {
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
             .with_create_exists("race-id")
-            .with_create_sequence([Ok(CreateDumpOutcome::Exists {
-                id: "race-id-2".into(),
-            })])
+            .with_create_sequence([Ok(CreateDumpOutcome::Exists { id: "race-id-2".into() })])
             .with_status_sequence([Ok(existing_task)])
             .with_delete_result(Ok(()));
 
@@ -3183,15 +2853,9 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::Conflict(_)),
-            "recreate race must yield Conflict"
-        );
+        assert!(matches!(err, Diagnostic::Conflict(_)), "recreate race must yield Conflict");
         let msg = err.to_string();
-        assert!(
-            msg.contains("recreated"),
-            "message must mention recreation: {msg}"
-        );
+        assert!(msg.contains("recreated"), "message must mention recreation: {msg}");
     }
 
     #[test]
@@ -3235,16 +2899,9 @@ mod tests {
             "in-progress existing dump must block replace"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("in progress"),
-            "message must mention in-progress state: {msg}"
-        );
+        assert!(msg.contains("in progress"), "message must mention in-progress state: {msg}");
         // Delete must NOT have been called.
-        assert_eq!(
-            *client.delete_calls.borrow(),
-            0,
-            "delete must not be called when in-progress"
-        );
+        assert_eq!(*client.delete_calls.borrow(), 0, "delete must not be called when in-progress");
     }
 
     // --- Delete mode ---
@@ -3287,11 +2944,7 @@ mod tests {
         .unwrap();
 
         // Must NOT have downloaded.
-        assert_eq!(
-            *client.download_calls.borrow(),
-            0,
-            "delete must not download"
-        );
+        assert_eq!(*client.download_calls.borrow(), 0, "delete must not download");
         // Must have called delete.
         assert_eq!(*client.delete_calls.borrow(), 1);
         // project_dump_deleted must have been called with deleted:true.
@@ -3306,35 +2959,24 @@ mod tests {
             "project_dump must not be called in delete mode"
         );
         // Reporter: Deleting{id}
-        assert!(
-            reporter
-                .events
-                .contains(&EventRecord::Deleting("del-id".into()))
-        );
+        assert!(reporter.events.contains(&EventRecord::Deleting("del-id".into())));
         // Call sequence: Resolve, Create, Status, Delete — no Download
         let log = client.call_log();
         assert_eq!(log[0], CallRecord::Resolve);
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            }
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }
         );
-        assert_eq!(
-            log[2],
-            CallRecord::Status("http://rdfh.ch/projects/0001".to_string())
-        );
-        assert_eq!(
-            log[3],
-            CallRecord::Delete("http://rdfh.ch/projects/0001".to_string())
-        );
+        assert_eq!(log[2], CallRecord::Status("http://rdfh.ch/projects/0001".to_string()));
+        assert_eq!(log[3], CallRecord::Delete("http://rdfh.ch/projects/0001".to_string()));
         assert_eq!(log.len(), 4, "must be exactly 4 calls");
     }
 
     #[test]
     fn delete_failed_deletes_without_downloading() {
-        // Delete + Exists (failed) → same path as completed: status→delete → project_dump_deleted{deleted:true}.
-        // Verifies the `Completed | Failed` arm handles Failed identically to Completed.
+        // Delete + Exists (failed) → same path as completed: status→delete →
+        // project_dump_deleted{deleted:true}. Verifies the `Completed | Failed` arm handles Failed
+        // identically to Completed.
         let dir = TempDir::new().unwrap();
         let (mut args, cfg) = make_args(&dir);
         args.delete = true;
@@ -3376,11 +3018,7 @@ mod tests {
             "delete must not download even for a failed dump"
         );
         // Must have called delete.
-        assert_eq!(
-            *client.delete_calls.borrow(),
-            1,
-            "delete must be called for a failed dump"
-        );
+        assert_eq!(*client.delete_calls.borrow(), 1, "delete must be called for a failed dump");
         // project_dump_deleted must have been called with deleted:true.
         let del_outcome = renderer
             .dump_deleted_outcome
@@ -3397,18 +3035,10 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve);
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            }
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }
         );
-        assert_eq!(
-            log[2],
-            CallRecord::Status("http://rdfh.ch/projects/0001".to_string())
-        );
-        assert_eq!(
-            log[3],
-            CallRecord::Delete("http://rdfh.ch/projects/0001".to_string())
-        );
+        assert_eq!(log[2], CallRecord::Status("http://rdfh.ch/projects/0001".to_string()));
+        assert_eq!(log[3], CallRecord::Delete("http://rdfh.ch/projects/0001".to_string()));
         assert_eq!(log.len(), 4, "must be exactly 4 calls");
     }
 
@@ -3448,20 +3078,10 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::Conflict(_)),
-            "in-progress dump must block delete"
-        );
+        assert!(matches!(err, Diagnostic::Conflict(_)), "in-progress dump must block delete");
         let msg = err.to_string();
-        assert!(
-            msg.contains("in progress"),
-            "message must mention in-progress: {msg}"
-        );
-        assert_eq!(
-            *client.delete_calls.borrow(),
-            0,
-            "delete must not be called"
-        );
+        assert!(msg.contains("in progress"), "message must mention in-progress: {msg}");
+        assert_eq!(*client.delete_calls.borrow(), 0, "delete must not be called");
     }
 
     #[test]
@@ -3496,23 +3116,13 @@ mod tests {
         // project_dump must NOT be called.
         assert!(renderer.dump_outcome.is_none());
         // project_dump_deleted must be called with deleted:false and a note.
-        let del_outcome = renderer
-            .dump_deleted_outcome
-            .expect("project_dump_deleted must be called");
-        assert!(
-            !del_outcome.deleted,
-            "deleted must be false (probe, not real delete)"
-        );
+        let del_outcome = renderer.dump_deleted_outcome.expect("project_dump_deleted must be called");
+        assert!(!del_outcome.deleted, "deleted must be false (probe, not real delete)");
         let note = del_outcome.note.expect("note must be set for probe case");
-        assert!(
-            note.contains("dump-id-42"),
-            "note must mention the probe id: {note}"
-        );
+        assert!(note.contains("dump-id-42"), "note must mention the probe id: {note}");
         // Reporter must have received ProbeCreated.
         assert!(
-            reporter
-                .events
-                .contains(&EventRecord::ProbeCreated("dump-id-42".into())),
+            reporter.events.contains(&EventRecord::ProbeCreated("dump-id-42".into())),
             "must report ProbeCreated; events: {:?}",
             reporter.events
         );
@@ -3560,10 +3170,7 @@ mod tests {
             "Default + ExistsForOtherProject must yield Conflict, got {err:?}"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains(foreign_iri()),
-            "Conflict message must name the foreign IRI: {msg}"
-        );
+        assert!(msg.contains(foreign_iri()), "Conflict message must name the foreign IRI: {msg}");
         assert!(
             msg.contains("--replace --discard-other-project"),
             "Conflict message must hint at --replace --discard-other-project: {msg}"
@@ -3573,20 +3180,15 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve);
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            }
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }
         );
-        assert_eq!(
-            log.len(),
-            2,
-            "must be exactly 2 calls (no status/delete/download)"
-        );
+        assert_eq!(log.len(), 2, "must be exactly 2 calls (no status/delete/download)");
     }
 
     #[test]
     fn replace_exists_for_other_project_without_flag_returns_conflict_no_status_delete() {
-        // Replace + ExistsForOtherProject + no --discard-other-project → Conflict, no status/delete.
+        // Replace + ExistsForOtherProject + no --discard-other-project → Conflict, no
+        // status/delete.
         let dir = TempDir::new().unwrap();
         let (mut args, cfg) = make_args(&dir);
         args.replace = true;
@@ -3618,10 +3220,7 @@ mod tests {
             "Replace + ExistsForOtherProject without flag must yield Conflict, got {err:?}"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains(foreign_iri()),
-            "Conflict message must name the foreign IRI: {msg}"
-        );
+        assert!(msg.contains(foreign_iri()), "Conflict message must name the foreign IRI: {msg}");
         assert!(
             msg.contains("--replace --discard-other-project"),
             "Conflict message must hint at the flag: {msg}"
@@ -3631,9 +3230,7 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve);
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            }
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }
         );
         assert_eq!(log.len(), 2, "must be exactly 2 calls (no status/delete)");
     }
@@ -3690,12 +3287,10 @@ mod tests {
 
         // DiscardingOtherProjectDump must have been reported.
         assert!(
-            reporter
-                .events
-                .contains(&EventRecord::DiscardingOtherProjectDump {
-                    id: "foreign-dump-id".into(),
-                    project_iri: foreign_iri().to_string(),
-                }),
+            reporter.events.contains(&EventRecord::DiscardingOtherProjectDump {
+                id: "foreign-dump-id".into(),
+                project_iri: foreign_iri().to_string(),
+            }),
             "must report DiscardingOtherProjectDump; events: {:?}",
             reporter.events
         );
@@ -3706,9 +3301,7 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve, "first must be Resolve");
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: make_project_ref().iri,
-            },
+            CallRecord::Create { project_iri: make_project_ref().iri },
             "second must be Create with REQUESTED project IRI (initial probe)"
         );
         assert_eq!(
@@ -3723,9 +3316,7 @@ mod tests {
         );
         assert_eq!(
             log[4],
-            CallRecord::Create {
-                project_iri: make_project_ref().iri,
-            },
+            CallRecord::Create { project_iri: make_project_ref().iri },
             "fifth must be Create with REQUESTED project IRI (recreate after discard)"
         );
         assert_eq!(log[5], CallRecord::Poll, "sixth must be Poll");
@@ -3792,12 +3383,10 @@ mod tests {
 
         // DiscardingOtherProjectDump must have been reported.
         assert!(
-            reporter
-                .events
-                .contains(&EventRecord::DiscardingOtherProjectDump {
-                    id: "foreign-dump-id".into(),
-                    project_iri: foreign_iri().to_string(),
-                }),
+            reporter.events.contains(&EventRecord::DiscardingOtherProjectDump {
+                id: "foreign-dump-id".into(),
+                project_iri: foreign_iri().to_string(),
+            }),
             "must report DiscardingOtherProjectDump; events: {:?}",
             reporter.events
         );
@@ -3808,9 +3397,7 @@ mod tests {
         assert_eq!(log[0], CallRecord::Resolve, "first must be Resolve");
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: make_project_ref().iri,
-            },
+            CallRecord::Create { project_iri: make_project_ref().iri },
             "second must be Create with REQUESTED project IRI (initial probe)"
         );
         assert_eq!(
@@ -3825,9 +3412,7 @@ mod tests {
         );
         assert_eq!(
             log[4],
-            CallRecord::Create {
-                project_iri: make_project_ref().iri,
-            },
+            CallRecord::Create { project_iri: make_project_ref().iri },
             "fifth must be Create with REQUESTED project IRI (recreate after discard)"
         );
         assert_eq!(log[5], CallRecord::Poll, "sixth must be Poll");
@@ -3884,14 +3469,8 @@ mod tests {
             "foreign InProgress must yield Conflict, got {err:?}"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("in progress"),
-            "message must mention in progress: {msg}"
-        );
-        assert!(
-            msg.contains(foreign_iri()),
-            "message must name the foreign IRI: {msg}"
-        );
+        assert!(msg.contains("in progress"), "message must mention in progress: {msg}");
+        assert!(msg.contains(foreign_iri()), "message must name the foreign IRI: {msg}");
         // Status check was done with FOREIGN iri; no delete.
         let log = client.call_log();
         assert_eq!(
@@ -3941,25 +3520,15 @@ mod tests {
         let del_outcome = renderer
             .dump_deleted_outcome
             .expect("project_dump_deleted must have been called");
-        assert!(
-            !del_outcome.deleted,
-            "deleted must be false for foreign-slot no-op"
-        );
-        let note = del_outcome
-            .note
-            .expect("note must be set for foreign-slot case");
-        assert!(
-            note.contains(foreign_iri()),
-            "note must name the foreign project IRI: {note}"
-        );
+        assert!(!del_outcome.deleted, "deleted must be false for foreign-slot no-op");
+        let note = del_outcome.note.expect("note must be set for foreign-slot case");
+        assert!(note.contains(foreign_iri()), "note must name the foreign project IRI: {note}");
         // No status/delete calls (only Resolve + Create).
         let log = client.call_log();
         assert_eq!(log[0], CallRecord::Resolve);
         assert_eq!(
             log[1],
-            CallRecord::Create {
-                project_iri: "http://rdfh.ch/projects/0001".to_string(),
-            }
+            CallRecord::Create { project_iri: "http://rdfh.ch/projects/0001".to_string() }
         );
         assert_eq!(log.len(), 2, "must be exactly 2 calls (no status/delete)");
         assert_eq!(
@@ -3991,9 +3560,7 @@ mod tests {
     }
 
     fn make_list_cfg() -> Config {
-        Config {
-            server: LIST_SERVER.to_string(),
-        }
+        Config { server: LIST_SERVER.to_string() }
     }
 
     fn make_project(shortcode: &str, shortname: &str, longname: Option<&str>) -> Project {
@@ -4026,8 +3593,7 @@ mod tests {
         let client = MockDspClient::new().with_list_projects_result(Ok(two_project_list()));
         let mut renderer = RecordingRenderer::new();
 
-        run_list_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path))
-            .expect("must succeed anonymously");
+        run_list_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path)).expect("must succeed anonymously");
 
         let meta = renderer.projects_meta.unwrap();
         assert_eq!(meta.auth_state, "anonymous");
@@ -4180,10 +3746,7 @@ mod tests {
 
         let (items, total, _) = renderer.projects_view.unwrap();
         assert_eq!(total, 2, "total must still show pre-filter count");
-        assert!(
-            items.is_empty(),
-            "items must be empty when filter matches nothing"
-        );
+        assert!(items.is_empty(), "items must be empty when filter matches nothing");
     }
 
     /// Sort: unsorted mock response → renderer receives shortcode-ascending order.
@@ -4204,8 +3767,7 @@ mod tests {
         let client = MockDspClient::new().with_list_projects_result(Ok(unsorted));
         let mut renderer = RecordingRenderer::new();
 
-        run_list_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path))
-            .expect("sort must not error");
+        run_list_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path)).expect("sort must not error");
 
         let (items, _, _) = renderer.projects_view.unwrap();
         let shortcodes: Vec<&str> = items.iter().map(|p| p.shortcode.as_str()).collect();
@@ -4264,10 +3826,7 @@ mod tests {
             "expected Usage diagnostic for missing server, got {err:?}"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("--server") || msg.contains("DSP_SERVER"),
-            "{msg}"
-        );
+        assert!(msg.contains("--server") || msg.contains("DSP_SERVER"), "{msg}");
     }
 
     /// Token assertion is real: passing the wrong expected token should fail the test.
@@ -4323,9 +3882,7 @@ mod tests {
     }
 
     fn make_describe_cfg() -> Config {
-        Config {
-            server: DESCRIBE_SERVER.to_string(),
-        }
+        Config { server: DESCRIBE_SERVER.to_string() }
     }
 
     /// Build a realistic `ProjectDetail` fixture (beol-shaped).
@@ -4366,14 +3923,10 @@ mod tests {
         let client = MockDspClient::new().with_describe_project_result(Ok(detail.clone()));
         let mut renderer = RecordingRenderer::new();
 
-        run_describe_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path))
-            .expect("describe must succeed");
+        run_describe_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path)).expect("describe must succeed");
 
         let recorded_detail = renderer.describe_detail.unwrap();
-        assert_eq!(
-            recorded_detail, detail,
-            "renderer must receive the exact ProjectDetail"
-        );
+        assert_eq!(recorded_detail, detail, "renderer must receive the exact ProjectDetail");
 
         let meta = renderer.describe_meta.unwrap();
         assert_eq!(meta.server_label, DESCRIBE_SERVER);
@@ -4419,18 +3972,13 @@ mod tests {
         let args = make_describe_args(Some("9999"));
         let cfg = make_describe_cfg();
 
-        let client = MockDspClient::new().with_describe_project_result(Err(Diagnostic::NotFound(
-            "project '9999' not found".to_string(),
-        )));
+        let client = MockDspClient::new()
+            .with_describe_project_result(Err(Diagnostic::NotFound("project '9999' not found".to_string())));
         let mut renderer = RecordingRenderer::new();
 
-        let err = run_describe_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path))
-            .unwrap_err();
+        let err = run_describe_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path)).unwrap_err();
 
-        assert!(
-            matches!(err, Diagnostic::NotFound(_)),
-            "expected NotFound, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::NotFound(_)), "expected NotFound, got {err:?}");
     }
 
     /// Missing `--project` → `Diagnostic::Usage` with the expected message.
@@ -4446,18 +3994,14 @@ mod tests {
         let client = MockDspClient::new();
         let mut renderer = RecordingRenderer::new();
 
-        let err = run_describe_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path))
-            .unwrap_err();
+        let err = run_describe_impl(&args, &cfg, &client, &mut renderer, None, Some(&cache_path)).unwrap_err();
 
         assert!(
             matches!(err, Diagnostic::Usage(_)),
             "expected Usage diagnostic for missing --project, got {err:?}"
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("--project"),
-            "--project must appear in the usage message: {msg}"
-        );
+        assert!(msg.contains("--project"), "--project must appear in the usage message: {msg}");
 
         // No server call must have been made (fail-fast guard fires before IO).
         assert!(

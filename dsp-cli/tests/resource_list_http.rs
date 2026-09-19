@@ -155,23 +155,13 @@ async fn paged_progression_page0_more_true_page1_false() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result_p0.is_ok(),
-        "page 0 must succeed, got: {:?}",
-        result_p0
-    );
+    assert!(result_p0.is_ok(), "page 0 must succeed, got: {:?}", result_p0);
     let page0 = result_p0.unwrap();
     assert_eq!(page0.resources.len(), 2, "page 0 must have 2 resources");
-    assert!(
-        page0.may_have_more_results,
-        "page 0 must report may_have_more_results: true"
-    );
+    assert!(page0.may_have_more_results, "page 0 must report may_have_more_results: true");
     assert_eq!(page0.resources[0].label, "Page 1r");
     assert_eq!(page0.resources[0].iri, "http://rdfh.ch/0803/resource-0001");
-    assert!(
-        page0.resources[0].ark_url.is_some(),
-        "page 0, item 0: ark_url must be Some"
-    );
+    assert!(page0.resources[0].ark_url.is_some(), "page 0, item 0: ark_url must be Some");
     assert!(
         page0.resources[0].creation_date.is_some(),
         "page 0, item 0: creation_date must be Some"
@@ -202,17 +192,10 @@ async fn paged_progression_page0_more_true_page1_false() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result_p1.is_ok(),
-        "page 1 must succeed, got: {:?}",
-        result_p1
-    );
+    assert!(result_p1.is_ok(), "page 1 must succeed, got: {:?}", result_p1);
     let page1 = result_p1.unwrap();
     assert_eq!(page1.resources.len(), 1, "page 1 must have 1 resource");
-    assert!(
-        !page1.may_have_more_results,
-        "page 1 must report may_have_more_results: false"
-    );
+    assert!(!page1.may_have_more_results, "page 1 must report may_have_more_results: false");
 }
 
 // ---------------------------------------------------------------------------
@@ -280,11 +263,7 @@ async fn empty_final_page_returns_zero_resources_with_false() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result_p0.is_ok(),
-        "page 0 must succeed, got: {:?}",
-        result_p0
-    );
+    assert!(result_p0.is_ok(), "page 0 must succeed, got: {:?}", result_p0);
     let page0 = result_p0.unwrap();
     assert_eq!(page0.resources.len(), 1);
     assert!(page0.may_have_more_results, "page 0 must say more=true");
@@ -297,17 +276,9 @@ async fn empty_final_page_returns_zero_resources_with_false() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result_p1.is_ok(),
-        "empty page 1 must succeed (not error), got: {:?}",
-        result_p1
-    );
+    assert!(result_p1.is_ok(), "empty page 1 must succeed (not error), got: {:?}", result_p1);
     let page1 = result_p1.unwrap();
-    assert_eq!(
-        page1.resources.len(),
-        0,
-        "empty final page must yield zero resources"
-    );
+    assert_eq!(page1.resources.len(), 0, "empty final page must yield zero resources");
     assert!(
         !page1.may_have_more_results,
         "empty final page must report may_have_more_results: false"
@@ -351,10 +322,7 @@ async fn resource_class_query_param_is_sent() {
     );
 
     // Also verify via recorded requests.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
 
     // The query string must contain the encoded resourceClass IRI.
@@ -400,10 +368,7 @@ async fn x_knora_accept_project_header_is_sent() {
     );
 
     // Verify via recorded requests.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let project_header = received[0]
         .headers
@@ -484,16 +449,9 @@ async fn zero_result_response_returns_empty_resource_page() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "zero-result response must yield Ok, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "zero-result response must yield Ok, got: {:?}", result);
     let page = result.unwrap();
-    assert!(
-        page.resources.is_empty(),
-        "zero-result response must yield empty resources"
-    );
+    assert!(page.resources.is_empty(), "zero-result response must yield empty resources");
     assert!(
         !page.may_have_more_results,
         "zero-result response must yield may_have_more_results: false"
@@ -563,11 +521,7 @@ async fn single_result_no_graph_parses_to_one_resource() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "single-result form must yield Ok, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "single-result form must yield Ok, got: {:?}", result);
     let page = result.unwrap();
 
     assert_eq!(
@@ -581,10 +535,7 @@ async fn single_result_no_graph_parses_to_one_resource() {
         r.iri, "http://rdfh.ch/0803/incunabula-res-solo",
         "resource IRI must match top-level @id"
     );
-    assert_eq!(
-        r.label, "Folio Solo",
-        "resource label must match rdfs:label"
-    );
+    assert_eq!(r.label, "Folio Solo", "resource label must match rdfs:label");
 
     // resource_type is derived via local_name() from the @type array's first element.
     assert_eq!(
@@ -642,10 +593,7 @@ async fn single_result_without_optional_fields_yields_none() {
     let page = result.unwrap();
     assert_eq!(page.resources.len(), 1);
     let r = &page.resources[0];
-    assert!(
-        r.ark_url.is_none(),
-        "ark_url must be None when absent from response"
-    );
+    assert!(r.ark_url.is_none(), "ark_url must be None when absent from response");
     assert!(
         r.creation_date.is_none(),
         "creation_date must be None when absent from response"
@@ -680,10 +628,7 @@ async fn bearer_present_when_token_is_some() {
 
     assert!(result.is_ok(), "expected Ok with token, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -719,10 +664,7 @@ async fn bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -878,14 +820,7 @@ async fn order_by_property_present_when_order_by_is_some() {
     let prop_iri = PROP_IRI.to_string();
     let result = std::thread::spawn(move || {
         let client = HttpDspClient::new().expect("client construction should not fail");
-        client.list_resources(
-            &uri,
-            PROJECT_IRI,
-            RESOURCE_CLASS_IRI,
-            Some(&prop_iri),
-            0,
-            None,
-        )
+        client.list_resources(&uri, PROJECT_IRI, RESOURCE_CLASS_IRI, Some(&prop_iri), 0, None)
     })
     .join()
     .expect("blocking thread should not panic");
@@ -896,10 +831,7 @@ async fn order_by_property_present_when_order_by_is_some() {
         result
     );
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let query = received[0].url.query().unwrap_or("");
     assert!(
@@ -918,9 +850,7 @@ async fn order_by_property_absent_when_order_by_is_none() {
     // A mock that only matches when orderByProperty is present — must get 0 hits.
     Mock::given(method("GET"))
         .and(path(RESOURCES_PATH))
-        .and(wiremock::matchers::query_param_is_missing(
-            "orderByProperty",
-        ))
+        .and(wiremock::matchers::query_param_is_missing("orderByProperty"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
         .expect(1)
         .mount(&server)
@@ -934,16 +864,9 @@ async fn order_by_property_absent_when_order_by_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "request with order_by=None must succeed, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "request with order_by=None must succeed, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let query = received[0].url.query().unwrap_or("");
     assert!(
@@ -986,10 +909,7 @@ async fn schema_complex_query_param_is_always_sent() {
         result
     );
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1);
     let query = received[0].url.query().unwrap_or("");
     assert!(

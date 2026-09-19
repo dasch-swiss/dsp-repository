@@ -1,16 +1,14 @@
 //! Snapshot tests for `dsp vre data-model describe` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (beol-like data-model): exercises the Option matrix for
-//!   label/last_modified (both Some), plus several real beol resource-types with
-//!   mixed-case names and one with `label: None`. Shared by prose, json, lines,
-//!   csv, tsv cells.
-//! - **Empty fixture**: `name: "minimal"`, `label: None`, `last_modified: None`,
-//!   `resource_types: vec![]`. Tested with prose, json, csv (locks the zero-count
-//!   prose branch, json null fields, and csv zero-count row).
-//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a
-//!   `JsonRenderer` — locks the action-built NotFound envelope rendered by the
-//!   generic `diagnostic` method.
+//! - **Main fixture** (beol-like data-model): exercises the Option matrix for label/last_modified
+//!   (both Some), plus several real beol resource-types with mixed-case names and one with `label:
+//!   None`. Shared by prose, json, lines, csv, tsv cells.
+//! - **Empty fixture**: `name: "minimal"`, `label: None`, `last_modified: None`, `resource_types:
+//!   vec![]`. Tested with prose, json, csv (locks the zero-count prose branch, json null fields,
+//!   and csv zero-count row).
+//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`
+//!   — locks the action-built NotFound envelope rendered by the generic `diagnostic` method.
 //!
 //! Determinism: these tests call `Renderer::data_model_describe(&detail, &meta)`
 //! **directly** with a hand-built `MetaContext` / `DataModelDetail`. They never go
@@ -90,16 +88,8 @@ fn beol_detail() -> DataModelDetail {
                 "http://api.dasch.swiss/ontology/0801/beol/v2#basicLetter",
                 Some("Basic Letter"),
             ),
-            rt(
-                "letter",
-                "http://api.dasch.swiss/ontology/0801/beol/v2#letter",
-                None,
-            ),
-            rt(
-                "person",
-                "http://api.dasch.swiss/ontology/0801/beol/v2#person",
-                Some("Person"),
-            ),
+            rt("letter", "http://api.dasch.swiss/ontology/0801/beol/v2#letter", None),
+            rt("person", "http://api.dasch.swiss/ontology/0801/beol/v2#person", Some("Person")),
         ],
     }
 }
@@ -203,8 +193,7 @@ fn data_model_describe_tsv() {
 fn data_model_describe_prose_empty() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.data_model_describe(&minimal_detail(), &anon_meta())
-        .unwrap();
+    r.data_model_describe(&minimal_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Structural assertions before snapshotting.
@@ -239,12 +228,10 @@ fn data_model_describe_prose_empty() {
 fn data_model_describe_json_empty() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.data_model_describe(&minimal_detail(), &anon_meta())
-        .unwrap();
+    r.data_model_describe(&minimal_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
     assert!(
         parsed["data"]["label"].is_null(),
         "json empty: label must be null; got: {}",
@@ -256,10 +243,7 @@ fn data_model_describe_json_empty() {
         parsed["data"]["last_modified"]
     );
     assert!(
-        parsed["data"]["resource_types"]
-            .as_array()
-            .unwrap()
-            .is_empty(),
+        parsed["data"]["resource_types"].as_array().unwrap().is_empty(),
         "json empty: resource_types must be an empty array; got: {}",
         parsed["data"]["resource_types"]
     );
@@ -275,8 +259,7 @@ fn data_model_describe_csv_empty() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.data_model_describe(&minimal_detail(), &anon_meta())
-        .unwrap();
+    r.data_model_describe(&minimal_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
 
     // Structural assertion: header present and count is 0.
@@ -290,10 +273,7 @@ fn data_model_describe_csv_empty() {
     );
 
     insta::assert_snapshot!("data_model_describe_csv_empty_stdout", stdout);
-    insta::assert_snapshot!(
-        "data_model_describe_csv_empty_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("data_model_describe_csv_empty_stderr", buf_to_string(&err_buf));
 }
 
 // ── not_found JSON error envelope ─────────────────────────────────────────────
@@ -319,8 +299,7 @@ fn data_model_describe_json_not_found() {
     let out = buf_to_string(&buf);
 
     // Structural assertions before snapshotting.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
     assert_eq!(
         parsed["error"]["kind"], "not_found",
         "error envelope must have kind='not_found'; got: {}",

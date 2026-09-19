@@ -7,15 +7,13 @@
 
 use clap::ValueEnum;
 
-use super::{
-    Renderer, TableOptions,
-    csv::CsvRenderer,
-    json::JsonRenderer,
-    lines::LinesRenderer,
-    progress::{HumanProgress, JsonProgress, ProgressReporter},
-    prose::ProseRenderer,
-    tsv::TsvRenderer,
-};
+use super::csv::CsvRenderer;
+use super::json::JsonRenderer;
+use super::lines::LinesRenderer;
+use super::progress::{HumanProgress, JsonProgress, ProgressReporter};
+use super::prose::ProseRenderer;
+use super::tsv::TsvRenderer;
+use super::{Renderer, TableOptions};
 
 /// Output format for a command.
 ///
@@ -93,9 +91,7 @@ impl Format {
     pub fn into_progress_reporter(self) -> Box<dyn ProgressReporter> {
         match self {
             Format::Json => Box::new(JsonProgress::new()),
-            Format::Prose | Format::Lines | Format::Csv | Format::Tsv => {
-                Box::new(HumanProgress::new())
-            }
+            Format::Prose | Format::Lines | Format::Csv | Format::Tsv => Box::new(HumanProgress::new()),
         }
     }
 }

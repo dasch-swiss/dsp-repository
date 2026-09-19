@@ -100,18 +100,11 @@ async fn happy_path_translates_dto_to_project_detail() {
     assert_eq!(detail.longname.as_deref(), Some("Bernoulli-Euler Online"));
 
     // Status
-    assert_eq!(
-        detail.status,
-        ProjectStatus::Active,
-        "status:true must map to Active"
-    );
+    assert_eq!(detail.status, ProjectStatus::Active, "status:true must map to Active");
 
     // Description
     assert_eq!(detail.description.len(), 1, "one description entry");
-    assert_eq!(
-        detail.description[0].value,
-        "<b>BEOL</b> — early modern mathematics."
-    );
+    assert_eq!(detail.description[0].value, "<b>BEOL</b> — early modern mathematics.");
     assert_eq!(
         detail.description[0].language.as_deref(),
         Some("en"),
@@ -122,16 +115,8 @@ async fn happy_path_translates_dto_to_project_detail() {
     assert_eq!(detail.keywords, vec!["Bernoulli", "Euler", "Mathematics"]);
 
     // Data-models: sorted by name ascending, not wire order
-    assert_eq!(
-        detail.data_models.len(),
-        4,
-        "four ontologies → four data_models"
-    );
-    let names: Vec<&str> = detail
-        .data_models
-        .iter()
-        .map(|dm| dm.name.as_str())
-        .collect();
+    assert_eq!(detail.data_models.len(), 4, "four ontologies → four data_models");
+    let names: Vec<&str> = detail.data_models.iter().map(|dm| dm.name.as_str()).collect();
     assert_eq!(
         names,
         vec!["beol", "biblio", "leibniz", "newton"],
@@ -192,18 +177,12 @@ async fn not_found_returns_not_found_diagnostic_with_hint() {
         "404 must map to Diagnostic::NotFound, got: {err:?}"
     );
     if let Diagnostic::NotFound(msg) = err {
-        assert!(
-            msg.contains("9999"),
-            "error message must contain the project input '9999'"
-        );
+        assert!(msg.contains("9999"), "error message must contain the project input '9999'");
         assert!(
             msg.contains("dsp vre project list"),
             "error message must contain the recovery hint 'dsp vre project list'"
         );
-        assert!(
-            msg.contains(&uri_clone),
-            "error message must contain the server"
-        );
+        assert!(msg.contains(&uri_clone), "error message must contain the server");
     }
 }
 
@@ -242,10 +221,7 @@ async fn malformed_success_body_returns_server_error() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_err(),
-        "missing `status` field must cause a parse error"
-    );
+    assert!(result.is_err(), "missing `status` field must cause a parse error");
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),
         "parse failure on 200 must map to Diagnostic::ServerError"
@@ -280,11 +256,7 @@ async fn bearer_present_when_token_is_some() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok when bearer token is forwarded, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok when bearer token is forwarded, got: {:?}", result);
 }
 
 /// When `token = None` is passed, the request has NO `Authorization` header.
@@ -390,11 +362,7 @@ async fn status_false_maps_to_inactive() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     let detail = result.unwrap();
-    assert_eq!(
-        detail.status,
-        ProjectStatus::Inactive,
-        "status:false must map to Inactive"
-    );
+    assert_eq!(detail.status, ProjectStatus::Inactive, "status:false must map to Inactive");
 }
 
 // ---------------------------------------------------------------------------
@@ -469,9 +437,5 @@ async fn shortname_input_routes_to_shortname_path() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok for shortname input, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok for shortname input, got: {:?}", result);
 }

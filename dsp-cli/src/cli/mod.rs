@@ -18,30 +18,26 @@ use crate::render::{Format, HeaderMode, TableOptions};
 // column list exactly matches the joined `crate::render` const, so adding a
 // column without updating the literal fails CI.
 
-const AFTER_HELP_PROJECT_LIST: &str =
-    "Columns (--columns): shortcode, shortname, longname, status, data_models, iri";
+const AFTER_HELP_PROJECT_LIST: &str = "Columns (--columns): shortcode, shortname, longname, status, data_models, iri";
 
 const AFTER_HELP_PROJECT_DESCRIBE: &str =
     "Columns (--columns): shortcode, shortname, longname, status, data_models, iri";
 
 const AFTER_HELP_PROJECT_DUMP: &str = "Columns (--columns): path  (--delete mode: deleted)";
 
-const AFTER_HELP_DATA_MODEL_LIST: &str =
-    "Columns (--columns): name, iri, label, last_modified, is_builtin";
+const AFTER_HELP_DATA_MODEL_LIST: &str = "Columns (--columns): name, iri, label, last_modified, is_builtin";
 
-const AFTER_HELP_DATA_MODEL_DESCRIBE: &str =
-    "Columns (--columns): name, iri, label, last_modified, resource_types";
+const AFTER_HELP_DATA_MODEL_DESCRIBE: &str = "Columns (--columns): name, iri, label, last_modified, resource_types";
 
-const AFTER_HELP_DATA_MODEL_STRUCTURE: &str =
-    "Columns (--columns): source, target, kind, field, target_data_model";
+const AFTER_HELP_DATA_MODEL_STRUCTURE: &str = "Columns (--columns): source, target, kind, field, target_data_model";
 
-const AFTER_HELP_RESOURCE_TYPE_LIST: &str =
-    "Columns (--columns): name, iri, label, is_builtin, count";
+const AFTER_HELP_RESOURCE_TYPE_LIST: &str = "Columns (--columns): name, iri, label, is_builtin, count";
 
 /// Full 8-column set for `resource-type describe` (one row per field).
 /// `iri` is accessible via `--columns iri` (hidden from the default csv/tsv
 /// output by the lean-default mechanism, but present in `all_columns`).
-const AFTER_HELP_RESOURCE_TYPE_DESCRIBE: &str = "Columns (--columns): name, iri, value_type, link_target, cardinality, label, is_builtin, data_model";
+const AFTER_HELP_RESOURCE_TYPE_DESCRIBE: &str =
+    "Columns (--columns): name, iri, value_type, link_target, cardinality, label, is_builtin, data_model";
 
 const AFTER_HELP_RESOURCE_LIST: &str = "Columns (--columns): label, iri, ark_url, creation_date, last_modified, resource_type\n\n\
      Scan behaviour: a bare --resource-type name (no ://) scans all project data-models; \
@@ -158,14 +154,13 @@ impl FormatArgs {
     ///
     /// ## Validation rules
     ///
-    /// - `--columns` is only valid with `csv`, `tsv`, or `lines` output.
-    ///   Any other format → `Diagnostic::Usage`.
-    /// - `--no-header` / `--header-only` are only valid with `csv` or `tsv`.
-    ///   `lines` has no header concept. Any other format → `Diagnostic::Usage`.
-    /// - `--columns` value: the string must be non-empty; each comma-separated
-    ///   token must be non-blank (no `a,,b`); no duplicates allowed.
-    ///   Unknown column names are validated later by the engine (which knows the
-    ///   per-noun set).
+    /// - `--columns` is only valid with `csv`, `tsv`, or `lines` output. Any other format →
+    ///   `Diagnostic::Usage`.
+    /// - `--no-header` / `--header-only` are only valid with `csv` or `tsv`. `lines` has no header
+    ///   concept. Any other format → `Diagnostic::Usage`.
+    /// - `--columns` value: the string must be non-empty; each comma-separated token must be
+    ///   non-blank (no `a,,b`); no duplicates allowed. Unknown column names are validated later by
+    ///   the engine (which knows the per-noun set).
     ///
     /// Returns a `TableOptions` whose `columns` field is guaranteed to be
     /// syntactically valid (non-empty `Some(Vec)` with no blank entries and no
@@ -173,9 +168,7 @@ impl FormatArgs {
     pub fn table_options(&self, format: Format) -> Result<TableOptions, Diagnostic> {
         // Validate --columns scope.
         if self.columns.is_some() && !matches!(format, Format::Csv | Format::Tsv | Format::Lines) {
-            return Err(Diagnostic::Usage(
-                "--columns works with csv, tsv, and lines output".to_string(),
-            ));
+            return Err(Diagnostic::Usage("--columns works with csv, tsv, and lines output".to_string()));
         }
 
         // Validate --no-header / --header-only scope.
@@ -189,9 +182,7 @@ impl FormatArgs {
         // Parse --columns value.
         let columns = if let Some(ref raw) = self.columns {
             if raw.is_empty() {
-                return Err(Diagnostic::Usage(
-                    "--columns requires at least one column name".to_string(),
-                ));
+                return Err(Diagnostic::Usage("--columns requires at least one column name".to_string()));
             }
             let parts: Vec<&str> = raw.split(',').collect();
             // Reject blank segments (e.g. "a,,b" or trailing comma).
@@ -296,11 +287,7 @@ impl Cli {
                     SparqlCmd::Query(_) => None,
                 },
             },
-            TopLevel::Docs(args) => Some(if args.json {
-                Format::Json
-            } else {
-                Format::Prose
-            }),
+            TopLevel::Docs(args) => Some(if args.json { Format::Json } else { Format::Prose }),
         }
     }
 
@@ -1153,12 +1140,10 @@ pub struct DocsArgs {
 mod tests {
     use super::*;
     use crate::render::{
-        AUTH_LOGIN_COLUMNS, AUTH_LOGOUT_COLUMNS, DATA_MODEL_DESCRIBE_COLUMNS,
-        DATA_MODEL_STRUCTURE_COLUMNS, DATA_MODELS_COLUMNS, Format, HeaderMode,
-        PROJECT_DUMP_COLUMNS, PROJECT_DUMP_DELETED_COLUMNS, PROJECTS_COLUMNS,
-        RESOURCE_DESCRIBE_COLUMNS, RESOURCE_DESCRIBE_VALUES_COLUMNS,
-        RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS, RESOURCE_LIST_COLUMNS,
-        RESOURCE_TYPE_DESCRIBE_COLUMNS, RESOURCE_TYPES_COLUMNS, VOCABULARIES_COLUMNS,
+        AUTH_LOGIN_COLUMNS, AUTH_LOGOUT_COLUMNS, DATA_MODEL_DESCRIBE_COLUMNS, DATA_MODEL_STRUCTURE_COLUMNS,
+        DATA_MODELS_COLUMNS, Format, HeaderMode, PROJECT_DUMP_COLUMNS, PROJECT_DUMP_DELETED_COLUMNS, PROJECTS_COLUMNS,
+        RESOURCE_DESCRIBE_COLUMNS, RESOURCE_DESCRIBE_VALUES_COLUMNS, RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS,
+        RESOURCE_LIST_COLUMNS, RESOURCE_TYPE_DESCRIBE_COLUMNS, RESOURCE_TYPES_COLUMNS, VOCABULARIES_COLUMNS,
         VOCABULARY_DESCRIBE_COLUMNS,
     };
 
@@ -1189,10 +1174,7 @@ mod tests {
         // --columns with the default (prose) format → Usage error.
         let args = fmt_args(Format::Prose, false, false, Some("name"), false, false);
         let result = args.table_options(Format::Prose);
-        assert!(
-            matches!(result, Err(Diagnostic::Usage(_))),
-            "expected Usage, got {result:?}"
-        );
+        assert!(matches!(result, Err(Diagnostic::Usage(_))), "expected Usage, got {result:?}");
     }
 
     #[test]
@@ -1201,10 +1183,7 @@ mod tests {
         let args = fmt_args(Format::Prose, true, false, Some("name"), false, false);
         let resolved = args.resolve(); // Json
         let result = args.table_options(resolved);
-        assert!(
-            matches!(result, Err(Diagnostic::Usage(_))),
-            "expected Usage, got {result:?}"
-        );
+        assert!(matches!(result, Err(Diagnostic::Usage(_))), "expected Usage, got {result:?}");
     }
 
     #[test]
@@ -1231,21 +1210,11 @@ mod tests {
 
     #[test]
     fn columns_with_csv_accepted() {
-        let args = fmt_args(
-            Format::Csv,
-            false,
-            false,
-            Some("shortcode,iri"),
-            false,
-            false,
-        );
+        let args = fmt_args(Format::Csv, false, false, Some("shortcode,iri"), false, false);
         let result = args.table_options(Format::Csv);
         assert!(result.is_ok(), "expected Ok, got {result:?}");
         let opts = result.unwrap();
-        assert_eq!(
-            opts.columns,
-            Some(vec!["shortcode".to_string(), "iri".to_string()])
-        );
+        assert_eq!(opts.columns, Some(vec!["shortcode".to_string(), "iri".to_string()]));
     }
 
     // ── header-flag validation ────────────────────────────────────────────────
@@ -1362,22 +1331,11 @@ mod tests {
     #[test]
     fn multiple_columns_select_and_reorder() {
         // Columns come back in the user-supplied order (the engine honours it).
-        let args = fmt_args(
-            Format::Csv,
-            false,
-            false,
-            Some("iri,shortcode,label"),
-            false,
-            false,
-        );
+        let args = fmt_args(Format::Csv, false, false, Some("iri,shortcode,label"), false, false);
         let opts = args.table_options(Format::Csv).unwrap();
         assert_eq!(
             opts.columns,
-            Some(vec![
-                "iri".to_string(),
-                "shortcode".to_string(),
-                "label".to_string()
-            ])
+            Some(vec!["iri".to_string(), "shortcode".to_string(), "label".to_string()])
         );
     }
 
@@ -1423,15 +1381,9 @@ mod tests {
             (AFTER_HELP_PROJECT_DESCRIBE, PROJECTS_COLUMNS),
             (AFTER_HELP_DATA_MODEL_LIST, DATA_MODELS_COLUMNS),
             (AFTER_HELP_DATA_MODEL_DESCRIBE, DATA_MODEL_DESCRIBE_COLUMNS),
-            (
-                AFTER_HELP_DATA_MODEL_STRUCTURE,
-                DATA_MODEL_STRUCTURE_COLUMNS,
-            ),
+            (AFTER_HELP_DATA_MODEL_STRUCTURE, DATA_MODEL_STRUCTURE_COLUMNS),
             (AFTER_HELP_RESOURCE_TYPE_LIST, RESOURCE_TYPES_COLUMNS),
-            (
-                AFTER_HELP_RESOURCE_TYPE_DESCRIBE,
-                RESOURCE_TYPE_DESCRIBE_COLUMNS,
-            ),
+            (AFTER_HELP_RESOURCE_TYPE_DESCRIBE, RESOURCE_TYPE_DESCRIBE_COLUMNS),
             (AFTER_HELP_AUTH_LOGIN, AUTH_LOGIN_COLUMNS),
             (AFTER_HELP_AUTH_STATUS, AUTH_LOGIN_COLUMNS),
             (AFTER_HELP_AUTH_LOGOUT, AUTH_LOGOUT_COLUMNS),
@@ -1601,8 +1553,7 @@ mod tests {
     fn server_flag_with_flag_supplied() {
         // An explicit --server always wins over any ambient DSP_SERVER env var
         // (clap precedence: explicit CLI arg > env), so no env guarding needed here.
-        let cli =
-            Cli::try_parse_from(["dsp", "vre", "project", "list", "--server", "dev"]).unwrap();
+        let cli = Cli::try_parse_from(["dsp", "vre", "project", "list", "--server", "dev"]).unwrap();
         assert_eq!(cli.server_flag(), Some("dev"));
     }
 

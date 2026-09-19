@@ -83,9 +83,9 @@ fn fixture_context() -> serde_json::Value {
 /// Classes:
 ///
 /// - `myonto:Letter`: inherits WrittenSource (same DM), inherits knora-base:Resource
-///   (system/builtin), link hasSender → Person (same DM), link hasSenderValue (twin,
-///   dropped), link hasSiblingLink → sibling:Thing (cross-DM target), link hasKnoraLink
-///   → knora-api:Region (project field / builtin target; is_builtin=false, tdm=None).
+///   (system/builtin), link hasSender → Person (same DM), link hasSenderValue (twin, dropped), link
+///   hasSiblingLink → sibling:Thing (cross-DM target), link hasKnoraLink → knora-api:Region
+///   (project field / builtin target; is_builtin=false, tdm=None).
 /// - `myonto:WrittenSource`: superclass, also a resource class.
 /// - `myonto:Person`: link target, resource class.
 ///
@@ -234,10 +234,7 @@ async fn happy_path_data_model_structure() {
     );
 
     // ── Verify the hasSenderValue twin is NOT present ───────────────────────
-    let twin_present = structure
-        .relations
-        .iter()
-        .any(|r| r.field.as_deref() == Some("hasSenderValue"));
+    let twin_present = structure.relations.iter().any(|r| r.field.as_deref() == Some("hasSenderValue"));
     assert!(
         !twin_present,
         "hasSenderValue (link-value twin) must be dropped from the relation list"
@@ -246,10 +243,7 @@ async fn happy_path_data_model_structure() {
     // ── Verify the sibling:thingLink absent-node skip ──────────────────────
     // The restriction `sibling:thingLink` on Letter should be skipped because
     // the property node is absent from the graph (v1 limitation).
-    let absent_node_present = structure
-        .relations
-        .iter()
-        .any(|r| r.field.as_deref() == Some("thingLink"));
+    let absent_node_present = structure.relations.iter().any(|r| r.field.as_deref() == Some("thingLink"));
     assert!(
         !absent_node_present,
         "sibling:thingLink restriction (node absent) must be skipped (v1 limitation)"
@@ -272,10 +266,7 @@ async fn happy_path_data_model_structure() {
         "same-DM target: target_data_model must be Some(\"myonto\")"
     );
     // Field prefix is myonto (project) → not builtin
-    assert!(
-        !has_sender.is_builtin,
-        "project link field hasSender must not be builtin"
-    );
+    assert!(!has_sender.is_builtin, "project link field hasSender must not be builtin");
 
     // 2. Letter → hasSiblingLink → Thing (cross-DM target)
     let sib_link = structure
@@ -290,10 +281,7 @@ async fn happy_path_data_model_structure() {
         Some("sibling"),
         "cross-DM target: target_data_model must be Some(\"sibling\")"
     );
-    assert!(
-        !sib_link.is_builtin,
-        "project link field hasSiblingLink must not be builtin"
-    );
+    assert!(!sib_link.is_builtin, "project link field hasSiblingLink must not be builtin");
 
     // 3. Letter → hasKnoraLink → Region (project field → builtin target)
     let knora_link = structure
@@ -318,14 +306,9 @@ async fn happy_path_data_model_structure() {
     let inherits_written = structure
         .relations
         .iter()
-        .find(|r| {
-            r.source == "Letter" && r.kind == RelationKind::Inherits && r.target == "WrittenSource"
-        })
+        .find(|r| r.source == "Letter" && r.kind == RelationKind::Inherits && r.target == "WrittenSource")
         .expect("Letter inherits WrittenSource must be present");
-    assert_eq!(
-        inherits_written.field, None,
-        "inherits relation must have field=None"
-    );
+    assert_eq!(inherits_written.field, None, "inherits relation must have field=None");
     // WrittenSource prefix is myonto (project) — Some("myonto")
     assert_eq!(
         inherits_written.target_data_model.as_deref(),
@@ -341,9 +324,7 @@ async fn happy_path_data_model_structure() {
     let inherits_resource = structure
         .relations
         .iter()
-        .find(|r| {
-            r.source == "Letter" && r.kind == RelationKind::Inherits && r.target == "Resource"
-        })
+        .find(|r| r.source == "Letter" && r.kind == RelationKind::Inherits && r.target == "Resource")
         .expect("Letter inherits knora-base:Resource must be present");
     assert_eq!(inherits_resource.field, None);
     // System superclass → target_data_model = None (invariant b)
@@ -360,19 +341,11 @@ async fn happy_path_data_model_structure() {
     // ── D6 sort order: (source, kind, field, target) ─────────────────────────
     // Link < Inherits within same source; None < Some for field (inherits have None).
     // Within Letter: links first (sorted by field name), then inherits.
-    let letter_relations: Vec<&Relation> = structure
-        .relations
-        .iter()
-        .filter(|r| r.source == "Letter")
-        .collect();
+    let letter_relations: Vec<&Relation> = structure.relations.iter().filter(|r| r.source == "Letter").collect();
 
     // All links must come before all inherits.
-    let first_inherits = letter_relations
-        .iter()
-        .position(|r| r.kind == RelationKind::Inherits);
-    let last_link = letter_relations
-        .iter()
-        .rposition(|r| r.kind == RelationKind::Link);
+    let first_inherits = letter_relations.iter().position(|r| r.kind == RelationKind::Inherits);
+    let last_link = letter_relations.iter().rposition(|r| r.kind == RelationKind::Link);
     if let (Some(fi), Some(ll)) = (first_inherits, last_link) {
         assert!(
             fi > ll,
@@ -420,21 +393,10 @@ async fn bearer_present_when_token_is_some() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok when token is Some, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok when token is Some, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
-    assert_eq!(
-        received.len(),
-        1,
-        "exactly one request must have been made (no sibling fetch)"
-    );
+    let received = server.received_requests().await.expect("request recording should be enabled");
+    assert_eq!(received.len(), 1, "exactly one request must have been made (no sibling fetch)");
     let auth = received[0]
         .headers
         .get("authorization")
@@ -470,10 +432,7 @@ async fn bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -515,10 +474,7 @@ async fn exactly_one_allentities_request_no_sibling_fetch() {
     );
 
     // wiremock asserts exactly 1 hit when server drops — this is belt-and-braces.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(
         received.len(),
         1,
@@ -587,20 +543,13 @@ async fn empty_graph_yields_empty_relations() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok for empty graph, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok for empty graph, got: {:?}", result);
     let structure = result.unwrap();
     assert_eq!(
         structure.data_model, "myonto",
         "data_model must still be derived from IRI even for empty graph"
     );
-    assert!(
-        structure.relations.is_empty(),
-        "empty graph must yield empty relations"
-    );
+    assert!(structure.relations.is_empty(), "empty graph must yield empty relations");
 }
 
 // ---------------------------------------------------------------------------
@@ -681,20 +630,10 @@ async fn d6_sort_order_multi_source() {
     let structure = result.unwrap();
 
     // Verify global sort order: Apple-* comes before Zebra-*.
-    let sources: Vec<&str> = structure
-        .relations
-        .iter()
-        .map(|r| r.source.as_str())
-        .collect();
+    let sources: Vec<&str> = structure.relations.iter().map(|r| r.source.as_str()).collect();
 
-    let apple_first = sources
-        .iter()
-        .position(|&s| s == "Apple")
-        .unwrap_or(usize::MAX);
-    let zebra_first = sources
-        .iter()
-        .position(|&s| s == "Zebra")
-        .unwrap_or(usize::MAX);
+    let apple_first = sources.iter().position(|&s| s == "Apple").unwrap_or(usize::MAX);
+    let zebra_first = sources.iter().position(|&s| s == "Zebra").unwrap_or(usize::MAX);
     assert!(
         apple_first < zebra_first,
         "Apple relations must sort before Zebra relations (D6 source sort)"
@@ -702,14 +641,8 @@ async fn d6_sort_order_multi_source() {
 
     // Within each source: link before inherits.
     for source in &["Apple", "Zebra"] {
-        let src_rels: Vec<&Relation> = structure
-            .relations
-            .iter()
-            .filter(|r| r.source.as_str() == *source)
-            .collect();
-        let first_inherit = src_rels
-            .iter()
-            .position(|r| r.kind == RelationKind::Inherits);
+        let src_rels: Vec<&Relation> = structure.relations.iter().filter(|r| r.source.as_str() == *source).collect();
+        let first_inherit = src_rels.iter().position(|r| r.kind == RelationKind::Inherits);
         let last_link = src_rels.iter().rposition(|r| r.kind == RelationKind::Link);
         if let (Some(fi), Some(ll)) = (first_inherit, last_link) {
             assert!(

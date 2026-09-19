@@ -43,8 +43,7 @@ const TOKEN: &str = "test-values-token";
 // A synthetic resource IRI that contains characters needing percent-encoding.
 // (Same IRI used in 8b tests so we can re-use RESOURCE_PATH constant style.)
 const RESOURCE_IRI: &str = "http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw";
-const RESOURCE_PATH: &str =
-    "/v2/resources/http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4SVnGG1DBzFvYErw";
+const RESOURCE_PATH: &str = "/v2/resources/http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4SVnGG1DBzFvYErw";
 
 // The project ontology that houses `myonto:hasFoo`.
 const MYONTO_IRI: &str = "http://api.dasch.swiss/ontology/0803/myonto/v2";
@@ -154,8 +153,8 @@ fn resource_body() -> serde_json::Value {
 ///
 /// Adds two additional entries beyond `resource_body()`:
 ///   - `knora-api:hasStandoffLinkToValue` — a `*Value`-typed key on the denylist.
-///   - `myonto:hasDeletedThing` — a value whose `@type` is `knora-api:DeletedValue`
-///     (must be silently skipped; the whole field becomes empty and is dropped).
+///   - `myonto:hasDeletedThing` — a value whose `@type` is `knora-api:DeletedValue` (must be
+///     silently skipped; the whole field becomes empty and is dropped).
 ///
 /// A real, non-denied field (`knora-api:hasStillImageFileValue`) is still present
 /// so we can assert it DOES surface (non-vacuous positive check).
@@ -285,9 +284,7 @@ async fn multi_fetch_happy_path() {
     let detail = result.expect("multi-fetch happy-path must succeed");
 
     // (1) values is Some and non-empty.
-    let fields = detail
-        .values
-        .expect("values must be Some when with_values=true");
+    let fields = detail.values.expect("values must be Some when with_values=true");
     assert!(!fields.is_empty(), "fields must not be empty");
 
     // (2) Link target label: populated from embedded target, no extra fetch needed.
@@ -297,10 +294,7 @@ async fn multi_fetch_happy_path() {
         .expect("must find hasGenre link field (Value-suffix stripped)");
     let link_val = &link_field.values[0];
     match &link_val.content {
-        ValueContent::Link {
-            target_label,
-            target_iri,
-        } => {
+        ValueContent::Link { target_label, target_iri } => {
             assert_eq!(
                 target_label.as_deref(),
                 Some("Incunabula Testbook"),
@@ -312,10 +306,7 @@ async fn multi_fetch_happy_path() {
     }
 
     // (3) Field label resolved from ontology fetch.
-    let foo_field = fields
-        .iter()
-        .find(|f| f.name == "hasFoo")
-        .expect("must find hasFoo field");
+    let foo_field = fields.iter().find(|f| f.name == "hasFoo").expect("must find hasFoo field");
     assert_eq!(
         foo_field.label.as_deref(),
         Some("Has Foo Property"),
@@ -448,10 +439,7 @@ async fn degradation_ontology_404_succeeds() {
         .iter()
         .find(|f| f.name == "hasListItem")
         .expect("hasListItem field must be present even when ontology 404s");
-    let list_val = list_field
-        .values
-        .first()
-        .expect("hasListItem must have at least one value");
+    let list_val = list_field.values.first().expect("hasListItem must have at least one value");
     match &list_val.content {
         ValueContent::VocabularyItem { label, .. } => {
             assert_eq!(
@@ -509,10 +497,7 @@ async fn degradation_node_404_succeeds() {
         .iter()
         .find(|f| f.name == "hasListItem")
         .expect("hasListItem field must be present even when /v2/node 404s");
-    let list_val = list_field
-        .values
-        .first()
-        .expect("hasListItem must have at least one value");
+    let list_val = list_field.values.first().expect("hasListItem must have at least one value");
     match &list_val.content {
         ValueContent::VocabularyItem { label, node_iri } => {
             assert!(
@@ -573,10 +558,7 @@ async fn standoff_text_xml_is_stripped() {
         .expect("must find hasStandoff field");
     match &standoff_field.values[0].content {
         ValueContent::Text(s) => {
-            assert!(
-                !s.contains('<'),
-                "standoff text must have XML tags stripped; got: {s:?}"
-            );
+            assert!(!s.contains('<'), "standoff text must have XML tags stripped; got: {s:?}");
             assert!(
                 !s.contains("strong"),
                 "standoff text must have 'strong' tag stripped; got: {s:?}"
@@ -681,9 +663,9 @@ async fn denylist_keys_not_surfaced_as_fields() {
     let fields = detail.values.expect("values must be Some");
 
     // hasIncomingLinkValue must NOT appear.
-    let incoming = fields.iter().find(|f| {
-        f.name.to_lowercase().contains("incominglinkvalue") || f.name == "hasIncomingLinkValue"
-    });
+    let incoming = fields
+        .iter()
+        .find(|f| f.name.to_lowercase().contains("incominglinkvalue") || f.name == "hasIncomingLinkValue");
     assert!(
         incoming.is_none(),
         "hasIncomingLinkValue must NOT appear as a user field; fields: {:?}",
@@ -691,9 +673,9 @@ async fn denylist_keys_not_surfaced_as_fields() {
     );
 
     // versionArkUrl must NOT appear (xsd:anyURI @type).
-    let version_ark = fields.iter().find(|f| {
-        f.name.to_lowercase().contains("version") || f.name.to_lowercase().contains("arkurl")
-    });
+    let version_ark = fields
+        .iter()
+        .find(|f| f.name.to_lowercase().contains("version") || f.name.to_lowercase().contains("arkurl"));
     assert!(
         version_ark.is_none(),
         "versionArkUrl must NOT appear as a user field; fields: {:?}",
@@ -745,36 +727,34 @@ async fn denylist_extended_standoff_link_and_deleted_value() {
     let field_names: Vec<&str> = fields.iter().map(|f| f.name.as_str()).collect();
 
     // hasStandoffLinkToValue must NOT appear (on the explicit denylist).
-    let standoff = fields.iter().find(|f| {
-        f.name.to_lowercase().contains("standofflinkto") || f.name == "hasStandoffLinkToValue"
-    });
+    let standoff = fields
+        .iter()
+        .find(|f| f.name.to_lowercase().contains("standofflinkto") || f.name == "hasStandoffLinkToValue");
     assert!(
         standoff.is_none(),
         "hasStandoffLinkToValue must NOT appear as a user field; fields: {field_names:?}"
     );
 
     // DeletedValue field must NOT appear (its only value is deleted → empty → dropped).
-    let deleted = fields
-        .iter()
-        .find(|f| f.name.to_lowercase().contains("deleted"));
+    let deleted = fields.iter().find(|f| f.name.to_lowercase().contains("deleted"));
     assert!(
         deleted.is_none(),
         "DeletedValue field must NOT appear as a user field; fields: {field_names:?}"
     );
 
     // hasIncomingLinkValue must NOT appear (existing denylist, still guarded).
-    let incoming = fields.iter().find(|f| {
-        f.name.to_lowercase().contains("incominglinkvalue") || f.name == "hasIncomingLinkValue"
-    });
+    let incoming = fields
+        .iter()
+        .find(|f| f.name.to_lowercase().contains("incominglinkvalue") || f.name == "hasIncomingLinkValue");
     assert!(
         incoming.is_none(),
         "hasIncomingLinkValue must NOT appear as a user field; fields: {field_names:?}"
     );
 
     // versionArkUrl must NOT appear (xsd:anyURI @type, existing guard).
-    let version_ark = fields.iter().find(|f| {
-        f.name.to_lowercase().contains("version") || f.name.to_lowercase().contains("arkurl")
-    });
+    let version_ark = fields
+        .iter()
+        .find(|f| f.name.to_lowercase().contains("version") || f.name.to_lowercase().contains("arkurl"));
     assert!(
         version_ark.is_none(),
         "versionArkUrl must NOT appear as a user field; fields: {field_names:?}"
@@ -873,9 +853,7 @@ async fn value_with_comment_is_parsed_end_to_end() {
     Mock::given(method("GET"))
         .and(path(RESOURCE_PATH))
         .and(query_param("schema", "complex"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_json(resource_body_with_commented_value()),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(resource_body_with_commented_value()))
         .expect(1)
         .mount(&server)
         .await;
@@ -890,17 +868,12 @@ async fn value_with_comment_is_parsed_end_to_end() {
     .expect("blocking thread should not panic")
     .expect("describe_resource with a commented value must succeed");
 
-    let fields = detail
-        .values
-        .expect("values must be Some when with_values=true");
+    let fields = detail.values.expect("values must be Some when with_values=true");
     let commented_field = fields
         .iter()
         .find(|f| f.name == "hasComment")
         .expect("must find hasComment field");
-    let value = commented_field
-        .values
-        .first()
-        .expect("hasComment must have at least one value");
+    let value = commented_field.values.first().expect("hasComment must have at least one value");
 
     assert_eq!(
         value.comment.as_deref(),

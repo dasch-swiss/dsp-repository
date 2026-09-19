@@ -157,10 +157,7 @@ pub struct Value {
 
 impl From<ValueContent> for Value {
     fn from(content: ValueContent) -> Self {
-        Value {
-            content,
-            comment: None,
-        }
+        Value { content, comment: None }
     }
 }
 
@@ -341,10 +338,7 @@ mod tests {
 
     #[test]
     fn value_type_token_text() {
-        assert_eq!(
-            ValueContent::Text("hello".into()).value_type_token(),
-            "text"
-        );
+        assert_eq!(ValueContent::Text("hello".into()).value_type_token(), "text");
     }
 
     #[test]
@@ -354,10 +348,7 @@ mod tests {
 
     #[test]
     fn value_type_token_decimal() {
-        assert_eq!(
-            ValueContent::Decimal("3.14".into()).value_type_token(),
-            "decimal"
-        );
+        assert_eq!(ValueContent::Decimal("3.14".into()).value_type_token(), "decimal");
     }
 
     #[test]
@@ -387,34 +378,22 @@ mod tests {
 
     #[test]
     fn value_type_token_time() {
-        assert_eq!(
-            ValueContent::Time("2021-01-01T00:00:00Z".into()).value_type_token(),
-            "time"
-        );
+        assert_eq!(ValueContent::Time("2021-01-01T00:00:00Z".into()).value_type_token(), "time");
     }
 
     #[test]
     fn value_type_token_uri() {
-        assert_eq!(
-            ValueContent::Uri("https://example.com".into()).value_type_token(),
-            "uri"
-        );
+        assert_eq!(ValueContent::Uri("https://example.com".into()).value_type_token(), "uri");
     }
 
     #[test]
     fn value_type_token_color() {
-        assert_eq!(
-            ValueContent::Color("#ff0000".into()).value_type_token(),
-            "color"
-        );
+        assert_eq!(ValueContent::Color("#ff0000".into()).value_type_token(), "color");
     }
 
     #[test]
     fn value_type_token_geoname() {
-        assert_eq!(
-            ValueContent::Geoname("2661552".into()).value_type_token(),
-            "geoname"
-        );
+        assert_eq!(ValueContent::Geoname("2661552".into()).value_type_token(), "geoname");
     }
 
     #[test]
@@ -504,11 +483,7 @@ mod tests {
     #[test]
     fn value_type_token_raw() {
         assert_eq!(
-            ValueContent::Raw {
-                value_type: "interval".into(),
-                text: "PT10S".into(),
-            }
-            .value_type_token(),
+            ValueContent::Raw { value_type: "interval".into(), text: "PT10S".into() }.value_type_token(),
             "interval"
         );
     }

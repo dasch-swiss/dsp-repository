@@ -63,13 +63,12 @@ fn optional_env(name: &str) -> Option<String> {
 /// `resource_counts` and assert:
 ///
 /// - Result is `Ok`.
-/// - The returned map is non-empty (sanity check that the endpoint returned
-///   real data, not an empty/degenerate response).
-/// - **Risk 1 (class-IRI form match)**: the map contains the EXACT IRI
-///   returned by `describe_resource_type` for `beol:page` as a key. This is
-///   the check that would fail if the v3 `resourcesPerOntology` route used a
-///   different class-IRI form than `allentities` (e.g. different case, a
-///   different ontology version segment). `beol:page` is a project-defined
+/// - The returned map is non-empty (sanity check that the endpoint returned real data, not an
+///   empty/degenerate response).
+/// - **Risk 1 (class-IRI form match)**: the map contains the EXACT IRI returned by
+///   `describe_resource_type` for `beol:page` as a key. This is the check that would fail if the v3
+///   `resourcesPerOntology` route used a different class-IRI form than `allentities` (e.g.
+///   different case, a different ontology version segment). `beol:page` is a project-defined
 ///   (non-builtin) class, so this is a FIRM assertion, not a soft check.
 ///
 /// Note: the per-class count is typed `u64`, so non-negativity is a
@@ -88,8 +87,7 @@ fn live_resource_counts_contains_known_class_iri() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `resource_counts` uses a public endpoint; the token is optional. If
@@ -110,18 +108,13 @@ fn live_resource_counts_contains_known_class_iri() {
 
     // ── 4. Resolve the known project (beol / shortcode 0801) ─────────────────
     let project_identifier = "0801";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
              if the beol project has been removed from this server, update the test to use a \
              different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -133,14 +126,11 @@ fn live_resource_counts_contains_known_class_iri() {
         .list_data_models(&cfg.server, &proj.iri, token_ref)
         .expect("list_data_models failed — check DSP_TEST_SERVER and network connectivity");
 
-    let beol_dm = data_models
-        .iter()
-        .find(|dm| dm.name.eq_ignore_ascii_case("beol"))
-        .expect(
-            "beol data-model not found in project '0801' — expected the beol data-model to be \
+    let beol_dm = data_models.iter().find(|dm| dm.name.eq_ignore_ascii_case("beol")).expect(
+        "beol data-model not found in project '0801' — expected the beol data-model to be \
              present; check that DSP_TEST_SERVER points to a server where this project is \
              populated with its standard data-models",
-        );
+    );
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
@@ -160,17 +150,12 @@ fn live_resource_counts_contains_known_class_iri() {
     );
 
     // ── 7. Call resource_counts ────────────────────────────────────────────────
-    eprintln!(
-        "live test: calling resource_counts for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling resource_counts for project IRI {}", proj.iri);
 
-    let counts = client
-        .resource_counts(&cfg.server, &proj.iri, token_ref)
-        .expect(
-            "resource_counts failed — check DSP_TEST_SERVER and network connectivity; the \
+    let counts = client.resource_counts(&cfg.server, &proj.iri, token_ref).expect(
+        "resource_counts failed — check DSP_TEST_SERVER and network connectivity; the \
              v3 resourcesPerOntology route requires dsp-api >= 37.1.0",
-        );
+    );
 
     eprintln!(
         "live test: resource_counts returned {} class(es) across the project",

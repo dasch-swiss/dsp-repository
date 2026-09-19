@@ -11,17 +11,15 @@
 // `resource_counts` (`GET /v3/projects/{enc(project_iri)}/resourcesPerOntology`)
 // tests assert:
 //   1. The correct URL path is requested (percent-encoded project IRI).
-//   2. The response — a top-level JSON ARRAY of per-ontology entries — is
-//      flattened into a single `HashMap<resource_class_iri, item_count>`
-//      across ALL ontology entries in the payload.
-//   3. An ontology entry with an empty `classesAndCount` contributes no
-//      entries and does not error (`#[serde(default)]`).
-//   4. `Authorization: Bearer <token>` is sent when `token` is `Some`, and
-//      omitted entirely when `token` is `None` (public endpoint, mirrors
-//      `list_data_models`).
-//   5. Status-code mapping: 404 → `NotFound`; 401/403 → `AuthRequired`
-//      (generic `map_unexpected_status`, not a bespoke message); other
-//      unexpected statuses (e.g. 500) → `ServerError`.
+//   2. The response — a top-level JSON ARRAY of per-ontology entries — is flattened into a single
+//      `HashMap<resource_class_iri, item_count>` across ALL ontology entries in the payload.
+//   3. An ontology entry with an empty `classesAndCount` contributes no entries and does not error
+//      (`#[serde(default)]`).
+//   4. `Authorization: Bearer <token>` is sent when `token` is `Some`, and omitted entirely when
+//      `token` is `None` (public endpoint, mirrors `list_data_models`).
+//   5. Status-code mapping: 404 → `NotFound`; 401/403 → `AuthRequired` (generic
+//      `map_unexpected_status`, not a bespoke message); other unexpected statuses (e.g. 500) →
+//      `ServerError`.
 
 use std::collections::HashMap;
 
@@ -90,18 +88,9 @@ async fn happy_path_flattens_multiple_ontologies_and_classes() {
     let counts = result.unwrap();
 
     let expected: HashMap<String, u64> = HashMap::from([
-        (
-            "http://api.dasch.swiss/ontology/0001/onto-a/v2#Book".to_string(),
-            42,
-        ),
-        (
-            "http://api.dasch.swiss/ontology/0001/onto-a/v2#Page".to_string(),
-            1893,
-        ),
-        (
-            "http://api.dasch.swiss/ontology/0001/onto-b/v2#Letter".to_string(),
-            7,
-        ),
+        ("http://api.dasch.swiss/ontology/0001/onto-a/v2#Book".to_string(), 42),
+        ("http://api.dasch.swiss/ontology/0001/onto-a/v2#Page".to_string(), 1893),
+        ("http://api.dasch.swiss/ontology/0001/onto-b/v2#Letter".to_string(), 7),
     ]);
 
     assert_eq!(
@@ -151,11 +140,7 @@ async fn empty_classes_and_count_contributes_no_entries_and_does_not_error() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     let counts = result.unwrap();
-    assert_eq!(
-        counts.len(),
-        1,
-        "empty classesAndCount entry must contribute zero map entries"
-    );
+    assert_eq!(counts.len(), 1, "empty classesAndCount entry must contribute zero map entries");
     assert_eq!(
         counts.get("http://api.dasch.swiss/ontology/0001/onto-a/v2#Book"),
         Some(&3),
@@ -191,10 +176,7 @@ async fn bearer_header_sent_when_token_is_some() {
 
     assert!(result.is_ok(), "expected Ok with token, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -233,16 +215,9 @@ async fn bearer_header_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok without token, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok without token, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -279,10 +254,7 @@ async fn url_path_is_correctly_percent_encoded() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let request_path = received[0].url.path();
     assert_eq!(

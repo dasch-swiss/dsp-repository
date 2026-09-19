@@ -58,12 +58,11 @@ fn optional_env(name: &str) -> Option<String> {
 /// due to real errors.
 ///
 /// Assertions are intentionally resilient to real-data variation:
-/// - Non-empty list (beol is an active research project with at least one
-///   project-defined data-model).
+/// - Non-empty list (beol is an active research project with at least one project-defined
+///   data-model).
 /// - Every `name` is non-empty.
-/// - Every returned item has `is_builtin == false` — the client method fetches
-///   project-scoped data-models only; builtins are appended by the action,
-///   never by `list_data_models` itself.
+/// - Every returned item has `is_builtin == false` — the client method fetches project-scoped
+///   data-models only; builtins are appended by the action, never by `list_data_models` itself.
 /// - Every `iri` is non-empty and starts with `"http"`.
 #[test]
 fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
@@ -74,8 +73,7 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `list_data_models` uses a public endpoint; the token is optional. If
@@ -99,18 +97,13 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
     // project-defined data-model, so the assertion `!data_models.is_empty()` is
     // reliable. The shortcode `0801` is the canonical beol project.
     let project_identifier = "0801";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
              if the beol project has been removed from this server, update the test to use a \
              different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -118,10 +111,7 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
     );
 
     // ── 5. Call list_data_models ──────────────────────────────────────────────
-    eprintln!(
-        "live test: calling list_data_models for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
         .list_data_models(&cfg.server, &proj.iri, token_ref)

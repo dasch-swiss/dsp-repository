@@ -25,12 +25,11 @@
 //! **Credentials travel in the POST JSON body**, not in the URL or in any header
 //! that reqwest's built-in debug logging captures (i.e. not Authorization header).
 
+use std::collections::{HashMap, HashSet};
 use std::io::{Read, Write};
 use std::time::Duration;
 
 use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
-
-use std::collections::{HashMap, HashSet};
 
 use crate::client::DspClient;
 use crate::client::builtins::builtin_field_value_type;
@@ -39,12 +38,10 @@ use crate::diagnostic::Diagnostic;
 use crate::model::auth::LoginResponse;
 use crate::model::resource::{DatePoint, DateValue, FieldValues, FileValue, Value, ValueContent};
 use crate::model::{
-    Cardinality, CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure,
-    DataModelSummary, DumpStatus, DumpTask, Field, LocalizedText, Project, ProjectDescription,
-    ProjectDetail, ProjectRef, ProjectStatus, Relation, RelationKind, Representation,
-    ResourceAccess, ResourceDetail, ResourcePage, ResourceSummary, ResourceTypeDetail,
-    ResourceTypeSummary, ResourceVisibility, ValueType, Vocabulary, VocabularyHeader,
-    VocabularyNode, VocabularyTree,
+    Cardinality, CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure, DataModelSummary, DumpStatus,
+    DumpTask, Field, LocalizedText, Project, ProjectDescription, ProjectDetail, ProjectRef, ProjectStatus, Relation,
+    RelationKind, Representation, ResourceAccess, ResourceDetail, ResourcePage, ResourceSummary, ResourceTypeDetail,
+    ResourceTypeSummary, ResourceVisibility, ValueType, Vocabulary, VocabularyHeader, VocabularyNode, VocabularyTree,
 };
 
 // ---------------------------------------------------------------------------
@@ -298,18 +295,16 @@ struct OntologyAllEntitiesResponse {
 /// ADDITIVE extension for `describe_resource_type` (Step 2, task 016): all new
 /// fields are `Option` / `#[serde(default)]` so `describe_data_model` (which
 /// shares this struct) continues to parse without change — see R1 in the plan.
-/// - `sub_class_of`: heterogeneous list of superclass refs + `owl:Restriction`s;
-///   typed as `Vec<serde_json::Value>` because the mix of shapes (bare `@id` vs
-///   restriction object with integer cardinality) defeats a single `#[derive]`
-///   struct (R9).
+/// - `sub_class_of`: heterogeneous list of superclass refs + `owl:Restriction`s; typed as
+///   `Vec<serde_json::Value>` because the mix of shapes (bare `@id` vs restriction object with
+///   integer cardinality) defeats a single `#[derive]` struct (R9).
 /// - `object_type`: `knora-api:objectType` → inner `{"@id": "…"}` object.
 /// - `is_link_property`: `knora-api:isLinkProperty` (link fields).
 /// - `is_link_value_property`: `knora-api:isLinkValueProperty` (reification twin; dropped).
 /// - `is_resource_property`: `knora-api:isResourceProperty`.
-/// - `gui_order`: `salsah-gui:guiOrder` on restriction nodes (only meaningful
-///   inside `sub_class_of` items, but also present on property nodes for some
-///   ontologies; captured here for completeness and parsed from `sub_class_of`
-///   elements directly in the classifier).
+/// - `gui_order`: `salsah-gui:guiOrder` on restriction nodes (only meaningful inside `sub_class_of`
+///   items, but also present on property nodes for some ontologies; captured here for completeness
+///   and parsed from `sub_class_of` elements directly in the classifier).
 #[derive(serde::Deserialize)]
 struct OntologyEntityDto {
     #[serde(rename = "@id")]
@@ -365,13 +360,10 @@ impl V3ErrorBody {
     /// The returned `ExportExists` fields are each `Option` — callers are
     /// responsible for fail-closed handling of absent `id` or `projectIri`.
     fn export_exists(&self) -> Option<ExportExists<'_>> {
-        self.errors
-            .iter()
-            .find(|e| e.code == "export_exists")
-            .map(|e| ExportExists {
-                id: e.details.get("id").map(String::as_str),
-                project_iri: e.details.get("projectIri").map(String::as_str),
-            })
+        self.errors.iter().find(|e| e.code == "export_exists").map(|e| ExportExists {
+            id: e.details.get("id").map(String::as_str),
+            project_iri: e.details.get("projectIri").map(String::as_str),
+        })
     }
 }
 
@@ -420,22 +412,15 @@ impl DataTaskStatusApiResponse {
 
         // Parse created_at best-effort: a present-but-malformed timestamp must
         // NOT fail the whole parse — created_at is display-only, never load-bearing.
-        let created_at = self.created_at.and_then(|s| {
-            match chrono::DateTime::parse_from_rfc3339(&s) {
-                Ok(dt) => Some(dt.with_timezone(&chrono::Utc)),
-                Err(_) => {
-                    tracing::debug!(raw = %s, "dump task createdAt could not be parsed as RFC3339; using None");
-                    None
-                }
+        let created_at = self.created_at.and_then(|s| match chrono::DateTime::parse_from_rfc3339(&s) {
+            Ok(dt) => Some(dt.with_timezone(&chrono::Utc)),
+            Err(_) => {
+                tracing::debug!(raw = %s, "dump task createdAt could not be parsed as RFC3339; using None");
+                None
             }
         });
 
-        Ok(DumpTask {
-            id: self.id,
-            status,
-            error_message,
-            created_at,
-        })
+        Ok(DumpTask { id: self.id, status, error_message, created_at })
     }
 }
 
@@ -560,10 +545,7 @@ struct ListNodeDto {
 /// languages are kept (D4).
 fn into_localized_texts(dtos: Vec<ListLabelDto>) -> Vec<LocalizedText> {
     dtos.into_iter()
-        .map(|d| LocalizedText {
-            value: d.value,
-            language: d.language,
-        })
+        .map(|d| LocalizedText { value: d.value, language: d.language })
         .collect()
 }
 
@@ -814,9 +796,9 @@ fn local_name(id: &str) -> &str {
 /// Resolve a class `@id` into `(resource-type name, full IRI)`.
 ///
 /// - `name` = the local part: the segment after the last `#`, `/`, or `:`.
-/// - `iri`  = CURIE `prefix:local` expanded via `@context` (when `local` is not
-///   `//…`, i.e. not a scheme separator, and `prefix` is a known context prefix);
-///   otherwise the `@id` verbatim (covers full IRIs, unknown prefixes, no-colon).
+/// - `iri`  = CURIE `prefix:local` expanded via `@context` (when `local` is not `//…`, i.e. not a
+///   scheme separator, and `prefix` is a known context prefix); otherwise the `@id` verbatim
+///   (covers full IRIs, unknown prefixes, no-colon).
 ///
 /// Total — no `unwrap`/`panic`. One code path handles CURIE, full-IRI, and
 /// degenerate input without a dedicated `contains("://")` branch (the fallback
@@ -959,8 +941,7 @@ fn object_type_to_kebab(local: &str) -> String {
 /// (absent key, value>1) degrades to `ZeroOrMore` with a `tracing::warn!`.
 fn decode_cardinality(restriction: &serde_json::Value) -> Cardinality {
     // Helper to read an integer from a serde_json::Value.
-    let as_u64 =
-        |key: &str| -> Option<u64> { restriction.get(key).and_then(serde_json::Value::as_u64) };
+    let as_u64 = |key: &str| -> Option<u64> { restriction.get(key).and_then(serde_json::Value::as_u64) };
 
     if let Some(v) = as_u64("owl:cardinality") {
         if v == 1 {
@@ -1034,7 +1015,8 @@ fn curie_prefix(id: &str) -> Option<&str> {
 ///
 /// The endpoint returns three structural forms of JSON-LD:
 ///
-/// - **Many results**: `{ "@graph": [ { "@id": "…", "@type": "…", … }, … ], "knora-api:mayHaveMoreResults": … }`
+/// - **Many results**: `{ "@graph": [ { "@id": "…", "@type": "…", … }, … ],
+///   "knora-api:mayHaveMoreResults": … }`
 /// - **Single result**: `{ "@id": "…", "@type": "…", … }` — no `@graph`, but `@id` IS present
 /// - **Empty result**: `{}` — no `@graph`, no `@id`
 ///
@@ -1297,8 +1279,8 @@ fn derive_access(user_has_permission: &str) -> Option<ResourceAccess> {
 ///
 /// Implements the D1 ACL parse algorithm (see implementation plan):
 /// 1. Split on `'|'` into entries; for each, `split_once(' ')` → `(code, group_list)`.
-/// 2. Split `group_list` on `','`; take each group's local name and match **exactly**
-///    against `"UnknownUser"` / `"KnownUser"` — never `.contains()`.
+/// 2. Split `group_list` on `','`; take each group's local name and match **exactly** against
+///    `"UnknownUser"` / `"KnownUser"` — never `.contains()`.
 /// 3. Track the max `permission_rank(code)` seen for each world group across all entries.
 /// 4. Apply the D1 visibility table.
 /// 5. Empty or whitespace-only ACL → `None`.
@@ -1375,8 +1357,8 @@ impl HttpDspClient {
     /// Construct a new client pair with appropriate timeouts.
     ///
     /// - `client`: 10 s connect + 30 s overall (used for all short-lived requests).
-    /// - `download_client`: 30 s connect, **no overall timeout** (used only for
-    ///   streaming dump archives — they can be large).
+    /// - `download_client`: 30 s connect, **no overall timeout** (used only for streaming dump
+    ///   archives — they can be large).
     ///
     /// Returns `Err(Diagnostic::Internal(...))` if either reqwest client cannot be
     /// built (rare — only triggered by TLS backend misconfiguration).
@@ -1392,15 +1374,10 @@ impl HttpDspClient {
             .timeout(None)
             .user_agent(crate::util::USER_AGENT)
             .build()
-            .map_err(|e| {
-                Diagnostic::Internal(format!("failed to build download HTTP client: {e}"))
-            })?;
+            .map_err(|e| Diagnostic::Internal(format!("failed to build download HTTP client: {e}")))?;
         // No third client built here: `sparql_query`'s client (D17) is built
         // per call, not once here — see its doc comment for why.
-        Ok(Self {
-            client,
-            download_client,
-        })
+        Ok(Self { client, download_client })
     }
 
     /// Fetch `GET /v2/ontologies/allentities/{enc(ontology_iri)}` and deserialize.
@@ -1425,19 +1402,15 @@ impl HttpDspClient {
         );
 
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
         let status = response.status();
 
         if status.is_success() {
-            let resp: OntologyAllEntitiesResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!("data-model response could not be parsed: {e}"))
-            })?;
+            let resp: OntologyAllEntitiesResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("data-model response could not be parsed: {e}")))?;
             Ok(resp)
         } else {
             Err(map_unexpected_status(status, &url))
@@ -1450,28 +1423,19 @@ impl HttpDspClient {
     /// address and the second, upward-resolved root fetch (D2). Auth is
     /// optional; `token` is forwarded as a bearer when `Some`. NEVER log the
     /// token.
-    fn fetch_list_get(
-        &self,
-        server: &str,
-        iri: &str,
-        token: Option<&str>,
-    ) -> Result<ListGetResponseDto, Diagnostic> {
+    fn fetch_list_get(&self, server: &str, iri: &str, token: Option<&str>) -> Result<ListGetResponseDto, Diagnostic> {
         let url = format!("{}/admin/lists/{}", server.trim_end_matches('/'), enc(iri));
 
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
         let status = response.status();
 
         if status.is_success() {
-            response.json::<ListGetResponseDto>().map_err(|e| {
-                Diagnostic::ServerError(format!("vocabulary response could not be parsed: {e}"))
-            })
+            response
+                .json::<ListGetResponseDto>()
+                .map_err(|e| Diagnostic::ServerError(format!("vocabulary response could not be parsed: {e}")))
         } else {
             Err(map_unexpected_status(status, &url))
         }
@@ -1571,11 +1535,7 @@ impl HttpDspClient {
                 continue;
             }
 
-            parsed_fields.push(ParsedField {
-                key,
-                is_link: any_link,
-                values: contents,
-            });
+            parsed_fields.push(ParsedField { key, is_link: any_link, values: contents });
         }
 
         // ── 4. Resolve field labels (project ontologies only, deduped) ───────────
@@ -1646,11 +1606,7 @@ impl HttpDspClient {
             // the segment or alter the host.
             let url = format!("{}/v2/node/{}", server.trim_end_matches('/'), enc(node_iri));
             let req = self.client.get(&url);
-            let req = if let Some(t) = token {
-                req.bearer_auth(t)
-            } else {
-                req
-            };
+            let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
             match req.send() {
                 Ok(resp) if resp.status().is_success() => {
                     // Degrade to None on parse failure (consistent with sibling tracing arms).
@@ -1693,10 +1649,7 @@ impl HttpDspClient {
             // Derive field name (D3): strip `Value` suffix on link-typed fields only.
             let raw_name = local_name(pf.key).to_string();
             let name = if pf.is_link {
-                raw_name
-                    .strip_suffix("Value")
-                    .unwrap_or(&raw_name)
-                    .to_string()
+                raw_name.strip_suffix("Value").unwrap_or(&raw_name).to_string()
             } else {
                 raw_name
             };
@@ -1710,9 +1663,7 @@ impl HttpDspClient {
                     let ont_iri = ns.trim_end_matches(['#', '/']).to_string();
                     let local = local_name(pf.key);
                     let prop_iri = format!("{}{}", ns, local);
-                    ontology_labels
-                        .get(&ont_iri)
-                        .and_then(|m| m.get(&prop_iri).cloned())
+                    ontology_labels.get(&ont_iri).and_then(|m| m.get(&prop_iri).cloned())
                 } else {
                     None
                 }
@@ -1726,25 +1677,15 @@ impl HttpDspClient {
                     ValueContent::VocabularyItem { node_iri, label: _ } => {
                         let resolved = node_labels.get(&node_iri).cloned().flatten();
                         Value {
-                            content: ValueContent::VocabularyItem {
-                                node_iri,
-                                label: resolved,
-                            },
+                            content: ValueContent::VocabularyItem { node_iri, label: resolved },
                             comment: v.comment,
                         }
                     }
-                    other => Value {
-                        content: other,
-                        comment: v.comment,
-                    },
+                    other => Value { content: other, comment: v.comment },
                 })
                 .collect();
 
-            result.push(FieldValues {
-                name,
-                label,
-                values,
-            });
+            result.push(FieldValues { name, label, values });
         }
 
         result
@@ -1813,30 +1754,27 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
         "TextValue" => {
             // Presence-based detection (Risk 7 / ADR-0013): if textValueAsXml present
             // → formatted (standoff); else valueAsString.
-            let content =
-                if let Some(xml) = obj.get("knora-api:textValueAsXml").and_then(|v| v.as_str()) {
-                    crate::util::text::html_to_text(xml)
-                } else {
-                    obj.get("knora-api:valueAsString")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string()
-                };
+            let content = if let Some(xml) = obj.get("knora-api:textValueAsXml").and_then(|v| v.as_str()) {
+                crate::util::text::html_to_text(xml)
+            } else {
+                obj.get("knora-api:valueAsString")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
+            };
             (ValueContent::Text(content), false)
         }
 
         // ── IntValue ─────────────────────────────────────────────────────────────
         "IntValue" => {
-            let n = obj
-                .get("knora-api:intValueAsInt")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
+            let n = obj.get("knora-api:intValueAsInt").and_then(|v| v.as_i64()).unwrap_or(0);
             (ValueContent::Integer(n), false)
         }
 
         // ── DecimalValue ─────────────────────────────────────────────────────────
         "DecimalValue" => {
-            // `decimalValueAsDecimal` is a typed literal: `{"@value": "3.14", "@type": "xsd:decimal"}`.
+            // `decimalValueAsDecimal` is a typed literal: `{"@value": "3.14", "@type":
+            // "xsd:decimal"}`.
             let s = obj
                 .get("knora-api:decimalValueAsDecimal")
                 .and_then(|v| {
@@ -1875,22 +1813,10 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
                 let era_key = format!("knora-api:{prefix}Era");
 
                 DatePoint {
-                    year: obj
-                        .get(year_key.as_str())
-                        .and_then(|v| v.as_i64())
-                        .map(|v| v as i32),
-                    month: obj
-                        .get(month_key.as_str())
-                        .and_then(|v| v.as_u64())
-                        .map(|v| v as u32),
-                    day: obj
-                        .get(day_key.as_str())
-                        .and_then(|v| v.as_u64())
-                        .map(|v| v as u32),
-                    era: obj
-                        .get(era_key.as_str())
-                        .and_then(|v| v.as_str())
-                        .map(str::to_owned),
+                    year: obj.get(year_key.as_str()).and_then(|v| v.as_i64()).map(|v| v as i32),
+                    month: obj.get(month_key.as_str()).and_then(|v| v.as_u64()).map(|v| v as u32),
+                    day: obj.get(day_key.as_str()).and_then(|v| v.as_u64()).map(|v| v as u32),
+                    era: obj.get(era_key.as_str()).and_then(|v| v.as_str()).map(str::to_owned),
                 }
             };
 
@@ -1906,23 +1832,10 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string();
-                return (
-                    ValueContent::Raw {
-                        value_type: "date".to_string(),
-                        text: raw_text,
-                    },
-                    false,
-                );
+                return (ValueContent::Raw { value_type: "date".to_string(), text: raw_text }, false);
             }
 
-            (
-                ValueContent::Date(DateValue {
-                    calendar,
-                    start,
-                    end,
-                }),
-                false,
-            )
+            (ValueContent::Date(DateValue { calendar, start, end }), false)
         }
 
         // ── TimeValue ────────────────────────────────────────────────────────────
@@ -1997,29 +1910,21 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
         "LinkValue" => {
             // Prefer embedded `linkValueHasTarget` (complex schema). Fall back to
             // `linkValueHasTargetIri.@id` when only the IRI is available.
-            let (target_iri, target_label) =
-                if let Some(target_obj) = obj.get("knora-api:linkValueHasTarget") {
-                    let iri = target_obj
-                        .get("@id")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    let lbl = target_obj.get("rdfs:label").and_then(extract_string_value);
-                    (iri, lbl)
-                } else {
-                    let iri = obj
-                        .get("knora-api:linkValueHasTargetIri")
-                        .and_then(|v| v.get("@id"))
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    (iri, None)
-                };
+            let (target_iri, target_label) = if let Some(target_obj) = obj.get("knora-api:linkValueHasTarget") {
+                let iri = target_obj.get("@id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let lbl = target_obj.get("rdfs:label").and_then(extract_string_value);
+                (iri, lbl)
+            } else {
+                let iri = obj
+                    .get("knora-api:linkValueHasTargetIri")
+                    .and_then(|v| v.get("@id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                (iri, None)
+            };
             (
-                ValueContent::Link {
-                    target_iri,
-                    target_label,
-                },
+                ValueContent::Link { target_iri, target_label },
                 true, // this IS a link
             )
         }
@@ -2076,13 +1981,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
                         (None, None)
                     };
                     (
-                        ValueContent::File(FileValue {
-                            value_type: vt,
-                            filename,
-                            url: url_str,
-                            width,
-                            height,
-                        }),
+                        ValueContent::File(FileValue { value_type: vt, filename, url: url_str, width, height }),
                         false,
                     )
                 }
@@ -2093,13 +1992,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
                         .and_then(|v| v.as_str())
                         .unwrap_or(&filename)
                         .to_string();
-                    (
-                        ValueContent::Raw {
-                            value_type: object_type_to_kebab(t),
-                            text: raw_text,
-                        },
-                        false,
-                    )
+                    (ValueContent::Raw { value_type: object_type_to_kebab(t), text: raw_text }, false)
                 }
             }
         }
@@ -2114,13 +2007,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
                 .and_then(|v| v.as_str())
                 .map(str::to_owned)
                 .unwrap_or_else(|| compact_value_text(obj));
-            (
-                ValueContent::Raw {
-                    value_type,
-                    text: raw_text,
-                },
-                false,
-            )
+            (ValueContent::Raw { value_type, text: raw_text }, false)
         }
     }
 }
@@ -2181,10 +2068,7 @@ impl DspClient for HttpDspClient {
         let url = format!("{}/v2/authentication", server.trim_end_matches('/'));
 
         let mut body = serde_json::Map::with_capacity(2);
-        body.insert(
-            identifier_key(user).to_owned(),
-            serde_json::Value::from(user),
-        );
+        body.insert(identifier_key(user).to_owned(), serde_json::Value::from(user));
         body.insert("password".to_owned(), serde_json::Value::from(password));
 
         let response = self
@@ -2197,25 +2081,17 @@ impl DspClient for HttpDspClient {
         let status = response.status();
 
         if status.is_success() {
-            let api: LoginApiResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!("login response could not be parsed: {e}"))
-            })?;
+            let api: LoginApiResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("login response could not be parsed: {e}")))?;
             let expires_at = extract_exp(&api.token);
-            Ok(LoginResponse {
-                token: api.token,
-                user: user.to_string(),
-                expires_at,
-            })
-        } else if status == reqwest::StatusCode::UNAUTHORIZED
-            || status == reqwest::StatusCode::FORBIDDEN
-        {
+            Ok(LoginResponse { token: api.token, user: user.to_string(), expires_at })
+        } else if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
             let body = response.text().unwrap_or_default();
             let preview: String = body.chars().take(200).collect();
             tracing::trace!("auth failure response body (capped): {}", preview);
             // Username MUST NOT appear in the error message (ADR-0007 / PRD AC 7).
-            Err(Diagnostic::AuthRequired(format!(
-                "Authentication failed on {server}"
-            )))
+            Err(Diagnostic::AuthRequired(format!("Authentication failed on {server}")))
         } else if status == reqwest::StatusCode::NOT_FOUND {
             Err(Diagnostic::NotFound(format!(
                 "endpoint not found at {url}; check that --server resolves to a DSP-API instance, not just any HTTPS host"
@@ -2226,9 +2102,7 @@ impl DspClient for HttpDspClient {
             tracing::trace!("server error response body (capped): {}", preview);
             Err(Diagnostic::ServerError(format!("server returned {status}")))
         } else {
-            Err(Diagnostic::ServerError(format!(
-                "unexpected status: {status}"
-            )))
+            Err(Diagnostic::ServerError(format!("unexpected status: {status}")))
         }
     }
 
@@ -2238,18 +2112,14 @@ impl DspClient for HttpDspClient {
         let url = project_lookup_url(base, project);
 
         // Project lookup endpoints are public — no Authorization header.
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .map_err(|e| Diagnostic::Network(e.to_string()))?;
+        let response = self.client.get(&url).send().map_err(|e| Diagnostic::Network(e.to_string()))?;
 
         let status = response.status();
 
         if status.is_success() {
-            let api: ProjectGetApiResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!("project lookup response could not be parsed: {e}"))
-            })?;
+            let api: ProjectGetApiResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("project lookup response could not be parsed: {e}")))?;
             if !is_safe_shortcode(&api.project.shortcode) {
                 return Err(Diagnostic::ServerError(
                     "server returned a project with an unexpected shortcode".into(),
@@ -2263,11 +2133,7 @@ impl DspClient for HttpDspClient {
         } else if status == reqwest::StatusCode::NOT_FOUND {
             // Cap a long IRI input at ~80 chars for readability.
             let display_input: String = project.chars().take(80).collect();
-            let suffix = if project.chars().count() > 80 {
-                "…"
-            } else {
-                ""
-            };
+            let suffix = if project.chars().count() > 80 { "…" } else { "" };
             Err(Diagnostic::NotFound(format!(
                 "project '{display_input}{suffix}' not found on {server}"
             )))
@@ -2288,10 +2154,7 @@ impl DspClient for HttpDspClient {
         // The word "export" is confined to this URL and http.rs internals only;
         // the trait and all layers above use "dump" exclusively (ADR-0001).
         // skipAssets is a query parameter: ?skipAssets=true|false
-        let url = format!(
-            "{base}/v3/projects/{}/exports?skipAssets={skip_assets}",
-            enc(project_iri)
-        );
+        let url = format!("{base}/v3/projects/{}/exports?skipAssets={skip_assets}", enc(project_iri));
 
         let response = self
             .client
@@ -2304,11 +2167,9 @@ impl DspClient for HttpDspClient {
 
         match status.as_u16() {
             202 => {
-                let api: DataTaskStatusApiResponse = response.json().map_err(|e| {
-                    Diagnostic::ServerError(format!(
-                        "dump trigger response could not be parsed: {e}"
-                    ))
-                })?;
+                let api: DataTaskStatusApiResponse = response
+                    .json()
+                    .map_err(|e| Diagnostic::ServerError(format!("dump trigger response could not be parsed: {e}")))?;
                 api.into_dump_task().map(CreateDumpOutcome::Created)
             }
             409 => {
@@ -2333,8 +2194,7 @@ impl DspClient for HttpDspClient {
                         // item WAS present but lacked an id (vs. no parseable item at all).
                         let id = ex.id.ok_or_else(|| {
                             Diagnostic::ServerError(
-                                "the server's dump-conflict response was missing the dump id"
-                                    .into(),
+                                "the server's dump-conflict response was missing the dump id".into(),
                             )
                         })?;
                         validate_dump_id(id)?;
@@ -2344,9 +2204,7 @@ impl DspClient for HttpDspClient {
                         // canonical and identically formed. No normalization needed. If the CLI
                         // ever accepts raw user IRIs here, canonicalize at the input boundary.
                         match ex.project_iri {
-                            Some(owner) if owner == project_iri => {
-                                Ok(CreateDumpOutcome::Exists { id: id.to_string() })
-                            }
+                            Some(owner) if owner == project_iri => Ok(CreateDumpOutcome::Exists { id: id.to_string() }),
                             Some(owner) => Ok(CreateDumpOutcome::ExistsForOtherProject {
                                 id: id.to_string(),
                                 project_iri: owner.to_string(),
@@ -2398,16 +2256,12 @@ project owns the existing dump; cannot safely proceed"
 
         match status.as_u16() {
             200 => {
-                let api: DataTaskStatusApiResponse = response.json().map_err(|e| {
-                    Diagnostic::ServerError(format!(
-                        "dump status response could not be parsed: {e}"
-                    ))
-                })?;
+                let api: DataTaskStatusApiResponse = response
+                    .json()
+                    .map_err(|e| Diagnostic::ServerError(format!("dump status response could not be parsed: {e}")))?;
                 api.into_dump_task()
             }
-            404 => Err(Diagnostic::NotFound(format!(
-                "dump '{dump_id}' not found for project at {url}"
-            ))),
+            404 => Err(Diagnostic::NotFound(format!("dump '{dump_id}' not found for project at {url}"))),
             401 | 403 => Err(Diagnostic::AuthRequired(
                 "fetching dump status requires a system-administrator token".into(),
             )),
@@ -2426,10 +2280,7 @@ project owns the existing dump; cannot safely proceed"
         validate_dump_id(dump_id)?;
         let base = server.trim_end_matches('/');
         // dump_id is URL-safe base64 — inserted verbatim (no encoding).
-        let url = format!(
-            "{base}/v3/projects/{}/exports/{dump_id}/download",
-            enc(project_iri)
-        );
+        let url = format!("{base}/v3/projects/{}/exports/{dump_id}/download", enc(project_iri));
 
         // Use download_client (no overall/read timeout) for potentially large archives.
         let mut response = self
@@ -2457,19 +2308,14 @@ project owns the existing dump; cannot safely proceed"
                     if n == 0 {
                         break;
                     }
-                    dest.write_all(&buf[..n]).map_err(|e| {
-                        Diagnostic::Io(format!("failed to write dump to disk: {e}"))
-                    })?;
+                    dest.write_all(&buf[..n])
+                        .map_err(|e| Diagnostic::Io(format!("failed to write dump to disk: {e}")))?;
                     total += n as u64;
                 }
                 Ok(total)
             }
-            409 => Err(Diagnostic::Conflict(
-                "dump not ready — still in progress or failed".into(),
-            )),
-            404 => Err(Diagnostic::NotFound(format!(
-                "dump '{dump_id}' not found at {url}"
-            ))),
+            409 => Err(Diagnostic::Conflict("dump not ready — still in progress or failed".into())),
+            404 => Err(Diagnostic::NotFound(format!("dump '{dump_id}' not found at {url}"))),
             401 | 403 => Err(Diagnostic::AuthRequired(
                 "downloading a project dump requires a system-administrator token".into(),
             )),
@@ -2503,9 +2349,7 @@ project owns the existing dump; cannot safely proceed"
             409 => Err(Diagnostic::Conflict(
                 "dump is still in progress and cannot be deleted yet".into(),
             )),
-            404 => Err(Diagnostic::NotFound(format!(
-                "dump '{dump_id}' not found at {url}"
-            ))),
+            404 => Err(Diagnostic::NotFound(format!("dump '{dump_id}' not found at {url}"))),
             401 | 403 => Err(Diagnostic::AuthRequired(
                 "deleting a project dump requires a system-administrator token".into(),
             )),
@@ -2523,20 +2367,16 @@ project owns the existing dump; cannot safely proceed"
         // bearer — that would change request semantics vs. a truly unauthenticated
         // call.
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
 
         let status = response.status();
 
         if status.is_success() {
-            let api: ProjectsListApiResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!("projects list response could not be parsed: {e}"))
-            })?;
+            let api: ProjectsListApiResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("projects list response could not be parsed: {e}")))?;
             let projects = api
                 .projects
                 .into_iter()
@@ -2564,12 +2404,7 @@ project owns the existing dump; cannot safely proceed"
         }
     }
 
-    fn describe_project(
-        &self,
-        server: &str,
-        project: &str,
-        token: Option<&str>,
-    ) -> Result<ProjectDetail, Diagnostic> {
+    fn describe_project(&self, server: &str, project: &str, token: Option<&str>) -> Result<ProjectDetail, Diagnostic> {
         let base = server.trim_end_matches('/');
         let url = project_lookup_url(base, project);
 
@@ -2577,20 +2412,16 @@ project owns the existing dump; cannot safely proceed"
         // provided. When `token` is `None` the request is sent without any
         // Authorization header (public endpoint). Mirrors `list_projects`.
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
 
         let status = response.status();
 
         if status.is_success() {
-            let api: ProjectDetailApiResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!("project lookup response could not be parsed: {e}"))
-            })?;
+            let api: ProjectDetailApiResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("project lookup response could not be parsed: {e}")))?;
             let dto = api.project;
 
             // Translate `status` bool → enum (true = Active, false = Inactive).
@@ -2604,10 +2435,7 @@ project owns the existing dump; cannot safely proceed"
             let description = dto
                 .description
                 .into_iter()
-                .map(|d| ProjectDescription {
-                    value: d.value,
-                    language: d.language,
-                })
+                .map(|d| ProjectDescription { value: d.value, language: d.language })
                 .collect();
 
             // Translate ontology IRIs → DataModelSummary, sorted by name ascending.
@@ -2634,11 +2462,7 @@ project owns the existing dump; cannot safely proceed"
         } else if status == reqwest::StatusCode::NOT_FOUND {
             // Cap a long input at ~80 chars for readability, mirroring resolve_project.
             let display_input: String = project.chars().take(80).collect();
-            let suffix = if project.chars().count() > 80 {
-                "…"
-            } else {
-                ""
-            };
+            let suffix = if project.chars().count() > 80 { "…" } else { "" };
             Err(Diagnostic::NotFound(format!(
                 "project '{display_input}{suffix}' not found on {server}. Run `dsp vre project list --server {server}` to see available projects."
             )))
@@ -2670,11 +2494,7 @@ project owns the existing dump; cannot safely proceed"
             .filter(|dto| dto.is_resource_class)
             .map(|dto| {
                 let (name, iri) = expand_class_id(&dto.id, &prefixes);
-                ResourceTypeSummary {
-                    name,
-                    iri,
-                    label: dto.label,
-                }
+                ResourceTypeSummary { name, iri, label: dto.label }
             })
             .collect();
 
@@ -2710,10 +2530,7 @@ project owns the existing dump; cannot safely proceed"
         for entity in graph_entities {
             if entity.is_resource_class {
                 class_nodes.push(entity);
-            } else if entity.object_type.is_some()
-                || entity.is_link_property
-                || entity.is_resource_property
-            {
+            } else if entity.object_type.is_some() || entity.is_link_property || entity.is_resource_property {
                 prop_lookup.insert(entity.id.clone(), entity);
             }
         }
@@ -2782,8 +2599,7 @@ project owns the existing dump; cannot safely proceed"
                         target_data_model,
                         is_builtin,
                     });
-                } else if let Some(id_val) = element.get("@id").and_then(serde_json::Value::as_str)
-                {
+                } else if let Some(id_val) = element.get("@id").and_then(serde_json::Value::as_str) {
                     // ── Inherits edge ────────────────────────────────────────────
                     // Bare {"@id": "..."} entries are superclass refs (skip blank
                     // nodes / owl:Restriction entries which have @type, not @id at
@@ -2792,8 +2608,7 @@ project owns the existing dump; cannot safely proceed"
 
                     let sup_prefix = curie_prefix(id_val).unwrap_or("");
                     let is_builtin = is_system_prefix(sup_prefix);
-                    let target_data_model = if is_system_prefix(sup_prefix) || sup_prefix.is_empty()
-                    {
+                    let target_data_model = if is_system_prefix(sup_prefix) || sup_prefix.is_empty() {
                         None
                     } else {
                         Some(sup_prefix.to_string())
@@ -2859,17 +2674,12 @@ project owns the existing dump; cannot safely proceed"
         // Set x-knora-accept-project header via the fallible HeaderValue path.
         // An IRI containing CRLF or other invalid header bytes is a Usage error
         // (the caller supplied a bad IRI), not an Internal error. No unwrap.
-        let header_value = reqwest::header::HeaderValue::from_str(project_iri).map_err(|e| {
-            Diagnostic::Usage(format!("project IRI is not a valid HTTP header value: {e}"))
-        })?;
+        let header_value = reqwest::header::HeaderValue::from_str(project_iri)
+            .map_err(|e| Diagnostic::Usage(format!("project IRI is not a valid HTTP header value: {e}")))?;
         let req = req.header("x-knora-accept-project", header_value);
 
         // Conditional bearer auth — mirrors list_projects.
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
         let status = response.status();
@@ -2878,9 +2688,9 @@ project owns the existing dump; cannot safely proceed"
             return Err(map_unexpected_status(status, &url));
         }
 
-        let dto: ResourceListDto = response.json().map_err(|e| {
-            Diagnostic::ServerError(format!("resource list response could not be parsed: {e}"))
-        })?;
+        let dto: ResourceListDto = response
+            .json()
+            .map_err(|e| Diagnostic::ServerError(format!("resource list response could not be parsed: {e}")))?;
 
         let may_have_more_results = dto.may_have_more_results;
 
@@ -2917,10 +2727,7 @@ project owns the existing dump; cannot safely proceed"
             vec![]
         };
 
-        Ok(ResourcePage {
-            resources,
-            may_have_more_results,
-        })
+        Ok(ResourcePage { resources, may_have_more_results })
     }
 
     fn describe_resource(
@@ -2936,39 +2743,23 @@ project owns the existing dump; cannot safely proceed"
 
         // Build request with conditional bearer auth. NEVER log the token.
         let req = self.client.get(&url).query(&[("schema", "complex")]);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
         let status = response.status();
 
         if status.is_success() {
-            let dto: ResourceDetailDto = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!(
-                    "resource describe response could not be parsed: {e}"
-                ))
-            })?;
+            let dto: ResourceDetailDto = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("resource describe response could not be parsed: {e}")))?;
 
             // Boundary translation (ADR-0001): wire DTO → domain model.
-            let label = dto
-                .label
-                .as_ref()
-                .and_then(extract_string_value)
-                .unwrap_or_default();
+            let label = dto.label.as_ref().and_then(extract_string_value).unwrap_or_default();
             let resource_type = extract_resource_type(dto.type_field.as_ref());
             let ark_url = dto.ark_url.as_ref().and_then(extract_string_value);
             let creation_date = dto.creation_date.as_ref().and_then(extract_string_value);
-            let last_modified = dto
-                .last_modification_date
-                .as_ref()
-                .and_then(extract_string_value);
-            let attached_project = dto
-                .attached_to_project
-                .as_ref()
-                .and_then(extract_string_value);
+            let last_modified = dto.last_modification_date.as_ref().and_then(extract_string_value);
+            let attached_project = dto.attached_to_project.as_ref().and_then(extract_string_value);
             let owner = dto.attached_to_user.as_ref().and_then(extract_string_value);
             let visibility = dto.has_permissions.as_deref().and_then(derive_visibility);
             let your_access = dto.user_has_permission.as_deref().and_then(derive_access);
@@ -2996,26 +2787,14 @@ project owns the existing dump; cannot safely proceed"
         } else if status == reqwest::StatusCode::NOT_FOUND {
             // Cap the resource IRI at 80 chars for readability, mirroring resolve_project.
             let display_iri: String = resource_iri.chars().take(80).collect();
-            let iri_suffix = if resource_iri.chars().count() > 80 {
-                "…"
-            } else {
-                ""
-            };
-            Err(Diagnostic::NotFound(format!(
-                "resource '{display_iri}{iri_suffix}' not found"
-            )))
-        } else if status == reqwest::StatusCode::UNAUTHORIZED
-            || status == reqwest::StatusCode::FORBIDDEN
-        {
+            let iri_suffix = if resource_iri.chars().count() > 80 { "…" } else { "" };
+            Err(Diagnostic::NotFound(format!("resource '{display_iri}{iri_suffix}' not found")))
+        } else if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
             // Deliberate: an anonymous caller describing a private resource gets 403.
             // AuthRequired (exit 3 + login hint) is the right UX for an auth-optional read.
             // NEVER log the token — not in any Diagnostic or tracing call.
             let display_iri: String = resource_iri.chars().take(80).collect();
-            let iri_suffix = if resource_iri.chars().count() > 80 {
-                "…"
-            } else {
-                ""
-            };
+            let iri_suffix = if resource_iri.chars().count() > 80 { "…" } else { "" };
             Err(Diagnostic::AuthRequired(format!(
                 "access denied for resource '{display_iri}{iri_suffix}' — log in to view this resource"
             )))
@@ -3043,9 +2822,7 @@ project owns the existing dump; cannot safely proceed"
             let preview: String = body.chars().take(200).collect();
             tracing::trace!("verify_token success response body (capped): {}", preview);
             Ok(())
-        } else if status == reqwest::StatusCode::UNAUTHORIZED
-            || status == reqwest::StatusCode::FORBIDDEN
-        {
+        } else if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
             // Drain the response body so pooled connections behave.
             let body = response.text().unwrap_or_default();
             let preview: String = body.chars().take(200).collect();
@@ -3065,31 +2842,23 @@ project owns the existing dump; cannot safely proceed"
         project_iri: &str,
         token: Option<&str>,
     ) -> Result<Vec<DataModel>, Diagnostic> {
-        let url = format!(
-            "{}/v2/ontologies/metadata/{}",
-            server.trim_end_matches('/'),
-            enc(project_iri)
-        );
+        let url = format!("{}/v2/ontologies/metadata/{}", server.trim_end_matches('/'), enc(project_iri));
 
         // Build the request: conditionally add Bearer auth ONLY when a token is
         // provided. When `token` is `None` the request is sent without any
         // Authorization header (public endpoint). Mirrors `list_projects`.
         // NEVER log the token — it must not appear in any Diagnostic or tracing call.
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
 
         let status = response.status();
 
         if status.is_success() {
-            let resp: OntologyMetadataResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!("data-models response could not be parsed: {e}"))
-            })?;
+            let resp: OntologyMetadataResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("data-models response could not be parsed: {e}")))?;
 
             // `@graph` present → use it (covers multi AND a server that wraps a single
             // ontology in a length-1 array). Else a flattened top-level `@id` → one
@@ -3159,11 +2928,7 @@ project owns the existing dump; cannot safely proceed"
             Some(i) => i,
             None => {
                 let display: String = resource_type.chars().take(80).collect();
-                let suffix = if resource_type.chars().count() > 80 {
-                    "…"
-                } else {
-                    ""
-                };
+                let suffix = if resource_type.chars().count() > 80 { "…" } else { "" };
                 return Err(Diagnostic::NotFound(format!(
                     "resource-type '{display}{suffix}' not found in data-model '{}' on {server}",
                     data_model_name_from_iri(data_model_iri)
@@ -3212,11 +2977,7 @@ project owns the existing dump; cannot safely proceed"
 
                 restriction_prop_locals.push(local_name(&on_prop_id).to_string());
 
-                restrictions.push(Restriction {
-                    on_property_id: on_prop_id,
-                    cardinality,
-                    gui_order,
-                });
+                restrictions.push(Restriction { on_property_id: on_prop_id, cardinality, gui_order });
                 continue;
             }
             // Not a restriction — it's a superclass ref: {"@id": "..."}
@@ -3226,22 +2987,15 @@ project owns the existing dump; cannot safely proceed"
         }
 
         // ── 4. Representation (Decision 5 / R8): from file-value restrictions ─
-        let representation = detect_representation(
-            &restriction_prop_locals
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<_>>(),
-        );
+        let representation =
+            detect_representation(&restriction_prop_locals.iter().map(String::as_str).collect::<Vec<_>>());
 
         // ── 5. Build property node lookup from the queried ontology ───────────
         let mut prop_lookup: HashMap<String, OntologyEntityDto> = HashMap::new();
         for entity in graph_entities {
             // Property nodes have an objectType or isResourceProperty/isLinkProperty.
             // Use object_type as the discriminant (property nodes carry it; class nodes don't).
-            if entity.object_type.is_some()
-                || entity.is_link_property
-                || entity.is_resource_property
-            {
+            if entity.object_type.is_some() || entity.is_link_property || entity.is_resource_property {
                 prop_lookup.insert(entity.id.clone(), entity);
             }
         }
@@ -3313,10 +3067,7 @@ project owns the existing dump; cannot safely proceed"
             match self.fetch_allentities(server, sibling_iri, token) {
                 Ok(sibling_resp) => {
                     for entity in sibling_resp.graph {
-                        if entity.object_type.is_some()
-                            || entity.is_link_property
-                            || entity.is_resource_property
-                        {
+                        if entity.object_type.is_some() || entity.is_link_property || entity.is_resource_property {
                             prop_lookup.entry(entity.id.clone()).or_insert(entity);
                         }
                     }
@@ -3355,9 +3106,7 @@ project owns the existing dump; cannot safely proceed"
                 let prop_local = local_name(prop_id);
                 if let Some(base) = prop_local.strip_suffix("Value") {
                     // Look for a restriction whose local name equals `base` (CURIE match).
-                    let base_present = restrictions
-                        .iter()
-                        .any(|r| local_name(&r.on_property_id) == base);
+                    let base_present = restrictions.iter().any(|r| local_name(&r.on_property_id) == base);
                     // Also check: `base` must be present as a restriction prop id
                     // (with any prefix, not just same prefix).
                     if base_present {
@@ -3395,11 +3144,7 @@ project owns the existing dump; cannot safely proceed"
                         .unwrap_or_else(|| "unknown".to_string());
                     (ValueType::Link, Some(target_name))
                 } else {
-                    let obj_local = n
-                        .object_type
-                        .as_ref()
-                        .map(|ot| local_name(&ot.id))
-                        .unwrap_or("");
+                    let obj_local = n.object_type.as_ref().map(|ot| local_name(&ot.id)).unwrap_or("");
                     (map_object_type_to_value_type(obj_local), None)
                 }
             } else {
@@ -3440,9 +3185,7 @@ project owns the existing dump; cannot safely proceed"
 
         // ── 8. Sort by guiOrder then name ─────────────────────────────────────
         fields.sort_by(|(order_a, field_a), (order_b, field_b)| {
-            order_a
-                .cmp(order_b)
-                .then_with(|| field_a.name.cmp(&field_b.name))
+            order_a.cmp(order_b).then_with(|| field_a.name.cmp(&field_b.name))
         });
         let sorted_fields: Vec<Field> = fields.into_iter().map(|(_, f)| f).collect();
 
@@ -3488,21 +3231,15 @@ project owns the existing dump; cannot safely proceed"
         // Conditionally add Bearer auth ONLY when a token is provided — mirrors
         // `list_data_models`. NEVER log the token.
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
         let status = response.status();
 
         if status.is_success() {
-            let entries: Vec<OntologyAndResourceClassesDto> = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!(
-                    "resource-counts response could not be parsed: {e}"
-                ))
-            })?;
+            let entries: Vec<OntologyAndResourceClassesDto> = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("resource-counts response could not be parsed: {e}")))?;
 
             let mut counts = HashMap::new();
             for entry in entries {
@@ -3524,30 +3261,20 @@ project owns the existing dump; cannot safely proceed"
         project_iri: &str,
         token: Option<&str>,
     ) -> Result<Vec<Vocabulary>, Diagnostic> {
-        let url = format!(
-            "{}/admin/lists?projectIri={}",
-            server.trim_end_matches('/'),
-            enc(project_iri)
-        );
+        let url = format!("{}/admin/lists?projectIri={}", server.trim_end_matches('/'), enc(project_iri));
 
         // Conditionally add Bearer auth ONLY when a token is provided — mirrors
         // `list_data_models`. NEVER log the token.
         let req = self.client.get(&url);
-        let req = if let Some(t) = token {
-            req.bearer_auth(t)
-        } else {
-            req
-        };
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
 
         let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
         let status = response.status();
 
         if status.is_success() {
-            let resp: ListsListApiResponse = response.json().map_err(|e| {
-                Diagnostic::ServerError(format!(
-                    "vocabulary list response could not be parsed: {e}"
-                ))
-            })?;
+            let resp: ListsListApiResponse = response
+                .json()
+                .map_err(|e| Diagnostic::ServerError(format!("vocabulary list response could not be parsed: {e}")))?;
 
             Ok(resp
                 .lists
@@ -3570,12 +3297,7 @@ project owns the existing dump; cannot safely proceed"
         }
     }
 
-    fn describe_vocabulary(
-        &self,
-        server: &str,
-        iri: &str,
-        token: Option<&str>,
-    ) -> Result<VocabularyTree, Diagnostic> {
+    fn describe_vocabulary(&self, server: &str, iri: &str, token: Option<&str>) -> Result<VocabularyTree, Diagnostic> {
         match self.fetch_list_get(server, iri, token)? {
             ListGetResponseDto::Root(root) => Ok(build_vocabulary_tree(root.list, None)),
             ListGetResponseDto::Node(node) => {
@@ -3584,9 +3306,7 @@ project owns the existing dump; cannot safely proceed"
                 // is discarded; the root fetch below carries the full tree.
                 let root_iri = node.node.nodeinfo.has_root_node;
                 match self.fetch_list_get(server, &root_iri, token)? {
-                    ListGetResponseDto::Root(root) => {
-                        Ok(build_vocabulary_tree(root.list, Some(iri.to_string())))
-                    }
+                    ListGetResponseDto::Root(root) => Ok(build_vocabulary_tree(root.list, Some(iri.to_string()))),
                     // One resolution hop only — no retry loop. A second
                     // node response here is a hard error, not a degrade.
                     ListGetResponseDto::Node(_) => Err(Diagnostic::ServerError(format!(
@@ -3637,9 +3357,7 @@ project owns the existing dump; cannot safely proceed"
             .redirect(reqwest::redirect::Policy::none())
             .user_agent(crate::util::USER_AGENT)
             .build()
-            .map_err(|e| {
-                Diagnostic::Internal(format!("failed to build SPARQL HTTP client: {e}"))
-            })?;
+            .map_err(|e| Diagnostic::Internal(format!("failed to build SPARQL HTTP client: {e}")))?;
 
         let req = sparql_client
             .post(&url)
@@ -3675,9 +3393,7 @@ project owns the existing dump; cannot safely proceed"
             .get(reqwest::header::CONTENT_TYPE)
             .and_then(|v| v.to_str().ok())
             .map(|s| s.to_string());
-        let body = response
-            .bytes()
-            .map_err(|e| Diagnostic::Network(e.to_string()))?;
+        let body = response.bytes().map_err(|e| Diagnostic::Network(e.to_string()))?;
 
         tracing::debug!(
             status = status.as_u16(),
@@ -3699,11 +3415,13 @@ project owns the existing dump; cannot safely proceed"
                         crate::util::text::sanitise_bytes_for_prose(&body)
                     );
                 }
-                Ok(crate::client::sparql::SparqlResponse {
-                    status: status.as_u16(),
-                    content_type,
-                    body: body.to_vec(),
-                })
+                Ok(
+                    crate::client::sparql::SparqlResponse {
+                        status: status.as_u16(),
+                        content_type,
+                        body: body.to_vec(),
+                    },
+                )
             }
         }
     }
@@ -3734,12 +3452,7 @@ enum SparqlOutcome {
 /// `map_unexpected_status` — reused nowhere else and not reusing it, because
 /// SPARQL passthrough's status vocabulary (`413`/`415`/dsp-api's typed
 /// `500`-`504` exceptions) has no equivalent in the generic table.
-fn classify_sparql_status(
-    status: u16,
-    content_type: Option<&str>,
-    body: &[u8],
-    url: &str,
-) -> SparqlOutcome {
+fn classify_sparql_status(status: u16, content_type: Option<&str>, body: &[u8], url: &str) -> SparqlOutcome {
     match status {
         401 => SparqlOutcome::DspApiError(Diagnostic::AuthRequired(
             "authentication is required — run `dsp auth login`".into(),
@@ -3828,10 +3541,7 @@ mod tests {
         // 0.1.1: a read refused with 401 (missing/expired cached token) or 403
         // (permission) must surface as AuthRequired (exit 3) with a
         // re-authenticate hint — not a bare "unexpected status" runtime error.
-        for status in [
-            reqwest::StatusCode::UNAUTHORIZED,
-            reqwest::StatusCode::FORBIDDEN,
-        ] {
+        for status in [reqwest::StatusCode::UNAUTHORIZED, reqwest::StatusCode::FORBIDDEN] {
             let diag = map_unexpected_status(status, "https://example.org/x");
             match diag {
                 Diagnostic::AuthRequired(msg) => assert!(
@@ -3890,19 +3600,13 @@ mod tests {
     #[test]
     fn classify_http_iri() {
         let ident = classify("http://rdfh.ch/projects/0001");
-        assert!(
-            matches!(ident, ProjectIdent::Iri(_)),
-            "http:// prefix should classify as Iri"
-        );
+        assert!(matches!(ident, ProjectIdent::Iri(_)), "http:// prefix should classify as Iri");
     }
 
     #[test]
     fn classify_https_iri() {
         let ident = classify("https://rdfh.ch/projects/0001");
-        assert!(
-            matches!(ident, ProjectIdent::Iri(_)),
-            "https:// prefix should classify as Iri"
-        );
+        assert!(matches!(ident, ProjectIdent::Iri(_)), "https:// prefix should classify as Iri");
     }
 
     #[test]
@@ -3983,19 +3687,13 @@ mod tests {
         assert!(super::validate_dump_id("abc-123_XYZ").is_ok());
         // 256-char id is the upper bound — must still be accepted.
         let max_id = "a".repeat(256);
-        assert!(
-            super::validate_dump_id(&max_id).is_ok(),
-            "256-char id must be accepted"
-        );
+        assert!(super::validate_dump_id(&max_id).is_ok(), "256-char id must be accepted");
     }
 
     #[test]
     fn validate_dump_id_empty_is_rejected() {
         let result = super::validate_dump_id("");
-        assert!(
-            matches!(result, Err(Diagnostic::ServerError(_))),
-            "empty id must be rejected"
-        );
+        assert!(matches!(result, Err(Diagnostic::ServerError(_))), "empty id must be rejected");
     }
 
     #[test]
@@ -4087,9 +3785,7 @@ mod tests {
             error_message: Some(long_msg),
             created_at: None,
         };
-        let task = api
-            .into_dump_task()
-            .expect("should parse even with long message");
+        let task = api.into_dump_task().expect("should parse even with long message");
         let stored = task.error_message.unwrap();
         assert_eq!(
             stored.len(),
@@ -4141,13 +3837,8 @@ mod tests {
             created_at: Some("not-a-date!!".into()),
         };
         // Must succeed (garbage timestamp ≠ parse failure for the whole task).
-        let task = api
-            .into_dump_task()
-            .expect("garbage created_at must not fail parse");
-        assert!(
-            task.created_at.is_none(),
-            "garbage created_at must map to None"
-        );
+        let task = api.into_dump_task().expect("garbage created_at must not fail parse");
+        assert!(task.created_at.is_none(), "garbage created_at must map to None");
     }
 
     // ---------------------------------------------------------------------------
@@ -4161,10 +3852,7 @@ mod tests {
                 code: "export_exists".into(),
                 details: [
                     ("id".to_string(), "dGVzdC1pZA".to_string()),
-                    (
-                        "projectIri".to_string(),
-                        "http://rdfh.ch/projects/0001".to_string(),
-                    ),
+                    ("projectIri".to_string(), "http://rdfh.ch/projects/0001".to_string()),
                 ]
                 .into(),
             }],
@@ -4190,17 +3878,11 @@ mod tests {
         let body = V3ErrorBody {
             errors: vec![V3ErrorItem {
                 code: "export_exists".into(),
-                details: [(
-                    "projectIri".to_string(),
-                    "http://rdfh.ch/projects/0001".to_string(),
-                )]
-                .into(),
+                details: [("projectIri".to_string(), "http://rdfh.ch/projects/0001".to_string())].into(),
             }],
         };
         // export_exists returns Some (the code matched) but id is None.
-        let ex = body
-            .export_exists()
-            .expect("export_exists must be Some when code matches");
+        let ex = body.export_exists().expect("export_exists must be Some when code matches");
         assert!(ex.id.is_none(), "id must be None when 'id' key is absent");
         assert_eq!(ex.project_iri, Some("http://rdfh.ch/projects/0001"));
     }
@@ -4219,9 +3901,7 @@ mod tests {
                 details: [("id".to_string(), "abc123".to_string())].into(),
             }],
         };
-        let ex = body
-            .export_exists()
-            .expect("export_exists must be Some when code matches");
+        let ex = body.export_exists().expect("export_exists must be Some when code matches");
         assert_eq!(ex.id, Some("abc123"));
         assert!(
             ex.project_iri.is_none(),
@@ -4235,56 +3915,32 @@ mod tests {
 
     #[test]
     fn is_safe_shortcode_valid_hex_shortcode() {
-        assert!(
-            super::is_safe_shortcode("0001"),
-            "4-hex-digit shortcode must be accepted"
-        );
-        assert!(
-            super::is_safe_shortcode("ABCD"),
-            "upper-case hex shortcode must be accepted"
-        );
-        assert!(
-            super::is_safe_shortcode("beef"),
-            "lower-case hex shortcode must be accepted"
-        );
+        assert!(super::is_safe_shortcode("0001"), "4-hex-digit shortcode must be accepted");
+        assert!(super::is_safe_shortcode("ABCD"), "upper-case hex shortcode must be accepted");
+        assert!(super::is_safe_shortcode("beef"), "lower-case hex shortcode must be accepted");
     }
 
     #[test]
     fn is_safe_shortcode_alphanumeric_within_32_chars_accepted() {
         let long_code = "a".repeat(32);
-        assert!(
-            super::is_safe_shortcode(&long_code),
-            "32-char alphanumeric must be accepted"
-        );
+        assert!(super::is_safe_shortcode(&long_code), "32-char alphanumeric must be accepted");
     }
 
     #[test]
     fn is_safe_shortcode_empty_is_rejected() {
-        assert!(
-            !super::is_safe_shortcode(""),
-            "empty shortcode must be rejected"
-        );
+        assert!(!super::is_safe_shortcode(""), "empty shortcode must be rejected");
     }
 
     #[test]
     fn is_safe_shortcode_too_long_is_rejected() {
         let long_code = "a".repeat(33);
-        assert!(
-            !super::is_safe_shortcode(&long_code),
-            "33-char shortcode must be rejected"
-        );
+        assert!(!super::is_safe_shortcode(&long_code), "33-char shortcode must be rejected");
     }
 
     #[test]
     fn is_safe_shortcode_slash_is_rejected() {
-        assert!(
-            !super::is_safe_shortcode("ab/cd"),
-            "shortcode with '/' must be rejected"
-        );
-        assert!(
-            !super::is_safe_shortcode("/evil"),
-            "absolute path shortcode must be rejected"
-        );
+        assert!(!super::is_safe_shortcode("ab/cd"), "shortcode with '/' must be rejected");
+        assert!(!super::is_safe_shortcode("/evil"), "absolute path shortcode must be rejected");
     }
 
     #[test]
@@ -4293,27 +3949,18 @@ mod tests {
             !super::is_safe_shortcode("../evil"),
             "path traversal shortcode must be rejected"
         );
-        assert!(
-            !super::is_safe_shortcode(".."),
-            "'..' shortcode must be rejected"
-        );
+        assert!(!super::is_safe_shortcode(".."), "'..' shortcode must be rejected");
     }
 
     #[test]
     fn is_safe_shortcode_backslash_is_rejected() {
-        assert!(
-            !super::is_safe_shortcode("ab\\cd"),
-            "shortcode with '\\' must be rejected"
-        );
+        assert!(!super::is_safe_shortcode("ab\\cd"), "shortcode with '\\' must be rejected");
     }
 
     #[test]
     fn is_safe_shortcode_dot_is_rejected() {
         // A single '.' or mixed dots are not ASCII-alphanumeric.
-        assert!(
-            !super::is_safe_shortcode("ab.cd"),
-            "shortcode with '.' must be rejected"
-        );
+        assert!(!super::is_safe_shortcode("ab.cd"), "shortcode with '.' must be rejected");
     }
 
     #[test]
@@ -4379,10 +4026,7 @@ mod tests {
 
     fn beol_prefixes() -> HashMap<String, String> {
         let mut m = HashMap::new();
-        m.insert(
-            "beol".to_string(),
-            "http://api.dasch.swiss/ontology/0801/beol/v2#".to_string(),
-        );
+        m.insert("beol".to_string(), "http://api.dasch.swiss/ontology/0801/beol/v2#".to_string());
         m
     }
 
@@ -4406,10 +4050,8 @@ mod tests {
     fn expand_class_id_full_iri_passes_through() {
         // `http://…/v2#Letter` has scheme `://`, so the local starts with `//` and
         // falls through to the passthrough arm. Name = `Letter`, IRI unchanged.
-        let (name, iri) = super::expand_class_id(
-            "http://api.dasch.swiss/ontology/0801/beol/v2#Letter",
-            &beol_prefixes(),
-        );
+        let (name, iri) =
+            super::expand_class_id("http://api.dasch.swiss/ontology/0801/beol/v2#Letter", &beol_prefixes());
         assert_eq!(name, "Letter");
         assert_eq!(iri, "http://api.dasch.swiss/ontology/0801/beol/v2#Letter");
     }
@@ -4502,19 +4144,13 @@ mod tests {
     #[test]
     fn map_object_type_known_text_value() {
         use crate::model::ValueType;
-        assert_eq!(
-            super::map_object_type_to_value_type("TextValue"),
-            ValueType::Text
-        );
+        assert_eq!(super::map_object_type_to_value_type("TextValue"), ValueType::Text);
     }
 
     #[test]
     fn map_object_type_known_list_value() {
         use crate::model::ValueType;
-        assert_eq!(
-            super::map_object_type_to_value_type("ListValue"),
-            ValueType::VocabularyItem
-        );
+        assert_eq!(super::map_object_type_to_value_type("ListValue"), ValueType::VocabularyItem);
     }
 
     #[test]
@@ -4628,30 +4264,21 @@ mod tests {
     fn detect_representation_still_image() {
         use crate::model::Representation;
         let locals = vec!["hasStillImageFileValue"];
-        assert_eq!(
-            super::detect_representation(&locals),
-            Some(Representation::StillImage)
-        );
+        assert_eq!(super::detect_representation(&locals), Some(Representation::StillImage));
     }
 
     #[test]
     fn detect_representation_moving_image() {
         use crate::model::Representation;
         let locals = vec!["hasMovingImageFileValue"];
-        assert_eq!(
-            super::detect_representation(&locals),
-            Some(Representation::MovingImage)
-        );
+        assert_eq!(super::detect_representation(&locals), Some(Representation::MovingImage));
     }
 
     #[test]
     fn detect_representation_audio() {
         use crate::model::Representation;
         let locals = vec!["hasAudioFileValue"];
-        assert_eq!(
-            super::detect_representation(&locals),
-            Some(Representation::Audio)
-        );
+        assert_eq!(super::detect_representation(&locals), Some(Representation::Audio));
     }
 
     #[test]
@@ -4666,10 +4293,7 @@ mod tests {
         use crate::model::Representation;
         // Both still-image and document present → first hit wins
         let locals = vec!["hasDocumentFileValue", "hasStillImageFileValue"];
-        assert_eq!(
-            super::detect_representation(&locals),
-            Some(Representation::Document)
-        );
+        assert_eq!(super::detect_representation(&locals), Some(Representation::Document));
     }
 
     // ---------------------------------------------------------------------------
@@ -4770,10 +4394,7 @@ mod tests {
 
     #[test]
     fn derive_access_rv() {
-        assert_eq!(
-            super::derive_access("RV"),
-            Some(super::ResourceAccess::RestrictedView)
-        );
+        assert_eq!(super::derive_access("RV"), Some(super::ResourceAccess::RestrictedView));
     }
 
     #[test]
@@ -4788,18 +4409,12 @@ mod tests {
 
     #[test]
     fn derive_access_d() {
-        assert_eq!(
-            super::derive_access("D"),
-            Some(super::ResourceAccess::Delete)
-        );
+        assert_eq!(super::derive_access("D"), Some(super::ResourceAccess::Delete));
     }
 
     #[test]
     fn derive_access_cr() {
-        assert_eq!(
-            super::derive_access("CR"),
-            Some(super::ResourceAccess::Manage)
-        );
+        assert_eq!(super::derive_access("CR"), Some(super::ResourceAccess::Manage));
     }
 
     #[test]
@@ -4820,60 +4435,42 @@ mod tests {
     fn derive_visibility_public_when_unknown_user_has_view() {
         // Real ACL from incunabula: UnknownUser gets V → public.
         let acl = "CR knora-admin:Creator,knora-admin:ProjectAdmin|V knora-admin:KnownUser,knora-admin:UnknownUser";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::Public)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::Public));
     }
 
     #[test]
     fn derive_visibility_public_when_unknown_user_has_cr() {
         // UnknownUser granted CR (>= V) → public.
         let acl = "CR knora-admin:UnknownUser";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::Public)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::Public));
     }
 
     #[test]
     fn derive_visibility_public_restricted_when_unknown_user_has_rv() {
         // UnknownUser granted exactly RV → public (restricted view).
         let acl = "RV knora-admin:UnknownUser|CR knora-admin:ProjectAdmin";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::PublicRestricted)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::PublicRestricted));
     }
 
     #[test]
     fn derive_visibility_logged_in_when_known_user_has_rv_unknown_absent() {
         // UnknownUser absent; KnownUser gets RV → logged-in users.
         let acl = "RV knora-admin:KnownUser|CR knora-admin:ProjectAdmin";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::LoggedInUsers)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::LoggedInUsers));
     }
 
     #[test]
     fn derive_visibility_logged_in_when_known_user_has_v() {
         // KnownUser ≥ RV (has V) and UnknownUser absent → logged-in users.
         let acl = "V knora-admin:KnownUser|CR knora-admin:ProjectAdmin";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::LoggedInUsers)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::LoggedInUsers));
     }
 
     #[test]
     fn derive_visibility_project_members_when_neither_world_group_granted() {
         // Only project-specific groups in ACL → project members only.
         let acl = "CR knora-admin:Creator,knora-admin:ProjectAdmin|M knora-admin:ProjectMember";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::ProjectMembers)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::ProjectMembers));
     }
 
     #[test]
@@ -4891,10 +4488,7 @@ mod tests {
         // "CRMALFORMED" has no space — skip it; the rest of the ACL may still parse.
         let acl = "CRMALFORMED|CR knora-admin:ProjectAdmin";
         // Only valid entry is CR ProjectAdmin; neither world group granted → ProjectMembers.
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::ProjectMembers)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::ProjectMembers));
     }
 
     #[test]
@@ -4902,20 +4496,14 @@ mod tests {
         // Unknown code "BOGUS" ranks 0 — even for UnknownUser, no implicit grant.
         let acl = "BOGUS knora-admin:UnknownUser|CR knora-admin:ProjectAdmin";
         // UnknownUser rank = 0 (< RV); KnownUser rank = 0 → ProjectMembers.
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::ProjectMembers)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::ProjectMembers));
     }
 
     #[test]
     fn derive_visibility_same_group_two_entries_max_wins() {
         // UnknownUser appears in two entries: RV and V. Max is V → public.
         let acl = "RV knora-admin:UnknownUser|V knora-admin:UnknownUser";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::Public)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::Public));
     }
 
     #[test]
@@ -4923,10 +4511,7 @@ mod tests {
         // Both UnknownUser (V) and KnownUser (CR) present — UnknownUser's grant decides.
         // UnknownUser ≥ V → public (not logged-in users, even though KnownUser is higher).
         let acl = "V knora-admin:UnknownUser|CR knora-admin:KnownUser";
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::Public)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::Public));
     }
 
     #[test]
@@ -4935,10 +4520,7 @@ mod tests {
         // (exact local-name match only, never substring contains).
         let acl = "CR knora-admin:SuperUnknownUser|CR knora-admin:ProjectAdmin";
         // SuperUnknownUser doesn't match → neither world group → ProjectMembers.
-        assert_eq!(
-            super::derive_visibility(acl),
-            Some(super::ResourceVisibility::ProjectMembers)
-        );
+        assert_eq!(super::derive_visibility(acl), Some(super::ResourceVisibility::ProjectMembers));
     }
 
     #[test]
@@ -5314,11 +4896,7 @@ mod tests {
         });
         let (content, _) = super::parse_value_content(&obj);
         if let ValueContent::File(fv) = content {
-            assert_eq!(
-                fv.value_type,
-                ValueType::StillImage,
-                "StillImageExternal* → StillImage"
-            );
+            assert_eq!(fv.value_type, ValueType::StillImage, "StillImageExternal* → StillImage");
         } else {
             panic!("expected File, got {content:?}");
         }
@@ -5424,11 +5002,7 @@ mod tests {
         });
         let (content, _) = super::parse_value_content(&obj);
         if let ValueContent::File(fv) = content {
-            assert_eq!(
-                fv.value_type,
-                ValueType::Document,
-                "TextFileValue → Document"
-            );
+            assert_eq!(fv.value_type, ValueType::Document, "TextFileValue → Document");
         } else {
             panic!("expected File, got {content:?}");
         }
@@ -5518,10 +5092,7 @@ mod tests {
             "knora-api:linkValueHasTargetIri": {"@id": "http://rdfh.ch/0803/res1"}
         });
         let (_, is_link) = super::parse_value_content(&obj);
-        assert!(
-            is_link,
-            "LinkValue must report is_link=true for name derivation"
-        );
+        assert!(is_link, "LinkValue must report is_link=true for name derivation");
     }
 
     #[test]
@@ -5535,18 +5106,12 @@ mod tests {
             "knora-api:linkValueHasTargetIri": {"@id": "http://rdfh.ch/0803/res1"}
         });
         let (_, is_link) = super::parse_value_content(&link_obj);
-        assert!(
-            is_link,
-            "LinkValue must report is_link=true for name derivation"
-        );
+        assert!(is_link, "LinkValue must report is_link=true for name derivation");
 
         let raw_name = super::local_name(key).to_string();
         // is_link = true → strip "Value" suffix (same logic as production code).
         let name = if is_link {
-            raw_name
-                .strip_suffix("Value")
-                .unwrap_or(&raw_name)
-                .to_string()
+            raw_name.strip_suffix("Value").unwrap_or(&raw_name).to_string()
         } else {
             raw_name
         };
@@ -5570,10 +5135,7 @@ mod tests {
         let raw_name = super::local_name(key).to_string();
         // is_link = false → no stripping (same logic as production code).
         let name = if is_link {
-            raw_name
-                .strip_suffix("Value")
-                .unwrap_or(&raw_name)
-                .to_string()
+            raw_name.strip_suffix("Value").unwrap_or(&raw_name).to_string()
         } else {
             raw_name
         };
@@ -5642,10 +5204,7 @@ mod tests {
             map.get("knora-api").map(String::as_str),
             Some("http://api.knora.org/ontology/knora-api/v2#")
         );
-        assert!(
-            !map.contains_key("someterm"),
-            "object-valued entry must be skipped"
-        );
+        assert!(!map.contains_key("someterm"), "object-valued entry must be skipped");
     }
 
     #[test]
@@ -5665,10 +5224,7 @@ mod tests {
         });
         let text = super::compact_value_text(&obj);
         // Must include the geometry key, not the metadata keys.
-        assert!(
-            text.contains("geometryValueAsGeometry"),
-            "geometry key present: {text}"
-        );
+        assert!(text.contains("geometryValueAsGeometry"), "geometry key present: {text}");
         assert!(!text.contains("@id"), "@id must be excluded: {text}");
         assert!(!text.contains("@type"), "@type must be excluded: {text}");
     }
@@ -5680,17 +5236,15 @@ mod tests {
             "@type": "knora-api:IntervalValue"
         });
         let text = super::compact_value_text(&obj);
-        assert!(
-            text.is_empty(),
-            "all-meta object must yield empty string: {text:?}"
-        );
+        assert!(text.is_empty(), "all-meta object must yield empty string: {text:?}");
     }
 
     // ── vocabulary DTO parsing / conversion (plan 034, Step 2) ─────────────────────
 
     #[test]
     fn list_get_response_root_shape_parses_as_root_variant() {
-        // Shape from the Verified API facts: `{"type":"...","list":{"listinfo":{...},"children":[...]}}`.
+        // Shape from the Verified API facts:
+        // `{"type":"...","list":{"listinfo":{...},"children":[...]}}`.
         // Children deliberately out of order to exercise the defensive sort.
         let json = serde_json::json!({
             "type": "ListGetResponseADM",
@@ -5714,8 +5268,7 @@ mod tests {
             }
         });
 
-        let parsed: ListGetResponseDto =
-            serde_json::from_value(json).expect("root shape must parse");
+        let parsed: ListGetResponseDto = serde_json::from_value(json).expect("root shape must parse");
         let root = match parsed {
             ListGetResponseDto::Root(root) => root,
             ListGetResponseDto::Node(_) => panic!("expected Root variant, got Node"),
@@ -5739,7 +5292,8 @@ mod tests {
 
     #[test]
     fn list_get_response_node_shape_parses_as_node_variant_and_extracts_has_root_node() {
-        // Shape from the Verified API facts: `{"type":"...","node":{"nodeinfo":{...,"hasRootNode"},"children":[...]}}`.
+        // Shape from the Verified API facts:
+        // `{"type":"...","node":{"nodeinfo":{...,"hasRootNode"},"children":[...]}}`.
         let json = serde_json::json!({
             "type": "ListNodeGetResponseADM",
             "node": {
@@ -5755,14 +5309,10 @@ mod tests {
             }
         });
 
-        let parsed: ListGetResponseDto =
-            serde_json::from_value(json).expect("node shape must parse");
+        let parsed: ListGetResponseDto = serde_json::from_value(json).expect("node shape must parse");
         match parsed {
             ListGetResponseDto::Node(node) => {
-                assert_eq!(
-                    node.node.nodeinfo.has_root_node,
-                    "http://rdfh.ch/lists/0001/root"
-                );
+                assert_eq!(node.node.nodeinfo.has_root_node, "http://rdfh.ch/lists/0001/root");
             }
             ListGetResponseDto::Root(_) => panic!("expected Node variant, got Root"),
         }
@@ -5775,24 +5325,15 @@ mod tests {
         // default variant.
         let json = serde_json::json!({"type": "SomethingUnexpected", "foo": "bar"});
         let parsed = serde_json::from_value::<ListGetResponseDto>(json);
-        assert!(
-            parsed.is_err(),
-            "a response with neither `list` nor `node` must fail to parse"
-        );
+        assert!(parsed.is_err(), "a response with neither `list` nor `node` must fail to parse");
     }
 
     #[test]
     fn into_localized_texts_keeps_all_languages_no_filtering() {
         // D4: no preferred-language collapsing anywhere in this crate.
         let dtos = vec![
-            ListLabelDto {
-                value: "a".into(),
-                language: Some("en".into()),
-            },
-            ListLabelDto {
-                value: "b".into(),
-                language: None,
-            },
+            ListLabelDto { value: "a".into(), language: Some("en".into()) },
+            ListLabelDto { value: "b".into(), language: None },
         ];
         let texts = into_localized_texts(dtos);
         assert_eq!(texts.len(), 2);

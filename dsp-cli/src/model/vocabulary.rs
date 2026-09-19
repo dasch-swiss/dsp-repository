@@ -124,18 +124,15 @@ impl VocabularyTree {
     /// walk has one implementation — the thing that makes the D15 invariant
     /// hold (`node_count` equals the rendered data-row count in both modes).
     ///
-    /// - `from: None` — whole-vocabulary mode. The root itself is never a
-    ///   node, so it is not counted; `depth` treats the root's direct
-    ///   children as level 1.
-    /// - `from: Some(iri)` — branch mode (`--subtree`). The addressed node
-    ///   IS included, as the top of its own branch (D14b): a leaf node
-    ///   yields `(1, 1)` — one node, one level, because the node itself
-    ///   occupies level 1 of the branch, its children level 2, and so on.
-    ///   If `iri` does not address any node in this tree, returns `(0, 0)`
-    ///   (the action layer validates that `--subtree`'s address names a node
-    ///   present in the tree before calling this, so that case should not
-    ///   arise from user input — this is a defensive default, not
-    ///   user-facing behaviour).
+    /// - `from: None` — whole-vocabulary mode. The root itself is never a node, so it is not
+    ///   counted; `depth` treats the root's direct children as level 1.
+    /// - `from: Some(iri)` — branch mode (`--subtree`). The addressed node IS included, as the top
+    ///   of its own branch (D14b): a leaf node yields `(1, 1)` — one node, one level, because the
+    ///   node itself occupies level 1 of the branch, its children level 2, and so on. If `iri` does
+    ///   not address any node in this tree, returns `(0, 0)` (the action layer validates that
+    ///   `--subtree`'s address names a node present in the tree before calling this, so that case
+    ///   should not arise from user input — this is a defensive default, not user-facing
+    ///   behaviour).
     ///
     /// This is not on the untrusted-input parse path (that's
     /// `src/client/http.rs`, which must walk iteratively) — it walks a tree
@@ -196,20 +193,13 @@ mod tests {
         VocabularyHeader {
             iri: iri.to_string(),
             name: Some(iri.to_string()),
-            labels: vec![LocalizedText {
-                value: iri.to_string(),
-                language: Some("en".into()),
-            }],
+            labels: vec![LocalizedText { value: iri.to_string(), language: Some("en".into()) }],
             comments: vec![],
         }
     }
 
     fn leaf(iri: &str, position: i32) -> VocabularyNode {
-        VocabularyNode {
-            header: header(iri),
-            position,
-            children: vec![],
-        }
+        VocabularyNode { header: header(iri), position, children: vec![] }
     }
 
     /// Builds:
@@ -296,11 +286,7 @@ mod tests {
         // `position` before building the tree); this test just confirms the
         // field and `Vec` order carry through unchanged.
         let children = vec![leaf("a", 0), leaf("b", 1), leaf("c", 2)];
-        let parent = VocabularyNode {
-            header: header("parent"),
-            position: 0,
-            children,
-        };
+        let parent = VocabularyNode { header: header("parent"), position: 0, children };
         assert_eq!(parent.children[0].header.iri, "a");
         assert_eq!(parent.children[0].position, 0);
         assert_eq!(parent.children[1].header.iri, "b");
@@ -336,10 +322,7 @@ mod tests {
 
     #[test]
     fn localized_text_construction_and_equality() {
-        let a = LocalizedText {
-            value: "Period".into(),
-            language: Some("en".into()),
-        };
+        let a = LocalizedText { value: "Period".into(), language: Some("en".into()) };
         let b = a.clone();
         assert_eq!(a, b);
         assert_eq!(a.value, "Period");
@@ -348,20 +331,13 @@ mod tests {
 
     #[test]
     fn localized_text_untagged() {
-        let a = LocalizedText {
-            value: "untagged".into(),
-            language: None,
-        };
+        let a = LocalizedText { value: "untagged".into(), language: None };
         assert_eq!(a.language, None);
     }
 
     #[test]
     fn vocabulary_node_count_none_before_count_flag() {
-        let vocab = Vocabulary {
-            header: header("vocab"),
-            node_count: None,
-            depth: None,
-        };
+        let vocab = Vocabulary { header: header("vocab"), node_count: None, depth: None };
         assert_eq!(vocab.node_count, None);
         assert_eq!(vocab.depth, None);
     }
@@ -377,12 +353,7 @@ mod tests {
     fn vocabulary_detail_construction_and_equality() {
         let tree = fixture_tree();
         let (node_count, depth) = tree.count_and_depth(None);
-        let detail = VocabularyDetail {
-            tree: tree.clone(),
-            subtree_of: None,
-            node_count,
-            depth,
-        };
+        let detail = VocabularyDetail { tree: tree.clone(), subtree_of: None, node_count, depth };
         let cloned = detail.clone();
         assert_eq!(detail, cloned);
         assert_eq!(detail.node_count, 5);

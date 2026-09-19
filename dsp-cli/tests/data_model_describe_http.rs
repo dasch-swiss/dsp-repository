@@ -225,10 +225,7 @@ async fn empty_graph_returns_zero_resource_types() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     let detail = result.unwrap();
-    assert!(
-        detail.resource_types.is_empty(),
-        "empty @graph must yield zero resource_types"
-    );
+    assert!(detail.resource_types.is_empty(), "empty @graph must yield zero resource_types");
     assert_eq!(detail.name, "beol");
     assert_eq!(detail.label.as_deref(), Some("Empty ontology"));
 }
@@ -263,16 +260,9 @@ async fn bearer_present_when_token_is_some() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok when token is Some, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok when token is Some, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -313,10 +303,7 @@ async fn bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),

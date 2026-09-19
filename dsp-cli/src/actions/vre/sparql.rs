@@ -54,14 +54,10 @@ fn resolve_accept(arg: Option<&str>) -> Result<String, Diagnostic> {
         // (e.g. U+0085 NEL) would otherwise pass, making D4's promise
         // conditional on the byte range.
         if s.chars().any(|c| c.is_control()) {
-            return Err(Diagnostic::Usage(
-                "--accept must not contain control characters".into(),
-            ));
+            return Err(Diagnostic::Usage("--accept must not contain control characters".into()));
         }
         if s.chars().count() > 200 {
-            return Err(Diagnostic::Usage(
-                "--accept is too long (max 200 characters)".into(),
-            ));
+            return Err(Diagnostic::Usage("--accept is too long (max 200 characters)".into()));
         }
         return Ok(s.to_string());
     }
@@ -104,9 +100,7 @@ fn resolve_query(
     } else if args.query_file.is_some() {
         // A missing `file_text` here means the caller did not read the file
         // the flag names — a broken internal invariant, not empty user input.
-        file_text.ok_or_else(|| {
-            Diagnostic::Internal("--query-file was given but its contents were not read".into())
-        })?
+        file_text.ok_or_else(|| Diagnostic::Internal("--query-file was given but its contents were not read".into()))?
     } else if let Some(s) = stdin_text {
         s
     } else if stdin_is_tty {
@@ -128,9 +122,7 @@ fn resolve_query(
     };
 
     if text.trim().is_empty() {
-        return Err(Diagnostic::Usage(
-            "the SPARQL query text must not be empty".into(),
-        ));
+        return Err(Diagnostic::Usage("the SPARQL query text must not be empty".into()));
     }
 
     Ok(text)
@@ -153,12 +145,10 @@ fn read_query_file(path: &str) -> Result<String, Diagnostic> {
         )));
     }
 
-    let bytes = std::fs::read(p).map_err(|e| {
-        Diagnostic::Usage(format!("could not read --query-file '{safe_path}': {e}"))
-    })?;
+    let bytes =
+        std::fs::read(p).map_err(|e| Diagnostic::Usage(format!("could not read --query-file '{safe_path}': {e}")))?;
 
-    String::from_utf8(bytes)
-        .map_err(|_| Diagnostic::Usage(format!("--query-file '{safe_path}' is not valid UTF-8")))
+    String::from_utf8(bytes).map_err(|_| Diagnostic::Usage(format!("--query-file '{safe_path}' is not valid UTF-8")))
 }
 
 /// Run a raw SPARQL query, owning all real IO: stdin (D5), the
@@ -210,10 +200,10 @@ pub fn run(args: &SparqlQueryArgs, cfg: &Config, client: &dyn DspClient) -> Resu
 /// and must NOT re-implement any of D8's table (that knowledge stays in
 /// `src/client/`, per ADR-0001).
 ///
-/// - `env_token`/`cache_path`: injectable seams (mirrors `project::run_impl`)
-///   so unit tests never touch the real environment or `~/.config/dsp-cli/`.
-/// - `stdin_is_tty`/`stdin_text`/`file_text`: already-read input, per D5 —
-///   this function performs no IO of its own beyond `out`.
+/// - `env_token`/`cache_path`: injectable seams (mirrors `project::run_impl`) so unit tests never
+///   touch the real environment or `~/.config/dsp-cli/`.
+/// - `stdin_is_tty`/`stdin_text`/`file_text`: already-read input, per D5 — this function performs
+///   no IO of its own beyond `out`.
 #[allow(clippy::too_many_arguments)]
 fn query(
     args: &SparqlQueryArgs,
@@ -227,11 +217,7 @@ fn query(
     out: &mut dyn Write,
 ) -> Result<(), Diagnostic> {
     // ── 1. Resolve token, fail fast (D11) — BEFORE any HTTP call ────────────
-    let env_token_would_win = env_token
-        .as_deref()
-        .map(str::trim)
-        .map(|s| !s.is_empty())
-        .unwrap_or(false);
+    let env_token_would_win = env_token.as_deref().map(str::trim).map(|s| !s.is_empty()).unwrap_or(false);
 
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
@@ -262,13 +248,7 @@ fn query(
     let accept = resolve_accept(args.accept.as_deref())?;
 
     // ── 3. Issue the request ────────────────────────────────────────────────
-    let resp = client.sparql_query(
-        &cfg.server,
-        &resolved.token,
-        &query_text,
-        &accept,
-        args.timeout,
-    )?;
+    let resp = client.sparql_query(&cfg.server, &resolved.token, &query_text, &accept, args.timeout)?;
 
     // ── 4. D7's split — the only decision this action owns ─────────────────
     if (200..300).contains(&resp.status) {
@@ -300,36 +280,18 @@ mod tests {
 
     #[test]
     fn resolve_accept_defaults_to_json() {
-        assert_eq!(
-            resolve_accept(None).unwrap(),
-            "application/sparql-results+json"
-        );
+        assert_eq!(resolve_accept(None).unwrap(), "application/sparql-results+json");
     }
 
     #[test]
     fn resolve_accept_every_alias() {
-        assert_eq!(
-            resolve_accept(Some("json")).unwrap(),
-            "application/sparql-results+json"
-        );
-        assert_eq!(
-            resolve_accept(Some("xml")).unwrap(),
-            "application/sparql-results+xml"
-        );
+        assert_eq!(resolve_accept(Some("json")).unwrap(), "application/sparql-results+json");
+        assert_eq!(resolve_accept(Some("xml")).unwrap(), "application/sparql-results+xml");
         assert_eq!(resolve_accept(Some("csv")).unwrap(), "text/csv");
-        assert_eq!(
-            resolve_accept(Some("tsv")).unwrap(),
-            "text/tab-separated-values"
-        );
+        assert_eq!(resolve_accept(Some("tsv")).unwrap(), "text/tab-separated-values");
         assert_eq!(resolve_accept(Some("turtle")).unwrap(), "text/turtle");
-        assert_eq!(
-            resolve_accept(Some("ntriples")).unwrap(),
-            "application/n-triples"
-        );
-        assert_eq!(
-            resolve_accept(Some("jsonld")).unwrap(),
-            "application/ld+json"
-        );
+        assert_eq!(resolve_accept(Some("ntriples")).unwrap(), "application/n-triples");
+        assert_eq!(resolve_accept(Some("jsonld")).unwrap(), "application/ld+json");
     }
 
     #[test]
@@ -387,26 +349,14 @@ mod tests {
     #[test]
     fn resolve_query_from_file_text() {
         let args = args_with(None, Some("query.rq"));
-        let text = resolve_query(
-            &args,
-            false,
-            None,
-            Some("SELECT * WHERE { ?s ?p ?o }".into()),
-        )
-        .unwrap();
+        let text = resolve_query(&args, false, None, Some("SELECT * WHERE { ?s ?p ?o }".into())).unwrap();
         assert_eq!(text, "SELECT * WHERE { ?s ?p ?o }");
     }
 
     #[test]
     fn resolve_query_from_stdin() {
         let args = args_with(None, None);
-        let text = resolve_query(
-            &args,
-            false,
-            Some("SELECT * WHERE { ?s ?p ?o }".into()),
-            None,
-        )
-        .unwrap();
+        let text = resolve_query(&args, false, Some("SELECT * WHERE { ?s ?p ?o }".into()), None).unwrap();
         assert_eq!(text, "SELECT * WHERE { ?s ?p ?o }");
     }
 
@@ -510,11 +460,7 @@ mod tests {
             unimplemented!("delete_project_dump not used in sparql action tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             unimplemented!("list_projects not used in sparql action tests")
         }
 
@@ -634,9 +580,7 @@ mod tests {
     }
 
     fn cfg() -> Config {
-        Config {
-            server: "https://example.org".to_string(),
-        }
+        Config { server: "https://example.org".to_string() }
     }
 
     fn empty_cache_dir() -> tempfile::TempDir {
@@ -704,10 +648,7 @@ mod tests {
 
         match err {
             Diagnostic::ServerError(msg) => {
-                assert!(
-                    msg.contains("Parse error"),
-                    "message must contain the store's text: {msg}"
-                );
+                assert!(msg.contains("Parse error"), "message must contain the store's text: {msg}");
                 assert!(
                     !msg.contains('\u{1b}') && !msg.contains('\u{7}'),
                     "the relay path must strip control characters (D7): {msg:?}"
@@ -715,10 +656,7 @@ mod tests {
             }
             other => panic!("expected ServerError, got: {other:?}"),
         }
-        assert!(
-            out.is_empty(),
-            "nothing must be written to stdout on a relayed rejection"
-        );
+        assert!(out.is_empty(), "nothing must be written to stdout on a relayed rejection");
     }
 
     #[test]
@@ -729,25 +667,11 @@ mod tests {
         let cache_path = dir.path().join("auth.toml");
         let mut out = Vec::new();
 
-        let err = query(
-            &args,
-            &cfg(),
-            &client,
-            None,
-            Some(&cache_path),
-            false,
-            None,
-            None,
-            &mut out,
-        )
-        .expect_err("no token must be Err");
+        let err = query(&args, &cfg(), &client, None, Some(&cache_path), false, None, None, &mut out)
+            .expect_err("no token must be Err");
 
         assert!(matches!(err, Diagnostic::AuthRequired(_)));
-        assert_eq!(
-            client.calls(),
-            0,
-            "the client must never be called without a token"
-        );
+        assert_eq!(client.calls(), 0, "the client must never be called without a token");
         assert!(out.is_empty());
     }
 

@@ -58,10 +58,7 @@ pub(crate) fn extract_meta(token: &str) -> Option<JwtMeta> {
     jsonwebtoken::dangerous::insecure_decode::<MetaClaims>(token)
         .ok()
         .map(|td| JwtMeta {
-            exp: td
-                .claims
-                .exp
-                .and_then(|e| chrono::DateTime::from_timestamp(e, 0)),
+            exp: td.claims.exp.and_then(|e| chrono::DateTime::from_timestamp(e, 0)),
             sub: td.claims.sub,
         })
 }
@@ -81,18 +78,15 @@ pub(crate) fn extract_exp(token: &str) -> Option<chrono::DateTime<chrono::Utc>> 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
+
+    use super::*;
 
     /// Produce a minimal JWT with the given JSON payload using `jsonwebtoken::encode`.
     /// The secret is arbitrary — `extract_exp` disables signature validation.
     fn make_jwt(payload: &serde_json::Value) -> String {
-        encode(
-            &Header::new(Algorithm::HS256),
-            payload,
-            &EncodingKey::from_secret(b"unused"),
-        )
-        .expect("test JWT encoding should not fail")
+        encode(&Header::new(Algorithm::HS256), payload, &EncodingKey::from_secret(b"unused"))
+            .expect("test JWT encoding should not fail")
     }
 
     // ── extract_exp tests (preserved) ─────────────────────────────────────────
@@ -102,10 +96,7 @@ mod tests {
         // Unix timestamp 1700000000 = 2023-11-14T22:13:20Z
         let token = make_jwt(&serde_json::json!({ "exp": 1700000000_i64 }));
         let result = extract_exp(&token);
-        assert!(
-            result.is_some(),
-            "expected Some(DateTime) for token with exp claim"
-        );
+        assert!(result.is_some(), "expected Some(DateTime) for token with exp claim");
         let dt = result.unwrap();
         assert_eq!(dt.timestamp(), 1700000000);
     }
@@ -114,10 +105,7 @@ mod tests {
     fn extract_exp_returns_none_for_token_without_exp_claim() {
         let token = make_jwt(&serde_json::json!({ "sub": "user@example.com" }));
         let result = extract_exp(&token);
-        assert!(
-            result.is_none(),
-            "expected None for token without exp claim"
-        );
+        assert!(result.is_none(), "expected None for token without exp claim");
     }
 
     #[test]
@@ -171,9 +159,7 @@ mod tests {
 
     #[test]
     fn extract_meta_returns_sub_when_present() {
-        let token = make_jwt(
-            &serde_json::json!({ "sub": "http://rdfh.ch/users/root", "exp": 1700000000_i64 }),
-        );
+        let token = make_jwt(&serde_json::json!({ "sub": "http://rdfh.ch/users/root", "exp": 1700000000_i64 }));
         let meta = extract_meta(&token).expect("expected Some for valid JWT");
         assert_eq!(
             meta.sub.as_deref(),
@@ -207,30 +193,15 @@ mod tests {
         // extract_meta must return Some (it IS a JWT), with both fields None.
         let token = make_jwt(&serde_json::json!({}));
         let meta = extract_meta(&token).expect("expected Some for valid JWT with empty payload");
-        assert!(
-            meta.exp.is_none(),
-            "exp should be None when payload is empty"
-        );
-        assert!(
-            meta.sub.is_none(),
-            "sub should be None when payload is empty"
-        );
+        assert!(meta.exp.is_none(), "exp should be None when payload is empty");
+        assert!(meta.sub.is_none(), "sub should be None when payload is empty");
     }
 
     #[test]
     fn extract_meta_returns_none_for_non_jwt_input() {
-        assert!(
-            extract_meta("not.a.jwt").is_none(),
-            "non-JWT string should return None"
-        );
-        assert!(
-            extract_meta("").is_none(),
-            "empty string should return None"
-        );
-        assert!(
-            extract_meta("garbage").is_none(),
-            "garbage string should return None"
-        );
+        assert!(extract_meta("not.a.jwt").is_none(), "non-JWT string should return None");
+        assert!(extract_meta("").is_none(), "empty string should return None");
+        assert!(extract_meta("garbage").is_none(), "garbage string should return None");
     }
 
     #[test]

@@ -34,11 +34,7 @@ fn run_impl(
     // A corrupt or unreadable `auth.toml` therefore must not mask the env
     // token: treat a cache-load failure as an empty cache when the env token
     // would resolve. (Matches the trim-and-empty rule in `resolve_token`.)
-    let env_token_would_win = env_token
-        .as_deref()
-        .map(str::trim)
-        .map(|s| !s.is_empty())
-        .unwrap_or(false);
+    let env_token_would_win = env_token.as_deref().map(str::trim).map(|s| !s.is_empty()).unwrap_or(false);
 
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
@@ -67,11 +63,7 @@ fn run_impl(
             let expires_at = crate::client::jwt::extract_exp(&token);
             let expired = expires_at.map(|t| t < now).unwrap_or(false);
             (
-                AuthStatusOutcome::AuthenticatedViaEnv {
-                    server: cfg.server.clone(),
-                    expires_at,
-                    expired,
-                },
+                AuthStatusOutcome::AuthenticatedViaEnv { server: cfg.server.clone(), expires_at, expired },
                 Some(resolved),
             )
         }
@@ -82,21 +74,11 @@ fn run_impl(
             let expires_at = cache.expires_at(&cfg.server);
             let expired = expires_at.map(|t| t < Utc::now()).unwrap_or(false);
             (
-                AuthStatusOutcome::LoggedIn {
-                    server: cfg.server.clone(),
-                    user,
-                    expires_at,
-                    expired,
-                },
+                AuthStatusOutcome::LoggedIn { server: cfg.server.clone(), user, expires_at, expired },
                 Some(resolved),
             )
         }
-        None => (
-            AuthStatusOutcome::NotLoggedIn {
-                server: cfg.server.clone(),
-            },
-            None,
-        ),
+        None => (AuthStatusOutcome::NotLoggedIn { server: cfg.server.clone() }, None),
     };
 
     // _meta.auth uses presence/origin semantics (ADR-0007 uniform vocabulary),
@@ -128,9 +110,7 @@ mod tests {
     use crate::config::auth_cache::ServerEntry;
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{Format, MetaContext, Renderer};
 
     // ── recording renderer ────────────────────────────────────────────────────
@@ -167,35 +147,18 @@ mod tests {
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            outcome: &AuthStatusOutcome,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, outcome: &AuthStatusOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.last_auth_state = Some(meta.auth_state.clone());
             match outcome {
-                AuthStatusOutcome::LoggedIn {
-                    server,
-                    user,
-                    expires_at,
-                    expired,
-                } => {
+                AuthStatusOutcome::LoggedIn { server, user, expires_at, expired } => {
                     self.status_outcome = Some(LoggedInRecord {
                         server: server.clone(),
                         user: user.clone(),
@@ -203,11 +166,7 @@ mod tests {
                         expired: *expired,
                     });
                 }
-                AuthStatusOutcome::AuthenticatedViaEnv {
-                    server,
-                    expires_at,
-                    expired,
-                } => {
+                AuthStatusOutcome::AuthenticatedViaEnv { server, expires_at, expired } => {
                     self.env_outcome = Some(EnvRecord {
                         server: server.clone(),
                         expires_at: *expires_at,
@@ -221,19 +180,11 @@ mod tests {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -253,11 +204,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &crate::render::ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &crate::render::ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -356,9 +303,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: server.to_string(),
-        };
+        let cfg = Config { server: server.to_string() };
         (args, cfg)
     }
 
@@ -373,12 +318,8 @@ mod tests {
     /// Produce a minimal JWT with the given JSON payload.
     /// The secret is arbitrary — `extract_exp` disables signature validation.
     fn make_jwt(payload: &serde_json::Value) -> String {
-        encode(
-            &Header::new(Algorithm::HS256),
-            payload,
-            &EncodingKey::from_secret(b"unused"),
-        )
-        .expect("test JWT encoding should not fail")
+        encode(&Header::new(Algorithm::HS256), payload, &EncodingKey::from_secret(b"unused"))
+            .expect("test JWT encoding should not fail")
     }
 
     fn make_jwt_with_exp(exp_ts: i64) -> String {
@@ -412,10 +353,7 @@ mod tests {
         assert_eq!(rec.server, "https://api.test.dasch.swiss");
         assert_eq!(rec.user.as_deref(), Some("u@x.test"));
         assert_eq!(rec.expires_at, Some(fixed_future()));
-        assert!(
-            !rec.expired,
-            "token with future expiry should not be expired"
-        );
+        assert!(!rec.expired, "token with future expiry should not be expired");
     }
 
     #[test]
@@ -427,14 +365,8 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         run_impl(&args, &cfg, &mut renderer, Some(&cache_path), None).unwrap();
 
-        assert!(
-            renderer.status_outcome.is_none(),
-            "expected no LoggedIn outcome"
-        );
-        assert_eq!(
-            renderer.not_logged_in.as_deref(),
-            Some("https://api.test.dasch.swiss")
-        );
+        assert!(renderer.status_outcome.is_none(), "expected no LoggedIn outcome");
+        assert_eq!(renderer.not_logged_in.as_deref(), Some("https://api.test.dasch.swiss"));
     }
 
     #[test]
@@ -470,10 +402,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let result = run_impl(&args, &cfg, &mut renderer, Some(&cache_path), None);
-        assert!(
-            result.is_ok(),
-            "status should always return Ok; got {result:?}"
-        );
+        assert!(result.is_ok(), "status should always return Ok; got {result:?}");
     }
 
     // ── env-token tests ───────────────────────────────────────────────────────
@@ -491,9 +420,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some(token)).unwrap();
 
-        let rec = renderer
-            .env_outcome
-            .expect("expected AuthenticatedViaEnv outcome");
+        let rec = renderer.env_outcome.expect("expected AuthenticatedViaEnv outcome");
         assert_eq!(rec.server, "https://api.test.dasch.swiss");
         assert!(rec.expires_at.is_some(), "expected Some(expires_at)");
         assert!(!rec.expired, "future exp should not be expired");
@@ -516,9 +443,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some(token)).unwrap();
 
-        let rec = renderer
-            .env_outcome
-            .expect("expected AuthenticatedViaEnv outcome");
+        let rec = renderer.env_outcome.expect("expected AuthenticatedViaEnv outcome");
         assert!(rec.expired, "past exp should be expired");
         // _meta.auth uses presence/origin semantics — expired env token still
         // reports "authenticated via DSP_TOKEN", not an expiry string.
@@ -538,22 +463,10 @@ mod tests {
         let (args, cfg) = make_args("https://api.test.dasch.swiss");
 
         let mut renderer = RecordingRenderer::new();
-        run_impl(
-            &args,
-            &cfg,
-            &mut renderer,
-            Some(&cache_path),
-            Some("not-a-jwt".to_string()),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some("not-a-jwt".to_string())).unwrap();
 
-        let rec = renderer
-            .env_outcome
-            .expect("expected AuthenticatedViaEnv outcome");
-        assert!(
-            rec.expires_at.is_none(),
-            "non-JWT env token should have expires_at == None"
-        );
+        let rec = renderer.env_outcome.expect("expected AuthenticatedViaEnv outcome");
+        assert!(rec.expires_at.is_none(), "non-JWT env token should have expires_at == None");
         assert!(!rec.expired, "non-JWT env token should not be expired");
         assert_eq!(
             renderer.last_auth_state.as_deref(),
@@ -585,20 +498,10 @@ mod tests {
         let env_token = make_jwt_with_exp(exp_ts);
 
         let mut renderer = RecordingRenderer::new();
-        run_impl(
-            &args,
-            &cfg,
-            &mut renderer,
-            Some(&cache_path),
-            Some(env_token),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some(env_token)).unwrap();
 
         // Env wins: must be AuthenticatedViaEnv, not LoggedIn.
-        assert!(
-            renderer.env_outcome.is_some(),
-            "env token should win over valid cache entry"
-        );
+        assert!(renderer.env_outcome.is_some(), "env token should win over valid cache entry");
         assert!(
             renderer.status_outcome.is_none(),
             "LoggedIn should not be produced when env token is present"
@@ -633,19 +536,9 @@ mod tests {
         let env_token = make_jwt_with_exp(exp_ts);
 
         let mut renderer = RecordingRenderer::new();
-        run_impl(
-            &args,
-            &cfg,
-            &mut renderer,
-            Some(&cache_path),
-            Some(env_token),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some(env_token)).unwrap();
 
-        assert!(
-            renderer.env_outcome.is_some(),
-            "env token should win over expired cache entry"
-        );
+        assert!(renderer.env_outcome.is_some(), "env token should win over expired cache entry");
         assert!(
             renderer.status_outcome.is_none(),
             "LoggedIn should not be produced when env token is present"
@@ -689,10 +582,7 @@ mod tests {
         let rec = renderer
             .status_outcome
             .expect("expected LoggedIn outcome from cache fall-through");
-        assert!(
-            rec.expired,
-            "cache entry has past expiry; expired should be true"
-        );
+        assert!(rec.expired, "cache entry has past expiry; expired should be true");
         assert!(
             renderer.env_outcome.is_none(),
             "whitespace env should not produce AuthenticatedViaEnv"
@@ -720,27 +610,14 @@ mod tests {
         let env_token = make_jwt_with_exp(exp_ts);
 
         let mut renderer = RecordingRenderer::new();
-        run_impl(
-            &args,
-            &cfg,
-            &mut renderer,
-            Some(&cache_path),
-            Some(env_token),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some(env_token)).unwrap();
 
-        assert!(
-            renderer.env_outcome.is_some(),
-            "env token should win over corrupt cache"
-        );
+        assert!(renderer.env_outcome.is_some(), "env token should win over corrupt cache");
         assert!(
             renderer.status_outcome.is_none(),
             "LoggedIn should not be produced when env token is present"
         );
-        assert_eq!(
-            renderer.last_auth_state.as_deref(),
-            Some("authenticated via DSP_TOKEN"),
-        );
+        assert_eq!(renderer.last_auth_state.as_deref(), Some("authenticated via DSP_TOKEN"),);
     }
 
     #[test]
@@ -773,13 +650,7 @@ mod tests {
 
         let (args, cfg) = make_args("https://api.test.dasch.swiss");
         let mut renderer = RecordingRenderer::new();
-        let result = run_impl(
-            &args,
-            &cfg,
-            &mut renderer,
-            Some(&cache_path),
-            Some("  ".to_string()),
-        );
+        let result = run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some("  ".to_string()));
         assert!(
             result.is_err(),
             "whitespace env token should not swallow corrupt-cache error; got {result:?}"

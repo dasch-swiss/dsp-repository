@@ -65,14 +65,14 @@ fn optional_env(name: &str) -> Option<String> {
 /// Assertions are intentionally resilient to real-data variation:
 /// - `data_model` field equals `"beol"`.
 /// - At least one `Link` relation is returned (beol has link fields).
-/// - At least one `Inherits` relation is returned (beol types inherit from
-///   each other, e.g. `letter` extends `writtenSource`).
-/// - At least one cross-model relation (`target_data_model = Some(...)` where
-///   the target dm differs from `"beol"`) is returned — beol has link fields
-///   pointing to sibling data-models such as `biblio`.
+/// - At least one `Inherits` relation is returned (beol types inherit from each other, e.g.
+///   `letter` extends `writtenSource`).
+/// - At least one cross-model relation (`target_data_model = Some(...)` where the target dm differs
+///   from `"beol"`) is returned — beol has link fields pointing to sibling data-models such as
+///   `biblio`.
 /// - All relation `source` and `target` names are non-empty.
-/// - `field` is `Some` for every `Link` relation and `None` for every
-///   `Inherits` relation (structural invariant from the domain model).
+/// - `field` is `Some` for every `Link` relation and `None` for every `Inherits` relation
+///   (structural invariant from the domain model).
 #[test]
 fn live_data_model_structure_returns_valid_structure() {
     // ── 1. Collect required config ────────────────────────────────────────────
@@ -82,8 +82,7 @@ fn live_data_model_structure_returns_valid_structure() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `data_model_structure` uses a public endpoint; the token is optional. If
@@ -106,18 +105,13 @@ fn live_data_model_structure_returns_valid_structure() {
     // beol is chosen for its cross-ontology link relations (e.g. beol:letter →
     // biblio:Book), which exercise both in-model and cross-model edges.
     let project_identifier = "0801";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
              if the beol project has been removed from this server, update the test to use a \
              different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -125,10 +119,7 @@ fn live_data_model_structure_returns_valid_structure() {
     );
 
     // ── 5. List data-models and find the beol data-model ─────────────────────
-    eprintln!(
-        "live test: calling list_data_models for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
         .list_data_models(&cfg.server, &proj.iri, token_ref)
@@ -137,30 +128,22 @@ fn live_data_model_structure_returns_valid_structure() {
     eprintln!("live test: received {} data-model(s)", data_models.len());
 
     // Find the beol data-model by name (case-insensitive, mirroring the action).
-    let beol_dm = data_models
-        .iter()
-        .find(|dm| dm.name.eq_ignore_ascii_case("beol"))
-        .expect(
-            "beol data-model not found in project '0801' — expected the beol data-model to be \
+    let beol_dm = data_models.iter().find(|dm| dm.name.eq_ignore_ascii_case("beol")).expect(
+        "beol data-model not found in project '0801' — expected the beol data-model to be \
              present; check that DSP_TEST_SERVER points to a server where this project is \
              populated with its standard data-models",
-        );
+    );
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
     // ── 6. Call data_model_structure ─────────────────────────────────────────
-    eprintln!(
-        "live test: calling data_model_structure for IRI {}",
-        beol_dm.iri
-    );
+    eprintln!("live test: calling data_model_structure for IRI {}", beol_dm.iri);
 
-    let structure = client
-        .data_model_structure(&cfg.server, &beol_dm.iri, token_ref)
-        .expect(
-            "data_model_structure failed for beol — check DSP_TEST_SERVER and network \
+    let structure = client.data_model_structure(&cfg.server, &beol_dm.iri, token_ref).expect(
+        "data_model_structure failed for beol — check DSP_TEST_SERVER and network \
              connectivity; if the beol data-model has been removed or restructured, update \
              this test to use a different project with cross-ontology link relations",
-        );
+    );
 
     eprintln!(
         "live test: received structure for '{}' ({} relation(s))",
@@ -225,11 +208,7 @@ fn live_data_model_structure_returns_valid_structure() {
     }
 
     // At least one Link relation must be present — beol defines link fields.
-    let link_count = structure
-        .relations
-        .iter()
-        .filter(|r| r.kind == RelationKind::Link)
-        .count();
+    let link_count = structure.relations.iter().filter(|r| r.kind == RelationKind::Link).count();
     assert!(
         link_count > 0,
         "expected at least one Link relation in beol but found none. \
@@ -239,11 +218,7 @@ fn live_data_model_structure_returns_valid_structure() {
 
     // At least one Inherits relation must be present — beol types inherit from
     // each other (e.g. beol:letter extends beol:writtenSource).
-    let inherits_count = structure
-        .relations
-        .iter()
-        .filter(|r| r.kind == RelationKind::Inherits)
-        .count();
+    let inherits_count = structure.relations.iter().filter(|r| r.kind == RelationKind::Inherits).count();
     assert!(
         inherits_count > 0,
         "expected at least one Inherits relation in beol but found none. \
@@ -257,11 +232,7 @@ fn live_data_model_structure_returns_valid_structure() {
     let cross_model_count = structure
         .relations
         .iter()
-        .filter(|r| {
-            r.target_data_model
-                .as_deref()
-                .is_some_and(|tdm| tdm != "beol")
-        })
+        .filter(|r| r.target_data_model.as_deref().is_some_and(|tdm| tdm != "beol"))
         .count();
     assert!(
         cross_model_count > 0,
@@ -280,10 +251,7 @@ fn live_data_model_structure_returns_valid_structure() {
         );
     }
     if structure.relations.len() > 10 {
-        eprintln!(
-            "live test: ... ({} more relations not shown)",
-            structure.relations.len() - 10
-        );
+        eprintln!("live test: ... ({} more relations not shown)", structure.relations.len() - 10);
     }
 
     eprintln!(

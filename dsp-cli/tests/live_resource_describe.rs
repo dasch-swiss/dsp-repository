@@ -109,8 +109,7 @@ fn live_resource_describe_envelope_field_assertion() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     let token: Option<String> = optional_env("DSP_TOKEN");
@@ -126,22 +125,14 @@ fn live_resource_describe_envelope_field_assertion() {
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
     // ── 4. Resolve the project ────────────────────────────────────────────────
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_shortcode, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_shortcode, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, &project_shortcode)
-        .expect(
-            "resolve_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
+    let proj = client.resolve_project(&cfg.server, &project_shortcode).expect(
+        "resolve_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
              and network connectivity",
-        );
-
-    eprintln!(
-        "live test: resolved project '{}' (IRI: {})",
-        proj.shortname, proj.iri
     );
+
+    eprintln!("live test: resolved project '{}' (IRI: {})", proj.shortname, proj.iri);
 
     // ── 5. List resources (page 0) to obtain a real resource IRI ─────────────
     assert!(
@@ -162,10 +153,7 @@ fn live_resource_describe_envelope_field_assertion() {
              DSP_TEST_CLASS_IRI and network connectivity",
         );
 
-    eprintln!(
-        "live test: received {} resource(s) on page 0",
-        page.resources.len()
-    );
+    eprintln!("live test: received {} resource(s) on page 0", page.resources.len());
 
     if page.resources.is_empty() {
         eprintln!(
@@ -183,18 +171,13 @@ fn live_resource_describe_envelope_field_assertion() {
         "first resource from list_resources must have a non-empty IRI"
     );
 
-    eprintln!(
-        "live test: using resource IRI '{}' for describe call",
-        first_iri
-    );
+    eprintln!("live test: using resource IRI '{}' for describe call", first_iri);
 
     // ── 6. Call describe_resource ─────────────────────────────────────────────
-    let detail = client
-        .describe_resource(&cfg.server, first_iri, token_ref, false)
-        .expect(
-            "describe_resource failed — check DSP_TEST_SERVER and network connectivity; \
+    let detail = client.describe_resource(&cfg.server, first_iri, token_ref, false).expect(
+        "describe_resource failed — check DSP_TEST_SERVER and network connectivity; \
              resource IRI may be inaccessible to anonymous callers if DSP_TOKEN is not set",
-        );
+    );
 
     eprintln!(
         "live test: describe_resource returned — label={:?} iri={} resource_type={} \
@@ -235,10 +218,7 @@ fn live_resource_describe_envelope_field_assertion() {
         detail.iri,
         cfg.server
     );
-    eprintln!(
-        "live test: D4 field 'resource_type': {} ✓",
-        detail.resource_type
-    );
+    eprintln!("live test: D4 field 'resource_type': {} ✓", detail.resource_type);
 
     // -- iri (hard assertion) --
     assert!(
@@ -264,10 +244,7 @@ fn live_resource_describe_envelope_field_assertion() {
         detail.iri,
         cfg.server
     );
-    eprintln!(
-        "live test: D4 field 'creation_date': {:?} ✓",
-        detail.creation_date
-    );
+    eprintln!("live test: D4 field 'creation_date': {:?} ✓", detail.creation_date);
 
     // -- attached_project (hard assertion — complex always carries it) --
     assert!(
@@ -278,10 +255,7 @@ fn live_resource_describe_envelope_field_assertion() {
         detail.iri,
         cfg.server
     );
-    eprintln!(
-        "live test: D4 field 'attached_project': {:?} ✓",
-        detail.attached_project
-    );
+    eprintln!("live test: D4 field 'attached_project': {:?} ✓", detail.attached_project);
 
     // -- owner (hard assertion — complex always carries it) --
     assert!(
@@ -298,10 +272,7 @@ fn live_resource_describe_envelope_field_assertion() {
 
     // -- ark_url (report-only) --
     if detail.ark_url.is_some() {
-        eprintln!(
-            "live test: D4 field 'ark_url': {:?} (present)",
-            detail.ark_url
-        );
+        eprintln!("live test: D4 field 'ark_url': {:?} (present)", detail.ark_url);
     } else {
         eprintln!(
             "live test: D4 NOTE — 'ark_url' is None. This is NOT a test failure — \
@@ -311,10 +282,7 @@ fn live_resource_describe_envelope_field_assertion() {
 
     // -- last_modified (report-only — server-side optional) --
     if detail.last_modified.is_some() {
-        eprintln!(
-            "live test: D4 field 'last_modified': {:?} (present)",
-            detail.last_modified
-        );
+        eprintln!("live test: D4 field 'last_modified': {:?} (present)", detail.last_modified);
     } else {
         eprintln!(
             "live test: D4 NOTE — 'last_modified' is None. This is NOT a test failure — \
@@ -365,8 +333,8 @@ fn live_resource_describe_envelope_field_assertion() {
 /// - At least one `integer` value is present.
 /// - At least one `link` value is present.
 /// - At least one `still-image` (or other file) value is present.
-/// - Every `link` value that has a `target_label` has a non-empty label (the
-///   complex schema embeds the target; this live-verifies the parse).
+/// - Every `link` value that has a `target_label` has a non-empty label (the complex schema embeds
+///   the target; this live-verifies the parse).
 ///
 /// **Report-only** (never a test failure):
 /// - Whether field labels were resolved from the ontology.
@@ -399,8 +367,7 @@ fn live_resource_describe_values() {
         None => return,
     };
 
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     let token: Option<String> = optional_env("DSP_TOKEN");
@@ -468,14 +435,10 @@ fn live_resource_describe_values() {
     }
 
     // Hard assertions: at least one of the expected value types must be present.
-    let all_values: Vec<&dsp_cli::model::ValueContent> = fields
-        .iter()
-        .flat_map(|f| f.values.iter().map(|v| &v.content))
-        .collect();
+    let all_values: Vec<&dsp_cli::model::ValueContent> =
+        fields.iter().flat_map(|f| f.values.iter().map(|v| &v.content)).collect();
 
-    let has_text = all_values
-        .iter()
-        .any(|v| matches!(v, dsp_cli::model::ValueContent::Text(_)));
+    let has_text = all_values.iter().any(|v| matches!(v, dsp_cli::model::ValueContent::Text(_)));
     assert!(
         has_text,
         "D4 HARD FAIL: no `text` value found in --values output. \
@@ -486,9 +449,7 @@ fn live_resource_describe_values() {
     );
     eprintln!("live test (values): text value present ✓");
 
-    let has_integer = all_values
-        .iter()
-        .any(|v| matches!(v, dsp_cli::model::ValueContent::Integer(_)));
+    let has_integer = all_values.iter().any(|v| matches!(v, dsp_cli::model::ValueContent::Integer(_)));
     assert!(
         has_integer,
         "D4 HARD FAIL: no `integer` value found in --values output. \
@@ -510,9 +471,7 @@ fn live_resource_describe_values() {
     );
     eprintln!("live test (values): link value present ✓");
 
-    let has_file = all_values
-        .iter()
-        .any(|v| matches!(v, dsp_cli::model::ValueContent::File(_)));
+    let has_file = all_values.iter().any(|v| matches!(v, dsp_cli::model::ValueContent::File(_)));
     assert!(
         has_file,
         "D4 HARD FAIL: no `file` value found in --values output. \
@@ -526,11 +485,7 @@ fn live_resource_describe_values() {
     // (Verifies that the embedded complex-schema target label is correctly extracted.)
     for f in &fields {
         for v in &f.values {
-            if let dsp_cli::model::ValueContent::Link {
-                target_label: Some(lbl),
-                target_iri,
-            } = &v.content
-            {
+            if let dsp_cli::model::ValueContent::Link { target_label: Some(lbl), target_iri } = &v.content {
                 assert!(
                     !lbl.is_empty(),
                     "D4 HARD FAIL: link target_label is present but empty \
@@ -538,10 +493,7 @@ fn live_resource_describe_values() {
                     target_iri,
                     f.name
                 );
-                eprintln!(
-                    "live test (values): link target_label non-empty: {:?} [{}] ✓",
-                    lbl, target_iri
-                );
+                eprintln!("live test (values): link target_label non-empty: {:?} [{}] ✓", lbl, target_iri);
             }
         }
     }
@@ -549,21 +501,10 @@ fn live_resource_describe_values() {
     // ── 6. Report-only: field labels and vocabulary-item labels ────────────────
     // (Never a test failure — depends on permission and ontology availability.)
 
-    let labelled_fields: Vec<&str> = fields
-        .iter()
-        .filter(|f| f.label.is_some())
-        .map(|f| f.name.as_str())
-        .collect();
-    let unlabelled_fields: Vec<&str> = fields
-        .iter()
-        .filter(|f| f.label.is_none())
-        .map(|f| f.name.as_str())
-        .collect();
+    let labelled_fields: Vec<&str> = fields.iter().filter(|f| f.label.is_some()).map(|f| f.name.as_str()).collect();
+    let unlabelled_fields: Vec<&str> = fields.iter().filter(|f| f.label.is_none()).map(|f| f.name.as_str()).collect();
 
-    eprintln!(
-        "live test (values): field labels resolved for: {:?}",
-        labelled_fields
-    );
+    eprintln!("live test (values): field labels resolved for: {:?}", labelled_fields);
     eprintln!(
         "live test (values): field labels unresolved (None) for: {:?}",
         unlabelled_fields
@@ -573,9 +514,9 @@ fn live_resource_describe_values() {
         .iter()
         .flat_map(|f| {
             f.values.iter().filter_map(move |v| match &v.content {
-                dsp_cli::model::ValueContent::VocabularyItem {
-                    label: Some(lbl), ..
-                } => Some((f.name.as_str(), lbl.as_str())),
+                dsp_cli::model::ValueContent::VocabularyItem { label: Some(lbl), .. } => {
+                    Some((f.name.as_str(), lbl.as_str()))
+                }
                 _ => None,
             })
         })
@@ -635,8 +576,8 @@ fn live_resource_describe_values() {
 /// **Hard assertions** (when the resource is reachable):
 /// - `values` is `Some`.
 /// - At least one `text` value is present.
-/// - No `text` value contains `<` or the substring `textValueAsXml` (standoff fully
-///   stripped to plain text).
+/// - No `text` value contains `<` or the substring `textValueAsXml` (standoff fully stripped to
+///   plain text).
 ///
 /// Skips cleanly (`eprintln!`, not a failure) if the resource is inaccessible —
 /// e.g. `DSP_TEST_SERVER` does not point at a server carrying the 0810 project.
@@ -646,8 +587,7 @@ fn live_resource_describe_values_standoff() {
         Some(v) => v,
         None => return,
     };
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
     let token: Option<String> = optional_env("DSP_TOKEN");
     let token_ref: Option<&str> = token.as_deref();
 

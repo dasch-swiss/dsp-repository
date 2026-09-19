@@ -136,9 +136,7 @@ mod tests {
             assert_eq!(t.created_at, Some(ts));
         }
 
-        let exists = CreateDumpOutcome::Exists {
-            id: "existing-id".into(),
-        };
+        let exists = CreateDumpOutcome::Exists { id: "existing-id".into() };
         assert!(matches!(exists, CreateDumpOutcome::Exists { .. }));
         if let CreateDumpOutcome::Exists { id } = &exists {
             assert_eq!(id, "existing-id");
@@ -154,10 +152,7 @@ mod tests {
             id: "foreign-dump-id".into(),
             project_iri: "http://rdfh.ch/projects/0002".into(),
         };
-        assert!(matches!(
-            other,
-            CreateDumpOutcome::ExistsForOtherProject { .. }
-        ));
+        assert!(matches!(other, CreateDumpOutcome::ExistsForOtherProject { .. }));
         if let CreateDumpOutcome::ExistsForOtherProject { id, project_iri } = &other {
             assert_eq!(id, "foreign-dump-id");
             assert_eq!(project_iri, "http://rdfh.ch/projects/0002");

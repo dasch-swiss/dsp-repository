@@ -41,9 +41,9 @@ impl PasswordSource for TtyPasswordSource {
             // A read failure here (closed pipe, no data on stdin) is a bad
             // invocation, not a CLI bug — surface it as Usage rather than the
             // From<io::Error> default of Internal.
-            std::io::stdin().read_line(&mut line).map_err(|e| {
-                Diagnostic::Usage(format!("could not read password from stdin: {e}"))
-            })?;
+            std::io::stdin()
+                .read_line(&mut line)
+                .map_err(|e| Diagnostic::Usage(format!("could not read password from stdin: {e}")))?;
             // Strip a single trailing line terminator via the shared helper.
             // See `crate::actions::auth::trim_line_ending` for the rationale:
             // a bare trailing `\r` is NOT stripped (it may be a legitimate
@@ -65,10 +65,7 @@ impl PasswordSource for TtyPasswordSource {
 /// **never a production password**. For non-interactive use against real
 /// environments, prefer a scoped, expiring token (`DSP_TOKEN`) over a
 /// durable master credential. See ADR-0007.
-fn resolve_password(
-    env_password: Option<String>,
-    source: &dyn PasswordSource,
-) -> Result<String, Diagnostic> {
+fn resolve_password(env_password: Option<String>, source: &dyn PasswordSource) -> Result<String, Diagnostic> {
     match env_password {
         Some(p) if !p.is_empty() => Ok(p),
         _ => source.read("Password: "),
@@ -88,15 +85,7 @@ pub fn run(
     renderer: &mut dyn Renderer,
 ) -> Result<(), Diagnostic> {
     let env_password = std::env::var("DSP_PASSWORD").ok();
-    run_impl(
-        args,
-        cfg,
-        client,
-        renderer,
-        &TtyPasswordSource,
-        env_password,
-        None,
-    )
+    run_impl(args, cfg, client, renderer, &TtyPasswordSource, env_password, None)
 }
 
 /// Internal entry point that accepts an explicit cache path (for tests) and an
@@ -111,9 +100,10 @@ fn run_impl(
     env_password: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    let user = args.user.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--user (email, username, or IRI) is required for login".to_string())
-    })?;
+    let user = args
+        .user
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--user (email, username, or IRI) is required for login".to_string()))?;
 
     let password = resolve_password(env_password, password_source)?;
 
@@ -141,10 +131,7 @@ fn run_impl(
     // returned user name. Synthesize a Cache-origin ResolvedToken so that
     // `read_auth_state` picks the correct branch and looks up the user from the
     // cache (which now contains `response.user`).
-    let resolved_for_meta = ResolvedToken {
-        token: response.token.clone(),
-        origin: TokenOrigin::Cache,
-    };
+    let resolved_for_meta = ResolvedToken { token: response.token.clone(), origin: TokenOrigin::Cache };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state: read_auth_state(Some(&resolved_for_meta), &cache, &cfg.server),
@@ -173,9 +160,7 @@ mod tests {
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
     use crate::model::LoginResponse;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{Format, MetaContext, Renderer};
 
     // ── local mock client ─────────────────────────────────────────────────────
@@ -187,11 +172,7 @@ mod tests {
     impl MockDspClient {
         fn ok(token: &str, user: &str, expires_at: Option<chrono::DateTime<Utc>>) -> Self {
             Self {
-                result: Ok(LoginResponse {
-                    token: token.to_string(),
-                    user: user.to_string(),
-                    expires_at,
-                }),
+                result: Ok(LoginResponse { token: token.to_string(), user: user.to_string(), expires_at }),
             }
         }
 
@@ -201,20 +182,11 @@ mod tests {
     }
 
     impl DspClient for MockDspClient {
-        fn login(
-            &self,
-            _server: &str,
-            _user: &str,
-            _password: &str,
-        ) -> Result<LoginResponse, Diagnostic> {
+        fn login(&self, _server: &str, _user: &str, _password: &str) -> Result<LoginResponse, Diagnostic> {
             self.result.clone()
         }
 
-        fn resolve_project(
-            &self,
-            _server: &str,
-            _project: &str,
-        ) -> Result<crate::model::ProjectRef, Diagnostic> {
+        fn resolve_project(&self, _server: &str, _project: &str) -> Result<crate::model::ProjectRef, Diagnostic> {
             unimplemented!("resolve_project not used by login tests")
         }
 
@@ -259,14 +231,8 @@ mod tests {
             unimplemented!("delete_project_dump not used by login tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
-            Err(Diagnostic::NotImplemented(
-                "list_projects not used in login.rs tests".into(),
-            ))
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
+            Err(Diagnostic::NotImplemented("list_projects not used in login.rs tests".into()))
         }
 
         fn describe_project(
@@ -275,9 +241,7 @@ mod tests {
             _project: &str,
             _token: Option<&str>,
         ) -> Result<crate::model::ProjectDetail, Diagnostic> {
-            Err(Diagnostic::NotImplemented(
-                "describe_project not used in login.rs tests".into(),
-            ))
+            Err(Diagnostic::NotImplemented("describe_project not used in login.rs tests".into()))
         }
 
         fn list_data_models(
@@ -286,9 +250,7 @@ mod tests {
             _project_iri: &str,
             _token: Option<&str>,
         ) -> Result<Vec<crate::model::DataModel>, Diagnostic> {
-            Err(Diagnostic::NotImplemented(
-                "list_data_models not used in login.rs tests".into(),
-            ))
+            Err(Diagnostic::NotImplemented("list_data_models not used in login.rs tests".into()))
         }
 
         fn describe_data_model(
@@ -403,27 +365,16 @@ mod tests {
 
     impl RecordingRenderer {
         fn new() -> Self {
-            Self {
-                login_outcome: None,
-                login_auth_state: None,
-            }
+            Self { login_outcome: None, login_auth_state: None }
         }
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            outcome: &AuthLoginOutcome,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, outcome: &AuthLoginOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.login_outcome = Some(AuthLoginOutcome {
                 server: outcome.server.clone(),
                 user: outcome.user.clone(),
@@ -433,27 +384,15 @@ mod tests {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -473,11 +412,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &crate::render::ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &crate::render::ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -581,9 +516,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: server.to_string(),
-        };
+        let cfg = Config { server: server.to_string() };
         (args, cfg)
     }
 
@@ -598,30 +531,12 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let pw = StaticPasswordSource("hunter2".to_string());
 
-        run_impl(
-            &args,
-            &cfg,
-            &client,
-            &mut renderer,
-            &pw,
-            None,
-            Some(&cache_path),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap();
 
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token("https://api.test.dasch.swiss"),
-            Some("tok-abc")
-        );
-        assert_eq!(
-            loaded.user("https://api.test.dasch.swiss"),
-            Some("u@x.test")
-        );
-        assert_eq!(
-            loaded.expires_at("https://api.test.dasch.swiss"),
-            Some(fixed_expires())
-        );
+        assert_eq!(loaded.token("https://api.test.dasch.swiss"), Some("tok-abc"));
+        assert_eq!(loaded.user("https://api.test.dasch.swiss"), Some("u@x.test"));
+        assert_eq!(loaded.expires_at("https://api.test.dasch.swiss"), Some(fixed_expires()));
         assert!(
             loaded.acquired_at("https://api.test.dasch.swiss").is_some(),
             "acquired_at should be set to Some(Utc::now()) after login"
@@ -637,26 +552,14 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let pw = StaticPasswordSource("hunter2".to_string());
 
-        run_impl(
-            &args,
-            &cfg,
-            &client,
-            &mut renderer,
-            &pw,
-            None,
-            Some(&cache_path),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap();
 
         let outcome = renderer.login_outcome.unwrap();
         assert_eq!(outcome.server, "https://api.test.dasch.swiss");
         assert_eq!(outcome.user, "u@x.test");
         assert_eq!(outcome.expires_at, Some(fixed_expires()));
         // _meta.auth must reflect the post-login state using ADR-0007 vocabulary.
-        assert_eq!(
-            renderer.login_auth_state.as_deref(),
-            Some("authenticated as u@x.test")
-        );
+        assert_eq!(renderer.login_auth_state.as_deref(), Some("authenticated as u@x.test"));
     }
 
     #[test]
@@ -670,20 +573,8 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let pw = StaticPasswordSource("bad-pw".to_string());
 
-        let err = run_impl(
-            &args,
-            &cfg,
-            &client,
-            &mut renderer,
-            &pw,
-            None,
-            Some(&cache_path),
-        )
-        .unwrap_err();
-        assert!(
-            matches!(err, Diagnostic::AuthRequired(_)),
-            "expected AuthRequired, got {err:?}"
-        );
+        let err = run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap_err();
+        assert!(matches!(err, Diagnostic::AuthRequired(_)), "expected AuthRequired, got {err:?}");
         // Must not include the username (ADR-0007 / PRD acceptance criterion 7).
         assert!(
             !err.to_string().contains("u@x.test"),
@@ -700,20 +591,8 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let pw = StaticPasswordSource("pw".to_string());
 
-        let err = run_impl(
-            &args,
-            &cfg,
-            &client,
-            &mut renderer,
-            &pw,
-            None,
-            Some(&cache_path),
-        )
-        .unwrap_err();
-        assert!(
-            matches!(err, Diagnostic::Network(_)),
-            "expected Network, got {err:?}"
-        );
+        let err = run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap_err();
+        assert!(matches!(err, Diagnostic::Network(_)), "expected Network, got {err:?}");
     }
 
     #[test]
@@ -725,20 +604,8 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let pw = StaticPasswordSource("pw".to_string());
 
-        let err = run_impl(
-            &args,
-            &cfg,
-            &client,
-            &mut renderer,
-            &pw,
-            None,
-            Some(&cache_path),
-        )
-        .unwrap_err();
-        assert!(
-            matches!(err, Diagnostic::ServerError(_)),
-            "expected ServerError, got {err:?}"
-        );
+        let err = run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap_err();
+        assert!(matches!(err, Diagnostic::ServerError(_)), "expected ServerError, got {err:?}");
     }
 
     #[test]
@@ -754,42 +621,24 @@ mod tests {
         let pw = StaticPasswordSource("hunter2".to_string());
 
         // Should complete without touching the real TTY.
-        run_impl(
-            &args,
-            &cfg,
-            &client,
-            &mut renderer,
-            &pw,
-            None,
-            Some(&cache_path),
-        )
-        .unwrap();
+        run_impl(&args, &cfg, &client, &mut renderer, &pw, None, Some(&cache_path)).unwrap();
 
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token("https://api.test.dasch.swiss"),
-            Some("tok-xyz")
-        );
+        assert_eq!(loaded.token("https://api.test.dasch.swiss"), Some("tok-xyz"));
     }
 
     #[test]
     fn resolve_password_prefers_nonempty_env_value() {
         let src = StaticPasswordSource("from-prompt".to_string());
         let pw = resolve_password(Some("from-env".to_string()), &src).unwrap();
-        assert_eq!(
-            pw, "from-env",
-            "non-empty DSP_PASSWORD must win over the prompt"
-        );
+        assert_eq!(pw, "from-env", "non-empty DSP_PASSWORD must win over the prompt");
     }
 
     #[test]
     fn resolve_password_ignores_empty_env_value() {
         let src = StaticPasswordSource("from-prompt".to_string());
         let pw = resolve_password(Some(String::new()), &src).unwrap();
-        assert_eq!(
-            pw, "from-prompt",
-            "an empty DSP_PASSWORD must fall through to the prompt"
-        );
+        assert_eq!(pw, "from-prompt", "an empty DSP_PASSWORD must fall through to the prompt");
     }
 
     #[test]

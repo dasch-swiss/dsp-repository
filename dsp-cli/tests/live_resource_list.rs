@@ -62,14 +62,14 @@ fn optional_env(name: &str) -> Option<String> {
 /// **D4 hard assertions** (updated 2026-06-17 — command now uses `schema=complex`):
 /// - `iri` (`@id`) must be present (non-empty) on at least one resource.
 /// - `label` must be present (non-empty) on at least one resource.
-/// - `creation_date` (`knora-api:creationDate`) must be present on at least one
-///   resource — hard assertion since `schema=complex` always carries creation dates
-///   (live-verified on `dev` 2026-06-17).
+/// - `creation_date` (`knora-api:creationDate`) must be present on at least one resource — hard
+///   assertion since `schema=complex` always carries creation dates (live-verified on `dev`
+///   2026-06-17).
 ///
 /// Report-only conditions (not a test failure):
 /// - `ark_url` (`knora-api:arkUrl`) — present in both schemas; logged as count.
-/// - `last_modified` (`knora-api:lastModificationDate`) — present in complex but
-///   server-side optional (a never-modified resource has none); logged as count.
+/// - `last_modified` (`knora-api:lastModificationDate`) — present in complex but server-side
+///   optional (a never-modified resource has none); logged as count.
 ///
 /// Also exercises the full-IRI bypass path: when `DSP_TEST_CLASS_IRI` is set
 /// to a full IRI, the CLI (and this test) use it directly without scanning
@@ -93,8 +93,7 @@ fn live_resource_list_schema_field_assertion() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     let token: Option<String> = optional_env("DSP_TOKEN");
@@ -110,22 +109,14 @@ fn live_resource_list_schema_field_assertion() {
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
     // ── 4. Resolve the project ────────────────────────────────────────────────
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_shortcode, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_shortcode, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, &project_shortcode)
-        .expect(
-            "resolve_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
+    let proj = client.resolve_project(&cfg.server, &project_shortcode).expect(
+        "resolve_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
              and network connectivity",
-        );
-
-    eprintln!(
-        "live test: resolved project '{}' (IRI: {})",
-        proj.shortname, proj.iri
     );
+
+    eprintln!("live test: resolved project '{}' (IRI: {})", proj.shortname, proj.iri);
 
     // ── 5. Call list_resources — full-IRI bypass path ────────────────────────
     // When DSP_TEST_CLASS_IRI is a full IRI (contains "://"), the production
@@ -160,17 +151,17 @@ fn live_resource_list_schema_field_assertion() {
     // creation and last-modification dates (live-verified on `dev` 2026-06-17).
     //
     // Hard-fail conditions:
-    //   - `iri` absent (empty) for ALL resources: the IRI is load-bearing for
-    //     the list projection; if absent the client is broken.
-    //   - `label` absent (empty) for ALL resources: labels are the human-readable
-    //     identifier in the prose view; if all absent something is wrong.
-    //   - `creation_date` absent for ALL resources: complex carries creationDate
-    //     for every resource; if all absent the DTO extraction is broken.
+    //   - `iri` absent (empty) for ALL resources: the IRI is load-bearing for the list projection;
+    //     if absent the client is broken.
+    //   - `label` absent (empty) for ALL resources: labels are the human-readable identifier in the
+    //     prose view; if all absent something is wrong.
+    //   - `creation_date` absent for ALL resources: complex carries creationDate for every
+    //     resource; if all absent the DTO extraction is broken.
     //
     // Report-only conditions (not a test failure):
     //   - `ark_url` absent for all resources: present in both schemas; logged as count.
-    //   - `last_modified` absent for all resources: server-side optional (a resource
-    //     that has never been modified has none); logged as present/absent count.
+    //   - `last_modified` absent for all resources: server-side optional (a resource that has never
+    //     been modified has none); logged as present/absent count.
 
     if page.resources.is_empty() {
         // No resources to assert on — skip the field assertions but record the fact.
@@ -219,11 +210,7 @@ fn live_resource_list_schema_field_assertion() {
         proj.iri, cfg.server
     );
 
-    let label_present_count = page
-        .resources
-        .iter()
-        .filter(|r| !r.label.is_empty())
-        .count();
+    let label_present_count = page.resources.iter().filter(|r| !r.label.is_empty()).count();
     eprintln!(
         "live test: D4 field 'label': present on {}/{} resources (schema=complex)",
         label_present_count,
@@ -231,11 +218,7 @@ fn live_resource_list_schema_field_assertion() {
     );
 
     // -- ark_url (report-only) --
-    let ark_present_count = page
-        .resources
-        .iter()
-        .filter(|r| r.ark_url.is_some())
-        .count();
+    let ark_present_count = page.resources.iter().filter(|r| r.ark_url.is_some()).count();
     eprintln!(
         "live test: D4 field 'ark_url': present on {}/{} resources (schema=complex)",
         ark_present_count,
@@ -243,11 +226,7 @@ fn live_resource_list_schema_field_assertion() {
     );
 
     // -- creation_date (hard assertion — complex always carries it) --
-    let cd_present_count = page
-        .resources
-        .iter()
-        .filter(|r| r.creation_date.is_some())
-        .count();
+    let cd_present_count = page.resources.iter().filter(|r| r.creation_date.is_some()).count();
     assert!(
         cd_present_count > 0,
         "D4 HARD FAIL: `creation_date` (from knora-api:creationDate) is absent from \
@@ -266,11 +245,7 @@ fn live_resource_list_schema_field_assertion() {
     );
 
     // -- last_modified (report-only — server-side optional) --
-    let lm_present_count = page
-        .resources
-        .iter()
-        .filter(|r| r.last_modified.is_some())
-        .count();
+    let lm_present_count = page.resources.iter().filter(|r| r.last_modified.is_some()).count();
     if lm_present_count == 0 {
         eprintln!(
             "live test: D4 NOTE — `last_modified` (from knora-api:lastModificationDate) is absent \
@@ -295,11 +270,7 @@ fn live_resource_list_schema_field_assertion() {
             "every resource must have a non-empty iri; got an empty iri on label={:?}",
             res.label
         );
-        assert!(
-            res.iri.starts_with("http"),
-            "resource IRI '{}' must start with 'http'",
-            res.iri
-        );
+        assert!(res.iri.starts_with("http"), "resource IRI '{}' must start with 'http'", res.iri);
         // resource_type is always set (fallback to "unknown" if @type missing).
         assert!(
             !res.resource_type.is_empty(),
@@ -309,12 +280,7 @@ fn live_resource_list_schema_field_assertion() {
         eprintln!(
             "live test: resource label={:?} iri={} ark_url={:?} creation_date={:?} \
              last_modified={:?} type={}",
-            res.label,
-            res.iri,
-            res.ark_url,
-            res.creation_date,
-            res.last_modified,
-            res.resource_type
+            res.label, res.iri, res.ark_url, res.creation_date, res.last_modified, res.resource_type
         );
     }
 
@@ -397,8 +363,7 @@ fn live_resource_list_order_by_acceptance() {
     );
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 3. Resolve optional token ─────────────────────────────────────────────
     let token: Option<String> = optional_env("DSP_TOKEN");
@@ -414,22 +379,14 @@ fn live_resource_list_order_by_acceptance() {
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
     // ── 5. Resolve the project ────────────────────────────────────────────────
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_shortcode, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_shortcode, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, &project_shortcode)
-        .expect(
-            "resolve_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
+    let proj = client.resolve_project(&cfg.server, &project_shortcode).expect(
+        "resolve_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
              and network connectivity",
-        );
-
-    eprintln!(
-        "live test: resolved project '{}' (IRI: {})",
-        proj.shortname, proj.iri
     );
+
+    eprintln!("live test: resolved project '{}' (IRI: {})", proj.shortname, proj.iri);
 
     // ── 6. Call list_resources with order_by set ─────────────────────────────
     //
@@ -441,14 +398,7 @@ fn live_resource_list_order_by_acceptance() {
         order_by_iri, class_iri
     );
 
-    let result = client.list_resources(
-        &cfg.server,
-        &proj.iri,
-        &class_iri,
-        Some(order_by_iri.as_str()),
-        0,
-        token_ref,
-    );
+    let result = client.list_resources(&cfg.server, &proj.iri, &class_iri, Some(order_by_iri.as_str()), 0, token_ref);
 
     // ── 7. Assert acceptance (200, no error) ─────────────────────────────────
     //

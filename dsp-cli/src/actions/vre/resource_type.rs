@@ -8,6 +8,7 @@
 
 use std::path::Path;
 
+use crate::actions::auth_state::read_auth_state;
 use crate::cli::{ResourceTypeDescribeArgs, ResourceTypeListArgs};
 use crate::client::DspClient;
 use crate::config::{AuthCache, Config, resolve_token};
@@ -15,14 +16,11 @@ use crate::diagnostic::Diagnostic;
 use crate::model::ResourceType;
 use crate::render::{MetaContext, Renderer, ResourceTypeListView};
 
-use crate::actions::auth_state::read_auth_state;
-
 /// Disclosure note for `--count` (plan 030) — schema-side, distinct from the
 /// instance-side `MetaContext.filter_warning` (ADR-0007). Emitted via
 /// `MetaContext.count_caveat` whenever `--count` is passed on `resource-type
 /// list`/`describe`.
-const COUNT_CAVEAT: &str =
-    "counts include resources you may not be permitted to see and exclude deleted resources.";
+const COUNT_CAVEAT: &str = "counts include resources you may not be permitted to see and exclude deleted resources.";
 
 /// List all resource-types in a data-model.
 ///
@@ -41,10 +39,10 @@ pub fn list(
 
 /// Internal entry point for `list` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry point before calling
+///   this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. This differs deliberately from
@@ -59,9 +57,10 @@ fn run_list_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
     let data_model = args
@@ -156,13 +155,7 @@ fn run_list_impl(
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         items.retain(|rt| {
-            rt.name.to_lowercase().contains(&lower)
-                || rt
-                    .label
-                    .as_deref()
-                    .unwrap_or("")
-                    .to_lowercase()
-                    .contains(&lower)
+            rt.name.to_lowercase().contains(&lower) || rt.label.as_deref().unwrap_or("").to_lowercase().contains(&lower)
         });
     }
 
@@ -207,10 +200,10 @@ pub fn describe(
 
 /// Internal entry point for `describe` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry point before
+///   calling this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. This differs deliberately from
@@ -225,9 +218,10 @@ fn run_describe_impl(
     cache_path: Option<&std::path::Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
     let data_model = args
@@ -236,9 +230,10 @@ fn run_describe_impl(
         .ok_or_else(|| Diagnostic::Usage("--data-model <name-or-IRI> is required".to_string()))?;
 
     // ── 3. --resource-type required (fail-fast, BEFORE any cache/IO) ─────────
-    let resource_type = args.resource_type.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string())
-    })?;
+    let resource_type = args
+        .resource_type
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string()))?;
 
     // ── 4. Load cache (auth-optional: failures fall back to empty cache) ──────
     let cache_result = match cache_path {
@@ -355,15 +350,11 @@ mod tests {
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
     use crate::model::{
-        Cardinality, DataModel, DataModelDetail, Field, ProjectRef, ResourceTypeDetail,
-        ResourceTypeSummary, ValueType,
+        Cardinality, DataModel, DataModelDetail, Field, ProjectRef, ResourceTypeDetail, ResourceTypeSummary, ValueType,
     };
-    use crate::render::Format;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{
-        DataModelListView, DumpDeleteOutcome, DumpOutcome, MetaContext, ProjectListView, Renderer,
+        DataModelListView, DumpDeleteOutcome, DumpOutcome, Format, MetaContext, ProjectListView, Renderer,
         ResourceTypeListView,
     };
 
@@ -429,19 +420,13 @@ mod tests {
         }
 
         /// Set the result returned by [`DspClient::describe_resource_type`].
-        fn with_describe_resource_type(
-            mut self,
-            result: Result<crate::model::ResourceTypeDetail, Diagnostic>,
-        ) -> Self {
+        fn with_describe_resource_type(mut self, result: Result<crate::model::ResourceTypeDetail, Diagnostic>) -> Self {
             self.describe_resource_type_result = Some(result);
             self
         }
 
         /// Set the result returned by [`DspClient::resource_counts`].
-        fn with_resource_counts(
-            mut self,
-            result: Result<HashMap<String, u64>, Diagnostic>,
-        ) -> Self {
+        fn with_resource_counts(mut self, result: Result<HashMap<String, u64>, Diagnostic>) -> Self {
             self.resource_counts_result = Some(result);
             self
         }
@@ -541,11 +526,7 @@ mod tests {
             unimplemented!("delete_project_dump not used in resource-type action tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             unimplemented!("list_projects not used in resource-type action tests")
         }
 
@@ -595,12 +576,11 @@ mod tests {
         ) -> Result<crate::model::ResourceTypeDetail, Diagnostic> {
             *self.describe_resource_type_calls.borrow_mut() += 1;
             *self.describe_resource_type_iri.borrow_mut() = Some(data_model_iri.to_string());
-            *self.describe_resource_type_resource_type.borrow_mut() =
-                Some(resource_type.to_string());
+            *self.describe_resource_type_resource_type.borrow_mut() = Some(resource_type.to_string());
             *self.describe_resource_type_token.borrow_mut() = Some(token.map(str::to_owned));
-            self.describe_resource_type_result.clone().expect(
-                "describe_resource_type_result must be set when describe_resource_type is called",
-            )
+            self.describe_resource_type_result
+                .clone()
+                .expect("describe_resource_type_result must be set when describe_resource_type is called")
         }
 
         fn data_model_structure(
@@ -701,51 +681,27 @@ mod tests {
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn project_dump(
-            &mut self,
-            _outcome: &DumpOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_dump(&mut self, _outcome: &DumpOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -757,11 +713,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -773,11 +725,7 @@ mod tests {
             Ok(())
         }
 
-        fn data_models(
-            &mut self,
-            _view: &DataModelListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn data_models(&mut self, _view: &DataModelListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -789,11 +737,7 @@ mod tests {
             Ok(())
         }
 
-        fn resource_types(
-            &mut self,
-            view: &ResourceTypeListView,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.resource_types_view = Some(view.clone());
             self.resource_types_meta = Some(meta.clone());
             Ok(())
@@ -855,9 +799,7 @@ mod tests {
     const SERVER: &str = "https://api.test.dasch.swiss";
 
     fn make_cfg() -> Config {
-        Config {
-            server: SERVER.to_string(),
-        }
+        Config { server: SERVER.to_string() }
     }
 
     fn make_project_ref() -> ProjectRef {
@@ -956,20 +898,14 @@ mod tests {
 
         assert!(result.is_ok(), "expected Ok, got {:?}", result);
 
-        let view = renderer
-            .resource_types_view
-            .expect("resource_types must have been called");
+        let view = renderer.resource_types_view.expect("resource_types must have been called");
         // Sorted: Apple < Zebra
         assert_eq!(view.items.len(), 2);
         assert_eq!(view.items[0].name, "Apple");
         assert_eq!(view.items[1].name, "Zebra");
         // All non-builtin
         for item in &view.items {
-            assert!(
-                !item.is_builtin,
-                "'{}' should be is_builtin=false",
-                item.name
-            );
+            assert!(!item.is_builtin, "'{}' should be is_builtin=false", item.name);
         }
         assert_eq!(view.total, 2);
         assert!(view.filter.is_none());
@@ -991,9 +927,7 @@ mod tests {
         args.include_builtins = true;
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .resource_types_view
-            .expect("resource_types must have been called");
+        let view = renderer.resource_types_view.expect("resource_types must have been called");
 
         // 1 project + 4 builtins = 5
         assert_eq!(view.total, 5, "total must include builtins before filter");
@@ -1003,16 +937,8 @@ mod tests {
         let builtin_names = ["AudioSegment", "LinkObj", "Region", "VideoSegment"];
         for name in &builtin_names {
             let found = view.items.iter().find(|rt| rt.name == *name);
-            assert!(
-                found.is_some(),
-                "builtin '{}' should be present with --include-builtins",
-                name
-            );
-            assert!(
-                found.unwrap().is_builtin,
-                "builtin '{}' should have is_builtin=true",
-                name
-            );
+            assert!(found.is_some(), "builtin '{}' should be present with --include-builtins", name);
+            assert!(found.unwrap().is_builtin, "builtin '{}' should have is_builtin=true", name);
         }
 
         // Project type has is_builtin=false
@@ -1022,16 +948,7 @@ mod tests {
 
         // Sorted: AudioSegment, LinkObj, Manuscript, Region, VideoSegment
         let names: Vec<&str> = view.items.iter().map(|rt| rt.name.as_str()).collect();
-        assert_eq!(
-            names,
-            vec![
-                "AudioSegment",
-                "LinkObj",
-                "Manuscript",
-                "Region",
-                "VideoSegment"
-            ]
-        );
+        assert_eq!(names, vec!["AudioSegment", "LinkObj", "Manuscript", "Region", "VideoSegment"]);
     }
 
     /// --filter narrows items; total reflects pre-filter/post-builtins count.
@@ -1053,9 +970,7 @@ mod tests {
         args.filter = Some("let".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .resource_types_view
-            .expect("resource_types must have been called");
+        let view = renderer.resource_types_view.expect("resource_types must have been called");
 
         // total = 3 project + 4 builtins = 7, before filter
         assert_eq!(view.total, 7, "total must be post-builtins pre-filter");
@@ -1171,9 +1086,7 @@ mod tests {
         let args = make_args(Some("0801"), Some("beol"));
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .resource_types_view
-            .expect("resource_types must have been called");
+        let view = renderer.resource_types_view.expect("resource_types must have been called");
         assert!(view.items.is_empty(), "items should be empty");
         assert_eq!(view.total, 0);
         assert_eq!(
@@ -1248,15 +1161,9 @@ mod tests {
 
         let meta = renderer.resource_types_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated via DSP_TOKEN");
-        assert_eq!(
-            client.list_data_models_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
+        assert_eq!(client.list_data_models_token(), Some(Some("env-jwt-token".to_string())));
         // The same token must reach describe_data_model, not just list_data_models.
-        assert_eq!(
-            client.describe_data_model_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
+        assert_eq!(client.describe_data_model_token(), Some(Some("env-jwt-token".to_string())));
     }
 
     /// Cache token set → auth_state is "authenticated as <user>".
@@ -1273,22 +1180,11 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"), Some("beol"));
-        run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
         let meta = renderer.resource_types_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated as user@example.com");
-        assert_eq!(
-            client.list_data_models_token(),
-            Some(Some("cache-token-xyz".to_string()))
-        );
+        assert_eq!(client.list_data_models_token(), Some(Some("cache-token-xyz".to_string())));
     }
 
     /// Corrupt/missing cache → falls back to anonymous, never returns Err.
@@ -1304,19 +1200,8 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"), Some("beol"));
-        let result = run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&bad_path),
-        );
-        assert!(
-            result.is_ok(),
-            "corrupt/missing cache must not fail: {:?}",
-            result
-        );
+        let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&bad_path));
+        assert!(result.is_ok(), "corrupt/missing cache must not fail: {:?}", result);
 
         let meta = renderer.resource_types_meta.expect("meta must be present");
         assert_eq!(
@@ -1338,11 +1223,7 @@ mod tests {
         let args = make_args(Some("0801"), Some(dm_iri));
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "exact IRI match must succeed, got {:?}",
-            result
-        );
+        assert!(result.is_ok(), "exact IRI match must succeed, got {:?}", result);
         let view = renderer.resource_types_view.expect("must have been called");
         assert_eq!(view.data_model, "beol");
     }
@@ -1359,11 +1240,7 @@ mod tests {
         let args = make_args(Some("0801"), Some("BEOL"));
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "case-insensitive name match must succeed, got {:?}",
-            result
-        );
+        assert!(result.is_ok(), "case-insensitive name match must succeed, got {:?}", result);
         let view = renderer.resource_types_view.expect("must have been called");
         assert_eq!(view.data_model, "beol");
     }
@@ -1524,10 +1401,7 @@ mod tests {
         );
         let view = renderer.resource_types_view.expect("must have been called");
         for item in &view.items {
-            assert_eq!(
-                item.count, None,
-                "count must be None when --count is omitted"
-            );
+            assert_eq!(item.count, None, "count must be None when --count is omitted");
         }
     }
 
@@ -1547,9 +1421,7 @@ mod tests {
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let meta = renderer.resource_types_meta.expect("meta must be present");
-        let caveat = meta
-            .count_caveat
-            .expect("count_caveat must be Some when --count is used");
+        let caveat = meta.count_caveat.expect("count_caveat must be Some when --count is used");
         assert!(
             caveat.contains("permitted"),
             "count_caveat should disclose permission/visibility limits, got: {caveat}"
@@ -1570,10 +1442,7 @@ mod tests {
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let meta = renderer.resource_types_meta.expect("meta must be present");
-        assert_eq!(
-            meta.count_caveat, None,
-            "count_caveat must be None when --count is not used"
-        );
+        assert_eq!(meta.count_caveat, None, "count_caveat must be None when --count is not used");
     }
 
     // ── describe helpers ──────────────────────────────────────────────────────
@@ -1797,9 +1666,7 @@ mod tests {
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
             .with_list_data_models(Ok(vec![make_data_model("beol", None)]))
-            .with_describe_resource_type(Err(Diagnostic::NotFound(
-                "resource type not found".to_string(),
-            )));
+            .with_describe_resource_type(Err(Diagnostic::NotFound("resource type not found".to_string())));
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("NonExistentType"));
@@ -1835,8 +1702,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let mut args = make_describe_args(Some("0801"), Some("beol"), Some("Manuscript"));
         args.include_builtins = false;
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let rendered = renderer
             .resource_type_describe_detail
@@ -1865,8 +1731,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let mut args = make_describe_args(Some("0801"), Some("beol"), Some("Manuscript"));
         args.include_builtins = true;
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let rendered = renderer
             .resource_type_describe_detail
@@ -1912,8 +1777,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("letter"));
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let rendered = renderer
             .resource_type_describe_detail
@@ -1929,8 +1793,7 @@ mod tests {
     fn test_describe_cross_dm_field_source_tag_preserved() {
         let cross_dm_field = Field {
             name: "isPartOfCollection".to_string(),
-            iri: "http://api.test.dasch.swiss/ontology/0801/biblio/v2#isPartOfCollection"
-                .to_string(),
+            iri: "http://api.test.dasch.swiss/ontology/0801/biblio/v2#isPartOfCollection".to_string(),
             label: Some("is part of".to_string()),
             value_type: ValueType::Link,
             link_target: Some("Collection".to_string()),
@@ -1957,8 +1820,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("manuscript"));
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let rendered = renderer
             .resource_type_describe_detail
@@ -1980,12 +1842,9 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("Manuscript"));
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let meta = renderer
-            .resource_type_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_type_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "anonymous");
         // Token passed to all three client calls must be None
         assert_eq!(client.list_data_models_token(), Some(None));
@@ -2013,20 +1872,12 @@ mod tests {
         )
         .expect("expected Ok");
 
-        let meta = renderer
-            .resource_type_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_type_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated via DSP_TOKEN");
         // Token must be forwarded to the two token-accepting calls.
         // resolve_project is called but takes no token (no assertion needed).
-        assert_eq!(
-            client.list_data_models_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
-        assert_eq!(
-            client.describe_resource_type_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
+        assert_eq!(client.list_data_models_token(), Some(Some("env-jwt-token".to_string())));
+        assert_eq!(client.describe_resource_type_token(), Some(Some("env-jwt-token".to_string())));
     }
 
     /// Cache token set → auth_state is "authenticated as <user>".
@@ -2044,28 +1895,12 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("Manuscript"));
-        run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
-        let meta = renderer
-            .resource_type_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_type_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated as user@example.com");
-        assert_eq!(
-            client.list_data_models_token(),
-            Some(Some("cache-token-xyz".to_string()))
-        );
-        assert_eq!(
-            client.describe_resource_type_token(),
-            Some(Some("cache-token-xyz".to_string()))
-        );
+        assert_eq!(client.list_data_models_token(), Some(Some("cache-token-xyz".to_string())));
+        assert_eq!(client.describe_resource_type_token(), Some(Some("cache-token-xyz".to_string())));
     }
 
     /// Token is forwarded to the two token-accepting calls: list_data_models AND
@@ -2123,23 +1958,10 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("Manuscript"));
-        let result = run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&bad_path),
-        );
-        assert!(
-            result.is_ok(),
-            "corrupt/missing cache must not fail: {:?}",
-            result
-        );
+        let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&bad_path));
+        assert!(result.is_ok(), "corrupt/missing cache must not fail: {:?}", result);
 
-        let meta = renderer
-            .resource_type_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_type_describe_meta.expect("meta must be present");
         assert_eq!(
             meta.auth_state, "anonymous",
             "corrupt cache + no env token must fall back to anonymous"
@@ -2158,8 +1980,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("Manuscript"));
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         assert_eq!(
             client.describe_resource_type_iri().as_deref(),
@@ -2187,8 +2008,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let mut args = make_describe_args(Some("0801"), Some("beol"), Some("Page"));
         args.count = true;
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let rendered = renderer
             .resource_type_describe_detail
@@ -2240,8 +2060,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let mut args = make_describe_args(Some("0801"), Some("beol"), Some("Page"));
         args.count = true;
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         assert_eq!(
             client.resource_counts_calls(),
@@ -2263,8 +2082,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"), Some("Page")); // count: false
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         assert_eq!(
             client.resource_counts_calls(),
@@ -2275,9 +2093,7 @@ mod tests {
             .resource_type_describe_detail
             .expect("resource_type_describe must have been called");
         assert_eq!(rendered.count, None);
-        let meta = renderer
-            .resource_type_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_type_describe_meta.expect("meta must be present");
         assert_eq!(meta.count_caveat, None);
     }
 
@@ -2294,15 +2110,10 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let mut args = make_describe_args(Some("0801"), Some("beol"), Some("Page"));
         args.count = true;
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let meta = renderer
-            .resource_type_describe_meta
-            .expect("meta must be present");
-        let caveat = meta
-            .count_caveat
-            .expect("count_caveat must be Some when --count is used");
+        let meta = renderer.resource_type_describe_meta.expect("meta must be present");
+        let caveat = meta.count_caveat.expect("count_caveat must be Some when --count is used");
         assert!(
             caveat.contains("permitted"),
             "count_caveat should disclose permission/visibility limits, got: {caveat}"

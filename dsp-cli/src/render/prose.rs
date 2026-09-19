@@ -12,16 +12,14 @@ use chrono::{DateTime, Utc};
 
 use crate::diagnostic::Diagnostic;
 use crate::model::{DataModelDetail, DataModelStructure, ProjectDetail, VocabularyDetail};
-use crate::render::auth::{
-    AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-};
+use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
 use crate::render::dump::{DumpDeleteOutcome, DumpOutcome};
 use crate::render::table::render_prose_footer;
 use crate::render::value::render_value_content;
 use crate::render::vocabulary::{flatten_vocabulary_detail, join_labels_prose};
 use crate::render::{
-    DataModelListView, MetaContext, ProjectListView, Renderer, ResourceListPagination,
-    ResourceListView, ResourceTypeListView, VocabularyListView,
+    DataModelListView, MetaContext, ProjectListView, Renderer, ResourceListPagination, ResourceListView,
+    ResourceTypeListView, VocabularyListView,
 };
 use crate::util::text::{html_to_text, strip_control_chars};
 
@@ -55,9 +53,7 @@ pub struct ProseRenderer {
 impl ProseRenderer {
     /// Creates a renderer writing to stdout.
     pub fn new() -> Self {
-        Self {
-            out: Box::new(io::stdout()),
-        }
+        Self { out: Box::new(io::stdout()) }
     }
 
     /// Creates a renderer writing to an arbitrary `Write` sink (used in tests).
@@ -78,11 +74,7 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn auth_login(
-        &mut self,
-        outcome: &AuthLoginOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_login(&mut self, outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         match &outcome.expires_at {
             Some(exp) => writeln!(
                 self.out,
@@ -91,47 +83,24 @@ impl Renderer for ProseRenderer {
                 outcome.user,
                 exp.format("%Y-%m-%d %H:%M UTC"),
             )?,
-            None => writeln!(
-                self.out,
-                "Logged in to {} as {}.",
-                outcome.server, outcome.user,
-            )?,
+            None => writeln!(self.out, "Logged in to {} as {}.", outcome.server, outcome.user,)?,
         }
         Ok(())
     }
 
-    fn auth_status(
-        &mut self,
-        outcome: &AuthStatusOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_status(&mut self, outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         match outcome {
-            AuthStatusOutcome::LoggedIn {
-                server,
-                user,
-                expires_at,
-                expired,
-            } => {
-                let user_str = user
-                    .as_deref()
-                    .map(|u| format!(" as {u}"))
-                    .unwrap_or_default();
+            AuthStatusOutcome::LoggedIn { server, user, expires_at, expired } => {
+                let user_str = user.as_deref().map(|u| format!(" as {u}")).unwrap_or_default();
                 let expiry_str = format_expiry_clause(*expires_at, *expired);
                 writeln!(self.out, "Logged in to {server}{user_str}.{expiry_str}")?;
             }
-            AuthStatusOutcome::AuthenticatedViaEnv {
-                server,
-                expires_at,
-                expired,
-            } => {
+            AuthStatusOutcome::AuthenticatedViaEnv { server, expires_at, expired } => {
                 let expiry_str = match expires_at {
                     None => " Token expiry unknown.".to_string(),
                     Some(_) => format_expiry_clause(*expires_at, *expired),
                 };
-                writeln!(
-                    self.out,
-                    "Authenticated to {server} via DSP_TOKEN.{expiry_str}"
-                )?;
+                writeln!(self.out, "Authenticated to {server} via DSP_TOKEN.{expiry_str}")?;
             }
             AuthStatusOutcome::NotLoggedIn { server } => {
                 writeln!(self.out, "Not logged in to {server}.")?;
@@ -140,33 +109,17 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn auth_logout(
-        &mut self,
-        outcome: &AuthLogoutOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_logout(&mut self, outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         if outcome.was_cached {
             writeln!(self.out, "Logged out of {}.", outcome.server)?;
         } else {
-            writeln!(
-                self.out,
-                "Not logged in to {} (nothing to remove).",
-                outcome.server
-            )?;
+            writeln!(self.out, "Not logged in to {} (nothing to remove).", outcome.server)?;
         }
         Ok(())
     }
 
-    fn auth_set_token(
-        &mut self,
-        outcome: &AuthSetTokenOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
-        let user_clause = outcome
-            .user
-            .as_deref()
-            .map(|u| format!(" as {u}"))
-            .unwrap_or_default();
+    fn auth_set_token(&mut self, outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
+        let user_clause = outcome.user.as_deref().map(|u| format!(" as {u}")).unwrap_or_default();
         let expiry_clause = match outcome.expires_at {
             Some(exp) => format!(" Token expires {}.", exp.format("%Y-%m-%d %H:%M UTC")),
             None => String::new(),
@@ -179,11 +132,7 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn project_dump(
-        &mut self,
-        outcome: &DumpOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_dump(&mut self, outcome: &DumpOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         if outcome.reused {
             // Adopt path: announce the existing dump with its creation timestamp
             // if known, then the local file line.
@@ -196,23 +145,14 @@ impl Renderer for ProseRenderer {
                 None => writeln!(self.out, "Downloaded existing dump.")?,
             }
         }
-        writeln!(
-            self.out,
-            "Wrote {} ({} bytes).",
-            outcome.path.display(),
-            outcome.bytes,
-        )?;
+        writeln!(self.out, "Wrote {} ({} bytes).", outcome.path.display(), outcome.bytes,)?;
         if outcome.cleaned_up {
             writeln!(self.out, "Cleaned up the server-side dump.")?;
         }
         Ok(())
     }
 
-    fn project_dump_deleted(
-        &mut self,
-        outcome: &DumpDeleteOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_dump_deleted(&mut self, outcome: &DumpDeleteOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         if outcome.deleted {
             writeln!(self.out, "Removed the project's dump.")?;
         } else if let Some(ref note) = outcome.note {
@@ -236,18 +176,8 @@ impl Renderer for ProseRenderer {
         writeln!(self.out)?;
 
         // Compute column widths for alignment.
-        let sc_w = view
-            .items
-            .iter()
-            .map(|p| p.shortcode.len())
-            .max()
-            .unwrap_or(0);
-        let sn_w = view
-            .items
-            .iter()
-            .map(|p| p.shortname.len())
-            .max()
-            .unwrap_or(0);
+        let sc_w = view.items.iter().map(|p| p.shortcode.len()).max().unwrap_or(0);
+        let sn_w = view.items.iter().map(|p| p.shortname.len()).max().unwrap_or(0);
         let ln_w = view
             .items
             .iter()
@@ -283,18 +213,10 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn project_describe(
-        &mut self,
-        project: &ProjectDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Header: "Project: <shortname> (<shortcode>)" — always this shape.
         // Short identifiers form the title; the longname becomes a labeled field below.
-        writeln!(
-            self.out,
-            "Project: {} ({})",
-            project.shortname, project.shortcode
-        )?;
+        writeln!(self.out, "Project: {} ({})", project.shortname, project.shortcode)?;
 
         // Label/value block — 2-space indent, values aligned to a common column.
         // "  Keywords:   " is the longest label (13 chars incl. colon + spaces).
@@ -317,11 +239,7 @@ impl Renderer for ProseRenderer {
         if n == 0 {
             writeln!(self.out, "  Data-models (0)")?;
         } else {
-            let names: Vec<&str> = project
-                .data_models
-                .iter()
-                .map(|dm| dm.name.as_str())
-                .collect();
+            let names: Vec<&str> = project.data_models.iter().map(|dm| dm.name.as_str()).collect();
             writeln!(self.out, "  Data-models ({n}): {}", names.join(", "))?;
         }
 
@@ -367,17 +285,13 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn data_model_describe(
-        &mut self,
-        detail: &DataModelDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Header: "Data-model: {name}"
         writeln!(self.out, "Data-model: {}", detail.name)?;
 
         // Label/value block — 2-space indent, values aligned to a common column.
-        // Longest label key is "Last-modified:" (14 chars incl. colon + 2 trailing spaces = 16 wide).
-        // Label: omit when None; IRI: always; Last-modified: omit when None.
+        // Longest label key is "Last-modified:" (14 chars incl. colon + 2 trailing spaces = 16
+        // wide). Label: omit when None; IRI: always; Last-modified: omit when None.
         if let Some(ref lbl) = detail.label {
             writeln!(self.out, "  Label:          {lbl}")?;
         }
@@ -395,12 +309,7 @@ impl Renderer for ProseRenderer {
             writeln!(self.out)?;
             writeln!(self.out, "  Resource-types ({n}):")?;
             // Compute max name width for alignment.
-            let name_w = detail
-                .resource_types
-                .iter()
-                .map(|rt| rt.name.len())
-                .max()
-                .unwrap_or(0);
+            let name_w = detail.resource_types.iter().map(|rt| rt.name.len()).max().unwrap_or(0);
             for rt in &detail.resource_types {
                 let label = rt.label.as_deref().unwrap_or("");
                 writeln!(self.out, "    {:<name_w$}  {label}", rt.name)?;
@@ -411,26 +320,14 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn data_models(
-        &mut self,
-        view: &DataModelListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         let n = view.items.len();
         let has_builtins = view.items.iter().any(|d| d.is_builtin);
-        let builtin_suffix = if has_builtins {
-            ", incl. built-ins"
-        } else {
-            ""
-        };
+        let builtin_suffix = if has_builtins { ", incl. built-ins" } else { "" };
 
         // Header line: with or without filter.
         match &view.filter {
-            None => writeln!(
-                self.out,
-                "data-models on {} ({n}){builtin_suffix}:",
-                meta.server_label,
-            )?,
+            None => writeln!(self.out, "data-models on {} ({n}){builtin_suffix}:", meta.server_label,)?,
             Some(f) => writeln!(
                 self.out,
                 "data-models on {} ({n} of {} matching \"{f}\"){builtin_suffix}:",
@@ -469,10 +366,7 @@ impl Renderer for ProseRenderer {
 
             // date: YYYY-MM-DD prefix via split_once('T'), empty when None.
             let date_str: String = match &item.last_modified {
-                Some(s) => s
-                    .split_once('T')
-                    .map(|(d, _)| d.to_string())
-                    .unwrap_or_else(|| s.clone()),
+                Some(s) => s.split_once('T').map(|(d, _)| d.to_string()).unwrap_or_else(|| s.clone()),
                 None => String::new(),
             };
 
@@ -487,19 +381,11 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn resource_types(
-        &mut self,
-        view: &ResourceTypeListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         let n = view.items.len();
         let has_builtins = view.items.iter().any(|rt| rt.is_builtin);
         let has_counts = view.items.iter().any(|rt| rt.count.is_some());
-        let builtin_suffix = if has_builtins {
-            ", incl. built-ins"
-        } else {
-            ""
-        };
+        let builtin_suffix = if has_builtins { ", incl. built-ins" } else { "" };
 
         // Header line: with or without filter.
         match &view.filter {
@@ -558,11 +444,7 @@ impl Renderer for ProseRenderer {
                 let label = item.label.as_deref().unwrap_or("");
                 // Built-in rows get an explicit trailing marker; project rows get nothing.
                 if item.is_builtin {
-                    writeln!(
-                        self.out,
-                        "  {:<name_w$}  {:<label_w$}  (built-in)",
-                        item.name, label,
-                    )?;
+                    writeln!(self.out, "  {:<name_w$}  {:<label_w$}  (built-in)", item.name, label,)?;
                 } else {
                     writeln!(self.out, "  {:<name_w$}  {label}", item.name)?;
                 }
@@ -590,11 +472,7 @@ impl Renderer for ProseRenderer {
             writeln!(self.out, "  Label:          {lbl}")?;
         }
         if !detail.super_types.is_empty() {
-            writeln!(
-                self.out,
-                "  Extends:        {}",
-                detail.super_types.join(", ")
-            )?;
+            writeln!(self.out, "  Extends:        {}", detail.super_types.join(", "))?;
         }
         if let Some(ref repr) = detail.representation {
             writeln!(self.out, "  Representation: {repr}")?;
@@ -629,19 +507,9 @@ impl Renderer for ProseRenderer {
                 .collect();
 
             // Compute column widths.
-            let name_w = detail
-                .fields
-                .iter()
-                .map(|f| f.name.len())
-                .max()
-                .unwrap_or(0);
+            let name_w = detail.fields.iter().map(|f| f.name.len()).max().unwrap_or(0);
             let vtype_w = vtype_strs.iter().map(|s| s.len()).max().unwrap_or(0);
-            let card_w = detail
-                .fields
-                .iter()
-                .map(|f| f.cardinality.to_string().len())
-                .max()
-                .unwrap_or(0);
+            let card_w = detail.fields.iter().map(|f| f.cardinality.to_string().len()).max().unwrap_or(0);
 
             for (field, vtype_str) in detail.fields.iter().zip(vtype_strs.iter()) {
                 let label = field.label.as_deref().unwrap_or("");
@@ -674,33 +542,20 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn data_model_structure(
-        &mut self,
-        structure: &DataModelStructure,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_model_structure(&mut self, structure: &DataModelStructure, meta: &MetaContext) -> Result<(), Diagnostic> {
         use crate::model::RelationKind;
 
         // Header: "Structure: <dm>  (<n> relations)"
         let n = structure.relations.len();
         let plural = if n == 1 { "relation" } else { "relations" };
-        writeln!(
-            self.out,
-            "Structure: {}  ({n} {plural})",
-            structure.data_model
-        )?;
+        writeln!(self.out, "Structure: {}  ({n} {plural})", structure.data_model)?;
 
         if n > 0 {
             writeln!(self.out)?;
 
             // Compute column widths.
             // source_w: max source name length.
-            let source_w = structure
-                .relations
-                .iter()
-                .map(|r| r.source.len())
-                .max()
-                .unwrap_or(0);
+            let source_w = structure.relations.iter().map(|r| r.source.len()).max().unwrap_or(0);
 
             // target_w: max of (target + optional " [to <dm>]") length.
             let target_w = structure
@@ -708,9 +563,7 @@ impl Renderer for ProseRenderer {
                 .iter()
                 .map(|r| {
                     let tag_len = match &r.target_data_model {
-                        Some(dm) if dm != &structure.data_model => {
-                            " [to ".len() + dm.len() + "]".len()
-                        }
+                        Some(dm) if dm != &structure.data_model => " [to ".len() + dm.len() + "]".len(),
                         _ => 0,
                     };
                     r.target.len() + tag_len
@@ -779,11 +632,7 @@ impl Renderer for ProseRenderer {
             // Sanitise labels before computing the alignment width, so padding
             // stays correct when a label contains control characters (stripping
             // shortens the byte length the `{:<label_w$}` pad relies on).
-            let labels: Vec<String> = view
-                .items
-                .iter()
-                .map(|r| strip_control_chars(&r.label))
-                .collect();
+            let labels: Vec<String> = view.items.iter().map(|r| strip_control_chars(&r.label)).collect();
             let label_w = labels.iter().map(|l| l.len()).max().unwrap_or(0);
 
             for (item, label) in view.items.iter().zip(&labels) {
@@ -792,16 +641,9 @@ impl Renderer for ProseRenderer {
         }
 
         // "more results available" hint — only in SinglePage mode when may_have_more.
-        if let ResourceListPagination::SinglePage {
-            may_have_more: true,
-            ..
-        } = view.pagination
-        {
+        if let ResourceListPagination::SinglePage { may_have_more: true, .. } = view.pagination {
             writeln!(self.out)?;
-            writeln!(
-                self.out,
-                "  more results available (use --all to fetch all pages)"
-            )?;
+            writeln!(self.out, "  more results available (use --all to fetch all pages)")?;
         }
 
         render_prose_footer(&mut *self.out, meta)?;
@@ -855,11 +697,7 @@ impl Renderer for ProseRenderer {
                     // Field header: "<label> (<name>)" when label is Some, else "<name>".
                     let header = match &fv.label {
                         Some(lbl) => {
-                            format!(
-                                "{} ({})",
-                                strip_control_chars(lbl),
-                                strip_control_chars(&fv.name)
-                            )
+                            format!("{} ({})", strip_control_chars(lbl), strip_control_chars(&fv.name))
                         }
                         None => strip_control_chars(&fv.name),
                     };
@@ -880,11 +718,7 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn vocabularies(
-        &mut self,
-        view: &VocabularyListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn vocabularies(&mut self, view: &VocabularyListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Header line: with or without filter (mirrors `projects`/`resource_types`).
         let n = view.items.len();
         match &view.filter {
@@ -912,10 +746,7 @@ impl Renderer for ProseRenderer {
             {
                 let node_word = if nodes == 1 { "node" } else { "nodes" };
                 let level_word = if depth == 1 { "level" } else { "levels" };
-                write!(
-                    self.out,
-                    "  \u{b7} {nodes} {node_word} \u{b7} {depth} {level_word}"
-                )?;
+                write!(self.out, "  \u{b7} {nodes} {node_word} \u{b7} {depth} {level_word}")?;
             }
             writeln!(self.out)?;
         }
@@ -924,11 +755,7 @@ impl Renderer for ProseRenderer {
         Ok(())
     }
 
-    fn vocabulary_describe(
-        &mut self,
-        detail: &VocabularyDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn vocabulary_describe(&mut self, detail: &VocabularyDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         let root = &detail.tree.root;
         let root_name = strip_control_chars(root.name.as_deref().unwrap_or(""));
         let root_labels = strip_control_chars(&join_labels_prose(&root.labels));
@@ -940,11 +767,7 @@ impl Renderer for ProseRenderer {
         // avoids a second flattening pass (plan 034 Step 3).
         let rows = flatten_vocabulary_detail(detail);
 
-        let node_word = if detail.node_count == 1 {
-            "node"
-        } else {
-            "nodes"
-        };
+        let node_word = if detail.node_count == 1 { "node" } else { "nodes" };
         let level_word = if detail.depth == 1 { "level" } else { "levels" };
         write!(
             self.out,
@@ -972,8 +795,7 @@ impl Renderer for ProseRenderer {
         for node in &rows {
             let indent = "  ".repeat(node.depth.saturating_sub(base_depth) + 1);
             let labels = strip_control_chars(&join_labels_prose(&node.header.labels));
-            let marker = if detail.tree.requested_node.as_deref() == Some(node.header.iri.as_str())
-            {
+            let marker = if detail.tree.requested_node.as_deref() == Some(node.header.iri.as_str()) {
                 "   \u{2190}"
             } else {
                 ""
@@ -990,9 +812,8 @@ impl Renderer for ProseRenderer {
 mod tests {
     use super::*;
     use crate::model::{
-        Cardinality, DataModel, DataModelDetail, DataModelSummary, Field, Project,
-        ProjectDescription, ProjectDetail, ProjectStatus, Representation, ResourceType,
-        ResourceTypeDetail, ResourceTypeSummary, ValueType,
+        Cardinality, DataModel, DataModelDetail, DataModelSummary, Field, Project, ProjectDescription, ProjectDetail,
+        ProjectStatus, Representation, ResourceType, ResourceTypeDetail, ResourceTypeSummary, ValueType,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -1030,11 +851,7 @@ mod tests {
     fn projects_prose_no_filter() {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
-        let view = ProjectListView {
-            items: make_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = ProjectListView { items: make_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
@@ -1060,11 +877,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let items = vec![make_fixture().remove(0)]; // just the "anything" project
-        let view = ProjectListView {
-            items,
-            total: 3,
-            filter: Some("any".to_string()),
-        };
+        let view = ProjectListView { items, total: 3, filter: Some("any".to_string()) };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
@@ -1077,11 +890,7 @@ mod tests {
         // Prose writes the disclosure footer to stdout (not stderr).
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
-        let view = ProjectListView {
-            items: vec![],
-            total: 0,
-            filter: None,
-        };
+        let view = ProjectListView { items: vec![], total: 0, filter: None };
         let meta = make_meta("authenticated as alice", "https://api.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
@@ -1127,9 +936,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "api.dasch.swiss");
-        renderer
-            .project_describe(&make_beol_detail(), &meta)
-            .unwrap();
+        renderer.project_describe(&make_beol_detail(), &meta).unwrap();
 
         let s = out.string();
         // Header: shortname (shortcode) — new layout B
@@ -1144,14 +951,8 @@ mod tests {
         assert!(s.contains("Data-models (4): beol, biblio, leibniz, newton"));
         // Description: plain text — no raw HTML tags, language prefix present
         assert!(s.contains("[en] BEOL"));
-        assert!(
-            !s.contains("<b>"),
-            "description must not contain raw <b> tags"
-        );
-        assert!(
-            !s.contains("</b>"),
-            "description must not contain raw </b> tags"
-        );
+        assert!(!s.contains("<b>"), "description must not contain raw <b> tags");
+        assert!(!s.contains("</b>"), "description must not contain raw </b> tags");
         // ADR-0007 footer
         assert!(s.contains("[anonymous on api.dasch.swiss]"));
     }
@@ -1168,10 +969,7 @@ mod tests {
         let s = out.string();
         // Header is shortname (shortcode); no Name: line
         assert!(s.contains("Project: beol (0801)"));
-        assert!(
-            !s.contains("Name:"),
-            "Name: line must be absent when longname is None"
-        );
+        assert!(!s.contains("Name:"), "Name: line must be absent when longname is None");
     }
 
     #[test]
@@ -1385,11 +1183,7 @@ mod tests {
     fn data_models_prose_no_filter() {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
-        let view = DataModelListView {
-            items: make_data_model_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = DataModelListView { items: make_data_model_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.data_models(&view, &meta).unwrap();
 
@@ -1402,14 +1196,9 @@ mod tests {
         // ADR-0007 footer on stdout
         assert!(s.contains("[anonymous on https://api.test.dasch.swiss]"));
         // beol row: label present + date (date portion only)
-        assert!(
-            s.contains("beol") && s.contains("The BEOL data-model") && s.contains("2024-05-27")
-        );
+        assert!(s.contains("beol") && s.contains("The BEOL data-model") && s.contains("2024-05-27"));
         // Full RFC3339 timestamp must NOT appear in prose
-        assert!(
-            !s.contains("T13:43:26"),
-            "prose must show only the date portion"
-        );
+        assert!(!s.contains("T13:43:26"), "prose must show only the date portion");
         // biblio row: no label, not builtin, so empty label slot
         assert!(s.contains("biblio"));
         // knora-api row: no label, is_builtin → "(built-in)" marker
@@ -1423,11 +1212,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let items = vec![make_data_model_fixture().remove(0)]; // just beol
-        let view = DataModelListView {
-            items,
-            total: 3,
-            filter: Some("beol".to_string()),
-        };
+        let view = DataModelListView { items, total: 3, filter: Some("beol".to_string()) };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.data_models(&view, &meta).unwrap();
 
@@ -1472,10 +1257,7 @@ mod tests {
 
         let s = out.string();
         // Header must end with "(2):" — without the ", incl. built-ins" suffix.
-        let header_line = s
-            .lines()
-            .next()
-            .expect("output must have at least one line");
+        let header_line = s.lines().next().expect("output must have at least one line");
         assert!(
             header_line.ends_with("(2):"),
             "header must end with '(2):' when there are no builtins; got: {header_line:?}"
@@ -1548,9 +1330,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "api.dasch.swiss");
-        renderer
-            .data_model_describe(&make_beol_dm_detail(), &meta)
-            .unwrap();
+        renderer.data_model_describe(&make_beol_dm_detail(), &meta).unwrap();
 
         let s = out.string();
         // Header
@@ -1575,22 +1355,13 @@ mod tests {
             "prose must show only date portion, not full timestamp; got:\n{s}"
         );
         // Resource-types section header
-        assert!(
-            s.contains("Resource-types (3):"),
-            "resource-types header missing; got:\n{s}"
-        );
+        assert!(s.contains("Resource-types (3):"), "resource-types header missing; got:\n{s}");
         // Resource-type rows
         assert!(s.contains("Archive"), "Archive row missing; got:\n{s}");
-        assert!(
-            s.contains("basicLetter"),
-            "basicLetter row missing; got:\n{s}"
-        );
+        assert!(s.contains("basicLetter"), "basicLetter row missing; got:\n{s}");
         assert!(s.contains("Letter"), "Letter label missing; got:\n{s}");
         // ADR-0007 footer
-        assert!(
-            s.contains("[anonymous on api.dasch.swiss]"),
-            "footer missing; got:\n{s}"
-        );
+        assert!(s.contains("[anonymous on api.dasch.swiss]"), "footer missing; got:\n{s}");
         // "None" must never appear
         assert!(!s.contains("None"), "None must not appear; got:\n{s}");
     }
@@ -1625,10 +1396,7 @@ mod tests {
             "Last-modified: line must be absent when last_modified is None; got:\n{s}"
         );
         // IRI still present
-        assert!(
-            s.contains("IRI:"),
-            "IRI line must always be present; got:\n{s}"
-        );
+        assert!(s.contains("IRI:"), "IRI line must always be present; got:\n{s}");
         // None must not appear literally
         assert!(!s.contains("None"), "None must not appear; got:\n{s}");
     }
@@ -1760,28 +1528,18 @@ mod tests {
             is_builtin: true,
             count: None,
         });
-        let view = ResourceTypeListView {
-            items,
-            total: 3,
-            filter: None,
-            data_model: "beol".into(),
-        };
+        let view = ResourceTypeListView { items, total: 3, filter: None, data_model: "beol".into() };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.resource_types(&view, &meta).unwrap();
 
         let s = out.string();
         // Header includes builtin suffix
         assert!(
-            s.contains(
-                "resource-types in beol on https://api.test.dasch.swiss (3), incl. built-ins:"
-            ),
+            s.contains("resource-types in beol on https://api.test.dasch.swiss (3), incl. built-ins:"),
             "header with builtin suffix missing; got:\n{s}"
         );
         // Region row must have (built-in) marker
-        assert!(
-            s.contains("(built-in)"),
-            "(built-in) marker missing on built-in row; got:\n{s}"
-        );
+        assert!(s.contains("(built-in)"), "(built-in) marker missing on built-in row; got:\n{s}");
         // Project rows must NOT have (built-in) marker
         let archive_line = s.lines().find(|l| l.contains("Archive")).unwrap();
         assert!(
@@ -1854,12 +1612,7 @@ mod tests {
             is_builtin: true,
             count: None,
         });
-        let view = ResourceTypeListView {
-            items,
-            total: 3,
-            filter: None,
-            data_model: "beol".into(),
-        };
+        let view = ResourceTypeListView { items, total: 3, filter: None, data_model: "beol".into() };
         let meta = MetaContext {
             server_label: "https://api.test.dasch.swiss".into(),
             auth_state: "anonymous".into(),
@@ -1876,10 +1629,7 @@ mod tests {
             "Archive row must show count 42; got: {archive_line:?}"
         );
         let letter_line = s.lines().find(|l| l.contains("letter")).unwrap();
-        assert!(
-            letter_line.contains('7'),
-            "letter row must show count 7; got: {letter_line:?}"
-        );
+        assert!(letter_line.contains('7'), "letter row must show count 7; got: {letter_line:?}");
         // Built-in row with no count: count cell renders blank, marker still present.
         let region_line = s.lines().find(|l| l.contains("Region")).unwrap();
         assert!(
@@ -1947,26 +1697,15 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.dasch.swiss");
-        renderer
-            .resource_type_describe(&make_manuscript_detail(), &meta)
-            .unwrap();
+        renderer.resource_type_describe(&make_manuscript_detail(), &meta).unwrap();
 
         let s = out.string();
         // Header
-        assert!(
-            s.contains("Resource-type: manuscript"),
-            "header missing; got:\n{s}"
-        );
+        assert!(s.contains("Resource-type: manuscript"), "header missing; got:\n{s}");
         // Label line present
-        assert!(
-            s.contains("Label:          Manuscript"),
-            "label line missing; got:\n{s}"
-        );
+        assert!(s.contains("Label:          Manuscript"), "label line missing; got:\n{s}");
         // Extends line present (non-empty super_types)
-        assert!(
-            s.contains("Extends:        writtenSource"),
-            "Extends line missing; got:\n{s}"
-        );
+        assert!(s.contains("Extends:        writtenSource"), "Extends line missing; got:\n{s}");
         // Representation line present (Some)
         assert!(
             s.contains("Representation: still-image"),
@@ -1978,15 +1717,9 @@ mod tests {
             "IRI line missing; got:\n{s}"
         );
         // Data-model line
-        assert!(
-            s.contains("Data-model:     beol"),
-            "Data-model line missing; got:\n{s}"
-        );
+        assert!(s.contains("Data-model:     beol"), "Data-model line missing; got:\n{s}");
         // Fields header
-        assert!(
-            s.contains("Fields (3):"),
-            "Fields header missing; got:\n{s}"
-        );
+        assert!(s.contains("Fields (3):"), "Fields header missing; got:\n{s}");
         // Title row (own DM — no source tag)
         let title_line = s.lines().find(|l| l.contains("title")).unwrap();
         assert!(
@@ -2004,10 +1737,7 @@ mod tests {
             "link field must show '→ person'; got: {author_line:?}"
         );
         // Cross-DM source tag
-        let coll_line = s
-            .lines()
-            .find(|l| l.contains("isPartOfCollection"))
-            .unwrap();
+        let coll_line = s.lines().find(|l| l.contains("isPartOfCollection")).unwrap();
         assert!(
             coll_line.contains("[from biblio]"),
             "cross-DM field must show [from biblio]; got: {coll_line:?}"
@@ -2046,10 +1776,7 @@ mod tests {
         // Instances line comes right after Data-model line.
         let dm_idx = s.find("Data-model:").expect("Data-model line present");
         let inst_idx = s.find("Instances:").expect("Instances line present");
-        assert!(
-            inst_idx > dm_idx,
-            "Instances line must come after Data-model line"
-        );
+        assert!(inst_idx > dm_idx, "Instances line must come after Data-model line");
         assert!(
             s.contains("counts exclude deleted resources"),
             "footer must carry count_caveat; got:\n{s}"
@@ -2063,9 +1790,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.dasch.swiss");
-        renderer
-            .resource_type_describe(&make_manuscript_detail(), &meta)
-            .unwrap();
+        renderer.resource_type_describe(&make_manuscript_detail(), &meta).unwrap();
 
         let s = out.string();
         assert!(
@@ -2090,10 +1815,7 @@ mod tests {
             "Label: line must be absent when label is None; got:\n{s}"
         );
         // Header still present
-        assert!(
-            s.contains("Resource-type: manuscript"),
-            "header missing; got:\n{s}"
-        );
+        assert!(s.contains("Resource-type: manuscript"), "header missing; got:\n{s}");
         // "None" must not appear
         assert!(!s.contains("None"), "None must not appear; got:\n{s}");
     }
@@ -2117,28 +1839,16 @@ mod tests {
 
         let s = out.string();
         // Zero branch: "Fields (0)" without colon, no rows
-        assert!(
-            s.contains("  Fields (0)"),
-            "zero fields branch missing; got:\n{s}"
-        );
+        assert!(s.contains("  Fields (0)"), "zero fields branch missing; got:\n{s}");
         // Must NOT have a colon after "(0)"
-        let fields_line = s
-            .lines()
-            .find(|l| l.contains("Fields (0)"))
-            .expect("must have Fields line");
+        let fields_line = s.lines().find(|l| l.contains("Fields (0)")).expect("must have Fields line");
         assert!(
             !fields_line.contains("Fields (0):"),
             "zero branch must NOT have a colon; got: {fields_line:?}"
         );
         // No Extends or Representation lines
-        assert!(
-            !s.contains("Extends:"),
-            "Extends line must be absent; got:\n{s}"
-        );
-        assert!(
-            !s.contains("Representation:"),
-            "Representation line must be absent; got:\n{s}"
-        );
+        assert!(!s.contains("Extends:"), "Extends line must be absent; got:\n{s}");
+        assert!(!s.contains("Representation:"), "Representation line must be absent; got:\n{s}");
     }
 
     #[test]
@@ -2240,8 +1950,8 @@ mod tests {
     // ── resource_describe prose values tests ─────────────────────────────────
 
     use crate::model::{
-        DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail,
-        ResourceVisibility, Value, ValueContent,
+        DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail, ResourceVisibility, Value,
+        ValueContent,
     };
 
     fn make_resource_detail_no_values() -> ResourceDetail {
@@ -2267,16 +1977,11 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = ProseRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .resource_describe(&make_resource_detail_no_values(), &meta)
-            .unwrap();
+        renderer.resource_describe(&make_resource_detail_no_values(), &meta).unwrap();
 
         let s = out.string();
         assert!(s.contains("Resource: Test Resource"), "header missing");
-        assert!(
-            !s.contains("Values:"),
-            "Values: section must be absent when values is None"
-        );
+        assert!(!s.contains("Values:"), "Values: section must be absent when values is None");
     }
 
     #[test]
@@ -2320,14 +2025,8 @@ mod tests {
         let s = out.string();
         assert!(s.contains("Values:"), "Values: header missing; got:\n{s}");
         // Field with label: "<label> (<name>)"
-        assert!(
-            s.contains("Title (hasTitle)"),
-            "labelled field header format wrong; got:\n{s}"
-        );
-        assert!(
-            s.contains("Incunabula Page"),
-            "text value missing; got:\n{s}"
-        );
+        assert!(s.contains("Title (hasTitle)"), "labelled field header format wrong; got:\n{s}");
+        assert!(s.contains("Incunabula Page"), "text value missing; got:\n{s}");
         // Field without label: "<name>" only, no parentheses
         let seqnum_line = s.lines().find(|l| l.contains("seqnum")).unwrap();
         assert!(
@@ -2356,20 +2055,14 @@ mod tests {
         renderer.resource_describe(&detail, &meta).unwrap();
 
         let s = out.string();
-        assert!(
-            s.contains("some transcription"),
-            "value line missing; got:\n{s}"
-        );
+        assert!(s.contains("some transcription"), "value line missing; got:\n{s}");
         assert!(
             s.contains("      comment: reading uncertain"),
             "comment line missing or mis-indented; got:\n{s}"
         );
         // Comment line must immediately follow the value line.
         let lines: Vec<&str> = s.lines().collect();
-        let value_idx = lines
-            .iter()
-            .position(|l| l.contains("some transcription"))
-            .unwrap();
+        let value_idx = lines.iter().position(|l| l.contains("some transcription")).unwrap();
         assert_eq!(
             lines[value_idx + 1],
             "      comment: reading uncertain",
@@ -2394,10 +2087,7 @@ mod tests {
         renderer.resource_describe(&detail, &meta).unwrap();
 
         let s = out.string();
-        assert!(
-            s.contains("some transcription"),
-            "value line missing; got:\n{s}"
-        );
+        assert!(s.contains("some transcription"), "value line missing; got:\n{s}");
         assert!(
             !s.contains("comment:"),
             "no comment line must be emitted when value.comment is None; got:\n{s}"
@@ -2440,10 +2130,7 @@ mod tests {
             "degraded link (no label) rendered incorrectly; got:\n{s}"
         );
         // No square brackets around the degraded link
-        let degraded_line = s
-            .lines()
-            .find(|l| l.contains("http://rdfh.ch/0803/book2"))
-            .unwrap();
+        let degraded_line = s.lines().find(|l| l.contains("http://rdfh.ch/0803/book2")).unwrap();
         assert!(
             !degraded_line.contains('['),
             "degraded link must not have brackets; got: {degraded_line:?}"
@@ -2516,10 +2203,7 @@ mod tests {
         detail.values = Some(vec![FieldValues {
             name: "hasDate".into(),
             label: Some("Date".into()),
-            values: vec![
-                ValueContent::Date(single).into(),
-                ValueContent::Date(range).into(),
-            ],
+            values: vec![ValueContent::Date(single).into(), ValueContent::Date(range).into()],
         }]);
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.resource_describe(&detail, &meta).unwrap();
@@ -2579,19 +2263,13 @@ mod tests {
             total: 1,
             filter: None,
             resource_type: "Page".into(),
-            pagination: ResourceListPagination::SinglePage {
-                page: 0,
-                may_have_more: false,
-            },
+            pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
         };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.resources(&view, &meta).unwrap();
 
         let s = out.string();
-        assert!(
-            s.contains("Bad[31mLabel"),
-            "label control chars not stripped; got:\n{s}"
-        );
+        assert!(s.contains("Bad[31mLabel"), "label control chars not stripped; got:\n{s}");
         assert!(
             !s.contains('\u{1b}') && !s.contains('\u{7f}'),
             "control characters leaked into prose output; got:\n{s:?}"

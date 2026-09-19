@@ -7,8 +7,8 @@
 //! - 45 success cells: 9 scenarios × 5 formats
 //!   - `auth_login` (token acquired)
 //!   - `auth_status` logged-in (not expired)
-//!   - `auth_status` cached token (expired) — D3 headline: `_meta.auth` shows
-//!     "authenticated as <user>" while data.state shows "expired"
+//!   - `auth_status` cached token (expired) — D3 headline: `_meta.auth` shows "authenticated as
+//!     <user>" while data.state shows "expired"
 //!   - `auth_status` env-authenticated (DSP_TOKEN, not expired / active)
 //!   - `auth_status` env-authenticated (DSP_TOKEN, expired)
 //!   - `auth_status` env-authenticated (DSP_TOKEN, expiry unknown / None)
@@ -29,11 +29,8 @@
 //! All fixtures use a fixed UTC timestamp for determinism (no `Utc::now()`).
 
 use chrono::{TimeZone, Utc};
-
 use dsp_cli::diagnostic::Diagnostic;
-use dsp_cli::render::auth::{
-    AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-};
+use dsp_cli::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
 use dsp_cli::render::csv::CsvRenderer;
 use dsp_cli::render::json::JsonRenderer;
 use dsp_cli::render::lines::LinesRenderer;
@@ -79,9 +76,7 @@ fn status_logged_in_outcome() -> AuthStatusOutcome {
 }
 
 fn status_not_logged_in_outcome() -> AuthStatusOutcome {
-    AuthStatusOutcome::NotLoggedIn {
-        server: "https://api.example.com".to_string(),
-    }
+    AuthStatusOutcome::NotLoggedIn { server: "https://api.example.com".to_string() }
 }
 
 fn status_logged_in_meta() -> MetaContext {
@@ -269,8 +264,7 @@ fn auth_login_tsv() {
 fn auth_status_prose_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -278,8 +272,7 @@ fn auth_status_prose_logged_in() {
 fn auth_status_json_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -287,8 +280,7 @@ fn auth_status_json_logged_in() {
 fn auth_status_lines_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -296,8 +288,7 @@ fn auth_status_lines_logged_in() {
 fn auth_status_csv_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -305,8 +296,7 @@ fn auth_status_csv_logged_in() {
 fn auth_status_tsv_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_logged_in_outcome(), &status_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -316,8 +306,7 @@ fn auth_status_tsv_logged_in() {
 fn auth_status_prose_env() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_status(&status_env_outcome(), &status_env_meta())
-        .unwrap();
+    r.auth_status(&status_env_outcome(), &status_env_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -325,8 +314,7 @@ fn auth_status_prose_env() {
 fn auth_status_json_env() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_status(&status_env_outcome(), &status_env_meta())
-        .unwrap();
+    r.auth_status(&status_env_outcome(), &status_env_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -334,8 +322,7 @@ fn auth_status_json_env() {
 fn auth_status_lines_env() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_status(&status_env_outcome(), &status_env_meta())
-        .unwrap();
+    r.auth_status(&status_env_outcome(), &status_env_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         !out.contains("DSP_TOKEN"),
@@ -348,13 +335,9 @@ fn auth_status_lines_env() {
 fn auth_status_csv_env() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_status(&status_env_outcome(), &status_env_meta())
-        .unwrap();
+    r.auth_status(&status_env_outcome(), &status_env_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        !out.contains("DSP_TOKEN"),
-        "DSP_TOKEN disclosure must not appear in csv stdout"
-    );
+    assert!(!out.contains("DSP_TOKEN"), "DSP_TOKEN disclosure must not appear in csv stdout");
     insta::assert_snapshot!(out);
 }
 
@@ -362,13 +345,9 @@ fn auth_status_csv_env() {
 fn auth_status_tsv_env() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_status(&status_env_outcome(), &status_env_meta())
-        .unwrap();
+    r.auth_status(&status_env_outcome(), &status_env_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        !out.contains("DSP_TOKEN"),
-        "DSP_TOKEN disclosure must not appear in tsv stdout"
-    );
+    assert!(!out.contains("DSP_TOKEN"), "DSP_TOKEN disclosure must not appear in tsv stdout");
     insta::assert_snapshot!(out);
 }
 
@@ -413,10 +392,7 @@ fn auth_status_csv_env_expired() {
     r.auth_status(&status_env_expired_outcome(), &status_env_expired_meta())
         .unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        !out.contains("DSP_TOKEN"),
-        "DSP_TOKEN disclosure must not appear in csv stdout"
-    );
+    assert!(!out.contains("DSP_TOKEN"), "DSP_TOKEN disclosure must not appear in csv stdout");
     insta::assert_snapshot!(out);
 }
 
@@ -427,10 +403,7 @@ fn auth_status_tsv_env_expired() {
     r.auth_status(&status_env_expired_outcome(), &status_env_expired_meta())
         .unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        !out.contains("DSP_TOKEN"),
-        "DSP_TOKEN disclosure must not appear in tsv stdout"
-    );
+    assert!(!out.contains("DSP_TOKEN"), "DSP_TOKEN disclosure must not appear in tsv stdout");
     insta::assert_snapshot!(out);
 }
 
@@ -443,11 +416,8 @@ fn auth_status_tsv_env_expired() {
 fn auth_status_prose_cache_expired() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_status(
-        &status_cache_expired_outcome(),
-        &status_cache_expired_meta(),
-    )
-    .unwrap();
+    r.auth_status(&status_cache_expired_outcome(), &status_cache_expired_meta())
+        .unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -455,11 +425,8 @@ fn auth_status_prose_cache_expired() {
 fn auth_status_json_cache_expired() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_status(
-        &status_cache_expired_outcome(),
-        &status_cache_expired_meta(),
-    )
-    .unwrap();
+    r.auth_status(&status_cache_expired_outcome(), &status_cache_expired_meta())
+        .unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -467,11 +434,8 @@ fn auth_status_json_cache_expired() {
 fn auth_status_lines_cache_expired() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_status(
-        &status_cache_expired_outcome(),
-        &status_cache_expired_meta(),
-    )
-    .unwrap();
+    r.auth_status(&status_cache_expired_outcome(), &status_cache_expired_meta())
+        .unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -479,11 +443,8 @@ fn auth_status_lines_cache_expired() {
 fn auth_status_csv_cache_expired() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_status(
-        &status_cache_expired_outcome(),
-        &status_cache_expired_meta(),
-    )
-    .unwrap();
+    r.auth_status(&status_cache_expired_outcome(), &status_cache_expired_meta())
+        .unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -491,11 +452,8 @@ fn auth_status_csv_cache_expired() {
 fn auth_status_tsv_cache_expired() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_status(
-        &status_cache_expired_outcome(),
-        &status_cache_expired_meta(),
-    )
-    .unwrap();
+    r.auth_status(&status_cache_expired_outcome(), &status_cache_expired_meta())
+        .unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -540,10 +498,7 @@ fn auth_status_csv_env_unknown() {
     r.auth_status(&status_env_unknown_outcome(), &status_env_unknown_meta())
         .unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        !out.contains("DSP_TOKEN"),
-        "DSP_TOKEN disclosure must not appear in csv stdout"
-    );
+    assert!(!out.contains("DSP_TOKEN"), "DSP_TOKEN disclosure must not appear in csv stdout");
     insta::assert_snapshot!(out);
 }
 
@@ -554,10 +509,7 @@ fn auth_status_tsv_env_unknown() {
     r.auth_status(&status_env_unknown_outcome(), &status_env_unknown_meta())
         .unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        !out.contains("DSP_TOKEN"),
-        "DSP_TOKEN disclosure must not appear in tsv stdout"
-    );
+    assert!(!out.contains("DSP_TOKEN"), "DSP_TOKEN disclosure must not appear in tsv stdout");
     insta::assert_snapshot!(out);
 }
 
@@ -567,8 +519,7 @@ fn auth_status_tsv_env_unknown() {
 fn auth_status_prose_not_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -576,8 +527,7 @@ fn auth_status_prose_not_logged_in() {
 fn auth_status_json_not_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -585,8 +535,7 @@ fn auth_status_json_not_logged_in() {
 fn auth_status_lines_not_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -594,8 +543,7 @@ fn auth_status_lines_not_logged_in() {
 fn auth_status_csv_not_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -603,8 +551,7 @@ fn auth_status_csv_not_logged_in() {
 fn auth_status_tsv_not_logged_in() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta())
-        .unwrap();
+    r.auth_status(&status_not_logged_in_outcome(), &not_logged_in_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -614,8 +561,7 @@ fn auth_status_tsv_not_logged_in() {
 fn auth_logout_prose_was_cached() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_logout(&logout_was_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_was_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -623,8 +569,7 @@ fn auth_logout_prose_was_cached() {
 fn auth_logout_json_was_cached() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_logout(&logout_was_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_was_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -632,8 +577,7 @@ fn auth_logout_json_was_cached() {
 fn auth_logout_lines_was_cached() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_logout(&logout_was_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_was_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -641,8 +585,7 @@ fn auth_logout_lines_was_cached() {
 fn auth_logout_csv_was_cached() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_logout(&logout_was_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_was_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -650,8 +593,7 @@ fn auth_logout_csv_was_cached() {
 fn auth_logout_tsv_was_cached() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_logout(&logout_was_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_was_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -661,8 +603,7 @@ fn auth_logout_tsv_was_cached() {
 fn auth_logout_prose_not_cached() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_logout(&logout_not_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_not_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -670,8 +611,7 @@ fn auth_logout_prose_not_cached() {
 fn auth_logout_json_not_cached() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_logout(&logout_not_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_not_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -679,8 +619,7 @@ fn auth_logout_json_not_cached() {
 fn auth_logout_lines_not_cached() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_logout(&logout_not_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_not_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -688,8 +627,7 @@ fn auth_logout_lines_not_cached() {
 fn auth_logout_csv_not_cached() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_logout(&logout_not_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_not_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -697,8 +635,7 @@ fn auth_logout_csv_not_cached() {
 fn auth_logout_tsv_not_cached() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_logout(&logout_not_cached_outcome(), &logout_meta())
-        .unwrap();
+    r.auth_logout(&logout_not_cached_outcome(), &logout_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -709,8 +646,7 @@ fn auth_logout_tsv_not_cached() {
 /// Username must NOT appear in the rendered output (ADR-0007 / PRD criterion 7).
 #[test]
 fn auth_login_json_auth_required() {
-    let diag =
-        Diagnostic::AuthRequired("Authentication failed on https://api.example.com".to_string());
+    let diag = Diagnostic::AuthRequired("Authentication failed on https://api.example.com".to_string());
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
     r.diagnostic(&diag, &failure_meta()).unwrap();
@@ -752,8 +688,7 @@ fn auth_login_json_server_error() {
 /// Username must NOT appear (ADR-0007 / PRD criterion 7).
 #[test]
 fn auth_login_prose_auth_required() {
-    let diag =
-        Diagnostic::AuthRequired("Authentication failed on https://api.example.com".to_string());
+    let diag = Diagnostic::AuthRequired("Authentication failed on https://api.example.com".to_string());
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
     r.diagnostic(&diag, &failure_meta()).unwrap();
@@ -826,8 +761,7 @@ fn set_token_failure_meta() -> MetaContext {
 fn auth_set_token_prose() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.auth_set_token(&set_token_outcome(), &set_token_meta())
-        .unwrap();
+    r.auth_set_token(&set_token_outcome(), &set_token_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -835,8 +769,7 @@ fn auth_set_token_prose() {
 fn auth_set_token_json() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.auth_set_token(&set_token_outcome(), &set_token_meta())
-        .unwrap();
+    r.auth_set_token(&set_token_outcome(), &set_token_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -844,8 +777,7 @@ fn auth_set_token_json() {
 fn auth_set_token_lines() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.auth_set_token(&set_token_outcome(), &set_token_meta())
-        .unwrap();
+    r.auth_set_token(&set_token_outcome(), &set_token_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -853,8 +785,7 @@ fn auth_set_token_lines() {
 fn auth_set_token_csv() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.auth_set_token(&set_token_outcome(), &set_token_meta())
-        .unwrap();
+    r.auth_set_token(&set_token_outcome(), &set_token_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -862,8 +793,7 @@ fn auth_set_token_csv() {
 fn auth_set_token_tsv() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.auth_set_token(&set_token_outcome(), &set_token_meta())
-        .unwrap();
+    r.auth_set_token(&set_token_outcome(), &set_token_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -877,10 +807,7 @@ fn auth_set_token_prose_minimal() {
         .unwrap();
     let out = buf_to_string(&buf);
     // Guard the conditional rendering: no " as " clause and no expiry sentence.
-    assert!(
-        !out.contains(" as "),
-        "minimal prose must not contain user clause; got: {out}"
-    );
+    assert!(!out.contains(" as "), "minimal prose must not contain user clause; got: {out}");
     assert!(
         !out.contains("expires"),
         "minimal prose must not contain expiry clause; got: {out}"

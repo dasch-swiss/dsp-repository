@@ -26,10 +26,7 @@ async fn verify_token_200_returns_ok() {
 
     Mock::given(method("GET"))
         .and(path("/v2/authentication"))
-        .and(header(
-            "Authorization",
-            format!("Bearer {TEST_TOKEN}").as_str(),
-        ))
+        .and(header("Authorization", format!("Bearer {TEST_TOKEN}").as_str()))
         .respond_with(ResponseTemplate::new(200).set_body_string(""))
         .mount(&server)
         .await;
@@ -43,11 +40,7 @@ async fn verify_token_200_returns_ok() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok for 200 response, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok for 200 response, got: {:?}", result);
 }
 
 #[tokio::test]

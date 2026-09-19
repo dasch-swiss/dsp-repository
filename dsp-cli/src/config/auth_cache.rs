@@ -7,10 +7,9 @@
 //! suffix prevents temp-file collisions between concurrent invocations.
 
 use std::collections::BTreeMap;
-use std::fmt;
-use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::{fmt, fs};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -76,8 +75,8 @@ impl AuthCache {
         // ADR-0007 specifies the literal `~/.config/dsp-cli/auth.toml`. Do not
         // substitute `dirs::config_dir()` — that returns `~/Library/Application
         // Support/dsp-cli` on macOS, which contradicts the ADR.
-        let home = dirs::home_dir()
-            .ok_or_else(|| Diagnostic::Internal("could not resolve home directory".to_string()))?;
+        let home =
+            dirs::home_dir().ok_or_else(|| Diagnostic::Internal("could not resolve home directory".to_string()))?;
         Ok(home.join(".config").join("dsp-cli").join("auth.toml"))
     }
 
@@ -119,20 +118,10 @@ impl AuthCache {
             )));
         }
 
-        let contents = fs::read_to_string(path).map_err(|e| {
-            Diagnostic::Internal(format!(
-                "failed to read auth cache at {}: {}",
-                path.display(),
-                e
-            ))
-        })?;
-        let entries: BTreeMap<String, ServerEntry> = toml::from_str(&contents).map_err(|e| {
-            Diagnostic::Internal(format!(
-                "failed to parse auth cache at {}: {}",
-                path.display(),
-                e
-            ))
-        })?;
+        let contents = fs::read_to_string(path)
+            .map_err(|e| Diagnostic::Internal(format!("failed to read auth cache at {}: {}", path.display(), e)))?;
+        let entries: BTreeMap<String, ServerEntry> = toml::from_str(&contents)
+            .map_err(|e| Diagnostic::Internal(format!("failed to parse auth cache at {}: {}", path.display(), e)))?;
         tracing::debug!(path = %path.display(), "loaded auth cache");
         Ok(Self { entries })
     }
@@ -153,20 +142,12 @@ impl AuthCache {
     pub fn save_to(&self, path: &Path) -> Result<(), Diagnostic> {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).map_err(|e| {
-                Diagnostic::Internal(format!(
-                    "failed to create auth cache directory at {}: {}",
-                    parent.display(),
-                    e
-                ))
+                Diagnostic::Internal(format!("failed to create auth cache directory at {}: {}", parent.display(), e))
             })?;
         }
 
         let contents = toml::to_string_pretty(&self.entries).map_err(|e| {
-            Diagnostic::Internal(format!(
-                "failed to serialise auth cache for {}: {}",
-                path.display(),
-                e
-            ))
+            Diagnostic::Internal(format!("failed to serialise auth cache for {}: {}", path.display(), e))
         })?;
 
         write_atomically(path, &contents)?;
@@ -209,15 +190,7 @@ impl AuthCache {
     /// the token set, leaving `user`, `acquired_at`, and `expires_at` as
     /// `None`. Use `set_entry` when the full shape is available.
     pub fn set_token(&mut self, server: String, token: String) {
-        self.set_entry(
-            server,
-            ServerEntry {
-                token,
-                user: None,
-                acquired_at: None,
-                expires_at: None,
-            },
-        );
+        self.set_entry(server, ServerEntry { token, user: None, acquired_at: None, expires_at: None });
     }
 
     /// Remove the token for `server`.
@@ -244,11 +217,7 @@ fn write_atomically(path: &Path, contents: &str) -> Result<(), Diagnostic> {
     let tmp_path = temp_sibling_path(path)?;
 
     write_temp_file(&tmp_path, contents).map_err(|e| {
-        Diagnostic::Internal(format!(
-            "failed to write auth cache temp file at {}: {}",
-            tmp_path.display(),
-            e
-        ))
+        Diagnostic::Internal(format!("failed to write auth cache temp file at {}: {}", tmp_path.display(), e))
     })?;
 
     if let Err(e) = fs::rename(&tmp_path, path) {
@@ -273,12 +242,7 @@ fn write_atomically(path: &Path, contents: &str) -> Result<(), Diagnostic> {
 fn temp_sibling_path(path: &Path) -> Result<PathBuf, Diagnostic> {
     let mut name = path
         .file_name()
-        .ok_or_else(|| {
-            Diagnostic::Internal(format!(
-                "auth cache path has no filename component: {}",
-                path.display()
-            ))
-        })?
+        .ok_or_else(|| Diagnostic::Internal(format!("auth cache path has no filename component: {}", path.display())))?
         .to_os_string();
     name.push(format!(".{}", std::process::id()));
     Ok(path.with_file_name(name))
@@ -306,8 +270,9 @@ fn write_temp_file(path: &Path, contents: &str) -> Result<(), std::io::Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn load_from_missing_file_returns_empty_cache() {
@@ -323,10 +288,7 @@ mod tests {
         let path = dir.path().join("auth.toml");
 
         let mut cache = AuthCache::load_from(&path).unwrap();
-        cache.set_token(
-            "https://api.dasch.swiss".to_string(),
-            "tok-abc123".to_string(),
-        );
+        cache.set_token("https://api.dasch.swiss".to_string(), "tok-abc123".to_string());
         cache.save_to(&path).unwrap();
 
         let loaded = AuthCache::load_from(&path).unwrap();
@@ -339,22 +301,13 @@ mod tests {
         let path = dir.path().join("auth.toml");
 
         let mut cache = AuthCache::load_from(&path).unwrap();
-        cache.set_token(
-            "https://api.dasch.swiss".to_string(),
-            "tok-prod".to_string(),
-        );
-        cache.set_token(
-            "https://api.test.dasch.swiss".to_string(),
-            "tok-test".to_string(),
-        );
+        cache.set_token("https://api.dasch.swiss".to_string(), "tok-prod".to_string());
+        cache.set_token("https://api.test.dasch.swiss".to_string(), "tok-test".to_string());
         cache.save_to(&path).unwrap();
 
         let loaded = AuthCache::load_from(&path).unwrap();
         assert_eq!(loaded.token("https://api.dasch.swiss"), Some("tok-prod"));
-        assert_eq!(
-            loaded.token("https://api.test.dasch.swiss"),
-            Some("tok-test")
-        );
+        assert_eq!(loaded.token("https://api.test.dasch.swiss"), Some("tok-test"));
     }
 
     #[test]
@@ -363,17 +316,11 @@ mod tests {
         let path = dir.path().join("auth.toml");
 
         let mut cache = AuthCache::load_from(&path).unwrap();
-        cache.set_token(
-            "https://api.dasch.swiss".to_string(),
-            "old-token".to_string(),
-        );
+        cache.set_token("https://api.dasch.swiss".to_string(), "old-token".to_string());
         cache.save_to(&path).unwrap();
 
         let mut cache2 = AuthCache::load_from(&path).unwrap();
-        cache2.set_token(
-            "https://api.dasch.swiss".to_string(),
-            "new-token".to_string(),
-        );
+        cache2.set_token("https://api.dasch.swiss".to_string(), "new-token".to_string());
         cache2.save_to(&path).unwrap();
 
         let loaded = AuthCache::load_from(&path).unwrap();
@@ -386,10 +333,7 @@ mod tests {
         let path = dir.path().join("auth.toml");
 
         let mut cache = AuthCache::load_from(&path).unwrap();
-        cache.set_token(
-            "https://api.dasch.swiss".to_string(),
-            "tok-prod".to_string(),
-        );
+        cache.set_token("https://api.dasch.swiss".to_string(), "tok-prod".to_string());
         cache.save_to(&path).unwrap();
 
         let mut cache2 = AuthCache::load_from(&path).unwrap();
@@ -489,10 +433,7 @@ mod tests {
             raw.contains("token = \"tok-abc\""),
             "expected token on its own line, got:\n{raw}"
         );
-        assert!(
-            !raw.contains("= {"),
-            "did not expect inline-table shape, got:\n{raw}"
-        );
+        assert!(!raw.contains("= {"), "did not expect inline-table shape, got:\n{raw}");
     }
 
     #[test]
@@ -510,10 +451,7 @@ mod tests {
             !rendered.contains("super-secret-jwt"),
             "Debug impl leaked the token: {rendered}"
         );
-        assert!(
-            rendered.contains("REDACTED"),
-            "expected redaction marker, got: {rendered}"
-        );
+        assert!(rendered.contains("REDACTED"), "expected redaction marker, got: {rendered}");
     }
 
     #[test]
@@ -532,10 +470,7 @@ mod tests {
             !rendered.contains("super-secret-jwt-full"),
             "Debug impl leaked the token when all fields are set: {rendered}"
         );
-        assert!(
-            rendered.contains("REDACTED"),
-            "expected redaction marker, got: {rendered}"
-        );
+        assert!(rendered.contains("REDACTED"), "expected redaction marker, got: {rendered}");
         // User and timestamps should appear in cleartext.
         assert!(
             rendered.contains("user@example.com"),
@@ -566,22 +501,10 @@ mod tests {
         cache.save_to(&path).unwrap();
 
         let loaded = AuthCache::load_from(&path).unwrap();
-        assert_eq!(
-            loaded.token("https://api.test.dasch.swiss"),
-            Some("tok-full")
-        );
-        assert_eq!(
-            loaded.user("https://api.test.dasch.swiss"),
-            Some("user@example.com")
-        );
-        assert_eq!(
-            loaded.acquired_at("https://api.test.dasch.swiss"),
-            Some(acquired)
-        );
-        assert_eq!(
-            loaded.expires_at("https://api.test.dasch.swiss"),
-            Some(expires)
-        );
+        assert_eq!(loaded.token("https://api.test.dasch.swiss"), Some("tok-full"));
+        assert_eq!(loaded.user("https://api.test.dasch.swiss"), Some("user@example.com"));
+        assert_eq!(loaded.acquired_at("https://api.test.dasch.swiss"), Some(acquired));
+        assert_eq!(loaded.expires_at("https://api.test.dasch.swiss"), Some(expires));
     }
 
     #[test]
@@ -601,10 +524,7 @@ mod tests {
             err
         );
         let msg = err.to_string();
-        assert!(
-            msg.contains("too large"),
-            "expected 'too large' in error message; got: {msg}"
-        );
+        assert!(msg.contains("too large"), "expected 'too large' in error message; got: {msg}");
     }
 
     #[test]

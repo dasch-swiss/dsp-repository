@@ -22,12 +22,12 @@
 #![cfg(feature = "live")]
 
 use std::io::{Read as _, Seek as _, SeekFrom};
+use std::time::{Duration, Instant};
 
 use dsp_cli::client::DspClient;
 use dsp_cli::client::http::HttpDspClient;
 use dsp_cli::config::Config;
 use dsp_cli::model::{CreateDumpOutcome, DumpStatus};
-use std::time::{Duration, Instant};
 use tempfile::tempfile;
 
 // ---------------------------------------------------------------------------
@@ -72,8 +72,7 @@ fn live_project_dump_end_to_end() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve token ──────────────────────────────────────────────────────
     // Prefer DSP_TOKEN; fall back to DSP_TEST_USER + DSP_TEST_PASSWORD via login.
@@ -118,20 +117,14 @@ fn live_project_dump_end_to_end() {
 
     let dump_id = match outcome {
         CreateDumpOutcome::Created(ref task) => {
-            eprintln!(
-                "live test: triggered new dump {}, initial status {:?}",
-                task.id, task.status
-            );
+            eprintln!("live test: triggered new dump {}, initial status {:?}", task.id, task.status);
             task.id.clone()
         }
         CreateDumpOutcome::Exists { ref id } => {
             eprintln!("live test: dump already exists ({id}); adopting it");
             id.clone()
         }
-        CreateDumpOutcome::ExistsForOtherProject {
-            ref id,
-            ref project_iri,
-        } => {
+        CreateDumpOutcome::ExistsForOtherProject { ref id, ref project_iri } => {
             eprintln!(
                 "live test: dump slot held by another project ({project_iri}, id {id}); \
 skipping live test (manual --discard-other-project required)"
@@ -156,19 +149,12 @@ skipping live test (manual --discard-other-project required)"
             .get_project_dump_status(&cfg.server, &proj.iri, &dump_id, &token)
             .expect("get_project_dump_status failed");
 
-        eprintln!(
-            "live test: poll status {:?} (elapsed {}s)",
-            t.status,
-            start.elapsed().as_secs()
-        );
+        eprintln!("live test: poll status {:?} (elapsed {}s)", t.status, start.elapsed().as_secs());
 
         match t.status {
             DumpStatus::Completed => break,
             DumpStatus::Failed => {
-                panic!(
-                    "server-side dump failed: {}",
-                    t.error_message.unwrap_or_default()
-                );
+                panic!("server-side dump failed: {}", t.error_message.unwrap_or_default());
             }
             DumpStatus::InProgress => {
                 if start.elapsed() + delay >= POLL_TIMEOUT {
@@ -197,12 +183,10 @@ skipping live test (manual --discard-other-project required)"
     assert!(bytes > 0, "downloaded file must not be empty");
 
     // Seek back to the beginning to read the magic bytes.
-    tmp.seek(SeekFrom::Start(0))
-        .expect("failed to seek tempfile to start");
+    tmp.seek(SeekFrom::Start(0)).expect("failed to seek tempfile to start");
 
     let mut magic = [0u8; 2];
-    tmp.read_exact(&mut magic)
-        .expect("failed to read magic bytes from tempfile");
+    tmp.read_exact(&mut magic).expect("failed to read magic bytes from tempfile");
 
     assert_eq!(
         magic,
@@ -217,14 +201,9 @@ skipping live test (manual --discard-other-project required)"
     // real server path; it is best-effort: if the server state changed between
     // the download and this call, we log and skip rather than hard-fail.
     match client.create_project_dump(&cfg.server, &proj.iri, true, &token) {
-        Ok(CreateDumpOutcome::Exists {
-            id: ref existing_id,
-        }) => {
+        Ok(CreateDumpOutcome::Exists { id: ref existing_id }) => {
             eprintln!("live test: idempotent re-run correctly returned Exists ({existing_id})");
-            assert_eq!(
-                existing_id, &dump_id,
-                "second create should return the same dump id"
-            );
+            assert_eq!(existing_id, &dump_id, "second create should return the same dump id");
         }
         Ok(CreateDumpOutcome::Created(ref t)) => {
             // Unexpected but not a hard failure: the server may have cleaned
@@ -236,10 +215,7 @@ skipping live test (manual --discard-other-project required)"
                 t.id
             );
         }
-        Ok(CreateDumpOutcome::ExistsForOtherProject {
-            ref id,
-            ref project_iri,
-        }) => {
+        Ok(CreateDumpOutcome::ExistsForOtherProject { ref id, ref project_iri }) => {
             // Another project's dump appeared between our download and this call.
             // Non-fatal for the live test — just log it.
             eprintln!(

@@ -1,16 +1,15 @@
 //! Snapshot tests for `dsp vre resource list` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (3 resources, incunabula project, Page type): exercises
-//!   the Option matrix (ark_url Some/None, creation_date Some/None). Shared
-//!   by prose, json, lines, csv, tsv cells.
+//! - **Main fixture** (3 resources, incunabula project, Page type): exercises the Option matrix
+//!   (ark_url Some/None, creation_date Some/None). Shared by prose, json, lines, csv, tsv cells.
 //! - **Empty fixture**: zero items, total 0. Prose and json only.
-//! - **Filter fixture**: `filter: Some("folio")` with `total > items.len()` so
-//!   prose shows "(m of total matching …)". Prose only.
-//! - **`--all` json**: `AllPages { pages_fetched: 2 }` — locks the asymmetric
-//!   `_meta` shape (`pages_fetched` + `may_have_more_results: false`, no `page`).
-//! - **Disclosure variants**: anonymous ("`filter_warning` = Some(anonymous wording)")
-//!   vs. authenticated ("`filter_warning` = Some(authenticated wording)"), per D3.
+//! - **Filter fixture**: `filter: Some("folio")` with `total > items.len()` so prose shows "(m of
+//!   total matching …)". Prose only.
+//! - **`--all` json**: `AllPages { pages_fetched: 2 }` — locks the asymmetric `_meta` shape
+//!   (`pages_fetched` + `may_have_more_results: false`, no `page`).
+//! - **Disclosure variants**: anonymous ("`filter_warning` = Some(anonymous wording)") vs.
+//!   authenticated ("`filter_warning` = Some(authenticated wording)"), per D3.
 //!
 //! Determinism: these tests call `Renderer::resources(&view, &meta)` directly
 //! with a hand-built `MetaContext`/`ResourceListView`. They never go through
@@ -137,10 +136,7 @@ fn main_view() -> ResourceListView {
         total,
         filter: None,
         resource_type: RESOURCE_TYPE.to_string(),
-        pagination: ResourceListPagination::SinglePage {
-            page: 0,
-            may_have_more: false,
-        },
+        pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
     }
 }
 
@@ -151,10 +147,7 @@ fn empty_view() -> ResourceListView {
         total: 0,
         filter: None,
         resource_type: RESOURCE_TYPE.to_string(),
-        pagination: ResourceListPagination::SinglePage {
-            page: 0,
-            may_have_more: false,
-        },
+        pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
     }
 }
 
@@ -165,19 +158,13 @@ fn filter_view() -> ResourceListView {
     let total = 3;
     let filter = "folio 2";
     let needle = filter.to_lowercase();
-    let items: Vec<ResourceSummary> = all
-        .into_iter()
-        .filter(|r| r.label.to_lowercase().contains(&needle))
-        .collect();
+    let items: Vec<ResourceSummary> = all.into_iter().filter(|r| r.label.to_lowercase().contains(&needle)).collect();
     ResourceListView {
         items,
         total,
         filter: Some(filter.to_string()),
         resource_type: RESOURCE_TYPE.to_string(),
-        pagination: ResourceListPagination::SinglePage {
-            page: 0,
-            may_have_more: false,
-        },
+        pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
     }
 }
 
@@ -200,10 +187,7 @@ fn all_pages_view() -> ResourceListView {
 /// Used to lock the "more results available (use --all)" hint in prose.
 fn more_results_view() -> ResourceListView {
     ResourceListView {
-        pagination: ResourceListPagination::SinglePage {
-            page: 0,
-            may_have_more: true,
-        },
+        pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: true },
         ..main_view()
     }
 }
@@ -214,7 +198,8 @@ fn more_results_view() -> ResourceListView {
 /// - header `resources of type page on api.dasch.swiss (3):`.
 /// - aligned two-column layout (label + iri).
 /// - no filter count line (filter is None).
-/// - D3 footer: `[anonymous on api.dasch.swiss] — results may be filtered; login to see private resources`.
+/// - D3 footer: `[anonymous on api.dasch.swiss] — results may be filtered; login to see private
+///   resources`.
 #[test]
 fn resource_list_prose() {
     let (buf, w) = shared_buf();
@@ -246,8 +231,7 @@ fn resource_list_json() {
     r.resources(&main_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     // Parse and structural assertions.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("json must be valid JSON");
     assert!(
         parsed["_meta"]["note"].as_str().is_some(),
         "json _meta must have 'note' key for instance-side command; got:\n{out}"
@@ -353,10 +337,7 @@ fn resource_list_prose_empty() {
     let mut r = ProseRenderer::with_writer(w);
     r.resources(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        out.contains("(0)"),
-        "prose empty must show '(0)' count; got:\n{out}"
-    );
+    assert!(out.contains("(0)"), "prose empty must show '(0)' count; got:\n{out}");
     assert!(
         out.contains("page"),
         "prose empty must still show resource_type name; got:\n{out}"
@@ -376,8 +357,7 @@ fn resource_list_json_empty() {
     let mut r = JsonRenderer::with_writer(w);
     r.resources(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
     assert!(
         parsed["data"].as_array().unwrap().is_empty(),
         "json empty must have empty data array; got:\n{out}"
@@ -406,10 +386,7 @@ fn resource_list_prose_filter() {
         out.contains("matching \"folio 2\""),
         "prose filter must contain 'matching \"folio 2\"'; got:\n{out}"
     );
-    assert!(
-        out.contains("of 3"),
-        "prose filter must show 'of 3' total; got:\n{out}"
-    );
+    assert!(out.contains("of 3"), "prose filter must show 'of 3' total; got:\n{out}");
     assert!(
         out.contains(ANON_FILTER_WARNING),
         "prose filter must contain D3 filter_warning; got:\n{out}"
@@ -431,8 +408,7 @@ fn resource_list_json_all_pages() {
     let mut r = JsonRenderer::with_writer(w);
     r.resources(&all_pages_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("all-pages json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("all-pages json must be valid JSON");
 
     // AllPages shape: pages_fetched, may_have_more_results: false, no page.
     assert_eq!(
@@ -464,7 +440,8 @@ fn resource_list_json_all_pages() {
 // two byte-identical snapshots that can silently drift.
 
 /// Authenticated prose: footer must include the authenticated filter_warning text.
-/// Locks: `[authenticated as daisy.duck@dasch.swiss on api.dasch.swiss] — results limited to your permissions`
+/// Locks: `[authenticated as daisy.duck@dasch.swiss on api.dasch.swiss] — results limited to your
+/// permissions`
 #[test]
 fn resource_list_disclosure_authenticated_prose() {
     let (buf, w) = shared_buf();
@@ -529,10 +506,7 @@ fn resource_list_prose_more_results_hint() {
         out.contains("more results available"),
         "prose with may_have_more: true must show the 'more results available' hint; got:\n{out}"
     );
-    assert!(
-        out.contains("--all"),
-        "prose hint must reference '--all'; got:\n{out}"
-    );
+    assert!(out.contains("--all"), "prose hint must reference '--all'; got:\n{out}");
     insta::assert_snapshot!(out);
 }
 

@@ -31,14 +31,13 @@ pub use progress::{HumanProgress, JsonProgress, ProgressReporter};
 // Re-exported for plan 020 steps 2–5: renderer methods, engine error hints,
 // and CLI `after_help` drift-guard tests.
 pub(crate) use table::{
-    AUTH_LOGIN_COLUMNS, AUTH_LOGOUT_COLUMNS, DATA_MODEL_DESCRIBE_COLUMNS,
-    DATA_MODEL_STRUCTURE_COLUMNS, DATA_MODELS_COLUMNS, PROJECT_DUMP_COLUMNS,
-    PROJECT_DUMP_DELETED_COLUMNS, PROJECTS_COLUMNS, QuoteMode, RESOURCE_DESCRIBE_COLUMNS,
-    RESOURCE_DESCRIBE_VALUES_COLUMNS, RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS,
+    AUTH_LOGIN_COLUMNS, AUTH_LOGOUT_COLUMNS, DATA_MODEL_DESCRIBE_COLUMNS, DATA_MODEL_STRUCTURE_COLUMNS,
+    DATA_MODELS_COLUMNS, PROJECT_DUMP_COLUMNS, PROJECT_DUMP_DELETED_COLUMNS, PROJECTS_COLUMNS, QuoteMode,
+    RESOURCE_DESCRIBE_COLUMNS, RESOURCE_DESCRIBE_VALUES_COLUMNS, RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS,
     RESOURCE_LIST_COLUMNS, RESOURCE_TYPE_DESCRIBE_COLUMNS, RESOURCE_TYPE_DESCRIBE_DEFAULT_COLUMNS,
     RESOURCE_TYPES_COLUMNS, RESOURCE_TYPES_DEFAULT_COLUMNS, TableSpec, VOCABULARIES_COLUMNS,
-    VOCABULARIES_COUNTED_DEFAULT_COLUMNS, VOCABULARIES_DEFAULT_COLUMNS,
-    VOCABULARY_DESCRIBE_COLUMNS, VOCABULARY_DESCRIBE_DEFAULT_COLUMNS, render_table,
+    VOCABULARIES_COUNTED_DEFAULT_COLUMNS, VOCABULARIES_DEFAULT_COLUMNS, VOCABULARY_DESCRIBE_COLUMNS,
+    VOCABULARY_DESCRIBE_DEFAULT_COLUMNS, render_table,
 };
 // TableOptions and HeaderMode are public: integration tests in `tests/` construct
 // renderers with specific options via `with_options`. The column-set consts are
@@ -54,8 +53,8 @@ pub use table::{HeaderMode, TableOptions};
 
 use crate::diagnostic::Diagnostic;
 use crate::model::{
-    DataModel, DataModelDetail, DataModelStructure, Project, ProjectDetail, ResourceDetail,
-    ResourceSummary, ResourceType, ResourceTypeDetail, Vocabulary, VocabularyDetail,
+    DataModel, DataModelDetail, DataModelStructure, Project, ProjectDetail, ResourceDetail, ResourceSummary,
+    ResourceType, ResourceTypeDetail, Vocabulary, VocabularyDetail,
 };
 
 /// The data a renderer needs to render a `project list` result.
@@ -241,47 +240,26 @@ pub trait Renderer {
     fn diagnostic(&mut self, diag: &Diagnostic, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a successful `dsp auth login` outcome.
-    fn auth_login(
-        &mut self,
-        outcome: &AuthLoginOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn auth_login(&mut self, outcome: &AuthLoginOutcome, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp auth status` outcome (logged-in or not-logged-in).
-    fn auth_status(
-        &mut self,
-        outcome: &AuthStatusOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn auth_status(&mut self, outcome: &AuthStatusOutcome, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp auth logout` outcome.
-    fn auth_logout(
-        &mut self,
-        outcome: &AuthLogoutOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn auth_logout(&mut self, outcome: &AuthLogoutOutcome, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a successful `dsp auth set-token` outcome.
-    fn auth_set_token(
-        &mut self,
-        outcome: &AuthSetTokenOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn auth_set_token(&mut self, outcome: &AuthSetTokenOutcome, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre project dump` outcome.
-    fn project_dump(&mut self, outcome: &DumpOutcome, meta: &MetaContext)
-    -> Result<(), Diagnostic>;
+    fn project_dump(&mut self, outcome: &DumpOutcome, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre project dump --delete` outcome.
     ///
     /// `outcome.deleted = false` means no completed/failed dump existed and a
     /// probe created an in-progress dump — NOT a delete failure (failures are
     /// `Err(Diagnostic)`).
-    fn project_dump_deleted(
-        &mut self,
-        outcome: &DumpDeleteOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn project_dump_deleted(&mut self, outcome: &DumpDeleteOutcome, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre project list` result (possibly empty).
     ///
@@ -294,43 +272,27 @@ pub trait Renderer {
     /// `project` is passed directly — no view wrapper, since there is no
     /// aggregate context (no `total`/`filter`) for a single-object describe.
     /// `meta` carries auth/server disclosure per ADR-0007.
-    fn project_describe(
-        &mut self,
-        project: &ProjectDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre data-model list` result (possibly empty).
     ///
     /// `view` carries the items (post-filter, sorted), the pre-filter total,
     /// and the filter string. `meta` carries auth/server disclosure (ADR-0007).
-    fn data_models(
-        &mut self,
-        view: &DataModelListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre data-model describe` result (a single data-model).
     ///
     /// `detail` is passed directly — no view wrapper, since there is no aggregate
     /// context (no `total`/`filter`) for a single-object describe. `meta` carries
     /// auth/server disclosure per ADR-0007.
-    fn data_model_describe(
-        &mut self,
-        detail: &DataModelDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre resource-type list` result (possibly empty).
     ///
     /// `view` carries the items (post-filter, sorted), the pre-filter total, the
     /// filter string, and the parent data-model name. `meta` carries auth/server
     /// disclosure (ADR-0007).
-    fn resource_types(
-        &mut self,
-        view: &ResourceTypeListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre resource-type describe` result (a single resource-type).
     ///
@@ -339,11 +301,7 @@ pub trait Renderer {
     /// auth/server disclosure per ADR-0007. Built-in field filtering is applied by
     /// the action (via `--include-builtins`) before this method is called — the
     /// renderer receives only the fields it should render.
-    fn resource_type_describe(
-        &mut self,
-        detail: &ResourceTypeDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn resource_type_describe(&mut self, detail: &ResourceTypeDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre data-model structure` result (a single data-model's relations).
     ///
@@ -352,11 +310,7 @@ pub trait Renderer {
     /// is applied by the action before this method is called; the renderer receives
     /// only the relations it should render. `meta` carries auth/server disclosure
     /// per ADR-0007.
-    fn data_model_structure(
-        &mut self,
-        structure: &DataModelStructure,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn data_model_structure(&mut self, structure: &DataModelStructure, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre resource list` result (possibly empty).
     ///
@@ -372,11 +326,7 @@ pub trait Renderer {
     /// context for a single-object describe. `meta` carries auth/server disclosure
     /// per ADR-0007 including the always-present `filter_warning` for instance-side
     /// commands (D3).
-    fn resource_describe(
-        &mut self,
-        detail: &ResourceDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn resource_describe(&mut self, detail: &ResourceDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre vocabulary list` result (possibly empty).
     ///
@@ -384,11 +334,7 @@ pub trait Renderer {
     /// total, the filter string, and whether `--count` was requested. `meta`
     /// carries auth/server disclosure (ADR-0007) plus the `--count` cost
     /// disclosure (`MetaContext.count_cost`, plan 034).
-    fn vocabularies(
-        &mut self,
-        view: &VocabularyListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn vocabularies(&mut self, view: &VocabularyListView, meta: &MetaContext) -> Result<(), Diagnostic>;
 
     /// Render a `dsp vre vocabulary describe` result (a single vocabulary's tree).
     ///
@@ -405,9 +351,5 @@ pub trait Renderer {
     /// delete the ancestor chain that the absolute `number` and `path` columns
     /// are derived from. Do not "fix" this by narrowing the tree in the action
     /// layer.
-    fn vocabulary_describe(
-        &mut self,
-        detail: &VocabularyDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic>;
+    fn vocabulary_describe(&mut self, detail: &VocabularyDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
 }

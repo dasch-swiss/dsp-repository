@@ -2,12 +2,11 @@
 //!
 //! This file contains two kinds of tests:
 //!
-//! 1. **Help-text snapshot tests**: Capture `--help` output at every
-//!    level of the command tree to detect unintended regressions. For an
-//!    AI-agent CLI, the `--help` text *is* the contract — snapshotting every
-//!    level catches silent vocabulary drift, flag removal, and changed verb
-//!    lists. Baselines are accepted once with `cargo insta accept` and reviewed
-//!    like any diff in future PRs.
+//! 1. **Help-text snapshot tests**: Capture `--help` output at every level of the command tree to
+//!    detect unintended regressions. For an AI-agent CLI, the `--help` text *is* the contract —
+//!    snapshotting every level catches silent vocabulary drift, flag removal, and changed verb
+//!    lists. Baselines are accepted once with `cargo insta accept` and reviewed like any diff in
+//!    future PRs.
 //!
 //!    NOTE: `dsp --version` is intentionally NOT snapshotted — every release
 //!    bumps the version string, causing unnecessary review noise without
@@ -17,10 +16,10 @@
 //!    snapshot (it includes the crate version). Accept the diff after each
 //!    `Cargo.toml` version bump.
 //!
-//! 2. **Dispatch smoke tests**: Verify that dispatch wiring reaches the correct
-//!    action and that usage errors surface at exit code 2. After Phase 4, the
-//!    `dsp vre project list` smoke test asserts that a missing `--server` yields
-//!    exit code 2 (Config::resolve is now reached, unlike the Phase 3 stub).
+//! 2. **Dispatch smoke tests**: Verify that dispatch wiring reaches the correct action and that
+//!    usage errors surface at exit code 2. After Phase 4, the `dsp vre project list` smoke test
+//!    asserts that a missing `--server` yields exit code 2 (Config::resolve is now reached, unlike
+//!    the Phase 3 stub).
 //!
 //! NOTE: `dsp docs connecting` and `dsp docs concepts` are referenced in
 //! `--help` "See also:" lines. As of Phase 6 these topics ship as real embedded
@@ -58,13 +57,7 @@ fn dsp() -> Command {
 
 #[test]
 fn help_top() {
-    let output = dsp()
-        .arg("--help")
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().arg("--help").assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     insta::assert_snapshot!("help_top", text);
 }
@@ -80,13 +73,7 @@ fn help_no_args() {
 
 #[test]
 fn help_auth() {
-    let output = dsp()
-        .args(["auth", "--help"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["auth", "--help"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     insta::assert_snapshot!("help_auth", text);
 }
@@ -158,13 +145,7 @@ fn help_auth_token() {
 
 #[test]
 fn help_vre() {
-    let output = dsp()
-        .args(["vre", "--help"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["vre", "--help"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     insta::assert_snapshot!("help_vre", text);
 }
@@ -418,13 +399,7 @@ fn help_vre_sparql_query() {
 
 #[test]
 fn help_docs() {
-    let output = dsp()
-        .args(["docs", "--help"])
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
+    let output = dsp().args(["docs", "--help"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(output).unwrap();
     insta::assert_snapshot!("help_docs", text);
 }
@@ -476,14 +451,7 @@ fn dump_replace_and_delete_together_exits_usage() {
 fn dump_delete_with_output_exits_usage() {
     // --delete conflicts_with_all includes "output"; clap rejects this at parse time.
     dsp()
-        .args([
-            "vre",
-            "project",
-            "dump",
-            "--delete",
-            "--output",
-            "/tmp/x.zip",
-        ])
+        .args(["vre", "project", "dump", "--delete", "--output", "/tmp/x.zip"])
         .env_remove("DSP_SERVER")
         .assert()
         .failure()
@@ -619,26 +587,15 @@ fn json_error_envelope_to_stdout_no_server() {
     assert!(stderr.is_empty(), "expected empty stderr; got: {stderr}");
 
     let lines: Vec<&str> = stdout.lines().filter(|l| !l.is_empty()).collect();
-    assert_eq!(
-        lines.len(),
-        1,
-        "expected exactly one NDJSON line on stdout; got: {stdout}"
-    );
+    assert_eq!(lines.len(), 1, "expected exactly one NDJSON line on stdout; got: {stdout}");
     let parsed: serde_json::Value = serde_json::from_str(lines[0])
         .unwrap_or_else(|e| panic!("stdout line did not parse as JSON: {e}; got: {stdout}"));
 
     assert_eq!(parsed["error"]["kind"], "usage");
-    let message = parsed["error"]["message"]
-        .as_str()
-        .expect("error.message must be a string");
-    assert!(
-        !message.is_empty(),
-        "error.message must be non-empty; got: {parsed}"
-    );
+    let message = parsed["error"]["message"].as_str().expect("error.message must be a string");
+    assert!(!message.is_empty(), "error.message must be non-empty; got: {parsed}");
 
-    let meta = parsed["_meta"]
-        .as_object()
-        .expect("_meta must be a JSON object");
+    let meta = parsed["_meta"].as_object().expect("_meta must be a JSON object");
     assert!(
         !meta.contains_key("server"),
         "_meta must not have a server key when Config::resolve failed; got: {parsed}"
@@ -766,21 +723,13 @@ fn resource_list_page_and_all_together_exits_usage() {
 fn docs_topic_with_json_flag_exits_usage() {
     // `dsp docs output -j` — -j conflicts_with_all includes topic (positional);
     // clap rejects at parse time with exit code 2.
-    dsp()
-        .args(["docs", "output", "-j"])
-        .assert()
-        .failure()
-        .code(2);
+    dsp().args(["docs", "output", "-j"]).assert().failure().code(2);
 }
 
 #[test]
 fn docs_json_with_pager_exits_usage() {
     // `dsp docs -j --pager` — clap conflicts_with rejects at parse time.
-    dsp()
-        .args(["docs", "-j", "--pager"])
-        .assert()
-        .failure()
-        .code(2);
+    dsp().args(["docs", "-j", "--pager"]).assert().failure().code(2);
 }
 
 // ── sparql query parse tests (plan 035, Step 3) ────────────────────────────────
@@ -791,13 +740,7 @@ fn sparql_query_parses_with_query_flag() {
     // exit 2 (usage), never a parse-level clap error (exit 2 either way, but
     // proves the flags themselves are accepted).
     dsp()
-        .args([
-            "vre",
-            "sparql",
-            "query",
-            "--query",
-            "SELECT * WHERE { ?s ?p ?o }",
-        ])
+        .args(["vre", "sparql", "query", "--query", "SELECT * WHERE { ?s ?p ?o }"])
         .env_remove("DSP_SERVER")
         .env_remove("DSP_TOKEN")
         .assert()
@@ -851,9 +794,7 @@ fn sparql_query_leading_dash_query_file_is_accepted_in_the_space_form() {
         .code(2)
         .stderr(predicates::prelude::PredicateBooleanExt::and(
             predicates::str::contains("could not read --query-file"),
-            predicates::prelude::PredicateBooleanExt::not(predicates::str::contains(
-                "unexpected argument",
-            )),
+            predicates::prelude::PredicateBooleanExt::not(predicates::str::contains("unexpected argument")),
         ));
 }
 
@@ -878,14 +819,7 @@ fn sparql_query_rejects_format_flag() {
     // D2's regression guard: no `--format`/`-j`/`-l` on this leaf — copied
     // from the `TokenArgs` precedent. Proves `FormatArgs` is NOT flattened.
     dsp()
-        .args([
-            "vre",
-            "sparql",
-            "query",
-            "--query",
-            "SELECT * WHERE { ?s ?p ?o }",
-            "-j",
-        ])
+        .args(["vre", "sparql", "query", "--query", "SELECT * WHERE { ?s ?p ?o }", "-j"])
         .assert()
         .failure()
         .code(2);

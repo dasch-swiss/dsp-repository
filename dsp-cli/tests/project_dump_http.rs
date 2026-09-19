@@ -114,10 +114,7 @@ async fn trigger_sends_bearer_header() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1);
     let auth = received[0]
         .headers
@@ -138,9 +135,7 @@ async fn trigger_skip_assets_true_sends_correct_query() {
     let mock = Mock::given(method("POST"))
         .and(path(expected_path))
         .and(query_param("skipAssets", "true"))
-        .respond_with(
-            ResponseTemplate::new(202).set_body_json(task_body("task-skip", "in_progress")),
-        )
+        .respond_with(ResponseTemplate::new(202).set_body_json(task_body("task-skip", "in_progress")))
         .expect(1)
         .mount_as_scoped(&server)
         .await;
@@ -235,11 +230,7 @@ async fn trigger_409_export_exists_other_project_returns_other_project_outcome()
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok(ExistsForOtherProject), got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok(ExistsForOtherProject), got: {:?}", result);
     let outcome = result.unwrap();
     match outcome {
         CreateDumpOutcome::ExistsForOtherProject { id, project_iri } => {
@@ -285,10 +276,7 @@ async fn trigger_409_export_exists_missing_project_iri_is_server_error() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_err(),
-        "missing projectIri must yield an error (fail-closed)"
-    );
+    assert!(result.is_err(), "missing projectIri must yield an error (fail-closed)");
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),
         "missing projectIri must map to ServerError (fail-closed, not Exists)"
@@ -392,10 +380,7 @@ async fn trigger_409_export_exists_missing_id_returns_server_error() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_err(),
-        "expected Err for 409 with no id in details"
-    );
+    assert!(result.is_err(), "expected Err for 409 with no id in details");
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),
         "409 export_exists with missing id must map to ServerError"
@@ -432,9 +417,7 @@ async fn trigger_202_with_created_at_populates_field() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     if let Ok(CreateDumpOutcome::Created(task)) = result {
-        let ts = task
-            .created_at
-            .expect("created_at should be Some for this response");
+        let ts = task.created_at.expect("created_at should be Some for this response");
         use chrono::Datelike;
         assert_eq!(ts.year(), 2026);
         assert_eq!(ts.month(), 5);
@@ -620,10 +603,7 @@ async fn download_happy_streams_bytes_and_ignores_content_disposition() {
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_bytes(zip_bytes.clone())
-                .insert_header(
-                    "Content-Disposition",
-                    "attachment; filename=\"server-chosen-name.zip\"",
-                )
+                .insert_header("Content-Disposition", "attachment; filename=\"server-chosen-name.zip\"")
                 .insert_header("Content-Type", "application/zip"),
         )
         .mount(&server)
@@ -643,10 +623,7 @@ async fn download_happy_streams_bytes_and_ignores_content_disposition() {
     let (sink_bytes, count) = result.unwrap();
 
     // Bytes land correctly in the sink.
-    assert_eq!(
-        sink_bytes, zip_bytes_clone,
-        "downloaded bytes must match the server body"
-    );
+    assert_eq!(sink_bytes, zip_bytes_clone, "downloaded bytes must match the server body");
     assert_eq!(
         count,
         zip_bytes_clone.len() as u64,
@@ -768,11 +745,7 @@ async fn delete_204_returns_ok() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok for 204 delete, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok for 204 delete, got: {:?}", result);
     drop(mock);
 }
 

@@ -58,8 +58,8 @@ fn optional_env(name: &str) -> Option<String> {
 /// due to real errors.
 ///
 /// Assertions are intentionally resilient to real-data variation:
-/// - Data-model `name == "beol"` (we explicitly find and describe the beol
-///   data-model — a stable fixture on the beol project).
+/// - Data-model `name == "beol"` (we explicitly find and describe the beol data-model — a stable
+///   fixture on the beol project).
 /// - `label` is `Some` (the beol data-model has a label on the live API).
 /// - `resource_types` is non-empty (beol defines multiple resource-types).
 /// - Every resource-type `name` is non-empty.
@@ -73,8 +73,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `describe_data_model` uses a public endpoint; the token is optional. If
@@ -95,18 +94,13 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
 
     // ── 4. Resolve the known project (beol / shortcode 0801) ─────────────────
     let project_identifier = "0801";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
              if the beol project has been removed from this server, update the test to use a \
              different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -114,10 +108,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
     );
 
     // ── 5. List data-models and find the beol data-model ─────────────────────
-    eprintln!(
-        "live test: calling list_data_models for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
         .list_data_models(&cfg.server, &proj.iri, token_ref)
@@ -126,22 +117,16 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
     eprintln!("live test: received {} data-model(s)", data_models.len());
 
     // Find the beol data-model by name (case-insensitive, mirroring the action).
-    let beol_dm = data_models
-        .iter()
-        .find(|dm| dm.name.eq_ignore_ascii_case("beol"))
-        .expect(
-            "beol data-model not found in project '0801' — expected the beol data-model to be \
+    let beol_dm = data_models.iter().find(|dm| dm.name.eq_ignore_ascii_case("beol")).expect(
+        "beol data-model not found in project '0801' — expected the beol data-model to be \
              present; check that DSP_TEST_SERVER points to a server where this project is \
              populated with its standard data-models",
-        );
+    );
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
     // ── 6. Call describe_data_model ───────────────────────────────────────────
-    eprintln!(
-        "live test: calling describe_data_model for IRI {}",
-        beol_dm.iri
-    );
+    eprintln!("live test: calling describe_data_model for IRI {}", beol_dm.iri);
 
     let detail = client
         .describe_data_model(&cfg.server, &beol_dm.iri, token_ref)
@@ -156,11 +141,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
     // ── 7. Assert structural invariants ──────────────────────────────────────
 
     // name must be "beol" — we resolved this data-model by name.
-    assert_eq!(
-        detail.name, "beol",
-        "data-model name must be 'beol'; got '{}'",
-        detail.name
-    );
+    assert_eq!(detail.name, "beol", "data-model name must be 'beol'; got '{}'", detail.name);
 
     // label must be Some — the beol data-model has a label on the live API.
     assert!(

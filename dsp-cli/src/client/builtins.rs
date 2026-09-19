@@ -93,22 +93,14 @@ mod tests {
     #[test]
     fn all_builtins_have_is_builtin_true() {
         for dm in builtin_data_models() {
-            assert!(
-                dm.is_builtin,
-                "built-in data-model '{}' must have is_builtin == true",
-                dm.name
-            );
+            assert!(dm.is_builtin, "built-in data-model '{}' must have is_builtin == true", dm.name);
         }
     }
 
     #[test]
     fn all_builtins_have_no_label_or_last_modified() {
         for dm in builtin_data_models() {
-            assert!(
-                dm.label.is_none(),
-                "built-in data-model '{}' must have label == None",
-                dm.name
-            );
+            assert!(dm.label.is_none(), "built-in data-model '{}' must have label == None", dm.name);
             assert!(
                 dm.last_modified.is_none(),
                 "built-in data-model '{}' must have last_modified == None",
@@ -137,10 +129,7 @@ mod tests {
         let names: Vec<&str> = builtins.iter().map(|dm| dm.name.as_str()).collect();
         assert!(names.contains(&"knora-api"), "knora-api must be a built-in");
         assert!(names.contains(&"standoff"), "standoff must be a built-in");
-        assert!(
-            names.contains(&"salsah-gui"),
-            "salsah-gui must be a built-in"
-        );
+        assert!(names.contains(&"salsah-gui"), "salsah-gui must be a built-in");
     }
 
     // ── builtin_resource_types tests ──────────────────────────────────────────
@@ -148,11 +137,7 @@ mod tests {
     #[test]
     fn builtin_resource_types_returns_four_entries() {
         let builtins = builtin_resource_types();
-        assert_eq!(
-            builtins.len(),
-            4,
-            "expected exactly 4 built-in resource-types"
-        );
+        assert_eq!(builtins.len(), 4, "expected exactly 4 built-in resource-types");
     }
 
     #[test]
@@ -171,14 +156,8 @@ mod tests {
         let builtins = builtin_resource_types();
         let names: Vec<&str> = builtins.iter().map(|rt| rt.name.as_str()).collect();
         assert!(names.contains(&"Region"), "Region must be a built-in");
-        assert!(
-            names.contains(&"AudioSegment"),
-            "AudioSegment must be a built-in"
-        );
-        assert!(
-            names.contains(&"VideoSegment"),
-            "VideoSegment must be a built-in"
-        );
+        assert!(names.contains(&"AudioSegment"), "AudioSegment must be a built-in");
+        assert!(names.contains(&"VideoSegment"), "VideoSegment must be a built-in");
         assert!(names.contains(&"LinkObj"), "LinkObj must be a built-in");
     }
 
@@ -210,14 +189,8 @@ mod tests {
     /// Spot-check the other file-value props to guard against regressions.
     #[test]
     fn builtin_field_value_type_spot_checks() {
-        assert_eq!(
-            builtin_field_value_type("hasStillImageFileValue"),
-            Some(ValueType::StillImage)
-        );
-        assert_eq!(
-            builtin_field_value_type("hasAudioFileValue"),
-            Some(ValueType::Audio)
-        );
+        assert_eq!(builtin_field_value_type("hasStillImageFileValue"), Some(ValueType::StillImage));
+        assert_eq!(builtin_field_value_type("hasAudioFileValue"), Some(ValueType::Audio));
         assert_eq!(builtin_field_value_type("unknown"), None);
     }
 

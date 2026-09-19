@@ -19,8 +19,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// A realistic newline-delimited crates.io sparse-index body: one JSON
 /// object per line, unknown fields present (`name`, `cksum`) alongside the
 /// two fields `fetch_latest`/`parse_latest_stable` actually read.
-const INDEX_BODY: &str =
-    "{\"name\":\"dsp-cli\",\"vers\":\"0.1.0\",\"yanked\":false,\"cksum\":\"aaa\"}
+const INDEX_BODY: &str = "{\"name\":\"dsp-cli\",\"vers\":\"0.1.0\",\"yanked\":false,\"cksum\":\"aaa\"}
 {\"name\":\"dsp-cli\",\"vers\":\"0.1.1\",\"yanked\":false,\"cksum\":\"bbb\"}
 {\"name\":\"dsp-cli\",\"vers\":\"0.1.2\",\"yanked\":false,\"cksum\":\"ccc\"}
 ";
@@ -62,10 +61,7 @@ async fn user_agent_is_sent_in_plain_form() {
 
     Mock::given(method("GET"))
         .and(path("/ds/p-/dsp-cli"))
-        .and(header(
-            "user-agent",
-            format!("dsp-cli/{}", env!("CARGO_PKG_VERSION")).as_str(),
-        ))
+        .and(header("user-agent", format!("dsp-cli/{}", env!("CARGO_PKG_VERSION")).as_str()))
         .respond_with(ResponseTemplate::new(200).set_body_string(INDEX_BODY))
         .expect(1)
         .mount(&server)

@@ -2,10 +2,10 @@
 //!
 //! `ProgressReporter` is a separate trait from `Renderer` because:
 //! - The renderer owns a single stdout sink; progress events belong on stderr.
-//! - Two impls (Human, JSON) vs five renderers keeps it right-sized — stderr is
-//!   non-data output so prose/lines/csv/tsv all share the human reporter.
-//! - Isolates the novel "multi-line polling progress to stderr" concern from the
-//!   renderer's stdout concerns (endorsed in the Step 6 rationale, ADR-0008).
+//! - Two impls (Human, JSON) vs five renderers keeps it right-sized — stderr is non-data output so
+//!   prose/lines/csv/tsv all share the human reporter.
+//! - Isolates the novel "multi-line polling progress to stderr" concern from the renderer's stdout
+//!   concerns (endorsed in the Step 6 rationale, ADR-0008).
 //!
 //! Returning `Result` is intentional: stderr writes can fail (e.g. the other
 //! end of a pipe closed unexpectedly). The action treats a stderr-write failure
@@ -45,9 +45,7 @@ pub struct HumanProgress {
 impl HumanProgress {
     /// Creates a reporter writing to `io::stderr()`.
     pub fn new() -> Self {
-        Self {
-            err: Box::new(io::stderr()),
-        }
+        Self { err: Box::new(io::stderr()) }
     }
 
     /// Creates a reporter writing to an arbitrary `Write` sink (used in tests).
@@ -68,10 +66,7 @@ impl ProgressReporter for HumanProgress {
             DumpEvent::Triggered { id } => {
                 writeln!(self.err, "Triggered dump {id}.")?;
             }
-            DumpEvent::Polling {
-                elapsed_secs,
-                status,
-            } => {
+            DumpEvent::Polling { elapsed_secs, status } => {
                 writeln!(
                     self.err,
                     "polling… {elapsed_secs}s elapsed ({status})",
@@ -131,9 +126,7 @@ pub struct JsonProgress {
 impl JsonProgress {
     /// Creates a reporter writing to `io::stderr()`.
     pub fn new() -> Self {
-        Self {
-            err: Box::new(io::stderr()),
-        }
+        Self { err: Box::new(io::stderr()) }
     }
 
     /// Creates a reporter writing to an arbitrary `Write` sink (used in tests).
@@ -154,10 +147,7 @@ impl ProgressReporter for JsonProgress {
             DumpEvent::Triggered { id } => {
                 serde_json::json!({"event": "triggered", "id": id})
             }
-            DumpEvent::Polling {
-                elapsed_secs,
-                status,
-            } => {
+            DumpEvent::Polling { elapsed_secs, status } => {
                 serde_json::json!({
                     "event": "polling",
                     "elapsed_s": elapsed_secs,
@@ -187,8 +177,8 @@ impl ProgressReporter for JsonProgress {
                 })
             }
         };
-        let line = serde_json::to_string(&obj)
-            .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?;
+        let line =
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?;
         writeln!(self.err, "{line}")?;
         Ok(())
     }
@@ -252,36 +242,25 @@ mod tests {
 
     #[test]
     fn human_triggered_formats_correctly() {
-        let out = collect_human(&[DumpEvent::Triggered {
-            id: "abc123".into(),
-        }]);
+        let out = collect_human(&[DumpEvent::Triggered { id: "abc123".into() }]);
         assert_eq!(out.trim(), "Triggered dump abc123.");
     }
 
     #[test]
     fn human_polling_in_progress_formats_correctly() {
-        let out = collect_human(&[DumpEvent::Polling {
-            elapsed_secs: 12,
-            status: DumpStatus::InProgress,
-        }]);
+        let out = collect_human(&[DumpEvent::Polling { elapsed_secs: 12, status: DumpStatus::InProgress }]);
         assert_eq!(out.trim(), "polling… 12s elapsed (in_progress)");
     }
 
     #[test]
     fn human_polling_completed_formats_correctly() {
-        let out = collect_human(&[DumpEvent::Polling {
-            elapsed_secs: 45,
-            status: DumpStatus::Completed,
-        }]);
+        let out = collect_human(&[DumpEvent::Polling { elapsed_secs: 45, status: DumpStatus::Completed }]);
         assert_eq!(out.trim(), "polling… 45s elapsed (completed)");
     }
 
     #[test]
     fn human_polling_failed_formats_correctly() {
-        let out = collect_human(&[DumpEvent::Polling {
-            elapsed_secs: 99,
-            status: DumpStatus::Failed,
-        }]);
+        let out = collect_human(&[DumpEvent::Polling { elapsed_secs: 99, status: DumpStatus::Failed }]);
         assert_eq!(out.trim(), "polling… 99s elapsed (failed)");
     }
 
@@ -305,9 +284,7 @@ mod tests {
 
     #[test]
     fn json_triggered_fields_correct() {
-        let out = collect_json(&[DumpEvent::Triggered {
-            id: "abc123".into(),
-        }]);
+        let out = collect_json(&[DumpEvent::Triggered { id: "abc123".into() }]);
         let v = parse_json_line(out.trim());
         assert_eq!(v["event"], "triggered");
         assert_eq!(v["id"], "abc123");
@@ -315,10 +292,7 @@ mod tests {
 
     #[test]
     fn json_polling_in_progress_fields_correct() {
-        let out = collect_json(&[DumpEvent::Polling {
-            elapsed_secs: 12,
-            status: DumpStatus::InProgress,
-        }]);
+        let out = collect_json(&[DumpEvent::Polling { elapsed_secs: 12, status: DumpStatus::InProgress }]);
         let v = parse_json_line(out.trim());
         assert_eq!(v["event"], "polling");
         assert_eq!(v["elapsed_s"], 12);
@@ -327,10 +301,7 @@ mod tests {
 
     #[test]
     fn json_polling_completed_fields_correct() {
-        let out = collect_json(&[DumpEvent::Polling {
-            elapsed_secs: 28,
-            status: DumpStatus::Completed,
-        }]);
+        let out = collect_json(&[DumpEvent::Polling { elapsed_secs: 28, status: DumpStatus::Completed }]);
         let v = parse_json_line(out.trim());
         assert_eq!(v["event"], "polling");
         assert_eq!(v["elapsed_s"], 28);
@@ -356,28 +327,19 @@ mod tests {
 
     #[test]
     fn human_adopting_formats_correctly() {
-        let out = collect_human(&[DumpEvent::Adopting {
-            id: "existing-dump-id".into(),
-        }]);
-        assert_eq!(
-            out.trim(),
-            "Found existing dump existing-dump-id; adopting it."
-        );
+        let out = collect_human(&[DumpEvent::Adopting { id: "existing-dump-id".into() }]);
+        assert_eq!(out.trim(), "Found existing dump existing-dump-id; adopting it.");
     }
 
     #[test]
     fn human_deleting_formats_correctly() {
-        let out = collect_human(&[DumpEvent::Deleting {
-            id: "del-dump-id".into(),
-        }]);
+        let out = collect_human(&[DumpEvent::Deleting { id: "del-dump-id".into() }]);
         assert_eq!(out.trim(), "Deleting dump del-dump-id\u{2026}");
     }
 
     #[test]
     fn human_probe_created_formats_correctly() {
-        let out = collect_human(&[DumpEvent::ProbeCreated {
-            id: "probe-id-99".into(),
-        }]);
+        let out = collect_human(&[DumpEvent::ProbeCreated { id: "probe-id-99".into() }]);
         assert_eq!(
             out.trim(),
             "No dump existed; a probe created a new in-progress dump probe-id-99 (it will complete server-side)."
@@ -386,9 +348,7 @@ mod tests {
 
     #[test]
     fn json_adopting_fields_correct() {
-        let out = collect_json(&[DumpEvent::Adopting {
-            id: "existing-dump-id".into(),
-        }]);
+        let out = collect_json(&[DumpEvent::Adopting { id: "existing-dump-id".into() }]);
         let v = parse_json_line(out.trim());
         assert_eq!(v["event"], "adopting");
         assert_eq!(v["id"], "existing-dump-id");
@@ -396,9 +356,7 @@ mod tests {
 
     #[test]
     fn json_deleting_fields_correct() {
-        let out = collect_json(&[DumpEvent::Deleting {
-            id: "del-dump-id".into(),
-        }]);
+        let out = collect_json(&[DumpEvent::Deleting { id: "del-dump-id".into() }]);
         let v = parse_json_line(out.trim());
         assert_eq!(v["event"], "deleting");
         assert_eq!(v["id"], "del-dump-id");
@@ -406,9 +364,7 @@ mod tests {
 
     #[test]
     fn json_probe_created_fields_correct() {
-        let out = collect_json(&[DumpEvent::ProbeCreated {
-            id: "probe-id-99".into(),
-        }]);
+        let out = collect_json(&[DumpEvent::ProbeCreated { id: "probe-id-99".into() }]);
         let v = parse_json_line(out.trim());
         assert_eq!(v["event"], "probe_created");
         assert_eq!(v["id"], "probe-id-99");
@@ -444,9 +400,6 @@ mod tests {
         assert_eq!(v["id"], "foreign-dump-id");
         assert_eq!(v["project_iri"], "http://rdfh.ch/projects/0002");
         // Must NOT use camelCase "projectIri" key (ADR-0001).
-        assert!(
-            v.get("projectIri").is_none(),
-            "JSON must not use camelCase 'projectIri'"
-        );
+        assert!(v.get("projectIri").is_none(), "JSON must not use camelCase 'projectIri'");
     }
 }

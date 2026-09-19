@@ -176,10 +176,7 @@ pub(crate) fn flatten_vocabulary_detail(detail: &VocabularyDetail) -> Vec<FlatVo
     match &detail.subtree_of {
         None => flat,
         Some(target_iri) => {
-            let target_number = flat
-                .iter()
-                .find(|n| &n.header.iri == target_iri)
-                .map(|n| n.number.clone());
+            let target_number = flat.iter().find(|n| &n.header.iri == target_iri).map(|n| n.number.clone());
             match target_number {
                 None => Vec::new(),
                 Some(target_number) => {
@@ -245,14 +242,7 @@ fn walk<'a>(
             position: node.position,
             parent_iri: parent_iri.to_string(),
         });
-        walk(
-            &node.children,
-            &number,
-            &path,
-            this_depth,
-            &node.header.iri,
-            out,
-        );
+        walk(&node.children, &number, &path, this_depth, &node.header.iri, out);
     }
 }
 
@@ -331,10 +321,7 @@ pub(crate) fn nest_vocabulary_detail(detail: &VocabularyDetail) -> Vec<NestedVoc
 /// Recursive builder for the whole (unfiltered) nested tree. `number_prefix`
 /// is the already-joined ancestor `number` string (`""` for the root's direct
 /// children — see `child_number`).
-fn nest_children<'a>(
-    nodes: &'a [VocabularyNode],
-    number_prefix: &str,
-) -> Vec<NestedVocabularyNode<'a>> {
+fn nest_children<'a>(nodes: &'a [VocabularyNode], number_prefix: &str) -> Vec<NestedVocabularyNode<'a>> {
     nodes
         .iter()
         .map(|node| {
@@ -354,10 +341,7 @@ fn nest_children<'a>(
 /// rooted at the first node whose `header.iri == target_iri` (or `None` if
 /// absent). Takes ownership (rather than borrowing) so the matched node's own
 /// already-built `children` can be returned as-is, with no re-derivation.
-fn take_node<'a>(
-    nodes: Vec<NestedVocabularyNode<'a>>,
-    target_iri: &str,
-) -> Option<NestedVocabularyNode<'a>> {
+fn take_node<'a>(nodes: Vec<NestedVocabularyNode<'a>>, target_iri: &str) -> Option<NestedVocabularyNode<'a>> {
     for node in nodes {
         if node.header.iri == target_iri {
             return Some(node);
@@ -476,21 +460,13 @@ mod tests {
 
     #[test]
     fn localized_path_segment_untagged_when_no_tagged_language_present() {
-        let h = header(
-            "http://rdfh.ch/lists/0838/x",
-            None,
-            vec![text("untagged value", None)],
-        );
+        let h = header("http://rdfh.ch/lists/0838/x", None, vec![text("untagged value", None)]);
         assert_eq!(localized_path_segment(&h), "untagged value");
     }
 
     #[test]
     fn localized_path_segment_falls_back_to_iri_local_name_with_slash() {
-        let h = header(
-            "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w",
-            None,
-            vec![],
-        );
+        let h = header("http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w", None, vec![]);
         assert_eq!(localized_path_segment(&h), "JbNT7lvfS9yaB5bgbkoa2w");
     }
 
@@ -553,10 +529,7 @@ mod tests {
             header: header(
                 "http://rdfh.ch/lists/0001/node2b1",
                 Some("node2b1"),
-                vec![
-                    text("Node 2b1 (en)", Some("en")),
-                    text("Knoten 2b1", Some("de")),
-                ],
+                vec![text("Node 2b1 (en)", Some("en")), text("Knoten 2b1", Some("de"))],
             ),
             position: 0,
             children: vec![],
@@ -565,10 +538,7 @@ mod tests {
             header: header(
                 "http://rdfh.ch/lists/0001/node2b",
                 Some("node2b"),
-                vec![
-                    text("Node 2b (en)", Some("en")),
-                    text("Knoten 2b", Some("de")),
-                ],
+                vec![text("Node 2b (en)", Some("en")), text("Knoten 2b", Some("de"))],
             ),
             position: 1,
             children: vec![node2b1],
@@ -586,10 +556,7 @@ mod tests {
             header: header(
                 "http://rdfh.ch/lists/0001/node2",
                 Some("node2"),
-                vec![
-                    text("Node 2 (en)", Some("en")),
-                    text("Knoten 2", Some("de")),
-                ],
+                vec![text("Node 2 (en)", Some("en")), text("Knoten 2", Some("de"))],
             ),
             position: 1,
             children: vec![node2a, node2b],
@@ -598,10 +565,7 @@ mod tests {
             header: header(
                 "http://rdfh.ch/lists/0001/node1",
                 Some("node1"),
-                vec![
-                    text("Node 1 (en)", Some("en")),
-                    text("Knoten 1", Some("de")),
-                ],
+                vec![text("Node 1 (en)", Some("en")), text("Knoten 1", Some("de"))],
             ),
             position: 0,
             children: vec![],
@@ -680,10 +644,7 @@ mod tests {
         // path column is index 15. Root is fr-only ("Phase de recherche"),
         // node2 is en-preferred ("Node 2 (en)"), node2a is en-only.
         let node2a = by_iri("http://rdfh.ch/lists/0001/node2a");
-        assert_eq!(
-            node2a[15],
-            "Phase de recherche \u{203a} Node 2 (en) \u{203a} Node 2a (en)"
-        );
+        assert_eq!(node2a[15], "Phase de recherche \u{203a} Node 2 (en) \u{203a} Node 2a (en)");
     }
 
     #[test]
@@ -702,11 +663,8 @@ mod tests {
     fn build_vocabulary_rows_subtree_narrows_and_keeps_absolute_numbers() {
         let whole = fixture_detail(None);
         let whole_rows = build_vocabulary_rows(&whole);
-        let whole_node2_number = whole_rows
-            .iter()
-            .find(|r| r[0] == "http://rdfh.ch/lists/0001/node2")
-            .unwrap()[1]
-            .clone();
+        let whole_node2_number =
+            whole_rows.iter().find(|r| r[0] == "http://rdfh.ch/lists/0001/node2").unwrap()[1].clone();
 
         let subtree = fixture_detail(Some("http://rdfh.ch/lists/0001/node2"));
         let subtree_rows = build_vocabulary_rows(&subtree);
@@ -720,11 +678,8 @@ mod tests {
         assert!(!ids.contains(&"http://rdfh.ch/lists/0001/node1"));
 
         // Absolute numbers unchanged from whole-tree numbering.
-        let subtree_node2_number = subtree_rows
-            .iter()
-            .find(|r| r[0] == "http://rdfh.ch/lists/0001/node2")
-            .unwrap()[1]
-            .clone();
+        let subtree_node2_number =
+            subtree_rows.iter().find(|r| r[0] == "http://rdfh.ch/lists/0001/node2").unwrap()[1].clone();
         assert_eq!(subtree_node2_number, whole_node2_number);
 
         // D15: row count equals detail.node_count in subtree mode.
@@ -775,11 +730,8 @@ mod tests {
     fn nest_vocabulary_detail_absolute_numbers_match_flat_builder() {
         let detail = fixture_detail(None);
         let flat_rows = build_vocabulary_rows(&detail);
-        let flat_node2b1_number = flat_rows
-            .iter()
-            .find(|r| r[0] == "http://rdfh.ch/lists/0001/node2b1")
-            .unwrap()[1]
-            .clone();
+        let flat_node2b1_number =
+            flat_rows.iter().find(|r| r[0] == "http://rdfh.ch/lists/0001/node2b1").unwrap()[1].clone();
         assert_eq!(flat_node2b1_number, "2.2.1");
 
         let nested = nest_vocabulary_detail(&detail);
@@ -810,11 +762,7 @@ mod tests {
         assert_eq!(node2.header.iri, "http://rdfh.ch/lists/0001/node2");
 
         // Descendants nested beneath: node2a and node2b (with node2b1 beneath node2b).
-        let ids: Vec<&str> = node2
-            .children
-            .iter()
-            .map(|n| n.header.iri.as_str())
-            .collect();
+        let ids: Vec<&str> = node2.children.iter().map(|n| n.header.iri.as_str()).collect();
         assert!(ids.contains(&"http://rdfh.ch/lists/0001/node2a"));
         assert!(ids.contains(&"http://rdfh.ch/lists/0001/node2b"));
         let node2b = node2
@@ -823,10 +771,7 @@ mod tests {
             .find(|n| n.header.iri == "http://rdfh.ch/lists/0001/node2b")
             .unwrap();
         assert_eq!(node2b.children.len(), 1);
-        assert_eq!(
-            node2b.children[0].header.iri,
-            "http://rdfh.ch/lists/0001/node2b1"
-        );
+        assert_eq!(node2b.children[0].header.iri, "http://rdfh.ch/lists/0001/node2b1");
 
         // node1 (a sibling branch) must not appear anywhere in the subtree.
         assert_ne!(node2.header.iri, "http://rdfh.ch/lists/0001/node1");

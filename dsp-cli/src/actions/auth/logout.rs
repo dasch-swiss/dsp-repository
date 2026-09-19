@@ -53,10 +53,7 @@ fn run_impl(
         count_cost: None,
     };
 
-    let outcome = AuthLogoutOutcome {
-        server: cfg.server.clone(),
-        was_cached,
-    };
+    let outcome = AuthLogoutOutcome { server: cfg.server.clone(), was_cached };
 
     renderer.auth_logout(&outcome, &meta)?;
     Ok(())
@@ -71,9 +68,7 @@ mod tests {
     use crate::config::auth_cache::ServerEntry;
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{Format, MetaContext, Renderer};
 
     // ── recording renderer ────────────────────────────────────────────────────
@@ -85,53 +80,30 @@ mod tests {
 
     impl RecordingRenderer {
         fn new() -> Self {
-            Self {
-                logout_outcome: None,
-                logout_auth_state: None,
-            }
+            Self { logout_outcome: None, logout_auth_state: None }
         }
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            outcome: &AuthLogoutOutcome,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, outcome: &AuthLogoutOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.logout_outcome = Some((outcome.server.clone(), outcome.was_cached));
             self.logout_auth_state = Some(meta.auth_state.clone());
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -151,11 +123,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &crate::render::ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &crate::render::ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -254,9 +222,7 @@ mod tests {
                 header_only: false,
             },
         };
-        let cfg = Config {
-            server: server.to_string(),
-        };
+        let cfg = Config { server: server.to_string() };
         (args, cfg)
     }
 
@@ -304,10 +270,7 @@ mod tests {
         run_impl(&args, &cfg, &mut renderer, Some(&cache_path)).unwrap();
 
         let (_, was_cached) = renderer.logout_outcome.unwrap();
-        assert!(
-            !was_cached,
-            "expected was_cached=false when cache was empty"
-        );
+        assert!(!was_cached, "expected was_cached=false when cache was empty");
     }
 
     #[test]
@@ -319,10 +282,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         run_impl(&args, &cfg, &mut renderer, Some(&cache_path)).unwrap();
 
-        assert!(
-            !cache_path.exists(),
-            "logout on empty cache must not create the cache file"
-        );
+        assert!(!cache_path.exists(), "logout on empty cache must not create the cache file");
     }
 
     #[test]
@@ -333,10 +293,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let result = run_impl(&args, &cfg, &mut renderer, Some(&cache_path));
-        assert!(
-            result.is_ok(),
-            "logout should always return Ok; got {result:?}"
-        );
+        assert!(result.is_ok(), "logout should always return Ok; got {result:?}");
     }
 
     #[test]

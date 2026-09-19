@@ -1,7 +1,6 @@
 use std::process::ExitCode;
 
 use clap::Parser;
-
 use dsp_cli::cli::Cli;
 use dsp_cli::config::Config;
 use dsp_cli::diagnostic::ExitCategory;

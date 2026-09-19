@@ -81,10 +81,7 @@ async fn happy_path_translates_dto_to_project() {
 
     Mock::given(method("GET"))
         .and(path("/admin/projects"))
-        .and(header(
-            "user-agent",
-            format!("dsp-cli/{}", env!("CARGO_PKG_VERSION")).as_str(),
-        ))
+        .and(header("user-agent", format!("dsp-cli/{}", env!("CARGO_PKG_VERSION")).as_str()))
         .respond_with(ResponseTemplate::new(200).set_body_json(body))
         .expect(1)
         .mount(&server)
@@ -108,11 +105,7 @@ async fn happy_path_translates_dto_to_project() {
     assert_eq!(p1.shortcode, "0001");
     assert_eq!(p1.shortname, "anything");
     assert_eq!(p1.longname.as_deref(), Some("Anything Project"));
-    assert_eq!(
-        p1.status,
-        ProjectStatus::Active,
-        "status:true must be Active"
-    );
+    assert_eq!(p1.status, ProjectStatus::Active, "status:true must be Active");
     assert_eq!(p1.data_models, 2, "two ontologies → data_models: 2");
 
     // Project 2: inactive, 0 data_models, no longname
@@ -121,22 +114,14 @@ async fn happy_path_translates_dto_to_project() {
     assert_eq!(p2.shortcode, "0002");
     assert_eq!(p2.shortname, "images");
     assert_eq!(p2.longname, None, "absent longname must map to None");
-    assert_eq!(
-        p2.status,
-        ProjectStatus::Inactive,
-        "status:false must be Inactive"
-    );
+    assert_eq!(p2.status, ProjectStatus::Inactive, "status:false must be Inactive");
     assert_eq!(p2.data_models, 0, "empty ontologies → data_models: 0");
 
     // Project 3: active, 1 data_model, longname present
     let p3 = &projects[2];
     assert_eq!(p3.iri, "http://rdfh.ch/projects/0803");
     assert_eq!(p3.data_models, 1);
-    assert_eq!(
-        p3.status,
-        ProjectStatus::Active,
-        "second active project must also be Active"
-    );
+    assert_eq!(p3.status, ProjectStatus::Active, "second active project must also be Active");
 }
 
 // ---------------------------------------------------------------------------
@@ -197,17 +182,10 @@ async fn bearer_present_when_token_is_some() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok when bearer token is forwarded, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok when bearer token is forwarded, got: {:?}", result);
 
     // Also inspect recorded headers directly.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -248,10 +226,7 @@ async fn bearer_absent_when_token_is_none() {
     .expect("blocking thread should not panic");
 
     // Inspect recorded headers to confirm the Authorization header is absent.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),

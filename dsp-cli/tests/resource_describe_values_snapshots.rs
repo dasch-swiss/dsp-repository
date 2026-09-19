@@ -27,8 +27,8 @@
 
 use dsp_cli::model::resource_type::ValueType;
 use dsp_cli::model::{
-    DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail,
-    ResourceVisibility, Value, ValueContent,
+    DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail, ResourceVisibility, Value,
+    ValueContent,
 };
 use dsp_cli::render::csv::CsvRenderer;
 use dsp_cli::render::json::JsonRenderer;
@@ -62,9 +62,7 @@ fn base_envelope(values: Option<Vec<FieldValues>>) -> ResourceDetail {
         label: "n6r".to_string(),
         iri: "http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw".to_string(),
         resource_type: "Page".to_string(),
-        ark_url: Some(
-            "https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr".to_string(),
-        ),
+        ark_url: Some("https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr".to_string()),
         creation_date: Some("2011-04-14T07:32:49Z".to_string()),
         last_modified: Some("2024-03-10T15:00:00Z".to_string()),
         attached_project: Some("http://rdfh.ch/projects/3ABR_2i8QYGSIDvmP9mlEw".to_string()),
@@ -90,9 +88,7 @@ fn fixture_a_scalars() -> ResourceDetail {
     let formatted_text = FieldValues {
         name: "hasComment".to_string(),
         label: Some("Comment".to_string()),
-        values: vec![
-            ValueContent::Text("This is a text value with stripped standoff.".to_string()).into(),
-        ],
+        values: vec![ValueContent::Text("This is a text value with stripped standoff.".to_string()).into()],
     };
     let integer_field = FieldValues {
         name: "hasSequenceNumber".to_string(),
@@ -366,54 +362,32 @@ fn fixture_d_with_comment() -> ResourceDetail {
 fn values_prose_scalars() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&fixture_a_scalars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_a_scalars(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Values section present.
-    assert!(
-        out.contains("Values:"),
-        "prose must have 'Values:' section; got:\n{out}"
-    );
+    assert!(out.contains("Values:"), "prose must have 'Values:' section; got:\n{out}");
     // Field header with label.
     assert!(
         out.contains("Page Number (hasPagenum)"),
         "prose must show 'Page Number (hasPagenum)'; got:\n{out}"
     );
     // Integer.
-    assert!(
-        out.contains("42"),
-        "prose must show integer value 42; got:\n{out}"
-    );
+    assert!(out.contains("42"), "prose must show integer value 42; got:\n{out}");
     // Decimal with precision.
-    assert!(
-        out.contains("3.14159"),
-        "prose must show decimal 3.14159; got:\n{out}"
-    );
+    assert!(out.contains("3.14159"), "prose must show decimal 3.14159; got:\n{out}");
     // Boolean.
-    assert!(
-        out.contains("true"),
-        "prose must show boolean 'true'; got:\n{out}"
-    );
+    assert!(out.contains("true"), "prose must show boolean 'true'; got:\n{out}");
     // Single-point date.
     assert!(
         out.contains("1489 CE (GREGORIAN)"),
         "prose must show collapsed date '1489 CE (GREGORIAN)'; got:\n{out}"
     );
     // Multi-value: both keywords present.
-    assert!(
-        out.contains("incunabula"),
-        "prose must show keyword 'incunabula'; got:\n{out}"
-    );
-    assert!(
-        out.contains("manuscript"),
-        "prose must show keyword 'manuscript'; got:\n{out}"
-    );
+    assert!(out.contains("incunabula"), "prose must show keyword 'incunabula'; got:\n{out}");
+    assert!(out.contains("manuscript"), "prose must show keyword 'manuscript'; got:\n{out}");
     // No DSP-API vocab.
-    assert!(
-        !out.contains("knora-api:"),
-        "prose must not leak 'knora-api:'; got:\n{out}"
-    );
+    assert!(!out.contains("knora-api:"), "prose must not leak 'knora-api:'; got:\n{out}");
     insta::assert_snapshot!("values_prose_scalars", out);
 }
 
@@ -427,8 +401,7 @@ fn values_prose_scalars() {
 fn values_prose_named_scalars_and_raw() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&fixture_b_named_scalars_and_raw(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_b_named_scalars_and_raw(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Date range (en-dash separator).
@@ -441,19 +414,10 @@ fn values_prose_named_scalars_and_raw() {
         out.contains("https://www.example.com/resource"),
         "prose must show URI; got:\n{out}"
     );
-    assert!(
-        out.contains("#ff3300"),
-        "prose must show color; got:\n{out}"
-    );
-    assert!(
-        out.contains("2661552"),
-        "prose must show geoname code; got:\n{out}"
-    );
+    assert!(out.contains("#ff3300"), "prose must show color; got:\n{out}");
+    assert!(out.contains("2661552"), "prose must show geoname code; got:\n{out}");
     // Raw fallback text.
-    assert!(
-        out.contains("PT10S"),
-        "prose must show raw fallback text 'PT10S'; got:\n{out}"
-    );
+    assert!(out.contains("PT10S"), "prose must show raw fallback text 'PT10S'; got:\n{out}");
     // Degraded label: `hasStillImageFileValue` alone (no parentheses).
     assert!(
         out.contains("hasStillImageFileValue"),
@@ -479,8 +443,7 @@ fn values_prose_named_scalars_and_raw() {
 fn values_prose_links_list_file() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&fixture_c_links_list_file(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_c_links_list_file(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Link with label: the → arrow and label+iri.
@@ -502,20 +465,14 @@ fn values_prose_links_list_file() {
         "prose must NOT wrap degraded link IRI in brackets; got:\n{out}"
     );
     // List-item with label.
-    assert!(
-        out.contains("Incunabula"),
-        "prose must show vocabulary-item label; got:\n{out}"
-    );
+    assert!(out.contains("Incunabula"), "prose must show vocabulary-item label; got:\n{out}");
     // List-item degraded.
     assert!(
         out.contains("http://rdfh.ch/lists/0803/subject-history"),
         "prose must show degraded list node IRI; got:\n{out}"
     );
     // Still-image with W×H dimensions.
-    assert!(
-        out.contains("n6r.jp2"),
-        "prose must show image filename; got:\n{out}"
-    );
+    assert!(out.contains("n6r.jp2"), "prose must show image filename; got:\n{out}");
     assert!(
         out.contains("2048") && out.contains("3072"),
         "prose must show still-image dimensions; got:\n{out}"
@@ -535,8 +492,7 @@ fn values_prose_links_list_file() {
 fn values_prose_empty() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&fixture_empty_values(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_empty_values(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("Values: (none)"),
@@ -555,8 +511,7 @@ fn values_prose_empty() {
 fn values_prose_comment() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&fixture_d_with_comment(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_d_with_comment(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     assert!(
@@ -587,8 +542,7 @@ fn values_prose_comment() {
 fn values_json_scalars() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&fixture_a_scalars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_a_scalars(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
 
@@ -597,23 +551,15 @@ fn values_json_scalars() {
         parsed["data"].get("values").is_some(),
         "json data must have 'values' key when Some; got:\n{out}"
     );
-    let values = parsed["data"]["values"]
-        .as_array()
-        .expect("values must be array");
-    assert!(
-        !values.is_empty(),
-        "values array must not be empty; got:\n{out}"
-    );
+    let values = parsed["data"]["values"].as_array().expect("values must be array");
+    assert!(!values.is_empty(), "values array must not be empty; got:\n{out}");
 
     // Find the integer field.
     let int_field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasSequenceNumber"))
         .expect("must have hasSequenceNumber field");
-    assert_eq!(
-        int_field["values"][0]["value_type"].as_str().unwrap(),
-        "integer"
-    );
+    assert_eq!(int_field["values"][0]["value_type"].as_str().unwrap(), "integer");
     assert_eq!(int_field["values"][0]["value"].as_i64().unwrap(), 42);
 
     // Find the date field.
@@ -621,22 +567,13 @@ fn values_json_scalars() {
         .iter()
         .find(|f| f["field"].as_str() == Some("hasPublicationDate"))
         .expect("must have hasPublicationDate field");
-    assert_eq!(
-        date_field["values"][0]["value_type"].as_str().unwrap(),
-        "date"
-    );
-    assert_eq!(
-        date_field["values"][0]["calendar"].as_str().unwrap(),
-        "GREGORIAN"
-    );
+    assert_eq!(date_field["values"][0]["value_type"].as_str().unwrap(), "date");
+    assert_eq!(date_field["values"][0]["calendar"].as_str().unwrap(), "GREGORIAN");
     assert!(
         date_field["values"][0].get("start").is_some(),
         "date must have 'start' sub-object"
     );
-    assert!(
-        date_field["values"][0].get("end").is_some(),
-        "date must have 'end' sub-object"
-    );
+    assert!(date_field["values"][0].get("end").is_some(), "date must have 'end' sub-object");
 
     // Multi-value field: 2 values.
     let kw_field = values
@@ -662,67 +599,46 @@ fn values_json_scalars() {
 fn values_json_named_scalars_and_raw() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&fixture_b_named_scalars_and_raw(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_b_named_scalars_and_raw(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
-    let values = parsed["data"]["values"]
-        .as_array()
-        .expect("values must be array");
+    let values = parsed["data"]["values"].as_array().expect("values must be array");
 
     // Check time token.
     let time_field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasTimestamp"))
         .expect("must have hasTimestamp");
-    assert_eq!(
-        time_field["values"][0]["value_type"].as_str().unwrap(),
-        "time"
-    );
+    assert_eq!(time_field["values"][0]["value_type"].as_str().unwrap(), "time");
 
     // Check uri token.
     let uri_field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasExternalUri"))
         .expect("must have hasExternalUri");
-    assert_eq!(
-        uri_field["values"][0]["value_type"].as_str().unwrap(),
-        "uri"
-    );
+    assert_eq!(uri_field["values"][0]["value_type"].as_str().unwrap(), "uri");
 
     // Check color token.
     let color_field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasColor"))
         .expect("must have hasColor");
-    assert_eq!(
-        color_field["values"][0]["value_type"].as_str().unwrap(),
-        "color"
-    );
+    assert_eq!(color_field["values"][0]["value_type"].as_str().unwrap(), "color");
 
     // Check geoname token.
     let geo_field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasLocation"))
         .expect("must have hasLocation");
-    assert_eq!(
-        geo_field["values"][0]["value_type"].as_str().unwrap(),
-        "geoname"
-    );
+    assert_eq!(geo_field["values"][0]["value_type"].as_str().unwrap(), "geoname");
 
     // Check raw fallback: value_type = "interval", has `text` key.
     let raw_field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasDuration"))
         .expect("must have hasDuration");
-    assert_eq!(
-        raw_field["values"][0]["value_type"].as_str().unwrap(),
-        "interval"
-    );
-    assert!(
-        raw_field["values"][0].get("text").is_some(),
-        "raw must have 'text' key"
-    );
+    assert_eq!(raw_field["values"][0]["value_type"].as_str().unwrap(), "interval");
+    assert!(raw_field["values"][0].get("text").is_some(), "raw must have 'text' key");
 
     // Degraded field label is null.
     let degraded = values
@@ -741,7 +657,8 @@ fn values_json_named_scalars_and_raw() {
 /// JSON render of fixture C (links, vocabulary-items, files).
 ///
 /// Locks:
-/// - Link: `value_type = "link"`, `target_iri`, `target_label` (non-null when present, null when absent).
+/// - Link: `value_type = "link"`, `target_iri`, `target_label` (non-null when present, null when
+///   absent).
 /// - List-item: `value_type = "vocabulary-item"`, `node_iri`, `label` (non-null/null per case).
 /// - Still-image: `value_type = "still-image"`, `filename`, `url`, `width`, `height` non-null.
 /// - Document: `value_type = "document"`, `width` and `height` null.
@@ -749,13 +666,10 @@ fn values_json_named_scalars_and_raw() {
 fn values_json_links_list_file() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&fixture_c_links_list_file(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_c_links_list_file(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
-    let values = parsed["data"]["values"]
-        .as_array()
-        .expect("values must be array");
+    let values = parsed["data"]["values"].as_array().expect("values must be array");
 
     // Link with label.
     let link = values
@@ -767,10 +681,7 @@ fn values_json_links_list_file() {
         link["values"][0]["target_iri"].as_str().unwrap(),
         "http://rdfh.ch/0803/bookres123"
     );
-    assert_eq!(
-        link["values"][0]["target_label"].as_str().unwrap(),
-        "Incunabula Testbook"
-    );
+    assert_eq!(link["values"][0]["target_label"].as_str().unwrap(), "Incunabula Testbook");
 
     // Link degraded: target_label is null.
     let link_deg = values
@@ -787,10 +698,7 @@ fn values_json_links_list_file() {
         .iter()
         .find(|f| f["field"].as_str() == Some("hasBookGenre"))
         .expect("must have hasBookGenre");
-    assert_eq!(
-        list["values"][0]["value_type"].as_str().unwrap(),
-        "vocabulary-item"
-    );
+    assert_eq!(list["values"][0]["value_type"].as_str().unwrap(), "vocabulary-item");
     assert!(list["values"][0]["node_iri"].as_str().is_some());
     assert_eq!(list["values"][0]["label"].as_str().unwrap(), "Incunabula");
 
@@ -809,10 +717,7 @@ fn values_json_links_list_file() {
         .iter()
         .find(|f| f["field"].as_str() == Some("hasStillImageFileValue"))
         .expect("must have still-image field");
-    assert_eq!(
-        img["values"][0]["value_type"].as_str().unwrap(),
-        "still-image"
-    );
+    assert_eq!(img["values"][0]["value_type"].as_str().unwrap(), "still-image");
     assert_eq!(img["values"][0]["width"].as_u64().unwrap(), 2048);
     assert_eq!(img["values"][0]["height"].as_u64().unwrap(), 3072);
 
@@ -822,14 +727,8 @@ fn values_json_links_list_file() {
         .find(|f| f["field"].as_str() == Some("hasDocumentFileValue"))
         .expect("must have document field");
     assert_eq!(doc["values"][0]["value_type"].as_str().unwrap(), "document");
-    assert!(
-        doc["values"][0]["width"].is_null(),
-        "document width must be null"
-    );
-    assert!(
-        doc["values"][0]["height"].is_null(),
-        "document height must be null"
-    );
+    assert!(doc["values"][0]["width"].is_null(), "document width must be null");
+    assert!(doc["values"][0]["height"].is_null(), "document height must be null");
 
     insta::assert_snapshot!("values_json_links_list_file", out);
 }
@@ -841,23 +740,17 @@ fn values_json_links_list_file() {
 fn values_json_comment() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&fixture_d_with_comment(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_d_with_comment(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
-    let values = parsed["data"]["values"]
-        .as_array()
-        .expect("values must be array");
+    let values = parsed["data"]["values"].as_array().expect("values must be array");
 
     let field = values
         .iter()
         .find(|f| f["field"].as_str() == Some("hasTranscription"))
         .expect("must have hasTranscription field");
     assert_eq!(field["values"][0]["value_type"].as_str().unwrap(), "text");
-    assert_eq!(
-        field["values"][0]["comment"].as_str().unwrap(),
-        "reading uncertain"
-    );
+    assert_eq!(field["values"][0]["comment"].as_str().unwrap(), "reading uncertain");
 
     insta::assert_snapshot!("values_json_comment", out);
 }
@@ -924,8 +817,7 @@ fn values_lines() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&fixture_a_scalars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_a_scalars(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
@@ -960,8 +852,7 @@ fn values_csv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&fixture_b_named_scalars_and_raw(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_b_named_scalars_and_raw(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
@@ -994,8 +885,7 @@ fn values_tsv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&fixture_c_links_list_file(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_c_links_list_file(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
@@ -1026,8 +916,8 @@ fn values_tsv() {
 ///
 /// A `ValueContent::Text` embedding a raw ANSI escape sequence is built and
 /// rendered through both renderers:
-///   - Prose: must NOT contain the ESC byte (0x1B); visible text ("danger", "RED",
-///     "end") must survive.
+///   - Prose: must NOT contain the ESC byte (0x1B); visible text ("danger", "RED", "end") must
+///     survive.
 ///   - JSON: must STILL CONTAIN the raw ESC byte (verbatim server value).
 ///
 /// A regressor that drops the `strip_control_chars` call in prose, OR that
@@ -1104,8 +994,7 @@ fn json_values_no_knora_api_vocab_leak() {
     // Use fixture A (all common scalar types) for breadth.
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&fixture_a_scalars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_a_scalars(), &anon_meta()).unwrap();
     let json_out = buf_to_string(&buf);
 
     assert!(
@@ -1115,8 +1004,7 @@ fn json_values_no_knora_api_vocab_leak() {
     // Also check fixture C (links, vocabulary-items, files) which is richer.
     let (buf2, w2) = shared_buf();
     let mut r2 = JsonRenderer::with_writer(w2);
-    r2.resource_describe(&fixture_c_links_list_file(), &anon_meta())
-        .unwrap();
+    r2.resource_describe(&fixture_c_links_list_file(), &anon_meta()).unwrap();
     let json_out2 = buf_to_string(&buf2);
 
     assert!(
@@ -1140,8 +1028,7 @@ fn tabular_values_lines_neutralises_control_chars() {
     const ESC: char = '\u{1b}';
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.resource_describe(&fixture_control_chars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_control_chars(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     assert!(
@@ -1168,8 +1055,7 @@ fn tabular_values_csv_neutralises_control_chars() {
     const ESC: char = '\u{1b}';
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.resource_describe(&fixture_control_chars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_control_chars(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     assert!(
@@ -1193,8 +1079,7 @@ fn tabular_values_tsv_neutralises_control_chars() {
     const ESC: char = '\u{1b}';
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.resource_describe(&fixture_control_chars(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_control_chars(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     assert!(
@@ -1224,8 +1109,7 @@ fn tabular_values_csv_empty_header_only_no_rows() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&fixture_empty_values(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_empty_values(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
@@ -1245,8 +1129,7 @@ fn tabular_values_tsv_empty_header_only_no_rows() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&fixture_empty_values(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_empty_values(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
@@ -1267,8 +1150,7 @@ fn tabular_values_lines_empty_stdout_is_empty() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&fixture_empty_values(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_empty_values(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
@@ -1335,18 +1217,12 @@ fn tabular_values_csv_columns_projection_opts_in_resource_keys() {
 #[test]
 fn values_csv_columns_comment() {
     let opts = TableOptions {
-        columns: Some(
-            ["field", "value", "comment"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect(),
-        ),
+        columns: Some(["field", "value", "comment"].iter().map(|s| s.to_string()).collect()),
         header: HeaderMode::On,
     };
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w).with_options(opts);
-    r.resource_describe(&fixture_d_with_comment(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&fixture_d_with_comment(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     assert!(

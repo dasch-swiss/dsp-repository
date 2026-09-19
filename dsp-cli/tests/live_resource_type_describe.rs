@@ -62,11 +62,11 @@ fn optional_env(name: &str) -> Option<String> {
 /// Assertions are intentionally resilient to real-data variation:
 /// - Result is `Ok`.
 /// - `fields` is non-empty (beol:page defines multiple project fields).
-/// - `fields` contains a field named `seqnum` (the sequence-number property
-///   on beol:page — a stable fixture on the live beol data-model).
-/// - `representation` is `Some(Representation::StillImage)` (beol:page is a
-///   still-image–bearing type via its flattened file-value restriction;
-///   verified against the live beol API per Decision 5 / R8 of the plan).
+/// - `fields` contains a field named `seqnum` (the sequence-number property on beol:page — a stable
+///   fixture on the live beol data-model).
+/// - `representation` is `Some(Representation::StillImage)` (beol:page is a still-image–bearing
+///   type via its flattened file-value restriction; verified against the live beol API per Decision
+///   5 / R8 of the plan).
 #[test]
 fn live_resource_type_describe_returns_valid_detail() {
     // ── 1. Collect required config ────────────────────────────────────────────
@@ -76,8 +76,7 @@ fn live_resource_type_describe_returns_valid_detail() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `describe_resource_type` uses a public endpoint; the token is optional. If
@@ -101,18 +100,13 @@ fn live_resource_type_describe_returns_valid_detail() {
     // project-defined data-model with multiple resource-types, including a
     // well-known still-image–bearing type (`page`).
     let project_identifier = "0801";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
              if the beol project has been removed from this server, update the test to use a \
              different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -124,10 +118,7 @@ fn live_resource_type_describe_returns_valid_detail() {
     // beol data-model by name. Using the named beol data-model — a stable
     // fixture — rather than picking `[0]` so the test is robust against
     // server-returned ordering.
-    eprintln!(
-        "live test: calling list_data_models for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
         .list_data_models(&cfg.server, &proj.iri, token_ref)
@@ -136,14 +127,11 @@ fn live_resource_type_describe_returns_valid_detail() {
     eprintln!("live test: received {} data-model(s)", data_models.len());
 
     // Find the beol data-model by name (case-insensitive, mirroring the action).
-    let beol_dm = data_models
-        .iter()
-        .find(|dm| dm.name.eq_ignore_ascii_case("beol"))
-        .expect(
-            "beol data-model not found in project '0801' — expected the beol data-model to be \
+    let beol_dm = data_models.iter().find(|dm| dm.name.eq_ignore_ascii_case("beol")).expect(
+        "beol data-model not found in project '0801' — expected the beol data-model to be \
              present; check that DSP_TEST_SERVER points to a server where this project is \
              populated with its standard data-models",
-        );
+    );
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
@@ -176,11 +164,7 @@ fn live_resource_type_describe_returns_valid_detail() {
     // ── 7. Assert structural invariants ──────────────────────────────────────
 
     // name must be "page" — we resolved this resource-type by name.
-    assert_eq!(
-        detail.name, "page",
-        "resource-type name must be 'page'; got '{}'",
-        detail.name
-    );
+    assert_eq!(detail.name, "page", "resource-type name must be 'page'; got '{}'", detail.name);
 
     // data_model must be "beol" — we described from the beol data-model.
     assert_eq!(
@@ -190,10 +174,7 @@ fn live_resource_type_describe_returns_valid_detail() {
     );
 
     // IRI must be non-empty and start with "http".
-    assert!(
-        !detail.iri.is_empty(),
-        "resource-type IRI must not be empty"
-    );
+    assert!(!detail.iri.is_empty(), "resource-type IRI must not be empty");
     assert!(
         detail.iri.starts_with("http"),
         "resource-type IRI '{}' must start with 'http'",
@@ -238,11 +219,7 @@ fn live_resource_type_describe_returns_valid_detail() {
         "expected field 'seqnum' in 'beol:page' field list but it was not found. \
          Fields returned: {:?}. \
          If 'seqnum' has been renamed in the live beol data-model, update this assertion.",
-        detail
-            .fields
-            .iter()
-            .map(|f| f.name.as_str())
-            .collect::<Vec<_>>()
+        detail.fields.iter().map(|f| f.name.as_str()).collect::<Vec<_>>()
     );
 
     eprintln!("live test: 'seqnum' field found — OK");

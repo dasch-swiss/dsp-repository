@@ -59,12 +59,7 @@ fn describe_path(iri: &str) -> String {
 }
 
 /// A minimal root-shaped `/admin/lists/{iri}` response body.
-fn root_body(
-    root_iri: &str,
-    project_iri: &str,
-    name: &str,
-    children: Vec<serde_json::Value>,
-) -> serde_json::Value {
+fn root_body(root_iri: &str, project_iri: &str, name: &str, children: Vec<serde_json::Value>) -> serde_json::Value {
     json!({
         "type": "ListGetResponseADM",
         "list": {
@@ -85,11 +80,7 @@ fn root_body(
 /// is deliberately parseable-but-discarded data: `ListNodeGetDto` on the
 /// impl side only models `nodeinfo`, so this payload can never leak into a
 /// `VocabularyTree` even if present.
-fn node_body(
-    node_iri: &str,
-    root_iri: &str,
-    own_children: Vec<serde_json::Value>,
-) -> serde_json::Value {
+fn node_body(node_iri: &str, root_iri: &str, own_children: Vec<serde_json::Value>) -> serde_json::Value {
     json!({
         "type": "ListNodeGetResponseADM",
         "node": {
@@ -196,10 +187,7 @@ async fn list_vocabularies_happy_path_parses_varied_entries() {
         .iter()
         .find(|v| v.header.name.as_deref() == Some("epoch"))
         .expect("epoch must be present");
-    assert_eq!(
-        epoch.header.iri,
-        "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w"
-    );
+    assert_eq!(epoch.header.iri, "http://rdfh.ch/lists/0838/JbNT7lvfS9yaB5bgbkoa2w");
     assert_eq!(epoch.header.labels.len(), 2);
     assert!(
         epoch
@@ -295,13 +283,7 @@ async fn describe_vocabulary_root_shaped_response_builds_tree_directly() {
                 "child-two",
                 1,
                 root_iri,
-                vec![child_json(
-                    grandchild_iri,
-                    "grandchild",
-                    0,
-                    root_iri,
-                    vec![],
-                )],
+                vec![child_json(grandchild_iri, "grandchild", 0, root_iri, vec![])],
             ),
         ],
     );
@@ -325,10 +307,7 @@ async fn describe_vocabulary_root_shaped_response_builds_tree_directly() {
     assert_eq!(tree.root.iri, root_iri);
     assert_eq!(tree.root.name.as_deref(), Some("handbuilt"));
     assert_eq!(tree.project_iri, PROJECT_IRI);
-    assert_eq!(
-        tree.requested_node, None,
-        "a root IRI must not set requested_node"
-    );
+    assert_eq!(tree.requested_node, None, "a root IRI must not set requested_node");
     assert_eq!(tree.children.len(), 2);
 
     let child1 = &tree.children[0];
@@ -339,11 +318,7 @@ async fn describe_vocabulary_root_shaped_response_builds_tree_directly() {
     let child2 = &tree.children[1];
     assert_eq!(child2.header.iri, child2_iri);
     assert_eq!(child2.position, 1);
-    assert_eq!(
-        child2.children.len(),
-        1,
-        "nested child must be recursively parsed"
-    );
+    assert_eq!(child2.children.len(), 1, "nested child must be recursively parsed");
     assert_eq!(child2.children[0].header.iri, grandchild_iri);
 }
 
@@ -369,13 +344,7 @@ async fn describe_vocabulary_node_shaped_response_resolves_upward_to_root() {
         .respond_with(ResponseTemplate::new(200).set_body_json(node_body(
             node_iri,
             resolved_root_iri,
-            vec![child_json(
-                decoy_child_iri,
-                "decoy",
-                0,
-                resolved_root_iri,
-                vec![],
-            )],
+            vec![child_json(decoy_child_iri, "decoy", 0, resolved_root_iri, vec![])],
         )))
         .expect(1)
         .mount(&server)
@@ -415,9 +384,7 @@ async fn describe_vocabulary_node_shaped_response_resolves_upward_to_root() {
     assert_eq!(tree.children.len(), 1);
     assert_eq!(tree.children[0].header.iri, resolved_child_iri);
     assert!(
-        tree.children
-            .iter()
-            .all(|c| c.header.iri != decoy_child_iri),
+        tree.children.iter().all(|c| c.header.iri != decoy_child_iri),
         "the node response's own (discarded) children must not leak into the tree"
     );
     assert_eq!(
@@ -428,15 +395,8 @@ async fn describe_vocabulary_node_shaped_response_resolves_upward_to_root() {
 
     // Exactly 2 requests, in order: the addressed node, then its resolved
     // root — and NEVER `/admin/lists/{root}/info`.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
-    assert_eq!(
-        received.len(),
-        2,
-        "exactly two requests must have been made"
-    );
+    let received = server.received_requests().await.expect("request recording should be enabled");
+    assert_eq!(received.len(), 2, "exactly two requests must have been made");
     assert_eq!(received[0].url.path(), describe_path(node_iri));
     assert_eq!(received[1].url.path(), describe_path(resolved_root_iri));
     assert!(
@@ -462,22 +422,14 @@ async fn describe_vocabulary_node_resolving_to_another_node_is_server_error() {
 
     Mock::given(method("GET"))
         .and(path(describe_path(node_iri)))
-        .respond_with(ResponseTemplate::new(200).set_body_json(node_body(
-            node_iri,
-            supposed_root_iri,
-            vec![],
-        )))
+        .respond_with(ResponseTemplate::new(200).set_body_json(node_body(node_iri, supposed_root_iri, vec![])))
         .mount(&server)
         .await;
 
     // The "resolved root" is ITSELF another node response.
     Mock::given(method("GET"))
         .and(path(describe_path(supposed_root_iri)))
-        .respond_with(ResponseTemplate::new(200).set_body_json(node_body(
-            supposed_root_iri,
-            another_root_hint,
-            vec![],
-        )))
+        .respond_with(ResponseTemplate::new(200).set_body_json(node_body(supposed_root_iri, another_root_hint, vec![])))
         .mount(&server)
         .await;
 
@@ -582,10 +534,7 @@ async fn describe_vocabulary_malformed_body_invalid_json_returns_server_error() 
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_err(),
-        "expected Err for malformed (non-JSON) body"
-    );
+    assert!(result.is_err(), "expected Err for malformed (non-JSON) body");
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),
         "malformed body must map to Diagnostic::ServerError, not panic"
@@ -603,10 +552,7 @@ async fn describe_vocabulary_body_missing_list_and_node_keys_returns_server_erro
 
     Mock::given(method("GET"))
         .and(path(describe_path(some_iri)))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(json!({"type": "SomethingElse", "unrelated": true})),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({"type": "SomethingElse", "unrelated": true})))
         .mount(&server)
         .await;
 
@@ -618,10 +564,7 @@ async fn describe_vocabulary_body_missing_list_and_node_keys_returns_server_erro
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_err(),
-        "expected Err when the body has neither 'list' nor 'node'"
-    );
+    assert!(result.is_err(), "expected Err when the body has neither 'list' nor 'node'");
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),
         "an unrecognised body shape must map to Diagnostic::ServerError, not panic"
@@ -654,10 +597,7 @@ async fn list_vocabularies_bearer_present_when_token_is_some() {
 
     assert!(result.is_ok(), "expected Ok with token, got: {result:?}");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -688,10 +628,7 @@ async fn list_vocabularies_bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -748,12 +685,7 @@ async fn describe_vocabulary_bearer_present_when_token_is_some() {
     Mock::given(method("GET"))
         .and(path(describe_path(iri)))
         .and(header("authorization", format!("Bearer {TOKEN}").as_str()))
-        .respond_with(ResponseTemplate::new(200).set_body_json(root_body(
-            iri,
-            PROJECT_IRI,
-            "bearer-test",
-            vec![],
-        )))
+        .respond_with(ResponseTemplate::new(200).set_body_json(root_body(iri, PROJECT_IRI, "bearer-test", vec![])))
         .expect(1)
         .mount(&server)
         .await;
@@ -777,12 +709,7 @@ async fn describe_vocabulary_bearer_absent_when_token_is_none() {
 
     Mock::given(method("GET"))
         .and(path(describe_path(iri)))
-        .respond_with(ResponseTemplate::new(200).set_body_json(root_body(
-            iri,
-            PROJECT_IRI,
-            "bearer-test",
-            vec![],
-        )))
+        .respond_with(ResponseTemplate::new(200).set_body_json(root_body(iri, PROJECT_IRI, "bearer-test", vec![])))
         .mount(&server)
         .await;
 
@@ -794,10 +721,7 @@ async fn describe_vocabulary_bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -824,9 +748,8 @@ const FIXTURE_PROJECT_IRI: &str = "http://rdfh.ch/projects/n0eRr0vWTDOArdaBAZ-jQ
 async fn describe_vocabulary_recorded_root_fixture_regression() {
     let server = MockServer::start().await;
 
-    let body: serde_json::Value =
-        serde_json::from_str(include_str!("fixtures/vocabulary_period_root.json"))
-            .expect("recorded root fixture must be valid JSON");
+    let body: serde_json::Value = serde_json::from_str(include_str!("fixtures/vocabulary_period_root.json"))
+        .expect("recorded root fixture must be valid JSON");
 
     Mock::given(method("GET"))
         .and(path(describe_path(FIXTURE_ROOT_IRI)))
@@ -851,10 +774,7 @@ async fn describe_vocabulary_recorded_root_fixture_regression() {
     );
     assert_eq!(tree.project_iri, FIXTURE_PROJECT_IRI);
     assert_eq!(tree.root.name.as_deref(), Some("epoch"));
-    assert_eq!(
-        tree.requested_node, None,
-        "a root IRI must not set requested_node"
-    );
+    assert_eq!(tree.requested_node, None, "a root IRI must not set requested_node");
 }
 
 /// The recorded NODE fixture resolves upward to the SAME recorded root
@@ -865,12 +785,10 @@ async fn describe_vocabulary_recorded_root_fixture_regression() {
 async fn describe_vocabulary_recorded_node_fixture_resolves_to_recorded_root() {
     let server = MockServer::start().await;
 
-    let node_json: serde_json::Value =
-        serde_json::from_str(include_str!("fixtures/vocabulary_period_node.json"))
-            .expect("recorded node fixture must be valid JSON");
-    let root_json: serde_json::Value =
-        serde_json::from_str(include_str!("fixtures/vocabulary_period_root.json"))
-            .expect("recorded root fixture must be valid JSON");
+    let node_json: serde_json::Value = serde_json::from_str(include_str!("fixtures/vocabulary_period_node.json"))
+        .expect("recorded node fixture must be valid JSON");
+    let root_json: serde_json::Value = serde_json::from_str(include_str!("fixtures/vocabulary_period_root.json"))
+        .expect("recorded root fixture must be valid JSON");
 
     Mock::given(method("GET"))
         .and(path(describe_path(FIXTURE_NODE_IRI)))

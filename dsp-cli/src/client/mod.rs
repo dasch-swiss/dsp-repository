@@ -11,19 +11,17 @@ pub mod http;
 pub(crate) mod jwt;
 pub mod sparql;
 
-pub(crate) use builtins::builtin_data_models;
-pub(crate) use builtins::builtin_resource_types;
-
 use std::collections::HashMap;
+
+pub(crate) use builtins::{builtin_data_models, builtin_resource_types};
+use sparql::SparqlResponse;
 
 use crate::diagnostic::Diagnostic;
 use crate::model::auth::LoginResponse;
 use crate::model::{
-    CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure, DumpTask, Project,
-    ProjectDetail, ProjectRef, ResourceDetail, ResourcePage, ResourceTypeDetail, Vocabulary,
-    VocabularyTree,
+    CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure, DumpTask, Project, ProjectDetail, ProjectRef,
+    ResourceDetail, ResourcePage, ResourceTypeDetail, Vocabulary, VocabularyTree,
 };
-use sparql::SparqlResponse;
 
 /// The `DspClient` trait. Methods are added as commands need them.
 pub trait DspClient {
@@ -50,14 +48,14 @@ pub trait DspClient {
     ///
     /// Returns a [`CreateDumpOutcome`]:
     /// - `Created(task)` — a fresh dump was triggered; `task.status` is `InProgress`.
-    /// - `Exists { id }` — the server reports an existing dump via a conflict response;
-    ///   `id` is the existing dump's server-assigned identifier, and the existing dump
-    ///   belongs to the same project that was requested. The action decides what to do
-    ///   with it (adopt / replace / error).
-    /// - `ExistsForOtherProject { id, project_iri }` — an existing dump belongs to a
-    ///   **different** project; the DSP-API holds one dump server-wide, and the slot is
-    ///   occupied by `project_iri`'s dump. The action must never silently use or destroy
-    ///   this dump on behalf of the requested project.
+    /// - `Exists { id }` — the server reports an existing dump via a conflict response; `id` is the
+    ///   existing dump's server-assigned identifier, and the existing dump belongs to the same
+    ///   project that was requested. The action decides what to do with it (adopt / replace /
+    ///   error).
+    /// - `ExistsForOtherProject { id, project_iri }` — an existing dump belongs to a **different**
+    ///   project; the DSP-API holds one dump server-wide, and the slot is occupied by
+    ///   `project_iri`'s dump. The action must never silently use or destroy this dump on behalf of
+    ///   the requested project.
     ///
     /// Other error conditions (auth, not-found, network) propagate as `Err(Diagnostic)`.
     fn create_project_dump(
@@ -129,12 +127,7 @@ pub trait DspClient {
     /// when present, mirroring `list_projects`. `project` may be an IRI,
     /// 4-hex-digit shortcode, or shortname — the classifier logic lives in the
     /// HTTP impl.
-    fn describe_project(
-        &self,
-        server: &str,
-        project: &str,
-        token: Option<&str>,
-    ) -> Result<ProjectDetail, Diagnostic>;
+    fn describe_project(&self, server: &str, project: &str, token: Option<&str>) -> Result<ProjectDetail, Diagnostic>;
 
     /// List a project's own data-models (DSP-API "ontologies") via
     /// `GET /v2/ontologies/metadata/{project_iri}`.
@@ -218,9 +211,8 @@ pub trait DspClient {
     /// Status mapping:
     /// - `200` → parse and flatten into the returned map.
     /// - `404` → `Err(Diagnostic::NotFound(...))` (project not found).
-    /// - `401`/`403` and everything else → the shared `map_unexpected_status`
-    ///   mapping (401/403 already map to `AuthRequired` there; no bespoke arm
-    ///   needed here).
+    /// - `401`/`403` and everything else → the shared `map_unexpected_status` mapping (401/403
+    ///   already map to `AuthRequired` there; no bespoke arm needed here).
     ///
     /// NEVER log the token.
     fn resource_counts(
@@ -258,12 +250,12 @@ pub trait DspClient {
     /// List resource instances of a given resource-type within a project.
     ///
     /// Issues `GET {server}/v2/resources` with:
-    /// - query param `resourceClass=<resource_type_iri>` (URL-encoded by reqwest;
-    ///   maps to the DSP-API `resourceClass` query parameter — wire name unchanged)
+    /// - query param `resourceClass=<resource_type_iri>` (URL-encoded by reqwest; maps to the
+    ///   DSP-API `resourceClass` query parameter — wire name unchanged)
     /// - query param `page=<page>` (zero-based)
-    /// - query param `schema=complex` (baked in — never a trait parameter, per D4;
-    ///   complex carries per-resource `creationDate`/`lastModificationDate`, which
-    ///   `simple` omits — the extra value objects are ignored by the envelope DTO)
+    /// - query param `schema=complex` (baked in — never a trait parameter, per D4; complex carries
+    ///   per-resource `creationDate`/`lastModificationDate`, which `simple` omits — the extra value
+    ///   objects are ignored by the envelope DTO)
     /// - header `x-knora-accept-project: <project_iri>`
     ///
     /// `token` is sent as a bearer when `Some`; omitted when `None` (anonymous
@@ -312,9 +304,9 @@ pub trait DspClient {
     /// Status mapping:
     /// - `200` → parse and return `ResourceDetail`.
     /// - `404` → `Err(Diagnostic::NotFound(...))`.
-    /// - `401`/`403` → `Err(Diagnostic::AuthRequired(...))` with a "log in" hint
-    ///   (deliberate: an anonymous caller describing a private resource gets 403,
-    ///   and `AuthRequired` with a login hint is the right UX for an auth-optional read).
+    /// - `401`/`403` → `Err(Diagnostic::AuthRequired(...))` with a "log in" hint (deliberate: an
+    ///   anonymous caller describing a private resource gets 403, and `AuthRequired` with a login
+    ///   hint is the right UX for an auth-optional read).
     /// - Other non-2xx → `Err(Diagnostic::ServerError(...))`.
     /// - Transport failure → `Err(Diagnostic::Network(...))`.
     ///
@@ -334,11 +326,10 @@ pub trait DspClient {
     /// performed.
     ///
     /// - `200` (or any 2xx) → `Ok(())`.
-    /// - `401` **and** `403` → `Err(Diagnostic::AuthRequired(...))`. Both map
-    ///   to the same variant because they share the same user-facing meaning:
-    ///   the token is not currently accepted. This is also why an expired token
-    ///   surfaces as `AuthRequired` rather than a distinct error kind — the
-    ///   server rejects it with `401`, which is handled identically to `403`.
+    /// - `401` **and** `403` → `Err(Diagnostic::AuthRequired(...))`. Both map to the same variant
+    ///   because they share the same user-facing meaning: the token is not currently accepted. This
+    ///   is also why an expired token surfaces as `AuthRequired` rather than a distinct error kind
+    ///   — the server rejects it with `401`, which is handled identically to `403`.
     /// - Any other non-2xx → `Err(Diagnostic::ServerError(...))`.
     /// - Transport failure → `Err(Diagnostic::Network(...))`.
     fn verify_token(&self, server: &str, token: &str) -> Result<(), Diagnostic>;
@@ -385,12 +376,7 @@ pub trait DspClient {
     ///
     /// Auth is optional (public endpoint); `token` is sent as a bearer when
     /// `Some`, mirroring `list_data_models`.
-    fn describe_vocabulary(
-        &self,
-        server: &str,
-        iri: &str,
-        token: Option<&str>,
-    ) -> Result<VocabularyTree, Diagnostic>;
+    fn describe_vocabulary(&self, server: &str, iri: &str, token: Option<&str>) -> Result<VocabularyTree, Diagnostic>;
 
     /// Issue a raw SPARQL query against `server`'s underlying triplestore via
     /// `POST /admin/sparql/query`, and relay the store's own response.

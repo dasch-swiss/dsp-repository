@@ -22,6 +22,8 @@ jobs:
     name: Release Please
     runs-on: ubuntu-latest
     if: github.repository_owner == 'dasch-swiss'
+    outputs:
+      branches: ${{ steps.find-prs.outputs.branches }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -35,27 +37,31 @@ jobs:
       # plugin cannot handle version.workspace = true (#2111), so we use
       # release-type: simple and regenerate the lockfile ourselves.
       #
-      # We check for any open release PR (not just newly created ones)
-      # because the PR may already exist from a previous run.
-      - name: Find release PR branch
-        id: find-pr
+      # We collect every pending release branch (not just newly created ones)
+      # because with separate-pull-requests there can be more than one open
+      # release PR (root and dsp-cli each get their own).
+      - name: Find release PR branches
+        id: find-prs
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
-          if [ -n "$RELEASE_PR" ]; then
-            BRANCH=$(echo "$RELEASE_PR" | jq -r '.headBranchName')
-          else
-            BRANCH=$(gh pr list --repo "${{ github.repository }}" --label "autorelease: pending" --json headRefName --jq '.[0].headRefName // empty')
-          fi
-          if [ -n "$BRANCH" ]; then
-            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          fi
+          # Compact to one line: a multi-line GITHUB_OUTPUT value is invalid, and gh pretty-prints arrays.
+          BRANCHES=$(gh pr list --repo "${{ github.repository }}" --label "autorelease: pending" --json headRefName --jq '[.[].headRefName]' | jq -c .)
+          echo "branches=$BRANCHES" >> "$GITHUB_OUTPUT"
 
+  amend-lockfile:
+    name: Amend Cargo.lock on release PR
+    needs: release-please
+    if: needs.release-please.result == 'success' && needs.release-please.outputs.branches != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJSON(needs.release-please.outputs.branches) }}
+    steps:
       - uses: actions/checkout@v4
-        if: steps.find-pr.outputs.branch
         with:
-          ref: ${{ steps.find-pr.outputs.branch }}
+          ref: ${{ matrix.branch }}
           # Full history: the next step amends release-please's commit. A shallow
           # checkout (default depth 1) has no parent to amend onto, so the amend
           # becomes a parentless root commit, the force-push makes the branch
@@ -64,10 +70,8 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable
-        if: steps.find-pr.outputs.branch
 
       - name: Update Cargo.lock on release PR
-        if: steps.find-pr.outputs.branch
         run: |
           cargo update --workspace
           git diff --quiet Cargo.lock && exit 0

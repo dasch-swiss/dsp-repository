@@ -3,9 +3,21 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "exclude-paths": [".github"]
+      "exclude-paths": [".github", "dsp-cli"],
+      "extra-files": [
+        { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" }
+      ]
+    },
+    "dsp-cli": {
+      "release-type": "simple",
+      "component": "dsp-cli",
+      "package-name": "dsp-cli",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": true,
+      "extra-files": [{ "type": "toml", "path": "Cargo.toml", "jsonpath": "$.package.version" }]
     }
   },
+  "separate-pull-requests": true,
   "include-component-in-tag": false,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
@@ -23,8 +35,5 @@
     { "type": "revert", "hidden": true },
     { "type": "style", "hidden": true },
     { "type": "ci", "hidden": true }
-  ],
-  "extra-files": [
-    { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" }
   ]
 }

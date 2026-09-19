@@ -98,6 +98,7 @@ Rules:
 - **Concern over location.** Scope by the responsibility a change serves, not the enclosing directory. Documentation *about* a crate takes that crate's scope (`docs(dpe-api-oai): ...`); only repo-level docs take `docs`.
 - A test *about* a specific concern takes that concern's scope (`test(dpe-core): ...`) — the `test` type already says it is a test.
 - **No catch-all.** There is no `repo`/`all` scope. If none of the enumerated scopes genuinely fits, ask the maintainer before inventing one.
+- **Keep `dsp-cli` commits under `dsp-cli/**` where possible.** release-please attributes a commit to a package by which paths it touches, not by its commit scope — a `dsp-cli`-scoped commit that also edits a root file (e.g. `Cargo.lock`) lands in the root release too. See [Release Please](./deployment.md#dsp-cli) for the double-bump rule this causes.
 
 The gate enforces only that a scope is *present* — it does not restrict which one, so adding a crate needs no config change. The list above is the advisory vocabulary; keep to it.
 

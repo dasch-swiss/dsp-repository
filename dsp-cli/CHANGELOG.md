@@ -2,9 +2,6 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-Pre-1.0 (`0.x.y`) means the public surface is not yet stable; breaking changes may land in any `0.x` bump and are listed here under `Changed` or `Removed`.
-
 ## [0.2.1] - 2026-08-07
 
 ### Added

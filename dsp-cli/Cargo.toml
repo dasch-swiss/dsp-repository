@@ -1,5 +1,6 @@
 [package]
 name = "dsp-cli"
+# release-please writes this field (registered via .github/release-please/config.json extra-files); never bump it by hand — use a Release-As: commit footer; see docs/src/deployment.md#dsp-cli
 version = "0.2.1"
 edition = "2024"
 rust-version = "1.92"

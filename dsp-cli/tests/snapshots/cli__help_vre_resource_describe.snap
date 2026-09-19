@@ -1,5 +1,5 @@
 ---
-source: tests/cli.rs
+source: dsp-cli/tests/cli.rs
 expression: text
 ---
 Fetch the envelope metadata of a single resource by its internal IRI.
@@ -22,6 +22,11 @@ Options:
 
   -v, --verbose...
           Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --allow-insecure-server
+          Allow a non-local --server to use insecure http:// (see `dsp docs connecting`)
+          
+          [env: DSP_ALLOW_INSECURE_SERVER=]
 
       --resource <RESOURCE>
           Internal IRI of the resource to describe (e.g. `http://rdfh.ch/0803/AbCdEf`). ARK addressing is not supported in v1 — use the internal IRI directly. Run `dsp vre resource list` to discover resource IRIs

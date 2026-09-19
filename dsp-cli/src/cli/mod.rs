@@ -236,6 +236,16 @@ pub struct Cli {
     #[arg(short = 'v', long = "verbose", action = clap::ArgAction::Count, global = true)]
     pub verbose: u8,
 
+    /// Allow a non-local --server to use insecure http:// (see `dsp docs connecting`).
+    #[arg(
+        long = "allow-insecure-server",
+        env = "DSP_ALLOW_INSECURE_SERVER",
+        value_parser = clap::builder::BoolishValueParser::new(),
+        action = clap::ArgAction::SetTrue,
+        global = true
+    )]
+    pub allow_insecure_server: bool,
+
     #[command(subcommand)]
     pub command: TopLevel,
 }
@@ -1578,6 +1588,7 @@ mod tests {
         // parsing absent input, so it is deterministic with zero env risk.
         let cli = Cli {
             verbose: 0,
+            allow_insecure_server: false,
             command: TopLevel::Vre {
                 cmd: VreCmd::Project {
                     cmd: ProjectCmd::List(ProjectListArgs {

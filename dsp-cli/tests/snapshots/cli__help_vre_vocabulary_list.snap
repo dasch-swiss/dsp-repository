@@ -1,5 +1,5 @@
 ---
-source: tests/cli.rs
+source: dsp-cli/tests/cli.rs
 expression: text
 ---
 List a project's vocabularies.
@@ -16,6 +16,11 @@ Options:
 
   -v, --verbose...
           Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --allow-insecure-server
+          Allow a non-local --server to use insecure http:// (see `dsp docs connecting`)
+          
+          [env: DSP_ALLOW_INSECURE_SERVER=]
 
   -p, --project <PROJECT>
           Shortcode, shortname, or IRI of the project

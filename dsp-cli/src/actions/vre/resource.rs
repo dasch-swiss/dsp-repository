@@ -82,10 +82,7 @@ pub(crate) fn run_list_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; falling back to anonymous for resource list"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "falling back to anonymous for resource list");
             AuthCache::default()
         }
     };
@@ -451,10 +448,7 @@ pub(crate) fn run_describe_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; falling back to anonymous for resource describe"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "falling back to anonymous for resource describe");
             AuthCache::default()
         }
     };

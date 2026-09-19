@@ -1,5 +1,5 @@
 ---
-source: tests/cli.rs
+source: dsp-cli/tests/cli.rs
 expression: text
 ---
 Embedded end-user documentation; `dsp docs` lists topics
@@ -10,7 +10,8 @@ Arguments:
   [TOPIC]  Topic to display. Omit to list all topics. Topics: dsp-cli, dsp, concepts, identifiers, connecting, output, workflows, errors, dsp-tools, sparql. Run `dsp docs` for one-line descriptions
 
 Options:
-      --pager       Page the output through $PAGER (default `less`)
-  -v, --verbose...  Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
-  -j, --json        Emit the topic index as machine-readable JSON. Cannot be combined with a topic name or --pager
-  -h, --help        Print help
+      --pager                  Page the output through $PAGER (default `less`)
+  -v, --verbose...             Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+      --allow-insecure-server  Allow a non-local --server to use insecure http:// (see `dsp docs connecting`) [env: DSP_ALLOW_INSECURE_SERVER=]
+  -j, --json                   Emit the topic index as machine-readable JSON. Cannot be combined with a topic name or --pager
+  -h, --help                   Print help

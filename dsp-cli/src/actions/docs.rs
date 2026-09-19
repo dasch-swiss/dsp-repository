@@ -84,8 +84,11 @@ const TOPICS: &[Topic] = &[
 ];
 
 /// Display embedded documentation: list topics, or print one topic's body.
+///
+/// Stdout is wrapped in `BrokenPipeWriter` so `dsp docs ... | head` exits 0
+/// silently instead of surfacing a broken pipe as `Diagnostic::Internal`.
 pub fn run(args: &DocsArgs) -> Result<(), Diagnostic> {
-    let mut out = io::stdout().lock();
+    let mut out = crate::util::BrokenPipeWriter::new(io::stdout().lock());
     run_impl(args, &mut out)
 }
 

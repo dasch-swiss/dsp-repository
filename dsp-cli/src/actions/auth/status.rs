@@ -43,10 +43,7 @@ fn run_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) if env_token_would_win => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; DSP_TOKEN is set, falling through to env token"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "DSP_TOKEN is set, falling through to env token");
             AuthCache::default()
         }
         Err(e) => return Err(e),
@@ -101,6 +98,8 @@ fn run_impl(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
     use chrono::{TimeZone, Utc};
     use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
     use tempfile::TempDir;
@@ -618,6 +617,72 @@ mod tests {
             "LoggedIn should not be produced when env token is present"
         );
         assert_eq!(renderer.last_auth_state.as_deref(), Some("authenticated via DSP_TOKEN"),);
+    }
+
+    /// `tracing_subscriber::fmt::MakeWriter` sink that appends everything written
+    /// to a shared buffer, so a test can inspect exactly what a scoped subscriber
+    /// would have written to stderr.
+    #[derive(Clone)]
+    struct CapturingWriter(Arc<Mutex<Vec<u8>>>);
+
+    impl std::io::Write for CapturingWriter {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn corrupt_cache_does_not_leak_token_bytes_at_default_verbosity() {
+        // Regression guard: a `toml` parse error quotes the offending source
+        // line. If the load-failure log includes that raw error at `warn`
+        // (`init_tracing`'s default level, i.e. verbosity 0), a cache file
+        // truncated mid-write inside a token line would echo token bytes to
+        // stderr. The fix moves the raw error to `debug` and keeps the `warn`
+        // line body-free.
+        const FAKE_TOKEN: &str = "eyFAKE.TOKEN.LEAK-DO-NOT-SHOW-1234567890";
+
+        let dir = TempDir::new().unwrap();
+        let cache_path = dir.path().join("auth.toml");
+        // Missing closing quote: a realistic "write cut off mid-token" corruption
+        // whose parse error necessarily points at (and quotes) this exact line.
+        std::fs::write(
+            &cache_path,
+            format!("[\"https://api.test.dasch.swiss\"]\ntoken = \"{FAKE_TOKEN}\n"),
+        )
+        .unwrap();
+
+        let (args, cfg) = make_args("https://api.test.dasch.swiss");
+        let exp_ts = fixed_future().timestamp();
+        let env_token = make_jwt_with_exp(exp_ts);
+
+        let captured = Arc::new(Mutex::new(Vec::<u8>::new()));
+        let writer = CapturingWriter(captured.clone());
+        // Mirrors `init_tracing(0)` (dsp-cli/ADR-0012: default verbosity is WARN),
+        // scoped to this thread only so it cannot affect other tests.
+        let subscriber = tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::WARN)
+            .with_writer(move || writer.clone())
+            .finish();
+
+        let mut renderer = RecordingRenderer::new();
+        tracing::subscriber::with_default(subscriber, || {
+            run_impl(&args, &cfg, &mut renderer, Some(&cache_path), Some(env_token)).unwrap();
+        });
+
+        let logged = String::from_utf8(captured.lock().unwrap().clone()).unwrap();
+        assert!(
+            !logged.contains(FAKE_TOKEN),
+            "warn-level log leaked token bytes from the toml parse error: {logged}"
+        );
+        assert!(
+            logged.contains("auth cache"),
+            "expected a body-free warning that the auth cache could not be read; got: {logged}"
+        );
     }
 
     #[test]

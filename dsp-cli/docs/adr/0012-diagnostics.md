@@ -124,3 +124,21 @@ stripped, `\n`/`\t` kept) and capped at 200 characters, with exit `1`. dsp-api's
 exit codes: `401`/`403` → `AuthRequired`/3, `404` → `NotFound`/1, `413` → `Usage`/2 (the one
 caller-fault mapping in this command that gets exit `2`, since it is unambiguously the submitted
 query text being too big), `415` → `Internal`/1, `500`–`504` → `ServerError`/1.
+
+## Amendment (2026-09-20) — a closed stdout pipe is not an error
+
+`dsp ... | head` used to exit `1` with `Error: internal error: io error: Broken pipe` on stderr,
+because the blanket `From<std::io::Error> for Diagnostic` maps every I/O failure to `Internal`. A
+reader that stops reading is the normal end of a pipeline, not a runtime error, and the noise broke
+the "pipes only see the data" promise above.
+
+A write to stdout that fails with `ErrorKind::BrokenPipe` now ends the process with exit `0` and no
+stderr output. Every other write error still becomes `Internal` and exits `1`, and the exit-code
+table is otherwise unchanged — this is a narrowing of when `1` is reported, not a new code.
+
+`Diagnostic::from(io::Error)` is deliberately left as it is: it is reached from non-stdout paths
+too, such as reading `auth.toml`, where a broken pipe is meaningless. The check sits upstream
+instead, in a writer adapter wrapping each stdout handle where it is constructed — the five
+renderers' sinks plus the three commands that write to stdout directly (`dsp docs`,
+`dsp auth token`, `dsp vre sparql query`). Nothing in the renderer trait or any public signature
+changed.

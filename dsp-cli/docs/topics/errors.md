@@ -12,6 +12,9 @@ alone**, without parsing any prose. This topic is the contract.
 | `2` | usage error | bad flag, missing argument, unparseable identifier syntax |
 | `3` | authentication required | no token supplied; the token was rejected by the server; or a cached token was locally detected as expired |
 
+A closed stdout pipe (`dsp … | head`) is not an error: the process exits `0` and
+writes nothing to stderr (dsp-cli/ADR-0012 amendment).
+
 These four codes are fixed in v1; a new category would require an ADR amendment, so
 you can rely on them. **Branch on the exit code, not on the message text** — the
 message is human-oriented and may change.

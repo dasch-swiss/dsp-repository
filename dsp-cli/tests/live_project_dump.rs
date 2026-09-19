@@ -55,7 +55,8 @@ fn live_project_dump_end_to_end() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim()), false)
+        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve token ──────────────────────────────────────────────────────
     // Prefer DSP_TOKEN; fall back to DSP_TEST_USER + DSP_TEST_PASSWORD via login.

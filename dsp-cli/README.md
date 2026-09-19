@@ -11,7 +11,7 @@ scripts as well as interactive use.
 
 The published crate is **`dsp-cli`**; the installed binary is **`dsp`**.
 
-> **Status:** `0.1.x` — pre-1.0 and read-focused (no write operations yet).
+> **Status:** pre-1.0 and read-focused (no write operations yet).
 > The command surface may change in any `0.x` release.
 
 ## Install

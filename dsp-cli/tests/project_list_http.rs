@@ -82,6 +82,7 @@ async fn happy_path_translates_dto_to_project() {
     Mock::given(method("GET"))
         .and(path("/admin/projects"))
         .and(header("user-agent", format!("dsp-cli/{}", env!("CARGO_PKG_VERSION")).as_str()))
+        .and(header("dsp-client", format!("dsp-cli/{}", env!("CARGO_PKG_VERSION")).as_str()))
         .respond_with(ResponseTemplate::new(200).set_body_json(body))
         .expect(1)
         .mount(&server)

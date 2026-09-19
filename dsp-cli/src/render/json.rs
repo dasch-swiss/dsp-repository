@@ -38,8 +38,13 @@ pub struct JsonRenderer {
 
 impl JsonRenderer {
     /// Creates a renderer writing to stdout.
+    ///
+    /// Stdout is wrapped in `BrokenPipeWriter` so `dsp ... | head` exits 0
+    /// silently instead of surfacing a broken pipe as `Diagnostic::Internal`.
     pub fn new() -> Self {
-        Self { out: Box::new(io::stdout()) }
+        Self {
+            out: Box::new(crate::util::BrokenPipeWriter::new(io::stdout())),
+        }
     }
 
     /// Creates a renderer writing to an arbitrary `Write` sink (used in tests).

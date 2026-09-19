@@ -1337,6 +1337,22 @@ fn derive_visibility(has_permissions: &str) -> Option<ResourceVisibility> {
     }
 }
 
+/// Default headers every DSP-API-facing reqwest client carries: `DSP-Client:
+/// dsp-cli/<version>`, sent alongside `.user_agent(...)` as a dsp-cli-specific
+/// client-identification header. Attached via reqwest's default-headers
+/// mechanism so it rides on every request the client makes, rather than
+/// being added at each call site. Never used by the crates.io update-check
+/// client in `src/update/mod.rs` — that one talks to crates.io, not DSP-API,
+/// and only carries the plain `User-Agent`.
+fn dsp_api_default_headers() -> reqwest::header::HeaderMap {
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        reqwest::header::HeaderName::from_static("dsp-client"),
+        reqwest::header::HeaderValue::from_static(crate::util::DSP_CLIENT_HEADER),
+    );
+    headers
+}
+
 // ---------------------------------------------------------------------------
 // HttpDspClient
 // ---------------------------------------------------------------------------
@@ -1367,12 +1383,14 @@ impl HttpDspClient {
             .connect_timeout(Duration::from_secs(10))
             .timeout(Duration::from_secs(30))
             .user_agent(crate::util::USER_AGENT)
+            .default_headers(dsp_api_default_headers())
             .build()
             .map_err(|e| Diagnostic::Internal(format!("failed to build HTTP client: {e}")))?;
         let download_client = reqwest::blocking::Client::builder()
             .connect_timeout(Some(Duration::from_secs(30)))
             .timeout(None)
             .user_agent(crate::util::USER_AGENT)
+            .default_headers(dsp_api_default_headers())
             .build()
             .map_err(|e| Diagnostic::Internal(format!("failed to build download HTTP client: {e}")))?;
         // No third client built here: `sparql_query`'s client (D17) is built
@@ -2132,11 +2150,8 @@ impl DspClient for HttpDspClient {
             })
         } else if status == reqwest::StatusCode::NOT_FOUND {
             // Cap a long IRI input at ~80 chars for readability.
-            let display_input: String = project.chars().take(80).collect();
-            let suffix = if project.chars().count() > 80 { "…" } else { "" };
-            Err(Diagnostic::NotFound(format!(
-                "project '{display_input}{suffix}' not found on {server}"
-            )))
+            let display_input = truncate_for_display(project);
+            Err(Diagnostic::NotFound(format!("project '{display_input}' not found on {server}")))
         } else {
             Err(map_unexpected_status(status, &url))
         }
@@ -2461,10 +2476,9 @@ project owns the existing dump; cannot safely proceed"
             })
         } else if status == reqwest::StatusCode::NOT_FOUND {
             // Cap a long input at ~80 chars for readability, mirroring resolve_project.
-            let display_input: String = project.chars().take(80).collect();
-            let suffix = if project.chars().count() > 80 { "…" } else { "" };
+            let display_input = truncate_for_display(project);
             Err(Diagnostic::NotFound(format!(
-                "project '{display_input}{suffix}' not found on {server}. Run `dsp vre project list --server {server}` to see available projects."
+                "project '{display_input}' not found on {server}. Run `dsp vre project list --server {server}` to see available projects."
             )))
         } else {
             Err(map_unexpected_status(status, &url))
@@ -2786,17 +2800,15 @@ project owns the existing dump; cannot safely proceed"
             })
         } else if status == reqwest::StatusCode::NOT_FOUND {
             // Cap the resource IRI at 80 chars for readability, mirroring resolve_project.
-            let display_iri: String = resource_iri.chars().take(80).collect();
-            let iri_suffix = if resource_iri.chars().count() > 80 { "…" } else { "" };
-            Err(Diagnostic::NotFound(format!("resource '{display_iri}{iri_suffix}' not found")))
+            let display_iri = truncate_for_display(resource_iri);
+            Err(Diagnostic::NotFound(format!("resource '{display_iri}' not found")))
         } else if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
             // Deliberate: an anonymous caller describing a private resource gets 403.
             // AuthRequired (exit 3 + login hint) is the right UX for an auth-optional read.
             // NEVER log the token — not in any Diagnostic or tracing call.
-            let display_iri: String = resource_iri.chars().take(80).collect();
-            let iri_suffix = if resource_iri.chars().count() > 80 { "…" } else { "" };
+            let display_iri = truncate_for_display(resource_iri);
             Err(Diagnostic::AuthRequired(format!(
-                "access denied for resource '{display_iri}{iri_suffix}' — log in to view this resource"
+                "access denied for resource '{display_iri}' — log in to view this resource"
             )))
         } else {
             Err(map_unexpected_status(status, &url))
@@ -2927,10 +2939,9 @@ project owns the existing dump; cannot safely proceed"
         let target_idx = match target_idx {
             Some(i) => i,
             None => {
-                let display: String = resource_type.chars().take(80).collect();
-                let suffix = if resource_type.chars().count() > 80 { "…" } else { "" };
+                let display = truncate_for_display(resource_type);
                 return Err(Diagnostic::NotFound(format!(
-                    "resource-type '{display}{suffix}' not found in data-model '{}' on {server}",
+                    "resource-type '{display}' not found in data-model '{}' on {server}",
                     data_model_name_from_iri(data_model_iri)
                 )));
             }
@@ -3356,6 +3367,7 @@ project owns the existing dump; cannot safely proceed"
             .timeout(Duration::from_secs(timeout_secs))
             .redirect(reqwest::redirect::Policy::none())
             .user_agent(crate::util::USER_AGENT)
+            .default_headers(dsp_api_default_headers())
             .build()
             .map_err(|e| Diagnostic::Internal(format!("failed to build SPARQL HTTP client: {e}")))?;
 
@@ -3425,6 +3437,19 @@ project owns the existing dump; cannot safely proceed"
             }
         }
     }
+}
+
+/// Cap a long user-supplied identifier (project shortcode/IRI, resource IRI,
+/// resource-type name, …) at 80 characters for display in a diagnostic
+/// message, appending `…` if it was longer. Counts by `char`, not by byte
+/// length, since the input may be a multibyte IRI segment and a byte-index
+/// cap could panic on a non-boundary split.
+fn truncate_for_display(s: &str) -> String {
+    let mut truncated: String = s.chars().take(80).collect();
+    if s.chars().count() > 80 {
+        truncated.push('…');
+    }
+    truncated
 }
 
 /// A dsp-api-typed error's `{"message": …}` body, per D8's Verified API facts.
@@ -3531,6 +3556,27 @@ fn parse_sparql_error_message(content_type: Option<&str>, body: &[u8]) -> Option
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ---------------------------------------------------------------------------
+    // `truncate_for_display` unit tests
+    // ---------------------------------------------------------------------------
+
+    #[test]
+    fn truncate_for_display_at_exactly_80_chars_no_ellipsis() {
+        let s = "a".repeat(80);
+        let result = truncate_for_display(&s);
+        assert_eq!(result, s);
+        assert!(!result.ends_with('…'));
+    }
+
+    #[test]
+    fn truncate_for_display_over_80_chars_truncates_with_ellipsis() {
+        let s = "a".repeat(90);
+        let result = truncate_for_display(&s);
+        assert_eq!(result.chars().count(), 81); // 80 chars + '…'
+        assert!(result.ends_with('…'));
+        assert_eq!(result.chars().filter(|&c| c == 'a').count(), 80);
+    }
 
     // ---------------------------------------------------------------------------
     // `map_unexpected_status` unit tests

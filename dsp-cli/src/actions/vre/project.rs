@@ -61,10 +61,7 @@ fn run_list_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; falling back to anonymous for project list"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "falling back to anonymous for project list");
             AuthCache::default()
         }
     };
@@ -154,10 +151,7 @@ fn run_describe_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; falling back to anonymous for project describe"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "falling back to anonymous for project describe");
             AuthCache::default()
         }
     };
@@ -272,10 +266,7 @@ fn run_impl(
     let cache = match cache_result {
         Ok(c) => c,
         Err(e) if env_token_would_win => {
-            tracing::warn!(
-                error = %e,
-                "auth cache load failed; DSP_TOKEN is set, falling through to env token"
-            );
+            crate::util::warn_auth_cache_load_failed(&e, "DSP_TOKEN is set, falling through to env token");
             AuthCache::default()
         }
         Err(e) => return Err(e),
@@ -3816,11 +3807,11 @@ mod tests {
         assert_eq!(items[0].shortcode, "0002");
     }
 
-    /// `Config::resolve(None)` with no server yields a Usage error (exit 2).
+    /// `Config::resolve(None, _)` with no server yields a Usage error (exit 2).
     /// Covers PRD AC 6 — no-server check is at the dispatch layer.
     #[test]
     fn config_resolve_none_returns_usage_error() {
-        let err = crate::config::Config::resolve(None).unwrap_err();
+        let err = crate::config::Config::resolve(None, false).unwrap_err();
         assert!(
             matches!(err, Diagnostic::Usage(_)),
             "expected Usage diagnostic for missing server, got {err:?}"

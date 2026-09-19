@@ -22,12 +22,31 @@ A server is either a full URL (`https://api.example.org`) or a built-in shortcut
 case-insensitive; anything unrecognised is treated as a literal URL.) Not every
 environment is always live — probe `<server>/health` if unsure.
 
+### Plain `http://` is refused for non-local servers
+
+Most commands send a bearer token (see Authentication below). A non-local
+`http://` server is refused, because that token would cross the network in
+cleartext — `https://` and local addresses (loopback or unspecified
+(`127.0.0.0/8`, `::1`, `0.0.0.0`, `::`) or `localhost` — `0.0.0.0` is what
+`--server local` expands to) are always accepted. Override with
+`--allow-insecure-server` or `DSP_ALLOW_INSECURE_SERVER=1` if you really mean
+to talk to a non-TLS-terminated server (e.g. an internal deployment behind a
+trusted network boundary); an explicit flag wins over the env var, same as
+everywhere else in `dsp-cli`. A server value containing a control character
+(e.g. a raw ANSI escape) is refused outright, on any scheme, since a URL never
+legitimately contains one.
+
 ## `.env` files
 
 On startup `dsp-cli` loads a `.env` file from the current working directory, if
 present. This lets you set `DSP_SERVER` (and more, below) once per project
 directory instead of repeating flags. `.env` loading is visible filesystem state,
 not hidden session state — the one carve-out to "no implicit state".
+
+**Watch for cross-context tokens.** If `DSP_TOKEN` is set in your shell but
+`DSP_SERVER` comes from a `.env` file in the directory you happen to be in,
+you may be sending a token acquired for one server to a different one —
+`dsp-cli` warns once, on stderr, when it detects this combination.
 
 ## Authentication
 

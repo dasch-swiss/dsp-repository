@@ -1,0 +1,5 @@
+---
+source: dsp-cli/tests/cli.rs
+expression: stderr
+---
+Error: usage error: refusing to use "http://api.example.org" over plain HTTP: an authenticated command sends a bearer token, which would cross the network in cleartext. Use https://, a local address (loopback or unspecified (127.0.0.0/8, ::1, 0.0.0.0, ::) or localhost), or override with --allow-insecure-server / DSP_ALLOW_INSECURE_SERVER=1.

@@ -1,5 +1,5 @@
 ---
-source: tests/cli.rs
+source: dsp-cli/tests/cli.rs
 expression: text
 ---
 List resource instances within a project.
@@ -16,6 +16,11 @@ Commands:
 Options:
   -v, --verbose...
           Increase log verbosity (-v=info, -vv=debug, -vvv=trace). RUST_LOG overrides
+
+      --allow-insecure-server
+          Allow a non-local --server to use insecure http:// (see `dsp docs connecting`)
+          
+          [env: DSP_ALLOW_INSECURE_SERVER=]
 
   -h, --help
           Print help (see a summary with '-h')

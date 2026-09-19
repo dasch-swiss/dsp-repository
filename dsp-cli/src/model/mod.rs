@@ -16,15 +16,11 @@ pub mod vocabulary;
 pub use auth::LoginResponse;
 pub use data_model::{DataModel, DataModelDetail, ResourceType, ResourceTypeSummary};
 pub use dump::{CreateDumpOutcome, DumpStatus, DumpTask};
-pub use project::{
-    DataModelSummary, Project, ProjectDescription, ProjectDetail, ProjectRef, ProjectStatus,
-};
+pub use project::{DataModelSummary, Project, ProjectDescription, ProjectDetail, ProjectRef, ProjectStatus};
 pub use resource::{
-    DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail, ResourcePage,
-    ResourceSummary, ResourceVisibility, Value, ValueContent,
+    DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail, ResourcePage, ResourceSummary,
+    ResourceVisibility, Value, ValueContent,
 };
 pub use resource_type::{Cardinality, Field, Representation, ResourceTypeDetail, ValueType};
 pub use structure::{DataModelStructure, Relation, RelationKind};
-pub use vocabulary::{
-    LocalizedText, Vocabulary, VocabularyDetail, VocabularyHeader, VocabularyNode, VocabularyTree,
-};
+pub use vocabulary::{LocalizedText, Vocabulary, VocabularyDetail, VocabularyHeader, VocabularyNode, VocabularyTree};

@@ -179,11 +179,7 @@ mod tests {
             Diagnostic::Io("x".into()),
             Diagnostic::NotImplemented("x".into()),
         ] {
-            assert_eq!(
-                d.exit_category(),
-                ExitCategory::Runtime,
-                "{d:?} must map to Runtime"
-            );
+            assert_eq!(d.exit_category(), ExitCategory::Runtime, "{d:?} must map to Runtime");
         }
     }
 

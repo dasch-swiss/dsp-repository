@@ -14,14 +14,12 @@
 //! - `<br>`, `<br/>`, `<br />` (case-insensitive) → newline.
 //! - `<p>` and `</p>` → newline (block boundary).
 //! - `<a href="URL" …>TEXT</a>` → `TEXT (URL)`; if no href, just `TEXT`.
-//! - All other tags (`<b>`, `</b>`, `<i>`, `<strong>`, `<em>`, `<ul>`,
-//!   `<li>`, unknown) → stripped, inner text kept.
-//! - Common HTML entities unescaped: `&amp;` `&lt;` `&gt;` `&quot;`
-//!   `&#39;`/`&apos;` `&nbsp;`.
-//! - Control chars **except** `\n` and `\t` stripped: the C0 range
-//!   (0x00–0x1F), DEL (0x7F) **and the C1 range** (0x80–0x9F). Closes the
-//!   terminal/ANSI-injection concern for server-supplied text — C1 matters
-//!   because U+009B is the single-character form of `ESC [` (CSI), so an
+//! - All other tags (`<b>`, `</b>`, `<i>`, `<strong>`, `<em>`, `<ul>`, `<li>`, unknown) → stripped,
+//!   inner text kept.
+//! - Common HTML entities unescaped: `&amp;` `&lt;` `&gt;` `&quot;` `&#39;`/`&apos;` `&nbsp;`.
+//! - Control chars **except** `\n` and `\t` stripped: the C0 range (0x00–0x1F), DEL (0x7F) **and
+//!   the C1 range** (0x80–0x9F). Closes the terminal/ANSI-injection concern for server-supplied
+//!   text — C1 matters because U+009B is the single-character form of `ESC [` (CSI), so an
 //!   ASCII-only filter would let a terminal control sequence through.
 //! - 3+ consecutive newlines collapsed to exactly 2 (at most one blank line).
 //! - Leading/trailing whitespace trimmed from the final result.
@@ -51,9 +49,7 @@ pub(crate) fn html_to_text(s: &str) -> String {
 /// the *tabular* formats (lines/csv/tsv), where `\n`/`\t` break the
 /// one-record-per-line / delimited structure, use [`replace_control_chars`].
 pub(crate) fn strip_control_chars(s: &str) -> String {
-    s.chars()
-        .filter(|&c| !c.is_control() || c == '\n' || c == '\t')
-        .collect()
+    s.chars().filter(|&c| !c.is_control() || c == '\n' || c == '\t').collect()
 }
 
 /// Replace **every** control character — the C0 range (`\x00`–`\x1f`, which
@@ -71,9 +67,7 @@ pub(crate) fn strip_control_chars(s: &str) -> String {
 /// (ESC, DEL) characters without a fragile deny-list. See plan 020 D11 and
 /// ADR-0003.
 pub(crate) fn replace_control_chars(s: &str) -> String {
-    s.chars()
-        .map(|c| if c.is_control() { ' ' } else { c })
-        .collect()
+    s.chars().map(|c| if c.is_control() { ' ' } else { c }).collect()
 }
 
 /// Sanitise store/server-authored prose for a diagnostic message: strip
@@ -268,10 +262,7 @@ fn collect_until_close_tag<'a>(rest: &'a str, tag: &str) -> (&'a str, usize) {
     if let Some(pos) = lower.find(&close_needle) {
         // Find end of the close tag (skip to '>').
         let after_name = pos + close_needle.len();
-        let close_end = rest[after_name..]
-            .find('>')
-            .map(|p| after_name + p + 1)
-            .unwrap_or(rest.len());
+        let close_end = rest[after_name..].find('>').map(|p| after_name + p + 1).unwrap_or(rest.len());
         (&rest[..pos], close_end)
     } else {
         // No close tag — consume the rest.
@@ -440,10 +431,7 @@ mod tests {
 
     #[test]
     fn anchor_empty_text_with_href() {
-        assert_eq!(
-            html_to_text("<a href=\"https://example.com\"></a>"),
-            "https://example.com"
-        );
+        assert_eq!(html_to_text("<a href=\"https://example.com\"></a>"), "https://example.com");
     }
 
     #[test]
@@ -480,10 +468,7 @@ mod tests {
         let input = "a\u{1b}[31mred\u{1b}[0mb";
         let result = html_to_text(input);
         // ESC (0x1B) must be gone
-        assert!(
-            !result.contains('\u{1b}'),
-            "ESC must be stripped; got: {result:?}"
-        );
+        assert!(!result.contains('\u{1b}'), "ESC must be stripped; got: {result:?}");
         // The visible chars remain
         assert!(result.contains('a'));
         assert!(result.contains('b'));
@@ -538,9 +523,7 @@ mod tests {
         assert!(!result.contains('>'), "no raw tags; got: {result:?}");
         // Links are rendered as TEXT (URL).
         assert!(
-            result.contains(
-                "https://meta.dasch.swiss/projects/0801 (https://meta.dasch.swiss/projects/0801)"
-            ),
+            result.contains("https://meta.dasch.swiss/projects/0801 (https://meta.dasch.swiss/projects/0801)"),
             "link rendered as TEXT (URL); got: {result:?}"
         );
         // Main description text present.
@@ -562,10 +545,7 @@ mod tests {
         let result = html_to_text("<p><strong>Title</strong>: text &amp; more</p>");
         assert!(!result.contains('<'), "no tags; got: {result:?}");
         assert!(result.contains("Title"), "title present; got: {result:?}");
-        assert!(
-            result.contains("text & more"),
-            "entity unescaped; got: {result:?}"
-        );
+        assert!(result.contains("text & more"), "entity unescaped; got: {result:?}");
     }
 
     #[test]
@@ -674,10 +654,7 @@ mod tests {
     fn sanitise_and_cap_strips_esc() {
         let input = "a\u{1b}[31mred\u{1b}[0mb";
         let result = sanitise_and_cap(input);
-        assert!(
-            !result.contains('\u{1b}'),
-            "ESC must be stripped: {result:?}"
-        );
+        assert!(!result.contains('\u{1b}'), "ESC must be stripped: {result:?}");
     }
 
     #[test]

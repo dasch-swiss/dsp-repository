@@ -30,17 +30,9 @@ use support::{buf_to_string, shared_buf};
 
 fn fixed_events() -> Vec<DumpEvent> {
     vec![
-        DumpEvent::Triggered {
-            id: "abc123".into(),
-        },
-        DumpEvent::Polling {
-            elapsed_secs: 12,
-            status: DumpStatus::InProgress,
-        },
-        DumpEvent::Polling {
-            elapsed_secs: 28,
-            status: DumpStatus::InProgress,
-        },
+        DumpEvent::Triggered { id: "abc123".into() },
+        DumpEvent::Polling { elapsed_secs: 12, status: DumpStatus::InProgress },
+        DumpEvent::Polling { elapsed_secs: 28, status: DumpStatus::InProgress },
         DumpEvent::Downloading,
         DumpEvent::Done { bytes: 12345 },
     ]
@@ -50,15 +42,9 @@ fn fixed_events() -> Vec<DumpEvent> {
 
 fn adopt_delete_probe_events() -> Vec<DumpEvent> {
     vec![
-        DumpEvent::Adopting {
-            id: "existing-dump-abc".into(),
-        },
-        DumpEvent::Deleting {
-            id: "dump-to-delete-xyz".into(),
-        },
-        DumpEvent::ProbeCreated {
-            id: "probe-created-999".into(),
-        },
+        DumpEvent::Adopting { id: "existing-dump-abc".into() },
+        DumpEvent::Deleting { id: "dump-to-delete-xyz".into() },
+        DumpEvent::ProbeCreated { id: "probe-created-999".into() },
     ]
 }
 
@@ -72,9 +58,7 @@ fn discard_other_project_events() -> Vec<DumpEvent> {
             id: "foreign-dump-abc".into(),
             project_iri: "http://rdfh.ch/projects/0002".into(),
         },
-        DumpEvent::Triggered {
-            id: "new-dump-xyz".into(),
-        },
+        DumpEvent::Triggered { id: "new-dump-xyz".into() },
         DumpEvent::Downloading,
         DumpEvent::Done { bytes: 98765 },
     ]

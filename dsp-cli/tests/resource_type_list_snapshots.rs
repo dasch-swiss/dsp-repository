@@ -1,20 +1,18 @@
 //! Snapshot tests for `dsp vre resource-type list` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (3 project resource-types in BEOL): exercises the Option
-//!   matrix (label Some, label Some, label None), all `is_builtin: false`. Shared
-//!   by prose, json, lines, csv, tsv cells.
-//! - **Builtins fixture** (2 project + 4 builtins): `Archive` and `letter` sort
-//!   between the builtins alphabetically: `Archive, AudioSegment, letter, LinkObj,
-//!   Region, VideoSegment`. Shared by prose, json, csv, tsv. (Lines omits
-//!   `is_builtin` — its builtins cell would add nothing new over the main fixture's
-//!   lines cell, so it is skipped.)
+//! - **Main fixture** (3 project resource-types in BEOL): exercises the Option matrix (label Some,
+//!   label Some, label None), all `is_builtin: false`. Shared by prose, json, lines, csv, tsv
+//!   cells.
+//! - **Builtins fixture** (2 project + 4 builtins): `Archive` and `letter` sort between the
+//!   builtins alphabetically: `Archive, AudioSegment, letter, LinkObj, Region, VideoSegment`.
+//!   Shared by prose, json, csv, tsv. (Lines omits `is_builtin` — its builtins cell would add
+//!   nothing new over the main fixture's lines cell, so it is skipped.)
 //! - **Empty fixture**: zero items, total 0. Prose and json only.
-//! - **Filter fixture**: `filter: Some("let")` with `total > items.len()` so the
-//!   prose header shows "(m of total matching …)". Prose only.
-//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a
-//!   `JsonRenderer` — locks the ADR-0012 propagated-error envelope for the
-//!   data-model-not-found path.
+//! - **Filter fixture**: `filter: Some("let")` with `total > items.len()` so the prose header shows
+//!   "(m of total matching …)". Prose only.
+//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`
+//!   — locks the ADR-0012 propagated-error envelope for the data-model-not-found path.
 //!
 //! Determinism: these tests call `Renderer::resource_types(&view, &meta)` (or
 //! `renderer.diagnostic(…)`) **directly** with a hand-built `MetaContext` /
@@ -68,8 +66,7 @@ fn anon_meta() -> MetaContext {
 fn count_caveat_meta() -> MetaContext {
     MetaContext {
         count_caveat: Some(
-            "counts include resources you may not be permitted to see and exclude deleted resources."
-                .to_string(),
+            "counts include resources you may not be permitted to see and exclude deleted resources.".to_string(),
         ),
         ..anon_meta()
     }
@@ -114,12 +111,7 @@ fn main_view() -> ResourceTypeListView {
         ),
     ];
     let total = items.len();
-    ResourceTypeListView {
-        items,
-        total,
-        filter: None,
-        data_model: "beol".to_string(),
-    }
+    ResourceTypeListView { items, total, filter: None, data_model: "beol".to_string() }
 }
 
 /// Main fixture with `--count` merged in — the same 3 project resource-types
@@ -186,12 +178,7 @@ fn builtins_view() -> ResourceTypeListView {
         ),
     ];
     let total = items.len();
-    ResourceTypeListView {
-        items,
-        total,
-        filter: None,
-        data_model: "beol".to_string(),
-    }
+    ResourceTypeListView { items, total, filter: None, data_model: "beol".to_string() }
 }
 
 /// Empty fixture — zero items, total 0.
@@ -215,12 +202,7 @@ fn filter_view() -> ResourceTypeListView {
         .into_iter()
         .filter(|rt| {
             rt.name.to_lowercase().contains(&needle)
-                || rt
-                    .label
-                    .as_deref()
-                    .unwrap_or("")
-                    .to_lowercase()
-                    .contains(&needle)
+                || rt.label.as_deref().unwrap_or("").to_lowercase().contains(&needle)
         })
         .collect();
     ResourceTypeListView {
@@ -321,8 +303,7 @@ fn resource_type_list_tsv() {
 fn resource_type_list_prose_with_count() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_types(&main_view_with_counts(), &count_caveat_meta())
-        .unwrap();
+    r.resource_types(&main_view_with_counts(), &count_caveat_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -333,8 +314,7 @@ fn resource_type_list_prose_with_count() {
 fn resource_type_list_json_with_count() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_types(&main_view_with_counts(), &count_caveat_meta())
-        .unwrap();
+    r.resource_types(&main_view_with_counts(), &count_caveat_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -347,18 +327,11 @@ fn resource_type_list_lines_with_count() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.resource_types(&main_view_with_counts(), &count_caveat_meta())
-        .unwrap();
+    r.resource_types(&main_view_with_counts(), &count_caveat_meta()).unwrap();
     // Snapshot stdout (data rows only — no header per lines format).
-    insta::assert_snapshot!(
-        "resource_type_list_lines_with_count_stdout",
-        buf_to_string(&out_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_lines_with_count_stdout", buf_to_string(&out_buf));
     // Snapshot stderr: disclosure now carries the count_caveat text.
-    insta::assert_snapshot!(
-        "resource_type_list_lines_with_count_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_lines_with_count_stderr", buf_to_string(&err_buf));
 }
 
 /// CSV render of the main fixture with `--count`. The `count` column
@@ -372,19 +345,12 @@ fn resource_type_list_csv_with_count() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.resource_types(&main_view_with_counts(), &count_caveat_meta())
-        .unwrap();
+    r.resource_types(&main_view_with_counts(), &count_caveat_meta()).unwrap();
     // Snapshot stdout (header + data rows).
-    insta::assert_snapshot!(
-        "resource_type_list_csv_with_count_stdout",
-        buf_to_string(&out_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_csv_with_count_stdout", buf_to_string(&out_buf));
     // Snapshot stderr: disclosure must land here, not on stdout, and must now
     // carry the count_caveat text.
-    insta::assert_snapshot!(
-        "resource_type_list_csv_with_count_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_csv_with_count_stderr", buf_to_string(&err_buf));
 }
 
 /// TSV render of the main fixture with `--count`. Same auto-expanding column
@@ -395,19 +361,12 @@ fn resource_type_list_tsv_with_count() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.resource_types(&main_view_with_counts(), &count_caveat_meta())
-        .unwrap();
+    r.resource_types(&main_view_with_counts(), &count_caveat_meta()).unwrap();
     // Snapshot stdout (header + data rows).
-    insta::assert_snapshot!(
-        "resource_type_list_tsv_with_count_stdout",
-        buf_to_string(&out_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_tsv_with_count_stdout", buf_to_string(&out_buf));
     // Snapshot stderr: disclosure must land here, not on stdout, and must now
     // carry the count_caveat text.
-    insta::assert_snapshot!(
-        "resource_type_list_tsv_with_count_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_tsv_with_count_stderr", buf_to_string(&err_buf));
 }
 
 // ── builtins fixture × 4 formats ─────────────────────────────────────────────
@@ -418,8 +377,7 @@ fn resource_type_list_tsv_with_count() {
 /// Prose render of the builtins fixture. Locks:
 /// - `, incl. built-ins` in the header.
 /// - `(built-in)` trailing marker on every built-in row.
-/// - Interleaved sort: `Archive, AudioSegment, letter, LinkObj, Region,
-///   VideoSegment`.
+/// - Interleaved sort: `Archive, AudioSegment, letter, LinkObj, Region, VideoSegment`.
 /// - No `(built-in)` marker on project rows.
 #[test]
 fn resource_type_list_builtins_prose() {
@@ -445,37 +403,16 @@ fn resource_type_list_builtins_prose() {
     // Check interleave: Archive < AudioSegment < letter < LinkObj < Region < VideoSegment.
     let lines: Vec<&str> = out.lines().collect();
     let archive_pos = lines.iter().position(|l| l.contains("Archive")).unwrap();
-    let audio_pos = lines
-        .iter()
-        .position(|l| l.contains("AudioSegment"))
-        .unwrap();
+    let audio_pos = lines.iter().position(|l| l.contains("AudioSegment")).unwrap();
     let letter_pos = lines.iter().position(|l| l.contains("letter")).unwrap();
     let linkobj_pos = lines.iter().position(|l| l.contains("LinkObj")).unwrap();
     let region_pos = lines.iter().position(|l| l.contains("Region")).unwrap();
-    let video_pos = lines
-        .iter()
-        .position(|l| l.contains("VideoSegment"))
-        .unwrap();
-    assert!(
-        archive_pos < audio_pos,
-        "Archive must appear before AudioSegment"
-    );
-    assert!(
-        audio_pos < letter_pos,
-        "AudioSegment must appear before letter"
-    );
-    assert!(
-        letter_pos < linkobj_pos,
-        "letter must appear before LinkObj"
-    );
-    assert!(
-        linkobj_pos < region_pos,
-        "LinkObj must appear before Region"
-    );
-    assert!(
-        region_pos < video_pos,
-        "Region must appear before VideoSegment"
-    );
+    let video_pos = lines.iter().position(|l| l.contains("VideoSegment")).unwrap();
+    assert!(archive_pos < audio_pos, "Archive must appear before AudioSegment");
+    assert!(audio_pos < letter_pos, "AudioSegment must appear before letter");
+    assert!(letter_pos < linkobj_pos, "letter must appear before LinkObj");
+    assert!(linkobj_pos < region_pos, "LinkObj must appear before Region");
+    assert!(region_pos < video_pos, "Region must appear before VideoSegment");
     insta::assert_snapshot!(out);
 }
 
@@ -490,40 +427,21 @@ fn resource_type_list_builtins_json() {
     r.resource_types(&builtins_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     // Structural assertion: is_builtin boolean, interleave order.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("builtins json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("builtins json must be valid JSON");
     let data = parsed["data"].as_array().unwrap();
     // Archive is first (sorted): is_builtin false
-    assert_eq!(
-        data[0]["name"], "Archive",
-        "first item must be Archive (sort order)"
-    );
-    assert_eq!(
-        data[0]["is_builtin"], false,
-        "Archive must have is_builtin: false"
-    );
+    assert_eq!(data[0]["name"], "Archive", "first item must be Archive (sort order)");
+    assert_eq!(data[0]["is_builtin"], false, "Archive must have is_builtin: false");
     // AudioSegment is second: is_builtin true
-    assert_eq!(
-        data[1]["name"], "AudioSegment",
-        "second item must be AudioSegment (sort order)"
-    );
-    assert_eq!(
-        data[1]["is_builtin"], true,
-        "AudioSegment must have is_builtin: true"
-    );
+    assert_eq!(data[1]["name"], "AudioSegment", "second item must be AudioSegment (sort order)");
+    assert_eq!(data[1]["is_builtin"], true, "AudioSegment must have is_builtin: true");
     assert_eq!(
         data[1]["label"], "Audio Annotation",
         "AudioSegment must have label 'Audio Annotation'"
     );
     // letter is third: is_builtin false
-    assert_eq!(
-        data[2]["name"], "letter",
-        "third item must be letter (sort order)"
-    );
-    assert_eq!(
-        data[2]["is_builtin"], false,
-        "letter must have is_builtin: false"
-    );
+    assert_eq!(data[2]["name"], "letter", "third item must be letter (sort order)");
+    assert_eq!(data[2]["is_builtin"], false, "letter must have is_builtin: false");
     insta::assert_snapshot!(out);
 }
 
@@ -550,10 +468,7 @@ fn resource_type_list_builtins_csv() {
         "CSV builtins rows must contain ',false'; got:\n{stdout}"
     );
     insta::assert_snapshot!("resource_type_list_builtins_csv_stdout", stdout);
-    insta::assert_snapshot!(
-        "resource_type_list_builtins_csv_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_builtins_csv_stderr", buf_to_string(&err_buf));
 }
 
 /// TSV render of the builtins fixture. Same column shape as CSV but tab-separated
@@ -578,10 +493,7 @@ fn resource_type_list_builtins_tsv() {
         "TSV builtins rows must contain '\\tfalse'; got:\n{stdout}"
     );
     insta::assert_snapshot!("resource_type_list_builtins_tsv_stdout", stdout);
-    insta::assert_snapshot!(
-        "resource_type_list_builtins_tsv_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_list_builtins_tsv_stderr", buf_to_string(&err_buf));
 }
 
 // ── empty fixture × prose + json ─────────────────────────────────────────────
@@ -594,15 +506,9 @@ fn resource_type_list_prose_empty() {
     let mut r = ProseRenderer::with_writer(w);
     r.resource_types(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        out.contains("(0)"),
-        "prose empty must show '(0)' count; got:\n{out}"
-    );
+    assert!(out.contains("(0)"), "prose empty must show '(0)' count; got:\n{out}");
     // data_model name must still appear even when empty
-    assert!(
-        out.contains("beol"),
-        "prose empty must still show data_model name; got:\n{out}"
-    );
+    assert!(out.contains("beol"), "prose empty must still show data_model name; got:\n{out}");
     assert!(
         out.contains("[anonymous on"),
         "prose empty must still have disclosure footer; got:\n{out}"
@@ -618,8 +524,7 @@ fn resource_type_list_json_empty() {
     let mut r = JsonRenderer::with_writer(w);
     r.resource_types(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
     assert!(
         parsed["data"].as_array().unwrap().is_empty(),
         "json empty must have empty data array; got:\n{out}"
@@ -644,10 +549,7 @@ fn resource_type_list_prose_filter() {
         out.contains("matching \"let\""),
         "prose filter must contain 'matching \"let\"'; got:\n{out}"
     );
-    assert!(
-        out.contains("of 3"),
-        "prose filter must show 'of 3' total; got:\n{out}"
-    );
+    assert!(out.contains("of 3"), "prose filter must show 'of 3' total; got:\n{out}");
     insta::assert_snapshot!(out);
 }
 
@@ -673,8 +575,7 @@ fn resource_type_list_json_not_found() {
     let out = buf_to_string(&buf);
 
     // Structural assertion before snapshotting.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
     assert_eq!(
         parsed["error"]["kind"], "not_found",
         "error envelope must have kind='not_found'; got: {}",

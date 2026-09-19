@@ -11,14 +11,13 @@
 
 use std::path::Path;
 
+use crate::actions::auth_state::read_auth_state;
 use crate::cli::{ResourceDescribeArgs, ResourceListArgs};
 use crate::client::DspClient;
 use crate::config::{AuthCache, Config, resolve_token};
 use crate::diagnostic::Diagnostic;
 use crate::model::ResourceSummary;
 use crate::render::{MetaContext, Renderer, ResourceListPagination, ResourceListView};
-
-use crate::actions::auth_state::read_auth_state;
 use crate::util::text::strip_control_chars;
 
 /// Resolved resource-type reference: IRI, local name, and optionally the
@@ -47,10 +46,10 @@ pub fn list(
 
 /// Internal entry point for `list` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry point before calling
+///   this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. For an instance-side read,
@@ -64,14 +63,16 @@ pub(crate) fn run_list_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. --resource-type required (fail-fast, BEFORE any cache/IO) ─────────
-    let resource_type_arg = args.resource_type.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string())
-    })?;
+    let resource_type_arg = args
+        .resource_type
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string()))?;
 
     // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
     let cache_result = match cache_path {
@@ -126,13 +127,7 @@ pub(crate) fn run_list_impl(
 
     // ── 8b. Resolve --order-by field name to property IRI ────────────────────
     let order_by: Option<String> = if let Some(ob) = args.order_by.as_deref() {
-        Some(resolve_order_by_property(
-            ob,
-            &rt_ref,
-            &cfg.server,
-            client,
-            token,
-        )?)
+        Some(resolve_order_by_property(ob, &rt_ref, &cfg.server, client, token)?)
     } else {
         None
     };
@@ -143,14 +138,8 @@ pub(crate) fn run_list_impl(
         let mut all: Vec<ResourceSummary> = Vec::new();
         let mut page = 0u32;
         loop {
-            let page_result = client.list_resources(
-                &cfg.server,
-                &pref.iri,
-                &rt_ref.iri,
-                order_by.as_deref(),
-                page,
-                token,
-            )?;
+            let page_result =
+                client.list_resources(&cfg.server, &pref.iri, &rt_ref.iri, order_by.as_deref(), page, token)?;
             all.extend(page_result.resources);
             if !page_result.may_have_more_results {
                 break;
@@ -162,21 +151,12 @@ pub(crate) fn run_list_impl(
     } else {
         // Single-page mode: fetch exactly the resolved page (default: 0).
         let page = args.page.unwrap_or(0);
-        let page_result = client.list_resources(
-            &cfg.server,
-            &pref.iri,
-            &rt_ref.iri,
-            order_by.as_deref(),
-            page,
-            token,
-        )?;
+        let page_result =
+            client.list_resources(&cfg.server, &pref.iri, &rt_ref.iri, order_by.as_deref(), page, token)?;
         let may_have_more = page_result.may_have_more_results;
         (
             page_result.resources,
-            ResourceListPagination::SinglePage {
-                page,
-                may_have_more,
-            },
+            ResourceListPagination::SinglePage { page, may_have_more },
         )
     };
 
@@ -211,8 +191,8 @@ pub(crate) fn run_list_impl(
 /// Resolve the `resource_type` argument to a [`ResourceTypeRef`].
 ///
 /// Three paths per D1 (plan 022):
-/// - Full IRI (contains `://`) → use as-is; extract local name with `local_name`;
-///   `data_model_iri` derived by stripping the `#fragment` (or `None` if no `#`).
+/// - Full IRI (contains `://`) → use as-is; extract local name with `local_name`; `data_model_iri`
+///   derived by stripping the `#fragment` (or `None` if no `#`).
 /// - `--data-model` given → scope to that one data-model.
 /// - Bare name, no `--data-model` → scan all project data-models.
 fn resolve_resource_type_iri(
@@ -228,14 +208,8 @@ fn resolve_resource_type_iri(
         // heuristic: looks like a full IRI → skip the scan
         let name = local_name(resource_type_arg);
         // Derive data_model_iri by stripping the #fragment, if present.
-        let data_model_iri = resource_type_arg
-            .find('#')
-            .map(|idx| resource_type_arg[..idx].to_string());
-        return Ok(ResourceTypeRef {
-            iri: resource_type_arg.to_string(),
-            name,
-            data_model_iri,
-        });
+        let data_model_iri = resource_type_arg.find('#').map(|idx| resource_type_arg[..idx].to_string());
+        return Ok(ResourceTypeRef { iri: resource_type_arg.to_string(), name, data_model_iri });
     }
 
     // Path B / C: bare name — possibly scoped by --data-model.
@@ -253,14 +227,8 @@ fn resolve_resource_type_iri(
                 .map(|dm| dm.iri.clone())
                 .ok_or_else(|| {
                     let dm_disp: String = dm_arg.chars().take(80).collect();
-                    let dm_suffix = if dm_arg.chars().count() > 80 {
-                        "…"
-                    } else {
-                        ""
-                    };
-                    Diagnostic::NotFound(format!(
-                        "data-model '{dm_disp}{dm_suffix}' not found in project on {server}"
-                    ))
+                    let dm_suffix = if dm_arg.chars().count() > 80 { "…" } else { "" };
+                    Diagnostic::NotFound(format!("data-model '{dm_disp}{dm_suffix}' not found in project on {server}"))
                 })?
         };
 
@@ -272,7 +240,11 @@ fn resolve_resource_type_iri(
             .find(|rt| rt.name.eq_ignore_ascii_case(resource_type_arg) || rt.iri == resource_type_arg)
             .ok_or_else(|| {
                 let rt_disp: String = resource_type_arg.chars().take(80).collect();
-                let rt_suffix = if resource_type_arg.chars().count() > 80 { "…" } else { "" };
+                let rt_suffix = if resource_type_arg.chars().count() > 80 {
+                    "…"
+                } else {
+                    ""
+                };
                 Diagnostic::NotFound(format!(
                     "resource-type '{rt_disp}{rt_suffix}' not found in data-model '{name}' on {server}; \
                      run `dsp vre resource-type list --project <project> --data-model {name} --server {server}` \
@@ -307,12 +279,7 @@ fn resolve_resource_type_iri(
         let detail = client.describe_data_model(server, &dm.iri, token)?;
         for rt in &detail.resource_types {
             if rt.name.eq_ignore_ascii_case(resource_type_arg) || rt.iri == resource_type_arg {
-                matches.push((
-                    rt.iri.clone(),
-                    rt.name.clone(),
-                    dm.iri.clone(),
-                    dm.name.clone(),
-                ));
+                matches.push((rt.iri.clone(), rt.name.clone(), dm.iri.clone(), dm.name.clone()));
             }
         }
     }
@@ -366,12 +333,11 @@ fn resolve_resource_type_iri(
 /// Resolve a `--order-by` argument to a complex-schema property IRI.
 ///
 /// Two paths:
-/// - `order_by_arg` contains `://` → full-IRI bypass; returned verbatim,
-///   `describe_resource_type` is NOT called.
-/// - Bare field name → look up via `describe_resource_type(server, dm_iri,
-///   rt_iri, token)`, match `field.name` case-insensitively, return
-///   `field.iri`. If no match → `Diagnostic::Usage` with a hint pointing at
-///   `dsp vre resource-type describe` to list field names.
+/// - `order_by_arg` contains `://` → full-IRI bypass; returned verbatim, `describe_resource_type`
+///   is NOT called.
+/// - Bare field name → look up via `describe_resource_type(server, dm_iri, rt_iri, token)`, match
+///   `field.name` case-insensitively, return `field.iri`. If no match → `Diagnostic::Usage` with a
+///   hint pointing at `dsp vre resource-type describe` to list field names.
 ///
 /// Requires `rt_ref.data_model_iri` on the bare-name path; if `None`
 /// (path A class IRI without `#`), returns `Diagnostic::Usage` telling the
@@ -403,11 +369,7 @@ fn resolve_order_by_property(
     let detail = client.describe_resource_type(server, dm_iri, &rt_ref.iri, token)?;
 
     // Match field by name (case-insensitive); cover ALL fields (built-ins included).
-    if let Some(field) = detail
-        .fields
-        .iter()
-        .find(|f| f.name.eq_ignore_ascii_case(order_by_arg))
-    {
+    if let Some(field) = detail.fields.iter().find(|f| f.name.eq_ignore_ascii_case(order_by_arg)) {
         return Ok(field.iri.clone());
     }
 
@@ -415,11 +377,7 @@ fn resolve_order_by_property(
     // (truncated to 80 chars + ellipsis, control-char-sanitised).
     let sanitised = strip_control_chars(order_by_arg);
     let field_disp: String = sanitised.chars().take(80).collect();
-    let field_suffix = if sanitised.chars().count() > 80 {
-        "…"
-    } else {
-        ""
-    };
+    let field_suffix = if sanitised.chars().count() > 80 { "…" } else { "" };
     Err(Diagnostic::Usage(format!(
         "field '{field_disp}{field_suffix}' not found in resource-type '{}'; \
          run `dsp vre resource-type describe --server <s> --project <project> \
@@ -438,10 +396,7 @@ fn resolve_order_by_property(
 /// `rsplit` always yields at least one element so `unwrap_or` is a no-panic
 /// guard rather than a live fallback, mirroring the http.rs implementation.
 fn local_name(iri: &str) -> String {
-    iri.rsplit(['#', '/', ':'])
-        .next()
-        .unwrap_or(iri)
-        .to_string()
+    iri.rsplit(['#', '/', ':']).next().unwrap_or(iri).to_string()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -466,10 +421,10 @@ pub fn describe(
 
 /// Internal entry point for `describe` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry point before
+///   calling this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. For an instance-side read,
@@ -548,11 +503,7 @@ pub(crate) fn run_describe_impl(
         // Cap the resource IRI at 80 chars for readability, mirroring the
         // idiom used throughout http.rs for user-supplied IRIs.
         let display_iri: String = resource_iri.chars().take(80).collect();
-        let iri_suffix = if resource_iri.chars().count() > 80 {
-            "…"
-        } else {
-            ""
-        };
+        let iri_suffix = if resource_iri.chars().count() > 80 { "…" } else { "" };
         return Err(Diagnostic::Usage(format!(
             "resource '{display_iri}{iri_suffix}' belongs to project {actual_name}, not {expected_name}"
         )));
@@ -586,15 +537,12 @@ mod tests {
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
     use crate::model::{
-        Cardinality, DataModel, DataModelDetail, Field, ProjectRef, ResourceAccess, ResourceDetail,
-        ResourcePage, ResourceSummary, ResourceTypeDetail, ResourceTypeSummary, ResourceVisibility,
+        Cardinality, DataModel, DataModelDetail, Field, ProjectRef, ResourceAccess, ResourceDetail, ResourcePage,
+        ResourceSummary, ResourceTypeDetail, ResourceTypeSummary, ResourceVisibility,
     };
-    use crate::render::Format;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{
-        DataModelListView, DumpDeleteOutcome, DumpOutcome, MetaContext, ProjectListView, Renderer,
+        DataModelListView, DumpDeleteOutcome, DumpOutcome, Format, MetaContext, ProjectListView, Renderer,
         ResourceListView, ResourceTypeListView,
     };
 
@@ -604,7 +552,8 @@ mod tests {
     // `describe_data_model` (popped in call order) so that the ambiguous-name
     // test can return different data-models for each call.
 
-    /// Captured `list_resources` arguments: (project_iri, resource_type_iri, order_by, page, token).
+    /// Captured `list_resources` arguments: (project_iri, resource_type_iri, order_by, page,
+    /// token).
     type ListResourcesArg = (String, String, Option<String>, u32, Option<String>);
 
     struct MockDspClient {
@@ -765,11 +714,7 @@ mod tests {
             unimplemented!("delete_project_dump not used in resource action tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             unimplemented!("list_projects not used in resource action tests")
         }
 
@@ -818,9 +763,7 @@ mod tests {
             *self.describe_resource_type_calls.borrow_mut() += 1;
             match &self.describe_resource_type_result {
                 Some(detail) => Ok(detail.clone()),
-                None => Err(Diagnostic::NotFound(
-                    "describe_resource_type: no result configured".to_string(),
-                )),
+                None => Err(Diagnostic::NotFound("describe_resource_type: no result configured".to_string())),
             }
         }
 
@@ -865,9 +808,7 @@ mod tests {
             with_values: bool,
         ) -> Result<crate::model::ResourceDetail, Diagnostic> {
             *self.describe_resource_calls.borrow_mut() += 1;
-            self.describe_resource_with_values_args
-                .borrow_mut()
-                .push(with_values);
+            self.describe_resource_with_values_args.borrow_mut().push(with_values);
             let mut queue = self.describe_resource_queue.borrow_mut();
             if queue.is_empty() {
                 panic!("describe_resource called more times than expected (queue is empty)");
@@ -939,51 +880,27 @@ mod tests {
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn project_dump(
-            &mut self,
-            _outcome: &DumpOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_dump(&mut self, _outcome: &DumpOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -995,11 +912,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -1011,11 +924,7 @@ mod tests {
             Ok(())
         }
 
-        fn data_models(
-            &mut self,
-            _view: &DataModelListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn data_models(&mut self, _view: &DataModelListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -1027,11 +936,7 @@ mod tests {
             Ok(())
         }
 
-        fn resource_types(
-            &mut self,
-            _view: &ResourceTypeListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn resource_types(&mut self, _view: &ResourceTypeListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -1051,11 +956,7 @@ mod tests {
             Ok(())
         }
 
-        fn resources(
-            &mut self,
-            view: &ResourceListView,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn resources(&mut self, view: &ResourceListView, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.resources_view = Some(view.clone());
             self.resources_meta = Some(meta.clone());
             Ok(())
@@ -1096,9 +997,7 @@ mod tests {
     const LETTER_IRI: &str = "http://api.test.dasch.swiss/ontology/0801/beol/v2#Letter";
 
     fn make_cfg() -> Config {
-        Config {
-            server: SERVER.to_string(),
-        }
+        Config { server: SERVER.to_string() }
     }
 
     fn make_project_ref() -> ProjectRef {
@@ -1311,10 +1210,7 @@ mod tests {
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
         if let Err(Diagnostic::Usage(msg)) = result {
-            assert!(
-                msg.contains("--resource"),
-                "error message must mention --resource, got: {msg}"
-            );
+            assert!(msg.contains("--resource"), "error message must mention --resource, got: {msg}");
         } else {
             panic!("expected Usage error");
         }
@@ -1332,18 +1228,12 @@ mod tests {
         let args = make_describe_args(Some(RESOURCE_IRI), Some("0801"));
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "matching project must not error, got {:?}",
-            result
-        );
-        assert!(
-            renderer.resource_describe_detail.is_some(),
-            "renderer must have been called"
-        );
+        assert!(result.is_ok(), "matching project must not error, got {:?}", result);
+        assert!(renderer.resource_describe_detail.is_some(), "renderer must have been called");
     }
 
-    /// Cross-project guard MISMATCH: resource.attached_project != resolved_project_iri → Usage error.
+    /// Cross-project guard MISMATCH: resource.attached_project != resolved_project_iri → Usage
+    /// error.
     ///
     /// The error message must name BOTH the resource IRI and the local-name tails of
     /// the actual project (OTHER_PROJECT_IRI → "9999") and the expected project
@@ -1409,15 +1299,8 @@ mod tests {
         let args = make_describe_args(Some(RESOURCE_IRI), Some("0801"));
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "None attached_project must not error, got {:?}",
-            result
-        );
-        assert!(
-            renderer.resource_describe_detail.is_some(),
-            "renderer must have been called"
-        );
+        assert!(result.is_ok(), "None attached_project must not error, got {:?}", result);
+        assert!(renderer.resource_describe_detail.is_some(), "renderer must have been called");
     }
 
     /// No --project given: guard is entirely skipped, resolve_project not called.
@@ -1444,20 +1327,12 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some(RESOURCE_IRI), None);
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let meta = renderer
-            .resource_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "anonymous");
-        let fw = meta
-            .filter_warning
-            .expect("filter_warning must be Some for anonymous");
-        assert_eq!(
-            fw,
-            "results may be filtered; login to see private resources"
-        );
+        let fw = meta.filter_warning.expect("filter_warning must be Some for anonymous");
+        assert_eq!(fw, "results may be filtered; login to see private resources");
     }
 
     /// D3: authenticated (cache token) → filter_warning is "results limited to your permissions".
@@ -1471,31 +1346,18 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some(RESOURCE_IRI), None);
-        run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
-        let meta = renderer
-            .resource_describe_meta
-            .expect("meta must be present");
-        let fw = meta
-            .filter_warning
-            .expect("filter_warning must be Some for authenticated");
+        let meta = renderer.resource_describe_meta.expect("meta must be present");
+        let fw = meta.filter_warning.expect("filter_warning must be Some for authenticated");
         assert_eq!(fw, "results limited to your permissions");
     }
 
     /// Not-found propagation: mock returns Diagnostic::NotFound → surfaced.
     #[test]
     fn test_describe_not_found_propagates() {
-        let client = MockDspClient::new().with_describe_resource(Err(Diagnostic::NotFound(
-            "resource not found on server".to_string(),
-        )));
+        let client = MockDspClient::new()
+            .with_describe_resource(Err(Diagnostic::NotFound("resource not found on server".to_string())));
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some(RESOURCE_IRI), None);
@@ -1526,20 +1388,10 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some(RESOURCE_IRI), None);
-        run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
         // The auth_state reported in meta reveals that auth was used.
-        let meta = renderer
-            .resource_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_describe_meta.expect("meta must be present");
         // Authenticated (cache token) → filter_warning uses the authenticated wording.
         let fw = meta.filter_warning.expect("filter_warning must be present");
         assert_eq!(fw, "results limited to your permissions");
@@ -1551,15 +1403,11 @@ mod tests {
         let client = MockDspClient::new().with_describe_resource(Ok(make_resource_detail()));
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some(RESOURCE_IRI), None); // values=false by default
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let with_values_args = client.describe_resource_with_values_args();
         assert_eq!(with_values_args.len(), 1);
-        assert!(
-            !with_values_args[0],
-            "with_values must be false when --values is absent"
-        );
+        assert!(!with_values_args[0], "with_values must be false when --values is absent");
     }
 
     /// --values true → describe_resource called with with_values=true.
@@ -1568,15 +1416,11 @@ mod tests {
         let client = MockDspClient::new().with_describe_resource(Ok(make_resource_detail()));
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args_with_values(Some(RESOURCE_IRI), None, true);
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let with_values_args = client.describe_resource_with_values_args();
         assert_eq!(with_values_args.len(), 1);
-        assert!(
-            with_values_args[0],
-            "with_values must be true when --values is given"
-        );
+        assert!(with_values_args[0], "with_values must be true when --values is given");
     }
 
     /// Corrupt/missing cache → falls back to anonymous, never returns Err.
@@ -1589,19 +1433,10 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some(RESOURCE_IRI), None);
-        let result = run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&bad_path),
-        );
+        let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&bad_path));
         assert!(result.is_ok(), "corrupt cache must not fail: {:?}", result);
 
-        let meta = renderer
-            .resource_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.resource_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "anonymous");
     }
 
@@ -1627,9 +1462,7 @@ mod tests {
         );
         assert_eq!(client.list_resources_calls(), 1);
 
-        let view = renderer
-            .resources_view
-            .expect("resources must have been called");
+        let view = renderer.resources_view.expect("resources must have been called");
         assert_eq!(view.items.len(), 1);
         assert_eq!(view.resource_type, "Letter"); // local name extracted
     }
@@ -1647,14 +1480,8 @@ mod tests {
 
         let calls = client.list_resources_args();
         assert_eq!(calls.len(), 1);
-        assert_eq!(
-            calls[0].0, PROJECT_IRI,
-            "project_iri must be the resolved IRI"
-        );
-        assert_eq!(
-            calls[0].1, LETTER_IRI,
-            "resource_type_iri must be the full IRI"
-        );
+        assert_eq!(calls[0].0, PROJECT_IRI, "project_iri must be the resolved IRI");
+        assert_eq!(calls[0].1, LETTER_IRI, "resource_type_iri must be the full IRI");
         assert_eq!(calls[0].2, None, "order_by is None (placeholder)");
         assert_eq!(calls[0].3, 0, "default page is 0");
         assert_eq!(calls[0].4, None, "no token for anonymous");
@@ -1741,14 +1568,7 @@ mod tests {
             .with_list_resources(Ok(make_resource_page(&["LetterA"], false)));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args(
-            Some("0801"),
-            Some("Letter"),
-            Some("beol"),
-            None,
-            false,
-            None,
-        );
+        let args = make_args(Some("0801"), Some("Letter"), Some("beol"), None, false, None);
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
         assert!(result.is_ok(), "expected Ok, got {:?}", result);
@@ -1765,14 +1585,7 @@ mod tests {
             .with_list_resources(Ok(make_resource_page(&["LetterA"], false)));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args(
-            Some("0801"),
-            Some("Letter"),
-            Some(BEOL_IRI),
-            None,
-            false,
-            None,
-        );
+        let args = make_args(Some("0801"), Some("Letter"), Some(BEOL_IRI), None, false, None);
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
         assert!(result.is_ok(), "expected Ok, got {:?}", result);
@@ -1798,10 +1611,7 @@ mod tests {
         assert_eq!(view.items.len(), 2);
         assert_eq!(view.total, 2);
         match &view.pagination {
-            crate::render::ResourceListPagination::SinglePage {
-                page,
-                may_have_more,
-            } => {
+            crate::render::ResourceListPagination::SinglePage { page, may_have_more } => {
                 assert_eq!(*page, 0);
                 assert!(!may_have_more);
             }
@@ -1896,11 +1706,7 @@ mod tests {
 
         assert_eq!(client.list_resources_calls(), 2);
         let view = renderer.resources_view.expect("must have been called");
-        assert_eq!(
-            view.items.len(),
-            1,
-            "empty final page contributes zero resources"
-        );
+        assert_eq!(view.items.len(), 1, "empty final page contributes zero resources");
         match &view.pagination {
             crate::render::ResourceListPagination::AllPages { pages_fetched } => {
                 assert_eq!(*pages_fetched, 2);
@@ -1926,10 +1732,7 @@ mod tests {
             "mid-loop error must propagate, got {:?}",
             result
         );
-        assert!(
-            renderer.resources_view.is_none(),
-            "no partial result must be rendered on error"
-        );
+        assert!(renderer.resources_view.is_none(), "no partial result must be rendered on error");
     }
 
     /// Empty result (zero resources): renders with total=0.
@@ -1956,24 +1759,13 @@ mod tests {
             .with_list_resources(Ok(make_resource_page(&["AliceA", "BobB", "AliceC"], false)));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args(
-            Some("0801"),
-            Some(LETTER_IRI),
-            None,
-            None,
-            false,
-            Some("alice"),
-        );
+        let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, Some("alice"));
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let view = renderer.resources_view.expect("must have been called");
         assert_eq!(view.total, 3, "total is pre-filter");
         assert_eq!(view.items.len(), 2, "filter keeps only Alice items");
-        assert!(
-            view.items
-                .iter()
-                .all(|r| r.label.to_lowercase().contains("alice"))
-        );
+        assert!(view.items.iter().all(|r| r.label.to_lowercase().contains("alice")));
         assert_eq!(view.filter.as_deref(), Some("alice"));
     }
 
@@ -2022,13 +1814,8 @@ mod tests {
 
         let meta = renderer.resources_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "anonymous");
-        let fw = meta
-            .filter_warning
-            .expect("filter_warning must be Some for anonymous");
-        assert_eq!(
-            fw,
-            "results may be filtered; login to see private resources"
-        );
+        let fw = meta.filter_warning.expect("filter_warning must be Some for anonymous");
+        assert_eq!(fw, "results may be filtered; login to see private resources");
     }
 
     /// D3: authenticated (cache token) → filter_warning is "results limited to your permissions".
@@ -2044,20 +1831,10 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, None);
-        run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
         let meta = renderer.resources_meta.expect("meta must be present");
-        let fw = meta
-            .filter_warning
-            .expect("filter_warning must be Some for authenticated");
+        let fw = meta.filter_warning.expect("filter_warning must be Some for authenticated");
         assert_eq!(fw, "results limited to your permissions");
     }
 
@@ -2073,14 +1850,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, None);
-        let result = run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&bad_path),
-        );
+        let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&bad_path));
         assert!(result.is_ok(), "corrupt cache must not fail: {:?}", result);
 
         let meta = renderer.resources_meta.expect("meta must be present");
@@ -2102,9 +1872,7 @@ mod tests {
             // First call succeeds — but the target type is not in it.
             .with_describe_data_model(Ok(make_detail_with_rts("beol", &["Letter", "Person"])))
             // Second call returns a server error mid-scan.
-            .with_describe_data_model(Err(Diagnostic::ServerError(
-                "data-model service unavailable".into(),
-            )));
+            .with_describe_data_model(Err(Diagnostic::ServerError("data-model service unavailable".into())));
 
         let mut renderer = RecordingRenderer::new();
         // "Score" exists only in webern, but the second call errors before we get there.
@@ -2136,15 +1904,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, None);
-        run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
         let calls = client.list_resources_args();
         assert_eq!(
@@ -2157,10 +1917,7 @@ mod tests {
     // ── order-by tests ────────────────────────────────────────────────────────
 
     /// Build a ResourceTypeDetail with a set of fields for testing.
-    fn make_rt_detail_with_fields(
-        rt_name: &str,
-        field_names: &[(&str, &str)],
-    ) -> ResourceTypeDetail {
+    fn make_rt_detail_with_fields(rt_name: &str, field_names: &[(&str, &str)]) -> ResourceTypeDetail {
         let fields = field_names
             .iter()
             .map(|(name, iri)| Field {
@@ -2200,15 +1957,7 @@ mod tests {
             .with_list_resources(Ok(make_resource_page(&["A"], false)));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args_with_order_by(
-            Some("0801"),
-            Some("Letter"),
-            None,
-            None,
-            false,
-            None,
-            Some("hasTitle"),
-        );
+        let args = make_args_with_order_by(Some("0801"), Some("Letter"), None, None, false, None, Some("hasTitle"));
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         assert_eq!(
@@ -2233,15 +1982,8 @@ mod tests {
             .with_list_resources(Ok(make_resource_page(&["A"], false)));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args_with_order_by(
-            Some("0801"),
-            Some(LETTER_IRI),
-            None,
-            None,
-            false,
-            None,
-            Some(TITLE_PROP_IRI),
-        );
+        let args =
+            make_args_with_order_by(Some("0801"), Some(LETTER_IRI), None, None, false, None, Some(TITLE_PROP_IRI));
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         assert_eq!(
@@ -2302,15 +2044,8 @@ mod tests {
         let client = MockDspClient::new().with_resolve_project(Ok(make_project_ref()));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args_with_order_by(
-            Some("0801"),
-            Some(no_fragment_iri),
-            None,
-            None,
-            false,
-            None,
-            Some("hasTitle"),
-        );
+        let args =
+            make_args_with_order_by(Some("0801"), Some(no_fragment_iri), None, None, false, None, Some("hasTitle"));
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
         assert!(
@@ -2337,15 +2072,8 @@ mod tests {
             .with_describe_resource_type(rt_detail);
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args_with_order_by(
-            Some("0801"),
-            Some("Letter"),
-            None,
-            None,
-            false,
-            None,
-            Some("nonExistentField"),
-        );
+        let args =
+            make_args_with_order_by(Some("0801"), Some("Letter"), None, None, false, None, Some("nonExistentField"));
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
         assert!(
@@ -2384,10 +2112,7 @@ mod tests {
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let calls = client.list_resources_args();
-        assert_eq!(
-            calls[0].2, None,
-            "--order-by absent must pass None to list_resources"
-        );
+        assert_eq!(calls[0].2, None, "--order-by absent must pass None to list_resources");
         assert_eq!(
             client.describe_resource_type_calls(),
             0,
@@ -2445,15 +2170,7 @@ mod tests {
             .with_list_resources(Ok(make_resource_page(&[], false)));
 
         let mut renderer = RecordingRenderer::new();
-        let args = make_args_with_order_by(
-            Some("0801"),
-            Some("Letter"),
-            None,
-            None,
-            false,
-            None,
-            Some("HASTITLE"),
-        );
+        let args = make_args_with_order_by(Some("0801"), Some("Letter"), None, None, false, None, Some("HASTITLE"));
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let calls = client.list_resources_args();

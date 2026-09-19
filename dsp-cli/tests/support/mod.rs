@@ -70,9 +70,8 @@ use dsp_cli::client::DspClient;
 use dsp_cli::client::sparql::SparqlResponse;
 use dsp_cli::diagnostic::Diagnostic;
 use dsp_cli::model::{
-    CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure, DumpTask, LoginResponse,
-    Project, ProjectDetail, ProjectRef, ResourceDetail, ResourcePage, ResourceTypeDetail,
-    Vocabulary, VocabularyTree,
+    CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure, DumpTask, LoginResponse, Project, ProjectDetail,
+    ProjectRef, ResourceDetail, ResourcePage, ResourceTypeDetail, Vocabulary, VocabularyTree,
 };
 
 /// A recorded call to `list_projects`, capturing the arguments passed.
@@ -171,10 +170,7 @@ impl MockDspClient {
 
     /// Build a mock preconfigured to return `result` from [`DspClient::login`].
     pub fn with_login_result(result: Result<LoginResponse, Diagnostic>) -> Self {
-        Self {
-            login_result: Some(result),
-            ..Self::new()
-        }
+        Self { login_result: Some(result), ..Self::new() }
     }
 
     /// Set the result returned by [`DspClient::resolve_project`].
@@ -199,12 +195,9 @@ impl MockDspClient {
         self
     }
 
-    /// Shorthand for `with_create_dump(Ok(CreateDumpOutcome::ExistsForOtherProject { id, project_iri }))`.
-    pub fn with_create_exists_other_project(
-        mut self,
-        id: impl Into<String>,
-        project_iri: impl Into<String>,
-    ) -> Self {
+    /// Shorthand for `with_create_dump(Ok(CreateDumpOutcome::ExistsForOtherProject { id,
+    /// project_iri }))`.
+    pub fn with_create_exists_other_project(mut self, id: impl Into<String>, project_iri: impl Into<String>) -> Self {
         self.create_dump_result = Some(Ok(CreateDumpOutcome::ExistsForOtherProject {
             id: id.into(),
             project_iri: project_iri.into(),
@@ -275,19 +268,13 @@ impl MockDspClient {
     }
 
     /// Set the result returned by [`DspClient::describe_resource_type`].
-    pub fn with_describe_resource_type(
-        mut self,
-        result: Result<ResourceTypeDetail, Diagnostic>,
-    ) -> Self {
+    pub fn with_describe_resource_type(mut self, result: Result<ResourceTypeDetail, Diagnostic>) -> Self {
         self.describe_resource_type_result = Some(result);
         self
     }
 
     /// Set the result returned by [`DspClient::data_model_structure`].
-    pub fn with_data_model_structure(
-        mut self,
-        result: Result<DataModelStructure, Diagnostic>,
-    ) -> Self {
+    pub fn with_data_model_structure(mut self, result: Result<DataModelStructure, Diagnostic>) -> Self {
         self.data_model_structure_result = Some(result);
         self
     }
@@ -330,12 +317,7 @@ impl Default for MockDspClient {
 }
 
 impl DspClient for MockDspClient {
-    fn login(
-        &self,
-        _server: &str,
-        _user: &str,
-        _password: &str,
-    ) -> Result<LoginResponse, Diagnostic> {
+    fn login(&self, _server: &str, _user: &str, _password: &str) -> Result<LoginResponse, Diagnostic> {
         // `expect` is acceptable in test support code — the panic message
         // points the test author at the builder they forgot to call.
         self.login_result
@@ -344,9 +326,9 @@ impl DspClient for MockDspClient {
     }
 
     fn resolve_project(&self, _server: &str, _project: &str) -> Result<ProjectRef, Diagnostic> {
-        self.resolve_project_result
-            .clone()
-            .expect("MockDspClient::resolve_project_result was not configured; use MockDspClient::with_resolve_project(...)")
+        self.resolve_project_result.clone().expect(
+            "MockDspClient::resolve_project_result was not configured; use MockDspClient::with_resolve_project(...)",
+        )
     }
 
     fn create_project_dump(
@@ -368,10 +350,9 @@ impl DspClient for MockDspClient {
         _dump_id: &str,
         _token: &str,
     ) -> Result<DumpTask, Diagnostic> {
-        self.poll_sequence
-            .borrow_mut()
-            .pop_front()
-            .expect("MockDspClient::poll_sequence was exhausted; add more entries via MockDspClient::with_poll_sequence(...)")
+        self.poll_sequence.borrow_mut().pop_front().expect(
+            "MockDspClient::poll_sequence was exhausted; add more entries via MockDspClient::with_poll_sequence(...)",
+        )
     }
 
     fn download_project_dump(
@@ -407,13 +388,10 @@ impl DspClient for MockDspClient {
         // Record the call so Step 5 action tests can assert on the forwarded arguments.
         self.list_projects_calls
             .borrow_mut()
-            .push(ListProjectsCall {
-                server: server.to_string(),
-                token: token.map(str::to_string),
-            });
-        self.list_projects_result
-            .clone()
-            .expect("MockDspClient::list_projects_result was not configured; use MockDspClient::with_list_projects(...)")
+            .push(ListProjectsCall { server: server.to_string(), token: token.map(str::to_string) });
+        self.list_projects_result.clone().expect(
+            "MockDspClient::list_projects_result was not configured; use MockDspClient::with_list_projects(...)",
+        )
     }
 
     fn verify_token(&self, _server: &str, _token: &str) -> Result<(), Diagnostic> {
@@ -428,9 +406,9 @@ impl DspClient for MockDspClient {
         _project: &str,
         _token: Option<&str>,
     ) -> Result<ProjectDetail, Diagnostic> {
-        self.describe_project_result
-            .clone()
-            .expect("MockDspClient::describe_project_result was not configured; use MockDspClient::with_describe_project(...)")
+        self.describe_project_result.clone().expect(
+            "MockDspClient::describe_project_result was not configured; use MockDspClient::with_describe_project(...)",
+        )
     }
 
     fn list_data_models(
@@ -439,9 +417,9 @@ impl DspClient for MockDspClient {
         _project_iri: &str,
         _token: Option<&str>,
     ) -> Result<Vec<DataModel>, Diagnostic> {
-        self.list_data_models_result
-            .clone()
-            .expect("MockDspClient::list_data_models_result was not configured; use MockDspClient::with_list_data_models(...)")
+        self.list_data_models_result.clone().expect(
+            "MockDspClient::list_data_models_result was not configured; use MockDspClient::with_list_data_models(...)",
+        )
     }
 
     fn describe_data_model(
@@ -489,9 +467,9 @@ impl DspClient for MockDspClient {
         _page: u32,
         _token: Option<&str>,
     ) -> Result<ResourcePage, Diagnostic> {
-        self.list_resources_result
-            .clone()
-            .expect("MockDspClient::list_resources_result was not configured; use MockDspClient::with_list_resources(...)")
+        self.list_resources_result.clone().expect(
+            "MockDspClient::list_resources_result was not configured; use MockDspClient::with_list_resources(...)",
+        )
     }
 
     fn describe_resource(

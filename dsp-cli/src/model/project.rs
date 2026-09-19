@@ -199,10 +199,7 @@ mod tests {
 
     #[test]
     fn project_description_without_language() {
-        let d = ProjectDescription {
-            value: "Beschreibung".into(),
-            language: None,
-        };
+        let d = ProjectDescription { value: "Beschreibung".into(), language: None };
         let cloned = d.clone();
         assert_eq!(d, cloned);
         assert_eq!(d.language, None);

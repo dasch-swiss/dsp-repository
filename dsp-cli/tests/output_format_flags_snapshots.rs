@@ -16,10 +16,9 @@
 //! - csv `--header-only`
 //! - csv `--header-only --columns X,Y` composed
 //! - tsv projected
-//! - unknown-column error: `insta::assert_snapshot!` of the renderer-level
-//!   `Diagnostic::Usage` message (renderer knows the valid column set). The
-//!   exit-code mapping (`Diagnostic::Usage` → exit 2) is unit-tested in
-//!   `src/diagnostic.rs`; this test only pins the message wording.
+//! - unknown-column error: `insta::assert_snapshot!` of the renderer-level `Diagnostic::Usage`
+//!   message (renderer knows the valid column set). The exit-code mapping (`Diagnostic::Usage` →
+//!   exit 2) is unit-tested in `src/diagnostic.rs`; this test only pins the message wording.
 //!
 //! ## Composability assertion
 //!
@@ -75,11 +74,7 @@ fn projects_with_comma_longname() -> ProjectListView {
         },
     ];
     let total = items.len();
-    ProjectListView {
-        items,
-        total,
-        filter: None,
-    }
+    ProjectListView { items, total, filter: None }
 }
 
 /// A ResourceTypeDetail fixture for testing `resource-type describe` csv projection.
@@ -127,18 +122,12 @@ fn col_opts(cols: &[&str]) -> TableOptions {
 
 /// Helper: build `TableOptions` for header-only mode.
 fn header_only_opts() -> TableOptions {
-    TableOptions {
-        columns: None,
-        header: HeaderMode::Only,
-    }
+    TableOptions { columns: None, header: HeaderMode::Only }
 }
 
 /// Helper: build `TableOptions` for no-header mode.
 fn no_header_opts() -> TableOptions {
-    TableOptions {
-        columns: None,
-        header: HeaderMode::Off,
-    }
+    TableOptions { columns: None, header: HeaderMode::Off }
 }
 
 // ── projects csv projected ────────────────────────────────────────────────────
@@ -148,8 +137,7 @@ fn projects_csv_columns_shortcode_iri() {
     // --columns shortcode,iri: select a two-column subset, omitting longname etc.
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w).with_options(col_opts(&["shortcode", "iri"]));
-    r.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -160,8 +148,7 @@ fn projects_lines_columns_iri() {
     // --columns iri --format lines: bare IRIs for piping.
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w).with_options(col_opts(&["iri"]));
-    r.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -172,8 +159,7 @@ fn resource_type_describe_csv_columns_name_iri_value_type() {
     // --columns name,iri,value_type: guards the D1 "iri now accessible in csv" case.
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w).with_options(col_opts(&["name", "iri", "value_type"]));
-    r.resource_type_describe(&resource_type_detail_fixture(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&resource_type_detail_fixture(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -183,8 +169,7 @@ fn resource_type_describe_csv_columns_name_iri_value_type() {
 fn projects_csv_no_header() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w).with_options(no_header_opts());
-    r.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -194,8 +179,7 @@ fn projects_csv_no_header() {
 fn projects_csv_header_only() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w).with_options(header_only_opts());
-    r.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -208,8 +192,7 @@ fn projects_csv_header_only_with_columns() {
         columns: Some(vec!["shortcode".to_string(), "longname".to_string()]),
         header: HeaderMode::Only,
     });
-    r.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -219,8 +202,7 @@ fn projects_csv_header_only_with_columns() {
 fn projects_tsv_columns_shortcode_shortname() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w).with_options(col_opts(&["shortcode", "shortname"]));
-    r.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -244,22 +226,18 @@ fn csv_no_header_data_rows_byte_equal_headered_data_rows() {
     // Headered run.
     let (buf_h, w_h) = shared_buf();
     let mut r_h = CsvRenderer::with_writer(w_h).with_options(opts_with_header);
-    r_h.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r_h.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     let headered = buf_to_string(&buf_h);
 
     // No-header run.
     let (buf_n, w_n) = shared_buf();
     let mut r_n = CsvRenderer::with_writer(w_n).with_options(opts_no_header);
-    r_n.projects(&projects_with_comma_longname(), &anon_meta())
-        .unwrap();
+    r_n.projects(&projects_with_comma_longname(), &anon_meta()).unwrap();
     let no_header = buf_to_string(&buf_n);
 
     // The headered output starts with the header line; stripping it gives the
     // data rows, which must be byte-identical to the no-header output.
-    let first_newline = headered
-        .find('\n')
-        .expect("headered output must have a newline");
+    let first_newline = headered.find('\n').expect("headered output must have a newline");
     let data_rows = &headered[first_newline + 1..];
 
     assert_eq!(

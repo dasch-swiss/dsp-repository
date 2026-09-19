@@ -60,8 +60,8 @@ fn optional_env(name: &str) -> Option<String> {
 /// - Shortcode shape: 4 hex digits — `len == 4` and all chars are ASCII hex.
 /// - Shortname must be non-empty.
 /// - IRI must be non-empty and start with "http".
-/// - `data_models` count is asserted `>= 0` (any valid value); individual
-///   data-model names are asserted non-empty and IRIs start with "http".
+/// - `data_models` count is asserted `>= 0` (any valid value); individual data-model names are
+///   asserted non-empty and IRIs start with "http".
 /// - Status values: both `Active` and `Inactive` are acceptable.
 #[test]
 fn live_project_describe_returns_valid_project_detail() {
@@ -76,8 +76,7 @@ fn live_project_describe_returns_valid_project_detail() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `describe_project` is a public endpoint; the token is optional. If present
@@ -102,12 +101,10 @@ fn live_project_describe_returns_valid_project_detail() {
         cfg.server, project_input
     );
 
-    let detail = client
-        .describe_project(&cfg.server, project_input.trim(), token_ref)
-        .expect(
-            "describe_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
+    let detail = client.describe_project(&cfg.server, project_input.trim(), token_ref).expect(
+        "describe_project failed — check DSP_TEST_SERVER, DSP_TEST_PROJECT, \
              and network connectivity",
-        );
+    );
 
     eprintln!(
         "live test: received project detail for '{}' ({})",
@@ -168,11 +165,7 @@ fn live_project_describe_returns_valid_project_detail() {
     eprintln!(
         "live test: {} data-model(s) — {:?}",
         detail.data_models.len(),
-        detail
-            .data_models
-            .iter()
-            .map(|dm| &dm.name)
-            .collect::<Vec<_>>()
+        detail.data_models.iter().map(|dm| &dm.name).collect::<Vec<_>>()
     );
     for dm in &detail.data_models {
         assert!(

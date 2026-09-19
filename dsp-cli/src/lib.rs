@@ -18,8 +18,7 @@ pub mod update;
 pub(crate) mod util;
 
 use crate::cli::{
-    AuthCmd, Cli, DataModelCmd, ProjectCmd, ResourceCmd, ResourceTypeCmd, SparqlCmd, TopLevel,
-    VocabularyCmd, VreCmd,
+    AuthCmd, Cli, DataModelCmd, ProjectCmd, ResourceCmd, ResourceTypeCmd, SparqlCmd, TopLevel, VocabularyCmd, VreCmd,
 };
 use crate::client::http::HttpDspClient;
 use crate::config::Config;
@@ -99,13 +98,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     let opts = args.format.table_options(fmt)?;
                     let mut renderer = fmt.into_renderer_with_options(opts);
                     let mut reporter = fmt.into_progress_reporter();
-                    actions::vre::project::dump(
-                        &args,
-                        &cfg,
-                        &client,
-                        &mut *renderer,
-                        &mut *reporter,
-                    )
+                    actions::vre::project::dump(&args, &cfg, &client, &mut *renderer, &mut *reporter)
                 }
             },
             VreCmd::DataModel { cmd } => match cmd {

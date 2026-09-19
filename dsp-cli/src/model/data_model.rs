@@ -120,10 +120,7 @@ mod tests {
         assert_eq!(dm.name, "beol");
         assert_eq!(dm.iri, "http://api.dasch.swiss/ontology/0801/beol/v2");
         assert_eq!(dm.label.as_deref(), Some("The BEOL data-model"));
-        assert_eq!(
-            dm.last_modified.as_deref(),
-            Some("2024-05-27T13:43:26.233048Z")
-        );
+        assert_eq!(dm.last_modified.as_deref(), Some("2024-05-27T13:43:26.233048Z"));
         assert!(!dm.is_builtin);
     }
 
@@ -175,10 +172,7 @@ mod tests {
         let cloned = rt.clone();
         assert_eq!(rt, cloned);
         assert_eq!(rt.name, "letter");
-        assert_eq!(
-            rt.iri,
-            "http://api.dasch.swiss/ontology/0801/beol/v2#letter"
-        );
+        assert_eq!(rt.iri, "http://api.dasch.swiss/ontology/0801/beol/v2#letter");
         assert_eq!(rt.label.as_deref(), Some("Letter"));
         assert!(!rt.is_builtin);
     }
@@ -246,10 +240,7 @@ mod tests {
         let cloned = rt.clone();
         assert_eq!(rt, cloned);
         assert_eq!(rt.name, "letter");
-        assert_eq!(
-            rt.iri,
-            "http://api.dasch.swiss/ontology/0801/beol/v2#letter"
-        );
+        assert_eq!(rt.iri, "http://api.dasch.swiss/ontology/0801/beol/v2#letter");
         assert_eq!(rt.label.as_deref(), Some("Letter"));
     }
 
@@ -263,10 +254,7 @@ mod tests {
         let cloned = rt.clone();
         assert_eq!(rt, cloned);
         assert_eq!(rt.name, "Archive");
-        assert_eq!(
-            rt.iri,
-            "http://api.dasch.swiss/ontology/0801/beol/v2#Archive"
-        );
+        assert_eq!(rt.iri, "http://api.dasch.swiss/ontology/0801/beol/v2#Archive");
         assert_eq!(rt.label, None);
     }
 
@@ -297,10 +285,7 @@ mod tests {
         assert_eq!(detail.name, "beol");
         assert_eq!(detail.iri, "http://api.dasch.swiss/ontology/0801/beol/v2");
         assert_eq!(detail.label.as_deref(), Some("The BEOL data-model"));
-        assert_eq!(
-            detail.last_modified.as_deref(),
-            Some("2024-05-27T13:43:26.233048Z")
-        );
+        assert_eq!(detail.last_modified.as_deref(), Some("2024-05-27T13:43:26.233048Z"));
         assert_eq!(detail.resource_types.len(), 2);
     }
 

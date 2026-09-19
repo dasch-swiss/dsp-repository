@@ -1,19 +1,18 @@
 //! Snapshot tests for `dsp vre data-model list` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (4 project data-models): exercises the Option matrix
-//!   (label+date, label+no-date, no-label+date, no-label+no-date), all
-//!   `is_builtin: false`. Shared by prose, json, lines, csv, tsv cells.
-//! - **Builtins fixture** (2 project + 3 builtins): `limc` and `rosetta` sort
-//!   *between* the builtins, so `knora-api, limc, rosetta, salsah-gui, standoff`
-//!   is the observable interleave order. Built in pre-sorted order. Shared by
-//!   prose, json, csv, tsv. (Lines omits `is_builtin` — its builtins cell would
-//!   add nothing new over the main fixture cell, so it is skipped.)
+//! - **Main fixture** (4 project data-models): exercises the Option matrix (label+date,
+//!   label+no-date, no-label+date, no-label+no-date), all `is_builtin: false`. Shared by prose,
+//!   json, lines, csv, tsv cells.
+//! - **Builtins fixture** (2 project + 3 builtins): `limc` and `rosetta` sort *between* the
+//!   builtins, so `knora-api, limc, rosetta, salsah-gui, standoff` is the observable interleave
+//!   order. Built in pre-sorted order. Shared by prose, json, csv, tsv. (Lines omits `is_builtin` —
+//!   its builtins cell would add nothing new over the main fixture cell, so it is skipped.)
 //! - **Empty fixture**: zero items, total 0. Prose and json only.
-//! - **Filter fixture**: `filter: Some("...")` with `total > items.len()` so the
-//!   prose header shows "(m of total matching …)". Prose only.
-//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)`
-//!   on a `JsonRenderer` — locks the ADR-0012 propagated-error envelope.
+//! - **Filter fixture**: `filter: Some("...")` with `total > items.len()` so the prose header shows
+//!   "(m of total matching …)". Prose only.
+//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`
+//!   — locks the ADR-0012 propagated-error envelope.
 //!
 //! Determinism: these tests call `Renderer::data_models(&view, &meta)` (or
 //! `renderer.diagnostic(…)`) **directly** with a hand-built `MetaContext` /
@@ -60,13 +59,7 @@ fn anon_meta() -> MetaContext {
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
 /// Helper to construct a `DataModel`.
-fn dm(
-    name: &str,
-    iri: &str,
-    label: Option<&str>,
-    last_modified: Option<&str>,
-    is_builtin: bool,
-) -> DataModel {
+fn dm(name: &str, iri: &str, label: Option<&str>, last_modified: Option<&str>, is_builtin: bool) -> DataModel {
     DataModel {
         name: name.to_string(),
         iri: iri.to_string(),
@@ -104,20 +97,10 @@ fn main_view() -> DataModelListView {
             Some("2023-11-14T09:15:00.000000Z"),
             false,
         ),
-        dm(
-            "newton",
-            "http://api.dasch.swiss/ontology/0801/newton/v2",
-            None,
-            None,
-            false,
-        ),
+        dm("newton", "http://api.dasch.swiss/ontology/0801/newton/v2", None, None, false),
     ];
     let total = items.len();
-    DataModelListView {
-        items,
-        total,
-        filter: None,
-    }
+    DataModelListView { items, total, filter: None }
 }
 
 /// Builtins fixture — 2 project data-models (`limc`, `rosetta`) interleaved
@@ -127,13 +110,7 @@ fn main_view() -> DataModelListView {
 /// *between* the builtins alphabetically).
 fn builtins_view() -> DataModelListView {
     let items = vec![
-        dm(
-            "knora-api",
-            "http://api.knora.org/ontology/knora-api/v2",
-            None,
-            None,
-            true,
-        ),
+        dm("knora-api", "http://api.knora.org/ontology/knora-api/v2", None, None, true),
         dm(
             "limc",
             "http://api.dasch.swiss/ontology/0897/limc/v2",
@@ -148,36 +125,16 @@ fn builtins_view() -> DataModelListView {
             Some("2023-08-01T07:30:00.000000Z"),
             false,
         ),
-        dm(
-            "salsah-gui",
-            "http://api.knora.org/ontology/salsah-gui/v2",
-            None,
-            None,
-            true,
-        ),
-        dm(
-            "standoff",
-            "http://api.knora.org/ontology/standoff/v2",
-            None,
-            None,
-            true,
-        ),
+        dm("salsah-gui", "http://api.knora.org/ontology/salsah-gui/v2", None, None, true),
+        dm("standoff", "http://api.knora.org/ontology/standoff/v2", None, None, true),
     ];
     let total = items.len();
-    DataModelListView {
-        items,
-        total,
-        filter: None,
-    }
+    DataModelListView { items, total, filter: None }
 }
 
 /// Empty fixture — zero items, total 0.
 fn empty_view() -> DataModelListView {
-    DataModelListView {
-        items: vec![],
-        total: 0,
-        filter: None,
-    }
+    DataModelListView { items: vec![], total: 0, filter: None }
 }
 
 /// Filter fixture — 1 of 4 items survives the filter (only "beol" by name),
@@ -190,20 +147,11 @@ fn filter_view() -> DataModelListView {
     let items: Vec<DataModel> = all
         .into_iter()
         .filter(|d| {
-            d.name.to_lowercase().contains(&needle)
-                || d.label
-                    .as_deref()
-                    .unwrap_or("")
-                    .to_lowercase()
-                    .contains(&needle)
+            d.name.to_lowercase().contains(&needle) || d.label.as_deref().unwrap_or("").to_lowercase().contains(&needle)
         })
         .collect();
     // Items from main_view are already sorted; retain order.
-    DataModelListView {
-        items,
-        total,
-        filter: Some(filter.to_string()),
-    }
+    DataModelListView { items, total, filter: Some(filter.to_string()) }
 }
 
 // ── main fixture × 5 formats (anonymous) ─────────────────────────────────────
@@ -305,14 +253,8 @@ fn data_model_list_builtins_prose() {
     let salsah_pos = lines.iter().position(|l| l.contains("salsah-gui")).unwrap();
     let rosetta_pos = lines.iter().position(|l| l.contains("rosetta")).unwrap();
     let standoff_pos = lines.iter().position(|l| l.contains("standoff")).unwrap();
-    assert!(
-        knora_pos < limc_pos,
-        "knora-api must appear before limc in sorted output"
-    );
-    assert!(
-        limc_pos < rosetta_pos,
-        "limc must appear before rosetta in sorted output"
-    );
+    assert!(knora_pos < limc_pos, "knora-api must appear before limc in sorted output");
+    assert!(limc_pos < rosetta_pos, "limc must appear before rosetta in sorted output");
     assert!(
         rosetta_pos < salsah_pos,
         "rosetta must appear before salsah-gui in sorted output"
@@ -334,28 +276,15 @@ fn data_model_list_builtins_json() {
     r.data_models(&builtins_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     // Structural assertion: is_builtin boolean.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("builtins json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("builtins json must be valid JSON");
     let data = parsed["data"].as_array().unwrap();
     // knora-api is first (sorted): is_builtin true
-    assert_eq!(
-        data[0]["name"], "knora-api",
-        "first item must be knora-api (sort order)"
-    );
-    assert_eq!(
-        data[0]["is_builtin"], true,
-        "knora-api must have is_builtin: true"
-    );
+    assert_eq!(data[0]["name"], "knora-api", "first item must be knora-api (sort order)");
+    assert_eq!(data[0]["is_builtin"], true, "knora-api must have is_builtin: true");
     assert!(data[0]["label"].is_null(), "knora-api label must be null");
     // limc is second: is_builtin false
-    assert_eq!(
-        data[1]["name"], "limc",
-        "second item must be limc (sort order)"
-    );
-    assert_eq!(
-        data[1]["is_builtin"], false,
-        "limc must have is_builtin: false"
-    );
+    assert_eq!(data[1]["name"], "limc", "second item must be limc (sort order)");
+    assert_eq!(data[1]["is_builtin"], false, "limc must have is_builtin: false");
     insta::assert_snapshot!(out);
 }
 
@@ -383,10 +312,7 @@ fn data_model_list_builtins_csv() {
         "CSV builtins rows must contain ',false'; got:\n{stdout}"
     );
     insta::assert_snapshot!("data_model_list_builtins_csv_stdout", stdout);
-    insta::assert_snapshot!(
-        "data_model_list_builtins_csv_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("data_model_list_builtins_csv_stderr", buf_to_string(&err_buf));
 }
 
 /// TSV render of the builtins fixture. Same column shape as CSV but
@@ -411,10 +337,7 @@ fn data_model_list_builtins_tsv() {
         "TSV builtins rows must contain '\\tfalse'; got:\n{stdout}"
     );
     insta::assert_snapshot!("data_model_list_builtins_tsv_stdout", stdout);
-    insta::assert_snapshot!(
-        "data_model_list_builtins_tsv_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("data_model_list_builtins_tsv_stderr", buf_to_string(&err_buf));
 }
 
 // ── empty fixture × prose + json ──────────────────────────────────────────────
@@ -427,10 +350,7 @@ fn data_model_list_prose_empty() {
     let mut r = ProseRenderer::with_writer(w);
     r.data_models(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        out.contains("(0)"),
-        "prose empty must show '(0)' count; got:\n{out}"
-    );
+    assert!(out.contains("(0)"), "prose empty must show '(0)' count; got:\n{out}");
     assert!(
         out.contains("[anonymous on"),
         "prose empty must still have disclosure footer; got:\n{out}"
@@ -446,8 +366,7 @@ fn data_model_list_json_empty() {
     let mut r = JsonRenderer::with_writer(w);
     r.data_models(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("empty json must be valid JSON");
     assert!(
         parsed["data"].as_array().unwrap().is_empty(),
         "json empty must have empty data array; got:\n{out}"
@@ -473,10 +392,7 @@ fn data_model_list_prose_filter() {
         out.contains("matching \"beol\""),
         "prose filter must contain 'matching \"beol\"'; got:\n{out}"
     );
-    assert!(
-        out.contains("of 4"),
-        "prose filter must show 'of 4' total; got:\n{out}"
-    );
+    assert!(out.contains("of 4"), "prose filter must show 'of 4' total; got:\n{out}");
     insta::assert_snapshot!(out);
 }
 
@@ -501,8 +417,7 @@ fn data_model_list_json_not_found() {
     let out = buf_to_string(&buf);
 
     // Structural assertion before snapshotting.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
     assert_eq!(
         parsed["error"]["kind"], "not_found",
         "error envelope must have kind='not_found'; got: {}",

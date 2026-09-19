@@ -106,36 +106,21 @@ async fn multi_graph_returns_two_data_models() {
     assert_eq!(models.len(), 2, "expected 2 data models");
 
     // Model 1: beol — has both label and last_modified
-    let m1 = models
-        .iter()
-        .find(|m| m.name == "beol")
-        .expect("beol must be present");
+    let m1 = models.iter().find(|m| m.name == "beol").expect("beol must be present");
     assert_eq!(m1.iri, "http://api.dasch.swiss/ontology/0801/beol/v2");
     assert_eq!(m1.label.as_deref(), Some("The BEOL ontology"));
+    assert!(m1.last_modified.is_some(), "beol last_modified must be Some");
     assert!(
-        m1.last_modified.is_some(),
-        "beol last_modified must be Some"
-    );
-    assert!(
-        m1.last_modified
-            .as_deref()
-            .unwrap()
-            .starts_with("2024-05-27"),
+        m1.last_modified.as_deref().unwrap().starts_with("2024-05-27"),
         "last_modified should contain the date"
     );
     assert!(!m1.is_builtin, "project data-model must not be builtin");
 
     // Model 2: biblio — missing both label and last_modified
-    let m2 = models
-        .iter()
-        .find(|m| m.name == "biblio")
-        .expect("biblio must be present");
+    let m2 = models.iter().find(|m| m.name == "biblio").expect("biblio must be present");
     assert_eq!(m2.iri, "http://api.dasch.swiss/ontology/0801/biblio/v2");
     assert!(m2.label.is_none(), "biblio label must be None (absent)");
-    assert!(
-        m2.last_modified.is_none(),
-        "biblio last_modified must be None (absent)"
-    );
+    assert!(m2.last_modified.is_none(), "biblio last_modified must be None (absent)");
     assert!(!m2.is_builtin);
 }
 
@@ -176,11 +161,7 @@ async fn graph_of_length_one_returns_one_data_model() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     let models = result.unwrap();
-    assert_eq!(
-        models.len(),
-        1,
-        "a length-1 @graph must yield exactly 1 DataModel"
-    );
+    assert_eq!(models.len(), 1, "a length-1 @graph must yield exactly 1 DataModel");
     assert_eq!(models[0].name, "gotthelf");
     assert_eq!(models[0].label.as_deref(), Some("gotthelf-ontology"));
     assert!(!models[0].is_builtin);
@@ -220,16 +201,9 @@ async fn single_flattened_returns_one_data_model() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     let models = result.unwrap();
-    assert_eq!(
-        models.len(),
-        1,
-        "flattened single-ontology response must yield 1 DataModel"
-    );
+    assert_eq!(models.len(), 1, "flattened single-ontology response must yield 1 DataModel");
     assert_eq!(models[0].name, "gotthelf");
-    assert_eq!(
-        models[0].iri,
-        "http://api.dasch.swiss/ontology/0862/gotthelf/v2"
-    );
+    assert_eq!(models[0].iri, "http://api.dasch.swiss/ontology/0862/gotthelf/v2");
     assert_eq!(models[0].label.as_deref(), Some("gotthelf-ontology"));
     assert!(models[0].last_modified.is_some());
     assert!(!models[0].is_builtin);
@@ -255,15 +229,8 @@ async fn zero_ontologies_returns_empty_vec() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "empty object must yield Ok, got: {:?}",
-        result
-    );
-    assert!(
-        result.unwrap().is_empty(),
-        "empty object must yield empty Vec"
-    );
+    assert!(result.is_ok(), "empty object must yield Ok, got: {:?}", result);
+    assert!(result.unwrap().is_empty(), "empty object must yield empty Vec");
 }
 
 // ---------------------------------------------------------------------------
@@ -294,10 +261,7 @@ async fn bearer_present_when_token_is_some() {
 
     assert!(result.is_ok(), "expected Ok with token, got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     let auth = received[0]
         .headers
@@ -345,10 +309,7 @@ async fn bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].headers.get("authorization").is_none(),
@@ -502,8 +463,5 @@ fn metadata_path_helper_is_non_empty() {
         p.starts_with("/v2/ontologies/metadata/"),
         "path must start with /v2/ontologies/metadata/"
     );
-    assert!(
-        p.len() > "/v2/ontologies/metadata/".len(),
-        "path must include the encoded IRI"
-    );
+    assert!(p.len() > "/v2/ontologies/metadata/".len(), "path must include the encoded IRI");
 }

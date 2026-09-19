@@ -14,24 +14,20 @@ use std::io::{self, Write};
 
 use crate::diagnostic::Diagnostic;
 use crate::model::{DataModelDetail, DataModelStructure, ProjectDetail, VocabularyDetail};
-use crate::render::auth::{
-    AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-};
+use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
 use crate::render::dump::{DumpDeleteOutcome, DumpOutcome};
 use crate::render::table::render_table_disclosure;
 use crate::render::value::{build_metadata_row, build_value_rows};
 use crate::render::vocabulary::{build_vocabulary_list_rows, build_vocabulary_rows};
 use crate::render::{
-    AUTH_LOGIN_COLUMNS, AUTH_LOGOUT_COLUMNS, DATA_MODEL_DESCRIBE_COLUMNS,
-    DATA_MODEL_STRUCTURE_COLUMNS, DATA_MODELS_COLUMNS, DataModelListView, MetaContext,
-    PROJECT_DUMP_COLUMNS, PROJECT_DUMP_DELETED_COLUMNS, PROJECTS_COLUMNS, ProjectListView,
-    QuoteMode, RESOURCE_DESCRIBE_COLUMNS, RESOURCE_DESCRIBE_VALUES_COLUMNS,
-    RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS, RESOURCE_LIST_COLUMNS,
-    RESOURCE_TYPE_DESCRIBE_COLUMNS, RESOURCE_TYPE_DESCRIBE_DEFAULT_COLUMNS, RESOURCE_TYPES_COLUMNS,
-    RESOURCE_TYPES_DEFAULT_COLUMNS, Renderer, ResourceListView, ResourceTypeListView, TableOptions,
-    TableSpec, VOCABULARIES_COLUMNS, VOCABULARIES_COUNTED_DEFAULT_COLUMNS,
-    VOCABULARIES_DEFAULT_COLUMNS, VOCABULARY_DESCRIBE_COLUMNS, VOCABULARY_DESCRIBE_DEFAULT_COLUMNS,
-    VocabularyListView, render_table,
+    AUTH_LOGIN_COLUMNS, AUTH_LOGOUT_COLUMNS, DATA_MODEL_DESCRIBE_COLUMNS, DATA_MODEL_STRUCTURE_COLUMNS,
+    DATA_MODELS_COLUMNS, DataModelListView, MetaContext, PROJECT_DUMP_COLUMNS, PROJECT_DUMP_DELETED_COLUMNS,
+    PROJECTS_COLUMNS, ProjectListView, QuoteMode, RESOURCE_DESCRIBE_COLUMNS, RESOURCE_DESCRIBE_VALUES_COLUMNS,
+    RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS, RESOURCE_LIST_COLUMNS, RESOURCE_TYPE_DESCRIBE_COLUMNS,
+    RESOURCE_TYPE_DESCRIBE_DEFAULT_COLUMNS, RESOURCE_TYPES_COLUMNS, RESOURCE_TYPES_DEFAULT_COLUMNS, Renderer,
+    ResourceListView, ResourceTypeListView, TableOptions, TableSpec, VOCABULARIES_COLUMNS,
+    VOCABULARIES_COUNTED_DEFAULT_COLUMNS, VOCABULARIES_DEFAULT_COLUMNS, VOCABULARY_DESCRIBE_COLUMNS,
+    VOCABULARY_DESCRIBE_DEFAULT_COLUMNS, VocabularyListView, render_table,
 };
 
 /// Renders output as comma-separated values with a header row.
@@ -98,15 +94,8 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn auth_login(
-        &mut self,
-        outcome: &AuthLoginOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
-        let expires = outcome
-            .expires_at
-            .map(|dt| dt.to_rfc3339())
-            .unwrap_or_default();
+    fn auth_login(&mut self, outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
+        let expires = outcome.expires_at.map(|dt| dt.to_rfc3339()).unwrap_or_default();
         let rows = vec![vec![
             outcome.server.clone(),
             outcome.user.clone(),
@@ -125,18 +114,9 @@ impl Renderer for CsvRenderer {
         render_table(&mut *self.out, &spec)
     }
 
-    fn auth_status(
-        &mut self,
-        outcome: &AuthStatusOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_status(&mut self, outcome: &AuthStatusOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let row = match outcome {
-            AuthStatusOutcome::LoggedIn {
-                server,
-                user,
-                expires_at,
-                expired,
-            } => {
+            AuthStatusOutcome::LoggedIn { server, user, expires_at, expired } => {
                 let user_str = user.as_deref().unwrap_or("").to_string();
                 let expires = expires_at.map(|dt| dt.to_rfc3339()).unwrap_or_default();
                 let state = if *expired { "expired" } else { "logged_in" };
@@ -145,11 +125,7 @@ impl Renderer for CsvRenderer {
             // DSP_TOKEN env-override: row shape is uniform with LoggedIn (user empty,
             // expires_at rfc3339 or empty, state "logged_in"|"expired"). The source
             // is never a stdout column.
-            AuthStatusOutcome::AuthenticatedViaEnv {
-                server,
-                expires_at,
-                expired,
-            } => {
+            AuthStatusOutcome::AuthenticatedViaEnv { server, expires_at, expired } => {
                 let expires = expires_at.map(|dt| dt.to_rfc3339()).unwrap_or_default();
                 let state = if *expired { "expired" } else { "logged_in" };
                 vec![server.clone(), String::new(), expires, state.to_string()]
@@ -178,11 +154,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn auth_logout(
-        &mut self,
-        outcome: &AuthLogoutOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_logout(&mut self, outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         let rows = vec![vec![outcome.server.clone(), outcome.was_cached.to_string()]];
         let projected = self.options.projected();
         let spec = TableSpec {
@@ -196,16 +168,9 @@ impl Renderer for CsvRenderer {
         render_table(&mut *self.out, &spec)
     }
 
-    fn auth_set_token(
-        &mut self,
-        outcome: &AuthSetTokenOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_set_token(&mut self, outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         let user_str = outcome.user.as_deref().unwrap_or("").to_string();
-        let expires = outcome
-            .expires_at
-            .map(|dt| dt.to_rfc3339())
-            .unwrap_or_default();
+        let expires = outcome.expires_at.map(|dt| dt.to_rfc3339()).unwrap_or_default();
         let rows = vec![vec![
             outcome.server.clone(),
             user_str,
@@ -224,11 +189,7 @@ impl Renderer for CsvRenderer {
         render_table(&mut *self.out, &spec)
     }
 
-    fn project_dump(
-        &mut self,
-        outcome: &DumpOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_dump(&mut self, outcome: &DumpOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         // CSV format: path only; cleanup disclosure is omitted (prose/json only).
         // reused/created_at are also prose/json only.
         // RFC-4180 escaping via csv_field handles paths that contain commas or quotes.
@@ -245,11 +206,7 @@ impl Renderer for CsvRenderer {
         render_table(&mut *self.out, &spec)
     }
 
-    fn project_dump_deleted(
-        &mut self,
-        outcome: &DumpDeleteOutcome,
-        _meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_dump_deleted(&mut self, outcome: &DumpDeleteOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
         // CSV format: header "deleted" + one row "true" or "false".
         let rows = vec![vec![outcome.deleted.to_string()]];
         let projected = self.options.projected();
@@ -295,11 +252,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn project_describe(
-        &mut self,
-        project: &ProjectDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // CSV format: header + one data row. Columns mirror `project list` CSV.
         // `data_models` is the count (rich fields like names stay prose/json only).
         let longname = project.longname.as_deref().unwrap_or("").to_string();
@@ -326,11 +279,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn data_model_describe(
-        &mut self,
-        detail: &DataModelDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // CSV format: header + one data row.
         // `resource_types` carries the count (names are nested — tabular carries count,
         // mirroring how `project_describe` csv carries the `data_models` count).
@@ -358,11 +307,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn data_models(
-        &mut self,
-        view: &DataModelListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         let rows: Vec<Vec<String>> = view
             .items
             .iter()
@@ -393,11 +338,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn resource_types(
-        &mut self,
-        view: &ResourceTypeListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // CSV header: name,iri,label,is_builtin,count. No last_modified —
         // resource-types have none. `count` auto-shows only when at least one
         // item carries one (plan 030) — see `default_columns` below.
@@ -484,11 +425,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn data_model_structure(
-        &mut self,
-        structure: &DataModelStructure,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_model_structure(&mut self, structure: &DataModelStructure, meta: &MetaContext) -> Result<(), Diagnostic> {
         // CSV format: header row + one row per relation.
         // Columns: source, target, kind, field, target_data_model.
         // Empty cell when field/target_data_model is None.
@@ -499,13 +436,7 @@ impl Renderer for CsvRenderer {
                 let kind_str = rel.kind.to_string();
                 let field = rel.field.as_deref().unwrap_or("").to_string();
                 let target_dm = rel.target_data_model.as_deref().unwrap_or("").to_string();
-                vec![
-                    rel.source.clone(),
-                    rel.target.clone(),
-                    kind_str,
-                    field,
-                    target_dm,
-                ]
+                vec![rel.source.clone(), rel.target.clone(), kind_str, field, target_dm]
             })
             .collect();
         let projected = self.options.projected();
@@ -592,11 +523,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn vocabularies(
-        &mut self,
-        view: &VocabularyListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn vocabularies(&mut self, view: &VocabularyListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         let rows = build_vocabulary_list_rows(&view.items);
         // `nodes`/`depth` auto-show only when at least one item actually
         // carries a count (mirrors `resource_types`'s `has_counts` pattern) —
@@ -622,11 +549,7 @@ impl Renderer for CsvRenderer {
         Ok(())
     }
 
-    fn vocabulary_describe(
-        &mut self,
-        detail: &VocabularyDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn vocabulary_describe(&mut self, detail: &VocabularyDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         let rows = build_vocabulary_rows(detail);
         let projected = self.options.projected();
         let spec = TableSpec {
@@ -647,8 +570,8 @@ impl Renderer for CsvRenderer {
 mod tests {
     use super::*;
     use crate::model::{
-        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDetail, ProjectStatus,
-        ResourceType, ResourceTypeSummary,
+        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDetail, ProjectStatus, ResourceType,
+        ResourceTypeSummary,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -687,26 +610,18 @@ mod tests {
         let out = SharedBuf::new();
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
-        let view = ProjectListView {
-            items: make_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = ProjectListView { items: make_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
         let stdout = out.string();
         assert!(stdout.starts_with("shortcode,shortname,longname,status,data_models,iri\n"));
         // Plain field
-        assert!(
-            stdout.contains("0001,anything,Anything Project,active,2,http://rdfh.ch/projects/0001")
-        );
+        assert!(stdout.contains("0001,anything,Anything Project,active,2,http://rdfh.ch/projects/0001"));
         // None longname → empty field
         assert!(stdout.contains("0002,images,,inactive,0,http://rdfh.ch/projects/0002"));
         // Leading `=` longname — formula injection quoting; also contains comma
-        assert!(stdout.contains(
-            r#"0803,daschland,"=Formula,Project",active,1,http://rdfh.ch/projects/0803"#
-        ));
+        assert!(stdout.contains(r#"0803,daschland,"=Formula,Project",active,1,http://rdfh.ch/projects/0803"#));
     }
 
     #[test]
@@ -714,20 +629,13 @@ mod tests {
         let out = SharedBuf::new();
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
-        let view = ProjectListView {
-            items: make_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = ProjectListView { items: make_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
         // Disclosure lands on stderr, not stdout
         let err_str = err.string();
-        assert_eq!(
-            err_str.trim(),
-            "[anonymous on https://api.test.dasch.swiss]"
-        );
+        assert_eq!(err_str.trim(), "[anonymous on https://api.test.dasch.swiss]");
         // stdout must NOT contain the disclosure
         assert!(!out.string().contains("[anonymous"));
     }
@@ -738,10 +646,7 @@ mod tests {
         let out = SharedBuf::new();
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
-        let meta = make_meta(
-            "authenticated via DSP_TOKEN",
-            "https://api.prod.dasch.swiss",
-        );
+        let meta = make_meta("authenticated via DSP_TOKEN", "https://api.prod.dasch.swiss");
         renderer
             .auth_status(
                 &AuthStatusOutcome::AuthenticatedViaEnv {
@@ -753,10 +658,7 @@ mod tests {
             )
             .unwrap();
         let err_str = err.string();
-        assert_eq!(
-            err_str.trim(),
-            "[authenticated via DSP_TOKEN on https://api.prod.dasch.swiss]"
-        );
+        assert_eq!(err_str.trim(), "[authenticated via DSP_TOKEN on https://api.prod.dasch.swiss]");
         // Disclosure must not appear on stdout
         assert!(!out.string().contains('['));
 
@@ -767,17 +669,12 @@ mod tests {
         let meta2 = make_meta("anonymous", "https://api.prod.dasch.swiss");
         renderer2
             .auth_status(
-                &AuthStatusOutcome::NotLoggedIn {
-                    server: "https://api.prod.dasch.swiss".to_string(),
-                },
+                &AuthStatusOutcome::NotLoggedIn { server: "https://api.prod.dasch.swiss".to_string() },
                 &meta2,
             )
             .unwrap();
         let err2_str = err2.string();
-        assert_eq!(
-            err2_str.trim(),
-            "[anonymous on https://api.prod.dasch.swiss]"
-        );
+        assert_eq!(err2_str.trim(), "[anonymous on https://api.prod.dasch.swiss]");
         // Disclosure must not appear on stdout (symmetry with the env case above)
         assert!(!out2.string().contains('['));
     }
@@ -787,18 +684,11 @@ mod tests {
         // with_writer → err = io::sink(); should not panic, just discard disclosure.
         let out = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writer(out.clone());
-        let view = ProjectListView {
-            items: vec![],
-            total: 0,
-            filter: None,
-        };
+        let view = ProjectListView { items: vec![], total: 0, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
         // Only header row on stdout
-        assert_eq!(
-            out.string(),
-            "shortcode,shortname,longname,status,data_models,iri\n"
-        );
+        assert_eq!(out.string(), "shortcode,shortname,longname,status,data_models,iri\n");
     }
 
     #[test]
@@ -832,9 +722,9 @@ mod tests {
         // Header row
         assert!(stdout.starts_with("shortcode,shortname,longname,status,data_models,iri\n"));
         // Data row: data_models = count (2)
-        assert!(stdout.contains(
-            "0801,beol,Bernoulli-Euler Online,active,2,http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF"
-        ));
+        assert!(
+            stdout.contains("0801,beol,Bernoulli-Euler Online,active,2,http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF")
+        );
     }
 
     #[test]
@@ -901,10 +791,7 @@ mod tests {
         renderer.project_describe(&detail, &meta).unwrap();
 
         let err_str = err.string();
-        assert_eq!(
-            err_str.trim(),
-            "[anonymous on https://api.test.dasch.swiss]"
-        );
+        assert_eq!(err_str.trim(), "[anonymous on https://api.test.dasch.swiss]");
         assert!(!out.string().contains("[anonymous"));
     }
 
@@ -939,11 +826,7 @@ mod tests {
         let out = SharedBuf::new();
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
-        let view = DataModelListView {
-            items: make_data_model_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = DataModelListView { items: make_data_model_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.data_models(&view, &meta).unwrap();
 
@@ -982,9 +865,7 @@ mod tests {
         let stdout = out.string();
         // Formula injection + comma → quoted field
         assert!(
-            stdout.contains(
-                r#"test,http://api.dasch.swiss/ontology/0001/test/v2,"=Formula,Label",,false"#
-            ),
+            stdout.contains(r#"test,http://api.dasch.swiss/ontology/0001/test/v2,"=Formula,Label",,false"#),
             "formula-injected label must be quoted; got:\n{stdout}"
         );
     }
@@ -994,19 +875,12 @@ mod tests {
         let out = SharedBuf::new();
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
-        let view = DataModelListView {
-            items: make_data_model_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = DataModelListView { items: make_data_model_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.data_models(&view, &meta).unwrap();
 
         let err_str = err.string();
-        assert_eq!(
-            err_str.trim(),
-            "[anonymous on https://api.test.dasch.swiss]"
-        );
+        assert_eq!(err_str.trim(), "[anonymous on https://api.test.dasch.swiss]");
         assert!(!out.string().contains("[anonymous"));
     }
 
@@ -1044,9 +918,7 @@ mod tests {
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .data_model_describe(&make_beol_dm_detail(), &meta)
-            .unwrap();
+        renderer.data_model_describe(&make_beol_dm_detail(), &meta).unwrap();
 
         let stdout = out.string();
         // Header row
@@ -1103,9 +975,7 @@ mod tests {
         let stdout = out.string();
         // Formula injection + comma → quoted field
         assert!(
-            stdout.contains(
-                r#"test,http://api.dasch.swiss/ontology/0001/test/v2,"=Formula,Label",,0"#
-            ),
+            stdout.contains(r#"test,http://api.dasch.swiss/ontology/0001/test/v2,"=Formula,Label",,0"#),
             "formula-injected label must be quoted; got:\n{stdout}"
         );
     }
@@ -1116,15 +986,10 @@ mod tests {
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .data_model_describe(&make_beol_dm_detail(), &meta)
-            .unwrap();
+        renderer.data_model_describe(&make_beol_dm_detail(), &meta).unwrap();
 
         let err_str = err.string();
-        assert_eq!(
-            err_str.trim(),
-            "[anonymous on https://api.test.dasch.swiss]"
-        );
+        assert_eq!(err_str.trim(), "[anonymous on https://api.test.dasch.swiss]");
         assert!(!out.string().contains("[anonymous"));
     }
 
@@ -1171,9 +1036,7 @@ mod tests {
         );
         // Archive: has label, not builtin
         assert!(
-            stdout.contains(
-                "Archive,http://api.dasch.swiss/ontology/0801/beol/v2#Archive,Archive,false"
-            ),
+            stdout.contains("Archive,http://api.dasch.swiss/ontology/0801/beol/v2#Archive,Archive,false"),
             "Archive row missing; got:\n{stdout}"
         );
         // letter: label None → empty field
@@ -1261,10 +1124,7 @@ mod tests {
         renderer.resource_types(&view, &meta).unwrap();
 
         let err_str = err.string();
-        assert_eq!(
-            err_str.trim(),
-            "[anonymous on https://api.test.dasch.swiss]"
-        );
+        assert_eq!(err_str.trim(), "[anonymous on https://api.test.dasch.swiss]");
         assert!(!out.string().contains("[anonymous"));
     }
 
@@ -1278,12 +1138,7 @@ mod tests {
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
         let mut items = make_resource_type_fixture();
         items[0].count = Some(10);
-        let view = ResourceTypeListView {
-            items,
-            total: 2,
-            filter: None,
-            data_model: "beol".into(),
-        };
+        let view = ResourceTypeListView { items, total: 2, filter: None, data_model: "beol".into() };
         let meta = crate::render::MetaContext {
             server_label: "https://api.test.dasch.swiss".into(),
             auth_state: "anonymous".into(),
@@ -1299,9 +1154,7 @@ mod tests {
             "header must auto-show count column; got:\n{stdout}"
         );
         assert!(
-            stdout.contains(
-                "Archive,http://api.dasch.swiss/ontology/0801/beol/v2#Archive,Archive,false,10"
-            ),
+            stdout.contains("Archive,http://api.dasch.swiss/ontology/0801/beol/v2#Archive,Archive,false,10"),
             "Archive row must show count 10; got:\n{stdout}"
         );
         // letter has no count -> empty cell, trailing comma.
@@ -1347,9 +1200,8 @@ mod tests {
 
         // Table shape unchanged: header only, no `count` column.
         assert!(
-            out.string().starts_with(
-                "name,value_type,link_target,cardinality,label,is_builtin,data_model\n"
-            )
+            out.string()
+                .starts_with("name,value_type,link_target,cardinality,label,is_builtin,data_model\n")
         );
         // Disclosure note carries the caveat.
         assert!(
@@ -1361,9 +1213,7 @@ mod tests {
 
     // ── resource_describe csv values-note tests ───────────────────────────────
 
-    use crate::model::{
-        FieldValues, ResourceAccess, ResourceDetail, ResourceVisibility, ValueContent,
-    };
+    use crate::model::{FieldValues, ResourceAccess, ResourceDetail, ResourceVisibility, ValueContent};
 
     fn make_resource_detail(values: Option<Vec<FieldValues>>) -> ResourceDetail {
         ResourceDetail {
@@ -1429,9 +1279,7 @@ mod tests {
         let err = SharedBuf::new();
         let mut renderer = CsvRenderer::with_writers(out.clone(), err.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .resource_describe(&make_resource_detail(None), &meta)
-            .unwrap();
+        renderer.resource_describe(&make_resource_detail(None), &meta).unwrap();
 
         assert!(
             !err.string().contains("values not shown"),

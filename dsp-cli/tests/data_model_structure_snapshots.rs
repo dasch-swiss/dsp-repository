@@ -1,14 +1,14 @@
 //! Snapshot tests for `dsp vre data-model structure` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Full-mixed fixture** (beol-like): exercises link relations (in-model, cross-model),
-//!   inherits relations (in-model), and a same-DM link with no `[to]` tag. Used for
-//!   prose ×4 variants and json full.
-//! - **Zero-relations fixture**: empty `relations` vec. Locks prose `(0 relations)` branch
-//!   and json `data:[]`.
-//! - **Include-builtins fixture**: the full-mixed fixture with additional builtin relations
-//!   (system superclass inherits, system link field). The renderer renders them when present
-//!   — the action has already filtered if needed.
+//! - **Full-mixed fixture** (beol-like): exercises link relations (in-model, cross-model), inherits
+//!   relations (in-model), and a same-DM link with no `[to]` tag. Used for prose ×4 variants and
+//!   json full.
+//! - **Zero-relations fixture**: empty `relations` vec. Locks prose `(0 relations)` branch and json
+//!   `data:[]`.
+//! - **Include-builtins fixture**: the full-mixed fixture with additional builtin relations (system
+//!   superclass inherits, system link field). The renderer renders them when present — the action
+//!   has already filtered if needed.
 //! - **Cross-model-heavy fixture**: several cross-DM links to test `[to <dm>]` alignment.
 //!
 //! Lines ×2, csv ×2, tsv ×2 use the full-mixed fixture (stdout + stderr).
@@ -108,10 +108,7 @@ fn full_mixed_structure() -> DataModelStructure {
 
 /// Zero-relations fixture. Locks the `(0 relations)` prose branch and `data:[]` json.
 fn zero_relations_structure() -> DataModelStructure {
-    DataModelStructure {
-        data_model: "minimal".to_string(),
-        relations: vec![],
-    }
+    DataModelStructure { data_model: "minimal".to_string(), relations: vec![] }
 }
 
 /// Include-builtins fixture — the full-mixed fixture plus:
@@ -208,8 +205,7 @@ fn cross_model_heavy_structure() -> DataModelStructure {
 fn data_model_structure_prose_full() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.data_model_structure(&full_mixed_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&full_mixed_structure(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Vocabulary guard — no export/class/property (no IRI lines here, all local names).
@@ -234,20 +230,14 @@ fn data_model_structure_prose_full() {
         out.contains("Structure: beol"),
         "header must contain 'Structure: beol'; got:\n{out}"
     );
-    assert!(
-        out.contains("5 relations"),
-        "header must contain '5 relations'; got:\n{out}"
-    );
+    assert!(out.contains("5 relations"), "header must contain '5 relations'; got:\n{out}");
     // Cross-model tag present.
     assert!(
         out.contains("[to biblio]"),
         "cross-model link must have [to biblio] tag; got:\n{out}"
     );
     // Arrow present.
-    assert!(
-        out.contains('\u{2192}'),
-        "rows must use → (U+2192) arrow; got:\n{out}"
-    );
+    assert!(out.contains('\u{2192}'), "rows must use → (U+2192) arrow; got:\n{out}");
     // Footer.
     assert!(
         out.contains("[anonymous on https://api.dasch.swiss]"),
@@ -271,8 +261,7 @@ fn data_model_structure_prose_full() {
 fn data_model_structure_prose_zero_relations() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.data_model_structure(&zero_relations_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&zero_relations_structure(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     assert!(
@@ -284,10 +273,7 @@ fn data_model_structure_prose_zero_relations() {
         "footer must still be present for zero-relations; got:\n{out}"
     );
     // No arrow rows.
-    assert!(
-        !out.contains('\u{2192}'),
-        "zero-relations prose must have no rows; got:\n{out}"
-    );
+    assert!(!out.contains('\u{2192}'), "zero-relations prose must have no rows; got:\n{out}");
 
     insta::assert_snapshot!(out);
 }
@@ -298,8 +284,7 @@ fn data_model_structure_prose_zero_relations() {
 fn data_model_structure_prose_include_builtins() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.data_model_structure(&include_builtins_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&include_builtins_structure(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // All 8 relations must render.
@@ -343,22 +328,12 @@ fn data_model_structure_prose_include_builtins() {
 fn data_model_structure_prose_cross_model_heavy() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.data_model_structure(&cross_model_heavy_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&cross_model_heavy_structure(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
-    assert!(
-        out.contains("[to biblio]"),
-        "[to biblio] must appear; got:\n{out}"
-    );
-    assert!(
-        out.contains("[to leibniz]"),
-        "[to leibniz] must appear; got:\n{out}"
-    );
-    assert!(
-        out.contains("[to newton]"),
-        "[to newton] must appear; got:\n{out}"
-    );
+    assert!(out.contains("[to biblio]"), "[to biblio] must appear; got:\n{out}");
+    assert!(out.contains("[to leibniz]"), "[to leibniz] must appear; got:\n{out}");
+    assert!(out.contains("[to newton]"), "[to newton] must appear; got:\n{out}");
     // same-DM target_data_model == "beol" == structure.data_model → no tag.
     assert!(
         !out.contains("[to beol]"),
@@ -382,8 +357,7 @@ fn data_model_structure_prose_cross_model_heavy() {
 fn data_model_structure_json_full() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.data_model_structure(&full_mixed_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&full_mixed_structure(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
@@ -421,16 +395,12 @@ fn data_model_structure_json_full() {
 fn data_model_structure_json_zero_relations() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.data_model_structure(&zero_relations_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&zero_relations_structure(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
     let data = parsed["data"].as_array().expect("data must be array");
-    assert!(
-        data.is_empty(),
-        "zero-relations must produce empty data array"
-    );
+    assert!(data.is_empty(), "zero-relations must produce empty data array");
 
     insta::assert_snapshot!(out);
 }
@@ -448,17 +418,13 @@ fn data_model_structure_lines() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.data_model_structure(&full_mixed_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&full_mixed_structure(), &anon_meta()).unwrap();
 
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
 
     // Structural assertions.
-    assert!(
-        !stdout.starts_with("source"),
-        "lines must have no header row"
-    );
+    assert!(!stdout.starts_with("source"), "lines must have no header row");
     // link row: source TAB target TAB kind TAB field
     assert!(
         stdout.contains("letter\tBook\tlink\tcites"),
@@ -491,10 +457,7 @@ fn data_model_structure_lines() {
     }
 
     // Disclosure on stderr.
-    assert!(
-        stderr.contains("[anonymous on"),
-        "disclosure must be on stderr; got:\n{stderr}"
-    );
+    assert!(stderr.contains("[anonymous on"), "disclosure must be on stderr; got:\n{stderr}");
     assert!(
         !stdout.contains("[anonymous on"),
         "disclosure must NOT be on stdout; got:\n{stdout}"
@@ -510,7 +473,8 @@ fn data_model_structure_lines() {
 
 /// CSV render of the full-mixed fixture. Locks:
 /// - Header `source,target,kind,field,target_data_model`
-/// - One row per relation; field empty for inherits; target_data_model empty only when None (system)
+/// - One row per relation; field empty for inherits; target_data_model empty only when None
+///   (system)
 /// - target_data_model populated for in-model and cross-model links
 /// - Disclosure on stderr, not stdout
 #[test]
@@ -518,8 +482,7 @@ fn data_model_structure_csv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.data_model_structure(&full_mixed_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&full_mixed_structure(), &anon_meta()).unwrap();
 
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
@@ -546,10 +509,7 @@ fn data_model_structure_csv() {
     );
 
     // Disclosure on stderr.
-    assert!(
-        stderr.contains("[anonymous on"),
-        "disclosure must be on stderr; got:\n{stderr}"
-    );
+    assert!(stderr.contains("[anonymous on"), "disclosure must be on stderr; got:\n{stderr}");
     assert!(
         !stdout.contains("[anonymous on"),
         "disclosure must NOT be on stdout; got:\n{stdout}"
@@ -565,7 +525,8 @@ fn data_model_structure_csv() {
 
 /// TSV render of the full-mixed fixture. Locks:
 /// - Header `source\ttarget\tkind\tfield\ttarget_data_model`
-/// - One row per relation; field empty for inherits; target_data_model empty only when None (system)
+/// - One row per relation; field empty for inherits; target_data_model empty only when None
+///   (system)
 /// - target_data_model populated for in-model and cross-model links
 /// - Disclosure on stderr, not stdout
 #[test]
@@ -573,8 +534,7 @@ fn data_model_structure_tsv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.data_model_structure(&full_mixed_structure(), &anon_meta())
-        .unwrap();
+    r.data_model_structure(&full_mixed_structure(), &anon_meta()).unwrap();
 
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
@@ -601,10 +561,7 @@ fn data_model_structure_tsv() {
     );
 
     // Disclosure on stderr.
-    assert!(
-        stderr.contains("[anonymous on"),
-        "disclosure must be on stderr; got:\n{stderr}"
-    );
+    assert!(stderr.contains("[anonymous on"), "disclosure must be on stderr; got:\n{stderr}");
     assert!(
         !stdout.contains("[anonymous on"),
         "disclosure must NOT be on stdout; got:\n{stdout}"

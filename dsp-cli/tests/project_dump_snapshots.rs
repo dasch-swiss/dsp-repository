@@ -5,16 +5,19 @@
 //! `Utc::now()` calls. Deterministic.
 //!
 //! Coverage (one snapshot per (noun, format) cell):
-//! - `project_dump` × 5 formats (prose, json, lines, csv, tsv) — `cleaned_up: false`, `reused: false`
+//! - `project_dump` × 5 formats (prose, json, lines, csv, tsv) — `cleaned_up: false`, `reused:
+//!   false`
 //! - `project_dump` × prose — `cleaned_up: true`  (second-line cleanup disclosure)
 //! - `project_dump` × json  — `cleaned_up: true`  (`cleaned_up: true` in JSON data)
 //! - `project_dump` reused variant × prose + json (with fixed `created_at`)
 //! - `project_dump_deleted` × 5 formats — `deleted: true`
 //! - `project_dump_deleted` × prose + json — `deleted: false` with note (probe case)
 //! - `project_dump_deleted` × prose + json — `deleted: false` with foreign-slot note
-//! - `project_dump_conflict_default_refusal` × json — `Diagnostic::Conflict` from default-mode cross-project guard
+//! - `project_dump_conflict_default_refusal` × json — `Diagnostic::Conflict` from default-mode
+//!   cross-project guard
 //! - `project_dump_conflict_default_refusal` × prose — stdout empty (prose errors go to stderr)
-//! - `project_dump_conflict_replace_no_flag` × json — `Diagnostic::Conflict` from replace-without-flag guard
+//! - `project_dump_conflict_replace_no_flag` × json — `Diagnostic::Conflict` from
+//!   replace-without-flag guard
 //! - `project_dump_conflict_replace_no_flag` × prose — stdout empty
 
 use dsp_cli::diagnostic::Diagnostic;
@@ -73,10 +76,7 @@ fn dump_outcome_reused() -> DumpOutcome {
 
 /// Fixed `DumpDeleteOutcome` with `deleted: true`.
 fn dump_delete_outcome_deleted() -> DumpDeleteOutcome {
-    DumpDeleteOutcome {
-        deleted: true,
-        note: None,
-    }
+    DumpDeleteOutcome { deleted: true, note: None }
 }
 
 /// Fixed `DumpDeleteOutcome` with `deleted: false` and a probe note.
@@ -121,8 +121,7 @@ fn dump_meta() -> MetaContext {
 fn project_dump_prose() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -130,8 +129,7 @@ fn project_dump_prose() {
 fn project_dump_json() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -139,8 +137,7 @@ fn project_dump_json() {
 fn project_dump_lines() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -148,8 +145,7 @@ fn project_dump_lines() {
 fn project_dump_csv() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -157,8 +153,7 @@ fn project_dump_csv() {
 fn project_dump_tsv() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_not_cleaned(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -169,8 +164,7 @@ fn project_dump_tsv() {
 fn project_dump_prose_cleaned_up() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_cleaned(), &dump_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("Cleaned up the server-side dump."),
@@ -184,8 +178,7 @@ fn project_dump_prose_cleaned_up() {
 fn project_dump_json_cleaned_up() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_cleaned(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_cleaned(), &dump_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("\"cleaned_up\":true"),
@@ -201,8 +194,7 @@ fn project_dump_json_cleaned_up() {
 fn project_dump_prose_reused() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_reused(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_reused(), &dump_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("Downloaded existing dump"),
@@ -216,8 +208,7 @@ fn project_dump_prose_reused() {
 fn project_dump_json_reused() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.project_dump(&dump_outcome_reused(), &dump_meta())
-        .unwrap();
+    r.project_dump(&dump_outcome_reused(), &dump_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("\"reused\":true"),
@@ -232,8 +223,7 @@ fn project_dump_json_reused() {
 fn project_dump_deleted_prose() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta())
-        .unwrap();
+    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -241,8 +231,7 @@ fn project_dump_deleted_prose() {
 fn project_dump_deleted_json() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta())
-        .unwrap();
+    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -250,8 +239,7 @@ fn project_dump_deleted_json() {
 fn project_dump_deleted_lines() {
     let (buf, w) = shared_buf();
     let mut r = LinesRenderer::with_writer(w);
-    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta())
-        .unwrap();
+    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -259,8 +247,7 @@ fn project_dump_deleted_lines() {
 fn project_dump_deleted_csv() {
     let (buf, w) = shared_buf();
     let mut r = CsvRenderer::with_writer(w);
-    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta())
-        .unwrap();
+    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -268,8 +255,7 @@ fn project_dump_deleted_csv() {
 fn project_dump_deleted_tsv() {
     let (buf, w) = shared_buf();
     let mut r = TsvRenderer::with_writer(w);
-    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta())
-        .unwrap();
+    r.project_dump_deleted(&dump_delete_outcome_deleted(), &dump_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 

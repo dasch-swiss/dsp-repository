@@ -19,12 +19,8 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Produce a minimal JWT with the given JSON payload.
 /// The secret is arbitrary — `extract_exp` disables signature validation.
 fn make_jwt(payload: &serde_json::Value) -> String {
-    encode(
-        &Header::new(Algorithm::HS256),
-        payload,
-        &EncodingKey::from_secret(b"unused"),
-    )
-    .expect("test JWT encoding should not fail")
+    encode(&Header::new(Algorithm::HS256), payload, &EncodingKey::from_secret(b"unused"))
+        .expect("test JWT encoding should not fail")
 }
 
 /// A JWT with an `exp` claim set to Unix timestamp 4_000_000_000 (year 2096
@@ -62,14 +58,8 @@ async fn login_200_happy_path() {
 
     assert!(result.is_ok(), "expected Ok, got: {:?}", result);
     let response = result.unwrap();
-    assert_eq!(
-        response.token, token_clone,
-        "token should match mock response"
-    );
-    assert_eq!(
-        response.user, "user@example.com",
-        "user should be echoed from input"
-    );
+    assert_eq!(response.token, token_clone, "token should match mock response");
+    assert_eq!(response.user, "user@example.com", "user should be echoed from input");
     assert!(
         response.expires_at.is_some(),
         "expires_at should be Some because JWT carries exp claim"
@@ -238,16 +228,9 @@ async fn login_200_with_username_sends_username_key() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok for username login, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok for username login, got: {:?}", result);
     let response = result.unwrap();
-    assert_eq!(
-        response.token, token_clone,
-        "token should match mock response"
-    );
+    assert_eq!(response.token, token_clone, "token should match mock response");
     assert_eq!(response.user, "jdoe", "user should be echoed from input");
 
     drop(mock);
@@ -278,20 +261,10 @@ async fn login_200_with_iri_sends_iri_key() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "expected Ok for IRI login, got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "expected Ok for IRI login, got: {:?}", result);
     let response = result.unwrap();
-    assert_eq!(
-        response.token, token_clone,
-        "token should match mock response"
-    );
-    assert_eq!(
-        response.user, "http://rdfh.ch/users/jane",
-        "user should be echoed from input"
-    );
+    assert_eq!(response.token, token_clone, "token should match mock response");
+    assert_eq!(response.user, "http://rdfh.ch/users/jane", "user should be echoed from input");
 
     drop(mock);
 }

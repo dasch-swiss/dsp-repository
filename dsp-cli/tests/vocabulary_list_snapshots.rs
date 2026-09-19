@@ -1,24 +1,21 @@
 //! Snapshot tests for `dsp vre vocabulary list` — one per (fixture, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (4 geoarch-like vocabularies: `epoch`, `material`, `person`,
-//!   and one with `name: None`): pre-sorted by name (case-insensitive, `None`-named
-//!   last) the way the action would hand it to the renderer. Exercises the label
-//!   Option matrix (2 languages + a comment, 1 language + no comment, name absent).
-//!   `node_count`/`depth` are `None` on every item (no `--count`). Shared by prose,
-//!   json, lines, csv, tsv cells.
-//! - **Counted fixture** — the main fixture's items with `node_count`/`depth`
-//!   populated on every item, `counted: true`, and `meta.count_cost` set. Exercises
-//!   the `nodes`/`depth` tabular auto-default and the prose `· N nodes · M levels`
-//!   per-item suffix.
-//! - **All-failed-counted fixture** — same items, but `node_count`/`depth` stay
-//!   `None` on every item even though `counted: true` and `count_cost` is `Some`
-//!   (mirrors a `--count` run where every per-vocabulary tree fetch failed).
-//!   Locks that the dynamic tabular default keys off actual per-item data, NOT
-//!   the `counted` flag.
+//! - **Main fixture** (4 geoarch-like vocabularies: `epoch`, `material`, `person`, and one with
+//!   `name: None`): pre-sorted by name (case-insensitive, `None`-named last) the way the action
+//!   would hand it to the renderer. Exercises the label Option matrix (2 languages + a comment, 1
+//!   language + no comment, name absent). `node_count`/`depth` are `None` on every item (no
+//!   `--count`). Shared by prose, json, lines, csv, tsv cells.
+//! - **Counted fixture** — the main fixture's items with `node_count`/`depth` populated on every
+//!   item, `counted: true`, and `meta.count_cost` set. Exercises the `nodes`/`depth` tabular
+//!   auto-default and the prose `· N nodes · M levels` per-item suffix.
+//! - **All-failed-counted fixture** — same items, but `node_count`/`depth` stay `None` on every
+//!   item even though `counted: true` and `count_cost` is `Some` (mirrors a `--count` run where
+//!   every per-vocabulary tree fetch failed). Locks that the dynamic tabular default keys off
+//!   actual per-item data, NOT the `counted` flag.
 //! - **Empty fixture**: zero items, total 0. Prose only.
-//! - **Filter fixture**: `filter: Some("epo")` with `total > items.len()` so the
-//!   prose header shows "(m of total matching …)". Prose only.
+//! - **Filter fixture**: `filter: Some("epo")` with `total > items.len()` so the prose header shows
+//!   "(m of total matching …)". Prose only.
 //!
 //! Determinism: these tests call `Renderer::vocabularies(&view, &meta)`
 //! **directly** with a hand-built `MetaContext` / `VocabularyListView`. They never
@@ -65,10 +62,7 @@ fn anon_meta() -> MetaContext {
 /// Anonymous `MetaContext` with `count_cost` set — mirrors what `run_list_impl`
 /// builds when `--count` is passed and every per-tree fetch succeeded.
 fn count_cost_meta() -> MetaContext {
-    MetaContext {
-        count_cost: Some(COUNT_COST.to_string()),
-        ..anon_meta()
-    }
+    MetaContext { count_cost: Some(COUNT_COST.to_string()), ..anon_meta() }
 }
 
 /// Anonymous `MetaContext` with `count_cost` set AND the failure-tally suffix
@@ -92,12 +86,7 @@ fn text(value: &str, language: Option<&str>) -> LocalizedText {
     }
 }
 
-fn header(
-    iri: &str,
-    name: Option<&str>,
-    labels: Vec<LocalizedText>,
-    comments: Vec<LocalizedText>,
-) -> VocabularyHeader {
+fn header(iri: &str, name: Option<&str>, labels: Vec<LocalizedText>, comments: Vec<LocalizedText>) -> VocabularyHeader {
     VocabularyHeader {
         iri: iri.to_string(),
         name: name.map(str::to_string),
@@ -107,11 +96,7 @@ fn header(
 }
 
 fn vocab(header: VocabularyHeader, node_count: Option<usize>, depth: Option<usize>) -> Vocabulary {
-    Vocabulary {
-        header,
-        node_count,
-        depth,
-    }
+    Vocabulary { header, node_count, depth }
 }
 
 /// Main fixture — 4 geoarch-like vocabularies, pre-sorted the way the action
@@ -125,10 +110,7 @@ fn main_view() -> VocabularyListView {
                 "http://rdfh.ch/lists/0838/epoch",
                 Some("epoch"),
                 vec![text("Period", Some("en")), text("Epoche", Some("de"))],
-                vec![text(
-                    "Chronological periods used for dating find contexts.",
-                    Some("en"),
-                )],
+                vec![text("Chronological periods used for dating find contexts.", Some("en"))],
             ),
             None,
             None,
@@ -168,12 +150,7 @@ fn main_view() -> VocabularyListView {
         ),
     ];
     let total = items.len();
-    VocabularyListView {
-        items,
-        total,
-        filter: None,
-        counted: false,
-    }
+    VocabularyListView { items, total, filter: None, counted: false }
 }
 
 /// Counted fixture — the main fixture's items with `node_count`/`depth`
@@ -200,12 +177,7 @@ fn all_failed_view() -> VocabularyListView {
 
 /// Empty fixture — zero items, total 0.
 fn empty_view() -> VocabularyListView {
-    VocabularyListView {
-        items: vec![],
-        total: 0,
-        filter: None,
-        counted: false,
-    }
+    VocabularyListView { items: vec![], total: 0, filter: None, counted: false }
 }
 
 /// Filter fixture — 1 of 4 items survives the filter ("epo" matches only
@@ -217,14 +189,7 @@ fn filter_view() -> VocabularyListView {
     let needle = filter.to_lowercase();
     let items: Vec<Vocabulary> = all
         .into_iter()
-        .filter(|v| {
-            v.header
-                .name
-                .as_deref()
-                .unwrap_or("")
-                .to_lowercase()
-                .contains(&needle)
-        })
+        .filter(|v| v.header.name.as_deref().unwrap_or("").to_lowercase().contains(&needle))
         .collect();
     VocabularyListView {
         items,
@@ -365,16 +330,11 @@ fn vocabulary_list_csv_with_count() {
     r.vocabularies(&counted_view(), &count_cost_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     assert!(
-        stdout.starts_with(
-            "name,iri,label_en,label_de,label_fr,label_it,label_rm,label,nodes,depth\n"
-        ),
+        stdout.starts_with("name,iri,label_en,label_de,label_fr,label_it,label_rm,label,nodes,depth\n"),
         "CSV with-count header must add nodes,depth; got:\n{stdout}"
     );
     insta::assert_snapshot!("vocabulary_list_csv_with_count_stdout", stdout);
-    insta::assert_snapshot!(
-        "vocabulary_list_csv_with_count_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("vocabulary_list_csv_with_count_stderr", buf_to_string(&err_buf));
 }
 
 /// TSV render of the counted fixture. Same auto-expanding column shape as CSV
@@ -387,16 +347,11 @@ fn vocabulary_list_tsv_with_count() {
     r.vocabularies(&counted_view(), &count_cost_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     assert!(
-        stdout.starts_with(
-            "name\tiri\tlabel_en\tlabel_de\tlabel_fr\tlabel_it\tlabel_rm\tlabel\tnodes\tdepth\n"
-        ),
+        stdout.starts_with("name\tiri\tlabel_en\tlabel_de\tlabel_fr\tlabel_it\tlabel_rm\tlabel\tnodes\tdepth\n"),
         "TSV with-count header must add nodes,depth; got:\n{stdout}"
     );
     insta::assert_snapshot!("vocabulary_list_tsv_with_count_stdout", stdout);
-    insta::assert_snapshot!(
-        "vocabulary_list_tsv_with_count_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("vocabulary_list_tsv_with_count_stderr", buf_to_string(&err_buf));
 }
 
 // ── all-failed-counted fixture ───────────────────────────────────────────────
@@ -410,8 +365,7 @@ fn vocabulary_list_csv_count_all_failed() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.vocabularies(&all_failed_view(), &count_cost_all_failed_meta())
-        .unwrap();
+    r.vocabularies(&all_failed_view(), &count_cost_all_failed_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let header_line = stdout.lines().next().unwrap();
     assert!(
@@ -420,10 +374,7 @@ fn vocabulary_list_csv_count_all_failed() {
          fetch failed (no item carries a count); got: {header_line:?}"
     );
     insta::assert_snapshot!("vocabulary_list_csv_count_all_failed_stdout", stdout);
-    insta::assert_snapshot!(
-        "vocabulary_list_csv_count_all_failed_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("vocabulary_list_csv_count_all_failed_stderr", buf_to_string(&err_buf));
 }
 
 // ── empty fixture × prose ─────────────────────────────────────────────────────
@@ -436,10 +387,7 @@ fn vocabulary_list_prose_empty() {
     let mut r = ProseRenderer::with_writer(w);
     r.vocabularies(&empty_view(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    assert!(
-        out.contains("(0)"),
-        "prose empty must show '(0)' count; got:\n{out}"
-    );
+    assert!(out.contains("(0)"), "prose empty must show '(0)' count; got:\n{out}");
     assert!(
         out.contains("[anonymous on"),
         "prose empty must still have disclosure footer; got:\n{out}"
@@ -462,9 +410,6 @@ fn vocabulary_list_prose_filter() {
         out.contains("matching \"epo\""),
         "prose filter must contain 'matching \"epo\"'; got:\n{out}"
     );
-    assert!(
-        out.contains("of 4"),
-        "prose filter must show 'of 4' total; got:\n{out}"
-    );
+    assert!(out.contains("of 4"), "prose filter must show 'of 4' total; got:\n{out}");
     insta::assert_snapshot!(out);
 }

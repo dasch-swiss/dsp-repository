@@ -40,12 +40,11 @@ pub struct DumpOutcome {
 /// `Renderer` via `Renderer::project_dump_deleted`.
 ///
 /// `deleted: false` has two distinct meanings, discriminated by `note`:
-/// - **(a) Probe case**: no existing dump was found — `create_project_dump`
-///   created a new in-progress dump as a probe side effect. `note` describes
-///   the probe dump id.
-/// - **(b) Foreign-slot case**: the server's single dump slot is occupied by a
-///   different project's dump. The delete is a no-op (we never remove another
-///   project's dump). `note` names the occupying project's IRI.
+/// - **(a) Probe case**: no existing dump was found — `create_project_dump` created a new
+///   in-progress dump as a probe side effect. `note` describes the probe dump id.
+/// - **(b) Foreign-slot case**: the server's single dump slot is occupied by a different project's
+///   dump. The delete is a no-op (we never remove another project's dump). `note` names the
+///   occupying project's IRI.
 ///
 /// Delete *failures* are returned as `Err(Diagnostic)` from the action, never
 /// as a `DumpDeleteOutcome`.
@@ -133,10 +132,7 @@ mod tests {
         assert!(outcome.cleaned_up);
         assert!(!outcome.reused);
         assert!(outcome.created_at.is_none());
-        assert_eq!(
-            outcome.path,
-            std::path::PathBuf::from("./0001-20260529T120000Z.zip")
-        );
+        assert_eq!(outcome.path, std::path::PathBuf::from("./0001-20260529T120000Z.zip"));
     }
 
     #[test]
@@ -156,17 +152,17 @@ mod tests {
 
     #[test]
     fn dump_delete_outcome_construction() {
-        let deleted = DumpDeleteOutcome {
-            deleted: true,
-            note: None,
-        };
+        let deleted = DumpDeleteOutcome { deleted: true, note: None };
         assert!(deleted.deleted);
         assert!(deleted.note.is_none());
 
         // Case (a): probe — create_project_dump created a new in-progress dump.
         let probe = DumpDeleteOutcome {
             deleted: false,
-            note: Some("no dump existed; a probe created an in-progress dump probe-id-42 that will complete server-side".to_string()),
+            note: Some(
+                "no dump existed; a probe created an in-progress dump probe-id-42 that will complete server-side"
+                    .to_string(),
+            ),
         };
         assert!(!probe.deleted);
         assert!(probe.note.is_some());
@@ -186,24 +182,13 @@ mod tests {
 
     #[test]
     fn dump_event_variants_construct() {
-        let triggered = DumpEvent::Triggered {
-            id: "dump-id-42".into(),
-        };
-        let polling = DumpEvent::Polling {
-            elapsed_secs: 0,
-            status: DumpStatus::InProgress,
-        };
+        let triggered = DumpEvent::Triggered { id: "dump-id-42".into() };
+        let polling = DumpEvent::Polling { elapsed_secs: 0, status: DumpStatus::InProgress };
         let downloading = DumpEvent::Downloading;
         let done = DumpEvent::Done { bytes: 2048 };
-        let adopting = DumpEvent::Adopting {
-            id: "existing-id".into(),
-        };
-        let deleting = DumpEvent::Deleting {
-            id: "del-id".into(),
-        };
-        let probe_created = DumpEvent::ProbeCreated {
-            id: "probe-id".into(),
-        };
+        let adopting = DumpEvent::Adopting { id: "existing-id".into() };
+        let deleting = DumpEvent::Deleting { id: "del-id".into() };
+        let probe_created = DumpEvent::ProbeCreated { id: "probe-id".into() };
         let discarding_other = DumpEvent::DiscardingOtherProjectDump {
             id: "foreign-id".into(),
             project_iri: "http://rdfh.ch/projects/0002".into(),
@@ -215,10 +200,7 @@ mod tests {
             _ => panic!("unexpected variant"),
         }
         match polling {
-            DumpEvent::Polling {
-                elapsed_secs,
-                status,
-            } => {
+            DumpEvent::Polling { elapsed_secs, status } => {
                 assert_eq!(elapsed_secs, 0);
                 assert_eq!(status, DumpStatus::InProgress);
             }

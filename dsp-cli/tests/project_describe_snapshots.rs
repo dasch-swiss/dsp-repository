@@ -77,11 +77,7 @@ fn beol_detail() -> ProjectDetail {
             value: "<b>BEOL</b> — early modern mathematics.".to_string(),
             language: Some("en".to_string()),
         }],
-        keywords: vec![
-            "Bernoulli".to_string(),
-            "Euler".to_string(),
-            "Mathematics".to_string(),
-        ],
+        keywords: vec!["Bernoulli".to_string(), "Euler".to_string(), "Mathematics".to_string()],
         data_models: vec![
             DataModelSummary {
                 name: "beol".to_string(),
@@ -251,8 +247,7 @@ fn project_describe_json_edge() {
     let out = buf_to_string(&buf);
 
     // Parse and assert structurally, then snapshot.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("edge json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("edge json must be valid JSON");
     assert!(
         parsed["data"]["longname"].is_null(),
         "json edge: longname must be null; got: {}",
@@ -298,8 +293,7 @@ fn project_describe_json_not_found() {
     let out = buf_to_string(&buf);
 
     // Structural assertion before snapshotting.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
     assert_eq!(
         parsed["error"]["kind"], "not_found",
         "error envelope must have kind='not_found'; got: {}",

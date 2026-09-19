@@ -21,17 +21,14 @@ use serde_json::json;
 
 use crate::diagnostic::Diagnostic;
 use crate::model::{
-    DataModelDetail, DataModelStructure, DatePoint, ProjectDetail, ResourceDetail, ValueContent,
-    VocabularyDetail,
+    DataModelDetail, DataModelStructure, DatePoint, ProjectDetail, ResourceDetail, ValueContent, VocabularyDetail,
 };
-use crate::render::auth::{
-    AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-};
+use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
 use crate::render::dump::{DumpDeleteOutcome, DumpOutcome};
 use crate::render::vocabulary::{NestedVocabularyNode, nest_vocabulary_detail};
 use crate::render::{
-    DataModelListView, MetaContext, ProjectListView, Renderer, ResourceListPagination,
-    ResourceListView, ResourceTypeListView, VocabularyListView,
+    DataModelListView, MetaContext, ProjectListView, Renderer, ResourceListPagination, ResourceListView,
+    ResourceTypeListView, VocabularyListView,
 };
 
 /// Renders output as newline-delimited JSON.
@@ -42,9 +39,7 @@ pub struct JsonRenderer {
 impl JsonRenderer {
     /// Creates a renderer writing to stdout.
     pub fn new() -> Self {
-        Self {
-            out: Box::new(io::stdout()),
-        }
+        Self { out: Box::new(io::stdout()) }
     }
 
     /// Creates a renderer writing to an arbitrary `Write` sink (used in tests).
@@ -70,16 +65,10 @@ fn meta_block(meta: &MetaContext, exit_code: u8) -> serde_json::Value {
     use serde_json::Map;
     let mut m = Map::new();
     if !meta.server_label.is_empty() {
-        m.insert(
-            "server".into(),
-            serde_json::Value::String(meta.server_label.clone()),
-        );
+        m.insert("server".into(), serde_json::Value::String(meta.server_label.clone()));
     }
     if !meta.auth_state.is_empty() {
-        m.insert(
-            "auth".into(),
-            serde_json::Value::String(meta.auth_state.clone()),
-        );
+        m.insert("auth".into(), serde_json::Value::String(meta.auth_state.clone()));
     }
     m.insert("exit_code".into(), serde_json::Value::from(exit_code));
     serde_json::Value::Object(m)
@@ -112,42 +101,24 @@ fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
     let mut m = Map::new();
     match vc {
         ValueContent::Text(s) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("text".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("text".into()));
             m.insert("text".into(), serde_json::Value::String(s.clone()));
         }
         ValueContent::Integer(n) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("integer".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("integer".into()));
             m.insert("value".into(), serde_json::Value::Number((*n).into()));
         }
         ValueContent::Decimal(s) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("decimal".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("decimal".into()));
             m.insert("value".into(), serde_json::Value::String(s.clone()));
         }
         ValueContent::Boolean(b) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("boolean".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("boolean".into()));
             m.insert("value".into(), serde_json::Value::Bool(*b));
         }
         ValueContent::Date(dv) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("date".into()),
-            );
-            m.insert(
-                "calendar".into(),
-                serde_json::Value::String(dv.calendar.clone()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("date".into()));
+            m.insert("calendar".into(), serde_json::Value::String(dv.calendar.clone()));
             // Build start/end point objects — omit absent sub-fields (null for era when None).
             let point_to_json = |p: &DatePoint| {
                 json!({
@@ -161,10 +132,7 @@ fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
             m.insert("end".into(), point_to_json(&dv.end));
         }
         ValueContent::Time(s) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("time".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("time".into()));
             m.insert("value".into(), serde_json::Value::String(s.clone()));
         }
         ValueContent::Uri(s) => {
@@ -172,46 +140,25 @@ fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
             m.insert("value".into(), serde_json::Value::String(s.clone()));
         }
         ValueContent::Color(s) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("color".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("color".into()));
             m.insert("value".into(), serde_json::Value::String(s.clone()));
         }
         ValueContent::Geoname(s) => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("geoname".into()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("geoname".into()));
             m.insert("value".into(), serde_json::Value::String(s.clone()));
         }
         ValueContent::VocabularyItem { node_iri, label } => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("vocabulary-item".into()),
-            );
-            m.insert(
-                "node_iri".into(),
-                serde_json::Value::String(node_iri.clone()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String("vocabulary-item".into()));
+            m.insert("node_iri".into(), serde_json::Value::String(node_iri.clone()));
             let label_val = match label {
                 Some(s) => serde_json::Value::String(s.clone()),
                 None => serde_json::Value::Null,
             };
             m.insert("label".into(), label_val);
         }
-        ValueContent::Link {
-            target_iri,
-            target_label,
-        } => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String("link".into()),
-            );
-            m.insert(
-                "target_iri".into(),
-                serde_json::Value::String(target_iri.clone()),
-            );
+        ValueContent::Link { target_iri, target_label } => {
+            m.insert("value_type".into(), serde_json::Value::String("link".into()));
+            m.insert("target_iri".into(), serde_json::Value::String(target_iri.clone()));
             let tl_val = match target_label {
                 Some(s) => serde_json::Value::String(s.clone()),
                 None => serde_json::Value::Null,
@@ -222,20 +169,17 @@ fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
             use crate::model::resource_type::ValueType;
             let type_token = fv.value_type.as_token().to_string();
             m.insert("value_type".into(), serde_json::Value::String(type_token));
-            m.insert(
-                "filename".into(),
-                serde_json::Value::String(fv.filename.clone()),
-            );
+            m.insert("filename".into(), serde_json::Value::String(fv.filename.clone()));
             m.insert("url".into(), serde_json::Value::String(fv.url.clone()));
             // width/height: only meaningful for still-image, null for others.
             match fv.value_type {
                 ValueType::StillImage => {
-                    let w_val: serde_json::Value = fv.width.map_or(serde_json::Value::Null, |w| {
-                        serde_json::Value::Number(w.into())
-                    });
-                    let h_val: serde_json::Value = fv.height.map_or(serde_json::Value::Null, |h| {
-                        serde_json::Value::Number(h.into())
-                    });
+                    let w_val: serde_json::Value = fv
+                        .width
+                        .map_or(serde_json::Value::Null, |w| serde_json::Value::Number(w.into()));
+                    let h_val: serde_json::Value = fv
+                        .height
+                        .map_or(serde_json::Value::Null, |h| serde_json::Value::Number(h.into()));
                     m.insert("width".into(), w_val);
                     m.insert("height".into(), h_val);
                 }
@@ -246,10 +190,7 @@ fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
             }
         }
         ValueContent::Raw { value_type, text } => {
-            m.insert(
-                "value_type".into(),
-                serde_json::Value::String(value_type.clone()),
-            );
+            m.insert("value_type".into(), serde_json::Value::String(value_type.clone()));
             m.insert("text".into(), serde_json::Value::String(text.clone()));
         }
     }
@@ -285,17 +226,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn auth_login(
-        &mut self,
-        outcome: &AuthLoginOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_login(&mut self, outcome: &AuthLoginOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let obj = json!({
             "_meta": meta_block(meta, 0),
             "data": {
@@ -307,24 +243,14 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn auth_status(
-        &mut self,
-        outcome: &AuthStatusOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_status(&mut self, outcome: &AuthStatusOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let obj = match outcome {
-            AuthStatusOutcome::LoggedIn {
-                server: _,
-                user,
-                expires_at,
-                expired,
-            } => json!({
+            AuthStatusOutcome::LoggedIn { server: _, user, expires_at, expired } => json!({
                 "_meta": meta_block(meta, 0),
                 "data": {
                     "user": user,
@@ -336,11 +262,7 @@ impl Renderer for JsonRenderer {
             // (user: null, expires_at: rfc3339 or null, state: "logged_in"|"expired").
             // The "via DSP_TOKEN" disclosure is carried by _meta.auth, not by a
             // source key in data, to keep the data shape stable across all three outcomes.
-            AuthStatusOutcome::AuthenticatedViaEnv {
-                server: _,
-                expires_at,
-                expired,
-            } => json!({
+            AuthStatusOutcome::AuthenticatedViaEnv { server: _, expires_at, expired } => json!({
                 "_meta": meta_block(meta, 0),
                 "data": {
                     "user": null,
@@ -360,17 +282,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn auth_logout(
-        &mut self,
-        outcome: &AuthLogoutOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_logout(&mut self, outcome: &AuthLogoutOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let obj = json!({
             "_meta": meta_block(meta, 0),
             "data": {
@@ -381,17 +298,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn auth_set_token(
-        &mut self,
-        outcome: &AuthSetTokenOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn auth_set_token(&mut self, outcome: &AuthSetTokenOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let obj = json!({
             "_meta": meta_block(meta, 0),
             "data": {
@@ -403,17 +315,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn project_dump(
-        &mut self,
-        outcome: &DumpOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_dump(&mut self, outcome: &DumpOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let obj = json!({
             "_meta": meta_block(meta, 0),
             "data": {
@@ -427,17 +334,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn project_dump_deleted(
-        &mut self,
-        outcome: &DumpDeleteOutcome,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_dump_deleted(&mut self, outcome: &DumpDeleteOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
         let obj = if let Some(ref note) = outcome.note {
             json!({
                 "_meta": meta_block(meta, 0),
@@ -457,8 +359,7 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
@@ -489,17 +390,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn project_describe(
-        &mut self,
-        project: &ProjectDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // `data` is a single object (ADR-0003). Deterministic key order via `json!`
         // (preserve_order feature ensures insertion order).
         let description: Vec<serde_json::Value> = project
@@ -540,17 +436,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn data_model_describe(
-        &mut self,
-        detail: &DataModelDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // ADR-0003 single-object envelope. `last_modified` is the full RFC3339
         // string (lossless). `resource_types` is an array of per-resource-type
         // objects (name, iri, label).
@@ -579,17 +470,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn data_models(
-        &mut self,
-        view: &DataModelListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Build data array — per-item key order via `json!` insertion order
         // (preserve_order feature on serde_json, per ADR-0003).
         // label None → JSON null; last_modified None → JSON null; is_builtin → bool.
@@ -614,17 +500,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn resource_types(
-        &mut self,
-        view: &ResourceTypeListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Build data array — per-item key order via `json!` insertion order
         // (preserve_order feature on serde_json, per ADR-0003).
         // label None → JSON null; is_builtin → bool.
@@ -664,8 +545,7 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
@@ -725,17 +605,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn data_model_structure(
-        &mut self,
-        structure: &DataModelStructure,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn data_model_structure(&mut self, structure: &DataModelStructure, meta: &MetaContext) -> Result<(), Diagnostic> {
         // ADR-0003 flat-array envelope. Each element carries all 5 keys (none omitted).
         // Optional values are emitted as JSON null (matching resource_type_describe lines
         // 476-485 which render None Options as null — never skip_serializing_if).
@@ -760,8 +635,7 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
@@ -786,10 +660,7 @@ impl Renderer for JsonRenderer {
         // Build _meta pagination keys (D5 — two asymmetric shapes by mode).
         let mut meta_obj = meta_block(meta, 0);
         match &view.pagination {
-            ResourceListPagination::SinglePage {
-                page,
-                may_have_more,
-            } => {
+            ResourceListPagination::SinglePage { page, may_have_more } => {
                 meta_obj["page"] = serde_json::Value::from(*page);
                 meta_obj["may_have_more_results"] = serde_json::Value::from(*may_have_more);
             }
@@ -812,17 +683,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn resource_describe(
-        &mut self,
-        detail: &ResourceDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn resource_describe(&mut self, detail: &ResourceDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // ADR-0003 single-object envelope. `data` is an object (not array).
         // Keys in deterministic order; `None` → JSON null.
         // D3: add `note` to _meta when filter_warning is Some.
@@ -833,74 +699,57 @@ impl Renderer for JsonRenderer {
 
         // Build data object with explicit key ordering (preserve_order, ADR-0003).
         let mut data = serde_json::Map::new();
-        data.insert(
-            "label".into(),
-            serde_json::Value::String(detail.label.clone()),
-        );
+        data.insert("label".into(), serde_json::Value::String(detail.label.clone()));
         data.insert("iri".into(), serde_json::Value::String(detail.iri.clone()));
-        data.insert(
-            "resource_type".into(),
-            serde_json::Value::String(detail.resource_type.clone()),
-        );
+        data.insert("resource_type".into(), serde_json::Value::String(detail.resource_type.clone()));
         data.insert(
             "ark_url".into(),
             detail
                 .ark_url
                 .as_ref()
-                .map_or(serde_json::Value::Null, |s| {
-                    serde_json::Value::String(s.clone())
-                }),
+                .map_or(serde_json::Value::Null, |s| serde_json::Value::String(s.clone())),
         );
         data.insert(
             "creation_date".into(),
             detail
                 .creation_date
                 .as_ref()
-                .map_or(serde_json::Value::Null, |s| {
-                    serde_json::Value::String(s.clone())
-                }),
+                .map_or(serde_json::Value::Null, |s| serde_json::Value::String(s.clone())),
         );
         data.insert(
             "last_modified".into(),
             detail
                 .last_modified
                 .as_ref()
-                .map_or(serde_json::Value::Null, |s| {
-                    serde_json::Value::String(s.clone())
-                }),
+                .map_or(serde_json::Value::Null, |s| serde_json::Value::String(s.clone())),
         );
         data.insert(
             "attached_project".into(),
             detail
                 .attached_project
                 .as_ref()
-                .map_or(serde_json::Value::Null, |s| {
-                    serde_json::Value::String(s.clone())
-                }),
+                .map_or(serde_json::Value::Null, |s| serde_json::Value::String(s.clone())),
         );
         data.insert(
             "owner".into(),
-            detail.owner.as_ref().map_or(serde_json::Value::Null, |s| {
-                serde_json::Value::String(s.clone())
-            }),
+            detail
+                .owner
+                .as_ref()
+                .map_or(serde_json::Value::Null, |s| serde_json::Value::String(s.clone())),
         );
         data.insert(
             "visibility".into(),
             detail
                 .visibility
                 .as_ref()
-                .map_or(serde_json::Value::Null, |v| {
-                    serde_json::Value::String(v.as_str().into())
-                }),
+                .map_or(serde_json::Value::Null, |v| serde_json::Value::String(v.as_str().into())),
         );
         data.insert(
             "your_access".into(),
             detail
                 .your_access
                 .as_ref()
-                .map_or(serde_json::Value::Null, |a| {
-                    serde_json::Value::String(a.as_str().into())
-                }),
+                .map_or(serde_json::Value::Null, |a| serde_json::Value::String(a.as_str().into())),
         );
         // `values` key is present only when --values was set (detail.values is Some).
         // Absent (not null) when None — preserves 8b envelope byte-for-byte.
@@ -913,8 +762,7 @@ impl Renderer for JsonRenderer {
                         .iter()
                         .map(|v| {
                             let mut obj = value_content_to_json(&v.content);
-                            if let (Some(c), serde_json::Value::Object(m)) = (&v.comment, &mut obj)
-                            {
+                            if let (Some(c), serde_json::Value::Object(m)) = (&v.comment, &mut obj) {
                                 m.insert("comment".into(), serde_json::Value::String(c.clone()));
                             }
                             obj
@@ -941,17 +789,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn vocabularies(
-        &mut self,
-        view: &VocabularyListView,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn vocabularies(&mut self, view: &VocabularyListView, meta: &MetaContext) -> Result<(), Diagnostic> {
         // Build data array. `labels`/`comments` are the verbatim, lossless
         // `{value, language}` arrays (json stays lossless — no per-language
         // column collapsing, unlike tabular). `nodes`/`depth` (plan 034) are
@@ -993,17 +836,12 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
 
-    fn vocabulary_describe(
-        &mut self,
-        detail: &VocabularyDetail,
-        meta: &MetaContext,
-    ) -> Result<(), Diagnostic> {
+    fn vocabulary_describe(&mut self, detail: &VocabularyDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
         // ADR-0003 single-object envelope. `nodes`/`depth` are ALWAYS present
         // here (plain `usize` on `VocabularyDetail`, unlike `list`'s Option) —
         // the omit-when-absent rule above does not apply.
@@ -1031,10 +869,8 @@ impl Renderer for JsonRenderer {
         }
 
         let root = &detail.tree.root;
-        let children: Vec<serde_json::Value> = nest_vocabulary_detail(detail)
-            .iter()
-            .map(nested_to_json)
-            .collect::<Vec<_>>();
+        let children: Vec<serde_json::Value> =
+            nest_vocabulary_detail(detail).iter().map(nested_to_json).collect::<Vec<_>>();
 
         let mut data = json!({
             "name": root.name,
@@ -1062,8 +898,7 @@ impl Renderer for JsonRenderer {
         writeln!(
             self.out,
             "{}",
-            serde_json::to_string(&obj)
-                .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
+            serde_json::to_string(&obj).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?
         )?;
         Ok(())
     }
@@ -1073,8 +908,8 @@ impl Renderer for JsonRenderer {
 mod tests {
     use super::*;
     use crate::model::{
-        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDescription, ProjectDetail,
-        ProjectStatus, ResourceType, ResourceTypeSummary,
+        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDescription, ProjectDetail, ProjectStatus,
+        ResourceType, ResourceTypeSummary,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -1145,11 +980,7 @@ mod tests {
                 data_models: 0,
             },
         ];
-        let view = ProjectListView {
-            items,
-            total: 2,
-            filter: None,
-        };
+        let view = ProjectListView { items, total: 2, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
@@ -1184,11 +1015,7 @@ mod tests {
     fn projects_json_empty_data_array() {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
-        let view = ProjectListView {
-            items: vec![],
-            total: 0,
-            filter: None,
-        };
+        let view = ProjectListView { items: vec![], total: 0, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
 
@@ -1216,11 +1043,7 @@ mod tests {
             (&Diagnostic::NotImplemented("x".into()), "internal"),
         ];
         for (diag, expected_kind) in cases {
-            assert_eq!(
-                diagnostic_kind(diag),
-                *expected_kind,
-                "unexpected kind for {diag:?}"
-            );
+            assert_eq!(diagnostic_kind(diag), *expected_kind, "unexpected kind for {diag:?}");
         }
     }
 
@@ -1253,9 +1076,7 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
         assert_eq!(parsed["error"]["kind"], "not_found");
         assert_eq!(parsed["_meta"]["exit_code"], 1);
-        let message = parsed["error"]["message"]
-            .as_str()
-            .expect("error.message must be a string");
+        let message = parsed["error"]["message"].as_str().expect("error.message must be a string");
         assert!(!message.is_empty(), "error.message must be non-empty");
         assert_eq!(message, diag.to_string());
     }
@@ -1301,9 +1122,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .project_describe(&make_beol_detail(), &meta)
-            .unwrap();
+        renderer.project_describe(&make_beol_detail(), &meta).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
 
@@ -1314,10 +1133,7 @@ mod tests {
         // data is a single object
         let data = &parsed["data"];
         assert!(data.is_object());
-        assert_eq!(
-            data["iri"],
-            "http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF"
-        );
+        assert_eq!(data["iri"], "http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF");
         assert_eq!(data["shortcode"], "0801");
         assert_eq!(data["shortname"], "beol");
         assert_eq!(data["longname"], "Bernoulli-Euler Online");
@@ -1339,10 +1155,7 @@ mod tests {
         let dms = data["data_models"].as_array().unwrap();
         assert_eq!(dms.len(), 4, "all four data-models must be rendered");
         assert_eq!(dms[0]["name"], "beol");
-        assert_eq!(
-            dms[0]["iri"],
-            "http://api.dasch.swiss/ontology/0801/beol/v2"
-        );
+        assert_eq!(dms[0]["iri"], "http://api.dasch.swiss/ontology/0801/beol/v2");
         assert_eq!(dms[1]["name"], "biblio");
         assert_eq!(dms[2]["name"], "leibniz");
         assert_eq!(dms[3]["name"], "newton");
@@ -1417,11 +1230,7 @@ mod tests {
     fn data_models_json_output() {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
-        let view = DataModelListView {
-            items: make_data_model_fixture(),
-            total: 3,
-            filter: None,
-        };
+        let view = DataModelListView { items: make_data_model_fixture(), total: 3, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.data_models(&view, &meta).unwrap();
 
@@ -1438,10 +1247,7 @@ mod tests {
 
         // first item: has label and last_modified, not builtin
         assert_eq!(data[0]["name"], "beol");
-        assert_eq!(
-            data[0]["iri"],
-            "http://api.dasch.swiss/ontology/0801/beol/v2"
-        );
+        assert_eq!(data[0]["iri"], "http://api.dasch.swiss/ontology/0801/beol/v2");
         assert_eq!(data[0]["label"], "The BEOL data-model");
         assert_eq!(data[0]["last_modified"], "2024-05-27T13:43:26.233048Z");
         assert_eq!(data[0]["is_builtin"], false);
@@ -1463,11 +1269,7 @@ mod tests {
     fn data_models_json_empty_data_array() {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
-        let view = DataModelListView {
-            items: vec![],
-            total: 0,
-            filter: None,
-        };
+        let view = DataModelListView { items: vec![], total: 0, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.data_models(&view, &meta).unwrap();
 
@@ -1508,9 +1310,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .data_model_describe(&make_beol_dm_detail(), &meta)
-            .unwrap();
+        renderer.data_model_describe(&make_beol_dm_detail(), &meta).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
 
@@ -1532,10 +1332,7 @@ mod tests {
         let rts = data["resource_types"].as_array().unwrap();
         assert_eq!(rts.len(), 3);
         assert_eq!(rts[0]["name"], "Archive");
-        assert_eq!(
-            rts[0]["iri"],
-            "http://api.dasch.swiss/ontology/0801/beol/v2#Archive"
-        );
+        assert_eq!(rts[0]["iri"], "http://api.dasch.swiss/ontology/0801/beol/v2#Archive");
         assert_eq!(rts[0]["label"], "Archive");
         // label None → null
         assert_eq!(rts[1]["name"], "basicLetter");
@@ -1615,10 +1412,7 @@ mod tests {
 
         // first item: has label, not builtin
         assert_eq!(data[0]["name"], "Archive");
-        assert_eq!(
-            data[0]["iri"],
-            "http://api.dasch.swiss/ontology/0801/beol/v2#Archive"
-        );
+        assert_eq!(data[0]["iri"], "http://api.dasch.swiss/ontology/0801/beol/v2#Archive");
         assert_eq!(data[0]["label"], "Archive");
         assert_eq!(data[0]["is_builtin"], false);
 
@@ -1701,12 +1495,7 @@ mod tests {
         let mut renderer = JsonRenderer::with_writer(out.clone());
         let mut items = make_rt_fixture();
         items[0].count = Some(5);
-        let view = ResourceTypeListView {
-            items,
-            total: 2,
-            filter: None,
-            data_model: "beol".into(),
-        };
+        let view = ResourceTypeListView { items, total: 2, filter: None, data_model: "beol".into() };
         let meta = crate::render::MetaContext {
             server_label: "https://api.test.dasch.swiss".into(),
             auth_state: "anonymous".into(),
@@ -1795,9 +1584,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.dasch.swiss");
-        renderer
-            .resource_type_describe(&make_minimal_rt_detail(), &meta)
-            .unwrap();
+        renderer.resource_type_describe(&make_minimal_rt_detail(), &meta).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
         assert!(!parsed["data"].as_object().unwrap().contains_key("count"));
@@ -1808,8 +1595,8 @@ mod tests {
 
     use crate::model::resource_type::ValueType;
     use crate::model::{
-        DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail,
-        ResourceVisibility, Value, ValueContent,
+        DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail, ResourceVisibility, Value,
+        ValueContent,
     };
 
     fn make_resource_detail_no_values() -> ResourceDetail {
@@ -1834,9 +1621,7 @@ mod tests {
         let out = SharedBuf::new();
         let mut renderer = JsonRenderer::with_writer(out.clone());
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
-        renderer
-            .resource_describe(&make_resource_detail_no_values(), &meta)
-            .unwrap();
+        renderer.resource_describe(&make_resource_detail_no_values(), &meta).unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
         let data = &parsed["data"];
@@ -1911,10 +1696,7 @@ mod tests {
 
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
         let fg = &parsed["data"]["values"][0];
-        assert!(
-            fg["field_label"].is_null(),
-            "field_label must be null when label is None"
-        );
+        assert!(fg["field_label"].is_null(), "field_label must be null when label is None");
         let val = &fg["values"][0];
         assert_eq!(val["value_type"], "integer");
         assert_eq!(val["value"], 42);
@@ -1982,10 +1764,7 @@ mod tests {
         let val = &parsed["data"]["values"][0]["values"][0];
         assert_eq!(val["value_type"], "still-image");
         assert_eq!(val["filename"], "image.jp2");
-        assert_eq!(
-            val["url"],
-            "https://iiif.example.com/image.jp2/full/max/0/default.jpg"
-        );
+        assert_eq!(val["url"], "https://iiif.example.com/image.jp2/full/max/0/default.jpg");
         assert_eq!(val["width"], 1200);
         assert_eq!(val["height"], 800);
     }

@@ -6,25 +6,23 @@
 //! nodes, not the real 33), deliberately covering every edge case the plan calls
 //! out:
 //! - `prehistory` (level 1): 4 languages (en/de/fr/it), no comment, has children.
-//! - `stoneAge` (level 2, under `prehistory`): 2 languages (en/de), HAS a comment,
-//!   has a child — this is the node used for the node-IRI and `--subtree` cases.
-//! - `neolithic` (level 3, under `stoneAge`): 1 language (en only), a leaf — reaches
-//!   3 levels of nesting so DFS `number` is `1.1.1`.
-//! - `bronzeAge` (level 2, under `prehistory`): an UNTAGGED label (`language: None`),
-//!   a leaf — used for the `--subtree`-on-a-leaf case.
-//! - `antiquity` (level 1): `name: None`, a DUPLICATE-tag label (two entries both
-//!   `language: Some("en")` — `localized_column` takes the first), a leaf.
+//! - `stoneAge` (level 2, under `prehistory`): 2 languages (en/de), HAS a comment, has a child —
+//!   this is the node used for the node-IRI and `--subtree` cases.
+//! - `neolithic` (level 3, under `stoneAge`): 1 language (en only), a leaf — reaches 3 levels of
+//!   nesting so DFS `number` is `1.1.1`.
+//! - `bronzeAge` (level 2, under `prehistory`): an UNTAGGED label (`language: None`), a leaf — used
+//!   for the `--subtree`-on-a-leaf case.
+//! - `antiquity` (level 1): `name: None`, a DUPLICATE-tag label (two entries both `language:
+//!   Some("en")` — `localized_column` takes the first), a leaf.
 //! - `modernPeriod` (level 1): 1 language (en only), a leaf.
 //!
 //! Required cases:
-//! 1. Whole-vocabulary describe (`subtree_of: None`, `requested_node: None`) — all
-//!    5 formats.
-//! 2. Node-IRI describe (`requested_node: Some(stoneAge)`, `subtree_of: None`) —
-//!    prose (trailing `←` marker + header note) and json (`data.requested_node`).
-//! 3. `--subtree` describe (`subtree_of: Some(prehistory)`, `requested_node` set to
-//!    the same iri, `node_count`/`depth` recomputed via `count_and_depth`) — prose
-//!    (narrowed branch + `· subtree of <number>` header) and json
-//!    (`data.subtree_of`).
+//! 1. Whole-vocabulary describe (`subtree_of: None`, `requested_node: None`) — all 5 formats.
+//! 2. Node-IRI describe (`requested_node: Some(stoneAge)`, `subtree_of: None`) — prose (trailing
+//!    `←` marker + header note) and json (`data.requested_node`).
+//! 3. `--subtree` describe (`subtree_of: Some(prehistory)`, `requested_node` set to the same iri,
+//!    `node_count`/`depth` recomputed via `count_and_depth`) — prose (narrowed branch + `· subtree
+//!    of <number>` header) and json (`data.subtree_of`).
 //! 4. `--subtree` on a leaf (`bronzeAge`) — prose only.
 //!
 //! Determinism: these tests call `Renderer::vocabulary_describe(&detail, &meta)`
@@ -33,9 +31,7 @@
 //! See `docs/dev/testing-strategy.md`, ADR-0009, and
 //! `docs/design/plans/034-vre-vocabulary/implementation-plan.md`.
 
-use dsp_cli::model::{
-    LocalizedText, VocabularyDetail, VocabularyHeader, VocabularyNode, VocabularyTree,
-};
+use dsp_cli::model::{LocalizedText, VocabularyDetail, VocabularyHeader, VocabularyNode, VocabularyTree};
 use dsp_cli::render::csv::CsvRenderer;
 use dsp_cli::render::json::JsonRenderer;
 use dsp_cli::render::lines::LinesRenderer;
@@ -76,12 +72,7 @@ fn text(value: &str, language: Option<&str>) -> LocalizedText {
     }
 }
 
-fn header(
-    iri: &str,
-    name: Option<&str>,
-    labels: Vec<LocalizedText>,
-    comments: Vec<LocalizedText>,
-) -> VocabularyHeader {
+fn header(iri: &str, name: Option<&str>, labels: Vec<LocalizedText>, comments: Vec<LocalizedText>) -> VocabularyHeader {
     VocabularyHeader {
         iri: iri.to_string(),
         name: name.map(str::to_string),
@@ -91,11 +82,7 @@ fn header(
 }
 
 fn node(header: VocabularyHeader, position: i32, children: Vec<VocabularyNode>) -> VocabularyNode {
-    VocabularyNode {
-        header,
-        position,
-        children,
-    }
+    VocabularyNode { header, position, children }
 }
 
 const NEOLITHIC_IRI: &str = "http://rdfh.ch/lists/0838/neolithic";
@@ -118,12 +105,7 @@ const MODERN_PERIOD_IRI: &str = "http://rdfh.ch/lists/0838/modernPeriod";
 /// 6 real nodes; deepest level is 3 (prehistory -> stoneAge -> neolithic).
 fn period_like_tree() -> VocabularyTree {
     let neolithic = node(
-        header(
-            NEOLITHIC_IRI,
-            Some("neolithic"),
-            vec![text("Neolithic", Some("en"))],
-            vec![],
-        ),
+        header(NEOLITHIC_IRI, Some("neolithic"), vec![text("Neolithic", Some("en"))], vec![]),
         0,
         vec![],
     );
@@ -141,12 +123,7 @@ fn period_like_tree() -> VocabularyTree {
         vec![neolithic],
     );
     let bronze_age = node(
-        header(
-            BRONZE_AGE_IRI,
-            Some("bronzeAge"),
-            vec![text("Bronze Age", None)],
-            vec![],
-        ),
+        header(BRONZE_AGE_IRI, Some("bronzeAge"), vec![text("Bronze Age", None)], vec![]),
         1,
         vec![],
     );
@@ -169,10 +146,7 @@ fn period_like_tree() -> VocabularyTree {
         header(
             ANTIQUITY_IRI,
             None,
-            vec![
-                text("Antiquity", Some("en")),
-                text("Classical Antiquity", Some("en")),
-            ],
+            vec![text("Antiquity", Some("en")), text("Classical Antiquity", Some("en"))],
             vec![],
         ),
         1,
@@ -205,12 +179,7 @@ fn period_like_tree() -> VocabularyTree {
 fn whole_detail() -> VocabularyDetail {
     let tree = period_like_tree();
     let (node_count, depth) = tree.count_and_depth(None);
-    VocabularyDetail {
-        tree,
-        subtree_of: None,
-        node_count,
-        depth,
-    }
+    VocabularyDetail { tree, subtree_of: None, node_count, depth }
 }
 
 /// Case 2 — node-IRI describe: whole vocabulary renders, `stoneAge` is merely
@@ -219,12 +188,7 @@ fn node_iri_detail() -> VocabularyDetail {
     let mut tree = period_like_tree();
     tree.requested_node = Some(STONE_AGE_IRI.to_string());
     let (node_count, depth) = tree.count_and_depth(None);
-    VocabularyDetail {
-        tree,
-        subtree_of: None,
-        node_count,
-        depth,
-    }
+    VocabularyDetail { tree, subtree_of: None, node_count, depth }
 }
 
 /// Case 3 — `--subtree` describe on `prehistory` (a level-1 node with
@@ -236,12 +200,7 @@ fn subtree_detail() -> VocabularyDetail {
     let iri = PREHISTORY_IRI.to_string();
     tree.requested_node = Some(iri.clone());
     let (node_count, depth) = tree.count_and_depth(Some(&iri));
-    VocabularyDetail {
-        tree,
-        subtree_of: Some(iri),
-        node_count,
-        depth,
-    }
+    VocabularyDetail { tree, subtree_of: Some(iri), node_count, depth }
 }
 
 /// Case 4 — `--subtree` on a leaf (`bronzeAge`). D14b: the addressed leaf is
@@ -252,12 +211,7 @@ fn leaf_subtree_detail() -> VocabularyDetail {
     let iri = BRONZE_AGE_IRI.to_string();
     tree.requested_node = Some(iri.clone());
     let (node_count, depth) = tree.count_and_depth(Some(&iri));
-    VocabularyDetail {
-        tree,
-        subtree_of: Some(iri),
-        node_count,
-        depth,
-    }
+    VocabularyDetail { tree, subtree_of: Some(iri), node_count, depth }
 }
 
 // ── case 1: whole-vocabulary describe × 5 formats ────────────────────────────
@@ -271,8 +225,7 @@ fn leaf_subtree_detail() -> VocabularyDetail {
 fn vocabulary_describe_prose() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.vocabulary_describe(&whole_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&whole_detail(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -284,11 +237,9 @@ fn vocabulary_describe_prose() {
 fn vocabulary_describe_json() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.vocabulary_describe(&whole_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&whole_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("whole-vocabulary json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("whole-vocabulary json must be valid JSON");
     assert!(
         parsed["data"].get("requested_node").is_none(),
         "requested_node must be omitted when not applicable; got:\n{out}"
@@ -307,8 +258,7 @@ fn vocabulary_describe_lines() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.vocabulary_describe(&whole_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&whole_detail(), &anon_meta()).unwrap();
     insta::assert_snapshot!("vocabulary_describe_lines_stdout", buf_to_string(&out_buf));
     insta::assert_snapshot!("vocabulary_describe_lines_stderr", buf_to_string(&err_buf));
 }
@@ -322,8 +272,7 @@ fn vocabulary_describe_csv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.vocabulary_describe(&whole_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&whole_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     assert!(
         stdout.starts_with("node_iri,number,label_en,label_de,label_fr,label_it,label_rm,label\n"),
@@ -340,13 +289,10 @@ fn vocabulary_describe_tsv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.vocabulary_describe(&whole_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&whole_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     assert!(
-        stdout.starts_with(
-            "node_iri\tnumber\tlabel_en\tlabel_de\tlabel_fr\tlabel_it\tlabel_rm\tlabel\n"
-        ),
+        stdout.starts_with("node_iri\tnumber\tlabel_en\tlabel_de\tlabel_fr\tlabel_it\tlabel_rm\tlabel\n"),
         "TSV header must be the 8-column describe default; got:\n{stdout}"
     );
     insta::assert_snapshot!("vocabulary_describe_tsv_stdout", stdout);
@@ -363,8 +309,7 @@ fn vocabulary_describe_tsv() {
 fn vocabulary_describe_prose_requested_node() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.vocabulary_describe(&node_iri_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&node_iri_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("you asked about 1.1"),
@@ -396,11 +341,9 @@ fn vocabulary_describe_prose_requested_node() {
 fn vocabulary_describe_json_requested_node() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.vocabulary_describe(&node_iri_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&node_iri_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("requested-node json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("requested-node json must be valid JSON");
     assert_eq!(
         parsed["data"]["requested_node"], STONE_AGE_IRI,
         "data.requested_node must be stoneAge's iri; got: {}",
@@ -429,8 +372,7 @@ fn vocabulary_describe_json_requested_node() {
 fn vocabulary_describe_prose_subtree() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.vocabulary_describe(&subtree_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&subtree_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("subtree of 1"),
@@ -455,11 +397,9 @@ fn vocabulary_describe_prose_subtree() {
 fn vocabulary_describe_json_subtree() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.vocabulary_describe(&subtree_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&subtree_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("subtree json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("subtree json must be valid JSON");
     assert_eq!(parsed["data"]["subtree_of"], PREHISTORY_IRI);
     assert_eq!(parsed["data"]["requested_node"], PREHISTORY_IRI);
     assert_eq!(
@@ -485,8 +425,7 @@ fn vocabulary_describe_json_subtree() {
 fn vocabulary_describe_prose_subtree_leaf() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.vocabulary_describe(&leaf_subtree_detail(), &anon_meta())
-        .unwrap();
+    r.vocabulary_describe(&leaf_subtree_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert_eq!(
         leaf_subtree_detail().node_count,

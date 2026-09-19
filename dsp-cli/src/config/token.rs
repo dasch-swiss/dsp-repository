@@ -53,23 +53,13 @@ impl fmt::Debug for ResolvedToken {
 /// The env token is server-agnostic and wins regardless of the cache contents
 /// for any server. Surrounding whitespace in the env value is trimmed: a JWT
 /// never contains whitespace, so `DSP_TOKEN="   "` is treated as absent.
-pub fn resolve_token(
-    env_token: Option<String>,
-    cache: &AuthCache,
-    server: &str,
-) -> Option<ResolvedToken> {
+pub fn resolve_token(env_token: Option<String>, cache: &AuthCache, server: &str) -> Option<ResolvedToken> {
     let t = env_token.as_deref().map(str::trim).unwrap_or("");
     if !t.is_empty() {
-        return Some(ResolvedToken {
-            token: t.to_owned(),
-            origin: TokenOrigin::Env,
-        });
+        return Some(ResolvedToken { token: t.to_owned(), origin: TokenOrigin::Env });
     }
     if let Some(c) = cache.token(server) {
-        return Some(ResolvedToken {
-            token: c.to_owned(),
-            origin: TokenOrigin::Cache,
-        });
+        return Some(ResolvedToken { token: c.to_owned(), origin: TokenOrigin::Cache });
     }
     None
 }
@@ -177,15 +167,9 @@ mod tests {
     #[test]
     fn debug_redacts_token() {
         let secret = "super-secret-bearer-token";
-        let rt = ResolvedToken {
-            token: secret.to_string(),
-            origin: TokenOrigin::Env,
-        };
+        let rt = ResolvedToken { token: secret.to_string(), origin: TokenOrigin::Env };
         let rendered = format!("{rt:?}");
-        assert!(
-            !rendered.contains(secret),
-            "Debug impl leaked the token: {rendered}"
-        );
+        assert!(!rendered.contains(secret), "Debug impl leaked the token: {rendered}");
         assert!(
             rendered.contains("REDACTED"),
             "expected redaction marker in Debug output, got: {rendered}"

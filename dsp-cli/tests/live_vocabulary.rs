@@ -67,8 +67,7 @@ fn live_vocabulary_list_and_describe_on_geoarch() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // Both `list_vocabularies` and `describe_vocabulary` are public endpoints;
@@ -92,18 +91,13 @@ fn live_vocabulary_list_and_describe_on_geoarch() {
     // `epoch`/Period vocabulary shape (33 nodes, 2 levels) are verified
     // ground truth as of 2026-07-29/30.
     let project_identifier = "0838";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0838' (geoarch) — check DSP_TEST_SERVER and network \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0838' (geoarch) — check DSP_TEST_SERVER and network \
          connectivity; if geoarch has been removed from this server, update the test to use a \
          different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -111,10 +105,7 @@ fn live_vocabulary_list_and_describe_on_geoarch() {
     );
 
     // ── 5. list_vocabularies must return exactly 21 roots ────────────────────
-    eprintln!(
-        "live test: calling list_vocabularies for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling list_vocabularies for project IRI {}", proj.iri);
 
     let vocabs = client
         .list_vocabularies(&cfg.server, &proj.iri, token_ref)
@@ -132,25 +123,15 @@ fn live_vocabulary_list_and_describe_on_geoarch() {
     // ── 6. Find "epoch" (case-insensitive name match) and describe it ────────
     let epoch = vocabs
         .iter()
-        .find(|v| {
-            v.header
-                .name
-                .as_deref()
-                .is_some_and(|n| n.eq_ignore_ascii_case("epoch"))
-        })
+        .find(|v| v.header.name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case("epoch")))
         .expect("epoch vocabulary not found in geoarch's vocabulary list");
 
-    eprintln!(
-        "live test: found epoch vocabulary (iri: {})",
-        epoch.header.iri
-    );
+    eprintln!("live test: found epoch vocabulary (iri: {})", epoch.header.iri);
 
-    let epoch_tree = client
-        .describe_vocabulary(&cfg.server, &epoch.header.iri, token_ref)
-        .expect(
-            "describe_vocabulary(epoch root iri) failed — check DSP_TEST_SERVER and network \
+    let epoch_tree = client.describe_vocabulary(&cfg.server, &epoch.header.iri, token_ref).expect(
+        "describe_vocabulary(epoch root iri) failed — check DSP_TEST_SERVER and network \
              connectivity",
-        );
+    );
 
     let epoch_stats = epoch_tree.count_and_depth(None);
     eprintln!("live test: epoch tree stats (nodes, depth): {epoch_stats:?}");
@@ -174,12 +155,10 @@ fn live_vocabulary_list_and_describe_on_geoarch() {
 
     eprintln!("live test: describing node IRI directly: {node_iri}");
 
-    let node_tree = client
-        .describe_vocabulary(&cfg.server, &node_iri, token_ref)
-        .expect(
-            "describe_vocabulary(node iri) failed — check DSP_TEST_SERVER and network \
+    let node_tree = client.describe_vocabulary(&cfg.server, &node_iri, token_ref).expect(
+        "describe_vocabulary(node iri) failed — check DSP_TEST_SERVER and network \
              connectivity",
-        );
+    );
 
     assert_eq!(
         node_tree.requested_node,
@@ -198,9 +177,7 @@ fn live_vocabulary_list_and_describe_on_geoarch() {
 
     // ── 8. --subtree-style branch counting on the SAME tree ──────────────────
     let (branch_count, branch_depth) = node_tree.count_and_depth(Some(&node_iri));
-    eprintln!(
-        "live test: branch stats for node {node_iri}: ({branch_count} nodes, {branch_depth} levels)"
-    );
+    eprintln!("live test: branch stats for node {node_iri}: ({branch_count} nodes, {branch_depth} levels)");
     assert!(
         branch_count < 33,
         "a non-root node's own branch must be smaller than the whole vocabulary (33 nodes); \

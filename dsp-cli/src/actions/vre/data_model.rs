@@ -6,13 +6,12 @@
 
 use std::path::Path;
 
+use crate::actions::auth_state::read_auth_state;
 use crate::cli::{DataModelDescribeArgs, DataModelListArgs, DataModelStructureArgs};
 use crate::client::DspClient;
 use crate::config::{AuthCache, Config, resolve_token};
 use crate::diagnostic::Diagnostic;
 use crate::render::{DataModelListView, MetaContext, Renderer};
-
-use crate::actions::auth_state::read_auth_state;
 
 /// List all data-models in a project.
 ///
@@ -31,10 +30,10 @@ pub fn list(
 
 /// Internal entry point for `list` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry point before calling
+///   this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. This differs deliberately from
@@ -49,9 +48,10 @@ fn run_list_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
     let cache_result = match cache_path {
@@ -94,13 +94,7 @@ fn run_list_impl(
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         items.retain(|dm| {
-            dm.name.to_lowercase().contains(&lower)
-                || dm
-                    .label
-                    .as_deref()
-                    .unwrap_or("")
-                    .to_lowercase()
-                    .contains(&lower)
+            dm.name.to_lowercase().contains(&lower) || dm.label.as_deref().unwrap_or("").to_lowercase().contains(&lower)
         });
     }
 
@@ -108,11 +102,7 @@ fn run_list_impl(
     items.sort_by(|a, b| a.name.cmp(&b.name));
 
     // ── 11. Build view + meta and render ─────────────────────────────────────
-    let view = DataModelListView {
-        items,
-        total,
-        filter: args.filter.clone(),
-    };
+    let view = DataModelListView { items, total, filter: args.filter.clone() };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -140,10 +130,10 @@ pub fn describe(
 
 /// Internal entry point for `describe` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry point before
+///   calling this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. The data-model endpoint is
@@ -158,9 +148,10 @@ fn run_describe_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
     let data_model = args
@@ -201,9 +192,7 @@ fn run_describe_impl(
     // Truncation is for display only — never truncate before the equality check.
     let dm_iri = data_models
         .iter()
-        .find(|dm| {
-            dm.iri == data_model || dm.name.eq_ignore_ascii_case(data_model)
-        })
+        .find(|dm| dm.iri == data_model || dm.name.eq_ignore_ascii_case(data_model))
         .map(|dm| dm.iri.clone())
         .ok_or_else(|| {
             let dm_disp: String = data_model.chars().take(80).collect();
@@ -249,10 +238,10 @@ pub fn structure(
 
 /// Internal entry point for `structure` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `structure` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `structure` entry point before
+///   calling this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty cache
 /// with a `tracing::warn!` — NEVER returns `Err`. The data-model endpoint is
@@ -267,9 +256,10 @@ fn run_structure_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
     let data_model = args
@@ -309,9 +299,7 @@ fn run_structure_impl(
     // ── 8. Match --data-model against the project's data-models ──────────────
     let dm_iri = data_models
         .iter()
-        .find(|dm| {
-            dm.iri == data_model || dm.name.eq_ignore_ascii_case(data_model)
-        })
+        .find(|dm| dm.iri == data_model || dm.name.eq_ignore_ascii_case(data_model))
         .map(|dm| dm.iri.clone())
         .ok_or_else(|| {
             let dm_disp: String = data_model.chars().take(80).collect();
@@ -356,23 +344,17 @@ mod tests {
     use tempfile::TempDir;
 
     use super::{run_describe_impl, run_list_impl, run_structure_impl};
-    use crate::cli::{
-        DataModelDescribeArgs, DataModelListArgs, DataModelStructureArgs, FormatArgs,
-    };
+    use crate::cli::{DataModelDescribeArgs, DataModelListArgs, DataModelStructureArgs, FormatArgs};
     use crate::client::DspClient;
     use crate::config::auth_cache::ServerEntry;
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
-    use crate::model::ProjectDetail;
     use crate::model::{
-        DataModel, DataModelDetail, DataModelStructure, ProjectRef, ResourceTypeSummary,
+        DataModel, DataModelDetail, DataModelStructure, ProjectDetail, ProjectRef, ResourceTypeSummary,
     };
-    use crate::render::Format;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{
-        DataModelListView, DumpDeleteOutcome, DumpOutcome, MetaContext, ProjectListView, Renderer,
+        DataModelListView, DumpDeleteOutcome, DumpOutcome, Format, MetaContext, ProjectListView, Renderer,
     };
 
     // ── MockDspClient ─────────────────────────────────────────────────────────
@@ -433,10 +415,7 @@ mod tests {
             self
         }
 
-        fn with_data_model_structure(
-            mut self,
-            result: Result<DataModelStructure, Diagnostic>,
-        ) -> Self {
+        fn with_data_model_structure(mut self, result: Result<DataModelStructure, Diagnostic>) -> Self {
             self.data_model_structure_result = Some(result);
             self
         }
@@ -536,11 +515,7 @@ mod tests {
             unimplemented!("delete_project_dump not used in data-model action tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             unimplemented!("list_projects not used in data-model action tests")
         }
 
@@ -599,9 +574,9 @@ mod tests {
             *self.data_model_structure_calls.borrow_mut() += 1;
             *self.data_model_structure_iri.borrow_mut() = Some(data_model_iri.to_string());
             *self.data_model_structure_token.borrow_mut() = Some(token.map(str::to_owned));
-            self.data_model_structure_result.clone().unwrap_or_else(|| {
-                unimplemented!("data_model_structure not configured in data-model action tests")
-            })
+            self.data_model_structure_result
+                .clone()
+                .unwrap_or_else(|| unimplemented!("data_model_structure not configured in data-model action tests"))
         }
 
         fn list_resources(
@@ -698,51 +673,27 @@ mod tests {
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn project_dump(
-            &mut self,
-            _outcome: &DumpOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_dump(&mut self, _outcome: &DumpOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -754,27 +705,15 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn project_describe(
-            &mut self,
-            _project: &ProjectDetail,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_describe(&mut self, _project: &ProjectDetail, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn data_models(
-            &mut self,
-            view: &DataModelListView,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.data_models_view = Some(view.clone());
             self.data_models_meta = Some(meta.clone());
             Ok(())
@@ -854,9 +793,7 @@ mod tests {
     const SERVER: &str = "https://api.test.dasch.swiss";
 
     fn make_cfg() -> Config {
-        Config {
-            server: SERVER.to_string(),
-        }
+        Config { server: SERVER.to_string() }
     }
 
     fn make_project_ref() -> ProjectRef {
@@ -936,10 +873,7 @@ mod tests {
 
         // Mock was called with the resolved IRI
         assert_eq!(client.list_data_models_calls(), 1);
-        assert_eq!(
-            client.list_data_models_iri().as_deref(),
-            Some(project_ref.iri.as_str())
-        );
+        assert_eq!(client.list_data_models_iri().as_deref(), Some(project_ref.iri.as_str()));
         // No token (anonymous)
         assert_eq!(
             client.list_data_models_token(),
@@ -947,9 +881,7 @@ mod tests {
             "token should be None for anonymous call"
         );
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
         // Sorted by name: apple < zebra
         assert_eq!(view.items.len(), 2);
         assert_eq!(view.items[0].name, "apple");
@@ -977,9 +909,7 @@ mod tests {
         args.include_builtins = false;
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
 
         // total must equal the project data-model count (captured AFTER builtins
         // append, BEFORE filter — with no builtins appended, that means 2).
@@ -1016,10 +946,7 @@ mod tests {
 
     #[test]
     fn test_list_data_models_include_builtins_appended_and_sorted() {
-        let items = vec![
-            make_data_model("limc", Some("LIMC")),
-            make_data_model("rosetta", None),
-        ];
+        let items = vec![make_data_model("limc", Some("LIMC")), make_data_model("rosetta", None)];
 
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
@@ -1030,9 +957,7 @@ mod tests {
         args.include_builtins = true;
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
 
         // total = 2 project + 3 builtins = 5, before filter
         assert_eq!(view.total, 5, "total must include builtins before filter");
@@ -1040,25 +965,14 @@ mod tests {
 
         // Sort order: knora-api, limc, rosetta, salsah-gui, standoff
         let names: Vec<&str> = view.items.iter().map(|i| i.name.as_str()).collect();
-        assert_eq!(
-            names,
-            vec!["knora-api", "limc", "rosetta", "salsah-gui", "standoff"]
-        );
+        assert_eq!(names, vec!["knora-api", "limc", "rosetta", "salsah-gui", "standoff"]);
 
         // Builtins have is_builtin == true
         for item in &view.items {
             if matches!(item.name.as_str(), "knora-api" | "standoff" | "salsah-gui") {
-                assert!(
-                    item.is_builtin,
-                    "'{}' should have is_builtin == true",
-                    item.name
-                );
+                assert!(item.is_builtin, "'{}' should have is_builtin == true", item.name);
             } else {
-                assert!(
-                    !item.is_builtin,
-                    "'{}' should have is_builtin == false",
-                    item.name
-                );
+                assert!(!item.is_builtin, "'{}' should have is_builtin == false", item.name);
             }
         }
     }
@@ -1092,8 +1006,8 @@ mod tests {
 
     #[test]
     fn test_list_data_models_resolve_not_found_propagates() {
-        let client = MockDspClient::new()
-            .with_resolve_project(Err(Diagnostic::NotFound("project '9999' not found".into())));
+        let client =
+            MockDspClient::new().with_resolve_project(Err(Diagnostic::NotFound("project '9999' not found".into())));
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("9999"));
@@ -1145,9 +1059,7 @@ mod tests {
         args.filter = Some("beol".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
 
         // total = 3 (before filter), shown = 1
         assert_eq!(view.total, 3, "total must be pre-filter count");
@@ -1174,9 +1086,7 @@ mod tests {
         args.filter = Some("AWESOME".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
         assert_eq!(view.total, 3);
         assert_eq!(view.items.len(), 1);
         assert_eq!(view.items[0].name, "ont1");
@@ -1195,9 +1105,7 @@ mod tests {
         args.filter = Some("zzznomatch".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
         assert_eq!(view.total, 1, "total is pre-filter");
         assert_eq!(view.items.len(), 0, "no items match the filter");
     }
@@ -1219,9 +1127,7 @@ mod tests {
         args.filter = Some("label".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
         // Both items pass — shown == total (the "(m of total matching …)" prose branch)
         assert_eq!(view.total, 2);
         assert_eq!(view.items.len(), 2);
@@ -1230,10 +1136,7 @@ mod tests {
 
     #[test]
     fn test_list_data_models_filter_matches_only_builtins() {
-        let items = vec![
-            make_data_model("beol", None),
-            make_data_model("images", None),
-        ];
+        let items = vec![make_data_model("beol", None), make_data_model("images", None)];
 
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
@@ -1246,9 +1149,7 @@ mod tests {
         args.filter = Some("knora".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
         // total = 2 project + 3 builtins = 5 (before filter)
         assert_eq!(view.total, 5, "total must include builtins before filter");
         // Only knora-api survives the filter
@@ -1272,14 +1173,9 @@ mod tests {
         args.filter = Some("beol".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .data_models_view
-            .expect("data_models must have been called");
+        let view = renderer.data_models_view.expect("data_models must have been called");
         // total = 1 project + 3 builtins = 4 (before filter), even though builtins are filtered out
-        assert_eq!(
-            view.total, 4,
-            "total must count builtins even when filtered out"
-        );
+        assert_eq!(view.total, 4, "total must count builtins even when filtered out");
         assert_eq!(view.items.len(), 1);
         assert_eq!(view.items[0].name, "beol");
     }
@@ -1324,10 +1220,7 @@ mod tests {
         let meta = renderer.data_models_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated via DSP_TOKEN");
         // Token passed to list_data_models must be the env token
-        assert_eq!(
-            client.list_data_models_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
+        assert_eq!(client.list_data_models_token(), Some(Some("env-jwt-token".to_string())));
     }
 
     #[test]
@@ -1342,22 +1235,11 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"));
-        run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
         let meta = renderer.data_models_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated as user@example.com");
-        assert_eq!(
-            client.list_data_models_token(),
-            Some(Some("cache-token-xyz".to_string()))
-        );
+        assert_eq!(client.list_data_models_token(), Some(Some("cache-token-xyz".to_string())));
     }
 
     #[test]
@@ -1373,19 +1255,8 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"));
         // Must succeed (no Err) even with missing cache
-        let result = run_list_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&bad_path),
-        );
-        assert!(
-            result.is_ok(),
-            "corrupt/missing cache must not fail: {:?}",
-            result
-        );
+        let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&bad_path));
+        assert!(result.is_ok(), "corrupt/missing cache must not fail: {:?}", result);
 
         let meta = renderer.data_models_meta.expect("meta must be present");
         assert_eq!(
@@ -1396,10 +1267,7 @@ mod tests {
 
     // ── describe helpers ──────────────────────────────────────────────────────
 
-    fn make_describe_args(
-        project: Option<&str>,
-        data_model: Option<&str>,
-    ) -> DataModelDescribeArgs {
+    fn make_describe_args(project: Option<&str>, data_model: Option<&str>) -> DataModelDescribeArgs {
         DataModelDescribeArgs {
             server: Some(SERVER.to_string()),
             project: project.map(str::to_owned),
@@ -1437,10 +1305,7 @@ mod tests {
         let detail = make_data_model_detail("beol");
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
-            .with_list_data_models(Ok(vec![make_data_model(
-                "beol",
-                Some("The BEOL data-model"),
-            )]))
+            .with_list_data_models(Ok(vec![make_data_model("beol", Some("The BEOL data-model"))]))
             .with_describe_data_model(Ok(detail.clone()));
 
         let mut renderer = RecordingRenderer::new();
@@ -1473,15 +1338,8 @@ mod tests {
         let args = make_describe_args(Some("0801"), Some("BEOL"));
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "expected Ok for case-insensitive match, got {:?}",
-            result
-        );
-        assert_eq!(
-            client.describe_data_model_iri().as_deref(),
-            Some(data_model_iri)
-        );
+        assert!(result.is_ok(), "expected Ok for case-insensitive match, got {:?}", result);
+        assert_eq!(client.describe_data_model_iri().as_deref(), Some(data_model_iri));
     }
 
     #[test]
@@ -1497,15 +1355,8 @@ mod tests {
         let args = make_describe_args(Some("0801"), Some(data_model_iri));
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "expected Ok for exact IRI match, got {:?}",
-            result
-        );
-        assert_eq!(
-            client.describe_data_model_iri().as_deref(),
-            Some(data_model_iri)
-        );
+        assert!(result.is_ok(), "expected Ok for exact IRI match, got {:?}", result);
+        assert_eq!(client.describe_data_model_iri().as_deref(), Some(data_model_iri));
     }
 
     #[test]
@@ -1590,8 +1441,8 @@ mod tests {
 
     #[test]
     fn test_describe_data_model_resolve_project_not_found_propagates() {
-        let client = MockDspClient::new()
-            .with_resolve_project(Err(Diagnostic::NotFound("project '9999' not found".into())));
+        let client =
+            MockDspClient::new().with_resolve_project(Err(Diagnostic::NotFound("project '9999' not found".into())));
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("9999"), Some("beol"));
@@ -1663,12 +1514,9 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"));
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let meta = renderer
-            .data_model_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "anonymous");
     }
 
@@ -1691,9 +1539,7 @@ mod tests {
         )
         .expect("expected Ok");
 
-        let meta = renderer
-            .data_model_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated via DSP_TOKEN");
     }
 
@@ -1710,19 +1556,9 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"));
-        run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
-        let meta = renderer
-            .data_model_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_describe_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated as user@example.com");
     }
 
@@ -1738,23 +1574,10 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("0801"), Some("beol"));
-        let result = run_describe_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&bad_path),
-        );
-        assert!(
-            result.is_ok(),
-            "corrupt/missing cache must not fail: {:?}",
-            result
-        );
+        let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&bad_path));
+        assert!(result.is_ok(), "corrupt/missing cache must not fail: {:?}", result);
 
-        let meta = renderer
-            .data_model_describe_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_describe_meta.expect("meta must be present");
         assert_eq!(
             meta.auth_state, "anonymous",
             "corrupt cache + no env token must fall back to anonymous"
@@ -1817,14 +1640,8 @@ mod tests {
         }
     }
 
-    fn make_structure(
-        data_model: &str,
-        relations: Vec<crate::model::Relation>,
-    ) -> DataModelStructure {
-        DataModelStructure {
-            data_model: data_model.to_string(),
-            relations,
-        }
+    fn make_structure(data_model: &str, relations: Vec<crate::model::Relation>) -> DataModelStructure {
+        DataModelStructure { data_model: data_model.to_string(), relations }
     }
 
     // ── structure tests ───────────────────────────────────────────────────────
@@ -1853,25 +1670,12 @@ mod tests {
             .data_model_structure_val
             .expect("data_model_structure must have been called");
         assert_eq!(recorded.relations.len(), 2);
-        assert!(
-            recorded
-                .relations
-                .iter()
-                .all(|r| r.kind == crate::model::RelationKind::Link)
-        );
+        assert!(recorded.relations.iter().all(|r| r.kind == crate::model::RelationKind::Link));
     }
 
     #[test]
     fn test_structure_inherits_only() {
-        let structure = make_structure(
-            "beol",
-            vec![make_inherits_relation(
-                "letter",
-                "writtenSource",
-                None,
-                false,
-            )],
-        );
+        let structure = make_structure("beol", vec![make_inherits_relation("letter", "writtenSource", None, false)]);
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
             .with_list_data_models(Ok(vec![make_data_model("beol", None)]))
@@ -1879,17 +1683,13 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false);
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let recorded = renderer
             .data_model_structure_val
             .expect("data_model_structure must have been called");
         assert_eq!(recorded.relations.len(), 1);
-        assert_eq!(
-            recorded.relations[0].kind,
-            crate::model::RelationKind::Inherits
-        );
+        assert_eq!(recorded.relations[0].kind, crate::model::RelationKind::Inherits);
     }
 
     #[test]
@@ -1908,8 +1708,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false);
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let recorded = renderer
             .data_model_structure_val
@@ -1926,13 +1725,7 @@ mod tests {
         // target_data_model = Some("biblio"), which the renderer will tag [to biblio].
         let structure = make_structure(
             "beol",
-            vec![make_link_relation(
-                "letter",
-                "cites",
-                "Book",
-                Some("biblio"),
-                false,
-            )],
+            vec![make_link_relation("letter", "cites", "Book", Some("biblio"), false)],
         );
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
@@ -1941,8 +1734,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false);
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let recorded = renderer
             .data_model_structure_val
@@ -1979,13 +1771,13 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false); // no --include-builtins
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let recorded = renderer
             .data_model_structure_val
             .expect("data_model_structure must have been called");
-        // Only the project link field (is_builtin=false) must survive; the system inherit is dropped.
+        // Only the project link field (is_builtin=false) must survive; the system inherit is
+        // dropped.
         assert_eq!(
             recorded.relations.len(),
             1,
@@ -1998,8 +1790,7 @@ mod tests {
     #[test]
     fn test_structure_include_builtins_shows_all() {
         // With --include-builtins, both the project link AND the system inherit are shown.
-        let project_link_to_builtin =
-            make_link_relation("letter", "hasRelation", "Resource", None, false);
+        let project_link_to_builtin = make_link_relation("letter", "hasRelation", "Resource", None, false);
         let system_inherit = make_inherits_relation("letter", "Resource", None, true);
         let structure = make_structure("beol", vec![project_link_to_builtin, system_inherit]);
         let client = MockDspClient::new()
@@ -2009,8 +1800,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), true); // --include-builtins
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let recorded = renderer
             .data_model_structure_val
@@ -2034,18 +1824,11 @@ mod tests {
         let args = make_structure_args(Some("0801"), Some("beol"), false);
         let result = run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
 
-        assert!(
-            result.is_ok(),
-            "zero relations must render OK, got {:?}",
-            result
-        );
+        assert!(result.is_ok(), "zero relations must render OK, got {:?}", result);
         let recorded = renderer
             .data_model_structure_val
             .expect("data_model_structure must have been called");
-        assert!(
-            recorded.relations.is_empty(),
-            "zero relations must be empty after filtering"
-        );
+        assert!(recorded.relations.is_empty(), "zero relations must be empty after filtering");
     }
 
     #[test]
@@ -2098,8 +1881,8 @@ mod tests {
 
     #[test]
     fn test_structure_project_not_found_propagates() {
-        let client = MockDspClient::new()
-            .with_resolve_project(Err(Diagnostic::NotFound("project '9999' not found".into())));
+        let client =
+            MockDspClient::new().with_resolve_project(Err(Diagnostic::NotFound("project '9999' not found".into())));
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("9999"), Some("beol"), false);
@@ -2158,8 +1941,7 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false);
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         assert_eq!(
             client.data_model_structure_iri().as_deref(),
@@ -2194,9 +1976,7 @@ mod tests {
             Some(Some("env-jwt-token".to_string())),
             "env token must be forwarded to data_model_structure"
         );
-        let meta = renderer
-            .data_model_structure_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_structure_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "authenticated via DSP_TOKEN");
     }
 
@@ -2210,12 +1990,9 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false);
-        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let meta = renderer
-            .data_model_structure_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_structure_meta.expect("meta must be present");
         assert_eq!(meta.auth_state, "anonymous");
         assert_eq!(client.data_model_structure_token(), Some(None));
     }
@@ -2238,19 +2015,9 @@ mod tests {
 
         let mut renderer = RecordingRenderer::new();
         let args = make_structure_args(Some("0801"), Some("beol"), false);
-        run_structure_impl(
-            &args,
-            &make_cfg(),
-            &client,
-            &mut renderer,
-            None,
-            Some(&path),
-        )
-        .expect("expected Ok");
+        run_structure_impl(&args, &make_cfg(), &client, &mut renderer, None, Some(&path)).expect("expected Ok");
 
-        let meta = renderer
-            .data_model_structure_meta
-            .expect("meta must be present");
+        let meta = renderer.data_model_structure_meta.expect("meta must be present");
         assert_eq!(
             meta.auth_state, "authenticated as user@example.com",
             "cached-token path must produce 'authenticated as <user>' auth state"

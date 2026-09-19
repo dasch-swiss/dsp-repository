@@ -22,11 +22,7 @@ use crate::render::{MetaContext, Renderer};
 ///
 /// Reads a JWT from stdin, then delegates to [`run_from_line`] for the
 /// trim→empty-guard→decode→probe→cache→render flow.
-pub fn run(
-    cfg: &Config,
-    client: &dyn DspClient,
-    renderer: &mut dyn Renderer,
-) -> Result<(), Diagnostic> {
+pub fn run(cfg: &Config, client: &dyn DspClient, renderer: &mut dyn Renderer) -> Result<(), Diagnostic> {
     let mut line = String::new();
     // `read_line` returns `Ok(0)` on EOF (not an error); the empty-guard in
     // `run_from_line` handles that case. A real I/O failure (broken pipe, etc.)
@@ -86,17 +82,16 @@ fn run_impl(
     renderer: &mut dyn Renderer,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // 1. Local decode: extract metadata without verifying the signature.
-    //    Failure means the input is not structurally a JWT → Usage error (exit 2).
-    //    We do NOT locally enforce `exp`; a locally-expired token may still pass
-    //    the live probe if the server's clock differs, and the probe is the trust
-    //    boundary in any case.
+    // 1. Local decode: extract metadata without verifying the signature. Failure means the input is
+    //    not structurally a JWT → Usage error (exit 2). We do NOT locally enforce `exp`; a
+    //    locally-expired token may still pass the live probe if the server's clock differs, and the
+    //    probe is the trust boundary in any case.
     let meta = crate::client::jwt::extract_meta(token)
         .ok_or_else(|| Diagnostic::Usage("input on stdin is not a valid JWT".to_string()))?;
 
-    // 2. Live probe: verify the token is currently accepted by the server.
-    //    This is the authoritative validity gate — no token is cached before this
-    //    succeeds. 401/403 → AuthRequired (exit 3); other failures propagate.
+    // 2. Live probe: verify the token is currently accepted by the server. This is the
+    //    authoritative validity gate — no token is cached before this succeeds. 401/403 →
+    //    AuthRequired (exit 3); other failures propagate.
     client.verify_token(&cfg.server, token)?;
 
     // 3. Cache (only reached when probe returned Ok).
@@ -121,10 +116,7 @@ fn run_impl(
     // shared ADR-0007 helper. The token was just stored in the cache as a
     // Cache-origin entry with `meta.sub` as the user. Synthesize a Cache-origin
     // ResolvedToken so `read_auth_state` picks the correct branch.
-    let resolved_for_meta = ResolvedToken {
-        token: token.to_string(),
-        origin: TokenOrigin::Cache,
-    };
+    let resolved_for_meta = ResolvedToken { token: token.to_string(), origin: TokenOrigin::Cache };
     let meta_ctx = MetaContext {
         server_label: cfg.server.clone(),
         auth_state: read_auth_state(Some(&resolved_for_meta), &cache, &cfg.server),
@@ -155,9 +147,7 @@ mod tests {
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
     use crate::model::{CreateDumpOutcome, DumpTask, LoginResponse, ProjectRef};
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{MetaContext, Renderer};
 
     // ── local mock client ─────────────────────────────────────────────────────
@@ -168,25 +158,16 @@ mod tests {
 
     impl MockDspClient {
         fn ok() -> Self {
-            Self {
-                verify_token_result: Ok(()),
-            }
+            Self { verify_token_result: Ok(()) }
         }
 
         fn err(diag: Diagnostic) -> Self {
-            Self {
-                verify_token_result: Err(diag),
-            }
+            Self { verify_token_result: Err(diag) }
         }
     }
 
     impl DspClient for MockDspClient {
-        fn login(
-            &self,
-            _server: &str,
-            _user: &str,
-            _password: &str,
-        ) -> Result<LoginResponse, Diagnostic> {
+        fn login(&self, _server: &str, _user: &str, _password: &str) -> Result<LoginResponse, Diagnostic> {
             unimplemented!("login not used by set-token tests")
         }
 
@@ -244,11 +225,7 @@ mod tests {
             unimplemented!("describe_project not used by set-token tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             Err(Diagnostic::NotImplemented(
                 "list_projects not used in set_token.rs tests".into(),
             ))
@@ -365,51 +342,28 @@ mod tests {
 
     impl RecordingRenderer {
         fn new() -> Self {
-            Self {
-                set_token_outcome: None,
-                set_token_auth_state: None,
-            }
+            Self { set_token_outcome: None, set_token_auth_state: None }
         }
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            outcome: &AuthSetTokenOutcome,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, outcome: &AuthSetTokenOutcome, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.set_token_outcome = Some(AuthSetTokenOutcome {
                 server: outcome.server.clone(),
                 user: outcome.user.clone(),
@@ -435,11 +389,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &crate::render::ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &crate::render::ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -529,12 +479,8 @@ mod tests {
     /// Produce a minimal JWT with the given JSON payload.
     /// The secret is arbitrary — `extract_meta` disables signature validation.
     fn make_jwt(payload: &serde_json::Value) -> String {
-        encode(
-            &Header::new(Algorithm::HS256),
-            payload,
-            &EncodingKey::from_secret(b"unused"),
-        )
-        .expect("test JWT encoding should not fail")
+        encode(&Header::new(Algorithm::HS256), payload, &EncodingKey::from_secret(b"unused"))
+            .expect("test JWT encoding should not fail")
     }
 
     fn fixed_expires() -> chrono::DateTime<Utc> {
@@ -546,9 +492,7 @@ mod tests {
     }
 
     fn make_cfg(server: &str) -> Config {
-        Config {
-            server: server.to_string(),
-        }
+        Config { server: server.to_string() }
     }
 
     const SERVER: &str = "https://api.test.dasch.swiss";
@@ -615,14 +559,7 @@ mod tests {
         let client = MockDspClient::ok();
         let mut renderer = RecordingRenderer::new();
 
-        run_from_line(
-            format!("  {token}  "),
-            &cfg,
-            &client,
-            &mut renderer,
-            Some(&cache_path),
-        )
-        .unwrap();
+        run_from_line(format!("  {token}  "), &cfg, &client, &mut renderer, Some(&cache_path)).unwrap();
 
         let loaded = AuthCache::load_from(&cache_path).unwrap();
         assert_eq!(
@@ -647,17 +584,10 @@ mod tests {
         run_impl(&token, &cfg, &client, &mut renderer, Some(&cache_path)).unwrap();
 
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.user(SERVER),
-            None,
-            "user should be None when sub absent"
-        );
+        assert_eq!(loaded.user(SERVER), None, "user should be None when sub absent");
 
         let outcome = renderer.set_token_outcome.unwrap();
-        assert_eq!(
-            outcome.user, None,
-            "outcome.user should be None when sub absent"
-        );
+        assert_eq!(outcome.user, None, "outcome.user should be None when sub absent");
         assert_eq!(
             renderer.set_token_auth_state.as_deref(),
             Some("authenticated"),
@@ -698,8 +628,7 @@ mod tests {
         let client = MockDspClient::ok();
         let mut renderer = RecordingRenderer::new();
 
-        let err =
-            run_impl("not-a-jwt", &cfg, &client, &mut renderer, Some(&cache_path)).unwrap_err();
+        let err = run_impl("not-a-jwt", &cfg, &client, &mut renderer, Some(&cache_path)).unwrap_err();
         assert!(
             matches!(err, Diagnostic::Usage(_)),
             "expected Usage diagnostic for non-JWT input, got {err:?}"
@@ -713,11 +642,7 @@ mod tests {
 
         // Nothing should have been cached.
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token(SERVER),
-            None,
-            "non-JWT input must not write anything to the cache"
-        );
+        assert_eq!(loaded.token(SERVER), None, "non-JWT input must not write anything to the cache");
     }
 
     #[test]
@@ -731,14 +656,7 @@ mod tests {
         let client = MockDspClient::ok();
         let mut renderer = RecordingRenderer::new();
 
-        let err = run_from_line(
-            String::new(),
-            &cfg,
-            &client,
-            &mut renderer,
-            Some(&cache_path),
-        )
-        .unwrap_err();
+        let err = run_from_line(String::new(), &cfg, &client, &mut renderer, Some(&cache_path)).unwrap_err();
         assert!(
             matches!(err, Diagnostic::Usage(_)),
             "expected Usage for empty stdin line, got {err:?}"
@@ -750,11 +668,7 @@ mod tests {
 
         // Nothing should have been cached.
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token(SERVER),
-            None,
-            "empty stdin must not write anything to the cache"
-        );
+        assert_eq!(loaded.token(SERVER), None, "empty stdin must not write anything to the cache");
     }
 
     #[test]
@@ -767,14 +681,7 @@ mod tests {
         let client = MockDspClient::ok();
         let mut renderer = RecordingRenderer::new();
 
-        let err = run_from_line(
-            "\n".to_string(),
-            &cfg,
-            &client,
-            &mut renderer,
-            Some(&cache_path),
-        )
-        .unwrap_err();
+        let err = run_from_line("\n".to_string(), &cfg, &client, &mut renderer, Some(&cache_path)).unwrap_err();
         assert!(
             matches!(err, Diagnostic::Usage(_)),
             "expected Usage for newline-only stdin line, got {err:?}"
@@ -797,14 +704,7 @@ mod tests {
         let client = MockDspClient::ok();
         let mut renderer = RecordingRenderer::new();
 
-        let err = run_from_line(
-            "   ".to_string(),
-            &cfg,
-            &client,
-            &mut renderer,
-            Some(&cache_path),
-        )
-        .unwrap_err();
+        let err = run_from_line("   ".to_string(), &cfg, &client, &mut renderer, Some(&cache_path)).unwrap_err();
         assert!(
             matches!(err, Diagnostic::Usage(_)),
             "expected Usage for whitespace-only stdin, got {err:?}"
@@ -845,11 +745,7 @@ mod tests {
 
         // Nothing should have been cached.
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token(SERVER),
-            None,
-            "probe 401 must not write anything to the cache"
-        );
+        assert_eq!(loaded.token(SERVER), None, "probe 401 must not write anything to the cache");
     }
 
     #[test]
@@ -877,11 +773,7 @@ mod tests {
         );
 
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token(SERVER),
-            None,
-            "probe 403 must not write anything to the cache"
-        );
+        assert_eq!(loaded.token(SERVER), None, "probe 403 must not write anything to the cache");
     }
 
     #[test]
@@ -897,9 +789,8 @@ mod tests {
             "exp": fixed_expires().timestamp(),
         }));
         let cfg = make_cfg(SERVER);
-        let client = MockDspClient::err(Diagnostic::ServerError(
-            "server returned 500 Internal Server Error".to_string(),
-        ));
+        let client =
+            MockDspClient::err(Diagnostic::ServerError("server returned 500 Internal Server Error".to_string()));
         let mut renderer = RecordingRenderer::new();
 
         let err = run_impl(&token, &cfg, &client, &mut renderer, Some(&cache_path)).unwrap_err();
@@ -910,11 +801,7 @@ mod tests {
 
         // Nothing should have been cached.
         let loaded = AuthCache::load_from(&cache_path).unwrap();
-        assert_eq!(
-            loaded.token(SERVER),
-            None,
-            "server error must not write anything to the cache"
-        );
+        assert_eq!(loaded.token(SERVER), None, "server error must not write anything to the cache");
     }
 
     #[test]

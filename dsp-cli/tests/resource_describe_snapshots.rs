@@ -1,14 +1,13 @@
 //! Snapshot tests for `dsp vre resource describe` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (incunabula:Page from project 0803, all fields present):
-//!   exercises the full envelope — label, iri, resource_type, ark_url,
-//!   creation_date, last_modified, attached_project, owner, visibility (Public),
-//!   your_access (View). Shared by prose, json, lines, csv, tsv cells.
-//! - **Absent-fields fixture**: `last_modified = None`, `ark_url = None`. Prose
-//!   must omit those lines; tabular must show empty cells.
-//! - **Project-members visibility**: `visibility = Some(ProjectMembers)`,
-//!   `your_access = Some(Manage)` — exercises a different visibility cell.
+//! - **Main fixture** (incunabula:Page from project 0803, all fields present): exercises the full
+//!   envelope — label, iri, resource_type, ark_url, creation_date, last_modified, attached_project,
+//!   owner, visibility (Public), your_access (View). Shared by prose, json, lines, csv, tsv cells.
+//! - **Absent-fields fixture**: `last_modified = None`, `ark_url = None`. Prose must omit those
+//!   lines; tabular must show empty cells.
+//! - **Project-members visibility**: `visibility = Some(ProjectMembers)`, `your_access =
+//!   Some(Manage)` — exercises a different visibility cell.
 //! - **Disclosure variants**: anonymous vs. authenticated `filter_warning`.
 //!
 //! Determinism: these tests call `Renderer::resource_describe(&detail, &meta)`
@@ -80,9 +79,7 @@ fn main_detail() -> ResourceDetail {
         label: "n6r".to_string(),
         iri: "http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw".to_string(),
         resource_type: "Page".to_string(),
-        ark_url: Some(
-            "https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr".to_string(),
-        ),
+        ark_url: Some("https://ark.stage.dasch.swiss/ark:/72163/1/0803/==6Esp4SVnGG1DBzFvYErwr".to_string()),
         creation_date: Some("2011-04-14T07:32:49Z".to_string()),
         last_modified: Some("2024-03-10T15:00:00Z".to_string()),
         attached_project: Some("http://rdfh.ch/projects/3ABR_2i8QYGSIDvmP9mlEw".to_string()),
@@ -179,8 +176,8 @@ fn logged_in_users_detail() -> ResourceDetail {
 ///
 /// Locks:
 /// - header `Resource: n6r`.
-/// - aligned `Type:`, `IRI:`, `ARK:`, `Created:`, `Modified:`, `Project:`,
-///   `Owner:`, `Visibility:`, `Your access:` block.
+/// - aligned `Type:`, `IRI:`, `ARK:`, `Created:`, `Modified:`, `Project:`, `Owner:`, `Visibility:`,
+///   `Your access:` block.
 /// - D3 footer with anonymous filter_warning.
 /// - No raw permission codes (`RV`, `CR`, etc.) or `knora-admin:` vocab.
 #[test]
@@ -194,18 +191,9 @@ fn resource_describe_prose() {
         out.contains("Resource: n6r"),
         "prose must start with 'Resource: n6r'; got:\n{out}"
     );
-    assert!(
-        out.contains("Type:"),
-        "prose must have 'Type:' field; got:\n{out}"
-    );
-    assert!(
-        out.contains("Page"),
-        "prose must show resource_type 'Page'; got:\n{out}"
-    );
-    assert!(
-        out.contains("Visibility:"),
-        "prose must show 'Visibility:' field; got:\n{out}"
-    );
+    assert!(out.contains("Type:"), "prose must have 'Type:' field; got:\n{out}");
+    assert!(out.contains("Page"), "prose must show resource_type 'Page'; got:\n{out}");
+    assert!(out.contains("Visibility:"), "prose must show 'Visibility:' field; got:\n{out}");
     assert!(
         out.contains("public"),
         "prose must show translated visibility 'public'; got:\n{out}"
@@ -214,10 +202,7 @@ fn resource_describe_prose() {
         out.contains("Your access:"),
         "prose must show 'Your access:' field; got:\n{out}"
     );
-    assert!(
-        out.contains("view"),
-        "prose must show translated access 'view'; got:\n{out}"
-    );
+    assert!(out.contains("view"), "prose must show translated access 'view'; got:\n{out}");
     assert!(
         out.contains(ANON_FILTER_WARNING),
         "prose must contain anonymous filter_warning; got:\n{out}"
@@ -227,10 +212,7 @@ fn resource_describe_prose() {
         !out.contains("knora-admin:"),
         "prose must not contain 'knora-admin:'; got:\n{out}"
     );
-    assert!(
-        !out.contains("knora-api:"),
-        "prose must not contain 'knora-api:'; got:\n{out}"
-    );
+    assert!(!out.contains("knora-api:"), "prose must not contain 'knora-api:'; got:\n{out}");
     insta::assert_snapshot!(out);
 }
 
@@ -247,8 +229,7 @@ fn resource_describe_json() {
     let mut r = JsonRenderer::with_writer(w);
     r.resource_describe(&main_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("json must be valid JSON");
     // _meta checks.
     assert!(
         parsed["_meta"]["note"].as_str().is_some(),
@@ -266,10 +247,7 @@ fn resource_describe_json() {
     );
     let data = &parsed["data"];
     assert_eq!(data["label"].as_str().unwrap(), "n6r");
-    assert_eq!(
-        data["iri"].as_str().unwrap(),
-        "http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw"
-    );
+    assert_eq!(data["iri"].as_str().unwrap(), "http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw");
     assert_eq!(data["resource_type"].as_str().unwrap(), "Page");
     // Translated vocabulary — no raw DSP-API codes.
     assert_eq!(
@@ -407,8 +385,7 @@ fn resource_describe_disclosure_authenticated_json() {
 fn resource_describe_prose_project_members_visibility() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&project_members_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&project_members_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("project members only"),
@@ -433,8 +410,7 @@ fn resource_describe_prose_project_members_visibility() {
 fn resource_describe_json_project_members_visibility() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&project_members_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&project_members_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
     assert_eq!(
@@ -459,8 +435,7 @@ fn resource_describe_json_project_members_visibility() {
 fn resource_describe_prose_absent_fields() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&absent_fields_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&absent_fields_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         !out.contains("ARK:"),
@@ -475,10 +450,7 @@ fn resource_describe_prose_absent_fields() {
         out.contains("Type:"),
         "prose must still show 'Type:' even with absent optional fields; got:\n{out}"
     );
-    assert!(
-        out.contains("IRI:"),
-        "prose must still show 'IRI:'; got:\n{out}"
-    );
+    assert!(out.contains("IRI:"), "prose must still show 'IRI:'; got:\n{out}");
     assert!(
         out.contains("Created:"),
         "prose must still show 'Created:' when creation_date is present; got:\n{out}"
@@ -493,8 +465,7 @@ fn resource_describe_prose_absent_fields() {
 fn resource_describe_json_absent_fields() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&absent_fields_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&absent_fields_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
     assert!(
@@ -525,8 +496,7 @@ fn resource_describe_csv_absent_fields() {
     let (out_buf, out_w) = shared_buf();
     let (_, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&absent_fields_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&absent_fields_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     // The header row is present; data row has empty cells for absent fields.
     // We can't easily assert exact column positions without splitting, so
@@ -657,8 +627,7 @@ fn resource_describe_json_no_raw_permission_codes() {
 fn resource_describe_prose_public_restricted_visibility() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&public_restricted_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&public_restricted_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("public (restricted view)"),
@@ -687,8 +656,7 @@ fn resource_describe_prose_public_restricted_visibility() {
 fn resource_describe_json_public_restricted_visibility() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&public_restricted_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&public_restricted_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
     assert_eq!(
@@ -716,17 +684,13 @@ fn resource_describe_json_public_restricted_visibility() {
 fn resource_describe_prose_logged_in_users_visibility() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_describe(&logged_in_users_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&logged_in_users_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     assert!(
         out.contains("logged-in users"),
         "prose must show 'logged-in users' for LoggedInUsers visibility; got:\n{out}"
     );
-    assert!(
-        out.contains("view"),
-        "prose must show 'view' for View access; got:\n{out}"
-    );
+    assert!(out.contains("view"), "prose must show 'view' for View access; got:\n{out}");
     // Vocabulary guard.
     assert!(
         !out.contains("knora-admin:"),
@@ -742,8 +706,7 @@ fn resource_describe_prose_logged_in_users_visibility() {
 fn resource_describe_json_logged_in_users_visibility() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_describe(&logged_in_users_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&logged_in_users_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
     let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("must be valid JSON");
     assert_eq!(
@@ -775,8 +738,7 @@ fn resource_describe_tsv_absent_fields() {
     let (out_buf, out_w) = shared_buf();
     let (_, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.resource_describe(&absent_fields_detail(), &anon_meta())
-        .unwrap();
+    r.resource_describe(&absent_fields_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     // "null" must not appear — absent optional fields must be empty cells.
     assert!(
@@ -830,8 +792,7 @@ fn resource_describe_prose_no_raw_permission_codes() {
     // Test with project-members fixture to cover the Manage/CR arm.
     let (buf2, w2) = shared_buf();
     let mut r2 = ProseRenderer::with_writer(w2);
-    r2.resource_describe(&project_members_detail(), &anon_meta())
-        .unwrap();
+    r2.resource_describe(&project_members_detail(), &anon_meta()).unwrap();
     let out2 = buf_to_string(&buf2);
 
     assert!(

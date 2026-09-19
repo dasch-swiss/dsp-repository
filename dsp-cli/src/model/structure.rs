@@ -43,8 +43,8 @@ pub struct DataModelStructure {
 /// **Invariants** (asserted in unit tests; not enforced structurally — same
 /// precedent as `Field.link_target` in `resource_type.rs`):
 /// - (a) `field.is_some()` iff `kind == RelationKind::Link`.
-/// - (b) `target_data_model == None` whenever the target is in a system namespace
-///   (`knora-api`, `knora-base`, etc.).
+/// - (b) `target_data_model == None` whenever the target is in a system namespace (`knora-api`,
+///   `knora-base`, etc.).
 ///
 /// No `serde` derive: wire deserialization stays in `src/client/http.rs`. See
 /// ADR-0001 / ADR-0008 and the CONTEXT.md "Relation" entry.
@@ -70,11 +70,11 @@ pub struct Relation {
     /// cross-data-model fields). This invariant is asserted in unit tests.
     pub target_data_model: Option<String>,
     /// Builtin flag — semantics are **asymmetric** by kind:
-    /// - `Link` → `true` iff the link **field's** CURIE prefix is a system namespace.
-    ///   A project-defined link field pointing to a built-in target is `false`
-    ///   (shown by default), because the *field* is project-defined.
-    /// - `Inherits` → `true` iff the **superclass** (target) CURIE prefix is a
-    ///   system namespace (e.g. `Resource`, `StillImageRepresentation`).
+    /// - `Link` → `true` iff the link **field's** CURIE prefix is a system namespace. A
+    ///   project-defined link field pointing to a built-in target is `false` (shown by default),
+    ///   because the *field* is project-defined.
+    /// - `Inherits` → `true` iff the **superclass** (target) CURIE prefix is a system namespace
+    ///   (e.g. `Resource`, `StillImageRepresentation`).
     ///
     /// The action filters `!r.is_builtin` by default; `--include-builtins` shows all.
     pub is_builtin: bool,
@@ -146,10 +146,7 @@ mod tests {
 
     #[test]
     fn data_model_structure_empty_relations() {
-        let structure = DataModelStructure {
-            data_model: "minimal".into(),
-            relations: vec![],
-        };
+        let structure = DataModelStructure { data_model: "minimal".into(), relations: vec![] };
         let cloned = structure.clone();
         assert_eq!(structure, cloned);
         assert_eq!(structure.data_model, "minimal");
@@ -239,10 +236,7 @@ mod tests {
             is_builtin: false,
         };
         assert_eq!(rel.kind, RelationKind::Link);
-        assert!(
-            rel.field.is_some(),
-            "a Link relation must have field == Some(...)"
-        );
+        assert!(rel.field.is_some(), "a Link relation must have field == Some(...)");
     }
 
     #[test]
@@ -257,10 +251,7 @@ mod tests {
             is_builtin: false,
         };
         assert_ne!(rel.kind, RelationKind::Link);
-        assert!(
-            rel.field.is_none(),
-            "a non-Link relation must have field == None"
-        );
+        assert!(rel.field.is_none(), "a non-Link relation must have field == None");
     }
 
     // --- Asymmetric is_builtin cases ---
@@ -280,10 +271,7 @@ mod tests {
             is_builtin: false,       // project field → not builtin
         };
         assert_eq!(rel.kind, RelationKind::Link);
-        assert!(
-            !rel.is_builtin,
-            "project link field to built-in target is is_builtin=false"
-        );
+        assert!(!rel.is_builtin, "project link field to built-in target is is_builtin=false");
         assert!(
             rel.target_data_model.is_none(),
             "system target → target_data_model must be None"
@@ -304,10 +292,7 @@ mod tests {
             is_builtin: true,        // system superclass → builtin
         };
         assert_eq!(rel.kind, RelationKind::Inherits);
-        assert!(
-            rel.is_builtin,
-            "inherits relation to system superclass is is_builtin=true"
-        );
+        assert!(rel.is_builtin, "inherits relation to system superclass is is_builtin=true");
         assert!(
             rel.target_data_model.is_none(),
             "system target → target_data_model must be None"

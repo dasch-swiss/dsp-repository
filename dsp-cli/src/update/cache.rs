@@ -3,14 +3,12 @@
 //!
 //! Modeled on [`crate::config::auth_cache::AuthCache`], with two deliberate
 //! differences:
-//! - This cache is a single flat struct (one file, two fields), not a
-//!   per-server `BTreeMap`.
-//! - **A malformed/oversize/unreadable file is never an error.** Every load
-//!   failure degrades to [`UpdateCheckCache::default`] (logged at
-//!   `tracing::debug!`). This cache is a disposable convenience — a corrupt
-//!   copy must never break an unrelated command.
-//! - Saves are plain atomic writes (temp-sibling + rename) with no `0600`
-//!   permission tightening: this file holds no secret, unlike `auth.toml`.
+//! - This cache is a single flat struct (one file, two fields), not a per-server `BTreeMap`.
+//! - **A malformed/oversize/unreadable file is never an error.** Every load failure degrades to
+//!   [`UpdateCheckCache::default`] (logged at `tracing::debug!`). This cache is a disposable
+//!   convenience — a corrupt copy must never break an unrelated command.
+//! - Saves are plain atomic writes (temp-sibling + rename) with no `0600` permission tightening:
+//!   this file holds no secret, unlike `auth.toml`.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -55,12 +53,9 @@ impl UpdateCheckCache {
         // Same home-dir resolution as `AuthCache::default_path` — do not
         // substitute `dirs::config_dir()`, which returns a different
         // platform-specific path on macOS.
-        let home = dirs::home_dir()
-            .ok_or_else(|| Diagnostic::Internal("could not resolve home directory".to_string()))?;
-        Ok(home
-            .join(".config")
-            .join("dsp-cli")
-            .join("update_check.toml"))
+        let home =
+            dirs::home_dir().ok_or_else(|| Diagnostic::Internal("could not resolve home directory".to_string()))?;
+        Ok(home.join(".config").join("dsp-cli").join("update_check.toml"))
     }
 
     /// Load the cache from [`Self::default_path`].
@@ -152,11 +147,7 @@ impl UpdateCheckCache {
         }
 
         let contents = toml::to_string_pretty(self).map_err(|e| {
-            Diagnostic::Internal(format!(
-                "failed to serialise update check cache for {}: {}",
-                path.display(),
-                e
-            ))
+            Diagnostic::Internal(format!("failed to serialise update check cache for {}: {}", path.display(), e))
         })?;
 
         write_atomically(path, &contents)?;
@@ -210,10 +201,7 @@ fn temp_sibling_path(path: &Path) -> Result<PathBuf, Diagnostic> {
     let mut name = path
         .file_name()
         .ok_or_else(|| {
-            Diagnostic::Internal(format!(
-                "update check cache path has no filename component: {}",
-                path.display()
-            ))
+            Diagnostic::Internal(format!("update check cache path has no filename component: {}", path.display()))
         })?
         .to_os_string();
     name.push(format!(".{}", std::process::id()));
@@ -222,9 +210,10 @@ fn temp_sibling_path(path: &Path) -> Result<PathBuf, Diagnostic> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use chrono::TimeZone;
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn round_trip_sets_both_fields() {
@@ -271,16 +260,9 @@ mod tests {
     #[test]
     fn save_creates_parent_directory() {
         let dir = TempDir::new().unwrap();
-        let path = dir
-            .path()
-            .join("nested")
-            .join("dir")
-            .join("update_check.toml");
+        let path = dir.path().join("nested").join("dir").join("update_check.toml");
 
-        let cache = UpdateCheckCache {
-            last_checked: None,
-            latest_seen: Some("0.1.3".to_string()),
-        };
+        let cache = UpdateCheckCache { last_checked: None, latest_seen: Some("0.1.3".to_string()) };
         cache.save_to(&path).unwrap();
 
         assert!(path.exists());
@@ -291,10 +273,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("update_check.toml");
 
-        let cache = UpdateCheckCache {
-            last_checked: None,
-            latest_seen: Some("0.1.3".to_string()),
-        };
+        let cache = UpdateCheckCache { last_checked: None, latest_seen: Some("0.1.3".to_string()) };
         cache.save_to(&path).unwrap();
 
         let tmp_path = temp_sibling_path(&path).unwrap();

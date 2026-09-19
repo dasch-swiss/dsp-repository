@@ -34,10 +34,7 @@ pub(crate) fn render_value_content(value: &ValueContent) -> String {
             Some(lbl) => lbl.to_string(),
             None => node_iri.clone(),
         },
-        ValueContent::Link {
-            target_iri,
-            target_label,
-        } => match target_label.as_deref() {
+        ValueContent::Link { target_iri, target_label } => match target_label.as_deref() {
             Some(lbl) => format!("\u{2192} {lbl} [{target_iri}]"),
             None => format!("\u{2192} {target_iri}"),
         },
@@ -104,18 +101,8 @@ pub(crate) fn build_metadata_row(detail: &ResourceDetail) -> Vec<String> {
         detail.last_modified.as_deref().unwrap_or("").to_string(),
         detail.attached_project.as_deref().unwrap_or("").to_string(),
         detail.owner.as_deref().unwrap_or("").to_string(),
-        detail
-            .visibility
-            .as_ref()
-            .map(|v| v.as_str())
-            .unwrap_or("")
-            .to_string(),
-        detail
-            .your_access
-            .as_ref()
-            .map(|a| a.as_str())
-            .unwrap_or("")
-            .to_string(),
+        detail.visibility.as_ref().map(|v| v.as_str()).unwrap_or("").to_string(),
+        detail.your_access.as_ref().map(|a| a.as_str()).unwrap_or("").to_string(),
     ]
 }
 
@@ -179,10 +166,7 @@ mod tests {
 
     #[test]
     fn render_value_content_text() {
-        assert_eq!(
-            render_value_content(&ValueContent::Text("hello world".into())),
-            "hello world"
-        );
+        assert_eq!(render_value_content(&ValueContent::Text("hello world".into())), "hello world");
     }
 
     #[test]
@@ -192,10 +176,7 @@ mod tests {
 
     #[test]
     fn render_value_content_decimal() {
-        assert_eq!(
-            render_value_content(&ValueContent::Decimal("3.14".into())),
-            "3.14"
-        );
+        assert_eq!(render_value_content(&ValueContent::Decimal("3.14".into())), "3.14");
     }
 
     #[test]
@@ -222,18 +203,12 @@ mod tests {
 
     #[test]
     fn render_value_content_color() {
-        assert_eq!(
-            render_value_content(&ValueContent::Color("#ff0000".into())),
-            "#ff0000"
-        );
+        assert_eq!(render_value_content(&ValueContent::Color("#ff0000".into())), "#ff0000");
     }
 
     #[test]
     fn render_value_content_geoname() {
-        assert_eq!(
-            render_value_content(&ValueContent::Geoname("2661552".into())),
-            "2661552"
-        );
+        assert_eq!(render_value_content(&ValueContent::Geoname("2661552".into())), "2661552");
     }
 
     // ── render_value_content: date ────────────────────────────────────────
@@ -246,15 +221,8 @@ mod tests {
             day: None,
             era: Some("CE".into()),
         };
-        let dv = DateValue {
-            calendar: "GREGORIAN".into(),
-            start: pt.clone(),
-            end: pt,
-        };
-        assert_eq!(
-            render_value_content(&ValueContent::Date(dv)),
-            "1489 CE (GREGORIAN)"
-        );
+        let dv = DateValue { calendar: "GREGORIAN".into(), start: pt.clone(), end: pt };
+        assert_eq!(render_value_content(&ValueContent::Date(dv)), "1489 CE (GREGORIAN)");
     }
 
     // ── render_value_content: vocabulary-item ───────────────────────────────
@@ -285,10 +253,7 @@ mod tests {
             target_iri: "http://rdfh.ch/0803/book1".into(),
             target_label: Some("Incunabula Book".into()),
         };
-        assert_eq!(
-            render_value_content(&v),
-            "\u{2192} Incunabula Book [http://rdfh.ch/0803/book1]"
-        );
+        assert_eq!(render_value_content(&v), "\u{2192} Incunabula Book [http://rdfh.ch/0803/book1]");
     }
 
     #[test]
@@ -297,10 +262,7 @@ mod tests {
             target_iri: "http://rdfh.ch/0803/book2".into(),
             target_label: None,
         };
-        assert_eq!(
-            render_value_content(&v),
-            "\u{2192} http://rdfh.ch/0803/book2"
-        );
+        assert_eq!(render_value_content(&v), "\u{2192} http://rdfh.ch/0803/book2");
     }
 
     // ── render_value_content: file (split per kind) ───────────────────────
@@ -329,10 +291,7 @@ mod tests {
             width: None,
             height: None,
         });
-        assert_eq!(
-            render_value_content(&v),
-            "image.jp2 https://iiif.example.com/image.jp2"
-        );
+        assert_eq!(render_value_content(&v), "image.jp2 https://iiif.example.com/image.jp2");
     }
 
     #[test]
@@ -344,10 +303,7 @@ mod tests {
             width: None,
             height: None,
         });
-        assert_eq!(
-            render_value_content(&v),
-            "clip.mp4 https://example.com/clip.mp4"
-        );
+        assert_eq!(render_value_content(&v), "clip.mp4 https://example.com/clip.mp4");
     }
 
     #[test]
@@ -359,10 +315,7 @@ mod tests {
             width: None,
             height: None,
         });
-        assert_eq!(
-            render_value_content(&v),
-            "track.mp3 https://example.com/track.mp3"
-        );
+        assert_eq!(render_value_content(&v), "track.mp3 https://example.com/track.mp3");
     }
 
     #[test]
@@ -374,10 +327,7 @@ mod tests {
             width: None,
             height: None,
         });
-        assert_eq!(
-            render_value_content(&v),
-            "report.pdf https://example.com/report.pdf"
-        );
+        assert_eq!(render_value_content(&v), "report.pdf https://example.com/report.pdf");
     }
 
     #[test]
@@ -389,20 +339,14 @@ mod tests {
             width: None,
             height: None,
         });
-        assert_eq!(
-            render_value_content(&v),
-            "bundle.zip https://example.com/bundle.zip"
-        );
+        assert_eq!(render_value_content(&v), "bundle.zip https://example.com/bundle.zip");
     }
 
     // ── render_value_content: raw fallback ────────────────────────────────
 
     #[test]
     fn render_value_content_raw() {
-        let v = ValueContent::Raw {
-            value_type: "interval".into(),
-            text: "1.0 - 2.0".into(),
-        };
+        let v = ValueContent::Raw { value_type: "interval".into(), text: "1.0 - 2.0".into() };
         assert_eq!(render_value_content(&v), "1.0 - 2.0");
     }
 
@@ -572,12 +516,7 @@ mod tests {
 
     #[test]
     fn format_date_point_year_only() {
-        let p = DatePoint {
-            year: Some(1489),
-            month: None,
-            day: None,
-            era: None,
-        };
+        let p = DatePoint { year: Some(1489), month: None, day: None, era: None };
         assert_eq!(format_date_point(&p), "1489");
     }
 
@@ -622,11 +561,7 @@ mod tests {
             day: None,
             era: Some("CE".into()),
         };
-        let dv = DateValue {
-            calendar: "GREGORIAN".into(),
-            start: pt.clone(),
-            end: pt,
-        };
+        let dv = DateValue { calendar: "GREGORIAN".into(), start: pt.clone(), end: pt };
         assert_eq!(format_date_value(&dv), "1489 CE (GREGORIAN)");
     }
 
@@ -647,10 +582,7 @@ mod tests {
                 era: Some("CE".into()),
             },
         };
-        assert_eq!(
-            format_date_value(&dv),
-            "1489 CE \u{2013} 1490 CE (GREGORIAN)"
-        );
+        assert_eq!(format_date_value(&dv), "1489 CE \u{2013} 1490 CE (GREGORIAN)");
     }
 
     #[test]
@@ -675,17 +607,8 @@ mod tests {
 
     #[test]
     fn format_date_value_none_year_returns_empty() {
-        let pt = DatePoint {
-            year: None,
-            month: None,
-            day: None,
-            era: None,
-        };
-        let dv = DateValue {
-            calendar: "GREGORIAN".into(),
-            start: pt.clone(),
-            end: pt,
-        };
+        let pt = DatePoint { year: None, month: None, day: None, era: None };
+        let dv = DateValue { calendar: "GREGORIAN".into(), start: pt.clone(), end: pt };
         assert_eq!(format_date_value(&dv), "");
     }
 
@@ -701,12 +624,7 @@ mod tests {
                 day: None,
                 era: Some("CE".into()),
             },
-            end: DatePoint {
-                year: None,
-                month: None,
-                day: None,
-                era: None,
-            },
+            end: DatePoint { year: None, month: None, day: None, era: None },
         };
         // Must render the non-empty endpoint as a single point — no dash, no empty half.
         assert_eq!(format_date_value(&dv), "1489 CE (GREGORIAN)");
@@ -717,12 +635,7 @@ mod tests {
     fn format_date_value_one_sided_end_only() {
         let dv = DateValue {
             calendar: "JULIAN".into(),
-            start: DatePoint {
-                year: None,
-                month: None,
-                day: None,
-                era: None,
-            },
+            start: DatePoint { year: None, month: None, day: None, era: None },
             end: DatePoint {
                 year: Some(1490),
                 month: None,

@@ -69,9 +69,7 @@ See `dsp docs connecting` for details."
 
                 tracing::debug!(server = url, "resolved server");
 
-                Ok(Config {
-                    server: url.to_string(),
-                })
+                Ok(Config { server: url.to_string() })
             }
         }
     }
@@ -121,14 +119,8 @@ mod tests {
     #[test]
     fn resolve_shortcut_is_case_insensitive() {
         // Mixed and upper case both resolve to the canonical URL.
-        assert_eq!(
-            Config::resolve(Some("PROD")).unwrap().server,
-            "https://api.dasch.swiss"
-        );
-        assert_eq!(
-            Config::resolve(Some("Dev")).unwrap().server,
-            "https://api.dev.dasch.swiss"
-        );
+        assert_eq!(Config::resolve(Some("PROD")).unwrap().server, "https://api.dasch.swiss");
+        assert_eq!(Config::resolve(Some("Dev")).unwrap().server, "https://api.dev.dasch.swiss");
     }
 
     #[test]

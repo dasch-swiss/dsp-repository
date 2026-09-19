@@ -185,7 +185,8 @@ pub enum Cardinality {
 pub enum Representation {
     /// Still-image representation (`knora-api:hasStillImageFileValue`). Display: `"still-image"`.
     StillImage,
-    /// Moving-image representation (`knora-api:hasMovingImageFileValue`). Display: `"moving-image"`.
+    /// Moving-image representation (`knora-api:hasMovingImageFileValue`). Display:
+    /// `"moving-image"`.
     MovingImage,
     /// Audio representation (`knora-api:hasAudioFileValue`). Display: `"audio"`.
     Audio,
@@ -287,10 +288,7 @@ mod tests {
         let cloned = detail.clone();
         assert_eq!(detail, cloned);
         assert_eq!(detail.name, "manuscript");
-        assert_eq!(
-            detail.iri,
-            "http://api.dasch.swiss/ontology/0801/beol/v2#manuscript"
-        );
+        assert_eq!(detail.iri, "http://api.dasch.swiss/ontology/0801/beol/v2#manuscript");
         assert_eq!(detail.label.as_deref(), Some("Manuscript"));
         assert_eq!(detail.data_model, "beol");
         assert_eq!(detail.representation, Some(Representation::StillImage));
@@ -333,10 +331,7 @@ mod tests {
         let cloned = field.clone();
         assert_eq!(field, cloned);
         assert_eq!(field.name, "hasAuthor");
-        assert_eq!(
-            field.iri,
-            "http://api.dasch.swiss/ontology/0801/beol/v2#hasAuthor"
-        );
+        assert_eq!(field.iri, "http://api.dasch.swiss/ontology/0801/beol/v2#hasAuthor");
         assert_eq!(field.label.as_deref(), Some("Author"));
         assert_eq!(field.value_type, ValueType::Link);
         assert_eq!(field.link_target.as_deref(), Some("person"));
@@ -504,10 +499,7 @@ mod tests {
     #[test]
     fn value_type_display_other_verbatim() {
         // Other(s) writes s verbatim — the client builds the kebab form.
-        assert_eq!(
-            ValueType::Other("text-file".into()).to_string(),
-            "text-file"
-        );
+        assert_eq!(ValueType::Other("text-file".into()).to_string(), "text-file");
     }
 
     // --- ValueType::as_token matches Display for all variants ---
@@ -535,12 +527,7 @@ mod tests {
             ValueType::Archive,
         ];
         for vt in &cases {
-            assert_eq!(
-                vt.as_token(),
-                vt.to_string(),
-                "as_token must match Display for {:?}",
-                vt
-            );
+            assert_eq!(vt.as_token(), vt.to_string(), "as_token must match Display for {:?}", vt);
         }
     }
 
@@ -583,10 +570,7 @@ mod tests {
             data_model: Some("beol".into()),
         };
         assert_eq!(field.value_type, ValueType::Link);
-        assert!(
-            field.link_target.is_some(),
-            "a Link field must have link_target == Some(...)"
-        );
+        assert!(field.link_target.is_some(), "a Link field must have link_target == Some(...)");
     }
 
     #[test]
@@ -603,9 +587,6 @@ mod tests {
             data_model: Some("beol".into()),
         };
         assert_ne!(field.value_type, ValueType::Link);
-        assert!(
-            field.link_target.is_none(),
-            "a non-Link field must have link_target == None"
-        );
+        assert!(field.link_target.is_none(), "a non-Link field must have link_target == None");
     }
 }

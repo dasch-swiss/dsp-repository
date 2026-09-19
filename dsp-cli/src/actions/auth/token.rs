@@ -52,11 +52,7 @@ fn run_impl(
     // token: treat a cache-load failure as an empty cache when the env token
     // would resolve. (Matches the trim-and-empty rule in `resolve_token`, and
     // the identical fallthrough in `status.rs`.)
-    let env_token_would_win = env_token
-        .as_deref()
-        .map(str::trim)
-        .map(|s| !s.is_empty())
-        .unwrap_or(false);
+    let env_token_would_win = env_token.as_deref().map(str::trim).map(|s| !s.is_empty()).unwrap_or(false);
 
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
@@ -134,9 +130,7 @@ mod tests {
     // ── helpers ───────────────────────────────────────────────────────────────
 
     fn make_cfg(server: &str) -> Config {
-        Config {
-            server: server.to_string(),
-        }
+        Config { server: server.to_string() }
     }
 
     fn fixed_future() -> chrono::DateTime<Utc> {
@@ -150,23 +144,15 @@ mod tests {
     /// Produce a minimal JWT with the given JSON payload.
     /// The secret is arbitrary — `extract_exp` disables signature validation.
     fn make_jwt(payload: &serde_json::Value) -> String {
-        encode(
-            &Header::new(Algorithm::HS256),
-            payload,
-            &EncodingKey::from_secret(b"unused"),
-        )
-        .expect("test JWT encoding should not fail")
+        encode(&Header::new(Algorithm::HS256), payload, &EncodingKey::from_secret(b"unused"))
+            .expect("test JWT encoding should not fail")
     }
 
     fn make_jwt_with_exp(exp_ts: i64) -> String {
         make_jwt(&serde_json::json!({ "exp": exp_ts }))
     }
 
-    fn run_buf(
-        cfg: &Config,
-        cache_path: &Path,
-        env_token: Option<String>,
-    ) -> (Result<(), Diagnostic>, String) {
+    fn run_buf(cfg: &Config, cache_path: &Path, env_token: Option<String>) -> (Result<(), Diagnostic>, String) {
         let mut buf: Vec<u8> = Vec::new();
         let result = run_impl(cfg, &mut buf, Some(cache_path), env_token);
         let out = String::from_utf8(buf).unwrap();
@@ -237,10 +223,7 @@ mod tests {
 
         let (result, out) = run_buf(&cfg, &cache_path, None);
         let err = result.expect_err("expected AuthRequired when no token is cached");
-        assert!(
-            matches!(err, Diagnostic::AuthRequired(_)),
-            "expected AuthRequired, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::AuthRequired(_)), "expected AuthRequired, got {err:?}");
         assert!(out.is_empty(), "nothing should be printed on error");
     }
 
@@ -373,10 +356,7 @@ mod tests {
 
         let (result, out) = run_buf(&cfg, &cache_path, Some("  ".to_string()));
         let err = result.expect_err("expected AuthRequired for expired cache fallthrough");
-        assert!(
-            matches!(err, Diagnostic::AuthRequired(_)),
-            "expected AuthRequired, got {err:?}"
-        );
+        assert!(matches!(err, Diagnostic::AuthRequired(_)), "expected AuthRequired, got {err:?}");
         assert!(out.is_empty(), "nothing should be printed on error");
     }
 
@@ -438,11 +418,7 @@ mod tests {
 
         let (result, out) = run_buf(&cfg, &cache_path, None);
         assert!(result.is_ok(), "expected Ok, got {result:?}");
-        assert_eq!(
-            out,
-            format!("{SECRET}\n"),
-            "output must be exactly the token plus one newline"
-        );
+        assert_eq!(out, format!("{SECRET}\n"), "output must be exactly the token plus one newline");
     }
 
     #[test]
@@ -483,10 +459,7 @@ mod tests {
         let (result2, out2) = run_buf(&cfg, &cache_path2, Some(env_jwt.clone()));
         let err2 = result2.expect_err("expected AuthRequired for expired env token");
         assert!(matches!(err2, Diagnostic::AuthRequired(_)));
-        assert!(
-            out2.is_empty(),
-            "nothing must be written on the exit-3 path"
-        );
+        assert!(out2.is_empty(), "nothing must be written on the exit-3 path");
         assert!(
             !err2.to_string().contains(&env_jwt),
             "expired env-token error message must not contain the token: {err2}"

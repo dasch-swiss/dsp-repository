@@ -140,17 +140,11 @@ fn run_impl(args: &DocsArgs, out: &mut dyn Write) -> Result<(), Diagnostic> {
 fn write_topic_index_json(out: &mut dyn Write) -> Result<(), Diagnostic> {
     let data: Vec<TopicIndexEntry<'_>> = TOPICS
         .iter()
-        .map(|t| TopicIndexEntry {
-            name: t.name,
-            summary: t.summary,
-        })
+        .map(|t| TopicIndexEntry { name: t.name, summary: t.summary })
         .collect();
-    let envelope = DocsJsonEnvelope {
-        _meta: EmptyMeta {},
-        data,
-    };
-    let json = serde_json::to_string(&envelope)
-        .map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?;
+    let envelope = DocsJsonEnvelope { _meta: EmptyMeta {}, data };
+    let json =
+        serde_json::to_string(&envelope).map_err(|e| Diagnostic::Internal(format!("json serialisation error: {e}")))?;
     writeln!(out, "{json}")?;
     Ok(())
 }
@@ -237,10 +231,7 @@ fn try_pager(content: &str) -> io::Result<()> {
     let pager = std::env::var("PAGER").unwrap_or_else(|_| "less".to_string());
     let mut parts = pager.split_whitespace();
     let program = parts.next().unwrap_or("less");
-    let mut child = Command::new(program)
-        .args(parts)
-        .stdin(Stdio::piped())
-        .spawn()?;
+    let mut child = Command::new(program).args(parts).stdin(Stdio::piped()).spawn()?;
     if let Some(mut stdin) = child.stdin.take() {
         stdin.write_all(content.as_bytes())?;
     }
@@ -317,11 +308,7 @@ mod tests {
         let list = render_list();
         for t in TOPICS {
             assert!(list.contains(t.name), "list missing topic {}", t.name);
-            assert!(
-                list.contains(t.summary),
-                "list missing summary for {}",
-                t.name
-            );
+            assert!(list.contains(t.summary), "list missing summary for {}", t.name);
         }
     }
 
@@ -331,11 +318,7 @@ mod tests {
         // 018 D5): every catalogued body is non-empty and starts with an h1 heading.
         for t in TOPICS {
             assert!(!t.body.trim().is_empty(), "empty body for topic {}", t.name);
-            assert!(
-                t.body.starts_with("# "),
-                "topic {} body must start with an h1 heading",
-                t.name
-            );
+            assert!(t.body.starts_with("# "), "topic {} body must start with an h1 heading", t.name);
         }
     }
 
@@ -351,11 +334,7 @@ mod tests {
 
     #[test]
     fn run_impl_no_topic_writes_list() {
-        let args = DocsArgs {
-            topic: None,
-            pager: false,
-            json: false,
-        };
+        let args = DocsArgs { topic: None, pager: false, json: false };
         let mut buf: Vec<u8> = Vec::new();
         run_impl(&args, &mut buf).unwrap();
         let out = String::from_utf8(buf).unwrap();
@@ -378,11 +357,7 @@ mod tests {
 
     #[test]
     fn run_impl_unknown_topic_errors() {
-        let args = DocsArgs {
-            topic: Some("nope".to_string()),
-            pager: false,
-            json: false,
-        };
+        let args = DocsArgs { topic: Some("nope".to_string()), pager: false, json: false };
         let mut buf: Vec<u8> = Vec::new();
         let err = run_impl(&args, &mut buf).unwrap_err();
         assert!(matches!(err, Diagnostic::NotFound(_)));

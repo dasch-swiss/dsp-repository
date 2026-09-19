@@ -21,11 +21,7 @@ use crate::config::{AuthCache, ResolvedToken, TokenOrigin};
 /// **Username source:** `ResolvedToken` carries only `token + origin`. The `{user}`
 /// for the cache arm is read from `cache.user(server)` — exactly as `auth status`
 /// does it. The `cache` param is needed solely for this username lookup.
-pub(crate) fn read_auth_state(
-    resolved: Option<&ResolvedToken>,
-    cache: &AuthCache,
-    server: &str,
-) -> String {
+pub(crate) fn read_auth_state(resolved: Option<&ResolvedToken>, cache: &AuthCache, server: &str) -> String {
     match resolved {
         None => "anonymous".to_string(),
         Some(r) if r.origin == TokenOrigin::Env => "authenticated via DSP_TOKEN".to_string(),
@@ -68,17 +64,11 @@ mod tests {
     }
 
     fn env_token() -> ResolvedToken {
-        ResolvedToken {
-            token: "env-tok".to_string(),
-            origin: TokenOrigin::Env,
-        }
+        ResolvedToken { token: "env-tok".to_string(), origin: TokenOrigin::Env }
     }
 
     fn cache_token() -> ResolvedToken {
-        ResolvedToken {
-            token: "cache-tok".to_string(),
-            origin: TokenOrigin::Cache,
-        }
+        ResolvedToken { token: "cache-tok".to_string(), origin: TokenOrigin::Cache }
     }
 
     /// Case 1: no token → "anonymous"

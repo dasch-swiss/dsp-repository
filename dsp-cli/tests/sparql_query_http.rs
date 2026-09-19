@@ -60,10 +60,7 @@ async fn success_relays_body_and_content_type() {
 
     let resp = result.expect("expected Ok for a 2xx relay");
     assert_eq!(resp.status, 200);
-    assert_eq!(
-        resp.content_type.as_deref(),
-        Some("application/sparql-results+json")
-    );
+    assert_eq!(resp.content_type.as_deref(), Some("application/sparql-results+json"));
     assert_eq!(resp.body, body_bytes, "body must be byte-exact");
 }
 
@@ -103,10 +100,7 @@ async fn outgoing_request_shape_is_correct() {
 
     result.expect("expected Ok — the mock above only matches the exact shape asserted");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1, "exactly one request must have been made");
     assert!(
         received[0].url.query().is_none(),
@@ -139,13 +133,7 @@ async fn store_400_is_relayed_as_ok_not_err() {
     let uri = server.uri();
     let result = std::thread::spawn(move || {
         let client = HttpDspClient::new().expect("client construction should not fail");
-        client.sparql_query(
-            &uri,
-            TOKEN,
-            "not a query",
-            "application/sparql-results+json",
-            3600,
-        )
+        client.sparql_query(&uri, TOKEN, "not a query", "application/sparql-results+json", 3600)
     })
     .join()
     .expect("blocking thread should not panic");
@@ -209,13 +197,7 @@ fn run_query_with_timeout(
 ) -> Result<dsp_cli::client::sparql::SparqlResponse, Diagnostic> {
     std::thread::spawn(move || {
         let client = HttpDspClient::new().expect("client construction should not fail");
-        client.sparql_query(
-            &uri,
-            TOKEN,
-            QUERY,
-            "application/sparql-results+json",
-            timeout_secs,
-        )
+        client.sparql_query(&uri, TOKEN, QUERY, "application/sparql-results+json", timeout_secs)
     })
     .join()
     .expect("blocking thread should not panic")
@@ -229,10 +211,7 @@ async fn status_401_maps_to_auth_required() {
     let err = run_query(server.uri()).expect_err("401 must be Err");
     match err {
         Diagnostic::AuthRequired(msg) => {
-            assert!(
-                msg.contains("login"),
-                "message should point at re-login: {msg}"
-            );
+            assert!(msg.contains("login"), "message should point at re-login: {msg}");
         }
         other => panic!("expected AuthRequired, got: {other:?}"),
     }
@@ -275,10 +254,7 @@ async fn status_404_maps_to_not_found_naming_the_server() {
     let err = run_query(uri.clone()).expect_err("404 must be Err");
     match err {
         Diagnostic::NotFound(msg) => {
-            assert!(
-                msg.contains(&uri),
-                "404 message must name the server it applies to; got: {msg}"
-            );
+            assert!(msg.contains(&uri), "404 message must name the server it applies to; got: {msg}");
             assert!(
                 msg.contains("allow-sparql-passthrough"),
                 "404 message must mention the guardrail flag: {msg}"
@@ -294,10 +270,7 @@ async fn status_413_maps_to_usage() {
     mount_status(&server, 413, None, "").await;
 
     let err = run_query(server.uri()).expect_err("413 must be Err");
-    assert!(
-        matches!(err, Diagnostic::Usage(_)),
-        "expected Usage, got: {err:?}"
-    );
+    assert!(matches!(err, Diagnostic::Usage(_)), "expected Usage, got: {err:?}");
 }
 
 #[tokio::test]
@@ -306,10 +279,7 @@ async fn status_415_maps_to_internal() {
     mount_status(&server, 415, None, "").await;
 
     let err = run_query(server.uri()).expect_err("415 must be Err");
-    assert!(
-        matches!(err, Diagnostic::Internal(_)),
-        "expected Internal, got: {err:?}"
-    );
+    assert!(matches!(err, Diagnostic::Internal(_)), "expected Internal, got: {err:?}");
 }
 
 #[tokio::test]
@@ -366,10 +336,7 @@ async fn status_500_non_json_body_names_the_status() {
     match err {
         Diagnostic::ServerError(msg) => {
             assert!(msg.contains("HTTP 500"), "must name the status: {msg:?}");
-            assert!(
-                msg.contains("the store exploded"),
-                "must carry the body text: {msg:?}"
-            );
+            assert!(msg.contains("the store exploded"), "must carry the body text: {msg:?}");
         }
         other => panic!("expected ServerError, got: {other:?}"),
     }
@@ -383,9 +350,7 @@ async fn redirects_are_not_followed() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/admin/sparql/query"))
-        .respond_with(
-            ResponseTemplate::new(307).insert_header("Location", "http://127.0.0.1:1/elsewhere"),
-        )
+        .respond_with(ResponseTemplate::new(307).insert_header("Location", "http://127.0.0.1:1/elsewhere"))
         .expect(1)
         .mount(&server)
         .await;
@@ -427,14 +392,8 @@ async fn status_500_parsed_message_is_sanitised_and_capped() {
     let err = run_query(server.uri()).expect_err("500 must be Err");
     match err {
         Diagnostic::ServerError(msg) => {
-            assert!(
-                !msg.contains('\u{1b}'),
-                "ESC must not survive into a prose diagnostic: {msg:?}"
-            );
-            assert!(
-                !msg.contains('\u{7}'),
-                "BEL must not survive into a prose diagnostic: {msg:?}"
-            );
+            assert!(!msg.contains('\u{1b}'), "ESC must not survive into a prose diagnostic: {msg:?}");
+            assert!(!msg.contains('\u{7}'), "BEL must not survive into a prose diagnostic: {msg:?}");
             assert!(
                 msg.chars().count() < 300,
                 "message must be capped, got {} chars",
@@ -456,15 +415,8 @@ async fn status_500_without_parseable_message_falls_back_capped() {
     let err = run_query(server.uri()).expect_err("500 must be Err");
     match err {
         Diagnostic::ServerError(msg) => {
-            assert!(
-                msg.len() < 500,
-                "message must be capped, got len {}",
-                msg.len()
-            );
-            assert!(
-                msg.ends_with('…'),
-                "capped message must end with an ellipsis: {msg}"
-            );
+            assert!(msg.len() < 500, "message must be capped, got len {}", msg.len());
+            assert!(msg.ends_with('…'), "capped message must end with an ellipsis: {msg}");
         }
         other => panic!("expected ServerError, got: {other:?}"),
     }
@@ -482,10 +434,7 @@ async fn status_502_maps_to_server_error() {
     .await;
 
     let err = run_query(server.uri()).expect_err("502 must be Err");
-    assert!(
-        matches!(err, Diagnostic::ServerError(_)),
-        "expected ServerError, got: {err:?}"
-    );
+    assert!(matches!(err, Diagnostic::ServerError(_)), "expected ServerError, got: {err:?}");
 }
 
 #[tokio::test]
@@ -500,10 +449,7 @@ async fn status_503_maps_to_server_error() {
     .await;
 
     let err = run_query(server.uri()).expect_err("503 must be Err");
-    assert!(
-        matches!(err, Diagnostic::ServerError(_)),
-        "expected ServerError, got: {err:?}"
-    );
+    assert!(matches!(err, Diagnostic::ServerError(_)), "expected ServerError, got: {err:?}");
 }
 
 #[tokio::test]
@@ -518,10 +464,7 @@ async fn status_504_maps_to_server_error() {
     .await;
 
     let err = run_query(server.uri()).expect_err("504 must be Err");
-    assert!(
-        matches!(err, Diagnostic::ServerError(_)),
-        "expected ServerError, got: {err:?}"
-    );
+    assert!(matches!(err, Diagnostic::ServerError(_)), "expected ServerError, got: {err:?}");
 }
 
 // ---------------------------------------------------------------------------
@@ -604,8 +547,7 @@ async fn short_timeout_past_delay_maps_to_network() {
         .mount(&server)
         .await;
 
-    let err =
-        run_query_with_timeout(server.uri(), 1).expect_err("a delay past --timeout must be Err");
+    let err = run_query_with_timeout(server.uri(), 1).expect_err("a delay past --timeout must be Err");
     match err {
         Diagnostic::Network(msg) => {
             // The message must name the client-side origin explicitly. It is

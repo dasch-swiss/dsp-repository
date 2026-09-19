@@ -8,14 +8,13 @@
 
 use std::path::Path;
 
+use crate::actions::auth_state::read_auth_state;
 use crate::cli::{VocabularyDescribeArgs, VocabularyListArgs};
 use crate::client::DspClient;
 use crate::config::{AuthCache, Config, resolve_token};
 use crate::diagnostic::Diagnostic;
 use crate::model::{Vocabulary, VocabularyDetail};
 use crate::render::{MetaContext, Renderer, VocabularyListView};
-
-use crate::actions::auth_state::read_auth_state;
 
 /// Disclosure note for `vocabulary list --count` (plan 034) — schema-side
 /// COST disclosure, distinct from `resource_type.rs`'s `COUNT_CAVEAT`, which
@@ -44,10 +43,10 @@ pub fn list(
 
 /// Internal entry point for `list` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry
-///   point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `list` entry point before calling
+///   this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty
 /// cache with a `tracing::warn!` — NEVER returns `Err`. Vocabularies are
@@ -62,9 +61,10 @@ fn run_list_impl(
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
     // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
-    let project = args.project.as_deref().ok_or_else(|| {
-        Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string())
-    })?;
+    let project = args
+        .project
+        .as_deref()
+        .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
     // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
     let cache_result = match cache_path {
@@ -105,17 +105,8 @@ fn run_list_impl(
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         items.retain(|item| {
-            item.header
-                .name
-                .as_deref()
-                .unwrap_or("")
-                .to_lowercase()
-                .contains(&lower)
-                || item
-                    .header
-                    .labels
-                    .iter()
-                    .any(|l| l.value.to_lowercase().contains(&lower))
+            item.header.name.as_deref().unwrap_or("").to_lowercase().contains(&lower)
+                || item.header.labels.iter().any(|l| l.value.to_lowercase().contains(&lower))
         });
     }
 
@@ -208,10 +199,10 @@ pub fn describe(
 
 /// Internal entry point for `describe` with injectable seams for testing.
 ///
-/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe`
-///   entry point before calling this, so tests never touch process env).
-/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in
-///   production to use the default `~/.config/dsp-cli/auth.toml`.
+/// - `env_token`: the `DSP_TOKEN` env value (read by the public `describe` entry point before
+///   calling this, so tests never touch process env).
+/// - `cache_path`: `Some(path)` in tests to use a temp auth cache; `None` in production to use the
+///   default `~/.config/dsp-cli/auth.toml`.
 ///
 /// **Auth-optional:** a cache-load failure ALWAYS falls back to an empty
 /// cache with a `tracing::warn!` — NEVER returns `Err`. Vocabularies are
@@ -295,21 +286,12 @@ fn run_describe_impl(
         let candidates = client.list_vocabularies(&cfg.server, &proj.iri, token)?;
         let matches: Vec<&Vocabulary> = candidates
             .iter()
-            .filter(|v| {
-                v.header
-                    .name
-                    .as_deref()
-                    .is_some_and(|n| n.eq_ignore_ascii_case(vocabulary))
-            })
+            .filter(|v| v.header.name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(vocabulary)))
             .collect();
         match matches.len() {
             0 => {
                 let name_disp: String = vocabulary.chars().take(80).collect();
-                let name_suffix = if vocabulary.chars().count() > 80 {
-                    "…"
-                } else {
-                    ""
-                };
+                let name_suffix = if vocabulary.chars().count() > 80 { "…" } else { "" };
                 return Err(Diagnostic::NotFound(format!(
                     "vocabulary '{name_disp}{name_suffix}' not found in project '{}' on {server}. \
                      Run `dsp vre vocabulary list --project {} --server {server}` \
@@ -321,11 +303,7 @@ fn run_describe_impl(
             }
             1 => matches[0].header.iri.clone(),
             _ => {
-                let iris: Vec<String> = matches
-                    .iter()
-                    .take(5)
-                    .map(|v| v.header.iri.clone())
-                    .collect();
+                let iris: Vec<String> = matches.iter().take(5).map(|v| v.header.iri.clone()).collect();
                 let more = if matches.len() > 5 {
                     format!(" (+{} more)", matches.len() - 5)
                 } else {
@@ -355,11 +333,7 @@ fn run_describe_impl(
         let actual_name = local_name(&tree.project_iri);
         let expected_name = local_name(&proj.iri);
         let display_iri: String = resolved_iri.chars().take(80).collect();
-        let iri_suffix = if resolved_iri.chars().count() > 80 {
-            "…"
-        } else {
-            ""
-        };
+        let iri_suffix = if resolved_iri.chars().count() > 80 { "…" } else { "" };
         return Err(Diagnostic::Usage(format!(
             "vocabulary '{display_iri}{iri_suffix}' belongs to project {actual_name}, not {expected_name}"
         )));
@@ -391,12 +365,7 @@ fn run_describe_impl(
     let (node_count, depth) = tree.count_and_depth(subtree_of.as_deref());
 
     // ── 11. Build detail + meta and render ──────────────────────────────────────
-    let detail = VocabularyDetail {
-        tree,
-        subtree_of,
-        node_count,
-        depth,
-    };
+    let detail = VocabularyDetail { tree, subtree_of, node_count, depth };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -416,10 +385,7 @@ fn run_describe_impl(
 /// `rsplit` always yields at least one element so `unwrap_or` is a no-panic
 /// guard rather than a live fallback, mirroring the http.rs implementation.
 fn local_name(iri: &str) -> String {
-    iri.rsplit(['#', '/', ':'])
-        .next()
-        .unwrap_or(iri)
-        .to_string()
+    iri.rsplit(['#', '/', ':']).next().unwrap_or(iri).to_string()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -437,15 +403,11 @@ mod tests {
     use crate::config::Config;
     use crate::diagnostic::Diagnostic;
     use crate::model::{
-        LocalizedText, ProjectRef, Vocabulary, VocabularyDetail, VocabularyHeader, VocabularyNode,
-        VocabularyTree,
+        LocalizedText, ProjectRef, Vocabulary, VocabularyDetail, VocabularyHeader, VocabularyNode, VocabularyTree,
     };
-    use crate::render::Format;
-    use crate::render::auth::{
-        AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome,
-    };
+    use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{
-        DataModelListView, DumpDeleteOutcome, DumpOutcome, MetaContext, ProjectListView, Renderer,
+        DataModelListView, DumpDeleteOutcome, DumpOutcome, Format, MetaContext, ProjectListView, Renderer,
         ResourceTypeListView, VocabularyListView,
     };
 
@@ -493,14 +455,8 @@ mod tests {
             self
         }
 
-        fn with_describe_vocabulary(
-            self,
-            iri: &str,
-            result: Result<VocabularyTree, Diagnostic>,
-        ) -> Self {
-            self.describe_vocabulary_results
-                .borrow_mut()
-                .insert(iri.to_string(), result);
+        fn with_describe_vocabulary(self, iri: &str, result: Result<VocabularyTree, Diagnostic>) -> Self {
+            self.describe_vocabulary_results.borrow_mut().insert(iri.to_string(), result);
             self
         }
 
@@ -583,11 +539,7 @@ mod tests {
             unimplemented!("delete_project_dump not used in vocabulary action tests")
         }
 
-        fn list_projects(
-            &self,
-            _server: &str,
-            _token: Option<&str>,
-        ) -> Result<Vec<crate::model::Project>, Diagnostic> {
+        fn list_projects(&self, _server: &str, _token: Option<&str>) -> Result<Vec<crate::model::Project>, Diagnostic> {
             unimplemented!("list_projects not used in vocabulary action tests")
         }
 
@@ -692,20 +644,14 @@ mod tests {
             iri: &str,
             token: Option<&str>,
         ) -> Result<VocabularyTree, Diagnostic> {
-            self.describe_vocabulary_calls
-                .borrow_mut()
-                .push(iri.to_string());
+            self.describe_vocabulary_calls.borrow_mut().push(iri.to_string());
             *self.describe_vocabulary_token.borrow_mut() = Some(token.map(str::to_owned));
-            self.describe_vocabulary_results
-                .borrow()
-                .get(iri)
-                .cloned()
-                .unwrap_or_else(|| {
-                    panic!(
-                        "describe_vocabulary_results must contain an entry for '{iri}' \
+            self.describe_vocabulary_results.borrow().get(iri).cloned().unwrap_or_else(|| {
+                panic!(
+                    "describe_vocabulary_results must contain an entry for '{iri}' \
                          (call with_describe_vocabulary(\"{iri}\", ...) in the test setup)"
-                    )
-                })
+                )
+            })
         }
 
         fn sparql_query(
@@ -741,51 +687,27 @@ mod tests {
     }
 
     impl Renderer for RecordingRenderer {
-        fn diagnostic(
-            &mut self,
-            _diag: &Diagnostic,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn diagnostic(&mut self, _diag: &Diagnostic, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_login(
-            &mut self,
-            _outcome: &AuthLoginOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_login(&mut self, _outcome: &AuthLoginOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_status(
-            &mut self,
-            _outcome: &AuthStatusOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_status(&mut self, _outcome: &AuthStatusOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_logout(
-            &mut self,
-            _outcome: &AuthLogoutOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_logout(&mut self, _outcome: &AuthLogoutOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn auth_set_token(
-            &mut self,
-            _outcome: &AuthSetTokenOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn auth_set_token(&mut self, _outcome: &AuthSetTokenOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
-        fn project_dump(
-            &mut self,
-            _outcome: &DumpOutcome,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn project_dump(&mut self, _outcome: &DumpOutcome, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -797,11 +719,7 @@ mod tests {
             Ok(())
         }
 
-        fn projects(
-            &mut self,
-            _view: &ProjectListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn projects(&mut self, _view: &ProjectListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -813,11 +731,7 @@ mod tests {
             Ok(())
         }
 
-        fn data_models(
-            &mut self,
-            _view: &DataModelListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn data_models(&mut self, _view: &DataModelListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -829,11 +743,7 @@ mod tests {
             Ok(())
         }
 
-        fn resource_types(
-            &mut self,
-            _view: &ResourceTypeListView,
-            _meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn resource_types(&mut self, _view: &ResourceTypeListView, _meta: &MetaContext) -> Result<(), Diagnostic> {
             Ok(())
         }
 
@@ -869,21 +779,13 @@ mod tests {
             Ok(())
         }
 
-        fn vocabularies(
-            &mut self,
-            view: &VocabularyListView,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn vocabularies(&mut self, view: &VocabularyListView, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.vocabularies_view = Some(view.clone());
             self.vocabularies_meta = Some(meta.clone());
             Ok(())
         }
 
-        fn vocabulary_describe(
-            &mut self,
-            detail: &VocabularyDetail,
-            meta: &MetaContext,
-        ) -> Result<(), Diagnostic> {
+        fn vocabulary_describe(&mut self, detail: &VocabularyDetail, meta: &MetaContext) -> Result<(), Diagnostic> {
             self.vocabulary_describe_detail = Some(detail.clone());
             self.vocabulary_describe_meta = Some(meta.clone());
             Ok(())
@@ -895,9 +797,7 @@ mod tests {
     const SERVER: &str = "https://api.test.dasch.swiss";
 
     fn make_cfg() -> Config {
-        Config {
-            server: SERVER.to_string(),
-        }
+        Config { server: SERVER.to_string() }
     }
 
     fn make_project_ref(iri: &str, shortcode: &str, shortname: &str) -> ProjectRef {
@@ -979,10 +879,7 @@ mod tests {
         }
     }
 
-    fn make_describe_args(
-        vocabulary: Option<&str>,
-        project: Option<&str>,
-    ) -> VocabularyDescribeArgs {
+    fn make_describe_args(vocabulary: Option<&str>, project: Option<&str>) -> VocabularyDescribeArgs {
         VocabularyDescribeArgs {
             server: Some(SERVER.to_string()),
             project: project.map(str::to_owned),
@@ -1007,10 +904,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let args = make_list_args(None);
         let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
-        assert!(
-            matches!(result, Err(Diagnostic::Usage(_))),
-            "got {result:?}"
-        );
+        assert!(matches!(result, Err(Diagnostic::Usage(_))), "got {result:?}");
         assert_eq!(client.resolve_calls(), 0);
     }
 
@@ -1022,10 +916,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(None, Some("0001"));
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
-        assert!(
-            matches!(result, Err(Diagnostic::Usage(_))),
-            "got {result:?}"
-        );
+        assert!(matches!(result, Err(Diagnostic::Usage(_))), "got {result:?}");
         assert_eq!(client.resolve_calls(), 0);
     }
 
@@ -1039,11 +930,7 @@ mod tests {
             matches!(result, Err(Diagnostic::Usage(_))),
             "bare name with no --project must be Usage, got {result:?}"
         );
-        assert_eq!(
-            client.resolve_calls(),
-            0,
-            "must fail before any client call"
-        );
+        assert_eq!(client.resolve_calls(), 0, "must fail before any client call");
     }
 
     // ── bare-name resolution ──────────────────────────────────────────────────
@@ -1054,12 +941,7 @@ mod tests {
         let epoch_iri = "http://rdfh.ch/lists/0001/epoch";
         let epoch = vocab(epoch_iri, Some("epoch"), vec![text("Period", Some("en"))]);
         let other = vocab("http://rdfh.ch/lists/0001/other", Some("other"), vec![]);
-        let tree = make_tree(
-            epoch_iri,
-            &proj.iri,
-            None,
-            vec![leaf_node(&format!("{epoch_iri}/n1"), "n1", 0)],
-        );
+        let tree = make_tree(epoch_iri, &proj.iri, None, vec![leaf_node(&format!("{epoch_iri}/n1"), "n1", 0)]);
 
         let client = MockDspClient::new()
             .with_resolve_project(Ok(proj))
@@ -1106,14 +988,8 @@ mod tests {
         .expect("expected Ok");
 
         assert_eq!(client.list_vocabularies_calls(), 1);
-        assert_eq!(
-            client.list_vocabularies_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
-        assert_eq!(
-            client.describe_vocabulary_token(),
-            Some(Some("env-jwt-token".to_string()))
-        );
+        assert_eq!(client.list_vocabularies_token(), Some(Some("env-jwt-token".to_string())));
+        assert_eq!(client.describe_vocabulary_token(), Some(Some("env-jwt-token".to_string())));
     }
 
     #[test]
@@ -1130,10 +1006,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let args = make_describe_args(Some("epoch"), Some("0001"));
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
-        assert!(
-            matches!(result, Err(Diagnostic::Usage(_))),
-            "got {result:?}"
-        );
+        assert!(matches!(result, Err(Diagnostic::Usage(_))), "got {result:?}");
         assert_eq!(
             client.list_vocabularies_calls(),
             1,
@@ -1173,9 +1046,7 @@ mod tests {
         args.filter = Some("periode".to_string());
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .vocabularies_view
-            .expect("vocabularies must have been called");
+        let view = renderer.vocabularies_view.expect("vocabularies must have been called");
         assert_eq!(view.items.len(), 1);
         assert_eq!(view.items[0].header.iri, epoch.header.iri);
         assert_eq!(view.total, 2, "total is pre-filter");
@@ -1220,9 +1091,7 @@ mod tests {
         args.count = true;
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
-        let view = renderer
-            .vocabularies_view
-            .expect("vocabularies must have been called");
+        let view = renderer.vocabularies_view.expect("vocabularies must have been called");
         let item1 = view
             .items
             .iter()
@@ -1258,10 +1127,7 @@ mod tests {
             .with_resolve_project(Ok(proj))
             .with_list_vocabularies(Ok(vec![v1, v2]))
             .with_describe_vocabulary("http://rdfh.ch/lists/0001/v1", Ok(tree1))
-            .with_describe_vocabulary(
-                "http://rdfh.ch/lists/0001/v2",
-                Err(Diagnostic::ServerError("boom".to_string())),
-            );
+            .with_describe_vocabulary("http://rdfh.ch/lists/0001/v2", Err(Diagnostic::ServerError("boom".to_string())));
 
         let mut renderer = RecordingRenderer::new();
         let mut args = make_list_args(Some("0001"));
@@ -1272,9 +1138,7 @@ mod tests {
             "a partial per-tree failure must not abort the whole command, got {result:?}"
         );
 
-        let view = renderer
-            .vocabularies_view
-            .expect("vocabularies must have been called");
+        let view = renderer.vocabularies_view.expect("vocabularies must have been called");
         let item1 = view
             .items
             .iter()
@@ -1290,9 +1154,7 @@ mod tests {
         assert_eq!(item2.depth, None);
 
         let meta = renderer.vocabularies_meta.expect("meta must be present");
-        let cost = meta
-            .count_cost
-            .expect("count_cost must be Some under --count");
+        let cost = meta.count_cost.expect("count_cost must be Some under --count");
         assert!(
             cost.contains("1 of 2"),
             "count_cost must disclose how many of how many failed, got: {cost}"
@@ -1353,18 +1215,8 @@ mod tests {
             .with_list_vocabularies(Ok(vec![]));
         let mut list_renderer = RecordingRenderer::new();
         let list_args = make_list_args(Some("0001"));
-        run_list_impl(
-            &list_args,
-            &make_cfg(),
-            &list_client,
-            &mut list_renderer,
-            None,
-            None,
-        )
-        .expect("expected Ok");
-        let list_meta = list_renderer
-            .vocabularies_meta
-            .expect("meta must be present");
+        run_list_impl(&list_args, &make_cfg(), &list_client, &mut list_renderer, None, None).expect("expected Ok");
+        let list_meta = list_renderer.vocabularies_meta.expect("meta must be present");
         assert_eq!(list_meta.filter_warning, None);
 
         let iri = "http://rdfh.ch/lists/0001/epoch";
@@ -1381,9 +1233,7 @@ mod tests {
             None,
         )
         .expect("expected Ok");
-        let describe_meta = describe_renderer
-            .vocabulary_describe_meta
-            .expect("meta must be present");
+        let describe_meta = describe_renderer.vocabulary_describe_meta.expect("meta must be present");
         assert_eq!(describe_meta.filter_warning, None);
     }
 
@@ -1429,10 +1279,7 @@ mod tests {
         let mut args = make_describe_args(Some("epoch"), Some("0001"));
         args.subtree = true;
         let result = run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
-        assert!(
-            matches!(result, Err(Diagnostic::Usage(_))),
-            "got {result:?}"
-        );
+        assert!(matches!(result, Err(Diagnostic::Usage(_))), "got {result:?}");
     }
 
     #[test]
@@ -1449,8 +1296,7 @@ mod tests {
         let mut renderer = RecordingRenderer::new();
         let mut args = make_describe_args(Some(node_iri), None);
         args.subtree = true;
-        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None)
-            .expect("expected Ok");
+        run_describe_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
         let detail = renderer
             .vocabulary_describe_detail

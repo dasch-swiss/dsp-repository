@@ -36,8 +36,7 @@ const RESOURCE_IRI: &str = "http://rdfh.ch/0803/--6Esp4SVnGG1DBzFvYErw";
 const RESOURCE_IRI_ENCODED: &str = "http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4SVnGG1DBzFvYErw";
 
 // Full path the server should see.
-const RESOURCE_PATH: &str =
-    "/v2/resources/http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4SVnGG1DBzFvYErw";
+const RESOURCE_PATH: &str = "/v2/resources/http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4SVnGG1DBzFvYErw";
 
 // ---------------------------------------------------------------------------
 // Happy-path fixture — the verified complex-schema single-resource body
@@ -105,17 +104,10 @@ async fn request_path_uses_percent_encoded_iri() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "happy-path describe_resource must succeed; got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "happy-path describe_resource must succeed; got: {:?}", result);
 
     // Recorded request check: path and schema param.
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1);
     let url = &received[0].url;
     assert!(
@@ -161,10 +153,7 @@ async fn happy_path_parses_full_envelope() {
     let detail = result.expect("happy path must return Ok(ResourceDetail)");
 
     assert_eq!(detail.label, "n6r", "label must match rdfs:label");
-    assert_eq!(
-        detail.iri, RESOURCE_IRI,
-        "iri must match the @id from the response"
-    );
+    assert_eq!(detail.iri, RESOURCE_IRI, "iri must match the @id from the response");
     // resource_type: derived via local_name() from @type bare string "incunabula:Page" → "Page".
     assert_eq!(
         detail.resource_type, "Page",
@@ -421,16 +410,9 @@ async fn bearer_present_when_token_is_some() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(
-        result.is_ok(),
-        "describe_resource with token must succeed; got: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "describe_resource with token must succeed; got: {:?}", result);
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1);
     let auth = received[0]
         .headers
@@ -467,10 +449,7 @@ async fn bearer_absent_when_token_is_none() {
     .join()
     .expect("blocking thread should not panic");
 
-    let received = server
-        .received_requests()
-        .await
-        .expect("request recording should be enabled");
+    let received = server.received_requests().await.expect("request recording should be enabled");
     assert_eq!(received.len(), 1);
     assert!(
         received[0].headers.get("authorization").is_none(),

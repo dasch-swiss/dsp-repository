@@ -67,8 +67,8 @@ fn optional_env(name: &str) -> Option<String> {
 /// - Every `name` is non-empty.
 /// - Every `iri` is non-empty and starts with `"http"`.
 /// - All project resource-types have `is_builtin == false`.
-/// - After manually extending with the 4 hardcoded built-ins, all 4 appear
-///   with `is_builtin == true`.
+/// - After manually extending with the 4 hardcoded built-ins, all 4 appear with `is_builtin ==
+///   true`.
 #[test]
 fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     // ── 1. Collect required config ────────────────────────────────────────────
@@ -78,8 +78,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     };
 
     // Resolve server shortcut via Config::resolve (mirrors production path).
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
     // ── 2. Resolve optional token ─────────────────────────────────────────────
     // `describe_data_model` uses a public endpoint; the token is optional. If
@@ -102,18 +101,13 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     // Using a well-known active DaSCH research project that has at least one
     // project-defined data-model with multiple resource-types.
     let project_identifier = "0801";
-    eprintln!(
-        "live test: resolving project '{}' on {}",
-        project_identifier, cfg.server
-    );
+    eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
-    let proj = client
-        .resolve_project(&cfg.server, project_identifier)
-        .expect(
-            "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
+    let proj = client.resolve_project(&cfg.server, project_identifier).expect(
+        "resolve_project failed for '0801' — check DSP_TEST_SERVER and network connectivity; \
              if the beol project has been removed from this server, update the test to use a \
              different well-known project shortcode",
-        );
+    );
 
     eprintln!(
         "live test: resolved project {} (shortcode {}, shortname {})",
@@ -125,10 +119,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     // project-defined (non-builtin) data-model to query. Using the named beol
     // data-model — a stable fixture — rather than picking `[0]` so the test
     // is robust against server-returned ordering.
-    eprintln!(
-        "live test: calling list_data_models for project IRI {}",
-        proj.iri
-    );
+    eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
         .list_data_models(&cfg.server, &proj.iri, token_ref)
@@ -137,14 +128,11 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     eprintln!("live test: received {} data-model(s)", data_models.len());
 
     // Find the beol data-model by name (case-insensitive, mirroring the action).
-    let beol_dm = data_models
-        .iter()
-        .find(|dm| dm.name.eq_ignore_ascii_case("beol"))
-        .expect(
-            "beol data-model not found in project '0801' — expected the beol data-model to be \
+    let beol_dm = data_models.iter().find(|dm| dm.name.eq_ignore_ascii_case("beol")).expect(
+        "beol data-model not found in project '0801' — expected the beol data-model to be \
              present; check that DSP_TEST_SERVER points to a server where this project is \
              populated with its standard data-models",
-        );
+    );
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
@@ -152,10 +140,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     // The action uses `describe_data_model` as its data source — no new client
     // method is added for resource-type list (see Locked decision #1 in the
     // implementation plan). Mirror that call directly here.
-    eprintln!(
-        "live test: calling describe_data_model for IRI {}",
-        beol_dm.iri
-    );
+    eprintln!("live test: calling describe_data_model for IRI {}", beol_dm.iri);
 
     let detail = client
         .describe_data_model(&cfg.server, &beol_dm.iri, token_ref)
@@ -237,11 +222,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
         .collect();
 
     let builtins: Vec<ResourceType> = [
-        (
-            "Region",
-            "http://api.knora.org/ontology/knora-api/v2#Region",
-            "Region",
-        ),
+        ("Region", "http://api.knora.org/ontology/knora-api/v2#Region", "Region"),
         (
             "AudioSegment",
             "http://api.knora.org/ontology/knora-api/v2#AudioSegment",
@@ -252,11 +233,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
             "http://api.knora.org/ontology/knora-api/v2#VideoSegment",
             "Video Annotation",
         ),
-        (
-            "LinkObj",
-            "http://api.knora.org/ontology/knora-api/v2#LinkObj",
-            "Link Object",
-        ),
+        ("LinkObj", "http://api.knora.org/ontology/knora-api/v2#LinkObj", "Link Object"),
     ]
     .into_iter()
     .map(|(name, iri, label)| ResourceType {
@@ -274,25 +251,12 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     let expected_builtins = ["Region", "AudioSegment", "VideoSegment", "LinkObj"];
     for builtin_name in &expected_builtins {
         let found = items.iter().find(|rt| rt.name == *builtin_name);
-        assert!(
-            found.is_some(),
-            "built-in '{}' must appear in the extended list",
-            builtin_name
-        );
+        assert!(found.is_some(), "built-in '{}' must appear in the extended list", builtin_name);
         let rt = found.unwrap();
+        assert!(rt.is_builtin, "built-in '{}' must have is_builtin=true", builtin_name);
+        assert!(!rt.iri.is_empty(), "built-in '{}' must have a non-empty IRI", builtin_name);
         assert!(
-            rt.is_builtin,
-            "built-in '{}' must have is_builtin=true",
-            builtin_name
-        );
-        assert!(
-            !rt.iri.is_empty(),
-            "built-in '{}' must have a non-empty IRI",
-            builtin_name
-        );
-        assert!(
-            rt.iri
-                .starts_with("http://api.knora.org/ontology/knora-api/v2#"),
+            rt.iri.starts_with("http://api.knora.org/ontology/knora-api/v2#"),
             "built-in '{}' IRI '{}' must use the stable api.knora.org namespace",
             builtin_name,
             rt.iri

@@ -1,18 +1,16 @@
 //! Snapshot tests for `dsp vre resource-type describe` — one per (noun, format) cell.
 //!
 //! Fixture philosophy:
-//! - **Main fixture** (beol-like manuscript): exercises the full feature set —
-//!   label, Extends, still-image Representation, IRI, own-DM fields (text, link),
-//!   and cross-DM fields (link + uri from biblio). Shared by prose, json, lines,
-//!   csv, tsv cells.
+//! - **Main fixture** (beol-like manuscript): exercises the full feature set — label, Extends,
+//!   still-image Representation, IRI, own-DM fields (text, link), and cross-DM fields (link + uri
+//!   from biblio). Shared by prose, json, lines, csv, tsv cells.
 //! - **Empty fixture**: zero fields. Tests the prose `Fields (0)` branch.
 //! - **Include-builtins fixture**: adds `is_builtin=true` fields (arkUrl, hasStillImageFileValue)
 //!   to the main fixture to exercise the `(built-in)` marker.
-//! - **Degraded-field fixture**: a field with `ValueType::Other("—")` and cross-DM
-//!   `data_model: Some("biblio")`, testing best-effort render and `[from biblio]` tag.
-//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a
-//!   `JsonRenderer` — locks the action-built NotFound envelope rendered by the generic
-//!   `diagnostic` method.
+//! - **Degraded-field fixture**: a field with `ValueType::Other("—")` and cross-DM `data_model:
+//!   Some("biblio")`, testing best-effort render and `[from biblio]` tag.
+//! - **not_found json**: `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`
+//!   — locks the action-built NotFound envelope rendered by the generic `diagnostic` method.
 //!
 //! Determinism: these tests call `Renderer::resource_type_describe(&detail, &meta)`
 //! **directly** with a hand-built `MetaContext` / `ResourceTypeDetail`. They never go
@@ -64,8 +62,7 @@ fn anon_meta() -> MetaContext {
 fn count_caveat_meta() -> MetaContext {
     MetaContext {
         count_caveat: Some(
-            "counts include resources you may not be permitted to see and exclude deleted resources."
-                .to_string(),
+            "counts include resources you may not be permitted to see and exclude deleted resources.".to_string(),
         ),
         ..anon_meta()
     }
@@ -124,8 +121,7 @@ fn manuscript_detail() -> ResourceTypeDetail {
             },
             Field {
                 name: "isPartOfCollection".to_string(),
-                iri: "http://api.dasch.swiss/ontology/0801/biblio/v2#isPartOfCollection"
-                    .to_string(),
+                iri: "http://api.dasch.swiss/ontology/0801/biblio/v2#isPartOfCollection".to_string(),
                 label: Some("is part of".to_string()),
                 value_type: ValueType::Link,
                 link_target: Some("Collection".to_string()),
@@ -226,8 +222,7 @@ fn degraded_field_detail() -> ResourceTypeDetail {
                 // best-effort cross-DM field: sibling fetch failed → value_type Other("—"),
                 // label None, but data_model still Some("biblio") so source tag renders.
                 name: "unknownBiblioField".to_string(),
-                iri: "http://api.dasch.swiss/ontology/0801/biblio/v2#unknownBiblioField"
-                    .to_string(),
+                iri: "http://api.dasch.swiss/ontology/0801/biblio/v2#unknownBiblioField".to_string(),
                 label: None,
                 value_type: ValueType::Other("—".to_string()),
                 link_target: None,
@@ -255,8 +250,7 @@ fn degraded_field_detail() -> ResourceTypeDetail {
 fn resource_type_describe_prose() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Vocabulary guard (014 learning) — skip lines that contain an IRI field.
@@ -289,16 +283,15 @@ fn resource_type_describe_prose() {
 /// - Key order: name, iri, label, data_model, representation, super_types, fields
 /// - `representation: "still-image"` string
 /// - `super_types: ["writtenSource"]` array
-/// - `fields` array with per-field objects (name, iri, label, value_type, link_target,
-///   cardinality, is_builtin, data_model)
+/// - `fields` array with per-field objects (name, iri, label, value_type, link_target, cardinality,
+///   is_builtin, data_model)
 /// - link field has `value_type: "link"` and `link_target: "person"`
 /// - cross-DM fields carry `data_model: "biblio"`; own-DM fields carry `data_model: "beol"`
 #[test]
 fn resource_type_describe_json() {
     let (buf, w) = shared_buf();
     let mut r = JsonRenderer::with_writer(w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
@@ -310,18 +303,11 @@ fn resource_type_describe_lines() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     // Snapshot stdout (data rows only).
-    insta::assert_snapshot!(
-        "resource_type_describe_lines_stdout",
-        buf_to_string(&out_buf)
-    );
+    insta::assert_snapshot!("resource_type_describe_lines_stdout", buf_to_string(&out_buf));
     // Snapshot stderr: disclosure must land here, not on stdout.
-    insta::assert_snapshot!(
-        "resource_type_describe_lines_stderr",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_describe_lines_stderr", buf_to_string(&err_buf));
 }
 
 /// CSV render of the main fixture. Locks:
@@ -334,8 +320,7 @@ fn resource_type_describe_csv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     // Snapshot stdout (header + data rows).
     insta::assert_snapshot!("resource_type_describe_csv_stdout", buf_to_string(&out_buf));
     // Snapshot stderr: disclosure must land here, not on stdout.
@@ -349,8 +334,7 @@ fn resource_type_describe_tsv() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     // Snapshot stdout (header + data rows).
     insta::assert_snapshot!("resource_type_describe_tsv_stdout", buf_to_string(&out_buf));
     // Snapshot stderr: disclosure must land here, not on stdout.
@@ -378,9 +362,7 @@ fn resource_type_describe_prose_with_count() {
         .position(|l| l.trim_start().starts_with("Data-model:"))
         .expect("Data-model: line must be present");
     assert!(
-        lines[data_model_idx + 1]
-            .trim_start()
-            .starts_with("Instances:"),
+        lines[data_model_idx + 1].trim_start().starts_with("Instances:"),
         "Instances: line must immediately follow Data-model:; got:\n{out}"
     );
     assert!(
@@ -406,8 +388,7 @@ fn resource_type_describe_json_with_count() {
     let out = buf_to_string(&buf);
 
     // Structural assertions before snapshotting.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("with-count json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("with-count json must be valid JSON");
     assert_eq!(
         parsed["data"]["count"], 1893,
         "data.count must be 1893; got: {}",
@@ -432,9 +413,7 @@ fn resource_type_describe_lines_stderr_with_count() {
     let (unflagged_out_buf, unflagged_out_w) = shared_buf();
     let (unflagged_err_buf, unflagged_err_w) = shared_buf();
     let mut unflagged = LinesRenderer::with_writers(unflagged_out_w, unflagged_err_w);
-    unflagged
-        .resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    unflagged.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let _ = unflagged_err_buf; // only stdout is compared here
 
     let (out_buf, out_w) = shared_buf();
@@ -448,10 +427,7 @@ fn resource_type_describe_lines_stderr_with_count() {
         buf_to_string(&unflagged_out_buf),
         "stdout must be byte-identical to the unflagged resource_type_describe_lines test"
     );
-    insta::assert_snapshot!(
-        "resource_type_describe_lines_stderr_with_count",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_describe_lines_stderr_with_count", buf_to_string(&err_buf));
 }
 
 /// CSV `resource-type describe` STDOUT is unchanged by `--count` (see the
@@ -461,9 +437,7 @@ fn resource_type_describe_csv_stderr_with_count() {
     let (unflagged_out_buf, unflagged_out_w) = shared_buf();
     let (unflagged_err_buf, unflagged_err_w) = shared_buf();
     let mut unflagged = CsvRenderer::with_writers(unflagged_out_w, unflagged_err_w);
-    unflagged
-        .resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    unflagged.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let _ = unflagged_err_buf;
 
     let (out_buf, out_w) = shared_buf();
@@ -477,10 +451,7 @@ fn resource_type_describe_csv_stderr_with_count() {
         buf_to_string(&unflagged_out_buf),
         "stdout must be byte-identical to the unflagged resource_type_describe_csv test"
     );
-    insta::assert_snapshot!(
-        "resource_type_describe_csv_stderr_with_count",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_describe_csv_stderr_with_count", buf_to_string(&err_buf));
 }
 
 /// TSV `resource-type describe` STDOUT is unchanged by `--count` (see the
@@ -490,9 +461,7 @@ fn resource_type_describe_tsv_stderr_with_count() {
     let (unflagged_out_buf, unflagged_out_w) = shared_buf();
     let (unflagged_err_buf, unflagged_err_w) = shared_buf();
     let mut unflagged = TsvRenderer::with_writers(unflagged_out_w, unflagged_err_w);
-    unflagged
-        .resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    unflagged.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let _ = unflagged_err_buf;
 
     let (out_buf, out_w) = shared_buf();
@@ -506,10 +475,7 @@ fn resource_type_describe_tsv_stderr_with_count() {
         buf_to_string(&unflagged_out_buf),
         "stdout must be byte-identical to the unflagged resource_type_describe_tsv test"
     );
-    insta::assert_snapshot!(
-        "resource_type_describe_tsv_stderr_with_count",
-        buf_to_string(&err_buf)
-    );
+    insta::assert_snapshot!("resource_type_describe_tsv_stderr_with_count", buf_to_string(&err_buf));
 }
 
 // ── empty fixture ─────────────────────────────────────────────────────────────
@@ -524,15 +490,11 @@ fn resource_type_describe_tsv_stderr_with_count() {
 fn resource_type_describe_prose_empty() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_type_describe(&empty_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&empty_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Structural assertions before snapshotting.
-    assert!(
-        out.contains("Fields (0)"),
-        "prose empty must show 'Fields (0)'; got:\n{out}"
-    );
+    assert!(out.contains("Fields (0)"), "prose empty must show 'Fields (0)'; got:\n{out}");
     assert!(
         !out.contains("Fields (0):"),
         "prose empty must NOT have trailing colon on 'Fields (0)'; got:\n{out}"
@@ -642,16 +604,12 @@ fn resource_type_describe_prose_include_builtins() {
 fn resource_type_describe_prose_degraded_field() {
     let (buf, w) = shared_buf();
     let mut r = ProseRenderer::with_writer(w);
-    r.resource_type_describe(&degraded_field_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&degraded_field_detail(), &anon_meta()).unwrap();
     let out = buf_to_string(&buf);
 
     // Structural assertions.
     // The cross-DM degraded field must carry [from biblio] tag.
-    let degraded_line = out
-        .lines()
-        .find(|l| l.contains("unknownBiblioField"))
-        .unwrap();
+    let degraded_line = out.lines().find(|l| l.contains("unknownBiblioField")).unwrap();
     assert!(
         degraded_line.contains("[from biblio]"),
         "degraded cross-DM field must still show [from biblio]; got: {degraded_line:?}"
@@ -709,8 +667,7 @@ fn resource_type_describe_json_not_found() {
     let out = buf_to_string(&buf);
 
     // Structural assertions before snapshotting.
-    let parsed: serde_json::Value =
-        serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).expect("not_found json must be valid JSON");
     assert_eq!(
         parsed["error"]["kind"], "not_found",
         "error envelope must have kind='not_found'; got: {}",
@@ -736,8 +693,7 @@ fn resource_type_describe_lines_disclosure_on_stderr_not_stdout() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = LinesRenderer::with_writers(out_w, err_w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
     assert!(
@@ -756,8 +712,7 @@ fn resource_type_describe_csv_disclosure_on_stderr_not_stdout() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = CsvRenderer::with_writers(out_w, err_w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
     assert!(
@@ -776,8 +731,7 @@ fn resource_type_describe_tsv_disclosure_on_stderr_not_stdout() {
     let (out_buf, out_w) = shared_buf();
     let (err_buf, err_w) = shared_buf();
     let mut r = TsvRenderer::with_writers(out_w, err_w);
-    r.resource_type_describe(&manuscript_detail(), &anon_meta())
-        .unwrap();
+    r.resource_type_describe(&manuscript_detail(), &anon_meta()).unwrap();
     let stdout = buf_to_string(&out_buf);
     let stderr = buf_to_string(&err_buf);
     assert!(

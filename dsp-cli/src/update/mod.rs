@@ -14,9 +14,10 @@
 
 pub mod cache;
 
-use serde::Deserialize;
 use std::io::Read;
 use std::time::Duration;
+
+use serde::Deserialize;
 
 /// The crates.io sparse-index path for `dsp-cli`. Fixed by the crate name; if
 /// the name ever changes, this path changes with it (see the 031 plan's
@@ -99,28 +100,22 @@ pub fn fetch_latest(url: &str) -> Result<Option<semver::Version>, crate::diagnos
         .user_agent(crate::util::USER_AGENT)
         .build()
         .map_err(|e| {
-            crate::diagnostic::Diagnostic::Internal(format!(
-                "failed to build update-check HTTP client: {e}"
-            ))
+            crate::diagnostic::Diagnostic::Internal(format!("failed to build update-check HTTP client: {e}"))
         })?;
 
-    let response = client.get(url).send().map_err(|e| {
-        crate::diagnostic::Diagnostic::Internal(format!("update-check request failed: {e}"))
-    })?;
+    let response = client
+        .get(url)
+        .send()
+        .map_err(|e| crate::diagnostic::Diagnostic::Internal(format!("update-check request failed: {e}")))?;
 
     if !response.status().is_success() {
         return Ok(None);
     }
 
     let mut buf = String::new();
-    response
-        .take(MAX_BODY_BYTES)
-        .read_to_string(&mut buf)
-        .map_err(|e| {
-            crate::diagnostic::Diagnostic::Internal(format!(
-                "failed to read update-check response body: {e}"
-            ))
-        })?;
+    response.take(MAX_BODY_BYTES).read_to_string(&mut buf).map_err(|e| {
+        crate::diagnostic::Diagnostic::Internal(format!("failed to read update-check response body: {e}"))
+    })?;
 
     Ok(parse_latest_stable(&buf))
 }
@@ -168,9 +163,7 @@ pub fn maybe_notify(fmt: Option<crate::render::Format>) {
     use std::io::IsTerminal;
 
     let stderr_is_tty = std::io::stderr().is_terminal();
-    let opted_out = std::env::var(OPT_OUT_ENV)
-        .map(|v| !v.is_empty())
-        .unwrap_or(false);
+    let opted_out = std::env::var(OPT_OUT_ENV).map(|v| !v.is_empty()).unwrap_or(false);
 
     if !gate_open(fmt, stderr_is_tty, opted_out) {
         return;
@@ -192,9 +185,7 @@ pub fn maybe_notify(fmt: Option<crate::render::Format>) {
 /// branches in [`run_check_and_notify`] where the candidate falls back to the
 /// cache instead of a fresh fetch.
 fn resolve_cached_latest(latest_seen: &Option<String>) -> Option<semver::Version> {
-    latest_seen
-        .as_deref()
-        .and_then(|s| semver::Version::parse(s).ok())
+    latest_seen.as_deref().and_then(|s| semver::Version::parse(s).ok())
 }
 
 /// Orchestrates one gated invocation: resolve the current version, load the
@@ -202,15 +193,13 @@ fn resolve_cached_latest(latest_seen: &Option<String>) -> Option<semver::Version
 /// advisory if a newer stable version is known. Never propagates a fetch or
 /// cache-save error upward — see the outcome matrix in the 031 plan's Step 5.
 fn run_check_and_notify() -> Result<(), crate::diagnostic::Diagnostic> {
-    let current = semver::Version::parse(env!("CARGO_PKG_VERSION")).map_err(|e| {
-        crate::diagnostic::Diagnostic::Internal(format!("could not parse own version: {e}"))
-    })?;
+    let current = semver::Version::parse(env!("CARGO_PKG_VERSION"))
+        .map_err(|e| crate::diagnostic::Diagnostic::Internal(format!("could not parse own version: {e}")))?;
 
     let mut cache = cache::UpdateCheckCache::load();
     let now = chrono::Utc::now();
 
-    let latest: Option<semver::Version> = if is_stale(now, cache.last_checked, CHECK_INTERVAL_HOURS)
-    {
+    let latest: Option<semver::Version> = if is_stale(now, cache.last_checked, CHECK_INTERVAL_HOURS) {
         // Stamp before the fetch so the 24h backoff holds even on failure —
         // a failed attempt still counts as an attempt (ADR-0015).
         cache.last_checked = Some(now);
@@ -257,10 +246,7 @@ mod tests {
 {"name":"dsp-cli","vers":"0.1.1","yanked":false,"cksum":"def"}
 {"name":"dsp-cli","vers":"0.1.2","yanked":false,"cksum":"ghi"}
 "#;
-        assert_eq!(
-            parse_latest_stable(body),
-            Some(semver::Version::parse("0.1.2").unwrap())
-        );
+        assert_eq!(parse_latest_stable(body), Some(semver::Version::parse("0.1.2").unwrap()));
     }
 
     #[test]
@@ -268,10 +254,7 @@ mod tests {
         let body = r#"{"name":"dsp-cli","vers":"0.1.1","yanked":false}
 {"name":"dsp-cli","vers":"0.1.2","yanked":true}
 "#;
-        assert_eq!(
-            parse_latest_stable(body),
-            Some(semver::Version::parse("0.1.1").unwrap())
-        );
+        assert_eq!(parse_latest_stable(body), Some(semver::Version::parse("0.1.1").unwrap()));
     }
 
     #[test]
@@ -279,10 +262,7 @@ mod tests {
         let body = r#"{"name":"dsp-cli","vers":"0.1.3","yanked":false}
 {"name":"dsp-cli","vers":"0.2.0-rc1","yanked":false}
 "#;
-        assert_eq!(
-            parse_latest_stable(body),
-            Some(semver::Version::parse("0.1.3").unwrap())
-        );
+        assert_eq!(parse_latest_stable(body), Some(semver::Version::parse("0.1.3").unwrap()));
     }
 
     #[test]
@@ -291,10 +271,7 @@ mod tests {
 {\"name\":\"dsp-cli\",\"vers\":\"0.1.0\",\"yanked\":false}\n\
 \n\
 {\"name\":\"dsp-cli\",\"vers\":\"0.1.1\",\"yanked\":false}\n";
-        assert_eq!(
-            parse_latest_stable(body),
-            Some(semver::Version::parse("0.1.1").unwrap())
-        );
+        assert_eq!(parse_latest_stable(body), Some(semver::Version::parse("0.1.1").unwrap()));
     }
 
     #[test]
@@ -318,10 +295,7 @@ mod tests {
         let body = r#"{"vers":"not-a-version","yanked":false}
 {"name":"dsp-cli","vers":"0.1.0","yanked":false}
 "#;
-        assert_eq!(
-            parse_latest_stable(body),
-            Some(semver::Version::parse("0.1.0").unwrap())
-        );
+        assert_eq!(parse_latest_stable(body), Some(semver::Version::parse("0.1.0").unwrap()));
 
         let only_unparseable = r#"{"vers":"not-a-version","yanked":false}"#;
         assert_eq!(parse_latest_stable(only_unparseable), None);
@@ -330,10 +304,7 @@ mod tests {
     #[test]
     fn plain_version_without_v_prefix_parses_and_is_returned() {
         let body = r#"{"name":"dsp-cli","vers":"0.1.3","yanked":false,"cksum":"abc"}"#;
-        assert_eq!(
-            parse_latest_stable(body),
-            Some(semver::Version::parse("0.1.3").unwrap())
-        );
+        assert_eq!(parse_latest_stable(body), Some(semver::Version::parse("0.1.3").unwrap()));
     }
 
     #[test]

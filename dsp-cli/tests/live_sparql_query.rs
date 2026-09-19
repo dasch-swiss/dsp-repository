@@ -15,7 +15,8 @@
 //
 //   cd ~/Documents/GitHub/dasch-swiss/dsp-api && git pull --ff-only && just init-db-test
 //   cd ~/Documents/GitHub/dasch-swiss/dsp-api && \
-//     KNORA_WEBAPI_ALLOW_SPARQL_PASSTHROUGH=true nix develop --command bazel run //modules/webapi:app
+//     KNORA_WEBAPI_ALLOW_SPARQL_PASSTHROUGH=true nix develop --command bazel run
+// //modules/webapi:app
 //
 // Required environment variables:
 //   DSP_TEST_SERVER   — server URL, e.g. "http://localhost:3333"
@@ -51,8 +52,7 @@ fn require_env(name: &str) -> Option<String> {
 fn require_server_and_token() -> Option<(String, String)> {
     let server_raw = require_env("DSP_TEST_SERVER")?;
     let token = require_env("DSP_TOKEN")?;
-    let cfg = Config::resolve(Some(server_raw.trim()))
-        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let cfg = Config::resolve(Some(server_raw.trim())).expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
     Some((cfg.server, token))
 }
 
@@ -67,27 +67,17 @@ fn live_select_returns_parseable_sparql_json_with_bindings() {
     };
 
     let client = HttpDspClient::new().expect("failed to build HTTP client");
-    let query =
-        format!("SELECT ?s ?p ?o WHERE {{ GRAPH <{ANYTHING_GRAPH}> {{ ?s ?p ?o }} }} LIMIT 10");
+    let query = format!("SELECT ?s ?p ?o WHERE {{ GRAPH <{ANYTHING_GRAPH}> {{ ?s ?p ?o }} }} LIMIT 10");
 
     eprintln!("live test: sparql_query (SELECT, json) on {server}");
     let resp = client
-        .sparql_query(
-            &server,
-            &token,
-            &query,
-            "application/sparql-results+json",
-            3600,
-        )
+        .sparql_query(&server, &token, &query, "application/sparql-results+json", 3600)
         .expect(
             "sparql_query failed — check DSP_TEST_SERVER, DSP_TOKEN, and that the local \
                  stack has the passthrough enabled",
         );
 
-    assert_eq!(
-        resp.status, 200,
-        "expected a 2xx relay for a well-formed SELECT"
-    );
+    assert_eq!(resp.status, 200, "expected a 2xx relay for a well-formed SELECT");
     // Media type only — the store appends parameters (observed 2026-08-07:
     // `application/sparql-results+json; charset=utf-8`). dsp-cli relays the
     // header without parsing it (D3), so asserting an exact string here would
@@ -98,13 +88,9 @@ fn live_select_returns_parseable_sparql_json_with_bindings() {
         "expected a SPARQL-JSON media type, got: {ct}"
     );
 
-    let parsed: serde_json::Value =
-        serde_json::from_slice(&resp.body).expect("response body must be valid JSON");
+    let parsed: serde_json::Value = serde_json::from_slice(&resp.body).expect("response body must be valid JSON");
     assert!(
-        parsed
-            .get("results")
-            .and_then(|r| r.get("bindings"))
-            .is_some(),
+        parsed.get("results").and_then(|r| r.get("bindings")).is_some(),
         "expected a SPARQL-JSON results.bindings shape, got: {parsed}"
     );
 
@@ -122,8 +108,7 @@ fn live_accept_csv_returns_a_header_row() {
     };
 
     let client = HttpDspClient::new().expect("failed to build HTTP client");
-    let query =
-        format!("SELECT ?s ?p ?o WHERE {{ GRAPH <{ANYTHING_GRAPH}> {{ ?s ?p ?o }} }} LIMIT 3");
+    let query = format!("SELECT ?s ?p ?o WHERE {{ GRAPH <{ANYTHING_GRAPH}> {{ ?s ?p ?o }} }} LIMIT 3");
 
     eprintln!("live test: sparql_query (SELECT, csv) on {server}");
     let resp = client
@@ -169,15 +154,9 @@ fn live_malformed_query_relays_as_ok_with_a_non_2xx_status() {
         "expected a non-2xx store rejection for a malformed query, got status {}",
         resp.status
     );
-    assert!(
-        !resp.body.is_empty(),
-        "expected a non-empty store error body"
-    );
+    assert!(!resp.body.is_empty(), "expected a non-empty store error body");
 
-    eprintln!(
-        "live test: PASSED — malformed query relayed with status {}",
-        resp.status
-    );
+    eprintln!("live test: PASSED — malformed query relayed with status {}", resp.status);
 }
 
 // ---------------------------------------------------------------------------

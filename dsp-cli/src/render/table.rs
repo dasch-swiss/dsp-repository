@@ -30,10 +30,9 @@
 
 use std::io::{self, Write};
 
+use super::MetaContext;
 use crate::diagnostic::Diagnostic;
 use crate::util::text::replace_control_chars;
-
-use super::MetaContext;
 
 /// Escape a CSV field per RFC 4180: wrap in double-quotes if the value
 /// contains a comma, double-quote, or newline. Internal double-quotes are
@@ -73,11 +72,7 @@ pub(crate) fn csv_field(s: &str) -> String {
 pub(crate) fn render_table_disclosure(err: &mut dyn Write, meta: &MetaContext) -> io::Result<()> {
     match disclosure_suffix(meta) {
         None => writeln!(err, "[{} on {}]", meta.auth_state, meta.server_label),
-        Some(note) => writeln!(
-            err,
-            "[{} on {}] — {note}",
-            meta.auth_state, meta.server_label
-        ),
+        Some(note) => writeln!(err, "[{} on {}] — {note}", meta.auth_state, meta.server_label),
     }
 }
 
@@ -97,11 +92,7 @@ pub(crate) fn render_prose_footer(out: &mut dyn Write, meta: &MetaContext) -> io
     writeln!(out)?;
     match disclosure_suffix(meta) {
         None => writeln!(out, "[{} on {}]", meta.auth_state, meta.server_label),
-        Some(note) => writeln!(
-            out,
-            "[{} on {}] — {note}",
-            meta.auth_state, meta.server_label
-        ),
+        Some(note) => writeln!(out, "[{} on {}] — {note}", meta.auth_state, meta.server_label),
     }
 }
 
@@ -121,11 +112,7 @@ fn disclosure_suffix(meta: &MetaContext) -> Option<String> {
     .into_iter()
     .flatten()
     .collect();
-    if parts.is_empty() {
-        None
-    } else {
-        Some(parts.join("; "))
-    }
+    if parts.is_empty() { None } else { Some(parts.join("; ")) }
 }
 
 // ── Header/quote mode types ───────────────────────────────────────────────────
@@ -154,8 +141,8 @@ pub enum HeaderMode {
 /// emit a raw ESC/DEL/etc. to the terminal or corrupt the delimited structure.
 /// They differ in separator and additional quoting:
 /// - `Csv` → `","`; `replace_control_chars` then RFC-4180 quoting via `csv_field`
-/// - `Tsv` → `"\t"`; `replace_control_chars` (also prevents an embedded tab/newline
-///   from splitting a column)
+/// - `Tsv` → `"\t"`; `replace_control_chars` (also prevents an embedded tab/newline from splitting
+///   a column)
 /// - `Lines` → `"\t"`; `replace_control_chars`
 ///
 /// No separate separator field exists: the separator is always derived from the
@@ -217,9 +204,7 @@ impl TableOptions {
     /// to `default_columns` or `all_columns`). Returns `Some(vec)` when the
     /// flag was supplied; each element borrows from `self.columns`.
     pub fn projected(&self) -> Option<Vec<&str>> {
-        self.columns
-            .as_ref()
-            .map(|c| c.iter().map(String::as_str).collect())
+        self.columns.as_ref().map(|c| c.iter().map(String::as_str).collect())
     }
 }
 
@@ -235,22 +220,13 @@ impl TableOptions {
 // Column order follows the CSV header order in csv.rs (the authoritative set).
 
 /// Column set for `project list` and `project describe`.
-pub(crate) const PROJECTS_COLUMNS: &[&str] = &[
-    "shortcode",
-    "shortname",
-    "longname",
-    "status",
-    "data_models",
-    "iri",
-];
+pub(crate) const PROJECTS_COLUMNS: &[&str] = &["shortcode", "shortname", "longname", "status", "data_models", "iri"];
 
 /// Column set for `data-model list`.
-pub(crate) const DATA_MODELS_COLUMNS: &[&str] =
-    &["name", "iri", "label", "last_modified", "is_builtin"];
+pub(crate) const DATA_MODELS_COLUMNS: &[&str] = &["name", "iri", "label", "last_modified", "is_builtin"];
 
 /// Column set for `data-model describe`.
-pub(crate) const DATA_MODEL_DESCRIBE_COLUMNS: &[&str] =
-    &["name", "iri", "label", "last_modified", "resource_types"];
+pub(crate) const DATA_MODEL_DESCRIBE_COLUMNS: &[&str] = &["name", "iri", "label", "last_modified", "resource_types"];
 
 /// Column set for `resource-type list`.
 pub(crate) const RESOURCE_TYPES_COLUMNS: &[&str] = &["name", "iri", "label", "is_builtin", "count"];
@@ -329,27 +305,18 @@ pub(crate) const RESOURCE_DESCRIBE_COLUMNS: &[&str] = &[
 
 /// Column set for `resource describe --values` (long-format, one row per
 /// value). `label`/`iri` are the leading key columns (ADR-0013 option 1).
-pub(crate) const RESOURCE_DESCRIBE_VALUES_COLUMNS: &[&str] = &[
-    "label",
-    "iri",
-    "field",
-    "field_label",
-    "value_type",
-    "value",
-    "comment",
-];
+pub(crate) const RESOURCE_DESCRIBE_VALUES_COLUMNS: &[&str] =
+    &["label", "iri", "field", "field_label", "value_type", "value", "comment"];
 
 /// Default columns for `resource describe --values` (all three tabular
 /// formats). `label`/`iri` are omitted by default — they are constant across
 /// every value row of a single-resource describe, so repeating them is pure
 /// redundancy; they stay available via `--columns label,iri,…` for callers
 /// who want self-contained/greppable rows.
-pub(crate) const RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS: &[&str] =
-    &["field", "field_label", "value_type", "value"];
+pub(crate) const RESOURCE_DESCRIBE_VALUES_DEFAULT_COLUMNS: &[&str] = &["field", "field_label", "value_type", "value"];
 
 /// Column set for `data-model structure`.
-pub(crate) const DATA_MODEL_STRUCTURE_COLUMNS: &[&str] =
-    &["source", "target", "kind", "field", "target_data_model"];
+pub(crate) const DATA_MODEL_STRUCTURE_COLUMNS: &[&str] = &["source", "target", "kind", "field", "target_data_model"];
 
 /// Column set for `auth login`, `auth status`, and `auth set-token`.
 pub(crate) const AUTH_LOGIN_COLUMNS: &[&str] = &["server", "user", "expires_at", "state"];
@@ -406,8 +373,7 @@ pub(crate) const VOCABULARIES_DEFAULT_COLUMNS: &[&str] = &[
 /// because `TableSpec::default_columns` is `Option<&'a [&'a str]>` and cannot
 /// borrow a locally-built `Vec<&str>`.
 pub(crate) const VOCABULARIES_COUNTED_DEFAULT_COLUMNS: &[&str] = &[
-    "name", "iri", "label_en", "label_de", "label_fr", "label_it", "label_rm", "label", "nodes",
-    "depth",
+    "name", "iri", "label_en", "label_de", "label_fr", "label_it", "label_rm", "label", "nodes", "depth",
 ];
 
 /// Column set for `vocabulary describe` (one row per node, DFS order; plan 034
@@ -455,10 +421,9 @@ pub(crate) const VOCABULARY_DESCRIBE_DEFAULT_COLUMNS: &[&str] = &[
 /// The effective column set is chosen in this order:
 ///
 /// 1. `projected` — user-supplied `--columns` selection (select AND reorder).
-/// 2. `default_columns` — the lean subset used by the lines renderer when no
-///    `--columns` flag is given. `Some(&[])` means zero columns (degenerate
-///    case — the engine emits nothing for data rows). `None` means "same as
-///    `all_columns`".
+/// 2. `default_columns` — the lean subset used by the lines renderer when no `--columns` flag is
+///    given. `Some(&[])` means zero columns (degenerate case — the engine emits nothing for data
+///    rows). `None` means "same as `all_columns`".
 /// 3. `all_columns` — the full set, used when neither of the above is present.
 ///
 /// This contract is pinned by unit tests in this module.
@@ -483,9 +448,8 @@ pub(crate) struct TableSpec<'a> {
     pub quote: QuoteMode,
     /// Effective header mode. The **caller** computes this:
     /// - csv/tsv pass `options.header` directly.
-    /// - lines passes `HeaderMode::Off` unconditionally (upstream validation
-    ///   prevents the user from setting header flags with lines; the engine
-    ///   never sees two authoritative header sources).
+    /// - lines passes `HeaderMode::Off` unconditionally (upstream validation prevents the user from
+    ///   setting header flags with lines; the engine never sees two authoritative header sources).
     pub header: HeaderMode,
 }
 
@@ -502,8 +466,7 @@ pub(crate) struct TableSpec<'a> {
 ///
 /// - `HeaderMode::On`: header row, then data rows.
 /// - `HeaderMode::Off`: data rows only.
-/// - `HeaderMode::Only`: header row only (no data rows emitted regardless of
-///   `spec.rows`).
+/// - `HeaderMode::Only`: header row only (no data rows emitted regardless of `spec.rows`).
 ///
 /// The effective column set is resolved per the precedence contract on
 /// [`TableSpec`]. Column cells in data rows are selected and reordered to
@@ -526,9 +489,7 @@ pub(crate) fn render_table(out: &mut dyn Write, spec: &TableSpec<'_>) -> Result<
         for name in proj.iter() {
             if !spec.all_columns.contains(name) {
                 let valid = spec.all_columns.join(", ");
-                return Err(Diagnostic::Usage(format!(
-                    "unknown column \"{name}\"; valid columns: {valid}"
-                )));
+                return Err(Diagnostic::Usage(format!("unknown column \"{name}\"; valid columns: {valid}")));
             }
         }
         proj.as_slice()
@@ -551,16 +512,13 @@ pub(crate) fn render_table(out: &mut dyn Write, spec: &TableSpec<'_>) -> Result<
     let col_indices: Vec<usize> = effective_columns
         .iter()
         .map(|name| {
-            spec.all_columns
-                .iter()
-                .position(|c| c == name)
-                .ok_or_else(|| {
-                    Diagnostic::Internal(format!(
-                        "column index missing for \"{name}\" after validation \
+            spec.all_columns.iter().position(|c| c == name).ok_or_else(|| {
+                Diagnostic::Internal(format!(
+                    "column index missing for \"{name}\" after validation \
                          (all_columns=[{}]); this is a dsp-cli bug",
-                        spec.all_columns.join(", ")
-                    ))
-                })
+                    spec.all_columns.join(", ")
+                ))
+            })
         })
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -608,11 +566,7 @@ mod tests {
     // coverage for csv_field and replace_control_chars via the join path).
 
     fn render_table_row(fields: &[&str], sep: &str, quote: impl Fn(&str) -> String) -> String {
-        fields
-            .iter()
-            .map(|f| quote(f))
-            .collect::<Vec<_>>()
-            .join(sep)
+        fields.iter().map(|f| quote(f)).collect::<Vec<_>>().join(sep)
     }
 
     // ── render_table_disclosure ───────────────────────────────────────────────
@@ -812,11 +766,7 @@ mod tests {
             vec!["3".to_string(), "4".to_string()],
         ];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::On),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::On)).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "a\tb\n1\t2\n3\t4\n");
     }
 
@@ -825,11 +775,7 @@ mod tests {
         let all = &["x", "y"];
         let rows: Vec<Vec<String>> = vec![];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::On),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::On)).unwrap();
         // Header only, no data rows.
         assert_eq!(String::from_utf8(buf).unwrap(), "x\ty\n");
     }
@@ -839,11 +785,7 @@ mod tests {
         let all = &["a", "b"];
         let rows = vec![vec!["1".to_string(), "2".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off)).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "1\t2\n");
     }
 
@@ -852,11 +794,7 @@ mod tests {
         let all = &["a", "b"];
         let rows: Vec<Vec<String>> = vec![];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off)).unwrap();
         assert_eq!(buf, b"");
     }
 
@@ -866,11 +804,7 @@ mod tests {
         let all = &["a", "b"];
         let rows = vec![vec!["1".to_string(), "2".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Only),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Only)).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "a\tb\n");
     }
 
@@ -879,11 +813,7 @@ mod tests {
         let all = &["a", "b"];
         let rows: Vec<Vec<String>> = vec![];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Only),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Only)).unwrap();
         // Header row only.
         assert_eq!(String::from_utf8(buf).unwrap(), "a\tb\n");
     }
@@ -895,11 +825,7 @@ mod tests {
         let all = &["name", "label"];
         let rows = vec![vec!["foo".to_string(), "bar".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Lines, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Lines, HeaderMode::Off)).unwrap();
         // No header, one tab-separated data row.
         assert_eq!(String::from_utf8(buf).unwrap(), "foo\tbar\n");
     }
@@ -909,11 +835,7 @@ mod tests {
         let all = &["name"];
         let rows = vec![vec!["a\tb".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Lines, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Lines, HeaderMode::Off)).unwrap();
         // Tab in value must be replaced by space.
         assert_eq!(String::from_utf8(buf).unwrap(), "a b\n");
     }
@@ -925,11 +847,7 @@ mod tests {
         let all = &["name"];
         let rows = vec![vec!["a\u{1b}\t\n\u{7f}b".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Csv, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Csv, HeaderMode::Off)).unwrap();
         // ESC, tab, newline, DEL each become a space; nothing left needs quoting.
         assert_eq!(String::from_utf8(buf).unwrap(), "a    b\n");
     }
@@ -939,11 +857,7 @@ mod tests {
         let all = &["name"];
         let rows = vec![vec!["a\u{1b}\u{7f}b".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off)).unwrap();
         // Previously TSV was identity and emitted ESC/DEL raw; now neutralised.
         assert_eq!(String::from_utf8(buf).unwrap(), "a  b\n");
     }
@@ -956,11 +870,7 @@ mod tests {
         let all = &["a", "b"];
         let rows = vec![vec!["x\ty".to_string(), "z".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::Off)).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "x y\tz\n");
     }
 
@@ -973,11 +883,7 @@ mod tests {
         let all = &["name"];
         let rows = vec![vec!["\u{1b}=SUM(A1)".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Csv, HeaderMode::Off),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Csv, HeaderMode::Off)).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), " =SUM(A1)\n");
     }
 
@@ -990,14 +896,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["a", "c"]),
-                None,
-                QuoteMode::Tsv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, Some(vec!["a", "c"]), None, QuoteMode::Tsv, HeaderMode::On),
         )
         .unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "a\tc\n1\t3\n");
@@ -1011,14 +910,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["c", "a"]),
-                None,
-                QuoteMode::Tsv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, Some(vec!["c", "a"]), None, QuoteMode::Tsv, HeaderMode::On),
         )
         .unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "c\ta\n3\t1\n");
@@ -1032,14 +924,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["name", "note"]),
-                None,
-                QuoteMode::Csv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, Some(vec!["name", "note"]), None, QuoteMode::Csv, HeaderMode::On),
         )
         .unwrap();
         // Data cell with comma gets quoted; header cells are plain literals.
@@ -1053,16 +938,9 @@ mod tests {
         let all = &["shortcode", "longname"];
         let rows = vec![vec!["0001".to_string(), "Project One".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Csv, HeaderMode::On),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Csv, HeaderMode::On)).unwrap();
         // Header is plain, data is quoted only if needed.
-        assert_eq!(
-            String::from_utf8(buf).unwrap(),
-            "shortcode,longname\n0001,Project One\n"
-        );
+        assert_eq!(String::from_utf8(buf).unwrap(), "shortcode,longname\n0001,Project One\n");
     }
 
     // ── render_table: unknown-column error ───────────────────────────────────
@@ -1074,14 +952,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         let result = render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["shortcode", "xyz"]),
-                None,
-                QuoteMode::Csv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, Some(vec!["shortcode", "xyz"]), None, QuoteMode::Csv, HeaderMode::On),
         );
         let err = result.unwrap_err();
         let msg = err.to_string();
@@ -1101,14 +972,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         let result = render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["a", "z"]),
-                None,
-                QuoteMode::Csv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, Some(vec!["a", "z"]), None, QuoteMode::Csv, HeaderMode::On),
         );
         assert!(result.is_err());
         assert_eq!(buf, b"", "output must be empty when validation fails");
@@ -1122,14 +986,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         let result = render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["a", "unknown"]),
-                None,
-                QuoteMode::Csv,
-                HeaderMode::Only,
-            ),
+            &make_spec(all, &rows, Some(vec!["a", "unknown"]), None, QuoteMode::Csv, HeaderMode::Only),
         );
         assert!(result.is_err());
         assert_eq!(buf, b"", "no header must be emitted before error");
@@ -1145,14 +1002,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                Some(vec!["b"]),
-                Some(&["a"]),
-                QuoteMode::Tsv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, Some(vec!["b"]), Some(&["a"]), QuoteMode::Tsv, HeaderMode::On),
         )
         .unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "b\nval_b\n");
@@ -1166,14 +1016,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         render_table(
             &mut buf,
-            &make_spec(
-                all,
-                &rows,
-                None,
-                Some(&["a"]),
-                QuoteMode::Tsv,
-                HeaderMode::On,
-            ),
+            &make_spec(all, &rows, None, Some(&["a"]), QuoteMode::Tsv, HeaderMode::On),
         )
         .unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "a\nval_a\n");
@@ -1185,11 +1028,7 @@ mod tests {
         let all = &["a", "b"];
         let rows = vec![vec!["1".to_string(), "2".to_string()]];
         let mut buf: Vec<u8> = Vec::new();
-        render_table(
-            &mut buf,
-            &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::On),
-        )
-        .unwrap();
+        render_table(&mut buf, &make_spec(all, &rows, None, None, QuoteMode::Tsv, HeaderMode::On)).unwrap();
         assert_eq!(String::from_utf8(buf).unwrap(), "a\tb\n1\t2\n");
     }
 

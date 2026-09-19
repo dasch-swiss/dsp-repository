@@ -1,0 +1,126 @@
+# This workflow exercises dsp-cli's live tests against a real DSP stack (Fuseki + knora-api). It
+# runs two ways:
+# - pull_request: `changes` detects whether the PR touches dsp-cli (or this workflow itself); when
+#   it does, `pinned` runs the live tests against the same dsp-api/dsp-db versions the rest of CI
+#   pins to. `gate` always reports, succeeding when `changes` passed and `pinned` either passed or
+#   was rightfully skipped, so `dsp-cli-drift / gate` can be a required check without blocking PRs
+#   that don't touch dsp-cli.
+# - schedule (nightly) / workflow_dispatch: `latest` runs the same live tests against
+#   `API=latest`/`DB=latest` to catch upstream dsp-api/dsp-db drift before a pinned bump lands.
+#   It still loads fixtures and ontologies checked out at the PINNED `API` tag from
+#   dsp-cli/ci/stack/stack.env, because `latest` has no corresponding dsp-api git ref to check
+#   fixtures out at (load-fixtures.sh re-sources stack.env itself, ignoring the job's override).
+#   So a red nightly run can mean either real dsp-api drift, or that the pinned fixtures no
+#   longer load cleanly into a newer API image. Tell them apart by which step failed: a failure
+#   in "Load fixtures" is the latter (stale fixtures vs. a newer API); a failure in "Run dsp-cli
+#   live tests" is the former (genuine behavioural drift).
+
+name: dsp-cli-drift
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  schedule:
+    # 04:00 UTC — clear of fuzz.yml's nightly run at 02:00 UTC.
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  changes:
+    name: changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      dsp_cli: ${{ steps.filter.outputs.dsp_cli }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect dsp-cli changes
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
+          echo "$changed"
+          if printf '%s\n' "$changed" | grep -qE '^dsp-cli/|^\.github/workflows/dsp-cli-drift\.yml$'; then
+            echo "dsp_cli=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dsp_cli=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  pinned:
+    name: pinned
+    needs: [changes]
+    if: github.event_name == 'pull_request' && needs.changes.outputs.dsp_cli == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record start time
+        id: start
+        run: echo "epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/dsp-cli-stack-test
+
+      - name: Report wall time
+        if: always()
+        env:
+          START_EPOCH: ${{ steps.start.outputs.epoch }}
+        run: |
+          end="$(date +%s)"
+          echo "dsp-cli-drift / pinned wall time: $((end - START_EPOCH))s" >> "$GITHUB_STEP_SUMMARY"
+
+  gate:
+    name: gate
+    needs: [changes, pinned]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify pinned ran, or was rightfully skipped
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          PINNED_RESULT: ${{ needs.pinned.result }}
+        run: |
+          if [ "$CHANGES_RESULT" = "success" ] && { [ "$PINNED_RESULT" = "success" ] || [ "$PINNED_RESULT" = "skipped" ]; }; then
+            echo "gate passed: changes=$CHANGES_RESULT pinned=$PINNED_RESULT"
+          else
+            echo "::error::gate failed: changes=$CHANGES_RESULT pinned=$PINNED_RESULT"
+            exit 1
+          fi
+
+  latest:
+    name: latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # A shell environment variable wins over `--env-file` in docker compose's precedence, so
+      # overriding API/DB here is enough to pull `latest` images without a second env file.
+      API: latest
+      DB: latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record start time
+        id: start
+        run: echo "epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/dsp-cli-stack-test
+        with:
+          summarize-failures: 'true'
+
+      - name: Report wall time
+        if: always()
+        env:
+          START_EPOCH: ${{ steps.start.outputs.epoch }}
+        run: |
+          end="$(date +%s)"
+          echo "dsp-cli-drift / latest wall time: $((end - START_EPOCH))s" >> "$GITHUB_STEP_SUMMARY"

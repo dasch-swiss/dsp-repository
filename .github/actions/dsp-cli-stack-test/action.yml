@@ -1,0 +1,88 @@
+name: dsp-cli stack test
+description: Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it.
+
+inputs:
+  summarize-failures:
+    description: >-
+      Write a failure summary (failing tests + the knora-api image digest) to
+      GITHUB_STEP_SUMMARY when the test step fails. The pinned PR job leaves this
+      off; the nightly `latest` job turns it on.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Start Fuseki
+      shell: bash
+      run: docker compose --env-file dsp-cli/ci/stack/stack.env -f dsp-cli/ci/stack/docker-compose.yml up -d --wait db
+
+    - name: Load fixtures
+      shell: bash
+      run: bash dsp-cli/ci/stack/load-fixtures.sh
+
+    - name: Start knora-api
+      shell: bash
+      run: docker compose --env-file dsp-cli/ci/stack/stack.env -f dsp-cli/ci/stack/docker-compose.yml up -d --wait api
+
+    - name: Wait for API
+      shell: bash
+      run: bash dsp-cli/ci/stack/wait-for-api.sh
+
+    - name: Mint tokens
+      shell: bash
+      # stdout carries the JWTs; $GITHUB_ENV is how they reach later steps, so drop the echo.
+      run: bash dsp-cli/ci/stack/token.sh > /dev/null
+
+    - name: Install just
+      uses: extractions/setup-just@v4
+
+    - name: Install stable
+      uses: dtolnay/rust-toolchain@stable
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Install cargo-nextest
+      uses: taiki-e/install-action@nextest
+
+    - name: Run dsp-cli live tests
+      id: test
+      shell: bash
+      env:
+        DSP_TEST_SERVER: http://localhost:3333
+        DSP_TEST_PROJECT: "0801"
+        DSP_TEST_CLASS_IRI: http://0.0.0.0:3333/ontology/0801/beol/v2#page
+        DSP_TEST_VOCAB_PROJECT: "0001"
+      # Always tee to test-output.log: the pinned job doesn't need it, but the
+      # summarize step below (shared by both jobs, gated by an input) does.
+      run: just dsp-cli-test-live 2>&1 | tee test-output.log
+
+    - name: Dump api logs
+      if: failure()
+      shell: bash
+      run: docker compose --env-file dsp-cli/ci/stack/stack.env -f dsp-cli/ci/stack/docker-compose.yml logs api
+
+    - name: Summarize failure
+      # Issues are disabled on dasch-swiss repos (Linear is the tracker instead), so a failing
+      # nightly run explains itself here rather than filing one.
+      if: failure() && inputs.summarize-failures == 'true' && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        # $API is a real shell env var here (inherited from the calling job's
+        # job-level `env:`), not a GitHub Actions `env` context lookup, so it
+        # survives the composite-action boundary. Fall back to the pinned tag
+        # in stack.env if it's ever unset.
+        api_tag="${API:-}"
+        if [ -z "${api_tag}" ]; then
+          api_tag="$(. dsp-cli/ci/stack/stack.env && echo "${API}")"
+        fi
+        {
+          echo "### dsp-cli-drift / latest failed"
+          echo
+          echo "**Failing tests:**"
+          echo '```'
+          grep -E '^\s*FAIL' test-output.log || echo "(no FAIL lines found in nextest output)"
+          echo '```'
+          echo
+          echo "**knora-api image:** $(docker image inspect --format '{{index .RepoDigests 0}}' "daschswiss/knora-api:${api_tag}" 2>/dev/null || echo unknown)"
+        } >> "$GITHUB_STEP_SUMMARY"

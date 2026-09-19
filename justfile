@@ -686,7 +686,7 @@ dsp-cli-run *args:
 
 # Needs a reachable DSP stack and the environment variables the live tests read
 # (DSP_TEST_SERVER, DSP_TEST_USER, DSP_TEST_PASSWORD, DSP_TEST_PROJECT,
-# DSP_TEST_CLASS_IRI, DSP_TEST_NON_ADMIN_TOKEN, DSP_TOKEN, and optionally
+# DSP_TEST_CLASS_IRI, DSP_TEST_VOCAB_PROJECT, DSP_TEST_NON_ADMIN_TOKEN, DSP_TOKEN, and optionally
 # DSP_TEST_ORDER_BY_IRI). DSP_LIVE_STRICT=1 makes a missing required variable
 # panic instead of the test quietly skipping. `live_update_check` is excluded:
 # it calls out to crates.io to check for a newer dsp-cli release, not a DSP
@@ -701,3 +701,26 @@ dsp-cli-test-live:
 [group('dsp-cli')]
 dsp-cli-snap-review:
     cargo insta review -p dsp-cli
+
+# Verify Docker is on PATH and its daemon answers. just runs recipes in sh, which does NOT see shell-function version managers — only real binaries on PATH.
+[private]
+_check-docker:
+    @command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 || { echo >&2 "error: 'docker' not on PATH or its daemon is not running. Start Docker (or Colima/OrbStack) and make sure 'docker' is on PATH for all shells."; exit 1; }
+
+# Start the dsp-cli test stack (Fuseki + knora-api) and load fixtures.
+[group('dsp-cli')]
+dsp-cli-stack-up: _check-docker
+    docker compose --env-file dsp-cli/ci/stack/stack.env -f dsp-cli/ci/stack/docker-compose.yml up -d --wait db
+    bash dsp-cli/ci/stack/load-fixtures.sh
+    docker compose --env-file dsp-cli/ci/stack/stack.env -f dsp-cli/ci/stack/docker-compose.yml up -d --wait api
+    bash dsp-cli/ci/stack/wait-for-api.sh
+
+# Tear down the dsp-cli test stack and remove its volumes.
+[group('dsp-cli')]
+dsp-cli-stack-down: _check-docker
+    docker compose --env-file dsp-cli/ci/stack/stack.env -f dsp-cli/ci/stack/docker-compose.yml down -v
+
+# Load fixtures into an already-running dsp-cli test stack.
+[group('dsp-cli')]
+dsp-cli-stack-fixtures: _check-docker
+    bash dsp-cli/ci/stack/load-fixtures.sh

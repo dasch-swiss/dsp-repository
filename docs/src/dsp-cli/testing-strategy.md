@@ -114,6 +114,7 @@ never commit secrets — see [dsp-cli/ADR-0007](https://github.com/dasch-swiss/d
 | `DSP_USER` | Default user (email, username, or IRI) for `dsp auth login`, so it need not be retyped. The identifier type is auto-detected from the value. |
 | `DSP_PASSWORD` | Password for non-interactive `dsp auth login`. **Local/dev/test setups only — never a production password.** This is a durable plaintext master credential on disk; for real environments prefer `DSP_TOKEN` (scoped and expiring) over `DSP_PASSWORD`. |
 | `DSP_TOKEN` | Pre-provisioned auth token. Overrides the cached token from `dsp auth login`. Useful in CI and pre-provisioned agent environments; `dsp auth status` reports when it is in effect and shows its expiry, if readable. |
+| `DSP_ALLOW_INSECURE_SERVER` | Set to `1` to lift the refusal of a non-local `http://` server, which otherwise puts a bearer token on the wire in cleartext. The `--allow-insecure-server` flag wins over this variable. See [dsp-cli/ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0007-auth-and-environments.md). |
 | `RUST_LOG` | Logging override. Bypasses the `-v` flag. See [dsp-cli/ADR-0012](https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0012-diagnostics.md). |
 | `DSP_NO_UPDATE_CHECK` | Disables the interactive update-check advisory (a crates.io version check that only fires on prose-format, interactive-TTY runs). Irrelevant to agents/scripts. |
 

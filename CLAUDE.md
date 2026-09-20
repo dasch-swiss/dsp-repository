@@ -16,6 +16,8 @@ All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is t
 
 Specs (PRDs and implementation plans) live in `docs/specs/`, outside the mdBook, and are the source of truth for intended behaviour. They stay in this repo — never in the central `dasch-specs` repository; this overrides any workflow-skill routing that would send them there. See `docs/specs/README.md` for the convention (dated topic folders, per-folder `NN-slug` numbering, `assets/` in Git LFS).
 
+Learnings (the documents `/eng:workflows:compound` writes) live in `docs/learnings/<category>/<slug>.md`, beside `docs/specs/` and likewise outside the mdBook. They stay in this repo too — never in `dasch-specs`, whatever the compounding skill's routing says — and land as a `docs(docs):` commit in the PR whose work they describe, not on a separate branch. Categories are the eng learnings categories (`configuration-errors`, `build-errors`, `test-setup`, …), created on demand; a `related:` entry that points at a dasch-specs learning is written as `dasch-specs/learnings/<category>/<file>.md`.
+
 ## Development Workflow
 
 **Important:** Follow ALL the steps below during development.

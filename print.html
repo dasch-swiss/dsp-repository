@@ -5338,6 +5338,146 @@ POST /logout       session deleted, cookie cleared
 }
 
 </style>
+<h1 id="collection-1"><a class="header" href="#collection-1">Collection</a></h1>
+<p>How an approved record leaves the editor and becomes a commit in this repository. The editor publishes the records and accepts a report about what happened to them; a GitHub Actions workflow does the work in between. This page is the contract between the two.</p>
+<p>That workflow does not exist yet. Everything this page says about it is a requirement on the work that builds it, not a description of something already running; everything it says about the editor is live and testable today.</p>
+<h2 id="the-invariant"><a class="header" href="#the-invariant">The invariant</a></h2>
+<p><strong>Reported collection state may drive what RDU is shown and how a record is classified. It may never drive what is served or published.</strong></p>
+<p>Every rule below is checkable against that one line. The editor holds no credential granting write access to any GitHub repository, in either direction: it holds a verifier for a token the workflow presents to it, never a token it presents to GitHub. Compromising the editor yields a token that authenticates to the editor and nothing else.</p>
+<h2 id="get-apiv1approved-records"><a class="header" href="#get-apiv1approved-records"><code>GET /api/v1/approved-records</code></a></h2>
+<p>Unauthenticated, read-only, rate-limited per client IP. Serves <strong>every</strong> approved record the editor holds, with no filter, so there is no state-dependent selection for a stale flag to hide. The set is already bounded: startup reconciliation deletes a record once the published set carries it, and a release is a redeployment, so a startup follows every release.</p>
+<p>The response performs no write and carries no generation timestamp, so two requests with no intervening write return byte-identical bodies.</p>
+<pre><code class="language-json">{
+  "records": [
+    {
+      "id": "0f9c…",
+      "shortcode": "0803",
+      "approvedAt": "2026-09-17T14:22:03Z",
+      "project": { "…": "the project, as ProjectRaw" },
+      "entities": [
+        { "kind": "person", "operation": "new", "id": "person-417", "body": { "…": "Person" } }
+      ],
+      "problem": null,
+      "collection": { "collectedAt": null, "pullRequest": null, "state": null, "lastFailure": null }
+    }
+  ]
+}
+</code></pre>
+<p>Every member is always present, <code>null</code> when empty — there is no absent-versus-null distinction to handle. <code>project</code> is the publishable project, not the editor's draft. <code>problem</code> is non-null only when a record's draft could not be converted; such a record is still served, carrying its error, because dropping it would hide a row and failing the response would let one bad record block every other project.</p>
+<p><strong><code>collection</code> is advisory.</strong> It is the last thing a run reported, provided so RDU can see what happened. The collecting workflow must not branch on it when deciding what to publish — it derives that from GitHub, as below.</p>
+<h2 id="the-collector-is-a-rust-binary-in-this-workspace"><a class="header" href="#the-collector-is-a-rust-binary-in-this-workspace">The collector is a Rust binary in this workspace</a></h2>
+<p>Not a shell or JavaScript script. REQ-5.4's entity renumbering can only run where <code>main</code> is visible, so the payload carries structured records rather than file bytes and the collector re-serializes after renumbering. That means calling <code>editor_core::canonical</code>, the same writer the editor uses. A second implementation of the canonical form in another language is exactly what breaks the byte-identical round-trip over the committed project files that the PRD's Success Criterion 3 requires.</p>
+<p>The payload carries no file paths. Path resolution belongs with the data, in this repository.</p>
+<h2 id="deriving-collection-state-from-github-keyed-on-the-project"><a class="header" href="#deriving-collection-state-from-github-keyed-on-the-project">Deriving collection state from GitHub, keyed on the project</a></h2>
+<p><strong>Collection state is keyed on the project's shortcode, never on the record id.</strong> The branch is <code>editor-collect/&lt;shortcode&gt;</code>.</p>
+<p>This is the load-bearing choice on this page, so here is why. A record id identifies a row the editor may legitimately replace: approving a project again supersedes its earlier record, giving the project a new record with a new id. The <em>conflict</em> being avoided, though, is per project file — two pull requests rewriting <code>0803</code>'s file. Keying idempotency on the record id would make a superseded record's pull request invisible to the next run, which would then open a second pull request against the same file and orphan the first, with no record referencing it and nothing displaying it. Keying on the shortcode makes that state unreachable: there is at most one collection branch per project, and at most one pull request open from it.</p>
+<p>Because the branch no longer encodes the record, a report identifies its record by the <code>record</code> id from the payload.</p>
+<p><strong>The skip rule.</strong> Per project, list the pull requests whose head branch is <code>editor-collect/&lt;shortcode&gt;</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>What GitHub shows</th><th>What the collector does</th></tr></thead><tbody>
+<tr><td>A <strong>merged</strong> pull request</td><td>Skip. The change has landed; reconciliation discards the record when a release carries it.</td></tr>
+<tr><td>An <strong>open</strong> pull request</td><td>Force-push the newest approved record onto the branch. The open pull request then carries the newest approved state instead of a stale one. Do not open a second.</td></tr>
+<tr><td>No pull request, or only <strong>closed-unmerged</strong> ones</td><td>Force-push the branch and open a <strong>new</strong> pull request.</td></tr>
+</tbody></table>
+</div>
+<p>Reopening a closed pull request is never correct: somebody deliberately ended that review.</p>
+<p><strong>Branch lifecycle, one rule covering every case.</strong> The collector owns every <code>editor-collect/&lt;shortcode&gt;</code> branch and force-pushes over it whenever no <em>merged</em> pull request references it. Stating it as "no pull request references the branch" would leave both the closed-pull-request retry and the stale-open-pull-request update unauthorised, and a branch left behind by a run that died before <code>gh pr create</code> is invisible to a rule phrased in terms of pull requests.</p>
+<p><strong>One runtime guard, not merely a documented convention.</strong> The collector refuses to force-push when the branch tip is not a commit it made, and reports that as a failure. Reviewer edits are an expected part of this flow, so a reviewer who pushes fixups to the branch must not have them silently overwritten by the next trigger.</p>
+<p><strong>Concurrency.</strong> REQ-5.3's trigger is manual and any RDU member can fire it, so two runs can overlap. The workflow declares a <code>concurrency</code> group with <code>cancel-in-progress: false</code>.</p>
+<p><strong>Entity ids are re-derived after each record is pushed</strong>, not read once per run. Without that, two records in one run — or two overlapping runs — can allocate the same <code>person-NNN</code>.</p>
+<h2 id="post-apiv1collection-report"><a class="header" href="#post-apiv1collection-report"><code>POST /api/v1/collection-report</code></a></h2>
+<p>Bearer token, held only by CI, verified against <code>EDITOR_COLLECTION_TOKEN</code>. An absent token and a wrong one are refused identically. <strong>One record per call</strong>, reported immediately after that record is handled, so a run that dies halfway still leaves a signal for every record it had already finished.</p>
+<pre><code class="language-json">{ "record": "0f9c…", "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/412", "state": "open" }
+</code></pre>
+<pre><code class="language-json">{ "record": "0f9c…", "failure": "renumbering could not resolve person-417" }
+</code></pre>
+<p>Exactly one of <code>pullRequest</code> or <code>failure</code>. A <code>pullRequest</code> requires a <code>state</code> of <code>open</code>, <code>merged</code> or <code>closed</code>, and must be under <code>https://github.com/dasch-swiss/dsp-repository/pull/</code> so a forged report cannot point RDU elsewhere. A report naming an unknown or already-discarded record is rejected whole, with nothing applied.</p>
+<p><strong>Report every record the run considered, not only the ones it acted on.</strong> The workflow is already listing those pull requests for the skip rule, so the refreshed state costs nothing, and it is what keeps the editor's picture current for records the run merely inspected.</p>
+<p>Three fields with three lifetimes come out of a report, and the two report shapes write different ones. <code>collectedAt</code> is stamped once and never moved. A pull request report replaces the URL and state and clears <code>lastFailure</code>. A failure report records <code>lastFailure</code> and <strong>leaves the URL and state alone</strong> — it says nothing about that pull request, and erasing a reference an earlier report established would leave the record reading as uncollected while its pull request is still open.</p>
+<h2 id="what-the-editor-does-with-a-report"><a class="header" href="#what-the-editor-does-with-a-report">What the editor does with a report</a></h2>
+<p><code>collectedAt</code> is a display timestamp. The classification that matters keys on the reported <strong>state</strong>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Published data</th><th>Reported state</th><th>How the record reads</th></tr></thead><tbody>
+<tr><td>Differs</td><td><code>open</code></td><td>Waiting for a release. Normal.</td></tr>
+<tr><td>Differs</td><td><code>merged</code></td><td>Merged with reviewer edits. The genuine anomaly; needs RDU.</td></tr>
+<tr><td>Differs</td><td><code>closed</code></td><td>The next run re-collects it. No action.</td></tr>
+<tr><td>Differs</td><td>nothing reported</td><td>Not collected yet. Normal.</td></tr>
+<tr><td>Matches</td><td>any</td><td>The record is discarded at the next startup; the project is Online.</td></tr>
+</tbody></table>
+</div>
+<p><strong>One live record per project, enforced at approval.</strong> Approving a project whose earlier record has no live pull request supersedes that record in the approving transaction. Approving one whose earlier record has an open or merged pull request is refused, because publishing a second file version over a live pull request is PRD Edge Case 4 and stays out of v1.</p>
+<h2 id="the-token-the-workflow-uses-against-github"><a class="header" href="#the-token-the-workflow-uses-against-github">The token the workflow uses against GitHub</a></h2>
+<p><code>secrets.GH_TOKEN</code>, not <code>github.token</code>. A pull request opened with <code>GITHUB_TOKEN</code> does not trigger workflows, so a collection pull request would arrive with no <code>check</code>, no <code>test</code> and no <code>commit-hygiene</code> run — looking green because nothing ran. <code>secrets.GH_TOKEN</code> is already used by <code>release-please.yml</code>, which is also the in-repo precedent for querying open pull requests rather than trusting local state.</p>
+<p>The collection pull request must satisfy <code>commit-hygiene.yml</code> like any other: <code>type(scope): subject</code>, one commit, and a scope from the vocabulary in <code>CONVENTIONS.md</code>. Project metadata files take <code>dpe-data</code>.</p>
+<h2 id="the-staleness-limitation"><a class="header" href="#the-staleness-limitation">The staleness limitation</a></h2>
+<p>A reported state is only as fresh as the last run, and the collection trigger is manual with no schedule. A pull request merged with reviewer edits <em>after</em> the last run leaves its record reading <code>open</code>, with nobody prompted to re-run, so it never reaches the merged-with-edits classification above.</p>
+<p>The surface therefore shows the last reported state <strong>with the time it was reported</strong>, and links to the pull request, so a reader can see the state is old and check it for themselves.</p>
+<p>Closing this properly needs a <strong>refresh-only trigger</strong> that re-reports pull request states without collecting anything. That belongs to the collecting workflow and is named here rather than assumed: it is distinct from the collection trigger, which REQ-5.3 keeps manual.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="editor-observability"><a class="header" href="#editor-observability">Editor Observability</a></h1>
 <p>Developer guide for the metadata editor's observability instrumentation. The pipeline is the same shape as <a href="editor/../dpe/observability.html">DPE's</a>; this page records what differs.</p>
 <h2 id="overview-2"><a class="header" href="#overview-2">Overview</a></h2>

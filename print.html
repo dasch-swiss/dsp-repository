@@ -439,7 +439,15 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
 <tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-adr-refs</code></td><td>Fail the build if a decision-record reference does not resolve to a record (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-live-tests-ignored</code></td><td>Fail the build if a dsp-cli live test is not <code>#[ignore]</code>d (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
+<tr><td><code>just dsp-cli-run &lt;args&gt;</code></td><td>Run the <code>dsp</code> command-line client with the given arguments</td></tr>
+<tr><td><code>just dsp-cli-test-live</code></td><td>Run dsp-cli's live tests against a reachable DSP stack (never part of <code>just test</code>)</td></tr>
+<tr><td><code>just dsp-cli-stack-up</code></td><td>Start the containerized DSP stack used by dsp-cli's live tests</td></tr>
+<tr><td><code>just dsp-cli-stack-fixtures</code></td><td>Load fixture data into the dsp-cli stack</td></tr>
+<tr><td><code>just dsp-cli-stack-down</code></td><td>Tear down the dsp-cli stack</td></tr>
+<tr><td><code>just dsp-cli-snap-review</code></td><td>Review pending insta snapshots for dsp-cli</td></tr>
 </tbody></table>
 </div>
 <h2 id="git-commits-and-pull-requests"><a class="header" href="#git-commits-and-pull-requests">Git, Commits, and Pull Requests</a></h2>
@@ -588,7 +596,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
+<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
@@ -605,6 +613,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <li><strong>Concern over location.</strong> Scope by the responsibility a change serves, not the enclosing directory. Documentation <em>about</em> a crate takes that crate's scope (<code>docs(dpe-api-oai): ...</code>); only repo-level docs take <code>docs</code>.</li>
 <li>A test <em>about</em> a specific concern takes that concern's scope (<code>test(dpe-core): ...</code>) — the <code>test</code> type already says it is a test.</li>
 <li><strong>No catch-all.</strong> There is no <code>repo</code>/<code>all</code> scope. If none of the enumerated scopes genuinely fits, ask the maintainer before inventing one.</li>
+<li><strong>Keep <code>dsp-cli</code> commits under <code>dsp-cli/**</code> where possible.</strong> release-please attributes a commit to a package by which paths it touches, not by its commit scope — a <code>dsp-cli</code>-scoped commit that also edits a root file (e.g. <code>Cargo.lock</code>) lands in the root release too. See <a href="./deployment.html#dsp-cli">Release Please</a> for the double-bump rule this causes.</li>
 </ul>
 <p>The gate enforces only that a scope is <em>present</em> — it does not restrict which one, so adding a crate needs no config change. The list above is the advisory vocabulary; keep to it.</p>
 <h2 id="enforcement"><a class="header" href="#enforcement">Enforcement</a></h2>
@@ -737,7 +746,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p>This repository is a Rust workspace structured as a monorepo. The service and design-system crates are organized as subdirectories within the <code>modules/</code> directory; the crates shared by more than one service sit in <code>shared/</code>, a sibling of it at the repository root.</p>
-<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>modules/editor/CONTEXT.md</code>, <code>modules/dpe/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Five ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code> and <code>chischtli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). All five are accepted; until the migration lands, this page describes the layout as it is.</p>
+<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>modules/editor/CONTEXT.md</code>, <code>modules/dpe/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Six ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code>, <code>chischtli/</code> and <code>dsp-cli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root <code>docs/adr/</code>, a root-level component's own decision history lives in its own <code>docs/adr/</code>, and a bare <code>ADR-NNNN</code> names the root series while <code>&lt;component&gt;/ADR-NNNN</code> names a component's (ADR-0006). All six are accepted; until the migration lands, this page describes the layout as it is.</p>
 <pre><code class="language-txt">modules/
 ├── dpe/                       # Discovery and Presentation Environment
 │   ├── core/                  # DPE's view model, caches, repositories (crate: dpe-core)
@@ -764,10 +773,13 @@ shared/                        # Crates shared by more than one service
 ├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
 ├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
 └── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
+
+dsp-cli/                       # Command-line client for the DaSCH Service Platform (crate: dsp-cli); a root peer, not a service
 </code></pre>
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
+<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. <code>dsp-cli</code> is an explicit exception: it is a single crate named after the product it publishes, not after a module-plus-role pair, and its folder keeps the crate's full name.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>dsp-cli</code></td><td><code>dsp-cli</code></td><td>Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002)</td></tr>
 <tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
 <tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
@@ -870,22 +882,161 @@ shared/                        # Crates shared by more than one service
 }
 
 </style>
+<h1 id="decision-records"><a class="header" href="#decision-records">Decision Records</a></h1>
+<p>Architecture decision records (ADRs) capture the "why" behind a decision, not just the "what".</p>
+<h2 id="where-a-decision-lives-and-how-it-is-cited"><a class="header" href="#where-a-decision-lives-and-how-it-is-cited">Where a decision lives, and how it is cited</a></h2>
+<p>System-wide decisions live in the root <code>docs/adr/</code>, with one sequence starting at 0001. A
+root-level component with its own decision history keeps its own <code>docs/adr/</code> under the component
+directory, with its own sequence also starting at 0001. The two sequences collide by number; the
+citation form is what disambiguates:</p>
+<ul>
+<li>A bare <code>ADR-NNNN</code> always names a root ADR, from anywhere in the repository.</li>
+<li>A component ADR is always cited qualified, as <code>&lt;component&gt;/ADR-NNNN</code> — also from inside that
+component.</li>
+</ul>
+<p>An amendment refines a decision in place, under a dated <code>## Amendment</code> heading. A decision that
+changes rather than narrows becomes a new ADR, and the superseded one takes
+<code>status: superseded by &lt;the new one&gt;</code>.</p>
+<p><code>just check</code> runs <code>check-adr-refs.sh</code>, which verifies that every <code>ADR-NNNN</code> and
+<code>&lt;component&gt;/ADR-NNNN</code> reference in the repository (outside <code>docs/specs/</code>) resolves to a file.
+See <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a>
+for the full decision.</p>
+<h2 id="root-series"><a class="header" href="#root-series">Root series</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>ADR</th><th>Title</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0001-bazel-builds-the-monorepo.md">ADR-0001</a></td><td>Bazel builds the monorepo</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0002-areas-at-the-repository-root.md">ADR-0002</a></td><td>The repository root is shaped by the three areas of the Trusted Repository</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0003-one-modulith-per-area.md">ADR-0003</a></td><td>One modulith per area</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0004-hypermedia-frontends.md">ADR-0004</a></td><td>Every user-facing surface is a hypermedia server</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0005-fair-landing-pages-in-the-access-area.md">ADR-0005</a></td><td>Every landing page in the Access Area is FAIR-assessable by machine</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a></td><td>Decision records are colocated with what they govern, and a component's are cited qualified</td></tr>
+</tbody></table>
+</div>
+<h2 id="component-series"><a class="header" href="#component-series">Component series</a></h2>
+<p>Listed here as components arrive with their own decision history.</p>
+<div class="table-wrapper"><table><thead><tr><th>Component</th><th>Decisions</th><th>Citation form</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/"><code>dsp-cli</code></a></td><td>its own sequence, starting at 0001</td><td><code>dsp-cli/ADR-NNNN</code>, also from inside <code>dsp-cli/</code></td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="release-deployment-and-versioning"><a class="header" href="#release-deployment-and-versioning">Release, Deployment and Versioning</a></h1>
 <h2 id="cicd-pipelines"><a class="header" href="#cicd-pipelines">CI/CD Pipelines</a></h2>
 <p>All CI/CD workflows are defined as GitHub Actions in <code>.github/workflows/</code>.</p>
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), and third-party artifact checksums (see <a href="./security.html">Security</a>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), third-party artifact checksums (see <a href="./security.html">Security</a>), and a dsp-cli packaging dry run (<code>cargo publish -p dsp-cli --dry-run</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
+<li><strong>dsp-cli-drift.yml</strong> — its <code>changes</code> job (deciding whether anything under <code>dsp-cli/**</code> changed) runs on every PR; see <a href="deployment.html#dsp-cli-drift-detection">dsp-cli drift detection</a> below</li>
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
 <p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
-<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
+<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
+<h3 id="dsp-cli-drift-detection"><a class="header" href="#dsp-cli-drift-detection">dsp-cli Drift Detection</a></h3>
+<p>Defined in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/dsp-cli-drift.yml"><code>dsp-cli-drift.yml</code></a>.</p>
+<p>Runs dsp-cli's live test suite (dsp-cli/ADR-0009 layer 5) against a pinned, containerized dsp-api
+stack. An OpenAPI diff of DSP-API's endpoint surface cannot see a renamed or re-shaped key inside a
+JSON-LD response body, but dsp-cli deserializes exactly those bodies — running the real client
+against a real server is what catches that class of drift.</p>
+<p>Four jobs:</p>
+<ul>
+<li><strong><code>changes</code></strong> — <code>pull_request</code> only. Decides whether anything under <code>dsp-cli/**</code> changed.</li>
+<li><strong><code>pinned</code></strong> — runs the live suite against the pinned stack when <code>changes</code> says something did.</li>
+<li><strong><code>gate</code></strong> — an always-runs aggregator, green when <code>pinned</code> either passed or was legitimately
+skipped. <strong><code>gate</code>, not <code>pinned</code>, is the required check</strong>: GitHub treats a job that never ran as
+pending rather than passing, so a required check that is conditionally skipped would block every
+PR that doesn't touch <code>dsp-cli/**</code>. (Configuring <code>gate</code> as a required check in repository settings
+is a follow-up action, not yet done.)</li>
+<li><strong><code>latest</code></strong> — nightly and <code>workflow_dispatch</code>, same steps against the <code>latest</code> images instead of
+the pin. <code>workflow_dispatch</code> exists because scheduled runs are delayed under load and GitHub
+disables a schedule after 60 days of repository inactivity, so a manual trigger is the escape
+hatch. It still loads the fixtures and ontologies checked out at the <strong>pinned</strong> <code>API</code> tag from
+<code>stack.env</code> — <code>latest</code> has no corresponding dsp-api ref to check out. So a red nightly can mean
+either real dsp-api drift, or that the pinned fixtures no longer load into a newer API. A failure
+in the "Load fixtures" step is the latter; a failure in the test step is the former.</li>
+</ul>
+<h4 id="the-stack"><a class="header" href="#the-stack">The stack</a></h4>
+<p>Lives in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/ci/stack/"><code>dsp-cli/ci/stack/</code></a>: a <code>docker-compose.yml</code> with two services, <code>db</code> (Apache Jena Fuseki) and <code>api</code>
+(knora-api) — no sipi, no ingest — plus <code>load-fixtures.sh</code>, <code>token.sh</code>, <code>wait-for-api.sh</code>, and a
+<code>README.md</code>. <code>stack.env</code> holds two independent pins, <code>API</code> and <code>DB</code> — and <strong>both are this
+repository's own choice, not a dsp-api release signal</strong>; <code>API</code> sets the <code>knora-api</code> image tag and
+also the <code>dasch-swiss/dsp-api</code> tag <code>load-fixtures.sh</code> checks the fixtures and ontologies out from,
+while <code>DB</code> sets only the Fuseki image. Bumping either means editing <code>stack.env</code>, re-running the
+suite locally, and committing the result.</p>
+<p>Run the stack locally with <code>just dsp-cli-stack-up</code>, <code>just dsp-cli-stack-fixtures</code>, and
+<code>just dsp-cli-stack-down</code>.</p>
+<h4 id="signal-model"><a class="header" href="#signal-model">Signal model</a></h4>
+<p>Same as fuzz testing above: no issue is filed automatically (GitHub Issues are disabled on this
+repository). When the nightly <code>latest</code> run goes red, a person reads the job summary — it carries the
+failing test names and the dsp-api image digest — and files a Linear issue from it.</p>
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
@@ -893,6 +1044,8 @@ shared/                        # Crates shared by more than one service
 <tr><td><code>build-editor</code></td><td>Compile the metadata editor (static musl <code>editor-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-editor-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
+<tr><td><code>commit-lint</code></td><td>Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap</td></tr>
+<tr><td><code>dsp-cli-stack-test</code></td><td>Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it</td></tr>
 </tbody></table>
 </div>
 <h3 id="mosaic-playground"><a class="header" href="#mosaic-playground">Mosaic Playground</a></h3>
@@ -943,7 +1096,13 @@ shared/                        # Crates shared by more than one service
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
 <p>Which prefix produces which changelog section and version bump is defined in <a href="./git-conventions.html#commit-message-schema">Git Conventions</a> — that page is the human source for the type vocabulary, and this config is the machine source.</p>
-<p>Configuration lives in <code>.github/release-please/config.json</code> and <code>.github/release-please/manifest.json</code>.</p>
+<p>Configuration lives in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json"><code>.github/release-please/config.json</code></a> and <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json"><code>.github/release-please/manifest.json</code></a>.</p>
+<h4 id="dsp-cli"><a class="header" href="#dsp-cli">dsp-cli</a></h4>
+<p><code>dsp-cli</code> is a second release-please package, configured alongside the root <code>"."</code> package in the same <code>config.json</code>. Top-level <code>separate-pull-requests: true</code> keeps the two release PRs apart, so merging a workspace release never ships <code>dsp-cli</code>, and merging the <code>dsp-cli</code> release never ships the workspace.</p>
+<p>Tag format differs by package: <code>dsp-cli</code> releases are tagged <code>dsp-cli-v&lt;version&gt;</code> (the package sets <code>include-component-in-tag: true</code>), while the root keeps the plain <code>v&lt;version&gt;</code> tag. The <code>dsp-cli</code> release branch is named <code>release-please--branches--main--components--dsp-cli</code>.</p>
+<p><strong>Release attribution is by path, not by commit scope.</strong> release-please assigns a commit to a package when any file it touches sits under that package's path; the root <code>"."</code> package receives every commit unless its <code>exclude-paths</code> excludes it, and a commit is excluded from a package only when <em>all</em> of its files fall under an excluded path. The root's <code>exclude-paths</code> is <code>[".github", "dsp-cli"]</code>. The consequence — accepted and documented, not worked around — is the <strong>double-bump rule</strong>: a <code>dsp-cli</code> commit that also touches a root file (for example, a <code>Cargo.lock</code> dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See <a href="./git-conventions.html#scopes">Git Conventions</a> for keeping <code>dsp-cli</code> commits scoped to <code>dsp-cli/**</code> where possible.</p>
+<p>A <code>Release-As: &lt;version&gt;</code> commit footer forces a deliberate version choice for a package, overriding the version release-please would otherwise compute. The first <code>dsp-cli</code> release from its new workspace home carries <code>Release-As: 0.3.0</code>: with <code>bump-minor-pre-major</code>, a <code>feat</code> alone would only produce <code>0.2.2</code>, which would not signal the move.</p>
+<p>Publishing <code>dsp-cli</code> to crates.io is handled by <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/publish-dsp-cli.yml"><code>publish-dsp-cli.yml</code></a>, triggered on <code>release: published</code> and guarded by <code>startsWith(github.event.release.tag_name, 'dsp-cli-v')</code> so it never fires for a root release. It publishes via <strong>trusted publishing</strong> (<code>rust-lang/crates-io-auth-action@v1</code> with <code>permissions: id-token: write</code>) rather than a long-lived <code>CARGO_REGISTRY_TOKEN</code> secret, and runs in the <code>crates-io</code> GitHub environment as defence in depth. Trusted publishing requires a one-time configuration on crates.io, done by an existing crate owner, naming this repository, the workflow file, and the <code>crates-io</code> environment; authentication fails until that configuration exists.</p>
 <h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
 <p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to GitHub Pages on pushes to <code>main</code>.</p>
 <h3 id="claude-code"><a class="header" href="#claude-code">Claude Code</a></h3>
@@ -6091,6 +6250,484 @@ Nothing outside <code>components/form/</code> may name them.</p>
 scroll region's <code>aria-label</code>, and an icon or nested markup in an accessible name
 means nothing. A slot that must survive as plain text is the exception the rule
 allows for; a slot that is only rendered is not.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="dsp-cli-architecture"><a class="header" href="#dsp-cli-architecture">dsp-cli Architecture</a></h1>
+<p><code>dsp-cli</code> is an AI-agent-friendly command-line interface for the DaSCH Service Platform (DSP). It
+translates DSP-API's RDF/JSON-LD surface into researcher vocabulary — <strong>data-model</strong>,
+<strong>resource-type</strong>, <strong>field</strong>, <strong>value</strong> — instead of DSP-API's own <code>ontology</code> / <code>class</code> /
+<code>property</code> / <code>Value</code> subclass terms. It is a root peer of the areas: a single crate, depending on
+no workspace crate, that reaches DSP-API purely over HTTP.</p>
+<h2 id="layers"><a class="header" href="#layers">Layers</a></h2>
+<p><code>dsp-cli</code> is organised as five layers inside a single crate that exposes both a library
+(<code>src/lib.rs</code>) and a binary (<code>src/main.rs</code>). Action functions depend on traits (<code>DspClient</code>,
+<code>Renderer</code>) rather than concrete implementations, so neither HTTP nor output format is hard-coded
+into business logic.</p>
+<pre><code>1. CLI parsing (clap derive)            — pure: produces typed arg structs
+2. Action layer (per noun-group)        — orchestrates client + renderer
+3a. DSP client trait + HTTP impl        — talks to DSP-API
+3b. Renderer trait + format impls       — prose, json, csv, tsv, lines
+4. Domain models                        — Project, DataModel, ResourceType, Field, Value, ValueType
+5. Config resolution                    — flag → env var → .env → cached token (dsp-cli/ADR-0007)
+</code></pre>
+<p>The action layer is the keystone. Each action function signature is roughly:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn &lt;verb&gt;(
+    args: &amp;&lt;Verb&gt;&lt;Noun&gt;Args,
+    cfg: &amp;Config,
+    client: &amp;dyn DspClient,
+    renderer: &amp;dyn Renderer,
+) -&gt; Result&lt;()&gt;
+<span class="boring">}</span></code></pre></pre>
+<p>This forces two properties:</p>
+<ul>
+<li><strong>HTTP-free action tests.</strong> Inject a <code>MockDspClient</code> and a capturing renderer; assert against
+the captured calls. Fast and deterministic.</li>
+<li><strong>Format-free action logic.</strong> Adding a new output format is a single <code>Renderer</code> impl; no action
+code changes.</li>
+</ul>
+<p><code>src/model/</code> (layer 4) holds translated domain types only. Transport-shaped relay types — where
+the shape is chosen by the server or the store, not by dsp-cli's translation, such as the raw
+SPARQL passthrough response — live in <code>src/client/</code> (layer 3a) instead.</p>
+<h2 id="test-seam"><a class="header" href="#test-seam">Test seam</a></h2>
+<ul>
+<li><strong>Primary: mock at the <code>DspClient</code> trait.</strong> Action-level tests construct a <code>MockDspClient</code> with
+canned responses and assert against the renderer's output or captured calls. These tests are the
+vast majority of the suite, run in milliseconds, and stay focused on business logic.</li>
+<li><strong>Secondary: wiremock integration tests.</strong> A small dedicated set of tests covers HTTP-level
+concerns: request shape, header propagation, deserialization of real DSP-API response payloads,
+retry/error behaviour. Slower; few in number; not where verb logic gets validated.</li>
+</ul>
+<p>See <a href="dsp-cli/./testing-strategy.html">Testing Strategy</a> for the full layer breakdown.</p>
+<h2 id="crate-layout"><a class="header" href="#crate-layout">Crate layout</a></h2>
+<pre><code>dsp-cli/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # binary entry: parse → dispatch
+│   ├── lib.rs               # library re-exports
+│   ├── cli/                 # clap derive structs (layer 1)
+│   ├── actions/             # layer 2
+│   │   └── vre/
+│   │       ├── project.rs
+│   │       ├── data_model.rs
+│   │       └── resource_type.rs
+│   ├── client/              # layer 3a — trait + HTTP impl
+│   ├── render/               # layer 3b — Renderer trait + format impls
+│   ├── model/                # layer 4 — domain types
+│   ├── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
+│   │   └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
+│   └── config/                # layer 5 — config stack
+└── tests/                    # wiremock integration tests + cli-level assert_cmd tests
+</code></pre>
+<p>The cross-layer dependency rule: <strong>client and render are sibling layers; neither may import the
+other; both may import util.</strong></p>
+<p>Single crate keeps build and test cycles simple. The library/binary split lets <code>cargo test</code>
+exercise everything except the very thin <code>main.rs</code>. The directory shape mirrors the noun-group
+hierarchy in dsp-cli/ADR-0002, so navigating "where does <code>dsp vre data-model describe</code> live" is
+mechanical: <code>src/actions/vre/data_model.rs</code>.</p>
+<h2 id="renderer-trait-granularity"><a class="header" href="#renderer-trait-granularity">Renderer trait granularity</a></h2>
+<p>Explicit per-(noun, shape) methods, not a generic <code>render&lt;T: Renderable&gt;</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>trait Renderer {
+    fn projects(&amp;mut self, view: &amp;ProjectListView, meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
+    fn project_detail(&amp;mut self, item: &amp;Project, data_models: &amp;[DataModelSummary], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
+    fn data_models(&amp;mut self, items: &amp;[DataModel], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
+    fn data_model_detail(&amp;mut self, item: &amp;DataModel, resource_types: &amp;[ResourceTypeSummary], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
+    fn resource_types(&amp;mut self, items: &amp;[ResourceType], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
+    fn resource_type_detail(&amp;mut self, item: &amp;ResourceType, meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
+    // ...
+}
+<span class="boring">}</span></code></pre></pre>
+<p>List methods take an owned per-noun view struct (e.g. <code>ProjectListView</code>) carrying the post-filter
+items, the pre-filter total, and the filter string, rather than a bare slice — this lets prose
+render a "(m of n matching …)" count line without the action layer duplicating that logic. The
+<code>_meta</code> argument (<code>MetaContext</code>: server label, auth state, optional filter warning) threads through
+every renderer call; this is the implementation site of dsp-cli/ADR-0007's auth-state disclosure
+requirement.</p>
+<p>Prose rendering is irreducibly per-noun (each entity has its own natural-language phrasing).
+Generic rendering via a trait object would force every format to read the same data through the
+same lens, which is exactly wrong for prose. The slight cost (more trait methods as the surface
+grows) is bounded by the fact that the noun-group set is small and grows slowly.</p>
+<h2 id="considered-alternatives"><a class="header" href="#considered-alternatives">Considered alternatives</a></h2>
+<ul>
+<li><strong>Binary-only single crate.</strong> Rejected — actions only testable via end-to-end <code>assert_cmd</code>,
+which is slow and friction-heavy for the dominant test mode.</li>
+<li><strong>Cargo workspace.</strong> Rejected while dsp-cli was a standalone repository — adds ceremony without
+benefit at personal-project scale. The move into this monorepo (dsp-cli/ADR-0014) kept the
+single-crate internal layout; it did not split dsp-cli itself into multiple crates.</li>
+<li><strong>Wiremock-only test seam.</strong> Rejected — action-level tests become 10-100x slower; edge cases
+(error paths, partial data) harder to construct.</li>
+<li><strong>Generic <code>render&lt;T&gt;</code> trait.</strong> Rejected — wrong shape for prose.</li>
+<li><strong>Action functions that own HTTP directly</strong> (no client trait). Rejected — eliminates the fast
+test seam.</li>
+</ul>
+<h2 id="consequences"><a class="header" href="#consequences">Consequences</a></h2>
+<ul>
+<li><code>DspClient</code> is a trait from day one. The trait's surface co-evolves with the action layer: every
+new verb that needs a new endpoint adds a method to the trait.</li>
+<li><code>Renderer</code> is a trait with explicit per-noun methods. New noun-groups add new methods; each
+format impl gets a new method.</li>
+<li>Async/tokio is not required. <code>reqwest::blocking</code> works fine for sequential CLI calls. Sync
+execution + trait-object dispatch keeps compile times reasonable and stack traces readable.</li>
+</ul>
+<p>See <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0008-internal-architecture.md">dsp-cli/ADR-0008</a>
+for the full rationale and rejected alternatives, and <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0001-vocabulary-divergence.md">dsp-cli/ADR-0001</a>
+for the vocabulary-translation boundary.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="dsp-cli-testing-strategy"><a class="header" href="#dsp-cli-testing-strategy">dsp-cli Testing Strategy</a></h1>
+<p><code>dsp-cli</code>'s test suite has five layers, each addressing a distinct class of failure. The primary
+seam is the <code>DspClient</code> trait (see <a href="dsp-cli/./architecture.html">Architecture</a>); the dominant test mode is
+action-level tests with mocks and snapshotted output. Live tests against a real DSP environment are
+opt-in and not part of the default suite; a dedicated CI job now runs them against a pinned,
+containerized stack (see <a href="dsp-cli/testing-strategy.html#drift-detection-in-ci">Drift detection in CI</a> below).</p>
+<h2 id="layers-1"><a class="header" href="#layers-1">Layers</a></h2>
+<ol>
+<li><strong>Unit tests</strong> — inline <code>#[cfg(test)]</code> modules for pure functions (parsing helpers, filter
+logic, value-type mapping, config resolution).</li>
+<li><strong>Action-level tests</strong> — mock the <code>DspClient</code> trait and a capturing renderer, asserting against
+the captured calls or snapshotted output. The bulk of the suite. Fast, deterministic, easy to
+write. Mocks are local to each action file rather than shared — see <code>dsp-cli/CLAUDE.md</code>'s
+non-obvious constraints for why.</li>
+<li><strong>Snapshot tests</strong> — via the <code>insta</code> crate, in <code>tests/</code>. One snapshot per (noun, verb, format)
+cell with meaningful output. Captures prose / json / csv / tsv / lines exactly. The default way
+to verify output shape; run <code>just dsp-cli-snap-review</code> (<code>cargo insta review</code>) to accept or
+reject a diff.</li>
+<li><strong>Wiremock client tests</strong> — small, focused on HTTP/serialization correctness: request shape,
+header propagation, response deserialization, retry/error paths. Fixtures are hybrid:
+hand-written for the "what we care about" happy paths, recorded from real DSP-API responses for
+regression cases where dsp-cli's view was wrong.</li>
+<li><strong>Live tests</strong> — <code>tests/live_*.rs</code>, behind the <code>live</code> cargo feature; not in the default suite.
+Hit a DSP environment: a developer-selected one locally (via env vars), or the drift job's pinned
+stack in CI. Smoke-check end-to-end integration before significant changes.</li>
+</ol>
+<p><code>just test</code> runs layers 1-4 (the cheap suite CI runs). <code>just dsp-cli-test-live</code> runs layer 5.</p>
+<h2 id="live-tests-are-always-ignored"><a class="header" href="#live-tests-are-always-ignored">Live tests are always <code>#[ignore]</code>d</a></h2>
+<p>Every <code>#[test]</code> in <code>dsp-cli/tests/live_*.rs</code> also carries <code>#[ignore]</code>, so a plain
+<code>cargo test</code>/<code>cargo nextest run</code> never attempts a live call — the tests need a reachable DSP stack,
+and without <code>#[ignore]</code> they would otherwise run and pass vacuously via their own early-return skip
+under CI. <code>.github/scripts/check-live-tests-ignored.sh</code>, run by <code>just check</code>, enforces this: it
+scans every <code>dsp-cli/tests/live_*.rs</code> file and fails if any <code>#[test]</code> lacks a matching <code>#[ignore]</code>.
+Run live tests explicitly with <code>just dsp-cli-test-live</code>, which passes <code>--features live</code> and
+<code>--ignored</code> (or the equivalent) so the ignored tests actually execute.</p>
+<h2 id="live-test-environment-variables"><a class="header" href="#live-test-environment-variables">Live-test environment variables</a></h2>
+<p>Live tests skip automatically when a required variable is unset — they never fail for missing
+config, only report why they were skipped. Each live-test file documents its own required
+variables; the common ones are:</p>
+<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required by</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>DSP_TEST_SERVER</code></td><td>all live tests</td><td>URL or shortcut of the DSP server to run against (e.g. <code>dev</code>, <code>https://api.dev.dasch.swiss</code>).</td></tr>
+<tr><td><code>DSP_TEST_PROJECT</code></td><td>project-dump and resource-list/describe live tests</td><td>Shortcode, shortname, or IRI of a small, disposable test project on <code>DSP_TEST_SERVER</code>.</td></tr>
+<tr><td><code>DSP_TEST_CLASS_IRI</code></td><td>resource-list and resource-describe live tests</td><td>Full class IRI to list/describe resources for (used to derive a resource IRI to feed into describe).</td></tr>
+<tr><td><code>DSP_TOKEN</code></td><td>tests that need auth</td><td>A pre-issued system-administrator JWT. When set, login is skipped entirely. Preferred for CI or any environment with a long-lived admin token.</td></tr>
+<tr><td><code>DSP_TEST_USER</code></td><td>tests that need auth</td><td>Email of a system-administrator account (alternative to <code>DSP_TOKEN</code>). Used together with <code>DSP_TEST_PASSWORD</code> to call <code>dsp auth login</code> first and obtain a token.</td></tr>
+<tr><td><code>DSP_TEST_PASSWORD</code></td><td>tests that need auth</td><td>Password for <code>DSP_TEST_USER</code>. Local/dev/test only — never a production password (same policy as <code>DSP_PASSWORD</code> below).</td></tr>
+<tr><td><code>DSP_TEST_NON_ADMIN_TOKEN</code></td><td>the sparql-query non-admin-token live test</td><td>A non-SystemAdmin bearer token, used to verify that the SPARQL passthrough maps a non-admin caller to a 403 auth-required error.</td></tr>
+<tr><td><code>DSP_TEST_VOCAB_PROJECT</code></td><td><code>live_vocabulary.rs</code></td><td>Shortcode or IRI of the project whose controlled vocabularies are inspected. Set to <code>0001</code> in the drift job.</td></tr>
+</tbody></table>
+</div>
+<p>If <code>DSP_TOKEN</code> is set it takes precedence over the <code>DSP_TEST_USER</code>/<code>DSP_TEST_PASSWORD</code> pair. If
+neither a token nor user+password is available, the live test skips with an <code>eprintln!</code> note
+explaining what is missing. The token is never logged.</p>
+<h3 id="strict-mode-dsp_live_strict"><a class="header" href="#strict-mode-dsp_live_strict">Strict mode (<code>DSP_LIVE_STRICT</code>)</a></h3>
+<p>By default, a live test missing a required environment variable skips quietly (an <code>eprintln!</code> and
+an early return) rather than failing — this keeps <code>just test</code> and any offline run from breaking
+when live-test configuration simply isn't present. Setting <code>DSP_LIVE_STRICT=1</code> turns that into a
+loud failure instead: <code>require_env</code> (<code>tests/common/mod.rs</code>) panics naming the missing variable
+rather than returning <code>None</code>. Use it when you specifically intend to run the live suite and want a
+misconfigured environment to fail fast instead of silently skipping every test. <code>optional_env</code>
+(also in <code>tests/common/mod.rs</code>) is unaffected by strict mode — an optional variable stays optional
+either way.</p>
+<h2 id="drift-detection-in-ci"><a class="header" href="#drift-detection-in-ci">Drift detection in CI</a></h2>
+<p><code>.github/workflows/dsp-cli-drift.yml</code> runs the layer-5 live suite in CI, strict
+(<code>DSP_LIVE_STRICT=1</code>), against a pinned, containerized dsp-api stack rather than a
+developer-selected environment. This is the check for a class of drift an OpenAPI diff can't see:
+dsp-cli deserializes DSP-API's JSON-LD response bodies, and a renamed or re-shaped key inside a
+body is invisible to a schema diff of the endpoint surface. Running the real client against a real
+server is what catches it.</p>
+<p>The default suite (<code>just test</code>, layers 1-4) is unaffected — live tests stay <code>#[ignore]</code>d there
+regardless of what runs in CI.</p>
+<h3 id="running-the-stack-locally"><a class="header" href="#running-the-stack-locally">Running the stack locally</a></h3>
+<p>The stack lives in <code>dsp-cli/ci/stack/</code> (<code>db</code> = Apache Jena Fuseki, <code>api</code> = knora-api; no sipi, no
+ingest). Three just recipes drive it:</p>
+<ul>
+<li><code>just dsp-cli-stack-up</code> — start the stack; this already loads fixtures as part of bringing it up.</li>
+<li><code>just dsp-cli-stack-fixtures</code> — reload fixtures into an already-running stack.</li>
+<li><code>just dsp-cli-stack-down</code> — tear it down.</li>
+</ul>
+<p>Run <code>just dsp-cli-test-live</code> against it the same way you would against any other environment (see
+the environment variables above).</p>
+<h3 id="bumping-the-pins"><a class="header" href="#bumping-the-pins">Bumping the pins</a></h3>
+<p><code>dsp-cli/ci/stack/stack.env</code> holds two independent pins, <code>API</code> and <code>DB</code>, and both are this
+repository's own choice, not a dsp-api release signal — neither is kept in lockstep with dsp-api's
+own version. <code>API</code> sets the <code>knora-api</code> image tag and also the <code>dasch-swiss/dsp-api</code> tag
+<code>load-fixtures.sh</code> checks the fixtures and ontologies out from; <code>DB</code> sets only the Fuseki image. To
+bump either: edit <code>stack.env</code>, re-run the live suite locally against the new versions, and commit.</p>
+<h2 id="general-configuration-variables"><a class="header" href="#general-configuration-variables">General configuration variables</a></h2>
+<p>These are not live-test-only; they configure any <code>dsp</code> invocation and are also useful when
+preparing a live-test environment. Copy them into a <code>.env</code> file in the working directory (gitignored,
+never commit secrets — see <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0007-auth-and-environments.md">dsp-cli/ADR-0007</a>):</p>
+<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>DSP_SERVER</code></td><td>Default server target (built-in shortcut or full URL).</td></tr>
+<tr><td><code>DSP_USER</code></td><td>Default user (email, username, or IRI) for <code>dsp auth login</code>, so it need not be retyped. The identifier type is auto-detected from the value.</td></tr>
+<tr><td><code>DSP_PASSWORD</code></td><td>Password for non-interactive <code>dsp auth login</code>. <strong>Local/dev/test setups only — never a production password.</strong> This is a durable plaintext master credential on disk; for real environments prefer <code>DSP_TOKEN</code> (scoped and expiring) over <code>DSP_PASSWORD</code>.</td></tr>
+<tr><td><code>DSP_TOKEN</code></td><td>Pre-provisioned auth token. Overrides the cached token from <code>dsp auth login</code>. Useful in CI and pre-provisioned agent environments; <code>dsp auth status</code> reports when it is in effect and shows its expiry, if readable.</td></tr>
+<tr><td><code>DSP_ALLOW_INSECURE_SERVER</code></td><td>Set to <code>1</code> to lift the refusal of a non-local <code>http://</code> server, which otherwise puts a bearer token on the wire in cleartext. The <code>--allow-insecure-server</code> flag wins over this variable. See <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0007-auth-and-environments.md">dsp-cli/ADR-0007</a>.</td></tr>
+<tr><td><code>RUST_LOG</code></td><td>Logging override. Bypasses the <code>-v</code> flag. See <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0012-diagnostics.md">dsp-cli/ADR-0012</a>.</td></tr>
+<tr><td><code>DSP_NO_UPDATE_CHECK</code></td><td>Disables the interactive update-check advisory (a crates.io version check that only fires on prose-format, interactive-TTY runs). Irrelevant to agents/scripts.</td></tr>
+</tbody></table>
+</div>
+<h2 id="coverage-expectations"><a class="header" href="#coverage-expectations">Coverage expectations</a></h2>
+<ul>
+<li>Every <code>pub fn</code> in <code>src/actions/</code> has an action-level test.</li>
+<li>Every (noun, verb, format) cell that produces meaningful output has a snapshot. Three commands
+are exempt because they have no <code>Renderer</code> and no output format to begin with: <code>dsp docs</code>,
+<code>dsp auth token</code>, and <code>dsp vre sparql query</code> — CLI-help snapshots are <strong>not</strong> exempt from this,
+since <code>--help</code> text is part of the contract regardless of a leaf's output shape.</li>
+<li>Every wire-format change (request body, response deserialisation) has at least one wiremock
+test.</li>
+<li>Live tests cover the read paths against a real DSP environment (smoke-only).</li>
+</ul>
+<h2 id="see-also-1"><a class="header" href="#see-also-1">See also</a></h2>
+<ul>
+<li><a href="dsp-cli/./architecture.html">Architecture</a> — layers and the <code>DspClient</code>/<code>Renderer</code> test seam.</li>
+<li><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0009-testing-strategy.md">dsp-cli/ADR-0009</a> — full rationale and rejected alternatives.</li>
+<li><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/docs/adr/0008-internal-architecture.md">dsp-cli/ADR-0008</a> — the test seam (<code>DspClient</code> trait + <code>Renderer</code> trait).</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="dsp-cli-usage"><a class="header" href="#dsp-cli-usage">dsp-cli Usage</a></h1>
+<p><code>dsp-cli</code> is an AI-agent-friendly command-line interface for the DaSCH Service Platform (DSP). The
+published crate is <code>dsp-cli</code>; the installed binary is <code>dsp</code>. Full end-user documentation, quickstart
+examples, and the command surface live in
+<a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/README.md"><code>dsp-cli/README.md</code></a> —
+this page only orients; it does not duplicate it.</p>
+<h2 id="install"><a class="header" href="#install">Install</a></h2>
+<pre><code class="language-bash">cargo install dsp-cli
+</code></pre>
+<p>Places the <code>dsp</code> binary in <code>~/.cargo/bin</code>. See the README for prerequisites (a Rust toolchain via
+<a href="https://rustup.rs/">rustup</a>).</p>
+<h2 id="built-in-documentation-dsp-docs"><a class="header" href="#built-in-documentation-dsp-docs">Built-in documentation: <code>dsp docs</code></a></h2>
+<p>End-user documentation ships embedded in the binary, version-synced with the release:</p>
+<pre><code class="language-bash">dsp docs                 # list the available topics
+dsp docs connecting      # servers, environments, and authentication
+dsp docs workflows       # chaining commands into real tasks
+</code></pre>
+<p><code>dsp docs &lt;topic&gt; --pager</code> pages through <code>$PAGER</code>; <code>dsp docs -j</code> emits a machine-readable JSON
+topic index.</p>
+<h2 id="server-shortcuts"><a class="header" href="#server-shortcuts">Server shortcuts</a></h2>
+<p>Every command is pointed at a server with <code>--server</code>/<code>-s</code> — a full URL or a built-in shortcut
+(<code>prod</code>, <code>stage</code>, <code>dev</code>, <code>demo</code>, <code>rdu</code>, <code>local</code>, and a couple of load-specific ones). There is no
+hard-coded default; a command with neither <code>--server</code> nor <code>DSP_SERVER</code> set fails fast with a clear
+error. See <code>dsp docs connecting</code> for the full list and rationale.</p>
+<h2 id="auth"><a class="header" href="#auth">Auth</a></h2>
+<p>Most project and schema metadata is public and needs no login. Instance data (resources) and
+private projects do:</p>
+<pre><code class="language-bash">dsp auth login --server stage --user you@example.org   # prompts for your password; caches the token
+dsp auth status --server stage                          # shows auth state for that server
+dsp auth token --server stage                            # prints the cached bearer token, for piping
+dsp auth logout --server stage                           # clears the cached token
+</code></pre>
+<p>See the README's Quickstart for the full login/token walkthrough, and
+<a href="dsp-cli/./testing-strategy.html#general-configuration-variables">Testing Strategy</a> for the environment
+variables (<code>DSP_SERVER</code>, <code>DSP_USER</code>, <code>DSP_PASSWORD</code>, <code>DSP_TOKEN</code>) that let a script or agent skip
+the interactive prompts entirely.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

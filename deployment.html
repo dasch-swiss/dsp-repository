@@ -248,16 +248,54 @@
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), and third-party artifact checksums (see <a href="./security.html">Security</a>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), third-party artifact checksums (see <a href="./security.html">Security</a>), and a dsp-cli packaging dry run (<code>cargo publish -p dsp-cli --dry-run</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
+<li><strong>dsp-cli-drift.yml</strong> — its <code>changes</code> job (deciding whether anything under <code>dsp-cli/**</code> changed) runs on every PR; see <a href="#dsp-cli-drift-detection">dsp-cli drift detection</a> below</li>
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
 <p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
-<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
+<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
+<h3 id="dsp-cli-drift-detection"><a class="header" href="#dsp-cli-drift-detection">dsp-cli Drift Detection</a></h3>
+<p>Defined in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/dsp-cli-drift.yml"><code>dsp-cli-drift.yml</code></a>.</p>
+<p>Runs dsp-cli's live test suite (dsp-cli/ADR-0009 layer 5) against a pinned, containerized dsp-api
+stack. An OpenAPI diff of DSP-API's endpoint surface cannot see a renamed or re-shaped key inside a
+JSON-LD response body, but dsp-cli deserializes exactly those bodies — running the real client
+against a real server is what catches that class of drift.</p>
+<p>Four jobs:</p>
+<ul>
+<li><strong><code>changes</code></strong> — <code>pull_request</code> only. Decides whether anything under <code>dsp-cli/**</code> changed.</li>
+<li><strong><code>pinned</code></strong> — runs the live suite against the pinned stack when <code>changes</code> says something did.</li>
+<li><strong><code>gate</code></strong> — an always-runs aggregator, green when <code>pinned</code> either passed or was legitimately
+skipped. <strong><code>gate</code>, not <code>pinned</code>, is the required check</strong>: GitHub treats a job that never ran as
+pending rather than passing, so a required check that is conditionally skipped would block every
+PR that doesn't touch <code>dsp-cli/**</code>. (Configuring <code>gate</code> as a required check in repository settings
+is a follow-up action, not yet done.)</li>
+<li><strong><code>latest</code></strong> — nightly and <code>workflow_dispatch</code>, same steps against the <code>latest</code> images instead of
+the pin. <code>workflow_dispatch</code> exists because scheduled runs are delayed under load and GitHub
+disables a schedule after 60 days of repository inactivity, so a manual trigger is the escape
+hatch. It still loads the fixtures and ontologies checked out at the <strong>pinned</strong> <code>API</code> tag from
+<code>stack.env</code> — <code>latest</code> has no corresponding dsp-api ref to check out. So a red nightly can mean
+either real dsp-api drift, or that the pinned fixtures no longer load into a newer API. A failure
+in the "Load fixtures" step is the latter; a failure in the test step is the former.</li>
+</ul>
+<h4 id="the-stack"><a class="header" href="#the-stack">The stack</a></h4>
+<p>Lives in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/ci/stack/"><code>dsp-cli/ci/stack/</code></a>: a <code>docker-compose.yml</code> with two services, <code>db</code> (Apache Jena Fuseki) and <code>api</code>
+(knora-api) — no sipi, no ingest — plus <code>load-fixtures.sh</code>, <code>token.sh</code>, <code>wait-for-api.sh</code>, and a
+<code>README.md</code>. <code>stack.env</code> holds two independent pins, <code>API</code> and <code>DB</code> — and <strong>both are this
+repository's own choice, not a dsp-api release signal</strong>; <code>API</code> sets the <code>knora-api</code> image tag and
+also the <code>dasch-swiss/dsp-api</code> tag <code>load-fixtures.sh</code> checks the fixtures and ontologies out from,
+while <code>DB</code> sets only the Fuseki image. Bumping either means editing <code>stack.env</code>, re-running the
+suite locally, and committing the result.</p>
+<p>Run the stack locally with <code>just dsp-cli-stack-up</code>, <code>just dsp-cli-stack-fixtures</code>, and
+<code>just dsp-cli-stack-down</code>.</p>
+<h4 id="signal-model"><a class="header" href="#signal-model">Signal model</a></h4>
+<p>Same as fuzz testing above: no issue is filed automatically (GitHub Issues are disabled on this
+repository). When the nightly <code>latest</code> run goes red, a person reads the job summary — it carries the
+failing test names and the dsp-api image digest — and files a Linear issue from it.</p>
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
@@ -265,6 +303,8 @@
 <tr><td><code>build-editor</code></td><td>Compile the metadata editor (static musl <code>editor-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-editor-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
+<tr><td><code>commit-lint</code></td><td>Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap</td></tr>
+<tr><td><code>dsp-cli-stack-test</code></td><td>Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it</td></tr>
 </tbody></table>
 </div>
 <h3 id="mosaic-playground"><a class="header" href="#mosaic-playground">Mosaic Playground</a></h3>
@@ -315,7 +355,13 @@
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
 <p>Which prefix produces which changelog section and version bump is defined in <a href="./git-conventions.html#commit-message-schema">Git Conventions</a> — that page is the human source for the type vocabulary, and this config is the machine source.</p>
-<p>Configuration lives in <code>.github/release-please/config.json</code> and <code>.github/release-please/manifest.json</code>.</p>
+<p>Configuration lives in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json"><code>.github/release-please/config.json</code></a> and <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json"><code>.github/release-please/manifest.json</code></a>.</p>
+<h4 id="dsp-cli"><a class="header" href="#dsp-cli">dsp-cli</a></h4>
+<p><code>dsp-cli</code> is a second release-please package, configured alongside the root <code>"."</code> package in the same <code>config.json</code>. Top-level <code>separate-pull-requests: true</code> keeps the two release PRs apart, so merging a workspace release never ships <code>dsp-cli</code>, and merging the <code>dsp-cli</code> release never ships the workspace.</p>
+<p>Tag format differs by package: <code>dsp-cli</code> releases are tagged <code>dsp-cli-v&lt;version&gt;</code> (the package sets <code>include-component-in-tag: true</code>), while the root keeps the plain <code>v&lt;version&gt;</code> tag. The <code>dsp-cli</code> release branch is named <code>release-please--branches--main--components--dsp-cli</code>.</p>
+<p><strong>Release attribution is by path, not by commit scope.</strong> release-please assigns a commit to a package when any file it touches sits under that package's path; the root <code>"."</code> package receives every commit unless its <code>exclude-paths</code> excludes it, and a commit is excluded from a package only when <em>all</em> of its files fall under an excluded path. The root's <code>exclude-paths</code> is <code>[".github", "dsp-cli"]</code>. The consequence — accepted and documented, not worked around — is the <strong>double-bump rule</strong>: a <code>dsp-cli</code> commit that also touches a root file (for example, a <code>Cargo.lock</code> dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See <a href="./git-conventions.html#scopes">Git Conventions</a> for keeping <code>dsp-cli</code> commits scoped to <code>dsp-cli/**</code> where possible.</p>
+<p>A <code>Release-As: &lt;version&gt;</code> commit footer forces a deliberate version choice for a package, overriding the version release-please would otherwise compute. The first <code>dsp-cli</code> release from its new workspace home carries <code>Release-As: 0.3.0</code>: with <code>bump-minor-pre-major</code>, a <code>feat</code> alone would only produce <code>0.2.2</code>, which would not signal the move.</p>
+<p>Publishing <code>dsp-cli</code> to crates.io is handled by <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/publish-dsp-cli.yml"><code>publish-dsp-cli.yml</code></a>, triggered on <code>release: published</code> and guarded by <code>startsWith(github.event.release.tag_name, 'dsp-cli-v')</code> so it never fires for a root release. It publishes via <strong>trusted publishing</strong> (<code>rust-lang/crates-io-auth-action@v1</code> with <code>permissions: id-token: write</code>) rather than a long-lived <code>CARGO_REGISTRY_TOKEN</code> secret, and runs in the <code>crates-io</code> GitHub environment as defence in depth. Trusted publishing requires a one-time configuration on crates.io, done by an existing crate owner, naming this repository, the workflow file, and the <code>crates-io</code> environment; authentication fails until that configuration exists.</p>
 <h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
 <p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to GitHub Pages on pushes to <code>main</code>.</p>
 <h3 id="claude-code"><a class="header" href="#claude-code">Claude Code</a></h3>
@@ -326,7 +372,7 @@
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="repo_structure.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="decisions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -340,7 +386,7 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="repo_structure.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="decisions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

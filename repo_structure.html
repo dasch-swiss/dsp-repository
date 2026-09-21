@@ -245,7 +245,7 @@
 <h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p>This repository is a Rust workspace structured as a monorepo. The service and design-system crates are organized as subdirectories within the <code>modules/</code> directory; the crates shared by more than one service sit in <code>shared/</code>, a sibling of it at the repository root.</p>
-<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>modules/editor/CONTEXT.md</code>, <code>modules/dpe/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Five ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code> and <code>chischtli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). All five are accepted; until the migration lands, this page describes the layout as it is.</p>
+<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>modules/editor/CONTEXT.md</code>, <code>modules/dpe/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Six ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code>, <code>chischtli/</code> and <code>dsp-cli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root <code>docs/adr/</code>, a root-level component's own decision history lives in its own <code>docs/adr/</code>, and a bare <code>ADR-NNNN</code> names the root series while <code>&lt;component&gt;/ADR-NNNN</code> names a component's (ADR-0006). All six are accepted; until the migration lands, this page describes the layout as it is.</p>
 <pre><code class="language-txt">modules/
 ├── dpe/                       # Discovery and Presentation Environment
 │   ├── core/                  # DPE's view model, caches, repositories (crate: dpe-core)
@@ -272,10 +272,13 @@ shared/                        # Crates shared by more than one service
 ├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
 ├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
 └── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
+
+dsp-cli/                       # Command-line client for the DaSCH Service Platform (crate: dsp-cli); a root peer, not a service
 </code></pre>
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
+<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. <code>dsp-cli</code> is an explicit exception: it is a single crate named after the product it publishes, not after a module-plus-role pair, and its folder keeps the crate's full name.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>dsp-cli</code></td><td><code>dsp-cli</code></td><td>Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002)</td></tr>
 <tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
 <tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
@@ -320,7 +323,7 @@ shared/                        # Crates shared by more than one service
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="decisions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -334,7 +337,7 @@ shared/                        # Crates shared by more than one service
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="decisions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

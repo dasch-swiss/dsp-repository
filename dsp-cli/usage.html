@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Workflows and Conventions - DSP-Repository Developer Documentation</title>
+        <title>Usage - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -106,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -141,7 +141,7 @@
                     <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -242,56 +242,52 @@
 }
 
 </style>
-<h1 id="workflows-and-conventions"><a class="header" href="#workflows-and-conventions">Workflows and Conventions</a></h1>
-<h2 id="entry-points"><a class="header" href="#entry-points">Entry Points</a></h2>
-<p>The first entry point of this repository is the README file, which should give anyone an indication of where to find any information they need.</p>
-<p>For any interaction or coding-related workflow, the justfile is the primary source of truth. Run <code>just</code> without arguments to see all available commands with descriptions.</p>
-<h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>just check</code></td><td>Run formatting, linting and checksum checks</td></tr>
-<tr><td><code>just build</code></td><td>Build all targets</td></tr>
-<tr><td><code>just test</code></td><td>Run all tests</td></tr>
-<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
-<tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
-<tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
-<tr><td><code>just dev</code></td><td>Run DPE with hot reload</td></tr>
-<tr><td><code>just dev-editor</code></td><td>Run the metadata editor with hot reload (binds 4100, so it can run alongside <code>just dev</code>)</td></tr>
-<tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
-<tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
-<tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
-<tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
-<tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
-<tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-adr-refs</code></td><td>Fail the build if a decision-record reference does not resolve to a record (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-live-tests-ignored</code></td><td>Fail the build if a dsp-cli live test is not <code>#[ignore]</code>d (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
-<tr><td><code>just dsp-cli-run &lt;args&gt;</code></td><td>Run the <code>dsp</code> command-line client with the given arguments</td></tr>
-<tr><td><code>just dsp-cli-test-live</code></td><td>Run dsp-cli's live tests against a reachable DSP stack (never part of <code>just test</code>)</td></tr>
-<tr><td><code>just dsp-cli-stack-up</code></td><td>Start the containerized DSP stack used by dsp-cli's live tests</td></tr>
-<tr><td><code>just dsp-cli-stack-fixtures</code></td><td>Load fixture data into the dsp-cli stack</td></tr>
-<tr><td><code>just dsp-cli-stack-down</code></td><td>Tear down the dsp-cli stack</td></tr>
-<tr><td><code>just dsp-cli-snap-review</code></td><td>Review pending insta snapshots for dsp-cli</td></tr>
-</tbody></table>
-</div>
-<h2 id="git-commits-and-pull-requests"><a class="header" href="#git-commits-and-pull-requests">Git, Commits, and Pull Requests</a></h2>
-<p>All git handling — the rebase-merge workflow, commit message schema, commit organization, and PR conventions — lives in a single file: <a href="./git-conventions.html">Git Conventions</a>.</p>
-<h2 id="release-workflow"><a class="header" href="#release-workflow">Release Workflow</a></h2>
-<p>Releases are automated via <a href="https://github.com/googleapis/release-please">Release Please</a>. On every push to <code>main</code>, Release Please reads conventional commit messages and either creates or updates a release PR. Merging the release PR creates a GitHub Release with auto-generated release notes.</p>
-<h2 id="code-review"><a class="header" href="#code-review">Code Review</a></h2>
-<p>See <a href="./fundamentals/review-guidelines.html">Review Guidelines</a> for the review checklist.</p>
-<h2 id="cicd"><a class="header" href="#cicd">CI/CD</a></h2>
-<p>GitHub Actions workflows run automatically on pushes and pull requests. See <a href="./deployment.html">Release, Deployment and Versioning</a> for details on the CI/CD pipelines.</p>
+<h1 id="dsp-cli-usage"><a class="header" href="#dsp-cli-usage">dsp-cli Usage</a></h1>
+<p><code>dsp-cli</code> is an AI-agent-friendly command-line interface for the DaSCH Service Platform (DSP). The
+published crate is <code>dsp-cli</code>; the installed binary is <code>dsp</code>. Full end-user documentation, quickstart
+examples, and the command surface live in
+<a href="https://github.com/dasch-swiss/dsp-repository/blob/main/dsp-cli/README.md"><code>dsp-cli/README.md</code></a> —
+this page only orients; it does not duplicate it.</p>
+<h2 id="install"><a class="header" href="#install">Install</a></h2>
+<pre><code class="language-bash">cargo install dsp-cli
+</code></pre>
+<p>Places the <code>dsp</code> binary in <code>~/.cargo/bin</code>. See the README for prerequisites (a Rust toolchain via
+<a href="https://rustup.rs/">rustup</a>).</p>
+<h2 id="built-in-documentation-dsp-docs"><a class="header" href="#built-in-documentation-dsp-docs">Built-in documentation: <code>dsp docs</code></a></h2>
+<p>End-user documentation ships embedded in the binary, version-synced with the release:</p>
+<pre><code class="language-bash">dsp docs                 # list the available topics
+dsp docs connecting      # servers, environments, and authentication
+dsp docs workflows       # chaining commands into real tasks
+</code></pre>
+<p><code>dsp docs &lt;topic&gt; --pager</code> pages through <code>$PAGER</code>; <code>dsp docs -j</code> emits a machine-readable JSON
+topic index.</p>
+<h2 id="server-shortcuts"><a class="header" href="#server-shortcuts">Server shortcuts</a></h2>
+<p>Every command is pointed at a server with <code>--server</code>/<code>-s</code> — a full URL or a built-in shortcut
+(<code>prod</code>, <code>stage</code>, <code>dev</code>, <code>demo</code>, <code>rdu</code>, <code>local</code>, and a couple of load-specific ones). There is no
+hard-coded default; a command with neither <code>--server</code> nor <code>DSP_SERVER</code> set fails fast with a clear
+error. See <code>dsp docs connecting</code> for the full list and rationale.</p>
+<h2 id="auth"><a class="header" href="#auth">Auth</a></h2>
+<p>Most project and schema metadata is public and needs no login. Instance data (resources) and
+private projects do:</p>
+<pre><code class="language-bash">dsp auth login --server stage --user you@example.org   # prompts for your password; caches the token
+dsp auth status --server stage                          # shows auth state for that server
+dsp auth token --server stage                            # prints the cached bearer token, for piping
+dsp auth logout --server stage                           # clears the cached token
+</code></pre>
+<p>See the README's Quickstart for the full login/token walkthrough, and
+<a href="./testing-strategy.html#general-configuration-variables">Testing Strategy</a> for the environment
+variables (<code>DSP_SERVER</code>, <code>DSP_USER</code>, <code>DSP_PASSWORD</code>, <code>DSP_TOKEN</code>) that let a script or agent skip
+the interactive prompts entirely.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="docs.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dsp-cli/testing-strategy.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="git-conventions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../fundamentals/processes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -301,11 +297,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="docs.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dsp-cli/testing-strategy.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="git-conventions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../fundamentals/processes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -320,17 +316,17 @@
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="mermaid.min.js"></script>
-        <script src="mermaid-init.js"></script>
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
 
 
 

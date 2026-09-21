@@ -313,7 +313,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
+<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
@@ -330,6 +330,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <li><strong>Concern over location.</strong> Scope by the responsibility a change serves, not the enclosing directory. Documentation <em>about</em> a crate takes that crate's scope (<code>docs(dpe-api-oai): ...</code>); only repo-level docs take <code>docs</code>.</li>
 <li>A test <em>about</em> a specific concern takes that concern's scope (<code>test(dpe-core): ...</code>) — the <code>test</code> type already says it is a test.</li>
 <li><strong>No catch-all.</strong> There is no <code>repo</code>/<code>all</code> scope. If none of the enumerated scopes genuinely fits, ask the maintainer before inventing one.</li>
+<li><strong>Keep <code>dsp-cli</code> commits under <code>dsp-cli/**</code> where possible.</strong> release-please attributes a commit to a package by which paths it touches, not by its commit scope — a <code>dsp-cli</code>-scoped commit that also edits a root file (e.g. <code>Cargo.lock</code>) lands in the root release too. See <a href="./deployment.html#dsp-cli">Release Please</a> for the double-bump rule this causes.</li>
 </ul>
 <p>The gate enforces only that a scope is <em>present</em> — it does not restrict which one, so adding a crate needs no config change. The list above is the advisory vocabulary; keep to it.</p>
 <h2 id="enforcement"><a class="header" href="#enforcement">Enforcement</a></h2>

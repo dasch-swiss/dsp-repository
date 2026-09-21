@@ -2,6 +2,30 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
+## [0.3.0](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.2.1...dsp-cli-v0.3.0) (2026-09-21)
+
+
+### Features
+
+* **dsp-cli:** Move dsp-cli from dsp-incubator into the workspace ([ca887a9](https://github.com/dasch-swiss/dsp-repository/commit/ca887a9f5a8451434c5429e7979e7a8f9408df53))
+
+
+### Bug Fixes
+
+* **dsp-cli:** Close the pre-migration security and correctness backlog ([b260c43](https://github.com/dasch-swiss/dsp-repository/commit/b260c434dfd1fa01d4f8fb87e4f6bb0c2183e7f8))
+
+
+### Build System
+
+* **dsp-cli,docs:** Register the crate and harmonize it with the workspace ([a667633](https://github.com/dasch-swiss/dsp-repository/commit/a66763352259b2ea5b03e2fdf7b6a5af5487c0ef))
+
+
+### Miscellaneous Chores
+
+* **ci:** Release dsp-cli on its own version line ([b7c3404](https://github.com/dasch-swiss/dsp-repository/commit/b7c34043bfc04eb1914ea23da79462d956fb58a6))
+* **ci:** Run dsp-cli live tests against a pinned dsp-api stack ([bd73243](https://github.com/dasch-swiss/dsp-repository/commit/bd7324387590dcf6c76ca3a8b845d47af0559c77))
+* **dsp-cli:** Format under the workspace rustfmt configuration ([141a016](https://github.com/dasch-swiss/dsp-repository/commit/141a016c5fbb50044340a4e03ef101c289cb7965))
+
 ## [Unreleased]
 
 ### Changed

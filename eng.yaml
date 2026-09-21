@@ -1,0 +1,41 @@
+version: 1
+
+defaults:
+  conventions: [CLAUDE.md, CONVENTIONS.md]
+  commands:
+    test: just test
+    lint: just check
+    gate: just check && just test
+    # no test_targeted: no recipe takes a file list
+
+overrides:
+  # Per-application guidance: one override per directory with its own CLAUDE.md.
+  - when: "modules/dpe/**"
+    conventions: [modules/dpe/CLAUDE.md]
+  - when: "modules/editor/**"
+    conventions: [modules/editor/CLAUDE.md]
+    reviewers: [eng:review:security-reviewer]
+  - when: "modules/mosaic/**"
+    conventions: [modules/mosaic/CLAUDE.md]
+    verify:
+      - skill: eng:test-browser
+        offer: ask
+  - when: "dsp-cli/**"
+    conventions: [dsp-cli/CLAUDE.md]
+  - when: "docs/specs/**"
+    conventions: [docs/specs/CLAUDE.md]
+
+  # HTML-producing paths: browser verification, plus the reviewers the built-in tables miss.
+  - when: "modules/*/web/**"
+    verify:
+      - skill: eng:test-browser
+        offer: ask
+    reviewers: [eng:review:accessibility-reviewer, eng:review:ivan-reviewer]
+  - when: "modules/*/style/*.css"
+    verify:
+      - skill: eng:test-browser
+        offer: ask
+  - when: "modules/*/server/src/**"
+    reviewers: [eng:review:ivan-reviewer]
+  - when: "shared/telemetry/**"
+    reviewers: [eng:review:observability-reviewer]

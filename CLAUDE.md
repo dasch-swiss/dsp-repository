@@ -12,7 +12,7 @@ This repository is a Rust-based monorepo for the DaSCH Service Platform. It cont
 
 ## Documentation
 
-All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions and the PR template (work phase); `REVIEW.md` holds the code review checklist (review phase). Architecture map: `ARCH-MAP.md`; domain vocabulary: `CONTEXT.md` (root index plus one per bounded context); decisions: `docs/adr/`. Load these on demand for blast-radius, boundary and naming questions.
+All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions and the PR template (work phase); `REVIEW.md` holds the code review checklist (review phase). Architecture map: `ARCH-MAP.md`; domain vocabulary: `CONTEXT.md` (root index plus one per bounded context); decisions: `docs/adr/`. Load these on demand for blast-radius, boundary and naming questions. `eng.yaml` binds the `eng` plugin's conventions, commands, checks and reviewers to paths; audit or update it with `/eng:eng-yaml`.
 
 Specs (PRDs and implementation plans) live in `docs/specs/`, outside the mdBook, and are the source of truth for intended behaviour. They stay in this repo — never in the central `dasch-specs` repository; this overrides any workflow-skill routing that would send them there. See `docs/specs/README.md` for the convention (dated topic folders, per-folder `NN-slug` numbering, `assets/` in Git LFS).
 

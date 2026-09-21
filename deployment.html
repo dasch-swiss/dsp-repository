@@ -254,7 +254,7 @@
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>modules/platform/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
@@ -284,7 +284,7 @@
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>modules/platform/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
@@ -300,7 +300,7 @@
 <h3 id="editor"><a class="header" href="#editor">Editor</a></h3>
 <h4 id="pr-preview-cloud-run-2"><a class="header" href="#pr-preview-cloud-run-2">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-editor-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/editor/</code> or <code>modules/platform/</code>, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>modules/editor/</code> or <code>shared/</code>, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins-1"><a class="header" href="#continuous-deployment-docker-hub--jenkins-1">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>editor-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>

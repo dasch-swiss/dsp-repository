@@ -438,7 +438,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
 <tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-platform-paths</code></td><td>Fail the build if a crate under <code>modules/platform/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
 </tbody></table>
 </div>
@@ -588,7 +588,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>platform-metadata</code>, <code>platform-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
+<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
@@ -736,7 +736,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </style>
 <h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
+<p>This repository is a Rust workspace structured as a monorepo. The service and design-system crates are organized as subdirectories within the <code>modules/</code> directory; the crates shared by more than one service sit in <code>shared/</code>, a sibling of it at the repository root.</p>
 <p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>modules/editor/CONTEXT.md</code>, <code>modules/dpe/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Five ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code> and <code>chischtli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). All five are accepted; until the migration lands, this page describes the layout as it is.</p>
 <pre><code class="language-txt">modules/
 ├── dpe/                       # Discovery and Presentation Environment
@@ -755,23 +755,26 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 │   ├── public/                # Static assets (incl. vendored JS)
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
-├── platform/                  # Crates shared by more than one service
-│   ├── metadata/              # Research-metadata wire contract (crate: platform-metadata)
-│   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
+
+shared/                        # Crates shared by more than one service
+├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
+├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
+└── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 </code></pre>
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
 <p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> and <code>platform-metadata</code> only)</td></tr>
+<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
-<tr><td><code>platform-metadata</code></td><td><code>platform/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
-<tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
+<tr><td><code>shared-fair</code></td><td><code>shared/fair</code></td><td>The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — <code>dpe-api-oai</code> is its only consumer today</td></tr>
+<tr><td><code>shared-metadata</code></td><td><code>shared/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
+<tr><td><code>shared-telemetry</code></td><td><code>shared/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
 <tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
@@ -780,22 +783,22 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </tbody></table>
 </div>
 <h2 id="shared-crates"><a class="header" href="#shared-crates">Shared Crates</a></h2>
-<p><strong>A crate that more than one service depends on lives under <code>modules/platform/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>platform-{role}</code> in the same commit.</p>
+<p><strong>A crate that more than one service depends on lives under <code>shared/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>shared-{role}</code> in the same commit.</p>
 <p>The directory is the ownership signal, and four things read it:</p>
 <ul>
 <li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>modules/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
-<li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>modules/platform/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
+<li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>shared/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
 <li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries two, one pointing into <code>dpe-server</code>'s <code>page_url.rs</code> and one into <code>editor-server</code>'s — and those need to name the real location.</li>
-<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by <code>just check-platform-paths</code> (<code>.github/scripts/check-platform-paths.sh</code>).</li>
+<li><strong>The dependency direction.</strong> <code>shared-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>).</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
-<p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a platform concern. What moved is the contract — <code>platform-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>modules/platform/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
+<p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a shared concern. What moved is the contract — <code>shared-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>shared/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
 <p><strong>The rule covers crates, not content.</strong> <code>modules/dpe/server/data</code> stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit <code>EDITOR_DATA_DIR</code> seam rather than a compiled-in path — see <a href="./editor/operations.html#data-directory-a-deliberate-build-input">Editor Operations</a>. Two of the four signals do have analogues there, accepted knowingly: a data-only change matches <code>modules/dpe/**</code>, so it deploys a DPE preview but no editor preview, and <code>serve-editor</code>'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.</p>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
 <p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
 <ul>
 <li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
-<li><strong>Dependencies</strong>: <code>platform-metadata</code> for the contract, <code>dpe-core</code> for the view model; never depends on other API crates or <code>dpe-web</code></li>
+<li><strong>Dependencies</strong>: <code>shared-metadata</code> for the contract, <code>dpe-core</code> for the view model, and any <code>shared-*</code> crate it needs — <code>dpe-api-oai</code> takes <code>shared-fair</code> for the DataCite and Dublin Core mappings; never depends on other API crates or <code>dpe-web</code></li>
 <li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
 <li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
 </ul>
@@ -879,7 +882,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>modules/platform/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
@@ -909,7 +912,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>modules/platform/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
@@ -925,7 +928,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h3 id="editor"><a class="header" href="#editor">Editor</a></h3>
 <h4 id="pr-preview-cloud-run-2"><a class="header" href="#pr-preview-cloud-run-2">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-editor-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/editor/</code> or <code>modules/platform/</code>, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>modules/editor/</code> or <code>shared/</code>, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins-1"><a class="header" href="#continuous-deployment-docker-hub--jenkins-1">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>editor-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
@@ -1030,9 +1033,9 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code>, <code>modules/platform/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
-<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>modules/editor/**</code>, <code>modules/platform/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>modules/editor/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
 </tbody></table>
 </div>
 <h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>
@@ -1180,29 +1183,35 @@ are detected</li>
 <h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
 <p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
 <h2 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h2>
-<pre><code>platform-metadata The wire contract, shared with the editor
+<pre><code>shared-metadata   The wire contract, shared with the editor
                        │
-dpe-core          DPE's view model, repositories, data loading
-                  Dependencies: platform-metadata, serde, serde_json
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-     dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Maud views
-     + axum
-          │            │
-          └────────────┘
-                 │
-           dpe-server
-           Route composition
-           + Datastar
-           (binary: dpe-server)
+          ┌────────────┴───────────────┐
+          │                            │
+     shared-fair                  dpe-core
+     FAIR exposure engine:        DPE's view model, repositories, data loading
+     resolved graphs +            Dependencies: shared-metadata, serde, serde_json
+     representation writers            │
+          │                 ┌──────────┼────────────┐
+          │                 │          │            │
+          └─────────────────┤          │            │
+                            │          │            │
+                       dpe-api-oai  dpe-web   (future APIs)
+                       OAI-PMH 2.0  Maud views
+                       + axum
+                            │          │
+                            └──────────┘
+                                 │
+                            dpe-server
+                            Route composition
+                            + Datastar
+                            (binary: dpe-server)
 </code></pre>
 <ul>
-<li><strong>platform-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>modules/platform/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>shared-fair</strong>: The FAIR exposure engine (ADR-0005) — one resolved graph per published object and one writer per representation over it, including the DataCite and Dublin Core mappings OAI-PMH uses. Lives in <code>shared/</code>, depends on shared-metadata only, and knows no routes.</li>
 <li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on platform-metadata and dpe-core.</li>
-<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports platform-metadata and dpe-core types directly.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends on shared-metadata, dpe-core and shared-fair.</li>
+<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports shared-metadata and dpe-core types directly.</li>
 <li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
@@ -1233,8 +1242,15 @@ Tab switch (without JS):
 <p><strong>Route pattern: resource-action nesting</strong></p>
 <pre><code>GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
+GET /projects/{id}/metadata.*   → Machine-readable representation (JSON-LD, DataCite JSON)
 </code></pre>
 <p>Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.</p>
+<p>The one exception is the landing page's <code>303 See Other</code> when <code>Accept</code> prefers a
+machine-readable representation, decided in ADR-0005
+(<code>docs/adr/0005-fair-landing-pages-in-the-access-area.md</code>). It is a
+redirect to a distinct URL, not a differently rendered page: the page itself is
+byte-identical for every <code>Accept</code> value, and every answer from the route carries
+<code>Vary: Accept</code>. See <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>.</p>
 <h2 id="hateoas-tab-pattern"><a class="header" href="#hateoas-tab-pattern">HATEOAS Tab Pattern</a></h2>
 <p>The server returns the <strong>complete tab component</strong> (tab bar + panel) in each SSE response. This means:</p>
 <ul>
@@ -1345,7 +1361,7 @@ projects and their context as a hierarchy of entities. The model originated in
 the now-retired <code>dsp-meta</code> repository, where it was designed as the successor to
 the earlier v1 model. The metadata has since been migrated to this repository
 and converted to v2; the model is implemented as Rust types in the
-<code>platform-metadata</code> crate (<code>modules/platform/metadata/src/</code>), shared with the
+<code>shared-metadata</code> crate (<code>shared/metadata/src/</code>), shared with the
 editor, and the data lives under <code>modules/dpe/server/data/</code>.</p>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
@@ -1354,7 +1370,7 @@ editor, and the data lives under <code>modules/dpe/server/data/</code>.</p>
 </p>
 <p><strong>Conceptual model vs. implementation.</strong>
 This page documents the <em>conceptual</em> v2 model — the full design as it was
-worked out. The implementation in <code>platform-metadata</code> is a pragmatic subset: some
+worked out. The implementation in <code>shared-metadata</code> is a pragmatic subset: some
 entities and fields are not (yet) implemented, and a few differ in shape from
 the design. Each section carries an <strong>As implemented</strong> callout describing the
 current state. Treat the conceptual tables as the design intent and the
@@ -2134,30 +2150,50 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 └── style/                              Tailwind CSS
 </code></pre>
 <h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
-<pre><code>platform-metadata     ← the wire contract, shared with the editor;
-  ↑                     lives in `modules/platform/`
+<pre><code>shared-metadata         ← the wire contract, shared with the editor;
+  ↑                       lives in `shared/`
+  ├── shared-fair       ← FAIR exposure engine: resolved graphs + representation
+  │                       writers, over the contract types only; lives in `shared/`
   │
-dpe-core              ← DPE's view model, caches, repositories; no framework deps
-  ↑
-  ├── dpe-api-oai     ← OAI-PMH endpoint
-  ├── dpe-web         ← Maud pages + components
-  └── dpe-server      ← composition root, Datastar fragment handlers
-       ↑
-       platform-telemetry  ← beacon contract + collector endpoint, shared with
-                             editor-server; lives in `modules/platform/`
+  └── dpe-core          ← DPE's view model, caches, repositories; no framework deps
+        ↑
+        ├── dpe-api-oai ← OAI-PMH endpoint; also depends on shared-fair
+        ├── dpe-web     ← Maud pages + components
+        └── dpe-server  ← composition root, Datastar fragment handlers
+              ↑
+              shared-telemetry  ← beacon contract + collector endpoint, shared
+                                  with editor-server; lives in `shared/`
 </code></pre>
-<p><code>dpe-api-oai</code>, <code>dpe-web</code> and <code>dpe-server</code> depend on <code>platform-metadata</code> directly
+<p><code>dpe-api-oai</code>, <code>dpe-web</code> and <code>dpe-server</code> depend on <code>shared-metadata</code> directly
 as well as through <code>dpe-core</code> — the contract types are theirs to import, not
 <code>dpe-core</code>'s to re-export.</p>
+<p>The arrow between <code>dpe-core</code> and <code>shared-fair</code> runs in neither direction, and
+that is deliberate: <code>shared-fair</code> names only contract types, so the domain crate
+never depends on the exposure engine and the engine never learns DPE's view
+model. <code>dpe_core::resolve_inputs()</code> is the seam — it returns the contributor
+lookup and the two temporal tables, which <code>dpe-api-oai</code> wraps in a
+<code>shared_fair::ResolveContext</code> at the call site.</p>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
-<h3 id="platform-metadata-modulesplatformmetadata"><a class="header" href="#platform-metadata-modulesplatformmetadata"><code>platform-metadata</code> (<code>modules/platform/metadata/</code>)</a></h3>
+<h3 id="shared-metadata-sharedmetadata"><a class="header" href="#shared-metadata-sharedmetadata"><code>shared-metadata</code> (<code>shared/metadata/</code>)</a></h3>
 <p>Not a DPE crate: the research-metadata wire contract, shared with the editor.
 Holds the types a data file deserializes into (<code>ProjectRaw</code>, <code>Person</code>,
 <code>Organization</code>, <code>Record</code>, <code>AuthorityFileReference</code>, …) and the rules for reading
 a value out of one — <code>is_placeholder</code>, the deterministic <code>multilingual_value</code>
 lookup key, <code>is_valid_shortcode</code>, W3CDTF formatting and temporal-coverage
 resolution. Table loading is exposed as <code>load_from(data_dir)</code> so each service
-supplies its own directory. See <code>modules/platform/README.md</code>.</p>
+supplies its own directory. Also holds <code>ContributorLookup</code>, the trait a service
+implements over its own corpus to resolve an <code>Attribution</code> id to a <code>Person</code> or
+an <code>Organization</code>. See <code>shared/README.md</code>.</p>
+<h3 id="shared-fair-sharedfair"><a class="header" href="#shared-fair-sharedfair"><code>shared-fair</code> (<code>shared/fair/</code>)</a></h3>
+<p>Not a DPE crate: the FAIR exposure engine of ADR-0005, currently with
+<code>dpe-api-oai</code> as its only consumer. Builds one resolved graph per published
+object — <code>ProjectGraph::build</code> applies agent resolution, placeholder filtering,
+multilingual preference, creator fallback and temporal-coverage resolution once,
+<code>RecordGraph::build</code> reads a record alone — and writes each representation off that graph
+(<code>project_to_datacite</code>, <code>project_to_dublin_core</code>, <code>record_to_datacite</code>,
+<code>record_to_dublin_core</code>). It knows no routes and no URL layout: a writer returns
+a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a service arrives in
+<code>ResolveContext::new(lookup, periods, enriched)</code>. See <code>shared/README.md</code>.</p>
 <h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
 <p>Framework-free domain layer — what only DPE needs. Contains:</p>
 <ul>
@@ -2169,10 +2205,10 @@ supplies its own directory. See <code>modules/platform/README.md</code>.</p>
 <li><strong>Static-asset lookup</strong>: <code>cover_image_cache</code> scans <code>&lt;public dir&gt;/assets/images</code> once for the per-project cover images, so a view can tell whether a project has one before rendering an <code>&lt;img&gt;</code></li>
 </ul>
 <p>The directory paths and display flags are process-global <code>OnceLock</code>s set from <code>dpe-server</code>'s config at startup (<code>set_data_dir</code>, <code>set_public_dir</code>, <code>set_show_placeholder_values</code>) and read directly by <code>dpe-web</code> views, which take no application state. Reuse that pattern rather than threading new values through <code>AppState</code>.</p>
-<p>Dependencies: <code>platform-metadata</code>, <code>serde</code>, <code>serde_json</code>, <code>tracing</code>, <code>ureq</code>.</p>
+<p>Dependencies: <code>shared-metadata</code>, <code>serde</code>, <code>serde_json</code>, <code>tracing</code>, <code>ureq</code>.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>.</p>
-<p>Depends on <code>platform-metadata</code> for the contract types and <code>dpe-core</code> for the view model — no web framework dependency.</p>
+<p>Depends on <code>shared-metadata</code> for the contract types, <code>dpe-core</code> for the view model and the <code>resolve_inputs()</code> seam, and <code>shared-fair</code> for the DataCite and Dublin Core mappings. What stays here is OAI-PMH protocol: the envelope and XML builder, the verbs, the <code>oai:dasch.swiss:</code> identifiers, the set specs, the date filters and <code>OaiRecord</code>. The corpus-wide tests over the committed data stay here too (<code>src/metadata/corpus.rs</code>), beside the data they read.</p>
 <h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
 <p>Maud view library — a plain <code>lib</code> crate of page and component functions returning <code>maud::Markup</code>. Contains:</p>
 <ul>
@@ -2180,23 +2216,23 @@ supplies its own directory. See <code>modules/platform/README.md</code>.</p>
 <li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input — small <code>fn -&gt; Markup</code> partials</li>
 <li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
-<p>Imports <code>platform-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
+<p>Imports <code>shared-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
-<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
+<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
 <li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
 <li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
 <li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
-<li><strong>Page-URL normalization</strong>: <code>page_url.rs</code> — bounds the telemetry <code>page.url</code> metric attribute to DPE's own known routes, passed into <code>platform_telemetry::collector::collect_route</code></li>
+<li><strong>Page-URL normalization</strong>: <code>page_url.rs</code> — bounds the telemetry <code>page.url</code> metric attribute to DPE's own known routes, passed into <code>shared_telemetry::collector::collect_route</code></li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
 <li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
 </ul>
 <h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
 <ul>
-<li><strong>The wire contract in <code>platform-metadata</code>, DPE's view model in <code>dpe-core</code></strong> — never in web or API crates</li>
-<li><strong>API crates depend on <code>platform-metadata</code> and <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
+<li><strong>The wire contract in <code>shared-metadata</code>, DPE's view model in <code>dpe-core</code></strong> — never in web or API crates</li>
+<li><strong>API crates depend on <code>shared-metadata</code>, <code>dpe-core</code> and the <code>shared-*</code> crates they need</strong> — <code>dpe-api-oai</code> takes <code>shared-fair</code> — never on each other or on <code>dpe-web</code></li>
 <li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition, the head/page shell, and fragment rendering</li>
 <li><strong>Fragment handlers</strong> call dpe-web view functions and render their <code>Markup</code> with <code>.into_string()</code>, then wrap it in Datastar <code>PatchElements</code>/<code>ExecuteScript</code> SSE events</li>
 </ul>
@@ -2288,7 +2324,7 @@ supplies its own directory. See <code>modules/platform/README.md</code>.</p>
 <li><strong>Location</strong>: <code>#[cfg(test)]</code> modules in each crate</li>
 <li><strong>Runner</strong>: <code>cargo test --workspace</code></li>
 <li><strong>Scope</strong>: Fragment handlers, OAI protocol, domain types, data loading, filtering/pagination</li>
-<li><strong>Crate</strong>: dpe-core and platform-metadata tests run independently — <code>cargo test -p dpe-core</code>, <code>cargo test -p platform-metadata</code></li>
+<li><strong>Crate</strong>: dpe-core and shared-metadata tests run independently — <code>cargo test -p dpe-core</code>, <code>cargo test -p shared-metadata</code></li>
 </ul>
 <h2 id="layer-2-snapshot-tests-insta"><a class="header" href="#layer-2-snapshot-tests-insta">Layer 2: Snapshot Tests (insta)</a></h2>
 <ul>
@@ -2567,7 +2603,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
 <li>Cross-references between projects, persons, and organizations</li>
 <li>Orphaned files that are not referenced by any parent entity</li>
-<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>platform-metadata</code>.</li>
+<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>shared-metadata</code>.</li>
 <li>Every distinct <code>temporalCoverage</code> name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked <code>source: "unresolved"</code>. See <code>docs/src/dpe/oai-pmh.md</code> → <em>Temporal coverage</em>.</li>
 </ul>
 <p><strong>Exit codes:</strong></p>
@@ -2592,8 +2628,10 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
-<tr><td><code>DPE_OAI_RATE_LIMIT_PER_SECOND</code></td><td>No</td><td><code>1</code></td><td>Per-IP rate limit on <code>/dpe/oai</code>: seconds per request once the burst is spent. <code>1</code> ≈ 60 requests/minute sustained. See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
-<tr><td><code>DPE_OAI_RATE_LIMIT_BURST</code></td><td>No</td><td><code>60</code></td><td>Per-IP burst allowance on <code>/dpe/oai</code>: back-to-back requests before the sustained rate applies.</td></tr>
+<tr><td><code>DPE_PUBLIC_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss</code></td><td>Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the <code>Link</code> header. Origin only: scheme <code>http</code> or <code>https</code>, no path, query or trailing slash. A bad value fails startup. Independent of <code>DPE_OAI_BASE_URL</code> (see the note below).</td></tr>
+<tr><td><code>DPE_ARK_RESOLVER_BASE_URL</code></td><td>No</td><td><em>(none)</em></td><td>Origin every emitted ARK is rewritten to carry, and the origin the deployment's own <code>/ark:/{naan}/{shoulder}/{shortcode}</code> resolver answers on. <strong>Leave unset everywhere but a PR preview.</strong> Unset, the ARKs are the ones the corpus records, resolving through <code>ark.dasch.swiss</code>, and no resolver route is mounted. Origin only, validated exactly as <code>DPE_PUBLIC_BASE_URL</code> is. See the note below.</td></tr>
+<tr><td><code>DPE_OAI_RATE_LIMIT_PER_SECOND</code></td><td>No</td><td><code>1</code></td><td>Per-IP rate limit, seconds per request once the burst is spent. <code>1</code> ≈ 60 requests/minute sustained. Governs <code>/dpe/oai</code> and both machine-readable representation routes, which share one bucket. See <a href="dpe/./oai-pmh.html">OAI-PMH</a> and <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>.</td></tr>
+<tr><td><code>DPE_OAI_RATE_LIMIT_BURST</code></td><td>No</td><td><code>60</code></td><td>Per-IP burst allowance on the same three routes: back-to-back requests before the sustained rate applies.</td></tr>
 <tr><td><code>DPE_OAI_PAGE_SIZE</code></td><td>No</td><td><code>100</code></td><td>Items per page in <code>ListRecords</code> / <code>ListIdentifiers</code> responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
@@ -2604,6 +2642,29 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="dpe/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
 </tbody></table>
 </div>
+<blockquote>
+<p><strong>Two base URLs, on purpose.</strong> <code>DPE_PUBLIC_BASE_URL</code> and <code>DPE_OAI_BASE_URL</code> are set independently and neither is derived from the other. The OAI endpoint advertises its own <code>baseURL</code> in every response, and on DEV that endpoint lives on a different host (<code>https://api.dev.dasch.swiss/dpe/oai</code>) from the site (<code>https://repository.dev.dasch.swiss</code>). Set both per environment.</p>
+<p><strong>Assessing a local run from a container.</strong> A FAIR assessor running in Docker resolves the URLs the page emits, so <code>DPE_PUBLIC_BASE_URL</code> must name a host the container can reach — <code>http://host.docker.internal:4000</code>, not <code>http://localhost:4000</code>, which inside the container is the container itself.</p>
+<p><strong>PR previews set all three themselves.</strong> <code>cloud-run-dpe-pull-request.yml</code> runs <code>gcloud run services update</code> right after the deploy, setting <code>DPE_PUBLIC_BASE_URL</code>, <code>DPE_OAI_BASE_URL</code> and <code>DPE_ARK_RESOLVER_BASE_URL</code> to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the <code>303</code> target, the OAI <code>baseURL</code>, and every emitted ARK respectively.</p>
+<p><strong>Why a preview rewrites its ARKs.</strong> A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. <code>DPE_ARK_RESOLVER_BASE_URL</code> makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.</p>
+<p><strong>Applied once, as corpus data enters.</strong> <code>dpe-core</code>'s caches normalise the ARK host on load, so everything downstream — the embedded JSON-LD, the Dublin Core tags, the <code>Link</code> header, the OAI payloads, the sidebar permalink a person clicks and copies, and the <code>pid</code> in <code>/dpe/api/v2/projects</code> — is correct without any of them knowing a resolver exists. Conceptually this is the <code>sync</code> capability's work and moves there when <code>sync</code> lands; <code>dpe_core::ark</code> records that.</p>
+<p>Only the host is rewritten. The ARK path — <code>ark:/72163/1/{shortcode}</code> — is the identifier and passes through untouched, and <strong>recorded text is quoted rather than asserted</strong>: a <code>howToCite</code> citation whose author wrote the ARK into the sentence, and a project's recorded website (083D records its own ARK there), are served as written.</p>
+<p>The resolver answers project ARKs only, with a <code>302</code> to the landing page, mirroring <code>ark.dasch.swiss</code>. A record ARK gets a <code>404</code>: DPE serves no record landing page, and <code>ark.dasch.swiss</code> resolves a record ARK to the VRE rather than to DPE.</p>
+<p><strong>Do not set it on DEV, STAGE or PROD.</strong> Those deployments <em>are</em> what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside <code>ark.dasch.swiss</code>.</p>
+</blockquote>
+<blockquote>
+<p><strong>What the rate limit does not bound.</strong> It bounds the request <em>rate</em>, not the
+per-request size, and the JSON-LD representation is large. Its own byte budget
+caps it at 4,000,000 bytes (<a href="dpe/./machine-readable-metadata.html#a-byte-budget">Machine-Readable
+Metadata</a>), and locally the two
+largest committed projects measure 3,972,504 bytes (0868, at the budget) and
+3,548,716 bytes (081C, under it). At the defaults (<code>per_second = 1</code>,
+<code>burst = 60</code>) one IP can therefore pull at most ~240 MB of transient allocation
+and egress in a burst window, settling to ~4 MB/s/IP afterwards. The budget is
+what makes that a <em>bound</em> rather than an observation: before it, the figure
+grew with the corpus. Lower <code>DPE_OAI_RATE_LIMIT_BURST</code> if that matters more
+than a harvester's throughput does.</p>
+</blockquote>
 <blockquote>
 <p><strong>Rate limiting and reverse proxies.</strong> The OAI (<code>/dpe/oai</code>) and telemetry (<code>/telemetry/collect</code>) rate limits key on the client IP, taken from the <strong>rightmost</strong> <code>X-Forwarded-For</code> entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any <code>X-Forwarded-For</code> value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to <code>X-Forwarded-For</code> would shift the trusted entry and require counting hops from the right.</p>
 </blockquote>
@@ -2626,6 +2687,47 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
 <li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
 </ul>
+<h3 id="landing-page-metadata-points-at-dsp-ingest"><a class="header" href="#landing-page-metadata-points-at-dsp-ingest">Landing-page metadata points at dsp-ingest</a></h3>
+<p>A project landing page advertises its records' files as <code>schema:distribution</code>,
+each with the dsp-ingest URL that serves the bytes
+(<a href="dpe/./machine-readable-metadata.html#record-files">Machine-Readable Metadata</a>). A
+consumer that follows those URLs downloads from <strong><code>ingest.dasch.swiss</code>, not from
+DPE</strong>, so DPE's per-IP rate limiter does not bound the traffic.</p>
+<p>How much there is to follow, for the two largest file-carrying projects in the
+committed corpus:</p>
+<div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: right">In the embedded block</th><th style="text-align: right">Bytes if all of those are fetched</th><th style="text-align: right">In <code>/metadata.jsonld</code></th><th style="text-align: right">Bytes if all of those are fetched</th></tr></thead><tbody>
+<tr><td>0868</td><td style="text-align: right">100</td><td style="text-align: right">90.9 MB</td><td style="text-align: right">6,107 of 7,716</td><td style="text-align: right">945.0 MB</td></tr>
+<tr><td>0803</td><td style="text-align: right">4</td><td style="text-align: right">81.9 MB</td><td style="text-align: right">4,062</td><td style="text-align: right">139.7 GB</td></tr>
+</tbody></table>
+</div>
+<p>The <code>/metadata.jsonld</code> figures are now bounded by the representation's
+<a href="dpe/./machine-readable-metadata.html#a-byte-budget">byte budget</a>, which is why 0868's
+list stops short of its 7,716 files and its total fell from 2.72 GB. Both are
+measured locally; a deployment on a longer host lists a shorter prefix and draws
+less. 0803's whole graph fits the budget, so nothing about it changed.</p>
+<p>A well-behaved assessor pulls far less, and the bound does not change what it
+pulls. F-UJI 3.5.0 takes at most five files per MIME type and truncates each
+download at 1,000,000 bytes, so a full assessment drew <strong>26 files and 11.3 MB
+for 0868 (558 s)</strong> and <strong>6 files and 6.0 MB for 0803 (307 s)</strong>, measured on
+2026-09-18 against the then-unbounded representation. All five of 0868's MIME
+types — <code>application/pdf</code>, <code>application/zip</code>, <code>image/png</code>, <code>text/csv</code>,
+<code>text/plain</code> — still appear inside the bounded prefix, so the same sampling has
+the same set to draw from. Its draw scales with how many distinct file types a
+project has, not with how many records it holds.</p>
+<p>This is a change in convenience rather than in capability. The same bytes were
+already reachable by enumerating the OAI-PMH set <code>project:{shortcode}</code> and
+calling <code>/dpe/records/{shortcode}/{record_id}/file</code> per record, which returns
+the same <code>downloadUrl</code>. What changed is that one request now returns every URL
+at once.</p>
+<p><strong>Retiring ingest carries a metadata obligation.</strong> All 11,778 published
+<code>contentUrl</code> values name <code>ingest.dasch.swiss</code>. When media moves to Vitrinli and
+downloads are served by the Access Area's <code>media</code> capability, the host in them
+changes. Metadata heals going forward on its own — the URL comes from the corpus
+export, so the first export after the migration carries the new host and DPE
+re-serves it without a code change — but copies already harvested by third
+parties do not, and <code>schema:distribution</code> exists to be harvested. Plan the
+retirement to include a corpus re-export and a re-publish, or external copies
+404.</p>
 <h2 id="logging-1"><a class="header" href="#logging-1">Logging</a></h2>
 <p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>DPE_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>DPE_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
 <pre><code class="language-bash"># Default (info level)
@@ -2744,6 +2846,13 @@ RUST_LOG=debug
 </tbody></table>
 </div>
 <p>It is not under <code>/dpe/api/v2/</code> and describes a <em>record</em> rather than a project. See <a href="dpe/./oai-pmh.html#file-metadata-document">OAI-PMH → File-metadata document</a>.</p>
+<p>Two more endpoints serve JSON for a project and are documented in <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Method</th><th>Path</th><th>Returns</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/dpe/projects/{shortcode}/metadata.jsonld</code></td><td>The project as schema.org JSON-LD, <code>application/ld+json</code></td></tr>
+<tr><td>GET</td><td><code>/dpe/projects/{shortcode}/metadata.datacite.json</code></td><td>The project as DataCite kernel-4 JSON, <code>application/vnd.datacite.datacite+json</code></td></tr>
+</tbody></table>
+</div>
+<p>These are <strong>standards-shaped</strong>: their field names and structure are schema.org's and DataCite's, so a FAIR assessor or a harvester can read them without knowing anything about DPE. <code>/dpe/api/v2</code> is not — it serves the internal project shape, which is DaSCH's own and changes with the corpus. A consumer that wants interoperable metadata wants those two; a consumer that wants what DPE itself holds wants <code>/dpe/api/v2</code>.</p>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000</code></td></tr>
 <tr><td>DEV</td><td><code>https://repository.dev.dasch.swiss</code></td></tr>
@@ -2971,7 +3080,7 @@ RUST_LOG=debug
 <li><strong>Everything else</strong> — free-text names resolve against <code>modules/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
 </ol>
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
-<p>Resolution lives in <code>platform_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
+<p>Resolution lives in <code>shared_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
 <h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
 <p>A bitstream Record carries at most one <code>file</code>, stored by dsp-ingest. In the metadata payloads the only thing it contributes is its MIME type:</p>
 <ul>
@@ -2995,7 +3104,7 @@ RUST_LOG=debug
 <h4 id="file-metadata-endpoint"><a class="header" href="#file-metadata-endpoint">File-metadata endpoint</a></h4>
 <pre><code>GET /dpe/records/{shortcode}/{record_id}/file  →  200, application/json
 </code></pre>
-<p>One URL, one representation. There is no content negotiation and no <code>?format=</code> parameter: the response is the JSON document below regardless of <code>Accept</code>.</p>
+<p>One URL, one representation. This endpoint has no <code>Accept</code> dispatch and no <code>?format=</code> parameter: the response is the JSON document below regardless of <code>Accept</code>. That is unchanged by the project landing page's <code>303</code>, which is a redirect from one URL to another and applies to <code>/dpe/projects/{shortcode}</code> alone — see <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>.</p>
 <p>DPE serves metadata only. It does not serve the file's bytes and does not redirect to them — the download URL is a <em>field</em> of the document, which a consumer reads and then fetches from dsp-ingest itself.</p>
 <p><code>404</code> covers both a record that does not exist and a record that carries no file. The two are not distinguished, and both return JSON — the endpoint has no <code>Accept</code> dispatch, so answering the error path in HTML would hand a harvester a document it cannot parse:</p>
 <pre><code class="language-json">{ "error": "not found" }
@@ -3039,7 +3148,7 @@ https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 <p><code>version</code> and <code>dateModified</code> are <strong>derived, not stored</strong>. Assets are immutable once ingested — the URL always ends <code>/original</code>, and there is no mechanism to replace a file in place — so every asset is its own first and only version, and its modification date is its creation date. Do not treat <code>version</code> as a revision counter or diff <code>dateModified</code> for change detection. <code>version</code> is an integer so a real version sequence can land later without a shape change, and <code>dateModified</code> follows <code>dateCreated</code> even when that is <code>null</code> (the two are always equal). The <em>record</em> also has a top-level <code>dateModified</code>; it is deliberately not used here, as it describes the record rather than the file.</p>
 <p><strong>On <code>fileId</code>.</strong> It is the record id — the same value as the <code>{record_id}</code> path segment — and <strong>not</strong> dsp-ingest's asset id. A record carries at most one file, so the record id identifies that file unambiguously. The asset id (<code>6YAAMJfR7sz-RWPTwYppGb7</code> in the example above) exists nowhere in the stored <code>file</code> object; it appears only inside <code>downloadUrl</code>, so emitting it would mean parsing ingest's internal path shape — the one coupling this document otherwise avoids everywhere. A consumer that needs the asset id can parse <code>downloadUrl</code> itself, accepting that coupling explicitly. <code>fileId</code> is never <code>null</code>: it comes from the route, not from the file object, so it is populated even for records whose <code>file</code> carries only a <code>url</code>.</p>
 <p>One field is <strong>absent entirely</strong>, not <code>null</code>: <strong>a relative path</strong>. Assets are flat under <code>/projects/{shortcode}/assets/</code>, so there is no directory structure for a path to describe. An always-<code>null</code> field would imply a hierarchy that does not exist. Adding it later is a backward-compatible change.</p>
-<p>The endpoint is <strong>not</strong> rate-limited: the limiter is scoped to <code>/dpe/oai</code> alone (see <em>Rate limiting</em>). It sits beside <code>/dpe/projects/{id}</code> rather than under <code>/dpe/oai</code>, which is strictly <code>?verb=</code>-dispatched per the protocol — a REST path under it would break that contract.</p>
+<p>The endpoint is <strong>not</strong> rate-limited: the limiter covers <code>/dpe/oai</code> and the two machine-readable representation routes, and this route is deliberately outside it (see <em>Rate limiting</em>). It sits beside <code>/dpe/projects/{id}</code> rather than under <code>/dpe/oai</code>, which is strictly <code>?verb=</code>-dispatched per the protocol — a REST path under it would break that contract.</p>
 <h2 id="identifiers"><a class="header" href="#identifiers">Identifiers</a></h2>
 <p>OAI identifiers are derived from DaSCH <a href="https://arks.org/">ARK</a> identifiers:</p>
 <div class="table-wrapper"><table><thead><tr><th>Item type</th><th>Pattern</th><th>Example</th></tr></thead><tbody>
@@ -3048,7 +3157,8 @@ https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 </tbody></table>
 </div>
 <p>These differ from the resolvable ARK URLs (<code>https://ark.dasch.swiss/ark:/72163/1/...</code>), which appear in the metadata payloads as <code>dc:identifier</code> / DataCite <code>identifier</code>.</p>
-<p>The OAI <code>&lt;identifier&gt;</code> header is the <strong>only</strong> place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — <code>dc:identifier</code>, <code>dc:relation</code>, DataCite <code>identifier</code> and <code>relatedIdentifier</code>, and the project page's permalink link target — carries <code>https://ark.dasch.swiss/</code> so a harvester can dereference it. <code>Pid::as_url()</code> is the accessor for that form; there is deliberately no accessor returning a bare <code>ark:/…</code> path.</p>
+<p>The OAI <code>&lt;identifier&gt;</code> header is the <strong>only</strong> place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — <code>dc:identifier</code>, <code>dc:relation</code>, DataCite <code>identifier</code> and <code>relatedIdentifier</code>, and the project page's permalink link target — carries a resolver in front so a harvester can dereference it. <code>Pid::as_url()</code> is the accessor for that form; there is deliberately no accessor returning a bare <code>ark:/…</code> path.</p>
+<p>Which resolver is a deployment's own business. Production, DEV and STAGE all emit <code>https://ark.dasch.swiss/</code>, the host the corpus records. A PR preview sets <a href="dpe/./operations.html#environment-variables"><code>DPE_ARK_RESOLVER_BASE_URL</code></a> and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI <code>&lt;identifier&gt;</code> header, being host-independent already, does not change at all.</p>
 <h2 id="sets"><a class="header" href="#sets">Sets</a></h2>
 <p>Selective harvesting uses the <code>set</code> argument on <code>ListIdentifiers</code> and <code>ListRecords</code>. Two kinds of sets exist: static <strong>entity-type</strong> sets and dynamic <strong>project</strong>/<strong>cluster</strong> sets.</p>
 <div class="table-wrapper"><table><thead><tr><th><code>setSpec</code></th><th>Contents</th><th>Notes</th></tr></thead><tbody>
@@ -3081,7 +3191,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oa
 <pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
 </code></pre>
 <h3 id="rate-limiting"><a class="header" href="#rate-limiting">Rate limiting</a></h3>
-<p>The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields <code>429 Too Many Requests</code> with a <code>Retry-After</code> header (and <code>X-RateLimit-*</code> headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via <code>DPE_OAI_RATE_LIMIT_PER_SECOND</code> and <code>DPE_OAI_RATE_LIMIT_BURST</code> (see <a href="dpe/./operations.html">operations</a>).</p>
+<p>The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields <code>429 Too Many Requests</code> with a <code>Retry-After</code> header (and <code>X-RateLimit-*</code> headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via <code>DPE_OAI_RATE_LIMIT_PER_SECOND</code> and <code>DPE_OAI_RATE_LIMIT_BURST</code> (see <a href="dpe/./operations.html">operations</a>); the same settings and the same per-IP bucket also cover the two machine-readable representation routes (see <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>).</p>
 <h3 id="flow-control-paging"><a class="header" href="#flow-control-paging">Flow control (paging)</a></h3>
 <p><code>ListIdentifiers</code> and <code>ListRecords</code> return at most 100 items per response (configurable via the <code>DPE_OAI_PAGE_SIZE</code> env var — see <a href="dpe/./operations.html#environment-variables">Operations</a>). When more items match, the response ends with a <code>resumptionToken</code> element carrying the token to fetch the next page, along with <code>completeListSize</code> (the total number of matching items) and <code>cursor</code> (the zero-based index of the first item in the current response):</p>
 <pre><code class="language-xml">&lt;resumptionToken completeListSize="342" cursor="0"&gt;MHwyMDIw...&lt;/resumptionToken&gt;
@@ -3225,11 +3335,1284 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 }
 
 </style>
+<h1 id="machine-readable-metadata"><a class="header" href="#machine-readable-metadata">Machine-Readable Metadata</a></h1>
+<p>A project's <strong>landing page</strong> — <code>/dpe/projects/{shortcode}</code>, the page the project's
+ARK resolves to — carries its metadata in the served HTML, so that a FAIR
+assessor or a harvester reading the page gets the same facts a person does.</p>
+<p>Three things are emitted in the page, and two <strong>machine-readable
+representations</strong> are served beside it, all built from one resolved graph per
+project:</p>
+<div class="table-wrapper"><table><thead><tr><th>What</th><th>Where</th><th>Vocabulary</th></tr></thead><tbody>
+<tr><td>A JSON-LD block</td><td><code>&lt;script type="application/ld+json"&gt;</code> at the end of <code>&lt;head&gt;</code></td><td>schema.org <code>Dataset</code></td></tr>
+<tr><td>Meta tags</td><td><code>&lt;meta name="DC.*"&gt;</code> in <code>&lt;head&gt;</code></td><td>Dublin Core elements, plus a COAR access-right URI</td></tr>
+<tr><td>Typed links</td><td><code>&lt;link&gt;</code> elements in <code>&lt;head&gt;</code> and an HTTP <code>Link</code> header</td><td>FAIR Signposting, Level 1</td></tr>
+<tr><td>A JSON-LD document</td><td><code>GET /dpe/projects/{shortcode}/metadata.jsonld</code></td><td>schema.org <code>Dataset</code>, <code>hasPart</code> bounded by bytes</td></tr>
+<tr><td>A DataCite document</td><td><code>GET /dpe/projects/{shortcode}/metadata.datacite.json</code></td><td>DataCite kernel 4 JSON</td></tr>
+</tbody></table>
+</div>
+<p>The graph is <code>shared_fair::ProjectGraph</code>. Every representation reads it and none
+re-derives a fact from the source data, which is what keeps them from disagreeing
+(ADR-0005, <code>docs/adr/0005-fair-landing-pages-in-the-access-area.md</code>). A
+corpus-wide test in <code>dpe-api-oai</code> asserts that agreement over every committed
+project.</p>
+<h2 id="what-is-emitted"><a class="header" href="#what-is-emitted">What is emitted</a></h2>
+<h3 id="schemaorg-json-ld"><a class="header" href="#schemaorg-json-ld">schema.org JSON-LD</a></h3>
+<p>The project is a <code>Dataset</code> whose <code>@id</code> is its ARK, <code>url</code> its landing page, and
+<code>hasPart</code> a list of its records. <code>publisher</code> is DaSCH; <code>producer</code> is a
+<code>ResearchProject</code> node carrying the project's own name, dates, external website
+and members.</p>
+<p>Four properties have a shape worth naming, mostly because an assessor reads them
+as RDF rather than as JSON:</p>
+<div class="table-wrapper"><table><thead><tr><th>Property</th><th>Shape</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>identifier</code></td><td>always two entries: the ARK as a <code>PropertyValue</code> with <code>propertyID: "ARK"</code>, and the landing page URL as a plain string</td><td>F-UJI reads the object identifier from <code>identifier.value</code>, so the ARK keeps the <code>PropertyValue</code> form. FAIR Champion's <em>MetadataIdentifierFound</em> reads <code>schema:identifier</code> alone and does not consider <code>url</code>, so an assessor pointed at the page needs the page's own URL here too</td></tr>
+<tr><td><code>license</code></td><td>a node object, <code>{"@id": "&lt;SPDX URI&gt;"}</code>; one object for a single licence, an array for several, no key for none</td><td>schema.org's remote context does not coerce <code>license</code> to <code>@id</code>, so a bare string parses as an RDF literal. FAIR Champion's <em>LicenseStrong</em> wants a Resource</td></tr>
+<tr><td><code>prov:wasAttributedTo</code></td><td>references to agents the graph already names: DaSCH, and every credited creator with an ORCID</td><td>PROV-O is the W3C vocabulary for provenance, and <code>creator</code> and <code>publisher</code> already assert exactly these agents. See <em>Provenance</em> below</td></tr>
+<tr><td><code>distribution</code></td><td>a <code>DataDownload</code> per record file, at the root of the graph, never on the <code>hasPart</code> node</td><td>Both assessors read <code>schema:distribution</code> off the described object. See <em>Record files</em> below</td></tr>
+</tbody></table>
+</div>
+<p>An agent node carries an <code>@id</code> when it has an IRI of its own — its ORCID, by the
+same rule Signposting's <code>author</code> link uses — so a statement about that agent
+points at the node rather than describing a second one. The publisher's <code>@id</code> is
+<code>https://dasch.swiss</code>. An agent without an ORCID stays a blank node.</p>
+<h3 id="provenance"><a class="header" href="#provenance">Provenance</a></h3>
+<p>The <code>@context</code> binds <code>prov:</code> to <code>http://www.w3.org/ns/prov#</code>, and the graph
+asserts <code>prov:wasAttributedTo</code> over DaSCH and the credited creators that have an
+ORCID.</p>
+<p>Nothing here is a new fact. <code>creator</code> and <code>publisher</code> already name those agents;
+PROV-O restates that relation in the vocabulary a consumer asking about
+provenance reads. That is the line ADR-0005's "nothing is invented for a score"
+draws: re-expressing a true statement in a second standard vocabulary is
+interoperability, and asserting a fact the corpus does not record would not be.</p>
+<p>Two things are deliberately not emitted:</p>
+<ul>
+<li><strong><code>prov:generatedAtTime</code>.</strong> F-UJI's own mapping treats <code>publication_date</code> that
+way, but what the corpus records is a publication <em>year</em>, not a generation
+time, so the statement would be approximately true at best.</li>
+<li><strong>Attribution to a creator with no ORCID.</strong> There is no node to point at, and
+inlining a copy would put a second, unidentified agent in the graph — the
+opposite of what the statement means. Naming some agents does not deny the
+others, so the shorter statement stays true.</li>
+</ul>
+<blockquote>
+<p>schema.org's <code>producer</code> is the research project that made the data. It is not
+the OAIS Producer of the Deposit Area, which is the depositing agent.</p>
+</blockquote>
+<p>Three rules hold throughout:</p>
+<ul>
+<li><strong>Nothing is invented.</strong> A value the corpus records as a Placeholder, or does
+not record at all, yields no key. A project whose records carry no file gets
+no <code>distribution</code>, because there is no download to describe.</li>
+<li><strong><code>hasPart</code> and <code>distribution</code> are one prefix</strong>, over the same records in the
+same order, wherever the prefix stops. The embedded block stops at 100; the
+standalone JSON-LD representation stops at a byte budget and carries far more.
+The largest committed project has 27,026 records; the one with the most files
+has 7,716 of them. The complete list is harvestable from the OAI set
+<code>project:{shortcode}</code>.</li>
+<li><strong>Key order is the builder's.</strong> The workspace enables <code>serde_json</code>'s
+<code>preserve_order</code>, so insertion order is emission order. <code>Map::remove</code>
+silently re-sorts the map and must not be used; <code>retain</code> or <code>shift_remove</code>
+instead.</li>
+</ul>
+<h3 id="record-files-1"><a class="header" href="#record-files-1">Record files</a></h3>
+<p>A bitstream record carries at most one file, stored by dsp-ingest at a public
+URL. Where a project's records carry files, the project's graph describes them:
+one <code>DataDownload</code> per file, at the root under <code>distribution</code>.</p>
+<pre><code class="language-json">{
+  "@type": "DataDownload",
+  "contentUrl": "https://ingest.dasch.swiss/projects/0868/assets/65x3bCZRvre-UHvpx8zyfii/original",
+  "name": "BesselianElements_MeanDeltaT.csv",
+  "encodingFormat": "text/csv",
+  "contentSize": 1331862,
+  "license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+}
+</code></pre>
+<p>Four rules govern what appears here:</p>
+<ul>
+<li><strong>Only a record the corpus records as <code>Full Open Access</code>.</strong> A restricted
+record's file is not advertised in any representation. This governs what is
+<em>published</em>, not what is reachable — it is not an access control. dsp-ingest
+serves these URLs to anyone who holds one, and the file-metadata endpoint
+returns the same URL for any record with a file, neither of which this rule
+changes. It is applied where the graph is built rather than in a writer, so no
+representation can be added that forgets it, and it fails closed: an access
+level spelled in a way the builder does not recognise yields no download.</li>
+<li><strong><code>encodingFormat</code> only when the export records a MIME type.</strong> Project 0803's
+4,062 files carry none, and a guessed format would be an invented fact.
+<code>name</code> and <code>contentSize</code> are omitted on the same terms.</li>
+<li><strong><code>license</code> is the record's own</strong>, not the project's, and the two disagree
+across the corpus: 0868 licenses the project CC BY 4.0 while all 7,716 of its
+file-carrying records carry CC0 1.0, and 0803 disagrees the same way. A
+download described under the root licence alone would misstate every file.
+Both are reported as recorded; which one is right is a question about the
+data, not about this code.</li>
+<li><strong>No checksum.</strong> schema.org has no standard property carrying one on a
+<code>DataDownload</code>. The file-metadata endpoint serves it, beside the same URL —
+see <a href="dpe/./oai-pmh.html#file-metadata-endpoint">OAI-PMH</a>.</li>
+</ul>
+<p>This does not contradict the OAI-PMH mapping, which drops the download URL. That
+decision is about fit: <code>dc:identifier</code> identifies the described resource and a
+<code>HasPart</code> <code>relatedIdentifier</code> relates resources, not bitstreams, so neither
+field could carry it. <code>schema:distribution</code> is the field that fits.</p>
+<p><strong><code>contentUrl</code> names a host with a retirement date.</strong> Every one of these URLs
+points at <code>ingest.dasch.swiss</code>. Media moves to Vitrinli and ingest is then
+retired, after which downloads are served by the Access Area's <code>media</code>
+capability, so the host changes. The URLs are true today, which is the standard
+everything on this page is held to, and they largely heal themselves:
+<code>RecordFile.url</code> comes from the corpus export, so the first export after the
+migration carries the new host and DPE re-serves it with no code change —
+nothing in <code>shared-fair</code> hardcodes ingest.</p>
+<p>What does not heal is a harvested copy. <a href="dpe/./oai-pmh.html">OAI-PMH</a> already records
+this tradeoff for the file endpoint's <code>downloadUrl</code>, with the mitigation that a
+consumer fetches it fresh per request. That mitigation does not apply here:
+<code>schema:distribution</code> exists to be harvested and cached, so an aggregator that
+read <code>/metadata.jsonld</code> before the move holds dead links until it re-harvests.
+<strong>Retiring ingest therefore carries a metadata obligation: re-export the corpus,
+then re-publish.</strong></p>
+<p>A DPE-owned stable download URL redirecting to wherever the bytes live would
+remove the problem. It is not done here, because <a href="dpe/./oai-pmh.html#file-metadata-endpoint">OAI-PMH</a>
+records that DPE serves metadata only and does not redirect to bytes. Changing
+that is an ADR question, not a detail of this page.</p>
+<p><strong>The cap bounds the page, not the assessor.</strong> F-UJI reads the embedded block,
+then follows the <code>describedby</code> link to <code>/metadata.jsonld</code> and merges what it
+finds there, so for project 0868 a local run collected 100 data links from the
+page and 7,716 in total, from a representation that was then unbounded. It
+limits <em>content</em> analysis to five files per MIME type whatever it collected,
+which is why an assessment of a file-carrying project downloads a few dozen
+files and takes minutes rather than seconds. A bounded representation changes
+the first number and not the second — see <a href="dpe/machine-readable-metadata.html#a-byte-budget">A byte
+budget</a>.</p>
+<h3 id="dublin-core-meta-tags"><a class="header" href="#dublin-core-meta-tags">Dublin Core meta tags</a></h3>
+<p>A second rendering of the Dublin Core record the <code>oai_dc</code> metadata prefix already
+serves, not a second mapping. Two differences, both deliberate:</p>
+<ul>
+<li>Placeholders are dropped. The committed <code>oai_dc</code> output carries them through,
+but a landing page telling a harvester <code>DC.title = "MISSING"</code> states something
+false.</li>
+<li><code>DC.description</code> is cut to 1000 characters, on a character boundary. A <code>&lt;meta&gt;</code>
+attribute of several kilobytes is legal and pointless.</li>
+</ul>
+<p><code>DC.accessRights</code> is the one value the OAI record has no field for: the COAR
+access-right URI for the project's access level.</p>
+<div class="table-wrapper"><table><thead><tr><th>Access level</th><th><code>isAccessibleForFree</code></th><th><code>conditionsOfAccess</code></th><th><code>DC.accessRights</code></th></tr></thead><tbody>
+<tr><td>Full Open Access</td><td><code>true</code></td><td><code>Full Open Access</code></td><td><code>http://purl.org/coar/access_right/c_abf2</code></td></tr>
+<tr><td>Open Access with Restrictions</td><td><code>false</code></td><td><code>Open Access with Restrictions</code></td><td><code>http://purl.org/coar/access_right/c_16ec</code></td></tr>
+<tr><td>Embargoed Access</td><td><code>false</code></td><td><code>Embargoed Access until {date}</code>, or <code>Embargoed Access</code></td><td><code>http://purl.org/coar/access_right/c_f1cf</code></td></tr>
+<tr><td>Metadata only Access</td><td><code>false</code></td><td><code>Metadata only Access</code></td><td><code>http://purl.org/coar/access_right/c_14cb</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="signposting"><a class="header" href="#signposting">Signposting</a></h3>
+<p>The same set of typed links goes out twice, as <code>&lt;link&gt;</code> elements and as an RFC
+8288 <code>Link</code> header.</p>
+<div class="table-wrapper"><table><thead><tr><th>Relation</th><th>Target</th><th>Cardinality</th></tr></thead><tbody>
+<tr><td><code>cite-as</code></td><td>the project's ARK</td><td>exactly 1</td></tr>
+<tr><td><code>type</code></td><td><code>https://schema.org/Dataset</code>, <code>https://schema.org/AboutPage</code></td><td>2</td></tr>
+<tr><td><code>describedby</code></td><td>the two representations, typed <code>application/ld+json</code> and <code>application/vnd.datacite.datacite+json</code>, then the OAI <code>GetRecord</code> URLs for <code>oai_datacite</code> and <code>oai_dc</code>, typed <code>application/xml</code></td><td>4</td></tr>
+<tr><td><code>license</code></td><td>the SPDX URI</td><td>0 or 1: only when the project records exactly one distinct URI, because the profile allows no more. The JSON-LD still lists them all</td></tr>
+<tr><td><code>author</code></td><td>the ORCID of each credited creator</td><td>0 or more</td></tr>
+</tbody></table>
+</div>
+<p>Each representation answers with the other half of that: <code>Link: &lt;landing page&gt;; rel="describes"</code>.</p>
+<p>The OAI <code>describedby</code> targets return an OAI-PMH envelope around the DataCite or
+Dublin Core payload, so <code>application/xml</code> is the accurate type for them. A
+harvester wanting bare DataCite gets it from <code>metadata.datacite.json</code>.</p>
+<h2 id="the-representations-and-the-one-negotiation-step"><a class="header" href="#the-representations-and-the-one-negotiation-step">The representations, and the one negotiation step</a></h2>
+<pre><code>GET /dpe/projects/{shortcode}/metadata.jsonld        → application/ld+json
+GET /dpe/projects/{shortcode}/metadata.datacite.json → application/vnd.datacite.datacite+json
+</code></pre>
+<p>The JSON-LD one is the same schema.org graph the page embeds, with <code>hasPart</code>
+<strong>bounded by bytes rather than by a count</strong> — as many records as fit in 4 MB,
+where the embedded block stops at 100. See <em>A byte budget</em> below. The DataCite
+one is the same record the <code>oai_datacite</code> prefix serves, in DataCite's kernel-4
+JSON shape rather than inside an OAI envelope. Its output is validated against
+DataCite's own JSON schema for every committed project by a corpus-wide test.</p>
+<p>A malformed shortcode is <code>400</code> and an unknown one <code>404</code>, both <code>text/plain</code> with
+an empty body: a client that asked for JSON-LD is a machine, and the content
+type is how it learns that what came back is not the document it asked for.</p>
+<p>Both routes share the per-IP bucket <code>/dpe/oai</code> uses, under the same
+<code>DPE_OAI_RATE_LIMIT_*</code> settings, because the JSON-LD for the largest committed
+project is a few megabytes built in memory per request. That limit
+bounds the request <em>rate</em>, not the per-request size; see
+<a href="dpe/./operations.html">Operations</a> for what a burst costs. Neither route sends
+<code>Cache-Control</code> or <code>ETag</code>, consistent with the rest of DPE: the data changes
+only on deploy.</p>
+<p><strong>The landing page redirects to a representation when <code>Accept</code> prefers one.</strong>
+This is the single negotiation step ADR-0005 allows, and the only thing about
+the route that varies by header — the page itself is byte-identical for every
+<code>Accept</code> value (ADR-0004, <code>docs/adr/0004-hypermedia-frontends.md</code>).</p>
+<div class="table-wrapper"><table><thead><tr><th><code>Accept</code></th><th>Result</th></tr></thead><tbody>
+<tr><td>absent, <code>*/*</code>, <code>text/html,*/*;q=0.8</code></td><td>200 HTML</td></tr>
+<tr><td><code>application/ld+json</code></td><td>303 to <code>metadata.jsonld</code></td></tr>
+<tr><td><code>application/vnd.datacite.datacite+json</code></td><td>303 to <code>metadata.datacite.json</code></td></tr>
+<tr><td><code>text/turtle</code>, <code>application/json</code>, <code>application/xml</code>, <code>application/*</code></td><td>200 HTML — these are not aliases; each representation is served for its own media type and no other</td></tr>
+<tr><td><code>text/html;q=1, application/ld+json;q=1</code></td><td>200 HTML — a tie goes to the page</td></tr>
+<tr><td><code>*/*;q=0</code>, malformed, unparseable <code>q</code></td><td>200 HTML</td></tr>
+<tr><td>unknown shortcode, any <code>Accept</code></td><td>200 HTML "Project Not Found", never a redirect</td></tr>
+</tbody></table>
+</div>
+<p>The table above is the acceptance specification. The rules that produce it —
+how <code>q</code> is read, how wildcards count, what a hostile header costs — are written
+out once, in <code>shared-fair</code>'s <code>negotiate</code> module, and are not restated here. The
+route never produces a 4xx from <code>Accept</code>.</p>
+<p><strong>Every answer from the route carries <code>Vary: Accept</code></strong> — 200 and 303, GET and
+HEAD. Without it a cache in front of DPE could replay a 303 to a person or the
+HTML to a harvester.</p>
+<p>The candidate list and the representation <code>describedby</code> links come from the
+same <code>UrlLayout</code> rows, so the page cannot redirect to a representation it does
+not link. The converse does not hold: the two OAI-record <code>describedby</code> links are
+never candidates, because a harvester is pointed at them rather than redirected
+to them.</p>
+<h3 id="a-byte-budget"><a class="header" href="#a-byte-budget">A byte budget</a></h3>
+<p><strong>The JSON-LD representation is bounded by the bytes it serialises to</strong>, not by
+a record count: <code>JSON_LD_BYTE_BUDGET</code>, 4,000,000, in <code>dpe-server</code>'s
+<code>metadata.rs</code>. The document served is always at or under it and is always valid
+JSON. It is never truncated mid-structure; what the budget removes is whole
+entries from the end of the part list.</p>
+<p><strong>Why there is a bound.</strong> Without one, <code>/dpe/projects/0868/metadata.jsonld</code>
+served 5,251,715 bytes on a PR preview. F-UJI truncates any download at
+5,000,000 bytes, and the truncated fragment is not valid JSON, so it could not
+parse the document at all:</p>
+<pre><code>WARNING: Downloaded content has been TRUNCATED by F-UJI since it is larger than: -: 5000000
+WARNING: Given JSON-LD seems to be invalid JSON
+</code></pre>
+<p><code>FsF-I1-01M</code> scored 1 of 2 on that run for that reason alone. The document was
+valid JSON as served — verified with <code>jq</code> — so this was a size defect and not a
+serialisation defect. <strong>0868 is a small project by DaSCH standards</strong>, so an
+unbounded representation fails for the normal case of a project with files, not
+for an edge case: a <code>hasPart</code> entry costs roughly 150 bytes and a <code>DataDownload</code>
+roughly 290, which puts the 5,000,000 ceiling at about 33,000 file-less records
+or about 20,000 once ~40% carry files.</p>
+<p><strong>Why bytes and not a count.</strong> The same 19,770 parts of 0868 serialise to 4.74 MB
+under <code>ark.dasch.swiss</code> and 5.25 MB under a preview's longer Cloud Run host.
+Identifier length, licence URIs, file names and MIME types vary per project
+besides. A count calibrated against one deployment is wrong on the next, so the
+implementation renders a prefix, serialises it, measures it, and returns the
+very document it measured. Nothing is estimated from entry counts.</p>
+<p><strong>Why 4,000,000.</strong> A 20% margin under F-UJI's limit. We control none of the three
+things that consume it: the host name a deployment serves under, the limit a
+future assessor applies, and what a later field adds to every entry. It is a
+constant rather than a setting, because a second value to keep in step would buy
+nothing.</p>
+<p><strong><code>hasPart</code> and <code>distribution</code> share one prefix.</strong> When the budget binds, the
+document describes records 1..<em>k</em> and the files of those records, and not the
+files of records it does not list — the same invariant the embedded block's cap
+already holds. Spending the budget preferentially on <code>distribution</code> was
+considered and rejected: it would need two truncation rules where there is one,
+it would describe downloads for unlisted records, and the reason to prefer
+distributions is that an assessor rewards them, which is not a reason this work
+accepts. Neither list is recoverable only from this document — the complete
+record list is the OAI set <code>project:{shortcode}</code>, and each record's download URL
+is <a href="dpe/./oai-pmh.html#file-metadata-endpoint"><code>/dpe/records/{shortcode}/{record_id}/file</code></a>.</p>
+<p><strong>A superseded decision, recorded rather than dropped.</strong> This page previously
+held that the representation must stay uncapped, because the uncapped set was
+what earned <code>F3-01M</code>, <code>A1-03D</code>, <code>R1-01MD</code> and <code>R1.3-02D</code> for 0868. The preview
+run disproves it. In the same run that failed to parse the document, F-UJI
+reported:</p>
+<pre><code>INFO: Found data links in MetadataFormats.JSONLD metadata -: 100
+SUCCESS: Number of object content identifier found -: 100
+</code></pre>
+<p>One hundred — the embedded block's cap. It never parsed the large document and
+still earned <code>F3-01M</code> 1/1, <code>A1-03D</code> 1/1, <code>R1-01MD</code> 3/4 and <code>R1.3-02D</code> 1/1 from
+those hundred entries. The uncapped set earned nothing the capped one did not.</p>
+<p><strong>The document does not say it is bounded. Completeness is reachable from it
+anyway, in band, over links it already carries.</strong> A consumer holding only the
+JSON-LD has <code>Link: &lt;landing page&gt;; rel="describes"</code> on the response. The landing
+page answers with <code>rel="describedby"</code> to the OAI <code>GetRecord</code> URLs for this
+project, which carry the OAI endpoint's own base URL; <code>ListRecords</code> over the set
+<code>project:{shortcode}</code> follows from that by the protocol. So the path from the
+bounded document to the complete record list is two hops and no new vocabulary.</p>
+<p>What is true is narrower than "nothing standard fits", and worth stating
+precisely: <strong>completeness is not expressible <em>in this document</em>.</strong> schema.org
+has no property meaning "this collection is partial, and <em>n</em> entries exist" —
+<code>numberOfItems</code> is defined on <code>ItemList</code> and not on <code>Dataset</code>, and <code>size</code> is
+product sizing. Hydra's <code>totalItems</code> and <code>PartialCollectionView</code> are designed
+for exactly this and were rejected: a third namespace for one integer, asserting
+a new fact rather than restating an existing one, which is the line <code>prov:</code>
+stays on the right side of. Inventing a term, or bending one, is what ADR-0005
+rules out.</p>
+<p>A consumer that reads the document alone should therefore not assume it is
+exhaustive; one that follows its links does not have to assume anything.</p>
+<h3 id="who-reads-which-document-and-what-each-one-can-take"><a class="header" href="#who-reads-which-document-and-what-each-one-can-take">Who reads which document, and what each one can take</a></h3>
+<p>The budget is one representation's bound, not a bound on what DaSCH publishes.
+Which consumer reads which document, and how much of its own ceiling that
+document uses:</p>
+<div class="table-wrapper"><table><thead><tr><th>Consumer</th><th>Document it reads</th><th style="text-align: right">Its ceiling</th><th style="text-align: right">Largest we serve</th></tr></thead><tbody>
+<tr><td>Google Dataset Search</td><td>the embedded block, in the landing page's <code>&lt;head&gt;</code> (<code>Count(100)</code>)</td><td style="text-align: right">2,097,152 B</td><td style="text-align: right">77,999 B (0868) — 3.7%</td></tr>
+<tr><td>F-UJI</td><td>the embedded block for the file-pointer metrics, <code>/metadata.jsonld</code> for <code>I1-01M</code></td><td style="text-align: right">5,000,000 B</td><td style="text-align: right">3,972,504 B, bounded</td></tr>
+<tr><td>A bulk harvester</td><td>the OAI set <code>project:{shortcode}</code></td><td style="text-align: right">none; it paginates</td><td style="text-align: right">the complete set</td></tr>
+</tbody></table>
+</div>
+<p><a href="https://developers.google.com/search/docs/crawling-indexing/googlebot">Googlebot crawls the first 2 MB of a supported file
+type</a>,
+and the file it crawls is the landing page HTML with the block inside it — the
+77,999 B above is that whole page, measured on a PR preview (75,717 B locally).</p>
+<p><strong>Note the direction. Googlebot's ceiling is half the JSON-LD representation's
+budget.</strong> Removing the bound to give a search engine more would not: Googlebot
+does not fetch <code>/metadata.jsonld</code>, and if it did, an unbounded document would be
+truncated at 2 MB and unparseable — less use to Google than the bounded one, not
+more. The embedded block is what Google reads, it is capped by count, and at
+3.7% of the limit it has room the byte budget does not constrain.</p>
+<h2 id="three-base-urls"><a class="header" href="#three-base-urls">Three base URLs</a></h2>
+<p><code>DPE_PUBLIC_BASE_URL</code> gives the site's own URLs — the landing page and the
+catalogue. <code>DPE_OAI_BASE_URL</code> gives the <code>describedby</code> targets, because that is
+the URL the OAI endpoint advertises for itself. Neither is derived from the
+other: on DEV the OAI endpoint answers on a different host.</p>
+<p><code>DPE_ARK_RESOLVER_BASE_URL</code> is the odd one out and is <strong>unset everywhere but a
+PR preview</strong>. Set, it rewrites the host of every emitted ARK to the deployment's
+own and mounts the <code>/ark:/</code> resolver that answers it, so a deployment which is
+not what the recorded ARK resolves to does not publish an identifier that sends
+an assessor somewhere else. See <a href="dpe/./operations.html">Operations</a>.</p>
+<h2 id="how-it-is-kept-safe"><a class="header" href="#how-it-is-kept-safe">How it is kept safe</a></h2>
+<p>Machine-readable metadata puts corpus data into HTML and into HTTP headers. The
+rules that govern that — identifiers derived from the resolved project and never
+from the request path, and the JSON-LD <code>&lt;script&gt;</code> as a sanctioned <code>PreEscaped</code>
+site whose only permitted input is <code>shared_fair::script_safe_json</code> — are
+ADR-0005's decision (<code>docs/adr/0005-fair-landing-pages-in-the-access-area.md</code>),
+and are not restated here. What the implementation adds to them:</p>
+<ul>
+<li><strong>The grep is crate-wide.</strong> A test in <code>dpe-server</code> reads every file under its
+own <code>src/</code> and asserts <code>PreEscaped(</code> appears exactly once in the whole crate,
+on the JSON-LD splice. Scoped to <code>metadata.rs</code> it could never have seen the
+site the rule actually worries about, the search-query echo in <code>fragments.rs</code>.</li>
+<li><strong>A rejected <code>Link</code> header is dropped, not panicked.</strong> A control character in
+a recorded PID makes <code>HeaderValue::from_str</code> refuse the value; the header goes
+with a <code>tracing::warn!</code> naming the shortcode, and the page stays. The same
+links are in the head either way, and a persistent failure is a data-quality
+bug that has to surface in logs rather than take the page down.</li>
+<li><strong>RFC 8288 field syntax is percent-encoded out of every href.</strong> <code>&lt;</code>, <code>&gt;</code>, <code>"</code>,
+<code>;</code>, <code>,</code> and space are encoded when the header is serialized, so a curator-
+entered ARK or license URI cannot end a link-value and start another. It is
+done at serialization, so the identifier in the JSON-LD and the <code>&lt;link&gt;</code>
+elements stays what the corpus records.</li>
+<li><strong>Casing changes nothing.</strong> The shortcode lookup is case-insensitive, so
+<code>/dpe/projects/080c</code> and <code>/dpe/projects/080C</code> produce byte-identical JSON-LD
+and <code>Link</code> headers.</li>
+</ul>
+<p>A project that does not resolve gets nothing: no JSON-LD, no <code>Link</code> header, no
+redirect. The existing always-200 "Project Not Found" body is unchanged.</p>
+<h2 id="measuring-it-just-fair-check"><a class="header" href="#measuring-it-just-fair-check">Measuring it: <code>just fair-check</code></a></h2>
+<pre><code>just fair-check &lt;url&gt; [min_score]
+</code></pre>
+<p>Starts F-UJI in a container, POSTs the URL to its evaluation API, prints the
+per-metric table with the assessor's <code>software_version</code> and the image digest,
+and exits non-zero when the total is below <code>min_score</code>. The exit code is the
+check, so a reviewer gets a pass or a fail rather than a table to read.</p>
+<p>Against a local server:</p>
+<pre><code>DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000 DPE_SITE_ADDR=0.0.0.0:4000 just dev
+just fair-check http://host.docker.internal:4000/dpe/projects/0862 12
+</code></pre>
+<p>Both environment variables are needed. <code>DPE_PUBLIC_BASE_URL</code> makes the page's
+own links point at a host the container can resolve, and <code>DPE_SITE_ADDR</code> binds
+the server on all interfaces — the default <code>127.0.0.1</code> is not reachable from a
+container under a VM-backed Docker runtime such as colima.</p>
+<p>A local run has the same identifier problem a preview has: the page publishes
+the recorded ARK, which resolves to production, while the assessment runs
+against <code>host.docker.internal</code>. That is what fails <code>F1-02D</code> in every local run
+recorded below. Adding <code>DPE_ARK_RESOLVER_BASE_URL=http://host.docker.internal:4000</code>
+makes the local run self-consistent and is the way to measure <code>F1-02D</code>. Every
+run in the table predates the variable and was made without it, so a run that
+sets it is not comparable to them metric for metric and should say so.</p>
+<p>Notes on the recipe:</p>
+<ul>
+<li><strong>The image is pinned by digest</strong>, not by <code>:latest</code>. A score is only
+comparable against the rows below if the assessor is the same build. Bumping
+the pin is a reviewed change, made when F-UJI publishes a release and checked
+at least with every change to a landing page — the same discipline as the
+Tailwind CLI pin in <a href="dpe/../security.html">Security</a>. There is no
+<code>tailwind-pins-refresh</code>-style refresh recipe, because <code>fair-check</code> never runs
+in CI.</li>
+<li><strong>The container can reach the host's port 4000</strong> during the run, through
+<code>--add-host=host.docker.internal:host-gateway</code>. That is the point: F-UJI
+fetches the URL it is given. The container is published on <code>127.0.0.1</code> only
+and is destroyed when the recipe returns, because an API that fetches
+arbitrary URLs should not be listening on the developer's network.</li>
+<li><strong><code>marvel</code> / <code>wonderwoman</code> are F-UJI's own published defaults</strong>
+(<code>fuji_server/config/users.py</code>), not a DaSCH credential. They are in the
+recipe because the container is loopback-only and short-lived.</li>
+<li><strong><code>DOCKER_CONFIG</code> points at a scratch directory</strong> holding a bare <code>{}</code>. A
+developer's own <code>~/.docker/config.json</code> may name a credential helper that is
+not on <code>PATH</code> under the active context, and <code>docker pull</code> then fails on a
+public image that needs no credentials at all.</li>
+<li><strong><code>jq</code> is required</strong>, and is in the Nix dev shell and <code>just install-requirements</code>.</li>
+</ul>
+<p><code>REVIEW.md</code> carries this as a checklist step: a change to a landing page or to
+<code>shared-fair</code> runs it against project 0862 and records the result.</p>
+<h2 id="assessment-results"><a class="header" href="#assessment-results">Assessment results</a></h2>
+<p>Project 0862 is the reference project and carries the history. Since 2026-09-18
+three more are measured, because a score is a statement about one project's data
+and not about the software.</p>
+<p><strong>Only 3 of the 85 committed projects carry record metadata at all</strong>, and which
+of them a score belongs to is the whole explanation for the spread:</p>
+<div class="table-wrapper"><table><thead><tr><th>Project</th><th>Record dump</th><th style="text-align: right">Records</th><th style="text-align: right">With a file</th><th>MIME types</th><th style="text-align: right">After <code>distribution</code></th></tr></thead><tbody>
+<tr><td>0862 <code>gotthelf</code></td><td>none committed</td><td style="text-align: right">0</td><td style="text-align: right">0</td><td>—</td><td style="text-align: right">16 of 24</td></tr>
+<tr><td>081C <code>hdm</code></td><td>committed</td><td style="text-align: right">27,026</td><td style="text-align: right">0</td><td>—</td><td style="text-align: right">16 of 24</td></tr>
+<tr><td>0803 <code>incunabula</code></td><td>committed</td><td style="text-align: right">4,198</td><td style="text-align: right">4,062</td><td>none recorded</td><td style="text-align: right">18 of 24</td></tr>
+<tr><td>0868 <code>solec</code></td><td>committed</td><td style="text-align: right">19,770</td><td style="text-align: right">7,716</td><td>all present</td><td style="text-align: right">21 of 24</td></tr>
+</tbody></table>
+</div>
+<p>Read by rung: a file pointer existing at all is worth two points (<code>F3-01M</code>,
+<code>A1-03D</code>), and the pointer carrying a MIME type is worth three more
+(<code>R1-01MD-2</code>, <code>R1-01MD-3</code>, <code>R1.3-02D</code>). 0862 and 081C score the same for
+unrelated reasons — one says nothing about records, the other describes 27,026
+of them and not one file.</p>
+<p>No record dump is committed for 0862, so its landing page lists no parts and
+describes no files — on a deployment carrying 0862's real records it would. The
+other 82 committed projects would behave as 0862 does locally, which is a fact
+about the development corpus rather than about those projects.</p>
+<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Project</th><th>Assessor</th><th>Version</th><th>Target</th><th>Result</th></tr></thead><tbody>
+<tr><td>2026-09-15</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0</td><td><code>https://ark.dasch.swiss/ark:/72163/1/0862</code> (PROD)</td><td>3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work</td></tr>
+<tr><td>2026-09-15</td><td>0862 <code>gotthelf</code></td><td>FAIR Champion</td><td>1.1.11</td><td>same</td><td>6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0 (<code>sha256:3cde9d30bc14…</code>)</td><td><code>http://host.docker.internal:4000/dpe/projects/0862</code> (local <code>dpe-server serve</code>)</td><td><strong>14 of 24</strong>, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0</td><td><code>https://dpe-pr-391-…run.app/dpe/projects/0862</code> (Cloud Run PR preview)</td><td>13 of 24. One point below the local run, and the whole difference is <code>I1-01M-2</code>: the preview did not set <code>DPE_PUBLIC_BASE_URL</code>, so the typed links pointed at production, which does not carry this code and answered 404. Predates the <code>identifier</code>, <code>license</code> and workflow fixes</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>FAIR Champion</td><td>1.1.11</td><td>same preview</td><td>7 of 15 passing. <em>LicenseStrong</em> and <em>MetadataIdentifierFound</em> among the failures; both are fixed by the <code>license</code> and <code>identifier</code> shapes above, and both predate them</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0 (<code>sha256:3cde9d30bc14…</code>)</td><td>same local target, after the <code>identifier</code> and <code>license</code> fixes</td><td><strong>14 of 24 again.</strong> A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting <code>identifier</code> in an array did not break F-UJI's reading of the ARK — it does not, and <code>F1-01D</code> still passes</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0 (<code>sha256:3cde9d30bc14…</code>)</td><td>same local target, after PROV-O</td><td><strong>16 of 24.</strong> Two metrics moved and no others: <code>R1.2-01M</code> 1/2 → 2/2 (<code>Found use of dedicated provenance ontologies</code>) and <code>I2-01M</code> 0/1 → 1/1 (<code>Namespace matches found -: ['http://www.w3.org/ns/prov']</code>). One statement earns both — PROV is a provenance ontology <em>and</em> a vocabulary F-UJI's LOD registry lists</td></tr>
+</tbody></table>
+</div>
+<p>| 2026-09-18 | 0868 <code>solec</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | <code>http://host.docker.internal:4000/dpe/projects/0868</code> (local <code>dpe-server serve</code>) | <strong>16 of 24 before <code>distribution</code></strong>, metric for metric identical to 0862's — a project holding 7,716 public file URLs scored what a project holding none scored |
+| 2026-09-18 | 0803 <code>incunabula</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | <code>http://host.docker.internal:4000/dpe/projects/0803</code> (local <code>dpe-server serve</code>) | <strong>16 of 24 before <code>distribution</code></strong>, identical again |
+| 2026-09-18 | 0862 <code>gotthelf</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | same local target, after <code>distribution</code> | <strong>16 of 24, unmoved metric for metric.</strong> No record dump is committed for 0862, so it has no file to describe and nothing about it should have changed. Nothing did |
+| 2026-09-18 | 0868 <code>solec</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | same local target, after <code>distribution</code> | <strong>21 of 24.</strong> Four metrics moved: <code>F3-01M</code> 0/1 → 1/1, <code>A1-03D</code> 0/1 → 1/1, <code>R1-01MD</code> 1/4 → 3/4 (sub-tests 2 and 3), <code>R1.3-02D</code> 0/1 → 1/1. Nothing else moved. 558 s |
+| 2026-09-18 | 0803 <code>incunabula</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | same local target, after <code>distribution</code> | <strong>18 of 24.</strong> Two metrics moved: <code>F3-01M</code> 0/1 → 1/1 and <code>A1-03D</code> 0/1 → 1/1. <code>R1-01MD</code> stayed 1/4 and <code>R1.3-02D</code> stayed 0/1, both for one reason — 0803's export records no <code>mimeType</code>, so no <code>encodingFormat</code> is emitted, and dsp-ingest serves those files as <code>application/octet-stream</code>. 307 s |</p>
+<p>| 2026-09-18 | 081C <code>hdm</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | <code>http://host.docker.internal:4000/dpe/projects/081C</code> (local <code>dpe-server serve</code>) | <strong>16 of 24, after <code>distribution</code>, metric for metric identical to 0862's.</strong> The strong control: 27,026 records, none carrying a file, so the page emits <code>hasPart</code> and no <code>distribution</code> and the score is unmoved. F-UJI confirms the absence rather than inferring it — <code>Valid data (content) identifier missing</code> |</p>
+<p>F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
+with, so the rows are comparable.</p>
+<p><strong>A score is a statement about one project's data.</strong> The three 2026-09-18 runs
+share a build and differ only in what the projects record, which is what makes
+the spread readable: 21 where the files are typed, 18 where they are not, 16
+where there are none. The identical 16 of 24 that all three scored beforehand is
+the other half of that: it is what made the movement attributable, because there
+was no pre-existing difference between them to confound it.</p>
+<p>The FAIR Champion tests named on this page by their short reference —
+<em>LicenseStrong</em>, <em>MetadataIdentifierFound</em>, <em>DataIdentifierFound</em> — are defined
+in the <a href="https://fairmetrics.github.io/Metrics/landingpages/general/index.html">FAIR Maturity Indicators
+index</a>,
+which is where each <code>FM_*</code> indicator a FAIR Champion result cites resolves to
+prose. It covers that set only; F-UJI's metrics are a separate set, cited in its
+own result payload as <a href="https://doi.org/10.5281/zenodo.6461229">https://doi.org/10.5281/zenodo.6461229</a>.</p>
+<p>Every row above is a local or preview measurement. Neither assessor has yet run
+against a <em>deployment</em> carrying the PROV-O, <code>identifier</code>, <code>license</code> and base-URL
+changes, and nothing on this page claims a score for one.</p>
+<p><strong>Two representations of one project do not fight over its resource type.</strong>
+F-UJI's JSON-LD mapping reads <code>object_type</code> from schema.org's <code>@type</code>
+(<code>Dataset</code>) and its DataCite JSON mapping from <code>types.resourceTypeGeneral</code>
+(<code>Project</code>). It merges <code>object_type</code> as a <em>list</em> and its resource-type test
+passes if <strong>any</strong> entry matches, so linking the DataCite representation costs
+nothing there. This was read out of the pinned image, and holds in 4.0.0 as
+well.</p>
+<h3 id="one-observation-from-a-pr-preview-not-in-the-table-above"><a class="header" href="#one-observation-from-a-pr-preview-not-in-the-table-above">One observation from a PR preview, not in the table above</a></h3>
+<p><strong><code>I1-01M</code> scored 1 of 2 on a preview because <code>/metadata.jsonld</code> was too large
+to parse</strong> — 5,251,715 bytes against F-UJI's 5,000,000-byte download limit. That
+is a preview observation and belongs in none of the columns below, which are
+local runs. It is the defect <a href="dpe/machine-readable-metadata.html#a-byte-budget">A byte budget</a> fixes, and <strong>no
+re-measurement has been made</strong>: nothing here claims that <code>I1-01M</code> now scores 2
+of 2. The same run is the evidence that bounding the representation costs
+nothing, because it earned <code>F3-01M</code>, <code>A1-03D</code>, <code>R1-01MD</code>'s two file sub-tests
+and <code>R1.3-02D</code> from the embedded block's 100 entries while failing to parse the
+large document at all.</p>
+<p>The four committed projects' representations, measured locally with the recorded
+ARK host and a short site host, before and after the budget:</p>
+<div class="table-wrapper"><table><thead><tr><th>Project</th><th style="text-align: right">Records</th><th style="text-align: right">Files</th><th style="text-align: right">Unbounded</th><th style="text-align: right">Served</th><th style="text-align: right">Parts listed</th><th style="text-align: right">Downloads listed</th></tr></thead><tbody>
+<tr><td>0868 <code>solec</code></td><td style="text-align: right">19,770</td><td style="text-align: right">7,716</td><td style="text-align: right">4,875,959</td><td style="text-align: right"><strong>3,972,504</strong></td><td style="text-align: right">16,218</td><td style="text-align: right">6,107</td></tr>
+<tr><td>081C <code>hdm</code></td><td style="text-align: right">27,026</td><td style="text-align: right">0</td><td style="text-align: right">3,548,716</td><td style="text-align: right">3,548,716</td><td style="text-align: right">27,026</td><td style="text-align: right">—</td></tr>
+<tr><td>0803 <code>incunabula</code></td><td style="text-align: right">4,198</td><td style="text-align: right">4,062</td><td style="text-align: right">1,472,208</td><td style="text-align: right">1,472,208</td><td style="text-align: right">4,198</td><td style="text-align: right">4,062</td></tr>
+<tr><td>0862 <code>gotthelf</code></td><td style="text-align: right">0</td><td style="text-align: right">0</td><td style="text-align: right">6,699</td><td style="text-align: right">6,699</td><td style="text-align: right">—</td><td style="text-align: right">—</td></tr>
+</tbody></table>
+</div>
+<p><strong>The same code under a different host gives different numbers, which is the
+whole argument for measuring bytes.</strong> On the preview, whose Cloud Run host is
+much longer than either the recorded ARK host or a local one, the same four
+documents measured 5,251,715, 4,062,336, 1,552,096 and 6,825 — so 081C binds
+there and does not bind locally, from one unchanged corpus. A record count
+calibrated on either host would be wrong on the other.</p>
+<h3 id="known-residuals"><a class="header" href="#known-residuals">Known residuals</a></h3>
+<p>Where the points F-UJI does not award go. <strong>Per project, because the residuals
+differ per project</strong> — the ledger used to describe 0862 and read as though it
+described the repository. Each column is the local run of 2026-09-18 after
+<code>distribution</code>, and each adds up to the 24 − score for that project. Sub-test
+attributions come from <code>test_debug</code> in those same runs.</p>
+<p>One row is no longer a residual in the sense the others are. <code>F1-02D</code> was a
+defect in our own deployment setup, it is fixed, and nothing has been
+re-measured since — so it still costs the point in every column below, and the
+arithmetic still closes on the runs those columns describe.</p>
+<div class="table-wrapper"><table><thead><tr><th>Cause</th><th>Metrics</th><th style="text-align: right">0862 (16/24)</th><th style="text-align: right">0868 (21/24)</th><th style="text-align: right">0803 (18/24)</th></tr></thead><tbody>
+<tr><td>No file to point at</td><td><code>F3-01M</code>, <code>A1-03D</code>, <code>R1-01MD-2</code>, <code>R1-01MD-3</code>, <code>R1.3-02D</code></td><td style="text-align: right">5</td><td style="text-align: right">—</td><td style="text-align: right">—</td></tr>
+<tr><td>The files carry no MIME type</td><td><code>R1-01MD-2</code>, <code>R1-01MD-3</code>, <code>R1.3-02D</code></td><td style="text-align: right">—</td><td style="text-align: right">—</td><td style="text-align: right">3</td></tr>
+<tr><td>No <code>variableMeasured</code></td><td><code>R1-01MD-4</code></td><td style="text-align: right">1</td><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td>ARKs are not registered with DataCite (permanent)</td><td><code>F4-01M-2</code></td><td style="text-align: right">1</td><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td>The deployment published ARKs it does not resolve</td><td><code>F1-02D</code></td><td style="text-align: right">1</td><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td style="text-align: right"><strong>8</strong></td><td style="text-align: right"><strong>3</strong></td><td style="text-align: right"><strong>6</strong></td></tr>
+</tbody></table>
+</div>
+<p><strong>No file to point at — five points, and only where there is nothing to point
+at.</strong> F-UJI distinguishes the metadata record from retrievable <em>data content</em>
+and asks for a pointer it can fetch and inspect. Where the records carry files,
+<code>distribution</code> supplies one and all five are earned; 0868 earns every one of
+them. Where there is no file, <code>R1-01MD-1</code> still passes on the resource type
+alone, <code>R1-01MD-2</code> comes back with an empty <code>data_content_descriptor</code>,
+<code>R1-01MD-3</code> cannot run (<code>NO data object content available/accessible to perform file descriptors (type and size) tests</code>), <code>A1-03D</code> skips (<code>Skipping protocol test for data since NO content (data) identifier is given in metadata</code>) and
+<code>R1.3-02D</code> reports <code>Could not perform file format checks as data content identifier(s) unavailable/inaccesible</code>.</p>
+<p>For 0862 this is a fact about the committed corpus, not about the project. <strong>No
+record dump is committed for 0862</strong>, so its landing page lists no parts and
+describes no files. Project 0862 does have file-carrying records in production —
+<a href="dpe/./oai-pmh.html#file-metadata-document">OAI-PMH</a> shows one, a PNG — so a
+deployment carrying them would describe them and would score these five points
+as 0868 does. "0862 did not move" is the right control for this change and not a
+ceiling on the project.</p>
+<p><strong>081C is the strong control and 0862 the weak one.</strong> Both score 16 of 24, metric
+for metric, and only one of them tests the rule. 0862 shows that no
+<code>distribution</code> is invented where there is nothing to describe, but only because
+it has nothing at all — no records, so no parts and no files. 081C has 27,026
+records and not one file among them, which is the case the rule is actually
+about: parts present, <code>hasPart</code> populated, <code>distribution</code> correctly absent. Its
+assessment says so directly (<code>Valid data (content) identifier missing</code>) rather
+than skipping for want of a graph.</p>
+<p>Fabricating a download for a project that has none would earn the points and
+state something untrue, which ADR-0005 rules out. Describing the files a project
+<em>does</em> have is the opposite of that, and is what earned them here.</p>
+<p><strong>The files carry no MIME type — three points, and this is a data-quality
+residual.</strong> 0803 gained <code>F3-01M</code> and <code>A1-03D</code> like 0868, and gained nothing
+beyond them. None of its 4,062 files records a <code>mimeType</code>, so no
+<code>encodingFormat</code> is emitted — a guessed format would be invented — and F-UJI
+reports <code>NO info about file type available in given metadata</code> for every file it
+sampled. That fails <code>R1-01MD-2a</code>, which takes <code>R1-01MD-2</code> and <code>R1-01MD-3</code> with
+it, and leaves <code>R1.3-02D</code> with no format list to check. dsp-ingest serves those
+files as <code>application/octet-stream</code>, so the header fallback does not rescue it
+either. Both ends would have to change: the export would have to record the
+MIME type, and ingest would have to serve it. Neither is a change to this code.</p>
+<p><strong>No <code>variableMeasured</code> — one point, for every project.</strong> <code>R1-01MD-4</code> asks
+whether the data content matches the measured variables or observation types the
+metadata declares, and F-UJI skips it with <code>NO measured variables found in metadata</code>. The DaSCH metadata schema records no such element. This used to be
+counted under the data-pointer cause, on the strength of its sub-test name;
+measuring 0868 separated them, because <code>-2</code> and <code>-3</code> moved and <code>-4</code> did not. No
+data pointer will ever earn it.</p>
+<p><strong>ARKs are not registered with DataCite — one point, permanently.</strong> <code>F4-01M-1</code>
+passes: the metadata is offered through a harvesting endpoint. <code>F4-01M-2</code> asks
+for registration in a major research data registry, and the ARKs are DaSCH's
+own. DaSCH mints no DOIs and will not — every resource carries an ARK, so parity
+would run to hundreds of thousands of them — so this point is a standing
+consequence of the identifier scheme rather than an open item; see <a href="dpe/./fair-principles.html#f4">FAIR
+Principles</a>.</p>
+<p><strong>The deployment published ARKs it does not resolve — one point. A defect, now
+fixed, not yet re-measured.</strong> <code>F1-02D</code> is about a persistent identifier, and
+F-UJI does find one. It harvested the ARK from the metadata, confirmed the
+syntax as <code>ark</code> and resolved it successfully (<code>resolvable_status: true</code>). It
+then discarded it: <code>Landing page domain resolved from PID found in metadata does not match with input URL domain -: run.app &lt;&gt; dasch.swiss</code>, followed by <code>PID syntax is OK but the PID seems to resolve to a different entity, will not use this PID for content negotiation</code>.</p>
+<p>This was recorded as an artefact of assessing a non-production host. That
+reading was wrong. Every deployment emitted the ARK the corpus records
+regardless of where it was running, so a preview published an identifier that
+resolves to <em>production</em> — a different deployment, running different code. F-UJI
+was right to discard it: what it assessed and what the identifier pointed at
+were two different things. That is the same defect
+<a href="dpe/./operations.html#environment-variables"><code>DPE_PUBLIC_BASE_URL</code></a> fixed one layer
+down, left in place one layer up.</p>
+<p><code>DPE_ARK_RESOLVER_BASE_URL</code> fixes it. A preview rewrites the host of every
+emitted ARK to its own and serves the <code>/ark:/</code> resolver that answers it, so the
+identifier, the page and the assessed deployment are one thing. Production, DEV
+and STAGE leave it unset and are unchanged.</p>
+<p><strong>No claim is made that <code>F1-02D</code> now passes.</strong> Nothing has been re-assessed
+since the fix, and the columns above are the runs that predate it. Two things
+are still unknown and are measured, not argued: whether F-UJI's domain
+comparison is satisfied by a preview that resolves its own ARKs, and what
+<code>F1-02D</code> does against a <code>dasch.swiss</code> host, which assessing DEV after merge
+would answer.</p>
+<p>A rejected alternative, recorded so it is not re-proposed: serving previews from
+a <code>*.dasch.swiss</code> host would also satisfy F-UJI's domain comparison, and the
+assessor would <em>still</em> be sent to production. That moves the metric without
+fixing anything, which is gaming it.</p>
+<p>Two further residuals sit outside this arithmetic, because no F-UJI metric
+carries them:</p>
+<ul>
+<li><strong>No metadata persistence policy URL.</strong> A <code>persistencePolicy</code> link needs a
+published policy to point at. FAIR Champion's <em>MetadataPersistence</em> asks for
+one.</li>
+<li><strong>Not indexed by a search engine.</strong> FAIR Champion's <em>DiscoverableInBing</em>.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="fair-principles"><a class="header" href="#fair-principles">FAIR Principles</a></h1>
+<p>What DPE does about each of the fifteen FAIR principles, where in the code it
+happens, and what is not satisfied.</p>
+<p>This page is organised by the principles, not by an assessor's metrics.
+<a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a> records what is
+emitted and what F-UJI scored for it; those scores appear below only as
+evidence. <strong>A metric code is never the reason a principle is called satisfied.</strong>
+The principles are stable and published; metric numbering is one tool's, and
+changes when that tool does.</p>
+<p>No score is claimed anywhere on this page.</p>
+<h2 id="scope-three-different-things"><a class="header" href="#scope-three-different-things">Scope: three different things</a></h2>
+<p>FAIR principles are scoped <code>(meta)data</code>. DPE publishes metadata, so the three
+things below have three different answers and every section keeps them apart.</p>
+<ul>
+<li><strong>Project metadata</strong> — the description of one project's data holdings, served
+at <code>/dpe/projects/{shortcode}</code>, the page the project's ARK resolves to. This
+is what DPE publishes, and what a claim below is about unless it says
+otherwise.</li>
+<li><strong>Record-level pointers</strong> — a project's records appear in its metadata as
+<code>hasPart</code> entries carrying record ARKs, and the files of fully open records as
+<code>distribution</code> entries carrying dsp-ingest URLs. Both are bounded prefixes of
+the record list. Neither is a record landing page.</li>
+<li><strong>The research data itself</strong> — the bitstreams, and everything the VRE holds.
+DPE does not publish it. It serves metadata only, does not serve a file's
+bytes and does not redirect to them
+(<a href="dpe/./oai-pmh.html#file-metadata-endpoint">OAI-PMH</a>); access to the data is
+governed outside this repository.</li>
+</ul>
+<p><strong>Record landing pages do not exist.</strong> <code>RecordGraph</code> is in
+<code>shared/fair/src/graph.rs</code>, Record is a contract term in the root
+<code>CONTEXT.md</code>, and both record writers (<code>shared/fair/src/record_datacite.rs</code>,
+<code>shared/fair/src/record_dublin_core.rs</code>) feed OAI-PMH. But
+<code>modules/dpe/server/src/router.rs</code> registers <code>/dpe/projects/{id}</code> and
+<code>/dpe/records/{shortcode}/{record_id}/file</code>, and no page route for a record. A
+record ARK therefore resolves to something outside DPE; what, is not settled in
+this repository. This is a boundary of what has been built, stated so that no
+section below reads as though records had pages.</p>
+<p><strong>What this page does not assess.</strong> The FAIR principles describe <code>(meta)data</code>,
+not the organisation holding them. Repository trustworthiness — OAIS conformance
+(root <code>CONTEXT.md</code>), CoreTrustSeal or any other certification — is a separate
+question with its own criteria, and nothing here is evidence about it either
+way.</p>
+<h2 id="three-kinds-of-residual"><a class="header" href="#three-kinds-of-residual">Three kinds of residual</a></h2>
+<p>The sections below separate what is not satisfied into three kinds, because
+they are fixed by three different people.</p>
+<ul>
+<li><strong>Unbuilt</strong> — engineering work nobody has done. A code change fixes it.</li>
+<li><strong>Data quality</strong> — the code is correct and the corpus does not carry the
+value. The export, or the depositor, fixes it.</li>
+<li><strong>Institutional</strong> — needs a policy, a registration or an organisational
+decision. No code change fixes it.</li>
+</ul>
+<p>The <a href="dpe/./machine-readable-metadata.html#known-residuals">residuals ledger</a> already
+holds most of the institutional items in their honest form; this page points at
+them rather than restating them.</p>
+<p><strong>A decision already taken is not a residual of any kind.</strong> Where one bounds
+what is reachable, the section says so in its own words and keeps it out of the
+list — the identifier scheme in F1, what that costs in F4, and DPE being
+unauthenticated by design in A1.2.</p>
+<h2 id="findable"><a class="header" href="#findable">Findable</a></h2>
+<h3 id="f1"><a class="header" href="#f1">F1</a></h3>
+<blockquote>
+<p>(meta)data are assigned a globally unique and persistent identifier</p>
+</blockquote>
+<p><strong>Project metadata: yes.</strong> Every project has an ARK. <code>canonical_ark</code> in
+<code>shared/fair/src/project_graph.rs</code> takes the recorded <code>pid</code> when it is neither a
+Placeholder nor empty, and otherwise builds one from the shortcode. That one
+value is the schema.org <code>@id</code> and the first <code>identifier</code> entry (<code>render</code> in
+<code>shared/fair/src/schema_org.rs</code>), the DataCite <code>identifier</code> with
+<code>identifierType="ARK"</code>, the <code>DC.identifier</code> meta tag, and the single <code>cite-as</code>
+link (<code>project_to_link_set</code> in <code>shared/fair/src/signposting.rs</code>). Records carry
+ARKs of their own (<code>RecordGraph::ark</code>, <code>shared/fair/src/graph.rs</code>).</p>
+<p>The ARK path is never rewritten. <code>modules/dpe/core/src/ark.rs</code> normalises only
+the <em>host</em>, and only on a deployment that publishes ARKs naming itself.</p>
+<p><strong>The data: no.</strong> A bitstream has no identifier of its own. It is named by a
+dsp-ingest URL, in <code>distribution.contentUrl</code> and as <code>downloadUrl</code> from the
+file-metadata endpoint. A URL is a location, and that location has a retirement
+date (<a href="dpe/./machine-readable-metadata.html#record-files">Machine-Readable Metadata</a>).</p>
+<p><strong>A settled non-goal, not a residual.</strong> The scheme is ARK throughout, and DaSCH
+mints no DOIs. The reason is granularity and cost: every resource carries an
+ARK, so DOI parity would mean hundreds of thousands of DOIs, which is
+prohibitively expensive. That is a decision taken rather than a task
+outstanding, and it is why no section of this page treats a DOI as something
+missing. F4 records where it bites.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>Bitstreams have no persistent identifier. <em>Unbuilt.</em></li>
+<li>An ARK is persistent because DaSCH goes on resolving it. That is an
+organisational commitment, and nothing in this code makes it one.
+<em>Institutional.</em></li>
+</ul>
+<h3 id="f2"><a class="header" href="#f2">F2</a></h3>
+<blockquote>
+<p>data are described with rich metadata (defined by R1 below)</p>
+</blockquote>
+<p><strong>What DPE does.</strong> A project file has 37 members (root <code>CONTEXT.md</code>).
+<code>ProjectGraph::build</code> in <code>shared/fair/src/project_graph.rs</code> resolves them into
+one graph: titles and alternative names, description and abstract, keywords,
+disciplines, creators and contributors with their ORCID and GND identifiers and
+resolved affiliations, start and end dates, temporal coverage resolved to W3CDTF
+ranges, spatial coverage, data language, licences, access rights, funding,
+publications, the project website, a how-to-cite string, status, and the part
+list. Every representation is a projection of that one graph.</p>
+<p><strong>Where.</strong> <code>ProjectGraph::build</code>; <code>project_to_schema_org</code>
+(<code>shared/fair/src/schema_org.rs</code>); <code>project_to_datacite</code> and
+<code>project_to_datacite_json</code>; <code>project_to_dublin_core</code> and
+<code>project_to_dublin_core_meta</code>.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>Eight recorded fields reach no machine-readable representation.</strong>
+<code>ProjectRaw</code> (<code>shared/metadata/src/project.rs</code>) carries <code>provenance</code>,
+<code>data_management_plan</code>, <code>contact_point</code>, <code>type_of_data</code>, <code>short_description</code>,
+<code>documentation_material</code>, <code>additional_material</code> and <code>image_credit</code>; none of
+them appears anywhere in <code>shared/fair/src</code> outside its test fixtures, and
+<code>ProjectGraph</code> has no field for any of them. The human page renders several —
+<code>provenance_card</code> in
+<code>modules/dpe/web/src/pages/project/components/project_details_tabs/dataset_overview_section/mod.rs</code>,
+the DMP and contact point in
+<code>modules/dpe/web/src/pages/project/components/project_sidebar/mod.rs</code>. A
+machine therefore sees less than a person does. <code>clusters</code> and <code>collections</code>
+are absent the same way; they are I3's point rather than this one.
+<code>type_of_data</code> is the consequential one: the project's DataCite
+<code>resourceType</code> is the constant <code>"Research Project"</code> and
+<code>resourceTypeGeneral</code> the constant <code>"Project"</code> (<code>shared/fair/src/datacite.rs</code>),
+so the recorded kind of the data never reaches a representation. <em>Unbuilt.</em></li>
+<li>The DaSCH metadata schema records no variable or observation-type element, so
+nothing maps to <code>variableMeasured</code>. <em>Data quality</em>, at the schema level.
+(Evidence: <code>R1-01MD-4</code> in the residuals ledger.)</li>
+<li>How rich the metadata is varies per project. A field the corpus records as a
+Placeholder yields no key at all (<code>helpers::real</code>), which is truthful and also
+means F2 is answered differently for different projects.</li>
+</ul>
+<h3 id="f3"><a class="header" href="#f3">F3</a></h3>
+<blockquote>
+<p>metadata clearly and explicitly include the identifier of the data it describes</p>
+</blockquote>
+<p><strong>The project's own identifier: yes.</strong> The ARK is both <code>@id</code> and the first
+<code>identifier</code> entry, and <code>url</code> carries the landing page beside it (<code>render</code> in
+<code>shared/fair/src/schema_org.rs</code>).</p>
+<p><strong>The identifiers of its records: partly.</strong> <code>part_nodes</code> emits one <code>Dataset</code>
+node per record with the record's ARK as <code>@id</code>, but only over a prefix: 100
+entries in the embedded block (<code>HAS_PART_CAP</code> in
+<code>modules/dpe/server/src/metadata.rs</code>) and as many as fit 4,000,000 bytes in
+<code>/metadata.jsonld</code> (<code>JSON_LD_BYTE_BUDGET</code>). The complete list is the OAI set
+<code>project:{shortcode}</code>, reachable from the document in two hops over links it
+already carries.</p>
+<p><strong>Pointers to the bitstreams: a location, not an identifier.</strong>
+<code>distribution_nodes</code> emits one <code>DataDownload</code> per file of a listed record, with
+<code>contentUrl</code>, and only for a record the corpus records as <code>Full Open Access</code>
+(<code>publishable_file</code> in <code>shared/fair/src/graph.rs</code>). <code>hasPart</code> and <code>distribution</code>
+take the same prefix in the same order, so the files described are the files of
+the records listed.</p>
+<p><em>Evidence, not the claim:</em> <code>F3-01M</code> moved from 0/1 to 1/1 for the two projects
+whose records carry files once <code>distribution</code> was emitted; see the
+<a href="dpe/./machine-readable-metadata.html#assessment-results">assessment results</a>.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>What the metadata includes for a bitstream is a retrieval URL, not an
+identifier, and that URL names a host with a retirement date. <em>Unbuilt</em> (a
+DPE-owned stable download URL is considered and rejected in
+<a href="dpe/./machine-readable-metadata.html#record-files">Machine-Readable Metadata</a>; it
+is an ADR question).</li>
+<li>Files of records the corpus does not record as fully open are not pointed at
+at all. That is ADR-0005's decision rather than a defect, and it does mean F3
+is unanswered for those records.</li>
+</ul>
+<h3 id="f4"><a class="header" href="#f4">F4</a></h3>
+<blockquote>
+<p>(meta)data are registered or indexed in a searchable resource</p>
+</blockquote>
+<p><strong>What DPE does.</strong> Two routes, neither of which needs a DOI.</p>
+<ul>
+<li><strong>Harvesting.</strong> DPE is an OAI-PMH 2.0 data provider at <code>/dpe/oai</code>
+(<code>modules/dpe/api-oai/</code>): all six verbs, <code>oai_dc</code> and <code>oai_datacite</code>, and
+selective harvesting over the sets <code>project:{shortcode}</code> and <code>cluster:{id}</code>.
+Any aggregator can take the whole corpus. F-UJI's <code>F4-01M-1</code> passes on this
+alone.</li>
+<li><strong>Search-engine indexing.</strong> The embedded schema.org <code>Dataset</code> block is the
+form Google Dataset Search ingests, and at 3.7% of Googlebot's 2 MB crawl
+budget for the largest committed project it has room (<a href="dpe/./machine-readable-metadata.html#who-reads-which-document-and-what-each-one-can-take">Machine-Readable
+Metadata</a>).
+The project graph also names the catalogue it belongs to, as
+<code>includedInDataCatalog</code>.</li>
+</ul>
+<p><strong>Where.</strong> <code>modules/dpe/server/src/router.rs</code> (<code>/dpe/oai</code>),
+<code>modules/dpe/api-oai/src/handlers/</code>, <a href="dpe/./oai-pmh.html">OAI-PMH</a>; <code>render</code> in
+<code>shared/fair/src/schema_org.rs</code> for <code>includedInDataCatalog</code>.</p>
+<p><strong>A permanent limit, from the identifier scheme.</strong> DaSCH mints no DOIs, for the
+reason F1 records, and registration in a DOI-based registry therefore does not
+happen. <code>F4-01M-2</code> asks for registration in a major research-data registry, and
+in the pinned F-UJI image DataCite is the only one of the three routes actually
+queried — Mendeley
+fails DNS resolution inside the container and the Google Search cache database
+ships empty, so that sub-test is partly a property of how the container is
+provisioned
+(<code>docs/specs/2026-09-15-fair-metadata-exposure/01-feat-fair-metadata-exposure-plan-journal.md</code>).
+DataCite registration is keyed on a DOI prefix. So as F-UJI measures F4 there is
+a ceiling, it follows from the identifier decision, and no work on this code
+moves it. It is not an open item.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>Being <em>indexable</em> is not being <em>indexed</em>. DPE serves no sitemap; nothing in
+the tree advertises the catalogue to a crawler, which then has to find every
+project page by following links. <em>Unbuilt.</em></li>
+<li>Not indexed by a search engine. <em>Institutional.</em> (Evidence: FAIR Champion's
+<em>DiscoverableInBing</em>.)</li>
+</ul>
+<h2 id="accessible"><a class="header" href="#accessible">Accessible</a></h2>
+<h3 id="a1"><a class="header" href="#a1">A1</a></h3>
+<blockquote>
+<p>(meta)data are retrievable by their identifier using a standardized communications protocol</p>
+</blockquote>
+<p><strong>Project metadata: yes.</strong> The ARK resolves by HTTP redirect to the landing
+page. In production the resolver is <code>ark.dasch.swiss</code>; a deployment that
+publishes ARKs naming itself mounts its own
+(<code>modules/dpe/server/src/ark.rs::resolve_project</code>, registered in <code>router.rs</code>
+only when <code>DPE_ARK_RESOLVER_BASE_URL</code> is set). The page carries its metadata
+inline, and two machine-readable representations sit beside it at their own
+URLs, reachable directly or by a single <code>303</code> when <code>Accept</code> prefers one
+(<code>landing_page</code> in <code>modules/dpe/server/src/metadata.rs</code>, over the decision table
+in <code>shared/fair/src/negotiate.rs</code>). Every answer from that route carries
+<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>modules/dpe/server/src/main.rs</code>).
+OAI-PMH is a second retrieval protocol over the same metadata.</p>
+<p><strong>The data: not from DPE.</strong> DPE serves metadata only. A consumer reads
+<code>downloadUrl</code> from <code>/dpe/records/{shortcode}/{record_id}/file</code>
+(<code>modules/dpe/server/src/downloads.rs</code>) and then fetches the bytes from
+dsp-ingest itself.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>Nothing in DPE retrieves data by its identifier, because no bitstream has one
+(F1). What it offers is retrieval by location.</li>
+</ul>
+<h3 id="a11"><a class="header" href="#a11">A1.1</a></h3>
+<blockquote>
+<p>the protocol is open, free, and universally implementable</p>
+</blockquote>
+<p><strong>What DPE does.</strong> HTTP throughout, and OAI-PMH 2.0 over HTTP. No client
+library, no key, no account, no registration: DPE is the public,
+unauthenticated, read-only server of the Access Area
+(<code>modules/dpe/CONTEXT.md</code>). The representation routes and <code>/dpe/oai</code> share a
+per-IP rate limit (<code>rate_limited_router</code> in <code>modules/dpe/server/src/router.rs</code>,
+<code>DPE_OAI_RATE_LIMIT_*</code>), which bounds request rate and gates nothing.</p>
+<p><strong>Not satisfied.</strong> Nothing identified. This is the one section with no residual,
+and it is the cheapest of the fifteen to satisfy.</p>
+<h3 id="a12"><a class="header" href="#a12">A1.2</a></h3>
+<blockquote>
+<p>the protocol allows for an authentication and authorization procedure, where necessary</p>
+</blockquote>
+<p>This section is the one most easily answered with the wrong evidence, so the
+wrong evidence is named first.</p>
+<p><strong>What DPE does, and what it does not mean.</strong> DPE publishes access conditions:
+<code>isAccessibleForFree</code> and <code>conditionsOfAccess</code> in the schema.org graph, and
+<code>DC.accessRights</code> as a COAR access-right URI (<code>helpers::coar_access_right</code>). It
+also withholds the file pointer of any record the corpus does not record as
+<code>Full Open Access</code> (<code>publishable_file</code> in <code>shared/fair/src/graph.rs</code>). <strong>None of
+that is an authentication or authorization procedure.</strong> <code>publishable_file</code>'s own
+documentation says so: it governs what is <em>published</em>, not what is reachable —
+dsp-ingest serves those URLs to anyone holding one, and DPE's own file-metadata
+endpoint returns the same URL for any record with a file.</p>
+<p>DPE itself needs no procedure: everything it serves is published metadata.
+Authorization, where it is necessary, lives outside this repository — in the
+VRE, in dsp-ingest, and in the Deposit Area, whose editor has its own
+(<a href="dpe/../editor/authentication.html">Authentication</a>). That is the producer side, not
+access to published data.</p>
+<p><strong>Not answered by DPE</strong></p>
+<ul>
+<li>DPE implements no authenticated path to restricted data, and does not mediate
+access to it by any procedure. HTTP would allow one; nothing here uses it.
+That is a boundary rather than a residual — <code>modules/dpe/CONTEXT.md</code> defines
+DPE as the public, unauthenticated, read-only server — and whether the Access
+Area should offer one is a question no decision record answers yet.</li>
+</ul>
+<h3 id="a2"><a class="header" href="#a2">A2</a></h3>
+<blockquote>
+<p>metadata are accessible, even when the data are no longer available</p>
+</blockquote>
+<p><strong>What DPE does.</strong> Metadata availability does not depend on bitstream
+availability. DPE serves the committed corpus under <code>modules/dpe/server/data/</code>
+rather than reading the archive, and a project whose records carry no file has a
+complete landing page all the same — 081C, with 27,026 records and not one file,
+is the worked case
+(<a href="dpe/./machine-readable-metadata.html#assessment-results">assessment results</a>).</p>
+<p>That is a property of today's deployment, not a commitment. The rest of this
+section is what is missing.</p>
+<p><strong>Not satisfied.</strong> This is the weakest of the fifteen.</p>
+<ul>
+<li><strong>No tombstone.</strong> A shortcode that names no project gets an always-200
+"Project Not Found" page (<code>landing_page</code> in
+<code>modules/dpe/server/src/metadata.rs</code>) — not a <code>410 Gone</code> carrying the metadata
+of what used to be there. Nothing in the tree distinguishes "never existed"
+from "withdrawn". <em>Unbuilt.</em></li>
+<li><strong>OAI-PMH says so out loud.</strong> <code>Identify</code> advertises
+<code>&lt;deletedRecord&gt;no&lt;/deletedRecord&gt;</code> (<code>OaiXmlBuilder::write_identify</code> in
+<code>modules/dpe/api-oai/src/xml.rs</code>), which tells a harvester the repository
+maintains no information about deletions. <em>Unbuilt.</em></li>
+<li><strong>No metadata persistence policy</strong> to point a <code>persistencePolicy</code> link at.
+<em>Institutional.</em> (Evidence: FAIR Champion's <em>MetadataPersistence</em>.)</li>
+</ul>
+<h2 id="interoperable"><a class="header" href="#interoperable">Interoperable</a></h2>
+<h3 id="i1"><a class="header" href="#i1">I1</a></h3>
+<blockquote>
+<p>(meta)data use a formal, accessible, shared, and broadly applicable language for knowledge representation.</p>
+</blockquote>
+<p><strong>What DPE does.</strong> JSON-LD, twice: embedded in the page head as
+<code>&lt;script type="application/ld+json"&gt;</code> and standalone at
+<code>/dpe/projects/{shortcode}/metadata.jsonld</code>. The <code>@context</code> is
+<code>https://schema.org</code> plus a <code>prov:</code> binding (<code>render</code> in
+<code>shared/fair/src/schema_org.rs</code>). Beside it, DataCite kernel 4 as JSON and as
+XML, and Dublin Core as <code>&lt;meta&gt;</code> tags and as <code>oai_dc</code>. An assessor reads the
+JSON-LD as RDF, which is why several property shapes are node objects rather
+than strings (<a href="dpe/./machine-readable-metadata.html#schemaorg-json-ld">Machine-Readable
+Metadata</a>).</p>
+<p><strong>Where.</strong> <code>shared/fair/src/schema_org.rs</code> (<code>render</code>, <code>script_safe_json</code>);
+<code>modules/dpe/server/src/metadata.rs</code> (<code>render</code>, <code>project_json_ld</code>);
+<code>shared/fair/src/datacite_json.rs</code>; <code>shared/fair/src/dublin_core_meta.rs</code>.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>No Turtle and no RDF/XML. ADR-0005 leaves Turtle open ("if it earns its
+place") and it has not been served. A consumer wanting RDF runs the JSON-LD
+through a processor. <em>Unbuilt, deliberately deferred.</em></li>
+<li>The JSON-LD representation is a bounded prefix and <strong>does not say so</strong>.
+schema.org has no property meaning "this collection is partial"; Hydra's
+<code>totalItems</code> was considered and rejected. A consumer reading the document
+alone cannot tell; one that follows its links can recover the complete list.
+The reasoning is in <a href="dpe/./machine-readable-metadata.html#a-byte-budget">A byte
+budget</a>.</li>
+</ul>
+<h3 id="i2"><a class="header" href="#i2">I2</a></h3>
+<blockquote>
+<p>(meta)data use vocabularies that follow FAIR principles</p>
+</blockquote>
+<p><strong>What DPE does.</strong> Published, versioned, resolvable vocabularies throughout:</p>
+<div class="table-wrapper"><table><thead><tr><th>Vocabulary</th><th>Used for</th><th>Where</th></tr></thead><tbody>
+<tr><td>schema.org</td><td>the root graph and every node in it</td><td><code>shared/fair/src/schema_org.rs</code></td></tr>
+<tr><td>Dublin Core elements</td><td><code>&lt;meta name="DC.*"&gt;</code> and the <code>oai_dc</code> record</td><td><code>shared/fair/src/dublin_core_meta.rs</code>, <code>dublin_core.rs</code></td></tr>
+<tr><td>DataCite kernel 4</td><td><code>metadata.datacite.json</code> and <code>oai_datacite</code></td><td><code>shared/fair/src/datacite.rs</code>, <code>datacite_json.rs</code></td></tr>
+<tr><td>PROV-O</td><td><code>prov:wasAttributedTo</code></td><td><code>PROV_NAMESPACE</code>, <code>attributed_to</code> in <code>schema_org.rs</code></td></tr>
+<tr><td>SPDX</td><td>licence identifiers (<code>rightsIdentifierScheme="SPDX"</code>)</td><td><code>shared/fair/src/datacite.rs</code>, <code>helpers::license_identifier_to_label</code></td></tr>
+<tr><td>COAR access rights</td><td><code>DC.accessRights</code></td><td><code>helpers::coar_access_right</code></td></tr>
+<tr><td>ORCID, GND</td><td>agent identifiers</td><td><code>person_to_agent</code> in <code>shared/fair/src/resolve.rs</code></td></tr>
+<tr><td>GND, STW, LCSH, AAT</td><td>subject schemes, inferred from an authority URL</td><td><code>helpers::infer_subject_scheme</code></td></tr>
+<tr><td>ChronOntology, W3CDTF</td><td>temporal coverage and its resolved ranges</td><td><code>shared_metadata::temporal_coverage</code></td></tr>
+<tr><td>FAIR Signposting (level 1)</td><td>the typed link set</td><td><code>shared/fair/src/signposting.rs</code></td></tr>
+<tr><td>OAI-PMH 2.0</td><td>the harvesting protocol</td><td><code>modules/dpe/api-oai/</code></td></tr>
+</tbody></table>
+</div>
+<p><em>Evidence, not the claim:</em> <code>I2-01M</code> moved from 0/1 to 1/1 when PROV was added,
+because F-UJI's linked-data registry lists that namespace.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>Contributor roles are free text.</strong> <code>CONTRIBUTOR_ROLES</code> in
+<code>shared/metadata/src/project.rs</code> is documented as "an offer, not a
+constraint", and the committed data spells the same role several ways, crams
+several into one entry, and uses prose in place of a role.
+<code>helpers::map_contributor_type</code> maps what it recognises onto DataCite's
+vocabulary and falls back to <code>Other</code>. <em>Data quality.</em></li>
+<li><strong>Organizations have no identifier.</strong> <code>resolve_agent</code> gives an organization
+<code>name_identifiers: vec![]</code>, and an affiliation is emitted as an <code>Organization</code>
+name with nothing else (<code>agent_node</code> in <code>schema_org.rs</code>). No ROR. The
+organization files carry a homepage and a postal address and no persistent
+identifier (<code>modules/dpe/server/data/organizations/</code>). <em>Unbuilt</em>, and
+<em>data quality</em> behind it.</li>
+<li><strong>Person identifiers are sparse, and two are typed away.</strong> 96 of the 416
+committed person files record <code>"type": "ORCID"</code> in <code>sameAs</code>. Two more hold an
+<code>orcid.org</code> URL typed <code>"URL"</code> (<code>person-146</code>, <code>person-246</code>); <code>person_to_agent</code>
+matches on the type string, so those two agents get no <code>@id</code>, no <code>author</code> link
+and no <code>prov:wasAttributedTo</code> entry although the identifier is there. Every
+section below that depends on an agent IRI inherits this. <em>Data quality.</em></li>
+<li>Keywords are free text, and disciplines carry a subject scheme only where the
+corpus records an authority URL.</li>
+</ul>
+<h3 id="i3"><a class="header" href="#i3">I3</a></h3>
+<blockquote>
+<p>(meta)data include qualified references to other (meta)data</p>
+</blockquote>
+<p><strong>What DPE does.</strong> This is the best-served of the fifteen.</p>
+<ul>
+<li>A record's DataCite record relates it to its project: <code>relationType="IsPartOf"</code>,
+<code>relatedIdentifierType="ARK"</code> (<code>record_to_datacite</code> in
+<code>shared/fair/src/record_datacite.rs</code>).</li>
+<li>The project's schema.org graph carries <code>hasPart</code> over record ARKs
+(<code>part_nodes</code>), <code>citation</code> nodes whose <code>@id</code> is a publication's PID when one is
+recorded (<code>citation_nodes</code>), <code>spatialCoverage</code> <code>Place</code> nodes with <code>sameAs</code> to
+an authority URL (<code>spatial_nodes</code>), agent nodes whose <code>@id</code> is the agent's
+ORCID (<code>agent_node</code>), <code>prov:wasAttributedTo</code> pointing at <em>those same nodes</em>
+rather than describing copies (<code>attributed_to</code>), <code>includedInDataCatalog</code>, and
+<code>sameAs</code> to the recorded PID when it differs from the resolved ARK.</li>
+<li>The Signposting set adds <code>cite-as</code>, one <code>describedby</code> per representation,
+<code>author</code> per ORCID, and <code>license</code> when exactly one applies; each representation
+answers with <code>describes</code> back at the page (<code>representation_to_link_set</code>).</li>
+</ul>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>A project's DataCite record carries no <code>relatedIdentifiers</code> at all.</strong>
+<code>shared/fair/src/datacite.rs</code> holds the unfilled note: <em>RelatedIdentifiers —
+should contain parent Project Cluster ARK. TODO: Populate once Project Cluster
+data is available.</em> So a project's cluster membership, its records and its
+publications are all absent from the DataCite representations, although the
+schema.org graph carries the last two. <em>Unbuilt.</em></li>
+<li>A reference to an agent is qualified only when that agent has an ORCID. One
+without stays a blank node and is left out of <code>prov:wasAttributedTo</code>
+entirely — naming some agents does not deny the others, but it does mean the
+reference is unqualified for most of them (see I2).</li>
+<li>Nothing relates one project to another, although Clusters and Collections
+exist and are served as OAI sets. <em>Unbuilt.</em></li>
+</ul>
+<h2 id="reusable"><a class="header" href="#reusable">Reusable</a></h2>
+<h3 id="r1"><a class="header" href="#r1">R1</a></h3>
+<blockquote>
+<p>meta(data) are richly described with a plurality of accurate and relevant attributes</p>
+</blockquote>
+<p>(Quoted as published; the paper's Box 2 reads <code>meta(data)</code> here.)</p>
+<p><strong>What DPE does.</strong> The attribute list is F2's. What R1 adds is <em>accurate</em>, and
+three rules carry that:</p>
+<ul>
+<li><strong>Nothing is invented for a score</strong> (ADR-0005). No representation asserts a
+fact the corpus does not record.</li>
+<li><strong>A Placeholder yields no key.</strong> <code>helpers::real</code> is the test every writer that
+must not assert a falsehood applies to a corpus string; <code>MISSING</code> never
+reaches a <code>&lt;meta&gt;</code> tag or a JSON-LD value.</li>
+<li><strong>One resolved graph feeds every representation</strong>, so two of them cannot
+disagree — asserted for every committed project by
+<code>every_representation_of_a_committed_object_agrees_with_the_others</code> in
+<code>dpe-api-oai</code>.</li>
+</ul>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>The eight unemitted fields of F2. <em>Unbuilt.</em></li>
+<li>No variable or observation-type element exists to describe. <em>Data quality</em>, at
+the schema level.</li>
+<li><strong>Two mandatory-field fallbacks are not facts, and a consumer cannot tell.</strong>
+DataCite makes <code>publicationYear</code> and at least one creator mandatory, so the
+representations that rule governs fall back to the year <code>2015</code>
+(<code>FALLBACK_PUBLICATION_YEAR</code> in <code>shared/fair/src/graph.rs</code>) and to an
+organizational <code>DaSCH</code> (<code>creators_with_fallback</code>). Both are reached only
+through those named helpers, and schema.org's optional <code>datePublished</code>
+deliberately omits the key instead — but a consumer reading a DataCite record
+for a project that records no usable date reads <code>2015</code> as though it were
+recorded. <em>Data quality</em>: the fallback fires only where the corpus records no
+usable value, and DataCite's mandatory field leaves the writer no way to mark
+one as supplied.</li>
+</ul>
+<h3 id="r11"><a class="header" href="#r11">R1.1</a></h3>
+<blockquote>
+<p>(meta)data are released with a clear and accessible data usage license</p>
+</blockquote>
+<p><strong>The data: yes, where the corpus records a licence.</strong> <code>license</code> as a node
+object <code>{"@id": &lt;SPDX URI&gt;}</code> in the schema.org graph — a node and not a string,
+because schema.org's remote context does not coerce <code>license</code> to <code>@id</code> and a
+consumer asking for a licence <em>resource</em> would find none. Beside it: <code>DC.rights</code>,
+DataCite <code>rightsList</code> with <code>rightsIdentifierScheme="SPDX"</code>, a Signposting
+<code>license</code> link, and a <code>license</code> on each <code>DataDownload</code> carrying <strong>the record's
+own</strong> licence, which across the corpus is not always the project's.</p>
+<p><strong>The metadata: no.</strong> Nothing in this tree licenses the metadata records
+themselves. <code>Identify</code> emits <code>repositoryName</code>, <code>baseURL</code>, <code>protocolVersion</code>,
+<code>adminEmail</code>, <code>earliestDatestamp</code>, <code>deletedRecord</code> and <code>granularity</code>, and no
+rights block (<code>OaiXmlBuilder::write_identify</code>). No landing page says anything
+about reuse of the metadata. A harvester taking <code>oai_dc</code> records away has no
+licence for them.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>The metadata has no licence.</strong> This needs a decision first and one field
+after. <em>Institutional.</em></li>
+<li>A project that records no licence emits no <code>license</code> key — truthful, and R1.1
+is then unanswered for that project. <em>Data quality.</em></li>
+<li>A project licensed several ways gets no Signposting <code>license</code> link at all,
+because the profile allows at most one and has no way to say "these apply
+together" (<code>project_to_link_set</code>). The JSON-LD still lists them.</li>
+</ul>
+<h3 id="r12"><a class="header" href="#r12">R1.2</a></h3>
+<blockquote>
+<p>(meta)data are associated with detailed provenance</p>
+</blockquote>
+<p><strong>What DPE does.</strong> <code>prov:wasAttributedTo</code> over DaSCH and every credited creator
+that has an ORCID, with <code>prov:</code> bound in the <code>@context</code> (<code>PROV_NAMESPACE</code> and
+<code>attributed_to</code> in <code>shared/fair/src/schema_org.rs</code>). Nothing new is asserted:
+<code>creator</code> and <code>publisher</code> already name those agents, and PROV-O restates the
+relation in the vocabulary a consumer asking about provenance reads. Beside it:
+<code>producer</code> as a <code>ResearchProject</code> with start and end dates and members
+(<code>producer_node</code>), <code>funder</code> and <code>funding</code> as <code>MonetaryGrant</code> nodes,
+<code>datePublished</code> where a year is recorded, and DataCite's <code>Created</code>, <code>Issued</code> and
+<code>Collected</code> dates.</p>
+<p><em>Evidence, not the claim:</em> <code>R1.2-01M</code> moved from 1/2 to 2/2 on the run that
+added PROV.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>The project's recorded provenance statement is not emitted anywhere
+machine-readable.</strong> <code>ProjectRaw.provenance</code> is free text, the human page
+renders it as a card (<code>provenance_card</code>), and no <code>shared-fair</code> writer reads
+it. The one field named for this principle is the one the machine-readable
+metadata leaves out. <em>Unbuilt.</em></li>
+<li><strong>Nothing records the provenance of the metadata.</strong> <code>ProjectRaw</code> carries no
+created or modified date (<code>shared/metadata/src/project.rs</code>), so who curated a
+project's description, when, and through what revision is not recorded and
+cannot be emitted. Records do carry <code>date_created</code> and <code>date_modified</code>
+(<code>RecordGraph</code>); projects do not. <em>Unbuilt</em>, and a contract change before it is
+a writer change.</li>
+<li><code>prov:generatedAtTime</code> is deliberately not emitted: the corpus records a
+publication <em>year</em>, not a generation time, so the statement would be
+approximately true at best
+(<a href="dpe/./machine-readable-metadata.html#provenance">Provenance</a>).</li>
+<li>A creator without an ORCID is not attributed, because there is no node to
+point at (see I2 for how many that is).</li>
+</ul>
+<h3 id="r13"><a class="header" href="#r13">R1.3</a></h3>
+<blockquote>
+<p>(meta)data meet domain-relevant community standards</p>
+</blockquote>
+<p><strong>What DPE does.</strong> The general research-data standards are met and checked:</p>
+<ul>
+<li><strong>DataCite kernel 4</strong>, <code>schemaVersion</code> 4.6, <code>datacentreSymbol</code> <code>DASCH.DSP</code>.
+The JSON is validated against DataCite's own JSON schema and the XML against
+<code>datacite-kernel-4.xsd</code> for every committed project, by the corpus-wide test
+in <code>dpe-api-oai</code>.</li>
+<li><strong>OAI-PMH 2.0</strong>, validated against <code>OAI-PMH.xsd</code>.</li>
+<li><strong>Dublin Core</strong>, <strong>schema.org <code>Dataset</code></strong> (the shape Google Dataset Search
+reads), <strong>FAIR Signposting level 1</strong>, <strong>COAR access rights</strong>, <strong>SPDX</strong>,
+<strong>W3CDTF</strong>.</li>
+</ul>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>No humanities-domain standard is served.</strong> No representation offers TEI,
+CIDOC-CRM, EAD or CMDI. The corpus records <code>XML (TEI)</code> as a <code>typeOfData</code> value
+(<code>general_data_type</code> in <code>shared/fair/src/graph.rs</code>), so content in one of
+those standards is described by metadata that does not speak it. <em>Unbuilt.</em></li>
+<li><strong>File formats are described only where the export records a MIME type.</strong>
+<code>encodingFormat</code> is omitted rather than guessed. All 4,062 files of project
+0803 carry no <code>mimeType</code>, and dsp-ingest serves them as
+<code>application/octet-stream</code>, so neither end supplies it. <em>Data quality</em>, at
+both ends. (Evidence: <code>R1.3-02D</code>.)</li>
+</ul>
+<h2 id="sources"><a class="header" href="#sources">Sources</a></h2>
+<p>The principle wording quoted above is Box 2 of:</p>
+<blockquote>
+<p>Wilkinson, M. D. <em>et al.</em> "The FAIR Guiding Principles for scientific data
+management and stewardship". <em>Scientific Data</em> <strong>3</strong>, 160018 (2016).
+<a href="https://doi.org/10.1038/sdata.2016.18">https://doi.org/10.1038/sdata.2016.18</a></p>
+</blockquote>
+<p>GO FAIR restates the same fifteen principles with a commentary on each, at
+<a href="https://www.go-fair.org/fair-principles/">https://www.go-fair.org/fair-principles/</a>.</p>
+<p>The assessors named in the evidence notes are separate from the principles.
+F-UJI's metrics are cited in its own result payload as
+<a href="https://doi.org/10.5281/zenodo.6461229">https://doi.org/10.5281/zenodo.6461229</a>; FAIR Champion's indicators are defined
+in the <a href="https://fairmetrics.github.io/Metrics/landingpages/general/index.html">FAIR Maturity Indicators
+index</a>.
+What each of them scored, when, and against what, is in
+<a href="dpe/./machine-readable-metadata.html#assessment-results">Machine-Readable Metadata</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="editor-architecture"><a class="header" href="#editor-architecture">Editor Architecture</a></h1>
 <p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
 <p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
 <h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
-<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, <code>platform-metadata</code> for the research-metadata contract and <code>mosaic-tiles</code> for components — but not a process, an image, or an origin.</p>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>shared-telemetry</code> for the browser-beacon contract, <code>shared-metadata</code> for the research-metadata contract and <code>mosaic-tiles</code> for components — but not a process, an image, or an origin.</p>
 <p>The separation is deliberate:</p>
 <ul>
 <li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
@@ -3355,12 +4738,12 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <p>Two things make that work and are easy to undo by accident:</p>
 <ul>
 <li>The workspace enables <code>serde_json</code>'s <strong><code>preserve_order</code></strong>. The writer round-trips through <code>serde_json::Value</code> to strip nulls, and <code>Value</code> is <code>BTreeMap</code>-backed without that feature, which would alphabetise every key in every file. Under the feature, <code>Map::remove</code> is swap-remove: use <code>retain</code> or <code>shift_remove</code>.</li>
-<li>Multilingual fields are <code>platform_metadata::utils::Multilingual</code> (a <code>BTreeMap</code>), not <code>HashMap</code>. Under <code>preserve_order</code> a <code>HashMap</code> field serializes in its own randomised iteration order, which would make the round-trip test flaky.</li>
+<li>Multilingual fields are <code>shared_metadata::utils::Multilingual</code> (a <code>BTreeMap</code>), not <code>HashMap</code>. Under <code>preserve_order</code> a <code>HashMap</code> field serializes in its own randomised iteration order, which would make the round-trip test flaky.</li>
 </ul>
 <p><code>ProjectRaw</code> deliberately carries no <code>skip_serializing_if</code>: <code>dpe-server</code>'s <code>fragments.rs</code> serializes it through <code>axum::Json</code>, so the attribute would drop null members from DPE's API responses too. Stripping happens in the writer instead.</p>
 <p>The 85-file round-trip test (<code>editor-core/tests/canonical_round_trip.rs</code>) asserts <code>load -&gt; draft -&gt; write</code> is byte-identical for the whole published corpus, and regenerates it under <code>CANONICALIZE_PROJECT_FILES=1</code>. Generating the corpus from the writer rather than a sibling script is the point: a script has to agree with the writer by inspection, and a near-miss surfaces later as a failing round-trip that looks like a writer bug.</p>
 <h3 id="submission-checks"><a class="header" href="#submission-checks">Submission checks</a></h3>
-<p><code>editor_core::submission::unresolved_temporal_coverage</code> applies the rule that every <code>temporalCoverage</code> entry must resolve to a structured date, which <code>dpe-server validate</code> does not block on and OAI-PMH needs. It reuses <code>platform_metadata::temporal_coverage::completeness_gap</code>, the same decision <code>validate</code> and <code>dpe-api-oai</code>'s <code>every_committed_temporal_coverage_resolves</code> apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the <code>Reference</code> variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.</p>
+<p><code>editor_core::submission::unresolved_temporal_coverage</code> applies the rule that every <code>temporalCoverage</code> entry must resolve to a structured date, which <code>dpe-server validate</code> does not block on and OAI-PMH needs. It reuses <code>shared_metadata::temporal_coverage::completeness_gap</code>, the same decision <code>validate</code> and <code>dpe-api-oai</code>'s <code>every_committed_temporal_coverage_resolves</code> apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the <code>Reference</code> variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.</p>
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
@@ -3817,7 +5200,7 @@ POST /logout       session deleted, cookie cleared
 <h3 id="per-project-scope"><a class="header" href="#per-project-scope">Per-project scope</a></h3>
 <p><code>User::may_reach</code> is the whole rule. RDU is unconditional, because RDU access is role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments.</p>
 <p>The comparison <strong>ignores ASCII case</strong>. The published set mixes <code>080C</code> with <code>0801a</code>, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.</p>
-<p>A shortcode is validated for shape before the assignment is consulted by <code>platform_metadata::is_valid_shortcode</code>, the single copy DPE and the editor share. The rule is <strong>ASCII alphanumeric with a 16-character bound</strong>, not DSP-API's four hex digits (<code>KnoraProject.scala</code>): <code>0801a</code> through <code>0801e</code> are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.</p>
+<p>A shortcode is validated for shape before the assignment is consulted by <code>shared_metadata::is_valid_shortcode</code>, the single copy DPE and the editor share. The rule is <strong>ASCII alphanumeric with a 16-character bound</strong>, not DSP-API's four hex digits (<code>KnoraProject.scala</code>): <code>0801a</code> through <code>0801e</code> are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.</p>
 <h3 id="landing-where-you-were-going"><a class="header" href="#landing-where-you-were-going">Landing where you were going</a></h3>
 <p>An unauthenticated <code>GET</code> is redirected to <code>/login?next=&lt;path&gt;</code>, and the destination is carried on the form actions of both login screens through to the redirect that follows a successful sign-in. Without it, following a link into a project means signing in and arriving at the root.</p>
 <p><strong>The destination is an open-redirect surface</strong>, because it arrives from a query string and is therefore attacker-chosen: a link carrying <code>next=https://evil.example</code> would turn the editor's own sign-in page into a redirector, reachable from the real origin with a real certificate and following a real authentication. <code>safe_next</code> is an allowlist rather than a list of things to reject, because the reject list is not knowable — <code>//evil.example</code> is protocol-relative, <code>/\evil.example</code> is normalised to it by browsers that treat a backslash as a separator, and <code>%2f%2fevil.example</code> becomes it after one decode. What is admitted is a leading <code>/</code> followed by ASCII alphanumerics and <code>/</code>, <code>-</code>, <code>_</code>, <code>.</code>, with no <code>..</code> segment and not the login screens themselves.</p>
@@ -3965,16 +5348,16 @@ POST /logout       session deleted, cookie cleared
 <p>Trace correlation uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell and the client includes it in every beacon payload.</p>
 <p>There is <strong>no third-party analytics script</strong>. DPE injects Fathom; the editor is an authenticated tool and does not.</p>
 <h2 id="the-shared-collector"><a class="header" href="#the-shared-collector">The shared collector</a></h2>
-<p>The beacon endpoint is not editor code. <code>platform-telemetry</code> owns the wire contract <em>and</em> the collector, and both services wire the same handler:</p>
+<p>The beacon endpoint is not editor code. <code>shared-telemetry</code> owns the wire contract <em>and</em> the collector, and both services wire the same handler:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>.route(
     "/telemetry/collect",
-    platform_telemetry::collector::collect_route("editor", page_url::normalize_page_url).layer(rate_limit),
+    shared_telemetry::collector::collect_route("editor", page_url::normalize_page_url).layer(rate_limit),
 )
 <span class="boring">}</span></code></pre></pre>
 <p>The <code>namespace</code> argument sets the OTel instrumentation scope — <code>editor.browser</code> here, <code>dpe.browser</code> in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as <code>otel_scope_name</code>, and a missed init would silently rename it.</p>
-<p><code>page_url::normalize_page_url</code> is not shared code either: a platform crate cannot hold one service's route table, so the editor owns its own <code>page_url.rs</code> (<code>server/src/page_url.rs</code>) and passes the fn in. New full-page routes need a matching entry there — see <code>REVIEW.md</code>.</p>
+<p><code>page_url::normalize_page_url</code> is not shared code either: a shared crate cannot hold one service's route table, so the editor owns its own <code>page_url.rs</code> (<code>server/src/page_url.rs</code>) and passes the fn in. New full-page routes need a matching entry there — see <code>REVIEW.md</code>.</p>
 <p>So a Grafana query distinguishes the two services by <code>otel_scope_name</code> (<code>editor.browser</code> vs <code>dpe.browser</code>) or by the resource attribute <code>service.namespace</code> (<code>editor</code> vs <code>dpe</code>). Metric <em>names</em> (<code>browser.web_vital</code>, <code>browser.error</code>, …) are identical across both.</p>
 <p>The <code>dpe-</code> crate prefix is historical — DPE was the first consumer. Nothing in the crate reads DPE's data or configuration.</p>
 <h2 id="local-observability-stack-1"><a class="header" href="#local-observability-stack-1">Local observability stack</a></h2>
@@ -4111,7 +5494,7 @@ image CI publishes, under emulation.</p>
 <h3 id="data-directory-a-deliberate-build-input"><a class="header" href="#data-directory-a-deliberate-build-input">Data directory (a deliberate build input)</a></h3>
 <p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>modules/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
 <p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via <code>ENV EDITOR_DATA_DIR</code>, local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
-<p>Moving the directory under <code>modules/platform/</code> was considered and rejected: the shared-crate rule in <a href="editor/../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
+<p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="editor/../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
 <h2 id="cli-commands-1"><a class="header" href="#cli-commands-1">CLI Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>editor-server serve</code></td><td>Start the web server</td></tr>
@@ -4954,9 +6337,9 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 </ul>
 <p><strong>Architecture</strong></p>
 <ul>
-<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>platform-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
-<li><code>dpe-core</code> and <code>platform-metadata</code> have no framework dependencies (no axum, no maud)</li>
-<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by <code>just check-platform-paths</code> (<code>.github/scripts/check-platform-paths.sh</code>)</li>
+<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>shared-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
+<li><code>dpe-core</code> and <code>shared-metadata</code> have no framework dependencies (no axum, no maud)</li>
+<li><code>shared-metadata</code> takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>)</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>
@@ -4985,7 +6368,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <ul>
 <li>Follow existing Datastar attribute patterns (signal naming with <code>_</code> prefix) — see <a href="fundamentals/../dpe/architecture.html">DPE Architecture</a></li>
 <li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
-<li>Contract types belong in <code>platform-metadata</code> and DPE's view model in <code>dpe-core</code>, not in web or API crates</li>
+<li>Contract types belong in <code>shared-metadata</code> and DPE's view model in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
 <li>View functions return <code>maud::Markup</code> via the <code>html!</code> macro</li>
 <li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>cargo fmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>

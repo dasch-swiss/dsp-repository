@@ -245,29 +245,35 @@
 <h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
 <p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
 <h2 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h2>
-<pre><code>platform-metadata The wire contract, shared with the editor
+<pre><code>shared-metadata   The wire contract, shared with the editor
                        │
-dpe-core          DPE's view model, repositories, data loading
-                  Dependencies: platform-metadata, serde, serde_json
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-     dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Maud views
-     + axum
-          │            │
-          └────────────┘
-                 │
-           dpe-server
-           Route composition
-           + Datastar
-           (binary: dpe-server)
+          ┌────────────┴───────────────┐
+          │                            │
+     shared-fair                  dpe-core
+     FAIR exposure engine:        DPE's view model, repositories, data loading
+     resolved graphs +            Dependencies: shared-metadata, serde, serde_json
+     representation writers            │
+          │                 ┌──────────┼────────────┐
+          │                 │          │            │
+          └─────────────────┤          │            │
+                            │          │            │
+                       dpe-api-oai  dpe-web   (future APIs)
+                       OAI-PMH 2.0  Maud views
+                       + axum
+                            │          │
+                            └──────────┘
+                                 │
+                            dpe-server
+                            Route composition
+                            + Datastar
+                            (binary: dpe-server)
 </code></pre>
 <ul>
-<li><strong>platform-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>modules/platform/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>shared-fair</strong>: The FAIR exposure engine (ADR-0005) — one resolved graph per published object and one writer per representation over it, including the DataCite and Dublin Core mappings OAI-PMH uses. Lives in <code>shared/</code>, depends on shared-metadata only, and knows no routes.</li>
 <li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on platform-metadata and dpe-core.</li>
-<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports platform-metadata and dpe-core types directly.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends on shared-metadata, dpe-core and shared-fair.</li>
+<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports shared-metadata and dpe-core types directly.</li>
 <li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
@@ -298,8 +304,15 @@ Tab switch (without JS):
 <p><strong>Route pattern: resource-action nesting</strong></p>
 <pre><code>GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
+GET /projects/{id}/metadata.*   → Machine-readable representation (JSON-LD, DataCite JSON)
 </code></pre>
 <p>Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.</p>
+<p>The one exception is the landing page's <code>303 See Other</code> when <code>Accept</code> prefers a
+machine-readable representation, decided in ADR-0005
+(<code>docs/adr/0005-fair-landing-pages-in-the-access-area.md</code>). It is a
+redirect to a distinct URL, not a differently rendered page: the page itself is
+byte-identical for every <code>Accept</code> value, and every answer from the route carries
+<code>Vary: Accept</code>. See <a href="./machine-readable-metadata.html">Machine-Readable Metadata</a>.</p>
 <h2 id="hateoas-tab-pattern"><a class="header" href="#hateoas-tab-pattern">HATEOAS Tab Pattern</a></h2>
 <p>The server returns the <strong>complete tab component</strong> (tab bar + panel) in each SSE response. This means:</p>
 <ul>

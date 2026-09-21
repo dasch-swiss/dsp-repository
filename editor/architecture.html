@@ -246,7 +246,7 @@
 <p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
 <p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
 <h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
-<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, <code>platform-metadata</code> for the research-metadata contract and <code>mosaic-tiles</code> for components — but not a process, an image, or an origin.</p>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>shared-telemetry</code> for the browser-beacon contract, <code>shared-metadata</code> for the research-metadata contract and <code>mosaic-tiles</code> for components — but not a process, an image, or an origin.</p>
 <p>The separation is deliberate:</p>
 <ul>
 <li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
@@ -372,12 +372,12 @@
 <p>Two things make that work and are easy to undo by accident:</p>
 <ul>
 <li>The workspace enables <code>serde_json</code>'s <strong><code>preserve_order</code></strong>. The writer round-trips through <code>serde_json::Value</code> to strip nulls, and <code>Value</code> is <code>BTreeMap</code>-backed without that feature, which would alphabetise every key in every file. Under the feature, <code>Map::remove</code> is swap-remove: use <code>retain</code> or <code>shift_remove</code>.</li>
-<li>Multilingual fields are <code>platform_metadata::utils::Multilingual</code> (a <code>BTreeMap</code>), not <code>HashMap</code>. Under <code>preserve_order</code> a <code>HashMap</code> field serializes in its own randomised iteration order, which would make the round-trip test flaky.</li>
+<li>Multilingual fields are <code>shared_metadata::utils::Multilingual</code> (a <code>BTreeMap</code>), not <code>HashMap</code>. Under <code>preserve_order</code> a <code>HashMap</code> field serializes in its own randomised iteration order, which would make the round-trip test flaky.</li>
 </ul>
 <p><code>ProjectRaw</code> deliberately carries no <code>skip_serializing_if</code>: <code>dpe-server</code>'s <code>fragments.rs</code> serializes it through <code>axum::Json</code>, so the attribute would drop null members from DPE's API responses too. Stripping happens in the writer instead.</p>
 <p>The 85-file round-trip test (<code>editor-core/tests/canonical_round_trip.rs</code>) asserts <code>load -&gt; draft -&gt; write</code> is byte-identical for the whole published corpus, and regenerates it under <code>CANONICALIZE_PROJECT_FILES=1</code>. Generating the corpus from the writer rather than a sibling script is the point: a script has to agree with the writer by inspection, and a near-miss surfaces later as a failing round-trip that looks like a writer bug.</p>
 <h3 id="submission-checks"><a class="header" href="#submission-checks">Submission checks</a></h3>
-<p><code>editor_core::submission::unresolved_temporal_coverage</code> applies the rule that every <code>temporalCoverage</code> entry must resolve to a structured date, which <code>dpe-server validate</code> does not block on and OAI-PMH needs. It reuses <code>platform_metadata::temporal_coverage::completeness_gap</code>, the same decision <code>validate</code> and <code>dpe-api-oai</code>'s <code>every_committed_temporal_coverage_resolves</code> apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the <code>Reference</code> variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.</p>
+<p><code>editor_core::submission::unresolved_temporal_coverage</code> applies the rule that every <code>temporalCoverage</code> entry must resolve to a structured date, which <code>dpe-server validate</code> does not block on and OAI-PMH needs. It reuses <code>shared_metadata::temporal_coverage::completeness_gap</code>, the same decision <code>validate</code> and <code>dpe-api-oai</code>'s <code>every_committed_temporal_coverage_resolves</code> apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the <code>Reference</code> variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.</p>
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
@@ -538,7 +538,7 @@
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/oai-pmh.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/fair-principles.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -552,7 +552,7 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/oai-pmh.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/fair-principles.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

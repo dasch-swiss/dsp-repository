@@ -268,7 +268,7 @@
 <li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
 <li>Cross-references between projects, persons, and organizations</li>
 <li>Orphaned files that are not referenced by any parent entity</li>
-<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>platform-metadata</code>.</li>
+<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>shared-metadata</code>.</li>
 <li>Every distinct <code>temporalCoverage</code> name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked <code>source: "unresolved"</code>. See <code>docs/src/dpe/oai-pmh.md</code> → <em>Temporal coverage</em>.</li>
 </ul>
 <p><strong>Exit codes:</strong></p>
@@ -293,8 +293,10 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="./oai-pmh.html">OAI-PMH</a>.</td></tr>
-<tr><td><code>DPE_OAI_RATE_LIMIT_PER_SECOND</code></td><td>No</td><td><code>1</code></td><td>Per-IP rate limit on <code>/dpe/oai</code>: seconds per request once the burst is spent. <code>1</code> ≈ 60 requests/minute sustained. See <a href="./oai-pmh.html">OAI-PMH</a>.</td></tr>
-<tr><td><code>DPE_OAI_RATE_LIMIT_BURST</code></td><td>No</td><td><code>60</code></td><td>Per-IP burst allowance on <code>/dpe/oai</code>: back-to-back requests before the sustained rate applies.</td></tr>
+<tr><td><code>DPE_PUBLIC_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss</code></td><td>Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the <code>Link</code> header. Origin only: scheme <code>http</code> or <code>https</code>, no path, query or trailing slash. A bad value fails startup. Independent of <code>DPE_OAI_BASE_URL</code> (see the note below).</td></tr>
+<tr><td><code>DPE_ARK_RESOLVER_BASE_URL</code></td><td>No</td><td><em>(none)</em></td><td>Origin every emitted ARK is rewritten to carry, and the origin the deployment's own <code>/ark:/{naan}/{shoulder}/{shortcode}</code> resolver answers on. <strong>Leave unset everywhere but a PR preview.</strong> Unset, the ARKs are the ones the corpus records, resolving through <code>ark.dasch.swiss</code>, and no resolver route is mounted. Origin only, validated exactly as <code>DPE_PUBLIC_BASE_URL</code> is. See the note below.</td></tr>
+<tr><td><code>DPE_OAI_RATE_LIMIT_PER_SECOND</code></td><td>No</td><td><code>1</code></td><td>Per-IP rate limit, seconds per request once the burst is spent. <code>1</code> ≈ 60 requests/minute sustained. Governs <code>/dpe/oai</code> and both machine-readable representation routes, which share one bucket. See <a href="./oai-pmh.html">OAI-PMH</a> and <a href="./machine-readable-metadata.html">Machine-Readable Metadata</a>.</td></tr>
+<tr><td><code>DPE_OAI_RATE_LIMIT_BURST</code></td><td>No</td><td><code>60</code></td><td>Per-IP burst allowance on the same three routes: back-to-back requests before the sustained rate applies.</td></tr>
 <tr><td><code>DPE_OAI_PAGE_SIZE</code></td><td>No</td><td><code>100</code></td><td>Items per page in <code>ListRecords</code> / <code>ListIdentifiers</code> responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See <a href="./oai-pmh.html">OAI-PMH</a>.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
@@ -305,6 +307,29 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
 </tbody></table>
 </div>
+<blockquote>
+<p><strong>Two base URLs, on purpose.</strong> <code>DPE_PUBLIC_BASE_URL</code> and <code>DPE_OAI_BASE_URL</code> are set independently and neither is derived from the other. The OAI endpoint advertises its own <code>baseURL</code> in every response, and on DEV that endpoint lives on a different host (<code>https://api.dev.dasch.swiss/dpe/oai</code>) from the site (<code>https://repository.dev.dasch.swiss</code>). Set both per environment.</p>
+<p><strong>Assessing a local run from a container.</strong> A FAIR assessor running in Docker resolves the URLs the page emits, so <code>DPE_PUBLIC_BASE_URL</code> must name a host the container can reach — <code>http://host.docker.internal:4000</code>, not <code>http://localhost:4000</code>, which inside the container is the container itself.</p>
+<p><strong>PR previews set all three themselves.</strong> <code>cloud-run-dpe-pull-request.yml</code> runs <code>gcloud run services update</code> right after the deploy, setting <code>DPE_PUBLIC_BASE_URL</code>, <code>DPE_OAI_BASE_URL</code> and <code>DPE_ARK_RESOLVER_BASE_URL</code> to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the <code>303</code> target, the OAI <code>baseURL</code>, and every emitted ARK respectively.</p>
+<p><strong>Why a preview rewrites its ARKs.</strong> A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. <code>DPE_ARK_RESOLVER_BASE_URL</code> makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.</p>
+<p><strong>Applied once, as corpus data enters.</strong> <code>dpe-core</code>'s caches normalise the ARK host on load, so everything downstream — the embedded JSON-LD, the Dublin Core tags, the <code>Link</code> header, the OAI payloads, the sidebar permalink a person clicks and copies, and the <code>pid</code> in <code>/dpe/api/v2/projects</code> — is correct without any of them knowing a resolver exists. Conceptually this is the <code>sync</code> capability's work and moves there when <code>sync</code> lands; <code>dpe_core::ark</code> records that.</p>
+<p>Only the host is rewritten. The ARK path — <code>ark:/72163/1/{shortcode}</code> — is the identifier and passes through untouched, and <strong>recorded text is quoted rather than asserted</strong>: a <code>howToCite</code> citation whose author wrote the ARK into the sentence, and a project's recorded website (083D records its own ARK there), are served as written.</p>
+<p>The resolver answers project ARKs only, with a <code>302</code> to the landing page, mirroring <code>ark.dasch.swiss</code>. A record ARK gets a <code>404</code>: DPE serves no record landing page, and <code>ark.dasch.swiss</code> resolves a record ARK to the VRE rather than to DPE.</p>
+<p><strong>Do not set it on DEV, STAGE or PROD.</strong> Those deployments <em>are</em> what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside <code>ark.dasch.swiss</code>.</p>
+</blockquote>
+<blockquote>
+<p><strong>What the rate limit does not bound.</strong> It bounds the request <em>rate</em>, not the
+per-request size, and the JSON-LD representation is large. Its own byte budget
+caps it at 4,000,000 bytes (<a href="./machine-readable-metadata.html#a-byte-budget">Machine-Readable
+Metadata</a>), and locally the two
+largest committed projects measure 3,972,504 bytes (0868, at the budget) and
+3,548,716 bytes (081C, under it). At the defaults (<code>per_second = 1</code>,
+<code>burst = 60</code>) one IP can therefore pull at most ~240 MB of transient allocation
+and egress in a burst window, settling to ~4 MB/s/IP afterwards. The budget is
+what makes that a <em>bound</em> rather than an observation: before it, the figure
+grew with the corpus. Lower <code>DPE_OAI_RATE_LIMIT_BURST</code> if that matters more
+than a harvester's throughput does.</p>
+</blockquote>
 <blockquote>
 <p><strong>Rate limiting and reverse proxies.</strong> The OAI (<code>/dpe/oai</code>) and telemetry (<code>/telemetry/collect</code>) rate limits key on the client IP, taken from the <strong>rightmost</strong> <code>X-Forwarded-For</code> entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any <code>X-Forwarded-For</code> value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to <code>X-Forwarded-For</code> would shift the trusted entry and require counting hops from the right.</p>
 </blockquote>
@@ -327,6 +352,47 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
 <li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
 </ul>
+<h3 id="landing-page-metadata-points-at-dsp-ingest"><a class="header" href="#landing-page-metadata-points-at-dsp-ingest">Landing-page metadata points at dsp-ingest</a></h3>
+<p>A project landing page advertises its records' files as <code>schema:distribution</code>,
+each with the dsp-ingest URL that serves the bytes
+(<a href="./machine-readable-metadata.html#record-files">Machine-Readable Metadata</a>). A
+consumer that follows those URLs downloads from <strong><code>ingest.dasch.swiss</code>, not from
+DPE</strong>, so DPE's per-IP rate limiter does not bound the traffic.</p>
+<p>How much there is to follow, for the two largest file-carrying projects in the
+committed corpus:</p>
+<div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: right">In the embedded block</th><th style="text-align: right">Bytes if all of those are fetched</th><th style="text-align: right">In <code>/metadata.jsonld</code></th><th style="text-align: right">Bytes if all of those are fetched</th></tr></thead><tbody>
+<tr><td>0868</td><td style="text-align: right">100</td><td style="text-align: right">90.9 MB</td><td style="text-align: right">6,107 of 7,716</td><td style="text-align: right">945.0 MB</td></tr>
+<tr><td>0803</td><td style="text-align: right">4</td><td style="text-align: right">81.9 MB</td><td style="text-align: right">4,062</td><td style="text-align: right">139.7 GB</td></tr>
+</tbody></table>
+</div>
+<p>The <code>/metadata.jsonld</code> figures are now bounded by the representation's
+<a href="./machine-readable-metadata.html#a-byte-budget">byte budget</a>, which is why 0868's
+list stops short of its 7,716 files and its total fell from 2.72 GB. Both are
+measured locally; a deployment on a longer host lists a shorter prefix and draws
+less. 0803's whole graph fits the budget, so nothing about it changed.</p>
+<p>A well-behaved assessor pulls far less, and the bound does not change what it
+pulls. F-UJI 3.5.0 takes at most five files per MIME type and truncates each
+download at 1,000,000 bytes, so a full assessment drew <strong>26 files and 11.3 MB
+for 0868 (558 s)</strong> and <strong>6 files and 6.0 MB for 0803 (307 s)</strong>, measured on
+2026-09-18 against the then-unbounded representation. All five of 0868's MIME
+types — <code>application/pdf</code>, <code>application/zip</code>, <code>image/png</code>, <code>text/csv</code>,
+<code>text/plain</code> — still appear inside the bounded prefix, so the same sampling has
+the same set to draw from. Its draw scales with how many distinct file types a
+project has, not with how many records it holds.</p>
+<p>This is a change in convenience rather than in capability. The same bytes were
+already reachable by enumerating the OAI-PMH set <code>project:{shortcode}</code> and
+calling <code>/dpe/records/{shortcode}/{record_id}/file</code> per record, which returns
+the same <code>downloadUrl</code>. What changed is that one request now returns every URL
+at once.</p>
+<p><strong>Retiring ingest carries a metadata obligation.</strong> All 11,778 published
+<code>contentUrl</code> values name <code>ingest.dasch.swiss</code>. When media moves to Vitrinli and
+downloads are served by the Access Area's <code>media</code> capability, the host in them
+changes. Metadata heals going forward on its own — the URL comes from the corpus
+export, so the first export after the migration carries the new host and DPE
+re-serves it without a code change — but copies already harvested by third
+parties do not, and <code>schema:distribution</code> exists to be harvested. Plan the
+retirement to include a corpus re-export and a re-publish, or external copies
+404.</p>
 <h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
 <p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>DPE_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>DPE_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
 <pre><code class="language-bash"># Default (info level)

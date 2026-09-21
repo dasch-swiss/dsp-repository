@@ -1,0 +1,891 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Machine-Readable Metadata - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="machine-readable-metadata"><a class="header" href="#machine-readable-metadata">Machine-Readable Metadata</a></h1>
+<p>A project's <strong>landing page</strong> — <code>/dpe/projects/{shortcode}</code>, the page the project's
+ARK resolves to — carries its metadata in the served HTML, so that a FAIR
+assessor or a harvester reading the page gets the same facts a person does.</p>
+<p>Three things are emitted in the page, and two <strong>machine-readable
+representations</strong> are served beside it, all built from one resolved graph per
+project:</p>
+<div class="table-wrapper"><table><thead><tr><th>What</th><th>Where</th><th>Vocabulary</th></tr></thead><tbody>
+<tr><td>A JSON-LD block</td><td><code>&lt;script type="application/ld+json"&gt;</code> at the end of <code>&lt;head&gt;</code></td><td>schema.org <code>Dataset</code></td></tr>
+<tr><td>Meta tags</td><td><code>&lt;meta name="DC.*"&gt;</code> in <code>&lt;head&gt;</code></td><td>Dublin Core elements, plus a COAR access-right URI</td></tr>
+<tr><td>Typed links</td><td><code>&lt;link&gt;</code> elements in <code>&lt;head&gt;</code> and an HTTP <code>Link</code> header</td><td>FAIR Signposting, Level 1</td></tr>
+<tr><td>A JSON-LD document</td><td><code>GET /dpe/projects/{shortcode}/metadata.jsonld</code></td><td>schema.org <code>Dataset</code>, <code>hasPart</code> bounded by bytes</td></tr>
+<tr><td>A DataCite document</td><td><code>GET /dpe/projects/{shortcode}/metadata.datacite.json</code></td><td>DataCite kernel 4 JSON</td></tr>
+</tbody></table>
+</div>
+<p>The graph is <code>shared_fair::ProjectGraph</code>. Every representation reads it and none
+re-derives a fact from the source data, which is what keeps them from disagreeing
+(ADR-0005, <code>docs/adr/0005-fair-landing-pages-in-the-access-area.md</code>). A
+corpus-wide test in <code>dpe-api-oai</code> asserts that agreement over every committed
+project.</p>
+<h2 id="what-is-emitted"><a class="header" href="#what-is-emitted">What is emitted</a></h2>
+<h3 id="schemaorg-json-ld"><a class="header" href="#schemaorg-json-ld">schema.org JSON-LD</a></h3>
+<p>The project is a <code>Dataset</code> whose <code>@id</code> is its ARK, <code>url</code> its landing page, and
+<code>hasPart</code> a list of its records. <code>publisher</code> is DaSCH; <code>producer</code> is a
+<code>ResearchProject</code> node carrying the project's own name, dates, external website
+and members.</p>
+<p>Four properties have a shape worth naming, mostly because an assessor reads them
+as RDF rather than as JSON:</p>
+<div class="table-wrapper"><table><thead><tr><th>Property</th><th>Shape</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>identifier</code></td><td>always two entries: the ARK as a <code>PropertyValue</code> with <code>propertyID: "ARK"</code>, and the landing page URL as a plain string</td><td>F-UJI reads the object identifier from <code>identifier.value</code>, so the ARK keeps the <code>PropertyValue</code> form. FAIR Champion's <em>MetadataIdentifierFound</em> reads <code>schema:identifier</code> alone and does not consider <code>url</code>, so an assessor pointed at the page needs the page's own URL here too</td></tr>
+<tr><td><code>license</code></td><td>a node object, <code>{"@id": "&lt;SPDX URI&gt;"}</code>; one object for a single licence, an array for several, no key for none</td><td>schema.org's remote context does not coerce <code>license</code> to <code>@id</code>, so a bare string parses as an RDF literal. FAIR Champion's <em>LicenseStrong</em> wants a Resource</td></tr>
+<tr><td><code>prov:wasAttributedTo</code></td><td>references to agents the graph already names: DaSCH, and every credited creator with an ORCID</td><td>PROV-O is the W3C vocabulary for provenance, and <code>creator</code> and <code>publisher</code> already assert exactly these agents. See <em>Provenance</em> below</td></tr>
+<tr><td><code>distribution</code></td><td>a <code>DataDownload</code> per record file, at the root of the graph, never on the <code>hasPart</code> node</td><td>Both assessors read <code>schema:distribution</code> off the described object. See <em>Record files</em> below</td></tr>
+</tbody></table>
+</div>
+<p>An agent node carries an <code>@id</code> when it has an IRI of its own — its ORCID, by the
+same rule Signposting's <code>author</code> link uses — so a statement about that agent
+points at the node rather than describing a second one. The publisher's <code>@id</code> is
+<code>https://dasch.swiss</code>. An agent without an ORCID stays a blank node.</p>
+<h3 id="provenance"><a class="header" href="#provenance">Provenance</a></h3>
+<p>The <code>@context</code> binds <code>prov:</code> to <code>http://www.w3.org/ns/prov#</code>, and the graph
+asserts <code>prov:wasAttributedTo</code> over DaSCH and the credited creators that have an
+ORCID.</p>
+<p>Nothing here is a new fact. <code>creator</code> and <code>publisher</code> already name those agents;
+PROV-O restates that relation in the vocabulary a consumer asking about
+provenance reads. That is the line ADR-0005's "nothing is invented for a score"
+draws: re-expressing a true statement in a second standard vocabulary is
+interoperability, and asserting a fact the corpus does not record would not be.</p>
+<p>Two things are deliberately not emitted:</p>
+<ul>
+<li><strong><code>prov:generatedAtTime</code>.</strong> F-UJI's own mapping treats <code>publication_date</code> that
+way, but what the corpus records is a publication <em>year</em>, not a generation
+time, so the statement would be approximately true at best.</li>
+<li><strong>Attribution to a creator with no ORCID.</strong> There is no node to point at, and
+inlining a copy would put a second, unidentified agent in the graph — the
+opposite of what the statement means. Naming some agents does not deny the
+others, so the shorter statement stays true.</li>
+</ul>
+<blockquote>
+<p>schema.org's <code>producer</code> is the research project that made the data. It is not
+the OAIS Producer of the Deposit Area, which is the depositing agent.</p>
+</blockquote>
+<p>Three rules hold throughout:</p>
+<ul>
+<li><strong>Nothing is invented.</strong> A value the corpus records as a Placeholder, or does
+not record at all, yields no key. A project whose records carry no file gets
+no <code>distribution</code>, because there is no download to describe.</li>
+<li><strong><code>hasPart</code> and <code>distribution</code> are one prefix</strong>, over the same records in the
+same order, wherever the prefix stops. The embedded block stops at 100; the
+standalone JSON-LD representation stops at a byte budget and carries far more.
+The largest committed project has 27,026 records; the one with the most files
+has 7,716 of them. The complete list is harvestable from the OAI set
+<code>project:{shortcode}</code>.</li>
+<li><strong>Key order is the builder's.</strong> The workspace enables <code>serde_json</code>'s
+<code>preserve_order</code>, so insertion order is emission order. <code>Map::remove</code>
+silently re-sorts the map and must not be used; <code>retain</code> or <code>shift_remove</code>
+instead.</li>
+</ul>
+<h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
+<p>A bitstream record carries at most one file, stored by dsp-ingest at a public
+URL. Where a project's records carry files, the project's graph describes them:
+one <code>DataDownload</code> per file, at the root under <code>distribution</code>.</p>
+<pre><code class="language-json">{
+  "@type": "DataDownload",
+  "contentUrl": "https://ingest.dasch.swiss/projects/0868/assets/65x3bCZRvre-UHvpx8zyfii/original",
+  "name": "BesselianElements_MeanDeltaT.csv",
+  "encodingFormat": "text/csv",
+  "contentSize": 1331862,
+  "license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+}
+</code></pre>
+<p>Four rules govern what appears here:</p>
+<ul>
+<li><strong>Only a record the corpus records as <code>Full Open Access</code>.</strong> A restricted
+record's file is not advertised in any representation. This governs what is
+<em>published</em>, not what is reachable — it is not an access control. dsp-ingest
+serves these URLs to anyone who holds one, and the file-metadata endpoint
+returns the same URL for any record with a file, neither of which this rule
+changes. It is applied where the graph is built rather than in a writer, so no
+representation can be added that forgets it, and it fails closed: an access
+level spelled in a way the builder does not recognise yields no download.</li>
+<li><strong><code>encodingFormat</code> only when the export records a MIME type.</strong> Project 0803's
+4,062 files carry none, and a guessed format would be an invented fact.
+<code>name</code> and <code>contentSize</code> are omitted on the same terms.</li>
+<li><strong><code>license</code> is the record's own</strong>, not the project's, and the two disagree
+across the corpus: 0868 licenses the project CC BY 4.0 while all 7,716 of its
+file-carrying records carry CC0 1.0, and 0803 disagrees the same way. A
+download described under the root licence alone would misstate every file.
+Both are reported as recorded; which one is right is a question about the
+data, not about this code.</li>
+<li><strong>No checksum.</strong> schema.org has no standard property carrying one on a
+<code>DataDownload</code>. The file-metadata endpoint serves it, beside the same URL —
+see <a href="./oai-pmh.html#file-metadata-endpoint">OAI-PMH</a>.</li>
+</ul>
+<p>This does not contradict the OAI-PMH mapping, which drops the download URL. That
+decision is about fit: <code>dc:identifier</code> identifies the described resource and a
+<code>HasPart</code> <code>relatedIdentifier</code> relates resources, not bitstreams, so neither
+field could carry it. <code>schema:distribution</code> is the field that fits.</p>
+<p><strong><code>contentUrl</code> names a host with a retirement date.</strong> Every one of these URLs
+points at <code>ingest.dasch.swiss</code>. Media moves to Vitrinli and ingest is then
+retired, after which downloads are served by the Access Area's <code>media</code>
+capability, so the host changes. The URLs are true today, which is the standard
+everything on this page is held to, and they largely heal themselves:
+<code>RecordFile.url</code> comes from the corpus export, so the first export after the
+migration carries the new host and DPE re-serves it with no code change —
+nothing in <code>shared-fair</code> hardcodes ingest.</p>
+<p>What does not heal is a harvested copy. <a href="./oai-pmh.html">OAI-PMH</a> already records
+this tradeoff for the file endpoint's <code>downloadUrl</code>, with the mitigation that a
+consumer fetches it fresh per request. That mitigation does not apply here:
+<code>schema:distribution</code> exists to be harvested and cached, so an aggregator that
+read <code>/metadata.jsonld</code> before the move holds dead links until it re-harvests.
+<strong>Retiring ingest therefore carries a metadata obligation: re-export the corpus,
+then re-publish.</strong></p>
+<p>A DPE-owned stable download URL redirecting to wherever the bytes live would
+remove the problem. It is not done here, because <a href="./oai-pmh.html#file-metadata-endpoint">OAI-PMH</a>
+records that DPE serves metadata only and does not redirect to bytes. Changing
+that is an ADR question, not a detail of this page.</p>
+<p><strong>The cap bounds the page, not the assessor.</strong> F-UJI reads the embedded block,
+then follows the <code>describedby</code> link to <code>/metadata.jsonld</code> and merges what it
+finds there, so for project 0868 a local run collected 100 data links from the
+page and 7,716 in total, from a representation that was then unbounded. It
+limits <em>content</em> analysis to five files per MIME type whatever it collected,
+which is why an assessment of a file-carrying project downloads a few dozen
+files and takes minutes rather than seconds. A bounded representation changes
+the first number and not the second — see <a href="#a-byte-budget">A byte
+budget</a>.</p>
+<h3 id="dublin-core-meta-tags"><a class="header" href="#dublin-core-meta-tags">Dublin Core meta tags</a></h3>
+<p>A second rendering of the Dublin Core record the <code>oai_dc</code> metadata prefix already
+serves, not a second mapping. Two differences, both deliberate:</p>
+<ul>
+<li>Placeholders are dropped. The committed <code>oai_dc</code> output carries them through,
+but a landing page telling a harvester <code>DC.title = "MISSING"</code> states something
+false.</li>
+<li><code>DC.description</code> is cut to 1000 characters, on a character boundary. A <code>&lt;meta&gt;</code>
+attribute of several kilobytes is legal and pointless.</li>
+</ul>
+<p><code>DC.accessRights</code> is the one value the OAI record has no field for: the COAR
+access-right URI for the project's access level.</p>
+<div class="table-wrapper"><table><thead><tr><th>Access level</th><th><code>isAccessibleForFree</code></th><th><code>conditionsOfAccess</code></th><th><code>DC.accessRights</code></th></tr></thead><tbody>
+<tr><td>Full Open Access</td><td><code>true</code></td><td><code>Full Open Access</code></td><td><code>http://purl.org/coar/access_right/c_abf2</code></td></tr>
+<tr><td>Open Access with Restrictions</td><td><code>false</code></td><td><code>Open Access with Restrictions</code></td><td><code>http://purl.org/coar/access_right/c_16ec</code></td></tr>
+<tr><td>Embargoed Access</td><td><code>false</code></td><td><code>Embargoed Access until {date}</code>, or <code>Embargoed Access</code></td><td><code>http://purl.org/coar/access_right/c_f1cf</code></td></tr>
+<tr><td>Metadata only Access</td><td><code>false</code></td><td><code>Metadata only Access</code></td><td><code>http://purl.org/coar/access_right/c_14cb</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="signposting"><a class="header" href="#signposting">Signposting</a></h3>
+<p>The same set of typed links goes out twice, as <code>&lt;link&gt;</code> elements and as an RFC
+8288 <code>Link</code> header.</p>
+<div class="table-wrapper"><table><thead><tr><th>Relation</th><th>Target</th><th>Cardinality</th></tr></thead><tbody>
+<tr><td><code>cite-as</code></td><td>the project's ARK</td><td>exactly 1</td></tr>
+<tr><td><code>type</code></td><td><code>https://schema.org/Dataset</code>, <code>https://schema.org/AboutPage</code></td><td>2</td></tr>
+<tr><td><code>describedby</code></td><td>the two representations, typed <code>application/ld+json</code> and <code>application/vnd.datacite.datacite+json</code>, then the OAI <code>GetRecord</code> URLs for <code>oai_datacite</code> and <code>oai_dc</code>, typed <code>application/xml</code></td><td>4</td></tr>
+<tr><td><code>license</code></td><td>the SPDX URI</td><td>0 or 1: only when the project records exactly one distinct URI, because the profile allows no more. The JSON-LD still lists them all</td></tr>
+<tr><td><code>author</code></td><td>the ORCID of each credited creator</td><td>0 or more</td></tr>
+</tbody></table>
+</div>
+<p>Each representation answers with the other half of that: <code>Link: &lt;landing page&gt;; rel="describes"</code>.</p>
+<p>The OAI <code>describedby</code> targets return an OAI-PMH envelope around the DataCite or
+Dublin Core payload, so <code>application/xml</code> is the accurate type for them. A
+harvester wanting bare DataCite gets it from <code>metadata.datacite.json</code>.</p>
+<h2 id="the-representations-and-the-one-negotiation-step"><a class="header" href="#the-representations-and-the-one-negotiation-step">The representations, and the one negotiation step</a></h2>
+<pre><code>GET /dpe/projects/{shortcode}/metadata.jsonld        → application/ld+json
+GET /dpe/projects/{shortcode}/metadata.datacite.json → application/vnd.datacite.datacite+json
+</code></pre>
+<p>The JSON-LD one is the same schema.org graph the page embeds, with <code>hasPart</code>
+<strong>bounded by bytes rather than by a count</strong> — as many records as fit in 4 MB,
+where the embedded block stops at 100. See <em>A byte budget</em> below. The DataCite
+one is the same record the <code>oai_datacite</code> prefix serves, in DataCite's kernel-4
+JSON shape rather than inside an OAI envelope. Its output is validated against
+DataCite's own JSON schema for every committed project by a corpus-wide test.</p>
+<p>A malformed shortcode is <code>400</code> and an unknown one <code>404</code>, both <code>text/plain</code> with
+an empty body: a client that asked for JSON-LD is a machine, and the content
+type is how it learns that what came back is not the document it asked for.</p>
+<p>Both routes share the per-IP bucket <code>/dpe/oai</code> uses, under the same
+<code>DPE_OAI_RATE_LIMIT_*</code> settings, because the JSON-LD for the largest committed
+project is a few megabytes built in memory per request. That limit
+bounds the request <em>rate</em>, not the per-request size; see
+<a href="./operations.html">Operations</a> for what a burst costs. Neither route sends
+<code>Cache-Control</code> or <code>ETag</code>, consistent with the rest of DPE: the data changes
+only on deploy.</p>
+<p><strong>The landing page redirects to a representation when <code>Accept</code> prefers one.</strong>
+This is the single negotiation step ADR-0005 allows, and the only thing about
+the route that varies by header — the page itself is byte-identical for every
+<code>Accept</code> value (ADR-0004, <code>docs/adr/0004-hypermedia-frontends.md</code>).</p>
+<div class="table-wrapper"><table><thead><tr><th><code>Accept</code></th><th>Result</th></tr></thead><tbody>
+<tr><td>absent, <code>*/*</code>, <code>text/html,*/*;q=0.8</code></td><td>200 HTML</td></tr>
+<tr><td><code>application/ld+json</code></td><td>303 to <code>metadata.jsonld</code></td></tr>
+<tr><td><code>application/vnd.datacite.datacite+json</code></td><td>303 to <code>metadata.datacite.json</code></td></tr>
+<tr><td><code>text/turtle</code>, <code>application/json</code>, <code>application/xml</code>, <code>application/*</code></td><td>200 HTML — these are not aliases; each representation is served for its own media type and no other</td></tr>
+<tr><td><code>text/html;q=1, application/ld+json;q=1</code></td><td>200 HTML — a tie goes to the page</td></tr>
+<tr><td><code>*/*;q=0</code>, malformed, unparseable <code>q</code></td><td>200 HTML</td></tr>
+<tr><td>unknown shortcode, any <code>Accept</code></td><td>200 HTML "Project Not Found", never a redirect</td></tr>
+</tbody></table>
+</div>
+<p>The table above is the acceptance specification. The rules that produce it —
+how <code>q</code> is read, how wildcards count, what a hostile header costs — are written
+out once, in <code>shared-fair</code>'s <code>negotiate</code> module, and are not restated here. The
+route never produces a 4xx from <code>Accept</code>.</p>
+<p><strong>Every answer from the route carries <code>Vary: Accept</code></strong> — 200 and 303, GET and
+HEAD. Without it a cache in front of DPE could replay a 303 to a person or the
+HTML to a harvester.</p>
+<p>The candidate list and the representation <code>describedby</code> links come from the
+same <code>UrlLayout</code> rows, so the page cannot redirect to a representation it does
+not link. The converse does not hold: the two OAI-record <code>describedby</code> links are
+never candidates, because a harvester is pointed at them rather than redirected
+to them.</p>
+<h3 id="a-byte-budget"><a class="header" href="#a-byte-budget">A byte budget</a></h3>
+<p><strong>The JSON-LD representation is bounded by the bytes it serialises to</strong>, not by
+a record count: <code>JSON_LD_BYTE_BUDGET</code>, 4,000,000, in <code>dpe-server</code>'s
+<code>metadata.rs</code>. The document served is always at or under it and is always valid
+JSON. It is never truncated mid-structure; what the budget removes is whole
+entries from the end of the part list.</p>
+<p><strong>Why there is a bound.</strong> Without one, <code>/dpe/projects/0868/metadata.jsonld</code>
+served 5,251,715 bytes on a PR preview. F-UJI truncates any download at
+5,000,000 bytes, and the truncated fragment is not valid JSON, so it could not
+parse the document at all:</p>
+<pre><code>WARNING: Downloaded content has been TRUNCATED by F-UJI since it is larger than: -: 5000000
+WARNING: Given JSON-LD seems to be invalid JSON
+</code></pre>
+<p><code>FsF-I1-01M</code> scored 1 of 2 on that run for that reason alone. The document was
+valid JSON as served — verified with <code>jq</code> — so this was a size defect and not a
+serialisation defect. <strong>0868 is a small project by DaSCH standards</strong>, so an
+unbounded representation fails for the normal case of a project with files, not
+for an edge case: a <code>hasPart</code> entry costs roughly 150 bytes and a <code>DataDownload</code>
+roughly 290, which puts the 5,000,000 ceiling at about 33,000 file-less records
+or about 20,000 once ~40% carry files.</p>
+<p><strong>Why bytes and not a count.</strong> The same 19,770 parts of 0868 serialise to 4.74 MB
+under <code>ark.dasch.swiss</code> and 5.25 MB under a preview's longer Cloud Run host.
+Identifier length, licence URIs, file names and MIME types vary per project
+besides. A count calibrated against one deployment is wrong on the next, so the
+implementation renders a prefix, serialises it, measures it, and returns the
+very document it measured. Nothing is estimated from entry counts.</p>
+<p><strong>Why 4,000,000.</strong> A 20% margin under F-UJI's limit. We control none of the three
+things that consume it: the host name a deployment serves under, the limit a
+future assessor applies, and what a later field adds to every entry. It is a
+constant rather than a setting, because a second value to keep in step would buy
+nothing.</p>
+<p><strong><code>hasPart</code> and <code>distribution</code> share one prefix.</strong> When the budget binds, the
+document describes records 1..<em>k</em> and the files of those records, and not the
+files of records it does not list — the same invariant the embedded block's cap
+already holds. Spending the budget preferentially on <code>distribution</code> was
+considered and rejected: it would need two truncation rules where there is one,
+it would describe downloads for unlisted records, and the reason to prefer
+distributions is that an assessor rewards them, which is not a reason this work
+accepts. Neither list is recoverable only from this document — the complete
+record list is the OAI set <code>project:{shortcode}</code>, and each record's download URL
+is <a href="./oai-pmh.html#file-metadata-endpoint"><code>/dpe/records/{shortcode}/{record_id}/file</code></a>.</p>
+<p><strong>A superseded decision, recorded rather than dropped.</strong> This page previously
+held that the representation must stay uncapped, because the uncapped set was
+what earned <code>F3-01M</code>, <code>A1-03D</code>, <code>R1-01MD</code> and <code>R1.3-02D</code> for 0868. The preview
+run disproves it. In the same run that failed to parse the document, F-UJI
+reported:</p>
+<pre><code>INFO: Found data links in MetadataFormats.JSONLD metadata -: 100
+SUCCESS: Number of object content identifier found -: 100
+</code></pre>
+<p>One hundred — the embedded block's cap. It never parsed the large document and
+still earned <code>F3-01M</code> 1/1, <code>A1-03D</code> 1/1, <code>R1-01MD</code> 3/4 and <code>R1.3-02D</code> 1/1 from
+those hundred entries. The uncapped set earned nothing the capped one did not.</p>
+<p><strong>The document does not say it is bounded. Completeness is reachable from it
+anyway, in band, over links it already carries.</strong> A consumer holding only the
+JSON-LD has <code>Link: &lt;landing page&gt;; rel="describes"</code> on the response. The landing
+page answers with <code>rel="describedby"</code> to the OAI <code>GetRecord</code> URLs for this
+project, which carry the OAI endpoint's own base URL; <code>ListRecords</code> over the set
+<code>project:{shortcode}</code> follows from that by the protocol. So the path from the
+bounded document to the complete record list is two hops and no new vocabulary.</p>
+<p>What is true is narrower than "nothing standard fits", and worth stating
+precisely: <strong>completeness is not expressible <em>in this document</em>.</strong> schema.org
+has no property meaning "this collection is partial, and <em>n</em> entries exist" —
+<code>numberOfItems</code> is defined on <code>ItemList</code> and not on <code>Dataset</code>, and <code>size</code> is
+product sizing. Hydra's <code>totalItems</code> and <code>PartialCollectionView</code> are designed
+for exactly this and were rejected: a third namespace for one integer, asserting
+a new fact rather than restating an existing one, which is the line <code>prov:</code>
+stays on the right side of. Inventing a term, or bending one, is what ADR-0005
+rules out.</p>
+<p>A consumer that reads the document alone should therefore not assume it is
+exhaustive; one that follows its links does not have to assume anything.</p>
+<h3 id="who-reads-which-document-and-what-each-one-can-take"><a class="header" href="#who-reads-which-document-and-what-each-one-can-take">Who reads which document, and what each one can take</a></h3>
+<p>The budget is one representation's bound, not a bound on what DaSCH publishes.
+Which consumer reads which document, and how much of its own ceiling that
+document uses:</p>
+<div class="table-wrapper"><table><thead><tr><th>Consumer</th><th>Document it reads</th><th style="text-align: right">Its ceiling</th><th style="text-align: right">Largest we serve</th></tr></thead><tbody>
+<tr><td>Google Dataset Search</td><td>the embedded block, in the landing page's <code>&lt;head&gt;</code> (<code>Count(100)</code>)</td><td style="text-align: right">2,097,152 B</td><td style="text-align: right">77,999 B (0868) — 3.7%</td></tr>
+<tr><td>F-UJI</td><td>the embedded block for the file-pointer metrics, <code>/metadata.jsonld</code> for <code>I1-01M</code></td><td style="text-align: right">5,000,000 B</td><td style="text-align: right">3,972,504 B, bounded</td></tr>
+<tr><td>A bulk harvester</td><td>the OAI set <code>project:{shortcode}</code></td><td style="text-align: right">none; it paginates</td><td style="text-align: right">the complete set</td></tr>
+</tbody></table>
+</div>
+<p><a href="https://developers.google.com/search/docs/crawling-indexing/googlebot">Googlebot crawls the first 2 MB of a supported file
+type</a>,
+and the file it crawls is the landing page HTML with the block inside it — the
+77,999 B above is that whole page, measured on a PR preview (75,717 B locally).</p>
+<p><strong>Note the direction. Googlebot's ceiling is half the JSON-LD representation's
+budget.</strong> Removing the bound to give a search engine more would not: Googlebot
+does not fetch <code>/metadata.jsonld</code>, and if it did, an unbounded document would be
+truncated at 2 MB and unparseable — less use to Google than the bounded one, not
+more. The embedded block is what Google reads, it is capped by count, and at
+3.7% of the limit it has room the byte budget does not constrain.</p>
+<h2 id="three-base-urls"><a class="header" href="#three-base-urls">Three base URLs</a></h2>
+<p><code>DPE_PUBLIC_BASE_URL</code> gives the site's own URLs — the landing page and the
+catalogue. <code>DPE_OAI_BASE_URL</code> gives the <code>describedby</code> targets, because that is
+the URL the OAI endpoint advertises for itself. Neither is derived from the
+other: on DEV the OAI endpoint answers on a different host.</p>
+<p><code>DPE_ARK_RESOLVER_BASE_URL</code> is the odd one out and is <strong>unset everywhere but a
+PR preview</strong>. Set, it rewrites the host of every emitted ARK to the deployment's
+own and mounts the <code>/ark:/</code> resolver that answers it, so a deployment which is
+not what the recorded ARK resolves to does not publish an identifier that sends
+an assessor somewhere else. See <a href="./operations.html">Operations</a>.</p>
+<h2 id="how-it-is-kept-safe"><a class="header" href="#how-it-is-kept-safe">How it is kept safe</a></h2>
+<p>Machine-readable metadata puts corpus data into HTML and into HTTP headers. The
+rules that govern that — identifiers derived from the resolved project and never
+from the request path, and the JSON-LD <code>&lt;script&gt;</code> as a sanctioned <code>PreEscaped</code>
+site whose only permitted input is <code>shared_fair::script_safe_json</code> — are
+ADR-0005's decision (<code>docs/adr/0005-fair-landing-pages-in-the-access-area.md</code>),
+and are not restated here. What the implementation adds to them:</p>
+<ul>
+<li><strong>The grep is crate-wide.</strong> A test in <code>dpe-server</code> reads every file under its
+own <code>src/</code> and asserts <code>PreEscaped(</code> appears exactly once in the whole crate,
+on the JSON-LD splice. Scoped to <code>metadata.rs</code> it could never have seen the
+site the rule actually worries about, the search-query echo in <code>fragments.rs</code>.</li>
+<li><strong>A rejected <code>Link</code> header is dropped, not panicked.</strong> A control character in
+a recorded PID makes <code>HeaderValue::from_str</code> refuse the value; the header goes
+with a <code>tracing::warn!</code> naming the shortcode, and the page stays. The same
+links are in the head either way, and a persistent failure is a data-quality
+bug that has to surface in logs rather than take the page down.</li>
+<li><strong>RFC 8288 field syntax is percent-encoded out of every href.</strong> <code>&lt;</code>, <code>&gt;</code>, <code>"</code>,
+<code>;</code>, <code>,</code> and space are encoded when the header is serialized, so a curator-
+entered ARK or license URI cannot end a link-value and start another. It is
+done at serialization, so the identifier in the JSON-LD and the <code>&lt;link&gt;</code>
+elements stays what the corpus records.</li>
+<li><strong>Casing changes nothing.</strong> The shortcode lookup is case-insensitive, so
+<code>/dpe/projects/080c</code> and <code>/dpe/projects/080C</code> produce byte-identical JSON-LD
+and <code>Link</code> headers.</li>
+</ul>
+<p>A project that does not resolve gets nothing: no JSON-LD, no <code>Link</code> header, no
+redirect. The existing always-200 "Project Not Found" body is unchanged.</p>
+<h2 id="measuring-it-just-fair-check"><a class="header" href="#measuring-it-just-fair-check">Measuring it: <code>just fair-check</code></a></h2>
+<pre><code>just fair-check &lt;url&gt; [min_score]
+</code></pre>
+<p>Starts F-UJI in a container, POSTs the URL to its evaluation API, prints the
+per-metric table with the assessor's <code>software_version</code> and the image digest,
+and exits non-zero when the total is below <code>min_score</code>. The exit code is the
+check, so a reviewer gets a pass or a fail rather than a table to read.</p>
+<p>Against a local server:</p>
+<pre><code>DPE_PUBLIC_BASE_URL=http://host.docker.internal:4000 DPE_SITE_ADDR=0.0.0.0:4000 just dev
+just fair-check http://host.docker.internal:4000/dpe/projects/0862 12
+</code></pre>
+<p>Both environment variables are needed. <code>DPE_PUBLIC_BASE_URL</code> makes the page's
+own links point at a host the container can resolve, and <code>DPE_SITE_ADDR</code> binds
+the server on all interfaces — the default <code>127.0.0.1</code> is not reachable from a
+container under a VM-backed Docker runtime such as colima.</p>
+<p>A local run has the same identifier problem a preview has: the page publishes
+the recorded ARK, which resolves to production, while the assessment runs
+against <code>host.docker.internal</code>. That is what fails <code>F1-02D</code> in every local run
+recorded below. Adding <code>DPE_ARK_RESOLVER_BASE_URL=http://host.docker.internal:4000</code>
+makes the local run self-consistent and is the way to measure <code>F1-02D</code>. Every
+run in the table predates the variable and was made without it, so a run that
+sets it is not comparable to them metric for metric and should say so.</p>
+<p>Notes on the recipe:</p>
+<ul>
+<li><strong>The image is pinned by digest</strong>, not by <code>:latest</code>. A score is only
+comparable against the rows below if the assessor is the same build. Bumping
+the pin is a reviewed change, made when F-UJI publishes a release and checked
+at least with every change to a landing page — the same discipline as the
+Tailwind CLI pin in <a href="../security.html">Security</a>. There is no
+<code>tailwind-pins-refresh</code>-style refresh recipe, because <code>fair-check</code> never runs
+in CI.</li>
+<li><strong>The container can reach the host's port 4000</strong> during the run, through
+<code>--add-host=host.docker.internal:host-gateway</code>. That is the point: F-UJI
+fetches the URL it is given. The container is published on <code>127.0.0.1</code> only
+and is destroyed when the recipe returns, because an API that fetches
+arbitrary URLs should not be listening on the developer's network.</li>
+<li><strong><code>marvel</code> / <code>wonderwoman</code> are F-UJI's own published defaults</strong>
+(<code>fuji_server/config/users.py</code>), not a DaSCH credential. They are in the
+recipe because the container is loopback-only and short-lived.</li>
+<li><strong><code>DOCKER_CONFIG</code> points at a scratch directory</strong> holding a bare <code>{}</code>. A
+developer's own <code>~/.docker/config.json</code> may name a credential helper that is
+not on <code>PATH</code> under the active context, and <code>docker pull</code> then fails on a
+public image that needs no credentials at all.</li>
+<li><strong><code>jq</code> is required</strong>, and is in the Nix dev shell and <code>just install-requirements</code>.</li>
+</ul>
+<p><code>REVIEW.md</code> carries this as a checklist step: a change to a landing page or to
+<code>shared-fair</code> runs it against project 0862 and records the result.</p>
+<h2 id="assessment-results"><a class="header" href="#assessment-results">Assessment results</a></h2>
+<p>Project 0862 is the reference project and carries the history. Since 2026-09-18
+three more are measured, because a score is a statement about one project's data
+and not about the software.</p>
+<p><strong>Only 3 of the 85 committed projects carry record metadata at all</strong>, and which
+of them a score belongs to is the whole explanation for the spread:</p>
+<div class="table-wrapper"><table><thead><tr><th>Project</th><th>Record dump</th><th style="text-align: right">Records</th><th style="text-align: right">With a file</th><th>MIME types</th><th style="text-align: right">After <code>distribution</code></th></tr></thead><tbody>
+<tr><td>0862 <code>gotthelf</code></td><td>none committed</td><td style="text-align: right">0</td><td style="text-align: right">0</td><td>—</td><td style="text-align: right">16 of 24</td></tr>
+<tr><td>081C <code>hdm</code></td><td>committed</td><td style="text-align: right">27,026</td><td style="text-align: right">0</td><td>—</td><td style="text-align: right">16 of 24</td></tr>
+<tr><td>0803 <code>incunabula</code></td><td>committed</td><td style="text-align: right">4,198</td><td style="text-align: right">4,062</td><td>none recorded</td><td style="text-align: right">18 of 24</td></tr>
+<tr><td>0868 <code>solec</code></td><td>committed</td><td style="text-align: right">19,770</td><td style="text-align: right">7,716</td><td>all present</td><td style="text-align: right">21 of 24</td></tr>
+</tbody></table>
+</div>
+<p>Read by rung: a file pointer existing at all is worth two points (<code>F3-01M</code>,
+<code>A1-03D</code>), and the pointer carrying a MIME type is worth three more
+(<code>R1-01MD-2</code>, <code>R1-01MD-3</code>, <code>R1.3-02D</code>). 0862 and 081C score the same for
+unrelated reasons — one says nothing about records, the other describes 27,026
+of them and not one file.</p>
+<p>No record dump is committed for 0862, so its landing page lists no parts and
+describes no files — on a deployment carrying 0862's real records it would. The
+other 82 committed projects would behave as 0862 does locally, which is a fact
+about the development corpus rather than about those projects.</p>
+<div class="table-wrapper"><table><thead><tr><th>Date</th><th>Project</th><th>Assessor</th><th>Version</th><th>Target</th><th>Result</th></tr></thead><tbody>
+<tr><td>2026-09-15</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0</td><td><code>https://ark.dasch.swiss/ark:/72163/1/0862</code> (PROD)</td><td>3 of 24 (12.5%). F 2/7, A 1/3, I 0/4, R 0/10; only F1 and A1-02M passed. Baseline, before this work</td></tr>
+<tr><td>2026-09-15</td><td>0862 <code>gotthelf</code></td><td>FAIR Champion</td><td>1.1.11</td><td>same</td><td>6 of 15 pass, of which 2 hollow ("linked data found", 0 of 0 triples); 6 fail, 3 indeterminate. Baseline, before this work</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0 (<code>sha256:3cde9d30bc14…</code>)</td><td><code>http://host.docker.internal:4000/dpe/projects/0862</code> (local <code>dpe-server serve</code>)</td><td><strong>14 of 24</strong>, against a target of 12. F1-01D 1/1, F2-01M 2/2, F4-01M 1/2, A1-01M 1/1, A1-02M 1/1, I1-01M 2/2, I3-01M 1/1, R1-01MD 1/4, R1.1-01M 2/2, R1.2-01M 1/2, R1.3-01M 1/1. Failing: F1-02D, F3-01M, A1-03D, R1.3-02D, and I2-01M scores 0/1</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0</td><td><code>https://dpe-pr-391-…run.app/dpe/projects/0862</code> (Cloud Run PR preview)</td><td>13 of 24. One point below the local run, and the whole difference is <code>I1-01M-2</code>: the preview did not set <code>DPE_PUBLIC_BASE_URL</code>, so the typed links pointed at production, which does not carry this code and answered 404. Predates the <code>identifier</code>, <code>license</code> and workflow fixes</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>FAIR Champion</td><td>1.1.11</td><td>same preview</td><td>7 of 15 passing. <em>LicenseStrong</em> and <em>MetadataIdentifierFound</em> among the failures; both are fixed by the <code>license</code> and <code>identifier</code> shapes above, and both predate them</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0 (<code>sha256:3cde9d30bc14…</code>)</td><td>same local target, after the <code>identifier</code> and <code>license</code> fixes</td><td><strong>14 of 24 again.</strong> A re-confirmation, not an improvement: every per-metric value matches the local row above, so neither fix cost a point and neither earned one. It was run to prove that putting <code>identifier</code> in an array did not break F-UJI's reading of the ARK — it does not, and <code>F1-01D</code> still passes</td></tr>
+<tr><td>2026-09-18</td><td>0862 <code>gotthelf</code></td><td>F-UJI</td><td>3.5.0 (<code>sha256:3cde9d30bc14…</code>)</td><td>same local target, after PROV-O</td><td><strong>16 of 24.</strong> Two metrics moved and no others: <code>R1.2-01M</code> 1/2 → 2/2 (<code>Found use of dedicated provenance ontologies</code>) and <code>I2-01M</code> 0/1 → 1/1 (<code>Namespace matches found -: ['http://www.w3.org/ns/prov']</code>). One statement earns both — PROV is a provenance ontology <em>and</em> a vocabulary F-UJI's LOD registry lists</td></tr>
+</tbody></table>
+</div>
+<p>| 2026-09-18 | 0868 <code>solec</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | <code>http://host.docker.internal:4000/dpe/projects/0868</code> (local <code>dpe-server serve</code>) | <strong>16 of 24 before <code>distribution</code></strong>, metric for metric identical to 0862's — a project holding 7,716 public file URLs scored what a project holding none scored |
+| 2026-09-18 | 0803 <code>incunabula</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | <code>http://host.docker.internal:4000/dpe/projects/0803</code> (local <code>dpe-server serve</code>) | <strong>16 of 24 before <code>distribution</code></strong>, identical again |
+| 2026-09-18 | 0862 <code>gotthelf</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | same local target, after <code>distribution</code> | <strong>16 of 24, unmoved metric for metric.</strong> No record dump is committed for 0862, so it has no file to describe and nothing about it should have changed. Nothing did |
+| 2026-09-18 | 0868 <code>solec</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | same local target, after <code>distribution</code> | <strong>21 of 24.</strong> Four metrics moved: <code>F3-01M</code> 0/1 → 1/1, <code>A1-03D</code> 0/1 → 1/1, <code>R1-01MD</code> 1/4 → 3/4 (sub-tests 2 and 3), <code>R1.3-02D</code> 0/1 → 1/1. Nothing else moved. 558 s |
+| 2026-09-18 | 0803 <code>incunabula</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | same local target, after <code>distribution</code> | <strong>18 of 24.</strong> Two metrics moved: <code>F3-01M</code> 0/1 → 1/1 and <code>A1-03D</code> 0/1 → 1/1. <code>R1-01MD</code> stayed 1/4 and <code>R1.3-02D</code> stayed 0/1, both for one reason — 0803's export records no <code>mimeType</code>, so no <code>encodingFormat</code> is emitted, and dsp-ingest serves those files as <code>application/octet-stream</code>. 307 s |</p>
+<p>| 2026-09-18 | 081C <code>hdm</code> | F-UJI | 3.5.0 (<code>sha256:3cde9d30bc14…</code>) | <code>http://host.docker.internal:4000/dpe/projects/081C</code> (local <code>dpe-server serve</code>) | <strong>16 of 24, after <code>distribution</code>, metric for metric identical to 0862's.</strong> The strong control: 27,026 records, none carrying a file, so the page emits <code>hasPart</code> and no <code>distribution</code> and the score is unmoved. F-UJI confirms the absence rather than inferring it — <code>Valid data (content) identifier missing</code> |</p>
+<p>F-UJI is run from a pinned image, at 3.5.0 — the version the baseline was taken
+with, so the rows are comparable.</p>
+<p><strong>A score is a statement about one project's data.</strong> The three 2026-09-18 runs
+share a build and differ only in what the projects record, which is what makes
+the spread readable: 21 where the files are typed, 18 where they are not, 16
+where there are none. The identical 16 of 24 that all three scored beforehand is
+the other half of that: it is what made the movement attributable, because there
+was no pre-existing difference between them to confound it.</p>
+<p>The FAIR Champion tests named on this page by their short reference —
+<em>LicenseStrong</em>, <em>MetadataIdentifierFound</em>, <em>DataIdentifierFound</em> — are defined
+in the <a href="https://fairmetrics.github.io/Metrics/landingpages/general/index.html">FAIR Maturity Indicators
+index</a>,
+which is where each <code>FM_*</code> indicator a FAIR Champion result cites resolves to
+prose. It covers that set only; F-UJI's metrics are a separate set, cited in its
+own result payload as <a href="https://doi.org/10.5281/zenodo.6461229">https://doi.org/10.5281/zenodo.6461229</a>.</p>
+<p>Every row above is a local or preview measurement. Neither assessor has yet run
+against a <em>deployment</em> carrying the PROV-O, <code>identifier</code>, <code>license</code> and base-URL
+changes, and nothing on this page claims a score for one.</p>
+<p><strong>Two representations of one project do not fight over its resource type.</strong>
+F-UJI's JSON-LD mapping reads <code>object_type</code> from schema.org's <code>@type</code>
+(<code>Dataset</code>) and its DataCite JSON mapping from <code>types.resourceTypeGeneral</code>
+(<code>Project</code>). It merges <code>object_type</code> as a <em>list</em> and its resource-type test
+passes if <strong>any</strong> entry matches, so linking the DataCite representation costs
+nothing there. This was read out of the pinned image, and holds in 4.0.0 as
+well.</p>
+<h3 id="one-observation-from-a-pr-preview-not-in-the-table-above"><a class="header" href="#one-observation-from-a-pr-preview-not-in-the-table-above">One observation from a PR preview, not in the table above</a></h3>
+<p><strong><code>I1-01M</code> scored 1 of 2 on a preview because <code>/metadata.jsonld</code> was too large
+to parse</strong> — 5,251,715 bytes against F-UJI's 5,000,000-byte download limit. That
+is a preview observation and belongs in none of the columns below, which are
+local runs. It is the defect <a href="#a-byte-budget">A byte budget</a> fixes, and <strong>no
+re-measurement has been made</strong>: nothing here claims that <code>I1-01M</code> now scores 2
+of 2. The same run is the evidence that bounding the representation costs
+nothing, because it earned <code>F3-01M</code>, <code>A1-03D</code>, <code>R1-01MD</code>'s two file sub-tests
+and <code>R1.3-02D</code> from the embedded block's 100 entries while failing to parse the
+large document at all.</p>
+<p>The four committed projects' representations, measured locally with the recorded
+ARK host and a short site host, before and after the budget:</p>
+<div class="table-wrapper"><table><thead><tr><th>Project</th><th style="text-align: right">Records</th><th style="text-align: right">Files</th><th style="text-align: right">Unbounded</th><th style="text-align: right">Served</th><th style="text-align: right">Parts listed</th><th style="text-align: right">Downloads listed</th></tr></thead><tbody>
+<tr><td>0868 <code>solec</code></td><td style="text-align: right">19,770</td><td style="text-align: right">7,716</td><td style="text-align: right">4,875,959</td><td style="text-align: right"><strong>3,972,504</strong></td><td style="text-align: right">16,218</td><td style="text-align: right">6,107</td></tr>
+<tr><td>081C <code>hdm</code></td><td style="text-align: right">27,026</td><td style="text-align: right">0</td><td style="text-align: right">3,548,716</td><td style="text-align: right">3,548,716</td><td style="text-align: right">27,026</td><td style="text-align: right">—</td></tr>
+<tr><td>0803 <code>incunabula</code></td><td style="text-align: right">4,198</td><td style="text-align: right">4,062</td><td style="text-align: right">1,472,208</td><td style="text-align: right">1,472,208</td><td style="text-align: right">4,198</td><td style="text-align: right">4,062</td></tr>
+<tr><td>0862 <code>gotthelf</code></td><td style="text-align: right">0</td><td style="text-align: right">0</td><td style="text-align: right">6,699</td><td style="text-align: right">6,699</td><td style="text-align: right">—</td><td style="text-align: right">—</td></tr>
+</tbody></table>
+</div>
+<p><strong>The same code under a different host gives different numbers, which is the
+whole argument for measuring bytes.</strong> On the preview, whose Cloud Run host is
+much longer than either the recorded ARK host or a local one, the same four
+documents measured 5,251,715, 4,062,336, 1,552,096 and 6,825 — so 081C binds
+there and does not bind locally, from one unchanged corpus. A record count
+calibrated on either host would be wrong on the other.</p>
+<h3 id="known-residuals"><a class="header" href="#known-residuals">Known residuals</a></h3>
+<p>Where the points F-UJI does not award go. <strong>Per project, because the residuals
+differ per project</strong> — the ledger used to describe 0862 and read as though it
+described the repository. Each column is the local run of 2026-09-18 after
+<code>distribution</code>, and each adds up to the 24 − score for that project. Sub-test
+attributions come from <code>test_debug</code> in those same runs.</p>
+<p>One row is no longer a residual in the sense the others are. <code>F1-02D</code> was a
+defect in our own deployment setup, it is fixed, and nothing has been
+re-measured since — so it still costs the point in every column below, and the
+arithmetic still closes on the runs those columns describe.</p>
+<div class="table-wrapper"><table><thead><tr><th>Cause</th><th>Metrics</th><th style="text-align: right">0862 (16/24)</th><th style="text-align: right">0868 (21/24)</th><th style="text-align: right">0803 (18/24)</th></tr></thead><tbody>
+<tr><td>No file to point at</td><td><code>F3-01M</code>, <code>A1-03D</code>, <code>R1-01MD-2</code>, <code>R1-01MD-3</code>, <code>R1.3-02D</code></td><td style="text-align: right">5</td><td style="text-align: right">—</td><td style="text-align: right">—</td></tr>
+<tr><td>The files carry no MIME type</td><td><code>R1-01MD-2</code>, <code>R1-01MD-3</code>, <code>R1.3-02D</code></td><td style="text-align: right">—</td><td style="text-align: right">—</td><td style="text-align: right">3</td></tr>
+<tr><td>No <code>variableMeasured</code></td><td><code>R1-01MD-4</code></td><td style="text-align: right">1</td><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td>ARKs are not registered with DataCite (permanent)</td><td><code>F4-01M-2</code></td><td style="text-align: right">1</td><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td>The deployment published ARKs it does not resolve</td><td><code>F1-02D</code></td><td style="text-align: right">1</td><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td style="text-align: right"><strong>8</strong></td><td style="text-align: right"><strong>3</strong></td><td style="text-align: right"><strong>6</strong></td></tr>
+</tbody></table>
+</div>
+<p><strong>No file to point at — five points, and only where there is nothing to point
+at.</strong> F-UJI distinguishes the metadata record from retrievable <em>data content</em>
+and asks for a pointer it can fetch and inspect. Where the records carry files,
+<code>distribution</code> supplies one and all five are earned; 0868 earns every one of
+them. Where there is no file, <code>R1-01MD-1</code> still passes on the resource type
+alone, <code>R1-01MD-2</code> comes back with an empty <code>data_content_descriptor</code>,
+<code>R1-01MD-3</code> cannot run (<code>NO data object content available/accessible to perform file descriptors (type and size) tests</code>), <code>A1-03D</code> skips (<code>Skipping protocol test for data since NO content (data) identifier is given in metadata</code>) and
+<code>R1.3-02D</code> reports <code>Could not perform file format checks as data content identifier(s) unavailable/inaccesible</code>.</p>
+<p>For 0862 this is a fact about the committed corpus, not about the project. <strong>No
+record dump is committed for 0862</strong>, so its landing page lists no parts and
+describes no files. Project 0862 does have file-carrying records in production —
+<a href="./oai-pmh.html#file-metadata-document">OAI-PMH</a> shows one, a PNG — so a
+deployment carrying them would describe them and would score these five points
+as 0868 does. "0862 did not move" is the right control for this change and not a
+ceiling on the project.</p>
+<p><strong>081C is the strong control and 0862 the weak one.</strong> Both score 16 of 24, metric
+for metric, and only one of them tests the rule. 0862 shows that no
+<code>distribution</code> is invented where there is nothing to describe, but only because
+it has nothing at all — no records, so no parts and no files. 081C has 27,026
+records and not one file among them, which is the case the rule is actually
+about: parts present, <code>hasPart</code> populated, <code>distribution</code> correctly absent. Its
+assessment says so directly (<code>Valid data (content) identifier missing</code>) rather
+than skipping for want of a graph.</p>
+<p>Fabricating a download for a project that has none would earn the points and
+state something untrue, which ADR-0005 rules out. Describing the files a project
+<em>does</em> have is the opposite of that, and is what earned them here.</p>
+<p><strong>The files carry no MIME type — three points, and this is a data-quality
+residual.</strong> 0803 gained <code>F3-01M</code> and <code>A1-03D</code> like 0868, and gained nothing
+beyond them. None of its 4,062 files records a <code>mimeType</code>, so no
+<code>encodingFormat</code> is emitted — a guessed format would be invented — and F-UJI
+reports <code>NO info about file type available in given metadata</code> for every file it
+sampled. That fails <code>R1-01MD-2a</code>, which takes <code>R1-01MD-2</code> and <code>R1-01MD-3</code> with
+it, and leaves <code>R1.3-02D</code> with no format list to check. dsp-ingest serves those
+files as <code>application/octet-stream</code>, so the header fallback does not rescue it
+either. Both ends would have to change: the export would have to record the
+MIME type, and ingest would have to serve it. Neither is a change to this code.</p>
+<p><strong>No <code>variableMeasured</code> — one point, for every project.</strong> <code>R1-01MD-4</code> asks
+whether the data content matches the measured variables or observation types the
+metadata declares, and F-UJI skips it with <code>NO measured variables found in metadata</code>. The DaSCH metadata schema records no such element. This used to be
+counted under the data-pointer cause, on the strength of its sub-test name;
+measuring 0868 separated them, because <code>-2</code> and <code>-3</code> moved and <code>-4</code> did not. No
+data pointer will ever earn it.</p>
+<p><strong>ARKs are not registered with DataCite — one point, permanently.</strong> <code>F4-01M-1</code>
+passes: the metadata is offered through a harvesting endpoint. <code>F4-01M-2</code> asks
+for registration in a major research data registry, and the ARKs are DaSCH's
+own. DaSCH mints no DOIs and will not — every resource carries an ARK, so parity
+would run to hundreds of thousands of them — so this point is a standing
+consequence of the identifier scheme rather than an open item; see <a href="./fair-principles.html#f4">FAIR
+Principles</a>.</p>
+<p><strong>The deployment published ARKs it does not resolve — one point. A defect, now
+fixed, not yet re-measured.</strong> <code>F1-02D</code> is about a persistent identifier, and
+F-UJI does find one. It harvested the ARK from the metadata, confirmed the
+syntax as <code>ark</code> and resolved it successfully (<code>resolvable_status: true</code>). It
+then discarded it: <code>Landing page domain resolved from PID found in metadata does not match with input URL domain -: run.app &lt;&gt; dasch.swiss</code>, followed by <code>PID syntax is OK but the PID seems to resolve to a different entity, will not use this PID for content negotiation</code>.</p>
+<p>This was recorded as an artefact of assessing a non-production host. That
+reading was wrong. Every deployment emitted the ARK the corpus records
+regardless of where it was running, so a preview published an identifier that
+resolves to <em>production</em> — a different deployment, running different code. F-UJI
+was right to discard it: what it assessed and what the identifier pointed at
+were two different things. That is the same defect
+<a href="./operations.html#environment-variables"><code>DPE_PUBLIC_BASE_URL</code></a> fixed one layer
+down, left in place one layer up.</p>
+<p><code>DPE_ARK_RESOLVER_BASE_URL</code> fixes it. A preview rewrites the host of every
+emitted ARK to its own and serves the <code>/ark:/</code> resolver that answers it, so the
+identifier, the page and the assessed deployment are one thing. Production, DEV
+and STAGE leave it unset and are unchanged.</p>
+<p><strong>No claim is made that <code>F1-02D</code> now passes.</strong> Nothing has been re-assessed
+since the fix, and the columns above are the runs that predate it. Two things
+are still unknown and are measured, not argued: whether F-UJI's domain
+comparison is satisfied by a preview that resolves its own ARKs, and what
+<code>F1-02D</code> does against a <code>dasch.swiss</code> host, which assessing DEV after merge
+would answer.</p>
+<p>A rejected alternative, recorded so it is not re-proposed: serving previews from
+a <code>*.dasch.swiss</code> host would also satisfy F-UJI's domain comparison, and the
+assessor would <em>still</em> be sent to production. That moves the metric without
+fixing anything, which is gaming it.</p>
+<p>Two further residuals sit outside this arithmetic, because no F-UJI metric
+carries them:</p>
+<ul>
+<li><strong>No metadata persistence policy URL.</strong> A <code>persistencePolicy</code> link needs a
+published policy to point at. FAIR Champion's <em>MetadataPersistence</em> asks for
+one.</li>
+<li><strong>Not indexed by a search engine.</strong> FAIR Champion's <em>DiscoverableInBing</em>.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../dpe/oai-pmh.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../dpe/fair-principles.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../dpe/oai-pmh.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../dpe/fair-principles.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

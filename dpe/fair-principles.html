@@ -1,0 +1,846 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>FAIR Principles - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="fair-principles"><a class="header" href="#fair-principles">FAIR Principles</a></h1>
+<p>What DPE does about each of the fifteen FAIR principles, where in the code it
+happens, and what is not satisfied.</p>
+<p>This page is organised by the principles, not by an assessor's metrics.
+<a href="./machine-readable-metadata.html">Machine-Readable Metadata</a> records what is
+emitted and what F-UJI scored for it; those scores appear below only as
+evidence. <strong>A metric code is never the reason a principle is called satisfied.</strong>
+The principles are stable and published; metric numbering is one tool's, and
+changes when that tool does.</p>
+<p>No score is claimed anywhere on this page.</p>
+<h2 id="scope-three-different-things"><a class="header" href="#scope-three-different-things">Scope: three different things</a></h2>
+<p>FAIR principles are scoped <code>(meta)data</code>. DPE publishes metadata, so the three
+things below have three different answers and every section keeps them apart.</p>
+<ul>
+<li><strong>Project metadata</strong> — the description of one project's data holdings, served
+at <code>/dpe/projects/{shortcode}</code>, the page the project's ARK resolves to. This
+is what DPE publishes, and what a claim below is about unless it says
+otherwise.</li>
+<li><strong>Record-level pointers</strong> — a project's records appear in its metadata as
+<code>hasPart</code> entries carrying record ARKs, and the files of fully open records as
+<code>distribution</code> entries carrying dsp-ingest URLs. Both are bounded prefixes of
+the record list. Neither is a record landing page.</li>
+<li><strong>The research data itself</strong> — the bitstreams, and everything the VRE holds.
+DPE does not publish it. It serves metadata only, does not serve a file's
+bytes and does not redirect to them
+(<a href="./oai-pmh.html#file-metadata-endpoint">OAI-PMH</a>); access to the data is
+governed outside this repository.</li>
+</ul>
+<p><strong>Record landing pages do not exist.</strong> <code>RecordGraph</code> is in
+<code>shared/fair/src/graph.rs</code>, Record is a contract term in the root
+<code>CONTEXT.md</code>, and both record writers (<code>shared/fair/src/record_datacite.rs</code>,
+<code>shared/fair/src/record_dublin_core.rs</code>) feed OAI-PMH. But
+<code>modules/dpe/server/src/router.rs</code> registers <code>/dpe/projects/{id}</code> and
+<code>/dpe/records/{shortcode}/{record_id}/file</code>, and no page route for a record. A
+record ARK therefore resolves to something outside DPE; what, is not settled in
+this repository. This is a boundary of what has been built, stated so that no
+section below reads as though records had pages.</p>
+<p><strong>What this page does not assess.</strong> The FAIR principles describe <code>(meta)data</code>,
+not the organisation holding them. Repository trustworthiness — OAIS conformance
+(root <code>CONTEXT.md</code>), CoreTrustSeal or any other certification — is a separate
+question with its own criteria, and nothing here is evidence about it either
+way.</p>
+<h2 id="three-kinds-of-residual"><a class="header" href="#three-kinds-of-residual">Three kinds of residual</a></h2>
+<p>The sections below separate what is not satisfied into three kinds, because
+they are fixed by three different people.</p>
+<ul>
+<li><strong>Unbuilt</strong> — engineering work nobody has done. A code change fixes it.</li>
+<li><strong>Data quality</strong> — the code is correct and the corpus does not carry the
+value. The export, or the depositor, fixes it.</li>
+<li><strong>Institutional</strong> — needs a policy, a registration or an organisational
+decision. No code change fixes it.</li>
+</ul>
+<p>The <a href="./machine-readable-metadata.html#known-residuals">residuals ledger</a> already
+holds most of the institutional items in their honest form; this page points at
+them rather than restating them.</p>
+<p><strong>A decision already taken is not a residual of any kind.</strong> Where one bounds
+what is reachable, the section says so in its own words and keeps it out of the
+list — the identifier scheme in F1, what that costs in F4, and DPE being
+unauthenticated by design in A1.2.</p>
+<h2 id="findable"><a class="header" href="#findable">Findable</a></h2>
+<h3 id="f1"><a class="header" href="#f1">F1</a></h3>
+<blockquote>
+<p>(meta)data are assigned a globally unique and persistent identifier</p>
+</blockquote>
+<p><strong>Project metadata: yes.</strong> Every project has an ARK. <code>canonical_ark</code> in
+<code>shared/fair/src/project_graph.rs</code> takes the recorded <code>pid</code> when it is neither a
+Placeholder nor empty, and otherwise builds one from the shortcode. That one
+value is the schema.org <code>@id</code> and the first <code>identifier</code> entry (<code>render</code> in
+<code>shared/fair/src/schema_org.rs</code>), the DataCite <code>identifier</code> with
+<code>identifierType="ARK"</code>, the <code>DC.identifier</code> meta tag, and the single <code>cite-as</code>
+link (<code>project_to_link_set</code> in <code>shared/fair/src/signposting.rs</code>). Records carry
+ARKs of their own (<code>RecordGraph::ark</code>, <code>shared/fair/src/graph.rs</code>).</p>
+<p>The ARK path is never rewritten. <code>modules/dpe/core/src/ark.rs</code> normalises only
+the <em>host</em>, and only on a deployment that publishes ARKs naming itself.</p>
+<p><strong>The data: no.</strong> A bitstream has no identifier of its own. It is named by a
+dsp-ingest URL, in <code>distribution.contentUrl</code> and as <code>downloadUrl</code> from the
+file-metadata endpoint. A URL is a location, and that location has a retirement
+date (<a href="./machine-readable-metadata.html#record-files">Machine-Readable Metadata</a>).</p>
+<p><strong>A settled non-goal, not a residual.</strong> The scheme is ARK throughout, and DaSCH
+mints no DOIs. The reason is granularity and cost: every resource carries an
+ARK, so DOI parity would mean hundreds of thousands of DOIs, which is
+prohibitively expensive. That is a decision taken rather than a task
+outstanding, and it is why no section of this page treats a DOI as something
+missing. F4 records where it bites.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>Bitstreams have no persistent identifier. <em>Unbuilt.</em></li>
+<li>An ARK is persistent because DaSCH goes on resolving it. That is an
+organisational commitment, and nothing in this code makes it one.
+<em>Institutional.</em></li>
+</ul>
+<h3 id="f2"><a class="header" href="#f2">F2</a></h3>
+<blockquote>
+<p>data are described with rich metadata (defined by R1 below)</p>
+</blockquote>
+<p><strong>What DPE does.</strong> A project file has 37 members (root <code>CONTEXT.md</code>).
+<code>ProjectGraph::build</code> in <code>shared/fair/src/project_graph.rs</code> resolves them into
+one graph: titles and alternative names, description and abstract, keywords,
+disciplines, creators and contributors with their ORCID and GND identifiers and
+resolved affiliations, start and end dates, temporal coverage resolved to W3CDTF
+ranges, spatial coverage, data language, licences, access rights, funding,
+publications, the project website, a how-to-cite string, status, and the part
+list. Every representation is a projection of that one graph.</p>
+<p><strong>Where.</strong> <code>ProjectGraph::build</code>; <code>project_to_schema_org</code>
+(<code>shared/fair/src/schema_org.rs</code>); <code>project_to_datacite</code> and
+<code>project_to_datacite_json</code>; <code>project_to_dublin_core</code> and
+<code>project_to_dublin_core_meta</code>.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>Eight recorded fields reach no machine-readable representation.</strong>
+<code>ProjectRaw</code> (<code>shared/metadata/src/project.rs</code>) carries <code>provenance</code>,
+<code>data_management_plan</code>, <code>contact_point</code>, <code>type_of_data</code>, <code>short_description</code>,
+<code>documentation_material</code>, <code>additional_material</code> and <code>image_credit</code>; none of
+them appears anywhere in <code>shared/fair/src</code> outside its test fixtures, and
+<code>ProjectGraph</code> has no field for any of them. The human page renders several —
+<code>provenance_card</code> in
+<code>modules/dpe/web/src/pages/project/components/project_details_tabs/dataset_overview_section/mod.rs</code>,
+the DMP and contact point in
+<code>modules/dpe/web/src/pages/project/components/project_sidebar/mod.rs</code>. A
+machine therefore sees less than a person does. <code>clusters</code> and <code>collections</code>
+are absent the same way; they are I3's point rather than this one.
+<code>type_of_data</code> is the consequential one: the project's DataCite
+<code>resourceType</code> is the constant <code>"Research Project"</code> and
+<code>resourceTypeGeneral</code> the constant <code>"Project"</code> (<code>shared/fair/src/datacite.rs</code>),
+so the recorded kind of the data never reaches a representation. <em>Unbuilt.</em></li>
+<li>The DaSCH metadata schema records no variable or observation-type element, so
+nothing maps to <code>variableMeasured</code>. <em>Data quality</em>, at the schema level.
+(Evidence: <code>R1-01MD-4</code> in the residuals ledger.)</li>
+<li>How rich the metadata is varies per project. A field the corpus records as a
+Placeholder yields no key at all (<code>helpers::real</code>), which is truthful and also
+means F2 is answered differently for different projects.</li>
+</ul>
+<h3 id="f3"><a class="header" href="#f3">F3</a></h3>
+<blockquote>
+<p>metadata clearly and explicitly include the identifier of the data it describes</p>
+</blockquote>
+<p><strong>The project's own identifier: yes.</strong> The ARK is both <code>@id</code> and the first
+<code>identifier</code> entry, and <code>url</code> carries the landing page beside it (<code>render</code> in
+<code>shared/fair/src/schema_org.rs</code>).</p>
+<p><strong>The identifiers of its records: partly.</strong> <code>part_nodes</code> emits one <code>Dataset</code>
+node per record with the record's ARK as <code>@id</code>, but only over a prefix: 100
+entries in the embedded block (<code>HAS_PART_CAP</code> in
+<code>modules/dpe/server/src/metadata.rs</code>) and as many as fit 4,000,000 bytes in
+<code>/metadata.jsonld</code> (<code>JSON_LD_BYTE_BUDGET</code>). The complete list is the OAI set
+<code>project:{shortcode}</code>, reachable from the document in two hops over links it
+already carries.</p>
+<p><strong>Pointers to the bitstreams: a location, not an identifier.</strong>
+<code>distribution_nodes</code> emits one <code>DataDownload</code> per file of a listed record, with
+<code>contentUrl</code>, and only for a record the corpus records as <code>Full Open Access</code>
+(<code>publishable_file</code> in <code>shared/fair/src/graph.rs</code>). <code>hasPart</code> and <code>distribution</code>
+take the same prefix in the same order, so the files described are the files of
+the records listed.</p>
+<p><em>Evidence, not the claim:</em> <code>F3-01M</code> moved from 0/1 to 1/1 for the two projects
+whose records carry files once <code>distribution</code> was emitted; see the
+<a href="./machine-readable-metadata.html#assessment-results">assessment results</a>.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>What the metadata includes for a bitstream is a retrieval URL, not an
+identifier, and that URL names a host with a retirement date. <em>Unbuilt</em> (a
+DPE-owned stable download URL is considered and rejected in
+<a href="./machine-readable-metadata.html#record-files">Machine-Readable Metadata</a>; it
+is an ADR question).</li>
+<li>Files of records the corpus does not record as fully open are not pointed at
+at all. That is ADR-0005's decision rather than a defect, and it does mean F3
+is unanswered for those records.</li>
+</ul>
+<h3 id="f4"><a class="header" href="#f4">F4</a></h3>
+<blockquote>
+<p>(meta)data are registered or indexed in a searchable resource</p>
+</blockquote>
+<p><strong>What DPE does.</strong> Two routes, neither of which needs a DOI.</p>
+<ul>
+<li><strong>Harvesting.</strong> DPE is an OAI-PMH 2.0 data provider at <code>/dpe/oai</code>
+(<code>modules/dpe/api-oai/</code>): all six verbs, <code>oai_dc</code> and <code>oai_datacite</code>, and
+selective harvesting over the sets <code>project:{shortcode}</code> and <code>cluster:{id}</code>.
+Any aggregator can take the whole corpus. F-UJI's <code>F4-01M-1</code> passes on this
+alone.</li>
+<li><strong>Search-engine indexing.</strong> The embedded schema.org <code>Dataset</code> block is the
+form Google Dataset Search ingests, and at 3.7% of Googlebot's 2 MB crawl
+budget for the largest committed project it has room (<a href="./machine-readable-metadata.html#who-reads-which-document-and-what-each-one-can-take">Machine-Readable
+Metadata</a>).
+The project graph also names the catalogue it belongs to, as
+<code>includedInDataCatalog</code>.</li>
+</ul>
+<p><strong>Where.</strong> <code>modules/dpe/server/src/router.rs</code> (<code>/dpe/oai</code>),
+<code>modules/dpe/api-oai/src/handlers/</code>, <a href="./oai-pmh.html">OAI-PMH</a>; <code>render</code> in
+<code>shared/fair/src/schema_org.rs</code> for <code>includedInDataCatalog</code>.</p>
+<p><strong>A permanent limit, from the identifier scheme.</strong> DaSCH mints no DOIs, for the
+reason F1 records, and registration in a DOI-based registry therefore does not
+happen. <code>F4-01M-2</code> asks for registration in a major research-data registry, and
+in the pinned F-UJI image DataCite is the only one of the three routes actually
+queried — Mendeley
+fails DNS resolution inside the container and the Google Search cache database
+ships empty, so that sub-test is partly a property of how the container is
+provisioned
+(<code>docs/specs/2026-09-15-fair-metadata-exposure/01-feat-fair-metadata-exposure-plan-journal.md</code>).
+DataCite registration is keyed on a DOI prefix. So as F-UJI measures F4 there is
+a ceiling, it follows from the identifier decision, and no work on this code
+moves it. It is not an open item.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>Being <em>indexable</em> is not being <em>indexed</em>. DPE serves no sitemap; nothing in
+the tree advertises the catalogue to a crawler, which then has to find every
+project page by following links. <em>Unbuilt.</em></li>
+<li>Not indexed by a search engine. <em>Institutional.</em> (Evidence: FAIR Champion's
+<em>DiscoverableInBing</em>.)</li>
+</ul>
+<h2 id="accessible"><a class="header" href="#accessible">Accessible</a></h2>
+<h3 id="a1"><a class="header" href="#a1">A1</a></h3>
+<blockquote>
+<p>(meta)data are retrievable by their identifier using a standardized communications protocol</p>
+</blockquote>
+<p><strong>Project metadata: yes.</strong> The ARK resolves by HTTP redirect to the landing
+page. In production the resolver is <code>ark.dasch.swiss</code>; a deployment that
+publishes ARKs naming itself mounts its own
+(<code>modules/dpe/server/src/ark.rs::resolve_project</code>, registered in <code>router.rs</code>
+only when <code>DPE_ARK_RESOLVER_BASE_URL</code> is set). The page carries its metadata
+inline, and two machine-readable representations sit beside it at their own
+URLs, reachable directly or by a single <code>303</code> when <code>Accept</code> prefers one
+(<code>landing_page</code> in <code>modules/dpe/server/src/metadata.rs</code>, over the decision table
+in <code>shared/fair/src/negotiate.rs</code>). Every answer from that route carries
+<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>modules/dpe/server/src/main.rs</code>).
+OAI-PMH is a second retrieval protocol over the same metadata.</p>
+<p><strong>The data: not from DPE.</strong> DPE serves metadata only. A consumer reads
+<code>downloadUrl</code> from <code>/dpe/records/{shortcode}/{record_id}/file</code>
+(<code>modules/dpe/server/src/downloads.rs</code>) and then fetches the bytes from
+dsp-ingest itself.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>Nothing in DPE retrieves data by its identifier, because no bitstream has one
+(F1). What it offers is retrieval by location.</li>
+</ul>
+<h3 id="a11"><a class="header" href="#a11">A1.1</a></h3>
+<blockquote>
+<p>the protocol is open, free, and universally implementable</p>
+</blockquote>
+<p><strong>What DPE does.</strong> HTTP throughout, and OAI-PMH 2.0 over HTTP. No client
+library, no key, no account, no registration: DPE is the public,
+unauthenticated, read-only server of the Access Area
+(<code>modules/dpe/CONTEXT.md</code>). The representation routes and <code>/dpe/oai</code> share a
+per-IP rate limit (<code>rate_limited_router</code> in <code>modules/dpe/server/src/router.rs</code>,
+<code>DPE_OAI_RATE_LIMIT_*</code>), which bounds request rate and gates nothing.</p>
+<p><strong>Not satisfied.</strong> Nothing identified. This is the one section with no residual,
+and it is the cheapest of the fifteen to satisfy.</p>
+<h3 id="a12"><a class="header" href="#a12">A1.2</a></h3>
+<blockquote>
+<p>the protocol allows for an authentication and authorization procedure, where necessary</p>
+</blockquote>
+<p>This section is the one most easily answered with the wrong evidence, so the
+wrong evidence is named first.</p>
+<p><strong>What DPE does, and what it does not mean.</strong> DPE publishes access conditions:
+<code>isAccessibleForFree</code> and <code>conditionsOfAccess</code> in the schema.org graph, and
+<code>DC.accessRights</code> as a COAR access-right URI (<code>helpers::coar_access_right</code>). It
+also withholds the file pointer of any record the corpus does not record as
+<code>Full Open Access</code> (<code>publishable_file</code> in <code>shared/fair/src/graph.rs</code>). <strong>None of
+that is an authentication or authorization procedure.</strong> <code>publishable_file</code>'s own
+documentation says so: it governs what is <em>published</em>, not what is reachable —
+dsp-ingest serves those URLs to anyone holding one, and DPE's own file-metadata
+endpoint returns the same URL for any record with a file.</p>
+<p>DPE itself needs no procedure: everything it serves is published metadata.
+Authorization, where it is necessary, lives outside this repository — in the
+VRE, in dsp-ingest, and in the Deposit Area, whose editor has its own
+(<a href="../editor/authentication.html">Authentication</a>). That is the producer side, not
+access to published data.</p>
+<p><strong>Not answered by DPE</strong></p>
+<ul>
+<li>DPE implements no authenticated path to restricted data, and does not mediate
+access to it by any procedure. HTTP would allow one; nothing here uses it.
+That is a boundary rather than a residual — <code>modules/dpe/CONTEXT.md</code> defines
+DPE as the public, unauthenticated, read-only server — and whether the Access
+Area should offer one is a question no decision record answers yet.</li>
+</ul>
+<h3 id="a2"><a class="header" href="#a2">A2</a></h3>
+<blockquote>
+<p>metadata are accessible, even when the data are no longer available</p>
+</blockquote>
+<p><strong>What DPE does.</strong> Metadata availability does not depend on bitstream
+availability. DPE serves the committed corpus under <code>modules/dpe/server/data/</code>
+rather than reading the archive, and a project whose records carry no file has a
+complete landing page all the same — 081C, with 27,026 records and not one file,
+is the worked case
+(<a href="./machine-readable-metadata.html#assessment-results">assessment results</a>).</p>
+<p>That is a property of today's deployment, not a commitment. The rest of this
+section is what is missing.</p>
+<p><strong>Not satisfied.</strong> This is the weakest of the fifteen.</p>
+<ul>
+<li><strong>No tombstone.</strong> A shortcode that names no project gets an always-200
+"Project Not Found" page (<code>landing_page</code> in
+<code>modules/dpe/server/src/metadata.rs</code>) — not a <code>410 Gone</code> carrying the metadata
+of what used to be there. Nothing in the tree distinguishes "never existed"
+from "withdrawn". <em>Unbuilt.</em></li>
+<li><strong>OAI-PMH says so out loud.</strong> <code>Identify</code> advertises
+<code>&lt;deletedRecord&gt;no&lt;/deletedRecord&gt;</code> (<code>OaiXmlBuilder::write_identify</code> in
+<code>modules/dpe/api-oai/src/xml.rs</code>), which tells a harvester the repository
+maintains no information about deletions. <em>Unbuilt.</em></li>
+<li><strong>No metadata persistence policy</strong> to point a <code>persistencePolicy</code> link at.
+<em>Institutional.</em> (Evidence: FAIR Champion's <em>MetadataPersistence</em>.)</li>
+</ul>
+<h2 id="interoperable"><a class="header" href="#interoperable">Interoperable</a></h2>
+<h3 id="i1"><a class="header" href="#i1">I1</a></h3>
+<blockquote>
+<p>(meta)data use a formal, accessible, shared, and broadly applicable language for knowledge representation.</p>
+</blockquote>
+<p><strong>What DPE does.</strong> JSON-LD, twice: embedded in the page head as
+<code>&lt;script type="application/ld+json"&gt;</code> and standalone at
+<code>/dpe/projects/{shortcode}/metadata.jsonld</code>. The <code>@context</code> is
+<code>https://schema.org</code> plus a <code>prov:</code> binding (<code>render</code> in
+<code>shared/fair/src/schema_org.rs</code>). Beside it, DataCite kernel 4 as JSON and as
+XML, and Dublin Core as <code>&lt;meta&gt;</code> tags and as <code>oai_dc</code>. An assessor reads the
+JSON-LD as RDF, which is why several property shapes are node objects rather
+than strings (<a href="./machine-readable-metadata.html#schemaorg-json-ld">Machine-Readable
+Metadata</a>).</p>
+<p><strong>Where.</strong> <code>shared/fair/src/schema_org.rs</code> (<code>render</code>, <code>script_safe_json</code>);
+<code>modules/dpe/server/src/metadata.rs</code> (<code>render</code>, <code>project_json_ld</code>);
+<code>shared/fair/src/datacite_json.rs</code>; <code>shared/fair/src/dublin_core_meta.rs</code>.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>No Turtle and no RDF/XML. ADR-0005 leaves Turtle open ("if it earns its
+place") and it has not been served. A consumer wanting RDF runs the JSON-LD
+through a processor. <em>Unbuilt, deliberately deferred.</em></li>
+<li>The JSON-LD representation is a bounded prefix and <strong>does not say so</strong>.
+schema.org has no property meaning "this collection is partial"; Hydra's
+<code>totalItems</code> was considered and rejected. A consumer reading the document
+alone cannot tell; one that follows its links can recover the complete list.
+The reasoning is in <a href="./machine-readable-metadata.html#a-byte-budget">A byte
+budget</a>.</li>
+</ul>
+<h3 id="i2"><a class="header" href="#i2">I2</a></h3>
+<blockquote>
+<p>(meta)data use vocabularies that follow FAIR principles</p>
+</blockquote>
+<p><strong>What DPE does.</strong> Published, versioned, resolvable vocabularies throughout:</p>
+<div class="table-wrapper"><table><thead><tr><th>Vocabulary</th><th>Used for</th><th>Where</th></tr></thead><tbody>
+<tr><td>schema.org</td><td>the root graph and every node in it</td><td><code>shared/fair/src/schema_org.rs</code></td></tr>
+<tr><td>Dublin Core elements</td><td><code>&lt;meta name="DC.*"&gt;</code> and the <code>oai_dc</code> record</td><td><code>shared/fair/src/dublin_core_meta.rs</code>, <code>dublin_core.rs</code></td></tr>
+<tr><td>DataCite kernel 4</td><td><code>metadata.datacite.json</code> and <code>oai_datacite</code></td><td><code>shared/fair/src/datacite.rs</code>, <code>datacite_json.rs</code></td></tr>
+<tr><td>PROV-O</td><td><code>prov:wasAttributedTo</code></td><td><code>PROV_NAMESPACE</code>, <code>attributed_to</code> in <code>schema_org.rs</code></td></tr>
+<tr><td>SPDX</td><td>licence identifiers (<code>rightsIdentifierScheme="SPDX"</code>)</td><td><code>shared/fair/src/datacite.rs</code>, <code>helpers::license_identifier_to_label</code></td></tr>
+<tr><td>COAR access rights</td><td><code>DC.accessRights</code></td><td><code>helpers::coar_access_right</code></td></tr>
+<tr><td>ORCID, GND</td><td>agent identifiers</td><td><code>person_to_agent</code> in <code>shared/fair/src/resolve.rs</code></td></tr>
+<tr><td>GND, STW, LCSH, AAT</td><td>subject schemes, inferred from an authority URL</td><td><code>helpers::infer_subject_scheme</code></td></tr>
+<tr><td>ChronOntology, W3CDTF</td><td>temporal coverage and its resolved ranges</td><td><code>shared_metadata::temporal_coverage</code></td></tr>
+<tr><td>FAIR Signposting (level 1)</td><td>the typed link set</td><td><code>shared/fair/src/signposting.rs</code></td></tr>
+<tr><td>OAI-PMH 2.0</td><td>the harvesting protocol</td><td><code>modules/dpe/api-oai/</code></td></tr>
+</tbody></table>
+</div>
+<p><em>Evidence, not the claim:</em> <code>I2-01M</code> moved from 0/1 to 1/1 when PROV was added,
+because F-UJI's linked-data registry lists that namespace.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>Contributor roles are free text.</strong> <code>CONTRIBUTOR_ROLES</code> in
+<code>shared/metadata/src/project.rs</code> is documented as "an offer, not a
+constraint", and the committed data spells the same role several ways, crams
+several into one entry, and uses prose in place of a role.
+<code>helpers::map_contributor_type</code> maps what it recognises onto DataCite's
+vocabulary and falls back to <code>Other</code>. <em>Data quality.</em></li>
+<li><strong>Organizations have no identifier.</strong> <code>resolve_agent</code> gives an organization
+<code>name_identifiers: vec![]</code>, and an affiliation is emitted as an <code>Organization</code>
+name with nothing else (<code>agent_node</code> in <code>schema_org.rs</code>). No ROR. The
+organization files carry a homepage and a postal address and no persistent
+identifier (<code>modules/dpe/server/data/organizations/</code>). <em>Unbuilt</em>, and
+<em>data quality</em> behind it.</li>
+<li><strong>Person identifiers are sparse, and two are typed away.</strong> 96 of the 416
+committed person files record <code>"type": "ORCID"</code> in <code>sameAs</code>. Two more hold an
+<code>orcid.org</code> URL typed <code>"URL"</code> (<code>person-146</code>, <code>person-246</code>); <code>person_to_agent</code>
+matches on the type string, so those two agents get no <code>@id</code>, no <code>author</code> link
+and no <code>prov:wasAttributedTo</code> entry although the identifier is there. Every
+section below that depends on an agent IRI inherits this. <em>Data quality.</em></li>
+<li>Keywords are free text, and disciplines carry a subject scheme only where the
+corpus records an authority URL.</li>
+</ul>
+<h3 id="i3"><a class="header" href="#i3">I3</a></h3>
+<blockquote>
+<p>(meta)data include qualified references to other (meta)data</p>
+</blockquote>
+<p><strong>What DPE does.</strong> This is the best-served of the fifteen.</p>
+<ul>
+<li>A record's DataCite record relates it to its project: <code>relationType="IsPartOf"</code>,
+<code>relatedIdentifierType="ARK"</code> (<code>record_to_datacite</code> in
+<code>shared/fair/src/record_datacite.rs</code>).</li>
+<li>The project's schema.org graph carries <code>hasPart</code> over record ARKs
+(<code>part_nodes</code>), <code>citation</code> nodes whose <code>@id</code> is a publication's PID when one is
+recorded (<code>citation_nodes</code>), <code>spatialCoverage</code> <code>Place</code> nodes with <code>sameAs</code> to
+an authority URL (<code>spatial_nodes</code>), agent nodes whose <code>@id</code> is the agent's
+ORCID (<code>agent_node</code>), <code>prov:wasAttributedTo</code> pointing at <em>those same nodes</em>
+rather than describing copies (<code>attributed_to</code>), <code>includedInDataCatalog</code>, and
+<code>sameAs</code> to the recorded PID when it differs from the resolved ARK.</li>
+<li>The Signposting set adds <code>cite-as</code>, one <code>describedby</code> per representation,
+<code>author</code> per ORCID, and <code>license</code> when exactly one applies; each representation
+answers with <code>describes</code> back at the page (<code>representation_to_link_set</code>).</li>
+</ul>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>A project's DataCite record carries no <code>relatedIdentifiers</code> at all.</strong>
+<code>shared/fair/src/datacite.rs</code> holds the unfilled note: <em>RelatedIdentifiers —
+should contain parent Project Cluster ARK. TODO: Populate once Project Cluster
+data is available.</em> So a project's cluster membership, its records and its
+publications are all absent from the DataCite representations, although the
+schema.org graph carries the last two. <em>Unbuilt.</em></li>
+<li>A reference to an agent is qualified only when that agent has an ORCID. One
+without stays a blank node and is left out of <code>prov:wasAttributedTo</code>
+entirely — naming some agents does not deny the others, but it does mean the
+reference is unqualified for most of them (see I2).</li>
+<li>Nothing relates one project to another, although Clusters and Collections
+exist and are served as OAI sets. <em>Unbuilt.</em></li>
+</ul>
+<h2 id="reusable"><a class="header" href="#reusable">Reusable</a></h2>
+<h3 id="r1"><a class="header" href="#r1">R1</a></h3>
+<blockquote>
+<p>meta(data) are richly described with a plurality of accurate and relevant attributes</p>
+</blockquote>
+<p>(Quoted as published; the paper's Box 2 reads <code>meta(data)</code> here.)</p>
+<p><strong>What DPE does.</strong> The attribute list is F2's. What R1 adds is <em>accurate</em>, and
+three rules carry that:</p>
+<ul>
+<li><strong>Nothing is invented for a score</strong> (ADR-0005). No representation asserts a
+fact the corpus does not record.</li>
+<li><strong>A Placeholder yields no key.</strong> <code>helpers::real</code> is the test every writer that
+must not assert a falsehood applies to a corpus string; <code>MISSING</code> never
+reaches a <code>&lt;meta&gt;</code> tag or a JSON-LD value.</li>
+<li><strong>One resolved graph feeds every representation</strong>, so two of them cannot
+disagree — asserted for every committed project by
+<code>every_representation_of_a_committed_object_agrees_with_the_others</code> in
+<code>dpe-api-oai</code>.</li>
+</ul>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li>The eight unemitted fields of F2. <em>Unbuilt.</em></li>
+<li>No variable or observation-type element exists to describe. <em>Data quality</em>, at
+the schema level.</li>
+<li><strong>Two mandatory-field fallbacks are not facts, and a consumer cannot tell.</strong>
+DataCite makes <code>publicationYear</code> and at least one creator mandatory, so the
+representations that rule governs fall back to the year <code>2015</code>
+(<code>FALLBACK_PUBLICATION_YEAR</code> in <code>shared/fair/src/graph.rs</code>) and to an
+organizational <code>DaSCH</code> (<code>creators_with_fallback</code>). Both are reached only
+through those named helpers, and schema.org's optional <code>datePublished</code>
+deliberately omits the key instead — but a consumer reading a DataCite record
+for a project that records no usable date reads <code>2015</code> as though it were
+recorded. <em>Data quality</em>: the fallback fires only where the corpus records no
+usable value, and DataCite's mandatory field leaves the writer no way to mark
+one as supplied.</li>
+</ul>
+<h3 id="r11"><a class="header" href="#r11">R1.1</a></h3>
+<blockquote>
+<p>(meta)data are released with a clear and accessible data usage license</p>
+</blockquote>
+<p><strong>The data: yes, where the corpus records a licence.</strong> <code>license</code> as a node
+object <code>{"@id": &lt;SPDX URI&gt;}</code> in the schema.org graph — a node and not a string,
+because schema.org's remote context does not coerce <code>license</code> to <code>@id</code> and a
+consumer asking for a licence <em>resource</em> would find none. Beside it: <code>DC.rights</code>,
+DataCite <code>rightsList</code> with <code>rightsIdentifierScheme="SPDX"</code>, a Signposting
+<code>license</code> link, and a <code>license</code> on each <code>DataDownload</code> carrying <strong>the record's
+own</strong> licence, which across the corpus is not always the project's.</p>
+<p><strong>The metadata: no.</strong> Nothing in this tree licenses the metadata records
+themselves. <code>Identify</code> emits <code>repositoryName</code>, <code>baseURL</code>, <code>protocolVersion</code>,
+<code>adminEmail</code>, <code>earliestDatestamp</code>, <code>deletedRecord</code> and <code>granularity</code>, and no
+rights block (<code>OaiXmlBuilder::write_identify</code>). No landing page says anything
+about reuse of the metadata. A harvester taking <code>oai_dc</code> records away has no
+licence for them.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>The metadata has no licence.</strong> This needs a decision first and one field
+after. <em>Institutional.</em></li>
+<li>A project that records no licence emits no <code>license</code> key — truthful, and R1.1
+is then unanswered for that project. <em>Data quality.</em></li>
+<li>A project licensed several ways gets no Signposting <code>license</code> link at all,
+because the profile allows at most one and has no way to say "these apply
+together" (<code>project_to_link_set</code>). The JSON-LD still lists them.</li>
+</ul>
+<h3 id="r12"><a class="header" href="#r12">R1.2</a></h3>
+<blockquote>
+<p>(meta)data are associated with detailed provenance</p>
+</blockquote>
+<p><strong>What DPE does.</strong> <code>prov:wasAttributedTo</code> over DaSCH and every credited creator
+that has an ORCID, with <code>prov:</code> bound in the <code>@context</code> (<code>PROV_NAMESPACE</code> and
+<code>attributed_to</code> in <code>shared/fair/src/schema_org.rs</code>). Nothing new is asserted:
+<code>creator</code> and <code>publisher</code> already name those agents, and PROV-O restates the
+relation in the vocabulary a consumer asking about provenance reads. Beside it:
+<code>producer</code> as a <code>ResearchProject</code> with start and end dates and members
+(<code>producer_node</code>), <code>funder</code> and <code>funding</code> as <code>MonetaryGrant</code> nodes,
+<code>datePublished</code> where a year is recorded, and DataCite's <code>Created</code>, <code>Issued</code> and
+<code>Collected</code> dates.</p>
+<p><em>Evidence, not the claim:</em> <code>R1.2-01M</code> moved from 1/2 to 2/2 on the run that
+added PROV.</p>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>The project's recorded provenance statement is not emitted anywhere
+machine-readable.</strong> <code>ProjectRaw.provenance</code> is free text, the human page
+renders it as a card (<code>provenance_card</code>), and no <code>shared-fair</code> writer reads
+it. The one field named for this principle is the one the machine-readable
+metadata leaves out. <em>Unbuilt.</em></li>
+<li><strong>Nothing records the provenance of the metadata.</strong> <code>ProjectRaw</code> carries no
+created or modified date (<code>shared/metadata/src/project.rs</code>), so who curated a
+project's description, when, and through what revision is not recorded and
+cannot be emitted. Records do carry <code>date_created</code> and <code>date_modified</code>
+(<code>RecordGraph</code>); projects do not. <em>Unbuilt</em>, and a contract change before it is
+a writer change.</li>
+<li><code>prov:generatedAtTime</code> is deliberately not emitted: the corpus records a
+publication <em>year</em>, not a generation time, so the statement would be
+approximately true at best
+(<a href="./machine-readable-metadata.html#provenance">Provenance</a>).</li>
+<li>A creator without an ORCID is not attributed, because there is no node to
+point at (see I2 for how many that is).</li>
+</ul>
+<h3 id="r13"><a class="header" href="#r13">R1.3</a></h3>
+<blockquote>
+<p>(meta)data meet domain-relevant community standards</p>
+</blockquote>
+<p><strong>What DPE does.</strong> The general research-data standards are met and checked:</p>
+<ul>
+<li><strong>DataCite kernel 4</strong>, <code>schemaVersion</code> 4.6, <code>datacentreSymbol</code> <code>DASCH.DSP</code>.
+The JSON is validated against DataCite's own JSON schema and the XML against
+<code>datacite-kernel-4.xsd</code> for every committed project, by the corpus-wide test
+in <code>dpe-api-oai</code>.</li>
+<li><strong>OAI-PMH 2.0</strong>, validated against <code>OAI-PMH.xsd</code>.</li>
+<li><strong>Dublin Core</strong>, <strong>schema.org <code>Dataset</code></strong> (the shape Google Dataset Search
+reads), <strong>FAIR Signposting level 1</strong>, <strong>COAR access rights</strong>, <strong>SPDX</strong>,
+<strong>W3CDTF</strong>.</li>
+</ul>
+<p><strong>Not satisfied</strong></p>
+<ul>
+<li><strong>No humanities-domain standard is served.</strong> No representation offers TEI,
+CIDOC-CRM, EAD or CMDI. The corpus records <code>XML (TEI)</code> as a <code>typeOfData</code> value
+(<code>general_data_type</code> in <code>shared/fair/src/graph.rs</code>), so content in one of
+those standards is described by metadata that does not speak it. <em>Unbuilt.</em></li>
+<li><strong>File formats are described only where the export records a MIME type.</strong>
+<code>encodingFormat</code> is omitted rather than guessed. All 4,062 files of project
+0803 carry no <code>mimeType</code>, and dsp-ingest serves them as
+<code>application/octet-stream</code>, so neither end supplies it. <em>Data quality</em>, at
+both ends. (Evidence: <code>R1.3-02D</code>.)</li>
+</ul>
+<h2 id="sources"><a class="header" href="#sources">Sources</a></h2>
+<p>The principle wording quoted above is Box 2 of:</p>
+<blockquote>
+<p>Wilkinson, M. D. <em>et al.</em> "The FAIR Guiding Principles for scientific data
+management and stewardship". <em>Scientific Data</em> <strong>3</strong>, 160018 (2016).
+<a href="https://doi.org/10.1038/sdata.2016.18">https://doi.org/10.1038/sdata.2016.18</a></p>
+</blockquote>
+<p>GO FAIR restates the same fifteen principles with a commentary on each, at
+<a href="https://www.go-fair.org/fair-principles/">https://www.go-fair.org/fair-principles/</a>.</p>
+<p>The assessors named in the evidence notes are separate from the principles.
+F-UJI's metrics are cited in its own result payload as
+<a href="https://doi.org/10.5281/zenodo.6461229">https://doi.org/10.5281/zenodo.6461229</a>; FAIR Champion's indicators are defined
+in the <a href="https://fairmetrics.github.io/Metrics/landingpages/general/index.html">FAIR Maturity Indicators
+index</a>.
+What each of them scored, when, and against what, is in
+<a href="./machine-readable-metadata.html#assessment-results">Machine-Readable Metadata</a>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../dpe/machine-readable-metadata.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../editor/architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../dpe/machine-readable-metadata.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../editor/architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

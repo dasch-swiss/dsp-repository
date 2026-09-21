@@ -1,4 +1,5 @@
 use maud::{html, Markup};
+use mosaic_tiles::icon::{icon, Mail};
 use shared_metadata::organization::Organization;
 use shared_metadata::person::Person;
 
@@ -38,23 +39,7 @@ fn email_link(addr: &str) -> Markup {
     html! {
         a   href=(format!("mailto:{addr}"))
             class="text-primary hover:underline inline-flex items-center gap-1 mt-1"
-        {
-            svg xmlns="http://www.w3.org/2000/svg"
-                class="w-3 h-3"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                focusable="false"
-            {
-                rect width="20" height="16" x="2" y="4" rx="2";
-                path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7";
-            }
-            (addr)
-        }
+        { (icon(Mail, "w-4 h-4")) (addr) }
     }
 }
 
@@ -118,9 +103,13 @@ mod tests {
     #[test]
     fn person_view_shows_email_only_when_requested() {
         let p = sample_person();
-        assert!(person_view(&p, &[], None, true)
-            .into_string()
-            .contains("mailto:ada@example.org"));
+        let shown = person_view(&p, &[], None, true).into_string();
+        assert!(shown.contains("mailto:ada@example.org"), "{shown}");
+        assert!(shown.contains(r#"class="icon w-4 h-4""#), "missing mosaic icon: {shown}");
+        assert!(
+            !shown.contains(r#"stroke="currentColor""#),
+            "raw stroke svg, not the mosaic helper: {shown}"
+        );
         assert!(!person_view(&p, &[], None, false).into_string().contains("mailto:"));
     }
 

@@ -1900,6 +1900,7 @@ mod tests {
             updated_at: Utc::now(),
             decided_by: None,
             decided_at: None,
+            retired_at: None,
         };
         EntityProposalRepository::create_new(&*state.db, &proposal, published_floor)
             .await

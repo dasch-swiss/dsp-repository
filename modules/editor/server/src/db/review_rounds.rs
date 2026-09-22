@@ -358,6 +358,7 @@ mod tests {
             decision,
             decided_by,
             decided_at: decision.map(|_| at(12)),
+            retired_at: None,
         };
         editor_core::repository::EntityProposalRepository::create_change(db, &proposal)
             .await

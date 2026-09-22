@@ -1233,6 +1233,7 @@ async fn propose(
                 decision: None,
                 decided_by: None,
                 decided_at: None,
+                retired_at: None,
             };
             let published_floor = state.agents.highest_id_number(kind);
             EntityProposalRepository::create_new(&*state.db, &proposal, published_floor)
@@ -1292,6 +1293,7 @@ async fn propose(
                 decision: None,
                 decided_by: None,
                 decided_at: None,
+                retired_at: None,
             };
             EntityProposalRepository::create_change(&*state.db, &proposal)
                 .await

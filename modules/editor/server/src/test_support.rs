@@ -221,6 +221,21 @@ pub(crate) fn published_corpus() -> Arc<PublishedProjects> {
         .clone()
 }
 
+/// The committed agent set, loaded once for the whole test binary. See
+/// [`published_corpus`] for why this is cached rather than reloaded per test.
+pub(crate) fn agents_corpus() -> Arc<editor_core::agents::Agents> {
+    static AGENTS: OnceLock<Arc<editor_core::agents::Agents>> = OnceLock::new();
+    AGENTS
+        .get_or_init(|| {
+            let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
+            let (agents, errors) =
+                editor_core::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
+            assert!(errors.is_empty(), "the committed agent set should load cleanly: {errors:?}");
+            Arc::new(agents)
+        })
+        .clone()
+}
+
 /// The whole app over `state`, as `serve()` assembles it.
 ///
 /// Static assets come from a directory that does not exist: these tests are
@@ -544,6 +559,14 @@ pub(crate) struct Faults {
     /// sharing one database file, which is why it needs a seam: the startup
     /// pass must not report a discard it did not make.
     pub approved_records_delete_missing: bool,
+    /// `EntityProposalRepository::list_accepted_unretired` — the retirement
+    /// pass's enumeration. Its failure must not discard the record pass's
+    /// summary, which is the one thing that branch exists to hold.
+    pub entity_proposals_list_accepted_unretired: bool,
+    /// `EntityProposalRepository::retire` — the retirement write, and the
+    /// branch where a proposal that could not be retired is counted so the next
+    /// start retries it rather than passing silently.
+    pub entity_proposals_retire: bool,
 }
 
 /// A store that delegates every call to a real [`Database`] and fails the ones
@@ -886,7 +909,21 @@ impl EntityProposalRepository for FaultyDatabase {
         EntityProposalRepository::list_live_for_entity(&*self.inner, entity_id).await
     }
 
+    async fn list_accepted_unretired(&self) -> Result<Vec<EntityProposal>> {
+        if self.faults.entity_proposals_list_accepted_unretired {
+            return Err(injected("EntityProposalRepository::list_accepted_unretired"));
+        }
+        EntityProposalRepository::list_accepted_unretired(&*self.inner).await
+    }
+
     async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
         EntityProposalRepository::withdraw(&*self.inner, id, at).await
+    }
+
+    async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {
+        if self.faults.entity_proposals_retire {
+            return Err(injected("EntityProposalRepository::retire"));
+        }
+        EntityProposalRepository::retire(&*self.inner, id, at).await
     }
 }

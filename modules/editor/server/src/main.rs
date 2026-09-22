@@ -606,7 +606,7 @@ async fn serve() -> ExitCode {
     // a deployment carrying an approved change starts is the moment that change
     // is Online. Not fatal — see `reconcile`'s module docs; a failure here costs
     // a stale label, and refusing to start costs the service.
-    match reconcile::reconcile_published(&*db, &published).await {
+    match reconcile::reconcile_published(&*db, &*db, &published, &agents).await {
         // Two spelled-out arms rather than one parameterised call: `tracing`
         // resolves the level at compile time, so it cannot be a variable.
         Ok(summary) if summary.needs_attention() => tracing::warn!(
@@ -616,6 +616,8 @@ async fn serve() -> ExitCode {
             projects.removed_upstream = summary.removed_upstream,
             records.unreadable = summary.unreadable,
             records.retry_failed = summary.retry_failed,
+            proposals.retired = summary.proposals_retired,
+            proposals.retire_failed = summary.proposals_retire_failed,
             "compared the published set against local records; some records need an RDU decision"
         ),
         Ok(summary) => tracing::info!(
@@ -625,6 +627,8 @@ async fn serve() -> ExitCode {
             projects.removed_upstream = summary.removed_upstream,
             records.unreadable = summary.unreadable,
             records.retry_failed = summary.retry_failed,
+            proposals.retired = summary.proposals_retired,
+            proposals.retire_failed = summary.proposals_retire_failed,
             "compared the published set against local records"
         ),
         Err(e) => tracing::error!(

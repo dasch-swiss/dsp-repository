@@ -209,6 +209,7 @@ mod tests {
             decision: None,
             decided_by: None,
             decided_at: None,
+            retired_at: None,
         }
     }
 

@@ -576,6 +576,7 @@ mod tests {
             updated_at: DateTime::<Utc>::MIN_UTC,
             decided_by: None,
             decided_at: None,
+            retired_at: None,
         }
     }
 

@@ -228,6 +228,9 @@ pub struct EntityProposal {
     pub decision: Option<ProposalDecision>,
     pub decided_by: Option<Uuid>,
     pub decided_at: Option<DateTime<Utc>>,
+    /// `None` until the startup reconciliation pass observes this proposal's
+    /// entity in the published set; see [`crate::repository::EntityProposalRepository::retire`].
+    pub retired_at: Option<DateTime<Utc>>,
 }
 
 impl EntityProposal {
@@ -518,6 +521,7 @@ mod tests {
             updated_at: DateTime::<Utc>::MIN_UTC,
             decided_by: None,
             decided_at: None,
+            retired_at: None,
         }
     }
 

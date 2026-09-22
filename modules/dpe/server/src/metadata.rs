@@ -433,7 +433,7 @@ mod tests {
                 })
                 .collect();
             raws.sort_by(|a, b| a.shortcode.cmp(&b.shortcode));
-            assert_eq!(raws.len(), 85, "the committed corpus");
+            assert!(!raws.is_empty(), "the committed corpus should resolve — check the data path");
             raws
         }
 
@@ -491,11 +491,12 @@ mod tests {
 
         #[test]
         fn a_configured_resolver_leaves_no_production_ark_in_the_rendered_bytes() {
+            let raws = corpus(Some(PREVIEW));
             let mut substituted = 0usize;
-            for raw in corpus(Some(PREVIEW)) {
-                let bytes = rendered(&raw);
+            for raw in &raws {
+                let bytes = rendered(raw);
                 assert!(
-                    !asserted_only(&bytes, &raw).contains(RECORDED_ARK_HOST),
+                    !asserted_only(&bytes, raw).contains(RECORDED_ARK_HOST),
                     "{}: a production ARK host survives outside quoted text",
                     raw.shortcode
                 );
@@ -505,7 +506,7 @@ mod tests {
             }
             // Without this the assertion above would pass on output carrying no
             // ARK at all.
-            assert_eq!(substituted, 85, "every project should render a substituted ARK");
+            assert_eq!(substituted, raws.len(), "every project should render a substituted ARK");
         }
 
         #[test]

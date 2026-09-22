@@ -27,6 +27,10 @@ fn projects_dir() -> PathBuf {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dpe/server/data/projects")).to_path_buf()
 }
 
+fn data_dir() -> PathBuf {
+    Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dpe/server/data")).to_path_buf()
+}
+
 fn project_files() -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = std::fs::read_dir(projects_dir())
         .expect("the projects data directory should be readable")
@@ -98,11 +102,46 @@ fn every_committed_project_file_round_trips_byte_identically() {
     );
 }
 
+/// The one place the corpus's size is pinned to a stored number.
+///
+/// Every other count assertion in the tree compares a loader against a live
+/// directory listing, so both sides move together and adding a file needs no
+/// edit. That catches a loader which drops a file, but it cannot catch the
+/// directory itself changing — a project deleted by accident would simply make
+/// every such assertion agree on a smaller number. This test is what notices,
+/// and `corpus-manifest.json` is the stored number it reads.
+///
+/// So a deliberate change to the published set is one line in a data file, and
+/// an accidental one is a failing test.
 #[test]
 fn the_corpus_is_the_whole_published_set() {
-    assert_eq!(
-        project_files().len(),
-        85,
-        "the published set changed size. If that was deliberate, update this count in the same commit."
-    );
+    let manifest = data_dir().join("corpus-manifest.json");
+    let json = std::fs::read_to_string(&manifest).expect("the corpus manifest should be readable");
+    let counts: serde_json::Value = serde_json::from_str(&json).expect("the corpus manifest should parse");
+
+    for (key, dir) in [
+        ("projects", "projects"),
+        ("persons", "persons"),
+        ("organizations", "organizations"),
+    ] {
+        let recorded = counts[key]
+            .as_u64()
+            .unwrap_or_else(|| panic!("corpus-manifest.json should record a number for {key}"))
+            as usize;
+        assert_eq!(
+            json_files_in(&data_dir().join(dir)),
+            recorded,
+            "the committed {key} changed size. If that was deliberate, update corpus-manifest.json \
+             in the same commit."
+        );
+    }
+}
+
+/// The `*.json` files directly under `dir`.
+fn json_files_in(dir: &Path) -> usize {
+    std::fs::read_dir(dir)
+        .expect("a data directory should be readable")
+        .flatten()
+        .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
+        .count()
 }

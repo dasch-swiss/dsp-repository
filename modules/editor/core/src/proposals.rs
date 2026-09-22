@@ -686,16 +686,16 @@ mod tests {
         // listing under- or over-counted would silently hand out a colliding id.
         let persons = ids_in(&data_dir().join("persons"));
         let organizations = ids_in(&data_dir().join("organizations"));
-        assert_eq!(persons.len(), 416, "the committed store is 416 persons");
-        assert_eq!(organizations.len(), 142, "the committed store is 142 organizations");
 
+        // Valid only because the committed ids are dense (no gaps): the next
+        // free id is the count plus one.
         assert_eq!(
             next_entity_id(ProposalKind::Person, persons.iter().map(String::as_str)),
-            "person-417"
+            format_entity_id(ProposalKind::Person, persons.len() as u32 + 1)
         );
         assert_eq!(
             next_entity_id(ProposalKind::Organization, organizations.iter().map(String::as_str)),
-            "organization-143"
+            format_entity_id(ProposalKind::Organization, organizations.len() as u32 + 1)
         );
     }
 

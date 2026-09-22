@@ -113,6 +113,15 @@ mod ingress_tests {
     const COMMITTED: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data/projects");
     const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
 
+    /// The `*.json` files directly under `dir`.
+    fn json_files_in(dir: &std::path::Path) -> usize {
+        std::fs::read_dir(dir)
+            .expect("a data directory should be readable")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
+            .count()
+    }
+
     /// The loader normalises on the way in, over the real committed corpus.
     ///
     /// Run against the loader rather than the cache: the cache is a
@@ -122,7 +131,11 @@ mod ingress_tests {
     #[test]
     fn a_configured_resolver_normalises_every_project_on_load() {
         let (projects, raws) = load_projects_from(std::path::Path::new(COMMITTED), Some(PREVIEW));
-        assert_eq!(projects.len(), 85, "the committed corpus");
+        assert_eq!(
+            projects.len(),
+            json_files_in(std::path::Path::new(COMMITTED)),
+            "the committed corpus"
+        );
         assert_eq!(projects.len(), raws.len(), "the two vectors stay index-aligned");
 
         for (project, raw) in projects.iter().zip(&raws) {

@@ -184,9 +184,14 @@ mod tests {
     /// unsubmittable. Fix the tier or the data, never this constant.
     const UNANSWERED_BY_THE_CORPUS: &[(&str, usize)] = &[];
 
-    /// How many committed projects answer every required field a depositor
-    /// sees: all of them, the per-project form of [`UNANSWERED_BY_THE_CORPUS`].
-    const COMPLETE_FOR_A_DEPOSITOR: usize = 85;
+    /// The `*.json` files directly under `dir`.
+    fn json_files_in(dir: &std::path::Path) -> usize {
+        std::fs::read_dir(dir)
+            .expect("a data directory should be readable")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
+            .count()
+    }
 
     #[test]
     fn the_required_fields_the_committed_corpus_does_not_answer_are_the_measured_ones() {
@@ -195,7 +200,11 @@ mod tests {
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let shortcodes: Vec<String> = published.summaries().map(|s| s.shortcode.to_string()).collect();
-        assert_eq!(shortcodes.len(), 85, "the corpus should be all 85 committed projects");
+        assert_eq!(
+            shortcodes.len(),
+            json_files_in(&dir),
+            "the corpus should be all committed projects"
+        );
 
         let mut unanswered: Vec<(&str, usize)> = crate::form::registry::FIELDS
             .iter()
@@ -238,7 +247,8 @@ mod tests {
                     .all(|section| section_progress(section, Audience::Everyone, &draft).is_complete())
             })
             .count();
-        assert_eq!(complete, COMPLETE_FOR_A_DEPOSITOR, "of {} projects", shortcodes.len());
+        // All of them: the per-project form of `UNANSWERED_BY_THE_CORPUS` above.
+        assert_eq!(complete, shortcodes.len(), "of {} projects", shortcodes.len());
     }
 
     #[test]

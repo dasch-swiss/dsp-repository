@@ -197,6 +197,15 @@ mod tests {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects")
     }
 
+    /// The `*.json` files directly under `dir`.
+    fn json_files_in(dir: &std::path::Path) -> usize {
+        std::fs::read_dir(dir)
+            .expect("a data directory should be readable")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
+            .count()
+    }
+
     /// A directory holding `files` as `<name>.json`, removed by the caller.
     fn dir_with(name: &str, files: &[(&str, String)]) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("editor-published-{name}"));
@@ -222,7 +231,7 @@ mod tests {
         // would show it.
         let (published, errors) = PublishedProjects::load_from(&corpus());
         assert!(errors.is_empty(), "{errors:?}");
-        assert_eq!(published.len(), 85);
+        assert_eq!(published.len(), json_files_in(&corpus()));
     }
 
     #[test]
@@ -328,7 +337,7 @@ mod tests {
         let mut sorted = codes.clone();
         sorted.sort_by_key(|code| code.to_ascii_lowercase());
         assert_eq!(codes, sorted);
-        assert_eq!(codes.len(), 85);
+        assert_eq!(codes.len(), json_files_in(&corpus()));
     }
 
     #[test]

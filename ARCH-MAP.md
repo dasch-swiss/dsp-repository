@@ -39,9 +39,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Four crates: `dpe-core` (view model, `OnceLock` caches, filesystem repositories, a
   DSP-API client), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages and components),
   `dpe-server` (the binary: routes, page shell, Datastar SSE fragments, the `validate`
-  CLI). Also owns the published **corpus** under `server/data/` (85 projects, 416 persons,
-  142 organizations, 5 clusters, 3 record dumps, two lookup tables) and the cover images
-  under `public/assets/images/`.
+  CLI). Also owns the published **corpus** under `server/data/` (projects, persons and
+  organizations, whose sizes `corpus-manifest.json` records; plus 5 clusters, 3 record
+  dumps, two lookup tables) and the cover images under `public/assets/images/`.
 - **Key entities:** `Project`, `ProjectQuery`, `VALID_TABS`, `all_projects`,
   `project_by_shortcode`, `cover_image_url`, `ClusterRaw`, `ClusterRef`, `CollectionRef`,
   `ProjectRepository` / `FsProjectRepository`, `RecordRepository` / `FsRecordRepository`,

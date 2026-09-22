@@ -4930,9 +4930,12 @@ What each of them scored, when, and against what, is in
 <tr><td><code>/depositors/new</code></td><td>GET</td><td>RDU</td><td>The create form.</td></tr>
 <tr><td><code>/depositors/{id}/edit</code></td><td>GET, POST</td><td>RDU</td><td>The edit form, and the change it makes.</td></tr>
 <tr><td><code>/depositors/{id}/remove</code></td><td>GET, POST</td><td>RDU</td><td>The removal confirmation, and the removal.</td></tr>
+<tr><td><code>/collection</code></td><td>GET</td><td>RDU</td><td>Every approved record and where its collection stands.</td></tr>
+<tr><td><code>/collection/{id}/discard</code></td><td>GET, POST</td><td>RDU</td><td>The discard confirmation, and force-discarding a stranded record.</td></tr>
 <tr><td><code>/healthz</code></td><td>GET</td><td>public</td><td>Liveness probe. Untraced.</td></tr>
 <tr><td><code>/telemetry/collect</code></td><td>POST</td><td>public</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
 <tr><td><code>/api/v1/approved-records</code></td><td>GET</td><td>public</td><td>Every approved record and its accepted entity proposals, as JSON, for the collecting workflow. Rate-limited per IP.</td></tr>
+<tr><td><code>/api/v1/collection-report</code></td><td>POST</td><td>bearer token</td><td>Report the outcome of one collection attempt — a pull request and its state, or a failure.</td></tr>
 </tbody></table>
 </div>
 <p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
@@ -5560,12 +5563,13 @@ POST /logout       session deleted, cookie cleared
 <p><code>collectedAt</code> is a display timestamp. The classification that matters keys on the reported <strong>state</strong>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Published data</th><th>Reported state</th><th>How the record reads</th></tr></thead><tbody>
 <tr><td>Differs</td><td><code>open</code></td><td>Waiting for a release. Normal.</td></tr>
-<tr><td>Differs</td><td><code>merged</code></td><td>Merged with reviewer edits. The genuine anomaly; needs RDU.</td></tr>
+<tr><td>Differs</td><td><code>merged</code></td><td>Merged with reviewer edits. The genuine anomaly; RDU resolves it (below).</td></tr>
 <tr><td>Differs</td><td><code>closed</code></td><td>The next run re-collects it. No action.</td></tr>
 <tr><td>Differs</td><td>nothing reported</td><td>Not collected yet. Normal.</td></tr>
 <tr><td>Matches</td><td>any</td><td>The record is discarded at the next startup; the project is Online.</td></tr>
 </tbody></table>
 </div>
+<p><strong>RDU resolves a stranded record by discarding it.</strong> <code>GET /collection</code> lists every approved record with the classification above, and a record reading <code>merged</code> over differing data offers a force-discard at <code>GET</code>/<code>POST /collection/{id}/discard</code>, behind a confirmation naming what is destroyed. Discarding deletes the record, so the project stops appearing in this payload and stops being compared against the published set. There is no way back — the record is the only copy of what was approved — and no workflow action is involved: the pull request has already merged. A record discarded this way is indistinguishable afterwards from one that never existed, which is what the report endpoint's "no such approved record" answer means.</p>
 <p><strong>One live record per project, enforced at approval.</strong> Approving a project whose earlier record has no live pull request supersedes that record in the approving transaction. Approving one whose earlier record has an open or merged pull request is refused, because publishing a second file version over a live pull request is PRD Edge Case 4 and stays out of v1.</p>
 <h2 id="the-token-the-workflow-uses-against-github"><a class="header" href="#the-token-the-workflow-uses-against-github">The token the workflow uses against GitHub</a></h2>
 <p><code>secrets.GH_TOKEN</code>, not <code>github.token</code>. A pull request opened with <code>GITHUB_TOKEN</code> does not trigger workflows, so a collection pull request would arrive with no <code>check</code>, no <code>test</code> and no <code>commit-hygiene</code> run — looking green because nothing ran. <code>secrets.GH_TOKEN</code> is already used by <code>release-please.yml</code>, which is also the in-repo precedent for querying open pull requests rather than trusting local state.</p>

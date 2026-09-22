@@ -401,9 +401,12 @@
 <tr><td><code>/depositors/new</code></td><td>GET</td><td>RDU</td><td>The create form.</td></tr>
 <tr><td><code>/depositors/{id}/edit</code></td><td>GET, POST</td><td>RDU</td><td>The edit form, and the change it makes.</td></tr>
 <tr><td><code>/depositors/{id}/remove</code></td><td>GET, POST</td><td>RDU</td><td>The removal confirmation, and the removal.</td></tr>
+<tr><td><code>/collection</code></td><td>GET</td><td>RDU</td><td>Every approved record and where its collection stands.</td></tr>
+<tr><td><code>/collection/{id}/discard</code></td><td>GET, POST</td><td>RDU</td><td>The discard confirmation, and force-discarding a stranded record.</td></tr>
 <tr><td><code>/healthz</code></td><td>GET</td><td>public</td><td>Liveness probe. Untraced.</td></tr>
 <tr><td><code>/telemetry/collect</code></td><td>POST</td><td>public</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
 <tr><td><code>/api/v1/approved-records</code></td><td>GET</td><td>public</td><td>Every approved record and its accepted entity proposals, as JSON, for the collecting workflow. Rate-limited per IP.</td></tr>
+<tr><td><code>/api/v1/collection-report</code></td><td>POST</td><td>bearer token</td><td>Report the outcome of one collection attempt — a pull request and its state, or a failure.</td></tr>
 </tbody></table>
 </div>
 <p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>

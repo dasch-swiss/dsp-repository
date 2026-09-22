@@ -1,5 +1,130 @@
 # Changelog
 
+## [0.8.6](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.5...v0.8.6) (2026-09-22)
+
+
+### Features
+
+* **dpe-server,dpe-api-oai:** DPE_ARK_RESOLVER_BASE_URL ([7ddba8c](https://github.com/dasch-swiss/dsp-repository/commit/7ddba8ce73ef0c9e7bbfd89ce6f78b3fe1d03393))
+* **dpe-server,mosaic-tiles:** Put the metadata and Signposting on the landing page ([161a2ff](https://github.com/dasch-swiss/dsp-repository/commit/161a2ff88ab6eb6826f2388fc3f8b320a06b1905))
+* **dpe-server:** Answer the ARKs a deployment publishes ([c51b8e4](https://github.com/dasch-swiss/dsp-repository/commit/c51b8e4557cb9354cf19306545be2a3030a5cba1))
+* **dpe-server:** Configure the site's own public base URL ([71b92a8](https://github.com/dasch-swiss/dsp-repository/commit/71b92a829d1d2768b1aa61e4d3ff9f8c4ca88277))
+* **dpe-server:** Redirect the landing page to a representation on Accept ([d0406b2](https://github.com/dasch-swiss/dsp-repository/commit/d0406b28a44c82723a4d6edf71d7a1086d805ec5))
+* **dpe-server:** Serve the machine-readable representations ([b60d158](https://github.com/dasch-swiss/dsp-repository/commit/b60d158e46ad3189373edbf55db7ba7d4eb8d314))
+* **dsp-cli:** Move dsp-cli from dsp-incubator into the workspace ([ca887a9](https://github.com/dasch-swiss/dsp-repository/commit/ca887a9f5a8451434c5429e7979e7a8f9408df53))
+* **editor-core,editor-server:** Accept an advisory collection report from CI ([1a2c02b](https://github.com/dasch-swiss/dsp-repository/commit/1a2c02b527b3b5c9eb7ea1c93b1259ce8323a804))
+* **editor-core,editor-server:** Publish approved records over a read-only endpoint ([173c013](https://github.com/dasch-swiss/dsp-repository/commit/173c013aa5311685fdc88142b0831815f183f82e))
+* **shared-fair,dpe-api-oai:** Resolve the ARK host in the graph ([98184b2](https://github.com/dasch-swiss/dsp-repository/commit/98184b2efc83deebfaa05021d92ac421c30bcfe3))
+* **shared-fair,dpe-server,dpe-api-oai:** Give /metadata.jsonld a byte budget ([82274cb](https://github.com/dasch-swiss/dsp-repository/commit/82274cb7378e419fe708d2988206fc8eeccb9767))
+* **shared-fair,shared-metadata,dpe-api-oai:** Describe the files a project has ([de6672c](https://github.com/dasch-swiss/dsp-repository/commit/de6672cbccc39b3676c5b6a4573f0e008f283096))
+* **shared-fair:** Assert provenance in PROV-O ([6342576](https://github.com/dasch-swiss/dsp-repository/commit/6342576e91b2d4f9cbe6b55462bd4315485770d2))
+* **shared-fair:** Build the Signposting link set off the project graph ([0565c96](https://github.com/dasch-swiss/dsp-repository/commit/0565c96c21d2a37c7608240b1e0b765cde7b366e))
+* **shared-fair:** Decide the landing page's one negotiation step ([74102e8](https://github.com/dasch-swiss/dsp-repository/commit/74102e883dec6727baa77f0d6ac5b201beb5ae6f))
+* **shared-fair:** Render the Dublin Core record as meta tags ([0cdec47](https://github.com/dasch-swiss/dsp-repository/commit/0cdec47f033a65506e0d7fd56625a30db1343727))
+* **shared-fair:** Resolve a project's facts once into ProjectGraph ([b1a2752](https://github.com/dasch-swiss/dsp-repository/commit/b1a2752178196ef4ea581d8222ee498a0e7e4573))
+* **shared-fair:** Resolve a record's facts once into RecordGraph ([b82fdf2](https://github.com/dasch-swiss/dsp-repository/commit/b82fdf2c2a1497c0594b8bede739d6fdbed14dda))
+* **shared-fair:** Write schema.org JSON-LD from the project graph ([5bf0912](https://github.com/dasch-swiss/dsp-repository/commit/5bf0912bfd68db2d77d207c105245220b677efab))
+* **shared-fair:** Write the DataCite record as kernel-4 JSON ([db7acfa](https://github.com/dasch-swiss/dsp-repository/commit/db7acfafddd9a022bf803376ea620058ad77a175))
+
+
+### Bug Fixes
+
+* **dpe-web:** Draw the email envelope with the Mosaic icon ([baaa683](https://github.com/dasch-swiss/dsp-repository/commit/baaa683bc672e0008031ad6f480515d7389489d7))
+* **oai:** Add ARK resolver for identifiers in the payload ([78c4a7c](https://github.com/dasch-swiss/dsp-repository/commit/78c4a7c7e3f13dcf610eda9b8c2c9f5ff11db8c2))
+* **shared-fair,dpe-api-oai,docs:** Ask the ORCID question once, and stop overclaiming ([1a554e8](https://github.com/dasch-swiss/dsp-repository/commit/1a554e858ed5586b91a5c2245f2a93501eacf2d3))
+* **shared-fair,dpe-api-oai:** Emit each licence as an IRI node ([cb18e12](https://github.com/dasch-swiss/dsp-repository/commit/cb18e12b6c6fc844cc2e366e1b6400c8eeb90f11))
+* **shared-fair,dpe-api-oai:** Name the landing page in schema.org identifier ([b10328e](https://github.com/dasch-swiss/dsp-repository/commit/b10328ef917c84404bbe5ea8036dd613c577e6dc))
+* **shared-fair,dpe-api-oai:** Stop asserting a publication year nobody recorded ([2ccd15e](https://github.com/dasch-swiss/dsp-repository/commit/2ccd15e6ad34e88dc514670a516c121e5f8908df))
+* **shared-fair:** Count characters, not bytes, in extract_year ([e1d400e](https://github.com/dasch-swiss/dsp-repository/commit/e1d400e685aa48914a6962e44e417d0ab7cd0e10))
+
+
+### Performance Improvements
+
+* **dpe-core,dpe-api-oai,dpe-server:** Index the records by shortcode ([f946068](https://github.com/dasch-swiss/dsp-repository/commit/f946068887aab10395a13c10ada9ab8693ba0b00))
+
+
+### Code Refactoring
+
+* **dpe-core,dpe-api-oai:** Reach the raw project through the repository ([89d5450](https://github.com/dasch-swiss/dsp-repository/commit/89d545081da903a0b7ecc8980cf48dc74a698fc2))
+* **dpe-core,shared-fair,dpe-api-oai,dpe-server:** Normalise the ARK host at ingress ([26ed938](https://github.com/dasch-swiss/dsp-repository/commit/26ed93894adfdb2e927cbec591b175e290a666bd))
+* **dpe-core:** Name what resolution needs in one place ([4d10b56](https://github.com/dasch-swiss/dsp-repository/commit/4d10b5645fb98e1f24db4320686d3c7519ba4214))
+* **dpe-server:** Let a page add markup to the head ([d9026b8](https://github.com/dasch-swiss/dsp-repository/commit/d9026b8e1db22d33c631889955e81fba487c6124))
+* **shared-fair,dpe-api-oai:** Move the DataCite and Dublin Core mappings out of OAI ([39e902f](https://github.com/dasch-swiss/dsp-repository/commit/39e902f7f9437f72b04606bbdcf4b6f4bf8a8de3))
+* **shared-fair:** Read the project writers off ProjectGraph ([8356e61](https://github.com/dasch-swiss/dsp-repository/commit/8356e618ca74504a21d16d7125f3e0e7a10022df))
+* **shared-fair:** Read the record writers off RecordGraph ([ac196ac](https://github.com/dasch-swiss/dsp-repository/commit/ac196ac9fcd1487e867be585b77d38664abed0ed))
+* **shared-fair:** Resolve the creator fallback once, on the graph ([63d98f8](https://github.com/dasch-swiss/dsp-repository/commit/63d98f83c17d631923ff5c4f5745efd58461a2a5))
+* **shared-metadata,dpe-core:** Move three reading rules to the contract crate ([9fdd306](https://github.com/dasch-swiss/dsp-repository/commit/9fdd306734c5f021ef359577427108fe9b0faf72))
+
+
+### Documentation
+
+* **docs,ci:** Record how decision records are homed and cited across components ([3072576](https://github.com/dasch-swiss/dsp-repository/commit/30725768ec6bd0fafc5f3641e96aaa1988a408bc))
+* **docs,dpe-server:** The representation is bounded, and by how much ([ebec39e](https://github.com/dasch-swiss/dsp-repository/commit/ebec39e5662cba9e4050aee6df826a97aef3652a))
+* **docs:** A test that reimplements what it tests is not a test ([acb60b0](https://github.com/dasch-swiss/dsp-repository/commit/acb60b0f039fb3e7e00a77732aeddf6cd1b547dc))
+* **docs:** Account for all ten points F-UJI does not award ([0a2b9c9](https://github.com/dasch-swiss/dsp-repository/commit/0a2b9c91fd04af8849c29fada378173e42efe299))
+* **docs:** Add the dsp-cli migration plan (move into the workspace, release wiring, dsp-api drift CI) ([1d86574](https://github.com/dasch-swiss/dsp-repository/commit/1d86574c778c8ea5c5540e43e60c73c6814c52f3))
+* **docs:** Add the dune agent-context layer and the monorepo shape ADRs ([79dc416](https://github.com/dasch-swiss/dsp-repository/commit/79dc4168188107af9c51c65fb7ce48582840f920))
+* **docs:** Add the learnings from the dsp-cli migration, and say where learnings live ([a6b0f9e](https://github.com/dasch-swiss/dsp-repository/commit/a6b0f9efc08e5c60f6c9b97bf19e77692a68b258))
+* **docs:** Amend the ADR, and score three projects instead of one ([fdd8837](https://github.com/dasch-swiss/dsp-repository/commit/fdd88377cf55dfed1573840cd6c34e3beedca557))
+* **docs:** Answer the principles, not the assessor ([29eff20](https://github.com/dasch-swiss/dsp-repository/commit/29eff20ed633b136a29bd53750369098ad643e4b))
+* **docs:** Assess 081C, the control that has records and no files ([331b5ef](https://github.com/dasch-swiss/dsp-repository/commit/331b5ef9feb9b76421a6999c474e198042e1ff48))
+* **docs:** Describe shared-fair and the moved reading rules ([59998a6](https://github.com/dasch-swiss/dsp-repository/commit/59998a6ad5e9d18b2ba48b5e2af229dab9b58bf6))
+* **docs:** Describe the landing page's machine-readable metadata ([44da66f](https://github.com/dasch-swiss/dsp-repository/commit/44da66f3c2a4f5a773071d57792079d98fd445b4))
+* **docs:** Describe the representations, and stop deferring the enforcement ([fabeb0c](https://github.com/dasch-swiss/dsp-repository/commit/fabeb0c38c50cc6450ca97245a1b9f785c581155))
+* **docs:** Describe the two shapes an assessor reads as RDF ([caebb4c](https://github.com/dasch-swiss/dsp-repository/commit/caebb4ce8b3fcd7eedf4c8eb26654690d488586d))
+* **docs:** Draw out why the byte sweep caught what it caught ([203a6f3](https://github.com/dasch-swiss/dsp-repository/commit/203a6f3288766bee78eb92227563f39398cbd6a6))
+* **docs:** Group the areas under areas/ and name the shared root shared/ ([70acb52](https://github.com/dasch-swiss/dsp-repository/commit/70acb5250ee8bbe26e4c3a6cec3ff385731e939c))
+* **docs:** Hand off the fixes the first live assessment found ([9cf0160](https://github.com/dasch-swiss/dsp-repository/commit/9cf0160a611113a47283ef679b08f034c4e067bb))
+* **docs:** Name the projects in the assessment table ([f461257](https://github.com/dasch-swiss/dsp-repository/commit/f46125784258f502f36a20138dcab76f7dea75d0))
+* **docs:** Plan machine-readable project metadata for FAIR assessment ([20bf0bd](https://github.com/dasch-swiss/dsp-repository/commit/20bf0bd605ba56efaad380983a29c3543ffa3e9e))
+* **docs:** Point at the metrics behind the FAIR Champion names ([e903d02](https://github.com/dasch-swiss/dsp-repository/commit/e903d020be1a461dd735ad8c01c820c8e72bb4f2))
+* **docs:** Record Phase 8, and reclassify F1-02D as a defect ([e7ed51e](https://github.com/dasch-swiss/dsp-repository/commit/e7ed51e5b7f3b40ad550f0d1f2458d04a87799fc))
+* **docs:** Record Phase 9, and where the substitution belongs ([8c6577d](https://github.com/dasch-swiss/dsp-repository/commit/8c6577de31a4137380353e7cbb9754efeabbfc59))
+* **docs:** Record phases 5 to 7 and the four assessed projects ([223e7b5](https://github.com/dasch-swiss/dsp-repository/commit/223e7b580a0899f98798571bb08904469aeb6ab7))
+* **docs:** Record the execution of the dsp-cli migration plan ([11520a1](https://github.com/dasch-swiss/dsp-repository/commit/11520a18866a5621a36db7eb3b8f5a9bac9d8088))
+* **docs:** Record the FAIR metadata exposure run ([bc86f8f](https://github.com/dasch-swiss/dsp-repository/commit/bc86f8fe8ad85b82a6447cd7737967917da4d6cc))
+* **docs:** Record the re-run, and why the missing download is a boundary ([11278ca](https://github.com/dasch-swiss/dsp-repository/commit/11278caf08a91ed7acf5380e35166a5a8b9e7f15))
+* **docs:** Record the rebase onto main ([b0136d0](https://github.com/dasch-swiss/dsp-repository/commit/b0136d0fff3dd2c22e3b4b2d10ec9a9880832513))
+* **docs:** Say shared/ and shared-* everywhere the rename touched ([5e6c3ce](https://github.com/dasch-swiss/dsp-repository/commit/5e6c3ce6b63ca9646f1472c9d64c07478913e4ef))
+* **docs:** Say which project the data-pointer residual is about ([4ecbb10](https://github.com/dasch-swiss/dsp-repository/commit/4ecbb100cd662876fc0606d3a2db1285eec6282b))
+* **docs:** Say which resolver an ARK carries ([ac4bc9a](https://github.com/dasch-swiss/dsp-repository/commit/ac4bc9aa1707c1ca0cd972156ed8340df78c01c1))
+* **docs:** Set up the docs/specs convention ([73dbd40](https://github.com/dasch-swiss/dsp-repository/commit/73dbd405026128582f74f5ab90f0c6162608666d))
+* **dsp-cli:** List the insecure-server override in the book ([416e849](https://github.com/dasch-swiss/dsp-repository/commit/416e849785eafbe8c00f9bf6723a6b0e43be5fb5))
+* **mosaic-tiles,mosaic-playground,dpe-core,dpe-server,dpe-web,dpe-api-oai,platform-metadata,platform-telemetry,editor-core,editor-server,ci:** Trim comments to the convention's core (DEV-7123) ([57ce87d](https://github.com/dasch-swiss/dsp-repository/commit/57ce87db2bf12ce91e83461bc2004fd19b6f4d70))
+* **shared-metadata,docs:** One application point, named as such ([4e62aaa](https://github.com/dasch-swiss/dsp-repository/commit/4e62aaaa5601d4c8aa80328e96cea47d108ea963))
+
+
+### Tests
+
+* **dpe-api-oai:** Check the representations agree over the whole corpus ([6dfe98e](https://github.com/dasch-swiss/dsp-repository/commit/6dfe98e4b8e31442facd77c4b68391e2e9a7d20d))
+* **dpe-api-oai:** Guard the writers against the committed corpus again ([5727133](https://github.com/dasch-swiss/dsp-repository/commit/572713389a8bd3d5e5c484fea622b2f63ac64f97))
+* **dpe-api-oai:** Pin OAI output with a corpus-wide hash baseline ([ed04416](https://github.com/dasch-swiss/dsp-repository/commit/ed04416c666d20a222d97124afde44bb8e622fc0))
+* **dpe-api-oai:** Pin the unset ARK host ([98a561b](https://github.com/dasch-swiss/dsp-repository/commit/98a561b51484e96e205fca5f57e150a534abea71))
+* **dpe-api-oai:** Remove the OAI hash baseline, its job done ([5f7ae8b](https://github.com/dasch-swiss/dsp-repository/commit/5f7ae8b3a4cccb14018f9c436e6654eff888bdb0))
+* **shared-fair,dpe-api-oai:** Check the DataCite JSON against DataCite's schema ([404c622](https://github.com/dasch-swiss/dsp-repository/commit/404c622405ad173f4bcc580a081f3f06292ad063))
+* **shared-fair:** Pin the multilingual rule and the url reading rule ([e5fbb5c](https://github.com/dasch-swiss/dsp-repository/commit/e5fbb5c1d92bb923d63ca26fbe19a5d8800ede70))
+
+
+### Build System
+
+* **ci:** Provide commitlint-rs in the Nix dev shell ([2c63129](https://github.com/dasch-swiss/dsp-repository/commit/2c63129948603e29533b7cbc2b7076a272f672df))
+* **dsp-cli,docs:** Register the crate and harmonize it with the workspace ([a667633](https://github.com/dasch-swiss/dsp-repository/commit/a66763352259b2ea5b03e2fdf7b6a5af5487c0ef))
+
+
+### Miscellaneous Chores
+
+* **ci:** Add `just fair-check` to score a landing page with F-UJI ([837585b](https://github.com/dasch-swiss/dsp-repository/commit/837585b76f30fa2f54d49f76118df0f16d77049f))
+* **ci:** Give fair-check time to assess a project that has files ([d5aeb99](https://github.com/dasch-swiss/dsp-repository/commit/d5aeb99ac32ae86bd68516e889b5dff7e1a91ddc))
+* **ci:** Keep the justfile formatter-clean ([e02708f](https://github.com/dasch-swiss/dsp-repository/commit/e02708f9260f7176b4a79326b269dc08448c09d8))
+* **ci:** Release dsp-cli on its own version line ([b7c3404](https://github.com/dasch-swiss/dsp-repository/commit/b7c34043bfc04eb1914ea23da79462d956fb58a6))
+* **ci:** Run dsp-cli live tests against a pinned dsp-api stack ([bd73243](https://github.com/dasch-swiss/dsp-repository/commit/bd7324387590dcf6c76ca3a8b845d47af0559c77))
+* **deps:** Update rust-overlay so the dev shell's nightly rustfmt matches CI ([c15ac71](https://github.com/dasch-swiss/dsp-repository/commit/c15ac7106b6b42403cebe32248fcb22e48b3ffaf))
+* **dpe-data:** Point 0105 drawings at the migrated server ([18a8f36](https://github.com/dasch-swiss/dsp-repository/commit/18a8f36fc2320d13256de1ac958844e21cb0dc6e))
+* **main:** Release dsp-cli 0.3.0 ([6914a9b](https://github.com/dasch-swiss/dsp-repository/commit/6914a9b8c095ac958ee95eec0cccc8b1428fb022))
+* **oai:** Update database with mime types ([67c7f89](https://github.com/dasch-swiss/dsp-repository/commit/67c7f8994cdf5bcc7788bfd37f995b33a703c1e9))
+* **shared-fair:** Add the crate that will hold the FAIR exposure engine ([32e2234](https://github.com/dasch-swiss/dsp-repository/commit/32e22345084fc5031795ced2889341978b6beaf5))
+* **shared-metadata,shared-telemetry:** Move the shared root to shared/ ([0a65104](https://github.com/dasch-swiss/dsp-repository/commit/0a6510485ad88479da05b14af7ba45f1bed7928c))
+
 ## [0.8.5](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.4...v0.8.5) (2026-09-17)
 
 

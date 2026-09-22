@@ -3147,6 +3147,10 @@ RUST_LOG=debug
 </style>
 <h1 id="oai-pmh-endpoint"><a class="header" href="#oai-pmh-endpoint">OAI-PMH Endpoint</a></h1>
 <p>Usage guide for the DPE <a href="https://www.openarchives.org/OAI/openarchivesprotocol.html">OAI-PMH 2.0</a> data provider, which exposes DaSCH research project and record metadata for harvesting. The implementation lives in the <code>dpe-api-oai</code> crate (see <a href="dpe/./project_structure.html">Project Structure</a>).</p>
+<p>The metadata served is the tracked corpus in <code>modules/dpe/server/data/</code> — the server reads it at startup and never fetches from the API itself. The record dumps under <code>records/</code> are refreshed by <code>just fetch-records</code>, whose default project list is the <code>RECORD_SHORTCODES</code> variable at the top of the <code>justfile</code>; override it per run to refresh a subset:</p>
+<pre><code class="language-bash">export bearer="Bearer eyJ..."   # a token for api.dasch.swiss
+just RECORD_SHORTCODES="081C 0868 0803" fetch-records
+</code></pre>
 <h2 id="endpoint"><a class="header" href="#endpoint">Endpoint</a></h2>
 <ul>
 <li><strong>Path</strong>: <code>GET /dpe/oai</code> — GET only; POST requests are not supported</li>

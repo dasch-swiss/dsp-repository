@@ -411,6 +411,21 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data")
     }
 
+    /// The `*.json` files directly under `dir`.
+    fn json_files_in(dir: &Path) -> usize {
+        std::fs::read_dir(dir)
+            .expect("a data directory should be readable")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
+            .count()
+    }
+
+    /// Persons plus organizations in the committed store.
+    fn committed_total() -> usize {
+        let dir = data_dir();
+        json_files_in(&dir.join("persons")) + json_files_in(&dir.join("organizations"))
+    }
+
     fn committed() -> (Agents, Vec<LoadError>) {
         let dir = data_dir();
         Agents::load_from(&dir.join("persons"), &dir.join("organizations"))
@@ -422,7 +437,11 @@ mod tests {
         assert!(errors.is_empty(), "{errors:?}");
         // A count rather than "not empty": a loader that silently read half the store shows up as
         // ids the form cannot resolve, which reads like a data problem.
-        assert_eq!(agents.len(), 558, "the committed store is 416 persons plus 142 organizations");
+        assert_eq!(
+            agents.len(),
+            committed_total(),
+            "persons plus organizations in the committed store"
+        );
     }
 
     #[test]
@@ -513,8 +532,16 @@ mod tests {
         // Same floors `proposals::tests` pins for `next_entity_id` against the identical corpus —
         // this is the value the server actually has in hand to pass as `published_floor`.
         let (agents, _) = committed();
-        assert_eq!(agents.highest_id_number(ProposalKind::Person), 416);
-        assert_eq!(agents.highest_id_number(ProposalKind::Organization), 142);
+        // Valid only because the committed ids are dense (no gaps): the highest
+        // id number equals the file count.
+        assert_eq!(
+            agents.highest_id_number(ProposalKind::Person),
+            json_files_in(&data_dir().join("persons")) as u32
+        );
+        assert_eq!(
+            agents.highest_id_number(ProposalKind::Organization),
+            json_files_in(&data_dir().join("organizations")) as u32
+        );
     }
 
     #[test]
@@ -588,7 +615,7 @@ mod tests {
             scope.get("person-001").map(|agent| agent.label.as_str()),
             Some("Philippe Gonzalez")
         );
-        assert_eq!(scope.len(), 558);
+        assert_eq!(scope.len(), committed_total());
     }
 
     #[test]
@@ -604,7 +631,7 @@ mod tests {
         );
         let scope = AgentScope::with_proposals(&agents, &[proposal]);
         assert_eq!(scope.get("person-417").map(|agent| agent.label.as_str()), Some("Ada Lovelace"));
-        assert_eq!(scope.len(), 559);
+        assert_eq!(scope.len(), committed_total() + 1, "the proposed person is the only addition");
     }
 
     #[test]
@@ -664,7 +691,7 @@ mod tests {
             ProposalStatus::Submitted,
         );
         let scope = AgentScope::with_proposals(&agents, &[proposal]);
-        assert_eq!(scope.len(), 558, "a change proposal adds no agent");
+        assert_eq!(scope.len(), committed_total(), "a change proposal adds no agent");
         assert_eq!(
             scope.all().filter(|agent| agent.id == "organization-008").count(),
             1,
@@ -704,7 +731,7 @@ mod tests {
             );
             let scope = AgentScope::with_proposals(&agents, &[proposal]);
             assert!(!scope.has("person-417"), "{payload}");
-            assert_eq!(scope.len(), 558);
+            assert_eq!(scope.len(), committed_total());
         }
     }
 

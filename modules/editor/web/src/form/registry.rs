@@ -721,6 +721,15 @@ mod tests {
         );
     }
 
+    /// The `*.json` files directly under `dir`.
+    fn json_files_in(dir: &std::path::Path) -> usize {
+        std::fs::read_dir(dir)
+            .expect("a data directory should be readable")
+            .flatten()
+            .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
+            .count()
+    }
+
     /// Every committed project, parsed as the contract sees it, nulls intact: the
     /// only way to tell an Option member from a required one.
     fn contracts() -> Vec<serde_json::Value> {
@@ -734,7 +743,11 @@ mod tests {
                 serde_json::to_value(project).expect("ProjectRaw serializes")
             })
             .collect();
-        assert_eq!(contracts.len(), 85, "the corpus should be all 85 committed projects");
+        assert_eq!(
+            contracts.len(),
+            json_files_in(&dir),
+            "the corpus should be all committed projects"
+        );
         contracts
     }
 

@@ -1,0 +1,88 @@
+name: Collect Editor Records
+
+# Turns the editor's approved records into one pull request per project.
+#
+# Manual by REQ-5.3: no schedule and no editor-side webhook, because neither
+# notifies anyone sooner than a person deciding to collect. `docs/src/editor/
+# collection.md` is the contract this implements and wins on any difference.
+#
+# Two modes, because a reported state is only as fresh as the last run:
+#   collect — fetch, publish and report (the REQ-5.3 trigger)
+#   refresh — re-report pull request states, writing nothing
+# Refresh exists so a pull request merged with reviewer edits after the last
+# collect is eventually classified; without it such a record reads `open`
+# forever and nobody is prompted.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "collect (publish and report) or refresh (re-report states only)"
+        type: choice
+        options: [collect, refresh]
+        default: collect
+        required: true
+
+# Any RDU member can fire this, so two runs can overlap. Queue rather than
+# cancel: a cancelled run has already opened pull requests it never reported,
+# and the entity-id allocation is re-derived per record, not per run.
+concurrency:
+  group: collect-editor-records
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    name: ${{ inputs.mode }}
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'dasch-swiss'
+    steps:
+      # Both guards run before checkout: a missing secret or variable is a
+      # configuration failure, and there is nothing to be gained from cloning
+      # first. GitHub substitutes an empty string for an unset secret rather
+      # than failing the run, so without this the collector opens pull requests
+      # and then takes 401 on every report — leaving records reading as never
+      # collected while their pull requests are open.
+      - name: Require the collection token and the editor's base URL
+        env:
+          EDITOR_COLLECTION_TOKEN: ${{ secrets.EDITOR_COLLECTION_TOKEN }}
+          EDITOR_BASE_URL: ${{ vars.EDITOR_BASE_URL }}
+        run: |
+          missing=()
+          [ -n "$EDITOR_COLLECTION_TOKEN" ] || missing+=("secret EDITOR_COLLECTION_TOKEN")
+          [ -n "$EDITOR_BASE_URL" ] || missing+=("variable EDITOR_BASE_URL")
+          if [ ${#missing[@]} -ne 0 ]; then
+            printf 'not configured: %s\n' "${missing[@]}" >&2
+            echo "See DEV-6921, which owns both halves of the token and the editor hostname." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the collector inspects each editor-collect/<shortcode>
+          # branch tip to decide whether it made that commit, and refuses to
+          # force-push over a reviewer's fixups.
+          fetch-depth: 0
+          # Not github.token. A pull request opened with GITHUB_TOKEN triggers no
+          # workflows, so a collection pull request would arrive with no check,
+          # no test and no commit-hygiene run — green because nothing ran.
+          token: ${{ secrets.GH_TOKEN }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Identify the collector's commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: ${{ inputs.mode }}
+        env:
+          EDITOR_BASE_URL: ${{ vars.EDITOR_BASE_URL }}
+          EDITOR_COLLECTION_TOKEN: ${{ secrets.EDITOR_COLLECTION_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          COLLECTOR_REPOSITORY: ${{ github.repository }}
+        run: cargo run --release -p editor-collector -- ${{ inputs.mode }}

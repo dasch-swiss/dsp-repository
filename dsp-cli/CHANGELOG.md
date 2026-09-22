@@ -2,6 +2,13 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
+## [0.3.1](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.0...dsp-cli-v0.3.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **dsp-cli:** Drop the project status column, removed by dsp-api v39 (DEV-7358) ([6834abf](https://github.com/dasch-swiss/dsp-repository/commit/6834abfe790d47176320dc176f3107353dda8515))
+
 ## [0.3.0](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.2.1...dsp-cli-v0.3.0) (2026-09-21)
 
 

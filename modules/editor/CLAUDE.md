@@ -15,7 +15,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Three crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-web` (`web/`, view functions) and `editor-server` (`server/`, the composition root).
+Four crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-web` (`web/`, view functions), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`).
 
 ## Code Organization Patterns
 

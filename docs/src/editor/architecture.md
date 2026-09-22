@@ -24,8 +24,9 @@ Same as DPE: server-rendered HTML with **Maud**, served by **Axum**, with **Data
 | `editor-core` | `editor/core` | Pure domain types and the persistence ports (no Axum, Maud or database dependency) |
 | `editor-web` | `editor/web` | Maud view library — the document shell, pages and components |
 | `editor-server` | `editor/server` | Composition root: configuration, observability, routing, persistence |
+| `editor-collector` | `editor/collector` | CI binary collecting approved records into pull requests (see [Collection](./collection.md)) |
 
-Dependency direction is `server → web → core`. `editor-web` depends on `editor-core` for the project representation it renders, and on `mosaic-tiles`; the login screens' submit buttons are the first surface to render a tile. Component CSS is collected from the Tailwind entry's `@source` globs rather than from the crate graph, so it ships independently of that dependency.
+Dependency direction is `server → web → core`; `editor-collector` sits outside that chain, depending on `editor-core` alone and running as a batch job rather than serving a request. `editor-web` depends on `editor-core` for the project representation it renders, and on `mosaic-tiles`; the login screens' submit buttons are the first surface to render a tile. Component CSS is collected from the Tailwind entry's `@source` globs rather than from the crate graph, so it ships independently of that dependency.
 
 Unlike DPE, the **HTML document shell lives in the view crate** (`editor-web/src/view.rs`), not the server crate. DPE keeps `head()` + `page()` in `dpe-server`; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.
 

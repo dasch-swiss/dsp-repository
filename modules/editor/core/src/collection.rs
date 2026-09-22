@@ -19,7 +19,7 @@ use crate::proposals::{EntityProposal, ProposalStatus};
 use crate::records::{ApprovedRecord, PullRequestState};
 
 /// The response body for the approved-records endpoint.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApprovedRecordsResponse {
     pub records: Vec<ApprovedRecordView>,
@@ -31,7 +31,7 @@ pub struct ApprovedRecordsResponse {
 /// there is no `skip_serializing_if` here, so a consumer reads `null` rather
 /// than having to distinguish an absent key from an empty one, and the
 /// key-set test stays a stable pin on the wire shape.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApprovedRecordView {
     pub id: Uuid,
@@ -47,7 +47,7 @@ pub struct ApprovedRecordView {
 }
 
 /// One accepted proposal, joined onto the record it rides with.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProposedEntityView {
     pub kind: String,
@@ -57,7 +57,7 @@ pub struct ProposedEntityView {
 }
 
 /// Where a record's collection into a pull request stands.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionStateView {
     pub collected_at: Option<DateTime<Utc>>,
@@ -154,7 +154,7 @@ impl CollectionStateView {
 /// A wire type only — the exactly-one-of-`pull_request`-or-`failure` rule and the pull request's
 /// origin are HTTP contract validation, not a domain invariant this crate enforces elsewhere, so
 /// they live in `editor-server` next to the handler that rejects a report failing them.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionReport {
     pub record: Uuid,

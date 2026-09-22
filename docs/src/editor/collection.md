@@ -2,7 +2,7 @@
 
 How an approved record leaves the editor and becomes a commit in this repository. The editor publishes the records and accepts a report about what happened to them; a GitHub Actions workflow does the work in between. This page is the contract between the two.
 
-That workflow does not exist yet. Everything this page says about it is a requirement on the work that builds it, not a description of something already running; everything it says about the editor is live and testable today.
+The workflow is `.github/workflows/collect-editor-records.yml` and the collector it runs is the `editor-collector` crate (`modules/editor/collector`). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.
 
 ## The invariant
 
@@ -113,6 +113,20 @@ Three fields with three lifetimes come out of a report, and the two report shape
 `secrets.GH_TOKEN`, not `github.token`. A pull request opened with `GITHUB_TOKEN` does not trigger workflows, so a collection pull request would arrive with no `check`, no `test` and no `commit-hygiene` run — looking green because nothing ran. `secrets.GH_TOKEN` is already used by `release-please.yml`, which is also the in-repo precedent for querying open pull requests rather than trusting local state.
 
 The collection pull request must satisfy `commit-hygiene.yml` like any other: `type(scope): subject`, one commit, and a scope from the vocabulary in `CONVENTIONS.md`. Project metadata files take `dpe-data`.
+
+## Running it
+
+`workflow_dispatch` only, in two modes. `collect` fetches, publishes and reports; `refresh` re-reports pull request states and writes nothing.
+
+| Name | Kind | Why |
+|---|---|---|
+| `EDITOR_BASE_URL` | repository variable | The editor's origin. A variable, not a secret: it is not one, and the hostname is still open with Infra (DEV-6921), so settling it needs no code change. |
+| `EDITOR_COLLECTION_TOKEN` | secret | Presented to the editor's report endpoint and to nothing else. |
+| `GH_TOKEN` | secret | Used against GitHub. Not `github.token` — see below. |
+
+The workflow refuses to start when the variable or the secret is empty, before checkout: GitHub substitutes an empty string for an unset secret rather than failing the run, so without that guard the collector would open pull requests and then take 401 on every report, leaving records reading as never collected while their pull requests are open.
+
+The collector fails the job when any record failed or any outcome could not be reported. A green run means every record the editor served was both handled and reported.
 
 ## The staleness limitation
 

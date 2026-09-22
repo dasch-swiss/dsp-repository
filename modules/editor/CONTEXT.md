@@ -55,8 +55,16 @@ The depositor's own discard of a pending Submission, recorded as a Review round 
 _Avoid_: cancel, delete.
 
 **Approved record**:
-An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting to be collected into the published corpus; the collection step (a pull request against this repository) is documented and not built. At most one live record per project: re-approving while none of the project's records has a live pull request supersedes the old row in the same transaction, and re-approving while one does is refused.
+An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting to be collected into the published corpus by the Collection run. At most one live record per project: re-approving while none of the project's records has a live pull request supersedes the old row in the same transaction, and re-approving while one does is refused.
 _Avoid_: published record (Online is the state after collection, not this), export.
+
+**Collection run**:
+One invocation of `.github/workflows/collect-editor-records.yml`: it reads every Approved record, writes each project's into a Collection branch, opens or updates one pull request per project, and reports the outcome back. Manual, in two modes — `collect` publishes and reports, `refresh` only re-reports pull request states. [`docs/src/editor/collection.md`](../../docs/src/editor/collection.md) is its contract.
+_Avoid_: sync, export, deploy, publish (publication is the merge plus a release, not the run).
+
+**Collection branch**:
+`editor-collect/<shortcode>` — the one branch a project's collection lives on, keyed on the Shortcode so at most one pull request is ever open against a project's file. Owned by the Collection run, which refuses to force-push over a tip it did not write.
+_Avoid_: record branch (it is keyed on the project, not the record).
 
 **Project state**:
 One of exactly five depositor-facing values, `ProjectState`: Draft, Submitted, In review, Approved, Online — normative per REQ-2.1, where Online is derived from the published set, never stored.

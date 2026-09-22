@@ -69,7 +69,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`.github/actions/build-editor/action.yml`, `justfile`) and read by the editor's tests through
   `CARGO_MANIFEST_DIR/../../dpe/server/data`; shared/metadata's and shared/fair's
   committed-data tests live here (`core/src/temporal_enrichment_cache.rs`,
-  `api-oai/src/metadata/corpus.rs`)
+  `api-oai/src/metadata/corpus.rs`); `editor-collector` writes the corpus through a pull request
+  (see **Durable state** above), still never through a `dpe-*` import
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
     (**review** today; **structure** via Bazel visibility after ADR-0001).
@@ -99,39 +100,52 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   placeholder bearer and writes into the tracked directory at startup; the shortcode list is
   duplicated between `justfile` and `record_cache.rs` (single-writer violation, recorded). The
   two lookup tables are written by `scripts/*.py`. Cover images: drop-at-path, hand-written.
+  `editor-collector` is a further writer of `projects/`, the first automated writer of `persons/`
+  and `organizations/`, and a second writer of `temporal-coverage-enrichment.json` and
+  `corpus-manifest.json` — but never in place: it writes a disposable checkout on an
+  `editor-collect/<shortcode>` branch, and the gate between that and anything served is the pull
+  request it opens plus a human merge (**static-analysis** via `canonical_round_trip`,
+  `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
+  which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   In-process `OnceLock` caches load once and never invalidate.
 
 ### modules/editor
 
 - **Paths:** `:(glob)modules/editor/**`
-- **Purpose:** The metadata editor — the Deposit Area's first service. Three crates:
-  `editor-core` (the draft model, validation, the canonical project writer, the persistence
-  ports), `editor-web` (the document shell, pages, the form's field registry and widgets),
-  `editor-server` (the binary: config, auth, routing, the SQLite implementations of the ports).
+- **Purpose:** The metadata editor — the Deposit Area's first service. Four crates:
+  `editor-core` (the draft model, validation, the canonical project and entity writers, the
+  persistence ports), `editor-web` (the document shell, pages, the form's field registry and
+  widgets), `editor-server` (the binary: config, auth, routing, the SQLite implementations of
+  the ports), `editor-collector` (the CI binary that turns an approved record into a pull
+  request against this repository — outside the service's request path, and the only crate here
+  that writes anything under `modules/dpe/`).
   Depositors edit their projects section by section; RDU reviews field by field; approve
-  writes an approved record that is meant to be collected into a pull request (not built).
+  writes an approved record, which the collector publishes as a pull request.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `Repositories`, `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
-  `apply`, `write_project`, `normalize_shortcode`, `Authenticated`, `Rdu`, `KNOWN_ROUTES`,
-  `EditorConfig`
+  `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Authenticated`, `Rdu`,
+  `KNOWN_ROUTES`, `EditorConfig`, `Forge`, `CollectionReport`
 - **Public interface:** the HTTP routes of `editor-server`, root-mounted on its own hostname
   (`/login`, `/login/code`, `/logout`, `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
   `/projects/{shortcode}/entities/{proposal}`, `/review`, `/review/{shortcode}`, `/depositors…`,
   `/collection`, `/collection/{id}/discard`, `/states`, `/healthz`, `POST /telemetry/collect`,
   `GET /api/v1/approved-records`, `POST /api/v1/collection-report`); the
-  `editor-server serve | healthcheck` CLI. No crate outside this component depends on an
-  `editor-*` crate; `editor-server` exports nothing.
+  `editor-server serve | healthcheck` CLI; the `editor-collector collect | refresh` CLI, invoked
+  only by `.github/workflows/collect-editor-records.yml`. No crate outside this component depends
+  on an `editor-*` crate; `editor-server` exports nothing.
 - **Local-context kit:** `modules/editor/CLAUDE.md`, `modules/editor/server/src/router.rs`,
   `modules/editor/web/src/form/registry.rs`, `modules/editor/core/src/form.rs`,
-  `modules/editor/core/src/status.rs`,
-  `modules/editor/server/src/db/migrations/0001_initial.sql`, `docs/src/editor/architecture.md`
+  `modules/editor/core/src/status.rs`, `docs/src/editor/collection.md`,
+  `docs/src/editor/architecture.md`
 - **Depends on:** shared/metadata (all three crates), shared/telemetry
   (`editor-server`), modules/mosaic (`editor-web`); modules/dpe's corpus as data (see above),
-  never its code; third-party: axum, maud, rusqlite (`bundled`) + deadpool-sqlite, figment,
-  lettre, clap, ureq, rand + subtle, tower_governor, the OpenTelemetry stack, pyroscope, insta
+  never its code — `editor-collector` additionally *writes* that corpus, through a pull request
+  and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
+  (`bundled`) + deadpool-sqlite, figment, lettre, clap, ureq, rand + subtle, tower_governor,
+  reqwest (`editor-collector`), the OpenTelemetry stack, pyroscope, insta
 - **Used by:** — (top of the dependency graph; a separate deployable)
 - **Boundary rules:**
   - Never depends on a `dpe-*` crate (**review** today; **structure** after ADR-0001).

@@ -15,8 +15,7 @@ Project ─owns→ Data-model ─defines→ Resource-type ─defines→ Field �
 
 - **Project** — the top-level unit of organisation. Every piece of research data
   belongs to exactly one project. A project has three interchangeable identifiers
-  (shortcode, shortname, IRI — see `dsp docs identifiers`) and is either `active`
-  or `inactive`.
+  (shortcode, shortname, IRI — see `dsp docs identifiers`).
 - **Data-model** — a project-specific schema that defines the resource-types and
   fields a project tracks. A project may have several. (DSP-API calls this an
   *ontology*.)

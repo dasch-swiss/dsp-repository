@@ -2,4 +2,4 @@
 source: tests/project_list_snapshots.rs
 expression: stdout
 ---
-shortcode	shortname	longname	status	data_models	iri
+shortcode	shortname	longname	data_models	iri

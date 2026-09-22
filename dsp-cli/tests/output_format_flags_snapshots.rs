@@ -27,7 +27,7 @@
 //! (embedded comma in longname triggers RFC-4180 quoting) and uses `--columns`,
 //! so the assertion exercises the quoted, projected path.
 
-use dsp_cli::model::{Cardinality, Field, Project, ProjectStatus, ResourceTypeDetail, ValueType};
+use dsp_cli::model::{Cardinality, Field, Project, ResourceTypeDetail, ValueType};
 use dsp_cli::render::csv::CsvRenderer;
 use dsp_cli::render::lines::LinesRenderer;
 use dsp_cli::render::tsv::TsvRenderer;
@@ -60,7 +60,6 @@ fn projects_with_comma_longname() -> ProjectListView {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             data_models: 4,
         },
         Project {
@@ -69,7 +68,6 @@ fn projects_with_comma_longname() -> ProjectListView {
             shortname: "incunabula".into(),
             // Contains a comma — triggers RFC-4180 quoting in the projected csv path.
             longname: Some("Basel, Early Book Printing".into()),
-            status: ProjectStatus::Active,
             data_models: 1,
         },
     ];

@@ -2,7 +2,7 @@
 source: tests/project_list_snapshots.rs
 expression: out
 ---
-shortcode,shortname,longname,status,data_models,iri
-0001,editions,"Letters, Drafts and Notes",active,2,http://rdfh.ch/projects/Ed1tNsXqT0
-0002,ledger,"=SUM(revenue)",active,1,http://rdfh.ch/projects/Ca1cFmLpR2
-0003,quoted,"The ""Definitive"" Edition",active,1,http://rdfh.ch/projects/Qu0tEdZwV3
+shortcode,shortname,longname,data_models,iri
+0001,editions,"Letters, Drafts and Notes",2,http://rdfh.ch/projects/Ed1tNsXqT0
+0002,ledger,"=SUM(revenue)",1,http://rdfh.ch/projects/Ca1cFmLpR2
+0003,quoted,"The ""Definitive"" Edition",1,http://rdfh.ch/projects/Qu0tEdZwV3

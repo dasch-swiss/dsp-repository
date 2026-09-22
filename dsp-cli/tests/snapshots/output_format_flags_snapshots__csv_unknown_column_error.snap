@@ -2,4 +2,4 @@
 source: tests/output_format_flags_snapshots.rs
 expression: err.to_string()
 ---
-usage error: unknown column "nonexistent"; valid columns: shortcode, shortname, longname, status, data_models, iri
+usage error: unknown column "nonexistent"; valid columns: shortcode, shortname, longname, data_models, iri

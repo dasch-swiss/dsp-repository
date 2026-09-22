@@ -16,7 +16,6 @@
 use dsp_cli::client::DspClient;
 use dsp_cli::client::http::HttpDspClient;
 use dsp_cli::diagnostic::Diagnostic;
-use dsp_cli::model::ProjectStatus;
 use serde_json::json;
 use wiremock::matchers::{header, header_exists, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -37,12 +36,13 @@ fn projects_body(projects: serde_json::Value) -> serde_json::Value {
 // Happy path — translates DTO correctly
 // ---------------------------------------------------------------------------
 
-/// A 200 response with a mixed fixture (active + inactive, with/without ontologies,
-/// with/without longname) is translated to the correct `Vec<Project>`.
+/// A 200 response with a mixed fixture (with/without ontologies, with/without
+/// longname) is translated to the correct `Vec<Project>`.
+///
+/// The body is shaped as dsp-api v39 returns it: project items carry no
+/// `status` key, the active/inactive concept having been removed upstream.
 ///
 /// Assertions cover:
-/// - `status: true`  → `ProjectStatus::Active`
-/// - `status: false` → `ProjectStatus::Inactive`
 /// - `ontologies: ["o1", "o2"]` → `data_models: 2`
 /// - `ontologies: []` (explicit empty) → `data_models: 0`
 /// - `longname: null` (absent from JSON) → `longname: None`
@@ -58,7 +58,6 @@ async fn happy_path_translates_dto_to_project() {
             "shortcode": "0001",
             "shortname": "anything",
             "longname": "Anything Project",
-            "status": true,
             "ontologies": ["http://www.knora.org/ontology/0001/anything", "http://www.knora.org/ontology/0001/minimal"]
         },
         {
@@ -66,7 +65,6 @@ async fn happy_path_translates_dto_to_project() {
             "shortcode": "0002",
             "shortname": "images",
             // longname absent (null) — must map to None
-            "status": false,
             "ontologies": []
         },
         {
@@ -74,7 +72,6 @@ async fn happy_path_translates_dto_to_project() {
             "shortcode": "0803",
             "shortname": "incunabula",
             "longname": "Incunabula Project",
-            "status": true,
             "ontologies": ["http://www.knora.org/ontology/0803/incunabula"]
         }
     ]));
@@ -100,29 +97,26 @@ async fn happy_path_translates_dto_to_project() {
     let projects = result.unwrap();
     assert_eq!(projects.len(), 3, "expected 3 projects");
 
-    // Project 1: active, 2 data_models, longname present
+    // Project 1: 2 data_models, longname present
     let p1 = &projects[0];
     assert_eq!(p1.iri, "http://rdfh.ch/projects/0001");
     assert_eq!(p1.shortcode, "0001");
     assert_eq!(p1.shortname, "anything");
     assert_eq!(p1.longname.as_deref(), Some("Anything Project"));
-    assert_eq!(p1.status, ProjectStatus::Active, "status:true must be Active");
     assert_eq!(p1.data_models, 2, "two ontologies → data_models: 2");
 
-    // Project 2: inactive, 0 data_models, no longname
+    // Project 2: 0 data_models, no longname
     let p2 = &projects[1];
     assert_eq!(p2.iri, "http://rdfh.ch/projects/0002");
     assert_eq!(p2.shortcode, "0002");
     assert_eq!(p2.shortname, "images");
     assert_eq!(p2.longname, None, "absent longname must map to None");
-    assert_eq!(p2.status, ProjectStatus::Inactive, "status:false must be Inactive");
     assert_eq!(p2.data_models, 0, "empty ontologies → data_models: 0");
 
-    // Project 3: active, 1 data_model, longname present
+    // Project 3: 1 data_model, longname present
     let p3 = &projects[2];
     assert_eq!(p3.iri, "http://rdfh.ch/projects/0803");
     assert_eq!(p3.data_models, 1);
-    assert_eq!(p3.status, ProjectStatus::Active, "second active project must also be Active");
 }
 
 // ---------------------------------------------------------------------------
@@ -237,23 +231,77 @@ async fn bearer_absent_when_token_is_none() {
 }
 
 // ---------------------------------------------------------------------------
-// Parse failure — missing `status` field → ServerError
+// Parse contract — a v39-shaped item (no `status`) parses
 // ---------------------------------------------------------------------------
 
-/// A response where a project item is missing the `status` field must fail
-/// parse loudly (`ServerError`), not silently default to `false`.
-/// `status` has no `#[serde(default)]` by design — see the DTO doc-comment.
+/// dsp-api v39.0.0 removed the project active/inactive concept, so
+/// `GET /admin/projects` items no longer carry a `status` key. A response in
+/// exactly that shape — the full key set a v39 server returns for a project —
+/// must parse, and the fields `project list` renders must survive the round
+/// trip. This is the regression guard for DEV-7358.
 #[tokio::test]
-async fn missing_status_field_returns_server_error() {
+async fn v39_shaped_item_without_status_parses() {
     let server = MockServer::start().await;
 
-    // `status` key is deliberately absent — missing required field.
+    // Verbatim key set of a prod (v39) project item, minus values elided for
+    // brevity. Note the absence of `status`.
+    let body = projects_body(json!([
+        {
+            "allowedCopyrightHolders": ["AI-Generated Content - Not Protected by Copyright"],
+            "dataCopyrightHolder": null,
+            "dataLicense": null,
+            "defaultDataAuthorship": [],
+            "description": [{ "value": "Anything", "language": "en" }],
+            "enabledLicenses": [],
+            "id": "http://rdfh.ch/projects/0001",
+            "keywords": ["things"],
+            "longname": "Anything Project",
+            "ontologies": ["http://www.knora.org/ontology/0001/anything"],
+            "selfjoin": false,
+            "shortcode": "0001",
+            "shortname": "anything"
+        }
+    ]));
+
+    Mock::given(method("GET"))
+        .and(path("/admin/projects"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(body))
+        .mount(&server)
+        .await;
+
+    let uri = server.uri();
+    let result = std::thread::spawn(move || {
+        let client = HttpDspClient::new().expect("client construction should not fail");
+        client.list_projects(&uri, None)
+    })
+    .join()
+    .expect("blocking thread should not panic");
+
+    let projects = result.expect("a v39-shaped response must parse");
+    assert_eq!(projects.len(), 1);
+    assert_eq!(projects[0].iri, "http://rdfh.ch/projects/0001");
+    assert_eq!(projects[0].shortcode, "0001");
+    assert_eq!(projects[0].shortname, "anything");
+    assert_eq!(projects[0].longname.as_deref(), Some("Anything Project"));
+    assert_eq!(projects[0].data_models, 1);
+}
+
+// ---------------------------------------------------------------------------
+// Parse failure — a missing required field → ServerError
+// ---------------------------------------------------------------------------
+
+/// The fields that remain keep the fail-loudly parse contract: an item missing
+/// `shortcode` (no `#[serde(default)]`, by design) must fail parse loudly
+/// (`ServerError`) rather than being silently filled in.
+#[tokio::test]
+async fn missing_shortcode_field_returns_server_error() {
+    let server = MockServer::start().await;
+
+    // `shortcode` is deliberately absent — missing required field.
     let body = projects_body(json!([
         {
             "id": "http://rdfh.ch/projects/0001",
-            "shortcode": "0001",
             "shortname": "anything"
-            // "status" is absent — must fail parse
         }
     ]));
 
@@ -273,7 +321,7 @@ async fn missing_status_field_returns_server_error() {
 
     assert!(
         result.is_err(),
-        "missing `status` field must cause a parse error, not silently default"
+        "a missing required field must cause a parse error, not a silent default"
     );
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),

@@ -15,7 +15,7 @@ dsp-api's healthcheck does not require sipi to report healthy.
 
 ## The version pin
 
-`stack.env` holds two independent pins, both currently `v38.1.0`. This is not
+`stack.env` holds two independent pins: `API` is currently `v39.0.0` and `DB` `v38.1.0`. This is not
 a recommendation from the dsp-api team and is not kept in lockstep with
 dsp-api's own compose file, which uses `latest` for both images.
 

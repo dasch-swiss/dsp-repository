@@ -134,3 +134,37 @@ lives in `src/client/sparql.rs`, layer 3a, not `src/model/`. Stated explicitly s
 > `src/model/` (layer 4) holds translated domain types only. Transport-shaped relay types — where the
 > shape is chosen by the server or the store, not by dsp-cli's translation — live in `src/client/`
 > (layer 3a).
+
+## Amendment (2026-09-22, DEV-7358) — what a removed wire field means at the layer 3a boundary
+
+The wire DTOs in `src/client/http.rs` declare a field without `#[serde(default)]` when the CLI
+depends on it, so that a server-contract change fails the parse loudly (→ `ServerError`) instead of
+being papered over with a default. `ProjectListItemDto::status` and `ProjectDetailApiDto::status`
+carried that rule in their doc comments, together with an instruction to record any change to it in
+an ADR amendment. This is that amendment.
+
+dsp-api v39.0.0 removed the project active/inactive concept outright (DEV-7039, listed as a breaking
+change in the dsp-api changelog): `GET /admin/projects` and `GET /admin/projects/{type}/{id}` no
+longer return a `status` key, and the `Project` case class no longer has the field. The fail-loudly
+contract worked exactly as intended — every `dsp vre project list` and `project describe` against a
+live server failed with `projects list response could not be parsed`.
+
+**The rule the fail-loudly contract implies, stated:**
+
+> When the parse fails loudly because a field was *removed upstream*, the fix is to remove the field
+> from the DTO **and from the domain model and the rendered output** — not to add
+> `#[serde(default)]`. A default would make dsp-cli render a value the server no longer has an
+> opinion about, which is worse than a missing column: the CLI would report every project as
+> `inactive` (or every project as `active`) with no way for the reader to tell. `#[serde(default)]`
+> stays reserved for fields that are genuinely optional in the contract, not for fields that are
+> gone.
+
+Accordingly, `ProjectStatus` is deleted from `src/model/project.rs`, `status` is gone from `Project`
+and `ProjectDetail`, and the `status` column is gone from `project list` and `project describe` in
+every format (prose, json, csv, tsv, lines) and from the `--columns` set. The remaining fields keep
+the fail-loudly contract unchanged; the wiremock suites now assert both halves of it — that a
+v39-shaped body parses, and that an item missing a field the CLI still needs does not.
+
+**Considered and rejected:** `#[serde(default)] status: bool` mapping absence to `Active`. It
+restores the column at the cost of inventing data, and it would silently outlive the day dsp-api
+reintroduces some other lifecycle concept under the same key.

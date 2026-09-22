@@ -2,5 +2,5 @@
 source: tests/output_format_flags_snapshots.rs
 expression: buf_to_string(&buf)
 ---
-0801,beol,Bernoulli-Euler Online,active,4,http://rdfh.ch/projects/Qt8K2mWbT0eHa1cZ
-0820,incunabula,"Basel, Early Book Printing",active,1,http://rdfh.ch/projects/Hn5D0sJwR3uXf7Tb
+0801,beol,Bernoulli-Euler Online,4,http://rdfh.ch/projects/Qt8K2mWbT0eHa1cZ
+0820,incunabula,"Basel, Early Book Printing",1,http://rdfh.ch/projects/Hn5D0sJwR3uXf7Tb

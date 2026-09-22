@@ -13,11 +13,6 @@ The HTTP client's `resolve_project` classifies the supplied value (4 hex digits 
 and resolves it against the matching `/admin/projects/{shortcode|shortname|iri}/…` endpoint.
 Help text, docs, and the glossary must always list all three; "shortname or IRI" (dropping shortcode) is a recurring drift to guard against.
 
-**Project status** (`active` / `inactive`):
-A project is either **active** or **inactive** on the server. dsp-cli uses these words as the canonical display strings;
-DSP-API represents the same concept as a boolean `status` field (`true` = active).
-The wire boolean is translated to the dsp-cli enum at the HTTP client boundary and never appears above it. See `model::ProjectStatus`.
-
 **Data-model count**:
 Each project carries a count of its data-models (the number of ontologies in DSP-API terms). dsp-cli surfaces this as the `data_models` field on `Project`.
 It is derived from the `ontologies` list in the DSP-API response (boundary translation: `ontologies.len()` → `data_models`) and shown in `dsp vre project list` output.
@@ -25,8 +20,8 @@ It is a count only — the actual data-model definitions are fetched separately 
 
 **Project detail** (`ProjectDetail`):
 The rich single-project view returned by `dsp vre project describe`.
-Carries identity (IRI, shortcode, shortname), status, description, keywords, and a data-models summary (count + names).
-Contrast **Project**, the lean `list` index projection which holds only identity, status, and a bare data-model count. See `model::ProjectDetail`.
+Carries identity (IRI, shortcode, shortname), description, keywords, and a data-models summary (count + names).
+Contrast **Project**, the lean `list` index projection which holds only identity and a bare data-model count. See `model::ProjectDetail`.
 
 **Project description** (`ProjectDescription`):
 One language-tagged description value attached to a project: a `value` string (may contain HTML markup as returned by the server)

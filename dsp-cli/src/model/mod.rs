@@ -16,7 +16,7 @@ pub mod vocabulary;
 pub use auth::LoginResponse;
 pub use data_model::{DataModel, DataModelDetail, ResourceType, ResourceTypeSummary};
 pub use dump::{CreateDumpOutcome, DumpStatus, DumpTask};
-pub use project::{DataModelSummary, Project, ProjectDescription, ProjectDetail, ProjectRef, ProjectStatus};
+pub use project::{DataModelSummary, Project, ProjectDescription, ProjectDetail, ProjectRef};
 pub use resource::{
     DatePoint, DateValue, FieldValues, FileValue, ResourceAccess, ResourceDetail, ResourcePage, ResourceSummary,
     ResourceVisibility, Value, ValueContent,

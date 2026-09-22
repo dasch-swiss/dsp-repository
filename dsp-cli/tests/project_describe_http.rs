@@ -15,7 +15,7 @@
 use dsp_cli::client::DspClient;
 use dsp_cli::client::http::HttpDspClient;
 use dsp_cli::diagnostic::Diagnostic;
-use dsp_cli::model::{DataModelSummary, ProjectStatus};
+use dsp_cli::model::DataModelSummary;
 use serde_json::json;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -30,7 +30,8 @@ const TOKEN: &str = "test-token";
 /// Build the beol-shaped project detail fixture.
 ///
 /// Uses a realistic random-suffix IRI (not shortcode-based, per plan §Grounding),
-/// HTML in description, 4 ontologies in non-alphabetical wire order (to verify sorting).
+/// HTML in description, 4 ontologies in non-alphabetical wire order (to verify
+/// sorting). Shaped as dsp-api v39 returns it: no `status` key.
 fn beol_body() -> serde_json::Value {
     json!({
         "project": {
@@ -53,7 +54,6 @@ fn beol_body() -> serde_json::Value {
                 "http://api.dasch.swiss/ontology/0801/newton/v2",
                 "http://api.dasch.swiss/ontology/0801/beol/v2"
             ],
-            "status": true,
             "selfjoin": false
         }
     })
@@ -67,7 +67,6 @@ fn beol_body() -> serde_json::Value {
 /// `ProjectDetail`, including:
 /// - realistic random-suffix IRI
 /// - longname, shortname, shortcode
-/// - `status: true` → `ProjectStatus::Active`
 /// - description value + language
 /// - keywords
 /// - ontologies → `data_models` sorted by name ascending
@@ -98,9 +97,6 @@ async fn happy_path_translates_dto_to_project_detail() {
     assert_eq!(detail.shortcode, "0801");
     assert_eq!(detail.shortname, "beol");
     assert_eq!(detail.longname.as_deref(), Some("Bernoulli-Euler Online"));
-
-    // Status
-    assert_eq!(detail.status, ProjectStatus::Active, "status:true must map to Active");
 
     // Description
     assert_eq!(detail.description.len(), 1, "one description entry");
@@ -196,14 +192,12 @@ async fn not_found_returns_not_found_diagnostic_with_hint() {
 async fn malformed_success_body_returns_server_error() {
     let server = MockServer::start().await;
 
-    // Return a 200 with a body that is valid JSON but missing required fields
-    // (e.g., `status` is absent — it has no `#[serde(default)]`).
+    // Return a 200 with a body that is valid JSON but missing a required field:
+    // `shortcode` has no `#[serde(default)]`, so it must fail parse loudly.
     let malformed = json!({
         "project": {
             "id": "http://rdfh.ch/projects/0001",
-            "shortcode": "0001",
             "shortname": "anything"
-            // "status" is deliberately absent — must fail parse loudly
         }
     });
 
@@ -221,7 +215,7 @@ async fn malformed_success_body_returns_server_error() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(result.is_err(), "missing `status` field must cause a parse error");
+    assert!(result.is_err(), "a missing required field must cause a parse error");
     assert!(
         matches!(result.unwrap_err(), Diagnostic::ServerError(_)),
         "parse failure on 200 must map to Diagnostic::ServerError"
@@ -322,26 +316,31 @@ async fn describe_project_connection_refused_returns_network() {
 }
 
 // ---------------------------------------------------------------------------
-// status: false → ProjectStatus::Inactive
+// v39 key set (no `status`) parses
 // ---------------------------------------------------------------------------
 
-/// A 200 response with `status: false` maps to `ProjectStatus::Inactive`.
-/// The happy-path test covers `status: true → Active`; this covers the other branch.
+/// dsp-api v39.0.0 removed the project active/inactive concept, so the
+/// single-project lookup no longer returns a `status` key. A body carrying the
+/// full v39 key set must parse. Regression guard for DEV-7358.
 #[tokio::test]
-async fn status_false_maps_to_inactive() {
+async fn v39_shaped_body_without_status_parses() {
     let server = MockServer::start().await;
 
     let body = json!({
         "project": {
-            "id": "http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF",
-            "shortname": "beol",
-            "shortcode": "0801",
-            "longname": "Bernoulli-Euler Online",
+            "allowedCopyrightHolders": ["AI-Generated Content - Not Protected by Copyright"],
+            "dataCopyrightHolder": null,
+            "dataLicense": null,
+            "defaultDataAuthorship": [],
             "description": [],
+            "enabledLicenses": [],
+            "id": "http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF",
             "keywords": [],
+            "longname": "Bernoulli-Euler Online",
             "ontologies": [],
-            "status": false,
-            "selfjoin": false
+            "selfjoin": false,
+            "shortcode": "0801",
+            "shortname": "beol"
         }
     });
 
@@ -360,9 +359,12 @@ async fn status_false_maps_to_inactive() {
     .join()
     .expect("blocking thread should not panic");
 
-    assert!(result.is_ok(), "expected Ok, got: {:?}", result);
-    let detail = result.unwrap();
-    assert_eq!(detail.status, ProjectStatus::Inactive, "status:false must map to Inactive");
+    let detail = result.expect("a v39-shaped response must parse");
+    assert_eq!(detail.iri, "http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF");
+    assert_eq!(detail.shortcode, "0801");
+    assert_eq!(detail.shortname, "beol");
+    assert_eq!(detail.longname.as_deref(), Some("Bernoulli-Euler Online"));
+    assert!(detail.data_models.is_empty());
 }
 
 // ---------------------------------------------------------------------------

@@ -55,4 +55,4 @@ Options:
   -h, --help
           Print help (see a summary with '-h')
 
-Columns (--columns): shortcode, shortname, longname, status, data_models, iri
+Columns (--columns): shortcode, shortname, longname, data_models, iri

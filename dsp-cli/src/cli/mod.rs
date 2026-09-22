@@ -18,10 +18,9 @@ use crate::render::{Format, HeaderMode, TableOptions};
 // column list exactly matches the joined `crate::render` const, so adding a
 // column without updating the literal fails CI.
 
-const AFTER_HELP_PROJECT_LIST: &str = "Columns (--columns): shortcode, shortname, longname, status, data_models, iri";
+const AFTER_HELP_PROJECT_LIST: &str = "Columns (--columns): shortcode, shortname, longname, data_models, iri";
 
-const AFTER_HELP_PROJECT_DESCRIBE: &str =
-    "Columns (--columns): shortcode, shortname, longname, status, data_models, iri";
+const AFTER_HELP_PROJECT_DESCRIBE: &str = "Columns (--columns): shortcode, shortname, longname, data_models, iri";
 
 const AFTER_HELP_PROJECT_DUMP: &str = "Columns (--columns): path  (--delete mode: deleted)";
 

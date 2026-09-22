@@ -193,25 +193,20 @@ impl Renderer for ProseRenderer {
         for item in &view.items {
             let longname = item.longname.as_deref().unwrap_or("");
             // iri is intentionally omitted from prose (dsp-cli/ADR-0003 / plan Step 3c).
-            // The data-models hint is right-appended to the row (same line as
-            // status), per the locked PRD output format.
-            write!(
-                self.out,
-                "  {:<sc_w$}  {:<sn_w$}  {:<ln_w$}  {}",
-                item.shortcode,
-                item.shortname,
-                longname,
-                item.status.as_str(),
-            )?;
+            // The data-models hint is right-appended to the row, per the locked
+            // PRD output format. The row is assembled first and trimmed at the
+            // end so a project with no longname and no data-models does not
+            // leave the column padding behind as trailing whitespace.
+            let mut row = format!("  {:<sc_w$}  {:<sn_w$}  {:<ln_w$}", item.shortcode, item.shortname, longname,);
             if item.data_models > 0 {
                 let label = if item.data_models == 1 {
                     "data-model"
                 } else {
                     "data-models"
                 };
-                write!(self.out, "   \u{b7} {} {label}", item.data_models)?;
+                row.push_str(&format!("   \u{b7} {} {label}", item.data_models));
             }
-            writeln!(self.out)?;
+            writeln!(self.out, "{}", row.trim_end())?;
         }
 
         render_prose_footer(&mut *self.out, meta)?;
@@ -232,7 +227,6 @@ impl Renderer for ProseRenderer {
         }
 
         writeln!(self.out, "  IRI:        {}", project.iri)?;
-        writeln!(self.out, "  Status:     {}", project.status.as_str())?;
 
         // Keywords — omit line when empty.
         if !project.keywords.is_empty() {
@@ -818,7 +812,7 @@ mod tests {
     use super::*;
     use crate::model::{
         Cardinality, DataModel, DataModelDetail, DataModelSummary, Field, Project, ProjectDescription, ProjectDetail,
-        ProjectStatus, Representation, ResourceType, ResourceTypeDetail, ResourceTypeSummary, ValueType,
+        Representation, ResourceType, ResourceTypeDetail, ResourceTypeSummary, ValueType,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -830,7 +824,6 @@ mod tests {
                 shortcode: "0001".into(),
                 shortname: "anything".into(),
                 longname: Some("Anything Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 2,
             },
             Project {
@@ -838,7 +831,6 @@ mod tests {
                 shortcode: "0002".into(),
                 shortname: "images".into(),
                 longname: None,
-                status: ProjectStatus::Inactive,
                 data_models: 0,
             },
             Project {
@@ -846,7 +838,6 @@ mod tests {
                 shortcode: "0803".into(),
                 shortname: "daschland".into(),
                 longname: Some("=Formula Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 1,
             },
         ]
@@ -909,7 +900,6 @@ mod tests {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "<b>BEOL</b> — early modern mathematics.".into(),
                 language: Some("en".into()),
@@ -950,7 +940,6 @@ mod tests {
         assert!(s.contains("Name:       Bernoulli-Euler Online"));
         // Other label/value lines
         assert!(s.contains("IRI:        http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF"));
-        assert!(s.contains("Status:     active"));
         assert!(s.contains("Keywords:   Bernoulli, Euler, Mathematics"));
         // Data-models with count + names
         assert!(s.contains("Data-models (4): beol, biblio, leibniz, newton"));
@@ -986,7 +975,6 @@ mod tests {
             shortcode: "0000".into(),
             shortname: "minimal".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -1013,7 +1001,6 @@ mod tests {
             shortcode: "0001".into(),
             shortname: "test".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "Plain description without language tag.".into(),
                 language: None,
@@ -1044,7 +1031,6 @@ mod tests {
             shortcode: "0002".into(),
             shortname: "multilang".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![
                 ProjectDescription {
                     value: "English description of this project.".into(),
@@ -1105,7 +1091,6 @@ mod tests {
             shortcode: "0003".into(),
             shortname: "multipara".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "First paragraph.\n\nSecond paragraph.".into(),
                 language: Some("en".into()),
@@ -1140,7 +1125,6 @@ mod tests {
             shortcode: "0004".into(),
             shortname: "tagsonly".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "<br/>".into(), // → "" after html_to_text
                 language: Some("en".into()),

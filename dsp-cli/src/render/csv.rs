@@ -235,7 +235,6 @@ impl Renderer for CsvRenderer {
                     item.shortcode.clone(),
                     item.shortname.clone(),
                     longname,
-                    item.status.as_str().to_string(),
                     data_models_str,
                     item.iri.clone(),
                 ]
@@ -264,7 +263,6 @@ impl Renderer for CsvRenderer {
             project.shortcode.clone(),
             project.shortname.clone(),
             longname,
-            project.status.as_str().to_string(),
             data_models_str,
             project.iri.clone(),
         ]];
@@ -573,8 +571,7 @@ impl Renderer for CsvRenderer {
 mod tests {
     use super::*;
     use crate::model::{
-        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDetail, ProjectStatus, ResourceType,
-        ResourceTypeSummary,
+        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDetail, ResourceType, ResourceTypeSummary,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -586,7 +583,6 @@ mod tests {
                 shortcode: "0001".into(),
                 shortname: "anything".into(),
                 longname: Some("Anything Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 2,
             },
             Project {
@@ -594,7 +590,6 @@ mod tests {
                 shortcode: "0002".into(),
                 shortname: "images".into(),
                 longname: None,
-                status: ProjectStatus::Inactive,
                 data_models: 0,
             },
             Project {
@@ -602,7 +597,6 @@ mod tests {
                 shortcode: "0803".into(),
                 shortname: "daschland".into(),
                 longname: Some("=Formula,Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 1,
             },
         ]
@@ -618,13 +612,13 @@ mod tests {
         renderer.projects(&view, &meta).unwrap();
 
         let stdout = out.string();
-        assert!(stdout.starts_with("shortcode,shortname,longname,status,data_models,iri\n"));
+        assert!(stdout.starts_with("shortcode,shortname,longname,data_models,iri\n"));
         // Plain field
-        assert!(stdout.contains("0001,anything,Anything Project,active,2,http://rdfh.ch/projects/0001"));
+        assert!(stdout.contains("0001,anything,Anything Project,2,http://rdfh.ch/projects/0001"));
         // None longname → empty field
-        assert!(stdout.contains("0002,images,,inactive,0,http://rdfh.ch/projects/0002"));
+        assert!(stdout.contains("0002,images,,0,http://rdfh.ch/projects/0002"));
         // Leading `=` longname — formula injection quoting; also contains comma
-        assert!(stdout.contains(r#"0803,daschland,"=Formula,Project",active,1,http://rdfh.ch/projects/0803"#));
+        assert!(stdout.contains(r#"0803,daschland,"=Formula,Project",1,http://rdfh.ch/projects/0803"#));
     }
 
     #[test]
@@ -691,7 +685,7 @@ mod tests {
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
         // Only header row on stdout
-        assert_eq!(out.string(), "shortcode,shortname,longname,status,data_models,iri\n");
+        assert_eq!(out.string(), "shortcode,shortname,longname,data_models,iri\n");
     }
 
     #[test]
@@ -704,7 +698,6 @@ mod tests {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![
@@ -723,11 +716,9 @@ mod tests {
 
         let stdout = out.string();
         // Header row
-        assert!(stdout.starts_with("shortcode,shortname,longname,status,data_models,iri\n"));
+        assert!(stdout.starts_with("shortcode,shortname,longname,data_models,iri\n"));
         // Data row: data_models = count (2)
-        assert!(
-            stdout.contains("0801,beol,Bernoulli-Euler Online,active,2,http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF")
-        );
+        assert!(stdout.contains("0801,beol,Bernoulli-Euler Online,2,http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF"));
     }
 
     #[test]
@@ -739,7 +730,6 @@ mod tests {
             shortcode: "0000".into(),
             shortname: "minimal".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -749,7 +739,7 @@ mod tests {
 
         let stdout = out.string();
         // None longname → empty field
-        assert!(stdout.contains("0000,minimal,,inactive,0,http://rdfh.ch/projects/0000"));
+        assert!(stdout.contains("0000,minimal,,0,http://rdfh.ch/projects/0000"));
     }
 
     #[test]
@@ -762,7 +752,6 @@ mod tests {
             shortcode: "0803".into(),
             shortname: "daschland".into(),
             longname: Some("=Formula,Project".into()),
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -772,7 +761,7 @@ mod tests {
 
         let stdout = out.string();
         // Formula injection and comma → quoted field
-        assert!(stdout.contains(r#"0803,daschland,"=Formula,Project",active,0"#));
+        assert!(stdout.contains(r#"0803,daschland,"=Formula,Project",0"#));
     }
 
     #[test]
@@ -785,7 +774,6 @@ mod tests {
             shortcode: "0001".into(),
             shortname: "test".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![],

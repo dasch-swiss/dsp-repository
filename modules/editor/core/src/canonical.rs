@@ -48,6 +48,39 @@ pub fn write_draft(draft: &ProjectDraft) -> Result<String, DraftError> {
     write_project(&project).map_err(|err| DraftError::Serialization(err.to_string()))
 }
 
+/// Serializes one entity — a person or an organization — in the canonical form.
+///
+/// Takes the payload as given rather than routing it through [`Person`] or
+/// [`Organization`], unlike [`write_project`]'s [`ProjectRaw`] detour: the
+/// committed corpus carries keys no struct declares and distinguishes an absent
+/// `affiliations` from an empty one, so a typed round-trip would drop the first
+/// and invent the second, rewriting files the caller never touched. The editor
+/// validates a payload before it is proposed, so the job here is the file's
+/// shape, not its contents.
+///
+/// `id` is hoisted to the front, where every committed entity file has it;
+/// [`ProposedEntityView`] appends it, because a producer leaves it out of the
+/// payload for the reader to supply.
+///
+/// `every_committed_entity_file_round_trips_byte_identically` holds both claims
+/// against the whole corpus.
+///
+/// [`Person`]: shared_metadata::person::Person
+/// [`Organization`]: shared_metadata::organization::Organization
+/// [`ProposedEntityView`]: crate::collection::ProposedEntityView
+pub fn write_entity(entity: &Value) -> Result<String, serde_json::Error> {
+    let mut value = entity.clone();
+    strip_null_members(&mut value);
+    if let Value::Object(map) = &mut value {
+        // `shift_*` rather than `insert`/`remove`: under `preserve_order` the
+        // plain pair is swap-based and would reorder the surviving members.
+        if let Some(id) = map.shift_remove("id") {
+            map.shift_insert(0, "id".to_string(), id);
+        }
+    }
+    render(&value)
+}
+
 fn render(value: &Value) -> Result<String, serde_json::Error> {
     let mut buffer = Vec::new();
     let mut serializer = serde_json::Serializer::with_formatter(&mut buffer, PrettyFormatter::with_indent(INDENT));
@@ -189,5 +222,57 @@ mod tests {
         draft.set("fieldTheContractDoesNotDeclare", json!("value"));
         let json = write_draft(&draft).expect("writes");
         assert!(!json.contains("fieldTheContractDoesNotDeclare"), "{json}");
+    }
+
+    #[test]
+    fn an_entity_is_written_with_id_first_even_when_the_payload_appends_it() {
+        // `ProposedEntityView::from_proposal` inserts `id` into a payload that
+        // left it out, so it arrives last. Every committed entity file has it
+        // first.
+        let entity = json!({"givenNames": ["Ada"], "familyNames": ["Lovelace"], "id": "person-417"});
+
+        let written = write_entity(&entity).expect("writes");
+
+        let keys: Vec<&str> = written
+            .lines()
+            .filter_map(|line| line.strip_prefix("    \""))
+            .filter_map(|line| line.split('"').next())
+            .collect();
+        assert_eq!(keys, ["id", "givenNames", "familyNames"]);
+    }
+
+    #[test]
+    fn an_entity_keeps_the_payload_order_of_everything_after_id() {
+        let entity = json!({"id": "organization-143", "url": "https://example.org/", "name": "Example"});
+
+        let written = write_entity(&entity).expect("writes");
+
+        let keys: Vec<&str> = written
+            .lines()
+            .filter_map(|line| line.strip_prefix("    \""))
+            .filter_map(|line| line.split('"').next())
+            .collect();
+        assert_eq!(keys, ["id", "url", "name"], "url before name, as the payload had it");
+    }
+
+    #[test]
+    fn an_entity_is_indented_with_four_spaces_and_ends_with_one_newline() {
+        let written = write_entity(&json!({"id": "person-417", "email": "ada@example.org"})).expect("writes");
+
+        assert!(written.contains("\n    \"email\""), "four-space indent at depth 1");
+        assert!(written.ends_with("}\n"));
+        assert!(!written.ends_with("}\n\n"));
+    }
+
+    #[test]
+    fn an_entity_drops_null_members_but_keeps_empty_collections() {
+        // 59 of 416 committed person files carry `"jobTitles": []`, so an empty
+        // list is data. A null member is the editor declining to send a value.
+        let entity = json!({"id": "person-417", "jobTitles": [], "email": null});
+
+        let written = write_entity(&entity).expect("writes");
+
+        assert!(written.contains("\"jobTitles\": []"), "an empty list survives");
+        assert!(!written.contains("email"), "a null member is dropped");
     }
 }

@@ -1,4 +1,4 @@
-//! The canonical writer, held against the whole committed corpus.
+//! The canonical writers, held against the whole committed corpus.
 //!
 //! `load -> draft -> canonical write` must be byte-identical for every
 //! committed project file. That pins member order at every depth, indentation,
@@ -16,7 +16,7 @@
 
 use std::path::{Path, PathBuf};
 
-use editor_core::canonical::write_draft;
+use editor_core::canonical::{write_draft, write_entity};
 use editor_core::draft::ProjectDraft;
 use shared_metadata::project::ProjectRaw;
 
@@ -144,4 +144,58 @@ fn json_files_in(dir: &Path) -> usize {
         .flatten()
         .filter(|entry| entry.path().extension().and_then(|e| e.to_str()) == Some("json"))
         .count()
+}
+
+/// The same claim for entity files, which `write_entity` produces: collecting
+/// one entity must not reformat its neighbours.
+///
+/// Unlike the project side there is no draft detour — `write_entity` takes the
+/// payload as the editor sent it, because the corpus carries keys no struct
+/// declares and distinguishes an absent `affiliations` from an empty one.
+///
+/// Twelve committed files end without a newline and the writer always emits
+/// one. They are compared with that difference normalised away, and counted, so
+/// that a new file entering the corpus in non-canonical form fails here rather
+/// than joining the exception unnoticed. The count cannot be derived from the
+/// directory: both sides would move together.
+#[test]
+fn every_committed_entity_file_round_trips_byte_identically() {
+    let mut missing_newline = Vec::new();
+
+    for dir in ["persons", "organizations"] {
+        let mut files: Vec<PathBuf> = std::fs::read_dir(data_dir().join(dir))
+            .expect("an entity data directory should be readable")
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|path| path.extension().and_then(|e| e.to_str()) == Some("json"))
+            .collect();
+        files.sort();
+        assert!(!files.is_empty(), "no {dir} files were found");
+
+        for path in files {
+            let committed = std::fs::read_to_string(&path).expect("an entity file should be readable");
+            let parsed: serde_json::Value = serde_json::from_str(&committed).expect("an entity file should parse");
+
+            let written = write_entity(&parsed).expect("the writer should serialize an entity");
+
+            if committed.ends_with('\n') {
+                assert_eq!(written, committed, "{} does not round-trip", path.display());
+            } else {
+                missing_newline.push(path.file_name().expect("a file name").to_string_lossy().into_owned());
+                assert_eq!(
+                    written,
+                    format!("{committed}\n"),
+                    "{} differs beyond its missing newline",
+                    path.display()
+                );
+            }
+        }
+    }
+
+    assert_eq!(
+        missing_newline.len(),
+        12,
+        "12 committed entity files end without a newline. A new one joining them is a file that \
+         should have been written canonically: {missing_newline:?}"
+    );
 }

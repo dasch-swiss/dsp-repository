@@ -10,7 +10,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// The two roles the editor recognises.
@@ -281,7 +281,7 @@ pub struct Submission {
 /// The wire form is the same lowercase set [`Self::as_str`] produces and the schema's `CHECK`
 /// constraint pins. `test_pull_request_state_deserializes_from_its_stored_form` holds the two
 /// together.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PullRequestState {
     Open,

@@ -2,5 +2,5 @@
 source: tests/project_describe_snapshots.rs
 expression: buf_to_string(&out_buf)
 ---
-shortcode	shortname	longname	status	data_models	iri
-0801	beol	Bernoulli-Euler Online	active	4	http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF
+shortcode	shortname	longname	data_models	iri
+0801	beol	Bernoulli-Euler Online	4	http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF

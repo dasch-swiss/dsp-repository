@@ -382,7 +382,6 @@ impl Renderer for JsonRenderer {
                     "shortcode": item.shortcode,
                     "shortname": item.shortname,
                     "longname": item.longname,
-                    "status": item.status.as_str(),
                     "data_models": item.data_models,
                 })
             })
@@ -432,7 +431,6 @@ impl Renderer for JsonRenderer {
                 "shortcode": project.shortcode,
                 "shortname": project.shortname,
                 "longname": project.longname,
-                "status": project.status.as_str(),
                 "description": description,
                 "keywords": project.keywords,
                 "data_models": data_models,
@@ -915,8 +913,8 @@ impl Renderer for JsonRenderer {
 mod tests {
     use super::*;
     use crate::model::{
-        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDescription, ProjectDetail, ProjectStatus,
-        ResourceType, ResourceTypeSummary,
+        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDescription, ProjectDetail, ResourceType,
+        ResourceTypeSummary,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -975,7 +973,6 @@ mod tests {
                 shortcode: "0001".into(),
                 shortname: "anything".into(),
                 longname: Some("Anything Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 2,
             },
             Project {
@@ -983,7 +980,6 @@ mod tests {
                 shortcode: "0002".into(),
                 shortname: "images".into(),
                 longname: None,
-                status: ProjectStatus::Inactive,
                 data_models: 0,
             },
         ];
@@ -1007,14 +1003,12 @@ mod tests {
         assert_eq!(data[0]["shortcode"], "0001");
         assert_eq!(data[0]["shortname"], "anything");
         assert_eq!(data[0]["longname"], "Anything Project");
-        assert_eq!(data[0]["status"], "active");
         assert_eq!(data[0]["data_models"], 2);
         assert_eq!(data[0]["iri"], "http://rdfh.ch/projects/0001");
 
         // second item — longname None → null
         assert_eq!(data[1]["shortcode"], "0002");
         assert!(data[1]["longname"].is_null());
-        assert_eq!(data[1]["status"], "inactive");
         assert_eq!(data[1]["data_models"], 0);
     }
 
@@ -1097,7 +1091,6 @@ mod tests {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "<b>BEOL</b> — early modern mathematics.".into(),
                 language: Some("en".into()),
@@ -1144,7 +1137,6 @@ mod tests {
         assert_eq!(data["shortcode"], "0801");
         assert_eq!(data["shortname"], "beol");
         assert_eq!(data["longname"], "Bernoulli-Euler Online");
-        assert_eq!(data["status"], "active");
 
         // description array
         let desc = data["description"].as_array().unwrap();
@@ -1191,7 +1183,6 @@ mod tests {
             shortcode: "0000".into(),
             shortname: "minimal".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -1201,7 +1192,6 @@ mod tests {
 
         let parsed: serde_json::Value = serde_json::from_str(out.string().trim()).unwrap();
         let data = &parsed["data"];
-        assert_eq!(data["status"], "inactive");
         assert!(data["description"].as_array().unwrap().is_empty());
         assert!(data["keywords"].as_array().unwrap().is_empty());
         assert!(data["data_models"].as_array().unwrap().is_empty());

@@ -15,36 +15,6 @@ pub struct ProjectRef {
     pub shortname: String,
 }
 
-/// A project's activation status (dsp-cli vocabulary for DSP-API's `status` bool).
-///
-/// **Why an enum over `active: bool`:** mirrors the [`DumpStatus`] precedent and
-/// keeps the `active`/`inactive` display words as a single source of truth — the
-/// vocabulary ADR wants dsp-cli terms defined once. Wire (bool) → enum translation
-/// happens at the client boundary (`http.rs`), never here. Deliberate — not
-/// over-engineering. See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
-///
-/// [`DumpStatus`]: crate::model::DumpStatus
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProjectStatus {
-    Active,
-    Inactive,
-}
-
-impl ProjectStatus {
-    /// Return the canonical lower-case display string for this status.
-    ///
-    /// This is the single source of truth for the status word used in
-    /// `project list` output (human prose, JSON, tabular formats). Wire
-    /// (bool) → enum translation happens in the HTTP client layer (`http.rs`)
-    /// and is intentionally NOT delegated here.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            ProjectStatus::Active => "active",
-            ProjectStatus::Inactive => "inactive",
-        }
-    }
-}
-
 /// One language-tagged description value (dsp-cli vocabulary for the API's
 /// `description: [{value, language}]`). `language` is optional on the wire.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -71,7 +41,7 @@ pub struct DataModelSummary {
 /// A project as shown by `dsp vre project describe` — the rich projection.
 ///
 /// Contrast `Project` (the lean `list` index projection). Carries identity,
-/// status, description, keywords, and a data-models summary (count + names).
+/// description, keywords, and a data-models summary (count + names).
 /// No `serde` derive: wire deserialization stays in `src/client/http.rs`.
 /// See dsp-cli/ADR-0001 and dsp-cli/ADR-0008.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -84,8 +54,6 @@ pub struct ProjectDetail {
     pub shortname: String,
     /// Human-readable long name, if the server supplies one.
     pub longname: Option<String>,
-    /// Whether the project is currently active on the server.
-    pub status: ProjectStatus,
     /// Language-tagged description values (may contain HTML markup).
     pub description: Vec<ProjectDescription>,
     /// Free-form keywords associated with the project.
@@ -110,8 +78,6 @@ pub struct Project {
     pub shortname: String,
     /// Human-readable long name, if the server supplies one.
     pub longname: Option<String>,
-    /// Whether the project is currently active on the server.
-    pub status: ProjectStatus,
     /// Number of data-models (DSP-API "ontologies") attached to the project.
     pub data_models: usize,
 }
@@ -135,29 +101,12 @@ mod tests {
     }
 
     #[test]
-    fn project_status_as_str() {
-        assert_eq!(ProjectStatus::Active.as_str(), "active");
-        assert_eq!(ProjectStatus::Inactive.as_str(), "inactive");
-    }
-
-    #[test]
-    fn project_status_derives() {
-        // Clone, Copy, PartialEq, Eq, Debug
-        let s = ProjectStatus::Active;
-        let t = s; // Copy
-        assert_eq!(s, t);
-        assert_ne!(ProjectStatus::Active, ProjectStatus::Inactive);
-        let _ = format!("{s:?}"); // Debug
-    }
-
-    #[test]
     fn project_construction_and_equality() {
         let p = Project {
             iri: "http://rdfh.ch/projects/0001".into(),
             shortcode: "0001".into(),
             shortname: "anything".into(),
             longname: Some("Anything Project".into()),
-            status: ProjectStatus::Active,
             data_models: 3,
         };
         let cloned = p.clone();
@@ -166,7 +115,6 @@ mod tests {
         assert_eq!(p.shortcode, "0001");
         assert_eq!(p.shortname, "anything");
         assert_eq!(p.longname.as_deref(), Some("Anything Project"));
-        assert_eq!(p.status, ProjectStatus::Active);
         assert_eq!(p.data_models, 3);
     }
 
@@ -177,11 +125,9 @@ mod tests {
             shortcode: "0002".into(),
             shortname: "images".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             data_models: 0,
         };
         assert_eq!(p.longname, None);
-        assert_eq!(p.status, ProjectStatus::Inactive);
         assert_eq!(p.data_models, 0);
     }
 
@@ -224,7 +170,6 @@ mod tests {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "<b>Project Metadata</b>".into(),
                 language: Some("en".into()),
@@ -247,7 +192,6 @@ mod tests {
         assert_eq!(detail.shortcode, "0801");
         assert_eq!(detail.shortname, "beol");
         assert_eq!(detail.longname.as_deref(), Some("Bernoulli-Euler Online"));
-        assert_eq!(detail.status, ProjectStatus::Active);
         assert_eq!(detail.description.len(), 1);
         assert_eq!(detail.keywords.len(), 3);
         assert_eq!(detail.data_models.len(), 2);
@@ -260,7 +204,6 @@ mod tests {
             shortcode: "0000".into(),
             shortname: "minimal".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -269,6 +212,5 @@ mod tests {
         assert!(detail.description.is_empty());
         assert!(detail.keywords.is_empty());
         assert!(detail.data_models.is_empty());
-        assert_eq!(detail.status, ProjectStatus::Inactive);
     }
 }

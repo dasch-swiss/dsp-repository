@@ -5,7 +5,6 @@ expression: buf_to_string(&buf)
 Project: beol (0801)
   Name:       Bernoulli-Euler Online
   IRI:        http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF
-  Status:     active
   Keywords:   Bernoulli, Euler, Mathematics
   Data-models (4): beol, biblio, leibniz, newton
   Description:

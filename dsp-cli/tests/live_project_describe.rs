@@ -44,7 +44,6 @@ use common::{optional_env, require_env};
 /// - IRI must be non-empty and start with "http".
 /// - `data_models` count is asserted `>= 0` (any valid value); individual data-model names are
 ///   asserted non-empty and IRIs start with "http".
-/// - Status values: both `Active` and `Inactive` are acceptable.
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_project_describe_returns_valid_project_detail() {
@@ -173,11 +172,10 @@ fn live_project_describe_returns_valid_project_detail() {
     }
 
     eprintln!(
-        "live test: project {} ({}) — status {:?}, {} data-model(s), \
+        "live test: project {} ({}) — {} data-model(s), \
          {} keyword(s), {} description(s)",
         detail.shortcode,
         detail.shortname,
-        detail.status,
         detail.data_models.len(),
         detail.keywords.len(),
         detail.description.len()

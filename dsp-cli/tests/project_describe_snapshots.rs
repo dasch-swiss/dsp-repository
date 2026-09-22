@@ -31,7 +31,7 @@
 //! appear as dsp-cli vocabulary in rendered labels or keys.)
 
 use dsp_cli::diagnostic::Diagnostic;
-use dsp_cli::model::{DataModelSummary, ProjectDescription, ProjectDetail, ProjectStatus};
+use dsp_cli::model::{DataModelSummary, ProjectDescription, ProjectDetail};
 use dsp_cli::render::csv::CsvRenderer;
 use dsp_cli::render::json::JsonRenderer;
 use dsp_cli::render::lines::LinesRenderer;
@@ -72,7 +72,6 @@ fn beol_detail() -> ProjectDetail {
         shortcode: "0801".to_string(),
         shortname: "beol".to_string(),
         longname: Some("Bernoulli-Euler Online".to_string()),
-        status: ProjectStatus::Active,
         description: vec![ProjectDescription {
             value: "<b>BEOL</b> — early modern mathematics.".to_string(),
             language: Some("en".to_string()),
@@ -109,7 +108,6 @@ fn edge_detail() -> ProjectDetail {
         shortcode: "4123".to_string(),
         shortname: "testproject".to_string(),
         longname: None,
-        status: ProjectStatus::Active,
         description: vec![],
         keywords: vec![],
         data_models: vec![],

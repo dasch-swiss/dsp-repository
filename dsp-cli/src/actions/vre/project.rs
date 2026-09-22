@@ -906,7 +906,7 @@ mod tests {
     use crate::diagnostic::Diagnostic;
     use crate::model::{
         CreateDumpOutcome, DataModelSummary, DumpStatus, DumpTask, Project, ProjectDescription, ProjectDetail,
-        ProjectRef, ProjectStatus,
+        ProjectRef,
     };
     use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::progress::ProgressReporter;
@@ -3560,7 +3560,6 @@ mod tests {
             shortcode: shortcode.to_string(),
             shortname: shortname.to_string(),
             longname: longname.map(str::to_string),
-            status: ProjectStatus::Active,
             data_models: 2,
         }
     }
@@ -3883,7 +3882,6 @@ mod tests {
             shortcode: "0801".to_string(),
             shortname: "beol".to_string(),
             longname: Some("Bernoulli-Euler Online".to_string()),
-            status: ProjectStatus::Active,
             description: vec![ProjectDescription {
                 value: "A project about Bernoulli and Euler.".to_string(),
                 language: Some("en".to_string()),

@@ -234,7 +234,6 @@ impl Renderer for TsvRenderer {
                     item.shortcode.clone(),
                     item.shortname.clone(),
                     longname,
-                    item.status.as_str().to_string(),
                     data_models_str,
                     item.iri.clone(),
                 ]
@@ -263,7 +262,6 @@ impl Renderer for TsvRenderer {
             project.shortcode.clone(),
             project.shortname.clone(),
             longname,
-            project.status.as_str().to_string(),
             data_models_str,
             project.iri.clone(),
         ]];
@@ -569,8 +567,7 @@ impl Renderer for TsvRenderer {
 mod tests {
     use super::*;
     use crate::model::{
-        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDetail, ProjectStatus, ResourceType,
-        ResourceTypeSummary,
+        DataModel, DataModelDetail, DataModelSummary, Project, ProjectDetail, ResourceType, ResourceTypeSummary,
     };
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
@@ -582,7 +579,6 @@ mod tests {
                 shortcode: "0001".into(),
                 shortname: "anything".into(),
                 longname: Some("Anything Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 2,
             },
             Project {
@@ -590,7 +586,6 @@ mod tests {
                 shortcode: "0002".into(),
                 shortname: "images".into(),
                 longname: None,
-                status: ProjectStatus::Inactive,
                 data_models: 0,
             },
             Project {
@@ -598,7 +593,6 @@ mod tests {
                 shortcode: "0803".into(),
                 shortname: "daschland".into(),
                 longname: Some("DaSCHland Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 1,
             },
         ]
@@ -614,11 +608,11 @@ mod tests {
         renderer.projects(&view, &meta).unwrap();
 
         let stdout = out.string();
-        assert!(stdout.starts_with("shortcode\tshortname\tlongname\tstatus\tdata_models\tiri\n"));
-        assert!(stdout.contains("0001\tanything\tAnything Project\tactive\t2\thttp://rdfh.ch/projects/0001"));
-        // None longname → empty (trailing tab before status)
-        assert!(stdout.contains("0002\timages\t\tinactive\t0\thttp://rdfh.ch/projects/0002"));
-        assert!(stdout.contains("0803\tdaschland\tDaSCHland Project\tactive\t1\thttp://rdfh.ch/projects/0803"));
+        assert!(stdout.starts_with("shortcode\tshortname\tlongname\tdata_models\tiri\n"));
+        assert!(stdout.contains("0001\tanything\tAnything Project\t2\thttp://rdfh.ch/projects/0001"));
+        // None longname → empty (trailing tab before data_models)
+        assert!(stdout.contains("0002\timages\t\t0\thttp://rdfh.ch/projects/0002"));
+        assert!(stdout.contains("0803\tdaschland\tDaSCHland Project\t1\thttp://rdfh.ch/projects/0803"));
     }
 
     #[test]
@@ -681,7 +675,7 @@ mod tests {
         let view = ProjectListView { items: vec![], total: 0, filter: None };
         let meta = make_meta("anonymous", "https://api.test.dasch.swiss");
         renderer.projects(&view, &meta).unwrap();
-        assert_eq!(out.string(), "shortcode\tshortname\tlongname\tstatus\tdata_models\tiri\n");
+        assert_eq!(out.string(), "shortcode\tshortname\tlongname\tdata_models\tiri\n");
     }
 
     #[test]
@@ -694,7 +688,6 @@ mod tests {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![
@@ -713,12 +706,10 @@ mod tests {
 
         let stdout = out.string();
         // Header row
-        assert!(stdout.starts_with("shortcode\tshortname\tlongname\tstatus\tdata_models\tiri\n"));
+        assert!(stdout.starts_with("shortcode\tshortname\tlongname\tdata_models\tiri\n"));
         // Data row: data_models = count (2)
         assert!(
-            stdout.contains(
-                "0801\tbeol\tBernoulli-Euler Online\tactive\t2\thttp://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF"
-            )
+            stdout.contains("0801\tbeol\tBernoulli-Euler Online\t2\thttp://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF")
         );
     }
 
@@ -731,7 +722,6 @@ mod tests {
             shortcode: "0000".into(),
             shortname: "minimal".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -741,7 +731,7 @@ mod tests {
 
         let stdout = out.string();
         // None longname → empty field (two consecutive tabs)
-        assert!(stdout.contains("0000\tminimal\t\tinactive\t0\thttp://rdfh.ch/projects/0000"));
+        assert!(stdout.contains("0000\tminimal\t\t0\thttp://rdfh.ch/projects/0000"));
     }
 
     #[test]
@@ -754,7 +744,6 @@ mod tests {
             shortcode: "0001".into(),
             shortname: "test".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![],

@@ -2,4 +2,4 @@
 source: tests/output_format_flags_snapshots.rs
 expression: buf_to_string(&buf)
 ---
-shortcode,shortname,longname,status,data_models,iri
+shortcode,shortname,longname,data_models,iri

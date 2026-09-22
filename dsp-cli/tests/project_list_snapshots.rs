@@ -31,7 +31,7 @@
 //! dsp-cli/ADR-0001 vocabulary guard: no `ontology`/`export`/`class`/`property` in this
 //! file or any .snap it generates.
 
-use dsp_cli::model::{Project, ProjectStatus};
+use dsp_cli::model::Project;
 use dsp_cli::render::csv::CsvRenderer;
 use dsp_cli::render::json::JsonRenderer;
 use dsp_cli::render::lines::LinesRenderer;
@@ -42,20 +42,12 @@ use dsp_cli::render::{MetaContext, ProjectListView, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-fn project(
-    iri: &str,
-    shortcode: &str,
-    shortname: &str,
-    longname: Option<&str>,
-    status: ProjectStatus,
-    data_models: usize,
-) -> Project {
+fn project(iri: &str, shortcode: &str, shortname: &str, longname: Option<&str>, data_models: usize) -> Project {
     Project {
         iri: iri.into(),
         shortcode: shortcode.into(),
         shortname: shortname.into(),
         longname: longname.map(Into::into),
-        status,
         data_models,
     }
 }
@@ -64,17 +56,15 @@ fn project(
 
 /// Realistic, special-character-free fixture. Returned in server order
 /// (unsorted) so the sort in `full_view` is meaningful. Covers the legitimate
-/// field-state variations (active/inactive, multi/single/zero data-models, an
-/// absent longname) without any quoting/escaping bait.
+/// field-state variations (multi/single/zero data-models, an absent longname)
+/// without any quoting/escaping bait.
 fn realistic_projects() -> Vec<Project> {
-    use ProjectStatus::{Active, Inactive};
     vec![
         project(
             "http://rdfh.ch/projects/Qt8K2mWbT0eHa1cZ",
             "0801",
             "beol",
             Some("Bernoulli-Euler Online"),
-            Active,
             4,
         ),
         project(
@@ -82,16 +72,14 @@ fn realistic_projects() -> Vec<Project> {
             "0918",
             "roud",
             Some("Gustave Roud"),
-            Active,
             2,
         ),
-        project("http://rdfh.ch/projects/Zc6F1hYpQ2kMe8Vn", "0512", "sandbox", None, Inactive, 0),
+        project("http://rdfh.ch/projects/Zc6F1hYpQ2kMe8Vn", "0512", "sandbox", None, 0),
         project(
             "http://rdfh.ch/projects/Hn5D0sJwR3uXf7Tb",
             "0820",
             "incunabula",
             Some("Basel Early Book Printing"),
-            Active,
             1,
         ),
     ]
@@ -372,30 +360,20 @@ fn project_list_json_authenticated() {
 /// formula-injection), and an embedded double-quote (RFC-4180 doubling). Kept
 /// out of the shared realistic fixture so it never pollutes the other cells.
 fn csv_escaping_view() -> ProjectListView {
-    use ProjectStatus::Active;
     let items = sorted(vec![
         project(
             "http://rdfh.ch/projects/Ed1tNsXqT0",
             "0001",
             "editions",
             Some("Letters, Drafts and Notes"),
-            Active,
             2,
         ),
-        project(
-            "http://rdfh.ch/projects/Ca1cFmLpR2",
-            "0002",
-            "ledger",
-            Some("=SUM(revenue)"),
-            Active,
-            1,
-        ),
+        project("http://rdfh.ch/projects/Ca1cFmLpR2", "0002", "ledger", Some("=SUM(revenue)"), 1),
         project(
             "http://rdfh.ch/projects/Qu0tEdZwV3",
             "0003",
             "quoted",
             Some("The \"Definitive\" Edition"),
-            Active,
             1,
         ),
     ]);
@@ -450,13 +428,11 @@ fn project_list_tsv_no_quoting() {
 /// fixture/filter so the non-ASCII byte never appears in the other snapshots.
 #[test]
 fn project_list_prose_filter_non_ascii() {
-    use ProjectStatus::Active;
     let all = vec![project(
         "http://rdfh.ch/projects/Ca1fEzWqT0",
         "0007",
         "cafe",
         Some("Café Editions"),
-        Active,
         1,
     )];
     let (items, total) = apply_filter(all, "café");

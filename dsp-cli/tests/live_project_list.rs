@@ -42,7 +42,6 @@ use common::{optional_env, require_env};
 /// - No hardcoded project counts or specific shortcodes.
 /// - Shortcode shape: 4 hex digits — `len == 4` and all chars are ASCII hex.
 /// - `data_models` is a `usize` — no panic on any valid count (including 0).
-/// - Status values: both `Active` and `Inactive` are acceptable.
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_project_list_returns_non_empty_vec_with_valid_shortcodes() {
@@ -136,8 +135,8 @@ fn live_project_list_returns_non_empty_vec_with_valid_shortcodes() {
         // We only log it; no bound assertion here because valid projects may
         // have 0 or many data models.
         eprintln!(
-            "live test: project {} ({}) — status {:?}, data_models {}",
-            proj.shortcode, proj.shortname, proj.status, proj.data_models
+            "live test: project {} ({}) — data_models {}",
+            proj.shortcode, proj.shortname, proj.data_models
         );
     }
 

@@ -265,7 +265,6 @@ impl Renderer for LinesRenderer {
                     item.shortcode.clone(),
                     item.shortname.clone(),
                     longname,
-                    item.status.as_str().to_string(),
                     data_models_str,
                     item.iri.clone(),
                 ]
@@ -294,7 +293,6 @@ impl Renderer for LinesRenderer {
             project.shortcode.clone(),
             project.shortname.clone(),
             longname,
-            project.status.as_str().to_string(),
             data_models_str,
             project.iri.clone(),
         ]];
@@ -595,9 +593,7 @@ impl Renderer for LinesRenderer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{
-        DataModel, DataModelDetail, Project, ProjectDetail, ProjectStatus, ResourceType, ResourceTypeSummary,
-    };
+    use crate::model::{DataModel, DataModelDetail, Project, ProjectDetail, ResourceType, ResourceTypeSummary};
     use crate::render::test_support::{SharedBuf, make_meta};
     use crate::render::{DataModelListView, ResourceTypeListView};
 
@@ -608,7 +604,6 @@ mod tests {
                 shortcode: "0001".into(),
                 shortname: "anything".into(),
                 longname: Some("Anything Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 2,
             },
             Project {
@@ -616,7 +611,6 @@ mod tests {
                 shortcode: "0002".into(),
                 shortname: "images".into(),
                 longname: None,
-                status: ProjectStatus::Inactive,
                 data_models: 0,
             },
             Project {
@@ -624,7 +618,6 @@ mod tests {
                 shortcode: "0803".into(),
                 shortname: "daschland".into(),
                 longname: Some("DaSCHland Project".into()),
-                status: ProjectStatus::Active,
                 data_models: 1,
             },
         ]
@@ -723,7 +716,6 @@ mod tests {
             shortcode: "0801".into(),
             shortname: "beol".into(),
             longname: Some("Bernoulli-Euler Online".into()),
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -748,7 +740,6 @@ mod tests {
             shortcode: "0000".into(),
             shortname: "minimal".into(),
             longname: None,
-            status: ProjectStatus::Inactive,
             description: vec![],
             keywords: vec![],
             data_models: vec![],
@@ -771,7 +762,6 @@ mod tests {
             shortcode: "0001".into(),
             shortname: "test".into(),
             longname: None,
-            status: ProjectStatus::Active,
             description: vec![],
             keywords: vec![],
             data_models: vec![],

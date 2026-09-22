@@ -220,7 +220,7 @@ impl TableOptions {
 // Column order follows the CSV header order in csv.rs (the authoritative set).
 
 /// Column set for `project list` and `project describe`.
-pub(crate) const PROJECTS_COLUMNS: &[&str] = &["shortcode", "shortname", "longname", "status", "data_models", "iri"];
+pub(crate) const PROJECTS_COLUMNS: &[&str] = &["shortcode", "shortname", "longname", "data_models", "iri"];
 
 /// Column set for `data-model list`.
 pub(crate) const DATA_MODELS_COLUMNS: &[&str] = &["name", "iri", "label", "last_modified", "is_builtin"];

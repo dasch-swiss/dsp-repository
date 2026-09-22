@@ -39,8 +39,8 @@ use crate::model::auth::LoginResponse;
 use crate::model::resource::{DatePoint, DateValue, FieldValues, FileValue, Value, ValueContent};
 use crate::model::{
     Cardinality, CreateDumpOutcome, DataModel, DataModelDetail, DataModelStructure, DataModelSummary, DumpStatus,
-    DumpTask, Field, LocalizedText, Project, ProjectDescription, ProjectDetail, ProjectRef, ProjectStatus, Relation,
-    RelationKind, Representation, ResourceAccess, ResourceDetail, ResourcePage, ResourceSummary, ResourceTypeDetail,
+    DumpTask, Field, LocalizedText, Project, ProjectDescription, ProjectDetail, ProjectRef, Relation, RelationKind,
+    Representation, ResourceAccess, ResourceDetail, ResourcePage, ResourceSummary, ResourceTypeDetail,
     ResourceTypeSummary, ResourceVisibility, ValueType, Vocabulary, VocabularyHeader, VocabularyNode, VocabularyTree,
 };
 
@@ -169,12 +169,6 @@ struct ProjectListItemDto {
     shortcode: String,
     #[serde(default)]
     longname: Option<String>,
-    /// `status` has NO `#[serde(default)]`: a missing `status` field is a
-    /// server-contract change and MUST fail parse loudly (→ `ServerError`),
-    /// not silently default to `false`. This mirrors the deliberate care in
-    /// [`DataTaskStatusApiResponse::status`] and is intentional. Document any
-    /// future change to this decision with an ADR amendment.
-    status: bool,
     #[serde(default)]
     ontologies: Vec<String>,
 }
@@ -186,7 +180,7 @@ struct ProjectListItemDto {
 ///
 /// Note: this endpoint is the SAME as resolve_project's (`/admin/projects/…`)
 /// but describe parses more fields. A separate DTO keeps parse contracts
-/// independent and avoids breaking resolve_project fixtures that omit `status`.
+/// independent, so each caller's required-field set can move on its own.
 #[derive(serde::Deserialize)]
 struct ProjectDetailApiResponse {
     project: ProjectDetailApiDto,
@@ -199,9 +193,6 @@ struct ProjectDetailApiDto {
     shortname: String,
     #[serde(default)]
     longname: Option<String>,
-    /// No `#[serde(default)]`: a missing `status` is a server-contract change
-    /// and must fail parse loudly (→ `ServerError`), mirroring `ProjectListItemDto`.
-    status: bool,
     #[serde(default)]
     description: Vec<ProjectDescriptionDto>,
     #[serde(default)]
@@ -2400,14 +2391,6 @@ project owns the existing dump; cannot safely proceed"
                     shortcode: dto.shortcode,
                     shortname: dto.shortname,
                     longname: dto.longname,
-                    // `status` bool → `ProjectStatus` enum: `true` = active, `false` = inactive.
-                    // Confirmed from live data: active research projects have `status: true`;
-                    // deprecated/test projects have `status: false`. See dsp-cli/ADR-0001.
-                    status: if dto.status {
-                        ProjectStatus::Active
-                    } else {
-                        ProjectStatus::Inactive
-                    },
                     // `ontologies` is the DSP-API wire name; `data_models` is the dsp-cli
                     // vocabulary (dsp-cli/ADR-0001 boundary). The count is all we need here.
                     data_models: dto.ontologies.len(),
@@ -2439,13 +2422,6 @@ project owns the existing dump; cannot safely proceed"
                 .map_err(|e| Diagnostic::ServerError(format!("project lookup response could not be parsed: {e}")))?;
             let dto = api.project;
 
-            // Translate `status` bool → enum (true = Active, false = Inactive).
-            let project_status = if dto.status {
-                ProjectStatus::Active
-            } else {
-                ProjectStatus::Inactive
-            };
-
             // Translate description Vec, order preserved.
             let description = dto
                 .description
@@ -2469,7 +2445,6 @@ project owns the existing dump; cannot safely proceed"
                 shortcode: dto.shortcode,
                 shortname: dto.shortname,
                 longname: dto.longname,
-                status: project_status,
                 description,
                 keywords: dto.keywords,
                 data_models,

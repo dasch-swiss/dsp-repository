@@ -349,6 +349,10 @@ pub struct ApprovedRecord {
     /// `None` while uncollected. A failed collection leaves it `None` so the
     /// next run retries it.
     pub collected_at: Option<DateTime<Utc>>,
+    /// `None` until a collection run has reported on this record. Moved by
+    /// every report, whatever it said, so this is the age of the state beside
+    /// it, not the moment of first dispatch.
+    pub reported_at: Option<DateTime<Utc>>,
     /// The pull request a collection run opened for this record, `None` until
     /// one has.
     pub pull_request_url: Option<String>,

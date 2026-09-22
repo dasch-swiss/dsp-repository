@@ -84,6 +84,7 @@ test.describe("RDU — the review screens", () => {
     { name: "Review queue", path: "/review" },
     { name: "Depositor accounts", path: "/depositors" },
     { name: "New depositor", path: "/depositors/new" },
+    { name: "Collection", path: "/collection" },
   ]) {
     test(`${name} (${path}) has no violations`, async ({ page }) => {
       await page.goto(path);

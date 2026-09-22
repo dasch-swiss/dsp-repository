@@ -14,7 +14,7 @@
 use shared_metadata::project::ProjectRaw;
 
 use crate::draft::ProjectDraft;
-use crate::records::SubmissionState;
+use crate::records::{ApprovedRecord, PullRequestState, SubmissionState};
 use crate::review::diff;
 
 /// The states a depositor may see, and no others; the list is closed.
@@ -165,6 +165,64 @@ impl Comparison {
     }
 }
 
+/// What one approved record means once its payload is read and compared
+/// against the published set. Produced only by [`classify_record`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RecordClassification {
+    /// The published set carries this record's data.
+    Published,
+    /// Differs, and no report has named a pull request yet.
+    AwaitingCollection { changed: Vec<String> },
+    /// Differs, and a pull request is open.
+    PullRequestOpen { changed: Vec<String> },
+    /// Differs, and the last pull request closed without merging.
+    PullRequestClosed { changed: Vec<String> },
+    /// Differs, and the pull request merged: reviewer edits landed instead.
+    Stranded { changed: Vec<String> },
+    /// Differs, and the last report carried a failure.
+    CollectionFailed { changed: Vec<String>, reason: String },
+    /// The published set no longer holds this project.
+    RemovedUpstream,
+    /// The stored payload could not be read as a project draft.
+    Unreadable { problem: String },
+    /// Readable, but compared as neither published nor local.
+    Anomalous,
+}
+
+/// Classify one approved record against the published set.
+///
+/// Parses `record.payload` itself, so every caller — the startup pass and any
+/// later reporting surface — reaches this from the same input rather than a
+/// second parse of its own. Merged outranks a failure: a merged pull request
+/// over differing data is the one case needing an RDU decision, and a later
+/// failure report does not make it stop needing one.
+#[must_use]
+pub fn classify_record(record: &ApprovedRecord, published: Option<&ProjectRaw>) -> RecordClassification {
+    let local = match serde_json::from_str::<ProjectDraft>(&record.payload) {
+        Ok(draft) => draft,
+        Err(error) => return RecordClassification::Unreadable { problem: error.to_string() },
+    };
+
+    match Comparison::classify(published, Some(&local)) {
+        Comparison::Matches => RecordClassification::Published,
+        Comparison::RemovedUpstream => RecordClassification::RemovedUpstream,
+        Comparison::Differs { changed } => {
+            if record.pull_request_state == Some(PullRequestState::Merged) {
+                RecordClassification::Stranded { changed }
+            } else if let Some(reason) = record.last_failure.clone() {
+                RecordClassification::CollectionFailed { changed, reason }
+            } else {
+                match record.pull_request_state {
+                    Some(PullRequestState::Open) => RecordClassification::PullRequestOpen { changed },
+                    Some(PullRequestState::Closed) => RecordClassification::PullRequestClosed { changed },
+                    _ => RecordClassification::AwaitingCollection { changed },
+                }
+            }
+        }
+        Comparison::NewAndUnpublished | Comparison::Unchanged | Comparison::Absent => RecordClassification::Anomalous,
+    }
+}
+
 /// Whether this local record describes a project that was published once.
 ///
 /// `id` and `pid` are assigned on first publication and are display-only, so a
@@ -229,7 +287,9 @@ pub fn depositor_state(
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
     use serde_json::json;
+    use uuid::Uuid;
 
     use super::*;
 
@@ -239,6 +299,33 @@ mod tests {
 
     fn published_raw() -> ProjectRaw {
         crate::test_support::sample_raw()
+    }
+
+    fn approved_record(
+        payload: &str,
+        pull_request_state: Option<PullRequestState>,
+        last_failure: Option<&str>,
+    ) -> ApprovedRecord {
+        ApprovedRecord {
+            id: Uuid::new_v4(),
+            shortcode: "0102".to_string(),
+            payload: payload.to_string(),
+            approved_by: None,
+            approved_at: Utc::now(),
+            collected_at: None,
+            reported_at: None,
+            pull_request_url: None,
+            pull_request_state,
+            last_failure: last_failure.map(str::to_string),
+        }
+    }
+
+    /// A payload that differs from the published set by one field.
+    fn differing_payload() -> String {
+        let raw = published_raw();
+        let mut local = ProjectDraft::from_raw(&raw);
+        local.set("name", json!("What The Reviewer Edited Away"));
+        serde_json::to_string(&local).expect("a draft serializes")
     }
 
     #[test]
@@ -403,5 +490,62 @@ mod tests {
             ProjectState::Approved.explanation().contains("few weeks"),
             "REQ-2.6: the Approved explanation states the expected wait"
         );
+    }
+
+    #[test]
+    fn a_merged_pull_request_is_stranded_even_with_a_failure_also_on_record() {
+        // The one ordering a future edit could silently invert: a later failure
+        // report must not demote a merged, differing record back to a normal wait.
+        let record = approved_record(&differing_payload(), Some(PullRequestState::Merged), Some("boom"));
+        assert_eq!(
+            classify_record(&record, Some(&published_raw())),
+            RecordClassification::Stranded { changed: vec!["name".to_string()] }
+        );
+    }
+
+    #[test]
+    fn a_failure_with_no_pull_request_state_is_collection_failed() {
+        let record = approved_record(&differing_payload(), None, Some("boom"));
+        assert_eq!(
+            classify_record(&record, Some(&published_raw())),
+            RecordClassification::CollectionFailed {
+                changed: vec!["name".to_string()],
+                reason: "boom".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn an_open_pull_request_with_no_failure_is_pull_request_open() {
+        let record = approved_record(&differing_payload(), Some(PullRequestState::Open), None);
+        assert_eq!(
+            classify_record(&record, Some(&published_raw())),
+            RecordClassification::PullRequestOpen { changed: vec!["name".to_string()] }
+        );
+    }
+
+    #[test]
+    fn a_closed_pull_request_with_no_failure_is_pull_request_closed() {
+        let record = approved_record(&differing_payload(), Some(PullRequestState::Closed), None);
+        assert_eq!(
+            classify_record(&record, Some(&published_raw())),
+            RecordClassification::PullRequestClosed { changed: vec!["name".to_string()] }
+        );
+    }
+
+    #[test]
+    fn a_differing_record_never_reported_is_awaiting_collection() {
+        let record = approved_record(&differing_payload(), None, None);
+        assert_eq!(
+            classify_record(&record, Some(&published_raw())),
+            RecordClassification::AwaitingCollection { changed: vec!["name".to_string()] }
+        );
+    }
+
+    #[test]
+    fn an_unparseable_payload_is_unreadable_rather_than_a_panic() {
+        let record = approved_record("{ not json", None, None);
+        let classification = classify_record(&record, Some(&published_raw()));
+        assert!(matches!(classification, RecordClassification::Unreadable { .. }));
     }
 }

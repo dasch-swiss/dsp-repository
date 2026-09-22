@@ -77,6 +77,7 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
             p class="mt-6 flex gap-6" {
                 a href="/review" class="underline" { "Review queue" }
                 a href="/depositors" class="underline" { "Manage depositor accounts" }
+                a href="/collection" class="underline" { "Collection" }
             }
         }
     }

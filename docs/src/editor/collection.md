@@ -95,10 +95,12 @@ Three fields with three lifetimes come out of a report, and the two report shape
 | Published data | Reported state | How the record reads |
 |---|---|---|
 | Differs | `open` | Waiting for a release. Normal. |
-| Differs | `merged` | Merged with reviewer edits. The genuine anomaly; needs RDU. |
+| Differs | `merged` | Merged with reviewer edits. The genuine anomaly; RDU resolves it (below). |
 | Differs | `closed` | The next run re-collects it. No action. |
 | Differs | nothing reported | Not collected yet. Normal. |
 | Matches | any | The record is discarded at the next startup; the project is Online. |
+
+**RDU resolves a stranded record by discarding it.** `GET /collection` lists every approved record with the classification above, and a record reading `merged` over differing data offers a force-discard at `GET`/`POST /collection/{id}/discard`, behind a confirmation naming what is destroyed. Discarding deletes the record, so the project stops appearing in this payload and stops being compared against the published set. There is no way back — the record is the only copy of what was approved — and no workflow action is involved: the pull request has already merged. A record discarded this way is indistinguishable afterwards from one that never existed, which is what the report endpoint's "no such approved record" answer means.
 
 **One live record per project, enforced at approval.** Approving a project whose earlier record has no live pull request supersedes that record in the approving transaction. Approving one whose earlier record has an open or merged pull request is refused, because publishing a second file version over a live pull request is PRD Edge Case 4 and stays out of v1.
 

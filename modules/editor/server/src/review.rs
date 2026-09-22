@@ -113,8 +113,8 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
         // here would be a queue entry nobody can clear.
         .filter(|submission| submission.state != SubmissionState::Approved)
         .map(|submission| PendingRow {
-            shortcode: shortcode_as_published(&state, &submission.shortcode),
-            project_name: project_name(&state, &submission.shortcode).map(str::to_string),
+            shortcode: crate::shortcode_as_published(&state, &submission.shortcode),
+            project_name: crate::project_name(&state, &submission.shortcode).map(str::to_string),
             last_editor: name_of(&names, submission.submitted_by).map(str::to_string),
             submitted_at: crate::format_instant(submission.submitted_at),
             reviewer: name_of(&names, submission.reviewed_by).map(str::to_string),
@@ -124,8 +124,8 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
     let draft_rows: Vec<DraftStrings> = drafts
         .iter()
         .map(|draft| DraftStrings {
-            shortcode: shortcode_as_published(&state, &draft.shortcode),
-            project_name: project_name(&state, &draft.shortcode).map(str::to_string),
+            shortcode: crate::shortcode_as_published(&state, &draft.shortcode),
+            project_name: crate::project_name(&state, &draft.shortcode).map(str::to_string),
             last_editor: name_of(&names, draft.updated_by).map(str::to_string),
             updated_at: crate::format_instant(draft.updated_at),
         })
@@ -646,6 +646,7 @@ fn approved_record(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Opt
         approved_by: Some(user.id),
         approved_at: at,
         collected_at: None,
+        reported_at: None,
         pull_request_url: None,
         pull_request_state: None,
         last_failure: None,
@@ -840,7 +841,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
         let others: Vec<String> = live
             .into_iter()
             .filter(|other| other.shortcode != key)
-            .map(|other| shortcode_as_published(state, &other.shortcode))
+            .map(|other| crate::shortcode_as_published(state, &other.shortcode))
             .collect();
         if !others.is_empty() {
             entity_cross_project.insert(proposal.entity_id.clone(), others);
@@ -1128,23 +1129,6 @@ async fn account_names(state: &AppState) -> Result<HashMap<Uuid, String>, Reposi
 /// The name behind an id, `None` for an account that has been removed.
 fn name_of(names: &HashMap<Uuid, String>, id: Option<Uuid>) -> Option<&str> {
     id.and_then(|id| names.get(&id)).map(String::as_str)
-}
-
-/// The published project's shortcode as its file spells it, falling back to the
-/// stored key.
-///
-/// The stored key is folded (`080c`), and the published set mixes `080C` with
-/// `0801a` — so a queue rendering the key would show a shortcode that appears
-/// nowhere else, in a column a reviewer matches against a file name.
-fn shortcode_as_published<'a>(state: &'a AppState, stored: &'a str) -> String {
-    state
-        .published
-        .get(stored)
-        .map_or_else(|| stored.to_string(), |project| project.shortcode.clone())
-}
-
-fn project_name<'a>(state: &'a AppState, shortcode: &str) -> Option<&'a str> {
-    state.published.get(shortcode).map(|project| project.name.as_str())
 }
 
 /// No submission on this project.
@@ -2713,6 +2697,7 @@ mod tests {
                 approved_by: None,
                 approved_at: Utc::now(),
                 collected_at: None,
+                reported_at: None,
                 pull_request_url: Some("https://example.test/pr/1".to_string()),
                 pull_request_state: Some(live),
                 last_failure: None,

@@ -112,15 +112,18 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   writes an approved record that is meant to be collected into a pull request (not built).
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
-  `Repositories`, `ReviewRoundRepository`, `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
+  `Repositories`, `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
+  `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `normalize_shortcode`, `Authenticated`, `Rdu`, `KNOWN_ROUTES`,
   `EditorConfig`
 - **Public interface:** the HTTP routes of `editor-server`, root-mounted on its own hostname
   (`/login`, `/login/code`, `/logout`, `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
   `/projects/{shortcode}/entities/{proposal}`, `/review`, `/review/{shortcode}`, `/depositors…`,
-  `/states`, `/healthz`, `POST /telemetry/collect`); the `editor-server serve | healthcheck` CLI.
-  No crate outside this component depends on an `editor-*` crate; `editor-server` exports nothing.
+  `/collection`, `/collection/{id}/discard`, `/states`, `/healthz`, `POST /telemetry/collect`,
+  `GET /api/v1/approved-records`, `POST /api/v1/collection-report`); the
+  `editor-server serve | healthcheck` CLI. No crate outside this component depends on an
+  `editor-*` crate; `editor-server` exports nothing.
 - **Local-context kit:** `modules/editor/CLAUDE.md`, `modules/editor/server/src/router.rs`,
   `modules/editor/web/src/form/registry.rs`, `modules/editor/core/src/form.rs`,
   `modules/editor/core/src/status.rs`,
@@ -150,7 +153,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     E2E pass).
 - **Durable state:** one SQLite database — `users`, `user_shortcodes`, `sessions`, `login_codes`,
   `mail_sends`, `drafts`, `submissions`, `review_rounds`, `approved_records`, `entity_proposals`,
-  all `STRICT`, forward-only migrations `0001`–`0004` under `server/src/db/migrations/`
+  all `STRICT`, forward-only migrations `0001`–`0005` under `server/src/db/migrations/`
   (`mail_sends` arrives in `0003`) guarded by `PRAGMA user_version`. **Single writer:**
   `editor-server/src/db/` through `editor-core`'s repository ports; several handlers call the
   same port, serialized by the one writer connection, and every multi-table transition is one

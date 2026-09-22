@@ -12,8 +12,8 @@ use super::Database;
 
 const ENTITY: &str = "approved record";
 
-const SELECT: &str = "SELECT id, shortcode, payload, approved_by, approved_at, collected_at, pull_request_url, \
-                       pull_request_state, last_failure FROM approved_records";
+const SELECT: &str = "SELECT id, shortcode, payload, approved_by, approved_at, collected_at, reported_at, \
+                       pull_request_url, pull_request_state, last_failure FROM approved_records";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<ApprovedRecord> {
     Ok(ApprovedRecord {
@@ -23,9 +23,10 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<ApprovedRecord> {
         approved_by: optional_uuid_column(row, 3)?,
         approved_at: row.get(4)?,
         collected_at: row.get(5)?,
-        pull_request_url: row.get(6)?,
-        pull_request_state: optional_parsed_column::<PullRequestState>(row, 7)?,
-        last_failure: row.get(8)?,
+        reported_at: row.get(6)?,
+        pull_request_url: row.get(7)?,
+        pull_request_state: optional_parsed_column::<PullRequestState>(row, 8)?,
+        last_failure: row.get(9)?,
     })
 }
 
@@ -36,7 +37,8 @@ impl ApprovedRecordRepository for Database {
         self.write(move |tx| {
             tx.execute(
                 "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at, \
-                 pull_request_url, pull_request_state, last_failure) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                 reported_at, pull_request_url, pull_request_state, last_failure) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                 params![
                     record.id.to_string(),
                     record.shortcode,
@@ -44,6 +46,7 @@ impl ApprovedRecordRepository for Database {
                     record.approved_by.map(|id| id.to_string()),
                     record.approved_at,
                     record.collected_at,
+                    record.reported_at,
                     record.pull_request_url,
                     record.pull_request_state.map(PullRequestState::as_str),
                     record.last_failure,
@@ -116,6 +119,7 @@ impl ApprovedRecordRepository for Database {
         pull_request_url: Option<&str>,
         state: Option<PullRequestState>,
         failure: Option<&str>,
+        at: DateTime<Utc>,
     ) -> Result<bool> {
         let id = id.to_string();
         let pull_request_url = pull_request_url.map(str::to_string);
@@ -127,13 +131,13 @@ impl ApprovedRecordRepository for Database {
                 // uncollected while its pull request is still open on GitHub, and the
                 // merged-with-edits classification could never fire for it again.
                 Some(failure) => tx.execute(
-                    "UPDATE approved_records SET last_failure = ?2 WHERE id = ?1",
-                    params![id, failure],
+                    "UPDATE approved_records SET last_failure = ?2, reported_at = ?3 WHERE id = ?1",
+                    params![id, failure, at],
                 ),
                 None => tx.execute(
                     "UPDATE approved_records SET pull_request_url = ?2, pull_request_state = ?3, \
-                     last_failure = NULL WHERE id = ?1",
-                    params![id, pull_request_url, state.map(PullRequestState::as_str)],
+                     last_failure = NULL, reported_at = ?4 WHERE id = ?1",
+                    params![id, pull_request_url, state.map(PullRequestState::as_str), at],
                 ),
             })
             .await?;
@@ -185,6 +189,7 @@ mod tests {
             approved_by: approver,
             approved_at: approved,
             collected_at: None,
+            reported_at: None,
             pull_request_url: None,
             pull_request_state: None,
             last_failure: None,
@@ -313,6 +318,7 @@ mod tests {
                 Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
                 Some(PullRequestState::Open),
                 None,
+                at(15),
             )
             .await
             .unwrap();
@@ -339,6 +345,7 @@ mod tests {
             Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
             Some(PullRequestState::Open),
             None,
+            at(16),
         )
         .await
         .unwrap();
@@ -358,6 +365,7 @@ mod tests {
             Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
             Some(PullRequestState::Open),
             None,
+            at(13),
         )
         .await
         .unwrap();
@@ -366,12 +374,79 @@ mod tests {
             Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
             Some(PullRequestState::Merged),
             None,
+            at(14),
         )
         .await
         .unwrap();
 
         let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
         assert_eq!(stored.pull_request_state, Some(PullRequestState::Merged));
+    }
+
+    #[tokio::test]
+    async fn test_report_collection_moves_reported_at_but_never_collected_at() {
+        // What this test pins beyond the trait doc: a *later* report moves the timestamp again.
+        let db = test_db("approved-report-moves-reported-at").await;
+        let record = record("0801", None, at(12));
+        ApprovedRecordRepository::create(&db, &record).await.unwrap();
+        db.mark_collected(record.id, at(13)).await.unwrap();
+
+        db.report_collection(
+            record.id,
+            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
+            Some(PullRequestState::Open),
+            None,
+            at(14),
+        )
+        .await
+        .unwrap();
+        let first = &db.find_by_shortcode("0801").await.unwrap()[0];
+        assert_eq!(first.reported_at, Some(at(14)));
+        assert_eq!(first.collected_at, Some(at(13)));
+
+        db.report_collection(
+            record.id,
+            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
+            Some(PullRequestState::Merged),
+            None,
+            at(15),
+        )
+        .await
+        .unwrap();
+        let second = &db.find_by_shortcode("0801").await.unwrap()[0];
+        assert_eq!(second.reported_at, Some(at(15)), "a later report must move it");
+        assert_eq!(second.collected_at, Some(at(13)), "a report must never touch this");
+    }
+
+    #[tokio::test]
+    async fn test_report_collection_failure_also_stamps_reported_at_without_touching_the_pull_request() {
+        // A run that reports a failure has still reported: a surface reading the failure as
+        // silence would be wrong about the one case it most needs to be right about. The failure
+        // arm's added `reported_at` SET must not widen it into touching the pull request fields.
+        let db = test_db("approved-report-failure-stamps-reported-at").await;
+        let record = record("0801", None, at(12));
+        ApprovedRecordRepository::create(&db, &record).await.unwrap();
+        db.report_collection(
+            record.id,
+            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
+            Some(PullRequestState::Open),
+            None,
+            at(13),
+        )
+        .await
+        .unwrap();
+
+        db.report_collection(record.id, None, None, Some("the branch tip is not ours"), at(14))
+            .await
+            .unwrap();
+
+        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
+        assert_eq!(stored.reported_at, Some(at(14)));
+        assert_eq!(
+            stored.pull_request_url.as_deref(),
+            Some("https://github.com/dasch-swiss/dsp-repository/pull/1")
+        );
+        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
     }
 
     #[tokio::test]
@@ -388,10 +463,11 @@ mod tests {
             Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
             Some(PullRequestState::Open),
             None,
+            at(13),
         )
         .await
         .unwrap();
-        db.report_collection(record.id, None, None, Some("the branch tip is not ours"))
+        db.report_collection(record.id, None, None, Some("the branch tip is not ours"), at(14))
             .await
             .unwrap();
 
@@ -412,7 +488,7 @@ mod tests {
         let record = record("0801", None, at(12));
         ApprovedRecordRepository::create(&db, &record).await.unwrap();
 
-        db.report_collection(record.id, None, None, Some("renumbering failed"))
+        db.report_collection(record.id, None, None, Some("renumbering failed"), at(13))
             .await
             .unwrap();
         db.report_collection(
@@ -420,6 +496,7 @@ mod tests {
             Some("https://github.com/dasch-swiss/dsp-repository/pull/2"),
             Some(PullRequestState::Open),
             None,
+            at(14),
         )
         .await
         .unwrap();
@@ -441,6 +518,7 @@ mod tests {
                 Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
                 Some(PullRequestState::Open),
                 None,
+                at(13),
             )
             .await
             .unwrap();

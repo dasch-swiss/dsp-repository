@@ -24,6 +24,7 @@ const KNOWN_ROUTES: &[&str] = &[
     "/projects",
     "/states",
     "/review",
+    "/collection",
     "/depositors",
     "/depositors/new",
 ];
@@ -105,6 +106,13 @@ pub fn normalize_page_url(url: &str) -> &'static str {
             _ => "other",
         };
     }
+    // An approved record's id, an unbounded set.
+    if let Some(rest) = url.strip_prefix("/collection/") {
+        return match rest.split_once('/') {
+            Some((id, "discard")) if !id.is_empty() => "/collection/{id}/discard",
+            _ => "other",
+        };
+    }
     "other"
 }
 
@@ -181,6 +189,7 @@ mod tests {
         assert_eq!(normalize_page_url("/projects"), "/projects");
         assert_eq!(normalize_page_url("/states"), "/states");
         assert_eq!(normalize_page_url("/review"), "/review");
+        assert_eq!(normalize_page_url("/collection"), "/collection");
         assert_eq!(normalize_page_url("/depositors"), "/depositors");
         assert_eq!(normalize_page_url("/depositors/new"), "/depositors/new");
     }
@@ -202,6 +211,10 @@ mod tests {
         assert_eq!(
             normalize_page_url(&format!("/depositors/{id}/remove")),
             "/depositors/{id}/remove"
+        );
+        assert_eq!(
+            normalize_page_url(&format!("/collection/{id}/discard")),
+            "/collection/{id}/discard"
         );
     }
 
@@ -239,6 +252,9 @@ mod tests {
         // An empty id is not an id: the guards keep `/depositors//…` out of
         // every pattern rather than minting one with a blank segment.
         assert_eq!(normalize_page_url("/depositors/"), "other");
+        assert_eq!(normalize_page_url("/collection/abc/delete"), "other");
+        assert_eq!(normalize_page_url("/collection//discard"), "other");
+        assert_eq!(normalize_page_url("/collection/"), "other");
     }
 
     #[test]

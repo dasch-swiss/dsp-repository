@@ -168,6 +168,7 @@ mod tests {
             "/depositors",
             "/depositors/x/edit",
             "/depositors/x/remove",
+            "/collection/00000000-0000-0000-0000-000000000000/discard",
         ];
 
         let app = crate::router::build_app(test_state("csrf-exemption-scope").await.0, "nonexistent-test-dir".as_ref());

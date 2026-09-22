@@ -182,6 +182,7 @@ mod tests {
             approved_by: Some(Uuid::new_v4()),
             approved_at: Utc::now(),
             collected_at: Some(Utc::now()),
+            reported_at: Some(Utc::now()),
             pull_request_url: Some("https://github.com/dasch-swiss/dasch-specs/pull/1".to_string()),
             pull_request_state: Some(PullRequestState::Open),
             last_failure: Some("boom".to_string()),

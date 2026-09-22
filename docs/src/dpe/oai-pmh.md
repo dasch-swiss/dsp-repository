@@ -2,6 +2,13 @@
 
 Usage guide for the DPE [OAI-PMH 2.0](https://www.openarchives.org/OAI/openarchivesprotocol.html) data provider, which exposes DaSCH research project and record metadata for harvesting. The implementation lives in the `dpe-api-oai` crate (see [Project Structure](./project_structure.md)).
 
+The metadata served is the tracked corpus in `modules/dpe/server/data/` — the server reads it at startup and never fetches from the API itself. The record dumps under `records/` are refreshed by `just fetch-records`, whose default project list is the `RECORD_SHORTCODES` variable at the top of the `justfile`; override it per run to refresh a subset:
+
+```bash
+export bearer="Bearer eyJ..."   # a token for api.dasch.swiss
+just RECORD_SHORTCODES="081C 0868 0803" fetch-records
+```
+
 ## Endpoint
 
 - **Path**: `GET /dpe/oai` — GET only; POST requests are not supported

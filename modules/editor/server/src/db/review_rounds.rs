@@ -317,6 +317,7 @@ mod tests {
             approved_by: approver,
             approved_at: at(13),
             collected_at: None,
+            reported_at: None,
             pull_request_url: None,
             pull_request_state: None,
             last_failure: None,

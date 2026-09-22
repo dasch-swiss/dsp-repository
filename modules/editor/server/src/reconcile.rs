@@ -15,11 +15,9 @@
 //!
 //! **A failure here is not fatal**, unlike [`crate::accounts::ensure_rdu`]. The
 //! cost is a stale status label; refusing to start costs the whole service.
-use editor_core::draft::ProjectDraft;
 use editor_core::published::PublishedProjects;
-use editor_core::records::{ApprovedRecord, PullRequestState};
 use editor_core::repository::{ApprovedRecordRepository, RepositoryError};
-use editor_core::status::Comparison;
+use editor_core::status::{classify_record, RecordClassification};
 
 /// What one startup pass did, for the log line and for tests.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -63,13 +61,8 @@ pub(crate) async fn reconcile_published(
     let mut summary = Reconciliation::default();
 
     for record in records {
-        let Some(local) = parse_payload(&record) else {
-            summary.unreadable += 1;
-            continue;
-        };
-
-        match Comparison::classify(published.get(&record.shortcode), Some(&local)) {
-            Comparison::Matches => {
+        match classify_record(&record, published.get(&record.shortcode)) {
+            RecordClassification::Published => {
                 // The delete is the whole transition: with no approved record
                 // and no submission, the project derives as Online. The returned
                 // `bool` is load-bearing — `false` means there was no row, which
@@ -103,10 +96,7 @@ pub(crate) async fn reconcile_published(
                     }
                 }
             }
-            // Stranded iff the pull request merged and the published data still
-            // differs; every other `Differs` (open, closed, or never reported)
-            // is a normal wait for the release that carries it.
-            Comparison::Differs { changed } if record.pull_request_state == Some(PullRequestState::Merged) => {
+            RecordClassification::Stranded { changed } => {
                 summary.stranded += 1;
                 tracing::warn!(
                     project.shortcode = %record.shortcode,
@@ -115,7 +105,10 @@ pub(crate) async fn reconcile_published(
                      resolve which version stands"
                 );
             }
-            Comparison::Differs { changed } => {
+            RecordClassification::AwaitingCollection { changed }
+            | RecordClassification::PullRequestOpen { changed }
+            | RecordClassification::PullRequestClosed { changed }
+            | RecordClassification::CollectionFailed { changed, .. } => {
                 summary.waiting += 1;
                 tracing::debug!(
                     project.shortcode = %record.shortcode,
@@ -123,7 +116,7 @@ pub(crate) async fn reconcile_published(
                     "an approved record is waiting for the release that carries it"
                 );
             }
-            Comparison::RemovedUpstream => {
+            RecordClassification::RemovedUpstream => {
                 summary.removed_upstream += 1;
                 tracing::warn!(
                     project.shortcode = %record.shortcode,
@@ -131,11 +124,19 @@ pub(crate) async fn reconcile_published(
                      record may be the only copy of this work"
                 );
             }
+            RecordClassification::Unreadable { problem } => {
+                summary.unreadable += 1;
+                tracing::error!(
+                    project.shortcode = %record.shortcode,
+                    error = %problem,
+                    "an approved record's payload could not be read as a project; it is left untouched"
+                );
+            }
             // None is reachable from an approved record: the local side is
             // always `Some` here, and a record carries the project's own
             // members. Counted rather than ignored — reaching one means the
             // payload is not what this pass assumes.
-            Comparison::NewAndUnpublished | Comparison::Unchanged | Comparison::Absent => {
+            RecordClassification::Anomalous => {
                 summary.unreadable += 1;
                 tracing::warn!(
                     project.shortcode = %record.shortcode,
@@ -148,26 +149,11 @@ pub(crate) async fn reconcile_published(
     Ok(summary)
 }
 
-/// The record's payload as a draft, or `None` when it cannot be read. Such a
-/// record is left strictly alone — it is somebody's approved work.
-fn parse_payload(record: &ApprovedRecord) -> Option<ProjectDraft> {
-    match serde_json::from_str::<ProjectDraft>(&record.payload) {
-        Ok(draft) => Some(draft),
-        Err(error) => {
-            tracing::error!(
-                project.shortcode = %record.shortcode,
-                error = %error,
-                "an approved record's payload could not be read as a project; it is left untouched"
-            );
-            None
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use editor_core::records::ApprovedRecord;
+    use editor_core::draft::ProjectDraft;
+    use editor_core::records::{ApprovedRecord, PullRequestState};
     use uuid::Uuid;
 
     use super::*;
@@ -184,6 +170,7 @@ mod tests {
             approved_by: None,
             approved_at: Utc::now(),
             collected_at: Some(Utc::now()),
+            reported_at: None,
             pull_request_url: None,
             pull_request_state,
             last_failure: None,

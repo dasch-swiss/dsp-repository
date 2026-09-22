@@ -52,6 +52,7 @@ export const DEPOSITOR_SHORTCODES = [
   "0102",
   "0107",
   "0108",
+  "0110",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -83,6 +84,16 @@ export const STATUS_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-js": DEPOSITOR_SHORTCODES[5],
   "chromium-nojs": DEPOSITOR_SHORTCODES[6],
 };
+/**
+ * The collection surface's arc: edit, submit, approve, report, discard. Its
+ * own project for the same reason as `JOURNEY_SHORTCODE` — a draft is per
+ * (user, project), so sharing one with another mutating spec would find that
+ * spec's leftover draft state instead of a pristine project.
+ */
+export const COLLECTION_SHORTCODE = DEPOSITOR_SHORTCODES[7];
+
+/** The suite's `POST /api/v1/collection-report` bearer token. */
+export const COLLECTION_TOKEN = "e2e-collection-token";
 
 const PORT = 4101;
 export const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -167,6 +178,9 @@ export default defineConfig({
       EDITOR_LOGIN_COOLDOWN_SECS: "1",
       // The console mailer logs codes at WARN, so `error` would hide them.
       RUST_LOG: "warn",
+      // Without a configured verifier, the report endpoint refuses every call —
+      // collection.spec.ts posts collection reports with this bearer token.
+      EDITOR_COLLECTION_TOKEN: COLLECTION_TOKEN,
     },
   },
 });

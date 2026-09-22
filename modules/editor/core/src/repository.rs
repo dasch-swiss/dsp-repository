@@ -326,6 +326,7 @@ pub trait ApprovedRecordRepository: Send + Sync {
     /// report established would lose a live pull request the editor still knows about.
     ///
     /// Never touches `collected_at` — that column belongs to [`Self::mark_collected`] alone.
+    /// `at` always stamps `reported_at`, in both branches: a failure is still a report.
     /// `false` when `id` names no row, which covers both an unknown id and one whose record was
     /// already discarded (see [`Self::delete`]); the caller must apply nothing else in that case.
     async fn report_collection(
@@ -334,6 +335,7 @@ pub trait ApprovedRecordRepository: Send + Sync {
         pull_request_url: Option<&str>,
         state: Option<PullRequestState>,
         failure: Option<&str>,
+        at: DateTime<Utc>,
     ) -> Result<bool>;
 
     /// `false` if there was no record to delete. Used when the change goes

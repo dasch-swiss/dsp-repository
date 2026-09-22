@@ -263,6 +263,26 @@ pub(crate) fn format_instant(at: chrono::DateTime<chrono::Utc>) -> String {
     at.format("%Y-%m-%d %H:%M UTC").to_string()
 }
 
+/// The published project's shortcode as its file spells it, falling back to the
+/// stored key.
+///
+/// The stored key is folded (`080c`), and the published set mixes `080C` with
+/// `0801a` — so a page rendering the key would show a shortcode that appears
+/// nowhere else, in a column a reader matches against a file name.
+///
+/// Here rather than duplicated per surface: `review` and `collection` both read
+/// it, and a second copy of the fold is a second place for it to drift.
+pub(crate) fn shortcode_as_published<'a>(state: &'a AppState, stored: &'a str) -> String {
+    state
+        .published
+        .get(stored)
+        .map_or_else(|| stored.to_string(), |project| project.shortcode.clone())
+}
+
+pub(crate) fn project_name<'a>(state: &'a AppState, shortcode: &str) -> Option<&'a str> {
+    state.published.get(shortcode).map(|project| project.name.as_str())
+}
+
 /// 404 fallback, reached after `ServeDir` finds no matching static file, by a
 /// project path that could never name a project, and by an account id that
 /// names none.

@@ -837,8 +837,9 @@ impl ApprovedRecordRepository for FaultyDatabase {
         pull_request_url: Option<&str>,
         state: Option<editor_core::records::PullRequestState>,
         failure: Option<&str>,
+        at: DateTime<Utc>,
     ) -> Result<bool> {
-        ApprovedRecordRepository::report_collection(&*self.inner, id, pull_request_url, state, failure).await
+        ApprovedRecordRepository::report_collection(&*self.inner, id, pull_request_url, state, failure, at).await
     }
 
     async fn delete(&self, id: Uuid) -> Result<bool> {

@@ -275,6 +275,11 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
             "/depositors/{id}/remove",
             get(crate::depositors::remove_form).post(crate::depositors::remove),
         )
+        .route("/collection", get(crate::collection::overview))
+        .route(
+            "/collection/{id}/discard",
+            get(crate::collection::discard_form).post(crate::collection::discard),
+        )
         // REVIEW: a new full-page route needs a matching entry in `page_url.rs`,
         // or its page views collapse into `other` — and no test fails, because
         // that module's tests are a closed list of routes that already exist.

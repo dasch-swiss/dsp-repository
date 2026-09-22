@@ -1,3 +1,8 @@
+//! Two audiences share this module, per `modules/editor/CLAUDE.md`'s "machine-facing routes live
+//! under /api/v1/" rule: [`list`] and [`report`] below are `/api/v1` — JSON or a bare status,
+//! never HTML — and [`overview`], [`discard_form`] and [`discard`] are the RDU browser surface,
+//! `GET /collection` and `GET`/`POST /collection/{id}/discard`.
+//!
 //! `GET /api/v1/approved-records` — the public read of every approved record
 //! and its accepted entity proposals — and `POST /api/v1/collection-report`,
 //! the token-authenticated write the collecting workflow uses to report back.
@@ -16,16 +21,26 @@
 //! change what `list` serves. A record leaves that set only by being deleted:
 //! by the startup reconcile once the published set carries it, or by approval
 //! superseding an earlier record for the same project.
+//!
+//! [`overview`] classifies every record live, per request, with
+//! [`editor_core::status::classify_record`] — the same call `reconcile`'s startup pass makes —
+//! rather than reading `reconcile::Reconciliation`, which is aggregate counters computed once at
+//! startup with no per-record identity.
 
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::{IntoResponse, Response};
+use axum::response::{IntoResponse, Redirect, Response};
 use axum::Json;
 use chrono::Utc;
 use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, CollectionReport};
-use editor_core::records::normalize_shortcode;
+use editor_core::records::{normalize_shortcode, ApprovedRecord, User};
 use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
+use editor_core::status::{classify_record, RecordClassification};
+use editor_web::pages::collection as page;
+use maud::html;
+use uuid::Uuid;
 
+use crate::auth::guard::Rdu;
 use crate::auth::secret::code_matches;
 use crate::AppState;
 
@@ -118,6 +133,7 @@ pub(crate) async fn report(
         body.pull_request.as_deref(),
         body.state,
         body.failure.as_deref(),
+        Utc::now(),
     )
     .await
     {
@@ -168,6 +184,157 @@ fn validate(report: &CollectionReport) -> Result<(), &'static str> {
     }
 }
 
+const NO_SUCH_RECORD: &str =
+    "There is no approved record with that id. It may already have been discarded by another RDU member.";
+
+/// One row's owned strings, so the view can borrow them — a row carries its formatted timestamps
+/// and its live classification, and neither can be produced inside the `map` that builds it.
+struct RowStrings {
+    id: String,
+    shortcode: String,
+    project_name: Option<String>,
+    approved_at: String,
+    reported_at: Option<String>,
+    pull_request: Option<String>,
+    classification: RecordClassification,
+}
+
+/// `GET /collection` — every approved record and where its collection stands, for RDU.
+pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
+    let records = match ApprovedRecordRepository::list_all(&*state.db).await {
+        Ok(records) => records,
+        Err(error) => return storage_error(&state, &user, "read the approved records", &error),
+    };
+
+    let rows: Vec<RowStrings> = records
+        .iter()
+        .map(|record| RowStrings {
+            id: record.id.to_string(),
+            shortcode: crate::shortcode_as_published(&state, &record.shortcode),
+            project_name: crate::project_name(&state, &record.shortcode).map(str::to_string),
+            approved_at: crate::format_instant(record.approved_at),
+            reported_at: record.reported_at.map(crate::format_instant),
+            pull_request: record.pull_request_url.clone(),
+            classification: classify_record(record, state.published.get(&record.shortcode)),
+        })
+        .collect();
+    let view_rows: Vec<page::CollectionRow<'_>> = rows
+        .iter()
+        .map(|row| page::CollectionRow {
+            id: &row.id,
+            shortcode: &row.shortcode,
+            project_name: row.project_name.as_deref(),
+            approved_at: &row.approved_at,
+            reported_at: row.reported_at.as_deref(),
+            pull_request: row.pull_request.as_deref(),
+            state: &row.classification,
+        })
+        .collect();
+
+    crate::render(
+        &state,
+        "Collection — DaSCH Metadata Editor",
+        StatusCode::OK,
+        Some(&user),
+        page::list(&view_rows),
+    )
+}
+
+/// The record `id` names, read from the same full enumeration [`overview`] reads.
+///
+/// There is no narrower read on the port for this: [`ApprovedRecordRepository`] carries
+/// `find_by_shortcode`, not `find_by_id`. `Ok(None)` covers both an id that is not a UUID at all
+/// and one that names no row, so a hand-typed path segment gets the same 404 as a discarded one.
+async fn find_record(state: &AppState, id: &str) -> Result<Option<ApprovedRecord>, RepositoryError> {
+    let Ok(id) = Uuid::parse_str(id) else {
+        return Ok(None);
+    };
+    let records = ApprovedRecordRepository::list_all(&*state.db).await?;
+    Ok(records.into_iter().find(|record| record.id == id))
+}
+
+/// `GET /collection/{id}/discard` — the confirmation, naming what would be destroyed.
+pub(crate) async fn discard_form(State(state): State<AppState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
+    let record = match find_record(&state, &id).await {
+        Ok(Some(record)) => record,
+        Ok(None) => return no_such_record(&state, &user),
+        Err(error) => return storage_error(&state, &user, "read the approved records", &error),
+    };
+    let shortcode = crate::shortcode_as_published(&state, &record.shortcode);
+    let approved_at = crate::format_instant(record.approved_at);
+    // Classified here too, so a reader who reached this URL directly sees the
+    // same state the list would have shown rather than a page that reads alike
+    // whatever it is about to destroy.
+    let classification = classify_record(&record, state.published.get(&record.shortcode));
+    let impact = page::DiscardImpact {
+        shortcode: &shortcode,
+        project_name: crate::project_name(&state, &record.shortcode),
+        approved_at: &approved_at,
+        pull_request: record.pull_request_url.as_deref(),
+        state: &classification,
+    };
+    crate::render(
+        &state,
+        "Discard record — DaSCH Metadata Editor",
+        StatusCode::OK,
+        Some(&user),
+        page::confirm_discard(&id, &impact),
+    )
+}
+
+/// `POST /collection/{id}/discard` — delete the record.
+///
+/// Not gated on the record's classification: the confirmation link only appears on a
+/// [`RecordClassification::Stranded`] row as guidance, but this acts on RDU's explicit
+/// confirmation of whatever id was posted, the same way [`discard_form`] renders whatever id was
+/// asked for. `delete` answering `false` (already gone) is not an error — a second submission of
+/// the same confirmation must not 500.
+pub(crate) async fn discard(State(state): State<AppState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
+    let Ok(record_id) = Uuid::parse_str(&id) else {
+        return no_such_record(&state, &user);
+    };
+    match ApprovedRecordRepository::delete(&*state.db, record_id).await {
+        Ok(_) => Redirect::to("/collection").into_response(),
+        Err(error) => {
+            tracing::error!(error = %error, "could not discard an approved record");
+            storage_error(&state, &user, "discard the record", &error)
+        }
+    }
+}
+
+/// No record with this id.
+fn no_such_record(state: &AppState, user: &User) -> Response {
+    let content = html! {
+        h1 class="font-display text-2xl mb-2" { "Nothing to discard" }
+        p class="mb-4" { (NO_SUCH_RECORD) }
+        p {
+            a href="/collection" class="underline" { "Back to collection" }
+        }
+    };
+    crate::render(
+        state,
+        "Nothing to discard — DaSCH Metadata Editor",
+        StatusCode::NOT_FOUND,
+        Some(user),
+        content,
+    )
+}
+
+/// Storage would not answer, so the page cannot show what it should.
+fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
+    tracing::error!(error = %error, operation = what, "the collection surface could not reach storage");
+    crate::render(
+        state,
+        "Page unavailable — DaSCH Metadata Editor",
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Some(user),
+        editor_web::pages::problem::unavailable(
+            "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
+             keeps happening, the service needs attention.",
+        ),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use axum::body::{to_bytes, Body};
@@ -176,7 +343,7 @@ mod tests {
     use editor_core::draft::ProjectDraft;
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
     use editor_core::records::{
-        ApprovedRecord, PullRequestState, ReviewOutcome, ReviewRound, Submission, SubmissionState,
+        ApprovedRecord, PullRequestState, ReviewOutcome, ReviewRound, Role, Submission, SubmissionState, User,
     };
     use editor_core::repository::{
         ApprovedRecordRepository, EntityProposalRepository, ReviewRoundRepository, SubmissionRepository, Transition,
@@ -185,7 +352,12 @@ mod tests {
     use tower::ServiceExt;
     use uuid::Uuid;
 
-    use crate::test_support::{published_corpus, state_with_collection_token, test_app, test_state};
+    use crate::auth::cookie;
+    use crate::test_support::{
+        a_session, a_user, body_string, get, location, post, published_corpus, state_with_collection_token, test_app,
+        test_state, with_cookie,
+    };
+    use crate::AppState;
 
     /// The bearer token these tests configure the endpoint with.
     const TOKEN: &str = "a-collection-token";
@@ -200,6 +372,27 @@ mod tests {
         serde_json::to_string(&ProjectDraft::from_raw(raw)).expect("a draft serializes")
     }
 
+    /// A payload that differs from the published set by one field, so a record built from it
+    /// classifies as something other than [`editor_core::status::RecordClassification::Published`].
+    fn differing_payload() -> String {
+        let published = published_corpus();
+        let raw = published.get(PUBLISHED_SHORTCODE).expect("the fixture project is published");
+        let mut draft = ProjectDraft::from_raw(raw);
+        draft.set("name", json!("What RDU Approved Instead"));
+        serde_json::to_string(&draft).expect("a draft serializes")
+    }
+
+    fn as_session(request: Request<Body>, session: &str) -> Request<Body> {
+        with_cookie(request, cookie::SESSION, session)
+    }
+
+    /// An RDU account with a live session.
+    async fn an_rdu_session(state: &AppState) -> (User, String) {
+        let user = a_user(state, "rdu@example.test", "An RDU Member", Role::Rdu, &[]).await;
+        let session = a_session(state, user.id).await;
+        (user, session)
+    }
+
     fn approved_record(shortcode: &str, payload: &str) -> ApprovedRecord {
         ApprovedRecord {
             id: Uuid::new_v4(),
@@ -208,6 +401,7 @@ mod tests {
             approved_by: None,
             approved_at: Utc::now(),
             collected_at: None,
+            reported_at: None,
             pull_request_url: None,
             pull_request_state: None,
             last_failure: None,
@@ -720,5 +914,98 @@ mod tests {
             .expect("read the record back");
         assert_eq!(after_approve.len(), 1);
         assert_eq!(after_approve[0].id, new_record.id, "the closed record must be superseded");
+    }
+
+    // ---- The RDU browser surface --------------------------------------------
+
+    #[tokio::test]
+    async fn a_depositor_session_is_refused_every_collection_route() {
+        let (state, _) = test_state("collection-depositor-refused").await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let depositor = a_user(&state, "depositor@example.test", "A Depositor", Role::Depositor, &[]).await;
+        let session = a_session(&state, depositor.id).await;
+        let app = test_app(&state);
+
+        for request in [
+            get("/collection"),
+            get(&format!("/collection/{}/discard", record.id)),
+            post(&format!("/collection/{}/discard", record.id), ""),
+        ] {
+            let response = app.clone().oneshot(as_session(request, &session)).await.unwrap();
+            assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_stranded_record_renders_as_stranded_and_the_same_record_open_renders_as_waiting() {
+        // The live-classification requirement: the page has to read the record fresh on every
+        // request, not a startup summary with no per-record identity — so this fails if the
+        // handler is ever changed to read `reconcile::Reconciliation` instead.
+        let (state, _) = test_state("collection-live-classification").await;
+        let (_, session) = an_rdu_session(&state).await;
+        let mut record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
+        record.pull_request_state = Some(PullRequestState::Merged);
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let app = test_app(&state);
+
+        let stranded = body_string(app.clone().oneshot(as_session(get("/collection"), &session)).await.unwrap()).await;
+        assert!(stranded.contains("Merged, still differs"), "{stranded}");
+
+        ApprovedRecordRepository::report_collection(
+            &*state.db,
+            record.id,
+            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
+            Some(PullRequestState::Open),
+            None,
+            Utc::now(),
+        )
+        .await
+        .expect("the report should be recorded");
+
+        let waiting = body_string(app.oneshot(as_session(get("/collection"), &session)).await.unwrap()).await;
+        assert!(waiting.contains("Pull request open"), "{waiting}");
+        assert!(!waiting.contains("Merged, still differs"), "{waiting}");
+    }
+
+    #[tokio::test]
+    async fn discarding_deletes_the_record_and_a_repeated_discard_does_not_500() {
+        let (state, _) = test_state("collection-discard").await;
+        let (_, session) = an_rdu_session(&state).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let app = test_app(&state);
+        let uri = format!("/collection/{}/discard", record.id);
+
+        let first = app.clone().oneshot(as_session(post(&uri, ""), &session)).await.unwrap();
+        assert_eq!(first.status(), axum::http::StatusCode::SEE_OTHER);
+        assert_eq!(location(&first).as_deref(), Some("/collection"));
+        assert!(ApprovedRecordRepository::find_by_shortcode(&*state.db, PUBLISHED_SHORTCODE)
+            .await
+            .unwrap()
+            .is_empty());
+
+        let second = app.oneshot(as_session(post(&uri, ""), &session)).await.unwrap();
+        assert_ne!(second.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn a_record_never_reported_on_says_so_rather_than_rendering_blank() {
+        let (state, _) = test_state("collection-never-reported").await;
+        let (_, session) = an_rdu_session(&state).await;
+        let record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
+        ApprovedRecordRepository::create(&*state.db, &record)
+            .await
+            .expect("seed a record");
+        let app = test_app(&state);
+
+        let body = body_string(app.oneshot(as_session(get("/collection"), &session)).await.unwrap()).await;
+        assert!(body.contains("Never reported on"), "{body}");
     }
 }

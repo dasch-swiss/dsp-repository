@@ -88,9 +88,11 @@ impl ApprovedRecordView {
             Err(message) => (None, Some(message)),
         };
 
+        // Excludes a retired proposal: its entity is already published, so a new approved record
+        // for this project must not re-serve it with `operation: "new"` and create a duplicate.
         let entities = proposals
             .iter()
-            .filter(|proposal| proposal.status == ProposalStatus::Accepted)
+            .filter(|proposal| proposal.status == ProposalStatus::Accepted && proposal.retired_at.is_none())
             .map(ProposedEntityView::from_proposal)
             .collect();
 
@@ -204,6 +206,7 @@ mod tests {
             decision: Some(ProposalDecision::Accept),
             decided_by: Some(Uuid::new_v4()),
             decided_at: Some(Utc::now()),
+            retired_at: None,
         }
     }
 
@@ -301,6 +304,19 @@ mod tests {
         let view = ApprovedRecordView::from_record(&record, &[submitted]);
 
         assert!(view.entities.is_empty());
+    }
+
+    #[test]
+    fn a_retired_proposal_produces_no_entity_but_a_live_accepted_one_still_does() {
+        let record = fully_populated_record();
+        let live = accepted_proposal(ProposalKind::Person, "person-1", json!({}));
+        let mut retired = accepted_proposal(ProposalKind::Organization, "organization-1", json!({}));
+        retired.retired_at = Some(Utc::now());
+
+        let view = ApprovedRecordView::from_record(&record, &[live, retired]);
+
+        let ids: Vec<&str> = view.entities.iter().map(|entity| entity.id.as_str()).collect();
+        assert_eq!(ids, vec!["person-1"]);
     }
 
     #[test]

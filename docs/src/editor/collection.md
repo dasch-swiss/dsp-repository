@@ -36,6 +36,10 @@ The response performs no write and carries no generation timestamp, so two reque
 
 Every member is always present, `null` when empty — there is no absent-versus-null distinction to handle. `project` is the publishable project, not the editor's draft. `problem` is non-null only when a record's draft could not be converted; such a record is still served, carrying its error, because dropping it would hide a row and failing the response would let one bad record block every other project.
 
+`entities` carries the project's **accepted** entity proposals, minus any the editor has retired. Retirement applies to `operation: "new"` only: the startup reconciliation retires such a proposal once its allocated `entity_id` appears in the published set, so an entity that already exists as a committed file does not ride along with the project's next approved record and get created twice.
+
+An `operation: "change"` proposal is never retired. Its `entity_id` names an entity the published set carries by definition, so membership cannot distinguish a change that has shipped from one that has not, and retiring on it would drop the edit from the payload and the entity file would never receive it. A change may therefore be sent again with a later approved record for the same project. **Applying a change must be idempotent** — it writes a whole entity body, so re-applying the same one is a no-op, and the collector needs no extra check.
+
 **`collection` is advisory.** It is the last thing a run reported, provided so RDU can see what happened. The collecting workflow must not branch on it when deciding what to publish — it derives that from GitHub, as below.
 
 ## The collector is a Rust binary in this workspace

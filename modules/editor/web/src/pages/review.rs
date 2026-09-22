@@ -1185,6 +1185,7 @@ mod tests {
             updated_at: Default::default(),
             decided_by: None,
             decided_at: None,
+            retired_at: None,
         }
     }
 

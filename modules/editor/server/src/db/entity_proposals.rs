@@ -25,7 +25,7 @@ use super::Database;
 const ENTITY: &str = "entity proposal";
 
 const SELECT: &str = "SELECT id, shortcode, entity_id, kind, operation, payload, status, decision, proposed_by, \
-                      created_at, updated_at, decided_by, decided_at FROM entity_proposals";
+                      created_at, updated_at, decided_by, decided_at, retired_at FROM entity_proposals";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<EntityProposal> {
     Ok(EntityProposal {
@@ -42,14 +42,15 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<EntityProposal> {
         updated_at: row.get(10)?,
         decided_by: optional_uuid_column(row, 11)?,
         decided_at: row.get(12)?,
+        retired_at: row.get(13)?,
     })
 }
 
 fn insert_proposal(tx: &Transaction<'_>, proposal: &EntityProposal) -> rusqlite::Result<()> {
     tx.execute(
         "INSERT INTO entity_proposals (id, shortcode, entity_id, kind, operation, payload, status, decision, \
-         proposed_by, created_at, updated_at, decided_by, decided_at) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+         proposed_by, created_at, updated_at, decided_by, decided_at, retired_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         params![
             proposal.id.to_string(),
             proposal.shortcode,
@@ -64,6 +65,7 @@ fn insert_proposal(tx: &Transaction<'_>, proposal: &EntityProposal) -> rusqlite:
             proposal.updated_at,
             proposal.decided_by.map(|id| id.to_string()),
             proposal.decided_at,
+            proposal.retired_at,
         ],
     )?;
     Ok(())
@@ -184,6 +186,19 @@ impl EntityProposalRepository for Database {
             .await?)
     }
 
+    async fn list_accepted_unretired(&self) -> Result<Vec<EntityProposal>> {
+        Ok(self
+            .read(move |conn| {
+                let mut stmt = conn.prepare(&format!(
+                    "{SELECT} WHERE status = '{}' AND retired_at IS NULL",
+                    ProposalStatus::Accepted.as_str(),
+                ))?;
+                let rows = stmt.query_map([], map_row)?;
+                rows.collect()
+            })
+            .await?)
+    }
+
     async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
         let updated = self
             .write(move |tx| {
@@ -198,6 +213,20 @@ impl EntityProposalRepository for Database {
             return Err(RepositoryError::NotFound { entity: ENTITY });
         }
         Ok(())
+    }
+
+    async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {
+        let updated = self
+            .write(move |tx| {
+                tx.execute(
+                    "UPDATE entity_proposals SET retired_at = ?2 \
+                     WHERE id = ?1 AND retired_at IS NULL AND operation = 'new'",
+                    params![id.to_string(), at],
+                )
+            })
+            .await
+            .map_err(|e| e.into_repository_error(ENTITY))?;
+        Ok(updated > 0)
     }
 }
 
@@ -250,6 +279,7 @@ mod tests {
             decision: None,
             decided_by: None,
             decided_at: None,
+            retired_at: None,
         }
     }
 
@@ -454,6 +484,7 @@ mod tests {
             decision: Some(ProposalDecision::Accept),
             decided_by: Some(reviewer),
             decided_at: Some(at(12)),
+            retired_at: Some(at(13)),
         };
         EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
 
@@ -638,5 +669,65 @@ mod tests {
             matches!(error, RepositoryError::NotFound { entity: "entity proposal" }),
             "{error}"
         );
+    }
+
+    #[tokio::test]
+    async fn test_retire_stamps_retired_at_and_a_second_call_does_not_move_it() {
+        let db = test_db("entity-proposals-retire").await;
+        let proposal = a_proposal("0801", "person-417", ProposalKind::Person, ProposalOperation::New);
+        EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
+
+        assert!(EntityProposalRepository::retire(&db, proposal.id, at(13)).await.unwrap());
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(found.retired_at, Some(at(13)));
+
+        assert!(!EntityProposalRepository::retire(&db, proposal.id, at(14)).await.unwrap());
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(found.retired_at, Some(at(13)), "a second retire must not move the timestamp");
+    }
+
+    #[tokio::test]
+    async fn test_retire_refuses_a_change_proposal_even_when_called_directly() {
+        // The guard is in this method's own predicate, not at its call site, so
+        // a second caller cannot drop it. Retiring a `change` would drop an
+        // approved edit from the payload permanently.
+        let db = test_db("entity-proposals-retire-change").await;
+        let proposal = a_proposal("0801", "person-001", ProposalKind::Person, ProposalOperation::Change);
+        EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
+
+        assert!(!EntityProposalRepository::retire(&db, proposal.id, at(13)).await.unwrap());
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(
+            found.retired_at, None,
+            "a change proposal must never acquire a retirement timestamp"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_retire_on_an_unknown_id_answers_false() {
+        let db = test_db("entity-proposals-retire-missing").await;
+        assert!(!EntityProposalRepository::retire(&db, Uuid::new_v4(), at(10)).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_list_accepted_unretired_excludes_other_statuses_and_retired_rows() {
+        let db = test_db("entity-proposals-list-accepted-unretired").await;
+        for (shortcode, status, retired_at) in [
+            ("0801", ProposalStatus::Accepted, None),
+            ("0803", ProposalStatus::Accepted, Some(at(13))),
+            ("0805", ProposalStatus::Draft, None),
+            ("0807", ProposalStatus::Submitted, None),
+            ("0809", ProposalStatus::Rejected, None),
+            ("0811", ProposalStatus::Withdrawn, None),
+        ] {
+            let mut proposal = a_proposal(shortcode, "person-417", ProposalKind::Person, ProposalOperation::Change);
+            proposal.status = status;
+            proposal.retired_at = retired_at;
+            db.write(move |tx| insert_proposal(tx, &proposal)).await.unwrap();
+        }
+
+        let unretired = EntityProposalRepository::list_accepted_unretired(&db).await.unwrap();
+        let shortcodes: Vec<_> = unretired.into_iter().map(|p| p.shortcode).collect();
+        assert_eq!(shortcodes, vec!["0801".to_string()]);
     }
 }

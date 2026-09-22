@@ -153,7 +153,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     E2E pass).
 - **Durable state:** one SQLite database — `users`, `user_shortcodes`, `sessions`, `login_codes`,
   `mail_sends`, `drafts`, `submissions`, `review_rounds`, `approved_records`, `entity_proposals`,
-  all `STRICT`, forward-only migrations `0001`–`0005` under `server/src/db/migrations/`
+  all `STRICT`, forward-only migrations `0001`–`0006` under `server/src/db/migrations/`
   (`mail_sends` arrives in `0003`) guarded by `PRAGMA user_version`. **Single writer:**
   `editor-server/src/db/` through `editor-core`'s repository ports; several handlers call the
   same port, serialized by the one writer connection, and every multi-table transition is one

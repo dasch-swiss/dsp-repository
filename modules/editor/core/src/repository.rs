@@ -431,9 +431,32 @@ pub trait EntityProposalRepository: Send + Sync {
     /// to.
     async fn list_live_for_entity(&self, entity_id: &str) -> Result<Vec<EntityProposal>>;
 
+    /// Every accepted proposal not yet retired, across all projects.
+    ///
+    /// Startup-only: the reconciliation pass calls this once per process start
+    /// to retire the ones whose entity has since appeared in the published set.
+    /// Not indexed for that reason — an index here would cost a write on every
+    /// proposal write for a read that runs once per start.
+    async fn list_accepted_unretired(&self) -> Result<Vec<EntityProposal>>;
+
     /// Discard a proposal the depositor abandoned. The row survives as a
     /// tombstone so its allocated id is never handed out again.
     async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()>;
+
+    /// Stamp `retired_at` on an accepted `new`-entity proposal whose entity the
+    /// startup reconciliation pass has observed in the published set.
+    ///
+    /// **Refuses a `change` proposal.** Such a proposal names an entity the
+    /// published set carries by definition, so membership cannot tell a shipped
+    /// edit from an unshipped one, and retiring it drops the edit from the next
+    /// approved record's payload for good. The operation is part of this
+    /// method's own predicate rather than a check at its one call site, so a
+    /// second caller cannot omit it.
+    ///
+    /// `false` when the row was already retired, when it is a `change`, or when
+    /// `id` names no row. A caller counting retirements distinguishes it from
+    /// `true`; one merely ensuring the state does not have to.
+    async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool>;
 }
 
 /// Every port at once, so one handle can serve all of them.

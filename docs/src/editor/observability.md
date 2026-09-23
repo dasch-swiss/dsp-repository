@@ -7,7 +7,7 @@ Developer guide for the metadata editor's observability instrumentation. The pip
 Two halves, as in DPE:
 
 - **Server-side**: OTel-native tracing via `axum-tracing-opentelemetry` middleware. Every HTTP request except `/healthz` and `/telemetry/collect` produces W3C-compliant spans exported over OTLP.
-- **Client-side**: `telemetry.js` captures Core Web Vitals, JS errors, Long Animation Frames and navigation timing, and flushes them via `navigator.sendBeacon` to `POST /telemetry/collect`, which converts them into OTel metrics and structured logs on the same OTLP pipeline.
+- **Client-side**: `telemetry.js` captures Core Web Vitals, JS errors, failed Datastar requests (`datastar-fetch` with type `error`, or the first `retrying` or `retries-failed` of a request, as error kind `datastar_sse`), Long Animation Frames and navigation timing, and flushes them via `navigator.sendBeacon` to `POST /telemetry/collect`, which converts them into OTel metrics and structured logs on the same OTLP pipeline.
 
 Trace correlation uses the W3C `traceparent` standard: the server renders a `<meta name="traceparent">` tag in the HTML shell and the client includes it in every beacon payload.
 

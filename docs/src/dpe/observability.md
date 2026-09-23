@@ -66,7 +66,7 @@ The `telemetry.js` module (served from `/telemetry.js`) captures:
 
 - **Core Web Vitals** (LCP, INP, CLS, TTFB, FCP) with attribution data
 - **JavaScript errors** and unhandled promise rejections
-- **Datastar SSE errors**
+- **Datastar request failures**: a `datastar-fetch` event whose `type` is `error` (a response status of 400 or above) or the first `retrying` or `retries-failed` of a request (a network failure or dropped stream, which Datastar retries for about 3 minutes by default before `retries-failed`), reported as error kind `datastar_sse`
 - **Long Animation Frames** (LoAF, ≥200ms threshold)
 - **Navigation timing** breakdown
 

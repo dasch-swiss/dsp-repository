@@ -109,16 +109,23 @@ window.addEventListener('unhandledrejection', (e) => {
   });
 });
 
-// --- Datastar SSE errors ---
-document.addEventListener('datastar-sse-error', (e) => {
+// --- Datastar fetch errors ---
+const reportedRetries = new WeakSet();
+document.addEventListener('datastar-fetch', (e) => {
+  const { type, el, argsRaw } = e.detail ?? {};
+  const request = el ?? document;
+  if (type === 'started') reportedRetries.delete(request);
+  if (type === 'retrying' || type === 'retries-failed') {
+    if (reportedRetries.has(request)) return;
+    reportedRetries.add(request);
+  } else if (type !== 'error') return;
   errorCounts['datastar_sse'] = (errorCounts['datastar_sse'] ?? 0) + 1;
   if (errorCounts['datastar_sse'] > MAX_ERRORS_PER_KIND) return;
 
   addSignal({
     type: 'error',
     kind: 'datastar_sse',
-    message: (e.detail?.message ?? 'SSE error').slice(0, 256),
-    url: e.detail?.url?.split('?')[0],
+    message: [type, argsRaw?.status].filter(Boolean).join(' '),
   });
 });
 

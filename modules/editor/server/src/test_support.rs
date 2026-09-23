@@ -378,6 +378,14 @@ pub(crate) async fn body_string(response: Response<Body>) -> String {
     String::from_utf8_lossy(&bytes).into_owned()
 }
 
+/// The document `<title>`'s text, for a full page's body. Panics if there is
+/// no `<title>` — every full page renders one.
+pub(crate) fn title_of(body: &str) -> &str {
+    let open = body.find("<title>").expect("a <title> tag") + "<title>".len();
+    let close = body[open..].find("</title>").expect("a matching </title>");
+    &body[open..open + close]
+}
+
 /// Every `tracing` event and span field emitted on this thread, as text.
 ///
 /// Spans are captured as well as events: `#[tracing::instrument]` records its

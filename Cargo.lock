@@ -1033,6 +1033,7 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "ureq",
+ "urlencoding",
  "uuid",
 ]
 

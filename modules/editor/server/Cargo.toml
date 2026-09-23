@@ -7,6 +7,9 @@ publish = false
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
+# The `?saved=<stamp>` redirect marker: RFC 3339 carries `+` and `:`, which an
+# unencoded query value would corrupt.
+urlencoding = "2.1"
 editor-core = { path = "../core" }
 editor-web = { path = "../web" }
 # Shared so both services agree on the trace-context and beacon wire formats.

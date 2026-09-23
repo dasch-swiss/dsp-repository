@@ -233,6 +233,27 @@ pub enum Notice<'a> {
     Refused(&'a str),
 }
 
+/// Short form of [`Notice::Saved`], shared between its alert text in [`status`]
+/// and [`Notice::title_prefix`] so a wording change cannot update one and not
+/// the other.
+const SAVED_TITLE: &str = "Saved";
+/// Short form of [`Notice::Discarded`]; see [`SAVED_TITLE`].
+const DISCARDED_TITLE: &str = "Discarded";
+/// The prefix for a write that did not land, [`Notice::Refused`].
+const NOT_SAVED_TITLE: &str = "Not saved";
+
+impl Notice<'_> {
+    /// The prefix a full page load puts in front of the document `<title>`, matching
+    /// [`crate::pages::section::Notice::title_prefix`].
+    pub fn title_prefix(&self) -> Option<&'static str> {
+        match self {
+            Notice::Saved => Some(SAVED_TITLE),
+            Notice::Discarded => Some(DISCARDED_TITLE),
+            Notice::Refused(_) => Some(NOT_SAVED_TITLE),
+        }
+    }
+}
+
 /// Which confirmation is showing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Confirmation {
@@ -332,12 +353,14 @@ fn status(view: &EntityView<'_>) -> Markup {
     html! {
         div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
             @match view.notice {
-                Some(Notice::Saved) => { (alert("Saved.").variant(AlertVariant::Success)) }
+                Some(Notice::Saved) => {
+                    (alert(format!("{SAVED_TITLE}.")).variant(AlertVariant::Success))
+                }
                 Some(Notice::Discarded) => {
                     ({
                         alert("This proposal has been discarded and is no longer live.")
                             .variant(AlertVariant::Success)
-                            .title("Discarded")
+                            .title(DISCARDED_TITLE)
                     })
                 }
                 Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }

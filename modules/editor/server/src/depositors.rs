@@ -34,7 +34,7 @@ use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
 use crate::auth::guard::Rdu;
-use crate::{format_instant, AppState};
+use crate::shell::{format_instant, AppState};
 
 /// What a depositor is told if they find their way to one of these pages.
 ///
@@ -156,13 +156,13 @@ pub(crate) async fn list(State(state): State<AppState>, Rdu(viewer): Rdu) -> Res
         })
         .collect();
 
-    crate::render(&state, LIST_TITLE, StatusCode::OK, Some(&viewer), page::list(&rows))
+    crate::shell::render(&state, LIST_TITLE, StatusCode::OK, Some(&viewer), page::list(&rows))
 }
 
 /// `GET /depositors/new` — the empty create form.
 pub(crate) async fn create_form(State(state): State<AppState>, Rdu(viewer): Rdu) -> Response {
     let fields = page::DepositorFields { name: "", email: "", shortcodes: "" };
-    crate::render(&state, CREATE_TITLE, StatusCode::OK, Some(&viewer), page::create(&fields, None))
+    crate::shell::render(&state, CREATE_TITLE, StatusCode::OK, Some(&viewer), page::create(&fields, None))
 }
 
 /// `POST /depositors` — create a depositor.
@@ -240,7 +240,7 @@ pub(crate) async fn edit_form(State(state): State<AppState>, Rdu(viewer): Rdu, P
         email: &target.email,
         shortcodes: &shortcodes,
     };
-    crate::render(
+    crate::shell::render(
         &state,
         EDIT_TITLE,
         StatusCode::OK,
@@ -366,7 +366,7 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
         draft_shortcodes: &drafts,
         submission_shortcodes: &submissions,
     };
-    crate::render(
+    crate::shell::render(
         &state,
         REMOVE_TITLE,
         StatusCode::OK,
@@ -433,14 +433,14 @@ async fn manageable(state: &AppState, viewer: &User, id: &str) -> Result<User, R
     // 404 as an id that names nothing, not a deserialization error explaining
     // what a UUID looks like.
     let Ok(id) = Uuid::parse_str(id) else {
-        return Err(crate::not_found(State(state.clone())).await);
+        return Err(crate::shell::not_found(State(state.clone())).await);
     };
     match UserRepository::find_by_id(&*state.db, id).await {
-        Ok(Some(user)) if user.is_rdu() => Err(crate::forbidden(state, viewer, RDU_IMMUTABLE)),
+        Ok(Some(user)) if user.is_rdu() => Err(crate::shell::forbidden(state, viewer, RDU_IMMUTABLE)),
         Ok(Some(user)) => Ok(user),
         // Not a 403: a reader who reached this page followed a link from the
         // list, and an account that is not there is gone rather than closed.
-        Ok(None) => Err(crate::not_found(State(state.clone())).await),
+        Ok(None) => Err(crate::shell::not_found(State(state.clone())).await),
         Err(error) => Err(storage_error(state, viewer, "read the account", &error)),
     }
 }
@@ -450,7 +450,7 @@ fn rejected_create(state: &AppState, viewer: &User, form: &DepositorForm, messag
     // 200 rather than 422: this is a form being redisplayed, which is what a
     // browser needs to show it. The outcome is on the span, which is where
     // alerting reads it from.
-    crate::render(
+    crate::shell::render(
         state,
         CREATE_TITLE,
         StatusCode::OK,
@@ -461,7 +461,7 @@ fn rejected_create(state: &AppState, viewer: &User, form: &DepositorForm, messag
 
 /// The edit form, redisplayed the same way.
 fn rejected_edit(state: &AppState, viewer: &User, id: Uuid, form: &DepositorForm, message: &str) -> Response {
-    crate::render(
+    crate::shell::render(
         state,
         EDIT_TITLE,
         StatusCode::OK,
@@ -482,7 +482,7 @@ fn rejected_edit(state: &AppState, viewer: &User, id: Uuid, form: &DepositorForm
 /// hunting for a misconfigured account instead of a database that is down.
 fn storage_error(state: &AppState, viewer: &User, what: &str, error: &RepositoryError) -> Response {
     tracing::error!(error = %error, operation = what, "an account screen could not reach storage");
-    crate::render(
+    crate::shell::render(
         state,
         UNAVAILABLE_TITLE,
         StatusCode::INTERNAL_SERVER_ERROR,

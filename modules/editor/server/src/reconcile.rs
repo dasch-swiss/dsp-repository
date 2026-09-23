@@ -443,7 +443,7 @@ mod tests {
     #[tokio::test]
     async fn a_database_that_cannot_be_enumerated_reconciles_nothing_and_reports_it() {
         // The module's central claim: a failure here is not fatal. Nothing is
-        // deleted, the error reaches the caller, and `main` logs it and carries
+        // deleted, the error reaches the caller, and `serve()` logs it and carries
         // on rather than refusing to start — so the cost of an unreadable
         // database is a stale label, never an editor nobody can reach.
         use crate::test_support::{Faults, FaultyDatabase};

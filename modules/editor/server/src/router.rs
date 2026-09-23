@@ -22,7 +22,7 @@ use axum::Router;
 use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::GovernorError;
 
-use crate::AppState;
+use crate::shell::AppState;
 
 /// The whole app: the traced router plus the routes that must stay untraced,
 /// with the CSRF middleware wrapped around all of them.
@@ -161,14 +161,14 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
 
-    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::not_found).with_state(state.clone()));
+    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(state.clone()));
 
     Router::new()
         // --- Traced routes (declared BEFORE .layer()) ---
         // The service root: a redirect to `/projects`. The shell's header links
         // here from every page, so without it the 404 page's own header is
         // another 404.
-        .route("/", get(crate::root))
+        .route("/", get(crate::shell::root))
         // The two login endpoints. The rate limit is on the POST alone, merged
         // in rather than layered over the whole route: a limit that counted page
         // loads would spend an office's budget on people reading the form.

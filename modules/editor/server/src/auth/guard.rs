@@ -18,7 +18,7 @@ use chrono::Utc;
 use editor_core::records::User;
 
 use super::session;
-use crate::AppState;
+use crate::shell::AppState;
 
 /// The query key that carries where the user was going.
 pub(crate) const NEXT: &str = "next";
@@ -74,7 +74,7 @@ impl FromRequestParts<AppState> for Rdu {
             // it from `MatchedPath`, and semconv defines it as the matched
             // template rather than the concrete path.
             tracing::info!("refused an RDU-only page to an account that is not RDU");
-            return Err(crate::forbidden(state, &user, crate::depositors::RDU_ONLY));
+            return Err(crate::shell::forbidden(state, &user, crate::depositors::RDU_ONLY));
         }
         Ok(Self(user))
     }

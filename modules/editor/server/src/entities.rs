@@ -31,7 +31,7 @@ use shared_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
 use crate::sections::is_enhanced;
-use crate::AppState;
+use crate::shell::AppState;
 
 const SAVE_REFUSED_NOT_LIVE: &str = "This proposal is no longer open, so it cannot be changed.";
 const SAVE_REFUSED_STORAGE: &str = "Could not be saved. Nothing was changed — try again, and if it keeps happening \
@@ -66,7 +66,7 @@ async fn context<'a>(
     signed_out_at: DateTime<Utc>,
 ) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
-        return Err(crate::not_found(State(state.clone())).await);
+        return Err(crate::shell::not_found(State(state.clone())).await);
     }
     if !user.may_reach(shortcode) {
         tracing::info!(
@@ -74,7 +74,7 @@ async fn context<'a>(
             project.shortcode = %shortcode,
             "refused an entity form for a project that is not assigned to this account"
         );
-        return Err(crate::forbidden(state, user, crate::projects::NOT_ASSIGNED));
+        return Err(crate::shell::forbidden(state, user, crate::projects::NOT_ASSIGNED));
     }
 
     let key = normalize_shortcode(shortcode);
@@ -85,7 +85,7 @@ async fn context<'a>(
     // The reader invented the pairing if this comes back empty — a proposal id under the wrong
     // shortcode is exactly that, so it is a 404 rather than a 403.
     let Some(proposal) = proposal_for(&proposals, entity_id) else {
-        return Err(crate::not_found(State(state.clone())).await);
+        return Err(crate::shell::not_found(State(state.clone())).await);
     };
 
     let draft = serde_json::from_str(&proposal.payload).unwrap_or_else(|error| {
@@ -319,7 +319,7 @@ async fn row_action(
                 Some(Shape::StringRows | Shape::AgentRows | Shape::ReferenceRows(_))
             )
     }) else {
-        return crate::not_found(State(state.clone())).await;
+        return crate::shell::not_found(State(state.clone())).await;
     };
 
     if !context.proposal.is_live() {
@@ -625,7 +625,7 @@ fn render_page(
         None => title,
     };
     let view = view(shortcode, context, rendering);
-    crate::render(state, &title, StatusCode::OK, Some(user), editor_web::entity::page(&view))
+    crate::shell::render(state, &title, StatusCode::OK, Some(user), editor_web::entity::page(&view))
 }
 
 fn view<'a>(
@@ -649,7 +649,7 @@ fn view<'a>(
 
 fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
     tracing::error!(error = %error, operation = what, "the entity form could not reach storage");
-    crate::render(
+    crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,

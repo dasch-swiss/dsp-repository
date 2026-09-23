@@ -49,7 +49,7 @@ impl<'de> Deserialize<'de> for Secret {
     ///
     /// figment magic-parses environment values, so `EDITOR_SMTP_PASSWORD=1234567890` arrives as a
     /// number. A derived `Deserialize` on this newtype would reject it, and figment's type-mismatch
-    /// error prints the value it found — straight to stderr through `main`'s config-load report.
+    /// error prints the value it found — straight to stderr through `serve()`'s config-load report.
     /// [`Secret`]'s redacting [`fmt::Debug`] cannot help with that: the value leaks while it is
     /// being turned *into* a `Secret`, upstream of the type. Accepting every scalar shape and
     /// stringifying it removes the failure, and with it the message.
@@ -498,7 +498,7 @@ impl EditorConfig {
             );
         }
         // The position, never the value. This message reaches stderr through
-        // `main`'s config-load report, which is container stderr and therefore
+        // `serve()`'s config-load report, which is container stderr and therefore
         // the log pipeline — and an address in a log is exactly what must not happen. The operator
         // holds the configuration, so an index is just as actionable.
         for (index, address) in self.rdu_addresses().iter().enumerate() {
@@ -947,7 +947,7 @@ mod tests {
         // figment magic-parses environment values, so a password that looks like
         // a number, a float or a boolean does not arrive as a string. A derived
         // `Deserialize` rejected those, and figment's type-mismatch error prints
-        // the value it found — to stderr, through `main`'s config-load report.
+        // the value it found — to stderr, through `serve()`'s config-load report.
         // The redacting `Debug` cannot help: the leak is upstream of the type.
         for password in ["1234567890", "9876.54", "true", "false", "-42", "0755"] {
             figment::Jail::expect_with(|jail| {

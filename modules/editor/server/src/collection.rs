@@ -42,7 +42,7 @@ use uuid::Uuid;
 
 use crate::auth::guard::Rdu;
 use crate::auth::secret::code_matches;
-use crate::AppState;
+use crate::shell::AppState;
 
 /// Every pull request this endpoint accepts must live under this prefix, so a forged report
 /// cannot point RDU's advisory display at another site.
@@ -210,10 +210,10 @@ pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> R
         .iter()
         .map(|record| RowStrings {
             id: record.id.to_string(),
-            shortcode: crate::shortcode_as_published(&state, &record.shortcode),
-            project_name: crate::project_name(&state, &record.shortcode).map(str::to_string),
-            approved_at: crate::format_instant(record.approved_at),
-            reported_at: record.reported_at.map(crate::format_instant),
+            shortcode: crate::shell::shortcode_as_published(&state, &record.shortcode),
+            project_name: crate::shell::project_name(&state, &record.shortcode).map(str::to_string),
+            approved_at: crate::shell::format_instant(record.approved_at),
+            reported_at: record.reported_at.map(crate::shell::format_instant),
             pull_request: record.pull_request_url.clone(),
             classification: classify_record(record, state.published.get(&record.shortcode)),
         })
@@ -231,7 +231,7 @@ pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> R
         })
         .collect();
 
-    crate::render(
+    crate::shell::render(
         &state,
         "Collection — DaSCH Metadata Editor",
         StatusCode::OK,
@@ -260,20 +260,20 @@ pub(crate) async fn discard_form(State(state): State<AppState>, Rdu(user): Rdu, 
         Ok(None) => return no_such_record(&state, &user),
         Err(error) => return storage_error(&state, &user, "read the approved records", &error),
     };
-    let shortcode = crate::shortcode_as_published(&state, &record.shortcode);
-    let approved_at = crate::format_instant(record.approved_at);
+    let shortcode = crate::shell::shortcode_as_published(&state, &record.shortcode);
+    let approved_at = crate::shell::format_instant(record.approved_at);
     // Classified here too, so a reader who reached this URL directly sees the
     // same state the list would have shown rather than a page that reads alike
     // whatever it is about to destroy.
     let classification = classify_record(&record, state.published.get(&record.shortcode));
     let impact = page::DiscardImpact {
         shortcode: &shortcode,
-        project_name: crate::project_name(&state, &record.shortcode),
+        project_name: crate::shell::project_name(&state, &record.shortcode),
         approved_at: &approved_at,
         pull_request: record.pull_request_url.as_deref(),
         state: &classification,
     };
-    crate::render(
+    crate::shell::render(
         &state,
         "Discard record — DaSCH Metadata Editor",
         StatusCode::OK,
@@ -311,7 +311,7 @@ fn no_such_record(state: &AppState, user: &User) -> Response {
             a href="/collection" class="underline" { "Back to collection" }
         }
     };
-    crate::render(
+    crate::shell::render(
         state,
         "Nothing to discard — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
@@ -323,7 +323,7 @@ fn no_such_record(state: &AppState, user: &User) -> Response {
 /// Storage would not answer, so the page cannot show what it should.
 fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
     tracing::error!(error = %error, operation = what, "the collection surface could not reach storage");
-    crate::render(
+    crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
@@ -353,11 +353,11 @@ mod tests {
     use uuid::Uuid;
 
     use crate::auth::cookie;
+    use crate::shell::AppState;
     use crate::test_support::{
         a_session, a_user, body_string, get, location, post, published_corpus, state_with_collection_token, test_app,
         test_state, with_cookie,
     };
-    use crate::AppState;
 
     /// The bearer token these tests configure the endpoint with.
     const TOKEN: &str = "a-collection-token";
@@ -614,7 +614,7 @@ mod tests {
         builder.body(Body::from(body.to_string())).unwrap()
     }
 
-    async fn snapshot(state: &crate::AppState) -> Vec<ApprovedRecord> {
+    async fn snapshot(state: &crate::shell::AppState) -> Vec<ApprovedRecord> {
         ApprovedRecordRepository::list_all(&*state.db)
             .await
             .expect("list should succeed")
@@ -622,7 +622,7 @@ mod tests {
 
     /// A pending submission on `shortcode`, so `ReviewRoundRepository::approve` has something to
     /// claim.
-    async fn a_pending_submission(state: &crate::AppState, shortcode: &str) -> Submission {
+    async fn a_pending_submission(state: &crate::shell::AppState, shortcode: &str) -> Submission {
         let submission = Submission {
             id: Uuid::new_v4(),
             shortcode: shortcode.to_string(),

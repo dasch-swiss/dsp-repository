@@ -43,7 +43,7 @@ use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
 use crate::auth::guard::Authenticated;
-use crate::AppState;
+use crate::shell::AppState;
 
 /// The header the vendored Datastar bundle sets on every fetch it makes.
 ///
@@ -305,7 +305,7 @@ async fn context<'a>(
     signed_out_at: DateTime<Utc>,
 ) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
-        return Err(crate::not_found(State(state.clone())).await);
+        return Err(crate::shell::not_found(State(state.clone())).await);
     }
     if !user.may_reach(shortcode) {
         tracing::info!(
@@ -313,7 +313,7 @@ async fn context<'a>(
             project.shortcode = %shortcode,
             "refused a project that is not assigned to this account"
         );
-        return Err(crate::forbidden(state, user, crate::projects::NOT_ASSIGNED));
+        return Err(crate::shell::forbidden(state, user, crate::projects::NOT_ASSIGNED));
     }
 
     let audience = audience_of(user);
@@ -324,7 +324,7 @@ async fn context<'a>(
     let Some(section) = registry::section(section_id)
         .filter(|section| registry::sections_for(audience).any(|visible| visible.id == section.id))
     else {
-        return Err(crate::not_found(State(state.clone())).await);
+        return Err(crate::shell::not_found(State(state.clone())).await);
     };
 
     let key = normalize_shortcode(shortcode);
@@ -415,7 +415,7 @@ async fn context<'a>(
     let round = latest_round.as_ref().map(|round| RoundStrings {
         outcome: round.outcome,
         note: round.note.clone(),
-        at: crate::format_instant(round.at),
+        at: crate::shell::format_instant(round.at),
         substitutions: decisions
             .as_ref()
             .map(|decisions| {
@@ -731,7 +731,7 @@ fn changed_underneath(context: &Context<'_>, body: &FormBody) -> Option<String> 
     let baseline = body.get(page::BASELINE)?;
     let record = context.record.as_ref()?;
     let stored = record.updated_at.to_rfc3339();
-    (stored != baseline).then(|| crate::format_instant(record.updated_at))
+    (stored != baseline).then(|| crate::shell::format_instant(record.updated_at))
 }
 
 /// Apply the posted body to the **in-memory** draft, returning how many fields
@@ -939,7 +939,7 @@ async fn row_action(
         .find(|field| field.id == field_id && field.shape.is_some_and(Shape::has_rows))
     else {
         span.record("form.outcome", "unknown_field");
-        return crate::not_found(State(state.clone())).await;
+        return crate::shell::not_found(State(state.clone())).await;
     };
 
     if context.locked.is_some() {
@@ -1826,7 +1826,7 @@ fn render_page(
         Some(prefix) => format!("{prefix} — {title}"),
         None => title,
     };
-    crate::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
+    crate::shell::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
 }
 
 /// What the stored draft row contributes to a rendering: when it was last
@@ -1849,9 +1849,12 @@ struct Stored {
 
 fn stored_of(context: &Context<'_>) -> Stored {
     Stored {
-        saved_at: context.record.as_ref().map(|record| crate::format_instant(record.updated_at)),
+        saved_at: context
+            .record
+            .as_ref()
+            .map(|record| crate::shell::format_instant(record.updated_at)),
         baseline: context.record.as_ref().map(|record| record.updated_at.to_rfc3339()),
-        signed_out_at: nearly_signed_out(context.signed_out_at).map(crate::format_instant),
+        signed_out_at: nearly_signed_out(context.signed_out_at).map(crate::shell::format_instant),
     }
 }
 
@@ -1909,7 +1912,7 @@ fn view<'a>(
 /// Storage would not answer, so the page cannot show what it should.
 fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
     tracing::error!(error = %error, operation = what, "the project form could not reach storage");
-    crate::render(
+    crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,

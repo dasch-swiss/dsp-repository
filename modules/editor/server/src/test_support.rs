@@ -26,7 +26,7 @@ use crate::auth::AuthConfig;
 use crate::config::EditorConfig;
 use crate::db::{Database, Source};
 use crate::mail::{Mail, MailError, Mailer};
-use crate::{AppState, TemporalTables};
+use crate::shell::{AppState, TemporalTables};
 
 /// One message a [`RecordingMailer`] was asked to send.
 #[derive(Debug, Clone, PartialEq, Eq)]

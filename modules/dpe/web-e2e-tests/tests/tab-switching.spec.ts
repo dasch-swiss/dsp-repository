@@ -197,4 +197,15 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     const activeTab = page.locator('[role="tab"][aria-selected="true"]');
     await expect(activeTab).toHaveText(/Overview/);
   });
+
+  test("a network failure on a tab fragment falls back to the no-JS tab URL at once", async ({
+    page,
+  }) => {
+    await page.goto(PROJECT_URL);
+    await page.route("**/tab/**", (route) => route.abort("failed"));
+
+    await page.locator('[role="tab"]', { hasText: "Contributors" }).click();
+
+    await expect(page).toHaveURL(/\?tab=contributors$/, { timeout: 5000 });
+  });
 });

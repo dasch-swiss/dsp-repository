@@ -100,7 +100,7 @@ fn tab_link(value: &str, active_tab: &str, icon: IconData, label: &str, shortcod
             tabindex=(if is_active { "0" } else { "-1" })
             data-on:click__prevent=({
                 format!(
-                    "@get('/dpe/projects/{shortcode}/tab/{value}', {{retry: 'never'}})",
+                    "@get('/dpe/projects/{shortcode}/tab/{value}', {{retry: 'never', retryMaxCount: 0}})",
                 )
             })
             data-indicator:_tab_loading
@@ -154,7 +154,7 @@ mod tests {
             "no-JS href: {out}"
         );
         assert!(
-            out.contains("@get('/dpe/projects/0ABC/tab/contributors', {retry: 'never'})"),
+            out.contains("@get('/dpe/projects/0ABC/tab/contributors', {retry: 'never', retryMaxCount: 0})"),
             "datastar get: {out}"
         );
         assert!(out.contains("data-indicator:_tab_loading"), "{out}");

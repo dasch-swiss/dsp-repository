@@ -51,7 +51,7 @@ use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
 use crate::auth::guard::Rdu;
-use crate::AppState;
+use crate::shell::AppState;
 
 /// The header the vendored Datastar bundle sets on every fetch it makes; see
 /// [`crate::sections`], which reads it for the same reason.
@@ -113,10 +113,10 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
         // here would be a queue entry nobody can clear.
         .filter(|submission| submission.state != SubmissionState::Approved)
         .map(|submission| PendingRow {
-            shortcode: crate::shortcode_as_published(&state, &submission.shortcode),
-            project_name: crate::project_name(&state, &submission.shortcode).map(str::to_string),
+            shortcode: crate::shell::shortcode_as_published(&state, &submission.shortcode),
+            project_name: crate::shell::project_name(&state, &submission.shortcode).map(str::to_string),
             last_editor: name_of(&names, submission.submitted_by).map(str::to_string),
-            submitted_at: crate::format_instant(submission.submitted_at),
+            submitted_at: crate::shell::format_instant(submission.submitted_at),
             reviewer: name_of(&names, submission.reviewed_by).map(str::to_string),
             state: submission.state,
         })
@@ -124,10 +124,10 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
     let draft_rows: Vec<DraftStrings> = drafts
         .iter()
         .map(|draft| DraftStrings {
-            shortcode: crate::shortcode_as_published(&state, &draft.shortcode),
-            project_name: crate::project_name(&state, &draft.shortcode).map(str::to_string),
+            shortcode: crate::shell::shortcode_as_published(&state, &draft.shortcode),
+            project_name: crate::shell::project_name(&state, &draft.shortcode).map(str::to_string),
             last_editor: name_of(&names, draft.updated_by).map(str::to_string),
-            updated_at: crate::format_instant(draft.updated_at),
+            updated_at: crate::shell::format_instant(draft.updated_at),
         })
         .collect();
 
@@ -152,7 +152,7 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
         })
         .collect();
 
-    crate::render(
+    crate::shell::render(
         &state,
         "Review queue — DaSCH Metadata Editor",
         StatusCode::OK,
@@ -702,7 +702,7 @@ fn asking(
         return (StatusCode::OK, axum::response::Html(page::region(&view).into_string())).into_response();
     }
     let title = page_title(context);
-    crate::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
+    crate::shell::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
 }
 
 /// The round is over, so there is no submission left to diff.
@@ -716,7 +716,7 @@ fn finished(state: &AppState, user: &User, context: &Context<'_>, outcome: Revie
     // too: the region this surface patches is the diff, and there is no diff
     // any more. Datastar matches a patch by `id`, so a body with no
     // `review-surface` in it patches nothing — a full page replaces it.
-    crate::render(
+    crate::shell::render(
         state,
         &page_title(context),
         StatusCode::OK,
@@ -775,7 +775,7 @@ impl Context<'_> {
 /// and role-based access leaves nothing per-project to check.
 async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
-        return Err(crate::not_found(State(state.clone())).await);
+        return Err(crate::shell::not_found(State(state.clone())).await);
     }
     let key = normalize_shortcode(shortcode);
     let submission = match SubmissionRepository::find_by_shortcode(&*state.db, &key).await {
@@ -841,7 +841,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
         let others: Vec<String> = live
             .into_iter()
             .filter(|other| other.shortcode != key)
-            .map(|other| crate::shortcode_as_published(state, &other.shortcode))
+            .map(|other| crate::shell::shortcode_as_published(state, &other.shortcode))
             .collect();
         if !others.is_empty() {
             entity_cross_project.insert(proposal.entity_id.clone(), others);
@@ -854,7 +854,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
         shortcode,
         submitter_name: name_of(&names, submission.submitted_by).map(str::to_string),
         reviewer_name: name_of(&names, submission.reviewed_by).map(str::to_string),
-        submitted_at: crate::format_instant(submission.submitted_at),
+        submitted_at: crate::shell::format_instant(submission.submitted_at),
         held_by_viewer: submission.reviewed_by == Some(user.id),
         submission,
         submitted,
@@ -1014,7 +1014,7 @@ fn render_page(
     let rows = review_rows(context);
     let entity_rows = entity_rows(context);
     let view = view(context, &rows, &entity_rows, filter, notice);
-    crate::render(state, &page_title(context), StatusCode::OK, Some(user), page::page(&view))
+    crate::shell::render(state, &page_title(context), StatusCode::OK, Some(user), page::page(&view))
 }
 
 /// What a review page is called. One decision, shared by the diff, the
@@ -1144,7 +1144,7 @@ fn no_submission(state: &AppState, user: &User) -> Response {
             a href="/review" class="underline" { "Back to the review queue" }
         }
     };
-    crate::render(
+    crate::shell::render(
         state,
         "Nothing to review — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
@@ -1155,7 +1155,7 @@ fn no_submission(state: &AppState, user: &User) -> Response {
 
 /// A submission whose stored payload this build cannot parse.
 fn unreadable_submission(state: &AppState, user: &User) -> Response {
-    crate::render(
+    crate::shell::render(
         state,
         "Submission unreadable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
@@ -1170,7 +1170,7 @@ fn unreadable_submission(state: &AppState, user: &User) -> Response {
 /// Storage would not answer, so the page cannot show what it should.
 fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
     tracing::error!(error = %error, operation = what, "the review surface could not reach storage");
-    crate::render(
+    crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,

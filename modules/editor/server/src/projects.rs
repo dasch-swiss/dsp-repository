@@ -20,7 +20,7 @@ use editor_web::pages::projects::AssignedProject;
 use shared_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
-use crate::AppState;
+use crate::shell::AppState;
 
 /// What a depositor is told about a project that is not theirs.
 ///
@@ -58,7 +58,7 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): 
         }
         editor_web::pages::projects::assigned(&rows, user.shortcodes.len())
     };
-    crate::render(
+    crate::shell::render(
         &state,
         "Projects — DaSCH Metadata Editor",
         axum::http::StatusCode::OK,
@@ -87,7 +87,7 @@ pub(crate) async fn detail(
     // rather than a 403. A 403 for `/projects/../etc/passwd` would assert that
     // such a project exists and is merely closed to this account.
     if !is_valid_shortcode(&shortcode) {
-        return crate::not_found(State(state)).await;
+        return crate::shell::not_found(State(state)).await;
     }
     // The authorization check runs before anything is read: 404 for a shortcode
     // that is not published and 403 for one that is would make the pair an oracle
@@ -106,7 +106,7 @@ pub(crate) async fn detail(
             project.shortcode = %shortcode,
             "refused a project that is not assigned to this account"
         );
-        return crate::forbidden(&state, &user, NOT_ASSIGNED);
+        return crate::shell::forbidden(&state, &user, NOT_ASSIGNED);
     }
     let audience = if user.is_rdu() {
         editor_web::form::registry::Audience::RduOnly
@@ -122,7 +122,7 @@ pub(crate) async fn detail(
 /// Behind [`Authenticated`] like the rest: it explains a depositor's own
 /// projects, and the editor has no public pages besides the login flow.
 pub(crate) async fn states(State(state): State<AppState>, Authenticated(user, _): Authenticated) -> Response {
-    crate::render(
+    crate::shell::render(
         &state,
         "What the states mean — DaSCH Metadata Editor",
         StatusCode::OK,
@@ -181,7 +181,7 @@ pub(crate) async fn approved_comparison(state: &AppState, key: &str) -> Result<(
 /// Storage would not answer, so the page cannot show what it should.
 fn storage_error(state: &AppState, viewer: &User, what: &str, error: &RepositoryError) -> Response {
     tracing::error!(error = %error, operation = what, "the project list could not reach storage");
-    crate::render(
+    crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,

@@ -21,7 +21,7 @@ use super::guard::{destination_or_root, login_url, next_from, NEXT};
 use super::{cookie, delta, is_plausible_address, locked_out, secret, session};
 use crate::config::{CODE_TTL, SEND_WINDOW};
 use crate::mail::Mail;
-use crate::AppState;
+use crate::shell::AppState;
 
 /// The one message every code-entry failure produces.
 ///
@@ -57,7 +57,7 @@ pub(crate) struct CodeForm {
 /// business on a page reached without a session, which is what the `None`
 /// viewer says.
 fn render(state: &AppState, title: &str, status: StatusCode, content: Markup) -> Response {
-    crate::render(state, title, status, None, content)
+    crate::shell::render(state, title, status, None, content)
 }
 
 /// `/login/code`, carrying the destination on to the second screen.

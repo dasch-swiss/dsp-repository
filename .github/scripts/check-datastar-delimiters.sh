@@ -45,6 +45,21 @@ main() {
     return 1
   fi
   echo "✓ Datastar attributes: no pre-RC.6 hyphen delimiters ($count files checked)"
+
+  # `retry: 'never'` covers only HTTP statuses: a network failure is still
+  # retried for about three minutes before `retries-failed`, which is what a
+  # no-JS fallback listens for. Only `retryMaxCount: 0` stops that.
+  violations="$(git grep -n "retry: 'never'" -- "${MAUD_PATHSPECS[@]}")" && rc=0 || rc=$?
+  [ "$rc" -le 1 ] || { echo "✗ git grep failed; the gate could not run" >&2; return 1; }
+  violations="$(printf '%s\n' "$violations" | grep -v "retryMaxCount: 0")" || true
+  if [ -n "$violations" ]; then
+    printf '%s\n\n' "$violations" >&2
+    echo "✗ a Datastar action sets retry: 'never' without retryMaxCount: 0, so a network" >&2
+    echo "  failure still retries for minutes. See docs/src/dpe/architecture.md" >&2
+    echo "  → Datastar Attribute Conventions." >&2
+    return 1
+  fi
+  echo "✓ Datastar actions: every retry: 'never' also sets retryMaxCount: 0"
 }
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then

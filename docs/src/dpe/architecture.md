@@ -100,7 +100,7 @@ The client never needs to track tab state — the server-rendered HTML IS the st
 <!-- Tab link with Datastar enhancement -->
 <a href="/projects/ABC1?tab=publications"
    role="tab" aria-selected="false"
-   data-on:click__prevent="@get('/projects/ABC1/tab/publications', {retry: 'never'})"
+   data-on:click__prevent="@get('/projects/ABC1/tab/publications', {retry: 'never', retryMaxCount: 0})"
    data-indicator:_tab_loading>
   Publications
 </a>
@@ -117,7 +117,7 @@ The client never needs to track tab state — the server-rendered HTML IS the st
 ## Datastar Attribute Conventions
 
 - **Signal naming**: Use `_` prefix for client-only signals (e.g., `_tab_loading`). The underscore excludes the signal from server payloads.
-- **`retry: 'never'`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying.
+- **`retry: 'never', retryMaxCount: 0`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying. `retry: 'never'` alone covers only HTTP statuses: a network failure or dropped stream is still retried (10 times, about 3 minutes with the defaults) before `retries-failed` fires. `retryMaxCount: 0` makes it fire on the first failure.
 - **Graceful degradation**: Every Datastar-enhanced `<a>` must have a valid `href` for no-JS fallback.
 
 ## See Also

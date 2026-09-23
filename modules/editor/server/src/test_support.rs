@@ -840,10 +840,6 @@ impl ApprovedRecordRepository for FaultyDatabase {
         ApprovedRecordRepository::create(&*self.inner, record).await
     }
 
-    async fn list_uncollected(&self) -> Result<Vec<ApprovedRecord>> {
-        ApprovedRecordRepository::list_uncollected(&*self.inner).await
-    }
-
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>> {
         if self.faults.approved_records_find_by_shortcode {
             return Err(injected("ApprovedRecordRepository::find_by_shortcode"));

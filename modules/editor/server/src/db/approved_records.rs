@@ -58,20 +58,6 @@ impl ApprovedRecordRepository for Database {
         Ok(())
     }
 
-    async fn list_uncollected(&self) -> Result<Vec<ApprovedRecord>> {
-        Ok(self
-            .read(|conn| {
-                // Oldest first, so a run that fails part-way still makes progress
-                // from the front of the queue. `collected_at IS NULL` matches the
-                // partial index, so collected rows are never scanned.
-                let mut stmt =
-                    conn.prepare(&format!("{SELECT} WHERE collected_at IS NULL ORDER BY approved_at, shortcode"))?;
-                let rows = stmt.query_map([], map_row)?;
-                rows.collect()
-            })
-            .await?)
-    }
-
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>> {
         let shortcode = shortcode.to_string();
         Ok(self
@@ -86,8 +72,7 @@ impl ApprovedRecordRepository for Database {
     async fn list_all(&self) -> Result<Vec<ApprovedRecord>> {
         Ok(self
             .read(|conn| {
-                // Same order as `list_uncollected`, so the startup log reads in
-                // the order records were approved rather than in rowid order.
+                // So the startup log reads in approval order, not rowid order.
                 let mut stmt = conn.prepare(&format!("{SELECT} ORDER BY approved_at, shortcode"))?;
                 let rows = stmt.query_map([], map_row)?;
                 rows.collect()
@@ -203,27 +188,11 @@ mod tests {
         let record = record("0801", Some(approver), at(14));
         ApprovedRecordRepository::create(&db, &record).await.unwrap();
 
-        assert_eq!(db.list_uncollected().await.unwrap(), vec![record]);
+        assert_eq!(db.list_all().await.unwrap(), vec![record]);
     }
 
     #[tokio::test]
-    async fn test_list_uncollected_excludes_collected_records() {
-        // The filter this method applies, pinned on its own terms: the public endpoint
-        // applies none, so nothing it serves depends on this flag.
-        let db = test_db("approved-uncollected").await;
-        let first = record("0801", None, at(12));
-        let second = record("0803", None, at(13));
-        ApprovedRecordRepository::create(&db, &first).await.unwrap();
-        ApprovedRecordRepository::create(&db, &second).await.unwrap();
-
-        db.mark_collected(first.id, at(15)).await.unwrap();
-
-        let uncollected: Vec<_> = db.list_uncollected().await.unwrap().into_iter().map(|r| r.shortcode).collect();
-        assert_eq!(uncollected, vec!["0803".to_string()]);
-    }
-
-    #[tokio::test]
-    async fn test_list_uncollected_is_oldest_first() {
+    async fn test_list_all_is_oldest_first() {
         let db = test_db("approved-order").await;
         ApprovedRecordRepository::create(&db, &record("0805", None, at(14)))
             .await
@@ -235,21 +204,8 @@ mod tests {
             .await
             .unwrap();
 
-        let order: Vec<_> = db.list_uncollected().await.unwrap().into_iter().map(|r| r.shortcode).collect();
+        let order: Vec<_> = db.list_all().await.unwrap().into_iter().map(|r| r.shortcode).collect();
         assert_eq!(order, vec!["0801".to_string(), "0803".to_string(), "0805".to_string()]);
-    }
-
-    #[tokio::test]
-    async fn test_a_failed_collection_leaves_the_record_for_the_next_run() {
-        // The record stays uncollected because nothing stamped it, which
-        // is why `mark_collected` is a separate call after the pull request is
-        // open rather than part of serving the endpoint.
-        let db = test_db("approved-retry").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        assert_eq!(db.list_uncollected().await.unwrap().len(), 1);
-        assert_eq!(db.list_uncollected().await.unwrap().len(), 1, "reading it must not consume it");
     }
 
     #[tokio::test]
@@ -540,9 +496,9 @@ mod tests {
 
         UserRepository::delete(&db, approver).await.unwrap();
 
-        let uncollected = db.list_uncollected().await.unwrap();
-        assert_eq!(uncollected.len(), 1);
-        assert_eq!(uncollected[0].approved_by, None);
-        assert_eq!(uncollected[0].payload, record.payload);
+        let records = db.list_all().await.unwrap();
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].approved_by, None);
+        assert_eq!(records[0].payload, record.payload);
     }
 }

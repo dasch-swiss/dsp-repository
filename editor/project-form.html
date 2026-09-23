@@ -300,9 +300,7 @@
 <p>Every closed vocabulary, enforced tier and cap above is decided by measuring the 85 committed projects rather than by preference, so the numbers are recorded here and the source points at this section instead of carrying them.</p>
 <div class="table-wrapper"><table><thead><tr><th>What</th><th>Measured</th></tr></thead><tbody>
 <tr><td>Placeholder sentinels (<code>MISSING</code>, <code>CALCULATED</code>)</td><td>131 across 8 paths in the 85 files; 24 of them <code>endDate</code></td></tr>
-<tr><td>Values differing only in surrounding whitespace</td><td>20 files, spread across <code>disciplines.text</code> (7), <code>publications.text</code> (6), <code>attributions.contributorType</code> (3), <code>abstract.en</code> (2), and one each in <code>keywords.ar</code>, <code>description.ar</code>, <code>spatialCoverage.text</code>, <code>legalInfo.license.licenseURI</code>, <code>shortDescription</code></td></tr>
-<tr><td>Two values in one project differing only by a trailing space</td><td><code>0121_societesavoie</code>, <code>attributions[].contributorType</code></td></tr>
-<tr><td>Abstracts holding a bare <code>\r</code></td><td>10</td></tr>
+<tr><td>Values with surrounding whitespace or a bare <code>\r</code></td><td>0 (stripped by DEV-7129; the trimming and newline rules remain for depositor input)</td></tr>
 <tr><td>Files whose bytes differ between a CRLF and an LF submit</td><td>26</td></tr>
 <tr><td><code>Required</code> fields the corpus does not answer</td><td>0, after re-tiering five: <code>documentationMaterial</code> (absent in all 85), <code>url</code> (13), <code>contactPoint</code> (9), <code>typeOfData</code> (1), <code>dataLanguage</code> (1)</td></tr>
 <tr><td>Agents, and references to them</td><td>558 persons and organizations; 674 references from <code>contactPoint</code>, <code>attributions[].contributor</code> and <code>funding[].funders</code>, all of which resolve</td></tr>

@@ -11,7 +11,7 @@
 
 use std::path::{Path, PathBuf};
 
-use editor_core::canonical::write_draft;
+use editor_core::canonical::{write_draft, write_project};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
@@ -363,28 +363,23 @@ fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
 }
 
 #[test]
-fn the_corpus_carries_a_row_whose_text_only_trimming_would_change() {
-    // A positive canary for the row arm: only a committed row with surrounding
-    // whitespace proves the trimming rule is live.
-    let mut found: Vec<String> = Vec::new();
-    for path in project_files() {
-        let raw: ProjectRaw = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("parses");
-        let value = serde_json::to_value(&raw).expect("serializes");
-        for field in ["keywords", "alternativeNames"] {
-            for row in value.get(field).and_then(Value::as_array).into_iter().flatten() {
-                for (tag, text) in row.as_object().into_iter().flatten() {
-                    if let Some(text) = text.as_str() {
-                        if text != text.trim() {
-                            found.push(format!("{}: {field}.{tag}", path.file_name().unwrap().to_string_lossy()));
-                        }
-                    }
-                }
-            }
-        }
-    }
-    assert!(
-        !found.is_empty(),
-        "no committed row text carries surrounding whitespace, so the round trip above no longer covers the          trimming rule for rows"
+fn an_untouched_submit_preserves_a_row_whose_text_carries_surrounding_whitespace() {
+    // A positive canary for the row arm: only a row with surrounding whitespace
+    // proves the trimming-preserve rule is live, and no committed row carries
+    // one, so this builds one instead of scanning for it, then drives it
+    // through the same `resubmit` + `write_draft` path
+    // `saving_an_untouched_form_leaves_every_committed_project_byte_identical`
+    // uses.
+    let mut raw: ProjectRaw =
+        serde_json::from_str(&std::fs::read_to_string(projects_dir().join("0801_bebb.json")).expect("readable"))
+            .expect("parses");
+    raw.keywords[0].insert("en".to_string(), " Bernoulli ".to_string());
+
+    let committed = write_project(&raw).expect("the synthetic project should serialize");
+    let written = write_draft(&resubmit(&ProjectDraft::from_raw(&raw))).expect("the draft should write");
+    assert_eq!(
+        written, committed,
+        "an untouched row's surrounding whitespace should survive the submit"
     );
 }
 

@@ -265,9 +265,9 @@ fn normalise_newlines(value: &str) -> String {
 ///
 /// Both sides are normalised for the comparison, and only the comparison: a
 /// stored value is kept byte-for-byte when it matches, and a genuinely new one
-/// is stored normalised. A bare `\r` is not representable in a `<textarea>` at
-/// all and committed abstracts hold one, so normalising for storage as well
-/// would rewrite them on the first save of an unrelated field.
+/// is stored normalised. A stored value, including one a depositor or an
+/// import wrote with a bare `\r`, must survive a save of an unrelated field
+/// byte-for-byte, so normalising for storage as well would rewrite it.
 fn resolve(submitted: &str, stored: Option<&str>) -> Resolved {
     let normalised = normalise_newlines(submitted);
     let trimmed = normalised.trim();
@@ -727,9 +727,8 @@ pub(crate) fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft,
 /// preferred over a whitespace-insensitive one, because a list may hold two
 /// values that differ only in whitespace.
 fn resolve_against(stored: &[String], submitted: &str) -> Option<String> {
-    // An exact match first: one committed project holds a value and the same
-    // value with a trailing space, which the normalised comparison below cannot
-    // tell apart.
+    // An exact match first: a list can hold a value and the same value with a
+    // trailing space, which the normalised comparison below cannot tell apart.
     if let Some(held) = stored.iter().find(|held| held.as_str() == submitted) {
         return Some(held.clone());
     }
@@ -1303,7 +1302,8 @@ mod tests {
 
     #[test]
     fn a_value_differing_only_in_surrounding_whitespace_leaves_the_stored_bytes_alone() {
-        // Committed files carry leading or trailing spaces in fields the form owns.
+        // A stored value, carried over from a depositor's paste, may hold leading or
+        // trailing spaces.
         let mut draft = draft();
         draft.set("provenance", json!("Digitised from slides "));
         apply_text(
@@ -1773,9 +1773,8 @@ mod tests {
 
     #[test]
     fn two_roles_differing_only_in_a_trailing_space_both_survive() {
-        // `0121_societesavoie` holds `"Project Member, Data Collector"` and the
-        // same value with a trailing space; without an exact match first one is
-        // rewritten to the other.
+        // A list can hold two values differing only by a trailing space; without
+        // an exact match first, one is rewritten to the other.
         let mut draft = draft();
         draft.set(
             "attributions",

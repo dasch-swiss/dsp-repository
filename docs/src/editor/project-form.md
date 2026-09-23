@@ -105,9 +105,7 @@ Every closed vocabulary, enforced tier and cap above is decided by measuring the
 | What | Measured |
 |---|---|
 | Placeholder sentinels (`MISSING`, `CALCULATED`) | 131 across 8 paths in the 85 files; 24 of them `endDate` |
-| Values differing only in surrounding whitespace | 20 files, spread across `disciplines.text` (7), `publications.text` (6), `attributions.contributorType` (3), `abstract.en` (2), and one each in `keywords.ar`, `description.ar`, `spatialCoverage.text`, `legalInfo.license.licenseURI`, `shortDescription` |
-| Two values in one project differing only by a trailing space | `0121_societesavoie`, `attributions[].contributorType` |
-| Abstracts holding a bare `\r` | 10 |
+| Values with surrounding whitespace or a bare `\r` | 0 (stripped by DEV-7129; the trimming and newline rules remain for depositor input) |
 | Files whose bytes differ between a CRLF and an LF submit | 26 |
 | `Required` fields the corpus does not answer | 0, after re-tiering five: `documentationMaterial` (absent in all 85), `url` (13), `contactPoint` (9), `typeOfData` (1), `dataLanguage` (1) |
 | Agents, and references to them | 558 persons and organizations; 674 references from `contactPoint`, `attributions[].contributor` and `funding[].funders`, all of which resolve |

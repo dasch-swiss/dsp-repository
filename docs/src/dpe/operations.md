@@ -59,7 +59,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 |----------|----------|---------|-------------|
 | `RUST_LOG` | No | `info` | Log level filter (e.g., `dpe_server=info,tower_http=debug`) |
 | `DPE_DATA_DIR` | No | `modules/dpe/server/data` | Path to project/record JSON data files. Legacy alias: `DATA_DIR` (checked if `DPE_DATA_DIR` is unset) |
-| `DPE_FATHOM_SITE_ID` | No | *(none)* | Fathom Analytics site ID (not a secret) |
+| `DPE_FATHOM_SITE_ID` | No | *(none)* | Fathom Analytics site ID (not a secret). **Production only** — leave unset or empty everywhere else; empty is normalised to unset. |
 | `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
 | `DPE_OAI_BASE_URL` | No | `https://repository.dasch.swiss/dpe/oai` | Public base URL emitted as the OAI-PMH `baseURL` and echoed in `<request>` elements. Set per environment to match the public endpoint (e.g. `https://api.dev.dasch.swiss/dpe/oai` on DEV, `http://localhost:4000/dpe/oai` locally). See [OAI-PMH](./oai-pmh.md). |
 | `DPE_PUBLIC_BASE_URL` | No | `https://repository.dasch.swiss` | Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the `Link` header. Origin only: scheme `http` or `https`, no path, query or trailing slash. A bad value fails startup. Independent of `DPE_OAI_BASE_URL` (see the note below). |
@@ -194,13 +194,15 @@ RUST_LOG=debug
 
 Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.
 
-**Configuration:** Set the `DPE_FATHOM_SITE_ID` environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell.
+**Configuration:** Set the `DPE_FATHOM_SITE_ID` environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell. It is set in `ops-deploy/group_vars/prod.yml` and nowhere else, so DEV and STAGE render no script at all.
 
 **What gets tracked:**
 - Page views
 - Tab switches (detected automatically via `history.replaceState`)
 
-**Disable:** Omit the `DPE_FATHOM_SITE_ID` environment variable — no tracking script is rendered.
+**Disable:** Omit the `DPE_FATHOM_SITE_ID` environment variable, or set it to the empty string — both are treated as unset and no tracking script is rendered.
+
+**Second key:** where the script *is* rendered it carries `data-included-domains="repository.dasch.swiss"`, which Fathom enforces client-side against `window.location.hostname`. A deployment handed the site ID by mistake therefore still reports nothing.
 
 ### OpenTelemetry
 

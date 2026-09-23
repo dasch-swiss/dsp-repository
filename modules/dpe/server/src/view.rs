@@ -4,6 +4,12 @@
 
 use maud::{html, Markup, DOCTYPE};
 
+/// The one host that serves production. An allowlist rather than an exclusion
+/// list, and deliberately not derived from `DPE_PUBLIC_BASE_URL`: the point is a
+/// key independent of the deployment's own config, so a non-production
+/// deployment handed a site ID by mistake still reports nothing.
+const PRODUCTION_DOMAIN: &str = "repository.dasch.swiss";
+
 /// Extra markup for the end of `<head>`: the machine-readable metadata a page
 /// carries, or nothing.
 ///
@@ -41,7 +47,7 @@ fn head(
                     src="https://cdn.usefathom.com/script.js"
                     data-site=(site_id)
                     data-spa="auto"
-                    data-excluded-domains="localhost,repository.dev.dasch.swiss,repository.test.dasch.swiss,repository.stage.dasch.swiss"
+                    data-included-domains=(PRODUCTION_DOMAIN)
                     defer {}
             }
             title { (title) }
@@ -123,7 +129,7 @@ mod tests {
         assert!(with.contains(r#"src="https://cdn.usefathom.com/script.js""#), "{with}");
         assert!(with.contains(r#"data-site="ABCDEF""#), "{with}");
         assert!(with.contains(r#"data-spa="auto""#), "{with}");
-        assert!(with.contains("data-excluded-domains="), "{with}");
+        assert!(with.contains(r#"data-included-domains="repository.dasch.swiss""#), "{with}");
         let without = page("t", None, "/assets/app.css", None, no_extras(), html! {}).into_string();
         assert!(!without.contains("usefathom"), "{without}");
     }

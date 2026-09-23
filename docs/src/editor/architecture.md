@@ -112,7 +112,7 @@ Accepting a change proposal writes its payload as the entity file, so a payload 
 
 #### The entity form
 
-`GET | POST /projects/{shortcode}/entities/{proposal}`, plus the two row-action paths the repeatable fields need. A write shares the `GET` that renders it, like every other write here.
+`GET | POST /projects/{shortcode}/entities/{proposal}`, plus the two row-action paths the repeatable fields need. A write shares the `GET` that renders it, like every other write here, and that `GET` is marked the same way the section form's is (see "The form's two renderings" below).
 
 `{proposal}` is a proposal's **`entity_id`** (`person-417`), not its row `id`. That is the value the propose controls post back and the summary links carry, and it makes a readable URL. A project may hold several rows for one `entity_id` over time — a withdrawn proposal, then a fresh one — but never more than one *live* one, because `entity_proposals_live_per_entity` says so; the resolver prefers the live row and otherwise the most recently touched, so a stale link still shows something coherent. A proposal under the wrong shortcode is a 404 rather than a 403, for the reason an unknown section id is: the reader invented the pairing.
 
@@ -263,12 +263,14 @@ Two decisions about that scheme:
 
 | path | outcome | answer |
 |---|---|---|
-| no script | saved | `303` to this section's `GET` |
+| no script | saved | `303` to this section's marked `GET` |
 | no script | refused | `200`, the whole page re-rendered at the same URL |
 | Datastar | saved | `200`, the section region as `text/html` |
 | Datastar | refused | `200`, the same |
 
 The plain path redirects because a `POST` left in the history re-posts on refresh. The enhanced path does not need to and must not: it never navigated, so a refresh re-issues the last `GET` — and a 303 followed by a full document would hand Datastar an `<html>` to patch. A refusal re-renders on both paths, because a redirect would throw away what the depositor typed.
+
+That "marked" `GET` carries a query-string marker the redirect appends: `?saved=<the stored draft's updated_at, RFC 3339, URL-encoded>` for a save, or `?done=submitted|withdrawn|discarded` for a submit, a withdrawal or a discard. The `GET` renders the matching notice only while the marker still holds: the stamp still matches the stored row for `saved`, and for `done` the project is still in the phase named (locked for `submitted`, unlocked with the latest round `Withdrawn` for `withdrawn`, unlocked with no stored draft for `discarded`). A stale or bookmarked URL therefore confirms nothing. Because a status region filled at the first load is not reliably announced (`editor-web/src/pages/section.rs`'s module doc argues why), that same `GET` also prefixes the document `<title>` with the notice's short form (`Draft saved — …`, `Sent to RDU — …`, `Submission withdrawn — …`, `Draft discarded — …`), since a navigation does announce a title change where a live region filled at load does not. The entity form (see "The entity form" above) mirrors both halves for its own save (`?saved=<the proposal's own stamp>`) and discard (`?done=discarded`), with `Saved — …` and `Discarded — …` as its short forms.
 
 Three things about the enhanced path fail quietly if changed:
 

@@ -17,7 +17,7 @@
 //!   a depositor cannot write an RDU-only field by naming it. A field with no declared shape is
 //!   never applied, so its stored value rides through untouched.
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
@@ -478,17 +478,60 @@ async fn context<'a>(
     })
 }
 
+/// Whether this `GET` follows a plain-path save (`saved`, the stored row's stamp) or phase change
+/// (`done`). Each renders its notice only while what it names still holds, so a stale or
+/// bookmarked URL confirms nothing. `Option`s, so a missing or unrecognized value answers no
+/// notice rather than a 400.
+#[derive(Debug, serde::Deserialize)]
+pub(crate) struct ShowParams {
+    saved: Option<String>,
+    done: Option<String>,
+}
+
 /// `GET /projects/{shortcode}/sections/{section}`.
 pub(crate) async fn show(
     State(state): State<AppState>,
     Authenticated(user, signed_out_at): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
+    Query(params): Query<ShowParams>,
 ) -> Response {
     let context = match context(&state, &user, &shortcode, &section_id, signed_out_at).await {
         Ok(context) => context,
         Err(response) => return response,
     };
-    render_page(&state, &user, &shortcode, &context, Rendering::default())
+    let notice = context
+        .record
+        .as_ref()
+        .filter(|record| params.saved.as_deref() == Some(record.updated_at.to_rfc3339().as_str()))
+        .map(|_| page::Notice::Saved)
+        .or_else(|| done_notice(&context, params.done.as_deref()));
+    render_page(
+        &state,
+        &user,
+        &shortcode,
+        &context,
+        Rendering { notice, ..Rendering::default() },
+    )
+}
+
+/// The phase notice a `?done=...` marker names, rendered only while the project is still in the
+/// phase it describes — see [`ShowParams`]. `None` for an unrecognized value, or one whose phase
+/// has since moved on.
+fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice<'static>> {
+    match done {
+        Some("submitted") if context.locked.is_some() => Some(page::Notice::Submitted),
+        Some("withdrawn")
+            if context.locked.is_none()
+                && context
+                    .round
+                    .as_ref()
+                    .is_some_and(|round| round.outcome == ReviewOutcome::Withdrawn) =>
+        {
+            Some(page::Notice::Withdrawn)
+        }
+        Some("discarded") if context.locked.is_none() && context.record.is_none() => Some(page::Notice::Discarded),
+        _ => None,
+    }
 }
 
 /// `POST /projects/{shortcode}/sections/{section}` — save the draft,
@@ -1538,11 +1581,13 @@ pub(crate) fn is_enhanced(headers: &HeaderMap) -> bool {
 /// enhanced one.
 fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
     if !is_enhanced(&headers) {
-        // POST-redirect-GET: a `POST` left in the history re-posts on refresh,
-        // and the reloaded `GET` reads the row that was just written, so the
-        // "last saved" line is the confirmation rather than a flash message
-        // that has to survive a redirect.
-        return redirect_here(shortcode, context);
+        // POST-redirect-GET: a `POST` left in the history re-posts on
+        // refresh. `apply_and_store` always sets `context.record` before this
+        // runs; the `None` arm is a fail-safe, not a case expected to fire.
+        return match context.record.as_ref() {
+            Some(record) => redirect_with_notice(shortcode, context, Marker::Saved(record.updated_at)),
+            None => redirect_here(shortcode, context),
+        };
     }
     region(
         shortcode,
@@ -1551,16 +1596,17 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response
     )
 }
 
-/// A write that moved the project between phases: a submission recorded, or
-/// one taken back.
+/// A write that moved the project between phases: a submission recorded, one
+/// taken back, or a draft discarded.
 ///
-/// The plain path redirects, for the reason a save does — and the reloaded
-/// `GET` renders the new phase, which is a more durable confirmation than a
-/// flash message. The enhanced path patches the region, and **re-resolves the
-/// request first**: submitting locks every field and withdrawing unlocks them,
-/// so the context that answered the `POST` describes the phase that has just
-/// ended. Overriding two of its fields would leave the rest — `may_withdraw`,
-/// the accepted set, the round — describing the old one, silently.
+/// The plain path redirects, for the reason a save does — carrying a marker
+/// that names which notice this was, so the reloaded `GET` renders it only
+/// while the project is still in the phase it describes. The enhanced path
+/// patches the region, and **re-resolves the request first**: submitting
+/// locks every field and withdrawing unlocks them, so the context that
+/// answered the `POST` describes the phase that has just ended. Overriding
+/// two of its fields would leave the rest — `may_withdraw`, the accepted set,
+/// the round — describing the old one, silently.
 async fn phase_changed(
     state: &AppState,
     user: &User,
@@ -1574,15 +1620,19 @@ async fn phase_changed(
     // taking it off the context rather than as an argument keeps it in step
     // with whatever `context()` was given.
     let signed_out_at = context.signed_out_at;
+    let plain_redirect = || match Marker::for_phase_notice(&notice) {
+        Some(marker) => redirect_with_notice(shortcode, context, marker),
+        None => redirect_here(shortcode, context),
+    };
     if !is_enhanced(&headers) {
-        return redirect_here(shortcode, context);
+        return plain_redirect();
     }
     match self::context(state, user, shortcode, section_id, signed_out_at).await {
         Ok(fresh) => region(shortcode, &fresh, Rendering { notice: Some(notice), ..Rendering::default() }),
         // The write landed; only the re-read did not. A redirect is the
         // fail-safe answer — the browser follows it and finds the new phase,
         // where a refusal would report a failure that did not happen.
-        Err(_) => redirect_here(shortcode, context),
+        Err(_) => plain_redirect(),
     }
 }
 
@@ -1604,6 +1654,46 @@ fn confirming(
 
 fn redirect_here(shortcode: &str, context: &Context<'_>) -> Response {
     Redirect::to(&format!("/projects/{shortcode}/sections/{}", context.section.id)).into_response()
+}
+
+/// A query-string marker for [`redirect_with_notice`]; [`ShowParams`] reads it back.
+enum Marker {
+    /// The stored row's `updated_at`.
+    Saved(DateTime<Utc>),
+    Submitted,
+    Withdrawn,
+    Discarded,
+}
+
+impl Marker {
+    /// The marker for a [`phase_changed`] notice; `None` for a notice that names no phase.
+    fn for_phase_notice(notice: &page::Notice<'_>) -> Option<Marker> {
+        match notice {
+            page::Notice::Submitted => Some(Marker::Submitted),
+            page::Notice::Withdrawn => Some(Marker::Withdrawn),
+            page::Notice::Discarded => Some(Marker::Discarded),
+            _ => None,
+        }
+    }
+
+    fn into_query(self) -> String {
+        match self {
+            Marker::Saved(at) => format!("saved={}", urlencoding::encode(&at.to_rfc3339())),
+            Marker::Submitted => "done=submitted".to_string(),
+            Marker::Withdrawn => "done=withdrawn".to_string(),
+            Marker::Discarded => "done=discarded".to_string(),
+        }
+    }
+}
+
+/// Redirect to the section, carrying `marker` for the reloaded `GET`.
+fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) -> Response {
+    Redirect::to(&format!(
+        "/projects/{shortcode}/sections/{}?{}",
+        context.section.id,
+        marker.into_query()
+    ))
+    .into_response()
 }
 
 /// A refused save, re-rendered with what was typed still in the form.
@@ -1721,6 +1811,9 @@ fn render_page(
     rendering: Rendering<'_>,
 ) -> Response {
     let stored = stored_of(context);
+    // Also said in the title: a live region filled at page load is not reliably
+    // announced (see `pages::section`). Read before `rendering` moves into `view`.
+    let prefix = rendering.notice.and_then(|notice| notice.title_prefix());
     let view = view(shortcode, context, &stored, rendering);
     // The published name in the tab title where there is one: a browser with
     // eleven tabs open shows about twenty characters, and five of them being
@@ -1728,6 +1821,10 @@ fn render_page(
     let title = match context.project_name {
         Some(name) => format!("{} — {name} — DaSCH Metadata Editor", context.section.title),
         None => format!("{} — Project {shortcode} — DaSCH Metadata Editor", context.section.title),
+    };
+    let title = match prefix {
+        Some(prefix) => format!("{prefix} — {title}"),
+        None => title,
     };
     crate::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
 }
@@ -1841,7 +1938,7 @@ mod tests {
     use super::*;
     use crate::test_support::{
         a_session, a_user, body_string, count_rows, get, location, open_test_db, post, state_over, test_app,
-        test_state, with_cookie, Faults, FaultyDatabase, RecordingMailer,
+        test_state, title_of, with_cookie, Faults, FaultyDatabase, RecordingMailer,
     };
 
     /// Percent-encode a form value.
@@ -1952,7 +2049,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_save_stores_the_draft_and_redirects_to_the_get() {
+    async fn a_save_stores_the_draft_and_redirects_to_a_marker_matching_the_stored_stamp() {
         // A save must always be possible, and POST-redirect-GET: a `POST` left in the history
         // re-posts on refresh.
         let (state, _) = test_state("section-save").await;
@@ -1962,13 +2059,59 @@ mod tests {
 
         let saved = as_session(&app, post(OVERVIEW, "name=A+New+Title"), &session).await;
         assert_eq!(saved.status(), StatusCode::SEE_OTHER);
-        assert_eq!(location(&saved).as_deref(), Some(OVERVIEW));
+        let target = location(&saved).expect("a redirect location");
 
-        let reloaded = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        let stored = DraftRepository::find(&*state.db, "0801d").await.expect("read").expect("row");
+        let (path, query) = target.split_once('?').expect("a query string");
+        assert_eq!(path, OVERVIEW);
+        let encoded = query.strip_prefix("saved=").expect("a saved marker with a value");
+        assert_eq!(
+            urlencoding::decode(encoded).expect("valid percent-encoding").into_owned(),
+            stored.updated_at.to_rfc3339(),
+            "the marker should carry the stamp of the row just stored"
+        );
+
+        // Following the literal redirect target — round-tripping through storage and the query
+        // string — proves both that the notice renders and that the stamp's precision survives.
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
         assert!(reloaded.contains("A New Title"), "{reloaded}");
-        // The confirmation is the stored row read back, not a flash message that
-        // had to survive a redirect.
         assert!(reloaded.contains("Draft last saved"), "{reloaded}");
+        let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(reloaded[live..].contains("Draft saved."), "{reloaded}");
+        assert!(title_of(&reloaded).starts_with("Draft saved — "), "{}", title_of(&reloaded));
+    }
+
+    #[tokio::test]
+    async fn a_stale_saved_marker_renders_no_notice() {
+        // The marker confirms nothing on its own — only a stamp matching what is currently stored
+        // does. Otherwise a stale or bookmarked `?saved=...` would show "Draft saved." forever.
+        let (state, _) = test_state("section-save-notice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let first_save = as_session(&app, post(OVERVIEW, "name=First+Title"), &session).await;
+        let first_target = location(&first_save).expect("a redirect location");
+
+        as_session(&app, post(OVERVIEW, "name=Second+Title"), &session).await;
+
+        let stale = body_string(as_session(&app, get(&first_target), &session).await).await;
+        assert!(!stale.contains("Draft saved."), "{stale}");
+        assert!(!title_of(&stale).starts_with("Draft saved — "), "{}", title_of(&stale));
+
+        let empty_marker = as_session(&app, get(&format!("{OVERVIEW}?saved")), &session).await;
+        assert_eq!(empty_marker.status(), StatusCode::OK);
+        let empty_marker = body_string(empty_marker).await;
+        assert!(!empty_marker.contains("Draft saved."), "{empty_marker}");
+        assert!(
+            !title_of(&empty_marker).starts_with("Draft saved — "),
+            "{}",
+            title_of(&empty_marker)
+        );
+
+        let unmarked = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(!unmarked.contains("Draft saved."), "{unmarked}");
+        assert!(!title_of(&unmarked).starts_with("Draft saved — "), "{}", title_of(&unmarked));
     }
 
     #[tokio::test]
@@ -2329,7 +2472,7 @@ mod tests {
 
         let response = as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
-        assert_eq!(location(&response).as_deref(), Some(OVERVIEW));
+        assert_eq!(location(&response).as_deref(), Some(&format!("{OVERVIEW}?done=submitted")[..]));
 
         let submission = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
             .await
@@ -2340,6 +2483,30 @@ mod tests {
         assert!(submission.payload.contains("A New Title"), "{}", submission.payload);
         assert_eq!(submission.review_state, None);
         assert_eq!(submission.reviewed_by, None);
+    }
+
+    #[tokio::test]
+    async fn submitting_redirects_with_a_marker_that_goes_stale_once_withdrawn() {
+        let (state, _) = test_state("section-submit-notice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+
+        let response = as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let target = location(&response).expect("a redirect location");
+        assert_eq!(target, format!("{OVERVIEW}?done=submitted"));
+
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
+        let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(reloaded[live..].contains("Sent to RDU"), "{reloaded}");
+        assert!(title_of(&reloaded).starts_with("Sent to RDU — "), "{}", title_of(&reloaded));
+
+        as_session(&app, post(OVERVIEW, "intent=withdraw"), &session).await;
+        let stale = body_string(as_session(&app, get(&target), &session).await).await;
+        assert!(!stale.contains("Sent to RDU"), "{stale}");
+        assert!(!title_of(&stale).starts_with("Sent to RDU — "), "{}", title_of(&stale));
     }
 
     #[tokio::test]
@@ -2847,6 +3014,11 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("more values than this form accepts"), "{body}");
         assert!(body.contains("Description"), "the field is named: {body}");
+        assert!(
+            title_of(&body).starts_with("Not saved — "),
+            "a re-render is a full page load, so the title says it too: {}",
+            title_of(&body)
+        );
         assert_eq!(
             DraftRepository::find(&*state.db, "0801d").await.unwrap(),
             None,
@@ -3219,6 +3391,35 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn withdrawing_redirects_with_a_marker_that_goes_stale_once_resubmitted() {
+        let (state, _) = test_state("section-withdraw-notice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+        as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
+
+        let response = as_session(&app, post(OVERVIEW, "intent=withdraw"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let target = location(&response).expect("a redirect location");
+        assert_eq!(target, format!("{OVERVIEW}?done=withdrawn"));
+
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
+        let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(reloaded[live..].contains("Submission withdrawn"), "{reloaded}");
+        assert!(
+            title_of(&reloaded).starts_with("Submission withdrawn — "),
+            "{}",
+            title_of(&reloaded)
+        );
+
+        as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
+        let stale = body_string(as_session(&app, get(&target), &session).await).await;
+        assert!(!stale.contains("Submission withdrawn"), "{stale}");
+        assert!(!title_of(&stale).starts_with("Submission withdrawn — "), "{}", title_of(&stale));
+    }
+
+    #[tokio::test]
     async fn the_form_is_editable_again_after_a_withdrawal() {
         // The observable point of a withdrawal: the depositor got their form back.
         // A withdrawal that left the lock in place would be indistinguishable
@@ -3492,6 +3693,30 @@ mod tests {
         assert!(body.contains("Basler Edition der Bernoulli-Briefwechsel"), "{body}");
         assert!(!body.contains("A New Title"), "the discarded value is gone: {body}");
         assert!(body.contains("Nothing saved yet"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn discarding_redirects_with_a_marker_that_goes_stale_once_a_new_draft_is_saved() {
+        let (state, _) = test_state("section-discard-notice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+
+        let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let target = location(&response).expect("a redirect location");
+        assert_eq!(target, format!("{OVERVIEW}?done=discarded"));
+
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
+        let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(reloaded[live..].contains("Draft discarded"), "{reloaded}");
+        assert!(title_of(&reloaded).starts_with("Draft discarded — "), "{}", title_of(&reloaded));
+
+        as_session(&app, post(OVERVIEW, "name=A+Later+Title"), &session).await;
+        let stale = body_string(as_session(&app, get(&target), &session).await).await;
+        assert!(!stale.contains("Draft discarded"), "{stale}");
+        assert!(!title_of(&stale).starts_with("Draft discarded — "), "{}", title_of(&stale));
     }
 
     #[tokio::test]

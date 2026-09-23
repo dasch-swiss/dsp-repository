@@ -13,7 +13,7 @@
 //! under the wrong shortcode is a 404 for the same reason an unknown section id is: the reader
 //! invented the pairing, not an assignment question a 403 would answer.
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
@@ -115,17 +115,48 @@ fn proposal_for(proposals: &[EntityProposal], entity_id: &str) -> Option<EntityP
         .cloned()
 }
 
+/// Whether this `GET` follows a plain-path save or discard, as `sections.rs::ShowParams` does for
+/// a section.
+#[derive(Debug, serde::Deserialize)]
+pub(crate) struct ShowParams {
+    saved: Option<String>,
+    done: Option<String>,
+}
+
 /// `GET /projects/{shortcode}/entities/{proposal}`.
 pub(crate) async fn show(
     State(state): State<AppState>,
     Authenticated(user, signed_out_at): Authenticated,
     Path((shortcode, entity_id)): Path<(String, String)>,
+    Query(params): Query<ShowParams>,
 ) -> Response {
     let context = match context(&state, &user, &shortcode, &entity_id, signed_out_at).await {
         Ok(context) => context,
         Err(response) => return response,
     };
-    render_page(&state, &user, &shortcode, &context, Rendering::default())
+    let notice = params
+        .saved
+        .as_deref()
+        .filter(|saved| *saved == context.proposal.updated_at.to_rfc3339())
+        .map(|_| page::Notice::Saved)
+        .or_else(|| done_notice(&context, params.done.as_deref()));
+    render_page(
+        &state,
+        &user,
+        &shortcode,
+        &context,
+        Rendering { notice, ..Rendering::default() },
+    )
+}
+
+/// The phase notice a `?done=...` marker names, rendered only while the proposal is still in the
+/// phase it describes — see [`ShowParams`]. `None` for an unrecognized value, or one whose phase
+/// has since moved on.
+fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice<'static>> {
+    match done {
+        Some("discarded") if context.proposal.status == ProposalStatus::Withdrawn => Some(page::Notice::Discarded),
+        _ => None,
+    }
 }
 
 /// `POST /projects/{shortcode}/entities/{proposal}` — save the proposal, or discard it.
@@ -189,10 +220,14 @@ pub(crate) async fn act(
     apply_posted(&mut context.draft, context.proposal.kind, &body);
     let payload = serde_json::to_string(&context.draft).unwrap_or_default();
 
-    match EntityProposalRepository::update_payload(&*state.db, context.proposal.id, &payload, Utc::now()).await {
+    // One `Utc::now()`, reused as the marker `saved` redirects with: the marker must carry the
+    // stamp that landed, and a second call would not match it.
+    let now = Utc::now();
+    match EntityProposalRepository::update_payload(&*state.db, context.proposal.id, &payload, now).await {
         Ok(()) => {
             span.record("form.outcome", "saved");
             tracing::info!("saved an entity proposal");
+            context.proposal.updated_at = now;
             saved(&shortcode, &context, headers)
         }
         Err(error) => {
@@ -348,7 +383,7 @@ async fn discard(
             // enhanced path still renders the region, because Datastar processes a body only on a
             // 200 and would merge a followed redirect's whole page into it.
             if !is_enhanced(&headers) {
-                return redirect_here(shortcode, context);
+                return redirect_with_notice(shortcode, context, Marker::Discarded);
             }
             match self::context(state, user, shortcode, &context.proposal.entity_id, context.signed_out_at).await {
                 Ok(fresh) => {
@@ -477,9 +512,11 @@ fn over_of(status: ProposalStatus) -> Option<page::Over> {
     }
 }
 
+/// A successful save: a redirect on the plain path, the patched region on the enhanced one.
+/// `act` sets `updated_at` to the stored stamp before calling this, so the marker matches the row.
 fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
     if !is_enhanced(&headers) {
-        return redirect_here(shortcode, context);
+        return redirect_with_notice(shortcode, context, Marker::Saved(context.proposal.updated_at));
     }
     region(
         shortcode,
@@ -499,8 +536,30 @@ fn confirming(state: &AppState, user: &User, shortcode: &str, context: &Context<
     render_page(state, user, shortcode, context, rendering)
 }
 
-fn redirect_here(shortcode: &str, context: &Context<'_>) -> Response {
-    Redirect::to(&format!("/projects/{shortcode}/entities/{}", context.proposal.entity_id)).into_response()
+/// A query-string marker for [`redirect_with_notice`]; [`ShowParams`] reads it back.
+enum Marker {
+    /// The stored proposal's `updated_at`.
+    Saved(DateTime<Utc>),
+    Discarded,
+}
+
+impl Marker {
+    fn into_query(self) -> String {
+        match self {
+            Marker::Saved(at) => format!("saved={}", urlencoding::encode(&at.to_rfc3339())),
+            Marker::Discarded => "done=discarded".to_string(),
+        }
+    }
+}
+
+/// Redirect to the entity form, carrying `marker` for the reloaded `GET`.
+fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) -> Response {
+    Redirect::to(&format!(
+        "/projects/{shortcode}/entities/{}?{}",
+        context.proposal.entity_id,
+        marker.into_query()
+    ))
+    .into_response()
 }
 
 fn refused(
@@ -554,11 +613,17 @@ fn render_page(
     context: &Context<'_>,
     rendering: Rendering<'_>,
 ) -> Response {
+    // Read before `rendering` moves into `view`; see `sections.rs::render_page`.
+    let prefix = rendering.notice.and_then(|notice| notice.title_prefix());
     let title = format!(
         "{} {} — DaSCH Metadata Editor",
         context.proposal.kind.label(),
         context.proposal.entity_id
     );
+    let title = match prefix {
+        Some(prefix) => format!("{prefix} — {title}"),
+        None => title,
+    };
     let view = view(shortcode, context, rendering);
     crate::render(state, &title, StatusCode::OK, Some(user), editor_web::entity::page(&view))
 }
@@ -605,7 +670,9 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::test_support::{a_session, a_user, body_string, get, post, test_app, test_state, with_cookie};
+    use crate::test_support::{
+        a_session, a_user, body_string, get, location, post, test_app, test_state, title_of, with_cookie,
+    };
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
@@ -896,11 +963,88 @@ mod tests {
         // an ordinary reload.
         let discard = as_session(&app, post(&uri, "intent=discard"), &session).await;
         assert_eq!(discard.status(), StatusCode::SEE_OTHER);
-        assert_eq!(
-            discard.headers().get("location").and_then(|value| value.to_str().ok()),
-            Some(uri.as_str())
-        );
+        let target = location(&discard).expect("a redirect location");
+        assert_eq!(target, format!("{uri}?done=discarded"));
         assert_eq!(proposals_for(&state, "0801d").await[0].status, ProposalStatus::Withdrawn);
+
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
+        let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(reloaded[live..].contains("discarded"), "{reloaded}");
+        assert!(title_of(&reloaded).starts_with("Discarded — "), "{}", title_of(&reloaded));
+    }
+
+    #[tokio::test]
+    async fn a_save_redirects_with_a_marker_matching_the_stored_stamp() {
+        let (state, _) = test_state("entity-save-redirect").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+
+        let response = as_session(&app, post(&uri, "givenNames.row=r0&givenNames.r0=Ada"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let target = location(&response).expect("a redirect location");
+
+        let stored = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
+        let (path, query) = target.split_once('?').expect("a query string");
+        assert_eq!(path, uri);
+        let encoded = query.strip_prefix("saved=").expect("a saved marker with a value");
+        assert_eq!(
+            urlencoding::decode(encoded).expect("valid percent-encoding").into_owned(),
+            stored.updated_at.to_rfc3339(),
+            "the marker should carry the stamp of the row just stored"
+        );
+
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
+        let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(reloaded[live..].contains("Saved."), "{reloaded}");
+        assert!(title_of(&reloaded).starts_with("Saved — "), "{}", title_of(&reloaded));
+    }
+
+    #[tokio::test]
+    async fn a_stale_saved_marker_renders_no_notice() {
+        let (state, _) = test_state("entity-save-notice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+
+        let first_save = as_session(&app, post(&uri, "givenNames.row=r0&givenNames.r0=Ada"), &session).await;
+        let first_target = location(&first_save).expect("a redirect location");
+
+        as_session(&app, post(&uri, "givenNames.row=r0&givenNames.r0=Grace"), &session).await;
+
+        let stale = body_string(as_session(&app, get(&first_target), &session).await).await;
+        let live = stale.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(!stale[live..].contains("Saved."), "{stale}");
+        assert!(!title_of(&stale).starts_with("Saved — "), "{}", title_of(&stale));
+
+        let empty_marker = as_session(&app, get(&format!("{uri}?saved")), &session).await;
+        assert_eq!(empty_marker.status(), StatusCode::OK);
+        let empty_marker = body_string(empty_marker).await;
+        let live = empty_marker.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(!empty_marker[live..].contains("Saved."), "{empty_marker}");
+        assert!(!title_of(&empty_marker).starts_with("Saved — "), "{}", title_of(&empty_marker));
+    }
+
+    #[tokio::test]
+    async fn a_done_discarded_marker_renders_no_notice_while_the_proposal_is_still_live() {
+        // No stale case to test, unlike the section form's: nothing in this form's handlers makes
+        // a withdrawn proposal live again.
+        let (state, _) = test_state("entity-discard-notice-live").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+
+        let response = as_session(&app, get(&format!("{uri}?done=discarded")), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        let live = body.find(r#"aria-live="polite""#).expect("the live region");
+        assert!(!body[live..].contains("discarded"), "{body}");
     }
 
     #[tokio::test]
@@ -946,7 +1090,9 @@ mod tests {
 
         let save = as_session(&app, post(&uri, "givenNames.row=r0&givenNames.r0=Ada"), &session).await;
         assert_eq!(save.status(), StatusCode::OK, "a refusal, not a 500");
-        assert!(body_string(save).await.contains("no longer open"));
+        let refusal = body_string(save).await;
+        assert!(refusal.contains("no longer open"), "{refusal}");
+        assert!(title_of(&refusal).starts_with("Not saved — "), "{}", title_of(&refusal));
 
         let discard_again = as_session(&app, post(&uri, "intent=discard"), &session).await;
         assert!(body_string(discard_again).await.contains("no longer open"));

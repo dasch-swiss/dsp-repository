@@ -5,12 +5,17 @@
 //!
 //! The region is the rail, the status and the form together, under one id:
 //! patching only the `<form>` leaves the rail showing the counts from before the
-//! save. The status region is rendered empty from the first load: an `aria-live`
-//! region announces a change to content it already holds, and one morphed in
-//! with its text is widely reported not to announce. No field is `required` and
-//! the form is not `novalidate`: a draft may be missing anything, and validation
-//! stays on because `type="date"` cannot hold a half-typed date, so with it off,
-//! fiddling the year of a real date and saving would clear it.
+//! save. The status region is rendered empty from the first load for the
+//! enhanced path: an `aria-live` region announces a change to content it
+//! already holds, and one morphed in with its text is widely reported not to
+//! announce. The plain path instead renders the notice already filled, from a
+//! redirect's marker or a refusal's re-render: a live region filled at load is
+//! no more reliably announced, so [`Notice::title_prefix`] puts the short form
+//! at the front of the document `<title>` instead, which a navigation does
+//! announce. No field is `required` and the form is not `novalidate`: a draft
+//! may be missing anything, and validation stays on because `type="date"`
+//! cannot hold a half-typed date, so with it off, fiddling the year of a real
+//! date and saving would clear it.
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
@@ -218,6 +223,35 @@ pub enum Notice<'a> {
     /// The write was refused, and why: the whole-form kind. Field-level errors are
     /// [`SectionView::errors`], which name a control the reader can fix.
     Refused(&'a str),
+}
+
+/// Short form of [`Notice::Saved`], shared between its alert text in [`status`]
+/// and [`Notice::title_prefix`] so a wording change cannot update one and not
+/// the other.
+const SAVED_TITLE: &str = "Draft saved";
+/// Short form of [`Notice::Submitted`]; see [`SAVED_TITLE`].
+const SUBMITTED_TITLE: &str = "Sent to RDU";
+/// Short form of [`Notice::Withdrawn`]; see [`SAVED_TITLE`].
+const WITHDRAWN_TITLE: &str = "Submission withdrawn";
+/// Short form of [`Notice::Discarded`]; see [`SAVED_TITLE`].
+const DISCARDED_TITLE: &str = "Draft discarded";
+/// The prefix for a write that did not land: [`Notice::Refused`] and [`Notice::Changed`].
+const NOT_SAVED_TITLE: &str = "Not saved";
+
+impl Notice<'_> {
+    /// The prefix a full page load puts in front of the document `<title>`, so a
+    /// screen reader hears the outcome of the reader's write on arrival (see the
+    /// module docs). `None` for [`Self::Proposed`], which does not answer one.
+    pub fn title_prefix(&self) -> Option<&'static str> {
+        match self {
+            Notice::Saved => Some(SAVED_TITLE),
+            Notice::Submitted => Some(SUBMITTED_TITLE),
+            Notice::Withdrawn => Some(WITHDRAWN_TITLE),
+            Notice::Discarded => Some(DISCARDED_TITLE),
+            Notice::Refused(_) | Notice::Changed { .. } => Some(NOT_SAVED_TITLE),
+            Notice::Proposed { .. } => None,
+        }
+    }
 }
 
 /// An action that asks before it acts. Both are irreversible for the person
@@ -497,7 +531,9 @@ fn status(view: &SectionView<'_>) -> Markup {
     html! {
         div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
             @match view.notice {
-                Some(Notice::Saved) => { (alert("Draft saved.").variant(AlertVariant::Success)) }
+                Some(Notice::Saved) => {
+                    (alert(format!("{SAVED_TITLE}.")).variant(AlertVariant::Success))
+                }
                 Some(Notice::Submitted) => {
                     ({
                         alert(
@@ -505,7 +541,7 @@ fn status(view: &SectionView<'_>) -> Markup {
                                  you, and your draft is kept either way.",
                             )
                             .variant(AlertVariant::Success)
-                            .title("Sent to RDU")
+                            .title(SUBMITTED_TITLE)
                     })
                 }
                 Some(Notice::Withdrawn) => {
@@ -515,7 +551,7 @@ fn status(view: &SectionView<'_>) -> Markup {
                                  is unchanged, so you can keep editing and submit again.",
                             )
                             .variant(AlertVariant::Success)
-                            .title("Submission withdrawn")
+                            .title(WITHDRAWN_TITLE)
                     })
                 }
                 Some(Notice::Discarded) => {
@@ -525,7 +561,7 @@ fn status(view: &SectionView<'_>) -> Markup {
                                  metadata again, and nothing you save from here is submitted until you say so.",
                             )
                             .variant(AlertVariant::Success)
-                            .title("Draft discarded")
+                            .title(DISCARDED_TITLE)
                     })
                 }
                 Some(Notice::Changed { by, at }) => { (changed_notice(by, at)) }

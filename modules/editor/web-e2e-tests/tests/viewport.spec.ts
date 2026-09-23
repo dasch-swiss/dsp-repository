@@ -85,16 +85,6 @@ test("a save without JavaScript reports that it happened", async ({ page }) => {
     "covered above with JavaScript on",
   );
 
-  // KNOWN GAP — this test is expected to fail, and `test.fail()` is what keeps
-  // it honest: the day someone makes the no-JS save render its confirmation,
-  // this reports "expected to fail but passed" and the marker comes off.
-  //
-  // Saving with JavaScript disabled navigates, the draft is written, and the
-  // live region comes back empty — so a depositor on the no-JS path gets no
-  // confirmation that their work was saved. The notice is produced only by the
-  // Datastar patch.
-  test.fail();
-
   await saveFromBelowTheFold(page);
 
   const notice = noticeOf(page);
@@ -104,4 +94,7 @@ test("a save without JavaScript reports that it happened", async ({ page }) => {
       message: "the no-JavaScript save path renders no confirmation notice",
     })
     .toBe(true);
+
+  // Also in the title: a live region filled at page load is not reliably announced.
+  await expect(page).toHaveTitle(/^Draft saved — /);
 });

@@ -69,7 +69,7 @@
         {
             "type": "Skos",
             "url": "https://skos.um.es/unesco6/620301",
-            "text": "Cinematography "
+            "text": "Cinematography"
         },
         {
             "en": "10406 Theatre and Cinema"
@@ -139,7 +139,7 @@
         }
     ],
     "abstract": {
-        "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing archive documents (Piece) divided into 7 distinct categories (contractual and legal documents, personal correspondence, published articles, documents related to the organisation of work, script documents, personal documents, documents related to promotion), and listing, for each piece, the natural or legal persons concerned by the writing of the document and, for each page of document, the persons, works and film projects mentioned.\r Some images (pages) are annotated (regions of interest)."
+        "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing archive documents (Piece) divided into 7 distinct categories (contractual and legal documents, personal correspondence, published articles, documents related to the organisation of work, script documents, personal documents, documents related to promotion), and listing, for each piece, the natural or legal persons concerned by the writing of the document and, for each page of document, the persons, works and film projects mentioned.\n Some images (pages) are annotated (regions of interest)."
     },
     "contactPoint": [
         "person-009"

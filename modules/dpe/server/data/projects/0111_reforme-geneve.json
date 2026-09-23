@@ -130,7 +130,7 @@
         }
     ],
     "abstract": {
-        "en": "The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\r The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions.\r"
+        "en": "The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\n The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions."
     },
     "contactPoint": [
         "person-034"

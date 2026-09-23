@@ -219,9 +219,7 @@ fn test_layout() -> UrlLayout {
 ///
 /// Format checking is off. This is a check of the *shape* the writer produces,
 /// and `format` is an annotation in draft-07 — the crate validates it by
-/// default, which is stricter than the specification. One committed license URI
-/// carries a trailing space, and that is a defect in the corpus, not in the
-/// writer: the XML representation and the `Link` header carry it too.
+/// default, which is stricter than the specification.
 fn datacite_json_validator() -> jsonschema::Validator {
     const SCHEMA: &str = include_str!("../../../../../shared/fair/testdata/schemas/datacite-4.3-schema.json");
     let schema: serde_json::Value = serde_json::from_str(SCHEMA).expect("the DataCite JSON schema should parse");

@@ -307,26 +307,26 @@
         }
     ],
     "abstract": {
-        "en": "The Digital Platform for Corpus Cosmatorum II (DigCorpCosII) aims to create a web-based, interactive map and research platform for datasets related to the “Churches of Rome in the Middle Ages” (Corpus Cosmatorum II) research infrastructure financed by the SNSF. The CorpCos II is the first catalogue of the churches of the city of Rome (1050-1300) in which “cosmatesque” works have been preserved or documented. The so-called “Cosmati” were marble workers and architects active between the 11th and the 13th century, famous for their sculpture and polychrome encrustation works. The CorpCos II platform will offer first glance essential data and research results about the catalogue’s medieval churches and their liturgical furnishing. Short texts (“Schede”), and 1-10 plans / photographs will illustrate each site. In addition, for each church whose research has already been complete (so far 88 out of 133 churches are finished), a pdf file of the scientific text will be freely downloadable via the platform.\r The platform will be useful for different audiences – from interested laymen and women like tourists (Citizen Science) to a specialized audience – as well as a learning tool for university students."
+        "en": "The Digital Platform for Corpus Cosmatorum II (DigCorpCosII) aims to create a web-based, interactive map and research platform for datasets related to the “Churches of Rome in the Middle Ages” (Corpus Cosmatorum II) research infrastructure financed by the SNSF. The CorpCos II is the first catalogue of the churches of the city of Rome (1050-1300) in which “cosmatesque” works have been preserved or documented. The so-called “Cosmati” were marble workers and architects active between the 11th and the 13th century, famous for their sculpture and polychrome encrustation works. The CorpCos II platform will offer first glance essential data and research results about the catalogue’s medieval churches and their liturgical furnishing. Short texts (“Schede”), and 1-10 plans / photographs will illustrate each site. In addition, for each church whose research has already been complete (so far 88 out of 133 churches are finished), a pdf file of the scientific text will be freely downloadable via the platform.\n The platform will be useful for different audiences – from interested laymen and women like tourists (Citizen Science) to a specialized audience – as well as a learning tool for university students."
     },
     "contactPoint": [
         "person-304"
     ],
     "publications": [
         {
-            "text": " P. C. Claussen, Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 1: Kirchen A–F (Corpus Cosmatorum II) (Forschungen zur Kunstgeschichte und Christlichen Archäologie 20), Stuttgart 2002."
+            "text": "P. C. Claussen, Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 1: Kirchen A–F (Corpus Cosmatorum II) (Forschungen zur Kunstgeschichte und Christlichen Archäologie 20), Stuttgart 2002."
         },
         {
-            "text": " P. C. Claussen, Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 2: S. Giovanni in Laterano, mit einem Beitrag von Darko Senekovic über S. Giovanni in Fonte (Corpus Cosmatorum II) (Forschungen zur Kunstgeschichte und Christlichen Archäologie 21), Stuttgart 2008."
+            "text": "P. C. Claussen, Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 2: S. Giovanni in Laterano, mit einem Beitrag von Darko Senekovic über S. Giovanni in Fonte (Corpus Cosmatorum II) (Forschungen zur Kunstgeschichte und Christlichen Archäologie 21), Stuttgart 2008."
         },
         {
-            "text": " P. C. Claussen, D. Mondini, D. Senekovic, Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 3: Kirchen G–L (Corpus Cosmatorum II) (Forschungen zur Kunstgeschichte und Christlichen Archäologie 22), Stuttgart 2010."
+            "text": "P. C. Claussen, D. Mondini, D. Senekovic, Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 3: Kirchen G–L (Corpus Cosmatorum II) (Forschungen zur Kunstgeschichte und Christlichen Archäologie 22), Stuttgart 2010."
         },
         {
-            "text": " Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 4: Kirchen M–O (Corpus Cosmatorum II), hg. von D. Mondini, C. Jäggi, P. C. Claussen, mit Beiträgen von P. C. Claussen, C. Jäggi, A. Klein, G. Pollio, A. Racz, M. Schmitz, D. Senekovic, A. Yorck von Wartenburg, Stuttgart 2020."
+            "text": "Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 4: Kirchen M–O (Corpus Cosmatorum II), hg. von D. Mondini, C. Jäggi, P. C. Claussen, mit Beiträgen von P. C. Claussen, C. Jäggi, A. Klein, G. Pollio, A. Racz, M. Schmitz, D. Senekovic, A. Yorck von Wartenburg, Stuttgart 2020."
         },
         {
-            "text": " Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 5: S. Maria in Aracoeli, S. Maria Maggiore, S. Maria in Trastevere (Corpus Cosmatorum II), hg. von D. Mondini, C. Jäggi, P. C. Claussen, mit Beiträgen von P. C. Claussen, D. Kinney, D. Mondini, Stuttgart 2024."
+            "text": "Die Kirchen der Stadt Rom im Mittelalter 1050–1300, Bd. 5: S. Maria in Aracoeli, S. Maria Maggiore, S. Maria in Trastevere (Corpus Cosmatorum II), hg. von D. Mondini, C. Jäggi, P. C. Claussen, mit Beiträgen von P. C. Claussen, D. Kinney, D. Mondini, Stuttgart 2024."
         }
     ],
     "funding": [

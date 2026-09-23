@@ -1830,10 +1830,12 @@ mod tests {
 
     use axum::body::Body;
     use axum::http::Request;
-    use editor_core::canonical::write_draft;
+    use editor_core::canonical::{write_draft, write_project};
+    use editor_core::published::PublishedProjects;
     use editor_core::records::Role;
     use editor_core::repository::ApprovedRecordRepository;
     use serde_json::{json, Value};
+    use shared_metadata::project::ProjectRaw;
     use tower::ServiceExt;
 
     use super::*;
@@ -4457,23 +4459,85 @@ mod tests {
         assert!(after.contains("Organisation"), "the kind is named: {after}");
     }
 
-    /// The projects the end-to-end round-trip drives, and the trap each carries.
+    /// The projects the end-to-end round-trip drives, and what each still proves.
     ///
     /// Chosen rather than sampled: a project with no trap would let this pass on
     /// the strength of the plumbing alone. The whole-corpus version of the same
     /// check is `editor-web`'s `untouched_form_round_trip`; what these two add
     /// is the handler layer, and what the handler layer can break is specific to
     /// the values a project holds.
+    ///
+    /// The committed corpus carries no surrounding-whitespace or leading-newline
+    /// value, so the trimming and leading-newline traps live on a synthetic
+    /// project instead:
+    /// `saving_a_section_nobody_edited_leaves_a_synthetic_whitespace_trap_byte_identical`.
     const ROUND_TRIP_PROJECTS: &[(&str, &str)] = &[
-        // `shortDescription` ends in a space, and `endDate` is the `MISSING`
-        // sentinel — the trimming and placeholder traps.
+        // `endDate` is the `MISSING` sentinel — the placeholder trap.
         ("0816", "0816_vitrocentre.json"),
-        // `description.ar` begins with a newline, which the HTML parser eats
-        // after a `<textarea>` start tag. The tile compensates; this is the only
-        // check that the compensation survives the section handler and the
-        // `payload` column rather than only the tile's own unit test.
+        // `description.ar` is a tag outside `UI_LANGUAGES`, and `keywords` carries
+        // rows tagged `ar` too — the only project here exercising the
+        // extra-language-tag branch of `untouched_body`'s `Multilingual` and
+        // `MultilingualRows` arms through the handler layer rather than only the
+        // whole-corpus unit test.
         ("0820", "0820_lhtt.json"),
     ];
+
+    /// Drives every section of `published` through the real routes as an
+    /// untouched save, then asserts the stored draft's canonical write matches
+    /// `committed`. Shared by the real-corpus round trip and the synthetic-draft
+    /// one below, so both exercise the same handler-layer plumbing.
+    ///
+    /// What it adds over the unit-level round trip is the handler layer — the
+    /// section scoping, the draft that starts as the published project, and the
+    /// storage round-trip through the `payload` column. A bug in any of those
+    /// rewrites a published file while every unit test stays green.
+    async fn assert_untouched_save_round_trips(
+        app: &axum::Router,
+        session: &str,
+        state: &AppState,
+        shortcode: &str,
+        published: &ProjectRaw,
+        committed: &str,
+        label: &str,
+    ) {
+        // Every section, as a reader who opened each one and pressed save.
+        for section in registry::sections_for(Audience::RduOnly) {
+            let body = untouched_body(&ProjectDraft::from_raw(published), section);
+            let uri = format!("/projects/{shortcode}/sections/{}", section.id);
+            let response = as_session(app, post(&uri, &body), session).await;
+            assert_eq!(response.status(), StatusCode::SEE_OTHER, "{label} {}", section.id);
+        }
+
+        let row = DraftRepository::find(&*state.db, &normalize_shortcode(shortcode))
+            .await
+            .expect("read")
+            .unwrap_or_else(|| panic!("{label} should have a draft row"));
+        let stored: ProjectDraft = serde_json::from_str(&row.payload).expect("a stored payload parses");
+        let written = write_draft(&stored).expect("the draft should write");
+        // The first differing line rather than two whole files: a failure
+        // here names a place, and dumping 200 lines of Arabic description
+        // to say a grant number moved is unreadable.
+        if written != committed {
+            let place = committed
+                .lines()
+                .zip(written.lines())
+                .enumerate()
+                .find(|(_, (before, after))| before != after)
+                .map_or_else(
+                    || {
+                        format!(
+                            "every shared line matches; lengths differ: committed {} bytes, written {}",
+                            committed.len(),
+                            written.len()
+                        )
+                    },
+                    |(line, (before, after))| {
+                        format!("line {}:\n  committed: {before}\n  written:   {after}", line + 1)
+                    },
+                );
+            panic!("saving every untouched section rewrote {label}\n{place}");
+        }
+    }
 
     #[tokio::test]
     async fn saving_a_section_nobody_edited_leaves_the_committed_file_byte_identical() {
@@ -4482,11 +4546,6 @@ mod tests {
         // post, and this one drives every section of a real project with the
         // values the rendered form actually carries, then writes the stored
         // draft back through the canonical writer.
-        //
-        // What it adds over the unit test is the handler layer — the section
-        // scoping, the draft that starts as the published project, and the
-        // storage round-trip through the `payload` column. A bug in any of those
-        // rewrites a published file while every unit test stays green.
         let (state, _) = test_state("section-round-trip").await;
         let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
         let session = a_session(&state, user.id).await;
@@ -4504,66 +4563,95 @@ mod tests {
             )
             .unwrap_or_else(|error| panic!("reading {filename}: {error}"));
 
-            // Every section, as a reader who opened each one and pressed save.
-            for section in registry::sections_for(Audience::RduOnly) {
-                let body = untouched_body(&ProjectDraft::from_raw(published), section);
-                let uri = format!("/projects/{shortcode}/sections/{}", section.id);
-                let response = as_session(&app, post(&uri, &body), &session).await;
-                assert_eq!(response.status(), StatusCode::SEE_OTHER, "{shortcode} {}", section.id);
-            }
-
-            let row = DraftRepository::find(&*state.db, &normalize_shortcode(shortcode))
-                .await
-                .expect("read")
-                .unwrap_or_else(|| panic!("{shortcode} should have a draft row"));
-            let stored: ProjectDraft = serde_json::from_str(&row.payload).expect("a stored payload parses");
-            let written = write_draft(&stored).expect("the draft should write");
-            // The first differing line rather than two whole files: a failure
-            // here names a place, and dumping 200 lines of Arabic description
-            // to say a grant number moved is unreadable.
-            if written != committed {
-                let place = committed
-                    .lines()
-                    .zip(written.lines())
-                    .enumerate()
-                    .find(|(_, (before, after))| before != after)
-                    .map_or_else(
-                        || {
-                            format!(
-                                "every shared line matches; lengths differ: committed {} bytes, written {}",
-                                committed.len(),
-                                written.len()
-                            )
-                        },
-                        |(line, (before, after))| {
-                            format!("line {}:\n  committed: {before}\n  written:   {after}", line + 1)
-                        },
-                    );
-                panic!("saving every untouched section rewrote {filename}\n{place}");
-            }
+            assert_untouched_save_round_trips(&app, &session, &state, shortcode, published, &committed, filename).await;
         }
+    }
+
+    /// A project like 0816, but with `shortDescription` ending in a space and
+    /// `description.en` beginning with a newline: the trimming and
+    /// leading-newline traps that no committed project carries, so this
+    /// synthesises them.
+    fn with_whitespace_traps(base: &ProjectRaw) -> ProjectRaw {
+        let mut project = base.clone();
+        let mut short_description = project.short_description.trim().to_string();
+        short_description.push(' ');
+        project.short_description = short_description;
+        let english = project.description.get("en").cloned().unwrap_or_default();
+        project
+            .description
+            .insert("en".to_string(), format!("\n{}", english.trim_start()));
+        project
+    }
+
+    /// A `PublishedProjects` holding just `project`, round-tripped through
+    /// `PublishedProjects::load_from` — the only public way to build one — since
+    /// its backing map is private outside `editor-core`.
+    fn published_set_of(project: &ProjectRaw) -> PublishedProjects {
+        let dir = std::env::temp_dir().join(format!("editor-server-synthetic-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).expect("a temp dir should be creatable");
+        let bytes = write_project(project).expect("the synthetic project should serialize");
+        std::fs::write(dir.join("synthetic.json"), bytes).expect("the temp file should be writable");
+        let (published, errors) = PublishedProjects::load_from(&dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(errors.is_empty(), "the synthetic project should load cleanly: {errors:?}");
+        published
+    }
+
+    #[tokio::test]
+    async fn saving_a_section_nobody_edited_leaves_a_synthetic_whitespace_trap_byte_identical() {
+        // A positive canary for the test above, which asserts an *absence* of
+        // change: over a corpus with no whitespace trap left it would pass while
+        // proving nothing. No committed project carries one, so this drives the
+        // same end-to-end path over a project built to carry both.
+        let (mut state, _) = test_state("section-round-trip-synthetic").await;
+        let synthetic = with_whitespace_traps(state.published.get("0816").expect("0816 is committed"));
+        assert!(
+            synthetic.short_description.ends_with(' '),
+            "the synthetic project should carry the trailing-space trap"
+        );
+        assert!(
+            synthetic.description.get("en").is_some_and(|text| text.starts_with('\n')),
+            "the synthetic project should carry the leading-newline trap"
+        );
+        state.published = Arc::new(published_set_of(&synthetic));
+
+        let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let committed = write_project(&synthetic).expect("the synthetic project should serialize");
+        assert_untouched_save_round_trips(
+            &app,
+            &session,
+            &state,
+            &synthetic.shortcode,
+            &synthetic,
+            &committed,
+            "synthetic 0816",
+        )
+        .await;
     }
 
     #[tokio::test]
     async fn the_round_trip_projects_still_carry_the_traps_they_were_chosen_for() {
-        // A positive canary for the test above, which asserts an *absence* of
-        // change: over a corpus with the traps edited out it would pass while
-        // proving nothing, and nobody could tell. Named per trap so a data
-        // change says which project to replace.
+        // A positive canary for the corpus round trip above, which asserts an
+        // *absence* of change: over a corpus with the trap edited out it would
+        // pass while proving nothing, and nobody could tell.
         let (state, _) = test_state("section-round-trip-canary").await;
         let vitrocentre = state.published.get("0816").expect("0816 is committed");
-        assert!(
-            vitrocentre.short_description.ends_with(' '),
-            "0816 was chosen for a trailing space in shortDescription"
-        );
         assert!(
             shared_metadata::is_placeholder(&vitrocentre.end_date),
             "0816 was chosen for a MISSING endDate"
         );
+
         let lhtt = state.published.get("0820").expect("0820 is committed");
         assert!(
-            lhtt.description.get("ar").is_some_and(|text| text.starts_with('\n')),
-            "0820 was chosen for a description.ar beginning with a newline"
+            lhtt.description.contains_key("ar"),
+            "0820 was chosen for an `ar` description tag outside UI_LANGUAGES, exercising the extra-language-tag branch of `untouched_body`'s Multilingual arm"
+        );
+        assert!(
+            lhtt.keywords.iter().any(|keyword| keyword.contains_key("ar")),
+            "0820 was chosen for an `ar` keywords row outside UI_LANGUAGES, exercising the extra-language-tag branch of `untouched_body`'s MultilingualRows arm"
         );
     }
 

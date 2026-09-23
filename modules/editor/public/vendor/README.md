@@ -22,18 +22,11 @@ The table above is the editor's version of record. DPE vendors its own copy unde
 
 One property of 1.0.x worth knowing: keyed plugin attributes use `:`, not `-` — `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. That has been true since RC.6, so it matches DPE's markup too. The old hyphen form fails **semi-silently**: a console error and an inert control, with the page rendering fine and snapshot tests still passing.
 
-## Known dead listener in `telemetry.js`
+## The Datastar failure listener in `telemetry.js`
 
-`telemetry.js` registers `document.addEventListener('datastar-sse-error', ...)`, copied from DPE.
-No such event exists in 1.0.2 — the bundle dispatches `datastar-fetch`, `datastar-patch-elements`,
-`datastar-patch-signals`, `datastar-prop-change`, `datastar-ready`, `datastar-scope-children` and
-`datastar-signal-patch`. The `kind: 'datastar_sse'` beacon signal is therefore unreachable, and the
-collector's SSE-error counter will read zero however many fragment requests fail.
+`telemetry.js` listens for `datastar-fetch`, the one event 1.0.x dispatches for every request outcome, and reports `type: 'error'` (a response status of 400 or above, with the status in `detail.argsRaw`) and the first `type: 'retrying'` or `type: 'retries-failed'` of each request as error kind `datastar_sse`. A network failure or dropped stream produces no `error`: Datastar retries it (even with `retry: 'never'`, which covers only HTTP statuses) and dispatches `retries-failed` only after about 3 minutes, so the first retry is where it is reported. The kind name is kept so the collector's bounded set and existing dashboards stay valid. There is no `datastar-sse-error` event in any 1.0.x release.
 
-Harmless today, because no Datastar endpoint exists yet. Rewire it to `datastar-fetch` (whose detail
-carries the failure type) when the first one lands, and verify against a real failing request rather
-than by inspection — this is exactly the semi-silent class of failure the delimiter note above warns
-about.
+The editor answers `200` on its Datastar paths by design, rendering refusals into the patched region, so here the listener fires only on a transport failure or on a route that breaks that convention. A bump that renames the event or its `type` values silences the listener without an error, so check `detail` against the new bundle on every update.
 
 ## Update process
 

@@ -2659,7 +2659,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <ul>
 <li><strong>Core Web Vitals</strong> (LCP, INP, CLS, TTFB, FCP) with attribution data</li>
 <li><strong>JavaScript errors</strong> and unhandled promise rejections</li>
-<li><strong>Datastar SSE errors</strong></li>
+<li><strong>Datastar request failures</strong>: a <code>datastar-fetch</code> event whose <code>type</code> is <code>error</code> (a response status of 400 or above) or the first <code>retrying</code> or <code>retries-failed</code> of a request (a network failure or dropped stream, which Datastar retries for about 3 minutes by default before <code>retries-failed</code>), reported as error kind <code>datastar_sse</code></li>
 <li><strong>Long Animation Frames</strong> (LoAF, ≥200ms threshold)</li>
 <li><strong>Navigation timing</strong> breakdown</li>
 </ul>
@@ -5665,7 +5665,7 @@ POST /logout       session deleted, cookie cleared
 <p>Two halves, as in DPE:</p>
 <ul>
 <li><strong>Server-side</strong>: OTel-native tracing via <code>axum-tracing-opentelemetry</code> middleware. Every HTTP request except <code>/healthz</code> and <code>/telemetry/collect</code> produces W3C-compliant spans exported over OTLP.</li>
-<li><strong>Client-side</strong>: <code>telemetry.js</code> captures Core Web Vitals, JS errors, Long Animation Frames and navigation timing, and flushes them via <code>navigator.sendBeacon</code> to <code>POST /telemetry/collect</code>, which converts them into OTel metrics and structured logs on the same OTLP pipeline.</li>
+<li><strong>Client-side</strong>: <code>telemetry.js</code> captures Core Web Vitals, JS errors, failed Datastar requests (<code>datastar-fetch</code> with type <code>error</code>, or the first <code>retrying</code> or <code>retries-failed</code> of a request, as error kind <code>datastar_sse</code>), Long Animation Frames and navigation timing, and flushes them via <code>navigator.sendBeacon</code> to <code>POST /telemetry/collect</code>, which converts them into OTel metrics and structured logs on the same OTLP pipeline.</li>
 </ul>
 <p>Trace correlation uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell and the client includes it in every beacon payload.</p>
 <p>There is <strong>no third-party analytics script</strong>. DPE injects Fathom; the editor is an authenticated tool and does not.</p>

@@ -248,7 +248,7 @@
 <p>Two halves, as in DPE:</p>
 <ul>
 <li><strong>Server-side</strong>: OTel-native tracing via <code>axum-tracing-opentelemetry</code> middleware. Every HTTP request except <code>/healthz</code> and <code>/telemetry/collect</code> produces W3C-compliant spans exported over OTLP.</li>
-<li><strong>Client-side</strong>: <code>telemetry.js</code> captures Core Web Vitals, JS errors, Long Animation Frames and navigation timing, and flushes them via <code>navigator.sendBeacon</code> to <code>POST /telemetry/collect</code>, which converts them into OTel metrics and structured logs on the same OTLP pipeline.</li>
+<li><strong>Client-side</strong>: <code>telemetry.js</code> captures Core Web Vitals, JS errors, failed Datastar requests (<code>datastar-fetch</code> with type <code>error</code>, or the first <code>retrying</code> or <code>retries-failed</code> of a request, as error kind <code>datastar_sse</code>), Long Animation Frames and navigation timing, and flushes them via <code>navigator.sendBeacon</code> to <code>POST /telemetry/collect</code>, which converts them into OTel metrics and structured logs on the same OTLP pipeline.</li>
 </ul>
 <p>Trace correlation uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell and the client includes it in every beacon payload.</p>
 <p>There is <strong>no third-party analytics script</strong>. DPE injects Fathom; the editor is an authenticated tool and does not.</p>

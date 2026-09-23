@@ -9,7 +9,7 @@
 //!
 //! `list` is unauthenticated: a CI poller reads this, not a signed-in user, so
 //! the handler takes no `Authenticated`/`Rdu` extractor. Enumerates with
-//! [`ApprovedRecordRepository::list_all`], not `list_uncollected` — there is no
+//! [`ApprovedRecordRepository::list_all`], unfiltered: there is no
 //! state-dependent selection here for a stale advisory flag to hide, and the
 //! served set is already bounded by startup reconciliation, which deletes a
 //! record once the published set matches it.

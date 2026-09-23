@@ -294,23 +294,19 @@ pub trait SubmissionRepository: Send + Sync {
 pub trait ApprovedRecordRepository: Send + Sync {
     async fn create(&self, record: &ApprovedRecord) -> Result<()>;
 
-    /// Approved records carrying no collection timestamp, oldest first.
-    ///
-    /// Not what the public endpoint serves: that one applies no filter at all,
-    /// so advisory collection state can never decide what is published.
-    async fn list_uncollected(&self) -> Result<Vec<ApprovedRecord>>;
-
     /// Every approved record for a project, so the startup comparison can find
     /// the one that matches the published data.
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>>;
 
-    /// Every approved record, collected or not.
+    /// Every approved record, collected or not, oldest approval first.
     ///
-    /// The startup comparison's enumeration. It cannot walk the published set
-    /// instead: a record whose project the published set no longer holds is
-    /// invisible to such a walk. `list_uncollected` is no substitute either: a
-    /// record is collected by the time its change ships, so filtering those out
-    /// would hide every record about to go Online.
+    /// What the public endpoint serves, unfiltered, so advisory collection state
+    /// can never decide what is published. Also the startup comparison's
+    /// enumeration. It cannot walk the published set instead: a record whose
+    /// project the published set no longer holds is invisible to such a walk.
+    /// Filtering out collected records is no substitute either: a record is
+    /// collected by the time its change ships, so that would hide every record
+    /// about to go Online.
     async fn list_all(&self) -> Result<Vec<ApprovedRecord>>;
 
     /// Stamp a record as collected. Leaving it unstamped is what makes a failed

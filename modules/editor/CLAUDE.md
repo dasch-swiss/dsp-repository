@@ -84,7 +84,7 @@ RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism name
 
 `docs/src/editor/collection.md` is the contract; these two are the parts a change here can quietly break.
 
-**Reported collection state never decides what is served or published.** It may drive what RDU is shown and how a record is classified, and nothing else. `GET /api/v1/approved-records` therefore applies no filter at all — it enumerates with `ApprovedRecordRepository::list_all`, not `list_uncollected`; that method's own doc carries the reason, and a test pins it by serving a record whose pull request is live.
+**Reported collection state never decides what is served or published.** It may drive what RDU is shown and how a record is classified, and nothing else. `GET /api/v1/approved-records` therefore applies no filter at all — it enumerates with `ApprovedRecordRepository::list_all`, whose doc carries the reason, and a test pins it by serving a record whose pull request is live.
 
 **The editor holds no GitHub credential, in either direction.** It verifies a token CI presents to it (`EDITOR_COLLECTION_TOKEN`); it never presents one to GitHub and makes no outbound GitHub call at all.
 

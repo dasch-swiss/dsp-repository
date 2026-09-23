@@ -27,6 +27,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0004_collection_report.sql"),
     include_str!("migrations/0005_reported_at.sql"),
     include_str!("migrations/0006_retired_proposals.sql"),
+    include_str!("migrations/0007_drop_uncollected_index.sql"),
 ];
 
 /// The version a fully migrated database reports.

@@ -244,7 +244,7 @@
 </style>
 <h1 id="collection"><a class="header" href="#collection">Collection</a></h1>
 <p>How an approved record leaves the editor and becomes a commit in this repository. The editor publishes the records and accepts a report about what happened to them; a GitHub Actions workflow does the work in between. This page is the contract between the two.</p>
-<p>That workflow does not exist yet. Everything this page says about it is a requirement on the work that builds it, not a description of something already running; everything it says about the editor is live and testable today.</p>
+<p>The workflow is <code>.github/workflows/collect-editor-records.yml</code> and the collector it runs is the <code>editor-collector</code> crate (<code>modules/editor/collector</code>). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.</p>
 <h2 id="the-invariant"><a class="header" href="#the-invariant">The invariant</a></h2>
 <p><strong>Reported collection state may drive what RDU is shown and how a record is classified. It may never drive what is served or published.</strong></p>
 <p>Every rule below is checkable against that one line. The editor holds no credential granting write access to any GitHub repository, in either direction: it holds a verifier for a token the workflow presents to it, never a token it presents to GitHub. Compromising the editor yields a token that authenticates to the editor and nothing else.</p>
@@ -314,6 +314,16 @@
 <h2 id="the-token-the-workflow-uses-against-github"><a class="header" href="#the-token-the-workflow-uses-against-github">The token the workflow uses against GitHub</a></h2>
 <p><code>secrets.GH_TOKEN</code>, not <code>github.token</code>. A pull request opened with <code>GITHUB_TOKEN</code> does not trigger workflows, so a collection pull request would arrive with no <code>check</code>, no <code>test</code> and no <code>commit-hygiene</code> run — looking green because nothing ran. <code>secrets.GH_TOKEN</code> is already used by <code>release-please.yml</code>, which is also the in-repo precedent for querying open pull requests rather than trusting local state.</p>
 <p>The collection pull request must satisfy <code>commit-hygiene.yml</code> like any other: <code>type(scope): subject</code>, one commit, and a scope from the vocabulary in <code>CONVENTIONS.md</code>. Project metadata files take <code>dpe-data</code>.</p>
+<h2 id="running-it"><a class="header" href="#running-it">Running it</a></h2>
+<p><code>workflow_dispatch</code> only, in two modes. <code>collect</code> fetches, publishes and reports; <code>refresh</code> re-reports pull request states and writes nothing.</p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Kind</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>EDITOR_BASE_URL</code></td><td>repository variable</td><td>The editor's origin. A variable, not a secret: it is not one, and the hostname is still open with Infra (DEV-6921), so settling it needs no code change.</td></tr>
+<tr><td><code>EDITOR_COLLECTION_TOKEN</code></td><td>secret</td><td>Presented to the editor's report endpoint and to nothing else.</td></tr>
+<tr><td><code>GH_TOKEN</code></td><td>secret</td><td>Used against GitHub. Not <code>github.token</code> — see below.</td></tr>
+</tbody></table>
+</div>
+<p>The workflow refuses to start when the variable or the secret is empty, before checkout: GitHub substitutes an empty string for an unset secret rather than failing the run, so without that guard the collector would open pull requests and then take 401 on every report, leaving records reading as never collected while their pull requests are open.</p>
+<p>The collector fails the job when any record failed or any outcome could not be reported. A green run means every record the editor served was both handled and reported.</p>
 <h2 id="the-staleness-limitation"><a class="header" href="#the-staleness-limitation">The staleness limitation</a></h2>
 <p>A reported state is only as fresh as the last run, and the collection trigger is manual with no schedule. A pull request merged with reviewer edits <em>after</em> the last run leaves its record reading <code>open</code>, with nobody prompted to re-run, so it never reaches the merged-with-edits classification above.</p>
 <p>The surface therefore shows the last reported state <strong>with the time it was reported</strong>, and links to the pull request, so a reader can see the state is old and check it for themselves.</p>

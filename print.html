@@ -596,7 +596,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
+<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>editor-collector</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
@@ -761,6 +761,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 │   ├── core/                  # Pure domain types (crate: editor-core)
 │   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
 │   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
+│   ├── collector/             # CI binary: turns approved records into pull requests (crate: editor-collector)
 │   ├── public/                # Static assets (incl. vendored JS)
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
@@ -790,6 +791,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
+<tr><td><code>editor-collector</code></td><td><code>editor/collector</code></td><td>CI binary — collects approved records into pull requests</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
 </tbody></table>
@@ -4789,9 +4791,10 @@ What each of them scored, when, and against what, is in
 <tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types and the persistence ports (no Axum, Maud or database dependency)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Maud view library — the document shell, pages and components</td></tr>
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Composition root: configuration, observability, routing, persistence</td></tr>
+<tr><td><code>editor-collector</code></td><td><code>editor/collector</code></td><td>CI binary collecting approved records into pull requests (see <a href="editor/./collection.html">Collection</a>)</td></tr>
 </tbody></table>
 </div>
-<p>Dependency direction is <code>server → web → core</code>. <code>editor-web</code> depends on <code>editor-core</code> for the project representation it renders, and on <code>mosaic-tiles</code>; the login screens' submit buttons are the first surface to render a tile. Component CSS is collected from the Tailwind entry's <code>@source</code> globs rather than from the crate graph, so it ships independently of that dependency.</p>
+<p>Dependency direction is <code>server → web → core</code>; <code>editor-collector</code> sits outside that chain, depending on <code>editor-core</code> alone and running as a batch job rather than serving a request. <code>editor-web</code> depends on <code>editor-core</code> for the project representation it renders, and on <code>mosaic-tiles</code>; the login screens' submit buttons are the first surface to render a tile. Component CSS is collected from the Tailwind entry's <code>@source</code> globs rather than from the crate graph, so it ships independently of that dependency.</p>
 <p>Unlike DPE, the <strong>HTML document shell lives in the view crate</strong> (<code>editor-web/src/view.rs</code>), not the server crate. DPE keeps <code>head()</code> + <code>page()</code> in <code>dpe-server</code>; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.</p>
 <h2 id="persistence"><a class="header" href="#persistence">Persistence</a></h2>
 <p>One SQLite database, <code>rusqlite</code> with the <code>bundled</code> feature — the amalgamation is compiled by <code>cc</code> into the binary, which is what keeps the static musl image self-contained. <code>editor-core</code> owns the records and one repository trait per aggregate; <code>editor-server/src/db/</code> implements all nine against SQLite, so handlers depend on the ports and not on the driver.</p>
@@ -5507,7 +5510,7 @@ POST /logout       session deleted, cookie cleared
 </style>
 <h1 id="collection-1"><a class="header" href="#collection-1">Collection</a></h1>
 <p>How an approved record leaves the editor and becomes a commit in this repository. The editor publishes the records and accepts a report about what happened to them; a GitHub Actions workflow does the work in between. This page is the contract between the two.</p>
-<p>That workflow does not exist yet. Everything this page says about it is a requirement on the work that builds it, not a description of something already running; everything it says about the editor is live and testable today.</p>
+<p>The workflow is <code>.github/workflows/collect-editor-records.yml</code> and the collector it runs is the <code>editor-collector</code> crate (<code>modules/editor/collector</code>). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.</p>
 <h2 id="the-invariant"><a class="header" href="#the-invariant">The invariant</a></h2>
 <p><strong>Reported collection state may drive what RDU is shown and how a record is classified. It may never drive what is served or published.</strong></p>
 <p>Every rule below is checkable against that one line. The editor holds no credential granting write access to any GitHub repository, in either direction: it holds a verifier for a token the workflow presents to it, never a token it presents to GitHub. Compromising the editor yields a token that authenticates to the editor and nothing else.</p>
@@ -5577,6 +5580,16 @@ POST /logout       session deleted, cookie cleared
 <h2 id="the-token-the-workflow-uses-against-github"><a class="header" href="#the-token-the-workflow-uses-against-github">The token the workflow uses against GitHub</a></h2>
 <p><code>secrets.GH_TOKEN</code>, not <code>github.token</code>. A pull request opened with <code>GITHUB_TOKEN</code> does not trigger workflows, so a collection pull request would arrive with no <code>check</code>, no <code>test</code> and no <code>commit-hygiene</code> run — looking green because nothing ran. <code>secrets.GH_TOKEN</code> is already used by <code>release-please.yml</code>, which is also the in-repo precedent for querying open pull requests rather than trusting local state.</p>
 <p>The collection pull request must satisfy <code>commit-hygiene.yml</code> like any other: <code>type(scope): subject</code>, one commit, and a scope from the vocabulary in <code>CONVENTIONS.md</code>. Project metadata files take <code>dpe-data</code>.</p>
+<h2 id="running-it"><a class="header" href="#running-it">Running it</a></h2>
+<p><code>workflow_dispatch</code> only, in two modes. <code>collect</code> fetches, publishes and reports; <code>refresh</code> re-reports pull request states and writes nothing.</p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Kind</th><th>Why</th></tr></thead><tbody>
+<tr><td><code>EDITOR_BASE_URL</code></td><td>repository variable</td><td>The editor's origin. A variable, not a secret: it is not one, and the hostname is still open with Infra (DEV-6921), so settling it needs no code change.</td></tr>
+<tr><td><code>EDITOR_COLLECTION_TOKEN</code></td><td>secret</td><td>Presented to the editor's report endpoint and to nothing else.</td></tr>
+<tr><td><code>GH_TOKEN</code></td><td>secret</td><td>Used against GitHub. Not <code>github.token</code> — see below.</td></tr>
+</tbody></table>
+</div>
+<p>The workflow refuses to start when the variable or the secret is empty, before checkout: GitHub substitutes an empty string for an unset secret rather than failing the run, so without that guard the collector would open pull requests and then take 401 on every report, leaving records reading as never collected while their pull requests are open.</p>
+<p>The collector fails the job when any record failed or any outcome could not be reported. A green run means every record the editor served was both handled and reported.</p>
 <h2 id="the-staleness-limitation"><a class="header" href="#the-staleness-limitation">The staleness limitation</a></h2>
 <p>A reported state is only as fresh as the last run, and the collection trigger is manual with no schedule. A pull request merged with reviewer edits <em>after</em> the last run leaves its record reading <code>open</code>, with nobody prompted to re-run, so it never reaches the merged-with-edits classification above.</p>
 <p>The surface therefore shows the last reported state <strong>with the time it was reported</strong>, and links to the pull request, so a reader can see the state is old and check it for themselves.</p>
@@ -5825,6 +5838,7 @@ image CI publishes, under emulation.</p>
 <tr><td><code>EDITOR_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4100</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
 <tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>modules/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>EDITOR_DATA_DIR</code></td><td>Yes, to read records</td><td><em>(none)</em></td><td>Directory holding the published project/person/organization set baked into the image. No default — see <a href="editor/operations.html#data-directory-a-deliberate-build-input">Data directory</a>. Reported at startup, as <code>&lt;unset&gt;</code> when absent.</td></tr>
+<tr><td><code>EDITOR_COLLECTION_TOKEN</code></td><td>Yes in <code>PROD</code></td><td><em>(none)</em></td><td>Verifier for the bearer token the collecting workflow presents to <code>POST /api/v1/collection-report</code>. Unset, the endpoint refuses every report; <code>EDITOR_ENV=PROD</code> refuses to start without it. The editor never presents a token to GitHub — see <a href="editor/./collection.html">Collection</a>.</td></tr>
 <tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="editor/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>; <strong><code>PROD</code> requires <code>EDITOR_SMTP_HOST</code></strong> or startup is refused, because a relay-less production writes every login code to the log. The PR preview and <code>just run-docker-editor</code> override it to <code>DEV</code>.</td></tr>
 <tr><td><code>EDITOR_DB_DIR</code></td><td>No</td><td><em>(none — in-memory)</em></td><td>Directory holding the SQLite database. <strong>Unset means in-memory</strong>, not a path — see <a href="editor/operations.html#database">Database</a>. Names the <em>directory</em>, never the database file.</td></tr>
 <tr><td><code>EDITOR_DB_READERS</code></td><td>No</td><td><code>4</code></td><td>Size of the reader connection pool. The writer pool is always one connection.</td></tr>

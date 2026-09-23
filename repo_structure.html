@@ -260,6 +260,7 @@
 │   ├── core/                  # Pure domain types (crate: editor-core)
 │   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
 │   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
+│   ├── collector/             # CI binary: turns approved records into pull requests (crate: editor-collector)
 │   ├── public/                # Static assets (incl. vendored JS)
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
@@ -289,6 +290,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
+<tr><td><code>editor-collector</code></td><td><code>editor/collector</code></td><td>CI binary — collects approved records into pull requests</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
 </tbody></table>

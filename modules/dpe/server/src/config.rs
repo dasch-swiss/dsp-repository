@@ -27,7 +27,8 @@ pub struct DpeConfig {
     /// `modules/dpe/public`. Set via `DPE_PUBLIC_DIR`.
     pub public_dir: PathBuf,
 
-    /// Fathom Analytics site ID. If set, the tracking script is injected into the HTML shell.
+    /// Fathom Analytics site ID. Set on production only; where it is set, the tracking
+    /// script is injected into the HTML shell. Empty is normalised to `None` on load.
     /// Not a secret (visible in page source). Set via `DPE_FATHOM_SITE_ID`.
     pub fathom_site_id: Option<String>,
 
@@ -99,7 +100,7 @@ impl Default for DpeConfig {
 impl DpeConfig {
     /// Load configuration from defaults → dpe.toml → DPE_* env vars.
     pub fn load() -> Result<Self, Box<figment::Error>> {
-        let config: Self = Figment::new()
+        let mut config: Self = Figment::new()
             .merge(Serialized::defaults(DpeConfig::default()))
             .merge(Toml::file("dpe.toml"))
             .merge(Env::prefixed("DPE_"))
@@ -107,6 +108,11 @@ impl DpeConfig {
             .merge(Env::raw().only(&["DATA_DIR"]).map(|_| "data_dir".into()))
             .extract()
             .map_err(Box::new)?;
+        // An empty `DPE_FATHOM_SITE_ID` means "no Fathom", the same as unset: a
+        // deployment tool that templates the key for every environment can only
+        // pass the empty string, and figment would otherwise hand back `Some("")`,
+        // which renders `data-site=""` and tracks under a junk site.
+        config.fathom_site_id = config.fathom_site_id.filter(|id| !id.is_empty());
         validate_origin("DPE_PUBLIC_BASE_URL", &config.public_base_url)
             .map_err(|message| Box::new(figment::Error::from(message)))?;
         if let Some(ref url) = config.ark_resolver_base_url {
@@ -250,5 +256,21 @@ mod tests {
     fn load_with_defaults() {
         let config = DpeConfig::load().expect("default config should load");
         assert!(config.fathom_site_id.is_none());
+    }
+
+    #[test]
+    fn empty_fathom_site_id_is_none() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("DPE_FATHOM_SITE_ID", "");
+            let config = DpeConfig::load().expect("config should load");
+            assert!(config.fathom_site_id.is_none());
+            Ok(())
+        });
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("DPE_FATHOM_SITE_ID", "FGMNMBLN");
+            let config = DpeConfig::load().expect("config should load");
+            assert_eq!(config.fathom_site_id.as_deref(), Some("FGMNMBLN"));
+            Ok(())
+        });
     }
 }

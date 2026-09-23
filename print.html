@@ -2784,7 +2784,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
-<tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
+<tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret). <strong>Production only</strong> — leave unset or empty everywhere else; empty is normalised to unset.</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
 <tr><td><code>DPE_PUBLIC_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss</code></td><td>Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the <code>Link</code> header. Origin only: scheme <code>http</code> or <code>https</code>, no path, query or trailing slash. A bad value fails startup. Independent of <code>DPE_OAI_BASE_URL</code> (see the note below).</td></tr>
@@ -2901,13 +2901,14 @@ RUST_LOG=debug
 <h2 id="observability"><a class="header" href="#observability">Observability</a></h2>
 <h3 id="fathom-analytics"><a class="header" href="#fathom-analytics">Fathom Analytics</a></h3>
 <p>Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.</p>
-<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell.</p>
+<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell. It is set in <code>ops-deploy/group_vars/prod.yml</code> and nowhere else, so DEV and STAGE render no script at all.</p>
 <p><strong>What gets tracked:</strong></p>
 <ul>
 <li>Page views</li>
 <li>Tab switches (detected automatically via <code>history.replaceState</code>)</li>
 </ul>
-<p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable — no tracking script is rendered.</p>
+<p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable, or set it to the empty string — both are treated as unset and no tracking script is rendered.</p>
+<p><strong>Second key:</strong> where the script <em>is</em> rendered it carries <code>data-included-domains="repository.dasch.swiss"</code>, which Fathom enforces client-side against <code>window.location.hostname</code>. A deployment handed the site ID by mistake therefore still reports nothing.</p>
 <h3 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h3>
 <p>DPE exports traces, metrics, and structured logs via OTLP gRPC. In production, the OTLP endpoint points to Grafana Alloy, which forwards to Grafana Cloud (Tempo for traces, Mimir for metrics, Loki for logs).</p>
 <p>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — the application runs normally without telemetry export. See <code>docs/src/dpe/observability.md</code> for the developer guide.</p>

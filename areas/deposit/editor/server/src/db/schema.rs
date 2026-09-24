@@ -3,11 +3,9 @@
 //!
 //! The rules that keep it honest:
 //!
-//! - [`MIGRATIONS`] becomes **append-only at the first deployment**, and is not there yet. The
-//!   editor has never been deployed and every database it has is disposable, so a column the first
-//!   iteration needs belongs in `0001`. Once a database exists that we cannot recreate, editing a
-//!   released entry is out: the `user_version` guard skips an entry it has already applied, so
-//!   every database that ran it would keep the old shape.
+//! - Until the first production deployment (DEV-6921), a schema change edits `0001` in place. After
+//!   it, `0001` is frozen and a change is a new entry: the guard never re-runs an applied one. See
+//!   `docs/src/editor/architecture.md#schema`.
 //! - Everything runs inside one `BEGIN IMMEDIATE` transaction, the `user_version` bump included, so
 //!   a crash part-way leaves the database at the version it started from rather than half-migrated.
 //!   `BEGIN IMMEDIATE` also makes two processes starting at once safe: the second waits and then
@@ -18,20 +16,9 @@
 
 use super::{Database, DbError};
 
-/// Ordered and append-only: index `i` is migration `i + 1`, and how many have
-/// been applied is `PRAGMA user_version`.
-const MIGRATIONS: &[&str] = &[
-    include_str!("migrations/0001_initial.sql"),
-    include_str!("migrations/0002_auth.sql"),
-    include_str!("migrations/0003_mail_sends.sql"),
-    include_str!("migrations/0004_collection_report.sql"),
-    include_str!("migrations/0005_reported_at.sql"),
-    include_str!("migrations/0006_retired_proposals.sql"),
-    include_str!("migrations/0007_drop_uncollected_index.sql"),
-];
-
-/// The version a fully migrated database reports.
-pub(crate) const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
+/// Ordered: index `i` is migration `i + 1`, and how many have been applied is
+/// `PRAGMA user_version`.
+const MIGRATIONS: &[&str] = &[include_str!("migrations/0001_initial.sql")];
 
 impl Database {
     /// Apply every migration this database has not run, and return how many ran.
@@ -39,36 +26,7 @@ impl Database {
     /// Zero means the schema was already current, which is the normal case on
     /// every restart after the first.
     pub(super) async fn migrate(&self) -> Result<u32, DbError> {
-        self.write(|tx| {
-            let current: u32 = tx.pragma_query_value(None, "user_version", |row| row.get::<_, i64>(0))?.max(0) as u32;
-
-            // A database from a newer release. Continuing would run application
-            // code against a schema it does not know, so stop — with the two
-            // numbers in the message, because the cause is a rollback to an
-            // older image and nothing about SQLite's own errors would say so.
-            if current > SCHEMA_VERSION {
-                return Err(rusqlite::Error::SqliteFailure(
-                    rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_MISUSE),
-                    Some(format!(
-                        "the database is at schema version {current}, but this build only knows {SCHEMA_VERSION} — it \
-                         was written by a newer release of editor-server"
-                    )),
-                ));
-            }
-
-            let mut applied = 0;
-            for (index, statements) in MIGRATIONS.iter().enumerate().skip(current as usize) {
-                let version = index as u32 + 1;
-                tx.execute_batch(statements)?;
-                // Not a bind parameter: PRAGMA values cannot be parameterised.
-                // `version` is derived from a slice index, so there is nothing to
-                // inject.
-                tx.pragma_update(None, "user_version", version)?;
-                applied += 1;
-            }
-            Ok(applied)
-        })
-        .await
+        self.write(|tx| apply_outstanding(tx, MIGRATIONS)).await
     }
 
     /// The schema version this database reports.
@@ -80,6 +38,35 @@ impl Database {
     }
 }
 
+/// Apply the entries of `migrations` past `user_version`, and return how many ran.
+/// Takes the list so the upgrade path is testable while [`MIGRATIONS`] has one entry.
+fn apply_outstanding(tx: &rusqlite::Transaction<'_>, migrations: &[&str]) -> rusqlite::Result<u32> {
+    let known = migrations.len() as u32;
+    let current: u32 = tx.pragma_query_value(None, "user_version", |row| row.get::<_, i64>(0))?.max(0) as u32;
+
+    // Written by a newer release, i.e. a rollback to an older image: stop, and
+    // name both versions, since no SQLite error would say why.
+    if current > known {
+        return Err(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_MISUSE),
+            Some(format!(
+                "the database is at schema version {current}, but this build only knows {known} — it was written by a \
+                 newer release of editor-server"
+            )),
+        ));
+    }
+
+    let mut applied = 0;
+    for (index, statements) in migrations.iter().enumerate().skip(current as usize) {
+        let version = index as u32 + 1;
+        tx.execute_batch(statements)?;
+        // PRAGMA values cannot be bound; `version` comes from a slice index.
+        tx.pragma_update(None, "user_version", version)?;
+        applied += 1;
+    }
+    Ok(applied)
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
@@ -87,6 +74,9 @@ mod tests {
     use super::super::tests::test_db;
     use super::*;
     use crate::db::Source;
+
+    /// The version a fully migrated database reports.
+    const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
 
     /// Every table the persistence layer is responsible for.
     const EXPECTED_TABLES: &[&str] = &[
@@ -176,49 +166,40 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
-    #[tokio::test]
-    async fn test_a_database_at_the_previous_version_is_upgraded_in_place() {
-        // The upgrade path, which the empty-database test cannot cover: a
-        // database that already ran 0001 must gain 0002's columns without
-        // losing its rows. Building it by hand rather than by rolling back,
-        // because a released migration is never edited and there is nothing to
-        // roll back with.
-        let dir = std::env::temp_dir().join(format!("editor-db-upgrade-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let file = dir.join("editor.sqlite3");
-        {
-            let conn = rusqlite::Connection::open(&file).expect("opening a raw connection should succeed");
-            conn.execute_batch(MIGRATIONS[0]).expect("0001 should apply");
-            conn.pragma_update(None, "user_version", 1u32).unwrap();
-            conn.execute(
-                "INSERT INTO users (id, email, email_normalized, name, role, created_at) \
-                 VALUES ('u1', 'a@x.test', 'a@x.test', 'A', 'rdu', '2026-08-21 10:00:00+00:00')",
-                [],
-            )
-            .expect("the pre-upgrade row should insert");
-        }
+    #[test]
+    fn test_a_database_at_the_previous_version_is_upgraded_in_place() {
+        // A database at the previous version gains the next column and keeps its
+        // rows. The second migration is a stand-in until a real one exists.
+        const NEXT: &str = "ALTER TABLE users ADD COLUMN probe TEXT;";
+        let mut conn = rusqlite::Connection::open_in_memory().expect("an in-memory connection should open");
 
-        let db = Database::open(Source::Directory(dir.clone()), 2, Duration::from_secs(5))
-            .await
-            .expect("opening a version-1 database should upgrade it");
-        assert_eq!(db.schema_version().await.unwrap(), SCHEMA_VERSION);
-        assert_eq!(db.migrate().await.unwrap(), 0, "the upgrade must not run twice");
+        let tx = conn.transaction().unwrap();
+        assert_eq!(apply_outstanding(&tx, MIGRATIONS).unwrap(), 1);
+        tx.execute(
+            "INSERT INTO users (id, email, email_normalized, name, role, created_at) \
+             VALUES ('u1', 'a@x.test', 'a@x.test', 'A', 'rdu', '2026-08-21 10:00:00+00:00')",
+            [],
+        )
+        .expect("the pre-upgrade row should insert");
+        tx.commit().unwrap();
 
-        // The row survived, and the columns 0002 added read as unset on it —
-        // which is the fail-closed value for both: no lockout in progress, and
-        // no browser bound.
-        let (users, unset_failed_at): (i64, i64) = db
-            .read(|conn| {
-                conn.query_row("SELECT count(*), sum(failed_login_at IS NULL) FROM users", [], |row| {
-                    Ok((row.get(0)?, row.get(1)?))
-                })
+        let upgraded = [MIGRATIONS[0], NEXT];
+        let tx = conn.transaction().unwrap();
+        assert_eq!(
+            apply_outstanding(&tx, &upgraded).unwrap(),
+            1,
+            "only the outstanding migration runs"
+        );
+        assert_eq!(apply_outstanding(&tx, &upgraded).unwrap(), 0, "the upgrade must not run twice");
+        tx.commit().unwrap();
+
+        let version: i64 = conn.pragma_query_value(None, "user_version", |row| row.get(0)).unwrap();
+        let (users, unset): (i64, i64) = conn
+            .query_row("SELECT count(*), sum(probe IS NULL) FROM users", [], |row| {
+                Ok((row.get(0)?, row.get(1)?))
             })
-            .await
             .expect("reading the upgraded table should succeed");
-        assert_eq!((users, unset_failed_at), (1, 1));
-
-        drop(db);
-        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!((version, users, unset), (2, 1, 1));
     }
 
     #[tokio::test]

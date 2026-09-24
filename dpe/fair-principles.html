@@ -463,7 +463,7 @@ inline, and two machine-readable representations sit beside it at their own
 URLs, reachable directly or by a single <code>303</code> when <code>Accept</code> prefers one
 (<code>landing_page</code> in <code>modules/dpe/server/src/metadata.rs</code>, over the decision table
 in <code>shared/fair/src/negotiate.rs</code>). Every answer from that route carries
-<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>modules/dpe/server/src/main.rs</code>).
+<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>modules/dpe/server/src/shell.rs</code>).
 OAI-PMH is a second retrieval protocol over the same metadata.</p>
 <p><strong>The data: not from DPE.</strong> DPE serves metadata only. A consumer reads
 <code>downloadUrl</code> from <code>/dpe/records/{shortcode}/{record_id}/file</code>

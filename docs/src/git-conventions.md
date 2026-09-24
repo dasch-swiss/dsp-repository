@@ -143,6 +143,18 @@ Start from the assumption that the whole PR is **one commit**. Group commits by 
 3. Ask: "would a developer deploying this care about this change?" If yes → `feat:` or `fix:`. If no → an internal-work prefix.
 4. Debugging journeys (trial-and-error, reverts of in-branch mistakes, iterative fixes) belong in the PR description, not the commit history. See [What `fix:` means](#what-fix-means).
 
+### One PR, several commits, or a stack
+
+The target is one commit per PR on `main`. Working commits while you build are fine, since they make rollback easy; squash them before review. When the finished work doesn't fit one commit, take the first rule that matches:
+
+1. **The parts would need different Motivation sections** (see the PR template) → **separate PRs**, each from `main`.
+2. **The part B builds on is already an open PR, or is ready for review while B is still unfinished** → **stack** with [`gh stack`](https://docs.github.com/en/pull-requests/how-tos/stacked-pull-requests) (`gh extension install github/gh-stack`): `gh stack init <A's branch>` adopts A locally, `gh stack add <B's branch>` puts B on top, and `gh stack submit` pushes both and creates the stack on GitHub.
+3. **All parts are finished together** → **one PR with several commits**: tick `allow-many-commits` and add a Review Notes section.
+
+A reviewer asking for a split turns case 3 into case 2. Each commit stands on its own in every case, per the principle above.
+
+In a stack, the commit-hygiene gate counts commits from each PR's own base, so the one-commit cap applies per PR.
+
 ### Where context lives
 
 | Layer | Audience | Content |

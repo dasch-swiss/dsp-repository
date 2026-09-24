@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - "modules/editor/**"
+      - "areas/deposit/editor/**"
       # `shared-*` crates compile into the editor binary, so a change there must
       # rebuild the preview — the editor module glob alone never sees it.
       - "shared/**"

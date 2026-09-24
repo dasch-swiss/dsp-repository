@@ -1,0 +1,34 @@
+[package]
+name = "editor-web"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+# The project representation the views render: the published set's summaries and
+# the draft a form is built from. `server -> web -> core` is the dependency
+# direction the architecture doc states, so a view naming a domain type is the
+# intended shape rather than a shortcut.
+editor-core = { path = "../core" }
+maud.workspace = true
+# A draft is the project's JSON members (`editor_core::draft`), so a view over
+# one names `serde_json::Value` — the draft API cannot be used without it.
+serde_json.workspace = true
+# `is_placeholder`: a stored `MISSING`/`CALCULATED` renders as an empty control,
+# which is the rule the whole untouched-save guarantee rests on. The shared
+# crate's own predicate rather than a second copy of the two sentinel strings.
+shared-metadata = { path = "../../../../shared/metadata" }
+# The login screens are the first surface to render a tile (the submit buttons),
+# which is what earns the dependency. The Tailwind entry already scanned the
+# crate before this, so its component CSS shipped regardless.
+mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
+
+[dev-dependencies]
+# `serde_json` and `shared-metadata` are not repeated here: both are real
+# dependencies above, and anything in `[dependencies]` is already on a test's
+# path. Repeating them would be two justifications for one fact.
+# Snapshots of the rendered form. The whole markup rather than a summary of it,
+# matching `dpe-server`'s use: what these catch is a control quietly becoming a
+# value, a posted name changing, or an `aria-*` attribute going missing, and each
+# of those is invisible in a summary written from the same code.
+insta.workspace = true

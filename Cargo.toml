@@ -9,10 +9,10 @@ members = [
   "modules/dpe/api-oai",
   "modules/dpe/web",
   "modules/dpe/server",
-  "modules/editor/core",
-  "modules/editor/web",
-  "modules/editor/server",
-  "modules/editor/collector",
+  "areas/deposit/editor/core",
+  "areas/deposit/editor/web",
+  "areas/deposit/editor/server",
+  "areas/deposit/editor/collector",
   "dsp-cli",
 ]
 resolver = "3"

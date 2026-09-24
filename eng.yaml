@@ -12,8 +12,8 @@ overrides:
   # Per-application guidance: one override per directory with its own CLAUDE.md.
   - when: "modules/dpe/**"
     conventions: [modules/dpe/CLAUDE.md]
-  - when: "modules/editor/**"
-    conventions: [modules/editor/CLAUDE.md]
+  - when: "areas/deposit/editor/**"
+    conventions: [areas/deposit/editor/CLAUDE.md]
     reviewers: [eng:review:security-reviewer]
   - when: "modules/mosaic/**"
     conventions: [modules/mosaic/CLAUDE.md]
@@ -36,6 +36,18 @@ overrides:
       - skill: eng:test-browser
         offer: ask
   - when: "modules/*/server/src/**"
+    reviewers: [eng:review:ivan-reviewer]
+  # The same three for applications inside an area (areas/<area>/<capability>/).
+  - when: "areas/*/*/web/**"
+    verify:
+      - skill: eng:test-browser
+        offer: ask
+    reviewers: [eng:review:accessibility-reviewer, eng:review:ivan-reviewer]
+  - when: "areas/*/*/style/*.css"
+    verify:
+      - skill: eng:test-browser
+        offer: ask
+  - when: "areas/*/*/server/src/**"
     reviewers: [eng:review:ivan-reviewer]
   - when: "shared/telemetry/**"
     reviewers: [eng:review:observability-reviewer]

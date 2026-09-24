@@ -7,7 +7,7 @@
 # explicit TMPDIR template: a bare mktemp resolves to a path a sandboxed shell
 # may not be allowed to write.
 #
-# Seven cases, one per distinct failure mode. The no-fire case matters most: a
+# Eight cases, one per distinct failure mode. The no-fire case matters most: a
 # false positive there would be "fixed" by deleting documentation. The nested
 # case is not redundant with the shallow ones, because the pathspecs only
 # recurse while they reach git unexpanded.
@@ -39,14 +39,14 @@ check() {
 }
 
 # make_repo: throwaway repo shaped like this one — service modules under
-# modules/, shared crates at the root under shared/ — all clean. Echoes its path.
+# modules/ and areas/, shared crates at the root under shared/ — all clean. Echoes its path.
 make_repo() {
   local dir f
   dir="$(mktemp -d "${TMPDIR:-/tmp}/shared-paths.XXXXXX")"
   mkdir -p "$dir/modules/dpe/server/data"
   printf '{}\n' >"$dir/modules/dpe/server/data/x.json"
-  mkdir -p "$dir/modules/editor/core/src"
-  printf 'pub fn a() {}\n' >"$dir/modules/editor/core/src/lib.rs"
+  mkdir -p "$dir/areas/deposit/editor/core/src"
+  printf 'pub fn a() {}\n' >"$dir/areas/deposit/editor/core/src/lib.rs"
   for f in fair metadata telemetry; do
     mkdir -p "$dir/shared/$f/src"
     printf 'pub fn a() {}\n' >"$dir/shared/$f/src/lib.rs"
@@ -119,6 +119,12 @@ repo="$(make_repo)"
 ( cd "$repo" && git rm -rq shared && git commit -qm drop && main >/dev/null 2>&1 )
 check "no shared sources at all fails" 1 "$?"
 rm -rf "$repo"
+
+# 8. An area is as off-limits as a module. The areas/ alternation fires, not
+#    the modules/ one, so this fails the moment areas/ drops out of the rule.
+check "a relative path into an area fails" 1 \
+  "$(gate_rc shared/metadata/src/bad.rs \
+     'const X: &str = include_str!("../../../areas/deposit/editor/core/src/lib.rs");')"
 
 echo
 echo "check-shared-paths tests: $PASS passed, $FAIL failed"

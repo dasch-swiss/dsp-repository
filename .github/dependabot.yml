@@ -23,7 +23,7 @@ updates:
     # Dockerfiles live under the module directories, not the repo root
     directories:
       - "/modules/dpe"
-      - "/modules/editor"
+      - "/areas/deposit/editor"
       - "/modules/mosaic/playground"
     schedule:
       interval: "weekly"

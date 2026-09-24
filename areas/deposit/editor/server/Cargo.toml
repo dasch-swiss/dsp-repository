@@ -1,0 +1,76 @@
+[package]
+name = "editor-server"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+ureq = "3"
+# The `?saved=<stamp>` redirect marker: RFC 3339 carries `+` and `:`, which an
+# unencoded query value would corrupt.
+urlencoding = "2.1"
+editor-core = { path = "../core" }
+editor-web = { path = "../web" }
+# Shared so both services agree on the trace-context and beacon wire formats.
+# Not part of the DPE runtime — it reads none of DPE's data or config. Its
+# contract modules are serde-only; `collector` adds axum/opentelemetry/url.
+shared-metadata = { path = "../../../../shared/metadata" }
+shared-telemetry = { path = "../../../../shared/telemetry" }
+maud.workspace = true
+
+axum.workspace = true
+figment = { version = "0.10", features = ["env", "toml"] }
+serde.workspace = true
+# The draft payload column: a `ProjectDraft` serialized. `editor-core` keeps it
+# an opaque `String` because that layer never interprets it, so the handler that
+# does — the form's save path — is where it is parsed and written.
+serde_json.workspace = true
+# Persistence. `rusqlite` is synchronous and its `Connection` is `!Sync`;
+# `deadpool-sqlite` keeps each connection on a thread of its own so every
+# call goes through `interact()` and none can be held across an `.await`.
+rusqlite.workspace = true
+deadpool-sqlite.workspace = true
+async-trait.workspace = true
+# Mail. `rustls` rather than the default `native-tls`: the release
+# binary is static musl, and `native-tls` would need an OpenSSL to link against.
+# `ring` and `webpki-roots` are chosen explicitly — lettre resolves its own
+# crypto provider from its own features, so it never depends on which provider
+# the rest of the graph happens to have enabled.
+lettre = { version = "0.11.23", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tokio1-rustls",
+    "ring",
+    "webpki-roots",
+] }
+# CSPRNG for the login code and the opaque tokens.
+rand = "0.9"
+# Constant-time comparison of the submitted code against the stored one.
+subtle = "2.6"
+base64.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tower_governor.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+axum-tracing-opentelemetry.workspace = true
+init-tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+opentelemetry-appender-tracing.workspace = true
+tracing-opentelemetry.workspace = true
+pyroscope.workspace = true
+
+[dev-dependencies]
+# `test` feature enables figment::Jail for isolated env-var config tests.
+figment = { version = "0.10", features = ["env", "toml", "test"] }
+tower = { workspace = true, features = ["util"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -1,0 +1,30 @@
+[package]
+name = "editor-collector"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "editor-collector"
+path = "src/main.rs"
+
+[dependencies]
+# The editor's own wire types and canonical writers. Consuming them rather than
+# mirroring them is what keeps the collector and the editor from drifting on the
+# payload shape, and what keeps one implementation of the canonical form —
+# `docs/src/editor/collection.md` requires both.
+editor-core = { path = "../core" }
+shared-metadata = { path = "../../../../shared/metadata" }
+serde.workspace = true
+serde_json.workspace = true
+# Blocking client: the collector is a batch CLI with no concurrency, so an async
+# runtime would buy nothing. `rustls` avoids an OpenSSL build dependency, as in
+# `dsp-cli`.
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
+
+[dev-dependencies]
+# Named only from tests, which build a record by hand; the production path
+# reaches both types through `editor-core`.
+chrono.workspace = true
+uuid.workspace = true
+

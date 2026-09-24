@@ -5,6 +5,10 @@ GIT_TAG := `git describe --tags --exact-match 2>/dev/null || true`
 IMAGE_TAG := if GIT_TAG == "" { CARGO_VERSION + "-" + COMMIT_HASH } else { CARGO_VERSION }
 DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
+# DPE's published data set, which the editor recipes below read from and package.
+
+DPE_DATA_DIR := "modules/dpe/server/data"
+
 # Projects whose OAI records `just fetch-records` refreshes. Add a shortcode here to track a new project.
 
 RECORD_SHORTCODES := "081C 0868 0803"
@@ -44,7 +48,7 @@ install-e2e-requirements: _check-node
     # track a package-lock.json, so `ci` pins the runner to the same version the browsers match.
     cd modules/mosaic/playground-e2e-tests && npm ci && npx playwright install
     cd modules/dpe/web-e2e-tests && npm ci && npx playwright install
-    cd modules/editor/web-e2e-tests && npm ci && npx playwright install
+    cd areas/deposit/editor/web-e2e-tests && npm ci && npx playwright install
 
 # Verify Node is on PATH. just runs recipes in sh, which does NOT see shell-function version managers (e.g. lazy nvm) — only real binaries on PATH. (DEV-6642)
 [private]
@@ -543,7 +547,7 @@ css-editor:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --minify
+    "$bin" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --minify
 
 # Build the release stylesheet with a content-hashed filename (app.<hash>.css); the server discovers it by scanning the asset dir at startup. Mirrors `just css-release`.
 [group('editor')]
@@ -551,8 +555,8 @@ css-editor-release:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    out=modules/editor/public/assets
-    "$bin" -i modules/editor/style/main.css -o "$out/app.css" --minify
+    out=areas/deposit/editor/public/assets
+    "$bin" -i areas/deposit/editor/style/main.css -o "$out/app.css" --minify
     if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
     # Write the hashed file first, then drop the stale hashed files + the unhashed
     # temp. If the copy fails, the previous hashed CSS is still in place.
@@ -567,13 +571,13 @@ dev-editor:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --watch &
+    "$bin" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
     # The editor has no default data directory: the published set is DPE's
     # content, consumed through EDITOR_DATA_DIR. Locally that is DPE's
     # checked-out data; the image bakes a snapshot at /app/server/data.
-    EDITOR_DATA_DIR=modules/dpe/server/data \
+    EDITOR_DATA_DIR={{ DPE_DATA_DIR }} \
     bacon serve-editor
 
 # Start the editor with hot reload, exporting traces/metrics/logs to a local LGTM stack (run `just lgtm-up` in another terminal first)
@@ -582,10 +586,10 @@ dev-editor-otel:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --watch &
+    "$bin" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
-    EDITOR_DATA_DIR=modules/dpe/server/data \
+    EDITOR_DATA_DIR={{ DPE_DATA_DIR }} \
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
     OTEL_SERVICE_NAME=editor \
     OTEL_RESOURCE_ATTRIBUTES="service.namespace=editor,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
@@ -598,12 +602,12 @@ dev-editor-otel:
 # Run the editor E2E suite: the JavaScript-enabled and the javaScriptEnabled=false pass.
 [group('editor')]
 test-e2e-editor: _check-node
-    cd modules/editor/web-e2e-tests && npx playwright test
+    cd areas/deposit/editor/web-e2e-tests && npx playwright test
 
 # Run the editor accessibility E2E tests (WCAG 2.1 AA via axe-core). Same build prerequisites as `test-e2e-editor`.
 [group('editor')]
 test-a11y-editor: _check-node
-    cd modules/editor/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
+    cd areas/deposit/editor/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
 
 # Build the editor Docker image locally; `arch=x86_64` reproduces the one CI publishes.
 [group('editor')]
@@ -651,12 +655,12 @@ build-docker-editor arch="": css-editor-release
     rm -rf "$stage"
     mkdir -p "$stage"
     cp "target/container/$target/release/editor-server" "$stage/"
-    cp -r modules/editor/public "$stage/"
+    cp -r areas/deposit/editor/public "$stage/"
     # DPE's published set, copied in deliberately: git stays the source of truth
     # and the editor reads an image-baked snapshot via EDITOR_DATA_DIR, so a data
     # change reaches the editor by rebuilding the image, not at runtime.
-    cp -r modules/dpe/server/data "$stage/"
-    cp modules/editor/Dockerfile "$stage/"
+    cp -r {{ DPE_DATA_DIR }} "$stage/"
+    cp areas/deposit/editor/Dockerfile "$stage/"
     docker build --platform "$platform" -f "$stage/Dockerfile" -t metadata-editor "$stage"
 
 # Run the editor Docker container on port 8080
@@ -671,7 +675,7 @@ run-docker-editor:
 lint-e2e: _check-node
     cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
-    cd modules/editor/web-e2e-tests && npx @biomejs/biome check .
+    cd areas/deposit/editor/web-e2e-tests && npx @biomejs/biome check .
 
 ###################
 # dsp-cli targets

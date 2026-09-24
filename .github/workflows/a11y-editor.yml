@@ -12,12 +12,12 @@ on:
       # through; `modules/mosaic/**` covers the tiles, which own accessibility
       # here — a missing semantic method on a tile is the usual cause of an
       # editor a11y failure, so a mosaic change must trigger this job.
-      - "modules/editor/**"
+      - "areas/deposit/editor/**"
       - "shared/**"
       - "modules/mosaic/**"
   pull_request:
     paths:
-      - "modules/editor/**"
+      - "areas/deposit/editor/**"
       - "shared/**"
       - "modules/mosaic/**"
 
@@ -46,16 +46,16 @@ jobs:
           node-version: 22
 
       - name: Install web-e2e-tests dependencies
-        run: cd modules/editor/web-e2e-tests && npm install
+        run: cd areas/deposit/editor/web-e2e-tests && npm install
 
       - name: Install Playwright browsers
-        run: cd modules/editor/web-e2e-tests && npx playwright install chromium --with-deps
+        run: cd areas/deposit/editor/web-e2e-tests && npx playwright install chromium --with-deps
 
       - name: Build editor-server and stylesheet
         # `cargo build -p editor-server --release` yields target/release/editor-server
         # directly (the [[bin]] name), which the Playwright webServer launches.
         # `just css-editor-release` builds the content-hashed app.css the release
-        # server discovers from modules/editor/public/assets at startup — without
+        # server discovers from areas/deposit/editor/public/assets at startup — without
         # it every Tailwind-dependent assertion fails for an unrelated reason.
         run: |
           cargo build -p editor-server --release
@@ -74,5 +74,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-a11y-editor
-          path: modules/editor/web-e2e-tests/playwright-report/
+          path: areas/deposit/editor/web-e2e-tests/playwright-report/
           retention-days: 7

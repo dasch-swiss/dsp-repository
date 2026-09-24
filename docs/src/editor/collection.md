@@ -2,7 +2,7 @@
 
 How an approved record leaves the editor and becomes a commit in this repository. The editor publishes the records and accepts a report about what happened to them; a GitHub Actions workflow does the work in between. This page is the contract between the two.
 
-The workflow is `.github/workflows/collect-editor-records.yml` and the collector it runs is the `editor-collector` crate (`modules/editor/collector`). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.
+The workflow is `.github/workflows/collect-editor-records.yml` and the collector it runs is the `editor-collector` crate (`areas/deposit/editor/collector`). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.
 
 ## The invariant
 

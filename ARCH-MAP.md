@@ -57,10 +57,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `server/data/`, which the editor consumes as an image-baked snapshot through `EDITOR_DATA_DIR`.
   No `dpe-*` crate is depended on by any crate outside this component.
 - **Local-context kit:** `modules/dpe/CLAUDE.md`, `modules/dpe/server/src/router.rs`,
-  `modules/dpe/server/src/main.rs`, `modules/dpe/core/src/lib.rs`,
+  `modules/dpe/server/src/shell.rs`, `modules/dpe/core/src/lib.rs`,
   `modules/dpe/core/src/project.rs`, `modules/dpe/server/src/fragments.rs`,
   `modules/dpe/api-oai/src/lib.rs` (the OAI crate's whole surface; the contract it reads is
-  shared/metadata's own kit)
+  shared/metadata's own kit). The kit is at its seven-file budget, so
+  `modules/dpe/server/src/serve.rs` is named here rather than added: it holds the order-sensitive
+  startup sequence and the two untraced routes.
 - **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/telemetry
   (`dpe-server`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio, tower /
   tower-http / tower_governor, maud, datastar, clap, figment, serde / serde_json, quick-xml,
@@ -89,7 +91,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** — a test in `dpe-server` greps every file under its own `src/` so
     `PreEscaped(` appears exactly once in the crate). The first two splice a constant. The
     search-query echo in `fragments.rs` stays an auto-escaped splice (**review**).
-  - Page, fragment and API routes live in `server/src/router.rs::build_router`; `main.rs`
+  - Page, fragment and API routes live in `server/src/router.rs::build_router`; `serve.rs`
     declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the
     OTel layers on purpose.
 - **Durable state:** the corpus under `server/data/`. `projects/` has **two writers** — hand

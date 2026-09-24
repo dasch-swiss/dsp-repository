@@ -65,8 +65,8 @@ pub fn set_data_dir(path: &str) {
 
 /// Get the data directory path.
 ///
-/// Priority: OnceLock (set by main.rs) → DPE_DATA_DIR env var → DATA_DIR env var → development
-/// default. Falls back to setting the OnceLock from env/default on first call.
+/// Priority: OnceLock (set by dpe-server's `serve()`) → DPE_DATA_DIR env var → DATA_DIR env var →
+/// development default. Falls back to setting the OnceLock from env/default on first call.
 pub fn get_data_dir() -> &'static str {
     DATA_DIR.get_or_init(|| {
         std::env::var("DPE_DATA_DIR")
@@ -90,8 +90,8 @@ pub fn set_public_dir(path: &str) {
 /// Get the public (static asset) directory path: the directory `ServeDir` serves, so a
 /// file present under it is reachable at the corresponding `/…` URL.
 ///
-/// Priority: OnceLock (set by main.rs) → DPE_PUBLIC_DIR env var → development default.
-/// Falls back to setting the OnceLock from env/default on first call.
+/// Priority: OnceLock (set by dpe-server's `serve()`) → DPE_PUBLIC_DIR env var → development
+/// default. Falls back to setting the OnceLock from env/default on first call.
 pub fn get_public_dir() -> &'static str {
     PUBLIC_DIR.get_or_init(|| std::env::var("DPE_PUBLIC_DIR").unwrap_or_else(|_| "modules/dpe/public".to_string()))
 }
@@ -110,8 +110,8 @@ pub fn set_show_placeholder_values(show: bool) {
 
 /// Whether placeholder values ("MISSING", "CALCULATED") should be shown in the UI.
 ///
-/// Priority: OnceLock (set by main.rs) → DPE_SHOW_PLACEHOLDER_VALUES env var → false.
-/// When true, placeholders are rendered with red styling for QA visibility.
+/// Priority: OnceLock (set by dpe-server's `serve()`) → DPE_SHOW_PLACEHOLDER_VALUES env var →
+/// false. When true, placeholders are rendered with red styling for QA visibility.
 /// When false (default/production), placeholders are hidden entirely.
 pub fn show_placeholder_values() -> bool {
     *SHOW_PLACEHOLDER_VALUES.get_or_init(|| {

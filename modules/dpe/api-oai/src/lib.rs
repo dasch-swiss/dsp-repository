@@ -41,8 +41,8 @@ pub fn set_base_url(url: &str) {
 
 /// The public OAI-PMH base URL emitted as `baseURL` and in `<request>` elements.
 ///
-/// Priority: OnceLock (set by main.rs from `DpeConfig`) → `DPE_OAI_BASE_URL` env var →
-/// [`DEFAULT_BASE_URL`]. The env fallback keeps the value correct in contexts that do not
+/// Priority: OnceLock (set by dpe-server's `serve()` from `DpeConfig`) → `DPE_OAI_BASE_URL` env var
+/// → [`DEFAULT_BASE_URL`]. The env fallback keeps the value correct in contexts that do not
 /// call [`set_base_url`] (e.g. tests).
 pub(crate) fn base_url() -> &'static str {
     BASE_URL.get_or_init(|| resolve_url(std::env::var("DPE_OAI_BASE_URL").ok(), DEFAULT_BASE_URL))

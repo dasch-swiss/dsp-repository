@@ -37,7 +37,7 @@ static ARK_RESOLVER_BASE_URL: OnceLock<Option<String>> = OnceLock::new();
 
 /// Sets the ARK resolver origin at startup, before any cache is populated.
 ///
-/// A `OnceLock` set from `main`, beside `set_data_dir`, `set_public_dir` and
+/// A `OnceLock` set from dpe-server's `serve()`, beside `set_data_dir`, `set_public_dir` and
 /// `set_show_placeholder_values` — the last of which is already deployment
 /// configuration (`DPE_SHOW_PLACEHOLDER_VALUES`) changing how corpus data is
 /// presented. This is a fourth of that kind, not a new kind.

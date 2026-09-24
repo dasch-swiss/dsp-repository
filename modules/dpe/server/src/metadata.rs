@@ -21,7 +21,7 @@ use shared_fair::{
 };
 use shared_metadata::{ProjectRaw, Record};
 
-use crate::AppState;
+use crate::shell::AppState;
 
 /// `hasPart` entries the embedded block carries.
 ///

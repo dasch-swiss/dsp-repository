@@ -130,9 +130,8 @@ DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging.
 
 ## Best Practices for AI Agents
 
-1. **Use `just check`** (fmt + clippy) and `just test` to verify before considering work done
-2. **Use `mosaic-tiles` components** where appropriate for consistent UI
-3. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. Run at the end of your work
+1. **Use `mosaic-tiles` components** where appropriate for consistent UI
+2. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. Run at the end of your work
 
 ## Note on the Mosaic Playground
 

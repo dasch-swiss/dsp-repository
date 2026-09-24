@@ -94,6 +94,5 @@ Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and ra
 
 ## Best Practices for AI Agents
 
-1. **Use `just check`** (fmt + clippy) and `just test` before considering work done
-2. **Use `mosaic-tiles` components** where appropriate, and add the semantic method to the tile rather than patching ARIA at the call site
-3. **Format with `just fmt`** — `maudfmt` then `cargo +nightly fmt`. Run at the end of your work
+1. **Use `mosaic-tiles` components** where appropriate, and add the semantic method to the tile rather than patching ARIA at the call site
+2. **Format with `just fmt`** — `maudfmt` then `cargo +nightly fmt`. Run at the end of your work

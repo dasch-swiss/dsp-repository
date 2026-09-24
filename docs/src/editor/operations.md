@@ -49,7 +49,7 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 |----------|----------|---------|-------------|
 | `RUST_LOG` | No | `info` | Log level filter (e.g. `editor_server=info,tower_http=debug`) |
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
-| `EDITOR_PUBLIC_DIR` | No | `modules/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
+| `EDITOR_PUBLIC_DIR` | No | `areas/deposit/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
 | `EDITOR_COLLECTION_TOKEN` | Yes in `PROD` | *(none)* | Verifier for the bearer token the collecting workflow presents to `POST /api/v1/collection-report`. Unset, the endpoint refuses every report; `EDITOR_ENV=PROD` refuses to start without it. The editor never presents a token to GitHub — see [Collection](./collection.md). |
 | `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`; **`PROD` requires `EDITOR_SMTP_HOST`** or startup is refused, because a relay-less production writes every login code to the log. The PR preview and `just run-docker-editor` override it to `DEV`. |

@@ -6,7 +6,7 @@ Index of the bounded contexts in this monorepo and the rules that govern how the
 
 ## Bounded contexts
 
-- **Deposit Area** — the producer side, brought under the repository roof: where a depositing project team creates and edits its metadata, uploads its media in preparation for archiving, and RDU reviews the result before anything is submitted to the archive. Today the metadata editor (`modules/editor/`). Target directory `areas/deposit/` (ADR-0002). → [`modules/editor/CONTEXT.md`](modules/editor/CONTEXT.md)
+- **Deposit Area** — the producer side, brought under the repository roof: where a depositing project team creates and edits its metadata, uploads its media in preparation for archiving, and RDU reviews the result before anything is submitted to the archive. Today the metadata editor (`areas/deposit/editor/`). Target directory `areas/deposit/` (ADR-0002). → [`areas/deposit/editor/CONTEXT.md`](areas/deposit/editor/CONTEXT.md)
   _Avoid_: Ingest Area (the earlier name, see Flagged ambiguities), Producer side, self-service preservation frontend (an earlier name for the eventual single application: editor + data-model creator + data creation).
 - **Archive Area (Spycherli)** — the OAIS archive: Ingest, Archival Storage and the supporting functional entities; the sealed heart of the platform. No code yet; target directory `areas/archive/` (ADR-0002). → [`areas/archive/CONTEXT.md`](areas/archive/CONTEXT.md)
   _Avoid_: Spycherly (misspelling), the Archive (ambiguous with the OAIS functional entity), Repository-Core.

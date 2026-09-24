@@ -135,7 +135,7 @@ When a GitHub Release is published (tag starting with `v`), builds and pushes a 
 
 Defined in `cloud-run-editor-pull-request.yml`.
 
-When a pull request modifies files under `modules/editor/` or `shared/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `areas/deposit/editor/` or `shared/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 

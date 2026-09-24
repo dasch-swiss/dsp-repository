@@ -21,10 +21,10 @@ Same as DPE: server-rendered HTML with **Maud**, served by **Axum**, with **Data
 
 | Crate | Folder | Role |
 |-------|--------|------|
-| `editor-core` | `editor/core` | Pure domain types and the persistence ports (no Axum, Maud or database dependency) |
-| `editor-web` | `editor/web` | Maud view library — the document shell, pages and components |
-| `editor-server` | `editor/server` | Composition root: configuration, observability, routing, persistence |
-| `editor-collector` | `editor/collector` | CI binary collecting approved records into pull requests (see [Collection](./collection.md)) |
+| `editor-core` | `areas/deposit/editor/core` | Pure domain types and the persistence ports (no Axum, Maud or database dependency) |
+| `editor-web` | `areas/deposit/editor/web` | Maud view library — the document shell, pages and components |
+| `editor-server` | `areas/deposit/editor/server` | Composition root: configuration, observability, routing, persistence |
+| `editor-collector` | `areas/deposit/editor/collector` | CI binary collecting approved records into pull requests (see [Collection](./collection.md)) |
 
 Dependency direction is `server → web → core`; `editor-collector` sits outside that chain, depending on `editor-core` alone and running as a batch job rather than serving a request. `editor-web` depends on `editor-core` for the project representation it renders, and on `mosaic-tiles`; the login screens' submit buttons are the first surface to render a tile. Component CSS is collected from the Tailwind entry's `@source` globs rather than from the crate graph, so it ships independently of that dependency.
 
@@ -433,13 +433,13 @@ That split is positional, so it is invisible in the route table and reversible b
 
 ## Datastar
 
-The editor vendors Datastar from `modules/editor/public/vendor/`, whose README is the version of record; do not restate the version here. DPE vendors its own copy and is bumped independently.
+The editor vendors Datastar from `areas/deposit/editor/public/vendor/`, whose README is the version of record; do not restate the version here. DPE vendors its own copy and is bumped independently.
 
 One thing to get right, and it fails quietly: **keyed plugin attributes use `:`, not `-`** — `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.
 
 ## Styling
 
-`modules/editor/style/main.css` is the single Tailwind entry, built by `just css-editor` (dev) or `just css-editor-release` (content-hashed). It imports the design tokens and the `mosaic-tiles` component barrel.
+`areas/deposit/editor/style/main.css` is the single Tailwind entry, built by `just css-editor` (dev) or `just css-editor-release` (content-hashed). It imports the design tokens and the `mosaic-tiles` component barrel.
 
 `@import 'tailwindcss' source(none)` means classes are collected **only** from the explicit `@source` globs, which must cover every crate that emits Tailwind classes. A missing glob produces no build error — just markup whose classes resolve to nothing. After a change that adds classes in a new location, grep the built stylesheet for them.
 

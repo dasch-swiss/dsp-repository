@@ -165,7 +165,7 @@ If you added a `.css` file, `@import` it into the barrel:
 - `modules/mosaic/tiles/src/components/components.css`
 
 That is the only edit. Every consuming Tailwind entry (`modules/dpe/style/main.css`,
-`modules/mosaic/playground/style/main.css`, `modules/editor/style/main.css`) imports
+`modules/mosaic/playground/style/main.css`, `areas/deposit/editor/style/main.css`) imports
 the barrel, so the new classes resolve everywhere the tile is used. Do **not** add
 per-file imports to the entries — a tile missing from one hand-maintained list
 silently drops its classes with no build error.

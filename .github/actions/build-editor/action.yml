@@ -24,7 +24,7 @@ runs:
 
     - name: Build stylesheet
       shell: bash
-      # Standalone Tailwind CLI → modules/editor/public/assets/app.<hash>.css.
+      # Standalone Tailwind CLI → areas/deposit/editor/public/assets/app.<hash>.css.
       # No Node/npm needed: the CLI bundles the official plugins.
       run: just css-editor-release
 
@@ -40,6 +40,6 @@ runs:
       run: |
         mkdir -p staging
         cp target/x86_64-unknown-linux-musl/release/editor-server staging/
-        cp -r modules/editor/public staging/
+        cp -r areas/deposit/editor/public staging/
         cp -r modules/dpe/server/data staging/
-        cp modules/editor/Dockerfile staging/
+        cp areas/deposit/editor/Dockerfile staging/

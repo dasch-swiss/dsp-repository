@@ -4,7 +4,7 @@
 # executes during a build. Two artifact kinds, one file so there is one place
 # to look:
 #
-#   Vendored JS (DEV-7126) lives in modules/*/public/vendor/. Each directory's
+#   Vendored JS (DEV-7126) lives in modules/*/public/vendor/ and areas/*/*/public/vendor/. Each directory's
 #   README.md opens with "Do not edit these files directly" and records a
 #   SHA-256 per file. Nothing recomputed those hashes, so the table attested
 #   files it could not vouch for: a mistyped 64-character digest is exactly the
@@ -213,7 +213,7 @@ verify_tailwind_pins() {
 main() {
   local dir tracked found=0 rc=0
 
-  for dir in modules/*/public/vendor; do
+  for dir in modules/*/public/vendor areas/*/*/public/vendor; do
     [ -d "$dir" ] || continue
     found=1
     if [ -f "$dir/README.md" ]; then
@@ -232,7 +232,7 @@ main() {
   # An unmatched glob would make this gate a silent no-op, which is the
   # failure it exists to prevent, so absence is an error, not zero work.
   if [ "$found" -eq 0 ]; then
-    echo "✗ no modules/*/public/vendor directory found. Run from the repo root" >&2
+    echo "✗ no modules/*/public/vendor or areas/*/*/public/vendor directory found. Run from the repo root" >&2
     rc=1
   fi
 

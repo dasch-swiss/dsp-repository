@@ -359,9 +359,25 @@ test_main_no_vendor_tree() {
   ( cd "$repo" && rm -rf modules && TAILWIND_PINS=tailwind.pins main )
   rc=$?; rm -rf "$repo"; return $rc
 }
+# A vendor directory inside an area is checked like one under modules/. The
+# clean modules/ copy stays, so only the areas/ glob can make this fail.
+test_main_area_vendor_dir_tampered() {
+  local repo rc
+  repo="$(make_vendor_repo)"
+  (
+    cd "$repo" \
+      && mkdir -p areas/deposit \
+      && cp -R modules/demo areas/deposit/demo \
+      && printf '\n' >>areas/deposit/demo/public/vendor/b.js \
+      && git add areas \
+      && TAILWIND_PINS=tailwind.pins main
+  )
+  rc=$?; rm -rf "$repo"; return $rc
+}
 assert_ok   "main: a consistent repo passes"                     test_main_clean
 assert_fail "main: vendor directory with files but no README fails" test_main_vendor_dir_without_readme
 assert_fail "main: no vendor directory at all fails"             test_main_no_vendor_tree
+assert_fail "main: a tampered file in an area's vendor directory fails" test_main_area_vendor_dir_tampered
 
 # --- Summary --------------------------------------------------------------
 

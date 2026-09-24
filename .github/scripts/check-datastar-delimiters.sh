@@ -17,8 +17,10 @@
 
 # Must stay a quoted array, so git expands the glob rather than bash — bash's *
 # does not cross `/` where a git pathspec's does, and an expanded-too-early glob
-# silently reduces the gate to top-level files.
-MAUD_PATHSPECS=('modules/*/*/src/*.rs')
+# silently reduces the gate to top-level files. The areas/ one needs no third
+# `*` for the capability level: a pathspec `*` spans it, and one more `*` would
+# miss an area-level composition root (`areas/<area>/server/src`, ADR-0002).
+MAUD_PATHSPECS=('modules/*/*/src/*.rs' 'areas/*/*/src/*.rs')
 
 DELIMITER_PATTERN='data-(on|attr|class|style)-[A-Za-z][A-Za-z0-9_.:-]*"?='
 
@@ -40,7 +42,7 @@ main() {
     printf '%s\n\n' "$violations" >&2
     echo "✗ a Maud template uses the pre-RC.6 Datastar hyphen delimiter. Write the" >&2
     echo "  attribute with a colon instead (data-on:click, data-attr:disabled)." >&2
-    echo "  The hyphen form renders fine and does nothing. See modules/editor/CLAUDE.md" >&2
+    echo "  The hyphen form renders fine and does nothing. See areas/deposit/editor/CLAUDE.md" >&2
     echo "  → Common Pitfalls → Datastar attribute syntax." >&2
     return 1
   fi

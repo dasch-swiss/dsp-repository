@@ -40,9 +40,9 @@ check() {
 make_repo() {
   local dir f
   dir="$(mktemp -d "${TMPDIR:-/tmp}/datastar-delims.XXXXXX")"
-  for f in editor/web dpe/web; do
-    mkdir -p "$dir/modules/$f/src"
-    printf 'pub fn a() {}\n' >"$dir/modules/$f/src/lib.rs"
+  for f in areas/deposit/editor/web modules/dpe/web; do
+    mkdir -p "$dir/$f/src"
+    printf 'pub fn a() {}\n' >"$dir/$f/src/lib.rs"
   done
   ( cd "$dir" && git init -q -b main && git config user.email t@example.com \
       && git config user.name t && git add -A && git commit -qm init )
@@ -71,46 +71,52 @@ rm -rf "$repo"
 
 # 2. The bare hyphen form fails — the shape that renders fine and does nothing.
 check "a bare data-on- attribute fails" 1 \
-  "$(gate_rc modules/editor/web/src/bad.rs \
+  "$(gate_rc areas/deposit/editor/web/src/bad.rs \
      'html! { form data-on-submit={ "@post()" } {} }')"
 
 # 3. Every prefix the rename covers, not just data-on-.
 for prefix in attr class style; do
   check "a data-$prefix- attribute fails" 1 \
-    "$(gate_rc modules/editor/web/src/bad.rs \
+    "$(gate_rc areas/deposit/editor/web/src/bad.rs \
        "html! { div data-$prefix-disabled={ \"\$x\" } {} }")"
 done
 
 # 4. The quoted form Maud requires for dotted names. Missed by a pattern that
 #    only accepts a bare attribute name, and the likeliest place for a slip.
 check "a quoted dotted hyphen attribute fails" 1 \
-  "$(gate_rc modules/editor/web/src/bad.rs \
+  "$(gate_rc areas/deposit/editor/web/src/bad.rs \
      'html! { input "data-on-change__debounce.1s"={ "@post()" } {} }')"
 
 # 5. The false positive that matters: the negative assertions already in this
 #    repo, which exist to pin exactly this rule.
 check "a negative assertion naming the hyphen form does not fire" 0 \
-  "$(gate_rc modules/editor/web/src/ok.rs \
+  "$(gate_rc areas/deposit/editor/web/src/ok.rs \
      'assert!(!out.contains("data-on-submit"), "{out}");' \
      'assert!(!out.contains("data-attr-disabled"), "{out}");')"
 
 # 6. The correct colon spelling, bare and quoted-dotted.
 check "colon-delimited attributes do not fire" 0 \
-  "$(gate_rc modules/editor/web/src/ok.rs \
+  "$(gate_rc areas/deposit/editor/web/src/ok.rs \
      'html! { form data-on:submit={ "@post()" } {} }' \
      'html! { input "data-on:change__debounce.1s"={ "@post()" } {} }')"
 
 # 7. Prose naming the old delimiter must not fire, or the gate is "fixed" by
 #    deleting the comment that explains it — including this module's own docs.
 check "prose mentioning data-on- does not fire" 0 \
-  "$(gate_rc modules/editor/web/src/ok.rs \
+  "$(gate_rc areas/deposit/editor/web/src/ok.rs \
      '//! The pre-RC.6 forms (data-on-, data-attr-) are inert.' \
      '/// Write data-on:click, never data-on-click.')"
 
 # 8. Nested src/ subdirectory. Fails the moment MAUD_PATHSPECS stops being a
 #    quoted array, since bash would expand the glob before git sees it.
 check "a violation in a nested src/ subdirectory fails" 1 \
-  "$(gate_rc modules/editor/web/src/pages/deep/bad.rs \
+  "$(gate_rc areas/deposit/editor/web/src/pages/deep/bad.rs \
+     'html! { form data-on-submit={ "@post()" } {} }')"
+
+# 10. An area-level composition root (`areas/<area>/server`, ADR-0002) sits one
+#     directory shallower than a capability's crates, and is still checked.
+check "a violation in an area-level crate fails" 1 \
+  "$(gate_rc areas/deposit/server/src/bad.rs \
      'html! { form data-on-submit={ "@post()" } {} }')"
 
 # 9. A tree with no Maud sources is an error, not a pass: a gate that reads

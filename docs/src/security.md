@@ -25,7 +25,7 @@ dependencies — and matches them against vulnerability databases.
 |-------|----------|---------|
 | DPE (`daschswiss/dpe`) | `scout-dpe.yml` | PRs touching `modules/dpe/**`, `shared/**` or `Cargo.lock` |
 | Mosaic Playground (`daschswiss/mosaic-playground`) | `scout-mosaic-playground.yml` | PRs touching `modules/mosaic/**` or `Cargo.lock` |
-| Editor (`daschswiss/metadata-editor`) | `scout-editor.yml` | PRs touching `modules/editor/**`, `shared/**` or `Cargo.lock` |
+| Editor (`daschswiss/metadata-editor`) | `scout-editor.yml` | PRs touching `areas/deposit/editor/**`, `shared/**` or `Cargo.lock` |
 
 ### How It Works
 
@@ -83,7 +83,7 @@ Scanning answers "does this dependency carry a known CVE". It does not answer "a
 
 ### Vendored JavaScript
 
-`modules/dpe/public/vendor/` and `modules/editor/public/vendor/` hold third-party JavaScript served straight to browsers. Each directory's `README.md` records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.
+`modules/dpe/public/vendor/` and `areas/deposit/editor/public/vendor/` hold third-party JavaScript served straight to browsers. Each directory's `README.md` records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.
 
 Verification fails when:
 

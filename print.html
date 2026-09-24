@@ -1424,7 +1424,7 @@ byte-identical for every <code>Accept</code> value, and every answer from the ro
 <pre><code class="language-html">&lt;!-- Tab link with Datastar enhancement --&gt;
 &lt;a href="/projects/ABC1?tab=publications"
    role="tab" aria-selected="false"
-   data-on:click__prevent="@get('/projects/ABC1/tab/publications', {retry: 'never'})"
+   data-on:click__prevent="@get('/projects/ABC1/tab/publications', {retry: 'never', retryMaxCount: 0})"
    data-indicator:_tab_loading&gt;
   Publications
 &lt;/a&gt;
@@ -1440,7 +1440,7 @@ byte-identical for every <code>Accept</code> value, and every answer from the ro
 <h2 id="datastar-attribute-conventions"><a class="header" href="#datastar-attribute-conventions">Datastar Attribute Conventions</a></h2>
 <ul>
 <li><strong>Signal naming</strong>: Use <code>_</code> prefix for client-only signals (e.g., <code>_tab_loading</code>). The underscore excludes the signal from server payloads.</li>
-<li><strong><code>retry: 'never'</code></strong>: Use on <code>@get()</code> calls where fallback to full navigation is preferred over retrying.</li>
+<li><strong><code>retry: 'never', retryMaxCount: 0</code></strong>: Use on <code>@get()</code> calls where fallback to full navigation is preferred over retrying. <code>retry: 'never'</code> alone covers only HTTP statuses: a network failure or dropped stream is still retried (10 times, about 3 minutes with the defaults) before <code>retries-failed</code> fires. <code>retryMaxCount: 0</code> makes it fire on the first failure.</li>
 <li><strong>Graceful degradation</strong>: Every Datastar-enhanced <code>&lt;a&gt;</code> must have a valid <code>href</code> for no-JS fallback.</li>
 </ul>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>

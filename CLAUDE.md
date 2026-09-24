@@ -20,11 +20,9 @@ Learnings (the documents `/eng:workflows:compound` writes) live in `docs/learnin
 
 ## Development Workflow
 
-**Important:** Follow ALL the steps below during development.
+- **Use `just` recipes where one exists** (`just --list` shows every recipe); for a single test, `cargo test -p <crate> <filter>` is fine.
 
-- **Use `just` for all commands** — `just --list` shows every recipe. Use `just`, not `cargo` or `npm`; prefer claude-specific recipes where they exist.
-
-Before considering ANY change as "done":
+Before considering a change done:
 
 - **Verify that changes compile and all checks pass** — run `just check` and `just test`. This covers formatting and linting, so there is no need to run them earlier.
 - **Check if documentation needs updating** — consider `docs/src/`, `CLAUDE.md`, `CONVENTIONS.md`, and `REVIEW.md`.
@@ -34,7 +32,7 @@ Before considering ANY change as "done":
 
 ## Testing Guidelines
 
-- **Tests first**: unless instructed otherwise, write unit tests for new functionality before implementing, and check them with the developer to confirm they define the right behavior.
+- **Tests first**: unless instructed otherwise, write unit tests for new functionality before implementing; in an interactive session, show them to the developer first to confirm they define the right behavior.
 - **Useful tests**: every test verifies meaningful behavior. Never write tests that verify the behavior of the Rust compiler or external libraries.
 - **Helper functions**: prefer repetition over complicated setup; use helpers only if they improve clarity.
 

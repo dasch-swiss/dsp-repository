@@ -115,8 +115,8 @@ pub(crate) fn locked_out(user: &User, auth: &AuthConfig, now: DateTime<Utc>) -> 
     match user.failed_login_at {
         Some(at) => now < at + delta(auth.lockout),
         // Unreachable: the counter and the instant are written together. An
-        // account at the cap with no instant is a hand-edited or pre-migration
-        // row, and refusing it is the fail-closed reading of one.
+        // account at the cap with no instant is a hand-edited row, and refusing
+        // it is the fail-closed reading of one.
         None => true,
     }
 }

@@ -187,8 +187,7 @@ pub struct LoginCode {
     ///
     /// Blocks the attack email codes are most exposed to: triggering a login for
     /// the victim and spending the read-out code from another machine. `None`
-    /// binds to no browser and can never be verified, which rows predating the
-    /// column rely on.
+    /// binds to no browser and can never be verified.
     pub browser_token: Option<String>,
 }
 

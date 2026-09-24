@@ -557,8 +557,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_unbound_code_is_reachable_by_no_token_at_all() {
-        // `browser_token` is nullable so that a row predating the column binds to
-        // no browser rather than to the empty one. SQL equality never matches
+        // `browser_token` is nullable so that an unbound row binds to no browser
+        // rather than to the empty one. SQL equality never matches
         // NULL, which is what makes that fail closed.
         let db = test_db("codes-token-null").await;
         let user_id = a_user(&db, "a@x.test").await;

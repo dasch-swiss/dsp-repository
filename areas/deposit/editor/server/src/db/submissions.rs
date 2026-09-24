@@ -282,9 +282,8 @@ mod tests {
         let db = test_db("submissions-round-trip").await;
         let author = a_user(&db, "a@x.test", Role::Depositor).await;
         let mut submission = submission("0801", Some(author), at(11));
-        // Set rather than left `None`, or the column added by 0004 round-trips
-        // vacuously: a `None` compares equal whether the column is read,
-        // written, or missing.
+        // Set rather than left `None`, or `review_state` round-trips vacuously: a `None` compares
+        // equal whether the column is read, written, or missing.
         submission.review_state = Some(r#"{"name":{"decision":"accept"}}"#.to_string());
         SubmissionRepository::create(&db, &submission).await.unwrap();
 

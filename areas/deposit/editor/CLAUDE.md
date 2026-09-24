@@ -72,6 +72,10 @@ The shell header renders `<form method="post" action="/logout">` on every signed
 
 With `EDITOR_SMTP_HOST` unset the console transport writes login codes to the log, which is how development, the PR preview and the E2E suite sign in.
 
+### A schema change edits `0001` until the first deployment
+
+`server/src/db/migrations/` holds one baseline. Until the first production deployment (DEV-6921), change the schema by editing `0001_initial.sql` in place; from that deployment on, `0001` is frozen and every change is a new `0002_*`, `0003_*`, … migration. Adding a numbered file before then records a history nobody lived through; editing `0001` after then leaves every deployed database on the old shape. See `docs/src/editor/architecture.md#schema`.
+
 ## Depositor-facing vocabulary is normative
 
 REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, Approved, Online — and REQ-2.2 forbids the words "export", "JSON", "transfer", "commit" and "pull request" anywhere a depositor reads. Both live on `editor_core::status::ProjectState`, which is what the list column, the `/states` page and the waiting-for-release notice all read, so the three cannot drift.

@@ -616,6 +616,3 @@ Not code components; they span the repo and are staleness-exempt here:
   `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`
 - **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill)
 - **Data tooling:** `scripts/**` — the two Python scripts that write DPE's lookup tables
-- **Legacy:** `assets/**` — 58 cover images at the repository root, unreferenced since the
-  early project pages (last touched in #142); DPE reads `modules/dpe/public/assets/images/`.
-  Removal candidate.

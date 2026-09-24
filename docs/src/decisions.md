@@ -32,6 +32,7 @@ for the full decision.
 | [ADR-0004](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0004-hypermedia-frontends.md) | Every user-facing surface is a hypermedia server |
 | [ADR-0005](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0005-fair-landing-pages-in-the-access-area.md) | Every landing page in the Access Area is FAIR-assessable by machine |
 | [ADR-0006](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md) | Decision records are colocated with what they govern, and a component's are cited qualified |
+| [ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md) | CPE joins the Access Area as its second capability (proposed) |
 
 ## Component series
 

@@ -15,7 +15,7 @@ use axum::extract::{Path, State};
 use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 
-use crate::AppState;
+use crate::shell::AppState;
 
 /// The one route this module serves.
 ///

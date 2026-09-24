@@ -11,7 +11,8 @@ use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::GovernorError;
 
 use crate::config::DpeConfig;
-use crate::{about_page_handler, fragments, project_page_handler, projects_page_handler, AppState};
+use crate::fragments;
+use crate::shell::{about_page_handler, project_page_handler, projects_page_handler, AppState};
 
 /// Rate-limit key extractor that keys on the **rightmost** `X-Forwarded-For`
 /// entry — the address our reverse proxy (Traefik) itself appended — falling back
@@ -109,7 +110,7 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_l
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
 
-    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::not_found).with_state(state.clone()));
+    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(state.clone()));
 
     // The deployment's own ARK resolver, and only when it publishes ARKs that
     // name itself. Unset — production, DEV, STAGE — the route does not exist:
@@ -372,7 +373,7 @@ mod tests {
 
         use super::{status_of, test_state, NO_PUBLIC_DIR};
         use crate::router::{build_router, rate_limited_router_with};
-        use crate::AppState;
+        use crate::shell::AppState;
 
         const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
 

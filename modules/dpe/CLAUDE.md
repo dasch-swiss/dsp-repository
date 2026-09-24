@@ -21,7 +21,7 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ### Routing, head, and the page shell (`dpe-server`)
 
-`dpe-server` is the composition root. Page, fragment and API routes are declared in `server/src/router.rs` (`build_router`) with the native Axum router; `main.rs` declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the OTel layers:
+`dpe-server` is the composition root. Page, fragment and API routes are declared in `server/src/router.rs` (`build_router`) with the native Axum router; `serve.rs` declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the OTel layers:
 
 ```rust
 .route("/dpe/projects", get(projects_page_handler))

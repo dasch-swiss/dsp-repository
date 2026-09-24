@@ -2,7 +2,7 @@
 //! with, and a `Link` header parser so header assertions are about relations
 //! rather than substrings.
 
-use crate::AppState;
+use crate::shell::AppState;
 
 /// Static assets come from a nonexistent dir: the tests using this target
 /// routes, never a real static file, so the `ServeDir` fallback is never

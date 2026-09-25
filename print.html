@@ -645,6 +645,15 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <li>Ask: "would a developer deploying this care about this change?" If yes → <code>feat:</code> or <code>fix:</code>. If no → an internal-work prefix.</li>
 <li>Debugging journeys (trial-and-error, reverts of in-branch mistakes, iterative fixes) belong in the PR description, not the commit history. See <a href="git-conventions.html#what-fix-means">What <code>fix:</code> means</a>.</li>
 </ol>
+<h3 id="one-pr-several-commits-or-a-stack"><a class="header" href="#one-pr-several-commits-or-a-stack">One PR, several commits, or a stack</a></h3>
+<p>The target is one commit per PR on <code>main</code>. Working commits while you build are fine, since they make rollback easy; squash them before review. When the finished work doesn't fit one commit, take the first rule that matches:</p>
+<ol>
+<li><strong>The parts would need different Motivation sections</strong> (see the PR template) → <strong>separate PRs</strong>, each from <code>main</code>.</li>
+<li><strong>The part B builds on is already an open PR, or is ready for review while B is still unfinished</strong> → <strong>stack</strong> with <a href="https://docs.github.com/en/pull-requests/how-tos/stacked-pull-requests"><code>gh stack</code></a> (<code>gh extension install github/gh-stack</code>): <code>gh stack init &lt;A's branch&gt;</code> adopts A locally, <code>gh stack add &lt;B's branch&gt;</code> puts B on top, and <code>gh stack submit</code> pushes both and creates the stack on GitHub.</li>
+<li><strong>All parts are finished together</strong> → <strong>one PR with several commits</strong>: tick <code>allow-many-commits</code> and add a Review Notes section.</li>
+</ol>
+<p>A reviewer asking for a split turns case 3 into case 2. Each commit stands on its own in every case, per the principle above.</p>
+<p>In a stack, the commit-hygiene gate counts commits from each PR's own base, so the one-commit cap applies per PR.</p>
 <h3 id="where-context-lives"><a class="header" href="#where-context-lives">Where context lives</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Layer</th><th>Audience</th><th>Content</th></tr></thead><tbody>
 <tr><td>Commit messages</td><td>Release notes readers</td><td>Every change; <code>feat:</code>/<code>fix:</code> carry the user-visible ones</td></tr>

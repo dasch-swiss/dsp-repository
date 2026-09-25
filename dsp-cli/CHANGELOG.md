@@ -2,6 +2,13 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
+## [0.3.2](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.1...dsp-cli-v0.3.2) (2026-09-25)
+
+
+### Miscellaneous Chores
+
+* **docs,dsp-cli:** Correct stale agent instructions in CLAUDE.md files ([b81801d](https://github.com/dasch-swiss/dsp-repository/commit/b81801dad7f9836773b7055eacd4c15e1c5bf267))
+
 ## [0.3.1](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.0...dsp-cli-v0.3.1) (2026-09-22)
 
 

@@ -244,7 +244,7 @@
 </style>
 <h1 id="collection"><a class="header" href="#collection">Collection</a></h1>
 <p>How an approved record leaves the editor and becomes a commit in this repository. The editor publishes the records and accepts a report about what happened to them; a GitHub Actions workflow does the work in between. This page is the contract between the two.</p>
-<p>The workflow is <code>.github/workflows/collect-editor-records.yml</code> and the collector it runs is the <code>editor-collector</code> crate (<code>modules/editor/collector</code>). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.</p>
+<p>The workflow is <code>.github/workflows/collect-editor-records.yml</code> and the collector it runs is the <code>editor-collector</code> crate (<code>areas/deposit/editor/collector</code>). Both sides are live; this page stays the contract, and on any difference between it and the code, it wins.</p>
 <h2 id="the-invariant"><a class="header" href="#the-invariant">The invariant</a></h2>
 <p><strong>Reported collection state may drive what RDU is shown and how a record is classified. It may never drive what is served or published.</strong></p>
 <p>Every rule below is checkable against that one line. The editor holds no credential granting write access to any GitHub repository, in either direction: it holds a verifier for a token the workflow presents to it, never a token it presents to GitHub. Compromising the editor yields a token that authenticates to the editor and nothing else.</p>

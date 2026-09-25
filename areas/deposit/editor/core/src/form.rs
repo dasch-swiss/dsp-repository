@@ -8,7 +8,7 @@
 //! key (a checkbox group, a repeatable list's row keys) rather than giving a
 //! `Vec`, and cannot deserialize a struct holding one. The pair list gives every
 //! pair in body order with duplicates intact. The argument is in
-//! `docs/src/editor/architecture.md`.
+//! `docs/src/editor/project-form.md`.
 //!
 //! This module knows no field shapes. [`FormBody`] reads names and values; the
 //! appliers below each know one shape, and choosing a shape per field is the

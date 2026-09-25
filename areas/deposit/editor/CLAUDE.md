@@ -8,7 +8,14 @@ The editor is the surface where a depositing project edits its own metadata and 
 
 ## Architecture and Structure
 
-- **Architecture, URL scheme and Datastar conventions**: See `docs/src/editor/architecture.md`
+- **Architecture (the flow, the crates, deployment and trust boundaries, the divergence from the target)**: See `docs/src/editor/architecture.md`
+- **URL scheme, method discipline, the two renderings of a write**: See `docs/src/editor/routing.md`
+- **Datastar, styling and the accessibility decisions**: See `docs/src/editor/rendering.md`
+- **Persistence (pools, PRAGMAs, schema)**: See `docs/src/editor/persistence.md`
+- **The draft, the published set and the canonical writer**: See `docs/src/editor/project-representation.md`
+- **Entity proposals**: See `docs/src/editor/entity-proposals.md`
+- **The review surface**: See `docs/src/editor/review.md`
+- **Project state and Online detection**: See `docs/src/editor/status.md`
 - **Authentication and sessions**: See `docs/src/editor/authentication.md`
 - **The project form**: See `docs/src/editor/project-form.md`
 - **Collection (the approved-records endpoint and the report back)**: See `docs/src/editor/collection.md`
@@ -74,7 +81,11 @@ With `EDITOR_SMTP_HOST` unset the console transport writes login codes to the lo
 
 ### A schema change edits `0001` until the first deployment
 
-`server/src/db/migrations/` holds one baseline. Until the first production deployment (DEV-6921), change the schema by editing `0001_initial.sql` in place; from that deployment on, `0001` is frozen and every change is a new `0002_*`, `0003_*`, … migration. Adding a numbered file before then records a history nobody lived through; editing `0001` after then leaves every deployed database on the old shape. See `docs/src/editor/architecture.md#schema`.
+`server/src/db/migrations/` holds one baseline. Until the first production deployment (DEV-6921), change the schema by editing `0001_initial.sql` in place; from that deployment on, `0001` is frozen and every change is a new `0002_*`, `0003_*`, … migration. Adding a numbered file before then records a history nobody lived through; editing `0001` after then leaves every deployed database on the old shape. See `docs/src/editor/persistence.md#schema`.
+
+## The architecture docs describe the code as it is
+
+`docs/src/editor/architecture.md`, `ARCH-MAP.md` and the `CONTEXT.md` files always describe the code as implemented, even where that disagrees with the target. The target lives only in the decision records, `areas/deposit/docs/adr/` (`areas/deposit/ADR-0004` is the shape). The architecture page ends with a **"Divergence from the target architecture"** section: one entry per gap, naming what differs, which ADR clause it violates and where in the code. Every refactor step (DEV-7375) updates the page to the new as-built state and removes the entries it closes, until the list is empty. A reviewer then sees, per PR, both what changed and how far the code still is from the target. Never describe the target on the page as though it were built, and never leave a closed gap in the list.
 
 ## Depositor-facing vocabulary is normative
 

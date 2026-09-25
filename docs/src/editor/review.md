@@ -1,0 +1,66 @@
+# The Review Surface
+
+The queue, the field-by-field diff, and how a review round ends. The comparison it renders from is also the one that derives Online at startup (see [Project State](./status.md)).
+
+`GET /review` is the queue and `GET /review/{shortcode}` the field-by-field diff. Both take the `Rdu` extractor, which puts the access rule in one place — access is role-based, so there is no assignment to check and no per-project 403 to render, and an RDU account's assignment set is empty by design. The queue carries a second table of every draft, because those are visible to RDU too; a draft is not reviewable, so it is a separate table rather than a row with no controls.
+
+## The diff is one form, not one request per field
+
+The surface offers accept, revert and edit-in-place *per field*. That does not mean a request per field, and what settles it is what batching is for: a reviewer who accepts eight fields and loses the ninth to a dropped connection has a submission half-decided with nothing saying which half. One `<form>` posting one body is that batching natively — every decision and every substituted value arrives together and is written in one transaction — and it keeps the surface working without JavaScript, which every other authenticated surface here does.
+
+Three things hold it together, each of which fails quietly if changed:
+
+- **A decision posts under `decision.{field}`; a substituted value posts under the field's own name** — `{field}` for a scalar, `{field}.{tag}` for one language of a map. That is exactly what the section form posts, and therefore exactly what `editor_core::form`'s appliers read. No registry id begins with `decision.`, so the two namespaces cannot collide.
+- **A substitution is computed by running the field's own applier over a clone of the submitted draft**, then comparing. That is the only way a reviewer's edit obeys the rules a depositor's does — trimming, newline normalisation, a stored `MISSING` surviving an empty submit — rules whose whole purpose is that an untouched value writes no bytes. A second comparison here would agree with them only by inspection.
+- **The in-place editor *is* the depositor's control**, `editor_web::form::widgets::control` over a one-member draft holding what would be committed. A second dispatch diverged as soon as it existed: keyed off whether the value happened to hold a newline, `startDate` rendered as free text where the form gives a date picker, and `shortDescription` lost the 200-character cap its own hint promises — neither caught server-side, because the cap is an HTML attribute.
+- **The intent rides on the submit button**, as `name="intent"` — one definition, in `editor_web::form`, since both write surfaces post the same pair. A native submit posts the activated button's name and value, and Datastar 1.0.2's form mode appends them too, from `SubmitEvent.submitter`, so every control on this surface is a named submit on one form: "Save review decisions", "Accept all remaining" and the three that finish the round. `formaction` would not do — the bundle posts to the URL in `@post`, so a second destination is silently ignored on the enhanced path and honoured on the plain one. It also means the terminating controls live **inside** the diff form: the note and every recorded decision have to arrive with the action, or approving would commit the decisions as they were last *saved* rather than as they stand on screen, a difference nothing on the page would explain.
+
+`POST /review/{shortcode}` answers the same two ways as the form's save, for the same two reasons: a 303 on the plain path so a `POST` left in the history does not re-post, and the region as `text/html` on the enhanced one, always 200 because Datastar processes a body only on a 200.
+
+## The submitted payload is never rewritten
+
+A reviewer's substitution goes to `submissions.review_state`, never over `payload`. A depositor's submission needs no second approver, so a value RDU put in place of the depositor's is seen by nobody unless the submitted one survives beside it — and an overwritten payload cannot answer what was submitted. `Some(Value::Null)` in a field's stored review is a reviewer *clearing* a field, which is a real substitution and not the absence of one.
+
+Only fields the submission actually changes are read back, and a revert is refused on a project with no published counterpart. Both are the same rule: an unchanged field renders no decision control and an unpublished project never offers revert, so a decision naming either came from a hand-built body — and storing one records a decision the surface can never show and therefore never undo. A stored revert on an unpublished project renders "Reverted — keeps published" beside a "Not published yet" column, in a radio group with no matching option, so it reads as undecided and cannot be cleared.
+
+## The comparison is over top-level members, not registry fields
+
+`editor_core::review::diff` compares the union of both sides' JSON members. Enumerating the registry instead would show a reviewer only the fields the *form* knows, so a change arriving through any other path — a member no applier touches, a field added to the contract without an editor change — would be approved without ever being displayed. A member the registry does not know keeps its own name as its label, and a member the submission *dropped* is still a row: a removal is a change somebody has to see.
+
+Equality is on the stored `Value`, which is stricter than the comparison `editor_core::form` applies to a submitted value. It has to be: those forgiving rules exist so that *saving* an untouched form writes no bytes, and by the time a submission exists they have already run. What survives them is a real difference in what would be committed.
+
+## A project with no published counterpart
+
+A project can exist only locally while the comparison assumes a published value per field, so for the first project created through the editor it degenerates. The surface says so once, in a banner rather than per field — it is a fact about the record, not about any one field, and a paragraph rendered beside a control is not part of that control's accessible description, so a reader tabbing straight to the input would never hear it. Per row it renders the published column as "Not published yet" rather than "Not set", since a reader told the latter looks for the field rather than for the record. And it **offers no revert**. Revert means keeping the published value, and there is none; offering it would silently unset a field the contract requires. Accept and edit-in-place still apply, which is the whole of what a reviewer can do to a record that is new.
+
+## Concurrent review is visible, not locked
+
+Two RDU members can open one submission, and no claim was defined. Opening one from the queue is a `POST` that claims it — `Submitted` to `InReview`, `reviewed_by` set — which is also the first producer of `SubmissionState::InReview`, a state the project form already reads as a reason to lock the depositor out. A second reviewer is told who has it and offered a take-over; nothing is blocked and the last save wins, as it does for a draft. The reader is only shown as the holder once the write has actually succeeded — naming them on a refusal would also suppress the take-over banner, telling them the opposite of what the row says at exactly the moment it matters. The take-over carries the current filter, for the same reason the diff form does.
+
+A lock was the alternative and costs more than it buys: it needs a release path and a stale-lock timeout, and strands a submission whenever somebody closes a tab. What must not happen *silently* is one reviewer overwriting another, and the banner plus the queue's "With …" column is what stops that.
+
+Claiming is a `POST` and not a `GET` because it changes state, and the `Sec-Fetch-Site` control exempts `GET` by necessity — a navigation from anywhere is a `GET`. It shares the review URL rather than taking one of its own, so a refused claim re-renders somewhere that still answers `GET`.
+
+## Ending a review round
+
+Approve, request-changes and reject are three `intent` values on the existing `POST /review/{shortcode}`, and the depositor's own withdrawal is a fourth on `POST /projects/{shortcode}/sections/{section}`. No new routes: a write sharing the `GET` that renders its form is the rule the whole service follows, and `page_url.rs`'s `KNOWN_ROUTES` is therefore untouched.
+
+All four end the round the same way — the `submissions` row is deleted — so all four go through `ReviewRoundRepository`, whose three writing methods each run in **one** transaction spanning three tables. The delete's own row count is the terminal-state guard, and it has to come before every other statement in the closure; `editor_server::db::review_rounds`' module documentation states the two properties that depend on that and what breaks without them.
+
+**Approve is always an explicit click, for an RDU member's own submission too.** What was removed is the second *approver*, not the approve step, and it is also asked that RDU direct editing produce a pending submission identical in shape to a depositor's — which auto-approval would make never pending. So nothing distinguishes an RDU member's own submission from anyone else's: there is no second-approver step to waive and no self-approval check to add.
+
+**Approve is refused while any changed field is undecided.** Committing an undecided row ships bytes nobody looked at, which is the one thing a field-by-field surface exists to prevent, and "Accept all remaining" makes clearing it a single click — so the refusal is never a dead end. What an approval commits is the submitted draft with every decision applied: an accepted field takes the reviewer's substitute where there is one, and a reverted field goes back to the published value, or is removed where the published side has no such member. `submissions.payload` stays the depositor's own until the row is deleted.
+
+**Request-changes and reject both require a note; approve does not.** For reject the note is the entire signal: the submission is discarded, notifications are out of scope, and the depositor-facing state list has no Rejected — so without a note the work vanishes with nothing saying why. For request-changes it is the only thing telling the depositor what to change. An approval needs none, because the depositor is *shown* what changed rather than told about it.
+
+**Reject and withdraw both leave the draft.** Reject must not destroy work RDU merely declined, and a withdrawal reads as "take it back so I can keep editing" — request-changes already establishes submission-becomes-draft as the direction. The abandoned-draft problem belongs to [discarding a draft](./project-form.md#discarding-a-draft), not to these.
+
+Each of the four asks once before writing, on the same URL, discriminated by a hidden `confirmed` pair the prompt carries. The intent names *what* is being done and stays the same across both posts, so the two-step shape does not double the verb list — and a body naming an intent without `confirmed` gets the prompt, never the write. An unknown intent falls back to a plain save on both surfaces: every terminating action is irreversible and a save is not.
+
+## What a finished round leaves, and where the depositor reads it
+
+`review_rounds` is append-only: one row per finished round, written by the transition that ended it and never updated, so the rows for one project are its review history. One table rather than four columns, because four separate things read it — a rejection being visible at all, a returned draft being distinguishable from one never submitted without adding a sixth state, the per-field accepted state surviving the return, and the depositor seeing what RDU substituted for their values. The last two read the round's `review_state` snapshot, which is a snapshot and not a reference because the submission carrying it is deleted by the same transaction.
+
+The depositor reads all of it on the project form, inside the region a save replaces, and **every outcome is shown** with its own wording — one banner reading "RDU asked for changes" whatever happened would tell somebody whose work was rejected to answer a closed round. It shows until the next submission, which starts the next cycle. `drafts` carries no note column: the note has to be read beside the outcome it belongs to, and only the round has both. A save cannot disturb it, which the column needed a rule to guarantee.
+
+**Fields RDU accepted are fixed while the round is being answered.** The per-field state is retained across the return, and nothing stopped the depositor altering an accepted field, which then re-entered review still flagged accepted. The gate is that `sections::act` skips those fields' appliers: not rendering the control stops an ordinary browser, and only the skip stops a hand-built body. It applies **only** while the latest round asked for changes — a reject's or a withdrawal's decisions are moot, since the submission they were recorded against is gone. A reverted field is deliberately not locked: its submitted value was discarded, so the depositor has nothing to preserve and every reason to try again.

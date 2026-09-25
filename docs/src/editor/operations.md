@@ -207,7 +207,7 @@ Everything in a preview dies with it: the database is in-memory, no mail can lea
 
 ## Database
 
-One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See [Architecture](./architecture.md#persistence) for the pool and PRAGMA design.
+One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See [Architecture](./persistence.md) for the pool and PRAGMA design.
 
 ### In-memory is the default, deliberately
 

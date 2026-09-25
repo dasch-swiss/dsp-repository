@@ -4,7 +4,7 @@
 //!
 //! The editor runs on its own hostname, so paths are root-mounted — there is no
 //! `/editor` prefix. A shared origin would defeat the `Sec-Fetch-Site` CSRF
-//! control. See `docs/src/editor/architecture.md`.
+//! control. See `docs/src/editor/routing.md`.
 //!
 //! **Method discipline.** Every route that changes state is `POST`: the
 //! `Sec-Fetch-Site` control exempts `GET` and `HEAD` by necessity, because a

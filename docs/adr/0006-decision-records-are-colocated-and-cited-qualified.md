@@ -63,3 +63,22 @@ Enforced by: the citation rule and reference resolution, by
 `.github/scripts/check-adr-refs.sh`, run by `just check` (**static-analysis**); the amendment and
 supersession rules, and the both-ends link between a root ADR and the component ADR it
 constrains, by **review**.
+
+## Amendment (2026-09-25): an area is a component with its own series
+
+This record grants a colocated `docs/adr/` to "any root-level component with its own vocabulary
+or decision history". An area (ADR-0002) is not root-level, it sits under `areas/`, and it is the
+one directory that outlives every capability inside it, so it is where a capability's decisions
+survive a move or a split. An area therefore keeps its own series at `areas/<area>/docs/adr/`,
+cited qualified as `areas/<area>/ADR-NNNN`, also from inside the area and from inside any of its
+capabilities; a capability carries no series of its own, its decisions go to the area's. The gate
+already resolves the multi-segment form: `areas/deposit/ADR-0004` resolves to
+`areas/deposit/docs/adr/0004-*.md`. The Deposit Area is the first, opened by DEV-7374 with three
+retroactive editor decisions and the target shape of two capabilities
+(`areas/deposit/ADR-0004`); `docs/src/decisions.md` lists it beside `dsp-cli`.
+
+Added to Considered Options:
+
+- **A series per capability** (`areas/deposit/editor/docs/adr/`) — rejected: the decisions that
+  matter most in an area are the ones between its capabilities, which no capability owns, and a
+  capability that moves or splits would take its records to a path that no longer names them.

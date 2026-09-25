@@ -33,7 +33,14 @@
 ## Editor
 
 - [Architecture](./editor/architecture.md)
+- [Routing and Request Handling](./editor/routing.md)
+- [Rendering, Datastar and Styling](./editor/rendering.md)
+- [Persistence](./editor/persistence.md)
+- [The Project Representation](./editor/project-representation.md)
 - [The Project Form](./editor/project-form.md)
+- [Entity Proposals](./editor/entity-proposals.md)
+- [The Review Surface](./editor/review.md)
+- [Project State and Online Detection](./editor/status.md)
 - [Authentication](./editor/authentication.md)
 - [Collection](./editor/collection.md)
 - [Observability](./editor/observability.md)

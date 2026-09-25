@@ -121,7 +121,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   request against this repository — outside the service's request path, and the only crate here
   that writes anything under `modules/dpe/`).
   Depositors edit their projects section by section; RDU reviews field by field; approve
-  writes an approved record, which the collector publishes as a pull request.
+  writes an approved record, which the collector publishes as a pull request. The Deposit
+  Area's target is two capabilities, `identity` and `editor`, under `areas/deposit/server`
+  (`areas/deposit/ADR-0004`); the code has one, and `docs/src/editor/architecture.md` lists
+  the divergence. The entry below describes the code as it is.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `Repositories`, `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -166,6 +169,17 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Depositor-facing vocabulary is closed (REQ-2.1 / REQ-2.2): five states, no "export", "JSON",
     "transfer", "commit", "pull request" (**static-analysis** — `depositor_vocabulary.rs` plus the
     E2E pass).
+  - One SQLite file holds identity's tables (`users`, `user_shortcodes`, `sessions`,
+    `login_codes`, `mail_sends`) beside the editor's, with seven foreign keys into `users`;
+    falls short of ADR-0003's data sovereignty and `areas/deposit/ADR-0004`'s one file per
+    capability (**review**; **structure** once the files split).
+  - `Authenticated` / `Rdu` and the user-name reads in `review.rs` and `sections.rs` call the
+    session and user repositories directly; `areas/deposit/ADR-0004` puts them behind
+    `editor-ports`, which does not exist yet (**review**).
+  - Handlers, routes and the SQLite implementations live in `editor-server`; ADR-0003's anatomy
+    puts them in the capability's web crate and an `editor-store` crate, and the composition
+    root at `areas/deposit/server` (**review**; no crate-graph gate exists yet — ADR-0003,
+    amendment of 2026-09-25).
 - **Durable state:** one SQLite database — `users`, `user_shortcodes`, `sessions`, `login_codes`,
   `mail_sends`, `drafts`, `submissions`, `review_rounds`, `approved_records`, `entity_proposals`,
   all `STRICT`, one baseline migration `0001` under `server/src/db/migrations/` (edited in place
@@ -574,7 +588,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   root-level component with its own decision history keeps its own `docs/adr/` under the
   component directory, with its own sequence from 0001 — a bare `ADR-NNNN` always names a root
   ADR, a component ADR is always cited qualified as `<component>/ADR-NNNN`, also from inside that
-  component (ADR-0006).
+  component (ADR-0006). An area is such a component: `areas/<area>/docs/adr/`, cited
+  `areas/<area>/ADR-NNNN`, and a capability carries no series of its own (ADR-0006, amendment of
+  2026-09-25; `areas/deposit/` is the first).
   *Enforcement:* **docs-only** for the runbook and vocabulary docs; **static-analysis**
   (`check-adr-refs.sh`, `just check`) for the citation rule.
 - **Local-context kit budget:** ≤7 files per component. *Enforcement:* **docs-only**.
@@ -586,7 +602,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 | Locally-attractive pattern | Why it couples globally | Supported alternative | Enforcement |
 |---|---|---|---|
 | A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | review → structure (ADR-0001) |
-| A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | review → structure (ADR-0001) |
+| A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | review → static-analysis (`check-capability-deps.sh`, ADR-0003 amendment of 2026-09-25, once it lands) → structure (ADR-0001) |
 | Opening the area's Chischtli instance to read or write a graph another capability owns | A graph with two writers is a table with two writers; readers past the owner's ports freeze the owner's internal graph layout | Query through the owning capability's ports (`sync` for the archive projection); a new graph gets a new owner, not a second writer (ADR-0003) | review → structure (store handle visible to owners only) |
 | A relative path from a `shared-*` crate into `modules/<service>/`, in a source file or a test fixture | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`); the repo-root `justfile` is what may name a module path | static-analysis (`shared/*/src/*.rs` and `shared/*/testdata/**`) |
 | Reading `dpe_core::Project` in the editor | The view model is lossy on `url` and `clusters`; the editor must preserve both | `ProjectRaw` → draft → `ProjectRaw` | review |

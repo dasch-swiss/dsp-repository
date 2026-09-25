@@ -46,3 +46,18 @@ Within a capability, the crate anatomy stays `{capability}-{role}` (ADR-0002): a
 - Each area keeps one `CONTEXT.md` per capability once vocabulary diverges, indexed from the root `CONTEXT.md`; today the area and its first capability coincide.
 
 Enforced by: Bazel `visibility` once ADR-0001 lands — a capability's `ports` crate is public within its area; its domain, store and web crates are visible only to the capability itself and to `<area>/server` (structure). Until then: review.
+
+## Amendment (2026-09-25): authentication ports, the area shell, and enforcement before Bazel
+
+Three rules the Deposit Area's split into two capabilities (`areas/deposit/ADR-0004`) needed and this record did not state. They are general: the Access Area meets all three when its admin view arrives beside DPE.
+
+- **Request authentication crosses a capability boundary as a consumer-defined port, and each web crate owns its own extractors.** A capability that needs to know who is asking declares the principal DTO and the authenticator port in its own `ports` crate; the capability that owns sessions implements it in its store crate; the consumer's web crate builds its extractors over that port. No area holds a shared extractor crate, and no composition root authenticates in a middleware: a handler's signature stays the place that says whether it is public.
+- **An area may hold one shell crate, `areas/<area>/shell`.** A view library (`fn -> Markup`: the document, header, footer, error pages) that depends on `mosaic-tiles` and `shared-*` only, never on a capability crate; every capability's web crate and the composition root depend on it. The routes it links are string literals, a coupling recorded, not compiled.
+- **Until Bazel visibility (ADR-0001) exists, the crate graph inside an area is checked by `.github/scripts/check-capability-deps.sh`** over `cargo metadata`, run by `just check`. Between two capabilities the only permitted edge is a provider's store crate on a consumer's `ports` crate; a `ports` crate depends on nothing in the workspace but `shared-*`; the shell crate depends on no capability crate; the composition root may depend on anything in its area. Every other edge fails the check.
+
+Added to Considered Options:
+
+- **One `auth` crate per area holding one extractor for every web crate** — rejected: it needs the session lookup, so it depends on the session-owning capability's store crate and every consumer inherits that edge; behind a port it is the rule above with one crate more.
+- **The shell in the composition root** — rejected: the handlers that need it live in the capabilities' web crates, so the root would either implement a shell port per consumer, which is view code at the composition root, or rewrite responses in a layer.
+
+Enforced by: the crate-graph script (**static-analysis**) once it lands with the first two-capability area, Bazel `visibility` afterwards (**structure**); the no-middleware rule by **review** (a middleware is one `.layer()` line).

@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.8.7](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.6...v0.8.7) (2026-09-25)
+
+
+### Features
+
+* **editor-core,editor-collector:** Collect approved records into one pull request per project ([8bc1cea](https://github.com/dasch-swiss/dsp-repository/commit/8bc1cea1b7bcd8054f0a77c21819d9a4aaa5b95c))
+* **editor-core,editor-server:** Retire an accepted entity proposal once its entity is published ([47822e6](https://github.com/dasch-swiss/dsp-repository/commit/47822e625537410e8153bac8cb6b9efbe7947ccc))
+* **editor-core,editor-web,editor-server:** Show RDU where each approved record's collection stands ([bb5607f](https://github.com/dasch-swiss/dsp-repository/commit/bb5607f4930f111048fac616880c1e2ee2f182cf))
+
+
+### Bug Fixes
+
+* **analytics:** Pin Fathom to production by config, not by an exclusion list ([b059a84](https://github.com/dasch-swiss/dsp-repository/commit/b059a846b26f6599aee1e2a9bdce5a1264d7bf9f))
+* **dpe-data:** Replace the 0803 and 081C covers and credit both ([787ef6b](https://github.com/dasch-swiss/dsp-repository/commit/787ef6b3dd4f28909c8796ca8e8dcb4e63ab3333))
+* **dpe-web:** Fall back to the no-JS tab at once on a network failure ([510379a](https://github.com/dasch-swiss/dsp-repository/commit/510379a812d0fff4d0252fd96f5a940c114c4018))
+* **dpe,editor:** Report Datastar request failures from datastar-fetch ([74efe86](https://github.com/dasch-swiss/dsp-repository/commit/74efe866d76a39172059d6f91fec5b7a2f04c26a))
+* **editor-server,editor-web:** Confirm every no-JavaScript write where screen readers hear it ([373831d](https://github.com/dasch-swiss/dsp-repository/commit/373831d80a05ec1628c5ef2ad6f6bcb0bbff2746))
+
+
+### Code Refactoring
+
+* **dpe-data:** Pin the corpus size once, count it live everywhere else ([af197df](https://github.com/dasch-swiss/dsp-repository/commit/af197df449651e869a98dd3a8e368ba832796e6d))
+* **dpe-server:** Reduce main.rs to a thin wrapper over startup modules ([2d3b21a](https://github.com/dasch-swiss/dsp-repository/commit/2d3b21a374dc193a4b6e5cfebd635e883e402d76))
+* **editor-core,editor-server:** Retire list_uncollected and its partial index ([02a6287](https://github.com/dasch-swiss/dsp-repository/commit/02a628792a27e53cf17ae80efdf1b7df7551c270))
+* **editor-core,editor-web,editor-server,editor-collector:** Move the editor to areas/deposit/editor ([54480c6](https://github.com/dasch-swiss/dsp-repository/commit/54480c61adc0839f702d9dcf707870b503bf9807))
+* **editor-server:** Collapse the schema migrations into one baseline ([985ef59](https://github.com/dasch-swiss/dsp-repository/commit/985ef5910c095b59a1e00f75a581a381d82144e0))
+* **editor-server:** Reduce main.rs to a thin wrapper over startup modules ([6d978ad](https://github.com/dasch-swiss/dsp-repository/commit/6d978adab8187daa234882c18c9569ff2709baab))
+
+
+### Documentation
+
+* **docs:** Add ordered rules for separate PRs, stacks, and multi-commit PRs ([0debe77](https://github.com/dasch-swiss/dsp-repository/commit/0debe7702cf8d97eb3a650962daf1b16d2b7b7e6))
+
+
+### Miscellaneous Chores
+
+* **ci,editor-collector:** Run the collector from a workflow, and record it ([ad36b1c](https://github.com/dasch-swiss/dsp-repository/commit/ad36b1cc6697da8996f8b6841311a11e9784cf9f))
+* **docs,dsp-cli:** Correct stale agent instructions in CLAUDE.md files ([b81801d](https://github.com/dasch-swiss/dsp-repository/commit/b81801dad7f9836773b7055eacd4c15e1c5bf267))
+* **docs:** Bind eng conventions, commands and reviewers in eng.yaml ([b6ca81b](https://github.com/dasch-swiss/dsp-repository/commit/b6ca81b44aa170cb192024e3515b7b629f95fe40))
+* **dpe-data:** Remove the unused cover images at the repository root ([a3a1b0d](https://github.com/dasch-swiss/dsp-repository/commit/a3a1b0dc015d839ac0e162d92b2b695ca7cc3d3b))
+* **dpe-data:** Strip stray whitespace from the committed project files ([6768507](https://github.com/dasch-swiss/dsp-repository/commit/6768507798d62956f2a7ee730aa906037f4d513e))
+* **main:** Release dsp-cli 0.3.1 ([ffb09d0](https://github.com/dasch-swiss/dsp-repository/commit/ffb09d0eb41c52599b3b89b7cb31f035d2b2c593))
+
 ## [0.8.6](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.5...v0.8.6) (2026-09-22)
 
 

@@ -25,7 +25,7 @@ The code does not have this shape yet. `docs/src/editor/architecture.md` describ
 
 ## Two databases
 
-Each capability opens its own SQLite file under `EDITOR_DB_DIR`, `identity.sqlite` and `editor.sqlite`, with its own migration series under its own `PRAGMA user_version` and its own single-writer pool; the in-memory variant is two named shared-cache databases. A store crate opens only its own file, so ADR-0003's "no cross-capability SQL" holds by structure rather than by review, and approve stays one transaction because every table it touches is editor's. Nothing irreplaceable is in either file (`docs/src/editor/operations.md`, Backups; the first retroactive record of this series, git as the source of truth, carries the decision).
+Each capability opens its own SQLite file under `EDITOR_DB_DIR`, `identity.sqlite` and `editor.sqlite`, with its own migration series under its own `PRAGMA user_version` and its own single-writer pool; the in-memory variant is two named shared-cache databases. A store crate opens only its own file, so ADR-0003's "no cross-capability SQL" holds by structure rather than by review, and approve stays one transaction because every table it touches is editor's. Nothing irreplaceable is in either file (`areas/deposit/ADR-0001`).
 
 ## Considered Options
 

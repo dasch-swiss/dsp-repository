@@ -70,7 +70,7 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): 
 /// `GET /projects/{shortcode}` — a redirect to the first form section.
 ///
 /// A redirect rather than a page, so exactly one place decides where a project
-/// link lands, and the scheme in `docs/src/editor/architecture.md` keeps the
+/// link lands, and the scheme in `docs/src/editor/routing.md` keeps the
 /// form's own URLs section-scoped and bookmarkable. It is therefore absent from
 /// `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no
 /// beacon can report it.

@@ -5,7 +5,7 @@
 //!
 //! - Until the first production deployment (DEV-6921), a schema change edits `0001` in place. After
 //!   it, `0001` is frozen and a change is a new entry: the guard never re-runs an applied one. See
-//!   `docs/src/editor/architecture.md#schema`.
+//!   `docs/src/editor/persistence.md#schema`.
 //! - Everything runs inside one `BEGIN IMMEDIATE` transaction, the `user_version` bump included, so
 //!   a crash part-way leaves the database at the version it started from rather than half-migrated.
 //!   `BEGIN IMMEDIATE` also makes two processes starting at once safe: the second waits and then

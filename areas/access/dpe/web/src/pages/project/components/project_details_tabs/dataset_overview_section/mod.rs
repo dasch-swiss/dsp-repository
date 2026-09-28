@@ -105,8 +105,8 @@ mod tests {
 
     #[test]
     fn renders_overview_sections_from_project() {
-        let out = dataset_overview_section(&sample_project(), &RenderContext { show_placeholder_values: false })
-            .into_string();
+        let out =
+            dataset_overview_section(&sample_project(), &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Abstract"), "{out}");
         assert!(out.contains("An abstract of the sample project."), "abstract value: {out}");
         assert!(out.contains("Type of Data"), "{out}");

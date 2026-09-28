@@ -32,7 +32,7 @@ _Avoid_: API response (the JSON API under `/dpe/api/v2` is DPE's own shape, not 
 _Avoid_: calling it "the Project" without qualification (see the root Flagged ambiguities).
 
 **Corpus**:
-The committed published data under `areas/access/dpe/server/data/`: `projects/`, `persons/`, `organizations/`, `clusters/`, `records/`, plus the two lookup tables (`chronontology-periods.json`, `temporal-coverage-enrichment.json`). DPE owns it; the editor reads an image-baked copy.
+The committed published data under `areas/access/dpe/server/data/`: `projects/`, `persons/`, `organizations/`, `clusters/`, `records/`, plus the two lookup tables (`chronontology-periods.json`, `temporal-coverage-enrichment.json`). DPE owns it; the editor reads an image-baked copy. In code, `dpe_core::Corpus` is the in-memory value that loads it: one per process, built from `DpeConfig` and handed to handlers and views.
 _Avoid_: database (there is none), the data directory (that is the deployment knob `DPE_DATA_DIR`, not the concept).
 
 **Cluster**:

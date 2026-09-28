@@ -5,8 +5,11 @@
 //! clearer. Tests that need a variant (e.g. no publications) clone and override
 //! the relevant field: `Project { publications: None, ..sample_project() }`.
 
+use std::sync::OnceLock;
+
 use dpe_core::contributors::ResolvedContributor;
 use dpe_core::project::Project;
+use dpe_core::{Corpus, CorpusSettings};
 use shared_metadata::models::AuthorityFileReference;
 use shared_metadata::organization::Organization;
 use shared_metadata::person::Person;
@@ -14,6 +17,31 @@ use shared_metadata::project::{
     AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Pid, ProjectStatus, Publication,
 };
 use shared_metadata::utils::Multilingual;
+
+use crate::RenderContext;
+
+/// A corpus over the committed data directory (`areas/access/dpe/server/data`),
+/// shared by every view-rendering test in this crate.
+///
+/// Resolved from `CARGO_MANIFEST_DIR` rather than a relative path, so it finds
+/// the data regardless of the test binary's working directory.
+pub(crate) fn test_corpus() -> &'static Corpus {
+    static CORPUS: OnceLock<Corpus> = OnceLock::new();
+    CORPUS.get_or_init(|| {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data").to_string();
+        Corpus::new(CorpusSettings {
+            data_dir: dir.clone(),
+            public_dir: dir,
+            ark_resolver_base_url: None,
+        })
+    })
+}
+
+/// A [`RenderContext`] over [`test_corpus`], for tests that only vary the
+/// placeholder-visibility flag.
+pub(crate) fn test_render_context(show_placeholder_values: bool) -> RenderContext {
+    RenderContext { show_placeholder_values, corpus: test_corpus() }
+}
 
 fn lang_map(value: &str) -> Multilingual {
     Multilingual::from([("en".to_string(), value.to_string())])

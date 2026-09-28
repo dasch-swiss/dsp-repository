@@ -1,26 +1,26 @@
-//! In-process cache for organizations.
+//! [`Corpus`]'s cache of organizations.
 //!
 //! All organizations are loaded from disk once on first access and held in a
 //! HashMap keyed by organization ID for O(1) lookup.
 use std::collections::HashMap;
-use std::sync::OnceLock;
 
 use shared_metadata::Organization;
 
-use super::utils::get_data_dir;
+use super::corpus::Corpus;
 
-static ORGANIZATIONS: OnceLock<HashMap<String, Organization>> = OnceLock::new();
-
-/// Return a reference to the cached organization map, loading it on first call.
-pub fn all_organizations() -> &'static HashMap<String, Organization> {
-    ORGANIZATIONS.get_or_init(load_all_organizations)
+impl Corpus {
+    /// Return a reference to the cached organization map, loading it on first call.
+    pub fn all_organizations(&'static self) -> &'static HashMap<String, Organization> {
+        self.organizations_cache
+            .get_or_init(|| load_all_organizations(&self.settings.data_dir))
+    }
 }
 
-fn load_all_organizations() -> HashMap<String, Organization> {
+fn load_all_organizations(data_dir: &str) -> HashMap<String, Organization> {
     use std::fs;
     use std::path::PathBuf;
 
-    let orgs_dir = PathBuf::from(get_data_dir()).join("organizations");
+    let orgs_dir = PathBuf::from(data_dir).join("organizations");
 
     let Ok(entries) = fs::read_dir(&orgs_dir) else {
         tracing::warn!(dir = ?orgs_dir, "failed to read organizations directory");

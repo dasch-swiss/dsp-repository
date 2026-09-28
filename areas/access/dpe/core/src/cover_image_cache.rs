@@ -1,17 +1,16 @@
-//! In-process cache of the project cover images present on disk.
+//! [`Corpus`]'s cache of the project cover images present on disk.
 //!
 //! A cover image is optional: images are onboarded per project on request, so at
 //! any time some published projects have one and some do not. Presence must
 //! therefore be resolved before rendering, not corrected afterwards.
 //!
 //! The directory is scanned once on first access and held for the lifetime of
-//! the process, mirroring [`crate::project_cache`]. A file added or removed
+//! the corpus, mirroring [`crate::project_cache`]. A file added or removed
 //! afterwards is not picked up; the views keep an `onerror` fallback for that.
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 
-use super::utils::get_public_dir;
+use super::corpus::Corpus;
 
 /// Subdirectory of the public dir holding the per-project covers. `ServeDir` mounts
 /// the public dir at the router root, so the URL is this path with a leading slash.
@@ -19,18 +18,19 @@ use super::utils::get_public_dir;
 const IMAGES_SUBDIR: &str = "assets/images";
 const COVER_EXTENSION: &str = "webp";
 
-static COVERS: OnceLock<HashSet<String>> = OnceLock::new();
+impl Corpus {
+    /// The URL of `shortcode`'s cover image, or `None` when the project has none.
+    ///
+    /// `None` means "render the placeholder instead", not "render a broken image".
+    pub fn cover_image_url(&'static self, shortcode: &str) -> Option<String> {
+        resolve_cover_url(self.covers(), shortcode)
+    }
 
-/// The URL of `shortcode`'s cover image, or `None` when the project has none.
-///
-/// `None` means "render the placeholder instead", not "render a broken image".
-pub fn cover_image_url(shortcode: &str) -> Option<String> {
-    resolve_cover_url(covers(), shortcode)
-}
-
-/// Return a reference to the cached set of cover-image stems, scanning on first call.
-fn covers() -> &'static HashSet<String> {
-    COVERS.get_or_init(|| scan_covers(&PathBuf::from(get_public_dir()).join(IMAGES_SUBDIR)))
+    /// Return a reference to the cached set of cover-image stems, scanning on first call.
+    fn covers(&'static self) -> &'static HashSet<String> {
+        self.covers_cache
+            .get_or_init(|| scan_covers(&PathBuf::from(&self.settings.public_dir).join(IMAGES_SUBDIR)))
+    }
 }
 
 /// Build the cover URL from an already-resolved stem set. Separated from the
@@ -75,6 +75,7 @@ fn scan_covers(images_dir: &Path) -> HashSet<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::corpus::CorpusSettings;
 
     fn covers_of(names: &[&str]) -> HashSet<String> {
         names.iter().map(|n| n.to_string()).collect()
@@ -137,5 +138,36 @@ mod tests {
     fn missing_directory_yields_no_covers_rather_than_panicking() {
         let covers = scan_covers(&PathBuf::from("/nonexistent/dpe/public/assets/images"));
         assert!(covers.is_empty());
+    }
+
+    /// `cover_image_url` reads the public dir a corpus was built with, not the
+    /// process's working directory — proven by two corpuses over two different
+    /// temporary public dirs, each with its own cover, in the same test binary.
+    /// This could not be written against the old process-global cache: a second
+    /// public-dir setter call was a silent no-op.
+    #[test]
+    fn cover_image_url_answers_from_the_corpus_public_dir_not_the_process_cwd() {
+        let dir_a = tempfile::tempdir().expect("tempdir");
+        let dir_b = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(dir_a.path().join(IMAGES_SUBDIR)).unwrap();
+        std::fs::create_dir_all(dir_b.path().join(IMAGES_SUBDIR)).unwrap();
+        std::fs::write(dir_a.path().join(IMAGES_SUBDIR).join("0803.webp"), "").unwrap();
+        std::fs::write(dir_b.path().join(IMAGES_SUBDIR).join("084D.webp"), "").unwrap();
+
+        let corpus_a: &'static Corpus = Box::leak(Box::new(Corpus::new(CorpusSettings {
+            data_dir: dir_a.path().to_string_lossy().into_owned(),
+            public_dir: dir_a.path().to_string_lossy().into_owned(),
+            ark_resolver_base_url: None,
+        })));
+        let corpus_b: &'static Corpus = Box::leak(Box::new(Corpus::new(CorpusSettings {
+            data_dir: dir_b.path().to_string_lossy().into_owned(),
+            public_dir: dir_b.path().to_string_lossy().into_owned(),
+            ark_resolver_base_url: None,
+        })));
+
+        assert_eq!(corpus_a.cover_image_url("0803").as_deref(), Some("/assets/images/0803.webp"));
+        assert_eq!(corpus_a.cover_image_url("084D"), None);
+        assert_eq!(corpus_b.cover_image_url("084D").as_deref(), Some("/assets/images/084D.webp"));
+        assert_eq!(corpus_b.cover_image_url("0803"), None);
     }
 }

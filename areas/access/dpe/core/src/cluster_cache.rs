@@ -1,23 +1,32 @@
-//! In-process cache for clusters.
+//! [`Corpus`]'s cache of clusters.
 //!
 //! All clusters are loaded from disk once on first access and held in memory
-//! for the lifetime of the server process. This avoids rescanning the clusters
+//! for the lifetime of the corpus. This avoids rescanning the clusters
 //! directory on every `get_project()` call.
-use std::sync::OnceLock;
-
 use super::cluster::{ClusterRaw, ClusterRef};
-use super::utils::get_data_dir;
+use super::corpus::Corpus;
 
-static CLUSTERS: OnceLock<Vec<ClusterRaw>> = OnceLock::new();
+impl Corpus {
+    /// Return a reference to the cached cluster list, loading it on first call.
+    pub fn all_clusters(&'static self) -> &'static [ClusterRaw] {
+        self.clusters_cache.get_or_init(|| load_all_clusters(&self.settings.data_dir))
+    }
 
-/// Return a reference to the cached cluster list, loading it on first call.
-pub fn all_clusters() -> &'static [ClusterRaw] {
-    CLUSTERS.get_or_init(load_all_clusters)
+    /// Returns the clusters (from the cache) a project shortcode belongs to.
+    pub fn clusters_for_shortcode(&'static self, shortcode: &str) -> Vec<ClusterRef> {
+        clusters_for_shortcode_in(self.all_clusters(), shortcode)
+    }
+
+    /// Returns the project shortcodes belonging to the cluster `id` (from the cache),
+    /// or `None` if no such cluster exists.
+    pub fn projects_for_cluster(&'static self, id: &str) -> Option<&'static [String]> {
+        projects_for_cluster_in(self.all_clusters(), id)
+    }
 }
 
 /// Returns the clusters in `clusters` whose `projects` list contains `shortcode`
 /// (compared case-insensitively). Pure over the given slice so it can be unit-tested
-/// without touching the process-global cache.
+/// without touching a corpus.
 pub fn clusters_for_shortcode_in(clusters: &[ClusterRaw], shortcode: &str) -> Vec<ClusterRef> {
     clusters
         .iter()
@@ -26,28 +35,17 @@ pub fn clusters_for_shortcode_in(clusters: &[ClusterRaw], shortcode: &str) -> Ve
         .collect()
 }
 
-/// Returns the clusters (from the cache) a project shortcode belongs to.
-pub fn clusters_for_shortcode(shortcode: &str) -> Vec<ClusterRef> {
-    clusters_for_shortcode_in(all_clusters(), shortcode)
-}
-
 /// Returns the project shortcodes belonging to the cluster with the given `id`
 /// (exact match), or `None` if no such cluster exists in `clusters`.
 pub fn projects_for_cluster_in<'a>(clusters: &'a [ClusterRaw], id: &str) -> Option<&'a [String]> {
     clusters.iter().find(|raw| raw.id == id).map(|raw| raw.projects.as_slice())
 }
 
-/// Returns the project shortcodes belonging to the cluster `id` (from the cache),
-/// or `None` if no such cluster exists.
-pub fn projects_for_cluster(id: &str) -> Option<&'static [String]> {
-    projects_for_cluster_in(all_clusters(), id)
-}
-
-fn load_all_clusters() -> Vec<ClusterRaw> {
+fn load_all_clusters(data_dir: &str) -> Vec<ClusterRaw> {
     use std::fs;
     use std::path::PathBuf;
 
-    let clusters_dir = PathBuf::from(get_data_dir()).join("clusters");
+    let clusters_dir = PathBuf::from(data_dir).join("clusters");
 
     let Ok(entries) = fs::read_dir(&clusters_dir) else {
         tracing::warn!(dir = ?clusters_dir, "failed to read clusters directory");

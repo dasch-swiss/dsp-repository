@@ -108,11 +108,9 @@ fn load_by_id<T: serde::de::DeserializeOwned>(dir: &Path, id_of: fn(&T) -> Strin
 
 /// The committed contributor corpus, read straight off disk.
 ///
-/// `dpe_core::CachedContributorLookup` would do the same job, but only through
-/// the process-global data dir — which is what forced the hash test this
-/// replaces to be `#[ignore]`d, because a test that sets it cannot share a
-/// process with the handler tests. Reading the same files directly keeps this
-/// guard in `just test`.
+/// `dpe_core::CachedContributorLookup` would do the same job over a `Corpus`,
+/// but building and leaking one just for this single comparison is not worth
+/// it; reading the same files directly keeps this guard simple.
 struct CorpusContributorLookup {
     persons: HashMap<String, Person>,
     organizations: HashMap<String, Organization>,

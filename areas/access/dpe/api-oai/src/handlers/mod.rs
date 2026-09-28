@@ -19,8 +19,8 @@ use axum::extract::{Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use dpe_core::{
-    cluster_cache, CachedContributorLookup, ClusterRaw, FsProjectRepository, FsRecordRepository, ProjectRepository,
-    RecordRepository,
+    cluster_cache, CachedContributorLookup, ClusterRaw, Corpus, FsProjectRepository, FsRecordRepository,
+    ProjectRepository, RecordRepository,
 };
 use get_record::handle_get_record;
 use identify::handle_identify;
@@ -58,24 +58,48 @@ pub const SUPPORTED_PREFIXES: [&str; 2] = ["oai_dc", "oai_datacite"];
 
 /// Main OAI-PMH handler that dispatches to verb-specific handlers.
 pub async fn oai_handler(State(state): State<OaiState>, Query(params): Query<OaiParams>) -> impl IntoResponse {
-    let repo = FsProjectRepository::new();
-    let record_repo = FsRecordRepository::new();
-    let clusters = cluster_cache::all_clusters();
-    let lookup = CachedContributorLookup;
+    let corpus = state.corpus;
+    let repo = FsProjectRepository::new(corpus);
+    let record_repo = FsRecordRepository::new(corpus);
+    let clusters = corpus.all_clusters();
+    let lookup = CachedContributorLookup { corpus };
     let base_url = state.base_url.as_str();
+    let list_inputs = ListInputs {
+        repo: &repo,
+        record_repo: &record_repo,
+        clusters,
+        lookup: &lookup,
+        corpus,
+        base_url,
+    };
 
     let xml = match params.verb.as_deref() {
         Some("Identify") => handle_identify(&params, &repo, base_url),
         Some("ListMetadataFormats") => handle_list_metadata_formats(&params, &repo, base_url),
         Some("ListSets") => handle_list_sets(&params, &repo, clusters, base_url),
-        Some("ListIdentifiers") => handle_list_identifiers(&params, &repo, &record_repo, clusters, &lookup, base_url),
-        Some("ListRecords") => handle_list_records(&params, &repo, &record_repo, clusters, &lookup, base_url),
-        Some("GetRecord") => handle_get_record(&params, &repo, &record_repo, clusters, &lookup, base_url),
+        Some("ListIdentifiers") => handle_list_identifiers(&params, &list_inputs),
+        Some("ListRecords") => handle_list_records(&params, &list_inputs),
+        Some("GetRecord") => handle_get_record(&params, &repo, &record_repo, clusters, &lookup, corpus, base_url),
         Some(_) => build_error_response(OaiError::BadVerb, None, base_url),
         None => build_error_response(OaiError::BadVerb, None, base_url),
     };
 
     (StatusCode::OK, [(header::CONTENT_TYPE, "text/xml; charset=utf-8")], xml)
+}
+
+/// The read-only inputs a list-verb handler (`ListIdentifiers`, `ListRecords`)
+/// needs: the two repositories, the cluster table, the contributor lookup, the
+/// corpus `resolve_inputs` draws the temporal tables from, and the base URL
+/// echoed into the response. Bundled so `handle_list_identifiers_paged` and
+/// `handle_list_records_paged` take one reference instead of five loose
+/// arguments.
+pub struct ListInputs<'a> {
+    pub repo: &'a dyn ProjectRepository,
+    pub record_repo: &'a dyn RecordRepository,
+    pub clusters: &'a [ClusterRaw],
+    pub lookup: &'a dyn ContributorLookup,
+    pub corpus: &'static Corpus,
+    pub base_url: &'a str,
 }
 
 /// Builds an error response. Pass `Some(verb)` for recognized verbs so the verb is echoed
@@ -192,14 +216,7 @@ pub fn next_page_token(page: &ListPage, end: usize) -> Option<String> {
 /// a small value to exercise paging without large fixtures.
 ///
 /// Returns `Err(OaiError)` if any validation step fails.
-pub fn validate_list_params(
-    params: &OaiParams,
-    repo: &dyn ProjectRepository,
-    record_repo: &dyn RecordRepository,
-    clusters: &[ClusterRaw],
-    lookup: &dyn ContributorLookup,
-    page_size: usize,
-) -> Result<ListPage, OaiError> {
+pub fn validate_list_params(params: &OaiParams, inputs: &ListInputs, page_size: usize) -> Result<ListPage, OaiError> {
     if let Some(token) = params.resumption_token.as_deref() {
         // OAI-PMH 2.0: resumptionToken is exclusive with all other arguments except verb.
         if params.metadata_prefix.is_some()
@@ -219,10 +236,7 @@ pub fn validate_list_params(
             cursor.from.as_deref(),
             cursor.until.as_deref(),
             cursor.set.as_deref(),
-            repo,
-            record_repo,
-            clusters,
-            lookup,
+            inputs,
         )?;
         // The list is regenerated deterministically, so an offset past its end
         // means the token refers to a list that has since shrunk — treat as
@@ -265,10 +279,7 @@ pub fn validate_list_params(
         params.from.as_deref(),
         params.until.as_deref(),
         params.set.as_deref(),
-        repo,
-        record_repo,
-        clusters,
-        lookup,
+        inputs,
     )?;
 
     Ok(ListPage {
@@ -290,58 +301,45 @@ pub fn validate_list_params(
 /// reproduce exactly the same list.
 ///
 /// Returns `Err(OaiError)` for an unsupported/unknown set or when nothing matches.
-#[allow(clippy::too_many_arguments)]
 fn collect_filtered_records(
     prefix: &str,
     from: Option<&str>,
     until: Option<&str>,
     set: Option<&str>,
-    repo: &dyn ProjectRepository,
-    record_repo: &dyn RecordRepository,
-    clusters: &[ClusterRaw],
-    lookup: &dyn ContributorLookup,
+    inputs: &ListInputs,
 ) -> Result<Vec<OaiRecord>, OaiError> {
     let syntax = parse_set_syntax(set)?;
 
     let oai_records = match syntax {
-        SetSyntax::All => collect_entities(repo, record_repo, prefix, clusters, lookup, from, until, true, true),
+        SetSyntax::All => collect_entities(inputs, prefix, from, until, true, true),
         SetSyntax::EntityType {
             projects: include_projects,
             records: include_records,
             // `entityType:ProjectCluster` selects nothing today (clusters are not
             // emitted as first-class OAI items), so its records list is empty.
             clusters: _,
-        } => collect_entities(
-            repo,
-            record_repo,
-            prefix,
-            clusters,
-            lookup,
-            from,
-            until,
-            include_projects,
-            include_records,
-        ),
+        } => collect_entities(inputs, prefix, from, until, include_projects, include_records),
         SetSyntax::Project(shortcode) => {
-            let Some(project) = repo.get_by_shortcode(&shortcode) else {
+            let Some(project) = inputs.repo.get_by_shortcode(&shortcode) else {
                 return Err(OaiError::BadArgument(format!("unknown project set: project:{shortcode}")));
             };
             // Records of this project only — no project entry. Looked up by the
             // resolved project's canonical shortcode, not the set spec's
             // spelling, so the existence check and the record lookup can never
             // disagree about which project the set names.
-            record_repo
+            inputs
+                .record_repo
                 .records_for_shortcode(&project.shortcode)
                 .into_iter()
                 .filter(|r| matches_date_filter_record(r, from, until))
-                .map(|r| to_oai_record_from_record(r, prefix, clusters))
+                .map(|r| to_oai_record_from_record(r, prefix, inputs.clusters))
                 .collect()
         }
         SetSyntax::Cluster(id) => {
-            let Some(member_shortcodes) = cluster_cache::projects_for_cluster_in(clusters, &id) else {
+            let Some(member_shortcodes) = cluster_cache::projects_for_cluster_in(inputs.clusters, &id) else {
                 return Err(OaiError::BadArgument(format!("unknown cluster set: cluster:{id}")));
             };
-            collect_cluster(repo, record_repo, prefix, clusters, lookup, from, until, member_shortcodes)
+            collect_cluster(inputs, prefix, from, until, member_shortcodes)
         }
     };
 
@@ -353,34 +351,33 @@ fn collect_filtered_records(
 }
 
 /// Collects project and/or record OAI items for the entity-type and `All` cases.
-#[allow(clippy::too_many_arguments)]
 fn collect_entities(
-    repo: &dyn ProjectRepository,
-    record_repo: &dyn RecordRepository,
+    inputs: &ListInputs,
     prefix: &str,
-    clusters: &[ClusterRaw],
-    lookup: &dyn ContributorLookup,
     from: Option<&str>,
     until: Option<&str>,
     include_projects: bool,
     include_records: bool,
 ) -> Vec<OaiRecord> {
     let mut oai_records: Vec<OaiRecord> = if include_projects {
-        repo.get_all_raw()
+        inputs
+            .repo
+            .get_all_raw()
             .iter()
             .filter(|p| matches_date_filter(p, from, until))
-            .map(|p| to_oai_record(p, prefix, clusters, lookup))
+            .map(|p| to_oai_record(p, prefix, inputs.clusters, inputs.lookup, inputs.corpus))
             .collect()
     } else {
         Vec::new()
     };
 
     if include_records {
-        let mut record_oai: Vec<OaiRecord> = record_repo
+        let mut record_oai: Vec<OaiRecord> = inputs
+            .record_repo
             .get_all()
             .iter()
             .filter(|r| matches_date_filter_record(r, from, until))
-            .map(|r| to_oai_record_from_record(r, prefix, clusters))
+            .map(|r| to_oai_record_from_record(r, prefix, inputs.clusters))
             .collect();
         oai_records.append(&mut record_oai);
     }
@@ -392,13 +389,9 @@ fn collect_entities(
 /// cluster member (and which exist in the repository) plus all their records.
 /// Project entries are deduplicated by shortcode and records by ARK suffix, so a
 /// shortcode listed more than once does not produce duplicate items.
-#[allow(clippy::too_many_arguments)]
 fn collect_cluster(
-    repo: &dyn ProjectRepository,
-    record_repo: &dyn RecordRepository,
+    inputs: &ListInputs,
     prefix: &str,
-    clusters: &[ClusterRaw],
-    lookup: &dyn ContributorLookup,
     from: Option<&str>,
     until: Option<&str>,
     member_shortcodes: &[String],
@@ -408,7 +401,8 @@ fn collect_cluster(
     // Project entries: members that actually exist in the repository, deduplicated
     // by shortcode (case-insensitive).
     let mut seen_projects: Vec<String> = Vec::new();
-    let mut oai_records: Vec<OaiRecord> = repo
+    let mut oai_records: Vec<OaiRecord> = inputs
+        .repo
         .get_all_raw()
         .iter()
         .filter(|p| is_member(&p.shortcode))
@@ -422,12 +416,13 @@ fn collect_cluster(
                 true
             }
         })
-        .map(|p| to_oai_record(p, prefix, clusters, lookup))
+        .map(|p| to_oai_record(p, prefix, inputs.clusters, inputs.lookup, inputs.corpus))
         .collect();
 
     // Records of member projects, deduplicated by ARK suffix.
     let mut seen_records: Vec<String> = Vec::new();
-    let mut record_oai: Vec<OaiRecord> = record_repo
+    let mut record_oai: Vec<OaiRecord> = inputs
+        .record_repo
         .get_all()
         .iter()
         .filter(|r| is_member(&r.pid.shortcode))
@@ -441,7 +436,7 @@ fn collect_cluster(
                 true
             }
         })
-        .map(|r| to_oai_record_from_record(r, prefix, clusters))
+        .map(|r| to_oai_record_from_record(r, prefix, inputs.clusters))
         .collect();
     oai_records.append(&mut record_oai);
 

@@ -9,17 +9,18 @@ use super::card::project_card;
 use super::project_pagination::project_pagination;
 use crate::domain::projects::filter_and_paginate;
 use crate::domain::ProjectQuery;
+use crate::RenderContext;
 
 /// Filtered + paginated project list, resolved synchronously from the in-process
 /// project cache. Renders an empty-state card when nothing matches, otherwise a
 /// responsive grid of project cards plus pagination.
-pub fn project_list(query: &ProjectQuery) -> Markup {
-    render_project_list(filter_and_paginate(dpe_core::all_projects(), query, None), query)
+pub fn project_list(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
+    render_project_list(filter_and_paginate(ctx.corpus.all_projects(), query, None), query, ctx)
 }
 
 /// Render a resolved [`Page`] of projects. Separated from the cache lookup so it
 /// can be unit-tested with a synthetic page.
-fn render_project_list(page: Page, query: &ProjectQuery) -> Markup {
+fn render_project_list(page: Page, query: &ProjectQuery, ctx: &RenderContext) -> Markup {
     if page.total_items == 0 {
         let empty_state = html! {
             div class="text-center" {
@@ -43,7 +44,7 @@ fn render_project_list(page: Page, query: &ProjectQuery) -> Markup {
                         .iter()
                         .filter_map(|m| dpe_core::lang_value(m).cloned())
                         .collect();
-                    (project_card(project, &keywords))
+                    (project_card(project, &keywords, ctx))
                 }
             }
         }
@@ -54,12 +55,12 @@ fn render_project_list(page: Page, query: &ProjectQuery) -> Markup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::sample_project;
+    use crate::test_support::{sample_project, test_render_context};
 
     #[test]
     fn empty_page_renders_clear_filters_card() {
         let page = Page { items: vec![], nr_pages: 1, total_items: 0 };
-        let out = render_project_list(page, &ProjectQuery::default()).into_string();
+        let out = render_project_list(page, &ProjectQuery::default(), &test_render_context(false)).into_string();
         assert!(out.contains("No projects found matching your criteria"), "{out}");
         assert!(out.contains("Clear your filters"), "{out}");
         assert!(out.contains(r#"href="/dpe/projects""#), "{out}");
@@ -68,7 +69,7 @@ mod tests {
     #[test]
     fn non_empty_page_renders_count_cards_and_pagination() {
         let page = Page { items: vec![sample_project()], nr_pages: 2, total_items: 1 };
-        let out = render_project_list(page, &ProjectQuery::default()).into_string();
+        let out = render_project_list(page, &ProjectQuery::default(), &test_render_context(false)).into_string();
         assert!(out.contains("1 projects"), "{out}");
         assert!(out.contains("Sample Research Project"), "card rendered: {out}");
         assert!(out.contains(r#"aria-label="Pagination""#), "pagination rendered: {out}");

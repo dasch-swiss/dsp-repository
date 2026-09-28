@@ -17,7 +17,7 @@ mod tests {
 
     #[test]
     fn wraps_loader_in_min_height_container() {
-        let out = project_page("zzzz", "overview", &RenderContext { show_placeholder_values: false }).into_string();
+        let out = project_page("zzzz", "overview", &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains(r#"class="min-h-100""#), "{out}");
         assert!(out.contains("Project Not Found"), "loader rendered: {out}");
     }

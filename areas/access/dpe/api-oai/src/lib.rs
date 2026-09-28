@@ -17,19 +17,22 @@ pub use metadata::project_oai_identifier;
 const DEFAULT_BASE_URL: &str = "https://repository.dasch.swiss/dpe/oai";
 
 /// The OAI-PMH handler's state: the public base URL emitted as `baseURL` and in
-/// `<request>` elements. Built once by the composition root and handed to
-/// `oai_handler` through axum's `State` extractor — never a process-global.
+/// `<request>` elements, and the corpus records and projects are read from.
+/// Built once by the composition root and handed to `oai_handler` through
+/// axum's `State` extractor — never a process-global.
 #[derive(Clone)]
 pub struct OaiState {
     pub base_url: String,
+    pub corpus: &'static dpe_core::Corpus,
 }
 
 impl OaiState {
     /// Applies the empty-to-default and trailing-slash normalisation exactly
     /// once, at construction.
-    pub fn new(configured: &str) -> Self {
+    pub fn new(configured: &str, corpus: &'static dpe_core::Corpus) -> Self {
         Self {
             base_url: resolve_url(Some(configured.to_string()), DEFAULT_BASE_URL),
+            corpus,
         }
     }
 }
@@ -46,18 +49,19 @@ fn resolve_url(explicit: Option<String>, default: &str) -> String {
 #[cfg(test)]
 mod oai_state_tests {
     use super::{OaiState, DEFAULT_BASE_URL};
+    use crate::handlers::test_utils::test_corpus;
 
     #[test]
     fn explicit_value_is_used() {
         assert_eq!(
-            OaiState::new("https://api.dev.dasch.swiss/dpe/oai").base_url,
+            OaiState::new("https://api.dev.dasch.swiss/dpe/oai", test_corpus()).base_url,
             "https://api.dev.dasch.swiss/dpe/oai"
         );
     }
 
     #[test]
     fn empty_falls_back_to_default() {
-        assert_eq!(OaiState::new("").base_url, DEFAULT_BASE_URL);
+        assert_eq!(OaiState::new("", test_corpus()).base_url, DEFAULT_BASE_URL);
     }
 
     #[test]
@@ -69,7 +73,7 @@ mod oai_state_tests {
     #[test]
     fn trailing_slash_is_stripped() {
         assert_eq!(
-            OaiState::new("https://repository.dasch.swiss/dpe/oai/").base_url,
+            OaiState::new("https://repository.dasch.swiss/dpe/oai/", test_corpus()).base_url,
             "https://repository.dasch.swiss/dpe/oai"
         );
     }

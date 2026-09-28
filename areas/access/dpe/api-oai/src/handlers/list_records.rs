@@ -1,43 +1,24 @@
 //! Handler for the OAI-PMH ListRecords verb.
 
-use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
-use shared_metadata::ContributorLookup;
-
-use super::{build_error_response, next_page_token, validate_list_params, OaiParams};
+use super::{build_error_response, next_page_token, validate_list_params, ListInputs, OaiParams};
 use crate::resumption::page_size;
 use crate::xml::OaiXmlBuilder;
 
-pub fn handle_list_records(
-    params: &OaiParams,
-    repo: &dyn ProjectRepository,
-    record_repo: &dyn RecordRepository,
-    clusters: &[ClusterRaw],
-    lookup: &dyn ContributorLookup,
-    base_url: &str,
-) -> String {
-    handle_list_records_paged(params, repo, record_repo, clusters, lookup, page_size(), base_url)
+pub fn handle_list_records(params: &OaiParams, inputs: &ListInputs) -> String {
+    handle_list_records_paged(params, inputs, page_size())
 }
 
 /// ListRecords with an explicit page size, so tests can exercise paging without
 /// large fixtures. Production callers use [`handle_list_records`].
-#[allow(clippy::too_many_arguments)]
-pub fn handle_list_records_paged(
-    params: &OaiParams,
-    repo: &dyn ProjectRepository,
-    record_repo: &dyn RecordRepository,
-    clusters: &[ClusterRaw],
-    lookup: &dyn ContributorLookup,
-    page_size: usize,
-    base_url: &str,
-) -> String {
-    let page = match validate_list_params(params, repo, record_repo, clusters, lookup, page_size) {
+pub fn handle_list_records_paged(params: &OaiParams, inputs: &ListInputs, page_size: usize) -> String {
+    let page = match validate_list_params(params, inputs, page_size) {
         Ok(result) => result,
-        Err(err) => return build_error_response(err, Some("ListRecords"), base_url),
+        Err(err) => return build_error_response(err, Some("ListRecords"), inputs.base_url),
     };
 
     let request_params: Vec<(&str, &str)> = page.request_params.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
 
-    let mut builder = OaiXmlBuilder::new(base_url);
+    let mut builder = OaiXmlBuilder::new(inputs.base_url);
     builder.write_request("ListRecords", &request_params);
 
     let end = (page.offset + page.page_size).min(page.records.len());
@@ -58,7 +39,7 @@ pub fn handle_list_records_paged(
 mod tests {
     use super::super::test_utils::{
         cluster_fixture, first_0803_record, golden, incunabula_lookup, incunabula_project, normalize,
-        project_with_shortcode, InMemoryProjectRepository, InMemoryRecordRepository,
+        project_with_shortcode, test_corpus, InMemoryProjectRepository, InMemoryRecordRepository,
     };
     use super::*;
 
@@ -97,11 +78,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("metadataPrefix argument is required"), "got: {}", xml);
@@ -113,11 +97,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"cannotDisseminateFormat\">"), "got: {}", xml);
     }
@@ -129,11 +116,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"badResumptionToken\">"), "got: {}", xml);
     }
@@ -146,11 +136,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
@@ -163,12 +156,15 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![project_with_shortcode("0001"), project_with_shortcode("0002")]);
         let xml = handle_list_records_paged(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         assert!(!xml.contains("<resumptionToken"), "no token for a single page, got: {}", xml);
     }
@@ -183,12 +179,15 @@ mod tests {
         ]);
         let xml = handle_list_records_paged(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("completeListSize=\"3\""), "got: {}", xml);
         assert!(xml.contains("cursor=\"0\""), "got: {}", xml);
@@ -222,12 +221,15 @@ mod tests {
             assert!(pages.len() < 10, "paging did not terminate");
             let xml = handle_list_records_paged(
                 &params,
-                &repo,
-                &InMemoryRecordRepository::empty(),
-                &[],
-                &lookup,
+                &ListInputs {
+                    repo: &repo,
+                    record_repo: &InMemoryRecordRepository::empty(),
+                    clusters: &[],
+                    lookup: &lookup,
+                    corpus: test_corpus(),
+                    base_url: crate::DEFAULT_BASE_URL,
+                },
                 2,
-                crate::DEFAULT_BASE_URL,
             );
             assert!(!xml.contains("<error"), "no page should error, got: {}", xml);
             let page: Vec<String> = ["0001", "0002", "0003", "0004", "0005"]
@@ -269,12 +271,15 @@ mod tests {
         let lookup = incunabula_lookup();
         let first = handle_list_records_paged(
             &make_params(Some("oai_dc")),
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &lookup,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &lookup,
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         let token = extract_token(&first).expect("first page has a token");
 
@@ -282,12 +287,15 @@ mod tests {
         params.resumption_token = Some(token);
         let last = handle_list_records_paged(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &lookup,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &lookup,
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         assert!(
             last.contains("<resumptionToken"),
@@ -313,12 +321,15 @@ mod tests {
         let lookup = incunabula_lookup();
         let first = handle_list_records_paged(
             &make_params(Some("oai_dc")),
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &lookup,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &lookup,
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         let token = extract_token(&first).expect("first page has a token");
 
@@ -326,12 +337,15 @@ mod tests {
         params.resumption_token = Some(token.clone());
         let second = handle_list_records_paged(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &lookup,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &lookup,
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         assert!(
             second.contains(&format!("resumptionToken=\"{token}\"")),
@@ -359,12 +373,15 @@ mod tests {
         // Walk to a later page against the big repo to get an offset=2 token.
         let first = handle_list_records_paged(
             &make_params(Some("oai_dc")),
-            &big,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &lookup,
+            &ListInputs {
+                repo: &big,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &lookup,
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         let token = extract_token(&first).expect("token present");
 
@@ -375,12 +392,15 @@ mod tests {
         params.resumption_token = Some(token);
         let xml = handle_list_records_paged(
             &params,
-            &small,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &lookup,
+            &ListInputs {
+                repo: &small,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &lookup,
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<error code=\"badResumptionToken\">"), "got: {}", xml);
     }
@@ -392,11 +412,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
@@ -409,11 +432,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
@@ -425,11 +451,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
@@ -441,11 +470,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
@@ -456,7 +488,17 @@ mod tests {
         params.set = Some("project:0803".to_string());
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
-        let xml = handle_list_records(&params, &repo, &record_repo, &[], &incunabula_lookup(), crate::DEFAULT_BASE_URL);
+        let xml = handle_list_records(
+            &params,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &record_repo,
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
+        );
         assert!(
             xml.contains("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             "record identifier should be present, got: {}",
@@ -481,11 +523,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
@@ -497,11 +542,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
@@ -512,7 +560,17 @@ mod tests {
         params.set = Some("entityType:Record".to_string());
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
-        let xml = handle_list_records(&params, &repo, &record_repo, &[], &incunabula_lookup(), crate::DEFAULT_BASE_URL);
+        let xml = handle_list_records(
+            &params,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &record_repo,
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
+        );
         assert!(
             xml.contains("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             "record identifier should be present, got: {}",
@@ -537,11 +595,14 @@ mod tests {
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &record_repo,
-            &clusters,
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &record_repo,
+                clusters: &clusters,
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(
             xml.contains("<identifier>oai:dasch.swiss:ark:/72163/1/0803</identifier>"),
@@ -570,11 +631,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &clusters,
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &clusters,
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(
             xml.contains("<identifier>oai:dasch.swiss:ark:/72163/1/0803</identifier>"),
@@ -593,11 +657,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &clusters,
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &clusters,
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
@@ -610,11 +677,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         let expected = golden("list_records_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -626,11 +696,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         let expected = golden("list_records_oai_datacite.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -641,7 +714,17 @@ mod tests {
         let params = make_params(Some("oai_dc"));
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
-        let xml = handle_list_records(&params, &repo, &record_repo, &[], &incunabula_lookup(), crate::DEFAULT_BASE_URL);
+        let xml = handle_list_records(
+            &params,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &record_repo,
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
+        );
         let expected = golden("list_records_mixed_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
     }
@@ -653,11 +736,14 @@ mod tests {
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_records(
             &params,
-            &InMemoryProjectRepository::new(vec![]),
-            &record_repo,
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &InMemoryProjectRepository::new(vec![]),
+                record_repo: &record_repo,
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         let expected = golden("list_records_record_only_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -671,11 +757,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
@@ -686,11 +775,14 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
@@ -700,7 +792,17 @@ mod tests {
         let params = make_params(Some("oai_dc"));
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
-        let xml = handle_list_records(&params, &repo, &record_repo, &[], &incunabula_lookup(), crate::DEFAULT_BASE_URL);
+        let xml = handle_list_records(
+            &params,
+            &ListInputs {
+                repo: &repo,
+                record_repo: &record_repo,
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
+        );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
@@ -714,12 +816,15 @@ mod tests {
         ]);
         let xml = handle_list_records_paged(
             &params,
-            &repo,
-            &InMemoryRecordRepository::empty(),
-            &[],
-            &incunabula_lookup(),
+            &ListInputs {
+                repo: &repo,
+                record_repo: &InMemoryRecordRepository::empty(),
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
             2,
-            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<resumptionToken"), "sanity: response is paged, got: {}", xml);
         crate::handlers::test_utils::validate_against_schema(&xml);
@@ -732,11 +837,14 @@ mod tests {
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_records(
             &params,
-            &InMemoryProjectRepository::new(vec![]),
-            &record_repo,
-            &[],
-            &incunabula_lookup(),
-            crate::DEFAULT_BASE_URL,
+            &ListInputs {
+                repo: &InMemoryProjectRepository::new(vec![]),
+                record_repo: &record_repo,
+                clusters: &[],
+                lookup: &incunabula_lookup(),
+                corpus: test_corpus(),
+                base_url: crate::DEFAULT_BASE_URL,
+            },
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }

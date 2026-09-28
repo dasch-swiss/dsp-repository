@@ -1,26 +1,25 @@
-//! In-process cache for persons.
+//! [`Corpus`]'s cache of persons.
 //!
 //! All persons are loaded from disk once on first access and held in a
 //! HashMap keyed by person ID for O(1) lookup.
 use std::collections::HashMap;
-use std::sync::OnceLock;
 
 use shared_metadata::Person;
 
-use super::utils::get_data_dir;
+use super::corpus::Corpus;
 
-static PERSONS: OnceLock<HashMap<String, Person>> = OnceLock::new();
-
-/// Return a reference to the cached person map, loading it on first call.
-pub fn all_persons() -> &'static HashMap<String, Person> {
-    PERSONS.get_or_init(load_all_persons)
+impl Corpus {
+    /// Return a reference to the cached person map, loading it on first call.
+    pub fn all_persons(&'static self) -> &'static HashMap<String, Person> {
+        self.persons_cache.get_or_init(|| load_all_persons(&self.settings.data_dir))
+    }
 }
 
-fn load_all_persons() -> HashMap<String, Person> {
+fn load_all_persons(data_dir: &str) -> HashMap<String, Person> {
     use std::fs;
     use std::path::PathBuf;
 
-    let persons_dir = PathBuf::from(get_data_dir()).join("persons");
+    let persons_dir = PathBuf::from(data_dir).join("persons");
 
     let Ok(entries) = fs::read_dir(&persons_dir) else {
         tracing::warn!(dir = ?persons_dir, "failed to read persons directory");

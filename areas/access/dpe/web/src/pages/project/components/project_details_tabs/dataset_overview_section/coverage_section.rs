@@ -95,7 +95,7 @@ mod tests {
             url: "https://chronontology.dainst.org/period/x".to_string(),
             text: Some("Bronze Age".to_string()),
         })];
-        let out = coverage_section(&temporal, &[], &RenderContext { show_placeholder_values: false }).into_string();
+        let out = coverage_section(&temporal, &[], &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Temporal Coverage"), "{out}");
         assert!(out.contains(r#"href="https://chronontology.dainst.org/period/x""#), "{out}");
         assert!(out.contains(r#"data-tip="https://chronontology.dainst.org/period/x""#), "{out}");
@@ -113,7 +113,7 @@ mod tests {
             url: "https://www.geonames.org/1".to_string(),
             text: Some("Rome".to_string()),
         }];
-        let out = coverage_section(&[], &spatial, &RenderContext { show_placeholder_values: false }).into_string();
+        let out = coverage_section(&[], &spatial, &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Spatial Coverage"), "{out}");
         assert!(out.contains("Rome"), "{out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn empty_renders_nothing() {
         assert_eq!(
-            coverage_section(&[], &[], &RenderContext { show_placeholder_values: false }).into_string(),
+            coverage_section(&[], &[], &crate::test_support::test_render_context(false)).into_string(),
             ""
         );
     }

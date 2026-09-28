@@ -842,6 +842,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shared-metadata",
+ "tempfile",
  "tracing",
  "ureq",
 ]

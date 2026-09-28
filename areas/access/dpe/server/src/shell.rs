@@ -14,13 +14,25 @@ pub(crate) struct AppState {
     /// `dpe-api-oai`'s `OaiState` takes the same normalised value, built alongside this one.
     pub(crate) oai_base_url: String,
     /// Origin emitted ARKs are rewritten to, and where the `/ark:/…` resolver route answers.
-    /// `None` (production, DEV, STAGE) keeps the corpus's ARKs and mounts no resolver.
-    /// `serve()` also sets it as `dpe-core`'s process-global ARK host from the same
-    /// `DpeConfig` field: the two must never be set apart.
+    /// `None` (production, DEV, STAGE) keeps the corpus's ARKs and mounts no resolver. This is
+    /// the resolver route's own copy; the corpus's setting (same `DpeConfig` field) is what
+    /// actually normalises the ARKs it serves.
     pub(crate) ark_resolver_base_url: Option<String>,
     /// Whether placeholder values ("MISSING", "CALCULATED") render, styled red for QA
     /// visibility, instead of being hidden. Carried through to `dpe_web::RenderContext`.
     pub(crate) show_placeholder_values: bool,
+    /// The corpus every handler reads projects, records and contributors from.
+    pub(crate) corpus: &'static dpe_core::Corpus,
+}
+
+impl AppState {
+    /// The `dpe_web::RenderContext` every page and fragment handler renders against.
+    pub(crate) fn render_context(&self) -> dpe_web::RenderContext {
+        dpe_web::RenderContext {
+            show_placeholder_values: self.show_placeholder_values,
+            corpus: self.corpus,
+        }
+    }
 }
 
 /// Query params for the project detail page: `?tab=` pre-selects the tab.
@@ -35,7 +47,8 @@ pub(crate) async fn projects_page_handler(
     axum::extract::Query(query): axum::extract::Query<dpe_web::domain::ProjectQuery>,
 ) -> axum::response::Html<String> {
     let tp = traceparent::extract_traceparent();
-    let content = dpe_web::pages::projects_page(&query);
+    let ctx = state.render_context();
+    let content = dpe_web::pages::projects_page(&query, &ctx);
     axum::response::Html(
         view::page(
             "DaSCH Metadata Browser Projects Overview",
@@ -104,10 +117,12 @@ pub(crate) async fn project_page_handler(
         .as_deref()
         .filter(|t| dpe_core::project::VALID_TABS.contains(t))
         .unwrap_or("overview");
-    let ctx = dpe_web::RenderContext { show_placeholder_values: state.show_placeholder_values };
+    let ctx = state.render_context();
     let content = dpe_web::pages::project_page(&id, active_tab, &ctx);
     // The display name when the project resolves (a cache read), else the shortcode.
-    let title = dpe_core::project_cache::project_by_shortcode(&id)
+    let title = state
+        .corpus
+        .project_by_shortcode(&id)
         .map(|p| format!("{} — DaSCH Metadata Browser", p.name))
         .unwrap_or_else(|| format!("Project {id} — DaSCH Metadata Browser"));
     let body = view::page(

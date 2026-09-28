@@ -63,7 +63,7 @@ pub async fn tab_fragment_handler(
         return Err(StatusCode::NOT_FOUND);
     }
 
-    let project = get_project(&id).ok_or(StatusCode::NOT_FOUND)?;
+    let project = get_project(&id, state.corpus).ok_or(StatusCode::NOT_FOUND)?;
 
     let has_publications_tab = has_publications(&project);
     if tab == "publications" && !has_publications_tab {
@@ -71,13 +71,13 @@ pub async fn tab_fragment_handler(
     }
 
     let contributors = if tab == "contributors" {
-        get_contributors(project.attributions.clone())
+        get_contributors(project.attributions.clone(), state.corpus)
     } else {
         vec![]
     };
 
     // Render the `#project-tabs` morph root (the same renderer the full page uses)
-    let ctx = dpe_web::RenderContext { show_placeholder_values: state.show_placeholder_values };
+    let ctx = state.render_context();
     let html = project_tabs(&project, &contributors, &tab, has_publications_tab, &ctx).into_string();
 
     let patch = PatchElements::new(html).selector("#project-tabs").use_view_transition(true);
@@ -116,6 +116,7 @@ pub struct SearchSignals {
     )
 )]
 pub async fn search_fragment_handler(
+    State(state): State<AppState>,
     ReadSignals(signals): ReadSignals<SearchSignals>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
     let search = signals.search.trim().to_string();
@@ -135,6 +136,7 @@ pub async fn search_fragment_handler(
             None,                 // type_of_data
             None,                 // data_language
             None,                 // access_rights
+            state.corpus,
         )
     };
 
@@ -184,16 +186,16 @@ fn render_search_results(query: &str, results: &Page) -> String {
     .into_string()
 }
 
-pub async fn projects_json_handler() -> impl IntoResponse {
+pub async fn projects_json_handler(State(state): State<AppState>) -> impl IntoResponse {
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
     use shared_metadata::project::ProjectRaw;
 
-    let repo = FsProjectRepository::new();
+    let repo = FsProjectRepository::new(state.corpus);
     let projects: Vec<ProjectRaw> = repo.get_all().iter().map(ProjectRaw::from).collect();
     axum::Json(projects).into_response()
 }
 
-pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn project_json_handler(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
     use shared_metadata::project::is_valid_shortcode;
 
@@ -201,7 +203,7 @@ pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
         return StatusCode::BAD_REQUEST.into_response();
     }
 
-    let repo = FsProjectRepository::new();
+    let repo = FsProjectRepository::new(state.corpus);
     match repo.get_by_shortcode(&id) {
         Some(proj) => axum::Json(shared_metadata::project::ProjectRaw::from(proj)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
@@ -288,19 +290,7 @@ mod tests {
 
     // --- Integration tests: tab_fragment_handler via tower ---
 
-    fn init_test_data() {
-        use std::sync::Once;
-        static INIT: Once = Once::new();
-        INIT.call_once(|| {
-            let data_dir = format!("{}/data", env!("CARGO_MANIFEST_DIR"));
-            dpe_core::set_data_dir(&data_dir);
-            // Same reason as router.rs: the public dir is not the test cwd.
-            dpe_core::set_public_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../public"));
-        });
-    }
-
     fn test_app() -> Router {
-        init_test_data();
         // Show placeholders in tests to exercise the red-styled rendering path.
         let state = AppState {
             show_placeholder_values: true,
@@ -470,13 +460,14 @@ mod tests {
     /// silently breaking Datastar's outer-morph.
     #[tokio::test]
     async fn morph_contract_project_tabs_open_tag_identical() {
-        init_test_data();
+        let corpus = crate::test_support::test_state().corpus;
 
         // Page path: the full project-detail view wraps `project_tabs` in a card.
-        let project = dpe_core::project_cache::project_by_shortcode("0803")
+        let project = corpus
+            .project_by_shortcode("0803")
             .expect("project 0803 missing in test data")
             .clone();
-        let ctx = dpe_web::RenderContext { show_placeholder_values: true };
+        let ctx = dpe_web::RenderContext { show_placeholder_values: true, corpus };
         let page_html =
             dpe_web::pages::project::components::project_details::project_details(&project, &[], "overview", &ctx)
                 .into_string();
@@ -532,7 +523,10 @@ mod tests {
     //     FundingSection, EntityName, OrganizationName, Person, AffiliationName) ---
 
     fn render_project_sidebar(project: &Project) -> String {
-        let ctx = dpe_web::RenderContext { show_placeholder_values: true };
+        let ctx = dpe_web::RenderContext {
+            show_placeholder_values: true,
+            ..crate::test_support::test_state().render_context()
+        };
         dpe_web::pages::project::components::project_sidebar::project_sidebar(project, &ctx).into_string()
     }
 
@@ -541,8 +535,9 @@ mod tests {
     /// from the funding section), and the affiliation chain for the contact.
     #[test]
     fn snapshot_project_sidebar_real_project() {
-        init_test_data();
-        let project = dpe_core::project_cache::project_by_shortcode("0803")
+        let project = crate::test_support::test_state()
+            .corpus
+            .project_by_shortcode("0803")
             .expect("project 0803 missing in test data")
             .clone();
         let html = render_project_sidebar(&project);
@@ -556,7 +551,6 @@ mod tests {
     fn snapshot_project_sidebar_with_entity_ids() {
         use shared_metadata::{AccessRights, AccessRightsType, Funding, ProjectStatus};
 
-        init_test_data();
         let project = Project {
             id: "test-entity-ids".to_string(),
             pid: "https://ark.dasch.swiss/ark:/72163/1/0001".to_string(),

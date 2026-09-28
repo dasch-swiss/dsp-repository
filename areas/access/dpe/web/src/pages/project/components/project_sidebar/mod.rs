@@ -36,7 +36,7 @@ pub fn project_sidebar(proj: &Project, ctx: &RenderContext) -> Markup {
                 @if !proj.legal_info.is_empty() { (legal_info(&proj.legal_info, ctx)) }
 
                 @if let Some(ids) = proj.contact_point.as_ref().filter(|v| !v.is_empty()) {
-                    div { (contact_section(ids)) }
+                    div { (contact_section(ids, ctx)) }
                 }
                 div class="dpe-divider" {}
                 h3 class="dpe-title" { "Project Timeline" }
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn renders_cite_access_timeline_and_funding() {
-        let out = project_sidebar(&sample_project(), &RenderContext { show_placeholder_values: false }).into_string();
+        let out = project_sidebar(&sample_project(), &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Cite this Project"), "{out}");
         assert!(out.contains("Permalink"), "{out}");
         assert!(out.contains("Citation"), "{out}");
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn renders_period_range_for_real_dates() {
-        let out = project_sidebar(&sample_project(), &RenderContext { show_placeholder_values: false }).into_string();
+        let out = project_sidebar(&sample_project(), &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("2020-01-01 – 2024-12-31"), "period range: {out}");
     }
 }

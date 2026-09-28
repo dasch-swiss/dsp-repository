@@ -6,13 +6,14 @@ use super::components::project_filters::project_filters;
 use super::components::project_list::project_list;
 use super::components::project_search_input::project_search_input;
 use crate::domain::{list_data_languages, list_type_of_data, ProjectQuery};
+use crate::RenderContext;
 
 /// Projects index page.
 ///
 /// Resolved synchronously from the in-memory project cache. The `query` is
 /// parsed from the URL query string by the Axum route handler and carries the
 /// active search/filter/pagination state.
-pub fn projects_page(query: &ProjectQuery) -> Markup {
+pub fn projects_page(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
     let status_items = query.status_filter_items();
     let access_rights_items = query.access_rights_filter_items();
 
@@ -21,7 +22,7 @@ pub fn projects_page(query: &ProjectQuery) -> Markup {
     let close_dialog_href = format!("/dpe/projects{}", query.clone().with_dialog(false).to_query_string());
 
     let type_of_data_selected = query.type_of_data();
-    let type_of_data_items: Vec<(String, bool, String)> = list_type_of_data()
+    let type_of_data_items: Vec<(String, bool, String)> = list_type_of_data(ctx.corpus)
         .into_iter()
         .map(|t| {
             let checked = type_of_data_selected.contains(&t);
@@ -31,7 +32,7 @@ pub fn projects_page(query: &ProjectQuery) -> Markup {
         .collect();
 
     let data_language_selected = query.data_language();
-    let data_language_items: Vec<(String, bool, String)> = list_data_languages()
+    let data_language_items: Vec<(String, bool, String)> = list_data_languages(ctx.corpus)
         .into_iter()
         .map(|(code, display)| {
             let checked = data_language_selected.contains(&code);
@@ -77,7 +78,7 @@ pub fn projects_page(query: &ProjectQuery) -> Markup {
                         .variant(CardVariant::Bordered)
                         .class("overflow-visible")
                 })
-                (project_list(query))
+                (project_list(query, ctx))
             }
         }
     }
@@ -86,12 +87,13 @@ pub fn projects_page(query: &ProjectQuery) -> Markup {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::test_render_context;
 
     #[test]
     fn renders_filter_sidebar_and_search() {
-        // Facets read the in-memory cache (empty in the test environment); the
-        // static page structure renders regardless.
-        let out = projects_page(&ProjectQuery::default()).into_string();
+        // Facets read the committed test corpus; the static page structure
+        // renders regardless.
+        let out = projects_page(&ProjectQuery::default(), &test_render_context(false)).into_string();
         assert!(out.contains("Filters"), "{out}");
         assert!(
             out.contains(r#"<form method="get" action="/dpe/projects">"#),

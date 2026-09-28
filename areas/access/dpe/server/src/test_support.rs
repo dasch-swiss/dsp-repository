@@ -2,6 +2,10 @@
 //! with, and a `Link` header parser so header assertions are about relations
 //! rather than substrings.
 
+use std::sync::OnceLock;
+
+use dpe_core::{Corpus, CorpusSettings};
+
 use crate::shell::AppState;
 
 /// Static assets come from a nonexistent dir: the tests using this target
@@ -9,22 +13,30 @@ use crate::shell::AppState;
 /// exercised.
 pub(crate) const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
 
+/// A corpus over the committed data, leaked once for the whole test binary and
+/// shared by every test that needs one.
+///
+/// Several corpora could coexist in one test binary (each fixture directory
+/// gets its own), which the statics this replaces made impossible; this crate's
+/// tests all read the one committed dataset, so one shared, leaked corpus is
+/// enough.
+pub(crate) fn test_corpus() -> &'static Corpus {
+    static CORPUS: OnceLock<Corpus> = OnceLock::new();
+    CORPUS.get_or_init(|| {
+        Corpus::new(CorpusSettings {
+            data_dir: concat!(env!("CARGO_MANIFEST_DIR"), "/data").to_string(),
+            public_dir: concat!(env!("CARGO_MANIFEST_DIR"), "/../public").to_string(),
+            ark_resolver_base_url: None,
+        })
+    })
+}
+
 /// The app state every test in this crate builds a router or renders a page
 /// with.
-///
-/// It also points `dpe-core` at the committed data, because that is the one
-/// call every such test makes. Both directories are process-global `OnceLock`s
-/// whose first caller wins, and `cargo test` runs from the package directory,
-/// where `dpe-core`'s relative defaults miss: a test that touched a cache
-/// before any of them was set would pin the *empty* corpus for the whole
-/// binary, and every test needing real data would then fail depending on the
-/// order the threads happened to take.
 ///
 /// The two base URLs differ on purpose, as they do on DEV, so a test cannot
 /// pass by accident when one is derived from the other.
 pub(crate) fn test_state() -> AppState {
-    dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
-    dpe_core::set_public_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../public"));
     AppState {
         fathom_site_id: None,
         css_href: "/assets/app.css".to_string(),
@@ -32,6 +44,7 @@ pub(crate) fn test_state() -> AppState {
         oai_base_url: "https://oai.example.test/dpe/oai".to_string(),
         ark_resolver_base_url: None,
         show_placeholder_values: false,
+        corpus: test_corpus(),
     }
 }
 

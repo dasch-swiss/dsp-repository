@@ -23,45 +23,13 @@
 //! # What it does
 //!
 //! Unset — the default, and what production, DEV and STAGE run — nothing is
-//! normalised and every ARK is the one the corpus records. Set, every ARK
-//! entering the caches carries the configured host instead, so a deployment
-//! that is not the one the recorded ARK resolves to does not publish an
-//! identifier that sends a reader somewhere else. Only the host: the ARK path
-//! is the identifier.
-
-use std::sync::OnceLock;
+//! normalised and every ARK is the one the corpus records. Set, on
+//! [`crate::CorpusSettings::ark_resolver_base_url`], every ARK entering the
+//! caches carries the configured host instead, so a deployment that is not the
+//! one the recorded ARK resolves to does not publish an identifier that sends
+//! a reader somewhere else. Only the host: the ARK path is the identifier.
 
 use shared_metadata::{ProjectRaw, Record};
-
-static ARK_RESOLVER_BASE_URL: OnceLock<Option<String>> = OnceLock::new();
-
-/// Sets the ARK resolver origin at startup, before any cache is populated.
-///
-/// A `OnceLock` set from dpe-server's `serve()`, beside `set_data_dir` and
-/// `set_public_dir`, all deployment configuration for how the corpus is loaded
-/// and presented. This is a third of that kind, not a new kind.
-///
-/// It is **not** the rule ADR-0005 states about a process-global. That rule is
-/// about the public base URL DPE builds its own URLs from, which stays in
-/// `AppState`. This normalises an identifier as data arrives, which is a
-/// different act in a different place.
-pub fn set_ark_resolver_base_url(url: Option<&str>) {
-    let value = url
-        .map(|url| url.trim_end_matches('/').to_string())
-        .filter(|url| !url.is_empty());
-    if ARK_RESOLVER_BASE_URL.set(value).is_err() {
-        tracing::warn!(new = url, "set_ark_resolver_base_url called again but the value is already set");
-    }
-}
-
-/// The configured resolver origin, or `None` for the recorded host.
-///
-/// No environment-variable fallback: unset has to mean "the recorded host" and
-/// nothing else, so that a test proving the unset case cannot be steered by the
-/// environment it happens to run in.
-pub fn ark_resolver_base_url() -> Option<&'static str> {
-    ARK_RESOLVER_BASE_URL.get_or_init(|| None).as_deref()
-}
 
 /// Normalises one project's recorded PID.
 ///
@@ -166,10 +134,70 @@ mod tests {
         }
     }
 
+    /// The normalisation rule proven above wired end to end: a corpus built
+    /// with `ark_resolver_base_url: Some(host)` normalises both a project and
+    /// a record on load, and one built with `None` leaves both as committed.
+    /// Two corpora over the same fixture directory, differing only in that
+    /// setting, both leaked in this test — impossible against the setter this
+    /// replaces, which was first-call-wins for the whole process.
     #[test]
-    fn the_resolver_is_unset_by_default() {
-        // Nothing in this crate's tests sets it, so this also states the state
-        // every other test here runs in.
-        assert_eq!(ark_resolver_base_url(), None);
+    fn a_corpus_settings_host_controls_normalisation_on_load() {
+        use crate::corpus::{Corpus, CorpusSettings};
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(dir.path().join("projects")).unwrap();
+        std::fs::create_dir_all(dir.path().join("records")).unwrap();
+        std::fs::write(
+            dir.path().join("projects/0803.json"),
+            std::fs::read_to_string(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../server/data/projects/0803_incunabula.json"
+            ))
+            .expect("committed fixture is readable"),
+        )
+        .unwrap();
+        // Written as the wire format directly, not round-tripped through
+        // `Record`: its `pid` deserializes from a string but serializes as a
+        // struct, so a `Record` built in memory cannot be written back out
+        // and reread.
+        std::fs::write(
+            dir.path().join("records/0803-records.json"),
+            serde_json::to_string(&serde_json::json!([{
+                "id": "rec-1",
+                "pid": "https://ark.dasch.swiss/ark:/72163/1/0803/rec-1",
+                "label": { "en": "A Record" },
+                "accessRights": "Full Open Access",
+                "legalInfo": {
+                    "license": { "licenseIdentifier": "", "licenseDate": "", "licenseURI": "" },
+                    "copyrightHolder": "",
+                    "authorship": [],
+                },
+            }]))
+            .unwrap(),
+        )
+        .unwrap();
+        // The loader also tries to warm three hardcoded shortcodes over the
+        // network when they are not already on disk; pre-seeding them empty
+        // keeps this test offline.
+        for shortcode in ["0868", "081C"] {
+            std::fs::write(dir.path().join(format!("records/{shortcode}-records.json")), "[]").unwrap();
+        }
+
+        let configured: &'static Corpus = Box::leak(Box::new(Corpus::new(CorpusSettings {
+            data_dir: dir.path().to_string_lossy().into_owned(),
+            public_dir: dir.path().to_string_lossy().into_owned(),
+            ark_resolver_base_url: Some(PREVIEW.to_string()),
+        })));
+        let unset: &'static Corpus = Box::leak(Box::new(Corpus::new(CorpusSettings {
+            data_dir: dir.path().to_string_lossy().into_owned(),
+            public_dir: dir.path().to_string_lossy().into_owned(),
+            ark_resolver_base_url: None,
+        })));
+
+        assert!(configured.all_projects_raw()[0].pid.starts_with(PREVIEW));
+        assert!(unset.all_projects_raw()[0].pid.starts_with("https://ark.dasch.swiss/"));
+
+        assert!(configured.all_records()[0].pid.as_url().starts_with(PREVIEW));
+        assert!(unset.all_records()[0].pid.as_url().starts_with("https://ark.dasch.swiss/"));
     }
 }

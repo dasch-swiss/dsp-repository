@@ -1,73 +1,67 @@
-//! In-process cache for the full project list.
+//! [`Corpus`]'s cache of the full project list.
 //!
 //! All projects are loaded from disk once on first access and held in memory
-//! for the lifetime of the server process. This avoids re-reading and
-//! re-deserializing every JSON file on every request.
+//! for the lifetime of the corpus. This avoids re-reading and re-deserializing
+//! every JSON file on every request.
 use std::collections::HashMap;
-use std::sync::OnceLock;
 
 use shared_metadata::ProjectRaw;
 
+use super::corpus::Corpus;
 use super::project::Project;
-use super::utils::get_data_dir;
 
-/// Both vectors come from the single directory pass in [`load_all_projects`]
-/// and stay index-aligned: position `i` in one is the same project as
-/// position `i` in the other, which is what lets [`SHORTCODE_INDEX`] (built
-/// from the view-model vector only) also serve `all_projects_raw` and
-/// `project_raw_by_shortcode`.
-static PROJECTS_CACHE: OnceLock<(Vec<Project>, Vec<ProjectRaw>)> = OnceLock::new();
-static SHORTCODE_INDEX: OnceLock<HashMap<String, usize>> = OnceLock::new();
+impl Corpus {
+    /// Return a reference to the cached project list, loading it on first call.
+    pub fn all_projects(&'static self) -> &'static Vec<Project> {
+        &self.projects_cache.get_or_init(|| self.load_all_projects()).0
+    }
 
-/// Return a reference to the cached project list, loading it on first call.
-pub fn all_projects() -> &'static Vec<Project> {
-    &PROJECTS_CACHE.get_or_init(load_all_projects).0
-}
+    /// Return a reference to the cached raw (wire-contract) project list, loading
+    /// it on first call. Index-aligned with [`Corpus::all_projects`].
+    pub fn all_projects_raw(&'static self) -> &'static Vec<ProjectRaw> {
+        &self.projects_cache.get_or_init(|| self.load_all_projects()).1
+    }
 
-/// Return a reference to the cached raw (wire-contract) project list, loading
-/// it on first call. Index-aligned with [`all_projects`].
-pub fn all_projects_raw() -> &'static Vec<ProjectRaw> {
-    &PROJECTS_CACHE.get_or_init(load_all_projects).1
-}
+    /// O(1) lookup of a project by shortcode using the cached HashMap index.
+    pub fn project_by_shortcode(&'static self, shortcode: &str) -> Option<&'static Project> {
+        self.project_index()
+            .get(&shortcode.to_uppercase())
+            .map(|&i| &self.all_projects()[i])
+    }
 
-/// O(1) lookup of a project by shortcode using the cached HashMap index.
-pub fn project_by_shortcode(shortcode: &str) -> Option<&'static Project> {
-    shortcode_index().get(&shortcode.to_uppercase()).map(|&i| &all_projects()[i])
-}
+    /// O(1) lookup of the raw (wire-contract) project by shortcode, using the same
+    /// index as [`Corpus::project_by_shortcode`] — safe because the raw and view-model
+    /// vectors are built in the same pass and stay index-aligned.
+    pub fn project_raw_by_shortcode(&'static self, shortcode: &str) -> Option<&'static ProjectRaw> {
+        self.project_index()
+            .get(&shortcode.to_uppercase())
+            .map(|&i| &self.all_projects_raw()[i])
+    }
 
-/// O(1) lookup of the raw (wire-contract) project by shortcode, using the same
-/// index as [`project_by_shortcode`] — safe because the raw and view-model
-/// vectors are built in the same pass and stay index-aligned.
-pub fn project_raw_by_shortcode(shortcode: &str) -> Option<&'static ProjectRaw> {
-    shortcode_index()
-        .get(&shortcode.to_uppercase())
-        .map(|&i| &all_projects_raw()[i])
-}
+    fn project_index(&'static self) -> &'static HashMap<String, usize> {
+        self.project_index_cache.get_or_init(|| {
+            self.all_projects()
+                .iter()
+                .enumerate()
+                .map(|(i, p)| (p.shortcode.to_uppercase(), i))
+                .collect()
+        })
+    }
 
-fn shortcode_index() -> &'static HashMap<String, usize> {
-    SHORTCODE_INDEX.get_or_init(|| {
-        all_projects()
-            .iter()
-            .enumerate()
-            .map(|(i, p)| (p.shortcode.to_uppercase(), i))
-            .collect()
-    })
-}
-
-fn load_all_projects() -> (Vec<Project>, Vec<ProjectRaw>) {
-    load_projects_from(
-        &std::path::PathBuf::from(get_data_dir()).join("projects"),
-        crate::ark::ark_resolver_base_url(),
-    )
+    fn load_all_projects(&self) -> (Vec<Project>, Vec<ProjectRaw>) {
+        load_projects_from(
+            &std::path::PathBuf::from(&self.settings.data_dir).join("projects"),
+            self.settings.ark_resolver_base_url.as_deref(),
+        )
+    }
 }
 
 /// The directory pass itself, separated from the cache so a test can run it
 /// over the committed corpus with a chosen resolver host.
 ///
-/// Same reason `record_cache::index_by_shortcode` is separate: the cache is a
-/// process-global keyed on `DPE_DATA_DIR`, which a test cannot vary, so the
-/// only way to prove the ingress normalisation actually happens on load is to
-/// be able to call the loader directly.
+/// Same reason `record_cache::index_by_shortcode` is separate: proving the
+/// ingress normalisation actually happens on load needs the loader called
+/// directly, independent of any particular corpus's settings.
 pub(crate) fn load_projects_from(
     projects_dir: &std::path::Path,
     ark_resolver: Option<&str>,
@@ -124,10 +118,9 @@ mod ingress_tests {
 
     /// The loader normalises on the way in, over the real committed corpus.
     ///
-    /// Run against the loader rather than the cache: the cache is a
-    /// process-global keyed on `DPE_DATA_DIR`, so a test cannot give it a
-    /// resolver. This is the wiring the whole placement rests on — if the ARK
-    /// is not normalised here, nothing downstream fixes it.
+    /// Run against the loader rather than a corpus: this is the wiring the
+    /// whole placement rests on — if the ARK is not normalised here, nothing
+    /// downstream fixes it.
     #[test]
     fn a_configured_resolver_normalises_every_project_on_load() {
         let (projects, raws) = load_projects_from(std::path::Path::new(COMMITTED), Some(PREVIEW));

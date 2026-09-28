@@ -19,7 +19,7 @@ pub fn project_details(
         div class="space-y-6" {
             (breadcrumb(&proj.name))
 
-            (project_header(proj))
+            (project_header(proj, ctx))
 
             div class="flex flex-col lg:flex-row gap-6 lg:items-start" {
                 div class="card card-bordered overflow-visible p-4 space-y-4 text-gray-700 flex-1 pt-4"
@@ -51,7 +51,7 @@ mod tests {
             &sample_project(),
             &[],
             "overview",
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(out.contains("breadcrumb"), "breadcrumb: {out}");

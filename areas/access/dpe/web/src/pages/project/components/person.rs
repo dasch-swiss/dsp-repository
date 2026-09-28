@@ -1,3 +1,4 @@
+use dpe_core::Corpus;
 use maud::{html, Markup};
 use mosaic_tiles::icon::{icon, Mail};
 use shared_metadata::organization::Organization;
@@ -45,11 +46,11 @@ fn email_link(addr: &str) -> Markup {
 
 /// Render a person looked up by ID. Affiliations are resolved (by ID) to their
 /// organization names. Used where the caller only has an ID (e.g. contact).
-pub fn person(person_id: &str, roles: Option<&str>, show_email: bool) -> Markup {
-    match dpe_core::load_person(person_id) {
+pub fn person(person_id: &str, roles: Option<&str>, show_email: bool, corpus: &'static Corpus) -> Markup {
+    match corpus.load_person(person_id) {
         Some(person) => html! {
             (person_name_and_roles(&person, roles))
-            @for org_id in &person.affiliations { (affiliation_name(org_id)) }
+            @for org_id in &person.affiliations { (affiliation_name(org_id, corpus)) }
             @if show_email {
                 @if let Some(addr) = &person.email { (email_link(addr)) }
             }
@@ -61,8 +62,8 @@ pub fn person(person_id: &str, roles: Option<&str>, show_email: bool) -> Markup 
 }
 
 /// Render an organization name (by ID) as an affiliation line.
-pub fn affiliation_name(org_id: &str) -> Markup {
-    match dpe_core::load_organization(org_id) {
+pub fn affiliation_name(org_id: &str, corpus: &'static Corpus) -> Markup {
+    match corpus.load_organization(org_id) {
         Some(o) => html! {
             div class="text-gray-600" { (o.name) }
         },
@@ -87,7 +88,7 @@ pub fn person_view(person: &Person, affiliations: &[Organization], roles: Option
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::{sample_organization, sample_person};
+    use crate::test_support::{sample_organization, sample_person, test_corpus};
 
     #[test]
     fn person_view_renders_name_roles_and_affiliation() {
@@ -115,7 +116,7 @@ mod tests {
 
     #[test]
     fn unknown_person_renders_not_found() {
-        let out = person("person-missing", None, false).into_string();
+        let out = person("person-missing", None, false, test_corpus()).into_string();
         assert!(out.contains("Person not found"), "{out}");
     }
 

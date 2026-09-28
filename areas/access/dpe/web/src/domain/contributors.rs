@@ -1,12 +1,12 @@
-// Sync, in-memory contributor resolver: hashmap lookups against
-// `dpe_core::contributors`, called directly from the project page and the SSE
+// Sync, in-memory contributor resolver: corpus lookups against the person and
+// organization caches, called directly from the project page and the SSE
 // fragment handler.
 
 pub use dpe_core::contributors::ResolvedContributor;
+use dpe_core::Corpus;
 use shared_metadata::project::Attribution;
 
-pub fn get_contributors(attributions: Vec<Attribution>) -> Vec<ResolvedContributor> {
-    use dpe_core::contributors::{load_organization, load_person};
+pub fn get_contributors(attributions: Vec<Attribution>, corpus: &'static Corpus) -> Vec<ResolvedContributor> {
     use shared_metadata::is_organization_id;
 
     let mut result = Vec::with_capacity(attributions.len());
@@ -14,16 +14,16 @@ pub fn get_contributors(attributions: Vec<Attribution>) -> Vec<ResolvedContribut
         let roles = (!attr.contributor_type.is_empty()).then(|| attr.contributor_type.join(", "));
         let id = &attr.contributor;
         if is_organization_id(id) {
-            match load_organization(id) {
+            match corpus.load_organization(id) {
                 Some(org) => result.push(ResolvedContributor::Organization { org, roles }),
                 None => result.push(ResolvedContributor::Unknown { id: id.clone(), roles }),
             }
         } else {
-            match load_person(id) {
+            match corpus.load_person(id) {
                 Some(person) => {
                     let mut affiliations = Vec::with_capacity(person.affiliations.len());
                     for aff_id in &person.affiliations {
-                        if let Some(org) = load_organization(aff_id) {
+                        if let Some(org) = corpus.load_organization(aff_id) {
                             affiliations.push(org);
                         }
                     }

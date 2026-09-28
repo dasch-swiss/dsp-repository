@@ -195,7 +195,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-core"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "serde",
  "serde_json",
@@ -859,7 +859,7 @@ dependencies = [
 
 [[package]]
 name = "shared-metadata"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "serde",
  "serde_json",
@@ -868,7 +868,7 @@ dependencies = [
 
 [[package]]
 name = "shared-telemetry"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "axum",
  "opentelemetry",

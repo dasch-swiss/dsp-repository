@@ -1,18 +1,15 @@
 // Project-list domain helpers.
 //
-// Plain synchronous reads of the in-memory project cache
-// (`dpe_core::all_projects`), called directly from page handlers and the SSE
-// fragment handler.
+// Plain synchronous reads of the corpus's project cache, called directly from
+// page handlers and the SSE fragment handler.
 
-use dpe_core::{Page, Project};
+use dpe_core::{Corpus, Page, Project};
 
-pub fn list_type_of_data() -> Vec<String> {
+pub fn list_type_of_data(corpus: &'static Corpus) -> Vec<String> {
     use std::collections::HashSet;
 
-    use dpe_core::all_projects;
-
     let mut types: HashSet<String> = HashSet::new();
-    for project in all_projects() {
+    for project in corpus.all_projects() {
         if let Some(t) = &project.type_of_data {
             types.extend(t.iter().cloned());
         }
@@ -22,13 +19,13 @@ pub fn list_type_of_data() -> Vec<String> {
     result
 }
 
-pub fn list_data_languages() -> Vec<(String, String)> {
+pub fn list_data_languages(corpus: &'static Corpus) -> Vec<(String, String)> {
     use std::collections::HashSet;
 
-    use dpe_core::{all_projects, language_display_name};
+    use dpe_core::language_display_name;
 
     let mut codes: HashSet<String> = HashSet::new();
-    for project in all_projects() {
+    for project in corpus.all_projects() {
         if let Some(langs) = &project.data_language {
             for lang in langs {
                 codes.insert(lang.clone());
@@ -56,9 +53,8 @@ pub fn list_projects(
     type_of_data: Option<String>,
     data_language: Option<String>,
     access_rights: Option<String>,
+    corpus: &'static Corpus,
 ) -> Page {
-    use dpe_core::all_projects;
-
     use super::project::ProjectQuery;
 
     let query = ProjectQuery {
@@ -72,7 +68,7 @@ pub fn list_projects(
         dialog: None,
     };
 
-    filter_and_paginate(all_projects(), &query, page_size)
+    filter_and_paginate(corpus.all_projects(), &query, page_size)
 }
 
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
@@ -156,24 +152,24 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
     Page { items, nr_pages, total_items }
 }
 
-pub fn get_project(shortcode: &str) -> Option<Project> {
+pub fn get_project(shortcode: &str, corpus: &'static Corpus) -> Option<Project> {
     use std::fs;
     use std::path::PathBuf;
 
-    use dpe_core::{get_data_dir, CollectionRef};
+    use dpe_core::CollectionRef;
 
     // Look up the base project from the in-memory cache — case-insensitive,
     // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
-    let base = dpe_core::project_cache::project_by_shortcode(shortcode)?;
+    let base = corpus.project_by_shortcode(shortcode)?;
     let mut project = base.clone();
     let canonical_shortcode = project.shortcode.clone();
 
     // Resolve clusters from the in-memory cache (reverse lookup). Compare
     // case-insensitively so cluster files referencing a different case still
     // resolve to the same project.
-    project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
+    project.clusters = corpus.clusters_for_shortcode(&canonical_shortcode);
 
-    let data_path = PathBuf::from(get_data_dir());
+    let data_path = PathBuf::from(corpus.data_dir());
     let collections_dir = data_path.join("collections");
     project.collections = project
         .collection_ids

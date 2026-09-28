@@ -5,12 +5,13 @@ use mosaic_tiles::card::{card, card_body_with_class, CardVariant};
 use mosaic_tiles::icon::{icon, OpenDocument};
 
 use super::statusbadge::project_card_indicators;
+use crate::RenderContext;
 
 /// A project tile for the projects grid: cover image (with fallback), title,
 /// short description, and up to three keyword badges. The whole card links to
 /// the project detail page. `keywords` are pre-resolved to display strings.
-pub fn project_card(project: &Project, keywords: &[String]) -> Markup {
-    render_project_card(project, keywords, dpe_core::cover_image_url(&project.shortcode).as_deref())
+pub fn project_card(project: &Project, keywords: &[String], ctx: &RenderContext) -> Markup {
+    render_project_card(project, keywords, ctx.corpus.cover_image_url(&project.shortcode).as_deref())
 }
 
 /// Render a card against an already-resolved `cover`. Separated from the cache

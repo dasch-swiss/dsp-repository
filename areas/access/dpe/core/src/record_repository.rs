@@ -2,6 +2,8 @@
 
 use shared_metadata::Record;
 
+use super::corpus::Corpus;
+
 /// Repository interface for accessing Records.
 pub trait RecordRepository {
     fn get_all(&self) -> &[Record];
@@ -24,36 +26,30 @@ pub trait RecordRepository {
 
 /// Filesystem-backed implementation of [`RecordRepository`].
 ///
-/// Backed by the in-process record cache (loaded once on first access).
-pub struct FsRecordRepository;
-
-impl Default for FsRecordRepository {
-    fn default() -> Self {
-        Self
-    }
+/// Backed by a corpus's in-process record cache (loaded once on first access).
+pub struct FsRecordRepository {
+    corpus: &'static Corpus,
 }
 
 impl FsRecordRepository {
-    pub fn new() -> Self {
-        Self
+    pub fn new(corpus: &'static Corpus) -> Self {
+        Self { corpus }
     }
 }
 
 impl RecordRepository for FsRecordRepository {
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all(&self) -> &[Record] {
-        super::record_cache::all_records()
+        self.corpus.all_records()
     }
 
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_by_id(&self, ark_suffix: &str) -> Option<&Record> {
-        super::record_cache::all_records()
-            .iter()
-            .find(|r| r.pid.ark_suffix() == ark_suffix)
+        self.corpus.all_records().iter().find(|r| r.pid.ark_suffix() == ark_suffix)
     }
 
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn records_for_shortcode(&self, shortcode: &str) -> Vec<&Record> {
-        super::record_cache::records_for_shortcode(shortcode).to_vec()
+        self.corpus.records_for_shortcode(shortcode).to_vec()
     }
 }

@@ -21,7 +21,7 @@ pub(crate) struct AppState {
     /// snapshot, so not behind a port.
     pub(crate) published: std::sync::Arc<editor_core::published::PublishedProjects>,
     /// The `temporalCoverage` resolution tables, read once at startup from `EDITOR_DATA_DIR`:
-    /// the same tables `dpe-server validate` and `dpe-api-oai` decide with. Empty without a
+    /// the same tables `access-server validate` and `dpe-api-oai` decide with. Empty without a
     /// data directory, which refuses every free-text period at submit (the fail-safe way).
     pub(crate) temporal: std::sync::Arc<TemporalTables>,
     /// The persons and organizations a project may refer to by id, read once at startup from

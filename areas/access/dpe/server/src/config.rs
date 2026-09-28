@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// DPE application configuration.
 ///
 /// Loaded from defaults → `dpe.toml` (optional) → `DPE_*` env vars.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DpeConfig {
     /// Directory containing project/record JSON data files.
     /// Default: `areas/access/dpe/server/data` (resolved relative to the working

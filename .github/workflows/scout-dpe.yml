@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "areas/access/dpe/**"
+      - "areas/access/server/**"
       - "shared/**"
       - "Cargo.lock"
 

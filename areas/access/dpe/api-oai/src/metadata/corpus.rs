@@ -59,7 +59,7 @@ fn every_committed_temporal_coverage_resolves() {
                 continue; // already checked this distinct name.
             }
 
-            // The same gap decision `dpe-server validate` applies, so the
+            // The same gap decision `access-server validate` applies, so the
             // two can't drift apart.
             if let Some(name) = shared_metadata::temporal_coverage::completeness_gap(tc, &periods, &enriched) {
                 unresolved.push(name);

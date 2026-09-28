@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - "areas/access/dpe/**"
+      - "areas/access/server/**"
       - "shared/**"
   workflow_dispatch:
 

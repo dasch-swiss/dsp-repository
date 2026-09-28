@@ -1,4 +1,4 @@
-//! The `dpe-server validate` subcommand.
+//! The logic behind the `access-server validate` subcommand.
 
 pub(crate) fn validate(data_dir: std::path::PathBuf) -> std::process::ExitCode {
     let report = collect_validation_errors(&data_dir);

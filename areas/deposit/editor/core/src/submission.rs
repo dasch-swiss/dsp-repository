@@ -1,14 +1,14 @@
 //! The checks a draft must pass to become a pending submission.
 //!
 //! One rule beyond the type-level gate in [`ProjectDraft::to_raw`]: every
-//! `temporalCoverage` entry has to resolve to a structured date. `dpe-server
+//! `temporalCoverage` entry has to resolve to a structured date. `access-server
 //! validate` does not block on it and OAI-PMH needs it, so a submission carrying
 //! an unresolvable period would open a pull request that fails CI. The
 //! depositor is never stranded: `temporalCoverage`'s `Reference` variant always
 //! resolves.
 //!
 //! The rule is [`shared_metadata::temporal_coverage::completeness_gap`], the
-//! same function `dpe-server validate` and `dpe-api-oai` apply, so the three
+//! same function `access-server validate` and `dpe-api-oai` apply, so the three
 //! cannot drift on what counts as a gap.
 //!
 //! [`ProjectDraft::to_raw`]: crate::draft::ProjectDraft::to_raw

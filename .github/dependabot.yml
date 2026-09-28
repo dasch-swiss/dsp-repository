@@ -22,7 +22,7 @@ updates:
   - package-ecosystem: "docker"
     # Dockerfiles live under the module directories, not the repo root
     directories:
-      - "/areas/access/dpe"
+      - "/areas/access/server"
       - "/areas/deposit/editor"
       - "/modules/mosaic/playground"
     schedule:

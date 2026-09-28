@@ -1,5 +1,5 @@
 name: Build DPE
-description: Compile DPE (static musl dpe-server binary + content-hashed Tailwind app.css) and stage to staging/
+description: Compile DPE (static musl access-server binary + content-hashed Tailwind app.css) and stage to staging/
 
 runs:
   using: composite
@@ -30,13 +30,13 @@ runs:
 
     - name: Build static musl binary
       shell: bash
-      run: cargo build -p dpe-server --release --target x86_64-unknown-linux-musl
+      run: cargo build -p access-server --release --target x86_64-unknown-linux-musl
 
     - name: Stage artifacts
       shell: bash
       run: |
         mkdir -p staging
-        cp target/x86_64-unknown-linux-musl/release/dpe-server staging/
+        cp target/x86_64-unknown-linux-musl/release/access-server staging/
         cp -r areas/access/dpe/public staging/
         cp -r areas/access/dpe/server/data staging/
-        cp areas/access/dpe/Dockerfile staging/
+        cp areas/access/server/Dockerfile staging/

@@ -26,7 +26,8 @@ shared-metadata   The wire contract, shared with the editor
                             dpe-server
                             Route composition
                             + Datastar
-                            (binary: dpe-server)
+                            (library; binary: access-server,
+                             the Access Area's composition root)
 ```
 
 - **shared-metadata**: The research-metadata wire contract, shared with the editor and living in `shared/` rather than under `areas/access/dpe/`.
@@ -34,7 +35,7 @@ shared-metadata   The wire contract, shared with the editor
 - **dpe-core**: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.
 - **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends on shared-metadata, dpe-core and shared-fair.
 - **dpe-web**: A native library of [Maud](https://maud.lambda.xyz/) page and component functions (`fn -> Markup`). Imports shared-metadata and dpe-core types directly.
-- **dpe-server**: Thin composition root. Wires the native Axum router, the `<head>`/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.
+- **dpe-server**: A library — DPE's native Axum router, the `<head>`/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers. `access-server` (`areas/access/server`), the Access Area's composition root, mounts this router, owns `main`, CLI dispatch and observability init.
 
 ## Hypermedia-Driven Architecture
 

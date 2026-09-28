@@ -49,8 +49,6 @@ static DATA_DIR: OnceLock<String> = OnceLock::new();
 
 static PUBLIC_DIR: OnceLock<String> = OnceLock::new();
 
-static SHOW_PLACEHOLDER_VALUES: OnceLock<bool> = OnceLock::new();
-
 /// Set the data directory path at startup. Must be called before any data access.
 /// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops).
 pub fn set_data_dir(path: &str) {
@@ -94,30 +92,4 @@ pub fn set_public_dir(path: &str) {
 /// default. Falls back to setting the OnceLock from env/default on first call.
 pub fn get_public_dir() -> &'static str {
     PUBLIC_DIR.get_or_init(|| std::env::var("DPE_PUBLIC_DIR").unwrap_or_else(|_| "areas/access/dpe/public".to_string()))
-}
-
-/// Set whether placeholder values ("MISSING", "CALCULATED") should be shown in the UI.
-/// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops).
-pub fn set_show_placeholder_values(show: bool) {
-    if SHOW_PLACEHOLDER_VALUES.set(show).is_err() {
-        tracing::warn!(
-            new = show,
-            current = SHOW_PLACEHOLDER_VALUES.get().unwrap(),
-            "set_show_placeholder_values called again but value is already set"
-        );
-    }
-}
-
-/// Whether placeholder values ("MISSING", "CALCULATED") should be shown in the UI.
-///
-/// Priority: OnceLock (set by dpe-server's `serve()`) → DPE_SHOW_PLACEHOLDER_VALUES env var →
-/// false. When true, placeholders are rendered with red styling for QA visibility.
-/// When false (default/production), placeholders are hidden entirely.
-pub fn show_placeholder_values() -> bool {
-    *SHOW_PLACEHOLDER_VALUES.get_or_init(|| {
-        std::env::var("DPE_SHOW_PLACEHOLDER_VALUES")
-            .ok()
-            .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(false)
-    })
 }

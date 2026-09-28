@@ -15,7 +15,7 @@ mod list_metadata_formats;
 mod list_records;
 mod list_sets;
 
-use axum::extract::Query;
+use axum::extract::{Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use dpe_core::{
@@ -37,6 +37,7 @@ use crate::metadata::{
     matches_date_filter, matches_date_filter_record, to_oai_record, to_oai_record_from_record, OaiRecord,
 };
 use crate::resumption::ResumptionCursor;
+use crate::OaiState;
 
 /// Query parameters for OAI-PMH requests.
 #[derive(Debug, Deserialize)]
@@ -56,21 +57,22 @@ pub struct OaiParams {
 pub const SUPPORTED_PREFIXES: [&str; 2] = ["oai_dc", "oai_datacite"];
 
 /// Main OAI-PMH handler that dispatches to verb-specific handlers.
-pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
+pub async fn oai_handler(State(state): State<OaiState>, Query(params): Query<OaiParams>) -> impl IntoResponse {
     let repo = FsProjectRepository::new();
     let record_repo = FsRecordRepository::new();
     let clusters = cluster_cache::all_clusters();
     let lookup = CachedContributorLookup;
+    let base_url = state.base_url.as_str();
 
     let xml = match params.verb.as_deref() {
-        Some("Identify") => handle_identify(&params, &repo),
-        Some("ListMetadataFormats") => handle_list_metadata_formats(&params, &repo),
-        Some("ListSets") => handle_list_sets(&params, &repo, clusters),
-        Some("ListIdentifiers") => handle_list_identifiers(&params, &repo, &record_repo, clusters, &lookup),
-        Some("ListRecords") => handle_list_records(&params, &repo, &record_repo, clusters, &lookup),
-        Some("GetRecord") => handle_get_record(&params, &repo, &record_repo, clusters, &lookup),
-        Some(_) => build_error_response(OaiError::BadVerb, None),
-        None => build_error_response(OaiError::BadVerb, None),
+        Some("Identify") => handle_identify(&params, &repo, base_url),
+        Some("ListMetadataFormats") => handle_list_metadata_formats(&params, &repo, base_url),
+        Some("ListSets") => handle_list_sets(&params, &repo, clusters, base_url),
+        Some("ListIdentifiers") => handle_list_identifiers(&params, &repo, &record_repo, clusters, &lookup, base_url),
+        Some("ListRecords") => handle_list_records(&params, &repo, &record_repo, clusters, &lookup, base_url),
+        Some("GetRecord") => handle_get_record(&params, &repo, &record_repo, clusters, &lookup, base_url),
+        Some(_) => build_error_response(OaiError::BadVerb, None, base_url),
+        None => build_error_response(OaiError::BadVerb, None, base_url),
     };
 
     (StatusCode::OK, [(header::CONTENT_TYPE, "text/xml; charset=utf-8")], xml)
@@ -78,8 +80,8 @@ pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
 
 /// Builds an error response. Pass `Some(verb)` for recognized verbs so the verb is echoed
 /// in the request element per OAI-PMH 2.0 section 3.6. Pass `None` only for badVerb.
-pub fn build_error_response(error: OaiError, verb: Option<&str>) -> String {
-    let mut builder = OaiXmlBuilder::new();
+pub fn build_error_response(error: OaiError, verb: Option<&str>, base_url: &str) -> String {
+    let mut builder = OaiXmlBuilder::new(base_url);
     match verb {
         Some(v) => builder.write_error_request_with_verb(v),
         None => builder.write_error_request(),
@@ -511,14 +513,18 @@ mod tests {
 
     #[test]
     fn bad_verb_error_omits_verb_attribute() {
-        let xml = build_error_response(OaiError::BadVerb, None);
+        let xml = build_error_response(OaiError::BadVerb, None, crate::DEFAULT_BASE_URL);
         assert!(xml.contains("<error code=\"badVerb\">"), "got: {}", xml);
         assert!(!xml.contains("verb="), "badVerb must not echo a verb attribute, got: {}", xml);
     }
 
     #[test]
     fn recognized_verb_error_echoes_verb_attribute() {
-        let xml = build_error_response(OaiError::BadArgument("test".to_string()), Some("ListRecords"));
+        let xml = build_error_response(
+            OaiError::BadArgument("test".to_string()),
+            Some("ListRecords"),
+            crate::DEFAULT_BASE_URL,
+        );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(
             xml.contains("verb=\"ListRecords\""),

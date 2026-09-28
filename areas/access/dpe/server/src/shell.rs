@@ -11,13 +11,16 @@ pub(crate) struct AppState {
     /// Origin of the site itself, for landing-page and catalogue URLs.
     pub(crate) public_base_url: String,
     /// Origin and path of the OAI endpoint, for the `describedby` targets; on DEV another host.
-    /// `serve()` also sets it as `dpe-api-oai`'s process-global `baseURL` from the same
-    /// `DpeConfig` field: the two must never be set apart.
+    /// `dpe-api-oai`'s `OaiState` takes the same normalised value, built alongside this one.
     pub(crate) oai_base_url: String,
     /// Origin emitted ARKs are rewritten to, and where the `/ark:/…` resolver route answers.
-    /// `None` (production, DEV, STAGE) keeps the corpus's ARKs and mounts no resolver. Same
-    /// second copy in `dpe-api-oai` as `oai_base_url`.
+    /// `None` (production, DEV, STAGE) keeps the corpus's ARKs and mounts no resolver.
+    /// `serve()` also sets it as `dpe-core`'s process-global ARK host from the same
+    /// `DpeConfig` field: the two must never be set apart.
     pub(crate) ark_resolver_base_url: Option<String>,
+    /// Whether placeholder values ("MISSING", "CALCULATED") render, styled red for QA
+    /// visibility, instead of being hidden. Carried through to `dpe_web::RenderContext`.
+    pub(crate) show_placeholder_values: bool,
 }
 
 /// Query params for the project detail page: `?tab=` pre-selects the tab.
@@ -101,7 +104,8 @@ pub(crate) async fn project_page_handler(
         .as_deref()
         .filter(|t| dpe_core::project::VALID_TABS.contains(t))
         .unwrap_or("overview");
-    let content = dpe_web::pages::project_page(&id, active_tab);
+    let ctx = dpe_web::RenderContext { show_placeholder_values: state.show_placeholder_values };
+    let content = dpe_web::pages::project_page(&id, active_tab, &ctx);
     // The display name when the project resolves (a cache read), else the shortcode.
     let title = dpe_core::project_cache::project_by_shortcode(&id)
         .map(|p| format!("{} — DaSCH Metadata Browser", p.name))

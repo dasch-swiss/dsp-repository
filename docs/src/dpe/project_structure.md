@@ -79,7 +79,7 @@ Framework-free domain layer — what only DPE needs. Contains:
 - **Utilities**: `lang_value()`, `language_display_name()`, `get_data_dir()`, `get_public_dir()`
 - **Static-asset lookup**: `cover_image_cache` scans `<public dir>/assets/images` once for the per-project cover images, so a view can tell whether a project has one before rendering an `<img>`
 
-The directory paths and display flags are process-global `OnceLock`s set from `dpe-server`'s config at startup (`set_data_dir`, `set_public_dir`, `set_show_placeholder_values`) and read directly by `dpe-web` views, which take no application state. Reuse that pattern rather than threading new values through `AppState`.
+The directory paths are process-global `OnceLock`s set from `dpe-server`'s config at startup (`set_data_dir`, `set_public_dir`) and read directly by the caches. Display settings instead reach `dpe-web` views as a `RenderContext` that `dpe-server` builds from `AppState`; new per-deployment view settings belong there, not in a process-global.
 
 Dependencies: `shared-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
 

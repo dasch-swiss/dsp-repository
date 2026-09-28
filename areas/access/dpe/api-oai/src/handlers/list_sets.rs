@@ -8,7 +8,12 @@ use crate::xml::OaiXmlBuilder;
 
 /// Advertises the static `entityType:*` sets plus a dynamic `project:{shortcode}`
 /// set per known project and a `cluster:{id}` set per cluster.
-pub fn handle_list_sets(params: &OaiParams, repo: &dyn ProjectRepository, clusters: &[ClusterRaw]) -> String {
+pub fn handle_list_sets(
+    params: &OaiParams,
+    repo: &dyn ProjectRepository,
+    clusters: &[ClusterRaw],
+    base_url: &str,
+) -> String {
     // ListSets accepts only resumptionToken
     if params.identifier.is_some()
         || params.metadata_prefix.is_some()
@@ -18,11 +23,12 @@ pub fn handle_list_sets(params: &OaiParams, repo: &dyn ProjectRepository, cluste
         return build_error_response(
             OaiError::BadArgument("Unexpected argument for ListSets".to_string()),
             Some("ListSets"),
+            base_url,
         );
     }
 
     if params.resumption_token.is_some() {
-        return build_error_response(OaiError::BadResumptionToken, Some("ListSets"));
+        return build_error_response(OaiError::BadResumptionToken, Some("ListSets"), base_url);
     }
 
     let project_sets: Vec<(String, String)> = repo
@@ -34,7 +40,7 @@ pub fn handle_list_sets(params: &OaiParams, repo: &dyn ProjectRepository, cluste
     let cluster_sets: Vec<(String, String)> =
         clusters.iter().map(|c| (format!("cluster:{}", c.id), c.name.clone())).collect();
 
-    let mut builder = OaiXmlBuilder::new();
+    let mut builder = OaiXmlBuilder::new(base_url);
     builder.write_request("ListSets", &[]);
     builder.write_list_sets(&project_sets, &cluster_sets);
 
@@ -72,7 +78,7 @@ mod tests {
     fn unexpected_argument_returns_bad_argument() {
         let mut params = make_params();
         params.from = Some("2020-01-01".to_string());
-        let xml = handle_list_sets(&params, &repo(), &clusters());
+        let xml = handle_list_sets(&params, &repo(), &clusters(), crate::DEFAULT_BASE_URL);
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("Unexpected argument for ListSets"), "got: {}", xml);
     }
@@ -81,7 +87,7 @@ mod tests {
     fn resumption_token_returns_bad_resumption_token() {
         let mut params = make_params();
         params.resumption_token = Some("some-token".to_string());
-        let xml = handle_list_sets(&params, &repo(), &clusters());
+        let xml = handle_list_sets(&params, &repo(), &clusters(), crate::DEFAULT_BASE_URL);
         assert!(xml.contains("<error code=\"badResumptionToken\">"), "got: {}", xml);
     }
 
@@ -90,7 +96,7 @@ mod tests {
     #[test]
     fn advertises_static_project_and_cluster_sets() {
         let params = make_params();
-        let xml = handle_list_sets(&params, &repo(), &clusters());
+        let xml = handle_list_sets(&params, &repo(), &clusters(), crate::DEFAULT_BASE_URL);
         assert!(xml.contains("entityType:ProjectCluster"), "got: {}", xml);
         assert!(xml.contains("entityType:ResearchProject"), "got: {}", xml);
         assert!(xml.contains("<setSpec>project:0803</setSpec>"), "got: {}", xml);
@@ -105,7 +111,7 @@ mod tests {
     #[test]
     fn is_never_empty_with_no_projects_or_clusters() {
         let params = make_params();
-        let xml = handle_list_sets(&params, &InMemoryProjectRepository::new(vec![]), &[]);
+        let xml = handle_list_sets(&params, &InMemoryProjectRepository::new(vec![]), &[], crate::DEFAULT_BASE_URL);
         assert!(
             xml.contains("entityType:ResearchProject"),
             "static sets always present, got: {}",
@@ -118,7 +124,7 @@ mod tests {
     #[test]
     fn golden_list_sets_response() {
         let params = make_params();
-        let xml = handle_list_sets(&params, &repo(), &clusters());
+        let xml = handle_list_sets(&params, &repo(), &clusters(), crate::DEFAULT_BASE_URL);
         let expected = golden("list_sets.xml", &xml);
         assert_eq!(normalize(&xml), expected);
     }
@@ -128,7 +134,7 @@ mod tests {
     #[test]
     fn list_sets_response_is_valid_oai_pmh() {
         let params = make_params();
-        let xml = handle_list_sets(&params, &repo(), &clusters());
+        let xml = handle_list_sets(&params, &repo(), &clusters(), crate::DEFAULT_BASE_URL);
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
 }

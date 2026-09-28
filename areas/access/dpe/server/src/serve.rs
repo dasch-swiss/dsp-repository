@@ -28,9 +28,10 @@ pub(crate) async fn serve() -> ExitCode {
     // its URL. dpe-core scans it to resolve cover presence at render time.
     dpe_core::set_public_dir(dpe_config.public_dir.to_str().expect("public_dir path must be valid UTF-8"));
 
-    // Set the public OAI-PMH base URL (thread-safe OnceLock), emitted as baseURL / <request>.
-    dpe_api_oai::set_base_url(&dpe_config.oai_base_url);
-    tracing::info!(oai_base_url = %dpe_config.oai_base_url, "OAI-PMH base URL set");
+    // The OAI-PMH base URL, emitted as baseURL / <request>: normalised once here, handed to
+    // the OAI router as state, and copied into `AppState.oai_base_url` below.
+    let oai_state = dpe_api_oai::OaiState::new(&dpe_config.oai_base_url);
+    tracing::info!(oai_base_url = %oai_state.base_url, "OAI-PMH base URL set");
 
     // Before any cache is populated (and before `record_cache::warm`), so the ARK host is
     // normalised as data enters every cache. Moves to `sync` when that lands.
@@ -42,7 +43,6 @@ pub(crate) async fn serve() -> ExitCode {
         );
     }
 
-    dpe_core::set_show_placeholder_values(dpe_config.show_placeholder_values);
     if dpe_config.show_placeholder_values {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
     }
@@ -58,13 +58,17 @@ pub(crate) async fn serve() -> ExitCode {
         fathom_site_id: dpe_config.fathom_site_id.clone(),
         css_href: crate::assets::resolve_css_href(&dpe_config.public_dir),
         public_base_url: dpe_config.public_base_url.clone(),
-        oai_base_url: dpe_config.oai_base_url.clone(),
+        oai_base_url: oai_state.base_url.clone(),
         ark_resolver_base_url: dpe_config.ark_resolver_base_url.clone(),
+        show_placeholder_values: dpe_config.show_placeholder_values,
     };
 
     // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).
-    let app =
-        crate::router::build_router(state, &dpe_config.public_dir, crate::router::rate_limited_router(&dpe_config));
+    let app = crate::router::build_router(
+        state,
+        &dpe_config.public_dir,
+        crate::router::rate_limited_router(&dpe_config, oai_state),
+    );
 
     // Dev-only browser live-reload (`dev` feature): wraps the page/static
     // routes declared above; the untraced routes below stay outside it.

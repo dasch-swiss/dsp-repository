@@ -53,7 +53,7 @@ _Avoid_: staging (the archive's quarantine bucket), draft store.
 ## Example dialogue
 
 > **Dev:** "CPE needs a new facet over the archive projection. Do I add a graph in CPE?"
-> **Domain expert:** "No. The projection graphs are `sync`'s; CPE cannot write them and should not open the store. If the facet is a **Query**, ask for it through `sync`'s ports. If it needs data the projection lacks, that is a change to what `sync` rebuilds from the archive's data products."
+> **Domain expert:** "No. The projection graphs are `sync`'s; CPE cannot write them and should not open the store. If the facet is a **Query**, ask for it through `sync`'s ports. If the projection has the facts but not in the shape CPE reads, that is CPE's own read model, derived through its port and rebuilt from what the port serves (ADR-0008); it lives in CPE's store, not in a graph. If it needs data the projection lacks, that is a change to what `sync` rebuilds from the archive's data products."
 
 > **Dev:** "Where do a user's saved searches go in DPE?"
 > **Domain expert:** "In a graph the `profile` capability owns, beside the projection but never inside it. `profile` writes it; DPE reads it through `profile`'s ports."

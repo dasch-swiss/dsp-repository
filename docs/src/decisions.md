@@ -33,6 +33,7 @@ for the full decision.
 | [ADR-0005](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0005-fair-landing-pages-in-the-access-area.md) | Every landing page in the Access Area is FAIR-assessable by machine |
 | [ADR-0006](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md) | Decision records are colocated with what they govern, and a component's are cited qualified |
 | [ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md) | CPE joins the Access Area as its second capability (proposed) |
+| [ADR-0008](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md) | A reading capability may keep a derived read model (proposed) |
 
 ## Component series
 

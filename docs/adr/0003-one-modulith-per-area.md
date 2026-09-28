@@ -46,3 +46,7 @@ Within a capability, the crate anatomy stays `{capability}-{role}` (ADR-0002): a
 - Each area keeps one `CONTEXT.md` per capability once vocabulary diverges, indexed from the root `CONTEXT.md`; today the area and its first capability coincide.
 
 Enforced by: Bazel `visibility` once ADR-0001 lands — a capability's `ports` crate is public within its area; its domain, store and web crates are visible only to the capability itself and to `<area>/server` (structure). Until then: review.
+
+## Amendment (2026-09-28) — a derived read model is not a copy of the projection
+
+The rejected option "each reading capability embedding its own Chischtli" rejects a *copy* of the archive projection per reader: the same graphs held three times, with three consumers of the archive's data products. It does not reject a reader keeping its own **read model** — a store of its own shape and engine, holding only what it needs, derived from what its port against `sync` serves, written by the reader alone and rebuilt from empty rather than repaired. The two were not distinguished when this record was written and the distinction is what ADR-0007's CPE store rests on; ADR-0008 records it as a general rule. The clause on Chischtli above is unchanged: `sync` stays the single writer of the projection and the single consumer of the data products, and every reader reaches the projection only through its own port.

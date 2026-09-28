@@ -76,7 +76,7 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 
 | Action | Purpose |
 |--------|---------|
-| `build-dpe` | Compile DPE (static musl `dpe-server` binary + content-hashed Tailwind `app.css` via `just css-release`) and stage artifacts |
+| `build-dpe` | Compile DPE (static musl `access-server` binary + content-hashed Tailwind `app.css` via `just css-release`) and stage artifacts |
 | `build-editor` | Compile the metadata editor (static musl `editor-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
 | `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
@@ -119,7 +119,7 @@ Defined in `dpe-docker-publish.yml`.
 
 On every push to `main`:
 1. Builds the content-hashed Tailwind stylesheet (`just css-release`)
-2. Builds a static musl-linked `dpe-server` binary
+2. Builds a static musl-linked `access-server` binary
 3. Pushes the Docker image to Docker Hub (`daschswiss/dpe:{tag}`)
 4. Triggers a Jenkins webhook for DEV deployment
 

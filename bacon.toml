@@ -8,15 +8,15 @@ command = ["cargo", "check", "--all-targets", "--color", "always"]
 need_stdout = false
 
 [jobs.serve]
-command = ["cargo", "run", "--bin", "dpe-server", "--features", "dev", "--", "serve"]
+command = ["cargo", "run", "--bin", "access-server", "--features", "dev", "--", "serve"]
 need_stdout = true
 background = false
 on_change_strategy = "kill_then_restart"
 # Graceful SIGINT so the server releases its port before restart.
 kill = ["kill", "-s", "INT"]
-# Also watch the tiles crate and the `shared-*` crates, so changes in
-# either rebuild — neither lives under `areas/access/dpe`.
-watch = ["areas/access/dpe", "shared", "modules/mosaic/tiles/src"]
+# Also watch the composition root, the tiles crate and the `shared-*` crates,
+# so changes in any of them rebuild — none lives under `areas/access/dpe`.
+watch = ["areas/access/dpe", "areas/access/server", "shared", "modules/mosaic/tiles/src"]
 
 [jobs.serve-editor]
 command = ["cargo", "run", "--bin", "editor-server", "--", "serve"]

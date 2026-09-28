@@ -1,28 +1,14 @@
-//! `dpe-server`, DPE's composition root.
+//! `access-server`, the Access Area's composition root: CLI, config loading,
+//! observability, the OTel layers and the untraced routes. Mounts DPE's
+//! router (`dpe-server`), the one capability that exists today.
 
 use std::process::ExitCode;
 
 use clap::Parser;
 
-mod ark;
-mod assets;
 mod cli;
-mod config;
-#[cfg(feature = "dev")]
-mod dev_reload;
-pub(crate) mod downloads;
-pub(crate) mod fragments;
-mod metadata;
 mod observability;
-mod page_url;
-mod router;
 mod serve;
-mod shell;
-#[cfg(test)]
-pub(crate) mod test_support;
-mod traceparent;
-mod validate;
-mod view;
 
 fn main() -> ExitCode {
     let parsed = cli::Cli::parse();
@@ -36,7 +22,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Some(cli::Commands::Serve) => serve::serve(),
-        Some(cli::Commands::Validate { data_dir }) => validate::validate(data_dir),
+        Some(cli::Commands::Validate { data_dir }) => dpe_server::validate(data_dir),
         Some(cli::Commands::Healthcheck { url }) => cli::healthcheck(&url),
     }
 }

@@ -12,6 +12,12 @@ overrides:
   # Per-application guidance: one override per directory with its own CLAUDE.md.
   - when: "areas/access/dpe/**"
     conventions: [areas/access/dpe/CLAUDE.md]
+  - when: "areas/access/server/**"
+    conventions: [areas/access/server/CLAUDE.md]
+  - when: "areas/access/server/src/observability.rs"
+    reviewers: [eng:review:observability-reviewer]
+  - when: "areas/access/server/Dockerfile"
+    reviewers: [eng:review:devops-reviewer]
   - when: "areas/deposit/editor/**"
     conventions: [areas/deposit/editor/CLAUDE.md]
     reviewers: [eng:review:security-reviewer]
@@ -37,6 +43,8 @@ overrides:
       - skill: eng:test-browser
         offer: ask
   - when: "areas/*/*/server/src/**"
+    reviewers: [eng:review:ivan-reviewer]
+  - when: "areas/*/server/src/**"
     reviewers: [eng:review:ivan-reviewer]
   - when: "shared/telemetry/**"
     reviewers: [eng:review:observability-reviewer]

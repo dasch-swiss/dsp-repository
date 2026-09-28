@@ -39,4 +39,4 @@ modules/mosaic/playground-e2e-tests/
 # Other Docker files
 Dockerfile*
 !modules/mosaic/playground/Dockerfile
-!areas/access/dpe/Dockerfile
+!areas/access/server/Dockerfile

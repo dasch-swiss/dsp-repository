@@ -3,6 +3,30 @@
 version = 4
 
 [[package]]
+name = "access-server"
+version = "0.8.6"
+dependencies = [
+ "axum",
+ "axum-tracing-opentelemetry",
+ "clap",
+ "dpe-server",
+ "init-tracing-opentelemetry",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "pyroscope",
+ "shared-telemetry",
+ "tokio",
+ "tower",
+ "tower_governor",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "ureq",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -852,8 +876,6 @@ name = "dpe-server"
 version = "0.8.6"
 dependencies = [
  "axum",
- "axum-tracing-opentelemetry",
- "clap",
  "datastar",
  "dpe-api-oai",
  "dpe-core",
@@ -861,16 +883,11 @@ dependencies = [
  "figment",
  "futures",
  "http-body-util",
- "init-tracing-opentelemetry",
  "insta",
  "maud",
  "mosaic-tiles",
  "notify",
  "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-otlp",
- "opentelemetry_sdk",
- "pyroscope",
  "serde",
  "serde_json",
  "shared-fair",
@@ -883,8 +900,6 @@ dependencies = [
  "tower_governor",
  "tracing",
  "tracing-opentelemetry",
- "tracing-subscriber",
- "ureq",
  "urlencoding",
 ]
 

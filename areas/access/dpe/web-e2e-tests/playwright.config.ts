@@ -5,13 +5,13 @@ import { defineConfig, devices } from "@playwright/test";
 const serverBinary = path.resolve(
   __dirname,
   "../../../..",
-  "target/release/dpe-server",
+  "target/release/access-server",
 );
 
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
     `Server binary not found at ${serverBinary}\n` +
-      `Run 'cargo build -p dpe-server --release' (and 'just css-release') before running E2E tests.`,
+      `Run 'cargo build -p access-server --release' (and 'just css-release') before running E2E tests.`,
   );
 }
 

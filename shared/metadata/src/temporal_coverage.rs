@@ -95,7 +95,7 @@ pub fn is_intentionally_unresolved(name: &str, enrichment: &HashMap<String, Enri
 /// reporting) when it is a gap, `None` otherwise (resolved, intentionally
 /// unresolved, or nameless).
 ///
-/// The single decision both `dpe-server validate` and the
+/// The single decision both `access-server validate` and the
 /// `every_committed_temporal_coverage_resolves` completeness test apply per
 /// entry, so the two enforcement points can't drift apart on what counts as a
 /// gap even though each walks its own project data independently.

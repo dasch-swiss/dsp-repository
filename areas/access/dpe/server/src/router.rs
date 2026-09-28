@@ -25,8 +25,11 @@ use crate::shell::{about_page_handler, project_page_handler, projects_page_handl
 /// the per-IP limit. The rightmost entry is the one Traefik wrote and cannot be
 /// spoofed, given Traefik is the only hop in front of DPE. This mirrors SIPI's
 /// `client_ip` resolver, which is deployed behind the same ingress.
+///
+/// `pub`: `access-server` reuses it to key the `/telemetry/collect` governor,
+/// the one other rate-limited route, which lives outside this crate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct RightmostXffKeyExtractor;
+pub struct RightmostXffKeyExtractor;
 
 impl KeyExtractor for RightmostXffKeyExtractor {
     type Key = IpAddr;
@@ -102,16 +105,20 @@ pub(crate) fn rate_limited_router(config: &DpeConfig, oai_state: dpe_api_oai::Oa
     rate_limited_router_with(oai_state, GovernorLayer { config: std::sync::Arc::new(governor_conf) })
 }
 
-/// Assemble the traced app router. `rate_limited` carries the (already
-/// rate-limited) `/dpe/oai` route and the two representation routes; passing it
-/// in — rather than a bare layer — keeps this signature free of the
-/// `GovernorLayer` trait bounds, so it stays reconstructable by hand and lets
-/// tests substitute a fake-limited sub-router. Static assets are served from
-/// `public_dir`, falling back to the app's 404 shell.
+/// Assemble DPE's own router: pages, fragments, the JSON API, the rate-limited
+/// `/dpe/oai` and representation routes, `/ark:/` when configured, and the
+/// `ServeDir` fallback. `rate_limited` carries the (already rate-limited)
+/// `/dpe/oai` route and the two representation routes; passing it in — rather
+/// than a bare layer — keeps this signature free of the `GovernorLayer` trait
+/// bounds, so it stays reconstructable by hand and lets tests substitute a
+/// fake-limited sub-router.
+///
+/// Un-layered by OTel: `access-server` applies `OtelInResponseLayer` and
+/// `OtelAxumLayer` over this router's output, so the traced/untraced route
+/// order stays load-bearing at the composition root, not here.
 pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_limited: Router<AppState>) -> Router {
     use axum::response::Redirect;
     use axum::routing::get;
-    use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
 
     let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(state.clone()));
@@ -148,12 +155,6 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_l
         .route("/dpe/api/v2/projects", get(fragments::projects_json_handler))
         .route("/dpe/api/v2/projects/{id}", get(fragments::project_json_handler))
         .fallback_service(serve_dir)
-        // --- OTel layers ---
-        // Axum layers wrap in reverse declaration order:
-        // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
-        // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
-        .layer(OtelInResponseLayer)
-        .layer(OtelAxumLayer::default())
         .with_state(state)
 }
 

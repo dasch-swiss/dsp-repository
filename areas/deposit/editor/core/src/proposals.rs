@@ -398,7 +398,7 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         });
     }
 
-    // `dpe-server validate` rejects a committed file carrying a
+    // `access-server validate` rejects a committed file carrying a
     // `shared_metadata::JOB_TITLE_ROLE_WORDS` entry in `jobTitles`, because the
     // OAI-PMH creator/contributor logic reads only `attributions`. Refusing here
     // stops a proposal that would fail that validation later.

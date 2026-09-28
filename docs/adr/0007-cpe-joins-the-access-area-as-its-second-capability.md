@@ -130,3 +130,12 @@ and component-library seams (structure), a `Cargo.toml` grep in the style of `ch
 the `mosaic-tiles` and cross-capability rules until then (static-analysis), the strict validation mode in
 CI for "a project fails alone" (static-analysis), and review for the port speaking archive-shaped facts
 and for a project folder moving in only with an empty diff against the incubator's copy.
+
+## Amendment (2026-09-28, DEV-7397) — the composition root moved out ahead of CPE
+
+This record's first clause makes CPE's arrival what turns `dpe-server` into a capability-internal crate
+and creates `areas/access/server`. DEV-7397 extracts that composition root now, before CPE lands, to
+unblock DEV-7400 and DEV-7405: both need `areas/access/server` to exist so CPE's own crates and wiring
+have somewhere to land without a second, simultaneous move of DPE's crate. `dpe-server` is a library from
+this point on, exposing `DpeConfig`, `Dpe` and `validate` to the new `access-server` binary; nothing in
+this decision's reasoning or its shape changes, only its timing relative to CPE.

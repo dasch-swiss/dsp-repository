@@ -2,8 +2,18 @@
 //!
 //! `serve()` owns the call order: [`install_tracing_panic_hook`] runs before
 //! [`init_otel`], so a panic during init is still captured.
+//!
+//! Wiring, so it lives in the composition root; the telemetry identity it
+//! emits is DPE's (see [`TELEMETRY_NAME`]).
 
 use opentelemetry_sdk::logs::SdkLoggerProvider;
+
+/// DPE's telemetry identity in Grafana: the OTel tracer name and the Pyroscope
+/// application name that dashboards group traces and profiles under. A literal,
+/// not `env!("CARGO_PKG_NAME")`: this crate's name is `access-server`, and
+/// renaming the identity is a dashboard decision, not a side effect of a crate
+/// rename.
+const TELEMETRY_NAME: &str = "dpe-server";
 
 /// Install a panic hook that emits panics as structured `tracing::error!` events with OTel
 /// exception semconv fields, so they reach the same pipeline as the logs.
@@ -87,7 +97,7 @@ pub(crate) fn init_otel() -> (Option<SdkLoggerProvider>, init_tracing_openteleme
     };
 
     let otel_guard = tracing_config
-        .with_otel_tracer_name(env!("CARGO_PKG_NAME"))
+        .with_otel_tracer_name(TELEMETRY_NAME)
         .init_subscriber_ext(|registry| {
             use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
             let otel_logs_layer: Option<OpenTelemetryTracingBridge<SdkLoggerProvider, SdkLogger>> =
@@ -113,12 +123,14 @@ pub(crate) fn init_pyroscope(
 
     let agent = pyroscope::pyroscope::PyroscopeAgentBuilder::new(
         &endpoint,
-        env!("CARGO_PKG_NAME"),
+        TELEMETRY_NAME,
         PROFILING_SAMPLE_RATE,
         "pyroscope-rs", // matches pyroscope crate's PPROFRS_SPY_NAME
         "2.0.0",        // pyroscope crate version (PPROFRS_SPY_VERSION is private)
         backend,
     )
+    // DPE's telemetry identity, not the crate's: this tag groups profiles under DPE in
+    // Grafana regardless of which crate calls in, same reasoning as TELEMETRY_NAME above.
     .tags(vec![("service.namespace", "dpe")])
     .build()
     .expect("failed to build Pyroscope agent");

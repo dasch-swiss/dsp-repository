@@ -1,19 +1,24 @@
 # Packaging-only Dockerfile — the Rust build happens in GH Actions.
 # Expects pre-built artifacts in the build context:
-#   dpe-server  (static musl binary)
-#   public/     (static assets + the content-hashed app.<hash>.css)
-#   data/       (JSON data files)
+#   access-server  (static musl binary)
+#   public/        (static assets + the content-hashed app.<hash>.css)
+#   data/          (JSON data files)
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /app
 
-COPY --chmod=755 dpe-server /app/dpe-server
+COPY --chmod=755 access-server /app/access-server
+# Alias: ops-deploy's healthcheck still runs /app/dpe-server. Drop this COPY
+# only after ops-deploy targets /app/access-server (H1 in
+# docs/specs/2026-09-28-access-area-composition-root/). Distroless has no
+# shell, so this is a second COPY, not a symlink.
+COPY --chmod=755 access-server /app/dpe-server
 COPY public /app/public
 COPY data /app/server/data
 
 ENV RUST_LOG="info"
-# Enable backtrace capture for the structured panic hook in dpe-server.
+# Enable backtrace capture for the structured panic hook in access-server.
 # Without this, `Backtrace::capture()` returns `BacktraceStatus::Disabled`
 # and panic logs lose the call site — paired with `debug = "line-tables-only"`
 # in the release profile so symbols and file:line make it into the backtrace.
@@ -25,8 +30,8 @@ ENV DPE_DATA_DIR="/app/server/data"
 
 EXPOSE 8080
 
-ENTRYPOINT ["./dpe-server"]
+ENTRYPOINT ["./access-server"]
 CMD ["serve"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD ["./dpe-server", "healthcheck"]
+  CMD ["./access-server", "healthcheck"]

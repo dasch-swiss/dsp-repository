@@ -7,24 +7,24 @@ Operations documentation for the DPE infrastructure team.
 - **Base**: `gcr.io/distroless/static-debian12:nonroot`
 - **User**: uid **65532** — distroless `NONROOT`. Not 65534, which is `nobody`; verified in [`common/variables.bzl`](https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl).
 - **Shell**: None (distroless — no SSH possible)
-- **Binary**: Static musl-linked `dpe-server` (CLI with subcommands)
+- **Binary**: Static musl-linked `access-server` (CLI with subcommands). The image also ships the same binary as `/app/dpe-server`, an alias kept until ops-deploy's healthcheck switches over (see `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`'s composition-root amendment).
 
 ## CLI Commands
 
-The `dpe-server` binary provides three subcommands:
+The `access-server` binary provides three subcommands:
 
 | Command | Description |
 |---------|-------------|
-| `dpe-server serve` | Start the web server |
-| `dpe-server validate <data_dir>` | Validate all data files under the given directory |
-| `dpe-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
+| `access-server serve` | Start the web server |
+| `access-server validate <data_dir>` | Validate all data files under the given directory |
+| `access-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
 
-### `dpe-server validate`
+### `access-server validate`
 
 Validates JSON data files for structural correctness and cross-reference integrity.
 
 ```bash
-dpe-server validate ./data
+access-server validate ./data
 ```
 
 **What it checks:**
@@ -38,13 +38,13 @@ dpe-server validate ./data
 - `0` — all data files are valid
 - `1` — validation errors found (details printed to stderr)
 
-### `dpe-server healthcheck`
+### `access-server healthcheck`
 
 Lightweight probe for Docker HEALTHCHECK or monitoring:
 
 ```bash
-dpe-server healthcheck                             # default: http://localhost:8080/healthz
-dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
+access-server healthcheck                             # default: http://localhost:8080/healthz
+access-server healthcheck --url http://localhost:9090/healthz # custom URL
 ```
 
 ## Ports
@@ -57,7 +57,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `RUST_LOG` | No | `info` | Log level filter (e.g., `dpe_server=info,tower_http=debug`) |
+| `RUST_LOG` | No | `info` | Log level filter (e.g., `access_server=info,dpe_server=info,tower_http=debug`) |
 | `DPE_DATA_DIR` | No | `areas/access/dpe/server/data` | Path to project/record JSON data files. Legacy alias: `DATA_DIR` (checked if `DPE_DATA_DIR` is unset) |
 | `DPE_FATHOM_SITE_ID` | No | *(none)* | Fathom Analytics site ID (not a secret). **Production only** — leave unset or empty everywhere else; empty is normalised to unset. |
 | `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
@@ -182,7 +182,7 @@ Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscrib
 RUST_LOG=info
 
 # Debug HTTP requests
-RUST_LOG=dpe_server=info,tower_http=debug
+RUST_LOG=access_server=info,dpe_server=info,tower_http=debug
 
 # Verbose debugging
 RUST_LOG=debug

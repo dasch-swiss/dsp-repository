@@ -1,6 +1,6 @@
-//! The rules `dpe-server validate` applies to a single project, callable.
+//! The rules `access-server validate` applies to a single project, callable.
 //!
-//! `dpe-server validate` reports per file; the editor renders the same rules per
+//! `access-server validate` reports per file; the editor renders the same rules per
 //! field, so a finding names *which member* it is about rather than which file.
 //!
 //! ## What is here and what is not

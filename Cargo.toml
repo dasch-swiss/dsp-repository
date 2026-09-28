@@ -9,6 +9,7 @@ members = [
   "areas/access/dpe/api-oai",
   "areas/access/dpe/web",
   "areas/access/dpe/server",
+  "areas/access/server",
   "areas/deposit/editor/core",
   "areas/deposit/editor/web",
   "areas/deposit/editor/server",
@@ -99,6 +100,6 @@ lto = true
 opt-level = 'z'
 # Keep DWARF line tables so panic backtraces in production show file:line.
 # Cheap (~10-20% binary size, no runtime cost) and required for the panic
-# hook in dpe-server to produce actionable stacktraces — paired with
-# `RUST_BACKTRACE=1` in areas/access/dpe/Dockerfile.
+# hook in access-server to produce actionable stacktraces — paired with
+# `RUST_BACKTRACE=1` in areas/access/server/Dockerfile.
 debug = "line-tables-only"

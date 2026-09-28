@@ -69,6 +69,13 @@ verify-checksums:
 check-shared-paths:
     bash .github/scripts/check-shared-paths.sh
 
+# A composition root's Cargo.toml can name a capability's core/web/api-* crate
+# directly and still compile fine, so only a grep catches the boundary break.
+
+# Verify each areas/<area>/server/Cargo.toml depends only on capability server crates. Run by `just check`. (DEV-7397, ADR-0007)
+check-composition-root-deps:
+    bash .github/scripts/check-composition-root-deps.sh
+
 # `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
 # fine and the control is inert, so only a grep or a browser catches it.
 
@@ -91,7 +98,7 @@ check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-datastar-delimiters check-adr-refs check-live-tests-ignored
+check: verify-checksums check-shared-paths check-composition-root-deps check-datastar-delimiters check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -130,11 +137,11 @@ build:
 
 # Run server
 run:
-    cargo run --bin dpe-server --release -- serve
+    cargo run --bin access-server --release -- serve
 
 # Validate all data files in the default data directory
 validate-data:
-    cargo run --bin dpe-server -- validate areas/access/dpe/server/data
+    cargo run --bin access-server -- validate areas/access/dpe/server/data
 
 # Re-download and re-patch the DataCite JSON schema the DataCite JSON writer's output is shape-checked against. The script takes the XSD directory as an argument because a shared crate may not know a module's layout; this justfile may, and passes it. (DEV-7268)
 refresh-datacite-schema:
@@ -163,6 +170,7 @@ test:
     bash .github/scripts/commit-advisory.test.sh
     bash .github/scripts/verify-checksums.test.sh
     bash .github/scripts/check-shared-paths.test.sh
+    bash .github/scripts/check-composition-root-deps.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
     bash .github/scripts/check-adr-refs.test.sh
     bash .github/scripts/check-live-tests-ignored.test.sh
@@ -387,7 +395,7 @@ css-release:
     rm -f "$out/app.css"
     echo "built $out/app.$h.css"
 
-# Start the DPE with hot reload: Tailwind --watch + bacon (kill_then_restart) serving dpe-server.
+# Start the DPE with hot reload: Tailwind --watch + bacon (kill_then_restart) serving access-server.
 [group('dpe')]
 dev:
     #!/usr/bin/env bash
@@ -525,7 +533,7 @@ dev-otel:
 # Build Docker image for DPE
 [group('dpe')]
 build-docker-dpe:
-    docker build -f areas/access/dpe/Dockerfile -t dpe .
+    docker build -f areas/access/server/Dockerfile -t dpe .
 
 # Run DPE Docker container on port 8080
 [group('dpe')]

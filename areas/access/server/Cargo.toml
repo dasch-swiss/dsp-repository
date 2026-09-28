@@ -1,0 +1,37 @@
+[package]
+name = "access-server"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "access-server"
+path = "src/main.rs"
+
+[features]
+# Dev-loop live-reload for DPE (`dpe-server/dev`): browser auto-refresh on server restart +
+# asset changes. Enabled by the dev loop (bacon.toml / `just dev`); never in release builds.
+dev = ["dpe-server/dev"]
+
+[dependencies]
+dpe-server = { path = "../dpe/server" }
+shared-telemetry = { path = "../../../shared/telemetry" }
+
+axum.workspace = true
+clap = { version = "4", features = ["derive"] }
+ureq = "3"
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+axum-tracing-opentelemetry.workspace = true
+init-tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+opentelemetry-appender-tracing.workspace = true
+pyroscope.workspace = true
+tower_governor.workspace = true
+
+[dev-dependencies]
+tower = { workspace = true, features = ["util"] }
+tracing-opentelemetry.workspace = true

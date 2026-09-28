@@ -11,10 +11,12 @@ on:
       # a server-side render change must trigger the a11y job too. `shared/**`
       # covers the shared crates DPE renders through.
       - "areas/access/dpe/**"
+      - "areas/access/server/**"
       - "shared/**"
   pull_request:
     paths:
       - "areas/access/dpe/**"
+      - "areas/access/server/**"
       - "shared/**"
 
 concurrency:
@@ -47,13 +49,13 @@ jobs:
       - name: Install Playwright browsers
         run: cd areas/access/dpe/web-e2e-tests && npx playwright install chromium --with-deps
 
-      - name: Build dpe-server and stylesheet
-        # `cargo build -p dpe-server --release` yields target/release/dpe-server
+      - name: Build access-server and stylesheet
+        # `cargo build -p access-server --release` yields target/release/access-server
         # directly (the [[bin]] name), which the Playwright webServer launches.
         # `just css-release` builds the content-hashed app.css the release server
         # discovers from areas/access/dpe/public/assets at startup.
         run: |
-          cargo build -p dpe-server --release
+          cargo build -p access-server --release
           just css-release
 
       - name: Run accessibility tests

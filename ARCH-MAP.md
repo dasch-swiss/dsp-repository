@@ -35,10 +35,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/access/dpe/**`, `:(glob)areas/access/CONTEXT.md` (the Access Area's
   vocabulary, DPE's until CPE adds its terms)
 - **Purpose:** The Discovery and Presentation Environment — the Access Area's first service.
-  Four crates: `dpe-core` (view model, `OnceLock` caches, filesystem repositories, a
-  DSP-API client), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages and components),
-  `dpe-server` (the binary: routes, page shell, Datastar SSE fragments, the `validate`
-  CLI). Also owns the published **corpus** under `server/data/` (projects, persons and
+  Four crates: `dpe-core` (view model, the `Corpus` value that owns the lazily-loaded caches,
+  filesystem repositories, a DSP-API client), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages
+  and components), `dpe-server` (a library: routes, page shell, Datastar SSE fragments, config,
+  the `validate` logic; the binary is areas/access/server's). Also owns the published **corpus** under `server/data/` (projects, persons and
   organizations, whose sizes `corpus-manifest.json` records; plus 5 clusters, 3 record
   dumps, two lookup tables) and the cover images under `public/assets/images/`.
 - **Key entities:** `Project`, `ProjectQuery`, `VALID_TABS`, `all_projects`,
@@ -47,26 +47,28 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `OaiRecord`, `CachedContributorLookup`, `resolve_inputs`, `records_for_shortcode`,
   `project_oai_identifier`, `oai_handler`, `OaiState`, `RenderContext`, `build_router`,
   `tab_fragment_handler`, `search_fragment_handler`, `record_file_handler`, `HeadExtras`,
-  `landing_page` / `LandingPage` / `render`, `Corpus` / `CorpusSettings`
+  `landing_page` / `LandingPage` / `render`, `Corpus` / `CorpusSettings`, `Dpe`, `DpeConfig`
 - **Public interface:** the HTTP routes of `dpe-server` (`/dpe/projects`, `/dpe/projects/{id}`,
   `/dpe/projects/{id}/metadata.jsonld` and `/dpe/projects/{id}/metadata.datacite.json`,
   `/dpe/projects/{id}/tab/{tab}` and `/dpe/projects/search` as SSE, `/dpe/records/{shortcode}/{record_id}/file`,
-  `/dpe/oai`, `/dpe/api/v2/projects[/{id}]`, `/dpe/about`, `/healthz`, `POST /telemetry/collect`); the
-  `dpe-server serve | validate <data_dir> | healthcheck <url>` CLI; and the corpus files under
-  `server/data/`, which the editor consumes as an image-baked snapshot through `EDITOR_DATA_DIR`.
-  No `dpe-*` crate is depended on by any crate outside this component.
+  `/dpe/oai`, `/dpe/api/v2/projects[/{id}]`, `/dpe/about`); to areas/access/server only,
+  `dpe-server`'s library surface `DpeConfig`, `Dpe::{new, router, warm}`, `validate`,
+  `normalize_page_url`, `RightmostXffKeyExtractor`, which names no `dpe-core`/`dpe-web`/`dpe-api-oai`
+  type; and the corpus files under `server/data/`, which the editor consumes as an image-baked
+  snapshot through `EDITOR_DATA_DIR`. No `dpe-*` crate other than `dpe-server` is depended on by
+  any crate outside this component, and `dpe-server` only by areas/access/server.
 - **Local-context kit:** `areas/access/dpe/CLAUDE.md`, `areas/access/dpe/server/src/router.rs`,
   `areas/access/dpe/server/src/shell.rs`, `areas/access/dpe/core/src/lib.rs`,
   `areas/access/dpe/core/src/project.rs`, `areas/access/dpe/server/src/fragments.rs`,
   `areas/access/dpe/api-oai/src/lib.rs` (the OAI crate's whole surface; the contract it reads is
   shared/metadata's own kit). The kit is at its seven-file budget, so
-  `areas/access/dpe/server/src/serve.rs` is named here rather than added: it holds the order-sensitive
-  startup sequence and the two untraced routes.
+  `areas/access/dpe/server/src/lib.rs` (the `Dpe` surface the composition root mounts, and the
+  one production `Box::leak` of the corpus) is named here rather than added.
 - **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/telemetry
-  (`dpe-server`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio, tower /
-  tower-http / tower_governor, maud, datastar, clap, figment, serde / serde_json, quick-xml,
-  ureq, the OpenTelemetry stack, pyroscope, insta
-- **Used by:** areas/deposit/editor — data only, never code: the corpus is copied into the editor image
+  (`dpe-server`, `traceparent.rs`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio,
+  tower / tower-http / tower_governor, maud, datastar, figment, serde / serde_json, quick-xml,
+  ureq, opentelemetry / tracing-opentelemetry, insta
+- **Used by:** areas/access/server (`dpe-server`'s library surface only); areas/deposit/editor — data only, never code: the corpus is copied into the editor image
   (`.github/actions/build-editor/action.yml`, `justfile`) and read by the editor's tests through
   `editor_core::checkout_dpe_data_dir()` (`DPE_DATA_DIR`, the one Rust definition of the path); shared/metadata's and shared/fair's
   committed-data tests live here (`core/src/temporal_enrichment_cache.rs`,
@@ -90,9 +92,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** — a test in `dpe-server` greps every file under its own `src/` so
     `PreEscaped(` appears exactly once in the crate). The first two splice a constant. The
     search-query echo in `fragments.rs` stays an auto-escaped splice (**review**).
-  - Page, fragment and API routes live in `server/src/router.rs::build_router`; `serve.rs`
-    declares only the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the
-    OTel layers on purpose.
+  - Page, fragment and API routes live in `server/src/router.rs::build_router`, un-layered;
+    the OTel layers and the two untraced routes, `/healthz` and `POST /telemetry/collect`, are
+    areas/access/server's.
+  - No process-global state: the corpus, the OAI base URL and the placeholder flag are values
+    (`Corpus`, `OaiState`, `RenderContext`, `AppState`) built from `DpeConfig` by `Dpe::new`; no
+    `static` `OnceLock`/`LazyLock` outside `#[cfg(test)]` (**review**; ADR-0007).
 - **Durable state:** the corpus under `server/data/`. `projects/` has **two writers** — hand
   edits and `editor-core`'s `canonical_round_trip` test under `CANONICALIZE_PROJECT_FILES=1`,
   which is the canonical formatter, so the second writer is the intended one. `records/` has
@@ -108,8 +113,40 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   request it opens plus a human merge (**static-analysis** via `canonical_round_trip`,
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
-  In-process `OnceLock` caches load once and never invalidate.
-- **Fingerprint:** `86a146b23432`
+  The `Corpus`'s instance `OnceLock` caches load once per process and never invalidate.
+- **Fingerprint:** `88e2980eb4e5`
+
+### areas/access/server
+
+- **Paths:** `:(glob)areas/access/server/**`
+- **Purpose:** The Access Area's composition root (ADR-0003, ADR-0007): the one binary,
+  `access-server`, holding wiring only — CLI, config loading, OTel and Pyroscope init, the OTel
+  layers, the untraced routes, and mounting each capability's router. Today it mounts DPE alone.
+- **Key entities:** `app`, `serve`, `shutdown_signal`, `init_otel`, `init_pyroscope`,
+  `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
+- **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
+  `/healthz` and `POST /telemetry/collect` (untraced), plus every route DPE's router carries. The
+  Docker image stays `daschswiss/dpe` and also ships the binary as `/app/dpe-server` until
+  ops-deploy's healthcheck switches.
+- **Local-context kit:** `areas/access/server/CLAUDE.md`, `areas/access/server/src/serve.rs`,
+  `areas/access/server/src/observability.rs`, `areas/access/server/src/cli.rs`,
+  `areas/access/dpe/server/src/lib.rs`, `docs/adr/0003-one-modulith-per-area.md`,
+  `.github/scripts/check-composition-root-deps.sh`
+- **Depends on:** areas/access/dpe (`dpe-server` only), shared/telemetry; third-party: axum,
+  tokio, clap, ureq, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
+- **Used by:** — (deployment: `areas/access/server/Dockerfile`, `.github/actions/build-dpe/`)
+- **Boundary rules:**
+  - Depends on each capability's `server` crate only, never a capability's `core`, `web` or
+    `api-*` crate (**static-analysis**: `check-composition-root-deps.sh` in `just check`).
+  - Routes declared after the OTel layers are untraced, so the order in `app` is load-bearing
+    (**static-analysis**: `serve.rs` tests assert the traceparent split).
+  - No adapter or domain logic: wiring only (**review**).
+  - Sets no router fallback: DPE's router carries the `ServeDir` fallback, and axum panics when
+    merging two (**review**).
+  - The OTel tracer name and Pyroscope application stay `dpe-server`, the `service.namespace` and
+    collector scope `dpe`: DPE's telemetry identity, not this crate's name (**review**).
+- **Durable state:** none.
+- **Fingerprint:** `311504f0a51c`
 
 ### areas/deposit/editor
 
@@ -177,7 +214,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   approve, and deleted by two paths: the startup reconcile that derives Online, and approve's
   own transaction, which supersedes an earlier record for the same project when no pull request
   of its own is live.
-- **Fingerprint:** `f91e585317fe`
+- **Fingerprint:** `f1d6a05a9015`
 
 ### modules/mosaic
 
@@ -321,7 +358,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**review**).
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
-- **Fingerprint:** `4233fef6323e`
+- **Fingerprint:** `969101398529`
 
 ### shared/telemetry
 
@@ -342,7 +379,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `shared/README.md`, `areas/access/dpe/server/fuzz/fuzz_targets/beacon_payload.rs`
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json; axum, opentelemetry,
   tracing, url (collector only). No `tower_governor` — the rate limiter is each server's own.
-- **Used by:** areas/access/dpe (`dpe-server`: `collect_route("dpe", page_url::normalize_page_url)`),
+- **Used by:** areas/access/server (`collect_route("dpe", dpe_server::normalize_page_url)`), areas/access/dpe (`dpe-server`'s `traceparent.rs`),
   areas/deposit/editor (`editor-server`: `collect_route("editor", …)`), both servers' `traceparent.rs`,
   the DPE fuzz crate
 - **Boundary rules:**
@@ -505,17 +542,18 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   hypermedia server rendering project-specific presentations over the same data as DPE,
   configured per project. Where the per-project configuration lives is an open item.
 - **Key entities:** — (none yet)
-- **Public interface:** its router, mounted by the Access Area's composition root on the area's
+- **Public interface:** its router, mounted by areas/access/server on the area's
   origin beside DPE's routes; `cpe/ports` for anything a sibling capability needs from it.
 - **Local-context kit:** `docs/adr/0002-areas-at-the-repository-root.md`, `areas/access/CONTEXT.md`,
-  `areas/access/dpe/server/src/router.rs` (the shape to copy), `shared/metadata/src/lib.rs`,
+  `areas/access/dpe/server/src/lib.rs` (the `Dpe` surface to copy), `areas/access/server/src/serve.rs`
+  (where it is mounted), `shared/metadata/src/lib.rs`,
   `docs/src/mosaic/component-api-conventions.md`, `docs/adr/0003-one-modulith-per-area.md`
 - **Depends on:** shared/metadata, shared/telemetry, modules/mosaic
   (expected); never DPE's domain, store or web crates. Two port directions, each with its own
   consumer (ADR-0003): what CPE needs from DPE, CPE declares in `cpe/ports` and DPE implements;
   what DPE needs from CPE, DPE declares in `dpe/ports` and CPE implements, depending on
   `dpe/ports` alone. A *concept* both need lives in `shared/`; a shape never does
-- **Used by:** —
+- **Used by:** areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
   in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA
@@ -540,8 +578,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **One modulith per area (ADR-0003):** one binary per area, composed at `<area>/server` out of
   capabilities that own their tables, collaborate only through consumer-defined `ports` crates
   with `Live<Port>` adapters in the provider's store, reference each other by opaque id, and
-  never span a transaction. Today each area has one capability, so the service crates are the
-  seeds of the composition roots. *Enforcement:* **review**, becoming **structure** (Bazel
+  never span a transaction. The Access Area's root is `areas/access/server` (moved up ahead of
+  CPE, ADR-0007 amendment); the Deposit Area has one capability, so `editor-server` is still the
+  seed of its root. *Enforcement:* **review**, becoming **structure** (Bazel
   visibility: `ports` public within the area; domain / store / web visible to the capability
   and the composition root only) with ADR-0001.
 - **Shared code lives under `shared/` as `shared-{role}`** the moment a second
@@ -551,9 +590,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   rule), **static-analysis** (the path grep).
 - **Crate naming:** `{service}-{role}`; the folder drops the prefix (`dpe/core` is `dpe-core`).
   *Enforcement:* **review**.
-- **Composition root:** each service's `server` crate owns routing and config; views are
+- **Composition root:** an area's `server` crate (`areas/<area>/server`) owns the CLI,
+  observability and mounting; each capability owns its routes and config; the root depends on a
+  capability's `server` crate, and on its `store` and `ports` crates only to construct and inject
+  `Live<Port>` adapters (ADR-0003), never on its `core`, `web` or `api-*` crates; views are
   `fn(...) -> Markup` in the `web` crate; the domain / contract crate has no framework
-  dependency. *Enforcement:* **review** (DPE's views self-load from `dpe-core` caches — a
+  dependency. *Enforcement:* **static-analysis** for the root's dependencies
+  (`check-composition-root-deps.sh`), **review** for the rest (DPE's views read the corpus
+  handed to them through `RenderContext` rather than taking every value as an argument — a
   recorded exception).
 - **Hypermedia, server-authoritative (ADR-0004):** server-rendered HTML with Datastar SSE
   fragments; no SPA, no WASM, no client-side state store, no BFF; every enhanced link keeps a

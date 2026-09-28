@@ -7,11 +7,14 @@ areas/access/dpe/
 ├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
-├── server/           dpe-server        Axum binary (composition root)
+├── server/           dpe-server        DPE's router, config and validate logic (library)
 ├── web-e2e-tests/                      Playwright E2E tests
 ├── public/                             Static assets
 └── style/                              Tailwind CSS
 ```
+
+The binary, `access-server`, lives outside this tree at `areas/access/server/` — the Access
+Area's composition root (ADR-0003), which mounts `dpe-server`'s router. See its `CLAUDE.md`.
 
 ## Dependency Graph
 
@@ -25,8 +28,9 @@ shared-metadata         ← the wire contract, shared with the editor;
         ↑
         ├── dpe-api-oai ← OAI-PMH endpoint; also depends on shared-fair
         ├── dpe-web     ← Maud pages + components
-        └── dpe-server  ← composition root, Datastar fragment handlers
+        └── dpe-server  ← router, config, Datastar fragment handlers (library)
               ↑
+              access-server     ← Access Area's composition root; areas/access/server
               shared-telemetry  ← beacon contract + collector endpoint, shared
                                   with editor-server; lives in `shared/`
 ```
@@ -79,7 +83,7 @@ Framework-free domain layer — what only DPE needs. Contains:
 - **Utilities**: `lang_value()`, `language_display_name()` (pure, no corpus needed)
 - **Static-asset lookup**: `cover_image_cache` scans `<public dir>/assets/images` once for the per-project cover images, so a view can tell whether a project has one before rendering an `<img>`
 
-`Corpus` is one capability-owned value, not a process-global: `dpe-server` builds it once from `DpeConfig` in `serve.rs` and leaks it (`Box::leak`) to get a `&'static Corpus`, the only production leak. That reference reaches handlers through `AppState`/`OaiState` and views through `RenderContext`; new per-deployment view settings belong on `RenderContext`, not in a process-global. Tests leak one `Corpus` per fixture directory, so several can coexist in one test binary — the statics this replaced made that impossible.
+`Corpus` is one capability-owned value, not a process-global: `dpe-server` builds it once from `DpeConfig` in `Dpe::new` (`lib.rs`) and leaks it (`Box::leak`) to get a `&'static Corpus`, the only production leak. That reference reaches handlers through `AppState`/`OaiState` and views through `RenderContext`; new per-deployment view settings belong on `RenderContext`, not in a process-global. Tests leak one `Corpus` per fixture directory, so several can coexist in one test binary — the statics this replaced made that impossible.
 
 Dependencies: `shared-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
 
@@ -101,18 +105,19 @@ Imports `shared-metadata` and `dpe-core` types directly; depends on `maud` and `
 
 ### Browser telemetry
 
-`dpe-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `areas/access/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold.
+`access-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `areas/access/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold, so `access-server` passes `dpe_server::normalize_page_url` into `shared_telemetry::collector::collect_route`.
 
 ### `dpe-server` (server/)
 
-Composition root and Axum binary. Contains:
+A library, DPE's router and configuration; no binary. Contains:
 
-- **Route wiring**: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, `/healthz`, `/telemetry/collect`, plus `ServeDir` static serving and a 404 fallback
+- **Route wiring**: `router.rs` — native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, plus `ServeDir` static serving and a 404 fallback. `Dpe::router()` returns this router for `access-server` to mount
 - **Head/page shell**: `view.rs` — the hand-written `head()` + `page()` partials (title, content-hashed stylesheet link, conditional `traceparent` meta, fonts, Fathom, Datastar + telemetry scripts)
 - **Fragment handlers**: `fragments.rs` — plain Axum handlers that render Maud `Markup` to HTML and return Datastar SSE events
-- **Page-URL normalization**: `page_url.rs` — bounds the telemetry `page.url` metric attribute to DPE's own known routes, passed into `shared_telemetry::collector::collect_route`
+- **Page-URL normalization**: `page_url.rs` — bounds the telemetry `page.url` metric attribute to DPE's own known routes
 - **Configuration**: `config.rs` — figment-based layered config (defaults → `dpe.toml` → `DPE_*` env vars)
-- **Logging**: OTel-aware subscriber via `init-tracing-opentelemetry`
+
+`/healthz`, `POST /telemetry/collect`, CLI dispatch and OTel/Pyroscope init live in `access-server` (`areas/access/server`), the Access Area's composition root — see its `CLAUDE.md`.
 
 ## Key Patterns
 

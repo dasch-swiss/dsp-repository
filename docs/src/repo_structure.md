@@ -15,15 +15,16 @@ modules/
 
 areas/
 ├── access/                    # Access Area
+│   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
+│   │   └── Dockerfile         # Production container image
 │   └── dpe/                   # Discovery and Presentation Environment
 │       ├── core/              # DPE's view model, caches, repositories (crate: dpe-core)
 │       ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │       ├── web/               # Web layer: Maud pages and components (crate: dpe-web)
-│       ├── server/            # Server binary: route composition, Datastar fragments (crate: dpe-server)
+│       ├── server/            # DPE's router, config and validate logic, a library (crate: dpe-server)
 │       ├── web-e2e-tests/     # Playwright E2E tests
 │       ├── public/            # Static assets
-│       ├── style/             # CSS / Tailwind
-│       └── Dockerfile         # Production container image
+│       └── style/             # CSS / Tailwind
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
@@ -51,10 +52,11 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | Crate | Folder | Role |
 |-------|--------|------|
 | `dsp-cli` | `dsp-cli` | Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002) |
+| `access-server` | `areas/access/server` | The Access Area's composition root (ADR-0003) — CLI, observability, route mounting; no business logic |
 | `dpe-core` | `areas/access/dpe/core` | DPE's view model, caches and repositories over the shared contract (zero framework deps) |
 | `dpe-api-oai` | `areas/access/dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core`, `shared-metadata` and `shared-fair` only) |
 | `dpe-web` | `areas/access/dpe/web` | Maud pages and components (`fn -> Markup`) |
-| `dpe-server` | `areas/access/dpe/server` | Server binary — composes all routes |
+| `dpe-server` | `areas/access/dpe/server` | A library — DPE's router, config and validate logic; no binary |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |

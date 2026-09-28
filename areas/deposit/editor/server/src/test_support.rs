@@ -189,7 +189,7 @@ pub(crate) fn agent_corpus() -> Arc<editor_core::agents::Agents> {
 ///
 /// The real ones, for the reason [`published_corpus`] gives about projects: a
 /// fixture of invented periods would let submit validation pass while
-/// disagreeing with what `dpe-server validate` decides about the committed
+/// disagreeing with what `access-server validate` decides about the committed
 /// projects, which is the whole point of sharing the tables.
 pub(crate) fn temporal_tables() -> Arc<TemporalTables> {
     static TABLES: OnceLock<Arc<TemporalTables>> = OnceLock::new();

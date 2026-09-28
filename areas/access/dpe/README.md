@@ -9,11 +9,14 @@ dpe/
 ├── core/             # DPE's view model, caches and repositories (crate: dpe-core)
 ├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
 ├── web/              # Maud pages and components, `fn -> Markup` (crate: dpe-web)
-├── server/           # Server binary, routing, head, fragment handlers (crate: dpe-server)
+├── server/           # DPE's router, config and validate logic, a library (crate: dpe-server)
 ├── web-e2e-tests/    # Playwright E2E tests
 ├── public/           # Static assets (served by ServeDir, includes compiled app.<hash>.css)
 └── style/            # Tailwind v4 entry (main.css)
 ```
+
+The binary, `access-server`, and its Dockerfile live outside this directory, at `areas/access/server/`
+(the Access Area's composition root; see its `CLAUDE.md`).
 
 ## Prerequisites
 
@@ -29,17 +32,17 @@ The Tailwind CLI is fetched automatically by the `just css*` recipes; CSS needs 
 just dev
 ```
 
-Runs Tailwind in `--watch` mode alongside `bacon serve`, which rebuilds and restarts `dpe-server` on change. The server listens at `http://127.0.0.1:4000`.
+Runs Tailwind in `--watch` mode alongside `bacon serve`, which rebuilds and restarts `access-server` on change. The server listens at `http://127.0.0.1:4000`.
 
 ## Building for Production
 
 ```bash
-cargo build --release --bin dpe-server   # static binary
-just css-release                          # content-hashed app.<hash>.css into public/assets/
+cargo build --release --bin access-server   # static binary
+just css-release                            # content-hashed app.<hash>.css into public/assets/
 ```
 
 Output:
-- Server binary: `target/release/dpe-server`
+- Server binary: `target/release/access-server`
 - Compiled stylesheet: `areas/access/dpe/public/assets/app.<hash>.css`
 
 ## Testing
@@ -86,7 +89,7 @@ See `docs/src/dpe/operations.md` for the full list of environment variables, CLI
 
 After building the binary and stylesheet (see [Building for Production](#building-for-production)), copy:
 
-1. The server binary from `target/release/dpe-server`
+1. The server binary from `target/release/access-server`
 2. The `public/` directory from `areas/access/dpe/public/` (static assets + the content-hashed `app.<hash>.css`)
 3. The data directory from `areas/access/dpe/server/data/`
 

@@ -1154,7 +1154,7 @@ async fn submit(
     }
 
     // Every `temporalCoverage` entry has to resolve to a structured date, checked through the
-    // same function `dpe-server validate` and `dpe-api-oai` apply, so the three cannot disagree
+    // same function `access-server validate` and `dpe-api-oai` apply, so the three cannot disagree
     // about what counts as a gap. Re-run on every submit, which is what makes a resubmission
     // revalidated rather than trusted because it was reviewed once.
     let unresolved = unresolved_temporal_coverage(&raw, &state.temporal.periods, &state.temporal.enrichment);
@@ -3157,7 +3157,7 @@ mod tests {
     #[tokio::test]
     async fn submitting_an_unresolvable_period_is_refused_with_a_field_error() {
         // Every `temporalCoverage` entry has to resolve, applied through the same function
-        // `dpe-server validate` and `dpe-api-oai` use. Re-run on every submit,
+        // `access-server validate` and `dpe-api-oai` use. Re-run on every submit,
         // which is what makes a resubmission revalidated rather than trusted
         // because it was reviewed once.
         let (state, _) = test_state("section-submit-invalid").await;

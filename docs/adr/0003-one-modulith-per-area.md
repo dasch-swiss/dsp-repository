@@ -41,6 +41,7 @@ Within a capability, the crate anatomy stays `{capability}-{role}` (ADR-0002): a
 ## Consequences
 
 - `dpe-server` and `editor-server` are the seeds of the Access and Deposit composition roots; as a second capability arrives in an area, the capability-specific code moves out of the server crate and the server becomes wiring only.
+  **Amended 2026-09-28:** the Access Area's root moved to `areas/access/server` ahead of its second capability (ADR-0007's amendment); `dpe-server` is now DPE's library crate.
 - A new capability in an area is a directory beside the existing ones, its own crates, and a mount plus adapter wiring at the composition root — never an import of a sibling capability.
 - More indirection per cross-capability need (a port plus an adapter), boundary DTOs defined per consumer rather than shared, and read paths that would have been one SQL join become a port call plus in-memory composition. Accepted.
 - Each area keeps one `CONTEXT.md` per capability once vocabulary diverges, indexed from the root `CONTEXT.md`; today the area and its first capability coincide.

@@ -1,6 +1,6 @@
 //! Keeping a collected project's `temporalCoverage` resolvable.
 //!
-//! `dpe-server validate` and `every_committed_temporal_coverage_resolves` both
+//! `access-server validate` and `every_committed_temporal_coverage_resolves` both
 //! fail on a free-text `temporalCoverage` that resolves to no date and carries
 //! no reviewed row, so a project collected without one arrives with a red gate
 //! through no reviewer's fault. A skeleton row (`date: null`,
@@ -99,7 +99,7 @@ mod tests {
     }
 
     /// The row's shape is what closes the gap: `completeness_gap` is the single
-    /// decision `dpe-server validate` and `every_committed_temporal_coverage_resolves`
+    /// decision `access-server validate` and `every_committed_temporal_coverage_resolves`
     /// both apply, so a row it still rejects would leave the collection pull
     /// request red.
     #[test]

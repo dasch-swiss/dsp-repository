@@ -1,11 +1,11 @@
-//! The `dpe-server` CLI: argument parsing and the `healthcheck` subcommand.
+//! The `access-server` CLI: argument parsing and the `healthcheck` subcommand.
 
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "dpe-server", about = "DaSCH Discovery and Presentation Environment")]
+#[command(name = "access-server", about = "DaSCH Discovery and Presentation Environment")]
 pub(crate) struct Cli {
     #[command(subcommand)]
     pub(crate) command: Option<Commands>,

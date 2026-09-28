@@ -244,7 +244,7 @@
 </style>
 <h1 id="dpe-project-structure"><a class="header" href="#dpe-project-structure">DPE Project Structure</a></h1>
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
-<pre><code>modules/dpe/
+<pre><code>areas/access/dpe/
 ├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
@@ -322,7 +322,7 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 </ul>
 <p>Imports <code>shared-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
-<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
+<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>areas/access/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>

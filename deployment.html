@@ -255,7 +255,7 @@
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>areas/access/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
@@ -324,7 +324,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>areas/access/dpe/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>

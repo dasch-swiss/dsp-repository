@@ -260,7 +260,7 @@ cross-linker, which macOS does not have. It defaults to the host architecture so
 the build is native; <code>just build-docker-editor arch=x86_64</code> reproduces the amd64
 image CI publishes, under emulation.</p>
 <h3 id="data-directory-a-deliberate-build-input"><a class="header" href="#data-directory-a-deliberate-build-input">Data directory (a deliberate build input)</a></h3>
-<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>modules/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
+<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>areas/access/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
 <p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via <code>ENV EDITOR_DATA_DIR</code>, local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
 <p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
@@ -381,7 +381,7 @@ image CI publishes, under emulation.</p>
 <p>With no relay and no <code>EDITOR_DB_DIR</code>, <strong>the code is shown on the code-entry page</strong> — nothing has to be read from anywhere. It is also written to the log; <code>just dev-editor</code> runs under bacon, so it appears in the output pane.</p>
 <p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
-EDITOR_DATA_DIR=modules/dpe/server/data \
+EDITOR_DATA_DIR=areas/access/dpe/server/data \
 cargo run --bin editor-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
 
 # after submitting the address at /login:

@@ -289,7 +289,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
-<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
+<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>areas/access/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret). <strong>Production only</strong> — leave unset or empty everywhere else; empty is normalised to unset.</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="./oai-pmh.html">OAI-PMH</a>.</td></tr>
@@ -303,7 +303,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
 <tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
 <tr><td><code>DPE_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4000</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
-<tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>modules/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
+<tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>areas/access/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
 </tbody></table>
 </div>

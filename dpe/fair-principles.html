@@ -274,7 +274,7 @@ governed outside this repository.</li>
 <code>shared/fair/src/graph.rs</code>, Record is a contract term in the root
 <code>CONTEXT.md</code>, and both record writers (<code>shared/fair/src/record_datacite.rs</code>,
 <code>shared/fair/src/record_dublin_core.rs</code>) feed OAI-PMH. But
-<code>modules/dpe/server/src/router.rs</code> registers <code>/dpe/projects/{id}</code> and
+<code>areas/access/dpe/server/src/router.rs</code> registers <code>/dpe/projects/{id}</code> and
 <code>/dpe/records/{shortcode}/{record_id}/file</code>, and no page route for a record. A
 record ARK therefore resolves to something outside DPE; what, is not settled in
 this repository. This is a boundary of what has been built, stated so that no
@@ -314,7 +314,7 @@ value is the schema.org <code>@id</code> and the first <code>identifier</code> e
 <code>identifierType="ARK"</code>, the <code>DC.identifier</code> meta tag, and the single <code>cite-as</code>
 link (<code>project_to_link_set</code> in <code>shared/fair/src/signposting.rs</code>). Records carry
 ARKs of their own (<code>RecordGraph::ark</code>, <code>shared/fair/src/graph.rs</code>).</p>
-<p>The ARK path is never rewritten. <code>modules/dpe/core/src/ark.rs</code> normalises only
+<p>The ARK path is never rewritten. <code>areas/access/dpe/core/src/ark.rs</code> normalises only
 the <em>host</em>, and only on a deployment that publishes ARKs naming itself.</p>
 <p><strong>The data: no.</strong> A bitstream has no identifier of its own. It is named by a
 dsp-ingest URL, in <code>distribution.contentUrl</code> and as <code>downloadUrl</code> from the
@@ -358,9 +358,9 @@ list. Every representation is a projection of that one graph.</p>
 them appears anywhere in <code>shared/fair/src</code> outside its test fixtures, and
 <code>ProjectGraph</code> has no field for any of them. The human page renders several —
 <code>provenance_card</code> in
-<code>modules/dpe/web/src/pages/project/components/project_details_tabs/dataset_overview_section/mod.rs</code>,
+<code>areas/access/dpe/web/src/pages/project/components/project_details_tabs/dataset_overview_section/mod.rs</code>,
 the DMP and contact point in
-<code>modules/dpe/web/src/pages/project/components/project_sidebar/mod.rs</code>. A
+<code>areas/access/dpe/web/src/pages/project/components/project_sidebar/mod.rs</code>. A
 machine therefore sees less than a person does. <code>clusters</code> and <code>collections</code>
 are absent the same way; they are I3's point rather than this one.
 <code>type_of_data</code> is the consequential one: the project's DataCite
@@ -384,7 +384,7 @@ means F2 is answered differently for different projects.</li>
 <p><strong>The identifiers of its records: partly.</strong> <code>part_nodes</code> emits one <code>Dataset</code>
 node per record with the record's ARK as <code>@id</code>, but only over a prefix: 100
 entries in the embedded block (<code>HAS_PART_CAP</code> in
-<code>modules/dpe/server/src/metadata.rs</code>) and as many as fit 4,000,000 bytes in
+<code>areas/access/dpe/server/src/metadata.rs</code>) and as many as fit 4,000,000 bytes in
 <code>/metadata.jsonld</code> (<code>JSON_LD_BYTE_BUDGET</code>). The complete list is the OAI set
 <code>project:{shortcode}</code>, reachable from the document in two hops over links it
 already carries.</p>
@@ -415,7 +415,7 @@ is unanswered for those records.</li>
 <p><strong>What DPE does.</strong> Two routes, neither of which needs a DOI.</p>
 <ul>
 <li><strong>Harvesting.</strong> DPE is an OAI-PMH 2.0 data provider at <code>/dpe/oai</code>
-(<code>modules/dpe/api-oai/</code>): all six verbs, <code>oai_dc</code> and <code>oai_datacite</code>, and
+(<code>areas/access/dpe/api-oai/</code>): all six verbs, <code>oai_dc</code> and <code>oai_datacite</code>, and
 selective harvesting over the sets <code>project:{shortcode}</code> and <code>cluster:{id}</code>.
 Any aggregator can take the whole corpus. F-UJI's <code>F4-01M-1</code> passes on this
 alone.</li>
@@ -426,8 +426,8 @@ Metadata</a>).
 The project graph also names the catalogue it belongs to, as
 <code>includedInDataCatalog</code>.</li>
 </ul>
-<p><strong>Where.</strong> <code>modules/dpe/server/src/router.rs</code> (<code>/dpe/oai</code>),
-<code>modules/dpe/api-oai/src/handlers/</code>, <a href="./oai-pmh.html">OAI-PMH</a>; <code>render</code> in
+<p><strong>Where.</strong> <code>areas/access/dpe/server/src/router.rs</code> (<code>/dpe/oai</code>),
+<code>areas/access/dpe/api-oai/src/handlers/</code>, <a href="./oai-pmh.html">OAI-PMH</a>; <code>render</code> in
 <code>shared/fair/src/schema_org.rs</code> for <code>includedInDataCatalog</code>.</p>
 <p><strong>A permanent limit, from the identifier scheme.</strong> DaSCH mints no DOIs, for the
 reason F1 records, and registration in a DOI-based registry therefore does not
@@ -457,17 +457,17 @@ project page by following links. <em>Unbuilt.</em></li>
 <p><strong>Project metadata: yes.</strong> The ARK resolves by HTTP redirect to the landing
 page. In production the resolver is <code>ark.dasch.swiss</code>; a deployment that
 publishes ARKs naming itself mounts its own
-(<code>modules/dpe/server/src/ark.rs::resolve_project</code>, registered in <code>router.rs</code>
+(<code>areas/access/dpe/server/src/ark.rs::resolve_project</code>, registered in <code>router.rs</code>
 only when <code>DPE_ARK_RESOLVER_BASE_URL</code> is set). The page carries its metadata
 inline, and two machine-readable representations sit beside it at their own
 URLs, reachable directly or by a single <code>303</code> when <code>Accept</code> prefers one
-(<code>landing_page</code> in <code>modules/dpe/server/src/metadata.rs</code>, over the decision table
+(<code>landing_page</code> in <code>areas/access/dpe/server/src/metadata.rs</code>, over the decision table
 in <code>shared/fair/src/negotiate.rs</code>). Every answer from that route carries
-<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>modules/dpe/server/src/shell.rs</code>).
+<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>areas/access/dpe/server/src/shell.rs</code>).
 OAI-PMH is a second retrieval protocol over the same metadata.</p>
 <p><strong>The data: not from DPE.</strong> DPE serves metadata only. A consumer reads
 <code>downloadUrl</code> from <code>/dpe/records/{shortcode}/{record_id}/file</code>
-(<code>modules/dpe/server/src/downloads.rs</code>) and then fetches the bytes from
+(<code>areas/access/dpe/server/src/downloads.rs</code>) and then fetches the bytes from
 dsp-ingest itself.</p>
 <p><strong>Not satisfied</strong></p>
 <ul>
@@ -481,8 +481,8 @@ dsp-ingest itself.</p>
 <p><strong>What DPE does.</strong> HTTP throughout, and OAI-PMH 2.0 over HTTP. No client
 library, no key, no account, no registration: DPE is the public,
 unauthenticated, read-only server of the Access Area
-(<code>modules/dpe/CONTEXT.md</code>). The representation routes and <code>/dpe/oai</code> share a
-per-IP rate limit (<code>rate_limited_router</code> in <code>modules/dpe/server/src/router.rs</code>,
+(<code>areas/access/CONTEXT.md</code>). The representation routes and <code>/dpe/oai</code> share a
+per-IP rate limit (<code>rate_limited_router</code> in <code>areas/access/dpe/server/src/router.rs</code>,
 <code>DPE_OAI_RATE_LIMIT_*</code>), which bounds request rate and gates nothing.</p>
 <p><strong>Not satisfied.</strong> Nothing identified. This is the one section with no residual,
 and it is the cheapest of the fifteen to satisfy.</p>
@@ -510,7 +510,7 @@ access to published data.</p>
 <ul>
 <li>DPE implements no authenticated path to restricted data, and does not mediate
 access to it by any procedure. HTTP would allow one; nothing here uses it.
-That is a boundary rather than a residual — <code>modules/dpe/CONTEXT.md</code> defines
+That is a boundary rather than a residual — <code>areas/access/CONTEXT.md</code> defines
 DPE as the public, unauthenticated, read-only server — and whether the Access
 Area should offer one is a question no decision record answers yet.</li>
 </ul>
@@ -519,7 +519,7 @@ Area should offer one is a question no decision record answers yet.</li>
 <p>metadata are accessible, even when the data are no longer available</p>
 </blockquote>
 <p><strong>What DPE does.</strong> Metadata availability does not depend on bitstream
-availability. DPE serves the committed corpus under <code>modules/dpe/server/data/</code>
+availability. DPE serves the committed corpus under <code>areas/access/dpe/server/data/</code>
 rather than reading the archive, and a project whose records carry no file has a
 complete landing page all the same — 081C, with 27,026 records and not one file,
 is the worked case
@@ -530,12 +530,12 @@ section is what is missing.</p>
 <ul>
 <li><strong>No tombstone.</strong> A shortcode that names no project gets an always-200
 "Project Not Found" page (<code>landing_page</code> in
-<code>modules/dpe/server/src/metadata.rs</code>) — not a <code>410 Gone</code> carrying the metadata
+<code>areas/access/dpe/server/src/metadata.rs</code>) — not a <code>410 Gone</code> carrying the metadata
 of what used to be there. Nothing in the tree distinguishes "never existed"
 from "withdrawn". <em>Unbuilt.</em></li>
 <li><strong>OAI-PMH says so out loud.</strong> <code>Identify</code> advertises
 <code>&lt;deletedRecord&gt;no&lt;/deletedRecord&gt;</code> (<code>OaiXmlBuilder::write_identify</code> in
-<code>modules/dpe/api-oai/src/xml.rs</code>), which tells a harvester the repository
+<code>areas/access/dpe/api-oai/src/xml.rs</code>), which tells a harvester the repository
 maintains no information about deletions. <em>Unbuilt.</em></li>
 <li><strong>No metadata persistence policy</strong> to point a <code>persistencePolicy</code> link at.
 <em>Institutional.</em> (Evidence: FAIR Champion's <em>MetadataPersistence</em>.)</li>
@@ -555,7 +555,7 @@ JSON-LD as RDF, which is why several property shapes are node objects rather
 than strings (<a href="./machine-readable-metadata.html#schemaorg-json-ld">Machine-Readable
 Metadata</a>).</p>
 <p><strong>Where.</strong> <code>shared/fair/src/schema_org.rs</code> (<code>render</code>, <code>script_safe_json</code>);
-<code>modules/dpe/server/src/metadata.rs</code> (<code>render</code>, <code>project_json_ld</code>);
+<code>areas/access/dpe/server/src/metadata.rs</code> (<code>render</code>, <code>project_json_ld</code>);
 <code>shared/fair/src/datacite_json.rs</code>; <code>shared/fair/src/dublin_core_meta.rs</code>.</p>
 <p><strong>Not satisfied</strong></p>
 <ul>
@@ -585,7 +585,7 @@ budget</a>.</li>
 <tr><td>GND, STW, LCSH, AAT</td><td>subject schemes, inferred from an authority URL</td><td><code>helpers::infer_subject_scheme</code></td></tr>
 <tr><td>ChronOntology, W3CDTF</td><td>temporal coverage and its resolved ranges</td><td><code>shared_metadata::temporal_coverage</code></td></tr>
 <tr><td>FAIR Signposting (level 1)</td><td>the typed link set</td><td><code>shared/fair/src/signposting.rs</code></td></tr>
-<tr><td>OAI-PMH 2.0</td><td>the harvesting protocol</td><td><code>modules/dpe/api-oai/</code></td></tr>
+<tr><td>OAI-PMH 2.0</td><td>the harvesting protocol</td><td><code>areas/access/dpe/api-oai/</code></td></tr>
 </tbody></table>
 </div>
 <p><em>Evidence, not the claim:</em> <code>I2-01M</code> moved from 0/1 to 1/1 when PROV was added,
@@ -602,7 +602,7 @@ vocabulary and falls back to <code>Other</code>. <em>Data quality.</em></li>
 <code>name_identifiers: vec![]</code>, and an affiliation is emitted as an <code>Organization</code>
 name with nothing else (<code>agent_node</code> in <code>schema_org.rs</code>). No ROR. The
 organization files carry a homepage and a postal address and no persistent
-identifier (<code>modules/dpe/server/data/organizations/</code>). <em>Unbuilt</em>, and
+identifier (<code>areas/access/dpe/server/data/organizations/</code>). <em>Unbuilt</em>, and
 <em>data quality</em> behind it.</li>
 <li><strong>Person identifiers are sparse, and two are typed away.</strong> 96 of the 416
 committed person files record <code>"type": "ORCID"</code> in <code>sameAs</code>. Two more hold an

@@ -599,7 +599,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>editor-collector</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
-<li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
+<li><code>dpe-data</code> — project metadata files under <code>areas/access/dpe/server/data/</code></li>
 <li><code>ci</code> — workflows, the justfile, CI scripts</li>
 <li><code>deps</code> — dependency bumps, Dependabot, base-image updates</li>
 <li><code>docs</code> — repo-level and process documentation with no single crate owner</li>
@@ -754,24 +754,25 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </style>
 <h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>This repository is a Rust workspace structured as a monorepo. DPE and the design system are organized as subdirectories within the <code>modules/</code> directory, and the metadata editor sits in the Deposit Area at <code>areas/deposit/editor/</code>; the crates shared by more than one service sit in <code>shared/</code>, a sibling of both at the repository root.</p>
-<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>areas/deposit/editor/CONTEXT.md</code>, <code>modules/dpe/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Six ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code>, <code>chischtli/</code> and <code>dsp-cli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root <code>docs/adr/</code>, a root-level component's own decision history lives in its own <code>docs/adr/</code>, and a bare <code>ADR-NNNN</code> names the root series while <code>&lt;component&gt;/ADR-NNNN</code> names a component's (ADR-0006). All six are accepted. Two more are proposed: the shape in which CPE joins the Access Area as its second capability (ADR-0007), and the rule that a capability reading the archive projection may keep its own derived read model, fed only through its port against <code>sync</code> (ADR-0008). The editor has moved to its area; until the rest of the migration lands, this page describes the layout as it is.</p>
+<p>This repository is a Rust workspace structured as a monorepo. The design system is organized as a subdirectory of the <code>modules/</code> directory, DPE sits in the Access Area at <code>areas/access/dpe/</code> and the metadata editor in the Deposit Area at <code>areas/deposit/editor/</code>; the crates shared by more than one service sit in <code>shared/</code>, a sibling of <code>modules/</code> and <code>areas/</code> at the repository root.</p>
+<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>areas/deposit/editor/CONTEXT.md</code>, <code>areas/access/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>) and one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Eight ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code>, <code>chischtli/</code> and <code>dsp-cli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root <code>docs/adr/</code>, a root-level component's own decision history lives in its own <code>docs/adr/</code>, and a bare <code>ADR-NNNN</code> names the root series while <code>&lt;component&gt;/ADR-NNNN</code> names a component's (ADR-0006). Two set how the Access Area grows: the shape in which CPE joins it as its second capability (ADR-0007), and the rule that a capability reading the archive projection may keep its own derived read model, fed only through its port against <code>sync</code> (ADR-0008). All eight are accepted. The editor and DPE have moved to their areas; until the rest of the migration lands, this page describes the layout as it is.</p>
 <pre><code class="language-txt">modules/
-├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # DPE's view model, caches, repositories (crate: dpe-core)
-│   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
-│   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── web-e2e-tests/         # Playwright E2E tests
-│   ├── public/                # Static assets
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
 
 areas/
+├── access/                    # Access Area
+│   └── dpe/                   # Discovery and Presentation Environment
+│       ├── core/              # DPE's view model, caches, repositories (crate: dpe-core)
+│       ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
+│       ├── web/               # Web layer: Maud pages and components (crate: dpe-web)
+│       ├── server/            # Server binary: route composition, Datastar fragments (crate: dpe-server)
+│       ├── web-e2e-tests/     # Playwright E2E tests
+│       ├── public/            # Static assets
+│       ├── style/             # CSS / Tailwind
+│       └── Dockerfile         # Production container image
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
@@ -795,10 +796,10 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. <code>dsp-cli</code> is an explicit exception: it is a single crate named after the product it publishes, not after a module-plus-role pair, and its folder keeps the crate's full name.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dsp-cli</code></td><td><code>dsp-cli</code></td><td>Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002)</td></tr>
-<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
-<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
-<tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
+<tr><td><code>dpe-core</code></td><td><code>areas/access/dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
+<tr><td><code>dpe-api-oai</code></td><td><code>areas/access/dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
+<tr><td><code>dpe-web</code></td><td><code>areas/access/dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
+<tr><td><code>dpe-server</code></td><td><code>areas/access/dpe/server</code></td><td>Server binary — composes all routes</td></tr>
 <tr><td><code>shared-fair</code></td><td><code>shared/fair</code></td><td>The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — <code>dpe-api-oai</code> is its only consumer today</td></tr>
 <tr><td><code>shared-metadata</code></td><td><code>shared/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
 <tr><td><code>shared-telemetry</code></td><td><code>shared/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
@@ -814,16 +815,16 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <p><strong>A crate that more than one service depends on lives under <code>shared/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>shared-{role}</code> in the same commit.</p>
 <p>The directory is the ownership signal, and four things read it:</p>
 <ul>
-<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>areas/deposit/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
+<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>areas/access/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>areas/deposit/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
 <li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>shared/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
-<li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries two, one pointing into <code>dpe-server</code>'s <code>page_url.rs</code> and one into <code>editor-server</code>'s — and those need to name the real location.</li>
+<li><strong>Directory-scoped agent instructions.</strong> <code>areas/access/dpe/CLAUDE.md</code> governs everything under <code>areas/access/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries two, one pointing into <code>dpe-server</code>'s <code>page_url.rs</code> and one into <code>editor-server</code>'s — and those need to name the real location.</li>
 <li><strong>The dependency direction.</strong> <code>shared-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>).</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
 <p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a shared concern. What moved is the contract — <code>shared-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>shared/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
-<p><strong>The rule covers crates, not content.</strong> <code>modules/dpe/server/data</code> stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit <code>EDITOR_DATA_DIR</code> seam rather than a compiled-in path — see <a href="./editor/operations.html#data-directory-a-deliberate-build-input">Editor Operations</a>. Two of the four signals do have analogues there, accepted knowingly: a data-only change matches <code>modules/dpe/**</code>, so it deploys a DPE preview but no editor preview, and <code>serve-editor</code>'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.</p>
+<p><strong>The rule covers crates, not content.</strong> <code>areas/access/dpe/server/data</code> stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit <code>EDITOR_DATA_DIR</code> seam rather than a compiled-in path — see <a href="./editor/operations.html#data-directory-a-deliberate-build-input">Editor Operations</a>. Two of the four signals do have analogues there, accepted knowingly: a data-only change matches <code>areas/access/dpe/**</code>, so it deploys a DPE preview but no editor preview, and <code>serve-editor</code>'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.</p>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
-<p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
+<p>Each API is a separate crate under <code>areas/access/dpe/</code>:</p>
 <ul>
 <li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
 <li><strong>Dependencies</strong>: <code>shared-metadata</code> for the contract, <code>dpe-core</code> for the view model, and any <code>shared-*</code> crate it needs — <code>dpe-api-oai</code> takes <code>shared-fair</code> for the DataCite and Dublin Core mappings; never depends on other API crates or <code>dpe-web</code></li>
@@ -1014,7 +1015,7 @@ for the full decision.</p>
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>areas/access/dpe/**</code> or <code>shared/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
@@ -1083,7 +1084,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>areas/access/dpe/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
@@ -1210,7 +1211,7 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>areas/deposit/editor/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
 </tbody></table>
@@ -1271,7 +1272,7 @@ are detected</li>
 <h2 id="third-party-artifact-integrity"><a class="header" href="#third-party-artifact-integrity">Third-Party Artifact Integrity</a></h2>
 <p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through Cargo, so nothing else checks them. <code>just check</code> enforces both, which is what the CI <code>check</code> job runs.</p>
 <h3 id="vendored-javascript"><a class="header" href="#vendored-javascript">Vendored JavaScript</a></h3>
-<p><code>modules/dpe/public/vendor/</code> and <code>areas/deposit/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
+<p><code>areas/access/dpe/public/vendor/</code> and <code>areas/deposit/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
 <p>Verification fails when:</p>
 <ul>
 <li>a vendored file's bytes no longer match the digest its table records;</li>
@@ -1384,7 +1385,7 @@ are detected</li>
                             (binary: dpe-server)
 </code></pre>
 <ul>
-<li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>areas/access/dpe/</code>.</li>
 <li><strong>shared-fair</strong>: The FAIR exposure engine (ADR-0005) — one resolved graph per published object and one writer per representation over it, including the DataCite and Dublin Core mappings OAI-PMH uses. Lives in <code>shared/</code>, depends on shared-metadata only, and knows no routes.</li>
 <li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
 <li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends on shared-metadata, dpe-core and shared-fair.</li>
@@ -1539,7 +1540,7 @@ the now-retired <code>dsp-meta</code> repository, where it was designed as the s
 the earlier v1 model. The metadata has since been migrated to this repository
 and converted to v2; the model is implemented as Rust types in the
 <code>shared-metadata</code> crate (<code>shared/metadata/src/</code>), shared with the
-editor, and the data lives under <code>modules/dpe/server/data/</code>.</p>
+editor, and the data lives under <code>areas/access/dpe/server/data/</code>.</p>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
   <span class="mdbook-alerts-icon"></span>
@@ -2156,7 +2157,7 @@ Contributor, how PublicationYear should be derived per project, and whether
 collections should also be exposed as OpenAIRE datasets.</p>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <p>The following examples show the conceptual JSON shape. Real data files live under
-<code>modules/dpe/server/data/</code> and may differ in the ways noted in the <strong>As
+<code>areas/access/dpe/server/data/</code> and may differ in the ways noted in the <strong>As
 implemented</strong> callouts above (e.g. the legacy <code>url</code> array form).</p>
 <h3 id="project-cluster-1"><a class="header" href="#project-cluster-1">Project Cluster</a></h3>
 <pre><code class="language-json">{
@@ -2317,7 +2318,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 </style>
 <h1 id="dpe-project-structure"><a class="header" href="#dpe-project-structure">DPE Project Structure</a></h1>
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
-<pre><code>modules/dpe/
+<pre><code>areas/access/dpe/
 ├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
@@ -2395,7 +2396,7 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 </ul>
 <p>Imports <code>shared-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
-<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
+<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>areas/access/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
@@ -2512,7 +2513,7 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 </ul>
 <h2 id="layer-3-e2e-tests-playwright"><a class="header" href="#layer-3-e2e-tests-playwright">Layer 3: E2E Tests (Playwright)</a></h2>
 <ul>
-<li><strong>Location</strong>: <code>modules/dpe/web-e2e-tests/</code></li>
+<li><strong>Location</strong>: <code>areas/access/dpe/web-e2e-tests/</code></li>
 <li><strong>Runner</strong>: <code>npx playwright test</code></li>
 <li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)</li>
 <li><strong>Accessibility</strong>: Full-page axe-core scans against WCAG 2.1 AA</li>
@@ -2801,7 +2802,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
-<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
+<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>areas/access/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret). <strong>Production only</strong> — leave unset or empty everywhere else; empty is normalised to unset.</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
@@ -2815,7 +2816,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
 <tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
 <tr><td><code>DPE_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4000</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
-<tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>modules/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
+<tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>areas/access/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="dpe/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
 </tbody></table>
 </div>
@@ -3166,7 +3167,7 @@ RUST_LOG=debug
 </style>
 <h1 id="oai-pmh-endpoint"><a class="header" href="#oai-pmh-endpoint">OAI-PMH Endpoint</a></h1>
 <p>Usage guide for the DPE <a href="https://www.openarchives.org/OAI/openarchivesprotocol.html">OAI-PMH 2.0</a> data provider, which exposes DaSCH research project and record metadata for harvesting. The implementation lives in the <code>dpe-api-oai</code> crate (see <a href="dpe/./project_structure.html">Project Structure</a>).</p>
-<p>The metadata served is the tracked corpus in <code>modules/dpe/server/data/</code> — the server reads it at startup and never fetches from the API itself. The record dumps under <code>records/</code> are refreshed by <code>just fetch-records</code>, whose default project list is the <code>RECORD_SHORTCODES</code> variable at the top of the <code>justfile</code>; override it per run to refresh a subset:</p>
+<p>The metadata served is the tracked corpus in <code>areas/access/dpe/server/data/</code> — the server reads it at startup and never fetches from the API itself. The record dumps under <code>records/</code> are refreshed by <code>just fetch-records</code>, whose default project list is the <code>RECORD_SHORTCODES</code> variable at the top of the <code>justfile</code>; override it per run to refresh a subset:</p>
 <pre><code class="language-bash">export bearer="Bearer eyJ..."   # a token for api.dasch.swiss
 just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 </code></pre>
@@ -3258,8 +3259,8 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 </code></pre>
 <p>Ranges are resolved offline (no network or LLM calls at request time), in two tiers:</p>
 <ol>
-<li><strong>ChronOntology references</strong> — entries with a <code>https://chronontology.dainst.org/period/...</code> URL resolve against <code>modules/dpe/server/data/chronontology-periods.json</code> (a slimmed mirror of ChronOntology timespans, regenerated by <code>scripts/fetch-chronontology-periods.py</code>).</li>
-<li><strong>Everything else</strong> — free-text names resolve against <code>modules/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
+<li><strong>ChronOntology references</strong> — entries with a <code>https://chronontology.dainst.org/period/...</code> URL resolve against <code>areas/access/dpe/server/data/chronontology-periods.json</code> (a slimmed mirror of ChronOntology timespans, regenerated by <code>scripts/fetch-chronontology-periods.py</code>).</li>
+<li><strong>Everything else</strong> — free-text names resolve against <code>areas/access/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
 </ol>
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
 <p>Resolution lives in <code>shared_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
@@ -4208,7 +4209,7 @@ governed outside this repository.</li>
 <code>shared/fair/src/graph.rs</code>, Record is a contract term in the root
 <code>CONTEXT.md</code>, and both record writers (<code>shared/fair/src/record_datacite.rs</code>,
 <code>shared/fair/src/record_dublin_core.rs</code>) feed OAI-PMH. But
-<code>modules/dpe/server/src/router.rs</code> registers <code>/dpe/projects/{id}</code> and
+<code>areas/access/dpe/server/src/router.rs</code> registers <code>/dpe/projects/{id}</code> and
 <code>/dpe/records/{shortcode}/{record_id}/file</code>, and no page route for a record. A
 record ARK therefore resolves to something outside DPE; what, is not settled in
 this repository. This is a boundary of what has been built, stated so that no
@@ -4248,7 +4249,7 @@ value is the schema.org <code>@id</code> and the first <code>identifier</code> e
 <code>identifierType="ARK"</code>, the <code>DC.identifier</code> meta tag, and the single <code>cite-as</code>
 link (<code>project_to_link_set</code> in <code>shared/fair/src/signposting.rs</code>). Records carry
 ARKs of their own (<code>RecordGraph::ark</code>, <code>shared/fair/src/graph.rs</code>).</p>
-<p>The ARK path is never rewritten. <code>modules/dpe/core/src/ark.rs</code> normalises only
+<p>The ARK path is never rewritten. <code>areas/access/dpe/core/src/ark.rs</code> normalises only
 the <em>host</em>, and only on a deployment that publishes ARKs naming itself.</p>
 <p><strong>The data: no.</strong> A bitstream has no identifier of its own. It is named by a
 dsp-ingest URL, in <code>distribution.contentUrl</code> and as <code>downloadUrl</code> from the
@@ -4292,9 +4293,9 @@ list. Every representation is a projection of that one graph.</p>
 them appears anywhere in <code>shared/fair/src</code> outside its test fixtures, and
 <code>ProjectGraph</code> has no field for any of them. The human page renders several —
 <code>provenance_card</code> in
-<code>modules/dpe/web/src/pages/project/components/project_details_tabs/dataset_overview_section/mod.rs</code>,
+<code>areas/access/dpe/web/src/pages/project/components/project_details_tabs/dataset_overview_section/mod.rs</code>,
 the DMP and contact point in
-<code>modules/dpe/web/src/pages/project/components/project_sidebar/mod.rs</code>. A
+<code>areas/access/dpe/web/src/pages/project/components/project_sidebar/mod.rs</code>. A
 machine therefore sees less than a person does. <code>clusters</code> and <code>collections</code>
 are absent the same way; they are I3's point rather than this one.
 <code>type_of_data</code> is the consequential one: the project's DataCite
@@ -4318,7 +4319,7 @@ means F2 is answered differently for different projects.</li>
 <p><strong>The identifiers of its records: partly.</strong> <code>part_nodes</code> emits one <code>Dataset</code>
 node per record with the record's ARK as <code>@id</code>, but only over a prefix: 100
 entries in the embedded block (<code>HAS_PART_CAP</code> in
-<code>modules/dpe/server/src/metadata.rs</code>) and as many as fit 4,000,000 bytes in
+<code>areas/access/dpe/server/src/metadata.rs</code>) and as many as fit 4,000,000 bytes in
 <code>/metadata.jsonld</code> (<code>JSON_LD_BYTE_BUDGET</code>). The complete list is the OAI set
 <code>project:{shortcode}</code>, reachable from the document in two hops over links it
 already carries.</p>
@@ -4349,7 +4350,7 @@ is unanswered for those records.</li>
 <p><strong>What DPE does.</strong> Two routes, neither of which needs a DOI.</p>
 <ul>
 <li><strong>Harvesting.</strong> DPE is an OAI-PMH 2.0 data provider at <code>/dpe/oai</code>
-(<code>modules/dpe/api-oai/</code>): all six verbs, <code>oai_dc</code> and <code>oai_datacite</code>, and
+(<code>areas/access/dpe/api-oai/</code>): all six verbs, <code>oai_dc</code> and <code>oai_datacite</code>, and
 selective harvesting over the sets <code>project:{shortcode}</code> and <code>cluster:{id}</code>.
 Any aggregator can take the whole corpus. F-UJI's <code>F4-01M-1</code> passes on this
 alone.</li>
@@ -4360,8 +4361,8 @@ Metadata</a>).
 The project graph also names the catalogue it belongs to, as
 <code>includedInDataCatalog</code>.</li>
 </ul>
-<p><strong>Where.</strong> <code>modules/dpe/server/src/router.rs</code> (<code>/dpe/oai</code>),
-<code>modules/dpe/api-oai/src/handlers/</code>, <a href="dpe/./oai-pmh.html">OAI-PMH</a>; <code>render</code> in
+<p><strong>Where.</strong> <code>areas/access/dpe/server/src/router.rs</code> (<code>/dpe/oai</code>),
+<code>areas/access/dpe/api-oai/src/handlers/</code>, <a href="dpe/./oai-pmh.html">OAI-PMH</a>; <code>render</code> in
 <code>shared/fair/src/schema_org.rs</code> for <code>includedInDataCatalog</code>.</p>
 <p><strong>A permanent limit, from the identifier scheme.</strong> DaSCH mints no DOIs, for the
 reason F1 records, and registration in a DOI-based registry therefore does not
@@ -4391,17 +4392,17 @@ project page by following links. <em>Unbuilt.</em></li>
 <p><strong>Project metadata: yes.</strong> The ARK resolves by HTTP redirect to the landing
 page. In production the resolver is <code>ark.dasch.swiss</code>; a deployment that
 publishes ARKs naming itself mounts its own
-(<code>modules/dpe/server/src/ark.rs::resolve_project</code>, registered in <code>router.rs</code>
+(<code>areas/access/dpe/server/src/ark.rs::resolve_project</code>, registered in <code>router.rs</code>
 only when <code>DPE_ARK_RESOLVER_BASE_URL</code> is set). The page carries its metadata
 inline, and two machine-readable representations sit beside it at their own
 URLs, reachable directly or by a single <code>303</code> when <code>Accept</code> prefers one
-(<code>landing_page</code> in <code>modules/dpe/server/src/metadata.rs</code>, over the decision table
+(<code>landing_page</code> in <code>areas/access/dpe/server/src/metadata.rs</code>, over the decision table
 in <code>shared/fair/src/negotiate.rs</code>). Every answer from that route carries
-<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>modules/dpe/server/src/shell.rs</code>).
+<code>Vary: Accept</code> (<code>project_page_handler</code> in <code>areas/access/dpe/server/src/shell.rs</code>).
 OAI-PMH is a second retrieval protocol over the same metadata.</p>
 <p><strong>The data: not from DPE.</strong> DPE serves metadata only. A consumer reads
 <code>downloadUrl</code> from <code>/dpe/records/{shortcode}/{record_id}/file</code>
-(<code>modules/dpe/server/src/downloads.rs</code>) and then fetches the bytes from
+(<code>areas/access/dpe/server/src/downloads.rs</code>) and then fetches the bytes from
 dsp-ingest itself.</p>
 <p><strong>Not satisfied</strong></p>
 <ul>
@@ -4415,8 +4416,8 @@ dsp-ingest itself.</p>
 <p><strong>What DPE does.</strong> HTTP throughout, and OAI-PMH 2.0 over HTTP. No client
 library, no key, no account, no registration: DPE is the public,
 unauthenticated, read-only server of the Access Area
-(<code>modules/dpe/CONTEXT.md</code>). The representation routes and <code>/dpe/oai</code> share a
-per-IP rate limit (<code>rate_limited_router</code> in <code>modules/dpe/server/src/router.rs</code>,
+(<code>areas/access/CONTEXT.md</code>). The representation routes and <code>/dpe/oai</code> share a
+per-IP rate limit (<code>rate_limited_router</code> in <code>areas/access/dpe/server/src/router.rs</code>,
 <code>DPE_OAI_RATE_LIMIT_*</code>), which bounds request rate and gates nothing.</p>
 <p><strong>Not satisfied.</strong> Nothing identified. This is the one section with no residual,
 and it is the cheapest of the fifteen to satisfy.</p>
@@ -4444,7 +4445,7 @@ access to published data.</p>
 <ul>
 <li>DPE implements no authenticated path to restricted data, and does not mediate
 access to it by any procedure. HTTP would allow one; nothing here uses it.
-That is a boundary rather than a residual — <code>modules/dpe/CONTEXT.md</code> defines
+That is a boundary rather than a residual — <code>areas/access/CONTEXT.md</code> defines
 DPE as the public, unauthenticated, read-only server — and whether the Access
 Area should offer one is a question no decision record answers yet.</li>
 </ul>
@@ -4453,7 +4454,7 @@ Area should offer one is a question no decision record answers yet.</li>
 <p>metadata are accessible, even when the data are no longer available</p>
 </blockquote>
 <p><strong>What DPE does.</strong> Metadata availability does not depend on bitstream
-availability. DPE serves the committed corpus under <code>modules/dpe/server/data/</code>
+availability. DPE serves the committed corpus under <code>areas/access/dpe/server/data/</code>
 rather than reading the archive, and a project whose records carry no file has a
 complete landing page all the same — 081C, with 27,026 records and not one file,
 is the worked case
@@ -4464,12 +4465,12 @@ section is what is missing.</p>
 <ul>
 <li><strong>No tombstone.</strong> A shortcode that names no project gets an always-200
 "Project Not Found" page (<code>landing_page</code> in
-<code>modules/dpe/server/src/metadata.rs</code>) — not a <code>410 Gone</code> carrying the metadata
+<code>areas/access/dpe/server/src/metadata.rs</code>) — not a <code>410 Gone</code> carrying the metadata
 of what used to be there. Nothing in the tree distinguishes "never existed"
 from "withdrawn". <em>Unbuilt.</em></li>
 <li><strong>OAI-PMH says so out loud.</strong> <code>Identify</code> advertises
 <code>&lt;deletedRecord&gt;no&lt;/deletedRecord&gt;</code> (<code>OaiXmlBuilder::write_identify</code> in
-<code>modules/dpe/api-oai/src/xml.rs</code>), which tells a harvester the repository
+<code>areas/access/dpe/api-oai/src/xml.rs</code>), which tells a harvester the repository
 maintains no information about deletions. <em>Unbuilt.</em></li>
 <li><strong>No metadata persistence policy</strong> to point a <code>persistencePolicy</code> link at.
 <em>Institutional.</em> (Evidence: FAIR Champion's <em>MetadataPersistence</em>.)</li>
@@ -4489,7 +4490,7 @@ JSON-LD as RDF, which is why several property shapes are node objects rather
 than strings (<a href="dpe/./machine-readable-metadata.html#schemaorg-json-ld">Machine-Readable
 Metadata</a>).</p>
 <p><strong>Where.</strong> <code>shared/fair/src/schema_org.rs</code> (<code>render</code>, <code>script_safe_json</code>);
-<code>modules/dpe/server/src/metadata.rs</code> (<code>render</code>, <code>project_json_ld</code>);
+<code>areas/access/dpe/server/src/metadata.rs</code> (<code>render</code>, <code>project_json_ld</code>);
 <code>shared/fair/src/datacite_json.rs</code>; <code>shared/fair/src/dublin_core_meta.rs</code>.</p>
 <p><strong>Not satisfied</strong></p>
 <ul>
@@ -4519,7 +4520,7 @@ budget</a>.</li>
 <tr><td>GND, STW, LCSH, AAT</td><td>subject schemes, inferred from an authority URL</td><td><code>helpers::infer_subject_scheme</code></td></tr>
 <tr><td>ChronOntology, W3CDTF</td><td>temporal coverage and its resolved ranges</td><td><code>shared_metadata::temporal_coverage</code></td></tr>
 <tr><td>FAIR Signposting (level 1)</td><td>the typed link set</td><td><code>shared/fair/src/signposting.rs</code></td></tr>
-<tr><td>OAI-PMH 2.0</td><td>the harvesting protocol</td><td><code>modules/dpe/api-oai/</code></td></tr>
+<tr><td>OAI-PMH 2.0</td><td>the harvesting protocol</td><td><code>areas/access/dpe/api-oai/</code></td></tr>
 </tbody></table>
 </div>
 <p><em>Evidence, not the claim:</em> <code>I2-01M</code> moved from 0/1 to 1/1 when PROV was added,
@@ -4536,7 +4537,7 @@ vocabulary and falls back to <code>Other</code>. <em>Data quality.</em></li>
 <code>name_identifiers: vec![]</code>, and an affiliation is emitted as an <code>Organization</code>
 name with nothing else (<code>agent_node</code> in <code>schema_org.rs</code>). No ROR. The
 organization files carry a homepage and a postal address and no persistent
-identifier (<code>modules/dpe/server/data/organizations/</code>). <em>Unbuilt</em>, and
+identifier (<code>areas/access/dpe/server/data/organizations/</code>). <em>Unbuilt</em>, and
 <em>data quality</em> behind it.</li>
 <li><strong>Person identifiers are sparse, and two are typed away.</strong> 96 of the 416
 committed person files record <code>"type": "ORCID"</code> in <code>sameAs</code>. Two more hold an
@@ -5833,7 +5834,7 @@ cross-linker, which macOS does not have. It defaults to the host architecture so
 the build is native; <code>just build-docker-editor arch=x86_64</code> reproduces the amd64
 image CI publishes, under emulation.</p>
 <h3 id="data-directory-a-deliberate-build-input"><a class="header" href="#data-directory-a-deliberate-build-input">Data directory (a deliberate build input)</a></h3>
-<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>modules/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
+<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>areas/access/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
 <p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via <code>ENV EDITOR_DATA_DIR</code>, local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
 <p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="editor/../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
 <h2 id="cli-commands-1"><a class="header" href="#cli-commands-1">CLI Commands</a></h2>
@@ -5954,7 +5955,7 @@ image CI publishes, under emulation.</p>
 <p>With no relay and no <code>EDITOR_DB_DIR</code>, <strong>the code is shown on the code-entry page</strong> — nothing has to be read from anywhere. It is also written to the log; <code>just dev-editor</code> runs under bacon, so it appears in the output pane.</p>
 <p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
-EDITOR_DATA_DIR=modules/dpe/server/data \
+EDITOR_DATA_DIR=areas/access/dpe/server/data \
 cargo run --bin editor-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
 
 # after submitting the address at /login:

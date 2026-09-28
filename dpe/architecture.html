@@ -269,7 +269,7 @@
                             (binary: dpe-server)
 </code></pre>
 <ul>
-<li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>areas/access/dpe/</code>.</li>
 <li><strong>shared-fair</strong>: The FAIR exposure engine (ADR-0005) — one resolved graph per published object and one writer per representation over it, including the DataCite and Dublin Core mappings OAI-PMH uses. Lives in <code>shared/</code>, depends on shared-metadata only, and knows no routes.</li>
 <li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
 <li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends on shared-metadata, dpe-core and shared-fair.</li>

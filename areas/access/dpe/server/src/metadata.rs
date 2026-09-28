@@ -109,7 +109,7 @@ pub(crate) enum LandingPage {
 /// are structurally no candidates to redirect to. The always-200 "Project Not
 /// Found" body it already renders is left exactly as it is.
 pub(crate) fn landing_page(shortcode: &str, accept: Option<&str>, state: &AppState) -> LandingPage {
-    let Some(raw) = dpe_core::project_cache::project_raw_by_shortcode(shortcode) else {
+    let Some(raw) = state.corpus.project_raw_by_shortcode(shortcode) else {
         return LandingPage::Render(html! {}, HeaderMap::new());
     };
 
@@ -137,14 +137,14 @@ pub(crate) fn landing_page(shortcode: &str, accept: Option<&str>, state: &AppSta
 
     // The canonical shortcode, not the path segment, so the record lookup and
     // the URLs cannot be steered by how the visitor spelled it.
-    let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
+    let records = state.corpus.records_for_shortcode(&raw.shortcode);
     let (markup, headers) = render(raw, records.iter().copied().take(HAS_PART_CAP), state);
     LandingPage::Render(markup, headers)
 }
 
 /// Renders one project's metadata. Separate from the lookup so that it can be
-/// tested against a project built in the test rather than the process-global
-/// cache.
+/// tested against a project built in the test rather than the `Corpus` loaded
+/// from the production data directory.
 ///
 /// Synchronous, and called before any `.await`: `ContributorLookup` carries no
 /// `Sync` bound, so a `ResolveContext` cannot be held across an await point.
@@ -154,7 +154,7 @@ fn render<'a>(
     records: impl IntoIterator<Item = &'a Record>,
     state: &AppState,
 ) -> (Markup, HeaderMap) {
-    let graph = build_graph(raw, records);
+    let graph = build_graph(raw, records, state.corpus);
 
     let urls = url_layout(raw, state);
     let json = script_safe_json(&project_to_schema_org(
@@ -192,9 +192,13 @@ fn render<'a>(
 /// value, so the resolve context — whose `ContributorLookup` carries no `Sync`
 /// bound — is created and dropped inside this call and can reach no await
 /// point.
-fn build_graph<'a>(raw: &ProjectRaw, records: impl IntoIterator<Item = &'a Record>) -> ProjectGraph {
-    let (lookup, periods, enriched) = dpe_core::resolve_inputs();
-    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched), records)
+fn build_graph<'a>(
+    raw: &ProjectRaw,
+    records: impl IntoIterator<Item = &'a Record>,
+    corpus: &'static dpe_core::Corpus,
+) -> ProjectGraph {
+    let (lookup, periods, enriched) = corpus.resolve_inputs();
+    ProjectGraph::build(raw, &ResolveContext::new(&lookup, periods, enriched), records)
 }
 
 /// The `Link` header for a link set, or an empty map when the HTTP layer will
@@ -226,9 +230,10 @@ fn link_header(links: &LinkSet, shortcode: &str) -> HeaderMap {
 /// Still a few megabytes, which is why this route sits behind the per-IP
 /// limiter from its first day (`router.rs`).
 pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    representation(&id, &state, JSON_LD, |raw, urls| {
-        let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
-        project_json_ld(raw, records.iter().copied(), urls)
+    let corpus = state.corpus;
+    representation(&id, &state, JSON_LD, move |raw, urls| {
+        let records = corpus.records_for_shortcode(&raw.shortcode);
+        project_json_ld(raw, records.iter().copied(), urls, corpus)
     })
     .await
 }
@@ -237,25 +242,28 @@ pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(
 /// caller materialised.
 ///
 /// Named and separate from the handler so a test can serve it the committed
-/// corpus without the record cache, which is a process-global keyed on
-/// `DPE_DATA_DIR`. It is the function the handler runs, not a lookalike: a
-/// budget that stopped being applied has to fail the corpus test too.
+/// corpus directly, rather than through the production `Corpus`'s record
+/// cache, which is populated from `DPE_DATA_DIR`. It is the function the
+/// handler runs, not a lookalike: a budget that stopped being applied has to
+/// fail the corpus test too.
 fn project_json_ld<'a>(
     raw: &ProjectRaw,
     records: impl IntoIterator<Item = &'a Record>,
     urls: &UrlLayout,
+    corpus: &'static dpe_core::Corpus,
 ) -> serde_json::Value {
-    let graph = build_graph(raw, records);
+    let graph = build_graph(raw, records, corpus);
     project_to_schema_org(&graph, urls, SchemaOrgOptions { parts: PartLimit::Bytes(JSON_LD_BYTE_BUDGET) })
 }
 
 /// The project's DataCite record as kernel-4 JSON, for a harvester that wants
 /// bare DataCite rather than the OAI envelope the `describedby` links to.
 pub(crate) async fn project_datacite_json_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    representation(&id, &state, DATACITE_JSON, |raw, _urls| {
+    let corpus = state.corpus;
+    representation(&id, &state, DATACITE_JSON, move |raw, _urls| {
         // No records: DataCite carries no part list, so building one would cost
         // a `PartRef` per record for nothing.
-        let graph = build_graph(raw, std::iter::empty());
+        let graph = build_graph(raw, std::iter::empty(), corpus);
         project_to_datacite_json(&project_to_datacite(&graph))
     })
     .await
@@ -285,7 +293,7 @@ async fn representation(
     if !shared_metadata::project::is_valid_shortcode(id) {
         return (StatusCode::BAD_REQUEST, plain_text()).into_response();
     }
-    let Some(raw) = dpe_core::project_cache::project_raw_by_shortcode(id) else {
+    let Some(raw) = state.corpus.project_raw_by_shortcode(id) else {
         return (StatusCode::NOT_FOUND, plain_text()).into_response();
     };
 
@@ -400,9 +408,9 @@ mod tests {
     /// function, so a renderer nobody thought of fails here rather than in a
     /// preview.
     ///
-    /// Renderers rather than the router, deliberately: the resolver is a
-    /// process-global read when the caches load, so a test cannot serve one
-    /// request with it set and another without. `dpe-core`'s
+    /// Renderers rather than the router, deliberately: the resolver is set
+    /// once per `Corpus` and read when its caches first load, so one corpus
+    /// cannot serve one request with it set and another without. `dpe-core`'s
     /// `project_cache::ingress_tests` proves the loader normalises; this proves
     /// that nothing downstream of the loader reintroduces the recorded host.
     mod served_bytes {
@@ -446,7 +454,7 @@ mod tests {
             if let Some(link) = headers.get(header::LINK) {
                 out.push_str(link.to_str().expect("ascii"));
             }
-            let ctx = dpe_web::RenderContext { show_placeholder_values: state.show_placeholder_values };
+            let ctx = state.render_context();
             out.push_str(
                 &dpe_web::pages::project::components::project_sidebar::project_sidebar(
                     &Project::from(raw.clone()),
@@ -536,7 +544,7 @@ mod tests {
                 .into_iter()
                 .find(|raw| raw.shortcode == "0803")
                 .expect("0803 is committed");
-            let ctx = dpe_web::RenderContext { show_placeholder_values: false };
+            let ctx = test_state().render_context();
             let html = dpe_web::pages::project::components::project_sidebar::project_sidebar(&Project::from(raw), &ctx)
                 .into_string();
             assert!(html.contains(&format!(r#"href="{PREVIEW}/ark:/72163/1/0803""#)), "href: {html}");
@@ -560,8 +568,9 @@ mod tests {
     ///
     /// It runs [`project_json_ld`] — the function the handler runs — over the
     /// committed dumps read from disk, rather than through the router: the
-    /// record cache is a process-global keyed on `DPE_DATA_DIR`, and reading
-    /// the files is what lets one test cover every project.
+    /// record cache is a field of the production `Corpus`, populated from
+    /// `DPE_DATA_DIR`, and reading the files directly is what lets one test
+    /// cover every project.
     mod byte_budget {
         use super::*;
 
@@ -598,7 +607,7 @@ mod tests {
         /// document, through the same serialiser call as `representation`.
         fn served(raw: &ProjectRaw, records: &[Record]) -> String {
             let state = test_state();
-            serde_json::to_string(&project_json_ld(raw, records.iter(), &url_layout(raw, &state)))
+            serde_json::to_string(&project_json_ld(raw, records.iter(), &url_layout(raw, &state), state.corpus))
                 .expect("a Value should serialise")
         }
 
@@ -638,7 +647,7 @@ mod tests {
 
             let state = test_state();
             let urls = url_layout(raw, &state);
-            let graph = build_graph(raw, records.iter());
+            let graph = build_graph(raw, records.iter(), state.corpus);
             let unbounded =
                 serde_json::to_string(&project_to_schema_org(&graph, &urls, SchemaOrgOptions::default())).unwrap();
             assert!(
@@ -662,7 +671,7 @@ mod tests {
             .expect("parses");
             let urls = url_layout(&raw, &state);
             let whole = serde_json::to_string(&project_to_schema_org(
-                &build_graph(&raw, std::iter::empty()),
+                &build_graph(&raw, std::iter::empty(), state.corpus),
                 &urls,
                 SchemaOrgOptions::default(),
             ))
@@ -804,11 +813,12 @@ mod tests {
     /// exactly these routes is `router.rs`'s own test. A real `GovernorLayer`
     /// here would make every assertion depend on how fast the suite runs.
     fn corpus_app() -> axum::Router {
+        let state = test_state();
         crate::router::build_router(
-            test_state(),
+            state.clone(),
             NO_PUBLIC_DIR.as_ref(),
             crate::router::rate_limited_router_with(
-                dpe_api_oai::OaiState::new(""),
+                dpe_api_oai::OaiState::new("", state.corpus),
                 tower::layer::util::Identity::new(),
             ),
         )
@@ -1019,7 +1029,7 @@ mod tests {
         );
         // The whole set, where the embedded block stops at HAS_PART_CAP.
         let parts = doc["hasPart"].as_array().map_or(0, Vec::len);
-        let records = dpe_core::record_cache::records_for_shortcode("0803").len();
+        let records = test_state().corpus.records_for_shortcode("0803").len();
         assert!(records > HAS_PART_CAP, "0803 should have more records than the cap");
         assert_eq!(parts, records, "0803 fits the budget, so no part is left out");
 

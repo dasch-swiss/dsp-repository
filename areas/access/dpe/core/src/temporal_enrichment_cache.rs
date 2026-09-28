@@ -1,28 +1,24 @@
-//! Process-global cache over the offline temporal-coverage enrichment table.
+//! [`Corpus`]'s cache over the offline temporal-coverage enrichment table.
 //!
 //! The loading and lookup logic is
 //! [`shared_metadata::temporal_enrichment`], shared with the editor. What
-//! stays here is the `OnceLock` and the DPE data directory it reads.
+//! stays here is the cache and the DPE data directory it reads.
 use std::collections::HashMap;
-use std::sync::OnceLock;
 
 use shared_metadata::temporal_enrichment::{self, EnrichedDate};
 
-use super::utils::get_data_dir;
+use super::corpus::Corpus;
 
-static ENRICHMENT: OnceLock<HashMap<String, EnrichedDate>> = OnceLock::new();
+impl Corpus {
+    pub fn all_enriched(&'static self) -> &'static HashMap<String, EnrichedDate> {
+        self.enrichment_cache
+            .get_or_init(|| temporal_enrichment::load_from(std::path::Path::new(&self.settings.data_dir)))
+    }
 
-pub fn all_enriched() -> &'static HashMap<String, EnrichedDate> {
-    ENRICHMENT.get_or_init(load_all_enriched)
-}
-
-/// Look up an enriched entry (from the cache) by its normalized key.
-pub fn enriched_for(key: &str) -> Option<EnrichedDate> {
-    temporal_enrichment::enriched_for_in(all_enriched(), key)
-}
-
-fn load_all_enriched() -> HashMap<String, EnrichedDate> {
-    temporal_enrichment::load_from(std::path::Path::new(get_data_dir()))
+    /// Look up an enriched entry (from the cache) by its normalized key.
+    pub fn enriched_for(&'static self, key: &str) -> Option<EnrichedDate> {
+        temporal_enrichment::enriched_for_in(self.all_enriched(), key)
+    }
 }
 
 #[cfg(test)]

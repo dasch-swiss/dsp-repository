@@ -2,18 +2,35 @@
 //! so two routers in the same test binary can serve different base URLs without
 //! interfering with each other — the hazard a `OnceLock` would reintroduce.
 
+use std::sync::OnceLock;
+
 use axum::body::Body;
 use axum::extract::Request;
 use axum::routing::get;
 use axum::Router;
 use dpe_api_oai::{oai_handler, OaiState};
+use dpe_core::{Corpus, CorpusSettings};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
+
+/// A corpus over a data directory that does not exist, leaked once per test
+/// process: this test only exercises how the base URL is threaded through, not
+/// what the corpus serves.
+fn test_corpus() -> &'static Corpus {
+    static CORPUS: OnceLock<Corpus> = OnceLock::new();
+    CORPUS.get_or_init(|| {
+        Corpus::new(CorpusSettings {
+            data_dir: "no-such-dir/dpe-api-oai-oai-state-test".to_string(),
+            public_dir: "no-such-dir/dpe-api-oai-oai-state-test".to_string(),
+            ark_resolver_base_url: None,
+        })
+    })
+}
 
 fn router_with_base_url(base_url: &str) -> Router {
     Router::new()
         .route("/dpe/oai", get(oai_handler))
-        .with_state(OaiState::new(base_url))
+        .with_state(OaiState::new(base_url, test_corpus()))
 }
 
 async fn identify_body(app: Router) -> String {

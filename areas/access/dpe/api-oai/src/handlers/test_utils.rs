@@ -1,9 +1,10 @@
 #![cfg(test)]
 
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 use dpe_core::project::Project;
-use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
+use dpe_core::{ClusterRaw, Corpus, CorpusSettings, ProjectRepository, RecordRepository};
 use shared_metadata::models::AuthorityFileReference;
 use shared_metadata::project::{
     AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectRaw,
@@ -250,8 +251,8 @@ pub fn project_with_shortcode(shortcode: &str) -> ProjectRaw {
 }
 
 /// Builds a cluster fixture (`cluster-001`, "EKWS") containing the given member
-/// project shortcodes. Use for cluster-set tests so they don't depend on the
-/// process-global cluster cache.
+/// project shortcodes. Use for cluster-set tests so they don't depend on a
+/// `Corpus`'s cluster cache.
 pub fn cluster_fixture(id: &str, name: &str, projects: &[&str]) -> ClusterRaw {
     let mut description = std::collections::HashMap::new();
     description.insert("en".to_string(), format!("{name} description"));
@@ -316,6 +317,25 @@ pub fn golden(name: &str, actual: &str) -> String {
         std::fs::write(&path, &normalized).expect("write golden file");
         normalized
     }
+}
+
+/// A corpus over a data directory that does not exist, shared by every test in
+/// this binary.
+///
+/// The handler tests inject their own project/record fixtures through the
+/// in-memory repositories; the corpus here is only for `resolve_inputs`'s
+/// temporal tables, which today's tests read as empty (the crate's cwd has no
+/// `areas/access/dpe/server/data` beneath it, and nothing exports a data-dir
+/// env var), so the golden files stay byte-identical.
+pub fn test_corpus() -> &'static Corpus {
+    static CORPUS: OnceLock<Corpus> = OnceLock::new();
+    CORPUS.get_or_init(|| {
+        Corpus::new(CorpusSettings {
+            data_dir: "no-such-dir/dpe-api-oai-tests".to_string(),
+            public_dir: "no-such-dir/dpe-api-oai-tests".to_string(),
+            ark_resolver_base_url: None,
+        })
+    })
 }
 
 pub fn validate_against_schema(xml: &str) {

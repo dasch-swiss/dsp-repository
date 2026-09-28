@@ -41,7 +41,7 @@ pub(crate) const RESOLVER_ROUTE: &str = "/ark:/72163/1/{shortcode}";
 /// deliberately not mirrored: there is no page here to render, and no canonical
 /// URL to redirect to.
 pub(crate) async fn resolve_project(State(state): State<AppState>, Path(shortcode): Path<String>) -> Response {
-    let Some(raw) = dpe_core::project_cache::project_raw_by_shortcode(&shortcode) else {
+    let Some(raw) = state.corpus.project_raw_by_shortcode(&shortcode) else {
         return StatusCode::NOT_FOUND.into_response();
     };
     let target = format!("{}/dpe/projects/{}", state.public_base_url, raw.shortcode);

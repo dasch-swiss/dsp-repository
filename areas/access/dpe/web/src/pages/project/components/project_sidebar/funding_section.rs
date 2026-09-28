@@ -9,13 +9,13 @@ use crate::RenderContext;
 
 /// A single grant rendered inside an `info_card`: its funders, grant number,
 /// name, and an optional external "More info" link.
-fn grant_card(grant: &Grant) -> Markup {
+fn grant_card(grant: &Grant, ctx: &RenderContext) -> Markup {
     let body = html! {
         div {
             @for (i, funder_id) in grant.funders.iter().enumerate() {
                 span {
                     @if i > 0 { ", " }
-                    (organization_name(funder_id))
+                    (organization_name(funder_id, ctx.corpus))
                 }
             }
         }
@@ -44,7 +44,7 @@ pub fn funding_section(funding: &Funding, ctx: &RenderContext) -> Markup {
                 Funding::Grants(grants) => {
                     div class="space-y-2" {
                         div class="dpe-subtitle" { "Grants" }
-                        @for grant in grants { (grant_card(grant)) }
+                        @for grant in grants { (grant_card(grant, ctx)) }
                     }
                 }
                 Funding::Text(text) => {
@@ -71,7 +71,7 @@ mod tests {
             name: Some("Big Grant".to_string()),
             url: Some("https://example.org/grant".to_string()),
         }]);
-        let out = funding_section(&funding, &RenderContext { show_placeholder_values: false }).into_string();
+        let out = funding_section(&funding, &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Grants"), "{out}");
         assert!(out.contains("Grant: 12345"), "{out}");
         assert!(out.contains("Big Grant"), "{out}");
@@ -84,7 +84,7 @@ mod tests {
     fn free_text_funding_renders() {
         let out = funding_section(
             &Funding::Text("Self-funded".to_string()),
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(out.contains("Self-funded"), "{out}");

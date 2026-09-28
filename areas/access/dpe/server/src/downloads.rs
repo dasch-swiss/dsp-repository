@@ -4,11 +4,13 @@
 //! checksum, dates — had no way out of DPE. See `docs/src/dpe/oai-pmh.md` →
 //! *Record files* for the rationale and the response shape.
 
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use dpe_core::record_repository::{FsRecordRepository, RecordRepository};
 use serde::Serialize;
 use shared_metadata::RecordFile;
+
+use crate::shell::AppState;
 
 /// `Option`s serialise as explicit `null` to keep the shape stable. `path` is
 /// absent entirely — assets are flat, so a null would imply a hierarchy that does
@@ -60,12 +62,13 @@ impl FileMetadata {
 /// The 404 is JSON too, not the app's HTML shell: the endpoint has no `Accept`
 /// dispatch, so switching media type on the error path would hand a harvester a
 /// document it cannot parse.
-#[tracing::instrument(fields(otel.kind = "internal"))]
+#[tracing::instrument(skip(state), fields(otel.kind = "internal"))]
 pub(crate) async fn record_file_handler(
+    State(state): State<AppState>,
     Path((shortcode, record_id)): Path<(String, String)>,
 ) -> axum::response::Response {
     let ark_suffix = format!("{shortcode}/{record_id}");
-    let repo = FsRecordRepository::new();
+    let repo = FsRecordRepository::new(state.corpus);
 
     let Some(file) = repo.get_by_id(&ark_suffix).and_then(|r| r.file.as_ref()) else {
         return (
@@ -329,12 +332,12 @@ mod lookup_tests {
     use super::*;
 
     fn app() -> axum::Router {
-        dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
-
-        axum::Router::new().route(
-            "/dpe/records/{shortcode}/{record_id}/file",
-            axum::routing::get(record_file_handler),
-        )
+        axum::Router::new()
+            .route(
+                "/dpe/records/{shortcode}/{record_id}/file",
+                axum::routing::get(record_file_handler),
+            )
+            .with_state(crate::test_support::test_state())
     }
 
     async fn fetch(app: axum::Router, uri: &str) -> (StatusCode, String) {
@@ -351,7 +354,9 @@ mod lookup_tests {
     async fn missing_record_and_record_without_a_file_both_return_a_json_404() {
         let app = app();
 
-        let no_file_record = dpe_core::record_cache::all_records()
+        let no_file_record = crate::test_support::test_state()
+            .corpus
+            .all_records()
             .iter()
             .find(|r| r.file.is_none())
             .expect("the committed data has at least one record without a file");
@@ -384,7 +389,9 @@ mod lookup_tests {
     async fn a_record_id_containing_an_equals_sign_resolves_literally_and_percent_encoded() {
         let app = app();
 
-        let record = dpe_core::record_cache::all_records()
+        let record = crate::test_support::test_state()
+            .corpus
+            .all_records()
             .iter()
             .find(|r| r.file.is_some() && r.pid.record_id.contains('='))
             .expect("the committed data has records with files and `=` in the id");

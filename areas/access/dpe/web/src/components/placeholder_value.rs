@@ -21,26 +21,27 @@ pub fn should_render_value(value: &str, ctx: &RenderContext) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::test_render_context;
 
     #[test]
     fn real_values_always_render() {
-        let ctx = RenderContext { show_placeholder_values: false };
+        let ctx = test_render_context(false);
         assert!(should_render_value("A real project name", &ctx));
         assert!(should_render_value("2020-01-01", &ctx));
     }
 
     #[test]
     fn placeholder_only_renders_when_context_says_to_show_placeholders() {
-        let shown = RenderContext { show_placeholder_values: true };
-        let hidden = RenderContext { show_placeholder_values: false };
+        let shown = test_render_context(true);
+        let hidden = test_render_context(false);
         assert!(should_render_value("MISSING", &shown));
         assert!(!should_render_value("MISSING", &hidden));
     }
 
     #[test]
     fn placeholder_value_renders_only_when_shown() {
-        let shown = RenderContext { show_placeholder_values: true };
-        let hidden = RenderContext { show_placeholder_values: false };
+        let shown = test_render_context(true);
+        let hidden = test_render_context(false);
         assert_ne!(placeholder_value("MISSING", &shown).into_string(), "");
         assert_eq!(placeholder_value("MISSING", &hidden).into_string(), "");
     }

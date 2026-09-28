@@ -1,5 +1,6 @@
 use shared_metadata::ProjectRaw;
 
+use super::corpus::Corpus;
 use super::project::Project;
 
 /// Repository interface for accessing projects.
@@ -10,39 +11,36 @@ pub trait ProjectRepository {
     fn get_raw_by_shortcode(&self, shortcode: &str) -> Option<&ProjectRaw>;
 }
 
-/// Production implementation of [`ProjectRepository`] backed by the in-process cache.
-pub struct FsProjectRepository;
-
-impl Default for FsProjectRepository {
-    fn default() -> Self {
-        Self
-    }
+/// Production implementation of [`ProjectRepository`] backed by a corpus's
+/// in-process cache.
+pub struct FsProjectRepository {
+    corpus: &'static Corpus,
 }
 
 impl FsProjectRepository {
-    pub fn new() -> Self {
-        Self
+    pub fn new(corpus: &'static Corpus) -> Self {
+        Self { corpus }
     }
 }
 
 impl ProjectRepository for FsProjectRepository {
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all(&self) -> &[Project] {
-        super::project_cache::all_projects()
+        self.corpus.all_projects()
     }
 
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
-        super::project_cache::project_by_shortcode(shortcode)
+        self.corpus.project_by_shortcode(shortcode)
     }
 
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all_raw(&self) -> &[ProjectRaw] {
-        super::project_cache::all_projects_raw()
+        self.corpus.all_projects_raw()
     }
 
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_raw_by_shortcode(&self, shortcode: &str) -> Option<&ProjectRaw> {
-        super::project_cache::project_raw_by_shortcode(shortcode)
+        self.corpus.project_raw_by_shortcode(shortcode)
     }
 }

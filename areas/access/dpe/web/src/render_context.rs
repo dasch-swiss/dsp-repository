@@ -5,4 +5,7 @@ pub struct RenderContext {
     /// Whether placeholder values ("MISSING", "CALCULATED") render, styled red
     /// for QA visibility, instead of being hidden.
     pub show_placeholder_values: bool,
+    /// The corpus self-loading components read from, instead of a process-global
+    /// cache.
+    pub corpus: &'static dpe_core::Corpus,
 }

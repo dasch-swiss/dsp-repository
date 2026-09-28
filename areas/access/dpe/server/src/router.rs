@@ -235,11 +235,12 @@ mod tests {
         #[tokio::test]
         async fn gates_oai_and_the_representations() {
             // The `/dpe` redirect is a pure handler (no data/cache access), so it is a
-            // stable "not rate-limited" control that avoids the set_data_dir global.
+            // stable "not rate-limited" control.
+            let state = test_state();
             let app = build_router(
-                test_state(),
+                state.clone(),
                 NO_PUBLIC_DIR.as_ref(),
-                rate_limited_router_with(dpe_api_oai::OaiState::new(""), DenyAll),
+                rate_limited_router_with(dpe_api_oai::OaiState::new("", state.corpus), DenyAll),
             );
             for uri in [
                 "/dpe/oai",
@@ -255,10 +256,11 @@ mod tests {
         /// and it must not reach the landing page a person reads either.
         #[tokio::test]
         async fn does_not_gate_the_record_file_or_landing_page_routes() {
+            let state = test_state();
             let app = build_router(
-                test_state(),
+                state.clone(),
                 NO_PUBLIC_DIR.as_ref(),
-                rate_limited_router_with(dpe_api_oai::OaiState::new(""), DenyAll),
+                rate_limited_router_with(dpe_api_oai::OaiState::new("", state.corpus), DenyAll),
             );
             for uri in ["/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file", "/dpe/projects/0862"] {
                 assert_ne!(status_of(app.clone(), uri).await, StatusCode::TOO_MANY_REQUESTS, "{uri}");
@@ -316,10 +318,11 @@ mod tests {
             // With a passthrough limiter, the limited routes must NOT be 429 — proving
             // the layer gates rather than hard-blocks. (Each handler answers its own
             // request.)
+            let state = test_state();
             let app = build_router(
-                test_state(),
+                state.clone(),
                 NO_PUBLIC_DIR.as_ref(),
-                rate_limited_router_with(dpe_api_oai::OaiState::new(""), AllowAll),
+                rate_limited_router_with(dpe_api_oai::OaiState::new("", state.corpus), AllowAll),
             );
             for uri in ["/dpe/oai", "/dpe/projects/0862/metadata.jsonld"] {
                 assert_ne!(status_of(app.clone(), uri).await, StatusCode::TOO_MANY_REQUESTS, "{uri}");
@@ -334,20 +337,14 @@ mod tests {
 
         use crate::router::build_router;
 
-        dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
-        // Covers live under the public dir, which cargo does NOT put on the test cwd:
-        // `cargo test` runs from the package dir, so the relative default misses and
-        // every project would render as coverless. Distinct from NO_PUBLIC_DIR below,
-        // which is the ServeDir static-file root, not dpe-core's asset lookup.
-        dpe_core::set_public_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../public"));
-
+        let state = test_state();
         let app = build_router(
-            test_state(),
+            state.clone(),
             NO_PUBLIC_DIR.as_ref(),
             axum::Router::new().merge(
                 axum::Router::new()
                     .route("/dpe/oai", get(dpe_api_oai::oai_handler))
-                    .with_state(dpe_api_oai::OaiState::new("")),
+                    .with_state(dpe_api_oai::OaiState::new("", state.corpus)),
             ),
         );
 
@@ -365,7 +362,9 @@ mod tests {
         // Any record with a file, taken from the cache: the populated-metadata
         // record is a shared-metadata test fixture and is not part of the
         // served data.
-        let record = dpe_core::record_cache::all_records()
+        let record = state
+            .corpus
+            .all_records()
             .iter()
             .find(|r| r.file.is_some())
             .expect("the committed data has records with files");
@@ -378,7 +377,7 @@ mod tests {
         assert!(!body.contains("Page not found."), "the project page route should still render");
         // 0862 has a cover on disk, so the wired-up handler must resolve it. This is the
         // only test that renders a full project page through the router, so without the
-        // assertion the whole set_public_dir → cover_image_url → <img> path is exercised
+        // assertion the whole corpus public-dir → cover_image_url → <img> path is exercised
         // nowhere in `cargo test` and a broken lookup would look like a passing suite.
         assert!(
             body.contains(r#"src="/assets/images/0862.webp""#),
@@ -395,16 +394,33 @@ mod tests {
 
         const PREVIEW: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
 
+        /// With an `ark_resolver_base_url`, a corpus leaked just for this test
+        /// pairs it with the corpus's own copy — the same pairing `serve()`
+        /// makes from one `DpeConfig` field.
         fn app(ark_resolver_base_url: Option<&str>) -> axum::Router {
-            dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
-            let state = AppState {
-                ark_resolver_base_url: ark_resolver_base_url.map(str::to_string),
-                ..test_state()
+            let state = match ark_resolver_base_url {
+                Some(url) => {
+                    let corpus: &'static dpe_core::Corpus =
+                        Box::leak(Box::new(dpe_core::Corpus::new(dpe_core::CorpusSettings {
+                            data_dir: concat!(env!("CARGO_MANIFEST_DIR"), "/data").to_string(),
+                            public_dir: concat!(env!("CARGO_MANIFEST_DIR"), "/../public").to_string(),
+                            ark_resolver_base_url: Some(url.to_string()),
+                        })));
+                    AppState {
+                        ark_resolver_base_url: Some(url.to_string()),
+                        corpus,
+                        ..test_state()
+                    }
+                }
+                None => test_state(),
             };
             build_router(
-                state,
+                state.clone(),
                 NO_PUBLIC_DIR.as_ref(),
-                rate_limited_router_with(dpe_api_oai::OaiState::new(""), tower::layer::util::Identity::new()),
+                rate_limited_router_with(
+                    dpe_api_oai::OaiState::new("", state.corpus),
+                    tower::layer::util::Identity::new(),
+                ),
             )
         }
 
@@ -497,8 +513,9 @@ mod tests {
         use crate::router::{build_router, rate_limited_router};
 
         let config = crate::config::DpeConfig::default();
-        let oai_state = dpe_api_oai::OaiState::new(&config.oai_base_url);
-        let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), rate_limited_router(&config, oai_state));
+        let state = test_state();
+        let oai_state = dpe_api_oai::OaiState::new(&config.oai_base_url, state.corpus);
+        let app = build_router(state, NO_PUBLIC_DIR.as_ref(), rate_limited_router(&config, oai_state));
         assert_ne!(status_of(app, "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
     }
 

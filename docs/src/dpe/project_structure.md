@@ -38,7 +38,7 @@ as well as through `dpe-core` — the contract types are theirs to import, not
 The arrow between `dpe-core` and `shared-fair` runs in neither direction, and
 that is deliberate: `shared-fair` names only contract types, so the domain crate
 never depends on the exposure engine and the engine never learns DPE's view
-model. `dpe_core::resolve_inputs()` is the seam — it returns the contributor
+model. `Corpus::resolve_inputs()` is the seam — it returns the contributor
 lookup and the two temporal tables, which `dpe-api-oai` wraps in a
 `shared_fair::ResolveContext` at the call site.
 
@@ -74,12 +74,12 @@ Framework-free domain layer — what only DPE needs. Contains:
 
 - **View model**: `Project` and the conversions to and from `ProjectRaw` (lossy, DPE-only), `Page`, `ClusterRef`, `CollectionRef`, `ResolvedContributor`
 - **Repository traits**: `ProjectRepository`, `RecordRepository`
-- **Fs implementations**: `FsProjectRepository`, `FsRecordRepository` (backed by in-memory caches)
-- **Data loading**: project, record, person, organization, cluster and the two temporal caches (`OnceLock<…>`) loaded from `DPE_DATA_DIR` on first access
-- **Utilities**: `lang_value()`, `language_display_name()`, `get_data_dir()`, `get_public_dir()`
+- **Fs implementations**: `FsProjectRepository`, `FsRecordRepository` (backed by `Corpus`'s in-memory caches)
+- **Data loading**: project, record, person, organization, cluster and the two temporal caches — one instance-owned `OnceLock<…>` field per cache on `Corpus` — loaded from `CorpusSettings::data_dir` on first access
+- **Utilities**: `lang_value()`, `language_display_name()` (pure, no corpus needed)
 - **Static-asset lookup**: `cover_image_cache` scans `<public dir>/assets/images` once for the per-project cover images, so a view can tell whether a project has one before rendering an `<img>`
 
-The directory paths are process-global `OnceLock`s set from `dpe-server`'s config at startup (`set_data_dir`, `set_public_dir`) and read directly by the caches. Display settings instead reach `dpe-web` views as a `RenderContext` that `dpe-server` builds from `AppState`; new per-deployment view settings belong there, not in a process-global.
+`Corpus` is one capability-owned value, not a process-global: `dpe-server` builds it once from `DpeConfig` in `serve.rs` and leaks it (`Box::leak`) to get a `&'static Corpus`, the only production leak. That reference reaches handlers through `AppState`/`OaiState` and views through `RenderContext`; new per-deployment view settings belong on `RenderContext`, not in a process-global. Tests leak one `Corpus` per fixture directory, so several can coexist in one test binary — the statics this replaced made that impossible.
 
 Dependencies: `shared-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
 
@@ -87,7 +87,7 @@ Dependencies: `shared-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
 
 OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in [OAI-PMH Endpoint](./oai-pmh.md).
 
-Depends on `shared-metadata` for the contract types, `dpe-core` for the view model and the `resolve_inputs()` seam, and `shared-fair` for the DataCite and Dublin Core mappings. What stays here is OAI-PMH protocol: the envelope and XML builder, the verbs, the `oai:dasch.swiss:` identifiers, the set specs, the date filters and `OaiRecord`. The corpus-wide tests over the committed data stay here too (`src/metadata/corpus.rs`), beside the data they read.
+Depends on `shared-metadata` for the contract types, `dpe-core` for the view model and the `Corpus::resolve_inputs()` seam, and `shared-fair` for the DataCite and Dublin Core mappings. What stays here is OAI-PMH protocol: the envelope and XML builder, the verbs, the `oai:dasch.swiss:` identifiers, the set specs, the date filters and `OaiRecord`. The corpus-wide tests over the committed data stay here too (`src/metadata/corpus.rs`), beside the data they read.
 
 ### `dpe-web` (web/)
 

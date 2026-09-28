@@ -7,11 +7,12 @@ use mosaic_tiles::link::link;
 use mosaic_tiles::ComponentBuilder;
 
 use super::description::description;
+use crate::RenderContext;
 
 /// The project hero: cover image (with fallback), title, alternative names,
 /// description, and primary/secondary "discover data" buttons.
-pub fn project_header(proj: &Project) -> Markup {
-    render_project_header(proj, dpe_core::cover_image_url(&proj.shortcode).as_deref())
+pub fn project_header(proj: &Project, ctx: &RenderContext) -> Markup {
+    render_project_header(proj, ctx.corpus.cover_image_url(&proj.shortcode).as_deref())
 }
 
 /// Render the hero against an already-resolved `cover`. Separated from the cache

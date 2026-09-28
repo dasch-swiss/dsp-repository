@@ -47,7 +47,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `OaiRecord`, `CachedContributorLookup`, `resolve_inputs`, `records_for_shortcode`,
   `project_oai_identifier`, `oai_handler`, `OaiState`, `RenderContext`, `build_router`,
   `tab_fragment_handler`, `search_fragment_handler`, `record_file_handler`, `HeadExtras`,
-  `landing_page` / `LandingPage` / `render`, `get_data_dir` / `set_data_dir`
+  `landing_page` / `LandingPage` / `render`, `Corpus` / `CorpusSettings`
 - **Public interface:** the HTTP routes of `dpe-server` (`/dpe/projects`, `/dpe/projects/{id}`,
   `/dpe/projects/{id}/metadata.jsonld` and `/dpe/projects/{id}/metadata.datacite.json`,
   `/dpe/projects/{id}/tab/{tab}` and `/dpe/projects/search` as SSE, `/dpe/records/{shortcode}/{record_id}/file`,

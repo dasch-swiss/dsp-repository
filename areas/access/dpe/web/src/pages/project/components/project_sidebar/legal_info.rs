@@ -9,16 +9,20 @@ use crate::RenderContext;
 
 /// Render an entity name (person or organization) from the in-process caches,
 /// by ID. Falls back to the raw ID when not found or not an entity reference.
-fn entity_name(id: &str) -> Markup {
+fn entity_name(id: &str, ctx: &RenderContext) -> Markup {
     if id.starts_with("person-") || id.contains("-person-") {
-        let name = dpe_core::load_person(id)
+        let name = ctx
+            .corpus
+            .load_person(id)
             .map(|p| format!("{} {}", p.given_names.join(" "), p.family_names.join(" ")))
             .unwrap_or_else(|| id.to_string());
         html! {
             span { (name) }
         }
     } else if id.starts_with("organization-") || id.contains("-organization-") {
-        let name = dpe_core::load_organization(id)
+        let name = ctx
+            .corpus
+            .load_organization(id)
             .map(|o| o.name)
             .unwrap_or_else(|| id.to_string());
         html! {
@@ -92,7 +96,7 @@ pub fn legal_info(legal_info: &[LegalInfoData], ctx: &RenderContext) -> Markup {
             } @else {
                 div {
                     h3 class="dpe-subtitle" { "Copyright" }
-                    (entity_name(&info.copyright_holder))
+                    (entity_name(&info.copyright_holder, ctx))
                 }
             }
 
@@ -110,7 +114,7 @@ pub fn legal_info(legal_info: &[LegalInfoData], ctx: &RenderContext) -> Markup {
                             @if shared_metadata::is_placeholder(id) {
                                 div { (placeholder_value(id, ctx)) }
                             } @else {
-                                div { (entity_name(id)) }
+                                div { (entity_name(id, ctx)) }
                             }
                         }
                     }
@@ -122,14 +126,14 @@ pub fn legal_info(legal_info: &[LegalInfoData], ctx: &RenderContext) -> Markup {
 
 /// The contact block: each contact is an org affiliation name or a person card
 /// (with email).
-pub fn contact_section(ids: &[String]) -> Markup {
+pub fn contact_section(ids: &[String], ctx: &RenderContext) -> Markup {
     html! {
         h3 class="dpe-subtitle" { "Contact" }
         div class="space-y-2" {
             @for id in ids {
                 @if id.starts_with("organization-") || id.contains("-organization-") {
-                    (info_card(affiliation_name(id)))
-                } @else { (info_card(person(id, None, true))) }
+                    (info_card(affiliation_name(id, ctx.corpus)))
+                } @else { (info_card(person(id, None, true, ctx.corpus))) }
             }
         }
     }
@@ -222,7 +226,7 @@ mod tests {
             "https://creativecommons.org/licenses/by/4.0/",
             "DaSCH",
         )];
-        let out = legal_info(&info, &RenderContext { show_placeholder_values: false }).into_string();
+        let out = legal_info(&info, &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("/assets/images/cc-licenses/by-4.0.svg"), "{out}");
         assert!(out.contains("(2024-01-01)"), "license date: {out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
@@ -232,7 +236,7 @@ mod tests {
     #[test]
     fn non_cc_license_renders_link() {
         let info = vec![legal("MIT", "https://opensource.org/license/mit", "DaSCH")];
-        let out = legal_info(&info, &RenderContext { show_placeholder_values: false }).into_string();
+        let out = legal_info(&info, &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains(r#"href="https://opensource.org/license/mit""#), "{out}");
         assert!(out.contains("MIT"), "{out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
@@ -246,7 +250,7 @@ mod tests {
             "https://creativecommons.org/licenses/by/4.0/",
             "ACME Corp",
         )];
-        let out = legal_info(&info, &RenderContext { show_placeholder_values: false }).into_string();
+        let out = legal_info(&info, &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Copyright"), "{out}");
         assert!(out.contains("ACME Corp"), "{out}");
         assert!(out.contains("Authorship"), "{out}");

@@ -21,21 +21,29 @@ pub(crate) async fn serve() -> ExitCode {
         tracing::info!(fathom_site_id = %site_id, "Fathom Analytics enabled");
     }
 
-    // A thread-safe OnceLock rather than env mutation.
-    dpe_core::set_data_dir(dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"));
-
-    // The same directory ServeDir serves, so a cover present under it is reachable at
-    // its URL. dpe-core scans it to resolve cover presence at render time.
-    dpe_core::set_public_dir(dpe_config.public_dir.to_str().expect("public_dir path must be valid UTF-8"));
+    // The one corpus this process builds, leaked so every handler and view can
+    // hold a `&'static Corpus` for the process's lifetime.
+    let corpus: &'static dpe_core::Corpus = Box::leak(Box::new(dpe_core::Corpus::new(dpe_core::CorpusSettings {
+        data_dir: dpe_config
+            .data_dir
+            .to_str()
+            .expect("data_dir path must be valid UTF-8")
+            .to_string(),
+        // The same directory ServeDir serves, so a cover present under it is reachable at
+        // its URL. dpe-core scans it to resolve cover presence at render time.
+        public_dir: dpe_config
+            .public_dir
+            .to_str()
+            .expect("public_dir path must be valid UTF-8")
+            .to_string(),
+        ark_resolver_base_url: dpe_config.ark_resolver_base_url.clone(),
+    })));
 
     // The OAI-PMH base URL, emitted as baseURL / <request>: normalised once here, handed to
     // the OAI router as state, and copied into `AppState.oai_base_url` below.
-    let oai_state = dpe_api_oai::OaiState::new(&dpe_config.oai_base_url);
+    let oai_state = dpe_api_oai::OaiState::new(&dpe_config.oai_base_url, corpus);
     tracing::info!(oai_base_url = %oai_state.base_url, "OAI-PMH base URL set");
 
-    // Before any cache is populated (and before `record_cache::warm`), so the ARK host is
-    // normalised as data enters every cache. Moves to `sync` when that lands.
-    dpe_core::set_ark_resolver_base_url(dpe_config.ark_resolver_base_url.as_deref());
     if let Some(ref url) = dpe_config.ark_resolver_base_url {
         tracing::info!(
             ark_resolver_base_url = %url,
@@ -47,7 +55,7 @@ pub(crate) async fn serve() -> ExitCode {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
     }
 
-    tokio::task::spawn_blocking(dpe_core::record_cache::warm);
+    tokio::task::spawn_blocking(move || corpus.warm());
 
     let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
@@ -61,6 +69,7 @@ pub(crate) async fn serve() -> ExitCode {
         oai_base_url: oai_state.base_url.clone(),
         ark_resolver_base_url: dpe_config.ark_resolver_base_url.clone(),
         show_placeholder_values: dpe_config.show_placeholder_values,
+        corpus,
     };
 
     // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).

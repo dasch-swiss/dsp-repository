@@ -9,7 +9,7 @@ mod corpus;
 mod types;
 
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
-use dpe_core::ClusterRaw;
+use dpe_core::{ClusterRaw, Corpus};
 use shared_fair::{
     project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ProjectGraph, RecordGraph,
     ResolveContext,
@@ -77,12 +77,13 @@ pub fn to_oai_record(
     metadata_prefix: &str,
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
+    corpus: &'static Corpus,
 ) -> OaiRecord {
     // The temporal tables come from `resolve_inputs`, the one place in DPE that
     // says what resolution needs, so this endpoint and the landing page cannot
     // drift apart. The lookup it returns is discarded: handlers take theirs as a
     // parameter, which is how the tests inject an in-memory double.
-    let (_cached_lookup, periods, enriched) = dpe_core::resolve_inputs();
+    let (_cached_lookup, periods, enriched) = corpus.resolve_inputs();
     let ctx = ResolveContext::new(lookup, periods, enriched);
     let header = OaiRecordHeader {
         identifier: project_oai_identifier(project),

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use shared_metadata::{ContributorLookup, Organization, Person};
 
+use super::corpus::Corpus;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ResolvedContributor {
     Person {
@@ -19,24 +21,28 @@ pub enum ResolvedContributor {
     },
 }
 
-/// Production [`ContributorLookup`] backed by the in-process person and
+/// Production [`ContributorLookup`] backed by a corpus's person and
 /// organization caches.
-pub struct CachedContributorLookup;
+pub struct CachedContributorLookup {
+    pub corpus: &'static Corpus,
+}
 
 impl ContributorLookup for CachedContributorLookup {
     fn person(&self, id: &str) -> Option<Person> {
-        load_person(id)
+        self.corpus.load_person(id)
     }
 
     fn organization(&self, id: &str) -> Option<Organization> {
-        load_organization(id)
+        self.corpus.load_organization(id)
     }
 }
 
-pub fn load_person(id: &str) -> Option<Person> {
-    super::person_cache::all_persons().get(id).cloned()
-}
+impl Corpus {
+    pub fn load_person(&'static self, id: &str) -> Option<Person> {
+        self.all_persons().get(id).cloned()
+    }
 
-pub fn load_organization(id: &str) -> Option<Organization> {
-    super::organization_cache::all_organizations().get(id).cloned()
+    pub fn load_organization(&'static self, id: &str) -> Option<Organization> {
+        self.all_organizations().get(id).cloned()
+    }
 }

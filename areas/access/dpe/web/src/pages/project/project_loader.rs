@@ -8,9 +8,9 @@ use crate::RenderContext;
 /// message. Looked up synchronously from the in-process project + contributor
 /// caches. `active_tab` selects the initially-rendered tab.
 pub fn project_loader(shortcode: &str, active_tab: &str, ctx: &RenderContext) -> Markup {
-    match get_project(shortcode) {
+    match get_project(shortcode, ctx.corpus) {
         Some(project) => {
-            let contributors = get_contributors(project.attributions.clone());
+            let contributors = get_contributors(project.attributions.clone(), ctx.corpus);
             project_details(&project, &contributors, active_tab, ctx)
         }
         None => html! {
@@ -29,7 +29,7 @@ mod tests {
     #[test]
     fn unknown_shortcode_renders_not_found() {
         // No project cache is populated in the unit-test environment.
-        let out = project_loader("zzzz", "overview", &RenderContext { show_placeholder_values: false }).into_string();
+        let out = project_loader("zzzz", "overview", &crate::test_support::test_render_context(false)).into_string();
         assert!(out.contains("Project Not Found"), "{out}");
         assert!(out.contains("zzzz"), "{out}");
     }

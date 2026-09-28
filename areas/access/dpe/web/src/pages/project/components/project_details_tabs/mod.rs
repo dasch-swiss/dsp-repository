@@ -132,7 +132,7 @@ mod tests {
             &[],
             "overview",
             true,
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(out.contains(r#"id="project-tabs""#), "morph root: {out}");
@@ -148,7 +148,7 @@ mod tests {
             &[],
             "overview",
             false,
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(out.contains(r#"id="tab-overview" aria-selected="true""#), "{out}");
@@ -162,7 +162,7 @@ mod tests {
             &[],
             "overview",
             true,
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(with.contains("tab-publications"), "{with}");
@@ -171,7 +171,7 @@ mod tests {
             &[],
             "overview",
             false,
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(!without.contains("tab-publications"), "{without}");
@@ -184,7 +184,7 @@ mod tests {
             &[],
             "overview",
             false,
-            &RenderContext { show_placeholder_values: false },
+            &crate::test_support::test_render_context(false),
         )
         .into_string();
         assert!(

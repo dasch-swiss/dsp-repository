@@ -10,7 +10,7 @@ Index of the bounded contexts in this monorepo and the rules that govern how the
   _Avoid_: Ingest Area (the earlier name, see Flagged ambiguities), Producer side, self-service preservation frontend (an earlier name for the eventual single application: editor + data-model creator + data creation).
 - **Archive Area (Spycherli)** — the OAIS archive: Ingest, Archival Storage and the supporting functional entities; the sealed heart of the platform. No code yet; target directory `areas/archive/` (ADR-0002). → [`areas/archive/CONTEXT.md`](areas/archive/CONTEXT.md)
   _Avoid_: Spycherly (misspelling), the Archive (ambiguous with the OAIS functional entity), Repository-Core.
-- **Access Area** — the consumer side, OAIS Access: produces Dissemination Information Packages for Consumers. Today DPE (`modules/dpe/`); planned as further capabilities of the same modulith: `sync` (the single writer of the archive projection in Chischtli), `profile` (per-user settings), `media` (Service Files via Vitrinli), CPE, the SPARQL endpoint and the admin view. Target directory `areas/access/` (ADR-0002). → [`modules/dpe/CONTEXT.md`](modules/dpe/CONTEXT.md)
+- **Access Area** — the consumer side, OAIS Access: produces Dissemination Information Packages for Consumers. Today DPE (`areas/access/dpe/`); planned as further capabilities of the same modulith: `sync` (the single writer of the archive projection in Chischtli), `profile` (per-user settings), `media` (Service Files via Vitrinli), CPE, the SPARQL endpoint and the admin view. Target directory `areas/access/` (ADR-0002). → [`areas/access/CONTEXT.md`](areas/access/CONTEXT.md)
 
 ## Shared infrastructure (not bounded contexts)
 
@@ -69,7 +69,7 @@ _Avoid_: master, source file, Preservation File (it becomes one only on ingest).
 
 ## Relationships
 
-- The **Deposit Area** reads the **Access Area**'s published project files (the corpus under `modules/dpe/server/data/`, baked into the editor image as `EDITOR_DATA_DIR`) and is meant to return approved records as a pull request against this repository; git is the source of truth today, the archive is designed to replace it.
+- The **Deposit Area** reads the **Access Area**'s published project files (the corpus under `areas/access/dpe/server/data/`, baked into the editor image as `EDITOR_DATA_DIR`) and is meant to return approved records as a pull request against this repository; git is the source of truth today, the archive is designed to replace it.
 - The **Archive Area** receives Submission Information Packages from the Deposit Area over the intent protocol and feeds every read-side service of the **Access Area** through NATS pointers plus immutable S3 payloads (target design; none of this exists here yet).
 - Each area is a separate deployable on its own origin; DPE and the editor share a process, an image or an origin with nothing.
 - One **Project** has exactly one **Shortcode**; a **Project** references zero or more **Persons** and **Organizations**; a **Project** has zero or more **Records**.

@@ -1,6 +1,6 @@
 # AI Agent Guide for the Metadata Editor
 
-Editor-specific guidance; project-wide guidance is in the top-level `CLAUDE.md`, and DPE's is in `modules/dpe/CLAUDE.md`.
+Editor-specific guidance; project-wide guidance is in the top-level `CLAUDE.md`, and DPE's is in `areas/access/dpe/CLAUDE.md`.
 
 ## Project Overview
 

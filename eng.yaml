@@ -10,8 +10,8 @@ defaults:
 
 overrides:
   # Per-application guidance: one override per directory with its own CLAUDE.md.
-  - when: "modules/dpe/**"
-    conventions: [modules/dpe/CLAUDE.md]
+  - when: "areas/access/dpe/**"
+    conventions: [areas/access/dpe/CLAUDE.md]
   - when: "areas/deposit/editor/**"
     conventions: [areas/deposit/editor/CLAUDE.md]
     reviewers: [eng:review:security-reviewer]

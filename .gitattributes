@@ -1,5 +1,5 @@
 # Raster images and PDFs under docs/specs/ are stored in Git LFS (case-insensitive).
-# Scoped to docs/specs/ on purpose: the DPE serves modules/dpe/public/assets/ images
+# Scoped to docs/specs/ on purpose: the DPE serves areas/access/dpe/public/assets/ images
 # straight from the tree, so those stay plain files. Vector/text formats (.svg) are
 # excluded — they diff as text.
 docs/specs/**/*.[pP][dD][fF] filter=lfs diff=lfs merge=lfs -text

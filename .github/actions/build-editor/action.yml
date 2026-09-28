@@ -41,5 +41,5 @@ runs:
         mkdir -p staging
         cp target/x86_64-unknown-linux-musl/release/editor-server staging/
         cp -r areas/deposit/editor/public staging/
-        cp -r modules/dpe/server/data staging/
+        cp -r areas/access/dpe/server/data staging/
         cp areas/deposit/editor/Dockerfile staging/

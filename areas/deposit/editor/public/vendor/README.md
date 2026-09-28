@@ -18,7 +18,7 @@ The Datastar URL is jsdelivr's **`gh/`** (GitHub) route, not `npm/`. The npm pac
 
 ## Datastar version
 
-The table above is the editor's version of record. DPE vendors its own copy under `modules/dpe/public/vendor/`; nothing is shared between the two directories and each is bumped on its own, so do not read either one's version off the other.
+The table above is the editor's version of record. DPE vendors its own copy under `areas/access/dpe/public/vendor/`; nothing is shared between the two directories and each is bumped on its own, so do not read either one's version off the other.
 
 One property of 1.0.x worth knowing: keyed plugin attributes use `:`, not `-` — `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. That has been true since RC.6, so it matches DPE's markup too. The old hyphen form fails **semi-silently**: a console error and an inert control, with the page rendering fine and snapshot tests still passing.
 

@@ -35,7 +35,7 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 
 ## Layer 3: E2E Tests (Playwright)
 
-- **Location**: `modules/dpe/web-e2e-tests/`
+- **Location**: `areas/access/dpe/web-e2e-tests/`
 - **Runner**: `npx playwright test`
 - **Scope**: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)
 - **Accessibility**: Full-page axe-core scans against WCAG 2.1 AA

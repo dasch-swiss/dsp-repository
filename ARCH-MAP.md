@@ -1,8 +1,7 @@
 ---
 dune_map: true
-schema_version: 1
-last_verified_commit: a3a1b0dc015d839ac0e162d92b2b695ca7cc3d3b
-date: 2026-09-24
+schema_version: 2
+date: 2026-09-28
 ---
 
 # Architecture Map
@@ -16,24 +15,25 @@ and the authenticated **metadata editor** — each a separate deployable on its 
 they share `shared-metadata` (the research-metadata contract), `shared-telemetry` (the
 browser-beacon collector) and `mosaic-tiles` (the design system), and nothing else. The
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
-another service. The shared root has moved to `shared/` at the repository root and the
-metadata editor to `areas/deposit/editor/` (ADR-0002); DPE and Mosaic still live under
-`modules/`, and three of the four planned components hold only a `CONTEXT.md` at their target
-path (`areas/access/cpe` has no files yet). The rest of ADR-0002 (accepted, migration pending)
-moves DPE under `areas/access/` and Mosaic to the root, beside `shared/`, `vitrinli/` and
-`chischtli/`, so read the globs here as current state. `dsp-cli/` is a sixth root,
+another service. The shared root has moved to `shared/` at the repository root, the
+metadata editor to `areas/deposit/editor/` and DPE to `areas/access/dpe/` (ADR-0002); Mosaic
+still lives under `modules/`, and three of the four planned components hold only a `CONTEXT.md`
+at their target path (`areas/access/cpe` has no files yet). The rest of ADR-0002 (accepted,
+migration pending) moves Mosaic to the root, beside `shared/`, `vitrinli/` and `chischtli/`, so
+read the globs here as current state. `dsp-cli/` is a sixth root,
 outside the `services → shared, mosaic` arrow entirely (ADR-0002 amendment): it is a client of
 every area rather than a member of one, no area depends on it, and it depends on no area
 crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `areas/deposit/editor/CONTEXT.md`,
-`modules/dpe/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
+`areas/access/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
 `chischtli/CONTEXT.md`, `dsp-cli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
 
 ## Components
 
-### modules/dpe
+### areas/access/dpe
 
-- **Paths:** `:(glob)modules/dpe/**`
+- **Paths:** `:(glob)areas/access/dpe/**`, `:(glob)areas/access/CONTEXT.md` (the Access Area's
+  vocabulary, DPE's until CPE adds its terms)
 - **Purpose:** The Discovery and Presentation Environment — the Access Area's first service.
   Four crates: `dpe-core` (view model, `OnceLock` caches, filesystem repositories, a
   DSP-API client), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages and components),
@@ -55,12 +55,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `dpe-server serve | validate <data_dir> | healthcheck <url>` CLI; and the corpus files under
   `server/data/`, which the editor consumes as an image-baked snapshot through `EDITOR_DATA_DIR`.
   No `dpe-*` crate is depended on by any crate outside this component.
-- **Local-context kit:** `modules/dpe/CLAUDE.md`, `modules/dpe/server/src/router.rs`,
-  `modules/dpe/server/src/shell.rs`, `modules/dpe/core/src/lib.rs`,
-  `modules/dpe/core/src/project.rs`, `modules/dpe/server/src/fragments.rs`,
-  `modules/dpe/api-oai/src/lib.rs` (the OAI crate's whole surface; the contract it reads is
+- **Local-context kit:** `areas/access/dpe/CLAUDE.md`, `areas/access/dpe/server/src/router.rs`,
+  `areas/access/dpe/server/src/shell.rs`, `areas/access/dpe/core/src/lib.rs`,
+  `areas/access/dpe/core/src/project.rs`, `areas/access/dpe/server/src/fragments.rs`,
+  `areas/access/dpe/api-oai/src/lib.rs` (the OAI crate's whole surface; the contract it reads is
   shared/metadata's own kit). The kit is at its seven-file budget, so
-  `modules/dpe/server/src/serve.rs` is named here rather than added: it holds the order-sensitive
+  `areas/access/dpe/server/src/serve.rs` is named here rather than added: it holds the order-sensitive
   startup sequence and the two untraced routes.
 - **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/telemetry
   (`dpe-server`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio, tower /
@@ -109,6 +109,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   In-process `OnceLock` caches load once and never invalidate.
+- **Fingerprint:** `86a146b23432`
 
 ### areas/deposit/editor
 
@@ -119,7 +120,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   widgets), `editor-server` (the binary: config, auth, routing, the SQLite implementations of
   the ports), `editor-collector` (the CI binary that turns an approved record into a pull
   request against this repository — outside the service's request path, and the only crate here
-  that writes anything under `modules/dpe/`).
+  that writes anything under `areas/access/dpe/`).
   Depositors edit their projects section by section; RDU reviews field by field; approve
   writes an approved record, which the collector publishes as a pull request.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
@@ -142,7 +143,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/editor/core/src/status.rs`, `docs/src/editor/collection.md`,
   `docs/src/editor/architecture.md`
 - **Depends on:** shared/metadata (all three crates), shared/telemetry
-  (`editor-server`), modules/mosaic (`editor-web`); modules/dpe's corpus as data (see above),
+  (`editor-server`), modules/mosaic (`editor-web`); areas/access/dpe's corpus as data (see above),
   never its code — `editor-collector` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
   (`bundled`) + deadpool-sqlite, figment, lettre, clap, ureq, rand + subtle, tower_governor,
@@ -176,6 +177,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   approve, and deleted by two paths: the startup reconcile that derives Online, and approve's
   own transaction, which supersedes an earlier record for the same project when no pull request
   of its own is live.
+- **Fingerprint:** `f91e585317fe`
 
 ### modules/mosaic
 
@@ -202,8 +204,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `modules/mosaic/tiles/src/components/components.css`, `modules/mosaic/playground/src/app.rs`
 - **Depends on:** nothing in the workspace; third-party: maud, icondata (tiles); axum, tokio,
   tower-http, optional tower-livereload + notify behind `dev` (playground)
-- **Used by:** modules/dpe (`dpe-web`, `dpe-server`), areas/deposit/editor (`editor-web`); all three
-  Tailwind entries (`modules/dpe/style/main.css`, `areas/deposit/editor/style/main.css`,
+- **Used by:** areas/access/dpe (`dpe-web`, `dpe-server`), areas/deposit/editor (`editor-web`); all three
+  Tailwind entries (`areas/access/dpe/style/main.css`, `areas/deposit/editor/style/main.css`,
   `modules/mosaic/playground/style/main.css`)
 - **Boundary rules:**
   - Depends on no `shared-*` or service crate (**structure** — a dependency would be a Cargo
@@ -220,6 +222,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
+- **Fingerprint:** `7e1f14442dc7`
 
 ### shared/fair
 
@@ -251,16 +254,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   consumer adapts its own store behind `shared_metadata::ContributorLookup` and the two
   temporal tables.
 - **Local-context kit:** `shared/fair/src/lib.rs`, `shared/fair/src/graph.rs`,
-  `shared/fair/src/project_graph.rs`, `modules/dpe/api-oai/src/metadata/mod.rs` (the OAI call
-  site), `modules/dpe/api-oai/src/metadata/corpus.rs` (the corpus-wide tests),
+  `shared/fair/src/project_graph.rs`, `areas/access/dpe/api-oai/src/metadata/mod.rs` (the OAI call
+  site), `areas/access/dpe/api-oai/src/metadata/corpus.rs` (the corpus-wide tests),
   `shared/README.md`, `docs/adr/0005-fair-landing-pages-in-the-access-area.md`. The kit is at
-  its seven-file budget, so the second call site, `modules/dpe/server/src/metadata.rs`, is named
+  its seven-file budget, so the second call site, `areas/access/dpe/server/src/metadata.rs`, is named
   here rather than added: it is where the landing page's writers are called and the `UrlLayout`
   is built.
 - **Depends on:** shared/metadata, and `serde_json` at runtime (the JSON-LD writer's `Value` is
   its output type, and `script_safe_json` serialises it); nothing else in the workspace. No
   other third-party runtime dependency.
-- **Used by:** modules/dpe — `dpe-api-oai` (the OAI writers) and `dpe-server` (the landing
+- **Used by:** areas/access/dpe — `dpe-api-oai` (the OAI writers) and `dpe-server` (the landing
   page's JSON-LD, meta tags and Signposting links). `dpe-core` does not and must not: the domain
   crate never depends on the exposure engine. ADR-0005 names the consumers still to come: DPE's
   record pages, CPE, and the Deposit Area's FAIR assessment.
@@ -275,9 +278,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     graph-derived field. Resolution happens once, at the build call, and a writer cannot reach
     past the graph to re-derive a fact (**review**).
   - Corpus-wide tests over the committed data live in the consumer that owns the data
-    (`modules/dpe/api-oai/src/metadata/corpus.rs`), not here (**review**).
+    (`areas/access/dpe/api-oai/src/metadata/corpus.rs`), not here (**review**).
 - **Durable state:** none. Holds no cache and reads no environment; the contributor lookup and
   the two temporal tables arrive in `ResolveContext`.
+- **Fingerprint:** `c424b1286553`
 
 ### shared/metadata
 
@@ -300,11 +304,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Local-context kit:** `shared/metadata/src/project.rs`,
   `shared/metadata/src/lib.rs`, `shared/README.md`,
   `areas/deposit/editor/web/src/form/registry.rs`, `areas/deposit/editor/core/src/draft.rs`,
-  `modules/dpe/core/src/project.rs`, `areas/deposit/editor/core/tests/canonical_round_trip.rs`
+  `areas/access/dpe/core/src/project.rs`, `areas/deposit/editor/core/tests/canonical_round_trip.rs`
   (a contract member moves with all four consumer files in one commit)
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json (`preserve_order`,
   which the editor's canonical writer requires), tracing
-- **Used by:** modules/dpe (all four crates), areas/deposit/editor (all three crates), shared/fair,
+- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (all three crates), shared/fair,
   the DPE fuzz crate
 - **Boundary rules:**
   - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
@@ -317,6 +321,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**review**).
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
+- **Fingerprint:** `4233fef6323e`
 
 ### shared/telemetry
 
@@ -332,12 +337,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   wiring point (`collect_handler` is also `pub`, contradicting its doc comment); `beacon::*`,
   `origin::is_allowed_origin`, `traceparent::{is_valid_traceparent, validated_traceparent}`.
 - **Local-context kit:** `shared/telemetry/src/beacon.rs`,
-  `shared/telemetry/src/collector.rs`, `modules/dpe/public/telemetry.js`,
+  `shared/telemetry/src/collector.rs`, `areas/access/dpe/public/telemetry.js`,
   `areas/deposit/editor/public/telemetry.js`, `docs/src/dpe/observability.md`,
-  `shared/README.md`, `modules/dpe/server/fuzz/fuzz_targets/beacon_payload.rs`
+  `shared/README.md`, `areas/access/dpe/server/fuzz/fuzz_targets/beacon_payload.rs`
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json; axum, opentelemetry,
   tracing, url (collector only). No `tower_governor` — the rate limiter is each server's own.
-- **Used by:** modules/dpe (`dpe-server`: `collect_route("dpe", page_url::normalize_page_url)`),
+- **Used by:** areas/access/dpe (`dpe-server`: `collect_route("dpe", page_url::normalize_page_url)`),
   areas/deposit/editor (`editor-server`: `collect_route("editor", …)`), both servers' `traceparent.rs`,
   the DPE fuzz crate
 - **Boundary rules:**
@@ -348,7 +353,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     required).
   - `namespace` is a required argument so the instrumentation scope dashboards filter on
     (`dpe.browser`, `editor.browser`) cannot be omitted (**structure**).
-  - The client module is a two-copy fork (`modules/dpe/public/telemetry.js`,
+  - The client module is a two-copy fork (`areas/access/dpe/public/telemetry.js`,
     `areas/deposit/editor/public/telemetry.js`); a new signal edits both, plus `beacon.rs`,
     `collector.rs` and the docs, in one commit (**review**).
   - Metric attributes stay bounded; high-cardinality data goes to logs (**review**).
@@ -356,6 +361,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `BROWSER_METRICS`) make the crate one-service-per-process by construction. Three fuzz targets
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
+- **Fingerprint:** `59aca6a4b6c2`
 
 ### dsp-cli
 
@@ -385,6 +391,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Live tests never run in the default suite (**static-analysis**,
     `check-live-tests-ignored.sh`).
 - **Durable state:** `~/.config/dsp-cli/auth.toml` — single writer, dsp-cli.
+- **Fingerprint:** `2b72a643c52f`
 
 ### areas/archive (Spycherli)
 
@@ -416,6 +423,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   **structure** via Bazel visibility).
 - **Durable state:** the sealed store, the hot log, the ingest (quarantine) and Access buckets —
   **single writer:** this area's coordinator and workers.
+- **Fingerprint:** none
 
 ### vitrinli
 
@@ -440,7 +448,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `shared/telemetry/src/lib.rs` (the beacon collector it may mount)
 - **Depends on:** nothing in this repository is expected beyond `shared-*` crates
 - **Used by:** the `media` capability of the Deposit Area modulith (today's areas/deposit/editor
-  area) and the `media` capability of the Access Area modulith (today's modules/dpe area),
+  area) and the `media` capability of the Access Area modulith (today's areas/access/dpe area),
   both planned; each implements Vitrinli's traits over its own store and owns the routes
 - **Boundary rules:** depends on no area crate and knows no area's session, rights or storage
   (**structure** via Bazel visibility once it arrives); every trait has one implementation per
@@ -450,6 +458,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   until code exists).
 - **Durable state:** none. What is servable and where is a `media` capability's tables, in its
   area's database — **single writer:** that area's `media` (target design).
+- **Fingerprint:** none
 
 ### chischtli
 
@@ -471,7 +480,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   own; the owning capabilities expose what may be read through their ports.
 - **Local-context kit:** `chischtli/CONTEXT.md`, `docs/adr/0002-areas-at-the-repository-root.md`,
   `docs/adr/0003-one-modulith-per-area.md`, `CONTEXT.md`, `areas/archive/CONTEXT.md` (the data
-  products `sync` rebuilds from), `modules/dpe/CONTEXT.md` (the reading side today)
+  products `sync` rebuilds from), `areas/access/CONTEXT.md` (the reading side today)
 - **Depends on:** nothing in this repository is expected beyond `shared-*` crates
 - **Used by:** the Access Area modulith — `sync` (writer of the archive projection), `profile`
   (writer of its settings graphs), with DPE, CPE and the SPARQL endpoint reading through
@@ -486,6 +495,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** the named graphs of each instance — **single writer per graph:** its owning
   capability (`sync`, `profile`, data creation); the Access-Area projection is disposable and
   rebuilt from snapshot plus replay, never repaired in place (target design).
+- **Fingerprint:** none
 
 ### areas/access/cpe
 
@@ -497,8 +507,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** — (none yet)
 - **Public interface:** its router, mounted by the Access Area's composition root on the area's
   origin beside DPE's routes; `cpe/ports` for anything a sibling capability needs from it.
-- **Local-context kit:** `docs/adr/0002-areas-at-the-repository-root.md`, `modules/dpe/CONTEXT.md`,
-  `modules/dpe/server/src/router.rs` (the shape to copy), `shared/metadata/src/lib.rs`,
+- **Local-context kit:** `docs/adr/0002-areas-at-the-repository-root.md`, `areas/access/CONTEXT.md`,
+  `areas/access/dpe/server/src/router.rs` (the shape to copy), `shared/metadata/src/lib.rs`,
   `docs/src/mosaic/component-api-conventions.md`, `docs/adr/0003-one-modulith-per-area.md`
 - **Depends on:** shared/metadata, shared/telemetry, modules/mosaic
   (expected); never DPE's domain, store or web crates. Two port directions, each with its own
@@ -512,6 +522,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (**docs-only** until code exists).
 - **Durable state:** its own read-side store, rebuildable from the archive's snapshot + replay
   (target design).
+- **Fingerprint:** none
 
 ## Conventions
 

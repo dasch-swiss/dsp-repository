@@ -690,7 +690,7 @@ mod tests {
     #[test]
     fn data_dir_is_unset_without_the_env_var() {
         // No default on purpose. The only plausible one is a relative path into
-        // DPE's tree (`modules/dpe/server/data`), which the editor does not own;
+        // DPE's tree (`areas/access/dpe/server/data`), which the editor does not own;
         // baking it in would let a records reader silently resolve another
         // module's directory instead of failing on an unconfigured seam.
         figment::Jail::expect_with(|_| {

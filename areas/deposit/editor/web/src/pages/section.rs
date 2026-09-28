@@ -751,7 +751,7 @@ fn proposal_findings_elsewhere(view: &SectionView<'_>) -> Markup {
 }
 
 /// The list inside [`proposal_findings_elsewhere`]'s alert. Its own function per
-/// the repo's rule on nested `html!` (`modules/dpe/CLAUDE.md`): `maudfmt` skips a
+/// the repo's rule on nested `html!` (`areas/access/dpe/CLAUDE.md`): `maudfmt` skips a
 /// block passed as a call argument and `cargo fmt` then flattens it, with `just
 /// check` green because it only verifies `maudfmt` is a no-op.
 fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
@@ -827,7 +827,7 @@ fn sign_out_notice(at: &str) -> Markup {
 }
 
 /// What a reader is told when somebody else saved the draft underneath them. A
-/// named function per the repo's rule on nested `html!` (`modules/dpe/CLAUDE.md`).
+/// named function per the repo's rule on nested `html!` (`areas/access/dpe/CLAUDE.md`).
 fn changed_notice(by: Option<&str>, at: &str) -> Markup {
     let body = html! {
         p {

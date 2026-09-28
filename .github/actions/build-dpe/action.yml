@@ -24,7 +24,7 @@ runs:
 
     - name: Build stylesheet
       shell: bash
-      # Standalone Tailwind CLI → modules/dpe/public/assets/app.<hash>.css.
+      # Standalone Tailwind CLI → areas/access/dpe/public/assets/app.<hash>.css.
       # No Node/npm needed: the CLI bundles the official plugins.
       run: just css-release
 
@@ -37,6 +37,6 @@ runs:
       run: |
         mkdir -p staging
         cp target/x86_64-unknown-linux-musl/release/dpe-server staging/
-        cp -r modules/dpe/public staging/
-        cp -r modules/dpe/server/data staging/
-        cp modules/dpe/Dockerfile staging/
+        cp -r areas/access/dpe/public staging/
+        cp -r areas/access/dpe/server/data staging/
+        cp areas/access/dpe/Dockerfile staging/

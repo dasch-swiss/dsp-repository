@@ -9,7 +9,7 @@ const serverBinary = path.resolve(
 );
 
 /** DPE's published data set, relative to `workspaceRoot`. */
-const DPE_DATA_DIR = "modules/dpe/server/data";
+const DPE_DATA_DIR = "areas/access/dpe/server/data";
 
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
@@ -39,7 +39,7 @@ export const RDU_EMAIL = "rdu@dasch.swiss";
 /** Created by `auth.setup.ts` through the RDU interface — nothing seeds it. */
 export const DEPOSITOR_EMAIL = "depositor@example.test";
 /**
- * Projects the depositor may edit. All exist in `modules/dpe/server/data/projects`.
+ * Projects the depositor may edit. All exist in `areas/access/dpe/server/data/projects`.
  *
  * One per mutating purpose, and that is not spare capacity: a draft is per
  * (user, project), so two tests editing the same project share one draft. The

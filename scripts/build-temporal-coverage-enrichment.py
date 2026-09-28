@@ -32,7 +32,7 @@ Workflow:
   3. Re-run with `--check` in CI to ensure every distinct dataset name is present.
 
 Key normalization MUST match `get_multilingual_value` in the Rust mapping
-(`modules/dpe/api-oai/src/metadata/helpers.rs`): prefer the `en` value, else the
+(`areas/access/dpe/api-oai/src/metadata/helpers.rs`): prefer the `en` value, else the
 value of the lexicographically smallest language code. Reference entries are
 keyed by their `text` field.
 
@@ -51,13 +51,13 @@ import json
 import sys
 from pathlib import Path
 
-DEFAULT_DATA_DIR = "modules/dpe/server/data"
+DEFAULT_DATA_DIR = "areas/access/dpe/server/data"
 OUTPUT_NAME = "temporal-coverage-enrichment.json"
 PERIODS_NAME = "chronontology-periods.json"
 PERIOD_URL_MARKER = "/period/"
 
 
-# --- W3CDTF formatting (mirrors modules/dpe/core/src/w3cdtf.rs) ---------------
+# --- W3CDTF formatting (mirrors areas/access/dpe/core/src/w3cdtf.rs) ---------------
 # Used only to convert authoritative ChronOntology year bounds. Free-text ranges
 # are LLM-generated and are expected to already be valid W3CDTF.
 

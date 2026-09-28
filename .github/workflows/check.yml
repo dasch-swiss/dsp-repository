@@ -109,7 +109,7 @@ jobs:
         with:
           node-version: 20
       - name: Lint DPE E2E tests
-        run: cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
+        run: cd areas/access/dpe/web-e2e-tests && npx @biomejs/biome check .
       - name: Lint Mosaic E2E tests
         run: cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
 

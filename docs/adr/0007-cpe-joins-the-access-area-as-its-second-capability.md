@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-25
 ---
 
@@ -120,8 +120,8 @@ decision.
   from `dsp-incubator/cpe` and the vendored copy of this capability takes its place, so no second engine
   is maintained; the prototype's ADRs stay as history.
 - `ARCH-MAP.md`'s planned entry for `areas/access/cpe` gains a `sync` sibling and the boundary rules above
-  (`/dune:dune-map`); `modules/dpe/CONTEXT.md` stops being the whole Access Area's vocabulary and becomes
-  `areas/access/CONTEXT.md` with one file per capability once CPE's terms arrive.
+  (`/dune:dune-map`); `areas/access/CONTEXT.md` (moved there from DPE's directory on 2026-09-28) stops
+  being DPE's vocabulary alone and splits into one file per capability once CPE's terms arrive.
 - The interaction convention the two capabilities differ on today (DPE's tab fragment writes the URL, CPE's
   swaps never do) is recorded as a per-capability rule, not unified by this record.
 

@@ -86,7 +86,7 @@ The scope names the **concern the change serves** — the crate or area whose re
 
 - **Crate scopes:** `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `shared-fair`, `shared-metadata`, `shared-telemetry`, `editor-core`, `editor-web`, `editor-server`, `editor-collector`, `mosaic-tiles`, `mosaic-playground`, `dsp-cli`
 - **Cross-cutting scopes** (changes not tied to one crate):
-  - `dpe-data` — project metadata files under `modules/dpe/server/data/`
+  - `dpe-data` — project metadata files under `areas/access/dpe/server/data/`
   - `ci` — workflows, the justfile, CI scripts
   - `deps` — dependency bumps, Dependabot, base-image updates
   - `docs` — repo-level and process documentation with no single crate owner

@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - "modules/dpe/**"
+      - "areas/access/dpe/**"
       - "shared/**"
   workflow_dispatch:
 

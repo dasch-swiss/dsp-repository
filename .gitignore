@@ -39,8 +39,8 @@ node_modules/
 .DS_Store
 
 # Generated unified DPE stylesheet (built by `just css` / `just css-release`, DEV-6642)
-modules/dpe/public/assets/app.css
-modules/dpe/public/assets/app.*.css
+areas/access/dpe/public/assets/app.css
+areas/access/dpe/public/assets/app.*.css
 
 # Generated editor stylesheet (built by `just css-editor` / `just css-editor-release`)
 areas/deposit/editor/public/assets/app.css
@@ -56,10 +56,10 @@ result-*
 /.vscode
 
 # In-memory repository caches
-modules/dpe/server/data/records/*-records.json
+areas/access/dpe/server/data/records/*-records.json
 
 # Raw ChronOntology mirror produced by scripts/fetch-chronontology-periods.py.
-# Only the slimmed projection under modules/dpe/server/data/ is committed.
+# Only the slimmed projection under areas/access/dpe/server/data/ is committed.
 /chronontology-periods.json
 
 # Python bytecode cache

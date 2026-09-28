@@ -40,7 +40,7 @@ check() {
 make_repo() {
   local dir f
   dir="$(mktemp -d "${TMPDIR:-/tmp}/datastar-delims.XXXXXX")"
-  for f in areas/deposit/editor/web modules/dpe/web; do
+  for f in areas/deposit/editor/web areas/access/dpe/web; do
     mkdir -p "$dir/$f/src"
     printf 'pub fn a() {}\n' >"$dir/$f/src/lib.rs"
   done

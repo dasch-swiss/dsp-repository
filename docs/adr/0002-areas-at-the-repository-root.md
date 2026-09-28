@@ -21,7 +21,7 @@ Mosaic, Vitrinli and Chischtli are root peers rather than area members because e
 
 Within an area, each capability is a directory named by its crate prefix, and the `{service}-{role}` crate convention of `docs/src/repo_structure.md` is unchanged: `areas/access/dpe/core` holds `dpe-core`, `areas/deposit/editor/server` holds `editor-server`. The editor keeps the name "editor" (confirmed 2026-09-16).
 
-The area's composition root (ADR-0003) is `areas/<area>/server`. While an area has one capability, that capability's `server` crate is the composition root and stays inside the capability (`areas/access/dpe/server` is `dpe-server`); it moves up to `areas/access/server` when the second capability arrives, and the capability keeps only what is its own. The area's container image is built beside its composition root: a Dockerfile there until ADR-0001 lands, an image target in the same directory afterwards. Each area carries its `CONTEXT.md` at `areas/<area>/CONTEXT.md`; while the area and its first capability coincide, that is one file (today `modules/dpe/CONTEXT.md` and `areas/deposit/editor/CONTEXT.md`, the latter moved 2026-09-24; the Archive Area's seed is already at `areas/archive/CONTEXT.md`).
+The area's composition root (ADR-0003) is `areas/<area>/server`. While an area has one capability, that capability's `server` crate is the composition root and stays inside the capability (`areas/access/dpe/server` is `dpe-server`); it moves up to `areas/access/server` when the second capability arrives, and the capability keeps only what is its own. The area's container image is built beside its composition root: a Dockerfile there until ADR-0001 lands, an image target in the same directory afterwards. Each area carries its `CONTEXT.md` at `areas/<area>/CONTEXT.md`; while the area and its first capability coincide, that is one file (today `areas/access/CONTEXT.md` and `areas/deposit/editor/CONTEXT.md`, moved 2026-09-28 and 2026-09-24; the Archive Area's seed is already at `areas/archive/CONTEXT.md`).
 
 Between areas, the rules are:
 
@@ -92,3 +92,18 @@ The editor still reaches into DPE's tree for the published data set: its tests, 
 Added to Consequences:
 
 - The gates that glob over application directories match both roots until `modules/` is gone: `check-shared-paths.sh` forbids a shared-crate path into `areas/<area>/` as it does into `modules/<module>/`, and `check-datastar-delimiters.sh`, `verify-checksums.sh` and the `eng.yaml` overrides each carry an `areas/*/*/…` glob beside their `modules/*/…` one. A glob left on `modules/` alone silently drops an application once it moves: the gates' absence checks fire only when nothing at all matches.
+
+## Amendment (2026-09-28): the Access Area half is done
+
+DPE moved from `modules/dpe/` to `areas/access/dpe/`, crate names unchanged (DEV-7396). Its `CLAUDE.md`, `README.md` and Dockerfile moved
+with it. Its `CONTEXT.md` did not stay with the capability, as the editor's did: it moved up to `areas/access/CONTEXT.md`.
+The file already described the whole Access Area, and CPE (ADR-0007) will add its terms to the same area, so putting it
+at the area level now saves a second move. The Deposit Area keeps its `CONTEXT.md` inside the editor until a second
+capability arrives there.
+
+The editor's reach into DPE's published data set changed one line per toolchain, as the 2026-09-24 amendment set up:
+`editor_core::DPE_DATA_DIR`, `DPE_DATA_DIR` in the `justfile`, the constant in the editor's Playwright config and the
+data copy in `.github/actions/build-editor`.
+
+`modules/` now holds only Mosaic. Its move to the root is the one part of this migration still open, and the gates keep
+their `modules/*/…` globs until it lands.

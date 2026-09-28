@@ -21,7 +21,7 @@
     --color-primary-950: oklch(0.2 0.0325 244.6);
     /* Default primary = the 600 stop (DaSCH Blue #336790). Re-enables the bare
        `text-primary` / `bg-primary` / `border-primary` utilities used by DPE text
-       links; without it those classes resolve to nothing (see modules/dpe/CLAUDE.md).
+       links; without it those classes resolve to nothing (see areas/access/dpe/CLAUDE.md).
        Uses the same var() aliasing as the info → secondary tokens below. */
     --color-primary: var(--color-primary-600);
 

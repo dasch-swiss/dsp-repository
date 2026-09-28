@@ -10,11 +10,11 @@ on:
       # Any DPE crate (server/core/api-oai/web), styles, assets, or the e2e suite —
       # a server-side render change must trigger the a11y job too. `shared/**`
       # covers the shared crates DPE renders through.
-      - "modules/dpe/**"
+      - "areas/access/dpe/**"
       - "shared/**"
   pull_request:
     paths:
-      - "modules/dpe/**"
+      - "areas/access/dpe/**"
       - "shared/**"
 
 concurrency:
@@ -42,16 +42,16 @@ jobs:
           node-version: 22
 
       - name: Install web-e2e-tests dependencies
-        run: cd modules/dpe/web-e2e-tests && npm install
+        run: cd areas/access/dpe/web-e2e-tests && npm install
 
       - name: Install Playwright browsers
-        run: cd modules/dpe/web-e2e-tests && npx playwright install chromium --with-deps
+        run: cd areas/access/dpe/web-e2e-tests && npx playwright install chromium --with-deps
 
       - name: Build dpe-server and stylesheet
         # `cargo build -p dpe-server --release` yields target/release/dpe-server
         # directly (the [[bin]] name), which the Playwright webServer launches.
         # `just css-release` builds the content-hashed app.css the release server
-        # discovers from modules/dpe/public/assets at startup.
+        # discovers from areas/access/dpe/public/assets at startup.
         run: |
           cargo build -p dpe-server --release
           just css-release
@@ -64,5 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-a11y-dpe
-          path: modules/dpe/web-e2e-tests/playwright-report/
+          path: areas/access/dpe/web-e2e-tests/playwright-report/
           retention-days: 7

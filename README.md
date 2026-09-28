@@ -23,7 +23,7 @@ just watch-mosaic-playground # Run Mosaic playground
 
 ## Refreshing the record data
 
-The record dumps in `modules/dpe/server/data/records/` are tracked in git and
+The record dumps in `areas/access/dpe/server/data/records/` are tracked in git and
 refreshed by hand after an API deployment changes the exported metadata. The
 token is not stored in the repo — set it yourself, then run the recipe:
 

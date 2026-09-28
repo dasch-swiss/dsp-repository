@@ -3,7 +3,7 @@
 ## Workspace Layout
 
 ```
-modules/dpe/
+areas/access/dpe/
 ├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
@@ -101,7 +101,7 @@ Imports `shared-metadata` and `dpe-core` types directly; depends on `maud` and `
 
 ### Browser telemetry
 
-`dpe-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `modules/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold.
+`dpe-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `areas/access/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold.
 
 ### `dpe-server` (server/)
 

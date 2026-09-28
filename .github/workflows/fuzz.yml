@@ -34,13 +34,13 @@ jobs:
       - name: Restore corpus cache
         uses: actions/cache@v4
         with:
-          path: modules/dpe/server/fuzz/corpus/${{ matrix.target }}
+          path: areas/access/dpe/server/fuzz/corpus/${{ matrix.target }}
           key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
           restore-keys: |
             fuzz-corpus-${{ matrix.target }}-
 
       - name: Run fuzzer (10 min budget)
-        working-directory: modules/dpe/server
+        working-directory: areas/access/dpe/server
         run: |
           cargo +nightly fuzz run ${{ matrix.target }} \
             --target x86_64-unknown-linux-gnu -- \
@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-corpus-${{ matrix.target }}
-          path: modules/dpe/server/fuzz/corpus/${{ matrix.target }}
+          path: areas/access/dpe/server/fuzz/corpus/${{ matrix.target }}
           retention-days: 30
 
       - name: Upload crash artifacts
@@ -61,6 +61,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-crashes-${{ matrix.target }}
-          path: modules/dpe/server/fuzz/artifacts/${{ matrix.target }}
+          path: areas/access/dpe/server/fuzz/artifacts/${{ matrix.target }}
           retention-days: 90
 

@@ -1,12 +1,12 @@
 //! Where DPE's published data set lives in this repository's checkout.
 //!
 //! One name per toolchain reads through here (or its `justfile`/Playwright
-//! equivalent), so a future move of `modules/dpe` changes this file alone.
+//! equivalent), so a future move of `areas/access/dpe` changes this file alone.
 
 use std::path::{Path, PathBuf};
 
 /// DPE's published data set, relative to the repository root.
-pub const DPE_DATA_DIR: &str = "modules/dpe/server/data";
+pub const DPE_DATA_DIR: &str = "areas/access/dpe/server/data";
 
 /// [`DPE_DATA_DIR`] resolved against this checkout, for tests and dev tooling.
 ///

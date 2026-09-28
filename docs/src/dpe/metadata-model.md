@@ -6,7 +6,7 @@ the now-retired `dsp-meta` repository, where it was designed as the successor to
 the earlier v1 model. The metadata has since been migrated to this repository
 and converted to v2; the model is implemented as Rust types in the
 `shared-metadata` crate (`shared/metadata/src/`), shared with the
-editor, and the data lives under `modules/dpe/server/data/`.
+editor, and the data lives under `areas/access/dpe/server/data/`.
 
 > [!NOTE]
 > **Conceptual model vs. implementation.**
@@ -617,7 +617,7 @@ collections should also be exposed as OpenAIRE datasets.
 ## Examples
 
 The following examples show the conceptual JSON shape. Real data files live under
-`modules/dpe/server/data/` and may differ in the ways noted in the **As
+`areas/access/dpe/server/data/` and may differ in the ways noted in the **As
 implemented** callouts above (e.g. the legacy `url` array form).
 
 ### Project Cluster

@@ -38,13 +38,16 @@ check() {
   fi
 }
 
-# make_repo: throwaway repo shaped like this one — service modules under
-# modules/ and areas/, shared crates at the root under shared/ — all clean. Echoes its path.
+# make_repo: throwaway repo shaped like this one — a module under modules/,
+# capabilities under areas/, shared crates at the root under shared/ — all clean.
+# Echoes its path.
 make_repo() {
   local dir f
   dir="$(mktemp -d "${TMPDIR:-/tmp}/shared-paths.XXXXXX")"
-  mkdir -p "$dir/modules/dpe/server/data"
-  printf '{}\n' >"$dir/modules/dpe/server/data/x.json"
+  mkdir -p "$dir/modules/widget/src"
+  printf 'pub fn w() {}\n' >"$dir/modules/widget/src/lib.rs"
+  mkdir -p "$dir/areas/access/dpe/server/data"
+  printf '{}\n' >"$dir/areas/access/dpe/server/data/x.json"
   mkdir -p "$dir/areas/deposit/editor/core/src"
   printf 'pub fn a() {}\n' >"$dir/areas/deposit/editor/core/src/lib.rs"
   for f in fair metadata telemetry; do
@@ -76,18 +79,18 @@ repo="$(make_repo)"
 check "a clean shared tree passes" 0 "$?"
 rm -rf "$repo"
 
-# 2. A relative path into a service module fails. From shared/metadata/src that
+# 2. A relative path into a module fails. From shared/metadata/src that
 #    is three up and back down through modules/, so the modules/ alternation is
 #    what fires.
-check "a relative include_str! into a service fails" 1 \
+check "a relative include_str! into a module fails" 1 \
   "$(gate_rc shared/metadata/src/bad.rs \
-     'const X: &str = include_str!("../../../modules/dpe/server/data/x.json");')"
+     'const X: &str = include_str!("../../../modules/widget/src/lib.rs");')"
 
 # 3. Same, one directory deeper. Fails the moment SHARED_PATHSPECS stops being a
 #    quoted array.
 check "a violation in a nested src/ subdirectory fails" 1 \
   "$(gate_rc shared/metadata/src/validators/deep.rs \
-     'const X: &str = include_str!("../../../../modules/dpe/server/data/x.json");')"
+     'const X: &str = include_str!("../../../../areas/access/dpe/server/data/x.json");')"
 
 # 4. The three shapes that must not fire, all real code in shared/.
 check "prose, routes and docs paths do not fire" 0 \
@@ -112,7 +115,7 @@ rm -rf "$repo"
 #    file is, and its pathspec is the newer half of the rule.
 check "a violation under shared testdata/ fails" 1 \
   "$(gate_rc shared/fair/testdata/schemas/refresh.sh \
-     'XSD="../../../../modules/dpe/api-oai/src/handlers/testdata/schemas/include"')"
+     'XSD="../../../../areas/access/dpe/api-oai/src/handlers/testdata/schemas/include"')"
 
 # 7. Absence is an error, not zero work.
 repo="$(make_repo)"

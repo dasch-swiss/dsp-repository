@@ -20,7 +20,7 @@ image CI publishes, under emulation.
 
 ### Data directory (a deliberate build input)
 
-The published project/person/organization set is **DPE's content**, not the editor's. Both `.github/actions/build-editor` and `just build-docker-editor` copy `modules/dpe/server/data` into the staging directory, and the Dockerfile places it at `/app/server/data`, where `EDITOR_DATA_DIR` points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.
+The published project/person/organization set is **DPE's content**, not the editor's. Both `.github/actions/build-editor` and `just build-docker-editor` copy `areas/access/dpe/server/data` into the staging directory, and the Dockerfile places it at `/app/server/data`, where `EDITOR_DATA_DIR` points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.
 
 That copy is the seam, and it is explicit on both sides. `EditorConfig` carries **no default** for `data_dir`: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via `ENV EDITOR_DATA_DIR`, local development via `just dev-editor`. Unset is a legitimate state while nothing reads records, and is reported as `<unset>` at startup rather than as an invented path.
 
@@ -179,7 +179,7 @@ Setting `EDITOR_DB_DIR` to keep accounts across restarts **turns the on-screen c
 
 ```bash
 EDITOR_RDU_EMAILS=you@dasch.swiss \
-EDITOR_DATA_DIR=modules/dpe/server/data \
+EDITOR_DATA_DIR=areas/access/dpe/server/data \
 cargo run --bin editor-server -- serve > editor.log 2>&1 &
 
 # after submitting the address at /login:

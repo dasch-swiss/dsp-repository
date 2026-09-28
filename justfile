@@ -7,7 +7,7 @@ DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
 # DPE's published data set, which the editor recipes below read from and package.
 
-DPE_DATA_DIR := "modules/dpe/server/data"
+DPE_DATA_DIR := "areas/access/dpe/server/data"
 
 # Projects whose OAI records `just fetch-records` refreshes. Add a shortcode here to track a new project.
 
@@ -47,7 +47,7 @@ install-e2e-requirements: _check-node
     # version that mismatches the installed browsers ("Executable doesn't exist"). Both packages
     # track a package-lock.json, so `ci` pins the runner to the same version the browsers match.
     cd modules/mosaic/playground-e2e-tests && npm ci && npx playwright install
-    cd modules/dpe/web-e2e-tests && npm ci && npx playwright install
+    cd areas/access/dpe/web-e2e-tests && npm ci && npx playwright install
     cd areas/deposit/editor/web-e2e-tests && npm ci && npx playwright install
 
 # Verify Node is on PATH. just runs recipes in sh, which does NOT see shell-function version managers (e.g. lazy nvm) — only real binaries on PATH. (DEV-6642)
@@ -55,8 +55,8 @@ install-e2e-requirements: _check-node
 _check-node:
     @command -v node >/dev/null 2>&1 || { echo >&2 "error: 'node' not on PATH. just runs recipes in sh, which can't see nvm's lazy shell functions — expose your default node bin on PATH for all shells (eager-load it in your shell rc, or use brew/volta/asdf). See docs/src/fundamentals/onboarding.md."; exit 1; }
 
-# Each modules/*/public/vendor/README.md table against the files it describes,
-# plus tailwind.pins for completeness.
+# Each modules/*/public/vendor/README.md and areas/*/*/public/vendor/README.md
+# table against the files it describes, plus tailwind.pins for completeness.
 
 # Verify the third-party bytes we ship or execute. Run by `just check`. (DEV-7126, DEV-6727)
 verify-checksums:
@@ -134,12 +134,12 @@ run:
 
 # Validate all data files in the default data directory
 validate-data:
-    cargo run --bin dpe-server -- validate modules/dpe/server/data
+    cargo run --bin dpe-server -- validate areas/access/dpe/server/data
 
 # Re-download and re-patch the DataCite JSON schema the DataCite JSON writer's output is shape-checked against. The script takes the XSD directory as an argument because a shared crate may not know a module's layout; this justfile may, and passes it. (DEV-7268)
 refresh-datacite-schema:
     bash shared/fair/testdata/schemas/download-schemas.sh \
-        modules/dpe/api-oai/src/handlers/testdata/schemas/include
+        areas/access/dpe/api-oai/src/handlers/testdata/schemas/include
 
 # Refresh the tracked OAI record dumps. Needs `bearer` in the environment (see README).
 [group('dpe')]
@@ -148,7 +148,7 @@ fetch-records:
     set -euo pipefail
     : "${bearer:?export bearer=\"Bearer eyJ...\"}"
     for sc in {{ RECORD_SHORTCODES }}; do
-        out=modules/dpe/server/data/records/$sc-records.json
+        out=areas/access/dpe/server/data/records/$sc-records.json
         curl -fsS -H "Authorization: $bearer" 'https://api.dasch.swiss/v3/export/resources/oai' \
             -d '{"shortcode": "'"$sc"'"}' -o "$out" -w "$out %{http_code}\n" >&2
     done
@@ -367,7 +367,7 @@ css:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --minify
+    "$bin" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --minify
 
 # Build the release stylesheet with a content-hashed filename (app.<hash>.css). (DEV-6642)
 [group('dpe')]
@@ -377,8 +377,8 @@ css-release:
     # The server discovers the name by scanning the asset dir at startup, so there
     # is no build.rs and no tracked-source edit: `git diff --exit-code` stays clean.
     bin="$(just -q _tailwind-bin)"
-    out=modules/dpe/public/assets
-    "$bin" -i modules/dpe/style/main.css -o "$out/app.css" --minify
+    out=areas/access/dpe/public/assets
+    "$bin" -i areas/access/dpe/style/main.css -o "$out/app.css" --minify
     if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
     # Write the hashed file first, then drop the stale hashed files + the unhashed
     # temp. If the copy fails, the previous hashed CSS is still in place.
@@ -393,7 +393,7 @@ dev:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --watch &
+    "$bin" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
     bacon serve
@@ -513,7 +513,7 @@ dev-otel:
     #!/usr/bin/env bash
     set -euo pipefail
     bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --watch &
+    "$bin" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
@@ -525,7 +525,7 @@ dev-otel:
 # Build Docker image for DPE
 [group('dpe')]
 build-docker-dpe:
-    docker build -f modules/dpe/Dockerfile -t dpe .
+    docker build -f areas/access/dpe/Dockerfile -t dpe .
 
 # Run DPE Docker container on port 8080
 [group('dpe')]
@@ -535,7 +535,7 @@ run-docker-dpe:
 # Run accessibility E2E tests for the DPE (requires running server on port 4000)
 [group('dpe')]
 test-a11y-dpe: _check-node
-    cd modules/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium
+    cd areas/access/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium
 
 ###################
 # Editor targets
@@ -673,7 +673,7 @@ run-docker-editor:
 
 # Lint E2E test TypeScript with Biome
 lint-e2e: _check-node
-    cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
+    cd areas/access/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
     cd areas/deposit/editor/web-e2e-tests && npx @biomejs/biome check .
 

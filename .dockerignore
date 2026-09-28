@@ -33,10 +33,10 @@ docs/book/
 **/*.snap.new
 
 # E2E tests (not needed in server build)
-modules/dpe/web-e2e-tests/
+areas/access/dpe/web-e2e-tests/
 modules/mosaic/playground-e2e-tests/
 
 # Other Docker files
 Dockerfile*
 !modules/mosaic/playground/Dockerfile
-!modules/dpe/Dockerfile
+!areas/access/dpe/Dockerfile

@@ -32,12 +32,12 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 - Use `#[tracing::instrument]` for new handler and service functions
 - Use `otel.kind = "internal"` on handler-level spans (middleware provides the server span)
 - Metric attributes must be bounded — validate against known sets, normalize dynamic values. High-cardinality data goes to structured logs only, never to metric attributes
-- Vendored JS files go in the owning module's `public/vendor/` — `modules/dpe/public/vendor/` or `areas/deposit/editor/public/vendor/` — and each has its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. The two are independent: each is updated on its own, and neither README states the other's versions. `just check` recomputes those digests and fails on drift either way (a changed file, a row without a file, a committed file without a row), so the table has to be correct, not just present. See `docs/src/security.md`.
+- Vendored JS files go in the owning module's `public/vendor/` — `areas/access/dpe/public/vendor/` or `areas/deposit/editor/public/vendor/` — and each has its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. The two are independent: each is updated on its own, and neither README states the other's versions. `just check` recomputes those digests and fails on drift either way (a changed file, a row without a file, a committed file without a row), so the table has to be correct, not just present. See `docs/src/security.md`.
 
 ## Data Conventions
 
 - Project JSON files are canonical: top-level members in `ProjectRaw`'s declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. Enforced byte-for-byte by `editor-core`'s `canonical_round_trip` test; regenerate with `CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip` rather than reordering by hand.
-- New project `temporalCoverage` values must resolve to structured dates for OAI-PMH — add each new free-text value to `modules/dpe/server/data/temporal-coverage-enrichment.json` (keyed by display text, with a W3CDTF range and `source: "llm"`). See `docs/src/dpe/oai-pmh.md` and the "Adding a Project Metadata File" section of `modules/dpe/CLAUDE.md`.
+- New project `temporalCoverage` values must resolve to structured dates for OAI-PMH — add each new free-text value to `areas/access/dpe/server/data/temporal-coverage-enrichment.json` (keyed by display text, with a W3CDTF range and `source: "llm"`). See `docs/src/dpe/oai-pmh.md` and the "Adding a Project Metadata File" section of `areas/access/dpe/CLAUDE.md`.
 
 ## Git, Commits, and Pull Requests
 

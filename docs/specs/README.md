@@ -47,7 +47,7 @@ docs/specs/
   annotated mockups). They are plan-scoped: the next spec has its own `assets/`.
 - Raster images under `docs/specs/` are stored in **Git LFS** (`.gitattributes`
   at the repo root). The rule is scoped to this folder: the DPE serves images
-  from `modules/dpe/public/assets/` straight from the tree, and those must stay
+  from `areas/access/dpe/public/assets/` straight from the tree, and those must stay
   plain files.
 
 ## Plans and PRs

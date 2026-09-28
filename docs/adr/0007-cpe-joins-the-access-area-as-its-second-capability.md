@@ -23,8 +23,9 @@ and the behaviour a visitor sees, and KDL as the authoring language (rationale a
   "one process per project" production guidance are both retired: there is one Access-Area binary, and a
   project's presentation is a route prefix inside CPE's router, not a deployment.
 - **CPE owns its own read-side store, built from `sync`, and never opens the archive projection itself.**
-  CPE declares in `cpe/ports` what it needs from the projection; `sync`, the Access Area's single writer of
-  the archive projection, implements the adapter beside its data. The port speaks archive-shaped facts as
+  The store is a derived read model under ADR-0008, CPE's own shape over the projection's facts, and this
+  clause is its first instance. CPE declares in `cpe/ports` what it needs from the projection; `sync`,
+  the Access Area's single writer of the archive projection, implements the adapter beside its data. The port speaks archive-shaped facts as
   the archive records them (classes, typed values, links, files, ordered membership), never CPE's
   presentation model. CPE's store is disposable and is rebuilt from what the port serves; nothing else
   writes it. `sync` starts at its minimum: the committed projection of one shortcode read from disk, behind

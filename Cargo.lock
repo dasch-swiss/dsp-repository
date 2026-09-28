@@ -823,6 +823,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "dpe-core",
+ "http-body-util",
  "jsonschema",
  "quick-xml",
  "serde",
@@ -830,7 +831,8 @@ dependencies = [
  "shared-fair",
  "shared-metadata",
  "tempfile",
- "tracing",
+ "tokio",
+ "tower",
 ]
 
 [[package]]

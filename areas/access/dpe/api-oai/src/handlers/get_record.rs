@@ -14,14 +14,15 @@ pub fn handle_get_record(
     record_repo: &dyn RecordRepository,
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
+    base_url: &str,
 ) -> String {
     let result = require_identifier(params)
         .and_then(|id| require_metadata_prefix(params).map(|prefix| (id, prefix)))
         .and_then(|(id, prefix)| reject_unexpected_args(params).map(|_| (id, prefix)))
         .and_then(|(id, prefix)| resolve_entity(id, repo, record_repo).map(|oai| (id, prefix, oai)))
-        .map(|(id, prefix, oai)| build_response(id, prefix, oai, clusters, lookup));
+        .map(|(id, prefix, oai)| build_response(id, prefix, oai, clusters, lookup, base_url));
 
-    result.unwrap_or_else(|err| build_error_response(err, Some("GetRecord")))
+    result.unwrap_or_else(|err| build_error_response(err, Some("GetRecord"), base_url))
 }
 
 fn require_identifier(params: &OaiParams) -> Result<&str, OaiError> {
@@ -82,13 +83,14 @@ fn build_response(
     entity: OaiEntity,
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
+    base_url: &str,
 ) -> String {
     let oai_record: OaiRecord = match entity {
         OaiEntity::Project(ref project) => to_oai_record(project, prefix, clusters, lookup),
         OaiEntity::Record(ref record) => to_oai_record_from_record(record, prefix, clusters),
     };
 
-    let mut builder = OaiXmlBuilder::new();
+    let mut builder = OaiXmlBuilder::new(base_url);
     builder.write_request("GetRecord", &[("identifier", identifier), ("metadataPrefix", prefix)]);
     builder.start_element("GetRecord");
     builder.write_record(&oai_record);
@@ -142,6 +144,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("identifier argument is required"), "got: {}", xml);
@@ -161,6 +164,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("metadataPrefix argument is required"), "got: {}", xml);
@@ -175,6 +179,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<error code=\"cannotDisseminateFormat\">"), "got: {}", xml);
     }
@@ -188,6 +193,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<error code=\"idDoesNotExist\">"), "got: {}", xml);
     }
@@ -202,6 +208,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
@@ -217,6 +224,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         let expected = golden("get_record_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -231,6 +239,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         let expected = golden("get_record_oai_datacite.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -250,6 +259,7 @@ mod tests {
             &repo_with_record(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         let expected = golden("get_record_record_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -267,6 +277,7 @@ mod tests {
             &repo_with_record(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         let expected = golden("get_record_record_oai_datacite.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -283,6 +294,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
@@ -296,6 +308,7 @@ mod tests {
             &InMemoryRecordRepository::empty(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
@@ -312,6 +325,7 @@ mod tests {
             &repo_with_record(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
@@ -328,6 +342,7 @@ mod tests {
             &repo_with_record(),
             &[],
             &incunabula_lookup(),
+            crate::DEFAULT_BASE_URL,
         );
         crate::handlers::test_utils::validate_against_schema(&xml);
     }

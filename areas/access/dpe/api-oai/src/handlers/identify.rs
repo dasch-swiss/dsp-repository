@@ -6,7 +6,7 @@ use super::{build_error_response, OaiParams};
 use crate::error::OaiError;
 use crate::xml::{OaiXmlBuilder, EARLIEST_DATESTAMP};
 
-pub fn handle_identify(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
+pub fn handle_identify(params: &OaiParams, repo: &dyn ProjectRepository, base_url: &str) -> String {
     // Identify does not accept any parameters except verb
     if params.identifier.is_some()
         || params.metadata_prefix.is_some()
@@ -18,10 +18,11 @@ pub fn handle_identify(params: &OaiParams, repo: &dyn ProjectRepository) -> Stri
         return build_error_response(
             OaiError::BadArgument("Identify does not accept any arguments".to_string()),
             Some("Identify"),
+            base_url,
         );
     }
 
-    let mut builder = OaiXmlBuilder::new();
+    let mut builder = OaiXmlBuilder::new(base_url);
     builder.write_request("Identify", &[]);
 
     let earliest = get_earliest_datestamp(repo);
@@ -70,7 +71,7 @@ mod tests {
         let mut params = make_params();
         params.set = Some("entityType:ResearchProject".to_string());
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
-        let xml = handle_identify(&params, &repo);
+        let xml = handle_identify(&params, &repo, crate::DEFAULT_BASE_URL);
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("Identify does not accept any arguments"), "got: {}", xml);
         assert!(
@@ -84,13 +85,12 @@ mod tests {
 
     #[test]
     fn identify_emits_configured_base_url_in_both_request_and_base_url() {
-        // The base URL resolves from the process-global / DPE_OAI_BASE_URL / default
-        // (here the default). It must appear in BOTH the <request> text and
-        // <baseURL>, and must not be the obsolete meta.dasch.swiss host.
+        // The base URL passed in by the caller must appear in BOTH the <request>
+        // text and <baseURL>, and must not be the obsolete meta.dasch.swiss host.
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
-        let xml = handle_identify(&params, &repo);
-        let base = crate::base_url();
+        let base = "https://repository.dasch.swiss/dpe/oai";
+        let xml = handle_identify(&params, &repo, base);
         assert!(xml.contains(&format!("<baseURL>{base}</baseURL>")), "got: {xml}");
         assert!(
             xml.contains(&format!("\">{base}</request>")),
@@ -105,7 +105,7 @@ mod tests {
     fn golden_identify_response() {
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
-        let xml = handle_identify(&params, &repo);
+        let xml = handle_identify(&params, &repo, crate::DEFAULT_BASE_URL);
         let expected = golden("identify.xml", &xml);
         assert_eq!(normalize(&xml), expected);
     }
@@ -114,7 +114,7 @@ mod tests {
     fn golden_identify_empty_repo_response() {
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![]);
-        let xml = handle_identify(&params, &repo);
+        let xml = handle_identify(&params, &repo, crate::DEFAULT_BASE_URL);
         let expected = golden("identify_empty_repo.xml", &xml);
         assert_eq!(normalize(&xml), expected);
     }
@@ -125,7 +125,7 @@ mod tests {
     fn identify_response_is_valid_oai_pmh() {
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
-        let xml = handle_identify(&params, &repo);
+        let xml = handle_identify(&params, &repo, crate::DEFAULT_BASE_URL);
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
@@ -133,7 +133,7 @@ mod tests {
     fn identify_empty_repo_response_is_valid_oai_pmh() {
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![]);
-        let xml = handle_identify(&params, &repo);
+        let xml = handle_identify(&params, &repo, crate::DEFAULT_BASE_URL);
         crate::handlers::test_utils::validate_against_schema(&xml);
     }
 }

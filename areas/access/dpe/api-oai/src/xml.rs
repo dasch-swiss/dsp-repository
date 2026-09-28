@@ -27,11 +27,14 @@ const DATACITE_SCHEMA_LOC: &str =
 
 pub struct OaiXmlBuilder {
     writer: Writer<Cursor<Vec<u8>>>,
+    base_url: String,
 }
 
 impl OaiXmlBuilder {
-    /// Creates a new XML builder with the OAI-PMH root element.
-    pub fn new() -> Self {
+    /// Creates a new XML builder with the OAI-PMH root element. `base_url` is emitted
+    /// verbatim in `<request>` text and `<baseURL>` — the caller (an `OaiState`) has
+    /// already applied any default/normalisation.
+    pub fn new(base_url: &str) -> Self {
         let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
 
         writer
@@ -51,11 +54,17 @@ impl OaiXmlBuilder {
         writer.write_event(Event::Text(BytesText::new(&response_date))).expect("write");
         writer.write_event(Event::End(BytesEnd::new("responseDate"))).expect("write");
 
-        Self { writer }
+        Self { writer, base_url: base_url.to_string() }
     }
 
     fn write(&mut self, event: Event) {
         self.writer.write_event(event).expect("Failed to write XML event");
+    }
+
+    fn write_base_url(&mut self) {
+        self.writer
+            .write_event(Event::Text(BytesText::new(&self.base_url)))
+            .expect("Failed to write XML event");
     }
 
     pub fn start_element(&mut self, name: &str) {
@@ -97,7 +106,7 @@ impl OaiXmlBuilder {
             request.push_attribute((*key, *value));
         }
         self.write(Event::Start(request));
-        self.write(Event::Text(BytesText::new(crate::base_url())));
+        self.write_base_url();
         self.end_element("request");
     }
 
@@ -127,7 +136,7 @@ impl OaiXmlBuilder {
     /// Writes the request element for badVerb error responses (no verb attribute).
     pub fn write_error_request(&mut self) {
         self.start_element("request");
-        self.write(Event::Text(BytesText::new(crate::base_url())));
+        self.write_base_url();
         self.end_element("request");
     }
 
@@ -136,7 +145,7 @@ impl OaiXmlBuilder {
         let mut request = BytesStart::new("request");
         request.push_attribute(("verb", verb));
         self.write(Event::Start(request));
-        self.write(Event::Text(BytesText::new(crate::base_url())));
+        self.write_base_url();
         self.end_element("request");
     }
 
@@ -150,7 +159,9 @@ impl OaiXmlBuilder {
     pub fn write_identify(&mut self, earliest_datestamp: &str) {
         self.start_element("Identify");
         self.write_element("repositoryName", "DaSCH Service Platform Repository");
-        self.write_element("baseURL", crate::base_url());
+        self.start_element("baseURL");
+        self.write_base_url();
+        self.end_element("baseURL");
         self.write_element("protocolVersion", "2.0");
         self.write_element("adminEmail", "info@dasch.swiss");
         self.write_element("earliestDatestamp", earliest_datestamp);
@@ -553,11 +564,5 @@ impl OaiXmlBuilder {
     pub fn finish(mut self) -> String {
         self.write(Event::End(BytesEnd::new("OAI-PMH")));
         String::from_utf8(self.writer.into_inner().into_inner()).expect("Invalid UTF-8 in XML output")
-    }
-}
-
-impl Default for OaiXmlBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }

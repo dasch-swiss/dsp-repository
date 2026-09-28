@@ -45,7 +45,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `project_by_shortcode`, `cover_image_url`, `ClusterRaw`, `ClusterRef`, `CollectionRef`,
   `ProjectRepository` / `FsProjectRepository`, `RecordRepository` / `FsRecordRepository`,
   `OaiRecord`, `CachedContributorLookup`, `resolve_inputs`, `records_for_shortcode`,
-  `project_oai_identifier`, `oai_handler`, `set_base_url`, `build_router`,
+  `project_oai_identifier`, `oai_handler`, `OaiState`, `RenderContext`, `build_router`,
   `tab_fragment_handler`, `search_fragment_handler`, `record_file_handler`, `HeadExtras`,
   `landing_page` / `LandingPage` / `render`, `get_data_dir` / `set_data_dir`
 - **Public interface:** the HTTP routes of `dpe-server` (`/dpe/projects`, `/dpe/projects/{id}`,

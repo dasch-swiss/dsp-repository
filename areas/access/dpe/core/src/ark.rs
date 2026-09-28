@@ -37,10 +37,9 @@ static ARK_RESOLVER_BASE_URL: OnceLock<Option<String>> = OnceLock::new();
 
 /// Sets the ARK resolver origin at startup, before any cache is populated.
 ///
-/// A `OnceLock` set from dpe-server's `serve()`, beside `set_data_dir`, `set_public_dir` and
-/// `set_show_placeholder_values` — the last of which is already deployment
-/// configuration (`DPE_SHOW_PLACEHOLDER_VALUES`) changing how corpus data is
-/// presented. This is a fourth of that kind, not a new kind.
+/// A `OnceLock` set from dpe-server's `serve()`, beside `set_data_dir` and
+/// `set_public_dir`, all deployment configuration for how the corpus is loaded
+/// and presented. This is a third of that kind, not a new kind.
 ///
 /// It is **not** the rule ADR-0005 states about a process-global. That rule is
 /// about the public base URL DPE builds its own URLs from, which stays in

@@ -14,10 +14,11 @@ use permalink::permalink;
 use shared_metadata::project::ProjectStatus;
 
 use crate::components::{placeholder_value, should_render_value};
+use crate::RenderContext;
 
 /// The project-detail sidebar: citation block, data access, legal info, contact,
 /// timeline, funding, and the data-management plan link.
-pub fn project_sidebar(proj: &Project) -> Markup {
+pub fn project_sidebar(proj: &Project, ctx: &RenderContext) -> Markup {
     html! {
         div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 lg:w-96"
         {
@@ -32,7 +33,7 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                     (access_rights_section(&proj.access_rights))
                 }
 
-                @if !proj.legal_info.is_empty() { (legal_info(&proj.legal_info)) }
+                @if !proj.legal_info.is_empty() { (legal_info(&proj.legal_info, ctx)) }
 
                 @if let Some(ids) = proj.contact_point.as_ref().filter(|v| !v.is_empty()) {
                     div { (contact_section(ids)) }
@@ -43,8 +44,12 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                     div class="dpe-subtitle" { "Period" }
                     div {
                         @if shared_metadata::is_placeholder(&proj.end_date) {
-                            @if should_render_value(&proj.end_date) {
-                                span { (proj.start_date) " – " (placeholder_value(&proj.end_date)) }
+                            @if should_render_value(&proj.end_date, ctx) {
+                                span {
+                                    (proj.start_date)
+                                    " – "
+                                    (placeholder_value(&proj.end_date, ctx))
+                                }
                             } @else {
                                 span { (proj.start_date) }
                             }
@@ -66,7 +71,7 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                 }
                 div class="dpe-divider" {}
                 h3 class="dpe-title" { "Funding" }
-                (funding_section(&proj.funding))
+                (funding_section(&proj.funding, ctx))
 
                 @if let Some(dmp) = &proj.data_management_plan {
                     div {
@@ -94,7 +99,7 @@ mod tests {
 
     #[test]
     fn renders_cite_access_timeline_and_funding() {
-        let out = project_sidebar(&sample_project()).into_string();
+        let out = project_sidebar(&sample_project(), &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("Cite this Project"), "{out}");
         assert!(out.contains("Permalink"), "{out}");
         assert!(out.contains("Citation"), "{out}");
@@ -107,7 +112,7 @@ mod tests {
 
     #[test]
     fn renders_period_range_for_real_dates() {
-        let out = project_sidebar(&sample_project()).into_string();
+        let out = project_sidebar(&sample_project(), &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("2020-01-01 – 2024-12-31"), "period range: {out}");
     }
 }

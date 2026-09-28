@@ -9,6 +9,9 @@
 pub mod components;
 pub mod domain;
 pub mod pages;
+mod render_context;
+
+pub use render_context::RenderContext;
 
 #[cfg(test)]
 pub(crate) mod test_support;

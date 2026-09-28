@@ -446,9 +446,13 @@ mod tests {
             if let Some(link) = headers.get(header::LINK) {
                 out.push_str(link.to_str().expect("ascii"));
             }
+            let ctx = dpe_web::RenderContext { show_placeholder_values: state.show_placeholder_values };
             out.push_str(
-                &dpe_web::pages::project::components::project_sidebar::project_sidebar(&Project::from(raw.clone()))
-                    .into_string(),
+                &dpe_web::pages::project::components::project_sidebar::project_sidebar(
+                    &Project::from(raw.clone()),
+                    &ctx,
+                )
+                .into_string(),
             );
             out.push_str(&serde_json::to_string(raw).expect("the wire contract should serialise"));
             out
@@ -532,7 +536,8 @@ mod tests {
                 .into_iter()
                 .find(|raw| raw.shortcode == "0803")
                 .expect("0803 is committed");
-            let html = dpe_web::pages::project::components::project_sidebar::project_sidebar(&Project::from(raw))
+            let ctx = dpe_web::RenderContext { show_placeholder_values: false };
+            let html = dpe_web::pages::project::components::project_sidebar::project_sidebar(&Project::from(raw), &ctx)
                 .into_string();
             assert!(html.contains(&format!(r#"href="{PREVIEW}/ark:/72163/1/0803""#)), "href: {html}");
             assert!(
@@ -802,7 +807,10 @@ mod tests {
         crate::router::build_router(
             test_state(),
             NO_PUBLIC_DIR.as_ref(),
-            crate::router::rate_limited_router_with(tower::layer::util::Identity::new()),
+            crate::router::rate_limited_router_with(
+                dpe_api_oai::OaiState::new(""),
+                tower::layer::util::Identity::new(),
+            ),
         )
     }
 

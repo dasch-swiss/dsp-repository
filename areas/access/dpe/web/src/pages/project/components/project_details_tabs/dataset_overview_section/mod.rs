@@ -18,6 +18,8 @@ use mosaic_tiles::ComponentBuilder;
 use publication_year::publication_year;
 use type_of_data_section::type_of_data_section;
 
+use crate::RenderContext;
+
 /// Shared chip class strings for the overview tab. Kept as single literals here
 /// (rather than duplicated per section) so Tailwind still scans them and the
 /// styling can't drift between sections.
@@ -29,7 +31,7 @@ pub(super) const CHIP_NEUTRAL: &str =
 /// The "Overview" tab panel: abstract, type of data, data languages,
 /// publication year, keywords, disciplines, coverage, clusters, collections,
 /// documentation / additional material, and provenance.
-pub fn dataset_overview_section(proj: &Project) -> Markup {
+pub fn dataset_overview_section(proj: &Project, ctx: &RenderContext) -> Markup {
     let all_keywords: Vec<String> = proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
     let data_languages: Vec<String> = proj
         .data_language
@@ -73,7 +75,7 @@ pub fn dataset_overview_section(proj: &Project) -> Markup {
                 }
             }
             (disciplines_section(&proj.disciplines))
-            (coverage_section(&proj.temporal_coverage, &proj.spatial_coverage))
+            (coverage_section(&proj.temporal_coverage, &proj.spatial_coverage, ctx))
             (link_card_section("Part of Cluster", &cluster_items, false))
             (link_card_section("Collections", &collection_items, false))
             @if let Some(docs) = proj.documentation_material.as_ref().filter(|d| !d.is_empty()) {
@@ -103,7 +105,8 @@ mod tests {
 
     #[test]
     fn renders_overview_sections_from_project() {
-        let out = dataset_overview_section(&sample_project()).into_string();
+        let out = dataset_overview_section(&sample_project(), &RenderContext { show_placeholder_values: false })
+            .into_string();
         assert!(out.contains("Abstract"), "{out}");
         assert!(out.contains("An abstract of the sample project."), "abstract value: {out}");
         assert!(out.contains("Type of Data"), "{out}");

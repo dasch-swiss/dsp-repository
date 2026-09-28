@@ -9,19 +9,32 @@ mod metadata;
 mod resumption;
 mod xml;
 
-use std::sync::OnceLock;
-
 pub use handlers::oai_handler;
 pub use metadata::project_oai_identifier;
 
-/// Fallback OAI-PMH base URL when neither [`set_base_url`] nor `DPE_OAI_BASE_URL` is set.
+/// Fallback OAI-PMH base URL when [`OaiState::new`] is given an empty string.
 /// The production canonical endpoint; mirrors the `DpeConfig::oai_base_url` default.
 const DEFAULT_BASE_URL: &str = "https://repository.dasch.swiss/dpe/oai";
 
-static BASE_URL: OnceLock<String> = OnceLock::new();
+/// The OAI-PMH handler's state: the public base URL emitted as `baseURL` and in
+/// `<request>` elements. Built once by the composition root and handed to
+/// `oai_handler` through axum's `State` extractor — never a process-global.
+#[derive(Clone)]
+pub struct OaiState {
+    pub base_url: String,
+}
+
+impl OaiState {
+    /// Applies the empty-to-default and trailing-slash normalisation exactly
+    /// once, at construction.
+    pub fn new(configured: &str) -> Self {
+        Self {
+            base_url: resolve_url(Some(configured.to_string()), DEFAULT_BASE_URL),
+        }
+    }
+}
 
 /// Strips any trailing slash so callers can concatenate a path unconditionally.
-/// Pure helper so the precedence is unit-testable without touching the process-global.
 fn resolve_url(explicit: Option<String>, default: &str) -> String {
     explicit
         .filter(|s| !s.is_empty())
@@ -30,40 +43,21 @@ fn resolve_url(explicit: Option<String>, default: &str) -> String {
         .to_string()
 }
 
-/// Sets the public OAI-PMH base URL at startup. Must be called before the first request.
-/// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops), matching
-/// `dpe_core::set_data_dir`.
-pub fn set_base_url(url: &str) {
-    if BASE_URL.set(resolve_url(Some(url.to_string()), DEFAULT_BASE_URL)).is_err() {
-        tracing::warn!(new = url, current = %base_url(), "set_base_url called again but base URL is already set");
-    }
-}
-
-/// The public OAI-PMH base URL emitted as `baseURL` and in `<request>` elements.
-///
-/// Priority: OnceLock (set by dpe-server's `serve()` from `DpeConfig`) → `DPE_OAI_BASE_URL` env var
-/// → [`DEFAULT_BASE_URL`]. The env fallback keeps the value correct in contexts that do not
-/// call [`set_base_url`] (e.g. tests).
-pub(crate) fn base_url() -> &'static str {
-    BASE_URL.get_or_init(|| resolve_url(std::env::var("DPE_OAI_BASE_URL").ok(), DEFAULT_BASE_URL))
-}
-
 #[cfg(test)]
-mod base_url_tests {
-    use super::{resolve_url, DEFAULT_BASE_URL};
+mod oai_state_tests {
+    use super::{OaiState, DEFAULT_BASE_URL};
 
     #[test]
     fn explicit_value_is_used() {
         assert_eq!(
-            resolve_url(Some("https://api.dev.dasch.swiss/dpe/oai".to_string()), DEFAULT_BASE_URL),
+            OaiState::new("https://api.dev.dasch.swiss/dpe/oai").base_url,
             "https://api.dev.dasch.swiss/dpe/oai"
         );
     }
 
     #[test]
-    fn empty_or_absent_falls_back_to_default() {
-        assert_eq!(resolve_url(None, DEFAULT_BASE_URL), DEFAULT_BASE_URL);
-        assert_eq!(resolve_url(Some(String::new()), DEFAULT_BASE_URL), DEFAULT_BASE_URL);
+    fn empty_falls_back_to_default() {
+        assert_eq!(OaiState::new("").base_url, DEFAULT_BASE_URL);
     }
 
     #[test]
@@ -75,7 +69,7 @@ mod base_url_tests {
     #[test]
     fn trailing_slash_is_stripped() {
         assert_eq!(
-            resolve_url(Some("https://repository.dasch.swiss/dpe/oai/".to_string()), DEFAULT_BASE_URL),
+            OaiState::new("https://repository.dasch.swiss/dpe/oai/").base_url,
             "https://repository.dasch.swiss/dpe/oai"
         );
     }

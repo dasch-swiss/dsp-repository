@@ -5,6 +5,7 @@ use shared_metadata::project::{Funding, Grant};
 use super::super::info_card::info_card;
 use super::super::organization_name::organization_name;
 use crate::components::placeholder_value;
+use crate::RenderContext;
 
 /// A single grant rendered inside an `info_card`: its funders, grant number,
 /// name, and an optional external "More info" link.
@@ -36,7 +37,7 @@ fn grant_card(grant: &Grant) -> Markup {
 }
 
 /// The funding block: a list of grant cards, or a free-text funding statement.
-pub fn funding_section(funding: &Funding) -> Markup {
+pub fn funding_section(funding: &Funding, ctx: &RenderContext) -> Markup {
     html! {
         div {
             @match funding {
@@ -47,7 +48,7 @@ pub fn funding_section(funding: &Funding) -> Markup {
                     }
                 }
                 Funding::Text(text) => {
-                    @if shared_metadata::is_placeholder(text) { (placeholder_value(text)) } @else {
+                    @if shared_metadata::is_placeholder(text) { (placeholder_value(text, ctx)) } @else {
                         div class="text-neutral-500" { (text) }
                     }
                 }
@@ -70,7 +71,7 @@ mod tests {
             name: Some("Big Grant".to_string()),
             url: Some("https://example.org/grant".to_string()),
         }]);
-        let out = funding_section(&funding).into_string();
+        let out = funding_section(&funding, &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("Grants"), "{out}");
         assert!(out.contains("Grant: 12345"), "{out}");
         assert!(out.contains("Big Grant"), "{out}");
@@ -81,7 +82,11 @@ mod tests {
 
     #[test]
     fn free_text_funding_renders() {
-        let out = funding_section(&Funding::Text("Self-funded".to_string())).into_string();
+        let out = funding_section(
+            &Funding::Text("Self-funded".to_string()),
+            &RenderContext { show_placeholder_values: false },
+        )
+        .into_string();
         assert!(out.contains("Self-funded"), "{out}");
     }
 }

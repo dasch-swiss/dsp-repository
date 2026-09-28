@@ -5,6 +5,7 @@ use shared_metadata::project::LegalInfo as LegalInfoData;
 use super::super::info_card::info_card;
 use super::super::person::{affiliation_name, person};
 use crate::components::{placeholder_value, should_render_value};
+use crate::RenderContext;
 
 /// Render an entity name (person or organization) from the in-process caches,
 /// by ID. Falls back to the raw ID when not found or not an entity reference.
@@ -32,17 +33,17 @@ fn entity_name(id: &str) -> Markup {
 
 /// The legal-info block: license (CC badge or link), copyright holder, and
 /// authorship. Placeholder values are hidden in production, shown red in dev.
-pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
+pub fn legal_info(legal_info: &[LegalInfoData], ctx: &RenderContext) -> Markup {
     html! {
         @for info in legal_info {
             @let license_is_placeholder = shared_metadata::is_placeholder(
                 &info.license.license_identifier,
             ) || shared_metadata::is_placeholder(&info.license.license_uri);
             @if license_is_placeholder {
-                @if should_render_value(&info.license.license_identifier) {
+                @if should_render_value(&info.license.license_identifier, ctx) {
                     div {
                         div class="dpe-subtitle" { "License" }
-                        (placeholder_value(&info.license.license_identifier))
+                        (placeholder_value(&info.license.license_identifier, ctx))
                     }
                 }
             } @else {
@@ -82,10 +83,10 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
             }
 
             @if shared_metadata::is_placeholder(&info.copyright_holder) {
-                @if should_render_value(&info.copyright_holder) {
+                @if should_render_value(&info.copyright_holder, ctx) {
                     div {
                         h3 class="dpe-subtitle" { "Copyright" }
-                        (placeholder_value(&info.copyright_holder))
+                        (placeholder_value(&info.copyright_holder, ctx))
                     }
                 }
             } @else {
@@ -100,14 +101,14 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
                     .authorship
                     .iter()
                     .map(String::as_str)
-                    .filter(|&id| should_render_value(id))
+                    .filter(|&id| should_render_value(id, ctx))
                     .collect();
                 @if !ids.is_empty() {
                     div class="dpe-subtitle" { "Authorship" }
                     div {
                         @for id in ids {
                             @if shared_metadata::is_placeholder(id) {
-                                div { (placeholder_value(id)) }
+                                div { (placeholder_value(id, ctx)) }
                             } @else {
                                 div { (entity_name(id)) }
                             }
@@ -221,7 +222,7 @@ mod tests {
             "https://creativecommons.org/licenses/by/4.0/",
             "DaSCH",
         )];
-        let out = legal_info(&info).into_string();
+        let out = legal_info(&info, &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("/assets/images/cc-licenses/by-4.0.svg"), "{out}");
         assert!(out.contains("(2024-01-01)"), "license date: {out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
@@ -231,7 +232,7 @@ mod tests {
     #[test]
     fn non_cc_license_renders_link() {
         let info = vec![legal("MIT", "https://opensource.org/license/mit", "DaSCH")];
-        let out = legal_info(&info).into_string();
+        let out = legal_info(&info, &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains(r#"href="https://opensource.org/license/mit""#), "{out}");
         assert!(out.contains("MIT"), "{out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
@@ -245,7 +246,7 @@ mod tests {
             "https://creativecommons.org/licenses/by/4.0/",
             "ACME Corp",
         )];
-        let out = legal_info(&info).into_string();
+        let out = legal_info(&info, &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("Copyright"), "{out}");
         assert!(out.contains("ACME Corp"), "{out}");
         assert!(out.contains("Authorship"), "{out}");

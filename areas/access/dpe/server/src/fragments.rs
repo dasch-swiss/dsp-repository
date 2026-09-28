@@ -7,7 +7,7 @@
 
 use std::convert::Infallible;
 
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::sse::{Event, Sse};
 use axum::response::IntoResponse;
@@ -22,6 +22,8 @@ use maud::html;
 use mosaic_tiles::icon::{icon, IconSearch};
 use serde::Deserialize;
 use shared_metadata::project::is_valid_shortcode;
+
+use crate::shell::AppState;
 
 #[derive(Deserialize)]
 pub struct TabParams {
@@ -45,6 +47,7 @@ pub struct TabParams {
     )
 )]
 pub async fn tab_fragment_handler(
+    State(state): State<AppState>,
     Path(params): Path<TabParams>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, impl IntoResponse> {
     let TabParams { id, tab } = params;
@@ -74,7 +77,8 @@ pub async fn tab_fragment_handler(
     };
 
     // Render the `#project-tabs` morph root (the same renderer the full page uses)
-    let html = project_tabs(&project, &contributors, &tab, has_publications_tab).into_string();
+    let ctx = dpe_web::RenderContext { show_placeholder_values: state.show_placeholder_values };
+    let html = project_tabs(&project, &contributors, &tab, has_publications_tab, &ctx).into_string();
 
     let patch = PatchElements::new(html).selector("#project-tabs").use_view_transition(true);
 
@@ -292,14 +296,19 @@ mod tests {
             dpe_core::set_data_dir(&data_dir);
             // Same reason as router.rs: the public dir is not the test cwd.
             dpe_core::set_public_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../public"));
-            // Show placeholders in tests to exercise the red-styled rendering path
-            dpe_core::set_show_placeholder_values(true);
         });
     }
 
     fn test_app() -> Router {
         init_test_data();
-        Router::new().route("/dpe/projects/{id}/tab/{tab}", get(tab_fragment_handler))
+        // Show placeholders in tests to exercise the red-styled rendering path.
+        let state = AppState {
+            show_placeholder_values: true,
+            ..crate::test_support::test_state()
+        };
+        Router::new()
+            .route("/dpe/projects/{id}/tab/{tab}", get(tab_fragment_handler))
+            .with_state(state)
     }
 
     #[tokio::test]
@@ -467,8 +476,9 @@ mod tests {
         let project = dpe_core::project_cache::project_by_shortcode("0803")
             .expect("project 0803 missing in test data")
             .clone();
+        let ctx = dpe_web::RenderContext { show_placeholder_values: true };
         let page_html =
-            dpe_web::pages::project::components::project_details::project_details(&project, &[], "overview")
+            dpe_web::pages::project::components::project_details::project_details(&project, &[], "overview", &ctx)
                 .into_string();
         let page_open_tag = project_tabs_open_tag(&page_html);
 
@@ -522,7 +532,8 @@ mod tests {
     //     FundingSection, EntityName, OrganizationName, Person, AffiliationName) ---
 
     fn render_project_sidebar(project: &Project) -> String {
-        dpe_web::pages::project::components::project_sidebar::project_sidebar(project).into_string()
+        let ctx = dpe_web::RenderContext { show_placeholder_values: true };
+        dpe_web::pages::project::components::project_sidebar::project_sidebar(project, &ctx).into_string()
     }
 
     /// Snapshot the sidebar for a real project (0803) — exercises `person`

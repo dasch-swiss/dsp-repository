@@ -9,6 +9,8 @@ use maud::{html, Markup, PreEscaped};
 use mosaic_tiles::icon::{Document, IconData, Info, People};
 use publication_tab::publication_tab;
 
+use crate::RenderContext;
+
 /// Whether the project has content for a publications tab (at least one
 /// publication). The abstract lives in the Overview tab, so it does not count.
 pub fn has_publications(project: &Project) -> bool {
@@ -30,6 +32,7 @@ pub fn project_tabs(
     contributors: &[ResolvedContributor],
     active_tab: &str,
     has_publications_tab: bool,
+    ctx: &RenderContext,
 ) -> Markup {
     let shortcode = &proj.shortcode;
     html! {
@@ -74,7 +77,7 @@ pub fn project_tabs(
                 @if active_tab == "publications" && has_publications_tab {
                     (publication_tab(proj.publications.as_deref()))
                 } @else if active_tab == "contributors" { (attributions_section(contributors)) } @else {
-                    (dataset_overview_section(proj))
+                    (dataset_overview_section(proj, ctx))
                 }
             }
         }
@@ -124,7 +127,14 @@ mod tests {
 
     #[test]
     fn renders_morph_root_with_aria_roles() {
-        let out = project_tabs(&sample_project(), &[], "overview", true).into_string();
+        let out = project_tabs(
+            &sample_project(),
+            &[],
+            "overview",
+            true,
+            &RenderContext { show_placeholder_values: false },
+        )
+        .into_string();
         assert!(out.contains(r#"id="project-tabs""#), "morph root: {out}");
         assert!(out.contains(r#"role="tablist""#), "{out}");
         assert!(out.contains(r#"role="tab""#), "{out}");
@@ -133,22 +143,50 @@ mod tests {
 
     #[test]
     fn marks_active_tab_selected() {
-        let out = project_tabs(&sample_project(), &[], "overview", false).into_string();
+        let out = project_tabs(
+            &sample_project(),
+            &[],
+            "overview",
+            false,
+            &RenderContext { show_placeholder_values: false },
+        )
+        .into_string();
         assert!(out.contains(r#"id="tab-overview" aria-selected="true""#), "{out}");
         assert!(out.contains(r#"id="tab-contributors" aria-selected="false""#), "{out}");
     }
 
     #[test]
     fn publications_tab_shown_only_when_available() {
-        let with = project_tabs(&sample_project(), &[], "overview", true).into_string();
+        let with = project_tabs(
+            &sample_project(),
+            &[],
+            "overview",
+            true,
+            &RenderContext { show_placeholder_values: false },
+        )
+        .into_string();
         assert!(with.contains("tab-publications"), "{with}");
-        let without = project_tabs(&sample_project(), &[], "overview", false).into_string();
+        let without = project_tabs(
+            &sample_project(),
+            &[],
+            "overview",
+            false,
+            &RenderContext { show_placeholder_values: false },
+        )
+        .into_string();
         assert!(!without.contains("tab-publications"), "{without}");
     }
 
     #[test]
     fn tab_link_carries_both_no_js_href_and_datastar_get() {
-        let out = project_tabs(&sample_project(), &[], "overview", false).into_string();
+        let out = project_tabs(
+            &sample_project(),
+            &[],
+            "overview",
+            false,
+            &RenderContext { show_placeholder_values: false },
+        )
+        .into_string();
         assert!(
             out.contains(r#"href="/dpe/projects/0ABC?tab=contributors""#),
             "no-JS href: {out}"

@@ -4,20 +4,25 @@ use shared_metadata::project::TemporalCoverage;
 
 use super::CHIP_PRIMARY;
 use crate::components::{placeholder_value, should_render_value};
+use crate::RenderContext;
 
 /// Temporal + spatial coverage chips. Reference values that are placeholders
 /// render via [`placeholder_value`] (hidden in production); real references link
 /// out with a tooltip of the URL. Sections with no renderable values are omitted.
-pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage: &[AuthorityFileReference]) -> Markup {
+pub fn coverage_section(
+    temporal_coverage: &[TemporalCoverage],
+    spatial_coverage: &[AuthorityFileReference],
+    ctx: &RenderContext,
+) -> Markup {
     let temporal: Vec<&TemporalCoverage> = temporal_coverage
         .iter()
         .filter(|t| match t {
             TemporalCoverage::Text(_) => true,
-            TemporalCoverage::Reference(r) => should_render_value(&r.url),
+            TemporalCoverage::Reference(r) => should_render_value(&r.url, ctx),
         })
         .collect();
     let spatial: Vec<&AuthorityFileReference> =
-        spatial_coverage.iter().filter(|s| should_render_value(&s.url)).collect();
+        spatial_coverage.iter().filter(|s| should_render_value(&s.url, ctx)).collect();
 
     html! {
         @if !temporal.is_empty() {
@@ -36,7 +41,7 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                             }
                             TemporalCoverage::Reference(r) => {
                                 @if shared_metadata::is_placeholder(&r.url) {
-                                    (placeholder_value(&r.url))
+                                    (placeholder_value(&r.url, ctx))
                                 } @else {
                                     @let label = r.text.clone().unwrap_or_else(|| r.url.clone());
                                     a   href=(r.url)
@@ -59,7 +64,9 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                 h3 class="dpe-subtitle" { "Spatial Coverage" }
                 div class="flex flex-wrap gap-1.5" {
                     @for s in spatial {
-                        @if shared_metadata::is_placeholder(&s.url) { (placeholder_value(&s.url)) } @else {
+                        @if shared_metadata::is_placeholder(&s.url) {
+                            (placeholder_value(&s.url, ctx))
+                        } @else {
                             @let label = s.text.clone().unwrap_or_else(|| s.url.clone());
                             a   href=(s.url)
                                 target="_blank"
@@ -88,7 +95,7 @@ mod tests {
             url: "https://chronontology.dainst.org/period/x".to_string(),
             text: Some("Bronze Age".to_string()),
         })];
-        let out = coverage_section(&temporal, &[]).into_string();
+        let out = coverage_section(&temporal, &[], &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("Temporal Coverage"), "{out}");
         assert!(out.contains(r#"href="https://chronontology.dainst.org/period/x""#), "{out}");
         assert!(out.contains(r#"data-tip="https://chronontology.dainst.org/period/x""#), "{out}");
@@ -106,7 +113,7 @@ mod tests {
             url: "https://www.geonames.org/1".to_string(),
             text: Some("Rome".to_string()),
         }];
-        let out = coverage_section(&[], &spatial).into_string();
+        let out = coverage_section(&[], &spatial, &RenderContext { show_placeholder_values: false }).into_string();
         assert!(out.contains("Spatial Coverage"), "{out}");
         assert!(out.contains("Rome"), "{out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
@@ -116,6 +123,9 @@ mod tests {
 
     #[test]
     fn empty_renders_nothing() {
-        assert_eq!(coverage_section(&[], &[]).into_string(), "");
+        assert_eq!(
+            coverage_section(&[], &[], &RenderContext { show_placeholder_values: false }).into_string(),
+            ""
+        );
     }
 }

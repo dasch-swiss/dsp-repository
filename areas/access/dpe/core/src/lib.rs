@@ -37,10 +37,7 @@ pub use project::{Project, VALID_TABS};
 pub use project_cache::all_projects;
 pub use project_repository::{FsProjectRepository, ProjectRepository};
 pub use record_repository::{FsRecordRepository, RecordRepository};
-pub use utils::{
-    get_data_dir, get_public_dir, lang_value, language_display_name, set_data_dir, set_public_dir,
-    set_show_placeholder_values, show_placeholder_values,
-};
+pub use utils::{get_data_dir, get_public_dir, lang_value, language_display_name, set_data_dir, set_public_dir};
 
 /// Everything resolving a project's metadata needs that DPE owns: the
 /// contributor lookup and the two temporal-coverage tables, all three backed by

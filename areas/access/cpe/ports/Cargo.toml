@@ -1,0 +1,5 @@
+[package]
+name = "cpe-ports"
+version.workspace = true
+edition = "2021"
+publish = false

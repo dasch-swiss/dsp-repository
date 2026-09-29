@@ -126,8 +126,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
 - **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
   `/healthz` and `POST /telemetry/collect` (untraced), plus every route DPE's router carries. The
-  Docker image stays `daschswiss/dpe` and also ships the binary as `/app/dpe-server` until
-  ops-deploy's healthcheck switches.
+  Docker image stays `daschswiss/dpe`.
 - **Local-context kit:** `areas/access/server/CLAUDE.md`, `areas/access/server/src/serve.rs`,
   `areas/access/server/src/observability.rs`, `areas/access/server/src/cli.rs`,
   `areas/access/dpe/server/src/lib.rs`, `docs/adr/0003-one-modulith-per-area.md`,
@@ -146,7 +145,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - The OTel tracer name and Pyroscope application stay `dpe-server`, the `service.namespace` and
     collector scope `dpe`: DPE's telemetry identity, not this crate's name (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `311504f0a51c`
+- **Fingerprint:** `06a9187ec123`
 
 ### areas/deposit/editor
 

@@ -9,11 +9,6 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 
 COPY --chmod=755 access-server /app/access-server
-# Alias: ops-deploy's healthcheck still runs /app/dpe-server. Drop this COPY
-# only after ops-deploy targets /app/access-server (H1 in
-# docs/specs/2026-09-28-access-area-composition-root/). Distroless has no
-# shell, so this is a second COPY, not a symlink.
-COPY --chmod=755 access-server /app/dpe-server
 COPY public /app/public
 COPY data /app/server/data
 

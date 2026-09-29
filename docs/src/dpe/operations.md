@@ -7,7 +7,7 @@ Operations documentation for the DPE infrastructure team.
 - **Base**: `gcr.io/distroless/static-debian12:nonroot`
 - **User**: uid **65532** — distroless `NONROOT`. Not 65534, which is `nobody`; verified in [`common/variables.bzl`](https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl).
 - **Shell**: None (distroless — no SSH possible)
-- **Binary**: Static musl-linked `access-server` (CLI with subcommands). The image also ships the same binary as `/app/dpe-server`, an alias kept until ops-deploy's healthcheck switches over (see `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`'s composition-root amendment).
+- **Binary**: Static musl-linked `access-server` (CLI with subcommands).
 
 ## CLI Commands
 

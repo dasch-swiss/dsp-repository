@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-09-28
+date: 2026-09-29
 ---
 
 # Architecture Map
@@ -17,15 +17,15 @@ browser-beacon collector) and `mosaic-tiles` (the design system), and nothing el
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
 another service. The shared root has moved to `shared/` at the repository root, the
 metadata editor to `areas/deposit/editor/` and DPE to `areas/access/dpe/` (ADR-0002); Mosaic
-still lives under `modules/`, and three of the four planned components hold only a `CONTEXT.md`
-at their target path (`areas/access/cpe` has no files yet). The rest of ADR-0002 (accepted,
-migration pending) moves Mosaic to the root, beside `shared/`, `vitrinli/` and `chischtli/`, so
-read the globs here as current state. `dsp-cli/` is a sixth root,
-outside the `services → shared, mosaic` arrow entirely (ADR-0002 amendment): it is a client of
-every area rather than a member of one, no area depends on it, and it depends on no area
+still lives under `modules/`, three of the four planned components hold only a `CONTEXT.md`
+at their target path, and `areas/access/cpe` holds its `CONTEXT.md` and the port crate
+`cpe-ports`. The rest of ADR-0002 (accepted, migration pending) moves Mosaic to the root,
+beside `shared/`, `vitrinli/` and `chischtli/`, so read the globs here as current state.
+`dsp-cli/` is a sixth root, outside the `services → shared, mosaic` arrow entirely (ADR-0002
+amendment): it is a client of every area rather than a member of one, no area depends on it, and it depends on no area
 crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `areas/deposit/editor/CONTEXT.md`,
-`areas/access/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
+`areas/access/CONTEXT.md`, `areas/access/cpe/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
 `chischtli/CONTEXT.md`, `dsp-cli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
 
 ## Components
@@ -33,7 +33,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 ### areas/access/dpe
 
 - **Paths:** `:(glob)areas/access/dpe/**`, `:(glob)areas/access/CONTEXT.md` (the Access Area's
-  vocabulary, DPE's until CPE adds its terms)
+  vocabulary, DPE's until it is split; CPE's own terms are in `areas/access/cpe/CONTEXT.md`)
 - **Purpose:** The Discovery and Presentation Environment — the Access Area's first service.
   Four crates: `dpe-core` (view model, the `Corpus` value that owns the lazily-loaded caches,
   filesystem repositories, a DSP-API client), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages
@@ -536,29 +536,42 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 ### areas/access/cpe
 
 - **status: planned**
-- **Paths:** `:(glob)areas/access/cpe/**` (no files yet)
+- **Paths:** `:(glob)areas/access/cpe/**` — today `ports/` (crate `cpe-ports`) and `CONTEXT.md`
+  (CPE's vocabulary and what its port serves)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
   hypermedia server rendering project-specific presentations over the same data as DPE,
-  configured per project. Where the per-project configuration lives is an open item.
-- **Key entities:** — (none yet)
-- **Public interface:** its router, mounted by areas/access/server on the area's
-  origin beside DPE's routes; `cpe/ports` for anything a sibling capability needs from it.
-- **Local-context kit:** `docs/adr/0002-areas-at-the-repository-root.md`, `areas/access/CONTEXT.md`,
+  configured per project. Where the per-project configuration lives is an open item. Only
+  `ports/` exists so far; the engine, store and routes are planned.
+- **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `FakeArchiveProjection`,
+  `contract::violations` (in `cpe-ports`); the engine's entities are not built yet
+- **Public interface:** its router (planned), mounted by areas/access/server on the area's
+  origin beside DPE's routes. `cpe/ports` is not an interface CPE offers but the ports CPE
+  consumes: today `ArchiveProjection`, which `sync` implements.
+- **Local-context kit:** `areas/access/cpe/CONTEXT.md`, `areas/access/cpe/ports/src/lib.rs`,
+  `areas/access/cpe/ports/src/snapshot.rs`, `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`,
+  `docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md`,
+  `docs/adr/0002-areas-at-the-repository-root.md`, `areas/access/CONTEXT.md`,
   `areas/access/dpe/server/src/lib.rs` (the `Dpe` surface to copy), `areas/access/server/src/serve.rs`
   (where it is mounted), `shared/metadata/src/lib.rs`,
   `docs/src/mosaic/component-api-conventions.md`, `docs/adr/0003-one-modulith-per-area.md`
-- **Depends on:** shared/metadata, shared/telemetry, modules/mosaic
-  (expected); never DPE's domain, store or web crates. Two port directions, each with its own
-  consumer (ADR-0003): what CPE needs from DPE, CPE declares in `cpe/ports` and DPE implements;
-  what DPE needs from CPE, DPE declares in `dpe/ports` and CPE implements, depending on
-  `dpe/ports` alone. A *concept* both need lives in `shared/`; a shape never does
-- **Used by:** areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`)
+- **Depends on:** `cpe-ports` depends on `std` alone. The engine: shared/metadata,
+  shared/telemetry, modules/mosaic (expected); never DPE's domain, store or web crates, and
+  never `sync`'s store or Chischtli (ADR-0008). The first `cpe/ports` edge is CPE's port
+  against `sync` (no map entry yet; DEV-7399): CPE declares `ArchiveProjection` and `sync`
+  implements it. Ports between CPE and DPE remain hypothetical, each with its own consumer (ADR-0003): what CPE needs from DPE,
+  CPE declares in `cpe/ports` and DPE implements; what DPE needs from CPE, DPE declares in
+  `dpe/ports` and CPE implements, depending on `dpe/ports` alone. A *concept* both need lives
+  in `shared/`; a shape never does
+- **Used by:** `sync` (no map entry yet; DEV-7399; expected: the provider, depending on
+  `cpe/ports` to implement `ArchiveProjection` as `LiveArchiveProjection`); areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
-  in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA
-  (**docs-only** until code exists).
-- **Durable state:** its own read-side store, rebuildable from the archive's snapshot + replay
-  (target design).
+  in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA.
+  That `cpe/ports` reaches only `std` and `shared-*` is **review** until Bazel `visibility`
+  (ADR-0003); the rest is **docs-only** until CPE's other crates exist.
+- **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
+  single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
+  target design, the store is not built). `cpe-ports` holds none.
 - **Fingerprint:** none
 
 ## Conventions

@@ -10,6 +10,7 @@ members = [
   "areas/access/dpe/web",
   "areas/access/dpe/server",
   "areas/access/server",
+  "areas/access/cpe/ports",
   "areas/deposit/editor/core",
   "areas/deposit/editor/web",
   "areas/deposit/editor/server",

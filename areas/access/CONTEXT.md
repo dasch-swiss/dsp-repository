@@ -1,6 +1,6 @@
 # Access Area
 
-The consumer side of the Trusted Repository, OAIS Access: the services that produce Dissemination Information Packages for Consumers. Today one service, the Discovery and Presentation Environment, DPE (`dpe-core`, `dpe-api-oai`, `dpe-web`, `dpe-server`), mounted by the area's composition root `access-server`, which serves published project metadata as HTML, as JSON and over OAI-PMH. Designed but not built as further capabilities of this area's modulith: `sync` (the single writer of the archive projection in Chischtli, which DPE will read through its ports), `profile` (per-user settings in its own graphs), `media` (archive-made Service Files via the Vitrinli library), CPE, the SPARQL endpoint and the admin view — see the root `CONTEXT.md`, `chischtli/CONTEXT.md` and `vitrinli/CONTEXT.md`. Until Spycherli publishes, the committed Corpus on disk stands in for the snapshot `sync` will one day receive, and DPE reads it directly. Contract terms — Project, Shortcode, Person, Organization, Multilingual, Placeholder, Temporal coverage, Record — are defined once in the root [`CONTEXT.md`](../../CONTEXT.md) `## Shared` and only used here.
+The consumer side of the Trusted Repository, OAIS Access: the services that produce Dissemination Information Packages for Consumers. Today one service, the Discovery and Presentation Environment, DPE (`dpe-core`, `dpe-api-oai`, `dpe-web`, `dpe-server`), mounted by the area's composition root `access-server`, which serves published project metadata as HTML, as JSON and over OAI-PMH. Designed but not built as further capabilities of this area's modulith: `sync` (the single writer of the archive projection in Chischtli, which DPE will read through its ports), `profile` (per-user settings in its own graphs), `media` (archive-made Service Files via the Vitrinli library), the SPARQL endpoint and the admin view — see the root `CONTEXT.md`, `chischtli/CONTEXT.md` and `vitrinli/CONTEXT.md`. CPE is the second capability; so far only its port onto the archive projection is declared (`cpe-ports`, see [`cpe/CONTEXT.md`](cpe/CONTEXT.md)). Until Spycherli publishes, the committed Corpus on disk stands in for the snapshot `sync` will one day receive, and DPE reads it directly. Contract terms — Project, Shortcode, Person, Organization, Multilingual, Placeholder, Temporal coverage, Record — are defined once in the root [`CONTEXT.md`](../../CONTEXT.md) `## Shared` and only used here.
 
 ## Language
 
@@ -11,7 +11,7 @@ The Discovery and Presentation Environment: the public, unauthenticated, read-on
 _Avoid_: Discovery and Presentation Platform, the repository (DPE is one window onto it), the frontend.
 
 **CPE**:
-The Configurable Presentation Environment: the planned hypermedia server for project-specific presentations over the same data, configured per project. Not built.
+The Configurable Presentation Environment: the hypermedia server for project-specific presentations over the same data, configured per project. Only its port onto the archive projection is declared (`cpe-ports`); its engine, store and routes are not built. Its own vocabulary is in [`cpe/CONTEXT.md`](cpe/CONTEXT.md).
 _Avoid_: custom frontend, project website.
 
 **DIP shape**:

@@ -249,7 +249,7 @@
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
 <li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
-<li><strong>Binary</strong>: Static musl-linked <code>access-server</code> (CLI with subcommands). The image also ships the same binary as <code>/app/dpe-server</code>, an alias kept until ops-deploy's healthcheck switches over (see <code>docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md</code>'s composition-root amendment).</li>
+<li><strong>Binary</strong>: Static musl-linked <code>access-server</code> (CLI with subcommands).</li>
 </ul>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <p>The <code>access-server</code> binary provides three subcommands:</p>

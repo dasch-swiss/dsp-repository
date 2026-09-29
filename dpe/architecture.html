@@ -266,7 +266,8 @@
                             dpe-server
                             Route composition
                             + Datastar
-                            (binary: dpe-server)
+                            (library; binary: access-server,
+                             the Access Area's composition root)
 </code></pre>
 <ul>
 <li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>areas/access/dpe/</code>.</li>
@@ -274,7 +275,7 @@
 <li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
 <li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends on shared-metadata, dpe-core and shared-fair.</li>
 <li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports shared-metadata and dpe-core types directly.</li>
-<li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
+<li><strong>dpe-server</strong>: A library — DPE's native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers. <code>access-server</code> (<code>areas/access/server</code>), the Access Area's composition root, mounts this router, owns <code>main</code>, CLI dispatch and observability init.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
 <p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Pages are rendered as plain HTML with <a href="https://maud.lambda.xyz/">Maud</a> (a compile-time HTML template macro), and interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of a client-side framework or WASM.</p>

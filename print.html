@@ -596,7 +596,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>editor-collector</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
+<li><strong>Crate scopes:</strong> <code>access-server</code>, <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>editor-collector</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>areas/access/dpe/server/data/</code></li>
@@ -764,15 +764,16 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 
 areas/
 ├── access/                    # Access Area
+│   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
+│   │   └── Dockerfile         # Production container image
 │   └── dpe/                   # Discovery and Presentation Environment
 │       ├── core/              # DPE's view model, caches, repositories (crate: dpe-core)
 │       ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │       ├── web/               # Web layer: Maud pages and components (crate: dpe-web)
-│       ├── server/            # Server binary: route composition, Datastar fragments (crate: dpe-server)
+│       ├── server/            # DPE's router, config and validate logic, a library (crate: dpe-server)
 │       ├── web-e2e-tests/     # Playwright E2E tests
 │       ├── public/            # Static assets
-│       ├── style/             # CSS / Tailwind
-│       └── Dockerfile         # Production container image
+│       └── style/             # CSS / Tailwind
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
@@ -796,10 +797,11 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. <code>dsp-cli</code> is an explicit exception: it is a single crate named after the product it publishes, not after a module-plus-role pair, and its folder keeps the crate's full name.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dsp-cli</code></td><td><code>dsp-cli</code></td><td>Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002)</td></tr>
+<tr><td><code>access-server</code></td><td><code>areas/access/server</code></td><td>The Access Area's composition root (ADR-0003) — CLI, observability, route mounting; no business logic</td></tr>
 <tr><td><code>dpe-core</code></td><td><code>areas/access/dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
 <tr><td><code>dpe-api-oai</code></td><td><code>areas/access/dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>areas/access/dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
-<tr><td><code>dpe-server</code></td><td><code>areas/access/dpe/server</code></td><td>Server binary — composes all routes</td></tr>
+<tr><td><code>dpe-server</code></td><td><code>areas/access/dpe/server</code></td><td>A library — DPE's router, config and validate logic; no binary</td></tr>
 <tr><td><code>shared-fair</code></td><td><code>shared/fair</code></td><td>The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — <code>dpe-api-oai</code> is its only consumer today</td></tr>
 <tr><td><code>shared-metadata</code></td><td><code>shared/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
 <tr><td><code>shared-telemetry</code></td><td><code>shared/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
@@ -1059,7 +1061,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>build-dpe</code></td><td>Compile DPE (static musl <code>dpe-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage artifacts</td></tr>
+<tr><td><code>build-dpe</code></td><td>Compile DPE (static musl <code>access-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage artifacts</td></tr>
 <tr><td><code>build-editor</code></td><td>Compile the metadata editor (static musl <code>editor-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-editor-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
@@ -1090,7 +1092,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <p>On every push to <code>main</code>:</p>
 <ol>
 <li>Builds the content-hashed Tailwind stylesheet (<code>just css-release</code>)</li>
-<li>Builds a static musl-linked <code>dpe-server</code> binary</li>
+<li>Builds a static musl-linked <code>access-server</code> binary</li>
 <li>Pushes the Docker image to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
 <li>Triggers a Jenkins webhook for DEV deployment</li>
 </ol>
@@ -1382,7 +1384,8 @@ are detected</li>
                             dpe-server
                             Route composition
                             + Datastar
-                            (binary: dpe-server)
+                            (library; binary: access-server,
+                             the Access Area's composition root)
 </code></pre>
 <ul>
 <li><strong>shared-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>shared/</code> rather than under <code>areas/access/dpe/</code>.</li>
@@ -1390,7 +1393,7 @@ are detected</li>
 <li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
 <li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends on shared-metadata, dpe-core and shared-fair.</li>
 <li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports shared-metadata and dpe-core types directly.</li>
-<li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
+<li><strong>dpe-server</strong>: A library — DPE's native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers. <code>access-server</code> (<code>areas/access/server</code>), the Access Area's composition root, mounts this router, owns <code>main</code>, CLI dispatch and observability init.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
 <p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Pages are rendered as plain HTML with <a href="https://maud.lambda.xyz/">Maud</a> (a compile-time HTML template macro), and interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of a client-side framework or WASM.</p>
@@ -2322,11 +2325,13 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 ├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
-├── server/           dpe-server        Axum binary (composition root)
+├── server/           dpe-server        DPE's router, config and validate logic (library)
 ├── web-e2e-tests/                      Playwright E2E tests
 ├── public/                             Static assets
 └── style/                              Tailwind CSS
 </code></pre>
+<p>The binary, <code>access-server</code>, lives outside this tree at <code>areas/access/server/</code> — the Access
+Area's composition root (ADR-0003), which mounts <code>dpe-server</code>'s router. See its <code>CLAUDE.md</code>.</p>
 <h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
 <pre><code>shared-metadata         ← the wire contract, shared with the editor;
   ↑                       lives in `shared/`
@@ -2337,8 +2342,9 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
         ↑
         ├── dpe-api-oai ← OAI-PMH endpoint; also depends on shared-fair
         ├── dpe-web     ← Maud pages + components
-        └── dpe-server  ← composition root, Datastar fragment handlers
+        └── dpe-server  ← router, config, Datastar fragment handlers (library)
               ↑
+              access-server     ← Access Area's composition root; areas/access/server
               shared-telemetry  ← beacon contract + collector endpoint, shared
                                   with editor-server; lives in `shared/`
 </code></pre>
@@ -2348,7 +2354,7 @@ as well as through <code>dpe-core</code> — the contract types are theirs to im
 <p>The arrow between <code>dpe-core</code> and <code>shared-fair</code> runs in neither direction, and
 that is deliberate: <code>shared-fair</code> names only contract types, so the domain crate
 never depends on the exposure engine and the engine never learns DPE's view
-model. <code>dpe_core::resolve_inputs()</code> is the seam — it returns the contributor
+model. <code>Corpus::resolve_inputs()</code> is the seam — it returns the contributor
 lookup and the two temporal tables, which <code>dpe-api-oai</code> wraps in a
 <code>shared_fair::ResolveContext</code> at the call site.</p>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
@@ -2377,16 +2383,16 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 <ul>
 <li><strong>View model</strong>: <code>Project</code> and the conversions to and from <code>ProjectRaw</code> (lossy, DPE-only), <code>Page</code>, <code>ClusterRef</code>, <code>CollectionRef</code>, <code>ResolvedContributor</code></li>
 <li><strong>Repository traits</strong>: <code>ProjectRepository</code>, <code>RecordRepository</code></li>
-<li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by in-memory caches)</li>
-<li><strong>Data loading</strong>: project, record, person, organization, cluster and the two temporal caches (<code>OnceLock&lt;…&gt;</code>) loaded from <code>DPE_DATA_DIR</code> on first access</li>
-<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>language_display_name()</code>, <code>get_data_dir()</code>, <code>get_public_dir()</code></li>
+<li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by <code>Corpus</code>'s in-memory caches)</li>
+<li><strong>Data loading</strong>: project, record, person, organization, cluster and the two temporal caches — one instance-owned <code>OnceLock&lt;…&gt;</code> field per cache on <code>Corpus</code> — loaded from <code>CorpusSettings::data_dir</code> on first access</li>
+<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>language_display_name()</code> (pure, no corpus needed)</li>
 <li><strong>Static-asset lookup</strong>: <code>cover_image_cache</code> scans <code>&lt;public dir&gt;/assets/images</code> once for the per-project cover images, so a view can tell whether a project has one before rendering an <code>&lt;img&gt;</code></li>
 </ul>
-<p>The directory paths and display flags are process-global <code>OnceLock</code>s set from <code>dpe-server</code>'s config at startup (<code>set_data_dir</code>, <code>set_public_dir</code>, <code>set_show_placeholder_values</code>) and read directly by <code>dpe-web</code> views, which take no application state. Reuse that pattern rather than threading new values through <code>AppState</code>.</p>
+<p><code>Corpus</code> is one capability-owned value, not a process-global: <code>dpe-server</code> builds it once from <code>DpeConfig</code> in <code>Dpe::new</code> (<code>lib.rs</code>) and leaks it (<code>Box::leak</code>) to get a <code>&amp;'static Corpus</code>, the only production leak. That reference reaches handlers through <code>AppState</code>/<code>OaiState</code> and views through <code>RenderContext</code>; new per-deployment view settings belong on <code>RenderContext</code>, not in a process-global. Tests leak one <code>Corpus</code> per fixture directory, so several can coexist in one test binary — the statics this replaced made that impossible.</p>
 <p>Dependencies: <code>shared-metadata</code>, <code>serde</code>, <code>serde_json</code>, <code>tracing</code>, <code>ureq</code>.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>.</p>
-<p>Depends on <code>shared-metadata</code> for the contract types, <code>dpe-core</code> for the view model and the <code>resolve_inputs()</code> seam, and <code>shared-fair</code> for the DataCite and Dublin Core mappings. What stays here is OAI-PMH protocol: the envelope and XML builder, the verbs, the <code>oai:dasch.swiss:</code> identifiers, the set specs, the date filters and <code>OaiRecord</code>. The corpus-wide tests over the committed data stay here too (<code>src/metadata/corpus.rs</code>), beside the data they read.</p>
+<p>Depends on <code>shared-metadata</code> for the contract types, <code>dpe-core</code> for the view model and the <code>Corpus::resolve_inputs()</code> seam, and <code>shared-fair</code> for the DataCite and Dublin Core mappings. What stays here is OAI-PMH protocol: the envelope and XML builder, the verbs, the <code>oai:dasch.swiss:</code> identifiers, the set specs, the date filters and <code>OaiRecord</code>. The corpus-wide tests over the committed data stay here too (<code>src/metadata/corpus.rs</code>), beside the data they read.</p>
 <h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
 <p>Maud view library — a plain <code>lib</code> crate of page and component functions returning <code>maud::Markup</code>. Contains:</p>
 <ul>
@@ -2396,17 +2402,17 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 </ul>
 <p>Imports <code>shared-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
-<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>areas/access/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
+<p><code>access-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>areas/access/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold, so <code>access-server</code> passes <code>dpe_server::normalize_page_url</code> into <code>shared_telemetry::collector::collect_route</code>.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
-<p>Composition root and Axum binary. Contains:</p>
+<p>A library, DPE's router and configuration; no binary. Contains:</p>
 <ul>
-<li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
+<li><strong>Route wiring</strong>: <code>router.rs</code> — native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, plus <code>ServeDir</code> static serving and a 404 fallback. <code>Dpe::router()</code> returns this router for <code>access-server</code> to mount</li>
 <li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
 <li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
-<li><strong>Page-URL normalization</strong>: <code>page_url.rs</code> — bounds the telemetry <code>page.url</code> metric attribute to DPE's own known routes, passed into <code>shared_telemetry::collector::collect_route</code></li>
+<li><strong>Page-URL normalization</strong>: <code>page_url.rs</code> — bounds the telemetry <code>page.url</code> metric attribute to DPE's own known routes</li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
-<li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
 </ul>
+<p><code>/healthz</code>, <code>POST /telemetry/collect</code>, CLI dispatch and OTel/Pyroscope init live in <code>access-server</code> (<code>areas/access/server</code>), the Access Area's composition root — see its <code>CLAUDE.md</code>.</p>
 <h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
 <ul>
 <li><strong>The wire contract in <code>shared-metadata</code>, DPE's view model in <code>dpe-core</code></strong> — never in web or API crates</li>
@@ -2534,7 +2540,7 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 
 Parallel job group 2 (~5 min):
   cargo nextest run --workspace
-  cargo build --release (dpe-server) + just css-release
+  cargo build --release (access-server) + just css-release
   cargo-llvm-cov (coverage → Codecov)
 
 Parallel job group 3 (~5 min):
@@ -2762,19 +2768,19 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
 <li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
-<li><strong>Binary</strong>: Static musl-linked <code>dpe-server</code> (CLI with subcommands)</li>
+<li><strong>Binary</strong>: Static musl-linked <code>access-server</code> (CLI with subcommands). The image also ships the same binary as <code>/app/dpe-server</code>, an alias kept until ops-deploy's healthcheck switches over (see <code>docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md</code>'s composition-root amendment).</li>
 </ul>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
-<p>The <code>dpe-server</code> binary provides three subcommands:</p>
+<p>The <code>access-server</code> binary provides three subcommands:</p>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>dpe-server serve</code></td><td>Start the web server</td></tr>
-<tr><td><code>dpe-server validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
-<tr><td><code>dpe-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+<tr><td><code>access-server serve</code></td><td>Start the web server</td></tr>
+<tr><td><code>access-server validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
+<tr><td><code>access-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
 </tbody></table>
 </div>
-<h3 id="dpe-server-validate"><a class="header" href="#dpe-server-validate"><code>dpe-server validate</code></a></h3>
+<h3 id="access-server-validate"><a class="header" href="#access-server-validate"><code>access-server validate</code></a></h3>
 <p>Validates JSON data files for structural correctness and cross-reference integrity.</p>
-<pre><code class="language-bash">dpe-server validate ./data
+<pre><code class="language-bash">access-server validate ./data
 </code></pre>
 <p><strong>What it checks:</strong></p>
 <ul>
@@ -2789,10 +2795,10 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li><code>0</code> — all data files are valid</li>
 <li><code>1</code> — validation errors found (details printed to stderr)</li>
 </ul>
-<h3 id="dpe-server-healthcheck"><a class="header" href="#dpe-server-healthcheck"><code>dpe-server healthcheck</code></a></h3>
+<h3 id="access-server-healthcheck"><a class="header" href="#access-server-healthcheck"><code>access-server healthcheck</code></a></h3>
 <p>Lightweight probe for Docker HEALTHCHECK or monitoring:</p>
-<pre><code class="language-bash">dpe-server healthcheck                             # default: http://localhost:8080/healthz
-dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
+<pre><code class="language-bash">access-server healthcheck                             # default: http://localhost:8080/healthz
+access-server healthcheck --url http://localhost:9090/healthz # custom URL
 </code></pre>
 <h2 id="ports"><a class="header" href="#ports">Ports</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
@@ -2801,7 +2807,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 </div>
 <h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
+<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>access_server=info,dpe_server=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>areas/access/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret). <strong>Production only</strong> — leave unset or empty everywhere else; empty is normalised to unset.</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
@@ -2912,7 +2918,7 @@ retirement to include a corpus re-export and a re-publish, or external copies
 RUST_LOG=info
 
 # Debug HTTP requests
-RUST_LOG=dpe_server=info,tower_http=debug
+RUST_LOG=access_server=info,dpe_server=info,tower_http=debug
 
 # Verbose debugging
 RUST_LOG=debug
@@ -3263,7 +3269,7 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 <li><strong>Everything else</strong> — free-text names resolve against <code>areas/access/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
 </ol>
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
-<p>Resolution lives in <code>shared_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
+<p>Resolution lives in <code>shared_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server</code>'s <code>validate</code> (run as <code>access-server validate</code>, <code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
 <h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
 <p>A bitstream Record carries at most one <code>file</code>, stored by dsp-ingest. In the metadata payloads the only thing it contributes is its MIME type:</p>
 <ul>
@@ -4929,7 +4935,7 @@ What each of them scored, when, and against what, is in
 <p><code>ProjectRaw</code> deliberately carries no <code>skip_serializing_if</code>: <code>dpe-server</code>'s <code>fragments.rs</code> serializes it through <code>axum::Json</code>, so the attribute would drop null members from DPE's API responses too. Stripping happens in the writer instead.</p>
 <p>The 85-file round-trip test (<code>editor-core/tests/canonical_round_trip.rs</code>) asserts <code>load -&gt; draft -&gt; write</code> is byte-identical for the whole published corpus, and regenerates it under <code>CANONICALIZE_PROJECT_FILES=1</code>. Generating the corpus from the writer rather than a sibling script is the point: a script has to agree with the writer by inspection, and a near-miss surfaces later as a failing round-trip that looks like a writer bug.</p>
 <h3 id="submission-checks"><a class="header" href="#submission-checks">Submission checks</a></h3>
-<p><code>editor_core::submission::unresolved_temporal_coverage</code> applies the rule that every <code>temporalCoverage</code> entry must resolve to a structured date, which <code>dpe-server validate</code> does not block on and OAI-PMH needs. It reuses <code>shared_metadata::temporal_coverage::completeness_gap</code>, the same decision <code>validate</code> and <code>dpe-api-oai</code>'s <code>every_committed_temporal_coverage_resolves</code> apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the <code>Reference</code> variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.</p>
+<p><code>editor_core::submission::unresolved_temporal_coverage</code> applies the rule that every <code>temporalCoverage</code> entry must resolve to a structured date, which <code>access-server validate</code> does not block on and OAI-PMH needs. It reuses <code>shared_metadata::temporal_coverage::completeness_gap</code>, the same decision <code>validate</code> and <code>dpe-api-oai</code>'s <code>every_committed_temporal_coverage_resolves</code> apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the <code>Reference</code> variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.</p>
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
@@ -5044,9 +5050,9 @@ What each of them scored, when, and against what, is in
 <li><strong>The draft must be a complete <code>ProjectRaw</code>.</strong> A type-level failure means a member the contract requires has no value, and no per-field rule below can say anything useful about a shape that does not exist.</li>
 <li><strong>Every <code>Obligation::Required</code> field the submitter sees must be answered</strong>, through <code>obligation::unsatisfied_required</code>. Narrower than it looks beside gate 1 and not redundant with it: every required field is a non-<code>Option</code> contract member, so an <em>absent</em> one already failed above, and what this catches is present-and-empty — <code>[]</code>, <code>{}</code>, <code>""</code>, a <code>MISSING</code> sentinel. It reads presence through the same function the section rail counts with, and the tier it gates on is bounded by what the published corpus answers; see <a href="editor/architecture.html#obligation-is-a-submit-gate-and-the-corpus-bounds-which-fields-carry-it">Obligation is a submit gate</a>.</li>
 <li><strong>Every agent reference must resolve</strong>, through <code>form::submit::unresolved_agents</code>. The applier stores whatever id arrives, because a draft may hold a value that does not validate — this is what stops an unresolvable reference reaching a published file, where the public project page would render a bare <code>person-001</code>. It resolves against the published store <strong>plus this project's own referenceable proposals</strong>, so a depositor can reference an entity they have just proposed. <code>funding[].funders</code> is included; see <a href="editor/./project-form.html#the-agent-store-and-how-a-reference-is-picked">the agent store</a> for how long it was not.</li>
-<li><strong>Every live entity proposal must satisfy its own rules</strong>, through <code>proposals::check_person</code> and <code>check_organization</code> — the organisation rules, the person rules, and the project-role guard on <code>jobTitles</code> that nothing asks for but <code>dpe-server validate</code> enforces, so without it the editor could produce data that fails validation in a crate it never touches. It runs directly after the reference gate above, because both are about the entities a project points at and a depositor fixing one is usually fixing the other. The refusal names each proposal and each finding, with a link to the form that can fix it, the way a field outside the current section is already listed with a link to its section.</li>
+<li><strong>Every live entity proposal must satisfy its own rules</strong>, through <code>proposals::check_person</code> and <code>check_organization</code> — the organisation rules, the person rules, and the project-role guard on <code>jobTitles</code> that nothing asks for but <code>access-server validate</code> enforces, so without it the editor could produce data that fails validation in a crate it never touches. It runs directly after the reference gate above, because both are about the entities a project points at and a depositor fixing one is usually fixing the other. The refusal names each proposal and each finding, with a link to the form that can fix it, the way a field outside the current section is already listed with a link to its section.</li>
 <li><strong>No field may hold a placeholder sentinel a depositor typed</strong>, through <code>form::submit::typed_sentinels</code>. Decided from the field's declared shape rather than from the value, because a stored sentinel is usually correct; see <a href="editor/architecture.html#where-a-fields-shape-and-empty-state-are-declared">where a field's shape and empty state are declared</a> above.</li>
-<li><strong>Every <code>temporalCoverage</code> entry must resolve</strong>, through <code>editor_core::submission::unresolved_temporal_coverage</code> — the same decision <code>dpe-server validate</code> and <code>dpe-api-oai</code> apply, over the same two tables, which <code>AppState</code> reads once at startup from <code>EDITOR_DATA_DIR</code>. With no data directory the tables are empty, so every free-text period is unresolvable and the submission is refused: the fail-safe direction, since the alternative opens a pull request that fails CI in a crate the editor never touches. It re-runs on <strong>every</strong> submit, which is what makes a resubmission revalidated rather than trusted because it was reviewed once.</li>
+<li><strong>Every <code>temporalCoverage</code> entry must resolve</strong>, through <code>editor_core::submission::unresolved_temporal_coverage</code> — the same decision <code>access-server validate</code> and <code>dpe-api-oai</code> apply, over the same two tables, which <code>AppState</code> reads once at startup from <code>EDITOR_DATA_DIR</code>. With no data directory the tables are empty, so every free-text period is unresolvable and the submission is refused: the fail-safe direction, since the alternative opens a pull request that fails CI in a crate the editor never touches. It re-runs on <strong>every</strong> submit, which is what makes a resubmission revalidated rather than trusted because it was reviewed once.</li>
 <li><strong>The submission must change something.</strong> The comparison is <code>editor_core::review::diff</code>, the one the review surface itself renders from, so "changes nothing" means the same thing in both places. Allowed through, an unchanged submission locks the depositor's own form on a queue entry a reviewer can only clear by rejecting it.</li>
 </ol>
 <p>Two further checks run on <strong>every</strong> write rather than only on a submit, and therefore before these: the per-field cap, because an applier truncates silently and deferring it would let an over-cap save store the truncated value; and the concurrent-save baseline, because a save is exactly what would overwrite somebody else's work.</p>
@@ -5174,7 +5180,7 @@ What each of them scored, when, and against what, is in
 <p>A <code>&lt;select&gt;</code> of everything is what the datalist existed to avoid: the list is 31.7 KB and <code>attributions</code> reaches 56 rows on one project, so a select per row would be 1.8 MB of markup re-sent on every save. Searching first bounds it: one row's menu is at most 25 options, and a page that has not been searched carries no menu at all. The search is a named submit on the section's own form — <code>intent=find-agent</code> — so it needs no route of its own, and it re-renders with the posted body kept, which is what carries the query back into the box.</p>
 <p><strong>What posts is still the id, and nothing else.</strong> Before a search that is a hidden input holding the stored value, so an untouched save round-trips byte-for-byte with no lookup in between that could resolve differently — the property the old text input had, and the reason its value was the id rather than the name. After a search the <code>&lt;select&gt;</code> posts under that same name with the current choice selected, so leaving it alone is still the identity and no applier changed for any of it. An id that resolves to nobody says so in the row as well as at submit: the form is where it can be fixed, and told only at submit a depositor would have to work out which of 56 rows the refusal meant. Without JavaScript the search is an ordinary form submission and the menu an ordinary <code>&lt;select&gt;</code>.</p>
 <p>Resolution is a submit gate rather than an applier's job, because a draft is allowed to hold a value that does not validate and deciding that is submit's. A dangling reference in a field nobody touched is still refused: every committed reference resolves, so a dangling one can only have arrived after the fact — an agent file removed from under a project, which is a thing to report rather than to publish.</p>
-<p><strong><code>funding[].funders</code> is a fourth agent field, and the gate used to miss it.</strong> A grant's funders hold agent ids exactly as the other three do — 125 of them across the 85 projects — but <code>funding</code> declares <code>Shape::FundingRows</code>, so a filter over <code>AgentRows | AttributionRows</code> walked past it: the form warned about an unresolvable funder in its label and submit accepted the project anyway. <code>dpe-server validate</code> does not catch it either, because <code>checks::contributor_refs</code> reports <code>attributions</code> and <code>contactPoint</code> only. A dangling funder therefore reached a published file and rendered as a bare <code>organization-008</code> on the public project page. All 125 committed funder references resolve, so closing it refuses nothing the corpus already contains. One function, <code>agent_ids_in_row</code>, now knows how all three shapes spell a reference, so a field that refers to an agent cannot be added to one reader and forgotten in the others.</p>
+<p><strong><code>funding[].funders</code> is a fourth agent field, and the gate used to miss it.</strong> A grant's funders hold agent ids exactly as the other three do — 125 of them across the 85 projects — but <code>funding</code> declares <code>Shape::FundingRows</code>, so a filter over <code>AgentRows | AttributionRows</code> walked past it: the form warned about an unresolvable funder in its label and submit accepted the project anyway. <code>access-server validate</code> does not catch it either, because <code>checks::contributor_refs</code> reports <code>attributions</code> and <code>contactPoint</code> only. A dangling funder therefore reached a published file and rendered as a bare <code>organization-008</code> on the public project page. All 125 committed funder references resolve, so closing it refuses nothing the corpus already contains. One function, <code>agent_ids_in_row</code>, now knows how all three shapes spell a reference, so a field that refers to an agent cannot be added to one reader and forgotten in the others.</p>
 <p><strong>Resolution is scoped to the project.</strong> <code>AgentScope</code> overlays the project's own referenceable entity proposals on the published store, so a just-allocated <code>person-417</code> resolves in the picker and passes this gate while it is still only a database row. It borrows the published store rather than copying it — that snapshot is 558 agents behind an <code>Arc</code> precisely so cloning it per request does not happen. A published id wins over a proposed one, because a change proposal names an id the store already holds and the surface is meant to show the published value beside the proposed one; the listing applies the same precedence, or a change proposal would offer one organisation twice under two names.</p>
 <h2 id="vocabularies-are-closed-only-where-the-corpus-lets-them-be"><a class="header" href="#vocabularies-are-closed-only-where-the-corpus-lets-them-be">Vocabularies are closed only where the corpus lets them be</a></h2>
 <p>Four fields offer a fixed set, and whether the set is a <em>constraint</em> or an <em>offer</em> is decided by the data every time, never by preference:</p>

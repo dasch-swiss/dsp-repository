@@ -139,3 +139,41 @@ unblock DEV-7400 and DEV-7405: both need `areas/access/server` to exist so CPE's
 have somewhere to land without a second, simultaneous move of DPE's crate. `dpe-server` is a library from
 this point on, exposing `DpeConfig`, `Dpe` and `validate` to the new `access-server` binary; nothing in
 this decision's reasoning or its shape changes, only its timing relative to CPE.
+
+## Amendment (2026-09-29, DEV-7405) — CPE's public URL layout
+
+The first clause makes a project's presentation "a route prefix inside CPE's router" without saying which
+prefix, or how CPE's routes share the origin with DPE's. This amendment narrows it:
+
+- **CPE lives under `/cpe/`, as DPE lives under `/dpe/`, and a project under `/cpe/<shortname>/`.** The
+  segment is the project's DSP shortname (`/cpe/incunabula/`). It is resolved in one place, so it can
+  become the Shortcode later without touching every route.
+- **CPE's router does not know its own prefix.** `areas/access/server` mounts it with `nest("/cpe", …)`,
+  and CPE builds every URL it emits (links, redirects, asset references) from a configured base, never from
+  a hardcoded `/cpe`. A project on its own hostname is not built, but stays possible by mounting the same
+  router at a different base.
+- **A project is self-contained under its prefix, assets included.** The engine's shared files are served
+  at `/cpe/<shortname>/_static/…` and the project's own at `/cpe/<shortname>/_assets/…`, keeping the
+  prototype's reserved `_` segments. The same engine file is then fetched once per project, which
+  content-hashed names and long cache lifetimes make negligible; a single shared `/cpe/_static/` would not
+  exist on a project's own hostname.
+- **`/` and everything outside `/cpe` stay DPE's, including its 404; CPE answers its own not-found under
+  `/cpe`.** CPE's router keeps its own catch-all (a project's 404 under a known project, a plain CPE 404
+  otherwise), and a nested router's catch-all wins over DPE's for paths under the prefix (axum 0.8.9,
+  checked 2026-09-29). Axum's `nest` does not match `/cpe/` itself, so the composition root routes that one
+  path to CPE's not-found explicitly; without it, `/cpe/` gets DPE's 404.
+- **No record URL form is fixed for ARKs yet.** The ARK clause above already keeps every ARK away from CPE
+  until the FAIR adapter exists; when it does, a uniform record route can redirect to each project's own
+  record pages.
+
+Deferred, not decided here: links between DPE's project page and a project's CPE presentation; browser
+telemetry for CPE pages, which send no beacons today (the `shared-telemetry` collector holds one meter scope
+and one path normaliser per process, so it needs a change when they do).
+
+Under `nest`, CPE sees paths with the prefix removed, and a leading `//` after it collapses to one slash
+(`/cpe//evil.example/x` arrives as `/evil.example/x`). The prototype's rule that its catch-all never
+redirects, and never echoes the request path, holds unchanged. Its open-redirect tests carry over and run
+both under the `/cpe` mount and at a root mount.
+
+Enforced by: routing tests in `areas/access/server` for the prefix, `/cpe/`, and which side answers a 404
+(static-analysis, landing with DEV-7438); review for URLs built from the configured base.

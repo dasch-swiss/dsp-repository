@@ -11,6 +11,7 @@ members = [
   "areas/access/dpe/server",
   "areas/access/server",
   "areas/access/cpe/ports",
+  "areas/access/sync/store",
   "areas/deposit/editor/core",
   "areas/deposit/editor/web",
   "areas/deposit/editor/server",
@@ -93,6 +94,10 @@ rusqlite = { version = "0.38", features = ["bundled", "chrono"] }
 # never be held across an `.await`.
 deadpool-sqlite = "0.13"
 async-trait = "0.1"
+# `sync-store` reads one committed N-Quads file per call: a strict, pure-Rust parser and its
+# term types, no triplestore. `rdf-12` stays off: the format has no RDF 1.2 triple terms.
+oxttl = { version = "0.2.4", default-features = false }
+oxrdf = { version = "0.3.4", default-features = false }
 
 # Build profiles
 [profile.release]

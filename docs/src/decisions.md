@@ -34,6 +34,7 @@ for the full decision.
 | [ADR-0006](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md) | Decision records are colocated with what they govern, and a component's are cited qualified |
 | [ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md) | CPE joins the Access Area as its second capability |
 | [ADR-0008](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md) | A reading capability may keep a derived read model |
+| [ADR-0009](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md) | DaTEI joins the Access Area as its third capability |
 
 ## Component series
 

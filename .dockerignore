@@ -40,3 +40,6 @@ modules/mosaic/playground-e2e-tests/
 Dockerfile*
 !modules/mosaic/playground/Dockerfile
 !areas/access/server/Dockerfile
+
+# sync's committed snapshot (about 20 MB); no image built from this context reads it
+areas/access/sync/data/

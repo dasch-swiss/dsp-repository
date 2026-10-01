@@ -178,6 +178,30 @@ both under the `/cpe` mount and at a root mount.
 Enforced by: routing tests in `areas/access/server` for the prefix, `/cpe/`, and which side answers a 404
 (static-analysis, landing with DEV-7438); review for URLs built from the configured base.
 
+## Amendment (2026-09-29, DEV-7399) — the committed projection is interim-DAO
+
+The clause on CPE's read-side store starts `sync` at "the committed projection of one shortcode read from
+disk" without saying in which shape. This amendment fixes the shape:
+
+- **The committed projection is interim-DAO.** `dao-lift` in `dasch-swiss/dsp-incubator`
+  (`cpe/tools/dao-lift`) produces it from a VRE dump, one N-Quads file per project. It follows DAO wherever
+  DAO has decided and deviates only where the port needs a fact DAO drops. Each deviation is listed with its
+  reason in `dao-lift`'s `FORMAT.md`, which stays in the incubator, so the format is visibly neither DAO nor
+  a commitment of this repository. `areas/access/sync/data/PROVENANCE` pins the `dao-lift` commit whose
+  `FORMAT.md` the committed file follows. `sync-store` refuses the whole snapshot (`Unavailable`) when the
+  file breaks a fact the port serves, and omits only what `FORMAT.md` lets a reader omit and what the port
+  does not carry, so CPE never receives a partial or repaired snapshot.
+- **The port follows the interim format (PR #452).** "Archive-shaped facts as the archive records them" in the
+  same clause means the facts as the interim format carries them, not as knora-base records them. Values
+  are named by their source property, the project property they were recorded under, which is also what a
+  project's KDL names.
+- **The interim format is temporary.** When DAO is published, `dao-lift` and `FORMAT.md` move to it, and
+  each deviation is resolved either upstream in DAO or by a change to the port.
+
+Enforced by: `sync-store`'s tests, for refused and omitted facts and for the committed file passing
+`cpe_ports::contract::violations` (static-analysis); `sync-store` refusing a snapshot the contract
+rejects (run-time); review for the port speaking the format.
+
 ## Amendment (2026-10-02) — data ARKs and presentation ARKs
 
 The ARK clause ("No persistent identifier resolves to a CPE page until CPE's pages carry ADR-0005's

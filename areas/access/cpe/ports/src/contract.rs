@@ -3,7 +3,9 @@
 //! [`violations`] checks only what one snapshot shows. Value order, `lang`, `Decimal` and `Uri`
 //! syntax, and whether an omitted fact was omitted correctly are invisible to it, so an empty
 //! result is a consistency check, not proof of fidelity; an adapter pins those in its own tests. A
-//! violation is always an adapter bug.
+//! violation is always an adapter bug, or bad data an adapter failed to refuse. `sync-store` runs
+//! [`violations`] on every snapshot it serves and refuses one with any violation, so a new
+//! invariant here can take a project offline at run time, not only fail a test.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;

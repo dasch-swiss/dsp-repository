@@ -12,7 +12,7 @@
     "startDate": "2017-11-01",
     "endDate": "2021-12-31",
     "url": [
-        "https://app.ls-prod-server.dasch.swiss/project/0112"
+        "https://app.dasch.swiss/project/0112"
     ],
     "secondaryUrl": {
         "type": "URL",

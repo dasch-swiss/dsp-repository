@@ -1,0 +1,15 @@
+[package]
+name = "sync-store"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+cpe-ports = { path = "../../cpe/ports" }
+oxrdf = { workspace = true }
+oxttl = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

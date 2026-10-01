@@ -17,15 +17,17 @@ browser-beacon collector) and `mosaic-tiles` (the design system), and nothing el
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
 another service. The shared root has moved to `shared/` at the repository root, the
 metadata editor to `areas/deposit/editor/` and DPE to `areas/access/dpe/` (ADR-0002); Mosaic
-still lives under `modules/`; of the seven planned components, `areas/access/cpe` holds its
-`CONTEXT.md` and the port crate `cpe-ports`, `areas/access/sync` and `areas/access/media` hold
-nothing yet, and the other four hold only a `CONTEXT.md` at their target path. The rest of ADR-0002 (accepted, migration pending) moves Mosaic to the root,
+still lives under `modules/`; `areas/access/sync` exists at its minimum, the crate `sync-store` and
+the committed snapshot it serves; of the six planned components, `areas/access/cpe` holds its
+`CONTEXT.md` and the port crate `cpe-ports`, `areas/access/media` holds nothing yet, and the
+other four hold only a `CONTEXT.md` at their target path. The rest of ADR-0002 (accepted, migration pending) moves Mosaic to the root,
 beside `shared/`, `vitrinli/` and `chischtli/`, so read the globs here as current state.
 `dsp-cli/` is a sixth root, outside the `services → shared, mosaic` arrow entirely (ADR-0002
 amendment): it is a client of every area rather than a member of one, no area depends on it, and it depends on no area
 crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `areas/deposit/editor/CONTEXT.md`,
-`areas/access/CONTEXT.md`, `areas/access/cpe/CONTEXT.md`, `areas/access/datei/CONTEXT.md`,
+`areas/access/CONTEXT.md`, `areas/access/cpe/CONTEXT.md`, `areas/access/sync/CONTEXT.md`,
+`areas/access/datei/CONTEXT.md`,
 `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
 `chischtli/CONTEXT.md`, `dsp-cli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
 
@@ -521,8 +523,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `docs/adr/0003-one-modulith-per-area.md`, `CONTEXT.md`, `areas/archive/CONTEXT.md` (the data
   products `sync` rebuilds from), `areas/access/CONTEXT.md` (the reading side today)
 - **Depends on:** nothing in this repository is expected beyond `shared-*` crates
-- **Used by:** the Access Area modulith — `sync` (areas/access/sync, planned; writer of the
-  archive projection), `profile`
+- **Used by:** the Access Area modulith — `sync` (areas/access/sync; writer of the
+  archive projection once it moves onto Chischtli), `profile`
   (writer of its settings graphs), with DPE, CPE and the SPARQL endpoint reading through
   `sync`'s ports; the Deposit Area modulith — the data-creation capability (writer of the working
   graphs); all planned
@@ -561,18 +563,20 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** `cpe-ports` depends on `std` alone. The engine: shared/metadata,
   shared/telemetry, modules/mosaic (expected); never DPE's domain, store or web crates, and
   never `sync`'s store or Chischtli (ADR-0008). The first `cpe/ports` edge is CPE's port
-  against areas/access/sync (planned; DEV-7399): CPE declares `ArchiveProjection` and `sync`
-  implements it. Ports between CPE and DPE remain hypothetical, each with its own consumer (ADR-0003): what CPE needs from DPE,
+  against areas/access/sync: CPE declares `ArchiveProjection` and `sync-store` implements it.
+  Ports between CPE and DPE remain hypothetical, each with its own consumer (ADR-0003): what CPE needs from DPE,
   CPE declares in `cpe/ports` and DPE implements; what DPE needs from CPE, DPE declares in
   `dpe/ports` and CPE implements, depending on `dpe/ports` alone. A *concept* both need lives
   in `shared/`; a shape never does
-- **Used by:** areas/access/sync (planned; DEV-7399: the provider, depending on
-  `cpe/ports` to implement `ArchiveProjection` as `LiveArchiveProjection`); areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`)
+- **Used by:** areas/access/sync (`sync-store`, the provider, depending on `cpe-ports` to
+  implement `ArchiveProjection` as `LiveArchiveProjection`); areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
   in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA.
   That `cpe/ports` reaches only `std` and `shared-*` is **review** until Bazel `visibility`
-  (ADR-0003); the rest is **docs-only** until CPE's other crates exist.
+  (ADR-0003); the rest is **docs-only** until CPE's other crates exist. `sync-store` also runs
+  `contract::violations` on every snapshot it serves, so a new contract invariant can take a
+  project offline.
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
   single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
   target design, the store is not built). `cpe-ports` holds none.
@@ -620,43 +624,56 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 ### areas/access/sync
 
-- **status: planned**
-- **Paths:** `:(glob)areas/access/sync/**` (nothing yet; DEV-7399 creates it)
+- **Paths:** `:(glob)areas/access/sync/**` — today `store/` (crate `sync-store`), `data/` (the
+  committed snapshots and their `PROVENANCE`) and `CONTEXT.md`
 - **Purpose:** The Access Area's `sync` capability: the single writer of the archive projection
   and the single consumer of the archive's projection stream, rebuilding the projection from
   snapshot plus replay (ADR-0003, ADR-0008); the first Access-Area capability without a screen
-  (ADR-0007). Starts at its minimum (DEV-7399): the committed projection of one shortcode (0803,
-  Incunabula) read from disk, behind CPE's port, with no Chischtli, replay or bus. DPE keeps reading
-  its corpus directly; moving it onto `sync` is its own decision. The on-disk format of the
-  committed projection and the RDF parser it needs are DEV-7399's decisions.
-- **Key entities:** (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
-  (`areas/archive/CONTEXT.md`); `LiveArchiveProjection`, the adapter DEV-7399 names
+  (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the committed snapshot of
+  one known project (0803, Incunabula) behind CPE's port, with no Chischtli, replay or bus, and
+  nothing constructs it until DEV-7400. The snapshot is interim-DAO N-Quads written by `dao-lift`
+  (ADR-0007, DEV-7399 amendment), read with a strict `oxttl` parse. DPE keeps reading its corpus
+  directly; moving it onto `sync` is its own decision.
+- **Key entities:** `LiveArchiveProjection`, `KNOWN`, `SnapshotError`, `InvalidFact` (in
+  `sync-store`); (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
+  (`areas/archive/CONTEXT.md`)
 - **Public interface:** nothing to a browser. The `Live<Port>` adapters for the ports it
-  implements: today CPE's `ArchiveProjection`; later DPE's own port when DPE moves onto `sync`,
-  and the query ports the SPARQL endpoint reads through.
-- **Local-context kit:** `chischtli/CONTEXT.md`, `areas/archive/CONTEXT.md`,
+  implements: today `LiveArchiveProjection` for CPE's `ArchiveProjection`; later DPE's own port
+  when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through.
+- **Local-context kit:** `areas/access/sync/CONTEXT.md`, `areas/access/sync/data/PROVENANCE`
+  (the `dao-lift` commit that pins `FORMAT.md`), `areas/access/sync/store/src/lib.rs`,
+  `areas/access/sync/store/src/vocab.rs` (the format's IRIs and the same pin),
   `areas/access/cpe/ports/src/lib.rs` (the port it implements),
   `areas/access/cpe/ports/src/contract.rs` (the contract its output must pass),
-  `docs/adr/0003-one-modulith-per-area.md`,
+  `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`,
+  `chischtli/CONTEXT.md`, `areas/archive/CONTEXT.md`, `docs/adr/0003-one-modulith-per-area.md`,
   `docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md`,
   `areas/access/server/src/serve.rs` (where its adapters are constructed)
 - **Depends on:** areas/access/cpe (`cpe-ports` only, to implement `ArchiveProjection`: the one
   permitted capability-to-capability edge, ADR-0003); chischtli (planned; not in the minimum);
-  shared/metadata (expected). Never CPE's or DPE's domain, store or web crates. Third-party: an
-  RDF parser, DEV-7399's choice
+  shared/metadata (expected). Never CPE's or DPE's domain, store or web crates. Third-party:
+  `oxttl` (the strict N-Quads parser) and `oxrdf` (its terms), with no triplestore at the
+  minimum; `thiserror`, `tracing`
 - **Used by:** areas/access/cpe (through `cpe-ports`; CPE's store is rebuilt from what `sync`
-  serves, ADR-0008); areas/access/server (adapter construction); later areas/access/dpe and the
-  SPARQL endpoint, each through its own port
+  serves, ADR-0008); areas/access/server (adapter construction, from DEV-7400); later
+  areas/access/dpe and the SPARQL endpoint, each through its own port
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008; whether `media`'s reading of the Access bucket counts
   against that is DEV-7442); maps its data to each consumer's archive-shaped DTOs and holds no
   presentation remodelling (ADR-0007's guardrail); readers reach the projection only through the
-  ports it implements, never by opening its store (**docs-only** until code exists; **review**,
-  then **structure** via Bazel visibility after ADR-0001).
+  ports it implements, never by opening its store; `sync-store` depends on `cpe-ports` and on no
+  other CPE or DPE crate (**review**, then **structure** via Bazel visibility after ADR-0001;
+  `check-composition-root-deps.sh` does not scan it). A file that breaks a fact the port serves
+  is refused whole, never served in part (**static-analysis**: `sync-store`'s tests), and so is
+  one whose mapped snapshot fails `cpe_ports::contract::violations`, run on every call; the
+  contract's cross-fact rules (inverted date, cycles, sibling positions) live only there, never
+  in the mapping (**review**; the crate doc in `lib.rs` says where a check goes).
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
-  snapshot plus replay, never repaired in place. Until Chischtli: the committed projection of 0803
-  under `areas/access/sync/`, produced from a dump and hand-committed (DEV-7399).
-- **Fingerprint:** none
+  snapshot plus replay, never repaired in place (target design). Today the committed snapshots
+  under `areas/access/sync/data/` (`0803.nq`), **single writer** `dao-lift`, run on a VRE dump at
+  the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
+  on every call, and holds nothing in between.
+- **Fingerprint:** `5c76664fc694`
 
 ### areas/access/media
 

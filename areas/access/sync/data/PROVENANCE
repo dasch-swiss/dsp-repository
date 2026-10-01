@@ -1,0 +1,23 @@
+0803.nq: the interim-DAO snapshot of project 0803 (incunabula) that sync-store serves.
+
+Dump
+  server:          stage (api.stage.dasch.swiss)
+  bagging date:    2026-07-19
+  DSP-API version: v37.1.0
+  KnoraBase:       52
+  produced by:     dsp vre project dump -s stage --project 0803 --skip-assets
+
+Producer
+  dao-lift:        dasch-swiss/dsp-incubator@1826d49f1632fd7502297b845cedffc278b48c2d
+                   (cpe/tools/dao-lift)
+
+This commit pins the FORMAT.md the file follows (cpe/tools/dao-lift/FORMAT.md at that commit);
+areas/access/sync/store/src/vocab.rs records the same commit.
+
+Regenerate from the incubator's cpe/ directory, at the commit above, on the unzipped dump:
+
+  cargo run --locked --release --manifest-path tools/dao-lift/Cargo.toml -- snapshot <dump-dir> <out.nq>
+
+The output is byte-identical for the same dump. Moving the pin means moving it here and in vocab.rs
+together, regenerating, and keeping sync-store's committed-file tests green without changing their
+expectations: those come from the dump.

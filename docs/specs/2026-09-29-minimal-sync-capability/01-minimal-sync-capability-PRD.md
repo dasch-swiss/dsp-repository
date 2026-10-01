@@ -177,6 +177,12 @@ whether or not its file can be read.
 - REQ-R1.5 (Unwanted-behaviour): If a known project's file is valid but holds no resources, then
   `LiveArchiveProjection` shall return `Unavailable`. An empty file is a failed regeneration, not an
   empty project.
+- REQ-R1.6 (Unwanted-behaviour): If the snapshot mapped from a known project's file has any
+  `contract::violations`, then `LiveArchiveProjection` shall return `Unavailable`. The contract is the
+  last guard: a file that breaks the interim format is refused, never served (REQ-R1.4), and the
+  format's rules that compare facts with one another (an inverted date, a membership or list-node
+  cycle, two siblings sharing a position) are checked only by the contract, so each has one
+  implementation.
 
 ### R2 Fidelity to the committed file
 
@@ -184,8 +190,8 @@ Covers what `contract::violations` cannot see, so that a mapping bug fails in `s
 a CPE page.
 
 - REQ-R2.1 (Ubiquitous): `contract::violations("0803", …)` shall return no violations on the committed
-  file. A violation is a test failure, i.e. a bug in `dao-lift` or `sync-store`. `sync` does not run
-  the contract at run time.
+  file. A violation is a test failure, i.e. a bug in `dao-lift` or `sync-store`. `sync` also runs the
+  contract at run time, as a last guard, and refuses a snapshot it rejects (REQ-R1.6).
 - REQ-R2.2 (Ubiquitous): Within one property, `sync-store` shall order values by `valueHasOrder`
   ascending, a missing order counting as 0, ties broken by value UUID (by target IRI for links).
 - REQ-R2.3 (Ubiquitous): `sync-store` shall serve each 0803 value that has superseded versions, and

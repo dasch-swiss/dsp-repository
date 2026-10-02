@@ -35,7 +35,7 @@ An adapter serves current, live facts only, and omits every fact not listed as i
 | Ordered membership (`isPartOf` parents and `seqnum`) | `isSequenceOf` | No project uses it yet; added when one needs it |
 | One file per resource: still image (asset and dimensions), audio, moving image, document | Other file kinds (archive, text, external and vector still images), file bytes, original filename, MIME types, checksums | CPE builds IIIF URLs from the asset name; the rest is not presented |
 | — | Rights and legal information (license, copyright holder, authorship) | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
-| — | ARKs, permissions, creation and deletion metadata | No ARK points at CPE yet (ADR-0007) |
+| — | ARKs, permissions, creation and deletion metadata | Not presented yet. A data ARK is added when CPE links back to the data it presents; data ARKs never resolve to CPE (ADR-0007, 2026-10-02 amendment) |
 | — | Deleted resources and values, superseded value versions | Not current facts |
 | — | Change announcements, a snapshot revision | ADR-0008: a full rebuild until a port carries change |
 | — | Links to resources outside the project | The adapter omits them |

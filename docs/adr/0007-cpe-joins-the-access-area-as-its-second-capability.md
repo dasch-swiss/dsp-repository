@@ -177,3 +177,26 @@ both under the `/cpe` mount and at a root mount.
 
 Enforced by: routing tests in `areas/access/server` for the prefix, `/cpe/`, and which side answers a 404
 (static-analysis, landing with DEV-7438); review for URLs built from the configured base.
+
+## Amendment (2026-10-02) — data ARKs and presentation ARKs
+
+The ARK clause ("No persistent identifier resolves to a CPE page until CPE's pages carry ADR-0005's
+metadata") and the last bullet of the DEV-7405 amendment read as if the existing ARKs of a CPE-presented
+project would be pointed at CPE once the FAIR adapter (DEV-7409) lands. They will not be (as stated by the
+owner, 2026-10-02). There are two kinds of ARK, and only the second ever resolves to CPE:
+
+- **Data ARKs identify DSP data and keep resolving to it.** The existing `ark:/72163/1/<shortcode>/<resource-id>`
+  and its value ARKs name a data point, not a view of it. They resolve to the data (today the VRE, at
+  `app.dasch.swiss`) and are never re-pointed at CPE, whether or not a project is presented by CPE. CPE
+  pages link back to the data they present by its data ARKs (a "Show in dataset" affordance, being planned
+  in `dsp-incubator`'s CPE).
+- **Presentation ARKs identify a CPE presentation view and resolve to CPE.** They are a separate, new kind;
+  their form and the resolver's mapping for them are not designed and stay open. The ARK clause's gate
+  applies to them: no presentation ARK resolves to a CPE page until that page carries ADR-0005's metadata,
+  and on such a page `cite-as` is its presentation ARK. CPE's share link may later copy it.
+- **The DEV-7405 amendment's ARK bullet is narrowed accordingly.** No URL form is fixed for presentation
+  ARKs yet; the uniform route it anticipates, if built, serves presentation ARKs, never data ARKs.
+
+In effect nothing changes today: no ARK of either kind resolves to CPE.
+
+Enforced by: review, for any change to how ARKs resolve or to what CPE emits as `cite-as`.

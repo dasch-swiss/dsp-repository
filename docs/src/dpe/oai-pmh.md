@@ -183,6 +183,8 @@ oai:dasch.swiss:ark:/72163/1/0862/RMgW_EICR3OLcMi7LNE=Sgu
 https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 ```
 
+A versioned ARK's timestamp may stay on the record id: `…/RMgW_EICR3OLcMi7LNE=Sgu.20110414T075708Z/file` answers the same document as the bare id, whose `fileId` it echoes. The file metadata does not differ between versions of a record, since assets are immutable once ingested.
+
 Record ids contain `=` (the ARK check character). It is a valid path-segment character and needs no percent-encoding, though `%3D` resolves identically. Note the `id` field (`http://rdfh.ch/0862/RMgW_EICR3OLcMi7LNE-Sg`) uses a different `-`-suffixed form and is **not** the routing key — only `pid` is.
 
 #### File-metadata document

@@ -100,6 +100,32 @@ fn parse_pid(s: &str) -> Result<Pid, String> {
     Ok(Pid { host, shortcode, record_id })
 }
 
+/// The record id with a trailing ARK version timestamp removed, or the id
+/// unchanged when it carries none.
+///
+/// A versioned ARK appends `.YYYYMMDDTHHMMSS[fraction]Z` to the record id (e.g.
+/// `fJsdjgkPULyPYXoiGkPOAwV.20110414T075708Z`). Dropping it is only sound for
+/// readers whose output does not depend on the version, such as a record's file
+/// metadata: assets are immutable once ingested.
+pub fn strip_ark_timestamp(record_id: &str) -> &str {
+    match record_id.rsplit_once('.') {
+        Some((id, timestamp)) if !id.is_empty() && is_ark_timestamp(timestamp) => id,
+        _ => record_id,
+    }
+}
+
+/// Mirrors dsp-api's `^\d{8}T\d{6}\d{0,9}Z$`.
+fn is_ark_timestamp(s: &str) -> bool {
+    let Some(digits) = s.strip_suffix('Z') else {
+        return false;
+    };
+    let all_digits = |part: &str| part.bytes().all(|b| b.is_ascii_digit());
+    match digits.split_once('T') {
+        Some((date, time)) => date.len() == 8 && (6..=15).contains(&time.len()) && all_digits(date) && all_digits(time),
+        None => false,
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordLicense {
     #[serde(rename = "licenseIdentifier")]
@@ -202,6 +228,33 @@ pub fn record_datestamp(record: &Record) -> String {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn strip_ark_timestamp_drops_a_version_suffix() {
+        for (input, expected) in [
+            ("fJsdjgkPULyPYXoiGkPOAwV.20110414T075708Z", "fJsdjgkPULyPYXoiGkPOAwV"),
+            ("RMgW_EICR3OLcMi7LNE=Sgu.20180528T155203897Z", "RMgW_EICR3OLcMi7LNE=Sgu"),
+            ("RMgW_EICR3OLcMi7LNE=Sgu.20180528T155203123456789Z", "RMgW_EICR3OLcMi7LNE=Sgu"),
+        ] {
+            assert_eq!(strip_ark_timestamp(input), expected, "for {input}");
+        }
+    }
+
+    #[test]
+    fn strip_ark_timestamp_leaves_anything_else_alone() {
+        for input in [
+            "RMgW_EICR3OLcMi7LNE=Sgu",
+            "RMgW_EICR3OLcMi7LNE=Sgu.",
+            "RMgW_EICR3OLcMi7LNE=Sgu.2011041T075708Z",
+            "RMgW_EICR3OLcMi7LNE=Sgu.20110414T07570Z",
+            "RMgW_EICR3OLcMi7LNE=Sgu.20110414T075708",
+            "RMgW_EICR3OLcMi7LNE=Sgu.20110414T0757081234567890Z",
+            "RMgW_EICR3OLcMi7LNE=Sgu.20110414X075708Z",
+            ".20110414T075708Z",
+        ] {
+            assert_eq!(strip_ark_timestamp(input), input, "for {input}");
+        }
+    }
 
     fn first_0803_record() -> Record {
         let json = include_str!("../testdata/0803-records.json");

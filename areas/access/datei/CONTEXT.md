@@ -37,13 +37,13 @@ A TEI artefact declaring how a project's units are navigated: a tree of entries 
 _Avoid_: navigation file, index (a Full-text index is Chischtli's).
 
 **Editorial page** (planned):
-A page of the edition's own prose, an introduction or an about page, declared through the Table of contents.
+A page of the edition's own prose, an introduction or an about page, declared through a Table of contents.
 _Avoid_: narrative (CPE's Markdown), landing page (ADR-0005's term; no persistent identifier resolves to DaTEI yet).
 
 ### How it is served
 
 **Rebuild**:
-Building a project's Read model from empty: read the Edition files, ODD, Project CSS, Driving files and Table of contents through the port, apply the Configuration, recompute derived state. Runs when a project is activated and is the only writer of the Read model. In the incubator it is `ingest` plus `apply-config` plus the derived recompute, minus the uploaded snapshot.
+Building a project's Read model from empty: read the Edition files, ODD, Project CSS, Driving files and Tables of contents through the port, apply the Configuration, recompute derived state. Runs when a project is activated and is the only writer of the Read model. In the incubator it is `ingest` plus `apply-config` plus the derived recompute, minus the uploaded snapshot.
 _Avoid_: ingest (the OAIS functional entity inside the Archive Area), transformer, import, restore (the incubator's snapshot-swap path).
 
 **Read model**:
@@ -52,12 +52,12 @@ _Avoid_: IR (fine inside the code; as a concept name it says nothing about owner
 
 ## What the port serves
 
-The files of one project, with their bytes: Edition files, ODD, Project CSS, Driving files, Table of contents. An adapter serves current, archived files only and omits what the archive does not hold. DaTEI needs none of the archive-shaped facts CPE's port serves and declares no port against `sync`. The provider is the Access Area's `media` capability, which reads Service Files from the Access bucket; a TEI file's Service File is the file itself. Whether `media` may consume the Access bucket beside `sync`'s consumption of the projection stream is DEV-7442.
+The files of one project, with their bytes: Edition files, ODD, Project CSS, Driving files, Tables of contents. An adapter serves current, archived files only and omits what the archive does not hold. DaTEI needs none of the archive-shaped facts CPE's port serves and declares no port against `sync`. The provider is the Access Area's `media` capability, which reads Service Files from the Access bucket; a TEI file's Service File is the file itself. Whether `media` may consume the Access bucket beside `sync`'s consumption of the projection stream is DEV-7442.
 
 ## Relationships
 
 - One DaTEI project presents exactly one contract **Project**, keyed by its **Shortcode**, under its own route prefix.
-- A project has one **Configuration**, one or more **Edition files**, zero or one **ODD**, zero or more **Project CSS** files, zero or more **Driving files** (one per synoptic view) and zero or one **Table of contents**.
+- A project has one **Configuration**, one or more **Edition files**, zero or one **ODD**, zero or more **Project CSS** files, zero or more **Driving files** (one per synoptic view) and zero or more **Tables of contents** (one per view is possible).
 - A **Rebuild** produces exactly one **Read model** per project from those; the **Presenter** reads it and nothing else.
 - DaTEI declares one port; `media` implements it (pending DEV-7442).
 

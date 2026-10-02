@@ -8,7 +8,7 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use dpe_core::record_repository::{FsRecordRepository, RecordRepository};
 use serde::Serialize;
-use shared_metadata::RecordFile;
+use shared_metadata::{strip_ark_timestamp, RecordFile};
 
 use crate::shell::AppState;
 
@@ -58,6 +58,9 @@ impl FileMetadata {
 /// One representation, unconditionally: no `Accept` dispatch, no redirect. DPE
 /// serves the metadata; the bytes come from `download_url`.
 ///
+/// A versioned ARK's timestamp on `record_id` is dropped: the file metadata is
+/// the same at every version of the record.
+///
 /// Missing record and record-without-file are both `404`, not distinguished.
 /// The 404 is JSON too, not the app's HTML shell: the endpoint has no `Accept`
 /// dispatch, so switching media type on the error path would hand a harvester a
@@ -67,6 +70,7 @@ pub(crate) async fn record_file_handler(
     State(state): State<AppState>,
     Path((shortcode, record_id)): Path<(String, String)>,
 ) -> axum::response::Response {
+    let record_id = strip_ark_timestamp(&record_id);
     let ark_suffix = format!("{shortcode}/{record_id}");
     let repo = FsRecordRepository::new(state.corpus);
 
@@ -78,7 +82,7 @@ pub(crate) async fn record_file_handler(
             .into_response();
     };
 
-    axum::Json(FileMetadata::new(file, &record_id)).into_response()
+    axum::Json(FileMetadata::new(file, record_id)).into_response()
 }
 
 #[cfg(test)]
@@ -410,6 +414,34 @@ mod lookup_tests {
             // Echoes the decoded segment: `%3D` comes back as a literal `=`.
             assert_eq!(body["fileId"], record.pid.record_id, "for {record_id}");
         }
+    }
+
+    /// The id echoed back is the bare one: the version names no different file.
+    #[tokio::test]
+    async fn a_versioned_record_id_resolves_to_the_unversioned_record() {
+        let app = app();
+
+        let record = crate::test_support::test_state()
+            .corpus
+            .all_records()
+            .iter()
+            .find(|r| r.file.is_some())
+            .expect("the committed data has records with files");
+        let expected_url = record.file.as_ref().unwrap().url.clone();
+
+        let (status, body) = fetch(
+            app,
+            &format!(
+                "/dpe/records/{}/{}.20110414T075708Z/file",
+                record.pid.shortcode, record.pid.record_id
+            ),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+
+        let body: serde_json::Value = serde_json::from_str(&body).expect("response body is JSON");
+        assert_eq!(body["downloadUrl"], expected_url);
+        assert_eq!(body["fileId"], record.pid.record_id);
     }
 
     #[tokio::test]

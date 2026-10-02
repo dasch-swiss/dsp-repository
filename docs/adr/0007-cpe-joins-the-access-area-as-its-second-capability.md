@@ -224,3 +224,37 @@ owner, 2026-10-02). There are two kinds of ARK, and only the second ever resolve
 In effect nothing changes today: no ARK of either kind resolves to CPE.
 
 Enforced by: review, for any change to how ARKs resolve or to what CPE emits as `cite-as`.
+
+## Amendment (2026-10-02, DEV-7400) — CPE arrives crate by crate, shaped in the incubator
+
+The record reads as if CPE arrives in one move: the prototype is moulded into the target anatomy on entry,
+its dependency pins are "reconciled on entry", and the vendored copy replaces the prototype's engine only
+once the monorepo serves Incunabula. A single move of that size cannot be reviewed: it would relocate the
+engine, split it into the capability's crates, reconcile its dependencies, build the store from the port
+and wire it into `areas/access/server` in one change, with the prototype no longer beside it as the
+reference. So the move is split (as decided by the owner, 2026-10-02; the plan is phase 1b of
+`dsp-incubator/cpe/docs/INCUNABULA_GO_LIVE.md`):
+
+- **The engine takes this capability's crate shape in the incubator first.** Its module cycles are broken,
+  page assembly receives view data instead of querying the store, the engine is split into the crates
+  `areas/access/cpe` will hold (domain, components, store, page assembly), and its dependency pins are
+  aligned with this workspace, all in `dsp-incubator`, each step checked against the prototype's
+  unchanged HTML. "Reconciled on entry" therefore happens before entry.
+- **The store built from the port, and the per-project remodelling, are built in the incubator first.**
+  The incubator vendors `cpe-ports` from this repository and builds Incunabula's store from the committed
+  0803 projection, compared against the prototype's `data.sql`. The remodelling clause above is unchanged;
+  only where it is first implemented moves.
+- **Crates move one at a time, once they have stopped changing.** A crate moves when its churn in the
+  incubator has dropped, not in dependency order; after it moves, the incubator vendors it back under its
+  own record (`0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md`), and changes to it
+  are PRs here. The store and page assembly move last, together with the
+  wiring and the retirement of the prototype's binary.
+- **The vendored copy therefore starts before Incunabula is served from here,** one crate at a time.
+  "Migrate, then delete" is unchanged: the prototype's own engine is removed once the monorepo CPE serves
+  Incunabula, which by then is the removal of whatever has not moved yet.
+
+The target shape, the port, the guardrails and the done-criterion (Incunabula byte-comparable to the
+prototype apart from the `/cpe` prefix) are unchanged.
+
+Enforced by: review, for a crate moving into `areas/access/cpe` with its incubator copy re-vendored and
+an empty `just vendor-diff` there.

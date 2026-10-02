@@ -1051,3 +1051,60 @@ fn allow_insecure_flag_wins_over_conflicting_env_var() {
         .assert()
         .success();
 }
+
+// ── corrupt auth cache at default verbosity ──────────────────────────────────
+//
+// Runs the real binary so the assertion covers what `init_tracing(0)` actually
+// writes to stderr. An in-process test with a thread-scoped subscriber is
+// flaky: tracing caches each callsite's interest process-wide, and a parallel
+// test thread can cache the shared `warn!` callsite as disabled (DEV-7446).
+
+#[test]
+fn corrupt_cache_does_not_leak_token_bytes_at_default_verbosity() {
+    // Regression guard: a `toml` parse error quotes the offending source line.
+    // If the load-failure log includes that raw error at `warn` (the default
+    // verbosity), a cache file truncated mid-write inside a token line would
+    // echo token bytes to stderr. The raw error belongs at `debug`; the `warn`
+    // line stays body-free.
+    const FAKE_TOKEN: &str = "eyFAKE.TOKEN.LEAK-DO-NOT-SHOW-1234567890";
+
+    let home = TempDir::new().unwrap();
+    let cache_dir = home.path().join(".config").join("dsp-cli");
+    std::fs::create_dir_all(&cache_dir).unwrap();
+    // Missing closing quote: a realistic "write cut off mid-token" corruption
+    // whose parse error necessarily points at (and quotes) this exact line.
+    std::fs::write(
+        cache_dir.join("auth.toml"),
+        format!("[\"https://api.test.dasch.swiss\"]\ntoken = \"{FAKE_TOKEN}\n"),
+    )
+    .unwrap();
+
+    // dsp-cli/ADR-0007: DSP_TOKEN wins over a corrupt cache, so the command
+    // succeeds and only warns that the cache could not be read.
+    let env_token = jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &serde_json::json!({ "exp": 4_102_444_800_i64 }), // 2100-01-01
+        &jsonwebtoken::EncodingKey::from_secret(b"unused"),
+    )
+    .unwrap();
+
+    let output = dsp()
+        .env("HOME", home.path())
+        .env("DSP_TOKEN", env_token)
+        .env_remove("RUST_LOG")
+        .args(["auth", "status", "--server", "https://api.test.dasch.swiss"])
+        .assert()
+        .success()
+        .get_output()
+        .clone();
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        !stderr.contains(FAKE_TOKEN),
+        "warn-level log leaked token bytes from the toml parse error: {stderr}"
+    );
+    assert!(
+        stderr.contains("auth cache"),
+        "expected a body-free warning that the auth cache could not be read; got: {stderr}"
+    );
+}

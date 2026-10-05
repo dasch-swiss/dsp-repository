@@ -375,6 +375,7 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
                              └─────────┬──────────────────┘
 https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 </code></pre>
+<p>A versioned ARK's timestamp may stay on the record id: <code>…/RMgW_EICR3OLcMi7LNE=Sgu.20110414T075708Z/file</code> answers the same document as the bare id, whose <code>fileId</code> it echoes. The file metadata does not differ between versions of a record, since assets are immutable once ingested.</p>
 <p>Record ids contain <code>=</code> (the ARK check character). It is a valid path-segment character and needs no percent-encoding, though <code>%3D</code> resolves identically. Note the <code>id</code> field (<code>http://rdfh.ch/0862/RMgW_EICR3OLcMi7LNE-Sg</code>) uses a different <code>-</code>-suffixed form and is <strong>not</strong> the routing key — only <code>pid</code> is.</p>
 <h4 id="file-metadata-document"><a class="header" href="#file-metadata-document">File-metadata document</a></h4>
 <pre><code class="language-json">{

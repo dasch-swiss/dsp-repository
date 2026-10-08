@@ -1,14 +1,17 @@
 0803.nq: the interim-DAO snapshot of project 0803 (incunabula) that sync-store serves.
 
 Dump
-  server:          stage (api.stage.dasch.swiss)
-  bagging date:    2026-07-19
-  DSP-API version: v37.1.0
-  KnoraBase:       52
-  produced by:     dsp vre project dump -s stage --project 0803 --skip-assets
+  server:          prod (api.dasch.swiss)
+  bagging date:    2026-10-07
+  DSP-API version: v40.3.0
+  KnoraBase:       59
+  produced by:     dsp vre project dump -s prod -p 0803 --skip-assets --cleanup
+
+The stage dump this file was first built from (api.stage.dasch.swiss, bagged 2026-07-19, DSP-API v37.1.0)
+gave the same bytes.
 
 Producer
-  dao-lift:        dasch-swiss/dsp-incubator@1826d49f1632fd7502297b845cedffc278b48c2d
+  dao-lift:        dasch-swiss/dsp-incubator@b2226ff4a987bf5f4b5cd0f33a8bf923a3033c7f
                    (cpe/tools/dao-lift)
 
 This commit pins the FORMAT.md the file follows (cpe/tools/dao-lift/FORMAT.md at that commit);

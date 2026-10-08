@@ -15,7 +15,7 @@ contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.
 The shape of a committed snapshot: N-Quads that follow DAO wherever its decisions have settled and deviate
 only where the port needs a fact DAO drops. `dao-lift` in `dasch-swiss/dsp-incubator` writes it, and its
 `FORMAT.md` there defines it and lists each deviation with its reason. The `dao-lift` commit in
-`data/PROVENANCE`, today `dasch-swiss/dsp-incubator@1826d49f1632fd7502297b845cedffc278b48c2d`, pins the
+`data/PROVENANCE`, today `dasch-swiss/dsp-incubator@b2226ff4a987bf5f4b5cd0f33a8bf923a3033c7f`, pins the
 `FORMAT.md` the file follows; `store/src/vocab.rs` records the same commit, and the two move together. The
 format is temporary: it moves to DAO once DAO is published (ADR-0007).
 _Avoid_: DAO (the format is DAO-shaped, not DAO), knora-base export, dump (the VRE export it is made from).

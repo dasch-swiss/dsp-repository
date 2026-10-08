@@ -53,6 +53,16 @@ iri! {
     ListNodeIri
 }
 
+/// The resolver, NAAN and version every plain data ARK starts with.
+pub const DATA_ARK_PREFIX: &str = "https://ark.dasch.swiss/ark:/72163/1/";
+
+iri! {
+    /// A resource's plain data ARK URL, e.g. `https://ark.dasch.swiss/ark:/72163/1/0803/<id><digit>`;
+    /// never a value or version ARK, and never resolving to CPE (ADR-0007).
+    /// [`violations`](crate::contract::violations) checks its shape.
+    DataArk
+}
+
 /// One project's current facts, whole.
 ///
 /// A snapshot carries no revision or hash: every rebuild starts from empty (ADR-0008).
@@ -72,6 +82,10 @@ pub struct ProjectSnapshot {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Resource {
     pub iri: ResourceIri,
+    /// The resource's data ARK, derived by the adapter from `iri` with dsp-api's algorithm.
+    ///
+    /// Provisional: DAO does not carry the ARK yet; once it does, the adapter reads it.
+    pub ark: DataArk,
     pub class: ClassIri,
     /// `rdfs:label`: exactly one, a plain literal.
     pub label: String,

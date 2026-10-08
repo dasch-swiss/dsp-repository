@@ -56,8 +56,8 @@ A Person or Organization named by a project's `Attribution`, resolved through `C
 _Avoid_: agent, author (one role among several).
 
 **Pid**:
-The ARK persistent identifier of a project or record (`RecordPid`, `ARK_PATH_PREFIX`), distinct from the internal `id` and from the Shortcode.
-_Avoid_: DOI, permalink, URL (a Pid resolves to one).
+The ARK persistent identifier of a project or record (`RecordPid`, `ARK_PATH_PREFIX`), distinct from the internal `id` and from the Shortcode, and from a resource's **Data ARK** (`cpe_ports::DataArk`, [`cpe/CONTEXT.md`](cpe/CONTEXT.md)).
+_Avoid_: DOI, permalink, URL (a Pid resolves to one); Pid for a resource's data ARK.
 
 ### Presentation and protocol
 

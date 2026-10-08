@@ -4,7 +4,9 @@
 //! `Decimal`, `Uri`, `Geometry` and `Color`, and whether an omitted fact was omitted correctly are
 //! invisible to it, so an empty result is a consistency check, not proof of fidelity; an adapter
 //! pins those in its own tests. Of what [`Annotation::targets`](crate::Annotation::targets)
-//! promises, it checks only that there is at least one and each is a resource of the snapshot.
+//! promises, it checks only that there is at least one and each is a resource of the snapshot. It
+//! checks the shape of a resource's data ARK, not that the ARK belongs to its IRI; that is the
+//! adapter's promise.
 //!
 //! A violation is always an adapter bug, or bad data an adapter failed to refuse. `sync-store` runs
 //! [`violations`] on every snapshot it serves and refuses one with any violation, so a new
@@ -13,7 +15,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use crate::{ListNodeIri, ProjectSnapshot, PropertyIri, ResourceIri, ValueKind};
+use crate::{DataArk, ListNodeIri, ProjectSnapshot, PropertyIri, ResourceIri, ValueKind, DATA_ARK_PREFIX};
 
 /// One broken invariant, naming the IRIs involved.
 ///
@@ -25,6 +27,10 @@ pub enum Violation {
     ShortcodeMismatch { requested: String, served: String },
     /// Two or more resources share this IRI.
     DuplicateResource { resource: ResourceIri },
+    /// A resource's `ark` is not a plain data ARK:
+    /// `https://ark.dasch.swiss/ark:/72163/1/<shortcode>/<id>` with four uppercase hex digits as
+    /// shortcode and an id of `[A-Za-z0-9_=]+`.
+    MalformedDataArk { resource: ResourceIri, ark: DataArk },
     /// A `Link` value's target is not a resource in the snapshot.
     DanglingLink {
         resource: ResourceIri,
@@ -77,6 +83,9 @@ impl fmt::Display for Violation {
                 write!(f, "requested project {requested}, but the snapshot is of {served}")
             }
             Self::DuplicateResource { resource } => write!(f, "resource {} occurs more than once", resource.as_str()),
+            Self::MalformedDataArk { resource, ark } => {
+                write!(f, "resource {} has the malformed data ARK {}", resource.as_str(), ark.as_str())
+            }
             Self::DanglingLink { resource, property, target } => write!(
                 f,
                 "resource {} links via {} to {}, which is not in the snapshot",
@@ -181,6 +190,10 @@ pub fn violations(requested: &str, snapshot: &ProjectSnapshot) -> Vec<Violation>
 
     let mut parents: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for resource in &snapshot.resources {
+        if !is_plain_data_ark(resource.ark.as_str()) {
+            found.push(Violation::MalformedDataArk { resource: resource.iri.clone(), ark: resource.ark.clone() });
+        }
+
         let edges = parents.entry(resource.iri.as_str()).or_default();
         for parent in &resource.part_of {
             if resource_counts.contains_key(parent.as_str()) {
@@ -290,6 +303,22 @@ pub fn violations(requested: &str, snapshot: &ProjectSnapshot) -> Vec<Violation>
     found
 }
 
+/// Whether `s` is `DATA_ARK_PREFIX` followed by `<shortcode>/<id>`: a four-digit uppercase
+/// hexadecimal shortcode, and an id of ASCII letters, digits, `_` and `=`. A version suffix, a
+/// value segment, a lowercase shortcode, a `-` and a foreign resolver all fail.
+fn is_plain_data_ark(s: &str) -> bool {
+    let Some(rest) = s.strip_prefix(DATA_ARK_PREFIX) else {
+        return false;
+    };
+    let Some((shortcode, id)) = rest.split_once('/') else {
+        return false;
+    };
+    shortcode.len() == 4
+        && shortcode.bytes().all(|b| b.is_ascii_digit() || (b'A'..=b'F').contains(&b))
+        && !id.is_empty()
+        && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'=')
+}
+
 /// The smallest member of every strongly connected component of `edges` that contains a cycle,
 /// self-loops included; successors that are not keys of `edges` are ignored.
 ///
@@ -379,6 +408,7 @@ mod tests {
     fn resource(id: &str, class: &str) -> Resource {
         Resource {
             iri: res(id),
+            ark: DataArk(format!("https://ark.dasch.swiss/ark:/72163/1/0803/{}", id.replace('-', "="))),
             class: ClassIri(class.to_string()),
             label: id.to_string(),
             values: vec![],
@@ -557,6 +587,46 @@ mod tests {
         let found = violations("0803", &snapshot(vec![resource("b", BOOK), other], vec![]));
 
         assert_eq!(found, vec![Violation::DuplicateResource { resource: res("b") }]);
+    }
+
+    #[test]
+    fn test_violations_version_ark_reports_malformed_data_ark() {
+        let ark = DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/b.20180604T085622Z".to_string());
+        let bad = Resource { ark: ark.clone(), ..resource("b", BOOK) };
+
+        let found = violations("0803", &snapshot(vec![bad], vec![]));
+
+        assert_eq!(found, vec![Violation::MalformedDataArk { resource: res("b"), ark }]);
+    }
+
+    #[test]
+    fn test_violations_lowercase_shortcode_ark_reports_malformed_data_ark() {
+        let ark = DataArk("https://ark.dasch.swiss/ark:/72163/1/080a/b".to_string());
+        let bad = Resource { ark: ark.clone(), ..resource("b", BOOK) };
+
+        let found = violations("0803", &snapshot(vec![bad], vec![]));
+
+        assert_eq!(found, vec![Violation::MalformedDataArk { resource: res("b"), ark }]);
+    }
+
+    #[test]
+    fn test_violations_unescaped_dash_ark_reports_malformed_data_ark() {
+        let ark = DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/zz-booko".to_string());
+        let bad = Resource { ark: ark.clone(), ..resource("zz-book", BOOK) };
+
+        let found = violations("0803", &snapshot(vec![bad], vec![]));
+
+        assert_eq!(found, vec![Violation::MalformedDataArk { resource: res("zz-book"), ark }]);
+    }
+
+    #[test]
+    fn test_violations_foreign_resolver_ark_reports_malformed_data_ark() {
+        let ark = DataArk("https://ark.example.org/ark:/72163/1/0803/b".to_string());
+        let bad = Resource { ark: ark.clone(), ..resource("b", BOOK) };
+
+        let found = violations("0803", &snapshot(vec![bad], vec![]));
+
+        assert_eq!(found, vec![Violation::MalformedDataArk { resource: res("b"), ark }]);
     }
 
     #[test]
@@ -870,8 +940,11 @@ mod tests {
             annotation: Some(Annotation { motivation: Motivation::Linking, targets: vec![res("gone")] }),
             ..resource("x", REGION)
         };
+        let bad_ark = DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/q.20180604T085622Z".to_string());
+        let malformed = Resource { ark: bad_ark.clone(), ..resource("q", BOOK) };
         let resources = vec![
             uuidless,
+            malformed,
             untargeted,
             inverted,
             page("m", "gone", None),
@@ -887,6 +960,7 @@ mod tests {
         assert_eq!(
             found,
             vec![
+                Violation::MalformedDataArk { resource: res("q"), ark: bad_ark },
                 Violation::DanglingLink {
                     resource: res("z"),
                     property: prop("hasAuthor"),

@@ -549,9 +549,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   configured per project. Where the per-project configuration lives is an open item. Only
   `ports/` exists so far; the engine, store and routes are planned.
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
-  `Motivation`, `FakeArchiveProjection`, `contract::violations` (in `cpe-ports`); an annotation
-  (Region, LinkObj) is an ordinary `Resource`, found by `Resource.annotation`, never by `class`;
-  the engine's entities are not built yet
+  `Motivation`, `DataArk`, `DATA_ARK_PREFIX`, `FakeArchiveProjection`, `contract::violations`
+  (in `cpe-ports`); an annotation (Region, LinkObj) is an ordinary `Resource`, found by
+  `Resource.annotation`, never by `class`; every `Resource` carries its plain data ARK, whose
+  shape the contract checks (`Violation::MalformedDataArk`) and whose derivation is the
+  adapter's (`sync-store`'s `ark.rs`); the
+  engine's entities are not built yet
 - **Public interface:** its router (planned), mounted by areas/access/server on the area's
   origin beside DPE's routes. `cpe/ports` is not an interface CPE offers but the ports CPE
   consumes: today `ArchiveProjection`, which `sync` implements.
@@ -627,24 +630,29 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 ### areas/access/sync
 
 - **Paths:** `:(glob)areas/access/sync/**` — today `store/` (crate `sync-store`), `data/` (the
-  committed snapshots and their `PROVENANCE`) and `CONTEXT.md`
+  committed snapshots, the test oracle `0803-arks.txt` and their `PROVENANCE`) and `CONTEXT.md`
 - **Purpose:** The Access Area's `sync` capability: the single writer of the archive projection
   and the single consumer of the archive's projection stream, rebuilding the projection from
   snapshot plus replay (ADR-0003, ADR-0008); the first Access-Area capability without a screen
   (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the committed snapshot of
   one known project (0803, Incunabula) behind CPE's port, with no Chischtli, replay or bus, and
   nothing constructs it until DEV-7400. Annotations (Regions, LinkObjs) are served as resources
-  with their geometry and color verbatim. The snapshot is interim-DAO N-Quads written by `dao-lift`
+  with their geometry and color verbatim. Each resource's data ARK is derived from its IRI with
+  dsp-api's algorithm (`ark.rs`), not read from the file, until DAO carries it; the incubator's
+  ARKs for 0803 are committed as `data/0803-arks.txt` and pinned by the committed-file tests.
+  The snapshot is interim-DAO N-Quads written by `dao-lift`
   (ADR-0007, DEV-7399 amendment), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
-- **Key entities:** `LiveArchiveProjection`, `KNOWN`, `SnapshotError`, `InvalidFact` (in
-  `sync-store`); (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
+- **Key entities:** `LiveArchiveProjection`, `KNOWN`, `SnapshotError`, `InvalidFact`,
+  `ArkError` (in `sync-store`; a resource IRI with no data ARK is `InvalidFact::NoDataArk`);
+  (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
   (`areas/archive/CONTEXT.md`)
 - **Public interface:** nothing to a browser. The `Live<Port>` adapters for the ports it
   implements: today `LiveArchiveProjection` for CPE's `ArchiveProjection`; later DPE's own port
   when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through.
 - **Local-context kit:** `areas/access/sync/CONTEXT.md`, `areas/access/sync/data/PROVENANCE`
   (the `dao-lift` commit that pins `FORMAT.md`), `areas/access/sync/store/src/lib.rs`,
+  `areas/access/sync/store/src/ark.rs` (the one derivation of the data ARK),
   `areas/access/sync/store/src/vocab.rs` (the format's IRIs and the same pin),
   `areas/access/cpe/ports/src/lib.rs` (the port it implements),
   `areas/access/cpe/ports/src/contract.rs` (the contract its output must pass),
@@ -677,8 +685,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   snapshot plus replay, never repaired in place (target design). Today the committed snapshots
   under `areas/access/sync/data/` (`0803.nq`), **single writer** `dao-lift`, run on a VRE dump at
   the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
-  on every call, and holds nothing in between.
-- **Fingerprint:** `5bff0a0bb38f`
+  on every call, and holds nothing in between. The test oracle `0803-arks.txt`, **single writer**
+  the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
+  (**review**), is read only by the committed-file tests.
+- **Fingerprint:** `ec1861e4ca2c`
 
 ### areas/access/media
 

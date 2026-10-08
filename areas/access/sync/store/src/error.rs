@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 use cpe_ports::contract::Violation;
 
+use crate::ArkError;
+
 /// Why a known project's snapshot file could not be served. `LiveArchiveProjection` returns it as
 /// the source of `ProjectionError::Unavailable`.
 #[derive(Debug, thiserror::Error)]
@@ -47,6 +49,9 @@ pub enum InvalidFact {
     BlankNodeObject,
     #[error("a quad outside the project graph, in {graph}")]
     ForeignGraph { graph: String },
+    /// The resource's IRI is not one dsp-api derives a data ARK from.
+    #[error("a resource whose IRI has no data ARK: {reason}")]
+    NoDataArk { reason: ArkError },
     #[error("a resource without a class")]
     MissingClass,
     #[error("a resource also typed {class}")]

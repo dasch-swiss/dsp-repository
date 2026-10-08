@@ -24,3 +24,18 @@ Regenerate from the incubator's cpe/ directory, at the commit above, on the unzi
 The output is byte-identical for the same dump. Moving the pin means moving it here and in vocab.rs
 together, regenerating, and keeping sync-store's committed-file tests green without changing their
 expectations: those come from the dump.
+
+0803-arks.txt: the 0803 data ARKs Incunabula stores, which are dao-lift's output. One plain data ARK
+per line, sorted, 4,143 lines.
+
+Source
+  file:            cpe/projects/incunabula/data.sql (the resources.ark and annotations.ark columns)
+  repository:      dasch-swiss/dsp-incubator, at commit c2b3e10a8d7c695347e11ed7a5cf31bf0f3dca64
+
+Extract it in the incubator checkout at that commit:
+
+  grep -oE 'https://ark\.dasch\.swiss/ark:/72163/1/0803/[A-Za-z0-9_=]+' cpe/projects/incunabula/data.sql | LC_ALL=C sort -u
+
+It is a subset of the served resources: no LinkObj, 64 of 77 Regions, no calibration-scan Pages. The
+committed tests check each line against the served ARK. Like 0803.nq, it is a frozen copy and does not
+follow the incubator.

@@ -897,7 +897,7 @@ fn test_snapshot_value_node_without_value_or_list_node_returns_unavailable() {
 }
 
 #[test]
-fn test_snapshot_broken_value_node_on_dropped_annotation_serves_snapshot() {
+fn test_snapshot_broken_value_node_on_annotation_returns_unavailable() {
     let dir = tempfile::tempdir().expect("create a temp dir");
     write_0803(
         &dir,
@@ -920,12 +920,18 @@ fn test_snapshot_broken_value_node_on_dropped_annotation_serves_snapshot() {
         "#,
     );
 
-    let snapshot = LiveArchiveProjection::new(dir.path())
+    let error = LiveArchiveProjection::new(dir.path())
         .snapshot("0803")
-        .expect("a broken fact inside an annotation is dropped");
+        .expect_err("a broken fact inside an annotation is refused");
 
-    let iris: Vec<&str> = snapshot.resources.iter().map(|resource| resource.iri.as_str()).collect();
-    assert_eq!(iris, vec!["http://rdfh.ch/0803/pG4w"]);
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(source, SnapshotError::Invalid { path: _, subject, reason: InvalidFact::MissingValueUuid } if subject == "urn:dsp:value:c0mM"),
+        "{source:?}"
+    );
 }
 
 #[test]
@@ -2378,6 +2384,497 @@ fn test_snapshot_representation_on_two_resources_returns_unavailable() {
             source,
             SnapshotError::Invalid { path: _, subject, reason: InvalidFact::DuplicateRepresentation { node } }
                 if subject == "http://rdfh.ch/0803/pG4w" && node == "urn:dsp:representation:sdSI"
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_without_motivation_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::MissingMotivation
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_with_two_motivations_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#commenting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::RepeatedPredicate { predicate: "http://www.w3.org/ns/oa#motivatedBy".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_with_unknown_motivation_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#tagging> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::UnknownMotivation { motivation: "http://www.w3.org/ns/oa#tagging".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_motivation_as_literal_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> "highlighting" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::UnfitLiteral { predicate: "http://www.w3.org/ns/oa#motivatedBy".to_string(), lexical: "highlighting".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_without_target_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::MissingAnnotationTarget
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_target_as_literal_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> "http://rdfh.ch/0803/pG4w" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::UnfitLiteral { predicate: "http://www.w3.org/ns/oa#hasTarget".to_string(), lexical: "http://rdfh.ch/0803/pG4w".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_target_not_a_resource_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/aBs3> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::UnknownTarget { target: "http://rdfh.ch/0803/aBs3".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_target_untyped_value_node_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.knora.org/ontology/0803/incunabula#pagenum> <urn:dsp:value:mK2x> <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <https://ontology.dasch.swiss/dao#valueHasUUID> "mK2x" <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <https://ontology.dasch.swiss/dao#sourceProperty> <http://www.knora.org/ontology/0803/incunabula#pagenum> <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <urn:dsp:value:mK2x> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::UnknownTarget { target: "urn:dsp:value:mK2x".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_target_on_resource_not_typed_annotation_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/zR8c"
+                    && *reason == InvalidFact::StrayAnnotationFact { predicate: "http://www.w3.org/ns/oa#hasTarget".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_motivation_on_value_node_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/zR8c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR8c> <http://www.knora.org/ontology/0803/incunabula#title> <urn:dsp:value:mK2x> <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Value> <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <https://ontology.dasch.swiss/dao#valueHasUUID> "mK2x" <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <https://ontology.dasch.swiss/dao#sourceProperty> <http://www.knora.org/ontology/0803/incunabula#title> <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "Zeitglöcklein des Lebens" <urn:dsp:project:0803> .
+        <urn:dsp:value:mK2x> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#commenting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "urn:dsp:value:mK2x"
+                    && *reason == InvalidFact::StrayAnnotationFact { predicate: "http://www.w3.org/ns/oa#motivatedBy".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_target_on_representation_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSI> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#DocumentRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#internalFilename> "8F1KTUpKKra-CaFgCYlt8im.pdf" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "urn:dsp:representation:sdSI"
+                    && *reason == InvalidFact::StrayAnnotationFact { predicate: "http://www.w3.org/ns/oa#hasTarget".to_string() }
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_not_typed_resource_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::UnservedAnnotation
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_annotation_with_third_type_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/oa#Annotation> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/2000/01/rdf-schema#label> "Hervorhebung" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.knora.org/ontology/knora-base#isRegionOf> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/pG4w> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#highlighting> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/Xr0e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason }
+                if subject == "http://rdfh.ch/0803/Xr0e"
+                    && *reason == InvalidFact::ExtraResourceType { class: "http://www.knora.org/ontology/knora-base#Region".to_string() }
         ),
         "{source:?}"
     );

@@ -5,7 +5,7 @@ the first Access-Area capability without a screen (ADR-0007). It exists so far a
 `sync-store` in `store/`, which serves CPE's archive projection port from one committed snapshot per known
 project in `data/`, with no Chischtli, replay or bus; nothing constructs it until DEV-7400. ADR-0007's
 DEV-7399 amendment records why the committed projection is interim-DAO. The port's terms (Archive
-projection port, Project snapshot, Source property, Archive-shaped fact) are in
+projection port, Project snapshot, Source property, Archive-shaped fact, Annotation) are in
 [`../cpe/CONTEXT.md`](../cpe/CONTEXT.md), the Access Area's in [`../CONTEXT.md`](../CONTEXT.md), the
 contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
@@ -38,6 +38,8 @@ _Avoid_: active project (CPE's activation is its own).
 snapshot, parses it strictly and maps it to the port's DTOs. It serves the whole snapshot or refuses it:
 a file that is missing, unreadable, not valid N-Quads, without resources, or that breaks a fact the port
 serves makes the call `Unavailable`, as does a snapshot that fails the port's contract, run on every call.
+An annotation target that is not a resource of the file refuses the snapshot (`UnknownTarget`), unlike a
+link to an IRI outside the file, which is dropped.
 What `FORMAT.md` lets a reader omit, and what the port does not carry, is omitted and never an error.
 _Avoid_: the sync port (CPE declares the port; `sync` implements it), cache (it holds nothing between
 calls), `FakeArchiveProjection` (CPE's in-memory adapter for its own tests).

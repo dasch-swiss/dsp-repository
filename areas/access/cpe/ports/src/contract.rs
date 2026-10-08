@@ -1,9 +1,12 @@
 //! The invariants every [`ArchiveProjection`](crate::ArchiveProjection) adapter's output satisfies.
 //!
-//! [`violations`] checks only what one snapshot shows. Value order, `lang`, `Decimal` and `Uri`
-//! syntax, and whether an omitted fact was omitted correctly are invisible to it, so an empty
-//! result is a consistency check, not proof of fidelity; an adapter pins those in its own tests. A
-//! violation is always an adapter bug, or bad data an adapter failed to refuse. `sync-store` runs
+//! [`violations`] checks only what one snapshot shows. Value order, `lang`, the syntax of
+//! `Decimal`, `Uri`, `Geometry` and `Color`, and whether an omitted fact was omitted correctly are
+//! invisible to it, so an empty result is a consistency check, not proof of fidelity; an adapter
+//! pins those in its own tests. Of what [`Annotation::targets`](crate::Annotation::targets)
+//! promises, it checks only that there is at least one and each is a resource of the snapshot.
+//!
+//! A violation is always an adapter bug, or bad data an adapter failed to refuse. `sync-store` runs
 //! [`violations`] on every snapshot it serves and refuses one with any violation, so a new
 //! invariant here can take a project offline at run time, not only fail a test.
 
@@ -28,6 +31,10 @@ pub enum Violation {
         property: PropertyIri,
         target: ResourceIri,
     },
+    /// An annotation's target is not a resource in the snapshot.
+    DanglingTarget { resource: ResourceIri, target: ResourceIri },
+    /// An annotation has no target.
+    UntargetedAnnotation { resource: ResourceIri },
     /// A `part_of` target is not a resource in the snapshot.
     DanglingParent { resource: ResourceIri, parent: ResourceIri },
     /// Resources that are their own ancestors through `part_of`: one per strongly connected
@@ -77,6 +84,15 @@ impl fmt::Display for Violation {
                 property.as_str(),
                 target.as_str()
             ),
+            Self::DanglingTarget { resource, target } => write!(
+                f,
+                "resource {} is an annotation targeting {}, which is not in the snapshot",
+                resource.as_str(),
+                target.as_str()
+            ),
+            Self::UntargetedAnnotation { resource } => {
+                write!(f, "resource {} is an annotation without a target", resource.as_str())
+            }
             Self::DanglingParent { resource, parent } => write!(
                 f,
                 "resource {} is part of {}, which is not in the snapshot",
@@ -171,6 +187,17 @@ pub fn violations(requested: &str, snapshot: &ProjectSnapshot) -> Vec<Violation>
                 edges.push(parent.as_str());
             } else {
                 found.push(Violation::DanglingParent { resource: resource.iri.clone(), parent: parent.clone() });
+            }
+        }
+
+        if let Some(annotation) = &resource.annotation {
+            if annotation.targets.is_empty() {
+                found.push(Violation::UntargetedAnnotation { resource: resource.iri.clone() });
+            }
+            for target in &annotation.targets {
+                if !resource_counts.contains_key(target.as_str()) {
+                    found.push(Violation::DanglingTarget { resource: resource.iri.clone(), target: target.clone() });
+                }
             }
         }
 
@@ -328,10 +355,14 @@ fn cycle_representatives<'a>(edges: &BTreeMap<&'a str, Vec<&'a str>>) -> Vec<&'a
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode, Resource, Value};
+    use crate::{
+        Annotation, Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode, Motivation,
+        Resource, Value,
+    };
 
     const PAGE: &str = "http://www.knora.org/ontology/0803/incunabula#page";
     const BOOK: &str = "http://www.knora.org/ontology/0803/incunabula#book";
+    const REGION: &str = "http://www.knora.org/ontology/knora-base#Region";
 
     fn res(id: &str) -> ResourceIri {
         ResourceIri(format!("http://rdfh.ch/0803/{id}"))
@@ -354,6 +385,7 @@ mod tests {
             file: None,
             part_of: vec![],
             seqnum: None,
+            annotation: None,
         }
     }
 
@@ -450,6 +482,30 @@ mod tests {
             file: Some(File::MovingImage { asset: "v.mp4".to_string() }),
             ..page("a-page", "q-book", Some(1))
         };
+        let region = Resource {
+            values: vec![
+                Value {
+                    property: prop("hasGeometry"),
+                    uuid: Some("gE0m".to_string()),
+                    kind: ValueKind::Geometry(r#"{"type":"rectangle"}"#.to_string()),
+                },
+                Value {
+                    property: prop("hasColor"),
+                    uuid: Some("cO1r".to_string()),
+                    kind: ValueKind::Color("#ff3333".to_string()),
+                },
+                Value {
+                    property: prop("isRegionOf"),
+                    uuid: None,
+                    kind: ValueKind::Link(res("x-page")),
+                },
+            ],
+            annotation: Some(Annotation {
+                motivation: Motivation::Commenting,
+                targets: vec![res("x-page")],
+            }),
+            ..resource("r-region", REGION)
+        };
         let genre = |id: &str, parent: &str, position: u32| ListNode {
             labels: vec![LangString { text: id.to_string(), lang: Some("en".to_string()) }],
             ..list_node(id, Some(parent), Some(position))
@@ -466,6 +522,7 @@ mod tests {
                 resource("m-person", "http://www.knora.org/ontology/0803/incunabula#person"),
                 resource("c-collection", "http://www.knora.org/ontology/0803/incunabula#collection"),
                 Resource { seqnum: Some(7), ..resource("s-orphan", PAGE) },
+                region,
             ],
             vec![
                 genre("sermon", "genres", 2),
@@ -523,6 +580,36 @@ mod tests {
                 target: res("gone")
             }]
         );
+    }
+
+    #[test]
+    fn test_violations_annotation_target_missing_reports_dangling_target() {
+        let annotation = Resource {
+            annotation: Some(Annotation {
+                motivation: Motivation::Linking,
+                targets: vec![res("b"), res("gone")],
+            }),
+            ..resource("l", REGION)
+        };
+
+        let found = violations("0803", &snapshot(vec![annotation, resource("b", BOOK)], vec![]));
+
+        assert_eq!(
+            found,
+            vec![Violation::DanglingTarget { resource: res("l"), target: res("gone") }]
+        );
+    }
+
+    #[test]
+    fn test_violations_annotation_without_target_reports_untargeted_annotation() {
+        let annotation = Resource {
+            annotation: Some(Annotation { motivation: Motivation::Commenting, targets: vec![] }),
+            ..resource("r", REGION)
+        };
+
+        let found = violations("0803", &snapshot(vec![annotation], vec![]));
+
+        assert_eq!(found, vec![Violation::UntargetedAnnotation { resource: res("r") }]);
     }
 
     #[test]
@@ -775,11 +862,21 @@ mod tests {
             values: vec![text(Some("vX2")), text(Some("vX2"))],
             ..resource("d", BOOK)
         };
+        let untargeted = Resource {
+            annotation: Some(Annotation { motivation: Motivation::Commenting, targets: vec![] }),
+            ..resource("b", REGION)
+        };
+        let targeting = Resource {
+            annotation: Some(Annotation { motivation: Motivation::Linking, targets: vec![res("gone")] }),
+            ..resource("x", REGION)
+        };
         let resources = vec![
             uuidless,
+            untargeted,
             inverted,
             page("m", "gone", None),
             doubled,
+            targeting,
             linking,
             page("c", "gone", None),
         ];
@@ -795,6 +892,8 @@ mod tests {
                     property: prop("hasAuthor"),
                     target: res("gone")
                 },
+                Violation::DanglingTarget { resource: res("x"), target: res("gone") },
+                Violation::UntargetedAnnotation { resource: res("b") },
                 parent("c"),
                 parent("m"),
                 Violation::InvertedDate { resource: res("a"), property: prop("pubdate") },
@@ -863,6 +962,44 @@ mod tests {
         assert_eq!(
             found,
             vec![Violation::MissingValueUuid { resource: res("b"), property: prop("title") }]
+        );
+    }
+
+    #[test]
+    fn test_violations_geometry_without_uuid_reports_missing_value_uuid() {
+        let region = Resource {
+            values: vec![Value {
+                property: prop("hasGeometry"),
+                uuid: None,
+                kind: ValueKind::Geometry(r#"{"type":"rectangle"}"#.to_string()),
+            }],
+            ..resource("r", REGION)
+        };
+
+        let found = violations("0803", &snapshot(vec![region], vec![]));
+
+        assert_eq!(
+            found,
+            vec![Violation::MissingValueUuid { resource: res("r"), property: prop("hasGeometry") }]
+        );
+    }
+
+    #[test]
+    fn test_violations_color_without_uuid_reports_missing_value_uuid() {
+        let region = Resource {
+            values: vec![Value {
+                property: prop("hasColor"),
+                uuid: None,
+                kind: ValueKind::Color("#ff3333".to_string()),
+            }],
+            ..resource("r", REGION)
+        };
+
+        let found = violations("0803", &snapshot(vec![region], vec![]));
+
+        assert_eq!(
+            found,
+            vec![Violation::MissingValueUuid { resource: res("r"), property: prop("hasColor") }]
         );
     }
 

@@ -92,6 +92,7 @@ mod tests {
                 file: None,
                 part_of: vec![],
                 seqnum: None,
+                annotation: None,
             }],
             list_nodes: vec![],
         }

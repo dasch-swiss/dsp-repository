@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-09-29
+date: 2026-10-08
 ---
 
 # Architecture Map
@@ -548,8 +548,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   hypermedia server rendering project-specific presentations over the same data as DPE,
   configured per project. Where the per-project configuration lives is an open item. Only
   `ports/` exists so far; the engine, store and routes are planned.
-- **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `FakeArchiveProjection`,
-  `contract::violations` (in `cpe-ports`); the engine's entities are not built yet
+- **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
+  `Motivation`, `FakeArchiveProjection`, `contract::violations` (in `cpe-ports`); an annotation
+  (Region, LinkObj) is an ordinary `Resource`, found by `Resource.annotation`, never by `class`;
+  the engine's entities are not built yet
 - **Public interface:** its router (planned), mounted by areas/access/server on the area's
   origin beside DPE's routes. `cpe/ports` is not an interface CPE offers but the ports CPE
   consumes: today `ArchiveProjection`, which `sync` implements.
@@ -631,7 +633,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   snapshot plus replay (ADR-0003, ADR-0008); the first Access-Area capability without a screen
   (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the committed snapshot of
   one known project (0803, Incunabula) behind CPE's port, with no Chischtli, replay or bus, and
-  nothing constructs it until DEV-7400. The snapshot is interim-DAO N-Quads written by `dao-lift`
+  nothing constructs it until DEV-7400. Annotations (Regions, LinkObjs) are served as resources
+  with their geometry and color verbatim. The snapshot is interim-DAO N-Quads written by `dao-lift`
   (ADR-0007, DEV-7399 amendment), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
 - **Key entities:** `LiveArchiveProjection`, `KNOWN`, `SnapshotError`, `InvalidFact` (in
@@ -667,13 +670,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   is refused whole, never served in part (**static-analysis**: `sync-store`'s tests), and so is
   one whose mapped snapshot fails `cpe_ports::contract::violations`, run on every call; the
   contract's cross-fact rules (inverted date, cycles, sibling positions) live only there, never
-  in the mapping (**review**; the crate doc in `lib.rs` says where a check goes).
+  in the mapping (**review**; the crate doc in `lib.rs` says where a check goes). A link to an IRI
+  outside the file is omitted, but an annotation target that is not a resource of the file is
+  refused (`InvalidFact::UnknownTarget`).
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
   snapshot plus replay, never repaired in place (target design). Today the committed snapshots
   under `areas/access/sync/data/` (`0803.nq`), **single writer** `dao-lift`, run on a VRE dump at
   the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
   on every call, and holds nothing in between.
-- **Fingerprint:** `5c76664fc694`
+- **Fingerprint:** `5bff0a0bb38f`
 
 ### areas/access/media
 

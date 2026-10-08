@@ -19,8 +19,8 @@ mod snapshot;
 
 pub use fake::FakeArchiveProjection;
 pub use snapshot::{
-    Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode, ListNodeIri, ProjectSnapshot,
-    PropertyIri, Resource, ResourceIri, Value, ValueKind,
+    Annotation, Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode, ListNodeIri,
+    Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind,
 };
 
 /// What CPE reads from the Access Area's archive projection: one project's facts as the archive

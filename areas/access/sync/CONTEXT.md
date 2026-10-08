@@ -41,5 +41,8 @@ serves makes the call `Unavailable`, as does a snapshot that fails the port's co
 An annotation target that is not a resource of the file refuses the snapshot (`UnknownTarget`), unlike a
 link to an IRI outside the file, which is dropped.
 What `FORMAT.md` lets a reader omit, and what the port does not carry, is omitted and never an error.
+The **Data ARK** ([`../cpe/CONTEXT.md`](../cpe/CONTEXT.md)) of each resource is derived from its IRI
+in `ark.rs`, not read from the file, until DAO carries it;
+a served resource whose IRI yields none refuses the snapshot (`NoDataArk`).
 _Avoid_: the sync port (CPE declares the port; `sync` implements it), cache (it holds nothing between
 calls), `FakeArchiveProjection` (CPE's in-memory adapter for its own tests).

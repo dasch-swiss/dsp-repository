@@ -1,7 +1,7 @@
 //! The interim-DAO quads of one project, mapped to the port's snapshot.
 //!
-//! The order is validate, then map. A served fact that breaks `FORMAT.md` is an [`Invalid`]; what
-//! the crate doc lists as omitted is omitted.
+//! The order is validate, then map. A served fact that breaks `FORMAT.md`, or a resource IRI with
+//! no data ARK, is an [`Invalid`]; what the crate doc lists as omitted is omitted.
 //!
 //! A served fact reads a predicate `FORMAT.md` allows once with [`one`], and each way the file can
 //! break it has an [`InvalidFact`] variant and a test in `snapshot_tests.rs` that fails

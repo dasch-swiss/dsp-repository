@@ -5,7 +5,7 @@ use cpe_ports::contract::Violation;
 use cpe_ports::{ArchiveProjection, ListNodeIri, ProjectionError, PropertyIri, ResourceIri};
 use tempfile::TempDir;
 
-use crate::{InvalidFact, LiveArchiveProjection, SnapshotError, KNOWN};
+use crate::{ArkError, InvalidFact, LiveArchiveProjection, SnapshotError, KNOWN};
 
 /// Writes `nquads` as `<dir>/0803.nq`; the one fixture helper of the crate's tests.
 pub(crate) fn write_0803(dir: &TempDir, nquads: &str) {
@@ -338,6 +338,58 @@ fn test_snapshot_resource_without_class_returns_unavailable() {
     let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
     assert!(
         matches!(source, SnapshotError::Invalid { path: _, subject, reason: InvalidFact::MissingClass } if subject == "http://rdfh.ch/0803/zR8c"),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_resource_iri_outside_rdfh_ch_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://example.org/zR8c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://example.org/zR8c> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+        <http://example.org/zR8c> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(source, SnapshotError::Invalid { path: _, subject, reason: InvalidFact::NoDataArk { reason: ArkError::NotResourceIri } } if subject == "http://example.org/zR8c"),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_resource_id_with_dot_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/zR.8c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR.8c> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/zR.8c> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(source, SnapshotError::Invalid { path: _, subject, reason: InvalidFact::NoDataArk { reason: ArkError::InvalidChar('.') } } if subject == "http://rdfh.ch/0803/zR.8c"),
         "{source:?}"
     );
 }

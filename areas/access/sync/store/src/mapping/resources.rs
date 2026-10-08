@@ -55,6 +55,7 @@ fn resource<'a>(
     served: &BTreeSet<&str>,
     claimed: &mut BTreeSet<&'a str>,
 ) -> Result<Resource, Invalid> {
+    let ark = crate::ark::data_ark(iri).map_err(|reason| invalid(iri, InvalidFact::NoDataArk { reason }))?;
     if let Some(other) = objects(facts, RDF_TYPE)
         .find(|class| ![TermRef::from(DAO_RESOURCE), TermRef::from(OA_ANNOTATION)].contains(class))
     {
@@ -77,6 +78,7 @@ fn resource<'a>(
     };
     Ok(Resource {
         iri: ResourceIri(iri.to_string()),
+        ark,
         class: ClassIri(class.as_str().to_string()),
         label,
         values,

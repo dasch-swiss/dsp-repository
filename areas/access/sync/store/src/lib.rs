@@ -5,10 +5,11 @@
 //! `dao-lift` commit `areas/access/sync/data/PROVENANCE` pins; `vocab.rs` is transcribed from it.
 //! Only the shortcodes in `KNOWN` are served; any other is `UnknownProject`.
 //!
-//! A `FORMAT.md` violation on a fact the port serves makes the whole call `Unavailable`, naming the
-//! rule as an [`InvalidFact`], as do a missing, unreadable, malformed or empty file. The mapped
-//! snapshot then goes through `cpe_ports::contract::violations`, and any violation is `Unavailable`
-//! as well ([`SnapshotError::Contract`]), whether the file or the mapping is at fault.
+//! A `FORMAT.md` violation on a fact the port serves, or a resource IRI with no data ARK, makes the
+//! whole call `Unavailable`, naming the rule as an [`InvalidFact`], as do a missing, unreadable,
+//! malformed or empty file. The mapped snapshot then goes through
+//! `cpe_ports::contract::violations`, and any violation is `Unavailable` as well
+//! ([`SnapshotError::Contract`]), whether the file or the mapping is at fault.
 //!
 //! Where a check goes: a rule the contract states over served facts compared with one another, an
 //! inverted date, a membership or list-node cycle and two siblings sharing a position, is the
@@ -16,7 +17,9 @@
 //! mapping's, as an `InvalidFact`, including a value node two resources share (the contract checks
 //! UUIDs only within one resource). Where the contract checks a mapping rule again (a missing value
 //! UUID, a dangling parent, list node or annotation target, an annotation without a target), the
-//! mapping's rule names the fault first.
+//! mapping's rule names the fault first. The ARK is derived from the resource IRI, not read from
+//! the file; the mapping's derivation refuses an IRI with no data ARK, and the contract checks the
+//! served ARK's shape again.
 //!
 //! Only what `FORMAT.md` lets a reader omit is omitted, never an error: a value whose `rdf:value`
 //! datatype the port has no kind for, a representation whose type it has no `File` for, and facts
@@ -36,10 +39,12 @@ use cpe_ports::{contract, ArchiveProjection, ProjectSnapshot, ProjectionError};
 use oxrdf::Quad;
 use oxttl::NQuadsParser;
 
+mod ark;
 mod error;
 mod mapping;
 mod vocab;
 
+pub use ark::ArkError;
 pub use error::{InvalidFact, SnapshotError};
 
 /// The projects `sync` holds. A shortcode outside this set is `UnknownProject`, whatever the
@@ -101,6 +106,8 @@ fn read_quads(path: &Path) -> Result<Vec<Quad>, SnapshotError> {
         })
 }
 
+#[cfg(test)]
+mod ark_tests;
 #[cfg(test)]
 mod mapping_tests;
 #[cfg(test)]

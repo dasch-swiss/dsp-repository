@@ -1,7 +1,7 @@
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, ArchiveProjection, Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode,
-    ListNodeIri, Motivation, PropertyIri, Resource, ResourceIri, Value, ValueKind,
+    Annotation, ArchiveProjection, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, LangString,
+    ListNode, ListNodeIri, Motivation, PropertyIri, Resource, ResourceIri, Value, ValueKind,
 };
 
 use crate::snapshot_tests::write_0803;
@@ -190,6 +190,7 @@ fn test_mapping_region_serves_annotation_values_and_links() {
         region,
         &Resource {
             iri: ResourceIri("http://rdfh.ch/0803/Xr0e".to_string()),
+            ark: DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/Xr0eJ".to_string()),
             class: ClassIri("http://www.knora.org/ontology/knora-base#Region".to_string()),
             label: "Randnotiz".to_string(),
             values: vec![
@@ -1090,6 +1091,7 @@ fn test_mapping_resource_without_values_serves_none() {
         snapshot.resources,
         vec![Resource {
             iri: ResourceIri("http://rdfh.ch/0803/zR8c".to_string()),
+            ark: DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/zR8cR".to_string()),
             class: ClassIri("http://www.knora.org/ontology/0803/incunabula#Book".to_string()),
             label: "Zeitglöcklein".to_string(),
             values: vec![],
@@ -1100,6 +1102,28 @@ fn test_mapping_resource_without_values_serves_none() {
         }]
     );
     assert_eq!(snapshot.list_nodes, vec![]);
+}
+
+#[test]
+fn test_mapping_resource_serves_the_data_ark_of_its_iri() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/wO-l4gfTVsGnKtusKEomhQ> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/wO-l4gfTVsGnKtusKEomhQ> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/wO-l4gfTVsGnKtusKEomhQ> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let snapshot = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect("a valid file is served");
+
+    assert_eq!(
+        snapshot.resources[0].ark,
+        DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/wO=l4gfTVsGnKtusKEomhQn".to_string())
+    );
 }
 
 // Properties and omissions

@@ -49,7 +49,7 @@ mod tests {
     use std::error::Error;
 
     use super::*;
-    use crate::{ClassIri, PropertyIri, Resource, ResourceIri, Value, ValueKind};
+    use crate::{ClassIri, DataArk, PropertyIri, Resource, ResourceIri, Value, ValueKind};
 
     fn text(property: &str, uuid: &str, text: &str) -> Value {
         Value {
@@ -65,6 +65,7 @@ mod tests {
             shortcode: "0803".to_string(),
             resources: vec![Resource {
                 iri: ResourceIri("http://rdfh.ch/0803/zz-book".to_string()),
+                ark: DataArk("https://ark.dasch.swiss/ark:/72163/1/0803/zz=booko".to_string()),
                 class: ClassIri("http://www.knora.org/ontology/0803/incunabula#book".to_string()),
                 label: "Zeitglöcklein".to_string(),
                 values: vec![

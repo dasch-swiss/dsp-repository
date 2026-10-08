@@ -404,3 +404,51 @@ fn test_committed_0803_provenance_pin_matches_vocab_pin() {
     assert_eq!(pin(vocab).len(), 40);
     assert_eq!(pin(&provenance), pin(vocab));
 }
+
+/// `0803-arks.txt` is the incubator's copy of `dao-lift`'s ARKs (`PROVENANCE`): never regenerate it
+/// from `sync-store`, or this test checks the derivation against itself.
+#[test]
+fn test_committed_0803_arks_serves_every_dao_lift_ark() {
+    let arks = fs::read_to_string(format!("{DATA_DIR}/0803-arks.txt")).expect("read 0803-arks.txt");
+    let lines: Vec<&str> = arks.lines().collect();
+    assert_eq!(lines.len(), 4_143);
+    assert!(lines.windows(2).all(|pair| pair[0] < pair[1]), "sorted, without repeats");
+
+    let served: BTreeMap<&str, &str> = snapshot()
+        .resources
+        .iter()
+        .map(|resource| (resource.iri.as_str(), resource.ark.as_str()))
+        .collect();
+    let mut mismatches = Vec::new();
+    for line in &lines {
+        // The ARK's last segment is the resource id, `-` written as `=`, plus one check digit.
+        let id = line
+            .strip_prefix("https://ark.dasch.swiss/ark:/72163/1/0803/")
+            .and_then(|segment| segment.get(..segment.len().checked_sub(1)?))
+            .unwrap_or_else(|| panic!("{line} is a 0803 data ARK"))
+            .replace('=', "-");
+        match served.get(format!("http://rdfh.ch/0803/{id}").as_str()) {
+            Some(ark) if ark == line => {}
+            Some(ark) => mismatches.push(format!("{line} expected, served {ark}")),
+            None => mismatches.push(format!("{line} expected, its resource is not served")),
+        }
+    }
+
+    assert!(mismatches.is_empty(), "{} mismatches: {mismatches:#?}", mismatches.len());
+}
+
+#[test]
+fn test_committed_0803_book_serves_its_data_ark() {
+    assert_eq!(
+        resource("http://rdfh.ch/0803/CDYZPN5zVVKbIcjA1DZxKQ").ark.as_str(),
+        "https://ark.dasch.swiss/ark:/72163/1/0803/CDYZPN5zVVKbIcjA1DZxKQO"
+    );
+}
+
+#[test]
+fn test_committed_0803_region_serves_its_data_ark() {
+    assert_eq!(
+        resource("http://rdfh.ch/0803/089fJhP1WuylV1wftl5Y_Q").ark.as_str(),
+        "https://ark.dasch.swiss/ark:/72163/1/0803/089fJhP1WuylV1wftl5Y_QL"
+    );
+}

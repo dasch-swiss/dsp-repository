@@ -412,6 +412,9 @@ Serving the annotations adds no dangling link, and no new check fires on 0803.
 
 #### Phase 3: Incubator vendors the new `cpe-ports`
 
+**Superseded:** Phase 3 of `docs/specs/2026-10-08-cpe-port-data-arks/01-feat-cpe-port-data-arks-plan.md`
+(DEV-7487) vendors this change together with the data ARKs, in one incubator PR. Do not run this phase.
+
 **Gate: H1**: resolve before starting this phase.
 
 ### dsp-incubator

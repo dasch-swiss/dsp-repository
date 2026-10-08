@@ -8,9 +8,9 @@ use oxrdf::{NamedNodeRef, TermRef};
 
 use super::{canonical_decimal, dates, integer, invalid, lexical, named, one, unfit, Facts, Index, Invalid};
 use crate::vocab::{
-    DAO_DATE, DAO_NAMESPACE, DAO_SOURCE_LIST_NODE, DAO_SOURCE_PROPERTY, DAO_VALUE, DAO_VALUE_HAS_ORDER,
-    DAO_VALUE_HAS_UUID, OA_NAMESPACE, RDFS_NAMESPACE, RDF_NAMESPACE, RDF_VALUE, SKOS_CONCEPT, VALUE_IRI_PREFIX,
-    XSD_ANY_URI, XSD_BOOLEAN, XSD_DECIMAL, XSD_INTEGER,
+    DAO_COLOR, DAO_DATE, DAO_GEOMETRY, DAO_NAMESPACE, DAO_SOURCE_LIST_NODE, DAO_SOURCE_PROPERTY, DAO_VALUE,
+    DAO_VALUE_HAS_ORDER, DAO_VALUE_HAS_UUID, OA_NAMESPACE, RDFS_NAMESPACE, RDF_NAMESPACE, RDF_VALUE, SKOS_CONCEPT,
+    VALUE_IRI_PREFIX, XSD_ANY_URI, XSD_BOOLEAN, XSD_DECIMAL, XSD_INTEGER,
 };
 use crate::InvalidFact;
 
@@ -34,7 +34,7 @@ pub(super) fn map<'a>(
             continue;
         };
         // A value edge, a link to a served resource, or dropped: the object of a format predicate,
-        // an annotation, or the one accepted violation the crate doc names.
+        // a link to an IRI outside the file, or the one accepted violation the crate doc names.
         if index.is_a(target.as_str(), DAO_VALUE) {
             let value = value_node(index, target.as_str(), predicate)?;
             if !claimed.insert(target.as_str()) {
@@ -164,6 +164,10 @@ fn kind(node: &str, facts: &Facts<'_>, content: TermRef<'_>) -> Result<Option<Va
         ValueKind::Uri(text.to_string())
     } else if datatype == DAO_DATE {
         ValueKind::Date(dates::map(node, facts)?)
+    } else if datatype == DAO_GEOMETRY {
+        ValueKind::Geometry(text.to_string())
+    } else if datatype == DAO_COLOR {
+        ValueKind::Color(text.to_string())
     } else {
         return Ok(None);
     }))

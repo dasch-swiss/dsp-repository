@@ -1,12 +1,10 @@
 //! The interim-DAO quads of one project, mapped to the port's snapshot.
 //!
-//! The order is drop, then validate, then map: annotations are never served, so a broken fact
-//! inside one is never checked; only the file-wide rules of `Index::build` (graph, blank nodes)
-//! apply to them. A served fact that breaks `FORMAT.md` is an [`Invalid`]; what the crate doc lists
-//! as omitted is omitted.
+//! The order is validate, then map. A served fact that breaks `FORMAT.md` is an [`Invalid`]; what
+//! the crate doc lists as omitted is omitted.
 //!
-//! A newly served fact reads a predicate `FORMAT.md` allows once with [`one`], and each way the
-//! file can break it gets an [`InvalidFact`] variant and a test in `snapshot_tests.rs` that fails
+//! A served fact reads a predicate `FORMAT.md` allows once with [`one`], and each way the file can
+//! break it has an [`InvalidFact`] variant and a test in `snapshot_tests.rs` that fails
 //! without the check.
 
 use std::collections::BTreeMap;

@@ -8,7 +8,8 @@ use std::sync::OnceLock;
 
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    ArchiveProjection, Calendar, DateBound, DatePrecision, DateValue, File, ProjectSnapshot, Resource, ValueKind,
+    ArchiveProjection, Calendar, DateBound, DatePrecision, DateValue, File, Motivation, ProjectSnapshot, Resource,
+    ResourceIri, ValueKind,
 };
 use sync_store::LiveArchiveProjection;
 
@@ -17,6 +18,9 @@ const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../data");
 const BOOK: &str = "http://www.knora.org/ontology/0803/incunabula#Book";
 const PAGE: &str = "http://www.knora.org/ontology/0803/incunabula#Page";
 const BAND: &str = "http://www.knora.org/ontology/0803/incunabula#Band";
+const KB: &str = "http://www.knora.org/ontology/knora-base#";
+const REGION: &str = "http://www.knora.org/ontology/knora-base#Region";
+const LINK_OBJ: &str = "http://www.knora.org/ontology/knora-base#LinkObj";
 
 /// The served snapshot, parsed once per test binary. It never checks that the file exists first,
 /// so a missing file fails every test that reads it.
@@ -37,6 +41,41 @@ fn resource(iri: &str) -> &'static Resource {
         .unwrap_or_else(|| panic!("{iri} is served"))
 }
 
+fn of_class(class: &str) -> Vec<&'static Resource> {
+    snapshot()
+        .resources
+        .iter()
+        .filter(|resource| resource.class.as_str() == class)
+        .collect()
+}
+
+fn kinds_under<'r>(resource: &'r Resource, property: &str) -> Vec<&'r ValueKind> {
+    resource
+        .values
+        .iter()
+        .filter(|value| value.property.as_str() == property)
+        .map(|value| &value.kind)
+        .collect()
+}
+
+fn link_targets<'r>(resource: &'r Resource, property: &str) -> Vec<&'r ResourceIri> {
+    kinds_under(resource, property)
+        .into_iter()
+        .map(|kind| match kind {
+            ValueKind::Link(target) => target,
+            other => panic!("{}: {property} holds {other:?}", resource.iri.as_str()),
+        })
+        .collect()
+}
+
+fn targets(resource: &Resource) -> Vec<&ResourceIri> {
+    let annotation = resource
+        .annotation
+        .as_ref()
+        .unwrap_or_else(|| panic!("{} is an annotation", resource.iri.as_str()));
+    annotation.targets.iter().collect()
+}
+
 #[test]
 fn test_committed_0803_snapshot_passes_contract() {
     let found = violations("0803", snapshot());
@@ -45,26 +84,145 @@ fn test_committed_0803_snapshot_passes_contract() {
 }
 
 #[test]
-fn test_committed_0803_resources_by_class_serves_books_pages_and_bands() {
+fn test_committed_0803_resources_by_class_serves_books_pages_bands_regions_and_link_objs() {
     let mut by_class: BTreeMap<&str, usize> = BTreeMap::new();
     for resource in &snapshot().resources {
         *by_class.entry(resource.class.as_str()).or_default() += 1;
     }
 
-    assert_eq!(by_class, BTreeMap::from([(PAGE, 4_024), (BOOK, 19), (BAND, 38)]));
+    assert_eq!(
+        by_class,
+        BTreeMap::from([(PAGE, 4_024), (BOOK, 19), (BAND, 38), (REGION, 77), (LINK_OBJ, 40)])
+    );
 }
 
 #[test]
-fn test_committed_0803_annotations_serves_none_of_them() {
+fn test_committed_0803_annotations_serves_regions_and_link_objs() {
     let snapshot = snapshot();
 
-    assert_eq!(snapshot.resources.len(), 4_081);
-    let region = "http://rdfh.ch/0803/GOkuI_IxVuSKMRZmCypz7Q";
-    let link_obj = "http://rdfh.ch/0803/00bnHlmDVIq_Blb4DvKGiQ";
-    assert!(snapshot
+    assert_eq!(snapshot.resources.len(), 4_198);
+    assert_eq!(resource("http://rdfh.ch/0803/GOkuI_IxVuSKMRZmCypz7Q").class.as_str(), REGION);
+    assert_eq!(resource("http://rdfh.ch/0803/00bnHlmDVIq_Blb4DvKGiQ").class.as_str(), LINK_OBJ);
+}
+
+#[test]
+fn test_committed_0803_annotations_serves_117_with_their_motivations() {
+    let motivations: Vec<Motivation> = snapshot()
         .resources
         .iter()
-        .all(|resource| ![region, link_obj].contains(&resource.iri.as_str())));
+        .filter_map(|resource| resource.annotation.as_ref())
+        .map(|annotation| annotation.motivation)
+        .collect();
+
+    let count = |motivation: Motivation| motivations.iter().filter(|found| **found == motivation).count();
+    assert_eq!(motivations.len(), 117);
+    assert_eq!(count(Motivation::Commenting), 77);
+    assert_eq!(count(Motivation::Linking), 40);
+}
+
+#[test]
+fn test_committed_0803_regions_serves_each_one_geometry() {
+    let regions = of_class(REGION);
+
+    assert_eq!(regions.len(), 77);
+    for region in regions {
+        let kinds = kinds_under(region, &format!("{KB}hasGeometry"));
+        assert!(
+            matches!(kinds.as_slice(), [ValueKind::Geometry(_)]),
+            "{}: {kinds:?}",
+            region.iri.as_str()
+        );
+    }
+}
+
+#[test]
+fn test_committed_0803_regions_serves_each_one_color() {
+    let regions = of_class(REGION);
+
+    assert_eq!(regions.len(), 77);
+    for region in regions {
+        let kinds = kinds_under(region, &format!("{KB}hasColor"));
+        assert!(
+            matches!(kinds.as_slice(), [ValueKind::Color(_)]),
+            "{}: {kinds:?}",
+            region.iri.as_str()
+        );
+    }
+}
+
+#[test]
+fn test_committed_0803_regions_serves_each_one_comment() {
+    let regions = of_class(REGION);
+
+    assert_eq!(regions.len(), 77);
+    for region in regions {
+        let kinds = kinds_under(region, &format!("{KB}hasComment"));
+        assert!(
+            matches!(kinds.as_slice(), [ValueKind::Text { .. }]),
+            "{}: {kinds:?}",
+            region.iri.as_str()
+        );
+    }
+}
+
+#[test]
+fn test_committed_0803_regions_serves_targets_equal_to_is_region_of_link() {
+    let regions = of_class(REGION);
+
+    assert_eq!(regions.len(), 77);
+    for region in regions {
+        let links = link_targets(region, &format!("{KB}isRegionOf"));
+        assert_eq!(links.len(), 1, "{}", region.iri.as_str());
+        assert_eq!(targets(region), links, "{}", region.iri.as_str());
+    }
+}
+
+#[test]
+fn test_committed_0803_link_objs_serves_79_has_link_to_links() {
+    let link_objs = of_class(LINK_OBJ);
+
+    let links: usize = link_objs
+        .iter()
+        .map(|link_obj| link_targets(link_obj, &format!("{KB}hasLinkTo")).len())
+        .sum();
+    assert_eq!(link_objs.len(), 40);
+    assert_eq!(links, 79);
+}
+
+#[test]
+fn test_committed_0803_link_objs_serves_targets_equal_to_has_link_to_links() {
+    let link_objs = of_class(LINK_OBJ);
+
+    assert_eq!(link_objs.len(), 40);
+    for link_obj in link_objs {
+        let links = link_targets(link_obj, &format!("{KB}hasLinkTo"));
+        assert_eq!(targets(link_obj), links, "{}", link_obj.iri.as_str());
+    }
+}
+
+#[test]
+fn test_committed_0803_region_color_serves_lexical() {
+    let region = resource("http://rdfh.ch/0803/089fJhP1WuylV1wftl5Y_Q");
+
+    assert_eq!(
+        kinds_under(region, &format!("{KB}hasColor")),
+        vec![&ValueKind::Color("#ff3333".to_string())]
+    );
+}
+
+#[test]
+fn test_committed_0803_region_geometry_serves_json_verbatim() {
+    let region = resource("http://rdfh.ch/0803/089fJhP1WuylV1wftl5Y_Q");
+
+    let kinds = kinds_under(region, &format!("{KB}hasGeometry"));
+    let [ValueKind::Geometry(geometry)] = kinds.as_slice() else {
+        panic!("expected one geometry, got {kinds:?}")
+    };
+    assert!(
+        geometry.starts_with(r##"{"status":"active","lineColor":"#ff3333""##),
+        "{geometry}"
+    );
+    assert!(geometry.contains(r#""type":"rectangle""#), "{geometry}");
 }
 
 #[test]
@@ -101,12 +259,29 @@ fn test_committed_0803_book_title_with_superseded_versions_serves_current_under_
             lang: None
         }
     );
-    let on_region = "xdvQATb3TOeS875AuWi6Rw";
-    assert!(snapshot()
-        .resources
+}
+
+#[test]
+fn test_committed_0803_region_comment_with_superseded_versions_serves_current_value() {
+    let region = resource("http://rdfh.ch/0803/GOkuI_IxVuSKMRZmCypz7Q");
+
+    let comments: Vec<(Option<&str>, &ValueKind)> = region
+        .values
         .iter()
-        .flat_map(|resource| &resource.values)
-        .all(|value| value.uuid.as_deref() != Some(on_region)));
+        .filter(|value| value.property.as_str() == format!("{KB}hasComment"))
+        .map(|value| (value.uuid.as_deref(), &value.kind))
+        .collect();
+    assert_eq!(
+        comments,
+        vec![(
+            Some("xdvQATb3TOeS875AuWi6Rw"),
+            &ValueKind::Text {
+                text: "Derselbe Holzschnitt wird auf Seite c7r der lateinischen Ausgabe des Narrenschiffs verwendet.\n        "
+                    .to_string(),
+                lang: None
+            }
+        )]
+    );
 }
 
 #[test]

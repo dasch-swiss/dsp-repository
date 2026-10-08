@@ -74,6 +74,11 @@ pub const DAO_DATE_END_PRECISION: NamedNodeRef<'_> =
 pub const DAO_SOURCE_LIST_NODE: NamedNodeRef<'_> =
     NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#sourceListNode");
 
+/// §4.8.
+pub const DAO_COLOR: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#color");
+/// §4.9.
+pub const DAO_GEOMETRY: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#geometry");
+
 /// §7.
 pub const DAO_IS_PART_OF: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#isPartOf");
 /// §7.
@@ -122,3 +127,13 @@ pub const DAO_LIST_NODE_POSITION: NamedNodeRef<'_> =
 /// The one marker of an annotation, a Region or LinkObj of any subclass (§10). Never identify
 /// one by `dao:sourceClass`.
 pub const OA_ANNOTATION: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/ns/oa#Annotation");
+/// §10.
+pub const OA_MOTIVATED_BY: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/ns/oa#motivatedBy");
+/// §10.
+pub const OA_HAS_TARGET: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/ns/oa#hasTarget");
+/// §10.
+pub const OA_COMMENTING: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/ns/oa#commenting");
+/// §10.
+pub const OA_HIGHLIGHTING: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/ns/oa#highlighting");
+/// §10.
+pub const OA_LINKING: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/ns/oa#linking");

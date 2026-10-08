@@ -15,16 +15,17 @@
 //! contract's alone and never reimplemented in the mapping. Every other `FORMAT.md` rule is the
 //! mapping's, as an `InvalidFact`, including a value node two resources share (the contract checks
 //! UUIDs only within one resource). Where the contract checks a mapping rule again (a missing value
-//! UUID, a dangling parent or list node), the mapping's rule names the fault first.
+//! UUID, a dangling parent, list node or annotation target, an annotation without a target), the
+//! mapping's rule names the fault first.
 //!
-//! Only what `FORMAT.md` lets a reader omit is omitted, never an error: annotations
-//! (`oa:Annotation`) and the links and memberships to them, a value whose `rdf:value` datatype the
-//! port has no kind for, a representation whose type it has no `File` for, and facts the port does
-//! not carry.
+//! Only what `FORMAT.md` lets a reader omit is omitted, never an error: a value whose `rdf:value`
+//! datatype the port has no kind for, a representation whose type it has no `File` for, and facts
+//! the port does not carry. Annotations (`oa:Annotation`) are served as resources.
 //!
 //! One violation is accepted, by decision: an edge to a value node that lacks `rdf:type dao:Value`.
 //! Telling it from a link to an IRI outside the file, also a violation, would rest on the IRI's
-//! shape, so both are dropped, as a link to an annotation is.
+//! shape, so both are dropped. An annotation target is never a value node, so one that is not a
+//! resource of the file is refused ([`InvalidFact::UnknownTarget`]).
 //!
 //! Nothing constructs the adapter yet; wiring it into `access-server` is DEV-7400.
 

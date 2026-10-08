@@ -101,6 +101,20 @@ pub enum InvalidFact {
     /// The error's `subject` is the second resource.
     #[error("two resources share the representation {node}")]
     DuplicateRepresentation { node: String },
+    #[error("an annotation without a motivation")]
+    MissingMotivation,
+    #[error("an annotation with the unknown motivation {motivation}")]
+    UnknownMotivation { motivation: String },
+    #[error("an annotation without a target")]
+    MissingAnnotationTarget,
+    /// The target is outside the file, or a node of it that is not a `dao:Resource`.
+    #[error("an annotation targeting {target}, which is not a resource")]
+    UnknownTarget { target: String },
+    #[error("an annotation that is not a resource")]
+    UnservedAnnotation,
+    /// The error's `subject` can be any node: a resource, a value node or a representation.
+    #[error("{predicate} on a node that is not an annotation")]
+    StrayAnnotationFact { predicate: String },
     /// Any predicate `FORMAT.md` allows once on its subject, other than those with their own
     /// variant above.
     #[error("{predicate} more than once")]

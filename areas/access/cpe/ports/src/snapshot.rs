@@ -89,6 +89,30 @@ pub struct Resource {
     /// `dao:seqnum`, verbatim. Gaps, ties and a `seqnum` without a parent are archive facts;
     /// positional order and its tie-break are CPE's derivation, not the port's.
     pub seqnum: Option<i64>,
+    /// `Some` exactly for a resource the archive types `oa:Annotation`: a Region or LinkObj, or a
+    /// project subclass of either. Identify annotations by this field, never by `class`
+    /// (`FORMAT.md` §10).
+    ///
+    /// Provisional: DAO's minimal Web Annotation mapping (d.71, `FORMAT.md` §12 D11).
+    pub annotation: Option<Annotation>,
+}
+
+/// What the archive records about an annotation beyond its values and links.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Annotation {
+    pub motivation: Motivation,
+    /// `oa:hasTarget`: at least one, each a resource of the snapshot; sorted by IRI, without
+    /// repeats. They are the targets of the annotation's own links, whichever of its properties
+    /// those are.
+    pub targets: Vec<ResourceIri>,
+}
+
+/// `oa:motivatedBy`, as the archive records it (`FORMAT.md` §10).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Motivation {
+    Commenting,
+    Highlighting,
+    Linking,
 }
 
 /// One value of a resource, under its source property.
@@ -101,8 +125,8 @@ pub struct Value {
     pub kind: ValueKind,
 }
 
-/// The value kinds the port serves. `Decimal`, `Uri` and `lang` are passed through as the archive
-/// records them; the port does not check their syntax.
+/// The value kinds the port serves. `Decimal`, `Uri`, `Geometry`, `Color` and `lang` are passed
+/// through as the archive records them; the port does not check their syntax.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValueKind {
     /// The plain text, also for a text that carries markup: the markup is left out, never the
@@ -124,6 +148,10 @@ pub enum ValueKind {
     /// Subject to object, as the archive records it. A reverse link is CPE's derivation, and a link
     /// to an omitted resource or one outside the project is itself omitted.
     Link(ResourceIri),
+    /// knora-base's geometry JSON (`dao:geometry`). Provisional: DAO's datatype name (§12 D10).
+    Geometry(String),
+    /// knora-base's color lexical, e.g. `#ff3333` (`dao:color`). Provisional: as `Geometry`.
+    Color(String),
 }
 
 /// A date as the archive records it; converting to year, month, day and era is CPE's remodel. A

@@ -1,5 +1,5 @@
 //! Every IRI the mapping reads, transcribed from `FORMAT.md` §15 at
-//! `dasch-swiss/dsp-incubator@1826d49f1632fd7502297b845cedffc278b48c2d`
+//! `dasch-swiss/dsp-incubator@b2226ff4a987bf5f4b5cd0f33a8bf923a3033c7f`
 //! (`cpe/tools/dao-lift/FORMAT.md`), the commit `areas/access/sync/data/PROVENANCE` pins.
 //!
 //! No IRI is written anywhere else in the crate. When the pin moves, re-transcribe from the new

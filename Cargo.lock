@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "access-server"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
@@ -590,7 +590,7 @@ dependencies = [
 
 [[package]]
 name = "cpe-ports"
-version = "0.8.7"
+version = "0.8.8"
 
 [[package]]
 name = "cpufeatures"
@@ -845,7 +845,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dpe-api-oai"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -865,7 +865,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-core"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "serde",
  "serde_json",
@@ -877,7 +877,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-server"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "axum",
  "datastar",
@@ -909,7 +909,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-web"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "dpe-core",
  "maud",
@@ -993,7 +993,7 @@ dependencies = [
 
 [[package]]
 name = "editor-collector"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "chrono",
  "editor-core",
@@ -1006,7 +1006,7 @@ dependencies = [
 
 [[package]]
 name = "editor-core"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1019,7 +1019,7 @@ dependencies = [
 
 [[package]]
 name = "editor-server"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "async-trait",
  "axum",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "editor-web"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "editor-core",
  "insta",
@@ -2587,7 +2587,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-playground"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "axum",
  "maud",
@@ -2601,7 +2601,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-tiles"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "icondata",
  "maud",
@@ -4100,7 +4100,7 @@ dependencies = [
 
 [[package]]
 name = "shared-fair"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "serde_json",
  "shared-metadata",
@@ -4108,7 +4108,7 @@ dependencies = [
 
 [[package]]
 name = "shared-metadata"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "serde",
  "serde_json",
@@ -4117,7 +4117,7 @@ dependencies = [
 
 [[package]]
 name = "shared-telemetry"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "axum",
  "opentelemetry",
@@ -4342,7 +4342,7 @@ dependencies = [
 
 [[package]]
 name = "sync-store"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "cpe-ports",
  "oxrdf",

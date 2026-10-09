@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.8.8](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.7...v0.8.8) (2026-10-09)
+
+
+### Features
+
+* **cpe-ports,sync-store:** Serve data ARKs through the port (DEV-7487) ([f73009e](https://github.com/dasch-swiss/dsp-repository/commit/f73009e207c189a0797e6c958eb873e2f56d92e9))
+* **cpe-ports,sync-store:** Serve Regions and LinkObjs through the port (DEV-7486) ([7118cdb](https://github.com/dasch-swiss/dsp-repository/commit/7118cdbf7b58d3d3d32a019fab16f17196c872ed))
+* **cpe-ports:** Declare CPE's port onto the archive projection ([c8662a2](https://github.com/dasch-swiss/dsp-repository/commit/c8662a2dcef6491812061ebe1adc2e7a8b36b376))
+* **sync-store:** Serve the committed 0803 projection behind CPE's port ([9e9d3e1](https://github.com/dasch-swiss/dsp-repository/commit/9e9d3e1b7dde1f07b71e30b1bcc3bd145abd6a19))
+
+
+### Bug Fixes
+
+* **shared-metadata,dpe-server:** Accept a versioned ARK's timestamp on the record file endpoint (DEV-7467) ([6663ba0](https://github.com/dasch-swiss/dsp-repository/commit/6663ba008418f0795e52dd2aa19b8b25e39131ed))
+
+
+### Documentation
+
+* **docs:** Add the plan for CPE's archive projection port ([be9d548](https://github.com/dasch-swiss/dsp-repository/commit/be9d548820d7850d61ddea24d31bc3528d6b07f4))
+* **docs:** Add the plan for serving annotations through cpe-ports (DEV-7486) ([ab452f2](https://github.com/dasch-swiss/dsp-repository/commit/ab452f2d5a20fd63d84d50d50c9052b686f5dae9))
+* **docs:** Add the plan for serving data ARKs through cpe-ports (DEV-7487) ([1eb0ffa](https://github.com/dasch-swiss/dsp-repository/commit/1eb0ffacec22dd98132b44330dd23b086c04fbe8))
+* **docs:** Add the PRD and plan for the minimal sync capability ([ab7840a](https://github.com/dasch-swiss/dsp-repository/commit/ab7840ac742db350f9db7c90dfb8f17b0e99b7ea))
+* **docs:** Allow a DaTEI project several tables of contents ([f660cd4](https://github.com/dasch-swiss/dsp-repository/commit/f660cd41fd49242efdad392d00bb929e54b0cfcb))
+* **docs:** Amend ADR-0007 so CPE arrives crate by crate, shaped in the incubator ([3d25e0a](https://github.com/dasch-swiss/dsp-repository/commit/3d25e0a313bde54fcbdb231b1826969c79a17bf9))
+* **docs:** Amend ADR-0007 to separate data ARKs from presentation ARKs ([960c57c](https://github.com/dasch-swiss/dsp-repository/commit/960c57c54710f3af33e99a9b877a1052076ab226))
+* **docs:** Amend ADR-0007 with CPE's public URL layout ([f784974](https://github.com/dasch-swiss/dsp-repository/commit/f7849740cf90d6c7ec80001e5b82f934f5f520ed))
+* **docs:** Close out the DEV-7486 and DEV-7487 plans after the incubator re-vendors ([8a68063](https://github.com/dasch-swiss/dsp-repository/commit/8a680637816e550a6b65689c8842c44895728e8d))
+* **docs:** Decide DaTEI joins the Access Area as its third capability ([f0bef14](https://github.com/dasch-swiss/dsp-repository/commit/f0bef14902c06c6dfd0be4e8112ad8d6d3c2af9f))
+* **docs:** Map sync, DaTEI and the Access Area's media capability as planned components ([e86bb84](https://github.com/dasch-swiss/dsp-repository/commit/e86bb84b34b62d07fccbcbfe7264868bcbac2e79))
+
+
+### Build System
+
+* **access-server:** Drop the /app/dpe-server image alias ([665aadd](https://github.com/dasch-swiss/dsp-repository/commit/665aaddd80bb2c420cbc70edfbb7084235702311))
+
+
+### Miscellaneous Chores
+
+* **dpe-data:** Point 0112 roud-oeuvres at the migrated server ([db3e8aa](https://github.com/dasch-swiss/dsp-repository/commit/db3e8aae9cb4eda9ae953b625c8dba7659628b4b))
+* **sync-store:** Record the 0803 projection as built from the prod dump (DEV-7444) ([a7e8df1](https://github.com/dasch-swiss/dsp-repository/commit/a7e8df14778845cb9bd578e34ec5c26aa3491f84))
+
 ## [0.8.7](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.6...v0.8.7) (2026-09-29)
 
 

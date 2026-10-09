@@ -124,6 +124,7 @@ fn test_ark_data_ark_computed_arks_pass_the_contract() {
             shortcode: "0803".to_string(),
             resources: vec![resource],
             list_nodes: vec![],
+            curation: vec![],
         };
         let found = violations("0803", &snapshot);
         assert_eq!(found, vec![], "{iri:?}");

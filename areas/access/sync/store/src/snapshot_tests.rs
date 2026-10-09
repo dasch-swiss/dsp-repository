@@ -1,15 +1,41 @@
+use std::collections::BTreeSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cpe_ports::contract::Violation;
-use cpe_ports::{ArchiveProjection, ListNodeIri, ProjectionError, PropertyIri, ResourceIri};
+use cpe_ports::{ArchiveProjection, CuratedValue, ListNodeIri, ProjectionError, PropertyIri, ResourceIri};
 use tempfile::TempDir;
 
-use crate::{ArkError, InvalidFact, LiveArchiveProjection, SnapshotError, KNOWN};
+use crate::{ArkError, CurationFault, InvalidCuration, InvalidFact, LiveArchiveProjection, SnapshotError, KNOWN};
 
-/// Writes `nquads` as `<dir>/0803.nq`; the one fixture helper of the crate's tests.
+/// Writes both files of project 0803: `nquads` as `<dir>/0803.nq`, and a `<dir>/0803-curation.csv`
+/// that holds the header `iri` alone, so the project has no curation.
 pub(crate) fn write_0803(dir: &TempDir, nquads: &str) {
     fs::write(dir.path().join("0803.nq"), nquads).expect("write the fixture");
+    write_0803_curation(dir, "iri\n");
+}
+
+/// Writes `csv` as `<dir>/0803-curation.csv`, replacing what `write_0803` wrote.
+fn write_0803_curation(dir: &TempDir, csv: &str) {
+    fs::write(dir.path().join("0803-curation.csv"), csv).expect("write the fixture");
+}
+
+/// The `SnapshotError` of a call refused as `Unavailable`; panics on any other error.
+fn expect_unavailable(error: &ProjectionError) -> &SnapshotError {
+    let ProjectionError::Unavailable(source) = error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError")
+}
+
+/// Asserts that `error` is `Unavailable` because `file`, a file name in the directory, could not
+/// be read.
+fn assert_unreadable(error: &ProjectionError, file: &str) {
+    let source = expect_unavailable(error);
+    assert!(
+        matches!(source, SnapshotError::Read { path, .. } if path.ends_with(file)),
+        "{source:?}"
+    );
 }
 
 const _: () = {
@@ -139,8 +165,63 @@ fn test_snapshot_every_known_shortcode_has_committed_file() {
     let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
 
     for shortcode in KNOWN {
-        let path = data.join(format!("{shortcode}.nq"));
-        assert!(path.is_file(), "{} is missing", path.display());
+        for file in [format!("{shortcode}.nq"), format!("{shortcode}-curation.csv")] {
+            let path = data.join(file);
+            assert!(path.is_file(), "{} is missing", path.display());
+        }
+    }
+}
+
+/// The files under `dir`, its subdirectories included.
+fn files_under(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    for entry in fs::read_dir(dir).expect("read the directory") {
+        let path = entry.expect("read the entry").path();
+        if path.is_dir() {
+            files.extend(files_under(&path));
+        } else {
+            files.push(path);
+        }
+    }
+    files
+}
+
+/// The adapter gives no curated key a meaning (ADR-0010): what a key means is a rule of the
+/// project's reader in CPE, never of `sync-store`. The keys are read from the curation file of
+/// every `KNOWN` project. This is a check of the text, comments included: it finds a key written
+/// as a string literal, not one assembled from parts.
+#[test]
+fn test_source_outside_tests_names_no_committed_curation_key() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut keys = BTreeSet::new();
+    for shortcode in KNOWN {
+        let path = manifest.join(format!("../data/{shortcode}-curation.csv"));
+        let csv = fs::read_to_string(&path).expect("read the committed curation file");
+        // A committed header quotes no cell, so its columns are its comma-separated parts.
+        let header = csv.lines().next().expect("the file has a header");
+        assert!(!header.contains('"'), "{}: a quoted header cell", path.display());
+        let columns = header.split(',').skip(1).filter(|column| !column.starts_with('#'));
+        keys.extend(columns.map(|column| column.split('@').next().unwrap_or(column).to_string()));
+    }
+    assert!(!keys.is_empty(), "the committed curation files have no key to look for");
+
+    let sources: Vec<PathBuf> = files_under(&manifest.join("src"))
+        .into_iter()
+        .filter(|path| !path.to_string_lossy().ends_with("_tests.rs"))
+        .collect();
+    assert!(sources.iter().any(|path| path.ends_with("curation.rs")), "{sources:?}");
+    for source in sources {
+        let text = fs::read_to_string(&source).expect("read the source file");
+        for key in &keys {
+            assert!(
+                !text.contains(&format!("\"{key}\"")) && !text.contains(&format!("\"{key}@")),
+                "{} holds the curated key {key:?} as a string literal. sync-store gives no key a meaning \
+                 (ADR-0010): a rule about a curated key belongs to the project's reader on CPE's side of the port \
+                 (areas/access/cpe), which gets every value through `ProjectSnapshot.curation`. If the literal is \
+                 not about curation and only spells the same word, do not reshape it to pass: exempt it here, by name",
+                source.display()
+            );
+        }
     }
 }
 
@@ -152,11 +233,7 @@ fn test_snapshot_missing_file_returns_unavailable() {
         .snapshot("0803")
         .expect_err("a missing file is not served");
 
-    let ProjectionError::Unavailable(source) = &error else {
-        panic!("expected Unavailable, got {error:?}")
-    };
-    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
-    assert!(matches!(source, SnapshotError::Read { .. }), "{source:?}");
+    assert_unreadable(&error, "0803.nq");
 }
 
 #[test]
@@ -168,11 +245,7 @@ fn test_snapshot_directory_in_place_of_file_returns_unavailable() {
         .snapshot("0803")
         .expect_err("a directory is not served");
 
-    let ProjectionError::Unavailable(source) = &error else {
-        panic!("expected Unavailable, got {error:?}")
-    };
-    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
-    assert!(matches!(source, SnapshotError::Read { .. }), "{source:?}");
+    assert_unreadable(&error, "0803.nq");
 }
 
 #[test]
@@ -3081,4 +3154,154 @@ fn test_snapshot_siblings_sharing_position_returns_unavailable_naming_violation(
             ],
         }]
     );
+}
+
+// The curation file
+
+#[test]
+fn test_display_curation_error_shows_path_and_line() {
+    let error = SnapshotError::Curation {
+        path: "data/0803-curation.csv".into(),
+        fault: CurationFault { line: 2, reason: InvalidCuration::BlankLine },
+    };
+
+    assert_eq!(
+        error.to_string(),
+        "data/0803-curation.csv is not a valid curation file at line 2: a blank line"
+    );
+}
+
+/// One Book, `zR8c`, with a title on the value node `urn:dsp:value:mK2x`.
+const BOOK_WITH_TITLE: &str = r#"
+    <http://rdfh.ch/0803/zR8c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+    <http://rdfh.ch/0803/zR8c> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+    <http://rdfh.ch/0803/zR8c> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+    <http://rdfh.ch/0803/zR8c> <http://www.knora.org/ontology/0803/incunabula#title> <urn:dsp:value:mK2x> <urn:dsp:project:0803> .
+    <urn:dsp:value:mK2x> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Value> <urn:dsp:project:0803> .
+    <urn:dsp:value:mK2x> <https://ontology.dasch.swiss/dao#valueHasUUID> "mK2x" <urn:dsp:project:0803> .
+    <urn:dsp:value:mK2x> <https://ontology.dasch.swiss/dao#sourceProperty> <http://www.knora.org/ontology/0803/incunabula#title> <urn:dsp:project:0803> .
+    <urn:dsp:value:mK2x> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "Zeitglöcklein des Lebens" <urn:dsp:project:0803> .
+    "#;
+
+#[test]
+fn test_snapshot_curation_row_for_served_resource_is_served() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_WITH_TITLE);
+    write_0803_curation(&dir, "iri,caption@en,colour\nhttp://rdfh.ch/0803/zR8c,\"A clock, small\",red\n");
+
+    let snapshot = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect("a valid curation file is served");
+
+    let book = ResourceIri("http://rdfh.ch/0803/zR8c".to_string());
+    assert_eq!(
+        snapshot.curation,
+        [
+            CuratedValue {
+                resource: book.clone(),
+                key: "caption".to_string(),
+                lang: Some("en".to_string()),
+                text: "A clock, small".to_string(),
+            },
+            CuratedValue {
+                resource: book,
+                key: "colour".to_string(),
+                lang: None,
+                text: "red".to_string()
+            },
+        ]
+    );
+}
+
+#[test]
+fn test_snapshot_curation_row_for_value_node_returns_unavailable_naming_path_and_line() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_WITH_TITLE);
+    write_0803_curation(&dir, "iri,colour\nurn:dsp:value:mK2x,red\n");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a value node is not a served resource");
+
+    let SnapshotError::Curation { path, fault } = expect_unavailable(&error) else {
+        panic!("expected Curation, got {error:?}")
+    };
+    assert!(path.ends_with("0803-curation.csv"), "{path:?}");
+    assert_eq!(
+        fault,
+        &CurationFault {
+            line: 2,
+            reason: InvalidCuration::UnknownResource { iri: "urn:dsp:value:mK2x".to_string() }
+        }
+    );
+}
+
+#[test]
+fn test_snapshot_curation_file_changed_between_calls_serves_changed_values() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    let projection = LiveArchiveProjection::new(dir.path());
+    write_0803(&dir, BOOK_WITH_TITLE);
+    write_0803_curation(&dir, "iri,colour\nhttp://rdfh.ch/0803/zR8c,red\n");
+    let first = projection.snapshot("0803").expect("the first file is served");
+    write_0803_curation(&dir, "iri,colour\nhttp://rdfh.ch/0803/zR8c,blue\n");
+
+    let second = projection.snapshot("0803").expect("the changed file is served");
+
+    assert_eq!(first.curation[0].text, "red");
+    assert_eq!(second.curation[0].text, "blue");
+}
+
+#[test]
+fn test_snapshot_unknown_shortcode_with_curation_file_present_returns_unknown_project() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    fs::write(
+        dir.path().join("0804.nq"),
+        r#"
+        <http://rdfh.ch/0804/kP2s> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0804> .
+        <http://rdfh.ch/0804/kP2s> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0804/dokubib#Bild> <urn:dsp:project:0804> .
+        <http://rdfh.ch/0804/kP2s> <http://www.w3.org/2000/01/rdf-schema#label> "Bild" <urn:dsp:project:0804> .
+        "#,
+    )
+    .expect("write the fixture");
+    fs::write(
+        dir.path().join("0804-curation.csv"),
+        "iri,colour\nhttp://rdfh.ch/0804/kP2s,red\n",
+    )
+    .expect("write the fixture");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0804")
+        .expect_err("0804 is not a known project");
+
+    assert!(
+        matches!(&error, ProjectionError::UnknownProject { shortcode } if shortcode == "0804"),
+        "{error:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_missing_curation_file_returns_unavailable_naming_its_path() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_WITH_TITLE);
+    fs::remove_file(dir.path().join("0803-curation.csv")).expect("remove the curation file");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a project without its curation file is not served");
+
+    assert_unreadable(&error, "0803-curation.csv");
+}
+
+#[test]
+fn test_snapshot_directory_in_place_of_curation_file_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_WITH_TITLE);
+    fs::remove_file(dir.path().join("0803-curation.csv")).expect("remove the curation file");
+    fs::create_dir(dir.path().join("0803-curation.csv")).expect("create the directory");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a directory is not served");
+
+    assert_unreadable(&error, "0803-curation.csv");
 }

@@ -1,4 +1,5 @@
-//! The boundary DTOs: one project's facts in the archive's shape.
+//! The boundary DTOs: one project's facts in the archive's shape, and beside them the project's
+//! curation, which is not an archive fact ([`CuratedValue`]).
 //!
 //! The shape follows the archive's canonical DAO model wherever its decisions have settled
 //! (`dsp-repository-design`, `spycherli/decisions-active.md`). A field that DAO drops or leaves
@@ -63,7 +64,7 @@ iri! {
     DataArk
 }
 
-/// One project's current facts, whole.
+/// One project's current facts, whole, and the project's curation beside them.
 ///
 /// A snapshot carries no revision or hash: every rebuild starts from empty (ADR-0008).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -76,6 +77,28 @@ pub struct ProjectSnapshot {
     /// Provisional: DAO keeps lists in a project's application profile (d.70), which the Access
     /// Area does not receive, so the snapshot carries them itself.
     pub list_nodes: Vec<ListNode>,
+    /// The project's curation: what its editors authored about single resources and the archive
+    /// does not record. Never an archive fact. Order unspecified; resource, key and language
+    /// together are unique, and every resource is one of `resources`.
+    ///
+    /// Provisional: `sync` serves curation by an interim decision (ADR-0010, proposed; DEV-7488).
+    pub curation: Vec<CuratedValue>,
+}
+
+/// One curated value of one resource. The port gives `key` no meaning: the project's KDL and hook
+/// do. `Ord` is resource, then key, then language (none first), then text.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CuratedValue {
+    pub resource: ResourceIri,
+    /// The project's own name for the value; a curation name
+    /// ([`is_curation_name`](crate::contract::is_curation_name)).
+    pub key: String,
+    /// The value's language, `None` where the project tags none; a curation name where there is
+    /// one.
+    pub lang: Option<String>,
+    /// Never empty: a value the editors left out is absent. The contract promises no more about
+    /// the text: an adapter may be stricter, and a fixture may hold padding or control characters.
+    pub text: String,
 }
 
 /// A resource of the project, with its values, file and membership.

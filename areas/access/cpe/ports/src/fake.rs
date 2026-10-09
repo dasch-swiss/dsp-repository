@@ -49,7 +49,7 @@ mod tests {
     use std::error::Error;
 
     use super::*;
-    use crate::{ClassIri, DataArk, PropertyIri, Resource, ResourceIri, Value, ValueKind};
+    use crate::{ClassIri, CuratedValue, DataArk, PropertyIri, Resource, ResourceIri, Value, ValueKind};
 
     fn text(property: &str, uuid: &str, text: &str) -> Value {
         Value {
@@ -59,8 +59,10 @@ mod tests {
         }
     }
 
-    /// Values neither alphabetical nor by IRI, with three under one property.
+    /// Values neither alphabetical nor by IRI, with three under one property; curation listed
+    /// against its `Ord`.
     fn book_snapshot() -> ProjectSnapshot {
+        let book = || ResourceIri("http://rdfh.ch/0803/zz-book".to_string());
         ProjectSnapshot {
             shortcode: "0803".to_string(),
             resources: vec![Resource {
@@ -96,6 +98,20 @@ mod tests {
                 annotation: None,
             }],
             list_nodes: vec![],
+            curation: vec![
+                CuratedValue {
+                    resource: book(),
+                    key: "teaser".to_string(),
+                    lang: Some("en".to_string()),
+                    text: "A book of hours".to_string(),
+                },
+                CuratedValue {
+                    resource: book(),
+                    key: "slug".to_string(),
+                    lang: None,
+                    text: "zeitgloecklein".to_string(),
+                },
+            ],
         }
     }
 

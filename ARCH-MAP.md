@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-08
+date: 2026-10-09
 ---
 
 # Architecture Map
@@ -18,7 +18,7 @@ dependency arrow is one-way: `services → shared, mosaic`, and a service never 
 another service. The shared root has moved to `shared/` at the repository root, the
 metadata editor to `areas/deposit/editor/` and DPE to `areas/access/dpe/` (ADR-0002); Mosaic
 still lives under `modules/`; `areas/access/sync` exists at its minimum, the crate `sync-store` and
-the committed snapshot it serves; of the six planned components, `areas/access/cpe` holds its
+the committed snapshot and curation it serves; of the six planned components, `areas/access/cpe` holds its
 `CONTEXT.md` and the port crate `cpe-ports`, `areas/access/media` holds nothing yet, and the
 other four hold only a `CONTEXT.md` at their target path. The rest of ADR-0002 (accepted, migration pending) moves Mosaic to the root,
 beside `shared/`, `vitrinli/` and `chischtli/`, so read the globs here as current state.
@@ -546,11 +546,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (CPE's vocabulary and what its port serves)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
   hypermedia server rendering project-specific presentations over the same data as DPE,
-  configured per project. Where the per-project configuration lives is an open item. Only
-  `ports/` exists so far; the engine, store and routes are planned.
+  configured per project. The project-wide configuration is in the project's folder, its KDL
+  (ADR-0007); per-resource curation comes through the port, beside the archive's facts and
+  never as one (ADR-0010, proposed). Only `ports/` exists so far; the engine, store and routes
+  are planned.
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
-  `Motivation`, `DataArk`, `DATA_ARK_PREFIX`, `FakeArchiveProjection`, `contract::violations`
-  (in `cpe-ports`); an annotation (Region, LinkObj) is an ordinary `Resource`, found by
+  `Motivation`, `DataArk`, `DATA_ARK_PREFIX`, `CuratedValue`, `FakeArchiveProjection`,
+  `contract::violations`, `contract::is_curation_name` (in `cpe-ports`); curation is
+  `ProjectSnapshot.curation`, whose keys the port gives no meaning and whose shape the contract
+  checks (`Violation::DanglingCuration`, `Violation::DuplicateCuration`,
+  `Violation::MalformedCuration`); an annotation (Region, LinkObj) is an ordinary `Resource`, found by
   `Resource.annotation`, never by `class`; every `Resource` carries its plain data ARK, whose
   shape the contract checks (`Violation::MalformedDataArk`) and whose derivation is the
   adapter's (`sync-store`'s `ark.rs`); the
@@ -561,6 +566,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Local-context kit:** `areas/access/cpe/CONTEXT.md`, `areas/access/cpe/ports/src/lib.rs`,
   `areas/access/cpe/ports/src/snapshot.rs`, `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`,
   `docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md`,
+  `docs/adr/0010-the-port-also-serves-per-resource-curation.md`,
   `docs/adr/0002-areas-at-the-repository-root.md`, `areas/access/CONTEXT.md`,
   `areas/access/dpe/server/src/lib.rs` (the `Dpe` surface to copy), `areas/access/server/src/serve.rs`
   (where it is mounted), `shared/metadata/src/lib.rs`,
@@ -581,7 +587,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   That `cpe/ports` reaches only `std` and `shared-*` is **review** until Bazel `visibility`
   (ADR-0003); the rest is **docs-only** until CPE's other crates exist. `sync-store` also runs
   `contract::violations` on every snapshot it serves, so a new contract invariant can take a
-  project offline.
+  project offline. No `cpe-ports` code gives a curation key a meaning: a key's rules belong to
+  the project's KDL and hook (ADR-0010, proposed; **review**).
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
   single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
   target design, the store is not built). `cpe-ports` holds none.
@@ -630,13 +637,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 ### areas/access/sync
 
 - **Paths:** `:(glob)areas/access/sync/**` — today `store/` (crate `sync-store`), `data/` (the
-  committed snapshots, the test oracle `0803-arks.txt` and their `PROVENANCE`) and `CONTEXT.md`
+  committed snapshots, the committed curation files, today `0803-curation.csv`, the test oracle
+  `0803-arks.txt` and their `PROVENANCE`) and `CONTEXT.md`
 - **Purpose:** The Access Area's `sync` capability: the single writer of the archive projection
   and the single consumer of the archive's projection stream, rebuilding the projection from
   snapshot plus replay (ADR-0003, ADR-0008); the first Access-Area capability without a screen
   (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the committed snapshot of
   one known project (0803, Incunabula) behind CPE's port, with no Chischtli, replay or bus, and
-  nothing constructs it until DEV-7400. Annotations (Regions, LinkObjs) are served as resources
+  nothing constructs it until DEV-7400. Beside the snapshot it serves the project's per-resource
+  curation from a hand-authored file, `data/0803-curation.csv`, as an interim (ADR-0010,
+  proposed): a missing or faulty curation file refuses the whole project. Annotations (Regions, LinkObjs) are served as resources
   with their geometry and color verbatim. Each resource's data ARK is derived from its IRI with
   dsp-api's algorithm (`ark.rs`), not read from the file, until DAO carries it; the incubator's
   ARKs for 0803 are committed as `data/0803-arks.txt` and pinned by the committed-file tests.
@@ -644,7 +654,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (ADR-0007, DEV-7399 amendment), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
 - **Key entities:** `LiveArchiveProjection`, `KNOWN`, `SnapshotError`, `InvalidFact`,
-  `ArkError` (in `sync-store`; a resource IRI with no data ARK is `InvalidFact::NoDataArk`);
+  `ArkError`, `InvalidCuration`, `CurationFault` (in `sync-store`; a resource IRI with no data
+  ARK is `InvalidFact::NoDataArk`; a curation file that breaks its format is
+  `SnapshotError::Curation`, a `CurationFault` naming the line and the `InvalidCuration` rule);
   (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
   (`areas/archive/CONTEXT.md`)
 - **Public interface:** nothing to a browser. The `Live<Port>` adapters for the ports it
@@ -654,6 +666,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (the `dao-lift` commit that pins `FORMAT.md`), `areas/access/sync/store/src/lib.rs`,
   `areas/access/sync/store/src/ark.rs` (the one derivation of the data ARK),
   `areas/access/sync/store/src/vocab.rs` (the format's IRIs and the same pin),
+  `areas/access/sync/store/src/curation.rs` (the curation file's format and its one reader),
+  `docs/adr/0010-the-port-also-serves-per-resource-curation.md`,
   `areas/access/cpe/ports/src/lib.rs` (the port it implements),
   `areas/access/cpe/ports/src/contract.rs` (the contract its output must pass),
   `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`,
@@ -670,8 +684,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   areas/access/dpe and the SPARQL endpoint, each through its own port
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008; whether `media`'s reading of the Access bucket counts
-  against that is DEV-7442); maps its data to each consumer's archive-shaped DTOs and holds no
-  presentation remodelling (ADR-0007's guardrail); readers reach the projection only through the
+  against that is DEV-7442); maps its data to each consumer's DTOs, archive-shaped but for
+  curation, and holds no presentation remodelling (ADR-0007's guardrail); `sync-store` knows no
+  curation key: it serves keys as opaque names and no code outside its tests names one
+  (ADR-0010, proposed; **static-analysis** for the committed keys as string literals,
+  `test_source_outside_tests_names_no_committed_curation_key`, otherwise **review**); readers reach the projection only through the
   ports it implements, never by opening its store; `sync-store` depends on `cpe-ports` and on no
   other CPE or DPE crate (**review**, then **structure** via Bazel visibility after ADR-0001;
   `check-composition-root-deps.sh` does not scan it). A file that breaks a fact the port serves
@@ -680,15 +697,22 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   contract's cross-fact rules (inverted date, cycles, sibling positions) live only there, never
   in the mapping (**review**; the crate doc in `lib.rs` says where a check goes). A link to an IRI
   outside the file is omitted, but an annotation target that is not a resource of the file is
-  refused (`InvalidFact::UnknownTarget`).
+  refused (`InvalidFact::UnknownTarget`). A curation file is read strictly and never repaired:
+  a row for an IRI the snapshot does not hold, a padded value or a missing file refuses the
+  project (**static-analysis**: `sync-store`'s tests).
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
   snapshot plus replay, never repaired in place (target design). Today the committed snapshots
   under `areas/access/sync/data/` (`0803.nq`), **single writer** `dao-lift`, run on a VRE dump at
   the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
-  on every call, and holds nothing in between. The test oracle `0803-arks.txt`, **single writer**
+  on every call, and holds nothing in between. The committed curation `0803-curation.csv`,
+  **single writer** a person: hand-authored, edited in place and never generated (**review**);
+  until DEV-7402 lands it is a copy of the incubator's CSV files, which stay authoritative, and
+  a change made there is repeated here by hand (`PROVENANCE`; **review**);
+  read by `sync-store` on every call, and pinned by the committed-file tests: an edit to the
+  file changes their expectations in the same commit (**review**). The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
   (**review**), is read only by the committed-file tests.
-- **Fingerprint:** `ec1861e4ca2c`
+- **Fingerprint:** `cf39e565315e`
 
 ### areas/access/media
 

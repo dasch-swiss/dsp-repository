@@ -20,8 +20,8 @@ areas/
 │   ├── cpe/                   # Configurable Presentation Environment (only its port so far)
 │   │   └── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
 │   ├── sync/                  # sync, the archive projection's writer (at its minimum so far)
-│   │   ├── store/             # Serves the committed snapshots behind CPE's port (crate: sync-store)
-│   │   └── data/              # Committed interim-DAO snapshots and their PROVENANCE
+│   │   ├── store/             # Serves the committed snapshots and curation behind CPE's port (crate: sync-store)
+│   │   └── data/              # Committed interim-DAO snapshots, curation files and their PROVENANCE
 │   └── dpe/                   # Discovery and Presentation Environment
 │       ├── core/              # DPE's view model, caches, repositories (crate: dpe-core)
 │       ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
@@ -62,8 +62,8 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `dpe-api-oai` | `areas/access/dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core`, `shared-metadata` and `shared-fair` only) |
 | `dpe-web` | `areas/access/dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `areas/access/dpe/server` | A library — DPE's router, config and validate logic; no binary |
-| `cpe-ports` | `areas/access/cpe/ports` | CPE's port onto the archive projection (ADR-0007, ADR-0008): the `ArchiveProjection` trait, its archive-shaped DTOs, an in-memory fake and the contract every adapter satisfies; depends on `std` alone |
-| `sync-store` | `areas/access/sync/store` | `sync` at its minimum (ADR-0007): `LiveArchiveProjection`, CPE's `ArchiveProjection` served from the committed interim-DAO snapshots in `areas/access/sync/data/`; depends on `cpe-ports` and no other CPE or DPE crate |
+| `cpe-ports` | `areas/access/cpe/ports` | CPE's port onto the archive projection (ADR-0007, ADR-0008): the `ArchiveProjection` trait, its DTOs (archive-shaped facts and, beside them, per-resource curation, ADR-0010, proposed), an in-memory fake and the contract every adapter satisfies; depends on `std` alone |
+| `sync-store` | `areas/access/sync/store` | `sync` at its minimum (ADR-0007): `LiveArchiveProjection`, CPE's `ArchiveProjection` served from the committed interim-DAO snapshots and the committed curation files in `areas/access/sync/data/`; depends on `cpe-ports` and no other CPE or DPE crate |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |

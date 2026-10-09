@@ -13,7 +13,7 @@ The project property a value was recorded under, e.g. `incunabula:hasTitle` (`da
 _Avoid_: canonical predicate, data predicate (DAO's `dcterms:title` or project-term IRI in the data, which can merge two properties into one).
 
 **Project snapshot**:
-`cpe_ports::ProjectSnapshot`, one project's current facts, whole, as one call to the port returns them: its resources and its list nodes. It carries no revision and announces no change, so every rebuild starts from empty.
+`cpe_ports::ProjectSnapshot`, one project's current facts, whole, as one call to the port returns them: its resources and its list nodes, and beside them its **Curation**. It carries no revision and announces no change, so every rebuild starts from empty.
 _Avoid_: dump (the archive's export format), delta, page (a snapshot is never partial).
 
 **Archive-shaped fact**:
@@ -28,9 +28,18 @@ _Avoid_: Region as the name for every annotation (a LinkObj is one too), a separ
 `cpe_ports::DataArk`, a resource's plain data ARK (`https://ark.dasch.swiss/ark:/72163/1/<SHORTCODE>/<id+checkdigit>`), carried by every `cpe_ports::Resource`. It resolves to the DSP data and never to CPE (ADR-0007, 2026-10-02 amendment). Distinct from the project or record **Pid** (`RecordPid`) defined in [`../CONTEXT.md`](../CONTEXT.md).
 _Avoid_: presentation ARK (ADR-0007's open kind), version ARK, Pid.
 
+**Curation**:
+`cpe_ports::CuratedValue`, what a project's editors authored about one resource and the archive does not record:
+a resource, a key, an optional language and a text. The port serves it beside the **Archive-shaped facts**, in
+`ProjectSnapshot.curation`, never as one and never inside a `cpe_ports::Resource`.
+A key means nothing to the port or to `sync`: the project's KDL and hook give it its meaning.
+Interim: `sync` serves curation by a decision that is still proposed (ADR-0010; DEV-7488).
+_Avoid_: configuration (project-wide, declared in the project's KDL), archive fact.
+
 ## What the port serves
 
 An adapter serves current, live facts only, and omits every fact not listed as in: it never errors on one and never substitutes a string form. A link or `part_of` whose target is omitted is itself omitted; a child of an omitted parent keeps its `seqnum`. An annotation target that is not a resource of the file is refused, unlike a link: the snapshot is not served.
+**Curation** is the one thing served that is not a fact of the archive.
 
 | In | Out, deliberately | Why out |
 |---|---|---|
@@ -43,6 +52,7 @@ An adapter serves current, live facts only, and omits every fact not listed as i
 | Links, subject to object, `isRegionOf`, `hasLinkTo` and `isAnnotationOf` included; Regions and LinkObjs as resources with their `oa:motivatedBy` and `oa:hasTarget` | LinkValue reifications | DAO strips them (`FORMAT.md` §6) |
 | Ordered membership (`isPartOf` parents and `seqnum`) | `isSequenceOf` | No project uses it yet; added when one needs it |
 | One file per resource: still image (asset and dimensions), audio, moving image, document | Other file kinds (archive, text, external and vector still images), file bytes, original filename, MIME types, checksums | CPE builds IIIF URLs from the asset name; the rest is not presented |
+| Per-resource curation: a key, an optional language and a text | Project-wide configuration (vocabularies with their labels and order, rights constants) and any meaning of a key | The project's KDL declares configuration (ADR-0007); only curation comes through `sync` (ADR-0010, proposed) |
 | — | Rights and legal information (license, copyright holder, authorship) | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
 | — | Permissions, creation and deletion metadata | Not presented yet |
 | — | Deleted resources and values, superseded value versions | Not current facts |

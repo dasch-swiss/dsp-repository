@@ -5,8 +5,8 @@ use cpe_ports::contract::Violation;
 
 use crate::ArkError;
 
-/// Why a known project's snapshot file could not be served. `LiveArchiveProjection` returns it as
-/// the source of `ProjectionError::Unavailable`.
+/// Why a known project's snapshot file or curation file could not be served; `path` names the file
+/// at fault. `LiveArchiveProjection` returns it as the source of `ProjectionError::Unavailable`.
 #[derive(Debug, thiserror::Error)]
 pub enum SnapshotError {
     #[error("cannot read {}", path.display())]
@@ -30,8 +30,12 @@ pub enum SnapshotError {
     Invalid { path: PathBuf, subject: String, reason: InvalidFact },
     #[error("{} holds no resource", path.display())]
     Empty { path: PathBuf },
+    /// The curation file breaks its format: the first fault met.
+    #[error("{} is not a valid curation file at {fault}", path.display())]
+    Curation { path: PathBuf, fault: CurationFault },
     /// The mapped snapshot breaks the port's contract: a cross-node rule `sync-store` leaves to
-    /// `cpe_ports::contract`, or anything else the mapping let through.
+    /// `cpe_ports::contract`, or anything else the mapping let through. `path` is the snapshot
+    /// file.
     #[error("{} breaks the port's contract: {}", path.display(), join_violations(violations))]
     Contract { path: PathBuf, violations: Vec<Violation> },
 }
@@ -124,4 +128,48 @@ pub enum InvalidFact {
     /// variant above.
     #[error("{predicate} more than once")]
     RepeatedPredicate { predicate: String },
+}
+
+/// A fault of a curation file. `line` is 1-based; the header is line 1.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("line {line}: {reason}")]
+pub struct CurationFault {
+    pub line: usize,
+    pub reason: InvalidCuration,
+}
+
+/// The rule a curation file breaks.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum InvalidCuration {
+    #[error("bytes that are not UTF-8")]
+    NotUtf8,
+    /// The file has no line, or its first line is empty.
+    #[error("no header")]
+    MissingHeader,
+    /// A control character other than the line feed that ends a line, or U+2028 or U+2029.
+    #[error("the control or line-break character {character:?}")]
+    ControlCharacter { character: char },
+    #[error("a quote inside a bare cell, or text after a closing quote")]
+    StrayQuote,
+    /// The fault's line is the one the quote opens on.
+    #[error("a quoted cell that does not end on its line")]
+    UnterminatedQuote,
+    #[error("a first column named {found:?}, not iri")]
+    FirstColumnNotIri { found: String },
+    #[error("a column named {column:?}, which is neither key, key@lang nor a comment")]
+    MalformedColumn { column: String },
+    #[error("the column {column:?} twice")]
+    DuplicateColumn { column: String },
+    #[error("a blank line")]
+    BlankLine,
+    #[error("a row of {found} cells under a header of {expected}")]
+    WrongCellCount { expected: usize, found: usize },
+    #[error("a row for {iri:?}, which is not a resource of the snapshot")]
+    UnknownResource { iri: String },
+    /// `first_line` is the line of the IRI's first row.
+    #[error("a second row for {iri:?}, after line {first_line}")]
+    DuplicateRow { iri: String, first_line: usize },
+    /// The value starts or ends with white space, U+200B or U+FEFF.
+    #[error("a value under {column} that starts or ends with white space or an invisible character")]
+    PaddedValue { column: String },
 }

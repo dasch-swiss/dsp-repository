@@ -3,7 +3,7 @@ title: "feat: Serve data ARKs through cpe-ports"
 type: feat
 date: 2026-10-08
 author: "Balduin Landolt"
-status: reviewed(2)
+status: complete
 linear: DEV-7487
 linear_project: CPE establish production path
 repositories:
@@ -302,18 +302,21 @@ already says data ARKs identify the DSP data and are never re-pointed at CPE.
 **Gate: H1** — resolve before starting this phase.
 
 ### dsp-incubator
-- [ ] Create a branch off up-to-date `origin/main`
-- [ ] Find the merged DEV-7487 commit on dsp-repository's `origin/main` (`git log origin/main --grep DEV-7487 -1` in the dsp-repository checkout)
-- [ ] Run `just cpe vendor <sha>` with that commit; `cpe/vendor/PIN` holds that sha
-- [ ] Grep `cpe/` outside `cpe/vendor/` for `cpe_ports`; record in the commit body whether any use exists
-- [ ] Add `Geometry` and `Color` arms to every `ValueKind` match that grep found
-- [ ] Add `annotation` and `ark` to every `cpe_ports::Resource` literal that grep found
-- [ ] Run `just cpe test`; it passes
-- [ ] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
-- [ ] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<sha>)`
-- [ ] Run `just cpe ci`; it passes
-- [ ] Commit `PIN`, the vendored tree and any `Cargo.lock` change together as `chore(cpe): vendor cpe-ports with annotations and data ARKs (DEV-7486, DEV-7487)`
+- [x] Create a branch off up-to-date `origin/main`
+- [x] Find the merged DEV-7487 commit on dsp-repository's `origin/main` (`git log origin/main --grep DEV-7487 -1` in the dsp-repository checkout)
+- [x] Run `just cpe vendor <sha>` with that commit; `cpe/vendor/PIN` holds that sha
+- [x] Grep `cpe/` outside `cpe/vendor/` for `cpe_ports`; record in the commit body whether any use exists
+- [x] Add `Geometry` and `Color` arms to every `ValueKind` match that grep found (none found)
+- [x] Add `annotation` and `ark` to every `cpe_ports::Resource` literal that grep found (none found)
+- [x] Run `just cpe test`; it passes
+- [x] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
+- [x] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<sha>)`
+- [x] Run `just cpe ci`; it passes
+- [x] Commit `PIN`, the vendored tree and any `Cargo.lock` change together as `chore(cpe): vendor cpe-ports with annotations and data ARKs (DEV-7486, DEV-7487)`
+      (landed as `chore(cpe): vendor cpe-ports with data ARKs (DEV-7487)`, dsp-incubator#486: #479 had already
+      vendored the annotations)
 - [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+      (skipped: `vendor-diff` is empty, so the diff is byte-identical to the code reviewed in dsp-repository#465)
 
 ## Human Actions
 
@@ -338,7 +341,7 @@ already says data ARKs identify the DSP data and are never re-pointed at CPE.
       deletion metadata as still out.
 
 **Incubator**
-- [ ] The incubator vendors the merged DEV-7487 commit; `just cpe vendor-diff` is empty and `just cpe ci`
+- [x] The incubator vendors the merged DEV-7487 commit; `just cpe vendor-diff` is empty and `just cpe ci`
       passes.
 
 ## Dependencies & Risks

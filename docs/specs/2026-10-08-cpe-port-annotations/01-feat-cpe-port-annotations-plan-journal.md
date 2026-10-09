@@ -10,7 +10,7 @@ problem: >
   cpe-ports. The port drops every oa:Annotation subject and every link to one, and has no geometry
   or color value kind, so the 77 kb:Region and 40 kb:LinkObj of the committed 0803 projection are
   not served.
-status: in-progress
+status: complete
 ---
 
 # Execution Journal: 01-feat-cpe-port-annotations-plan
@@ -19,7 +19,8 @@ status: in-progress
 
 | repo           | base_commit | branch            | merge_strategy | status      | pr |
 |----------------|-------------|-------------------|----------------|-------------|----|
-| dsp-repository | a7e8df14    | worktree-DEV-7486 | rebase         | in-progress | —  |
+| dsp-repository | a7e8df14    | worktree-DEV-7486 | rebase         | shipped     | https://github.com/dasch-swiss/dsp-repository/pull/464 |
+| dsp-incubator  | —           | worktree-DEV-7486 | squash         | shipped     | https://github.com/dasch-swiss/dsp-incubator/pull/479 |
 
 ## Phases
 
@@ -27,6 +28,7 @@ status: in-progress
 |-------|-------------|-------------------------|-------------------|
 | 1     | reviewed    | dsp-repository@d8f0a72e | 1                 |
 | 2     | reviewed    | dsp-repository@d8f0a72e | 1                 |
+| 3     | complete    | dsp-incubator           | 0                 |
 
 ## Chunk queue
 
@@ -58,6 +60,7 @@ status: in-progress
 | F5 | dsp-repository | complete | ccb11520 (amended) | Final review (simplicity W): contract.rs module doc points at Annotation::targets and says it checks only non-empty and resource-of-snapshot; resources.rs comment a pointer; snapshot.rs stays canonical | none |
 | F6 | dsp-repository | complete | ccb11520 (amended) | Final review (consistency S): mapping/mod.rs doc in present tense | none |
 | F7 | dsp-repository | complete | ccb11520 (amended) | Final review (dune S): Motivation in the ARCH-MAP cpe Key entities; fix diff re-reviewed (consistency, simplicity, dune): no Critical/Warning, two wording suggestions applied; sync fingerprint re-recorded 5bff0a0bb38f, verified equal to a fresh computation over HEAD's index; commit body reworded for the target rule; just check, just test green; commit-lint fails only the expected 2-commit count | none |
+| 3.1 | dsp-incubator | complete | squash-merged as 1fa1c440 | Recorded after the fact from dsp-incubator#479, run by another session: pin moved a7e8df14 → 7118cdbf (#464 as merged); no `cpe_ports` use outside cpe/vendor/, so no match or literal changed; Cargo.lock unchanged; `vendor-diff` empty, no ignored file, `just cpe test` and `just cpe ci` pass (its test plan). No Phase review is recorded | none |
 
 ## Deferrals
 
@@ -78,3 +81,10 @@ status: in-progress
 - Final-review fix round: an `oa:hasTarget` to a node typed `dao:Value` is refused earlier as
   `UnfitSourceProperty { edge: oa:hasTarget }` (values mapping treats it as a value edge), not as `UnknownTarget`;
   the new test therefore uses an untyped value node, the case the refusal exists for. Still Unavailable either way.
+
+## Closeout
+
+- root_cause: The port dropped every `oa:Annotation` subject and every link to one, and had no geometry or color value kind, so the 77 `kb:Region` and 40 `kb:LinkObj` of the committed 0803 projection were not served.
+- investigation: DAO marks annotations with `oa:` facts, not by class; LinkValue reifications are stripped by DAO and stay out; an annotation target outside the file is a broken snapshot, unlike an ordinary out-of-file link, which is dropped.
+- solution: `cpe-ports` gains `ValueKind::Geometry` and `Color`, `Annotation` and `Motivation`, `Resource.annotation`, and the `DanglingTarget` and `UntargetedAnnotation` violations; `sync-store` serves every `dao:Resource`, maps motivation and targets, and refuses broken annotation facts with their own `InvalidFact`; the incubator vendors the merged commit (dsp-incubator#479).
+- prevention: committed-0803 tests pin 4,198 resources, 77 Regions, 40 LinkObjs, 79 LinkObj links and 117 annotations whose targets equal their link targets; each annotation refusal has a single-fault test.

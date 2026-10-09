@@ -2,6 +2,23 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
+## [0.3.2](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.1...dsp-cli-v0.3.2) (2026-10-09)
+
+
+### Documentation
+
+* **docs:** Add ordered rules for separate PRs, stacks, and multi-commit PRs ([0debe77](https://github.com/dasch-swiss/dsp-repository/commit/0debe7702cf8d97eb3a650962daf1b16d2b7b7e6))
+
+
+### Tests
+
+* **dsp-cli:** Run the corrupt-cache log-leak guard as a binary test (DEV-7446) ([2374603](https://github.com/dasch-swiss/dsp-repository/commit/2374603f72d5f255eec7fc0a36e8b8c34dcedb9f))
+
+
+### Miscellaneous Chores
+
+* **docs,dsp-cli:** Correct stale agent instructions in CLAUDE.md files ([b81801d](https://github.com/dasch-swiss/dsp-repository/commit/b81801dad7f9836773b7055eacd4c15e1c5bf267))
+
 ## [0.3.1](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.0...dsp-cli-v0.3.1) (2026-09-22)
 
 

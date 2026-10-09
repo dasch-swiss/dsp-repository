@@ -8,6 +8,11 @@
 //! checks the shape of a resource's data ARK, not that the ARK belongs to its IRI; that is the
 //! adapter's promise.
 //!
+//! Of a project's curation it checks that a value names a resource of the snapshot, that resource,
+//! key and language occur once, that a key and a language are curation names
+//! ([`is_curation_name`]), and that a text is not empty. What a key means, what a non-empty text
+//! holds, and whether a resource has every value its project requires are the reader's rules.
+//!
 //! A violation is always an adapter bug, or bad data an adapter failed to refuse. `sync-store` runs
 //! [`violations`] on every snapshot it serves and refuses one with any violation, so a new
 //! invariant here can take a project offline at run time, not only fail a test.
@@ -65,6 +70,13 @@ pub enum Violation {
     DuplicateValueUuid { resource: ResourceIri, uuid: String },
     /// A link carries a UUID, which a link never has.
     LinkWithValueUuid { resource: ResourceIri, property: PropertyIri },
+    /// A curated value names a resource that is not in the snapshot; reported once per IRI.
+    DanglingCuration { resource: ResourceIri },
+    /// Two or more curated values share this resource, key and language; reported once per triple.
+    DuplicateCuration { resource: ResourceIri, key: String, lang: Option<String> },
+    /// A curated value whose `key`, or whose `lang` where it has one, is no curation name
+    /// ([`is_curation_name`]), or whose `text` is empty; reported once per entry of `curation`.
+    MalformedCuration { resource: ResourceIri, key: String, lang: Option<String> },
 }
 
 /// What refers to a list node in [`Violation::DanglingListNode`].
@@ -155,7 +167,35 @@ impl fmt::Display for Violation {
                 resource.as_str(),
                 property.as_str()
             ),
+            Self::DanglingCuration { resource } => {
+                write!(
+                    f,
+                    "resource {} has curated values, but is not in the snapshot",
+                    resource.as_str()
+                )
+            }
+            Self::DuplicateCuration { resource, key, lang } => write!(
+                f,
+                "resource {} has more than one curated value {}",
+                resource.as_str(),
+                curation_name(key, lang.as_deref())
+            ),
+            Self::MalformedCuration { resource, key, lang } => write!(
+                f,
+                "resource {} has a curated value {:?} whose key or language is not a curation name, or whose text \
+                 is empty",
+                resource.as_str(),
+                curation_name(key, lang.as_deref())
+            ),
         }
+    }
+}
+
+/// `key`, or `key@lang` where the value has a language.
+fn curation_name(key: &str, lang: Option<&str>) -> String {
+    match lang {
+        Some(lang) => format!("{key}@{lang}"),
+        None => key.to_string(),
     }
 }
 
@@ -299,8 +339,44 @@ pub fn violations(requested: &str, snapshot: &ProjectSnapshot) -> Vec<Violation>
         });
     }
 
+    let mut dangling: BTreeSet<&ResourceIri> = BTreeSet::new();
+    let mut curation_counts: BTreeMap<(&ResourceIri, &str, Option<&str>), usize> = BTreeMap::new();
+    for value in &snapshot.curation {
+        let lang = value.lang.as_deref();
+        if !resource_counts.contains_key(value.resource.as_str()) {
+            dangling.insert(&value.resource);
+        }
+        *curation_counts.entry((&value.resource, value.key.as_str(), lang)).or_default() += 1;
+        if !is_curation_name(&value.key) || !lang.is_none_or(is_curation_name) || value.text.is_empty() {
+            found.push(Violation::MalformedCuration {
+                resource: value.resource.clone(),
+                key: value.key.clone(),
+                lang: value.lang.clone(),
+            });
+        }
+    }
+    for resource in dangling {
+        found.push(Violation::DanglingCuration { resource: resource.clone() });
+    }
+    for ((resource, key, lang), _) in curation_counts.into_iter().filter(|&(_, count)| count > 1) {
+        found.push(Violation::DuplicateCuration {
+            resource: resource.clone(),
+            key: key.to_string(),
+            lang: lang.map(str::to_string),
+        });
+    }
+
     found.sort();
     found
+}
+
+/// Whether `name` can be a curated key or language: `[a-z][a-z0-9_-]*`, so `key@lang` reads one
+/// way. A language tag with an upper-case part, such as `de-CH`, is refused by design.
+#[must_use]
+pub fn is_curation_name(name: &str) -> bool {
+    let mut bytes = name.bytes();
+    bytes.next().is_some_and(|first| first.is_ascii_lowercase())
+        && bytes.all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'-')
 }
 
 /// Whether `s` is `DATA_ARK_PREFIX` followed by `<shortcode>/<id>`: a four-digit uppercase
@@ -385,8 +461,8 @@ fn cycle_representatives<'a>(edges: &BTreeMap<&'a str, Vec<&'a str>>) -> Vec<&'a
 mod tests {
     use super::*;
     use crate::{
-        Annotation, Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode, Motivation,
-        Resource, Value,
+        Annotation, Calendar, ClassIri, CuratedValue, DateBound, DatePrecision, DateValue, File, LangString, ListNode,
+        Motivation, Resource, Value,
     };
 
     const PAGE: &str = "http://www.knora.org/ontology/0803/incunabula#page";
@@ -445,7 +521,21 @@ mod tests {
     }
 
     fn snapshot(resources: Vec<Resource>, list_nodes: Vec<ListNode>) -> ProjectSnapshot {
-        ProjectSnapshot { shortcode: "0803".to_string(), resources, list_nodes }
+        ProjectSnapshot {
+            shortcode: "0803".to_string(),
+            resources,
+            list_nodes,
+            curation: vec![],
+        }
+    }
+
+    fn curated(id: &str, key: &str, lang: Option<&str>, text: &str) -> CuratedValue {
+        CuratedValue {
+            resource: res(id),
+            key: key.to_string(),
+            lang: lang.map(str::to_string),
+            text: text.to_string(),
+        }
     }
 
     fn valid_snapshot() -> ProjectSnapshot {
@@ -541,7 +631,14 @@ mod tests {
             ..list_node(id, Some(parent), Some(position))
         };
 
-        snapshot(
+        let curation = vec![
+            curated("r-region", "keep", None, "yes"),
+            curated("q-book", "caption", Some("en"), "A book of hours"),
+            curated("q-book", "slug", None, "zeitgloecklein"),
+            curated("q-book", "caption", Some("de"), "Ein Stundenbuch"),
+        ];
+
+        let facts = snapshot(
             vec![
                 book,
                 still,
@@ -562,7 +659,40 @@ mod tests {
                 list_node("places", None, None),
                 genre("basel", "places", 0),
             ],
-        )
+        );
+        ProjectSnapshot { curation, ..facts }
+    }
+
+    #[test]
+    fn test_is_curation_name_accepts_lowercase_names_and_refuses_the_rest() {
+        for name in ["slug", "date_display", "sort-key", "de", "a1"] {
+            assert!(is_curation_name(name), "{name:?}");
+        }
+        for name in ["", "Slug", "1st", "_a", "-a", "a b", "a@b", "de-CH", "ü"] {
+            assert!(!is_curation_name(name), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn test_curated_values_sort_by_resource_key_and_language() {
+        let mut values = vec![
+            curated("b", "caption", Some("en"), "Red"),
+            curated("b", "caption", Some("de"), "Rot"),
+            curated("b", "caption", None, "plain"),
+            curated("a", "size", None, "big"),
+        ];
+
+        values.sort();
+
+        assert_eq!(
+            values,
+            vec![
+                curated("a", "size", None, "big"),
+                curated("b", "caption", None, "plain"),
+                curated("b", "caption", Some("de"), "Rot"),
+                curated("b", "caption", Some("en"), "Red"),
+            ]
+        );
     }
 
     #[test]
@@ -954,7 +1084,14 @@ mod tests {
             page("c", "gone", None),
         ];
 
-        let found = violations("0803", &snapshot(resources, vec![]));
+        let curation = vec![
+            curated("z", "", None, "untitled"),
+            curated("a", "caption", Some("de"), "Rot"),
+            curated("nowhere", "caption", None, "plain"),
+            curated("a", "caption", Some("de"), "Dunkelrot"),
+        ];
+
+        let found = violations("0803", &ProjectSnapshot { curation, ..snapshot(resources, vec![]) });
 
         let parent = |id: &str| Violation::DanglingParent { resource: res(id), parent: res("gone") };
         assert_eq!(
@@ -973,6 +1110,13 @@ mod tests {
                 Violation::InvertedDate { resource: res("a"), property: prop("pubdate") },
                 Violation::MissingValueUuid { resource: res("y"), property: prop("title") },
                 Violation::DuplicateValueUuid { resource: res("d"), uuid: "vX2".to_string() },
+                Violation::DanglingCuration { resource: res("nowhere") },
+                Violation::DuplicateCuration {
+                    resource: res("a"),
+                    key: "caption".to_string(),
+                    lang: Some("de".to_string())
+                },
+                Violation::MalformedCuration { resource: res("z"), key: String::new(), lang: None },
             ]
         );
     }
@@ -1136,5 +1280,157 @@ mod tests {
         };
 
         assert_eq!(violations("0803", &snapshot(vec![valued("b"), valued("a")], vec![])), vec![]);
+    }
+
+    fn curated_snapshot(curation: Vec<CuratedValue>) -> ProjectSnapshot {
+        let resources = vec![resource("a", BOOK), resource("b", BOOK)];
+        ProjectSnapshot { curation, ..snapshot(resources, vec![]) }
+    }
+
+    fn malformed(id: &str, key: &str, lang: Option<&str>) -> Violation {
+        Violation::MalformedCuration {
+            resource: res(id),
+            key: key.to_string(),
+            lang: lang.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn test_violations_curation_for_missing_resource_reports_one_dangling_curation() {
+        let curation = vec![
+            curated("gone", "colour", None, "red"),
+            curated("gone", "size", None, "big"),
+        ];
+
+        let found = violations("0803", &curated_snapshot(curation));
+
+        assert_eq!(found, vec![Violation::DanglingCuration { resource: res("gone") }]);
+    }
+
+    #[test]
+    fn test_violations_curated_value_given_three_times_reports_one_duplicate_curation() {
+        let curation = vec![
+            curated("a", "caption", Some("en"), "Red"),
+            curated("a", "caption", Some("en"), "Crimson"),
+            curated("a", "caption", Some("en"), "Red"),
+        ];
+
+        let found = violations("0803", &curated_snapshot(curation));
+
+        assert_eq!(
+            found,
+            vec![Violation::DuplicateCuration {
+                resource: res("a"),
+                key: "caption".to_string(),
+                lang: Some("en".to_string())
+            }]
+        );
+    }
+
+    #[test]
+    fn test_violations_empty_curated_text_reports_malformed_curation() {
+        let found = violations("0803", &curated_snapshot(vec![curated("a", "colour", None, "")]));
+
+        assert_eq!(found, vec![malformed("a", "colour", None)]);
+    }
+
+    #[test]
+    fn test_violations_empty_curation_key_reports_malformed_curation() {
+        let found = violations("0803", &curated_snapshot(vec![curated("a", "", None, "red")]));
+
+        assert_eq!(found, vec![malformed("a", "", None)]);
+    }
+
+    #[test]
+    fn test_violations_empty_curation_language_reports_malformed_curation() {
+        let found = violations("0803", &curated_snapshot(vec![curated("a", "caption", Some(""), "Red")]));
+
+        assert_eq!(found, vec![malformed("a", "caption", Some(""))]);
+    }
+
+    #[test]
+    fn test_violations_uppercase_curation_key_reports_malformed_curation() {
+        let found = violations("0803", &curated_snapshot(vec![curated("a", "Colour", None, "red")]));
+
+        assert_eq!(found, vec![malformed("a", "Colour", None)]);
+    }
+
+    #[test]
+    fn test_violations_malformed_value_given_twice_reports_two_malformed_and_one_duplicate() {
+        let curation = vec![curated("a", "colour", None, ""), curated("a", "colour", None, "")];
+
+        let found = violations("0803", &curated_snapshot(curation));
+
+        assert_eq!(
+            found,
+            vec![
+                Violation::DuplicateCuration { resource: res("a"), key: "colour".to_string(), lang: None },
+                malformed("a", "colour", None),
+                malformed("a", "colour", None),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_violations_one_key_in_two_languages_reports_nothing() {
+        let curation = vec![
+            curated("a", "caption", Some("de"), "Rot"),
+            curated("a", "caption", Some("en"), "Red"),
+        ];
+
+        assert_eq!(violations("0803", &curated_snapshot(curation)), vec![]);
+    }
+
+    #[test]
+    fn test_violations_one_key_tagged_and_untagged_reports_nothing() {
+        let curation = vec![
+            curated("a", "caption", None, "plain"),
+            curated("a", "caption", Some("en"), "Red"),
+        ];
+
+        assert_eq!(violations("0803", &curated_snapshot(curation)), vec![]);
+    }
+
+    #[test]
+    fn test_violations_one_key_on_two_resources_reports_nothing() {
+        let curation = vec![curated("a", "colour", None, "red"), curated("b", "colour", None, "red")];
+
+        assert_eq!(violations("0803", &curated_snapshot(curation)), vec![]);
+    }
+
+    #[test]
+    fn test_violations_padded_curation_text_reports_nothing() {
+        let curation = vec![curated("a", "colour", None, " red\t")];
+
+        assert_eq!(violations("0803", &curated_snapshot(curation)), vec![]);
+    }
+
+    #[test]
+    fn test_display_dangling_curation_names_resource() {
+        let violation = Violation::DanglingCuration { resource: res("gone") };
+
+        assert!(violation.to_string().contains("http://rdfh.ch/0803/gone"), "{violation}");
+    }
+
+    #[test]
+    fn test_display_duplicate_curation_shows_key_and_language() {
+        let duplicate = |key: &str, lang: Option<&str>| Violation::DuplicateCuration {
+            resource: res("a"),
+            key: key.to_string(),
+            lang: lang.map(str::to_string),
+        };
+
+        let tagged = duplicate("teaser", Some("de")).to_string();
+        let untagged = duplicate("slug", None).to_string();
+
+        assert!(tagged.ends_with("curated value teaser@de"), "{tagged}");
+        assert!(untagged.ends_with("curated value slug"), "{untagged}");
+    }
+
+    #[test]
+    fn test_display_malformed_curation_quotes_empty_key() {
+        let violation = malformed("a", "", None);
+
+        assert!(violation.to_string().contains(r#"curated value "" whose"#), "{violation}");
     }
 }

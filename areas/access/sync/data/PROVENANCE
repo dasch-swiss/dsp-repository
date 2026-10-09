@@ -23,7 +23,9 @@ Regenerate from the incubator's cpe/ directory, at the commit above, on the unzi
 
 The output is byte-identical for the same dump. Moving the pin means moving it here and in vocab.rs
 together, regenerating, and keeping sync-store's committed-file tests green without changing their
-expectations: those come from the dump.
+expectations: those come from the dump. Every row of 0803-curation.csv names a resource of this file.
+If a regenerated file drops one, sync-store refuses the whole project until the row is removed or
+re-keyed by hand.
 
 0803-arks.txt: the 0803 data ARKs Incunabula stores, which are dao-lift's output. One plain data ARK
 per line, sorted, 4,143 lines.
@@ -39,3 +41,40 @@ Extract it in the incubator checkout at that commit:
 It is a subset of the served resources: no LinkObj, 64 of 77 Regions, no calibration-scan Pages. The
 committed tests check each line against the served ARK. Like 0803.nq, it is a frozen copy and does not
 follow the incubator.
+
+0803-curation.csv: the curation of project 0803 that sync-store serves beside 0803.nq: what the
+project's editors authored about single resources. One row per resource, 138 lines with the header.
+Hand-authored: it is edited in place by a person and never regenerated.
+
+Source
+  files:           cpe/projects/incunabula/raw/curation.csv
+                   cpe/projects/incunabula/raw/annotation-curation.csv
+                   cpe/projects/incunabula/raw/pages.csv
+                   cpe/projects/incunabula/translate.py:1030-1031 (UNSIGNED_STRIP_ID, UNSIGNED_STRIP_NAME)
+  repository:      dasch-swiss/dsp-incubator, at commit 6e8e4063b54603f4615a6ed96025362a37dae70b
+
+Mapping
+  curation.csv, one row per Book, in file order
+    dsp_id                             iri, as http://rdfh.ch/0803/<dsp_id>
+    id                                 slug
+    date_display                       date_display@de
+    office, title_override, sort_key   the same key
+    cover_page (a pages.csv id)        cover_page, as that Page's IRI
+    teaser_de, teaser_en               teaser@de, teaser@en
+  annotation-curation.csv, one row per Region or LinkObj, in file order
+    id                                 iri, as http://rdfh.ch/0803/<id>
+    keep, lang, name                   the same key
+    note                               #note, a comment column, never served
+    kind                               dropped: it restates the resource's class
+  translate.py, the last row, the Band http://rdfh.ch/0803/EJZQcYisXECHxchG_KQ27w
+    UNSIGNED_STRIP_ID                  slug
+    UNSIGNED_STRIP_NAME                name
+
+pages.csv has no IRI column. A Page's IRI is http://rdfh.ch/0803/ followed by the last path segment of
+its ark cell, without the check digit (the last character) and with every = turned into -. Every value
+is copied verbatim.
+
+The file was derived once, by a script that is not kept, and is edited by hand from then on: it is not
+regenerated. Until DEV-7402 lands, the incubator's CSV files stay authoritative for the public
+prototype, and nothing checks the two copies against each other. A curation change is made there and
+repeated here by hand.

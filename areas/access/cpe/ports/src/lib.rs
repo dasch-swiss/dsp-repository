@@ -1,8 +1,9 @@
 //! CPE's port onto the Access Area's archive projection (ADR-0003, ADR-0007, ADR-0008).
 //!
 //! [`ArchiveProjection`] is what CPE reads to rebuild its store: one project's facts in the
-//! archive's shape, never CPE's presentation model. `sync` implements it beside its data; CPE's
-//! tests use [`FakeArchiveProjection`], and every adapter's output must pass
+//! archive's shape, never CPE's presentation model. The snapshot also carries the project's
+//! curation ([`CuratedValue`]), which is not an archive fact. `sync` implements the port beside its
+//! data; CPE's tests use [`FakeArchiveProjection`], and every adapter's output must pass
 //! [`contract::violations`].
 //!
 //! The crate depends on `std` alone: a consumer's `ports` crate may reach only `std` and `shared-*`
@@ -19,19 +20,20 @@ mod snapshot;
 
 pub use fake::FakeArchiveProjection;
 pub use snapshot::{
-    Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, LangString, ListNode,
-    ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
+    Annotation, Calendar, ClassIri, CuratedValue, DataArk, DateBound, DatePrecision, DateValue, File, LangString,
+    ListNode, ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind,
+    DATA_ARK_PREFIX,
 };
 
 /// What CPE reads from the Access Area's archive projection: one project's facts as the archive
-/// records them.
+/// records them, and with them the project's curation, which is not an archive fact.
 ///
 /// Synchronous and dyn-compatible, so the composition root can hold an `Arc<dyn
 /// ArchiveProjection>`; CPE calls it inside `spawn_blocking`.
 pub trait ArchiveProjection: Send + Sync {
-    /// The project's current facts, whole. Every call is a full snapshot; the port announces no
-    /// change. A read that fails midway is [`ProjectionError::Unavailable`], never a partial
-    /// snapshot.
+    /// The project's current facts and its curation, whole. Every call is a full snapshot; the port
+    /// announces no change. A read that fails midway is [`ProjectionError::Unavailable`], never a
+    /// partial snapshot.
     fn snapshot(&self, shortcode: &str) -> Result<ProjectSnapshot, ProjectionError>;
 }
 

@@ -35,6 +35,7 @@ for the full decision.
 | [ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md) | CPE joins the Access Area as its second capability |
 | [ADR-0008](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md) | A reading capability may keep a derived read model |
 | [ADR-0009](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md) | DaTEI joins the Access Area as its third capability |
+| [ADR-0010](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md) | The port also serves per-resource curation (proposed) |
 
 ## Component series
 

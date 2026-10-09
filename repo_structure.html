@@ -259,8 +259,8 @@ areas/
 │   ├── cpe/                   # Configurable Presentation Environment (only its port so far)
 │   │   └── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
 │   ├── sync/                  # sync, the archive projection's writer (at its minimum so far)
-│   │   ├── store/             # Serves the committed snapshots behind CPE's port (crate: sync-store)
-│   │   └── data/              # Committed interim-DAO snapshots and their PROVENANCE
+│   │   ├── store/             # Serves the committed snapshots and curation behind CPE's port (crate: sync-store)
+│   │   └── data/              # Committed interim-DAO snapshots, curation files and their PROVENANCE
 │   └── dpe/                   # Discovery and Presentation Environment
 │       ├── core/              # DPE's view model, caches, repositories (crate: dpe-core)
 │       ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
@@ -297,8 +297,8 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <tr><td><code>dpe-api-oai</code></td><td><code>areas/access/dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>areas/access/dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>areas/access/dpe/server</code></td><td>A library — DPE's router, config and validate logic; no binary</td></tr>
-<tr><td><code>cpe-ports</code></td><td><code>areas/access/cpe/ports</code></td><td>CPE's port onto the archive projection (ADR-0007, ADR-0008): the <code>ArchiveProjection</code> trait, its archive-shaped DTOs, an in-memory fake and the contract every adapter satisfies; depends on <code>std</code> alone</td></tr>
-<tr><td><code>sync-store</code></td><td><code>areas/access/sync/store</code></td><td><code>sync</code> at its minimum (ADR-0007): <code>LiveArchiveProjection</code>, CPE's <code>ArchiveProjection</code> served from the committed interim-DAO snapshots in <code>areas/access/sync/data/</code>; depends on <code>cpe-ports</code> and no other CPE or DPE crate</td></tr>
+<tr><td><code>cpe-ports</code></td><td><code>areas/access/cpe/ports</code></td><td>CPE's port onto the archive projection (ADR-0007, ADR-0008): the <code>ArchiveProjection</code> trait, its DTOs (archive-shaped facts and, beside them, per-resource curation, ADR-0010, proposed), an in-memory fake and the contract every adapter satisfies; depends on <code>std</code> alone</td></tr>
+<tr><td><code>sync-store</code></td><td><code>areas/access/sync/store</code></td><td><code>sync</code> at its minimum (ADR-0007): <code>LiveArchiveProjection</code>, CPE's <code>ArchiveProjection</code> served from the committed interim-DAO snapshots and the committed curation files in <code>areas/access/sync/data/</code>; depends on <code>cpe-ports</code> and no other CPE or DPE crate</td></tr>
 <tr><td><code>shared-fair</code></td><td><code>shared/fair</code></td><td>The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — <code>dpe-api-oai</code> is its only consumer today</td></tr>
 <tr><td><code>shared-metadata</code></td><td><code>shared/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
 <tr><td><code>shared-telemetry</code></td><td><code>shared/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>

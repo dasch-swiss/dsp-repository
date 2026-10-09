@@ -9,7 +9,7 @@ problem: >
   ARK (4,079 resource and 64 Region ARKs for 0803), and DEV-7402 builds Incunabula's store from
   cpe-ports. The port has no ARK field and 0803.nq carries none; the incubator computes them in
   dao-lift from the resource IRI.
-status: in-progress
+status: complete
 ---
 
 # Execution Journal: 01-feat-cpe-port-data-arks-plan
@@ -18,7 +18,8 @@ status: in-progress
 
 | repo           | base_commit | branch            | merge_strategy | status      | pr |
 |----------------|-------------|-------------------|----------------|-------------|----|
-| dsp-repository | 2b0d86fe    | worktree-DEV-7487 | rebase         | in-progress | https://github.com/dasch-swiss/dsp-repository/pull/465 |
+| dsp-repository | 2b0d86fe    | worktree-DEV-7487 | rebase         | shipped     | https://github.com/dasch-swiss/dsp-repository/pull/465 |
+| dsp-incubator  | d23b6ad8    | worktree-DEV-7487 | squash         | shipped     | https://github.com/dasch-swiss/dsp-incubator/pull/486 |
 
 ## Phases
 
@@ -26,7 +27,7 @@ status: in-progress
 |-------|-------------|-------------------------|-------------------|
 | 1     | reviewed    | dsp-repository@93e9c4d6 | 1                 |
 | 2     | reviewed    | dsp-repository@93e9c4d6 | 1                 |
-| 3     | gated (H1)  | —                       | 0                 |
+| 3     | complete    | dsp-incubator@d23b6ad8  | 0                 |
 
 ## Chunk queue
 
@@ -55,9 +56,23 @@ status: in-progress
 | 2.4 | dsp-repository | complete | 4676af28 | just check and just test green; Phase 2 amended into the feat commit, message extended; commit-lint passes messages, fails only the count, which over a7e8df14..HEAD includes #464's two commits (the PR ticks allow-many-commits) | none |
 | 2.5 | dsp-repository | complete | b867f01b (amended) | Phase 2 review fixes. Reviewers: consistency (W: ARCH-MAP said sync-store reads the oracle), dune (W: sync kit lacked ark.rs; W: Pid/Data ARK linked one way), rust (W: byte slice and panic-at-first-miss in the oracle test), simplicity (W: drop literal count, spot tests, PROVENANCE counts; all rejected: literal counts are a repo learning, the spot tests are plan deliverables, the subset description is provenance). Applied: oracle's single writer named, never generated from ark.rs; sync Paths and kit name the oracle and ark.rs; cpe entry names sync-store's ark.rs; Pid entry excludes the data ARK; sync CONTEXT links the term; the oracle test uses a map, reports unserved resources, strips the check digit safely, asserts sorted-unique, and says why it must not be regenerated (one corrupted line: 1 mismatch). sync Fingerprint ec1861e4ca2c, recomputed over the committed tree | none |
 
+| 3.1 | dsp-incubator | complete | b79be915 (squash-merged as ae2610df) | Pin moved 7118cdbf → f73009e2 (dsp-repository#465 as merged); only the data ARKs, since dsp-incubator#479 had already vendored the annotations. No `cpe_ports` use outside cpe/vendor/, so no match or literal changed; Cargo.lock unchanged. `just cpe test`, `vendor-diff` (empty), the ignored-file check and `just cpe ci` pass. Phase review skipped: the vendored tree is byte-identical to the code reviewed in #465 | none |
+
 ## Side findings
+
+- #464 was rebase-merged during the run (7118cdbf on main); the stack base dropped out, #465 was
+  retargeted to main, and the branch was rebased onto origin/main with the user's approval
+  (d593a5b0, 6681c0bc). #465 was rebase-merged as 1eb0ffac and f73009e2, which resolved H1.
+- DEV-7486's own incubator phase was not superseded after all: dsp-incubator#479 ran it before this
+  plan's Phase 3. Its plan's note now says so; Phase 3 here vendored only the data ARKs.
 
 ## Deferrals
 
-- Phase 3 (dsp-incubator re-vendor): gated on H1 (merge #464, then #465); not run this session.
 - No eng.yaml `verify` entries; no browser or TUI surface in the diff.
+
+## Closeout
+
+- root_cause: CPE's "Show in dataset" panel and `MalformedDataArk` check need each resource's data ARK; the port had no ARK field, 0803.nq carries none, and only the incubator's `dao-lift` computed them.
+- investigation: dsp-api's `resourceIriToArkUrl` (ported by `dao-lift`) fixes the algorithm: base64url check digit over the id, `-` escaped as `=`, shortcode upper-cased. Every one of the incubator's 4,143 committed 0803 ARKs is served.
+- solution: `cpe-ports` gains `DataArk`, `DATA_ARK_PREFIX`, `Resource.ark` and a std-only `MalformedDataArk` shape check; `sync-store` derives the ARK from the IRI in `ark.rs` and refuses a snapshot with `NoDataArk`; the incubator vendors the merged commit (dsp-incubator#486).
+- prevention: `0803-arks.txt` is a committed oracle from `dao-lift`'s output, never regenerated from `ark.rs`, checked line by line against the served ARKs; `ark_tests.rs` carries dsp-api's and eleven production vectors and one test per `ArkError` kind.

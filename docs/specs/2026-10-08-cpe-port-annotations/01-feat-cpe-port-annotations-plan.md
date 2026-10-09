@@ -3,7 +3,7 @@ title: "feat: Serve Regions and LinkObjs through cpe-ports"
 type: feat
 date: 2026-10-08
 author: "Balduin Landolt"
-status: reviewed
+status: complete
 linear: DEV-7486
 linear_project: CPE establish production path
 repositories:
@@ -412,22 +412,24 @@ Serving the annotations adds no dangling link, and no new check fires on 0803.
 
 #### Phase 3: Incubator vendors the new `cpe-ports`
 
-**Superseded:** Phase 3 of `docs/specs/2026-10-08-cpe-port-data-arks/01-feat-cpe-port-data-arks-plan.md`
-(DEV-7487) vendors this change together with the data ARKs, in one incubator PR. Do not run this phase.
+**Done separately:** this phase ran as dsp-incubator#479 (pin `7118cdbf`), before Phase 3 of
+`docs/specs/2026-10-08-cpe-port-data-arks/01-feat-cpe-port-data-arks-plan.md` (DEV-7487), which then
+vendored only the data ARKs (dsp-incubator#486). The checkboxes below are ticked from #479's commit and
+test plan; its Phase review is unrecorded.
 
 **Gate: H1**: resolve before starting this phase.
 
 ### dsp-incubator
-- [ ] Create a branch off up-to-date `origin/main`
-- [ ] Run `just cpe vendor <sha>` with the merged dsp-repository commit on `main`; `cpe/vendor/PIN` holds that sha
-- [ ] Grep `cpe/` outside `cpe/vendor/` for `cpe_ports`; record in the commit body whether any use exists
-- [ ] Add `Geometry` and `Color` arms to every `ValueKind` match that grep found
-- [ ] Add `annotation` to every `cpe_ports::Resource` literal that grep found
-- [ ] Run `just cpe test`; it passes
-- [ ] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
-- [ ] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<sha>)`
-- [ ] Run `just cpe ci`; it passes
-- [ ] Commit `PIN`, the vendored tree and any `Cargo.lock` change together as `chore(cpe): vendor cpe-ports with annotations (DEV-7486)`
+- [x] Create a branch off up-to-date `origin/main`
+- [x] Run `just cpe vendor <sha>` with the merged dsp-repository commit on `main`; `cpe/vendor/PIN` holds that sha
+- [x] Grep `cpe/` outside `cpe/vendor/` for `cpe_ports`; record in the commit body whether any use exists
+- [x] Add `Geometry` and `Color` arms to every `ValueKind` match that grep found
+- [x] Add `annotation` to every `cpe_ports::Resource` literal that grep found
+- [x] Run `just cpe test`; it passes
+- [x] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
+- [x] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<sha>)`
+- [x] Run `just cpe ci`; it passes
+- [x] Commit `PIN`, the vendored tree and any `Cargo.lock` change together as `chore(cpe): vendor cpe-ports with annotations (DEV-7486)`
 - [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 ## Human Actions
@@ -456,7 +458,7 @@ Serving the annotations adds no dangling link, and no new check fires on 0803.
       reason left.
 
 **Incubator**
-- [ ] The incubator vendors the merged commit; `just cpe vendor-diff` is empty and `just cpe ci` passes.
+- [x] The incubator vendors the merged commit; `just cpe vendor-diff` is empty and `just cpe ci` passes.
 
 ## Dependencies & Risks
 

@@ -706,13 +706,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
   on every call, and holds nothing in between. The committed curation `0803-curation.csv`,
   **single writer** a person: hand-authored, edited in place and never generated (**review**);
-  until DEV-7402 lands it is a copy of the incubator's CSV files, which stay authoritative, and
-  a change made there is repeated here by hand (`PROVENANCE`; **review**);
+  since dsp-incubator#500 (DEV-7496) it is the only copy of Incunabula's curation, and a change
+  is made here and reaches the incubator when it re-vendors (`PROVENANCE`; **review**);
   read by `sync-store` on every call, and pinned by the committed-file tests: an edit to the
   file changes their expectations in the same commit (**review**). The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
   (**review**), is read only by the committed-file tests.
-- **Fingerprint:** `cf39e565315e`
+- **Fingerprint:** `59101ce70bc4`
 
 ### areas/access/media
 

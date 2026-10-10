@@ -31,9 +31,9 @@ product (what the archive will deliver in its place), the projection (the target
 **Committed curation**:
 One known project's **Curation** ([`../cpe/CONTEXT.md`](../cpe/CONTEXT.md)) as a file, `data/<shortcode>-curation.csv`:
 one row per resource, one column per key or key and language, and comment columns (`#…`) that are never
-served. It is hand-authored: its single writer is a person, and nothing generates it. Until DEV-7402 lands,
-`0803-curation.csv` is a copy: the incubator's CSV files stay authoritative, and a change made there is repeated
-here by hand (`data/PROVENANCE`). Its keys are opaque to
+served. It is hand-authored: its single writer is a person, and nothing generates it. Since dsp-incubator#500
+(DEV-7496), `0803-curation.csv` is the only copy of Incunabula's curation: a change is made here and reaches the
+incubator when it re-vendors (`data/PROVENANCE`). Its keys are opaque to
 `sync-store`, which names none of them (ADR-0010, proposed). A project without curation commits a file
 holding the header alone. Its line ends are LF, which `.gitattributes` sets and the reader enforces; it is
 UTF-8 without a byte-order mark, which the reader enforces. `store/src/curation.rs` defines the format.

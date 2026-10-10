@@ -75,6 +75,6 @@ its ark cell, without the check digit (the last character) and with every = turn
 is copied verbatim.
 
 The file was derived once, by a script that is not kept, and is edited by hand from then on: it is not
-regenerated. Until DEV-7402 lands, the incubator's CSV files stay authoritative for the public
-prototype, and nothing checks the two copies against each other. A curation change is made there and
-repeated here by hand.
+regenerated. Since dsp-incubator#500 (DEV-7496, merged 2026-10-10) it is the only copy of
+Incunabula's curation: the incubator deleted the source files above and builds its store from this
+file, which it vendors. A curation change is made here and reaches the incubator when it re-vendors.

@@ -773,6 +773,11 @@ narrower comparison would need a CSV-aware script. After that nothing checks the
 until DEV-7402's comparison does; `PROVENANCE`, the incubator's `raw/README.md` and
 `INCUNABULA_GO_LIVE.md` each say so (Phases 2 and 4).
 
+**Superseded 2026-10-10:** dsp-incubator#500 (DEV-7496, the first part of DEV-7402) builds Incunabula's
+store from the port and deleted `translate.py` and the incubator's CSVs. `0803-curation.csv` is from then
+on the only copy of Incunabula's curation: a change is made here and reaches the incubator when it
+re-vendors. `PROVENANCE`, `areas/access/sync/CONTEXT.md` and `ARCH-MAP.md` say so.
+
 **Commits (dsp-repository)**
 - In every command, `<dsp-repository path>` and `<dsp-incubator path>` are the two `repositories:` paths
   of this plan's frontmatter.
@@ -1120,7 +1125,8 @@ until DEV-7402's comparison does; `PROVENANCE`, the incubator's `raw/README.md` 
 - **Two copies until DEV-7402.** A curation change made only in the incubator leaves `0803-curation.csv`
   stale without any test failing. Phases 2 and 4 each check once that the sources did not move. After
   that the three documents that name the rule are the only guard until DEV-7402 compares its store with
-  `data.sql`.
+  `data.sql`. **Superseded 2026-10-10:** since dsp-incubator#500 (DEV-7496) there is one copy, this
+  repository's (*Technical Considerations*, "Two copies until DEV-7402").
 - **A faulty edit takes the project offline.** Any fault in the hand-edited file makes 0803 `Unavailable`
   (ARCH-MAP note on `sync-store`). The committed tests read the file, so a bad edit fails CI before it is
   deployed. Nothing constructs the adapter until DEV-7400.

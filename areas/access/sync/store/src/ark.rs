@@ -2,7 +2,8 @@
 //!
 //! [`data_ark`] must stay equal to dsp-api's `resourceIriToArkUrl`, and [`check_digit`] to its
 //! `Base64UrlCheckDigit`. The prefix lives in `cpe_ports::DATA_ARK_PREFIX` and is also spelled in
-//! the incubator's `translate.py` and `engine/src/ir.rs`; a change goes to all of them.
+//! the incubator's `tools/dao-lift/src/ark.rs` and `engine/src/ir.rs`; a change goes to
+//! all of them.
 
 use cpe_ports::{DataArk, DATA_ARK_PREFIX};
 

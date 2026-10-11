@@ -2,7 +2,7 @@
 //! 2026-07-19 stage dump that `PROVENANCE` names, so a failure here is a `dao-lift` or `sync-store`
 //! bug: never change an expectation to fit the file.
 //!
-//! The curation expectations are facts of the incubator's CSV files at the commit `PROVENANCE`
+//! The curation expectations are facts of the incubator's files at the commits `PROVENANCE`
 //! names for `0803-curation.csv`. That file is edited by hand, so such an expectation changes only
 //! together with it. These tests know Incunabula's keys; `sync-store` itself names none (ADR-0010).
 
@@ -489,16 +489,16 @@ fn count_by_text(values: &BTreeMap<&'static str, &'static str>) -> BTreeMap<&'st
 }
 
 #[test]
-fn test_committed_0803_curation_serves_341_values_on_137_resources() {
+fn test_committed_0803_curation_serves_347_values_on_137_resources() {
     let curation = &snapshot().curation;
 
     let resources: BTreeSet<&str> = curation.iter().map(|value| value.resource.as_str()).collect();
-    assert_eq!(curation.len(), 341);
+    assert_eq!(curation.len(), 347);
     assert_eq!(resources.len(), 137);
 }
 
 #[test]
-fn test_committed_0803_curation_serves_eleven_keys_and_languages_with_their_counts() {
+fn test_committed_0803_curation_serves_thirteen_keys_and_languages_with_their_counts() {
     let mut counts: BTreeMap<(&str, Option<&str>), usize> = BTreeMap::new();
     for value in &snapshot().curation {
         *counts.entry((value.key.as_str(), value.lang.as_deref())).or_default() += 1;
@@ -507,6 +507,8 @@ fn test_committed_0803_curation_serves_eleven_keys_and_languages_with_their_coun
     assert_eq!(
         counts,
         BTreeMap::from([
+            (("catalogue_uri", None), 3),
+            (("catalogue_uri_replaces", None), 3),
             (("cover_page", None), 19),
             (("date_display", Some("de")), 19),
             (("keep", None), 117),
@@ -709,6 +711,37 @@ fn test_committed_0803_curation_title_override_and_sort_key_serve_their_books() 
             ("http://rdfh.ch/0803/oZyOub3jUm2H0AGmZL3tyQ", "Narrenschiff (lat.) [März 1497]"),
         ])
     );
+}
+
+#[test]
+fn test_committed_0803_curation_catalogue_uri_serves_the_cologne_record_on_its_three_books() {
+    let cologne = "https://search.ub.uni-koeln.de/portal/inkunabeln/databases/id/inkunabeln/titles/id/cdm_inkunabeln_1878.html?l=de";
+
+    assert_eq!(
+        curated("catalogue_uri", None),
+        BTreeMap::from([
+            ("http://rdfh.ch/0803/6jKWDQbjU-K2n6VNEjl8sA", cologne),
+            ("http://rdfh.ch/0803/70aWaB2kWsuiN6ujYgM0ZQ", cologne),
+            ("http://rdfh.ch/0803/L9wVqnhfXA-7c5qmKBTylg", cologne),
+        ])
+    );
+}
+
+/// `catalogue_uri` stands in for an address the archive holds dead, and only while the archive
+/// holds exactly that address. A regenerated `0803.nq` with the address mended fails here, and
+/// the Book's two cells are then emptied.
+#[test]
+fn test_committed_0803_curation_catalogue_uri_replaces_serves_the_address_each_book_has() {
+    let replaced = curated("catalogue_uri_replaces", None);
+
+    assert_eq!(resources_of(&replaced), resources_of(&curated("catalogue_uri", None)));
+    for (book, dead) in replaced {
+        assert_eq!(
+            kinds_under(resource(book), "http://www.knora.org/ontology/0803/incunabula#hasUri"),
+            vec![&ValueKind::Uri(dead.to_string())],
+            "{book}"
+        );
+    }
 }
 
 #[test]

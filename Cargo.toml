@@ -14,6 +14,7 @@ members = [
   "areas/access/cpe/core",
   "areas/access/cpe/image-viewer",
   "areas/access/cpe/ports",
+  "areas/access/cpe/store",
   "areas/access/sync/store",
   "areas/deposit/editor/core",
   "areas/deposit/editor/web",

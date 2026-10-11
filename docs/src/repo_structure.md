@@ -17,13 +17,14 @@ areas/
 ├── access/                    # Access Area
 │   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
 │   │   └── Dockerfile         # Production container image
-│   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer and port so far)
+│   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer, port and store so far)
 │   │   ├── components/        # CPE's component library (crate: cpe-components)
 │   │   │   ├── src/           # The components, the chrome message catalogue, the per-project components
 │   │   │   └── style/         # The seven stylesheets the components' markup is written against; a host serves them
 │   │   ├── core/              # CPE's domain: config language, validation, IR, diagnostics (crate: cpe-core)
 │   │   ├── image-viewer/      # The `<image-viewer>` element and its Maud builder, an interim copy (crate: cpe-image-viewer)
-│   │   └── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
+│   │   ├── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
+│   │   └── store/             # CPE's read-side store: SQLite schema, loader, query layer (crate: cpe-store)
 │   ├── sync/                  # sync, the archive projection's writer (at its minimum so far)
 │   │   ├── store/             # Serves the committed snapshots and curation behind CPE's port (crate: sync-store)
 │   │   └── data/              # Committed interim-DAO snapshots, curation files and their PROVENANCE
@@ -71,6 +72,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `cpe-core` | `areas/access/cpe/core` | CPE's domain (ADR-0007): the KDL config language and its validation, the IR, diagnostics, labels, language, theme and the per-request view data; depends on `kdl`, `pulldown-cmark`, `percent-encoding` and `thiserror`, on no CPE crate, and on no `maud`, `axum` or `rusqlite` |
 | `cpe-components` | `areas/access/cpe/components` | CPE's component library (ADR-0007, amendment of 2026-10-11, DEV-7401): the Maud components a page is assembled from, the chrome message catalogue and the per-project components with their registry; its seven stylesheets are plain files in `style/`, which the crate neither embeds nor serves; depends on `cpe-core`, `cpe-image-viewer`, `maud`, `pulldown-cmark` and `tracing`, and on no `mosaic-tiles`, `axum` or `rusqlite` |
 | `cpe-image-viewer` | `areas/access/cpe/image-viewer` | CPE's IIIF deep-zoom viewer (ADR-0007, amendment of 2026-10-11, DEV-7401): the `<image-viewer>` web component with a vendored OpenSeadragon compiled in, and the `Viewer` Maud builder; an interim, cut-down copy of dsp-incubator's `shared/dasch-image-viewer` that the incubator's final viewer replaces; depends on `maud` alone and on no CPE crate |
+| `cpe-store` | `areas/access/cpe/store` | CPE's read-side store, a derived read model (ADR-0008): the SQLite schema (`schema.sql`), the loader that opens a project's in-memory database, and the query layer that answers the validator's questions about a project's data and assembles a page's data; depends on `cpe-core`, `rusqlite`, `thiserror` and `tracing`, and on no `maud` or `axum`; nothing here depends on it yet |
 | `sync-store` | `areas/access/sync/store` | `sync` at its minimum (ADR-0007): `LiveArchiveProjection`, CPE's `ArchiveProjection` served from the committed interim-DAO snapshots and the committed curation files in `areas/access/sync/data/`; depends on `cpe-ports` and no other CPE or DPE crate |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |

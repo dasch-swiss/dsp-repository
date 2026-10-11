@@ -1,0 +1,11 @@
+[package]
+name = "cpe-store"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+cpe-core = { path = "../core" }
+rusqlite = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

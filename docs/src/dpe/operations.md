@@ -8,6 +8,8 @@ Operations documentation for the DPE infrastructure team.
 - **User**: uid **65532** — distroless `NONROOT`. Not 65534, which is `nobody`; verified in [`common/variables.bzl`](https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl).
 - **Shell**: None (distroless — no SSH possible)
 - **Binary**: Static musl-linked `access-server` (CLI with subcommands).
+- **Data**: DPE's JSON corpus at `/app/server/data` (`DPE_DATA_DIR`), and `sync`'s committed snapshots and curation files
+  (`areas/access/sync/data/`) at `/app/sync/data`. Nothing in the binary reads the latter yet; `ops-deploy` sets `SYNC_DATA_DIR` to that path.
 
 ## CLI Commands
 

@@ -87,6 +87,9 @@ jobs:
           push: true
           tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/dpe:${{ env.IMAGE_TAG }}
 
+      # No CPU throttling: CPE loads its projects after the port is bound, and a
+      # throttled instance gets CPU only while it handles a request, so `/cpe`
+      # would answer 503 until enough requests had arrived.
       - name: Deploy to Cloud Run
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
@@ -100,7 +103,7 @@ jobs:
             --cpu=1
             --memory=512Mi
             --max-instances=1
-            --cpu-throttling
+            --no-cpu-throttling
 
       # A second step, not a flag on the deploy: Cloud Run assigns the service
       # URL when the service is created, so it cannot be passed to the call that

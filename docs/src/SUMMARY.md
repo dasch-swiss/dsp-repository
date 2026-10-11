@@ -33,6 +33,7 @@
 ## CPE
 
 - [Config Language](./cpe/config-language.md)
+- [Operations](./cpe/operations.md)
 
 ## Editor
 

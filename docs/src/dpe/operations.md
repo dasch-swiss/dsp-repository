@@ -2,14 +2,20 @@
 
 Operations documentation for the DPE infrastructure team.
 
+The image and its binary are the Access Area's: beside DPE they serve CPE, under `/cpe`. What is specific to
+CPE (start-up, what it answers when something is missing, measurements) is in [CPE Operations](../cpe/operations.md);
+the settings of both are in the table below.
+
 ## Docker Image
 
 - **Base**: `gcr.io/distroless/static-debian12:nonroot`
 - **User**: uid **65532** — distroless `NONROOT`. Not 65534, which is `nobody`; verified in [`common/variables.bzl`](https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl).
 - **Shell**: None (distroless — no SSH possible)
 - **Binary**: Static musl-linked `access-server` (CLI with subcommands).
-- **Data**: DPE's JSON corpus at `/app/server/data` (`DPE_DATA_DIR`), and `sync`'s committed snapshots and curation files
-  (`areas/access/sync/data/`) at `/app/sync/data`. Nothing in the binary reads the latter yet; `ops-deploy` sets `SYNC_DATA_DIR` to that path.
+- **Data**: DPE's JSON corpus at `/app/server/data` (`DPE_DATA_DIR`); `sync`'s committed snapshots and curation files
+  (`areas/access/sync/data/`) at `/app/sync/data` (`SYNC_DATA_DIR`), which CPE builds each project's store from at start;
+  and CPE's project folders (`areas/access/cpe/projects/`) at `/app/cpe/projects` (`CPE_PROJECTS_DIR`). CPE's stylesheets,
+  scripts and logos are compiled into the binary.
 
 ## CLI Commands
 
@@ -76,12 +82,18 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_SITE_ADDR` | No | `127.0.0.1:4000` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `DPE_PUBLIC_DIR` | No | `areas/access/dpe/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, project images, and the compiled `app.<hash>.css`). |
 | `DPE_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
+| `SYNC_DATA_DIR` | No | `areas/access/sync/data` | Directory of `sync`'s committed snapshots and curation files, read once at start to build each CPE project's store. The Docker image sets `/app/sync/data`, where it carries the data; a deployment that sets the variable too has to name that path. If the directory or a project's file in it is missing, that project answers `503` and an error is logged; DPE is unaffected. |
+| `CPE_BASE` | No | *(empty)* | Path CPE is mounted at. The Docker image sets `/cpe`. A leading `/`, no trailing one, unreserved characters only. Unset, empty or refused (logged as a warning and as an error with the reason): CPE is not mounted and DPE is served alone. It must not be a path DPE serves (`/dpe`, `/assets`, …): nothing checks that, and under such a base CPE answers every path DPE has no route of its own for, its static files included. A path the binary or DPE has a route for (`/healthz`, `/telemetry/collect`, `/dpe/projects`) keeps its answer under any base. If the router cannot be built with CPE at the base, that is logged as an error naming `CPE_BASE`, and CPE is not mounted; no value is known to do that. |
+| `CPE_PROJECTS_DIR` | No | `areas/access/cpe/projects` | Folder whose subfolders are CPE's projects (configuration, narrative, assets). The Docker image sets `/app/cpe/projects`. |
+| `CPE_PUBLIC_ORIGIN` | No | *(none)* | Origin CPE's absolute URLs (the share links) start with, e.g. `https://repository.dasch.swiss`. An origin only: scheme `http` or `https` and a host, no path (not `…/cpe`: the base is `CPE_BASE`), no query, no trailing slash. A value of another shape is refused, and CPE then answers `503` on every path under its base. Not set in the image. Unset, CPE takes the origin of each request from `X-Forwarded-Proto` and `Host` and logs once at start that it does. Both headers are the client's unless a proxy in front overwrites them (Cloud Run does), so set the variable on every deployment that has a cache or a proxy that passes them through. |
 
 > **Two base URLs, on purpose.** `DPE_PUBLIC_BASE_URL` and `DPE_OAI_BASE_URL` are set independently and neither is derived from the other. The OAI endpoint advertises its own `baseURL` in every response, and on DEV that endpoint lives on a different host (`https://api.dev.dasch.swiss/dpe/oai`) from the site (`https://repository.dev.dasch.swiss`). Set both per environment.
 >
 > **Assessing a local run from a container.** A FAIR assessor running in Docker resolves the URLs the page emits, so `DPE_PUBLIC_BASE_URL` must name a host the container can reach — `http://host.docker.internal:4000`, not `http://localhost:4000`, which inside the container is the container itself.
 >
 > **PR previews set all three themselves.** `cloud-run-dpe-pull-request.yml` runs `gcloud run services update` right after the deploy, setting `DPE_PUBLIC_BASE_URL`, `DPE_OAI_BASE_URL` and `DPE_ARK_RESOLVER_BASE_URL` to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the `303` target, the OAI `baseURL`, and every emitted ARK respectively.
+>
+> **PR previews set no `CPE_*` variable and no `SYNC_DATA_DIR`.** They run with the image's own, so CPE is served under `/cpe` there and its share links carry the preview's host, taken from each request.
 >
 > **Why a preview rewrites its ARKs.** A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. `DPE_ARK_RESOLVER_BASE_URL` makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.
 >
@@ -112,6 +124,8 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 - **Endpoint**: `GET /healthz`
 - **Response**: `200 OK` (no body)
 - **Purpose**: Lightweight probe for Traefik/load balancers. Does not render any page.
+- **CPE**: the probe answers as soon as the port is bound, before CPE's projects are loaded, and says nothing
+  about them.
 
 ## Data Volume
 
@@ -121,11 +135,12 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 
 ## Resource Requirements
 
-The DPE is lightweight — it serves static data with no database.
+The DPE is lightweight — it serves static data with no database. CPE holds each project's store in memory.
 
-- **Memory**: ~50-100 MB typical
+- **Memory**: about 220 MiB resident at the peak of start-up, less afterwards; CPE holds each project's store in
+  memory. The measured figures are in [CPE Operations](../cpe/operations.md#measurements).
 - **CPU**: Minimal (SSR rendering is fast, data is cached in-memory)
-- **Disk**: Data files + static assets (~50 MB)
+- **Disk**: Data files + static assets (~70 MB without the binary)
 
 ### Landing-page metadata points at dsp-ingest
 

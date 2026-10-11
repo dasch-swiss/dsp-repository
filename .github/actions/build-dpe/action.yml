@@ -35,9 +35,10 @@ runs:
     - name: Stage artifacts
       shell: bash
       run: |
-        mkdir -p staging/sync
+        mkdir -p staging/sync staging/cpe
         cp target/x86_64-unknown-linux-musl/release/access-server staging/
         cp -r areas/access/dpe/public staging/
         cp -r areas/access/dpe/server/data staging/
         cp -r areas/access/sync/data staging/sync/
+        cp -r areas/access/cpe/projects staging/cpe/
         cp areas/access/server/Dockerfile staging/

@@ -277,6 +277,9 @@ reference. So the move is split (as decided by the owner, 2026-10-02; the plan i
 The target shape, the port, the guardrails and the done-criterion (Incunabula byte-comparable to the
 prototype apart from the `/cpe` prefix) are unchanged.
 
+Note (2026-10-12, DEV-7465): the criterion has three expected differences as built, and was checked; see the
+amendment of 2026-10-12 (DEV-7465) below.
+
 Enforced by: review, for a crate moving into `areas/access/cpe` with its incubator copy re-vendored and
 an empty `just vendor-diff` there.
 
@@ -500,6 +503,8 @@ that carries the base and was joined by hand, and no check reads the source for 
   With `CPE_BASE` unset or refused the binary serves DPE alone and logs it, as a warning for the unset value
   and as CPE's own error for the refused one. The local run recipes set `CPE_BASE=/cpe`, and a deployment
   has to set it.
+
+  Note (2026-10-12, DEV-7465): the image sets it; see the amendment of 2026-10-12 (DEV-7465) below.
 - **Activation runs in the background, after the listener is bound.** `access-server` constructs
   `sync-store`'s `LiveArchiveProjection` over the directory `SYNC_DATA_DIR` names (default
   `areas/access/sync/data`, for a run from the repository root) and calls `Cpe::activate` on the blocking
@@ -523,3 +528,46 @@ and a mount that panics, the held activation, the missing data directory and the
 every file of the crate's `src/` for a `"/cpe` literal), and for the seam (`check-cpe-seam.sh`, rules 1 and 5;
 `check-composition-root-deps.sh`); review for `serve()` itself, which no test runs: that it awaits and
 unwraps nothing of CPE's.
+
+## Amendment (2026-10-12, DEV-7465) — the image carries CPE, and the done-criterion as checked
+
+- **The image serves CPE without a deployment's help.** It carries `sync`'s data at `/app/sync/data` and
+  CPE's project folders at `/app/cpe/projects`, and sets `SYNC_DATA_DIR`, `CPE_PROJECTS_DIR` and
+  `CPE_BASE=/cpe`. So a PR preview, which sets none of them, serves Incunabula under `/cpe`. This replaces
+  "a deployment has to set it" in the amendment of 2026-10-12 (DEV-7438). `CPE_PUBLIC_ORIGIN` is not set in
+  the image: it is the deployment's, and without it CPE takes the origin of each request from the request.
+- **The done-criterion, as built.** The amendment of 2026-10-02 (DEV-7400) set it as Incunabula
+  byte-comparable to the prototype apart from the `/cpe` prefix. With the layout of the amendments of
+  2026-09-29 (DEV-7405) and 2026-10-11 (DEV-7438), exactly three differences are expected:
+  1. the base: `/cpe` in front of every path CPE writes, in a body, in a `Location` and after the public
+     origin of a share link;
+  2. the static and asset path prefixes, which are per project: `/_static/…` is `/cpe/<id>/_static/…`,
+     and `/_assets/<id>/…` is `/cpe/<id>/_assets/…`;
+  3. the cookies' `Path`: `/` is `/cpe`.
+
+  Every other difference is a defect or is listed here with its cause.
+- **How it was checked.** The prototype, built from `dsp-incubator` at
+  `d68f214bf50c8999e1c7750160822ffa063a5c33`, served at `/`; the area binary served CPE under `/cpe` with the
+  image's settings, from a directory laid out as the image and from the image itself; both had the same
+  public origin. A crawl started at Incunabula's start page, with and without the trailing slash, and
+  followed every `href`, `src`, `action`, `poster`, CSS `url(…)` and Datastar `@get(…)` (asked with
+  `Datastar-Request: true`) either server wrote. For each URL it compared the status, the body bytes, the
+  `Location` (redirects were not followed), the `Set-Cookie` values and every other response header but
+  `Date` and `Content-Length`, after one normaliser that writes the three differences above back and
+  changes nothing else. It mapped the base only where it begins a path. Result on 2026-10-12, over 61,064
+  URLs: no difference in Incunabula's pages, files, redirects or cookies, and no URL in any body that starts
+  with `/` and is not under `/cpe`.
+- **The differences that are not among the three.**
+  - `/` is the prototype's site index and `/cpe/` is CPE's own not-found page: `cpe-server` has no index
+    of projects, and the prototype's other two projects are not here.
+  - Every answer of the area binary carries `traceparent` and `tracestate`, which its tracing layer adds.
+    The prototype had no such layer.
+- **What the check does not cover.** A browser: nothing ran the pages' scripts, so the viewer, the
+  Datastar patches and the history URLs as the browser applies them are checked by hand on a preview. A
+  URL no page links to, such as a free-text search. A request other than `GET`. The other two projects.
+
+Enforced by: review. The crawl, the prototype's build and the normaliser are not in the repository; the
+record of the run is the PR that added this amendment. What stays checked on every change is the weaker
+statement that no URL leaves the base (`cpe-server`'s `base_tests`, amendment of 2026-10-11, DEV-7438).
+That the image carries the data and sets the variables that name it is checked by nothing: no job starts
+the image and asks for a CPE page.

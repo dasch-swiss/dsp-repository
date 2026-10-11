@@ -9,9 +9,6 @@
 //! and never returned. The `Mutex` is non-reentrant, so a read never calls
 //! another read while it holds the guard. `Project` owns the `Mutex` and
 //! hands it in through [`ProjectReads::new`].
-//!
-//! This is the seam DEV-7402's read-side store replaces: the reads keep
-//! their signatures and are filled from `sync`'s port instead of SQLite.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Mutex;
@@ -26,11 +23,10 @@ use rusqlite::Connection;
 
 use crate::query::{self, QueryError};
 
-/// Resolve a raw `?page=` value to a 0-based position in `headers`
-/// (Incunabula Slice 2 step 7, decision 5 and its review note).
+/// Resolve a raw `?page=` value to a 0-based position in `headers`.
 ///
 /// The raw value is percent-/`+`-decoded once (`util::decode_query_value` —
-/// the bin's `query_pairs` never decodes, and a typed pagenum such as
+/// the host's `query_pairs` never decodes, and a typed pagenum such as
 /// `a1r; Titelblatt` arrives as `a1r%3B+Titelblatt`) and trimmed; an empty
 /// result counts as absent (`None`). Tiers, first hit wins:
 ///
@@ -43,7 +39,7 @@ use crate::query::{self, QueryError};
 ///    resolves to the first such member; a prefix spanning two different names (`a1` over
 ///    `a1r`/`a1v`) is ambiguous → `None`.
 ///
-/// `None` ⇒ the caller falls back to `?member=` (decision 6). Pure and total.
+/// `None` ⇒ the caller falls back to `?member=`. Pure and total.
 pub fn resolve_page_param(headers: &[MemberHeader], raw: &str) -> Option<usize> {
     let decoded = cpe_core::util::decode_query_value(raw);
     let needle = decoded.trim();
@@ -219,16 +215,16 @@ impl<'a> ProjectReads<'a> {
     ///   The member at the clamped position is hydrated via `get_resource`; the clamped 1-based
     ///   index is stored in `CompoundPage.index`; `members.len() == total`.
     ///
-    /// `page` is the RAW (still percent-/`+`-encoded) `?page=` value, if any
-    /// (Incunabula Slice 2 step 7, decisions 5–6). It is resolved against the
+    /// `page` is the RAW (still percent-/`+`-encoded) `?page=` value, if any.
+    /// It is resolved against the
     /// fetched headers by [`resolve_page_param`] — no extra SQL — and, when
     /// it resolves, **beats** `index` (the `?member=N` value). An absent,
     /// empty, unresolvable or ambiguous `page` falls back to `index` (so a
     /// request carrying both an unresolvable `page` and a valid `member`
     /// keeps the `member`), which itself defaults to 1 at the call site.
     ///
-    /// `media_property` is the `compound-viewer media="…"` attribute
-    /// (Incunabula Slice 2 step 6b). When `Some`, `CompoundPage.member_media`
+    /// `media_property` is the `compound-viewer media="…"` attribute.
+    /// When `Some`, `CompoundPage.member_media`
     /// is filled with the hydrated member's linked Images via
     /// [`ProjectReads::media_items`] (Seqnum order, host→image link per dsp-incubator
     /// cpe/docs/adr/0008-images-are-embedded-only-resources.md); when `None`, `member_media`
@@ -261,8 +257,7 @@ impl<'a> ProjectReads<'a> {
         };
 
         if headers.is_empty() {
-            // No first page to name, so a stale `?page=` sets no status
-            // (book-page Choice H).
+            // No first page to name, so a stale `?page=` sets no status.
             return Ok(CompoundPage {
                 member: None,
                 index: 1,
@@ -280,11 +275,11 @@ impl<'a> ProjectReads<'a> {
         // Clamp in usize space: convert the 1-based u32 index → usize (saturate on
         // overflow), clamp to [1, total], then subtract 1 for the 0-based slice.
         // Never use `as` for numeric narrowing.
-        // `?page=` (decision 5) wins over `?member=` when it resolves;
-        // otherwise fall back to the clamped `?member=` position (decision 6).
+        // `?page=` wins over `?member=` when it resolves;
+        // otherwise fall back to the clamped `?member=` position.
         let resolved = page.and_then(|raw| resolve_page_param(&headers, raw));
         // A non-empty `?page=` that names no page (unknown or ambiguous) is
-        // kept, decoded, so the reader can say so (book-page Choice H); the
+        // kept, decoded, so the reader can say so; the
         // page shown is still the `?member=` fallback.
         let stale_page = match (page, resolved) {
             (Some(raw), None) => {
@@ -330,8 +325,8 @@ impl<'a> ProjectReads<'a> {
     }
 
     /// Lightweight member headers for `parent_id`, without hydrating any
-    /// member's full `Resource` (record-viewer plan step 9 — `.rv-contents`,
-    /// AC11). Unlike `compound_parts` (built for the compound-viewer's own
+    /// member's full `Resource`.
+    /// Unlike `compound_parts` (built for the compound-viewer's own
     /// paging, which always hydrates the member at an index), a
     /// `resource-detail` page only needs to know WHETHER its own resource is a
     /// compound parent and, if so, list its members by id/class/name — it
@@ -355,7 +350,7 @@ impl<'a> ProjectReads<'a> {
 
     /// Every `spec.class` resource that links TO `target_id` through one of
     /// `spec.properties` — the reverse resolution behind a `resource-detail`'s
-    /// `incoming-links` child (Slice 5, G7; grouped rows HdM Slice 3, G3).
+    /// `incoming-links` child.
     ///
     /// Locks `conn`, runs `query::incoming_links`, and drops the guard on
     /// return. An empty `properties` list or a target nothing links to both
@@ -493,7 +488,7 @@ impl<'a> ProjectReads<'a> {
     /// Returns one `FacetGroup` with:
     /// - `label` = the declared `labels { property "…" { … } }` translation for `lang` when
     ///   `property_labels` (the project's `site.property_labels`) has one for `facet.property`,
-    ///   else the humanized property name (the pre-existing, language-independent fallback).
+    ///   else the humanized property name (the language-independent fallback).
     /// - `kind` = `facet.kind`.
     /// - `options` = one `FacetOption` per returned `(node_id, label_opt, count)`, with
     ///   `label_opt.unwrap_or_else(|| node_id.clone())` as the orphan-node fallback.
@@ -537,7 +532,7 @@ impl<'a> ProjectReads<'a> {
     /// The list nodes `class`'s `property` values point at, in vocabulary
     /// (`list_nodes.seq`) order, each labelled in `lang` (else any language).
     ///
-    /// The lane vocabulary of a `timeline` (Incunabula Slice 4). Not
+    /// The lane vocabulary of a `timeline`. Not
     /// [`ProjectReads::facet_options`]: that one orders by value count. Locks
     /// `conn` for the one query and drops the guard before returning.
     pub(crate) fn list_nodes_for_property(
@@ -573,7 +568,7 @@ impl<'a> ProjectReads<'a> {
     }
 
     /// Fetch the ordered, hydrated Image resources a host resource points at
-    /// via its `link`-typed `property` (embedded-media plan step 6a/6b).
+    /// via its `link`-typed `property`.
     ///
     /// Mirrors `compound_parts`'s two-phase lock protocol exactly: `conn` is
     /// locked once for `query::media_item_ids`, the guard is dropped, then
@@ -596,7 +591,7 @@ impl<'a> ProjectReads<'a> {
     }
 
     /// Batch-fetch the first (lowest-seqnum) media target's representation
-    /// URI for each id in `ids`, keyed by id (embedded-media plan step 6a/6b).
+    /// URI for each id in `ids`, keyed by id.
     ///
     /// Used to render browse-row thumbnails for a class whose media property
     /// is `class_media_property` — one query for the whole page's rows, not

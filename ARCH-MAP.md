@@ -656,7 +656,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the schema and the queries are in `cpe-store`; what builds a store from a snapshot is not here yet, so no
   store exists at run time). `cpe-ports`, `cpe-core`,
   `cpe-components` and `cpe-image-viewer` hold none.
-- **Fingerprint:** `4a6143ae2a1c`
+- **Fingerprint:** `1d39d1267cce`
 
 ### areas/access/datei
 

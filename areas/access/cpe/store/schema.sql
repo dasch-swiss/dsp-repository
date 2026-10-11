@@ -1,5 +1,5 @@
 -- CPE engine schema. The single source of truth for the data shape
--- every project's data.sql populates. Transcribed from docs/SCHEMA.md;
+-- every project's data.sql populates. Transcribed from dsp-incubator cpe/docs/SCHEMA.md;
 -- keep the two in sync (SCHEMA.md documents the value-type semantics
 -- and the constraints validated at boot rather than in DDL).
 --
@@ -11,7 +11,7 @@ CREATE TABLE resources (
     id     TEXT PRIMARY KEY,
     class  TEXT NOT NULL,
     -- the resource's plain DSP data ARK URL, or NULL; never ''. Its shape is
-    -- the boot check MalformedDataArk; see docs/SCHEMA.md.
+    -- the boot check MalformedDataArk; see dsp-incubator cpe/docs/SCHEMA.md.
     ark    TEXT
 );
 CREATE INDEX idx_resources_class ON resources(class);
@@ -54,7 +54,7 @@ CREATE INDEX idx_properties_name_date ON properties(name, date_start, date_end);
 -- With resource_id in the index it is one equality seek per row (69 ms
 -- for that same request; 61-75 ms across all six measured routes).
 -- A plan regression is caught by `target_in_where_uses_composite_target_index`
--- in `query.rs`. See docs/SCHEMA.md.
+-- in `query.rs`. See dsp-incubator cpe/docs/SCHEMA.md.
 CREATE INDEX idx_properties_target    ON properties(target_id, resource_id);
 
 CREATE TABLE lists (
@@ -102,7 +102,7 @@ CREATE INDEX idx_compound_parts_child  ON compound_parts(child_id);
 
 -- Annotations (dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md): one shape on one resource's displayed image.
 -- Box, points, colour and link-target rules are boot checks
--- (MalformedAnnotation), not DDL; see docs/SCHEMA.md.
+-- (MalformedAnnotation), not DDL; see dsp-incubator cpe/docs/SCHEMA.md.
 CREATE TABLE annotations (
     id          TEXT PRIMARY KEY,
     -- the annotated resource, not its Image: the geometry is relative to

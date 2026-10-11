@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: out
+---
+<article class="notfound notfound--terse page"><div class="notfound__inner"><p class="notfound__code">404 — nicht gefunden</p><h1 class="notfound__title">Unter dieser Adresse gibt es keinen Eintrag der Kategorie Character.</h1><p class="notfound__msg">Der Bezeichner in dieser Adresse benennt keinen Eintrag der Kategorie Character in diesem Projekt. Einträge werden manchmal umstrukturiert, nachdem ein Link oder ein Zitat erstellt wurde.</p><p class="notfound__or"><a href="/alice-in-daschland/characters">Alle Character durchsuchen</a><a href="/alice-in-daschland/">Projektstartseite</a></p><p class="notfound__or"><span>Oder durchsuchen:</span><a href="/alice-in-daschland/">Startseite</a><a href="/alice-in-daschland/wonderland">Wunderland</a><a href="/alice-in-daschland/looking-glass">Durch den Spiegel</a></p></div></article>

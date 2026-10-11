@@ -1,0 +1,5 @@
+---
+source: engine/src/component/compound_viewer.rs
+expression: out
+---
+<section class="compound-viewer page" id="compound-viewer" tabindex="-1"><header class="cv-compound-head"><p class="eyebrow cv-compound-head__eyebrow">StoryChapter</p><h2 class="cv-compound-head__title">Alice's Adventures in Wonderland</h2></header><p class="compound-viewer__empty">No parts are recorded for this StoryChapter.</p><div class="cv-member__props"><div class="prop"><div class="prop__label">Description</div><div class="prop__value"><span class="v-text">The first story.</span></div></div></div></section>

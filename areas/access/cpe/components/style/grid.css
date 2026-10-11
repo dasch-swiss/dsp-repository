@@ -1,0 +1,563 @@
+/* ============================================================================
+   CPE — LAYOUT GRID   ·   the single alignment system for every screen
+   ----------------------------------------------------------------------------
+   THE FRAME. Header, crumb line, page and footers share one frame box:
+   `max-width: var(--shell-max)` (137.5rem, gutters included), centred, with
+   `padding-inline: var(--gutter)`. The frame fills the window up to 2200px;
+   no breakpoint changes it, so their edges coincide at every width.
+
+   THE GRID. Inside the frame `.page` is a 12-column grid with a constant
+   --grid-gap; an unplaced child spans all twelve. The footers place their
+   blocks on its columns. A screen that is not laid out on the columns (a
+   narrative, the `contents` reader) sets `display: block` and caps its text
+   at --read; a narrative's breakouts are --narr-max wide (editorial.css, THE
+   COMPOSITION).
+
+   This file OWNS layout/alignment. The per-screen stylesheets keep only
+   typography and ornament.
+
+   ⚠️ LAYOUT CONTRACT — every top-level component root MUST carry `.page`.
+   `.page` is the shared centered box (max-width:var(--shell-max);
+   margin:0 auto; padding:… var(--gutter); defined in shell.css). The
+   renderer for a component emits its OWN root element, and that root must
+   include `.page` (e.g. `article.record.page`, `section.resource-list-section.page`,
+   `article.compound-viewer.page`) — INCLUDING the empty-state / not-found
+   branch. A root that omits `.page` is NOT centered: its content hugs both
+   viewport edges with no gutter. This has bitten multiple components; when
+   adding or reviewing a component renderer, grep its root markup for `.page`.
+   For a single reading column (no 12-col grid) add `display:block` like
+   `.editorial.page` / `.compound-viewer.page`.
+   EXEMPT: a component that renders only as a figure block in a narrative
+   section (`div.cases`, `ul.editions`, `ul.strips`) is centred by that
+   narrative's `article.editorial.page` and carries no `.page` of its own;
+   their required `section=` (validate/showcase.rs `require_section`) is what
+   keeps them out of an unslotted render. See cpe/CLAUDE.md.
+
+   ⚠️ A constrained dimension (max-width/max-height) must not GROW inside a
+   narrower media query — it should hold steady or shrink further as the
+   viewport shrinks. A `max-width` that increases at a smaller breakpoint is
+   backwards and has caused real overflow bugs (e.g. `.record__figure`).
+   Double-check the direction of any dimension you change inside a
+   `max-width: …px` block.
+   ========================================================================== */
+
+:root { --grid-gap: 1.5rem; --read: 42rem; }
+
+/* ---- the shared grid container -------------------------------------------
+   These all already carry max-width:var(--shell-max), margin-inline:auto and
+   padding-inline:var(--gutter), so their column lines coincide exactly. */
+.page,
+.record__body,
+.footer__inner,
+.footer-index__inner {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--grid-gap);
+  align-items: start;
+}
+
+/* safe default: an unplaced child fills the content width (never 1 column) */
+.page > *,
+.record__body > *,
+.footer__inner > *,
+.footer-index__inner > * { grid-column: 1 / -1; }
+
+/* canonical column helpers (also used directly by the selectors below) */
+.col-prose { grid-column: 1 / 7; }
+.col-companion { grid-column: 8 / 13; }
+.col-wide { grid-column: 1 / 11; }
+.col-full { grid-column: 1 / -1; }
+
+/* ============================================================================
+   PLACEMENTS  —  every screen, inside the same frame
+   ========================================================================== */
+
+/* ---- Narrative  ·  head, intro and sections at the reading measure ----
+   A block child of the frame at every width. Where these boxes sit in the
+   frame (centred, beside the page rail, in a breakout) is editorial.css's
+   THE COMPOSITION, which also lifts the cap on `.editorial__sections` inside
+   a breakout and re-applies the measure to the sections' own children. */
+.editorial.page { display: block; }
+.editorial h1 { hyphens: manual; }
+.editorial__head     { max-width: var(--read); }
+.editorial__intro    { max-width: var(--read); margin-bottom: var(--space-8); }
+.editorial__sections { max-width: var(--read); display: flex; flex-direction: column; gap: var(--space-8); }
+
+/* (The oversized site-index hero was dropped from the design; the project
+   list leads directly. No .index-hero placement is needed.) */
+
+/* ---- Record (character / location / featured) -------------------------- */
+.record__head { grid-column: 1 / -1; }
+/* The carousel-era `.record__figure` sizing rules (max-width: 20rem plate,
+   1600px side-column placement) are GONE with the carousel: the record
+   viewer (`.rv-col`, media.css) owns its own layout, and nothing emits the
+   `record__figure` class any more (only the `#record-figure` anchor id
+   survives, for the no-JS focus contract). */
+.record__body:not(.record__body--noimg) { display: block; }
+/* `.pgroup` (host-rights, Apparat, incoming-links — every `.pgroup` section
+   inside `.record__body` is a SIBLING of `div.props`, never a descendant;
+   see resource_detail.rs's "siblings of .props" comment) is paired with
+   `.props` here so the two share one measure. Without this, `.pgroup`
+   defaults to the body's own full width while `.props` is capped to
+   `--read` — invisible whenever the body itself is narrower than `--read`
+   (mobile, or the text column of the ≥1180px viewer split on a small
+   window), but a real hairline-overrun wherever the body is wider. These
+   two rules are (0,3,0), so they also hold at ≥1180px: media.css's
+   `.record--viewer .props { max-width: none }` (0,2,0) does not lift them,
+   and the tall frame's wide text column relies on that. */
+.record__body:not(.record__body--noimg) .props,
+.record__body:not(.record__body--noimg) .pgroup { max-width: var(--read); }
+
+/* no-image record (e.g. a Location): the body is one block and the
+   properties keep the reading measure. */
+.record__body--noimg { display: block; }
+.record__body--noimg .props,
+.record__body--noimg .pgroup { max-width: var(--read); }
+
+/* A plain record (no reader, no viewer) is one centred column at the reading
+   measure: head, props and ungrouped groups share its left edge. The body
+   itself is not capped, so a grouped incoming-links list keeps the full
+   width under the column (media.css, HDM SLICE 3).
+   The head is a grid item of `article.record.page`: with `auto` margins it
+   would shrink to its title's width and centre that, so it needs
+   `width: 100%`. Props and groups are block children and need none; with a
+   `narrative-for` intro they sit one level down, in `.record__apparat`
+   (media.css stacks that body). The intro's cap is on its inner `.prose`
+   (record.css), so the margin goes there. */
+.record:not(.record--reader, .record--viewer) > .record__head { max-width: var(--read); width: 100%; margin-inline: auto; }
+.record:not(.record--reader, .record--viewer) :is(.record__body--noimg, .record__apparat) > :is(.props, .pgroup:not(.incoming--grouped)) { margin-inline: auto; }
+.record:not(.record--reader, .record--viewer) .record__intro .prose { margin-inline: auto; }
+
+/* ---- Project footer (per-project) -------------------------------------- */
+/* Row 1: CPE chip | DaSCH lockup; row 2: description | attribution. The lockup
+   follows the description in the DOM, so both row-1 items pin their row;
+   `justify-self: start` keeps the link's hit area to the lockup's own width. */
+.footer__inner { row-gap: var(--space-5); }
+.footer__mark { grid-row: 1; grid-column: 1 / 7; }
+.footer__lockup { grid-row: 1; grid-column: 7 / 13; justify-self: start; }
+.footer__desc { grid-column: 1 / 7; }                  /* left half  */
+.footer__attr { grid-column: 7 / 13; }                 /* right half */
+
+/* ---- Site-index footer (CPE / DaSCH) ----------------------------------- */
+.footer-index__inner { row-gap: var(--space-6); }
+.footer-index__product { grid-column: 1 / 7; }         /* left half  */
+.footer-index__org { grid-column: 7 / 13; }            /* right half */
+
+/* DEVIATION #6: .sg__lede removed — styleguide remnant, not shipped. */
+
+/* ============================================================================
+   BROWSE  —  resource-list + pager
+   A full-width stacked list of resource rows. Each row is a linked block
+   (or plain div when the class has no bound route). The pager mirrors the
+   carousel's nav-bar idiom: prev / count / next in a single flex row.
+   ========================================================================== */
+
+/* ---- List container ------------------------------------------------------ */
+/* The section carries `.page` (shared centered max-width + gutter box); these
+   are the browse-specific additions on top of that box. */
+.resource-list-section {
+  margin-block: var(--space-6);
+  /* The size container the two-up rows query (`@container list`, below). A
+     query never styles its own container, so no rule for this element goes
+     inside one. */
+  container: list / inline-size;
+}
+
+/* ---- Empty state --------------------------------------------------------- */
+.resource-list__empty {
+  padding-block: var(--space-6);
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* ── surface header (result count + sort) ── */
+.surf-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4);
+  padding-bottom: var(--space-4); margin-bottom: var(--space-2); border-bottom: 1px solid var(--rule); }
+.surf-head__group { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.surf-head__title { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--ink-faint); font-weight: var(--weight-medium); }
+.surf-head__count { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+
+/* --- search row: a labelled band above the list, mirroring .filterbar ----- */
+.search-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
+.search-row__lbl { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); margin-right: var(--space-1); flex: 0 0 auto; padding-top: 0.15em; }
+.search-bar { display: flex; align-items: baseline; gap: 0.5em; flex: 1 1 18rem; max-width: 30rem; min-width: 12rem; border-bottom: var(--rule-weight) solid var(--rule-strong); border-radius: 1px; padding: 0 0 0.3em; transition: border-color var(--dur) var(--ease); }
+.search-bar:hover { border-bottom-color: var(--ink-faint); }
+.search-bar:focus-within { border-bottom-color: var(--accent-strong); outline: 2px solid var(--focus); outline-offset: 3px; }
+/* Active look = the field has text. Driven reactively off the input's content
+   (`:has(:not(:placeholder-shown))`) so it also applies during live JS typing,
+   when the row is NOT re-rendered (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`) and so the server `data-active`
+   attribute never updates. `[data-active="true"]` is kept as the no-JS/server
+   branch. Relies on a placeholder being present (all Alice search-bars have one). */
+.search-bar[data-active="true"],
+.search-bar:has(.search-bar__input:not(:placeholder-shown)) { border-bottom-width: 2px; border-bottom-color: var(--ink); padding-bottom: calc(0.3em - 1px); }
+.search-bar__input { flex: 1; min-width: 0; appearance: none; background: transparent; border: 0; outline: 0; padding: 0; font-family: var(--font-text); font-size: var(--size-4); line-height: var(--leading-snug); color: var(--ink); }
+.search-bar__input::placeholder { color: var(--ink-faint); font-style: italic; opacity: 1; }
+/* type="search" renders a native ::-webkit-search-cancel-button (a second ×) in
+   WebKit even with appearance:none on the input — suppress it so only the custom
+   .search-bar__clear × shows (fixes a double-× in Chrome/Safari). */
+.search-bar__input::-webkit-search-cancel-button,
+.search-bar__input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.search-bar__clear, .search-bar__go { flex: 0 0 auto; align-self: center; position: relative; background: transparent; border: 0; cursor: pointer; padding: 0 0.15em; font-family: var(--font-meta); line-height: 1; transition: color var(--dur) var(--ease); }
+/* WCAG 2.5.8 (min 24x24px target): an invisible ::after overlay enlarges the
+   click/tap hit area without growing the button's own box (which would
+   disturb `.search-bar`'s `align-items: baseline` row) or the glyph's visible
+   size/position. */
+.search-bar__clear::after, .search-bar__go::after { content: ""; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); }
+.search-bar__clear { font-size: var(--size-4); color: var(--ink-faint); }
+.search-bar__clear:hover { color: var(--ink); }
+/* The × is always in the DOM (see search_bar.rs) so it can appear during live
+   typing without re-rendering the row; hide it whenever the field is empty. */
+.search-bar__input:placeholder-shown ~ .search-bar__clear { display: none; }
+.search-bar__go { font-size: var(--size-4); color: var(--ink-muted); }
+.search-bar__go:hover { color: var(--accent-strong); }
+/* Empty-state dimming, CSS-only (a11y review: the `→` submit stays fully
+   operable while empty — a benign reload — so it no longer carries
+   `aria-disabled`). Keyed off the input's own emptiness (`:placeholder-shown`)
+   rather than the server `data-active`, so it un-dims reactively as you type. */
+.search-bar__input:placeholder-shown ~ .search-bar__go { color: var(--ink-faint); cursor: default; }
+.search-scope { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
+/* count · scope separator, emitted by the renderer as its own span
+   (span.surf-head__sep) rather than a ::before on .search-scope, since the
+   separator is only wanted when the scope note is actually present. */
+.surf-head__sep { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
+
+/* --- search-specific no-match state -------------------------------------- */
+.search-empty { padding-block: var(--space-7) var(--space-6); border-bottom: var(--rule-weight) solid var(--rule); }
+.search-empty__msg { font-size: var(--size-5); color: var(--ink-muted); margin: 0 0 var(--space-4); max-width: 42rem; line-height: var(--leading-snug); }
+.search-empty__msg em { font-style: italic; color: var(--ink); }
+.search-empty__acts { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: baseline; }
+.search-empty__act { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: 0.04em; color: var(--ink-muted); text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; background: transparent; border: 0; padding: 0; display: inline-flex; align-items: center; min-height: 24px; }
+.search-empty__act:hover { color: var(--accent-strong); }
+.search-empty__hint { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
+
+/* ── ordering control (details/summary disclosure, replaces .sortctl) ──
+   `.orderctl` is the <form> wrapper; the mono meta face/size lives HERE
+   (not on `.viewtoggle__lbl`'s own rule — that class is reused verbatim,
+   no second rule, and inherits face/size from this wrapper). */
+.orderctl { position: relative; display: inline-flex; align-items: baseline; gap: var(--space-3);
+  font-family: var(--font-meta); font-size: var(--size-1); }
+.orderctl__current {
+  position: relative; /* the caret's containing block — without it the 640px
+    `.orderctl { position: static }` would fling the caret to the head's edge */
+  display: inline-flex; align-items: center; min-height: 1.5rem;
+  font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink);
+  border-bottom: var(--rule-weight) solid var(--rule-strong);
+  padding: 0 1.1em 0.3em 0; /* right padding reserves the caret */
+  list-style: none; cursor: pointer;
+}
+.orderctl__current::-webkit-details-marker { display: none; }
+.orderctl__current:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.orderctl__caret { position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  color: var(--ink-faint); transition: transform var(--dur) var(--ease); }
+.orderctl__disc[open] > .orderctl__current .orderctl__caret { transform: translateY(-50%) rotate(180deg); }
+.orderctl__panel {
+  position: absolute; right: 0; top: calc(100% + var(--space-2)); min-width: 12.5rem; z-index: 3;
+  display: flex; flex-direction: column;
+  background: var(--surface-raised); border: 1px solid var(--rule-strong); box-shadow: var(--shadow-card);
+}
+.orderctl__opt {
+  display: block; width: 100%; text-align: left; min-height: 1.5rem;
+  font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-muted);
+  background: transparent; border: 0; padding: 0.5em 0.8em; cursor: pointer;
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.orderctl__opt:hover { background: var(--hover-fill); }
+.orderctl__opt[aria-current="true"] { background: var(--ink); color: var(--surface); font-weight: var(--weight-medium); }
+.orderctl__opt:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* non-default ordering thickens the rule to full ink, mirroring
+   .search-bar[data-active]'s active mark. */
+.orderctl[data-active] .orderctl__current { border-bottom: 2px solid var(--ink); padding-bottom: calc(0.3em - 1px); }
+/* .orderctl__status deliberately has no rule of its own — visually-hidden only. */
+/* ── annotated rows (text-first markup, optional thumb) ──
+   The thumb follows the text in markup but `order: -1` shows it LEFT of the
+   text on desktop, so a short title doesn't sit a wide empty band away from
+   its image (owner decision D11, layout review 2026-10-07). A row without an
+   image renders no `<img>`, so it gets no left gutter. The ≤640px phone
+   layout places the thumb by grid area instead (right of the gloss). */
+.rl-annot { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.rl-annot__item { border-bottom: 1px solid var(--rule); }
+.rl-annot__row { display: flex; gap: var(--space-5); align-items: flex-start; padding: var(--space-5) 0;
+  text-decoration: none; color: inherit; transition: background var(--dur) var(--ease); }
+a.rl-annot__row:hover { background: var(--hover-fill); padding-inline: var(--space-3); margin-inline: calc(-1 * var(--space-3)); }
+/* The text column keeps the reading measure on a wide list; the ≤860px block
+   below lifts the cap. */
+.rl-annot__main { flex: 1; min-width: 0; max-width: var(--read); }
+.rl-annot__thumb { flex: 0 0 auto; width: 6rem; height: 8rem; object-fit: cover; order: -1;
+  background: var(--surface-inset); border: 1px solid var(--rule); }
+.rl-annot__name { font-family: var(--font-display); font-style: var(--display-italic, normal); font-size: var(--size-5);
+  color: var(--ink); margin: -0.1em 0 0.1em; letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); }
+/* optional alternate-name accent after the name (design source; no config surface yet) */
+.rl-annot__alt { font-style: italic; color: var(--accent-strong); font-size: 0.82em; }
+/* one-line row gloss — fills its text column (`.rl-annot__main` holds the
+   reading-measure cap) and clamps to 2 lines; long descriptions stay
+   scannable and rows stay even, the full text lives on the detail page.
+   `line-clamp` is the standardized property, the `-webkit-*` trio the
+   wide-support fallback. */
+.rl-annot__gloss { font-size: var(--size-3); color: var(--ink-muted); line-height: var(--leading-snug);
+  margin: 0 0 var(--space-3);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+/* a gloss carrying an authored teaser gets one more line; nothing else changes */
+.rl-annot__gloss--teaser { -webkit-line-clamp: 3; line-clamp: 3; }
+/* row chip row — role (.term) + theme (.keyword) chips, reusing the record chip
+   styles. A SINGLE line (nowrap + clip): the renderer caps the visible chips
+   and appends a `.rl-annot__more` "+N" count, so the row height never varies
+   with chip count. `contain: inline-size` makes the clip hold at narrow widths:
+   without it the unwrapped chips' full width still counts as the row's
+   min-content, and the ≤860px `.page { grid-template-columns: 1fr }` track
+   (min = auto) grows to fit it, widening the whole list past the viewport
+   (Alice /characters, Incunabula /books). */
+.rl-annot__meta { display: flex; flex-wrap: nowrap; gap: var(--space-2); align-items: center;
+  overflow: hidden; min-width: 0; contain: inline-size; }
+.rl-annot__more { flex: 0 0 auto; font-family: var(--font-meta); font-size: var(--size-1);
+  color: var(--ink-faint); white-space: nowrap; font-feature-settings: "tnum" 1; }
+/* Two-up rows on a wide list. The grid fills row by row, so reading order,
+   focus order and visual order agree: an alphabetical list runs across the
+   two columns, then down. */
+@container list (min-width: 76rem) {
+  .rl-annot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-8); }
+}
+/* ---- Pager --------------------------------------------------------------- */
+/* NOTE: this no longer mirrors .figure__nav (the carousel is gone) — the
+   pager is now a standalone foot bar: a hairline rule above prev/numbers/next
+   in a space-between row, its own idiom. */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-4);
+  margin-top: var(--space-5);
+  font-family: var(--font-meta);
+}
+
+.pager__step {
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15em 0.5em;
+  text-decoration: none;
+  color: var(--ink-muted);
+  transition: color var(--dur) var(--ease);
+}
+
+a.pager__step:hover { color: var(--accent-strong); }
+
+/* Inert ends — dimmed, non-interactive, mirroring .figure__step[aria-disabled] */
+.pager__step[aria-disabled="true"] { color: var(--rule-strong); }
+
+.pager__nums {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-feature-settings: "tnum" 1;
+}
+
+.pager__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  text-decoration: none;
+  color: var(--ink-muted);
+  border-bottom: 2px solid transparent;
+  transition: color var(--dur) var(--ease);
+}
+a.pager__num:hover { color: var(--accent-strong); }
+.pager__num[aria-current="page"] { border-bottom: 2px solid var(--ink); color: var(--ink); }
+
+/* position words ("Page n of N") — hidden above 640px (the nav's own
+   aria-label already speaks the position); base rule below hides the
+   accompanying words whenever .pager__nums is also present. */
+.pager__of {
+  font-size: var(--size-1);
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  font-feature-settings: "tnum" 1;
+}
+.pager__nums + .pager__of { display: none; }
+
+/* ============================================================================
+   GRID MODE  —  browse gallery view (ported from docs/design/grid-mode/grid-mode.css)
+   Grid mode is a VIEW of the resource list, not a page: same resources, same
+   narrowing, same order. See the design doc for the full rationale.
+   ========================================================================== */
+
+/* ---- the view toggle ------------------------------------------------------
+   Sits in .surf-head beside the sort control, in the mono meta face, showing
+   the current mode with the system's established ink-fill current-choice
+   idiom. Real <a> links carrying ?view= — so it works zero-JS; aria-current
+   announces the state. No icon: the two words are the mark. */
+.viewtoggle { display: inline-flex; align-items: baseline; gap: var(--space-3); font-family: var(--font-meta); font-size: var(--size-1); }
+/* surf-head's right side now carries two controls: view, then sort */
+.surf-head__ctl { display: flex; align-items: baseline; gap: var(--space-5); flex-wrap: wrap; justify-content: flex-end; }
+.viewtoggle__lbl { color: var(--ink-faint); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.viewtoggle__opts { display: inline-flex; align-items: stretch; border: 1px solid var(--rule); border-radius: var(--radius-1); overflow: hidden; }
+.viewtoggle__opt {
+  display: inline-flex; align-items: center; padding: 0.3em 0.7em; text-decoration: none;
+  font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-muted); background: transparent; border: 0; border-left: 1px solid var(--rule); cursor: pointer;
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.viewtoggle__opt:first-child { border-left: 0; }
+.viewtoggle__opt:hover { color: var(--ink); }
+.viewtoggle__opt:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.viewtoggle__opt[aria-current="true"] { background: var(--ink); color: var(--surface); }
+
+/* ---- the grid ------------------------------------------------------------ */
+.gm { list-style: none; margin: 0; padding: 0; }
+.gm > li { display: flex; min-width: 0; }
+.gm__tile { display: flex; flex-direction: column; flex: 1 1 auto; width: 100%; height: 100%; text-decoration: none; color: inherit; }
+.gm__tile:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+/* 3:4 unless the list sets a ratio: the renderer writes `--tile-ratio` inline
+   on `ul.gm` (`resource-list tile-ratio=`). The image is contained, never
+   cropped. Its fetch width is `GRID_TILE_WIDTH` (core/src/iiif.rs), sized
+   for a tile of at most about 349px: change both together. A tall list
+   fetches by the tall rule's constant instead (below). */
+.gm__box { position: relative; aspect-ratio: var(--tile-ratio, 3 / 4); display: grid; place-items: center; overflow: hidden; }
+.gm__box img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.gm__name {
+  font-family: var(--font-display); font-style: var(--display-italic, normal);
+  color: var(--ink); letter-spacing: var(--tracking-tight); line-height: var(--leading-tight);
+}
+/* DEVIATION: .gm__alt (design doc's optional alternate-name accent) dropped —
+   no counterpart in engine config, would be dead CSS (plan decision 9). */
+
+.gm { display: grid; gap: var(--space-6) var(--grid-gap); border-top: 1px solid var(--rule); padding-top: var(--space-6); }
+/* The tile floor grows with the window (`--tile-min`, tokens.css). The ≤860px
+   floor below uses this same selector: a bare `.gm` there would lose to it. */
+.gm:not([data-tile="tall"]) { grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr)); }
+.gm .gm__box { background: var(--surface-inset); border: 1px solid var(--rule); padding: var(--space-3); transition: border-color var(--dur) var(--ease); }
+.gm__tile:hover .gm__box { border-color: var(--accent-strong); }
+.gm__name { font-size: var(--size-4); margin-top: var(--space-3); }
+.gm__tile:hover .gm__name { color: var(--accent-strong); }
+
+/* the text tile answers a missing image with WORDS, on the same box —
+   paper rather than the inset bed: a complete tile, just unillustrated.
+   DEVIATION: selector strengthened from the design doc's bare `.gm__box--text`
+   (specificity 0,1,0) to `.gm .gm__box.gm__box--text` (0,3,0) — the bare form
+   loses to `.gm .gm__box` (0,2,0) regardless of source order, so its
+   `background: transparent` could never win. */
+.gm .gm__box.gm__box--text { background: transparent; border-style: solid; border-color: var(--rule); }
+/* OWNER TWEAK (step-6 hands-on review, deviation from the reference CSS):
+   the "No illustration" label leads the tile — ink, not faint — with more
+   air before the gloss, and the gloss is clamped to 3 lines with an
+   ellipsis (the rl-annot__gloss clamp idiom, one line longer).
+   `min-width: 0` and `overflow-wrap` let the label break in a narrow box
+   instead of being cut off by the box's `overflow: hidden`. */
+.gm__text { display: grid; align-content: center; gap: var(--space-3); text-align: left; padding: var(--space-2);
+  min-width: 0; overflow-wrap: anywhere; }
+.gm__text .g { font-size: var(--size-2); color: var(--ink-muted); line-height: var(--leading-snug); font-style: italic;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.gm__text .k { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink); }
+
+/* Tall tiles (`data-tile="tall"`, set where `ir::is_tall` holds: a ratio at
+   least three times as high as wide, e.g. border strips): narrow columns,
+   and a box capped to the window's height. The box's 70svh cap pairs with
+   `GRID_TALL_FETCH_PX` (core/src/iiif.rs). */
+.gm[data-tile="tall"] {
+  grid-template-columns: repeat(auto-fill, minmax(clamp(4.75rem, 2.5rem + 2.6vw, 7.5rem), 1fr));
+  column-gap: var(--space-4);
+}
+.gm[data-tile="tall"] .gm__box { padding: var(--space-2); max-height: 70svh; }
+.gm[data-tile="tall"] .gm__name { font-size: var(--size-3); text-align: center; overflow-wrap: anywhere; hyphens: auto; }
+
+/* the browse column narrows at 860px (facet rail stacks); the grid never
+   becomes one tile per row — two columns is the phone floor. The `min()`
+   holds that below about 330px, where two 8.5rem tiles no longer fit; it
+   reads the column gap from `--gm-col-gap`, so the two cannot drift. */
+@media (max-width: 860px) {
+  .gm { --gm-col-gap: var(--space-4); gap: var(--space-5) var(--gm-col-gap); }
+  .gm:not([data-tile="tall"]) { grid-template-columns: repeat(auto-fill, minmax(min(8.5rem, calc(50% - var(--gm-col-gap) / 2)), 1fr)); }
+  .gm[data-tile="tall"] { grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr)); gap: var(--space-5) var(--space-3); }
+  .rl-annot__main { max-width: none; }
+  .surf-head { flex-wrap: wrap; flex-direction: column; align-items: flex-start; }
+  .surf-head__ctl { justify-content: flex-start; }
+  .orderctl__panel { left: 0; right: auto; }
+}
+
+/* ============================================================================
+   COLLAPSE  —  one column on narrow viewports
+   ========================================================================== */
+@media (max-width: 860px) {
+  .page,
+  .record__body,
+  .footer__inner,
+  .footer-index__inner { grid-template-columns: 1fr; }
+
+  /* DEVIATION #6: .sg__lede removed from this collapse list (styleguide remnant). */
+  .record__head, .props,
+  .footer__mark, .footer__desc, .footer__lockup, .footer__attr,
+  .footer-index__product, .footer-index__org,
+  .col-prose, .col-companion, .col-wide, .col-full { grid-column: 1 / -1; }
+
+  /* release the pinned rows so stacked items don't overlap */
+  .props,
+  .footer__mark, .footer__lockup { grid-row: auto; }
+
+  /* One column, DOM order: chip, description, a full-width hairline, lockup,
+     attribution. The hairline is a grid item of its own (the lockup stays
+     content-width), placed between the description and the lockup by `order`,
+     which keeps the visual order the DOM order; the row gap sets it off. */
+  .footer__inner::before {
+    content: "";
+    grid-column: 1 / -1;
+    order: 1;
+    border-top: var(--rule-weight) solid var(--rule);
+  }
+  .footer__lockup, .footer__attr { order: 2; }
+  /* no-image record collapses its two property columns to one */
+  .record__body--noimg .props { grid-template-columns: 1fr; }
+  .record__body--noimg .prop:nth-child(odd),
+  .record__body--noimg .prop:nth-child(even) { grid-column: 1 / -1; }
+}
+
+/* ============================================================================
+   NARROW  —  grid.css's first 640px block (the breakpoint value already
+   exists in shell.css for an unrelated rule; no new breakpoint introduced).
+   Overrides two of the 860px rules above: the ordering panel drops the
+   `left: 0; right: auto` anchor from the 860px block and instead spans the
+   whole `.surf-head` (no `--space-2` gap — the head's own padding-bottom
+   already supplies it); the pager swaps numbers for the position words.
+   ========================================================================== */
+@media (max-width: 640px) {
+  .pager__nums { display: none; }
+  .pager__nums + .pager__of { display: inline; }
+
+  .surf-head { position: relative; }
+  .orderctl { position: static; }
+  .orderctl__panel { left: 0; right: 0; top: 100%; }
+
+  /* Phone browse rows. The desktop row (6rem left thumb + text column) left
+     the title wrapping in ~60% of a phone's width, the thumb tiny and the
+     one-line chip row clipped after a chip or two. Here `.rl-annot__main`
+     dissolves (`display: contents`) so its children become grid items of the
+     row: the name spans the full line, the gloss sits beside a larger thumb,
+     and the chips take the full width beneath both, wrapping onto as many
+     lines as they need (the renderer's chip cap + "+N" still applies). The
+     items carry their own margins instead of the row's `gap` (zeroed: empty
+     tracks still take gaps), so a row without a thumb collapses the `auto`
+     column to nothing and the gloss runs full width, and a row without a
+     gloss or thumb adds no blank band. Display box 7.5rem (120px) — `THUMB_WIDTH` (384) still covers
+     it at 3x DPI. Markup is unchanged; desktop rows are untouched. */
+  .rl-annot__row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0;
+    grid-template-areas: "name name" "gloss thumb" "meta meta";
+  }
+  .rl-annot__main { display: contents; }
+  .rl-annot__name { grid-area: name; margin-bottom: var(--space-2); }
+  .rl-annot__gloss { grid-area: gloss; margin: 0; -webkit-line-clamp: 5; line-clamp: 5; }
+  .rl-annot__gloss--teaser { -webkit-line-clamp: 6; line-clamp: 6; }
+  .rl-annot__thumb { grid-area: thumb; width: 7.5rem; height: 10rem; margin-left: var(--space-4); }
+  .rl-annot__meta { grid-area: meta; flex-wrap: wrap; overflow: visible; margin-top: var(--space-3); }
+  .rl-annot__meta > .term,
+  .rl-annot__meta > .keyword { white-space: normal; max-width: 100%; }
+}

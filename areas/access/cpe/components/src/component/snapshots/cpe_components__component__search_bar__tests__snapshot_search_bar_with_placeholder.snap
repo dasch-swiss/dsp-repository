@@ -1,0 +1,5 @@
+---
+source: engine/src/component/search_bar.rs
+expression: out
+---
+<form class="search-row" role="search" method="get" action="/alice-in-daschland/characters"><label class="search-row__lbl" for="q">Search</label><div class="search-bar"><input class="search-bar__input" id="q" type="search" name="q" value="" autocomplete="off" placeholder="name or description" data-on:input__debounce.250ms="@get('/alice-in-daschland/characters/_search?q=' + encodeURIComponent(evt.target.value))"><button class="search-bar__clear" type="submit" name="q" value="" title="Clear search" aria-label="Clear search" data-on:click__prevent="el.form.querySelector('#q').value = ''; @get('/alice-in-daschland/characters/_search?q=')">×</button><button class="search-bar__go" type="submit" title="Search" aria-label="Search">→</button></div></form>

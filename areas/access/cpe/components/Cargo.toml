@@ -1,0 +1,17 @@
+[package]
+name = "cpe-components"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+cpe-core = { path = "../core" }
+cpe-image-viewer = { path = "../image-viewer" }
+maud = { workspace = true }
+pulldown-cmark = { workspace = true }
+# The timeline skips a Resource with an unparsable date with a warning. This crate installs no
+# subscriber; the host's does.
+tracing = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }

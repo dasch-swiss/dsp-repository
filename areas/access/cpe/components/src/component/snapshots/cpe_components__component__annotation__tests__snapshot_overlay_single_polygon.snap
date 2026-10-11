@@ -1,0 +1,5 @@
+---
+source: engine/src/component/annotation.rs
+expression: "overlay(&[numbered(1, poly)])"
+---
+<svg data-iv-overlay viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" data-class="{'anno-off': !$_annoShow}"><g data-iv-shape="poly" style="--iv-c:#ff3333;--iv-on:#000"><polygon data-iv-part="halo" points="55.000,50.000 80.000,58.000 74.000,82.000 50.000,76.000 46.000,60.000"></polygon><polygon data-iv-part="line" points="55.000,50.000 80.000,58.000 74.000,82.000 50.000,76.000 46.000,60.000"></polygon></g></svg><span data-iv-tag="poly" data-iv-x="55.000" data-iv-y="50.000" data-iv-align="center" style="--iv-c:#ff3333;--iv-on:#000;left:55.000%;top:50.000%" aria-hidden="true" data-class="{'anno-off': !$_annoShow}">1</span>

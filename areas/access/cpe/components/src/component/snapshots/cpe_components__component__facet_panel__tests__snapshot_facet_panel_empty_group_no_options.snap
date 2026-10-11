@@ -1,0 +1,5 @@
+---
+source: engine/src/component/facet_panel.rs
+expression: out
+---
+<section class="facet-panel page" id="facets-character-list" aria-label="Filters"><details class="facet-panel__disclosure"><summary class="facet-panel__toggle"><span class="facet-panel__toggle-label">Filters</span></summary><section class="facet-group"><div class="facet-group__titlerow"><h2 class="facet-group__title">Role</h2></div><p class="facet-panel__empty">No role are recorded for this class.</p></section></details></section>

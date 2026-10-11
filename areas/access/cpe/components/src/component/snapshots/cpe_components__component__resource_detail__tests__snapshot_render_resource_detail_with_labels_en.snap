@@ -1,0 +1,6 @@
+---
+source: engine/src/component/resource_detail.rs
+assertion_line: 2014
+expression: out
+---
+<article class="record page"><header class="record__head"><div class="record__class"><p class="eyebrow">Cast member</p><span class="record__id">CH_001</span></div><h1 class="record__title">Alice</h1><blockquote class="record__quote">Curiouser and curiouser!<cite class="record__cite">Alice</cite></blockquote></header><div class="record__body record__body--noimg"><div class="props"><div class="prop"><div class="prop__label">Character role</div><div class="prop__value"><span class="term">Protagonist</span></div></div></div></div></article>

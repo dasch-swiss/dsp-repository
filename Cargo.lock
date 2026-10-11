@@ -589,6 +589,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpe-components"
+version = "0.8.7"
+dependencies = [
+ "cpe-core",
+ "cpe-image-viewer",
+ "insta",
+ "maud",
+ "pulldown-cmark",
+ "tracing",
+]
+
+[[package]]
 name = "cpe-core"
 version = "0.8.7"
 dependencies = [

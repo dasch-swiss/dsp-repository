@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: "&row[..row.find(\"</section>\").expect(\"group closes\")]"
+---
+<div class="prop prop--links"><div class="prop__label">Verwandtes Buch</div><div class="prop__value"><div class="prop__rel"><span class="prop__rel-name" lang="de">im selben Band gebunden</span><a class="prop__rel-to" href="/incunabula/books/orationes"><em>Orationes</em> <span aria-hidden="true">→</span></a><a class="prop__rel-to" href="/incunabula/books/lob"><em>Lob der Glieder</em> <span aria-hidden="true">→</span></a></div><div class="prop__rel"><span class="prop__rel-name" lang="de">Übersetzung</span><a class="prop__rel-to" href="/incunabula/books/lat"><em>Narrenschiff (lat.)</em> <span aria-hidden="true">→</span></a></div></div></div></div>

@@ -1,0 +1,916 @@
+/* Ported from docs/design/embedded-media/media.css (CPE Design System project
+   fd2d2cb0-47d0-4115-a178-f57a06f743a4, 2026-08-25) — embedded-media plan
+   step 6c. Reuses existing token vars only (tokens.css) — no new custom
+   properties were introduced by this port. */
+
+/* ============================================================================
+   CPE — EMBEDDED MEDIA
+   Images are their own Resources (`dsp-incubator cpe/docs/adr/0008-images-are-embedded-only-resources.md`); a host page EMBEDS the images
+   that illustrate it. The settled pattern is THE RECORD VIEWER (`.rv-col`,
+   below): the whole media unit — head · viewer · caption · strip — is one
+   thing in a column beside the properties, with the attribution set ON the
+   image and the access state named above it. It grew out of the earlier plate
+   column, whose own renderer and rules are deleted. Also carries .pg, the
+   shared one-at-a-time primitive (← n / N →) for image paging.
+   Semantic roles only — no new tokens, no new colours, no icon set.
+   ========================================================================== */
+
+/* ---- the media unit's head — hairline rule + mono label + count --------- */
+.em-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); padding-bottom: var(--space-3); margin-bottom: var(--space-5); border-bottom: var(--rule-weight) solid var(--rule); }
+.em-head__group { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.em-head__title { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); font-weight: var(--weight-medium); }
+.em-head__count { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+
+.em-legal__run { display: inline; min-width: 0; }
+.em-legal__dot { color: oklch(1 0 0 / 0.42); }
+
+/* ---- THE ABSENT PLATE (E4) — the missing-image mark ---------------------
+   Ported from docs/design/empty-states/handoff/cpe-empty-states.css §1.
+   Bounded empty field + mono label, replacing the retired diagonally-striped
+   `.figure__note` placeholder. `.absent` is its own `--frame-ratio` consumer
+   (recorded dimensions when known, 3:4 default otherwise). */
+.absent {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.5em;
+  text-align: center;
+  background: var(--surface-inset);
+  border: 1px solid var(--rule);
+  aspect-ratio: var(--frame-ratio, 3 / 4);
+  padding: var(--space-4);
+}
+.absent__label {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.absent__why {
+  display: block;
+  font-size: var(--size-2);
+  font-style: italic;
+  line-height: var(--leading-snug);
+  color: var(--ink-faint);
+  max-width: 22ch;
+}
+
+/* ACCESS state — what this visitor may see. */
+.em-access { display: block; max-width: 100%; font-family: var(--font-meta); font-size: var(--size-1); line-height: var(--leading-snug); }
+.em-access b { font-weight: var(--weight-regular); letter-spacing: var(--tracking-label); text-transform: uppercase; color: oklch(1 0 0 / 0.96); }
+
+/* the media unit's own caption — the one line of prose in it */
+.em-caption { font-size: var(--size-3); color: var(--ink); line-height: var(--leading-snug); }
+
+/* ============================================================================
+   PAGING PRIMITIVE  ·  one prev/next idiom for image paging
+   ========================================================================== */
+.pg { display: flex; align-items: center; font-family: var(--font-meta); margin-top: var(--space-2); }
+.pg__count { flex: 1; text-align: center; font-size: var(--size-1); letter-spacing: 0.06em; color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+/* `min-width`/`min-height: 44px` meet the WCAG 2.5.5 (AAA) target size on
+   every pager. `inline-flex` + centering keeps the ←/→ glyph visually tight
+   while the hit area grows. */
+.pg__step { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 44px; min-height: 44px; font-family: var(--font-meta); font-size: var(--size-2); line-height: 1; padding: 0.15em 0.5em; text-decoration: none; color: var(--ink-muted); background: transparent; border: 0; cursor: pointer; transition: color var(--dur) var(--ease); }
+button.pg__step:hover, a.pg__step:hover { color: var(--accent-strong); }
+/* `pointer-events: none` makes a disabled boundary end truly inert for BOTH
+   the JS and zero-JS paths — the record viewer's pager keeps both arrows as
+   real `<a>` elements and toggles `aria-disabled` reactively from `$plate`
+   (media.rs `render_rv_pager`), so the end must be un-clickable by CSS, not by
+   swapping in an inert `<span>`. */
+.pg__step[aria-disabled="true"] { color: var(--rule-strong); cursor: default; pointer-events: none; }
+/* The `pages` reader's pager row (`.pg--reader`, book-page design-doc
+   §4.3): three tracks between hairlines — the back step pinned left, the
+   centre, the forward step pinned right — so nothing in the row wraps. Steps
+   carry their word and, when short, the target's name; the inert end keeps
+   its word so the row never changes width. Every other `.pg` is untouched.
+   `position: relative` anchors the page picker's panel (record.css) to the
+   row. */
+.pg--reader { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); column-gap: var(--space-3); margin-top: var(--space-4); border-block: 1px solid var(--rule); }
+.pg--reader > :first-child { justify-self: start; }
+.pg--reader > :last-child { justify-self: end; }
+.pg--reader .pg__step { gap: 0.4em; white-space: nowrap; padding: 0 var(--space-3); color: var(--ink); }
+.pg--reader a.pg__step:hover { color: var(--accent-strong); background: var(--hover-fill); }
+.pg--reader .pg__step[aria-disabled="true"] { color: var(--rule-strong); }
+.pg--reader .pg__name { color: var(--ink-faint); }
+.pg--reader a.pg__step:hover .pg__name { color: inherit; }
+
+/* ============================================================================
+   THE MEDIA COLUMN  — the strip and captions the record viewer embeds
+   (most of these selectors keep their `em-` prefix from the retired plate
+   column; every one of them is emitted by the record viewer's own renderers)
+   ========================================================================== */
+.em-strip { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+/* `display: inline-block` is REQUIRED here and is not just a stylistic
+   choice — `.em-thumb` renders on an `<a href>` (the no-JS anchor
+   contract; the reference JSX used a `<button>`, which is
+   `inline-block` by default in the UA stylesheet). A bare `<a>` is
+   `display: inline`, and `width`/`height` are no-ops on non-replaced
+   inline elements — without this line the thumb box never gets its
+   3.25rem × 3.9rem size at all: the anchor collapses toward 0 width
+   while its `<img>` (itself `width:100%; height:100%`, percentages
+   that can't resolve against a collapsed/auto-width inline ancestor)
+   falls back to rendering near its own fetched pixel size instead of
+   the intended small uniform box — the "huge thumbnails, empty-looking
+   cell" bug. Cross-reference: `.em-strip-toggle` (below) is also an
+   `<a>` and needed the same fix, already had it (`display: flex`). */
+/* `padding: 2px` insets the `<img>` from the border box so the current thumb's
+   `inset` highlight ring (`[aria-current]` below) is not overlaid — and chopped
+   — by the image itself. Uniform on every thumb (not current-only) so selecting
+   a thumb never nudges its image. The matte gap shows `--surface-sunken`. */
+.em-thumb { display: inline-block; flex: 0 0 auto; width: 3.25rem; height: 3.9rem; padding: 2px; background: var(--surface-sunken); border: var(--rule-weight) solid var(--rule); cursor: pointer; transition: border-color var(--dur) var(--ease); }
+.em-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.em-thumb:hover { border-color: var(--ink-faint); }
+.em-thumb[aria-current="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink), 0 0 0 2px var(--accent-tint); }
+.em-thumb[data-restricted="true"] { border-style: dashed; }
+
+.em-col__meta { display: flex; flex-direction: column; gap: var(--space-2); }
+/* The `hidden` attribute (zero-JS static + DataStar reactive) is the §3.1
+   per-image toggle for the record viewer's caption, bar-legal, and thumb-strip
+   blocks (plan step 8). A class that sets an explicit `display` (flex/block)
+   OVERRIDES the UA stylesheet's `[hidden] { display: none }`, silently defeating
+   the toggle — so EVERY per-image block renders at once, overflowing the bounded
+   sticky column and collapsing the viewer. These `[hidden]` rules (class+attr
+   specificity beats the class rule) restore the intended hide. Any future
+   `hidden`-toggled element that also carries an explicit `display` needs the
+   same guard. */
+.em-col__meta[hidden], .em-strip[hidden] { display: none; }
+/* `.rv__legal-plate` is the DELIBERATE EXCEPTION to the rule above: it hides
+   with `visibility: hidden`, NOT `display: none`. Its box must stay in flow,
+   because every plate of a sequence is stacked into ONE grid cell of
+   `.rv__legal` (see that rule, §3) and the cell sizes to its TALLEST occupant
+   — that stacking is what reserves a constant banner height, so the canvas
+   does not resize while paging. `visibility: hidden` removes the plate
+   visually and from the accessibility tree exactly as `display: none` does,
+   but keeps the box.
+   ⚠️ "Fixing" this back to `display: none` for consistency with its
+   neighbours silently reintroduces the canvas-resize bug: the banner would
+   again be sized by the SELECTED plate alone, so paging to an image with an
+   ACCESS line (or a licence that wraps to one more line) grows the banner and
+   shrinks the picture. NO automated test can see this — insta snapshots
+   assert markup strings and never lay out CSS. This comment is the guard. */
+.rv__legal-plate[hidden] { visibility: hidden; }
+.em-col__strip { padding-top: var(--space-2); border-top: var(--rule-weight) solid var(--rule); }
+.em-strip-toggle { display: flex; align-items: center; min-height: 24px; gap: var(--space-2); font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: 0.04em; color: var(--ink-faint); background: transparent; border: 0; padding: 0; cursor: pointer; transition: color var(--dur) var(--ease); text-decoration: none; }
+.em-strip-toggle:hover { color: var(--accent-strong); }
+.em-strip-toggle__mark { display: inline-block; width: 1em; text-align: center; transition: transform var(--dur) var(--ease); }
+.em-strip-toggle[aria-expanded="false"] .em-strip-toggle__mark { transform: rotate(-90deg); }
+
+/* ============================================================================
+   THE RECORD VIEWER  (record-viewer plan, §5 of the embedded-media study)
+
+   Ported from docs/design/embedded-media/record-viewer/zoom.css (CPE Design
+   System project fd2d2cb0-47d0-4115-a178-f57a06f743a4) — record-viewer plan
+   step 1. Folded into this file rather than a revived zoom.css, per the
+   Phase 3.7/3.8 precedent of one CSS layer per concern living in the shared
+   6-file `document_head` load order (see CLAUDE.md / record-viewer plan §1
+   "Decided in-plan"). `.rf`/`.rf__*`, `.pgroup`, `.rv-*`, `.vctl`, `.adj*`,
+   `.ico` are ALL introduced fresh here — none pre-existed in CPE's CSS.
+
+   The viewer is not a place you go; it is what the media column IS. Deep zoom
+   sits side by side with the properties and the resource contents, in the
+   record. Never make the plate a LINK to a separate viewer, and never DETACH
+   the image's rights into the host's properties flow.
+
+   Three consequences, and they are the whole design:
+     1. The COLUMN is a PEER, not a companion. A 24rem column is a plate; a
+        viewer needs the larger share of the grid. `.record--viewer` re-weights
+        the record for that.
+     2. CONTAINMENT carries the legal record. An embedded image is its own
+        Resource (`dsp-incubator cpe/docs/adr/0008-images-are-embedded-only-resources.md`), so a record shows TWO legal records at once: the
+        host's and the picture's. Proximity cannot tell them apart — fields in
+        the properties column read as the HOST's whatever their header says. So
+        the picture's legal record rides ON THE PICTURE'S OWN BED: author ·
+        copyright · licence in a banner (`.rv__banner`, owner checkpoint round
+        C — originally a bottom band beside the controls, moved to a top ROW
+        after hands-on review), inside the frame, on the SAME bed as the canvas
+        below it — no hairline, no border, no visual seam of any kind (round C
+        also removed the hairline that used to separate the canvas from the
+        bar). The host's own rights stay UNFRAMED in the properties flow
+        (`.pgroup`). Never render them alike.
+     2b. RANK, not repetition. The band carries what is legally load-bearing and
+        nothing else. Everything descriptive or technical — description,
+        identifier, dimensions, IIIF source, the restricted explanation — is a
+        second order of information and lives in the DETAILS drawer, opened on
+        demand exactly like Adjust. No field appears in both.
+     3. There is no ENTRY, EXIT or PERMALINK to design. Nothing is entered, so
+        nothing must be dismissed, and the record's own URL is already the
+        address — no route, no fragment swap, so `dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md` has nothing to say
+        here. The one remaining need is more room: `maximize`, a width change
+        within the page, not a modal.
+
+   Zero-JS: when the stored URI IS IIIF-shaped, `<image-viewer>` mounts and
+   its zero-JS / pre-upgrade view is the crate's OWN light-DOM fallback `<img>`
+   inside the host element (`.rv image-viewer > img`; on an annotated reader
+   page, the `.anno-fit` box holding that `<img>` and the overlay — see the
+   ANNOTATIONS block at the end); once JS loads, the same
+   host upgrades in place to the crate's mounted canvas. When the URI is NOT
+   IIIF-shaped, no `<image-viewer>` mounts — `render_viewer_canvas`'s `None`
+   arm emits a plain `.rv__stand` `<img>` instead, which never upgrades. And
+   when there is no safe representation at all, the earlier `image_repr`
+   guard emits `.rv__stand` wrapping the `.absent` mark (E4) rather than any
+   `<img>`. In every case there is no separate plate stage to upgrade in
+   place; the viewer IS the column.
+
+   ICONOGRAPHY — the second ratified icon decision (six glyphs, on a hairline
+   16×16 / 1.1 grid), scoped to viewer chrome only. Semantic roles only —
+   no new tokens, no new colours.
+   ========================================================================== */
+
+/* ---- ONE floor for quiet text on the dark bed --------------------------- */
+/* The bed is a fixed near-black, so the semantic ink ramp (tuned for the page
+   surface) cannot be used on it directly and the chrome states white-alpha
+   instead. Every such value MUST come from these two, never from a literal:
+   hand-rolled alphas are independent guesses and drift below the ramp's own
+   floor. Measured on the rail bed rgb(22,19,16): faint 7.5:1, muted 9.9:1 —
+   at or above --ink-faint's 7.7:1, so the dark chrome is never quieter than
+   the quietest legitimate ink in the system. AAA at 12.5px throughout. */
+.rv, .rv-unit { --on-bed: oklch(1 0 0 / 0.9); --on-bed-muted: oklch(1 0 0 / 0.72); --on-bed-faint: oklch(1 0 0 / 0.62); }
+
+/* ---- the ratified icon: one rule, one grid ------------------------------ */
+.ico { display: block; width: 1em; height: 1em; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+.ico--lg { width: 1.15em; height: 1.15em; }
+
+/* ============================================================================
+   1 · THE RECORD GRID, RE-WEIGHTED
+   The retired plate grid gave its column minmax(18rem, 24rem) — correct for a
+   plate beside the properties. A viewer inverts the emphasis: it takes the
+   larger share and the full viewport height, while the properties keep a real
+   reading measure (~30rem at desk widths) and scroll beside it.
+   ========================================================================== */
+/* `.page` neutralizer (LAYOUT CONTRACT, grid.css) — like `.compound-viewer.page`
+   / `.browse.page` / `.editorial.page`, `.record--viewer` opts OUT of `.page`'s
+   unconditional 12-col grid below the desk breakpoint: a single stacked block
+   flow, so `.record__head`, `.record__body` and `.rv-col` are plain full-width
+   block children in document order. WITHOUT this, `.record--viewer` still
+   inherits `.page`'s `display:grid`, and `.rv-col` — itself ALSO a `.page`
+   element (see the comment on `.rv-col.page` below) — inherits `.page`'s own
+   `margin: 0 auto` from shell.css. A grid item with an `auto` inline margin
+   loses default `stretch` sizing and shrink-wraps its content instead
+   (CSS Grid §11.2); `.rv-col`'s content (a flex column) shrink-wraps to
+   roughly its narrowest child, then the auto margins CENTER that narrow box
+   inside the grid area — exactly the owner-reported "too much padding /
+   very narrow / right-shifted" bug. The `≥1180px` rule below re-opts into a
+   real grid; `.record--viewer > .rv-col`'s own `width: 100%` there is what
+   masks this same auto-margin quirk at desk widths (it was never a `.page`
+   grid ITEM at those widths in the first place — `grid-column: 2` places it
+   explicitly — but `width: 100%` is duplicate insurance, see that rule's own
+   comment). Below 1180px there is no such override, so `display: block` is
+   the only fix: it removes `.record--viewer` from being a grid CONTAINER at
+   all, so `.rv-col`'s grid-item auto-margin behavior never triggers — as a
+   plain block box, `width: auto` already computes to the full containing-block
+   width regardless of content, and `margin: 0 auto` has nothing to center. */
+.record--viewer { display: block; }
+@media (min-width: 1180px) {
+  /* 1.7fr: anything less lands within a pixel of the retired plate column's
+     384px cap (`.record--media`, deleted with the plate renderer) at the low
+     end of desk widths. The reading column keeps a real measure (~30rem at
+     1280px); the viewer must be visibly a PEER. */
+  .record--viewer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); column-gap: var(--space-8); align-items: start; }
+  .record--viewer .record__head { grid-column: 1; grid-row: 1; }
+  .record--viewer .record__body { grid-column: 1; grid-row: 2; display: block; }
+  .record--viewer .props { max-width: none; }
+  /* the viewer column spans both rows, so it begins level with the eyebrow —
+     the plate column's own finding, kept.
+     STICKY: the properties scroll beside a picture that stays put, which is the
+     point of side-by-side when you are checking a transcription against a
+     manuscript. This is only safe because the frame's contents are BOUNDED —
+     the bar is ~2 lines and everything long lives in a drawer that scrolls
+     legitimately. Never pin this column while anything unbounded (a full field
+     list, a complete legal record) sits inside the frame: the pin caps the
+     frame, which caps its contents, which turns the legal record into a scroll
+     window. Bound the content first; pin second.
+     `top: var(--header-clear)` — NOT the design snapshot's `var(--space-6)`
+     (2rem). `.shell__header` is itself `position: sticky; top: 0` and 65px
+     tall, so a smaller offset sticks the column under the translucent
+     header. Every sticky record-page column (`.cv-toc__contents`, the
+     reader) reads the same token. Don't reintroduce `var(--space-6)`. */
+  /* `width: 100%` is REQUIRED, not redundant with `justify-items: normal`
+     (stretch) on `.record--viewer` — `.rv-col` is `display: flex;
+     flex-direction: column` with no in-flow content that has an intrinsic
+     width (the canvas's `<image-viewer>`/`.rv__stand` are BOTH
+     `position: absolute; inset: 0`, per §3 below, so they contribute
+     nothing to the flex container's own preferred width). A flex
+     container's own outer size, even as a grid item under a `stretch`
+     alignment, falls back to a shrink-to-fit/max-content measurement of
+     its children when nothing forces it wider — here that shrinks to
+     roughly the `.em-head` label's text width, collapsing the whole
+     column (and the `<image-viewer>`'s absolutely-positioned canvas
+     inside it) to a hairline. Don't remove this rule as "redundant"
+     without re-verifying in a real rendered browser (this bug passed the
+     full snapshot/unit-test suite — markup-only assertions can't catch a
+     collapsed box). */
+  /* Owner override (Round A checkpoint feedback, 2026-08-27): the sticky
+     column now gets a REAL `height`, not just `max-height` — a flex item's
+     `flex: 1 1 auto` child (`.rv-unit`, next rule) has nothing to distribute
+     against a `max-height`-only ancestor (max-height caps growth but supplies
+     no definite size to flex from), so the canvas below it fell straight to
+     its 12rem floor. `height` and `max-height` are the SAME calc(): it is
+     still the viewport-relative bound the sticky-travel math (R5) depends on,
+     it now also actively SIZES the column instead of merely capping it.
+     Round C: every bound grows by one extra `3.5rem` (`.rv`'s own `--bar-h` —
+     duplicated as a literal here since a descendant's custom property isn't
+     visible on this ancestor) to reserve the new banner row's own budget. Skip
+     this and the banner steals its height straight out of the canvas's 12rem
+     floor, since `.rv`'s own `height: auto` inside this fixed-height flex
+     column takes exactly what's left over — not what its grid rows want —
+     and `.rv-unit`'s `overflow: hidden` silently clips whatever doesn't fit.
+     Found on hands-on pixel inspection: no test catches a flex/grid budget
+     shortfall like this, only rendering it. */
+  .record--viewer > .rv-col { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; max-width: none;
+    width: 100%; position: sticky; top: var(--header-clear);
+    height: clamp(calc(22rem + 3.5rem), calc(68vh + 3.5rem), calc(52rem + 3.5rem));
+    max-height: clamp(calc(22rem + 3.5rem), calc(68vh + 3.5rem), calc(52rem + 3.5rem)); }
+  /* the frame flexes inside the bounded column; the canvas row is what gives */
+  .record--viewer > .rv-col > .rv-unit { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  /* Owner override: the design's `max-height: 34rem` canvas cap (deep-zoom-
+     state.md §1 / zoom.css) is DELIBERATELY LIFTED here — the owner wants the
+     canvas to grow with the sticky column, not cap at a fixed reading-
+     friendly height. `.rv-col`'s own `height` above is the real ceiling — a
+     bounded `clamp(22rem, 68vh, 52rem)` (Round B), not an unbounded viewport
+     fill — so this is safe: `.rv` grows to fill whatever the sticky column
+     actually has (up to that cap), instead of stopping 34rem short of it and
+     leaving the near-black bed's remainder empty. See checkpoint-feedback.md
+     Round A item 2 / Round B and PROJECT_PLAN.md/implementation-plan.md §1
+     "Decided in-plan". */
+  .record--viewer > .rv-col > .rv-unit > .rv { flex: 1 1 auto; min-height: 0; height: auto; }
+  /* the contact sheet yields after the canvas, and only down to two rows */
+  .record--viewer > .rv-col > .em-col__strip { flex: 0 1 auto; min-height: 0; }
+  /* MORE ROOM: the properties step aside and the viewer takes the measure.
+     A width change within the page — no overlay, no scrim, no route.
+     WIDER state is a CSS *class* (`.is-wide`), toggled by DataStar `data-class`
+     — NOT a reactive `data-expand` attribute. Writing a `data-*` attribute
+     reactively collides with DataStar's own `data-*` MutationObserver and
+     silently derails the whole binding pass (the bug that killed the step-6
+     drawers; see `media.rs` `render_media_viewer` and the record-viewer
+     issues journal). The head + body are also made genuinely `inert` +
+     `aria-hidden` in the markup (AC9), not merely `display:none`'d here. */
+  .record--viewer.is-wide { grid-template-columns: minmax(0, 1fr); }
+  .record--viewer.is-wide > .record__head, .record--viewer.is-wide > .record__body { display: none; }
+  .record--viewer.is-wide > .rv-col { grid-column: 1; grid-row: 1; }
+  /* WIDER is about SEEING MORE, so it grows the column vertically as well as
+     horizontally — otherwise the wider canvas just gets letterboxed and you
+     gain little (owner feedback, step-7 checkpoint). The default height is
+     capped at `clamp(22rem, 68vh, 52rem)` so the sticky column leaves room for
+     the properties beside it and keeps real sticky-travel (R5); expanded, the
+     head + body are `display:none` so there is nothing beside it and almost no
+     travel to preserve — the viewer can take nearly the whole viewport. Both
+     `height` and `max-height` are lifted together (the flex-item-needs-real-
+     `height` reason from the base `.rv-col` rule still applies). */
+  .record--viewer.is-wide > .rv-col { height: clamp(28rem, 88vh, 72rem); max-height: clamp(28rem, 88vh, 72rem); }
+
+  /* THE TALL FRAME. `data-frame="tall"` is on the article when every linked
+     image is at least three times as high as wide (media.rs `frame_is_tall`;
+     a border strip). Such an image is bound by height, so the column is
+     narrow and as tall as the window allows. The text beside it is already
+     held to the reading measure by grid.css's viewer-body rule.
+     Both rules carry `:not(.is-wide)`: they out-rank the WIDER rules above,
+     and without it a tall record in WIDER mode would keep the narrow column
+     while its head and body are hidden.
+     The height keeps the base rule's floor: below it the frame's rows no
+     longer fit and `.rv-unit` cuts the control bar off. */
+  .record--viewer[data-frame="tall"]:not(.is-wide) { grid-template-columns: minmax(0, 1fr) clamp(19rem, 22vw, 26rem); }
+  .record--viewer[data-frame="tall"]:not(.is-wide) > .rv-col {
+    height: max(calc(22rem + 3.5rem), calc(100svh - var(--header-clear) - var(--space-6)));
+    max-height: 64rem;
+  }
+}
+/* ratio is a flat 1:1.4 at all desk widths (owner: "always 1.4") — no ≥1440
+   bump. The tall frame above is the one exception. */
+
+/* WIDER is a layout-only affordance: every `.is-wide` visual effect above
+   lives inside `@media (min-width: 1180px)` — below that breakpoint
+   `.record--viewer` stays plain `display: block` (see the rule above) and
+   toggling `.is-wide` has NO visual effect at all. But the WIDER chip's
+   click handler still sets `$expand`, which drives `record_detail.rs`'s
+   `hidden_when_wide` unconditionally — it makes `.record__head`/
+   `.record__body` genuinely `inert`/`aria-hidden` regardless of viewport.
+   So on a narrow viewport the chip would silently disable the whole
+   head/properties region (dead to interaction and screen readers) with
+   zero visual feedback that anything happened. Hide the chip itself below
+   the breakpoint so it can never be activated where it only has a
+   destructive accessibility side-effect. */
+@media (max-width: 1179.98px) {
+  .vctl--wider { display: none; }
+}
+
+/* the column: the media unit's own stack. Because it is sticky at desk widths
+   it must fit ONE viewport, so it is bounded here and the frame flexes inside
+   it. Order of yielding is the design: the canvas gives up height first, the
+   strip second, and the BAR never — the legal record is not negotiable. */
+/* `align-items: stretch` is REQUIRED, not the flex default it looks like —
+   `.rv-col` also carries the shared `.page` class (LAYOUT CONTRACT), and
+   `.page`'s OWN rule (grid.css) sets `align-items: start` for its 12-col
+   grid purpose. `.rv-col`'s rule never named `align-items` at all, so that
+   `start` value (the only declaration for this property on this element)
+   wins by cascade and cross-axis-shrinks EVERY child (`.em-head`,
+   `.rv-unit`, `.em-col__meta`) to its own content width instead of
+   stretching to the column's full width — collapsing `.rv-unit`'s near-
+   black bed to a hairline exactly like the sibling `width: 100%` fix two
+   rules up. Explicit `stretch` here restores the real flex default and
+   neutralizes the inherited `.page` value. */
+.rv-col { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-4); }
+/* `.page` neutralizer — `#record-figure` carries `.page` per the LAYOUT
+   CONTRACT (grid.css), but `.rv-col` is a grid CHILD of `.record--viewer`
+   (a peer column beside the properties, not a standalone top-level page
+   section), so `.page`'s OWN centering box must not apply here.
+   `display`/`max-width`/`align-items` are already neutralized above and by
+   the `≥1180px` rule's `max-width: none`, but `.page`'s
+   `padding: … var(--gutter) …` was NEVER overridden — it landed on
+   `.rv-col` on top of the record's OWN outer `.page` padding, adding a
+   second `--gutter` of inset on the column's right edge (and, harmlessly,
+   its left). That's the owner-reported right-edge misalignment (checkpoint-
+   feedback.md Round A item 1): the viewer's content sat one gutter short of
+   the header nav / left column's shared right edge. Zeroing it here is
+   unconditional (not scoped to the ≥1180px split) so the stacked (<1180px)
+   layout doesn't pick up a double gutter either — it is already nested
+   inside `article.record.page`'s own padding there. */
+.rv-col.page { padding: 0; }
+.rv-col > .em-head, .rv-col > .pg, .rv-col > .em-col__strip { flex: 0 0 auto; }
+/* the count row keeps the plate column's measure even when the viewer is wide:
+   prev/next 700px apart is not a pager, it is two lonely arrows. */
+.rv-col > .pg { width: 100%; max-width: 26rem; align-self: center; }
+.rv-col .em-head { margin-bottom: 0; }
+.rv-col > .rv-unit { flex: 0 0 auto; }
+/* below the split the record stacks and the column is static, so a taller
+   canvas costs nothing */
+@media (max-width: 1179px) { .rv-col { margin-top: var(--space-7); } }
+.rv-col .em-col__strip { max-height: 8.5rem; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--rule-strong) transparent; }
+
+/* ============================================================================
+   2 · THE IMAGE'S OWN FRAME
+   An embedded image is its OWN Resource (`dsp-incubator cpe/docs/adr/0008-images-are-embedded-only-resources.md`), so the host record has
+   attribution of its own — a transcription's rights holder, an edition's
+   licence — and the two must never be confused. CONTAINMENT carries that:
+   the picture and its legal record are ONE bordered unit, and anything outside
+   this border belongs to the HOST record.
+   ========================================================================== */
+.rv-unit { display: block; overflow: hidden; container-type: inline-size; container-name: rv-unit; border: var(--rule-weight) solid var(--rule-strong); border-radius: var(--radius-card, 0); background: oklch(0.145 0.01 var(--neutral-hue)); }
+.rv-unit[data-restricted="true"] { border-color: var(--ink-faint); }
+/* In a multi-image sequence the frame's restricted tint tracks JS paging via a
+   reactive `.is-restricted` class (keyed on a per-image flag array indexed by
+   `$plate`, media.rs) — a class, never a reactive `data-restricted` write
+   (that would hit DataStar's `data-*` collision). The static `data-restricted`
+   above still carries the SELECTED image's state for the zero-JS/initial paint. */
+.rv-unit.is-restricted { border-color: var(--ink-faint); }
+
+/* ============================================================================
+   3 · THE VIEWER — the crate's canvas, inside the image's frame
+   Same near-black bed, grown up from the retired plate's stage (`.em-stage`,
+   deleted with the plate renderer): a banner row, a canvas row, and a bar
+   row, all on the same bed. Owner checkpoint round C added the banner row
+   and removed every
+   hairline INSIDE the frame — the three rows now read as one continuous black
+   bed, with only the frame's own outer border (`.rv-unit`) as a boundary.
+
+   NOTHING PERSISTENT IS EVER SET OVER THE PICTURE. Not the attribution, not the
+   controls. Over a Tenniel engraving or a manuscript scan — mostly white paper
+   — a dark wash composites to ~3.5:1, and a chip parked in a corner covers the
+   very detail a visitor zoomed in to read. The banner and the bar are the
+   answer: legal record above, controls below — both ROWS on the bed, never an
+   overlay on the canvas. Both rows share a reserved min-height (`--bar-h`),
+   but that is only a FLOOR: the picture stays the same size while paging
+   because the banner's `.rv__legal` stacks every pre-rendered plate into one
+   grid cell, so the row reserves the tallest plate's height (see `.rv__legal`
+   below). The unit owns the frame's outer
+   border, so none of the three inner rows carries one of its own.
+   ========================================================================== */
+/* The canvas row carries its own FLOOR (12rem), not `.rv` — in the sticky case
+   the frame is a flex item with `min-height: 0` so it can yield, and a floor on
+   the frame would be overridden while a floor on the row survives. Without it
+   the banner/bar (which never shrink) eat the whole frame and the canvas
+   collapses to zero. Order of yielding: canvas first, down to 12rem; then the
+   strip; the banner/bar never. */
+/* `height` grows by one `--bar-h` over the pre-round-C two-row budget
+   (min(62vh, 34rem) was tuned for canvas + bar only) — the new banner row
+   reserves the SAME min-height as the bar, so its space must be added on
+   top, not carved out of the canvas floor. Without this the banner's
+   min-height pushed total row content (banner + canvas floor + bar) past
+   the fixed container height, and `.rv-unit`'s `overflow: hidden` silently
+   clipped the bottom of the bar — caught on hands-on pixel inspection,
+   round C. */
+.rv { --bar-h: 3.5rem; display: grid; grid-template-rows: auto minmax(12rem, 1fr) auto; grid-template-columns: minmax(0, 1fr); height: calc(min(62vh, 34rem) + var(--bar-h)); background: oklch(0.145 0.01 var(--neutral-hue)); }
+/* the canvas row — the crate's territory. Only the drawers, summoned by the
+   visitor and dismissible, are ever laid over it. */
+.rv__canvas { position: relative; overflow: hidden; min-height: 0; container-type: inline-size; }
+.rv image-viewer, .rv .rv__stand { position: absolute; inset: 0; display: block; }
+/* The host follows its canvas row, which can be as short as its 12rem floor.
+   The crate's shadow `:host` sets `min-height: 240px`; left in force, the
+   host outgrows a shorter canvas and the canvas's `overflow: hidden` clips
+   the bottom of the fitted image. */
+.rv image-viewer { min-height: 0; }
+/* The crate's `<image-viewer>` host is sized above, but its own light-DOM
+   `.fallback()` `<img>` (rendered inside the host before the crate's
+   shadow-DOM `::slotted(img)` style takes effect, or permanently with JS
+   off) is not — the host's sizing does not cascade to a slotted child. On an
+   annotated reader page the `<img>` sits inside `.anno-fit` instead, which
+   takes the image's own ratio and sizes it (the ANNOTATIONS block at the end). */
+.rv image-viewer > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* Suppress the crate's built-in over-zoom badge (its `overzoom` shadow part):
+   CPE renders its own scale readout (`.rv__scale`, with a `· native` marker) in
+   the bar, so the badge is redundant chrome over the picture. */
+.rv image-viewer::part(overzoom) { display: none; }
+/* `.rv__stand` covers the SEPARATE non-`<image-viewer>` branches — both
+   `render_viewer_canvas`'s `None` arm (the stored URI isn't IIIF-shaped, so
+   the box holds a plain `<img>`) and its earlier `image_repr` guard (no safe
+   representation at all, so the box holds the `.absent` mark instead). It
+   never applies to a mounted `<image-viewer>`'s own
+   fallback img (that's the `.rv image-viewer > img` rule above, or
+   `.anno-fit > img` on an annotated reader page). Fills and
+   contains exactly as the plate does, so a small derivative is still scaled
+   up to the canvas: the crate fits the image to the viewport too. */
+.rv__stand { display: grid; place-items: center; padding: var(--space-5); overflow: hidden; }
+.rv__stand img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px oklch(0 0 0 / 0.5)) drop-shadow(0 14px 34px oklch(0 0 0 / 0.55)); transform-origin: center; transition: transform var(--dur) var(--ease); }
+
+/* ---- THE BANNER: the picture's legal record, on the bed, at the top ---- */
+/* Owner checkpoint round C: moved here from the bar (a bottom band beside the
+   controls) after hands-on review — the owner wanted it as its own top ROW,
+   never floating over the canvas. Same bed as the rest of `.rv` (no
+   background of its own — the grid container paints it through) and NO
+   border of any kind: the banner must sit seamlessly against the canvas
+   below it, so the frame's interior reads as one continuous black bed (fix 3
+   of round C). `min-height: var(--bar-h)` (shared with the bar) is only a
+   FLOOR — it does not keep the banner stable across paging, because the
+   banner's content varies per image (an ACCESS line on restricted plates, a
+   licence run that wraps differently per string and language). Height
+   stability comes from `.rv__legal` stacking all pre-rendered plates into one
+   grid cell, which reserves the tallest plate's height. */
+.rv__banner { display: flex; align-items: center; flex-wrap: wrap; min-height: var(--bar-h); padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4); }
+
+/* ---- THE BAR: the controls, on the bed --------------------------------- */
+/* One row, one job: what acts on the picture. On the bed, never on the
+   picture. Round C removed the hairline that used to sit here (`border-top`)
+   — the canvas and the bar are now the same continuous bed with no seam. */
+.rv__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4) var(--space-5); flex-wrap: wrap; min-height: var(--bar-h); padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4); }
+
+/* the legal record — the plate's own convention, extended: the access state one
+   line above the run, set apart by rank. The run now carries the FULL legally
+   load-bearing set (author · copyright · licence), because this is the only
+   place they are stated. Lives in `.rv__banner` now (round C), not `.rv__bar`. */
+/* A ONE-CELL GRID, not a column flex — and that is the whole canvas-resize
+   fix. Every plate of the sequence is pre-rendered up front and toggled
+   client-side by one `$plate` signal (§3.1: no measurement, no fragment
+   endpoint for this surface), so the tallest legal block of a resource is
+   knowable ONLY to CSS, at layout time. Pinning every `.rv__legal-plate` into
+   the same cell (`grid-area: 1 / 1`) makes the cell size to the tallest one,
+   so the banner reserves a height that is constant for every plate and the
+   picture keeps exactly the same size while paging. Hidden plates therefore
+   stay in flow (`visibility: hidden`, see the `[hidden]` guard in §1) — with
+   `display: none` the cell would reserve nothing, and with the old flex
+   column the visible plates would stack VERTICALLY. The two rules are one
+   fix: neither works alone.
+   Consequence, intended: on a resource mixing open and restricted images an
+   open plate shows the taller reserved band. That height was previously
+   "extra canvas" that got stolen back on the next plate. */
+.rv__legal { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; min-width: 0; flex: 1 1 18rem; font-family: var(--font-meta); font-size: var(--size-1); line-height: var(--leading-snug); letter-spacing: 0.02em; color: var(--on-bed); }
+/* Each image's legal record is its own stacked block (access line above the
+   run) — one per image in a sequence, toggled by `$plate` (§3.1, plan step 8);
+   the others carry `hidden`. All of them share the single grid cell above. */
+.rv__legal-plate { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: flex-start; row-gap: 0.3em; min-width: 0; }
+/* the run wraps rather than truncates: a licence is never abbreviated away */
+.rv__legal .em-legal__run { color: var(--on-bed); text-wrap: pretty; }
+/* the separator is a glyph, not decoration: it keeps the ramp's floor too */
+.rv__legal .em-legal__dot { color: var(--on-bed-faint); }
+
+/* ============================================================================
+   4 · THE DETAILS DRAWER — the second order of information
+   Description, identifier, dimensions, IIIF source and the restricted-access
+   explanation. Legally the band already says what binds a reader; these are the
+   citable and descriptive facts, wanted occasionally and by fewer people. They
+   open on demand from the bar, in the same drawer slot as Adjust — one place
+   where panels appear, so the viewer has one habit, not two.
+   Never duplicate a band field here: rank is the whole point.
+   ========================================================================== */
+.rv-details .rf__row { border-top-color: oklch(1 0 0 / 0.16); }
+.rv-details .rf dt { color: var(--on-bed-faint); }
+.rv-details .rf dd { color: var(--on-bed); font-size: var(--size-2); }
+.rv-details .rf dd.rf__mono { color: var(--on-bed-muted); }
+.rv-details .rf__row--access { border-left-color: var(--accent); }
+.rv-details .rf__note { color: var(--on-bed-faint); }
+
+/* ---- the control chip -------------------------------------------------- */
+/* Chrome lives ON THE DARK, because it acts on the picture. The properties
+   beside it stay untouched paper — that division is what keeps a permanently
+   present viewer from turning the record into an application. */
+.vctl { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-width: 2rem; min-height: 2rem; padding: 0.35em 0.55em; font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; line-height: 1; color: var(--ink-muted); background: transparent; border: var(--rule-weight) solid var(--rule); border-radius: var(--radius-2); cursor: pointer; text-decoration: none; transition: color var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.vctl:hover { color: var(--ink); background: var(--hover-fill); border-color: var(--ink-faint); }
+.vctl[aria-pressed="true"] { color: var(--surface); background: var(--ink); border-color: var(--ink); }
+/* Forced colours drop the fill, the only pressed cue. */
+@media (forced-colors: active) { .vctl[aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: 1px; } }
+.vctl[aria-disabled="true"], .vctl:disabled { color: var(--rule-strong); background: transparent; border-color: var(--rule); cursor: default; pointer-events: none; }
+/* `display` above defeats the UA `[hidden]` rule; a JS-revealed `.vctl`
+   (the annotation register's toggle) needs this to stay hidden without JS. */
+.vctl[hidden] { display: none; }
+.vgroup { display: inline-flex; border: var(--rule-weight) solid var(--rule); border-radius: var(--radius-2); }
+.vgroup .vctl { border: 0; border-left: var(--rule-weight) solid var(--rule); border-radius: 0; }
+.vgroup .vctl:first-child { border-left: 0; }
+
+/* The controls live in the BAR, never over the picture — see §3. On the bed
+   they need no backing plate of their own: the bed is the backing plate, and
+   the chips can go back to the plate's own hairline white-alpha idiom. */
+.rv__ctrls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); flex: 0 0 auto; margin-left: auto; }
+.rv__ctrls .vctl { color: var(--on-bed); background: transparent; border-color: oklch(1 0 0 / 0.28); }
+.rv__ctrls .vctl:hover { color: oklch(1 0 0 / 1); background: oklch(1 0 0 / 0.1); border-color: oklch(1 0 0 / 0.6); }
+.rv__ctrls .vctl[aria-pressed="true"] { color: oklch(0.145 0.01 var(--neutral-hue)); background: oklch(1 0 0 / 0.92); border-color: transparent; }
+.rv__ctrls .vctl[aria-disabled="true"] { color: oklch(1 0 0 / 0.38); background: transparent; border-color: oklch(1 0 0 / 0.16); pointer-events: none; }
+.rv__ctrls .vgroup { border-color: oklch(1 0 0 / 0.28); }
+.rv__ctrls .vgroup .vctl { border-left-color: oklch(1 0 0 / 0.28); }
+/* the one number the chrome owes the visitor */
+.rv__scale { display: inline-flex; align-items: center; padding: 0.35em 0.6em; font-family: var(--font-meta); font-size: var(--size-1); font-feature-settings: "tnum" 1; letter-spacing: 0.04em; color: var(--on-bed-muted); border: var(--rule-weight) solid oklch(1 0 0 / 0.28); border-radius: var(--radius-2); }
+.rv__limit { color: var(--on-bed-faint); }
+/* AC8's "quiet mono line" for a `viewer-error` event — never a dialog. Hidden
+   via a static `hidden` attribute + a reactive `data-attr` binding, NOT
+   `data-show` (see AC17's `data-show` prohibition — `data-show` only hides
+   reactively client-side, leaving the line visible pre-hydration/with JS off);
+   this rule only sets the shown state's look. */
+.rv__err { font-family: var(--font-meta); font-size: var(--size-1); color: var(--on-bed-faint); }
+
+/* ============================================================================
+   5 · THE DRAWERS — ONE slot, two panels: Adjust and Details
+   Adjust is the crate's Viewer::adjust(true); Details is §4. They share a slot
+   and are mutually exclusive, so the viewer has one habit rather than two, and
+   a summoned panel never has to negotiate with another.
+
+   These are the ONE thing allowed over the canvas, and only because the visitor
+   asked for them and can dismiss them: persistent chrome is in the bar. They
+   cover the canvas row only — the legal band below stays legible throughout,
+   including while adjusting, which is exactly when a manipulated image most
+   needs its attribution beside it.
+   ========================================================================== */
+.rv { --rv-rail: 15.5rem; }
+.rv__rail { position: absolute; top: 0; bottom: 0; right: 0; width: var(--rv-rail); display: flex; flex-direction: column; background: oklch(0.19 0.008 var(--neutral-hue) / 0.94); border-left: var(--rule-weight) solid oklch(1 0 0 / 0.16); transform: translateX(100%); visibility: hidden; transition: transform var(--dur) var(--ease), visibility var(--dur) var(--ease); }
+/* Drawer-open state is a reactive CLASS (`.rail-adjust`/`.rail-details`,
+   DataStar `data-class`), NOT a reactive `data-*` attribute: `data-*` is
+   DataStar's reserved namespace and reactively writing into it derails its
+   binding pass (see media.rs `render_media_viewer`). */
+.rv.rail-adjust .rv__rail--adjust, .rv.rail-details .rv__rail--details { transform: none; visibility: visible; }
+.rv__rail-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: var(--rule-weight) solid oklch(1 0 0 / 0.16); font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--on-bed); }
+/* the sliders own the rail: a floor (a viewport shorter than one row is not a
+   panel), and the note reads inside the body AFTER the controls it explains,
+   where it can scroll instead of eating the rail. The Details drawer scrolls
+   here too — a technical field list may legitimately be longer than the frame,
+   and unlike the legal record it is not a thing the law requires at a glance. */
+.rv__rail-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--space-3) var(--space-4) var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); scrollbar-width: thin; scrollbar-color: oklch(1 0 0 / 0.28) transparent; }
+.rv__rail--adjust .rv__rail-body { min-height: 11rem; }
+.rv__rail--details .rv__rail-body { display: block; }
+.rv__rail-foot { flex: 0 0 auto; padding: var(--space-3) var(--space-4); border-top: var(--rule-weight) solid oklch(1 0 0 / 0.16); }
+.rv__rail-note { margin: var(--space-2) 0 0; font-family: var(--font-meta); font-size: var(--size-1); line-height: var(--leading-snug); color: var(--on-bed-faint); }
+.rv__rail .vctl { color: var(--on-bed-muted); border-color: oklch(1 0 0 / 0.28); }
+.rv__rail .vctl:hover { color: oklch(1 0 0 / 0.96); background: oklch(1 0 0 / 0.08); border-color: oklch(1 0 0 / 0.5); }
+
+/* one slider row: mono label · mono readout sharing a baseline, hairline track
+   below — so seven rows scan as a list of names and numbers, not seven widgets */
+.adj { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0.35em var(--space-3); }
+.adj__lbl { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: 0.06em; text-transform: uppercase; color: var(--on-bed-muted); }
+.adj__val { font-family: var(--font-meta); font-size: var(--size-1); font-feature-settings: "tnum" 1; color: var(--on-bed); }
+/* an untouched value is dimmer than a touched one, but never dim enough to
+   read as disabled — this is the panel's OPENING state, where every readout
+   sits before anything is touched. It drops one step down the ramp, to the
+   floor, and no further. */
+.adj.untouched .adj__val { color: var(--on-bed-faint); }
+.adj__in { grid-column: 1 / -1; -webkit-appearance: none; appearance: none; width: 100%; height: 1.1rem; margin: 0; background: transparent; cursor: pointer; }
+.adj__in::-webkit-slider-runnable-track { height: var(--rule-weight); background: oklch(1 0 0 / 0.3); }
+.adj__in::-moz-range-track { height: var(--rule-weight); background: oklch(1 0 0 / 0.3); }
+.adj__in::-webkit-slider-thumb { -webkit-appearance: none; width: 9px; height: 9px; margin-top: -4px; border-radius: 50%; background: oklch(0.19 0.008 var(--neutral-hue)); border: 1px solid oklch(1 0 0 / 0.7); }
+.adj__in::-moz-range-thumb { width: 9px; height: 9px; border-radius: 50%; background: oklch(0.19 0.008 var(--neutral-hue)); border: 1px solid oklch(1 0 0 / 0.7); }
+.adj__in:hover::-webkit-slider-thumb { background: oklch(1 0 0 / 0.9); border-color: oklch(1 0 0 / 0.9); }
+.adj__in:hover::-moz-range-thumb { background: oklch(1 0 0 / 0.9); border-color: oklch(1 0 0 / 0.9); }
+.adj__in:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* invert is a state, not a quantity — it gets the chip, not a track */
+.adj--flag .vctl { min-height: 2rem; padding: 0.2em 0.5em; }
+
+/* ============================================================================
+   6 · THE HOST RECORD'S OWN RIGHTS — a properties group, deliberately OUTSIDE
+   The host resource has attribution of its own (a transcription's rights
+   holder, an edition's licence). It stays in the properties flow, on the page
+   surface, unframed — the visual opposite of the image's legal band, which sits
+   on the picture's own bed inside the frame. Containment is the distinction.
+   ========================================================================== */
+.pgroup { margin-top: var(--space-7); }
+/* In the book page's Apparat column the group is the column's first block,
+   so the host-rights spacing above would push its cap 48px below the intro
+   beside it (Slice 3 visual review). The column top is the group's top. */
+.record__apparat > .pgroup:first-child { margin-top: 0; }
+.pgroup__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); padding-bottom: var(--space-3); margin-bottom: var(--space-4); border-bottom: var(--rule-weight) solid var(--rule); }
+.pgroup__title { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); font-weight: var(--weight-medium); }
+/* which plate the group describes — the fields follow the viewer, so it must
+   say so; otherwise a paged set silently re-labels itself. */
+.pgroup__of { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+
+/* INCOMING LINKS (Slice 5 / G7) — `section.pgroup.incoming` reuses the cap
+   above verbatim; only the row list and its faint via-marker are new. Rows are
+   divided by the same hairline as `.rf__row`; the marker takes `.pgroup__of`'s
+   meta voice so it reads as secondary to the name. The empty sentence reuses
+   grid.css's `.resource-list__empty`. Works on a viewer record and on a
+   `.record__body--noimg` one alike (both are `display: block` flow there). */
+.incoming__list { list-style: none; margin: 0; padding: 0; }
+.incoming__item { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-4); padding: var(--space-2) 0; border-top: var(--rule-weight) solid var(--rule); }
+.incoming__item:first-child { border-top: 0; padding-top: 0; }
+.incoming__via { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
+/* Step 12 (item 6): the capped-list "Showing N of M" line — same faint meta
+   treatment as `.incoming__via`, rendered after the `ul` rather than inline
+   in a row. */
+.incoming__count { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); margin: var(--space-2) 0 0; }
+.pgroup.incoming > .resource-list__empty { margin: 0; padding-block: 0; }
+
+/* rows in the record's own field idiom: label above value, divided by rule.
+   Not a two-column dl — German labels run ~30% longer and a max-content label
+   column starves the values. */
+.rf { margin: 0; }
+.rf__row { padding: var(--space-3) 0; border-top: var(--rule-weight) solid var(--rule); }
+.rf__row:first-of-type { border-top: 0; padding-top: 0; }
+.rf dt { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); }
+.rf dd { margin: var(--space-2) 0 0; font-size: var(--size-3); color: var(--ink); line-height: var(--leading-snug); }
+.rf dd.rf__mono { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-muted); overflow-wrap: anywhere; }
+/* ACCESS: the only row allowed a second line of prose, because a restriction
+   must explain itself where it applies — once, not on all 55 plates. Marked by
+   an accent edge: a rule, not a warning colour. It is a fact, not an error. */
+.rf__row--access { border-left: 2px solid var(--accent); padding-left: var(--space-4); }
+.rf__note { margin-top: var(--space-2); font-family: var(--font-meta); font-size: var(--size-1); line-height: var(--leading-snug); color: var(--ink-muted); }
+.rf__note--wide { max-width: 46ch; }
+
+/* ---- resource contents, beside the viewer ------------------------------ */
+/* The compound member list stays in the reading column with the properties:
+   it is navigation of the RESOURCE. The thumb strip stays in the viewer
+   column: it is navigation of the PICTURE. Two different questions. */
+.rv-contents { margin-top: var(--space-7); }
+.rv-contents__list { list-style: none; margin: 0; padding: 0; }
+.rv-contents__item { border-top: var(--rule-weight) solid var(--rule); }
+.rv-contents__item:first-child { border-top: 0; }
+.rv-contents__link { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-3) 0; text-decoration: none; color: var(--ink-muted); transition: color var(--dur) var(--ease); }
+.rv-contents__link:hover { color: var(--accent-strong); }
+.rv-contents__no { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); font-feature-settings: "tnum" 1; flex: 0 0 auto; }
+.rv-contents__item[aria-current="true"] .rv-contents__link { color: var(--ink); }
+.rv-contents__item[aria-current="true"] .rv-contents__no { color: var(--accent-strong); }
+
+/* ---- the viewer answers its OWN width, not the viewport --------------- */
+/* The same viewer renders in a 24rem column, a 45rem record column and at
+   expanded width, so the chrome is sized by container query. Narrow: the chips
+   go icon-only (their titles carry the accessible name) so the bar still fits
+   one row beside the legal record, and the drawers narrow. */
+@container (max-width: 40rem) {
+  .rv__ctrls .vctl--icon span { display: none; }
+}
+@container (max-width: 34rem) {
+  .rv__rail { width: 13rem; }
+}
+@container (max-width: 24rem) {
+  .rv__scale { display: none; }
+  .rv__rail { width: 100%; }
+  /* Round C moved the legal record OUT of `.rv__bar` into its own `.rv__banner`
+     row above it — the bar/banner split into two separate grid rows for free
+     (§3.5/§3), so there is no "legal above, controls below" stacking left to do
+     inside the bar at this width; `.rv__bar` only ever holds an optional
+     `.rv__err` line plus `.rv__ctrls`. `.rv__banner` needs no breakpoint of its
+     own here either: it already `flex-wrap`s and its `.rv__legal-plate` is
+     always a column, so the access line and legal run already stack at any
+     width. What DOES still matter at this width: when the bar's content wraps
+     to more than one line, the controls cluster should hug the left edge
+     rather than the default right-alignment (`.rv__ctrls`'s own
+     `justify-content: flex-end`, set for the two-item wide-bar case) —
+     left-aligned wrapped chips read as one coherent left-anchored group
+     instead of a ragged right edge. */
+  .rv__ctrls { justify-content: flex-start; }
+}
+
+/* ---- the intro's two-column body (§4.5, Incunabula Slice 3, decision 8) --
+   `.record__body.record__body--intro` needs `display: grid` + a track
+   template to place `div.record__intro` beside `div.record__apparat`, but
+   `.record__body:not(.record__body--noimg)` in grid.css already sets
+   `display: block` (0,2,0) on a media record's body, and this file's own
+   `.record--viewer .record__body { display: block }` two rules up (≥1180px)
+   would fight it too. Both overrides therefore live HERE (media.css loads
+   after grid.css) and are scoped `.record--viewer .record__body.record__body
+   --intro` (0,3,0, beats grid.css's 0,2,0) INSIDE this same ≤1179.98px query,
+   so they never fight the ≥1180px `display: block` rule above — at desk
+   widths the intro and Apparat stack in the single reading column beside the
+   viewer (decision 8's review note), and the two-column grid only appears
+   below 1180px. `repeat(auto-fit, minmax(min(21rem, 100%), 1fr))` (not a bare
+   `minmax(21rem, 1fr)`) so the track can shrink below 21rem on a narrow phone
+   — grid.css's own ≤860px collapse (`.record__body { grid-template-columns:
+   1fr }`, 0,1,0) is out-specified the same way. */
+@media (max-width: 1179.98px) {
+  .record--viewer .record__body.record__body--intro {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr));
+    gap: var(--space-7);
+    align-items: start;
+  }
+  .record--viewer .record__body.record__body--intro > * { grid-column: auto; }
+}
+
+/* No-media record with a `narrative-for` intro: the base form of its body.
+   Both records that render one replace `display`: the reader's companion
+   stacks it (record.css, `.record--reader …`) and a plain record sets it
+   back to a block (below). `.record__body--noimg.record__body--intro`
+   (0,2,0) beats grid.css's `.record__body--noimg` (0,1,0). */
+.record__body--noimg.record__body--intro {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr));
+  gap: var(--space-7);
+  align-items: start;
+}
+.record__body--noimg.record__body--intro > * { grid-column: auto; }
+/* On a plain record (no reader, no viewer) the intro and the Apparat stack
+   in the one centred column (grid.css); side by side, each would be centred
+   in its own track. The bottom margin stands in for the grid's gap;
+   record.css's justified-text rule for the same records counts on it. */
+.record:not(.record--reader, .record--viewer) > .record__body--noimg.record__body--intro { display: block; }
+.record:not(.record--reader, .record--viewer) .record__intro { margin-bottom: var(--space-7); }
+
+/* HDM SLICE 3: GROUPED INCOMING LINKS -- BEGIN
+   `section.pgroup.incoming.incoming--grouped.incoming--{cards|columns}`
+   (resource_detail.rs `render_grouped_incoming`). Every rule is scoped under
+   `.incoming--grouped` except `.incoming__aside`, which renders only when a
+   spec sets `row-aside` (no ungrouped list does today). Values measured from
+   `projects/hdm/design/HdM in CPE.dc.html`: Work cards H270–295, Person
+   columns H337–352. The section cap stays the engine's `.pgroup__head`
+   (plan decision 3); only the gap below it, the per-group heads and the rows
+   are new. No existing rule above is edited. */
+
+/* The faint row context (H285: the source abbreviation). */
+.incoming__aside { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); letter-spacing: 0.06em; }
+
+/* Both mockup sections are full-width (`grid-column:1/-1`, no max-width),
+   not capped to `--read` like the other `.pgroup`s: a 42rem cap fits only
+   two 15rem cards and a single 20rem column. (0,3,0), after grid.css. */
+.record__body .pgroup.incoming--grouped { max-width: none; }
+/* Section spacing: H270 (Aufführungen) `space-9`, H337 (Person) `space-8`. */
+.pgroup.incoming--cards { margin-top: var(--space-9); }
+.pgroup.incoming--columns { margin-top: var(--space-8); }
+/* The mockup head carries no bottom margin; the gap to the groups sits on
+   the groups themselves (cards grid `space-6`, each role section `space-7`). */
+.incoming--grouped > .pgroup__head { margin-bottom: 0; }
+/* The section cap is an h2 here (a span on every other .pgroup): reset the
+   heading margin/line-height so it keeps the .pgroup__title cap look. */
+.incoming--grouped > .pgroup__head > .pgroup__title { margin: 0; line-height: inherit; }
+/* The head note (H272/H340): meta, faint, tracked, tabular. */
+.incoming--grouped .incoming__note { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); letter-spacing: 0.06em; font-feature-settings: "tnum" 1; }
+
+/* Rows: the mockup rules each row BELOW (li border-bottom, H282/H347) with
+   `space-2` padding, first row included, unlike the ungrouped list's top
+   rule. (0,2,0) after `.incoming__item:first-child`, so it wins. */
+.incoming--grouped .incoming__item { gap: var(--space-1) var(--space-3); padding: var(--space-2) 0; border-top: 0; border-bottom: var(--rule-weight) solid var(--rule); }
+
+/* ---- cards (Work: performances by decade, H275–295) ---- */
+.incoming--cards .incoming__groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-6) var(--space-7); margin-top: var(--space-6); }
+.incoming--cards .incoming__group { margin: 0; }
+/* An h3 in our markup (a div in the mockup, H278): every UA and shell.css
+   heading property is reset explicitly. */
+.incoming--cards .incoming__card-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin: 0; padding-bottom: var(--space-2); border-bottom: var(--rule-weight) solid var(--rule); font-family: var(--font-meta); font-size: var(--size-1); font-weight: var(--weight-regular); line-height: inherit; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.incoming--cards .incoming__count-n { color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+/* The date carries the link colour (H284; `.int-link .ref` underlines it). */
+.incoming--cards .incoming__name { font-family: var(--font-meta); font-size: var(--size-2); font-feature-settings: "tnum" 1; }
+
+/* ---- columns (Person: works by role, H343–352) ---- */
+.incoming--columns .incoming__group { margin: var(--space-7) 0 0; }
+/* An h3 (as in the mockup, H344): inline "Rolle · n". */
+.incoming--columns .incoming__role { display: block; margin: 0 0 var(--space-3); font-family: var(--font-meta); font-size: var(--size-1); font-weight: var(--weight-medium); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.incoming--columns .incoming__list { column-width: 20rem; column-gap: var(--space-7); }
+.incoming--columns .incoming__item { break-inside: avoid; }
+.incoming--columns .incoming__name { font-size: var(--size-3); }
+/* HDM SLICE 3: GROUPED INCOMING LINKS -- END */
+/* HDM SLICE 3: GROUP EMPTY -- BEGIN */
+.pgroup__empty { margin: 0; font-size: var(--size-5); font-style: italic; color: var(--ink-muted); }
+/* HDM SLICE 3: GROUP EMPTY -- END */
+
+/* ============================================================================
+   ANNOTATIONS (Slice 6) — the zero-JS overlay (annotations design-doc §3.6).
+   An annotated page's viewer fallback is `div.anno-fit`: the plate plus the
+   overlay markup (crate README, "Overlay layer"), sized to the image's own
+   ratio `--r` and fitted on BOTH axes, so the SVG lines up with the image at
+   any canvas aspect (F7). The host is the size container: `.rv__canvas` and
+   `.rv-unit` are inline-size containers, so `cqh` would skip them. These
+   rules style only the light-DOM copy; the viewer's adopted clone is styled
+   in its shadow root and reads the `--iv-*` tokens set on the host here.
+   Twin of the "Overlay layer" rules in the shadow stylesheet of
+   shared/dasch-image-viewer/assets/image-viewer.js: a change to a stroke,
+   tag box or colour here needs the same change there.
+   ============================================================================ */
+.rv image-viewer:has(> .anno-fit) {
+  container-type: size;
+  --iv-halo: var(--on-bed-faint); --iv-mono: var(--font-meta);
+  --iv-ink: var(--ink); --iv-surface: var(--surface); --iv-dur: var(--dur);
+}
+.anno-fit { position: absolute; inset: 0; margin: auto; width: min(100cqw, 100cqh * (var(--r))); height: min(100cqh, 100cqw / (var(--r))); }
+.anno-fit > img { display: block; width: 100%; height: 100%; }
+.anno-fit > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+/* `vector-effect` does not inherit: it is set on every shape. `#f33` is the
+   viewer's own default for a shape without a colour, so both copies agree. */
+.anno-fit [data-iv-part] { fill: none; vector-effect: non-scaling-stroke; }
+.anno-fit [data-iv-part=halo] { stroke: var(--iv-halo); stroke-width: 4px; }
+.anno-fit [data-iv-part=line] { stroke: var(--iv-c, #f33); stroke-width: 1.5px; }
+.anno-fit [data-iv-tag] {
+  position: absolute; transform: translateY(calc(-100% - 3px));
+  box-sizing: border-box; min-width: 18px; height: 18px; padding: 0 5px;
+  font: 600 11px/16px var(--iv-mono); text-align: center; white-space: nowrap; border-radius: 1px;
+  border: 1px solid var(--iv-c, #f33); background: var(--iv-c, #f33); color: var(--iv-on, #000);
+  box-shadow: 0 0 0 1px var(--iv-halo);
+}
+.anno-fit [data-iv-tag][data-iv-align=center] { transform: translate(-50%, calc(-100% - 3px)); }
+.anno-fit [data-iv-tag][data-iv-place=below] { transform: translateY(3px); }
+.anno-fit [data-iv-tag][data-iv-align=center][data-iv-place=below] { transform: translate(-50%, 3px); }
+/* The toggle is off (`$_annoShow`, a JS-only state): the light-DOM copy shows
+   nothing, so a page turn never flashes hidden shapes before the viewer
+   opens. It ties the tag rule at (0,2,0), so it must stay after it. */
+.anno-fit > .anno-off { display: none; }

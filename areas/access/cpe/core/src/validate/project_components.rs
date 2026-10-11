@@ -27,7 +27,7 @@
 //! (in `check_and_lower_pages`).
 //!
 //! The registry is split by crate: this half, in `cpe-core`, names only
-//! validation types, and the renderer half, in `dsp-incubator cpe/components`,
+//! validation types, and the renderer half, in `cpe-components`,
 //! only render types, so the validator never imports a renderer. A second
 //! project reusing a component is one more row in each half pointing at the
 //! same functions.

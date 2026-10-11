@@ -1,0 +1,5 @@
+---
+source: engine/src/component/compound_viewer.rs
+expression: pager
+---
+<nav class="pg pg--reader" aria-label="Blättern"><span class="pg__step" aria-disabled="true"><span aria-hidden="true">←</span> <span class="pg__word">Zurück</span></span><span class="pg__count" aria-live="polite" aria-atomic="true">1 / 2</span><a class="pg__step" href="/incunabula/books/B1?lang=de&amp;page=P_002" rel="next" title="a1v" data-on:click__prevent="@get('/incunabula/books/B1/_compound?lang=de&amp;page=P_002')"><span class="pg__name">a1v<span aria-hidden="true"> ·</span></span> <span class="pg__word">Weiter</span> <span aria-hidden="true">→</span></a></nav>

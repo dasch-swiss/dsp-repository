@@ -17,7 +17,10 @@ areas/
 ├── access/                    # Access Area
 │   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
 │   │   └── Dockerfile         # Production container image
-│   ├── cpe/                   # Configurable Presentation Environment (its domain crate, its image viewer and its port so far)
+│   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer and port so far)
+│   │   ├── components/        # CPE's component library (crate: cpe-components)
+│   │   │   ├── src/           # The components, the chrome message catalogue, the per-project components
+│   │   │   └── style/         # The seven stylesheets the components' markup is written against; a host serves them
 │   │   ├── core/              # CPE's domain: config language, validation, IR, diagnostics (crate: cpe-core)
 │   │   ├── image-viewer/      # The `<image-viewer>` element and its Maud builder, an interim copy (crate: cpe-image-viewer)
 │   │   └── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
@@ -66,6 +69,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `dpe-server` | `areas/access/dpe/server` | A library — DPE's router, config and validate logic; no binary |
 | `cpe-ports` | `areas/access/cpe/ports` | CPE's port onto the archive projection (ADR-0007, ADR-0008): the `ArchiveProjection` trait, its DTOs (archive-shaped facts and, beside them, per-resource curation, ADR-0010, proposed), an in-memory fake and the contract every adapter satisfies; depends on `std` alone |
 | `cpe-core` | `areas/access/cpe/core` | CPE's domain (ADR-0007): the KDL config language and its validation, the IR, diagnostics, labels, language, theme and the per-request view data; depends on `kdl`, `pulldown-cmark`, `percent-encoding` and `thiserror`, on no CPE crate, and on no `maud`, `axum` or `rusqlite` |
+| `cpe-components` | `areas/access/cpe/components` | CPE's component library (ADR-0007, amendment of 2026-10-11, DEV-7401): the Maud components a page is assembled from, the chrome message catalogue and the per-project components with their registry; its seven stylesheets are plain files in `style/`, which the crate neither embeds nor serves; depends on `cpe-core`, `cpe-image-viewer`, `maud`, `pulldown-cmark` and `tracing`, and on no `mosaic-tiles`, `axum` or `rusqlite` |
 | `cpe-image-viewer` | `areas/access/cpe/image-viewer` | CPE's IIIF deep-zoom viewer (ADR-0007, amendment of 2026-10-11, DEV-7401): the `<image-viewer>` web component with a vendored OpenSeadragon compiled in, and the `Viewer` Maud builder; an interim, cut-down copy of dsp-incubator's `shared/dasch-image-viewer` that the incubator's final viewer replaces; depends on `maud` alone and on no CPE crate |
 | `sync-store` | `areas/access/sync/store` | `sync` at its minimum (ADR-0007): `LiveArchiveProjection`, CPE's `ArchiveProjection` served from the committed interim-DAO snapshots and the committed curation files in `areas/access/sync/data/`; depends on `cpe-ports` and no other CPE or DPE crate |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |

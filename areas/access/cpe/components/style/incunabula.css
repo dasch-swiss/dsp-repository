@@ -1,0 +1,581 @@
+/* Incunabula's per-project components (components/src/component/project/
+   incunabula/), one delimited block each. Linked on every page, after
+   media.css (`document_head`). */
+
+/* ============================================================================
+   CPE — TIMELINE (`.tl`) — Incunabula Slice 4
+   Transcribed from the concept mockup, projects/incunabula/design/
+   Incunabula.dc.html L64–84 (markup) and L814–864 (geometry). Renderer:
+   components/src/component/project/incunabula/timeline.rs (`render_timeline`).
+   Inline `style=` carries ONLY the data-driven numbers — each bar's
+   left/width/top, each lane track's min-height, each tick's width, and the
+   grid overlay's background-size. Everything else lives here, on existing
+   tokens and one local property (`--tl-label`); no raw colours.
+   ========================================================================== */
+
+/* The root keeps the frame (`.page`); its children take the composition's
+   width, centred: the box of a narrative's breakout (`.narr-wide`,
+   editorial.css), so the lanes line up with the blocks around them.
+   `width: 100%` is load-bearing: `section.tl.page` is a grid, and a grid item
+   with `auto` margins shrinks to its content, which for the lanes is little
+   more than the label column. */
+.tl > * { max-width: var(--narr-max); width: 100%; margin-inline: auto; }
+
+/* After a narrative the timeline is the figure that narrative's last text
+   introduces: the two stand --space-6 apart (the timeline's top padding),
+   closer than two sections (--space-8). Nothing else may add to it, so the
+   narrative ends without padding or a trailing margin and the variants
+   start without one. The padding is set here, with or without a crumb line
+   (shell.css's `.shell__main:has(.breadcrumb) .page` is 0,3,0; this 0,4,0). */
+.editorial:has(+ .tl) { padding-bottom: 0; }
+.editorial:has(+ .tl) .editorial__sections > :last-child { margin-bottom: 0; }
+.editorial.page + .tl.page { padding-top: var(--space-6); }
+.editorial + .tl > * { margin-top: 0; }
+
+/* Both variants are always in the markup (decision 4 — zero JS); exactly one
+   is visible at a time via `display`, never the `hidden` attribute (defeated
+   by any explicit `display` on the same element — see CLAUDE.md). Lanes are
+   the default; the decades list takes over at the house 860px breakpoint. */
+.tl__lanes { display: block; }
+.tl__decades { display: none; }
+@media (max-width: 860px) {
+  .tl__lanes { display: none; }
+  .tl__decades { display: block; }
+}
+
+/* ---- the lanes variant ---------------------------------------------------
+   `--tl-label` is the lane label column. The lane grid and the tick row's
+   left padding both read it and must agree, or the ticks leave the track.
+   The end padding is room for the last tick's label (see `.tl__tick`). */
+.tl__lanes {
+  --tl-label: clamp(11rem, 14vw, 16rem);
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-4);
+  padding-inline-end: 3em;
+}
+
+/* The tick row. Its left padding is the lane label column PLUS the lane
+   row's column gap, so the tick percentages measure the same box the lane
+   track does and each tick sits at its year's pct() position. (The mockup
+   pads by the label column alone, which shifts the ticks left of the track
+   by one gap.) Grid lines are drawn every 3 years, so only ticks that land
+   on a multiple of 3 (here: 1470 and 1500) actually coincide with a line. */
+.tl__ticks {
+  display: flex;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+  padding-left: calc(var(--tl-label) + var(--space-3));
+  margin-bottom: var(--space-2);
+}
+/* Each tick's inline width runs to the next tick (the last decade clamped to
+   the axis end), so the widths sum to exactly 100 % of the track and
+   `flex: none` keeps any of them from shrinking off its grid line. The final
+   label (no inline width) is zero-width and hangs past the track's right
+   edge. The lanes can be as wide as the page's content box, so
+   `.tl__lanes`' end padding keeps that label inside the box: without it the
+   label would reach into the gutter and, on a narrow window, past the page. */
+.tl__tick { flex: none; font-feature-settings: "tnum" 1; }
+.tl__tick:last-child { flex: 0 0 0; width: 0; white-space: nowrap; overflow: visible; }
+
+.tl__lane {
+  display: grid;
+  grid-template-columns: var(--tl-label) 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.tl__lane-label {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  line-height: 1.35;
+  padding-top: 2px;
+}
+.tl__lane-name { min-width: 0; }
+.tl__lane-count { color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+
+/* The track; its min-height (rows × 1.35rem) is inline. */
+.tl__track { position: relative; }
+
+/* The grid-line overlay — one hairline every three years; its
+   background-size (3 / span × 100 %) is inline. Decorative: it never takes
+   the pointer from the bars above it. */
+.tl__grid {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--rule) 0 1px, transparent 1px 100%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* A bar — an empty link; left/width/top are inline. No per-bar year label:
+   the mockup's own decision (nineteen labels in one band read as noise). */
+.tl__bar {
+  position: absolute;
+  display: block;
+  height: 0.85rem;
+  background: var(--accent);
+  border: 0;
+  text-decoration: none;
+  box-shadow: none;
+}
+.tl__bar--span {
+  background: var(--accent-tint);
+  border: 1px solid var(--accent);
+}
+/* Hover (mockup `barHover`) and keyboard focus flip the same pair: on a
+   0.85rem-high bar the colour change is what the eye finds. The global
+   :focus-visible ring (shell.css) still applies on top. */
+.tl__bar:hover,
+.tl__bar:focus-visible {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+/* The key line below the lanes. */
+.tl__key {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  margin: var(--space-4) 0 0;
+  letter-spacing: 0.02em;
+}
+
+/* ---- the decades variant --------------------------------------------------
+   Below 860px only (see the switch above). No tick axis, no key line, no
+   office grouping — the mockup designs none for this variant. */
+.tl__decades { margin-top: var(--space-5); }
+
+.tl__decade {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.tl__decade-label {
+  font-size: var(--size-2);
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  font-feature-settings: "tnum" 1;
+}
+
+.tl__decade-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tl__decade-list li {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.tl__decade-year {
+  min-width: 3.2em;
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  font-feature-settings: "tnum" 1;
+}
+
+.tl__decade-list a {
+  color: var(--link);
+  font-size: var(--size-3);
+  text-decoration: none;
+}
+
+/* ============================================================================
+   CPE — SHOWCASE (`.cases`, `.case`, `.editions`, `.strips`) — Incunabula Slice 7
+   The woodcut crop figure of /woodcuts and /narrenschiff, and
+   /narrenschiff's edition cards and strip row, built to
+   projects/incunabula/design/showcases/design/HANDOFF.md §1–2. Renderer:
+   components/src/component/project/incunabula/showcase.rs. Inline `style=`
+   carries only each crop's pixel aspect `--ar`; existing tokens only.
+   ========================================================================== */
+
+/* The block: edition cases one per row. */
+.cases {
+  display: grid;
+  gap: var(--space-7);
+}
+
+/* `align-content: start`: in a compact block a case is stretched to its
+   row-mate's height, and the stretch must not open gaps inside the case. */
+.case {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  margin: 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+.case__id {
+  display: grid;
+  gap: var(--space-2);
+}
+.case__title {
+  font-weight: var(--weight-medium);
+  font-size: var(--size-5);
+  line-height: var(--leading-snug);
+}
+
+/* The row: each crop grows by its aspect, so every crop on a line has the
+   same height; the cap holds that height at 24rem. */
+.case__row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-5) var(--space-3);
+  align-items: stretch;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.case__crop {
+  display: flex;
+  min-width: 0;
+  flex: var(--ar) 1 0px;
+  max-width: calc(var(--ar) * 24rem);
+}
+
+/* The whole crop plus its caption is one link; its padding and the equal
+   negative margin let the hover fill bleed without moving anything. */
+.case__link {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+  color: var(--ink);
+  transition: background var(--dur) var(--ease);
+}
+
+/* The bed keeps the crop's ratio whether or not the image loads. Its 24rem
+   height pairs with CROP_FETCH_PX (core/src/iiif.rs, 800 px,
+   ≥ 2× at desk): change both together. */
+.case__bed {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: var(--ar);
+  background: var(--surface-inset);
+  border: 1px solid var(--rule);
+}
+.case__bed img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The failed state's label and alt copy stay out of layout and of the
+   accessibility tree until the bed is marked `.is-failed`. */
+.case__bed .absent__label,
+.case__alt {
+  display: none;
+}
+
+/* The caption grows to fill the stretched crop, so titles start together
+   under the images and page labels, arrows and rules share one line. */
+.case__cap {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--rule-strong);
+  transition: border-color var(--dur) var(--ease);
+}
+/* A long book title wraps to at most three lines; the full title stays in
+   the link's accessible name (D9). */
+.case__cap em {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-3);
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+.case__page {
+  align-self: end;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+}
+.case__arrow { color: var(--ink-faint); }
+
+.case__remark {
+  max-width: 38rem;
+  margin: 0;
+  font-size: var(--size-4);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+/* States: hover fills the link and turns the bed, rule and arrow to the
+   accent; keyboard focus rings the whole link. */
+a.case__link:hover { background: var(--hover-fill); }
+a.case__link:hover .case__bed { border-color: var(--accent); }
+a.case__link:hover .case__cap { border-bottom-color: var(--accent); }
+a.case__link:hover .case__arrow { color: var(--accent-strong); }
+a.case__link:focus-visible,
+a.case__detail:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* A failed image: the bed keeps its ratio, so the row does not reflow; the
+   image hides and the label and the alt copy show, centred. `is-failed` is
+   added client-side (D10), or server-side when there is no image URL. */
+.case__bed.is-failed {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  text-align: center;
+}
+.case__bed.is-failed img { display: none; }
+.case__bed.is-failed .absent__label,
+.case__bed.is-failed .case__alt {
+  display: block;
+}
+.case__alt {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-2);
+  line-height: var(--leading-snug);
+  color: var(--ink-muted);
+}
+
+/* Compact blocks: two cases per row, crops 17rem tall. */
+.cases--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-7) var(--space-6);
+}
+.cases--compact .case__crop { max-width: calc(var(--ar) * 17rem); }
+
+/* A row of three or four wraps two-up wherever it wraps (a compact case,
+   and every case at narrow widths below). The basis is the crop's aspect
+   times 10rem, so two woodcut crops (about 0.7) fit a line and three do
+   not; much narrower crops would fit three. */
+.cases--compact .case__row:has(> :nth-child(3)) { flex-wrap: wrap; }
+.cases--compact .case__row:has(> :nth-child(3)) > .case__crop {
+  flex: var(--ar) 1 calc(var(--ar) * 10rem);
+}
+
+/* Page cases: whole pages 15rem tall, paired with PAGE_FETCH_PX
+   (core/src/iiif.rs, 480 px): change both together. */
+.case--page .case__crop { max-width: calc(var(--ar) * 15rem); }
+.case__whole { font-size: 0.6875rem; }
+.case__note {
+  margin: 0;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+/* The detail crop (E5): its own link under the row, a 4.5rem bed beside
+   the eyebrow and page label. The height pairs with DETAIL_FETCH_PX
+   (core/src/iiif.rs, 400 px): change both together. */
+.case__detail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  align-items: end;
+  justify-self: start;
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+  color: var(--ink);
+  transition: background var(--dur) var(--ease);
+}
+.case__detail .case__bed { height: 4.5rem; }
+/* A failed detail bed is too small for the label and the alt: it shows the
+   label alone, and the alt copy stays in the accessibility tree (the link's
+   name) but out of sight. */
+.case__detail .case__bed.is-failed { padding: var(--space-1); }
+.case__detail .case__bed.is-failed .case__alt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.case__detail-text {
+  display: grid;
+  gap: var(--space-1);
+}
+.case__detail-text .eyebrow { font-size: 0.6875rem; }
+.case__detail .case__page {
+  justify-self: start;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--rule-strong);
+  transition: border-color var(--dur) var(--ease);
+}
+a.case__detail:hover { background: var(--hover-fill); }
+a.case__detail:hover .case__bed { border-color: var(--accent); }
+a.case__detail:hover .case__page { border-bottom-color: var(--accent); }
+a.case__detail:hover .case__arrow { color: var(--accent-strong); }
+
+/* Edition cards (/narrenschiff): three in a row, each one link around the
+   cover plate and the text. */
+.editions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.edition { min-width: 0; }
+.edition__link {
+  display: grid;
+  align-content: start;
+  height: 100%;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--rule);
+  transition: background var(--dur) var(--ease);
+}
+/* The plate's 15rem height pairs with PLATE_CARD_FETCH_PX
+   (core/src/iiif.rs, 480 px): change both together. */
+.edition__plate {
+  display: block;
+  height: 15rem;
+  margin: var(--space-3) var(--space-3) 0;
+  overflow: hidden;
+  background: var(--surface-inset);
+  border: 1px solid var(--rule);
+}
+.edition__plate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.edition__text {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+.edition__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-medium);
+  font-size: var(--size-5);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-tight);
+}
+.edition__imprint {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  line-height: 1.5;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.edition__read {
+  margin-top: var(--space-2);
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  letter-spacing: 0.04em;
+  color: var(--accent-strong);
+}
+a.edition__link:hover { background: var(--hover-fill); }
+
+/* The strip row (/narrenschiff): twelve tiles in the /strips grid tile's
+   look, the mono id under each. */
+.strips {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.strips > li { min-width: 0; }
+.strip {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+  color: var(--ink);
+  text-decoration: none;
+  transition: background var(--dur) var(--ease);
+}
+/* The tile image is fetched STRIP_TILE_FETCH_PX wide (core/src/iiif.rs,
+   192 px), 2× the widest tile here: change both together. */
+.strip__bed {
+  display: block;
+  height: 13rem;
+  padding: var(--space-1);
+  overflow: hidden;
+  background: var(--surface-inset);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur) var(--ease);
+}
+.strip__bed img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.strip__id {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+a.strip:hover { background: var(--hover-fill); }
+a.strip:hover .strip__bed { border-color: var(--accent); }
+a.edition__link:focus-visible,
+a.strip:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Narrow forms, at the site's 640px tier (D19): a compact block takes one
+   column, a pair stays side by side, three and four wrap two-up, and every
+   crop is capped at 13.5rem tall so a lone last crop keeps its row-mates'
+   height. Edition cards become rows (an 8.5rem plate beside the text), and
+   the strips run six per line at 9rem. */
+@media (max-width: 640px) {
+  .cases--compact { grid-template-columns: minmax(0, 1fr); }
+  .cases .case__crop { max-width: calc(var(--ar) * 13.5rem); }
+  .case__row:has(> :nth-child(3)) { flex-wrap: wrap; }
+  .case__row:has(> :nth-child(3)) > .case__crop {
+    flex: var(--ar) 1 calc(var(--ar) * 10rem);
+  }
+  .editions { grid-template-columns: minmax(0, 1fr); }
+  .edition__link { grid-template-columns: 6.5rem minmax(0, 1fr); }
+  .edition__plate {
+    height: 8.5rem;
+    margin-bottom: var(--space-3);
+  }
+  .strips { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .strip__bed { height: 9rem; }
+}

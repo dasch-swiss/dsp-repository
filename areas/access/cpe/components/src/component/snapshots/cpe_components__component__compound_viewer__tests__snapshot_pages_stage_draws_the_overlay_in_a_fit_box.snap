@@ -1,0 +1,5 @@
+---
+source: engine/src/component/compound_viewer.rs
+expression: viewer
+---
+<image-viewer id="rv-I_P1" engine="osd-wc" tile-sources="[&quot;https://iiif.example.org/0803/p1.jpx/info.json&quot;]" auth-mode="none" label="Folio a1r" chrome="false"><div class="anno-fit" style="--r:1200 / 1800"><img src="https://iiif.example.org/0803/p1.jpx/full/900,/0/default.jpg" alt="Folio a1r" decoding="async" loading="eager" fetchpriority="high"><svg data-iv-overlay viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" data-class="{'anno-off': !$_annoShow}"><g data-iv-shape="a1" style="--iv-c:#ff3333;--iv-on:#000"><rect data-iv-part="halo" x="17.000" y="15.000" width="40.000" height="30.000"></rect><rect data-iv-part="line" x="17.000" y="15.000" width="40.000" height="30.000"></rect></g></svg><span data-iv-tag="a1" data-iv-x="17.000" data-iv-y="15.000" data-iv-align="start" style="--iv-c:#ff3333;--iv-on:#000;left:17.000%;top:15.000%" aria-hidden="true" data-class="{'anno-off': !$_annoShow}">1</span></div></image-viewer>

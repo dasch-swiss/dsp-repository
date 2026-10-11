@@ -1,0 +1,669 @@
+/* ============================================================================
+   CPE — EDITORIAL  +  SITE INDEX
+   Archetype A (long-form narrative project home) and the root landing page.
+   ========================================================================== */
+
+/* ============================================================================
+   ARCHETYPE A — EDITORIAL / NARRATIVE
+   ========================================================================== */
+.editorial { max-width: var(--shell-max); }
+.editorial__kicker { margin-bottom: var(--space-4); }
+
+.editorial h1 {
+  font-size: var(--size-8);
+  font-weight: var(--h1-weight, 500);
+  font-style: var(--display-italic, normal);
+  margin-bottom: var(--space-4);
+}
+
+/* Standfirst between the h1 and the lede: upright display face, a step
+   below the h1, sitting close under it. */
+.editorial__subtitle {
+  font-family: var(--font-display);
+  font-size: var(--size-6);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+}
+
+.editorial__lede {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-5);
+  line-height: var(--leading-snug);
+  color: var(--ink-muted);
+  margin: 0 0 var(--space-6);
+}
+
+/* prose body — comfortable reading measure, real hierarchy */
+.prose { font-size: var(--size-4); line-height: var(--leading-body); color: var(--ink); }
+.prose strong { font-weight: var(--weight-semibold); color: var(--ink); }
+.prose em { font-style: italic; }
+/* Inline Markdown `code` (e.g. a property name like `hasPublisher` in a
+   narrative) — the mockup's `.idval`. Without this rule the UA's generic
+   `monospace` rendered at the full 19px body size, visibly too big and heavy.
+   The project's meta face, sized relative to the surrounding text. */
+.prose code { font-family: var(--font-meta); font-size: 0.8em; }
+
+/* ---- justified text (`site { text-align "justify" }`) --------------------
+   `<html data-align="justify">` hyphenates a prose block's own paragraphs
+   (`> p`, as `render_editorial` emits them) and justifies them where the
+   column is at least 30rem. The `prose` container is the article, not
+   `.prose`: a size container keeps its children's margins from collapsing
+   through it. A prose block in a track narrower than the article needs its
+   own container. `text-wrap: wrap` undoes shell.css's `pretty`. record.css
+   has the same rules for a record's intro; change them together.
+   A loose paragraph of the sections column (`.editorial__sections > p`: body
+   text under a `##` that no invite list follows) is prose too, though no
+   `.prose` wraps it; a section's own sentence (`.editorial__section > p`)
+   is not. */
+html[data-align="justify"] .editorial { container: prose / inline-size; }
+html[data-align="justify"] .editorial .prose > p:not(.editorial__lede),
+html[data-align="justify"] .editorial__sections > p {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphenate-limit-chars: 7 3 3;
+  text-wrap: wrap;
+}
+@container prose (min-width: 30rem) {
+  html[data-align="justify"] .editorial .prose > p:not(.editorial__lede),
+  html[data-align="justify"] .editorial__sections > p { text-align: justify; text-align-last: start; }
+}
+
+/* DEVIATION #4: wrap drop-cap in @supports so it degrades on Firefox
+   (which has no support for initial-letter). Plain first paragraph without
+   the drop-cap is the correct fallback. */
+@supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
+  /* a drop-initial gives the edition direction its literary opening */
+  [data-direction="edition"] .editorial__open::first-letter {
+    initial-letter: 3;
+    -webkit-initial-letter: 3;
+    font-weight: var(--weight-medium);
+    color: var(--accent-strong);
+    padding-right: 0.08em;
+    font-style: normal;
+  }
+  /* the literary drop-cap only suits a serif body — drop it for sans-bodied picks */
+  [data-direction="edition"][data-pick="figtree"] .editorial__open::first-letter,
+  [data-direction="edition"][data-pick="hanken"] .editorial__open::first-letter,
+  [data-direction="edition"][data-pick="schibsted"] .editorial__open::first-letter,
+  [data-direction="edition"][data-pick="spectral-figtree"] .editorial__open::first-letter,
+  [data-direction="edition"][data-pick="newsreader-figtree"] .editorial__open::first-letter {
+    initial-letter: normal;
+    -webkit-initial-letter: normal;
+    font-weight: inherit;
+    color: inherit;
+    padding-right: 0;
+  }
+}
+
+/* pull-quote / epigraph */
+.epigraph {
+  margin: var(--space-8) 0;
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--accent);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-6);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+.epigraph cite {
+  display: block;
+  margin-top: var(--space-3);
+  font-style: normal;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+}
+.epigraph cite::before { content: "— "; }
+
+/* section headings within the narrative */
+.editorial h2 {
+  font-size: var(--size-6);
+  font-weight: var(--h2-weight, 500);
+  margin: var(--space-8) 0 var(--space-2);
+}
+.editorial h2 + p { margin-top: var(--space-2); }
+
+/* the sections column (grid.css; its place in the frame is THE COMPOSITION, below) */
+.editorial__sections h2 { margin-top: 0; }
+/* A loose `##` of the column (one no invite list follows, so no section wraps
+   it) keeps the block after it: the column is a flexbox, and its gap
+   (grid.css, the same token) would set the two a whole section apart. Only
+   that first block: a second loose paragraph stands a gap further down. */
+.editorial__sections > h2 + :not(.editorial__section) { margin-top: calc(-1 * var(--space-8)); }
+.editorial__section > p { color: var(--ink-muted); font-size: var(--size-3); line-height: var(--leading-snug); }
+
+/* link-lists that read as invitations, not menus.
+   TWO FORMS, switched by a CONTAINER query on the section (see below).
+
+   WIDE (section >= 40rem) — name beside gloss. The list itself is the grid
+   so the name column sizes to the widest name in THIS dataset/language —
+   alignment is derived from content, never bound to a hard-coded width.
+   Each row subgrids onto those shared tracks. The outer padding columns
+   carry the full-bleed hover so the row's own box has no inline padding to
+   distort the shared track sizing.
+
+   STACKED (section < 40rem) — gloss BELOW the name, so both have room.
+   Needed wherever the section is narrower than the reading measure: there a
+   long display name eats the `max-content` track and the `minmax(0, 1fr)`
+   gloss collapses to a one-word strip.
+
+   Why a @container query and NOT a viewport media query: the same list must
+   keep the aligned form in a section at the reading measure (--read, 42rem,
+   672px) or wider AND stack in a narrower column (an office group's grid
+   cell) — at the SAME viewport width. Only the element's own width can
+   decide. Threshold 40rem = 640px leaves 2rem of headroom under the reading
+   measure; both numbers are rem-derived, so the relationship holds under
+   text zoom.
+
+   The query container is `.editorial__section`, NOT `.invite-list`: a
+   container query can never style its own container, and the stacked form
+   has to set `display: block` on the list itself. Every `ul.invite-list` is
+   emitted inside a `section.editorial__section` (components/src/component/
+   editorial.rs, `render_invite_list` — the only emission site, including
+   the `div.prose` fallback path, which keeps the section wrappers inside
+   it). A grouped list sits in a `section.invite-group` inside that section, which is the
+   nearer container (see "Invite groups" below).
+
+   `min-width: 0` + `overflow-wrap: break-word` on the two text spans is the
+   root-cause fix for the hover fill not covering the row: the gloss's
+   `minmax(0, 1fr)` track can be sized below the text's min-content, and
+   without these an unbreakable long German word paints outside the anchor's
+   box (and so outside the `:hover` fill). `overflow-wrap: break-word` does
+   not affect intrinsic sizing, so the `max-content` name track still aligns
+   to the full names. */
+.editorial__section { container-type: inline-size; }
+
+.invite-list {
+  /* The bleed must never exceed the page's own gutter — at a 390px
+     viewport `--gutter` is at its 1.25rem floor (20px) while
+     `--space-5` is 1.5rem (24px at the default font size), so an uncapped bleed pushes the list 4px
+     past the page edge. Capping at the smaller of the two keeps the list
+     flush with the page at narrow widths without changing it anywhere
+     `--space-5` is already <= `--gutter`. */
+  --invite-bleed: min(var(--space-5), var(--gutter));
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  margin-inline: calc(-1 * var(--invite-bleed));
+  display: grid;
+  grid-template-columns:
+    [bleed-start] var(--invite-bleed)
+    [name-start] max-content
+    [gloss-start] minmax(0, 1fr)
+    [arrow-start] auto
+    var(--invite-bleed) [bleed-end];
+  column-gap: var(--space-4);
+}
+.invite-list li {
+  margin: 0;
+  display: contents;
+}
+.invite-list a {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: bleed-start / bleed-end;
+  align-items: baseline;
+  padding-block: var(--space-4);
+  text-decoration: none;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+  transition: background var(--dur) var(--ease);
+}
+.invite-list li:first-child a { border-top: 1px solid var(--rule); }
+.invite-list a:hover { background: var(--hover-fill); }
+.invite-list .invite__name,
+.invite-list .invite__gloss { min-width: 0; overflow-wrap: break-word; }
+.invite-list .invite__name {
+  grid-column: name-start;
+  font-family: var(--font-display);
+  font-weight: var(--weight-medium);
+  font-size: var(--size-5);
+  color: var(--ink);
+}
+.invite-list .invite__gloss { grid-column: gloss-start; color: var(--ink-muted); font-size: var(--size-3); line-height: var(--leading-snug); }
+.invite-list .invite__arrow {
+  grid-column: arrow-start;
+  color: var(--ink-faint);
+  font-family: var(--font-meta);
+  align-self: center;
+  transition: transform var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.invite-list a:hover .invite__arrow { color: var(--accent-strong); }
+
+/* STACKED FORM — a narrow section (a narrow column, or any narrow viewport:
+   the section is the window less both gutters there). Deliberately an
+   explicit TWO-ROW grid, not `flex-wrap`: flex
+   items shrink by default, so a long name plus a shrinkable gloss span
+   reproduces exactly the squeeze this form exists to fix.
+   `padding-inline` is load-bearing — the list keeps its negative
+   `margin-inline` for the full-bleed hover, and in block mode the grid's
+   bleed columns no longer supply the text inset. Uses the same
+   `--invite-bleed` (capped at `--gutter`) as the aligned form's bleed
+   columns, so the text inset matches the bleed exactly at any width. */
+@container (max-width: 40rem) {
+  .invite-list,
+  .invite-list li { display: block; }
+  .invite-list a {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name  arrow"
+      "gloss gloss";
+    column-gap: var(--space-4);
+    row-gap: var(--space-1);
+    align-items: baseline;
+    padding-inline: var(--invite-bleed);
+  }
+  .invite-list .invite__name  { grid-area: name; }
+  .invite-list .invite__gloss { grid-area: gloss; }
+  .invite-list .invite__arrow { grid-area: arrow; }
+}
+
+/* ---- Invite groups ----
+   A section whose `##` is followed by `###` groups: each group is a heading,
+   an optional gloss and its own invite list (engine: `InviteSection::Groups`
+   in editorial.rs).
+
+   The group is a size container of its own, so the unnamed `@container`
+   query above judges a grouped list by its GROUP's width, not by the
+   section's: a group narrower than its section stacks its rows.
+
+   The gaps are what tells two groups apart, and a list's hover bleed
+   (`--invite-bleed` on each side) reaches into them: keep the column gap
+   (THE COMPOSITION, below) well above two bleeds. */
+.invite-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-top: var(--space-5);
+}
+.invite-group { container-type: inline-size; }
+.invite-group > h3 { margin: 0; }
+/* The values of `.editorial__section > p`, which a group's gloss is not. */
+.invite-group__gloss {
+  color: var(--ink-muted);
+  font-size: var(--size-3);
+  line-height: var(--leading-snug);
+}
+
+/* ---- Figure-block slot (figure mode) ----
+   A narrative that a figure block names renders each `## … {#id}` section as
+   `section.editorial__part`: its prose at the reading measure, then the
+   block(s) at the article's full width, each with an optional count line and
+   "more" link. */
+.editorial__part { margin-top: var(--space-8); }
+.editorial__part-prose { max-width: var(--read); }
+.editorial__figure { margin-top: var(--space-6); }
+/* A block whose root carries `.page` (the LAYOUT CONTRACT, grid.css; e.g. the
+   timeline, which also renders unslotted) already sits in the article's
+   centred box: drop its second gutter and page padding. Slot-only roots carry
+   no `.page` (grid.css's exemption).
+   0,3,0 so it also beats shell.css's `.shell__main:has(.breadcrumb) .page`. */
+.editorial__parts .editorial__figure > .page {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.editorial__figure-count {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+.editorial__figure-more {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  letter-spacing: 0.04em;
+}
+.editorial__figure-more a {
+  color: var(--ink);
+  text-decoration: underline 1px var(--accent);
+  text-underline-offset: 2px;
+}
+.editorial__figure-arrow { color: var(--accent-strong); }
+
+/* ============================================================================
+   THE COMPOSITION  —  reading column, page rail, breakouts
+   A narrative is two kinds of box (engine: `render_editorial`):
+     div.narr            head, intro and, in the page's first narrative, the
+                         page rail (`nav.narr__side`)
+     div.narr.narr-wide  the sections or the figure-mode parts: a BREAKOUT,
+                         as wide as the composition (--narr-max)
+   `<html data-narr="rail|text" data-narr-side="end|start">` picks the layout
+   for the whole page (engine: `project_html`), so several narratives and the
+   components between them (the timeline, incunabula.css) share one axis:
+     text  one centred reading column; breakouts centred on the same axis
+     rail  from 80rem the reading column and the rail side by side, centred
+           together; breakouts start at the reading column's edge
+   Below 80rem both are the `text` form.
+
+   The reading measure never changes. In a breakout only the office groups
+   and the figure blocks use the full width; every other child keeps --read.
+
+   ⚠️ A centred box that is a flex or grid item needs `width: 100%` beside
+   its `auto` margins: with them the item no longer stretches and shrinks to
+   its content.
+   ⚠️ Source order is part of the ≥80rem rules: `.narr > *` and `.narr__side`
+   have the same specificity, so the rail's rule comes second.
+   ========================================================================== */
+.narr { margin-inline: auto; max-width: var(--read); }
+.narr-wide { max-width: var(--narr-max); }
+/* An adjacency rule, so a breakout with nothing before it (a narrative that
+   opens with a section) adds no margin of its own. */
+.narr + .narr-wide { margin-top: var(--space-8); }
+.narr-wide .editorial__sections { max-width: none; }
+
+/* The measure inside a breakout: everything in a section but its groups
+   grid and its own invite list, and whatever sits between two sections
+   (`.editorial__sections` is a column flexbox, hence the width). A figure
+   block is not reached: nothing caps `.editorial__figure`. */
+.narr-wide .editorial__section > :not(.invite-groups, .invite-list),
+.narr-wide .editorial__sections > :not(.editorial__section),
+.narr-wide .editorial__part-prose {
+  max-width: var(--read);
+  width: 100%;
+  margin-inline: auto;
+}
+/* A section's own invite list keeps its bleed: its box is the measure plus
+   the bleed on both sides, so the names stay under the heading and the hover
+   fill still reaches past the text. The percentage is the section's width:
+   half the surplus over the measure where the section is wider, nothing
+   where it is not (a phone), which leaves the list's own `-bleed`. */
+.narr-wide .editorial__section > .invite-list {
+  max-width: calc(var(--read) + 2 * var(--invite-bleed));
+  margin-inline: calc(max(0px, (100% - var(--read)) / 2) - var(--invite-bleed));
+}
+
+/* The page rail. Hidden below 80rem and in `text` mode, for assistive
+   technology too: the headings themselves are the way through the page. */
+.narr__side { display: none; }
+.toc__cap { margin-bottom: var(--space-3); }
+.toc {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+.toc a {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-text);
+  font-size: var(--size-3);
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+.toc a:hover { color: var(--accent-strong); }
+
+@media (min-width: 80rem) {
+  html[data-narr="rail"] .narr {
+    max-width: var(--narr-max);
+    display: grid;
+    grid-template-columns: minmax(0, var(--read)) minmax(0, var(--fig-w));
+    /* Two rows, for the head and the intro; the rail spans both. The last
+       row is `1fr` so that a rail taller than the text beside it lengthens
+       that row alone, and no space opens between head and intro. */
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-9);
+  }
+  html[data-narr="rail"] .narr > * { grid-column: 1; }
+  /* Sticky inside its own `.narr`: it stays beside the intro and leaves
+     with it, since a breakout has no track beside it. */
+  html[data-narr="rail"] .narr__side {
+    display: block;
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: start;
+    position: sticky;
+    top: calc(var(--header-clear) + var(--space-4));
+  }
+  html[data-narr="rail"][data-narr-side="start"] .narr {
+    grid-template-columns: minmax(0, var(--fig-w)) minmax(0, var(--read));
+  }
+  html[data-narr="rail"][data-narr-side="start"] .narr > * { grid-column: 2; }
+  html[data-narr="rail"][data-narr-side="start"] .narr__side { grid-column: 1; }
+
+  /* A breakout is never the two-track grid. */
+  html[data-narr="rail"] .narr.narr-wide { display: block; }
+  /* The space under the first box. In the block form the last paragraph's
+     bottom margin, the intro's (grid.css), the breakout's top margin and a
+     first part's all collapse into one --space-8. A grid item keeps its own
+     and its children's margins inside itself, so here they would add up.
+     The box's last flow item (the intro, else the head) therefore ends
+     without a margin, and the intro's --space-8 sits on the grid box, where
+     it collapses again. */
+  html[data-narr="rail"] .narr > .editorial__intro,
+  html[data-narr="rail"] .narr > .editorial__intro > :last-child,
+  html[data-narr="rail"] .narr:not(:has(> .editorial__intro)) > .editorial__head > :last-child {
+    margin-bottom: 0;
+  }
+  html[data-narr="rail"] .narr:has(> .editorial__intro) { margin-bottom: var(--space-8); }
+
+  /* The measure inside a breakout moves under the reading column. */
+  html[data-narr="rail"] .narr-wide .editorial__section > :not(.invite-groups, .invite-list),
+  html[data-narr="rail"] .narr-wide .editorial__sections > :not(.editorial__section),
+  html[data-narr="rail"] .narr-wide .editorial__part-prose { margin-inline: 0 auto; }
+  html[data-narr="rail"] .narr-wide .editorial__section > .invite-list {
+    margin-inline: calc(-1 * var(--invite-bleed)) auto;
+  }
+  html[data-narr="rail"][data-narr-side="start"] .narr-wide .editorial__section > :not(.invite-groups, .invite-list),
+  html[data-narr="rail"][data-narr-side="start"] .narr-wide .editorial__sections > :not(.editorial__section),
+  html[data-narr="rail"][data-narr-side="start"] .narr-wide .editorial__part-prose { margin-inline: auto 0; }
+  html[data-narr="rail"][data-narr-side="start"] .narr-wide .editorial__section > .invite-list {
+    margin-inline: auto calc(-1 * var(--invite-bleed));
+  }
+
+  /* Office groups in columns, in both modes; the section's heading and
+     sentence stay above the grid. */
+  .narr-wide .invite-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(24rem, 100%), 1fr));
+    gap: var(--space-8) var(--space-9);
+  }
+}
+
+/* ============================================================================
+   SITE INDEX  (cross-project landing at "/")
+   Lighter shell — this page introduces CPE itself. No hero: the list of
+   projects leads directly (the oversized hero was dropped from the design).
+   ========================================================================== */
+/* The head is as wide as three cards (plus its own two gutters: it is
+   border-box and the gutter is its padding). A `max-width`, never a `width`:
+   on a narrower window it follows the window. Where fewer than three cards
+   fit, it is wider than the row of cards. */
+.index-list-head {
+  max-width: min(var(--shell-max), calc(3 * 25rem + 2 * var(--space-7) + 2 * var(--gutter)));
+  margin: clamp(var(--space-7), 7vw, var(--space-8)) auto 0;
+  padding: 0 var(--gutter) var(--space-3);
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4);
+}
+.index-list-head h2 { font-size: var(--size-5); font-weight: var(--weight-medium); white-space: nowrap; }
+.index-list-head .count { font-family: var(--font-meta); font-size: var(--size-2); color: var(--ink-faint); }
+
+.project-list {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter) var(--space-8);
+  list-style: none;
+  /* A card is 25rem and may shrink but never grow: a fixed `25rem` track
+     would be wider than the window under a large default font.
+     `auto-fit`, not `auto-fill`: where more tracks fit than there are cards,
+     the empty ones must collapse, or the row is centred as if they held a
+     card and the cards stand left of the head. */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(25rem, 100%), 25rem));
+  justify-content: center;
+  gap: var(--space-7);
+}
+.project-list > li { min-width: 0; }
+
+/* ---- teaser card (settled design — see
+   docs/design/site-index-cards/design-output.md's "Card anatomy"). One
+   <a class="teaser"> per project; the whole card is the link. Square
+   corners + a hairline border are the argued exception to "rules over
+   boxes" (§8.1). A 3px top rule in the project's OWN accent (via
+   [data-accent], below) is the only per-project differentiation — it
+   never touches type, link color, or fill (§8.3). */
+.teaser {
+  display: flex;
+  flex-direction: column;
+  height: 25rem;
+  min-height: 25rem;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--rule);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.teaser:hover { background: var(--hover-fill); box-shadow: var(--shadow-card); }
+
+.teaser[data-accent="ochre"] { border-top-color: var(--accent-ochre); }
+.teaser[data-accent="green"] { border-top-color: var(--accent-green); }
+.teaser[data-accent="teal"]  { border-top-color: var(--accent-teal); }
+.teaser[data-accent="red"]   { border-top-color: var(--accent-red); }
+
+/* Plate: inset image slot — paper margin + hairline border, so the picture
+   reads as belonging to the card rather than capping it (§8.2). */
+.teaser__plate { flex: none; padding: var(--space-3) var(--space-3) 0; }
+.teaser__img,
+.teaser__ghost {
+  width: 100%;
+  height: 6.5rem;
+  display: block;
+  border: 1px solid var(--rule);
+}
+.teaser__img {
+  object-fit: cover;
+  background: var(--surface-sunken);
+  /* Mild sepia evens out four unrelated images so the grid reads as one
+     set; hover lifts it back towards full colour along with the card fill. */
+  filter: sepia(0.34) saturate(0.88);
+  transition: filter var(--dur) var(--ease);
+}
+.teaser:hover .teaser__img { filter: sepia(0.1) saturate(1); }
+/* Imageless degradation — a blank sunken block, reserving the plate's
+   space. Provisional treatment (final look owned by the empty-states
+   pass); the border stays transparent (unlike the real img's hairline). */
+.teaser__ghost {
+  background: var(--surface-sunken);
+  border-color: transparent;
+}
+/* Credit caption — always rendered (filled or empty) at a fixed height so
+   titles align across a row, regardless of whether a project records an
+   imageCredit. */
+.teaser__credit {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  height: 1rem;
+  line-height: 1rem;
+  overflow: hidden;
+  margin: var(--space-2) 0 0;
+}
+
+.teaser__body {
+  padding: var(--space-5);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+/* One-line scent (material · place · span); reserved even when empty so
+   the title/desc below stay aligned across a row. */
+.teaser__eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.6;
+  height: 1.6em;
+  flex: none;
+}
+.teaser__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-6);
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.14;
+  max-height: 2.28em;
+  flex: none;
+}
+.teaser__desc {
+  color: var(--ink-muted);
+  font-size: var(--size-3);
+  /* Design's anatomy gives an explicit 1.35 line-height (not
+     --leading-snug, which is 1.28 — the numeric anatomy value wins). */
+  line-height: 1.35;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: 2.7em;
+  flex: none;
+}
+
+/* Footer row: Enter → (site's own --accent-strong — never the per-card
+   accent, §8.3) + the demoted mono /slug/ path (§8.4). */
+.teaser__foot {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+.teaser__enter {
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  letter-spacing: 0.04em;
+  color: var(--accent-strong);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.teaser__path {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+/* small stat chip used on index cards — a translucent tint so it reads the same
+   on the page and on the hover fill (never popping when the card highlights)
+   NOTE: color-mix(…transparent) is decorative here; degrading to transparent is acceptable. */
+.stat {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  border-radius: var(--radius-1);
+  padding: 0.25em 0.6em;
+}
+.stat b { color: var(--ink); font-weight: var(--weight-semibold); }
+
+/* Collapses to one column at the shell's own 860px break. */
+@media (max-width: 860px) {
+  .project-list { grid-template-columns: 1fr; }
+}

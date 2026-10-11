@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: "render_incoming(Some(&rows), &[], None, \"de\")"
+---
+<article class="record page"><header class="record__head"><div class="record__class"><p class="eyebrow">Band</p><span class="record__id">BAND_01</span></div><h1 class="record__title">Band one</h1></header><div class="record__body record__body--noimg"><div class="props"><div class="prop"><div class="prop__label">Width</div><div class="prop__value"><span class="v-number">42</span></div></div></div><section class="pgroup incoming"><header class="pgroup__head"><span class="pgroup__title">Folios</span></header><ul class="incoming__list"><li class="incoming__item"><a class="int-link incoming__name" href="/demo/folios/F_1"><span class="ref">Name F_1</span></a> <span class="incoming__via">Band links</span></li><li class="incoming__item"><a class="int-link incoming__name" href="/demo/volumes/VOL_1?page=L_2"><span class="ref">Name L_2</span></a> <span class="incoming__via">Band Right</span></li><li class="incoming__item"><span class="incoming__name">Name L_3</span> <span class="incoming__via">Band links</span></li></ul></section></div></article>

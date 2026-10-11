@@ -1,0 +1,5 @@
+---
+source: engine/src/component/facet_panel.rs
+expression: out
+---
+<div class="filterbar" id="filters-character-list" aria-live="polite" aria-atomic="true"></div>

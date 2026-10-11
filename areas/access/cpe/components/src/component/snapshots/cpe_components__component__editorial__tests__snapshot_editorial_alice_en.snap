@@ -1,0 +1,22 @@
+---
+source: engine/src/component/editorial.rs
+expression: out
+---
+<article class="editorial page"><div class="narr"><header class="editorial__head"><h1>Alice in DaSCHland</h1></header><div class="prose editorial__intro">
+<p class="editorial__lede"><em>Curiouser and curiouser!</em></p><p class="editorial__open">A<strong>lice in DaSCHland</strong> is a showcase project of the Swiss National Data and
+Service Center for the Humanities (DaSCH). It takes Lewis Carroll's two Alice
+stories — <em>Alice's Adventures in Wonderland</em> (1865) and <em>Through the
+Looking-Glass</em> — and models them as a richly-linked digital-humanities dataset.</p><p>Wander through the <strong>characters</strong> who people Wonderland, the <strong>stories</strong> and
+their <strong>chapters</strong>, the real-world and Wonderland <strong>locations</strong>, and the
+<strong>events</strong> that tie them together — alongside audiobook readings, historical
+<strong>book editions</strong>, and scanned <strong>illustrations</strong>.</p>
+<p>And there is a twist: in DaSCHland, Carroll's cast is reimagined for a world of
+data. The White Rabbit becomes <strong>RabbIT</strong>, a cybernetic archivist forever
+chasing timestamps; the Cheshire Cat a <strong>Quantum Cat</strong>; the Queen of Hearts a
+<strong>Data Queen</strong> who wires emotion to metadata.</p>
+<blockquote class="epigraph"><p>"We're all mad here."</p><cite>the Cheshire Cat</cite></blockquote></div></div><div class="narr narr-wide"><div class="editorial__sections"><section class="editorial__section"><h2 id="sec-1">Meet the characters</h2><p>Browse the full cast of <em>Alice in Wonderland</em> as a linked dataset. Each character
+page shows their description, role, and thematic keywords drawn from the 0854
+source data.</p>
+<ul class="invite-list"><li><a href="/alice-in-daschland/characters/CH_001"><span class="invite__name">Alice</span><span class="invite__gloss">the curious young protagonist</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/characters/CH_002"><span class="invite__name">White Rabbit</span><span class="invite__gloss">forever chasing the clock</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/characters/CH_005"><span class="invite__name">Cheshire Cat</span><span class="invite__gloss">master of disappearing acts</span><span class="invite__arrow">→</span></a></li></ul></section><section class="editorial__section"><h2 id="sec-2">Explore the locations</h2><p>The stories move between the real world and Wonderland. Each location page
+shows its description and type.</p>
+<ul class="invite-list"><li><a href="/alice-in-daschland/locations/L_001"><span class="invite__name">Riverbank</span><span class="invite__gloss">where Alice's adventure begins</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/locations/L_002"><span class="invite__name">Rabbit Hole</span><span class="invite__gloss">the entrance to Wonderland</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/locations/L_003"><span class="invite__name">Duchess' house</span><span class="invite__gloss">a chaotic Wonderland home</span><span class="invite__arrow">→</span></a></li></ul></section></div></div></article>

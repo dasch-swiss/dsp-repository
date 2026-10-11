@@ -1,0 +1,1362 @@
+/* ============================================================================
+   CPE — BASE + SHELL
+   Base element typography, the page shell (header · main · footer),
+   navigation, language switcher, and shared editorial primitives.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Always reserve the scrollbar gutter so centered content (the header,
+     page frame) doesn't shift horizontally between short pages (no scrollbar)
+     and long ones (scrollbar). */
+  scrollbar-gutter: stable;
+  /* Every anchor jump and scrollIntoView lands below the sticky header. A
+     target's own `scroll-margin-top` adds to this, so a margin set elsewhere
+     is the extra beyond --header-clear, not the whole offset. */
+  scroll-padding-top: var(--header-clear);
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--size-4);
+  line-height: var(--leading-body);
+  font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+/* ---- selection + focus ------------------------------------------------ */
+::selection { background: var(--accent-tint); color: var(--ink); }
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* ---- accessibility utilities ------------------------------------------ */
+/* Off-screen but present in the accessibility tree — NOT display:none (which
+   removes an element from the tree entirely). Standard clip-rect idiom. Used
+   for the page <h1> injected on pages with no visible heading of their own
+   (see page_heading / page_has_visible_h1 in web/src/page.rs). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip-to-content link — the first child of <body> on every full-page
+   renderer (render_page, N1, site_index, N2). Off-screen via
+   the same clip-rect idiom as .visually-hidden while unfocused; on :focus it
+   becomes a normal fixed-positioned, visible element pinned to the top-left
+   of the viewport so a keyboard user sees exactly where it landed. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  background: var(--surface-raised);
+  color: var(--ink);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-card);
+}
+.skip-link:focus {
+  position: fixed;
+  z-index: 100;
+  top: var(--space-3);
+  left: var(--space-3);
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.6em 1em;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ---- headings --------------------------------------------------------- */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  margin: 0;
+}
+
+/* ---- links ------------------------------------------------------------ */
+a { color: var(--link); text-decoration: none; }
+.prose a,
+a.linklike {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-color: var(--link-underline);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.prose a:hover,
+a.linklike:hover { text-decoration-color: var(--link); }
+
+p { margin: 0 0 var(--space-5); text-wrap: pretty; }
+
+/* ---- the eyebrow / small-caps label (recurring editorial device) ------
+   Carries a small accent mark so the project accent has a quiet, consistent
+   signature on every surface (incl. the otherwise link-free site index). */
+.eyebrow {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+/* ============================================================================
+   SHELL
+   ========================================================================== */
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ---- the shell header: one row, one DOM at every width ---------------
+   The project header is one DOM: brand · burger · #header-menu (a
+   popover="auto" holding the nav and #header-controls). From 79rem
+   #header-menu is restyled in flow as the desk row and the burger hides;
+   below it the burger opens #header-menu as a panel under the row.
+   ⚠️ 79rem is `HEADER_DESK_BREAKPOINT_PX` (core/src/markup_contract.rs),
+   which the resize-hide on #header-menu and the boot budget
+   (core/src/validate/header_budget.rs) are built from. The two media
+   queries below spell it as a literal, and a test pins them to the
+   constant: change the constant and both queries together.
+   Every desk and panel rule is scoped under #header-menu or
+   .header__menu-btn, so the site index and N2 (chip + appearance only)
+   keep only the row, brand and .theme-toggle rules. */
+.shell__header {
+  border-bottom: var(--rule-weight) solid var(--rule);
+  /* --header-fill is opaque --surface unless color-mix() computes (tokens.css). */
+  background: var(--header-fill);
+  /* Unpinned in the no-popover fallback below, where the row wraps. */
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: saturate(1.1) blur(6px);
+}
+/* The row is a fixed --header-h at every width (plus the 1px hairline: 65px)
+   and never wraps (except in the no-popover fallback below): the project
+   title ellipsises instead. */
+.header__inner {
+  max-width: var(--shell-max);
+  height: var(--header-h);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--space-5);
+}
+
+/* CPE wordmark — CPE looks like itself, not DaSCH */
+/* Baseline within the brand: the small CPE chip sits on the project name's
+   text baseline (the design's lockup), not floating centered against its
+   line-box. The outer .header__inner centers the brand as a block. */
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  text-decoration: none;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.brand__mark {
+  font-family: var(--font-meta);
+  font-weight: var(--weight-semibold);
+  font-size: var(--size-2);
+  letter-spacing: 0.18em;
+  color: var(--surface);
+  background: var(--chip);
+  padding: 0.28em 0.5em 0.24em;
+  border-radius: var(--radius-1);
+  line-height: 1;
+}
+.brand__project {
+  font-family: var(--font-display);
+  font-style: var(--display-italic, normal);
+  font-size: var(--size-4);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Room for the italic's overhang, which `overflow: hidden` would clip. */
+  padding-inline-end: 0.15em;
+}
+.brand__sep { color: var(--ink-faint); font-weight: 300; }
+
+/* header utilities group: the site index's and N2's appearance box */
+.header__controls { display: inline-flex; align-items: center; gap: var(--space-3); }
+.header__controls--push { margin-left: auto; }
+
+/* appearance (dark/light) toggle: a 32px box (44px on a phone outside the
+   menu, below); the panel restyles it as a row (#header-menu rules). */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  text-decoration: none;
+}
+.theme-toggle:hover { color: var(--ink); background: var(--surface-sunken); }
+.theme-toggle__icon {
+  flex: none;
+  width: 0.85rem; height: 0.85rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+}
+[data-appearance="dark"] .theme-toggle__icon {
+  background: linear-gradient(270deg, currentColor 0 50%, transparent 50% 100%);
+}
+
+/* The burger: the bars, then "Menü" (visually hidden on a phone). Pushed to
+   the row's end; hidden in the desk form. */
+.shell__header .header__menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 44px;
+  margin-left: auto;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+}
+.shell__header .header__menu-btn:hover { background: var(--surface-sunken); }
+.header__menu-bars {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 16px;
+  flex: none;
+}
+/* Whole pixels only, so the bars stay crisp. */
+.header__menu-bars > span { display: block; width: 16px; height: 2px; background: currentColor; }
+.shell__header .header__menu-btn:has(+ #header-menu:popover-open) {
+  background: var(--surface-sunken);
+  border-color: var(--rule-strong);
+}
+
+/* The language menu (both forms): a <details> whose server-rendered caret ▾
+   turns to ▴ while open; the server never writes `open`. */
+.lang-menu > summary { list-style: none; cursor: pointer; }
+.lang-menu > summary::-webkit-details-marker { display: none; }
+.lang-menu .caret { display: inline-block; color: var(--ink-faint); font-size: 0.85em; }
+.lang-menu[open] .caret { transform: rotate(180deg); }
+.lang-menu__list a { text-decoration: none; color: var(--ink); }
+.lang-menu__list .code {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+.lang-menu__list a[aria-current="true"] { background: var(--ink); color: var(--surface); }
+.lang-menu__list a[aria-current="true"] .code { color: inherit; }
+
+/* ---- desk form: #header-menu in flow as the row (≥ 79rem) --------------
+   The breakpoint is the smallest whole rem at which the widest shipped row
+   (Alice FR, 1,134px: brand + nav + controls + both 32px gaps) fits with at
+   least 24px to spare: the frame leaves 1,170px there, about 15px less
+   beside a classic scrollbar.
+   The boot warning `HeaderRowOverBudget` estimates this row from the sizes
+   and gaps below (core/src/validate/header_budget.rs): change both. */
+@media (min-width: 79rem) {
+  .header__inner { gap: var(--space-6); }
+  .shell__header .header__menu-btn { display: none; }
+  /* The bare rule beats the UA's [popover]:not(:popover-open) { display:
+     none } (author over UA). Its :popover-open twin is a separate rule: a
+     selector list holding :popover-open is dropped whole where that pseudo
+     is unknown. */
+  #header-menu {
+    display: flex; align-items: center; gap: var(--space-6);
+    position: static; inset: auto;
+    width: auto; height: auto; max-height: none;
+    margin: 0 0 0 auto; padding: 0; border: 0;
+    color: inherit; background: none; overflow: visible; box-shadow: none;
+  }
+  #header-menu:popover-open {
+    display: flex; align-items: center; gap: var(--space-6);
+    position: static; inset: auto;
+    width: auto; height: auto; max-height: none;
+    margin: 0 0 0 auto; padding: 0; border: 0;
+    color: inherit; background: none; overflow: visible; box-shadow: none;
+  }
+  #header-menu .header__nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex: none;
+    white-space: nowrap;
+  }
+  #header-menu .header__nav a {
+    display: block;
+    font-family: var(--font-meta);
+    font-size: var(--size-1);
+    line-height: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 7px 0 5px;
+    border-bottom: 1px solid transparent;
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  #header-menu .header__nav a:hover { color: var(--accent-strong); border-bottom-color: var(--accent); }
+  #header-menu .header__nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+  #header-menu .header__controls { display: flex; align-items: center; gap: 8px; flex: none; }
+  #header-menu .header__row { display: contents; }
+  #header-menu .header__row-label,
+  #header-menu .theme-toggle__panel-name { display: none; }
+  #header-menu .lang-menu .name,
+  #header-menu .theme-toggle__desk-name {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  #header-menu .lang-menu { position: relative; }
+  #header-menu .lang-menu > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 2rem;
+    padding: 0 10px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-2);
+    font-family: var(--font-meta);
+    font-size: var(--size-1);
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+  #header-menu .lang-menu > summary:hover { background: var(--surface-sunken); }
+  #header-menu .lang-menu[open] > summary {
+    background: var(--surface-sunken);
+    border-color: var(--rule-strong);
+  }
+  #header-menu .lang-menu__list {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 13rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    background: var(--surface-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-2);
+    box-shadow: var(--shadow-card);
+  }
+  #header-menu .lang-menu__list a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    padding: 0 10px;
+    border-radius: var(--radius-1);
+    font-family: var(--font-text);
+    font-size: var(--size-3);
+  }
+  #header-menu .lang-menu__list a:not([aria-current="true"]):hover { background: var(--surface-sunken); }
+}
+
+/* ---- menu form: the burger's panel (< 79rem) ---------------------------
+   `not all and (min-width: 79rem)` is the exact complement of the desk
+   query, so no width gets both forms. */
+@media not all and (min-width: 79rem) {
+  /* Every UA [popover] default is overridden: the panel sits under the
+     row, full width, and scrolls on its own when taller than the window. */
+  #header-menu:popover-open {
+    position: fixed;
+    top: calc(var(--header-h) + var(--rule-weight));
+    bottom: auto;
+    inset-inline: 0;
+    width: auto;
+    height: auto;
+    max-height: calc(100dvh - var(--header-h) - var(--rule-weight));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    /* The inline padding puts the panel's content on the header frame's
+       edges (`--shell-max` centred, plus the gutter) at every width. */
+    padding: 16px max(var(--gutter), calc((100% - var(--shell-max)) / 2 + var(--gutter))) 32px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 0 48px;
+    align-items: start;
+  }
+  #header-menu .header__nav { display: flex; flex-direction: column; }
+  #header-menu .header__nav a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-meta);
+    font-size: var(--size-2);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  #header-menu .header__nav a:last-child { border-bottom: 0; }
+  #header-menu .header__nav a:hover { color: var(--accent-strong); }
+  #header-menu .header__nav a[aria-current="page"] {
+    color: var(--ink);
+    text-decoration: underline 2px var(--accent);
+    text-underline-offset: 6px;
+  }
+  #header-menu .header__controls { display: block; }
+  /* A row: its label on the left, the control filling the rest with its
+     content at the right edge, so an open language list below the summary
+     spans the row. The label is aria-hidden and lets clicks through. */
+  #header-menu .header__row {
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+  #header-menu .header__row:has(> .lang-menu[open]) { border-bottom: 0; }
+  #header-menu .header__row:has(> .lang-menu[open]) + .header__row { border-top: 1px solid var(--rule); }
+  #header-menu .header__row-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    font-family: var(--font-meta);
+    font-size: var(--size-1);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  #header-menu .lang-menu > summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 11px 0;
+    line-height: 26px;
+    color: var(--ink);
+  }
+  #header-menu .lang-menu .name { order: -1; font-family: var(--font-text); font-size: var(--size-3); }
+  #header-menu .lang-menu > summary .code {
+    font-family: var(--font-meta);
+    font-size: var(--size-1);
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+  }
+  /* The list, inline under the summary in a bordered box. */
+  #header-menu .lang-menu__list {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-2);
+  }
+  #header-menu .lang-menu__list a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-text);
+    font-size: var(--size-3);
+  }
+  #header-menu .lang-menu__list a:last-child { border-bottom: 0; }
+  #header-menu .lang-menu__list a:not([aria-current="true"]):hover { background: var(--surface-sunken); }
+  #header-menu .lang-menu__list a[aria-current="true"] { border-bottom: 0; }
+  #header-menu .lang-menu__list a:first-child {
+    border-top-left-radius: calc(var(--radius-2) - 1px);
+    border-top-right-radius: calc(var(--radius-2) - 1px);
+  }
+  #header-menu .lang-menu__list a:last-child {
+    border-bottom-left-radius: calc(var(--radius-2) - 1px);
+    border-bottom-right-radius: calc(var(--radius-2) - 1px);
+  }
+  /* The appearance row: the icon and the target mode's name at the right.
+     Its label stays in flow (no list to span the row), so in the narrow
+     two-column panel a long name wraps instead of running under the label. */
+  #header-menu .header__row:has(> .theme-toggle) { display: flex; align-items: center; gap: 12px; }
+  #header-menu .header__row:has(> .theme-toggle) > .header__row-label { position: static; flex: none; }
+  #header-menu .theme-toggle {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    justify-content: flex-end;
+    text-align: end;
+    gap: 10px;
+    border: 0;
+    border-radius: 0;
+    color: var(--ink);
+    font-family: var(--font-text);
+    font-size: var(--size-3);
+  }
+  #header-menu .theme-toggle:hover { background: none; color: var(--accent-strong); }
+  #header-menu .theme-toggle__icon { color: var(--ink-muted); }
+  #header-menu .theme-toggle__desk-name { display: none; }
+}
+
+/* ---- phone: one column, an icon-only burger (≤ 640px) ------------------ */
+@media (max-width: 640px) {
+  .header__inner { gap: var(--space-4); }
+  .shell__header .header__menu-btn { width: 44px; padding: 0; justify-content: center; }
+  .header__menu-label {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  /* The site index's and N2's appearance box gets the phone tap target. */
+  .header__controls--push .theme-toggle { width: 44px; height: 44px; }
+  /* 6px, not the design's 4px: the panel scrolls (overflow-y), so it would
+     clip the top of the first link's 2px + 3px-offset focus ring. */
+  #header-menu:popover-open { display: block; padding: 6px var(--gutter) 24px; }
+  #header-menu .header__nav a:last-child { border-bottom: 1px solid var(--rule-strong); }
+  #header-menu .header__controls { margin-top: 8px; }
+  #header-menu .header__row { border-bottom: 0; }
+}
+@media (max-width: 24.99rem) {
+  .header__inner { gap: 10px; }
+  .brand { gap: 8px; }
+  .brand__sep { display: none; }
+}
+
+/* ---- focus: every header control ----------------------------------------- */
+.shell__header .header__menu-btn:focus-visible,
+#header-menu .header__nav a:focus-visible,
+.lang-menu > summary:focus-visible,
+.lang-menu__list a:focus-visible,
+.shell__header .theme-toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ---- no popover support: the menu shows in flow under the row ---------
+   Not pretty, but every control stays reachable. This block must not name
+   the popover-open pseudo-class: it is exactly what these engines lack.
+   The wrapped header is taller than --header-h, so it does not stick and
+   --header-clear shrinks to its 1rem: a sticky top or an anchor landing
+   sized for 65px would sit under it and hide focus. */
+@supports not selector(:popover-open) {
+  :root { --header-clear: var(--space-4); }
+  .shell__header { position: static; }
+  .shell__header .header__menu-btn { display: none; }
+  .header__inner { flex-wrap: wrap; height: auto; min-height: var(--header-h); }
+  #header-menu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    flex: 1 0 100%;
+    padding-bottom: var(--space-3);
+  }
+  #header-menu .header__nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+  #header-menu .header__controls { display: flex; align-items: center; gap: 8px; }
+}
+
+/* ---- forced colours ------------------------------------------------------ */
+@media (forced-colors: active) {
+  .shell__header .header__menu-btn,
+  .lang-menu > summary,
+  .theme-toggle { border-color: ButtonBorder; color: ButtonText; }
+  .lang-menu .caret { color: ButtonText; }
+  /* The bars are backgrounds, which forced colours would erase. */
+  .header__menu-bars > span { forced-color-adjust: none; background: ButtonText; }
+  .lang-menu__list { border: 1px solid CanvasText; }
+  .lang-menu__list a { color: LinkText; }
+  .lang-menu__list a[aria-current="true"],
+  #header-menu .header__nav a[aria-current="page"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  #header-menu .header__nav a[aria-current="page"] { border-bottom: 2px solid CanvasText; text-decoration-color: CanvasText; }
+  .theme-toggle__icon {
+    forced-color-adjust: none;
+    border: 1.5px solid ButtonText;
+    background: linear-gradient(90deg, ButtonText 0 50%, transparent 50%);
+  }
+  [data-appearance="dark"] .theme-toggle__icon {
+    background: linear-gradient(270deg, ButtonText 0 50%, transparent 50%);
+  }
+}
+
+/* ---- main ------------------------------------------------------------- */
+.shell__main { flex: 1 1 auto; }
+
+/* ---- breadcrumb — quiet "you are here" trail below the header --------- */
+/* The crumb line is its own layer: below the sticky header (20), above
+   everything on the page under it (the reader's pager is 6, its picker panel
+   4). The dataset panel's own 30 orders inside this layer, so the open panel
+   lies over the page and passes under the header. */
+.breadcrumb {
+  position: relative;
+  z-index: 10;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter) 0;
+}
+.breadcrumb__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+}
+.breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-faint);
+}
+.breadcrumb__sep {
+  color: var(--ink-faint);
+  margin: 0 var(--space-3);
+  user-select: none;
+}
+.breadcrumb__item a {
+  /* a 24px target (WCAG 2.5.8) */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--ink-muted);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.breadcrumb__item a:hover { color: var(--accent-strong); border-bottom-color: var(--accent); }
+.breadcrumb__current { color: var(--ink); }
+
+/* crumb line as a wrapping flex row — path left, `.crumb-actions` frame right
+   (share-view plan step 3). No fixed widths anywhere in this block: DE
+   labels run ~45% longer than EN, and above 40rem the row must wrap, never
+   truncate. Below 40rem it is one line (THE PHONE ROW, in BACKLINKS). */
+.breadcrumb__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--space-5);
+  row-gap: var(--space-2);
+}
+/* The row's phone forms (the back link, each action's short label) are in the
+   markup at every width and hidden unless a narrower rule shows them. */
+.crumb-back,
+.crumb-label--short { display: none; }
+
+/* "Copy link" share control (share-view plan step 3, design doc "Anatomy") */
+.crumb-share {
+  display: inline-flex;
+  align-items: baseline;
+}
+.crumb-share__link {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.03em;
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.15em;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease), text-decoration-color var(--dur) var(--ease);
+}
+.crumb-share__link:hover {
+  color: var(--accent-strong);
+  text-decoration-color: var(--accent-strong);
+}
+.crumb-share__mark {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -0.16em;
+  margin-right: 0.4em;
+}
+.crumb-share__glyph { display: inline-flex; }
+.crumb-share__dot {
+  display: none;
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background: var(--accent-strong);
+}
+/* Copied state: glyph → dot, no transition on the swap (design doc — "the
+   receipt must not fade in"). This is a plain class-driven display swap,
+   not the `hidden` attribute, so it carries no `[hidden]`/`display`
+   conflict (see cpe/CLAUDE.md's DataStar gotchas). */
+.crumb-share__link.is-copied .crumb-share__glyph { display: none; }
+.crumb-share__link.is-copied .crumb-share__dot { display: inline-block; }
+/* Design doc "Anatomy": the copied-state dot carries its own
+   `margin-right: 0.5em` (vs. the wrapper's shared 0.4em for the resting
+   glyph) — so the dot reads like the glyph it replaces, spaced slightly
+   wider to match its rounder shape. Applied to `.crumb-share__mark` (the
+   wrapper), not `.crumb-share__dot` itself: the dot is the wrapper's only
+   child in this state, so a margin on the dot directly would stack with
+   the wrapper's own `margin-right` (0.4em + 0.5em = 0.9em) instead of
+   replacing it. */
+.crumb-share__link.is-copied .crumb-share__mark { margin-right: 0.5em; }
+
+/* Visually-hidden aria-live status span — announces the long form; the
+   visible receipt stays two syllables ("Copied"). Same visually-hidden
+   idiom as `.visually-hidden` elsewhere in this file. */
+.crumb-share__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================================
+   BACKLINKS (Slice 9) — the crumb line's framed action block: Copy link in
+   its first row, the dataset panel row under it (design: CrumbLine.dc.html).
+   Above 40rem, no `margin-left: auto` on the frame: `.breadcrumb__row`'s
+   space-between keeps it at the right on a shared line, and a frame that
+   wraps onto its own line starts at the left, as the design's narrow board
+   draws it. Below 40rem the row does not wrap (THE PHONE ROW).
+   ========================================================================= */
+.crumb-actions {
+  anchor-name: --crumb-actions; /* the dataset panel's anchor, see the panel */
+  display: grid;
+  flex: 0 0 auto;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+.crumb-actions__row {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  padding: var(--space-1) var(--space-3);
+}
+
+/* The dataset row: a closed <details> under Copy link. */
+.crumb-data { border-top: 1px solid var(--rule); }
+.crumb-data__summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.03em;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.crumb-data__summary::-webkit-details-marker { display: none; }
+.crumb-data__summary:hover { color: var(--accent-strong); }
+.crumb-data__summary:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.crumb-data[open] > .crumb-data__summary { background: var(--surface-sunken); }
+.crumb-data__label {
+  margin-right: var(--space-4);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.15em;
+}
+/* No padding on the caret: the open state rotates its whole box. */
+.crumb-data__caret {
+  display: inline-block;
+  font-size: 0.85em;
+  margin-left: auto;
+}
+.crumb-data[open] > .crumb-data__summary .crumb-data__caret { transform: rotate(180deg); }
+
+/* The DaSCH mark: a mask filled with the surrounding text colour, so the
+   summary's is muted ink and Open in DSP's is the brand blue. */
+.dasch-mark,
+.dasch-link__mark {
+  display: inline-block;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: url("dasch-fingerprint.svg") center / contain no-repeat;
+  mask: url("dasch-fingerprint.svg") center / contain no-repeat;
+}
+.dasch-mark { width: 14px; height: 11.4px; margin-right: 0.4em; }
+
+/* The panel overlays the page under the frame and must stay inside the
+   viewport at every width (plan D14). Its containing block is the crumb row,
+   never the frame: a frame that wraps onto its own line sits at the row's
+   left, and a 31rem panel hung from its right edge would leave the viewport.
+   Without anchor positioning the panel hangs from the row's right edge. With
+   it, the panel's right edge meets the frame's, clamped at the row's left
+   edge, so a wrapped frame gets a left-aligned panel. (A flip-inline
+   fallback cannot do this: the panel always overflows the short row
+   vertically, so no try position ever fits.) Without anchor positioning
+   the top is the row's bottom, which is the frame's unless a wrapped trail
+   on the frame's line is taller. The width is capped by the row, not by
+   `100vw`, which counts a classic scrollbar. Below 40rem the panel spans the
+   row (THE PHONE ROW, below). */
+.breadcrumb__row { position: relative; }
+.crumb-data__panel {
+  --crumb-panel-w: 31rem;
+  /* A size container (the head stacks in a narrow panel), so its width must
+     never come from its content: every form of the panel states a width or
+     both inline insets. */
+  container: crumbdata / inline-size;
+  position: absolute;
+  top: calc(100% - 1px);
+  right: 0;
+  z-index: 30;
+  width: var(--crumb-panel-w);
+  max-width: 100%;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  box-shadow: 0 1px 2px oklch(0.3 0.03 var(--neutral-hue) / 0.08),
+              0 12px 32px -8px oklch(0.3 0.03 var(--neutral-hue) / 0.22);
+  text-align: left;
+  white-space: normal;
+}
+@supports (anchor-name: --a) {
+  .crumb-data__panel {
+    position-anchor: --crumb-actions;
+    /* The 100% fallbacks give the no-anchor geometry if the anchor fails. */
+    top: calc(anchor(bottom, 100%) - 1px);
+    right: auto;
+    left: max(0px, anchor(right, 100%) - var(--crumb-panel-w));
+  }
+}
+.crumb-data__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5) calc(var(--space-3) + 0.47rem);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.crumb-data__head .dasch-logo__img {
+  flex: none;
+  height: 1.4rem;
+  width: auto;
+  position: relative;
+  top: 0.473rem;
+}
+.crumb-data__lede {
+  margin: 0;
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--rule);
+  font-family: var(--font-text);
+  font-size: var(--size-2);
+  line-height: 1.25;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+.crumb-data__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 26rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.crumb-data__group {
+  border-top: 1px solid var(--rule);
+  padding: var(--space-2) var(--space-5);
+  background: var(--surface-sunken);
+}
+.crumb-data__group,
+.crumb-data__role,
+.crumb-data__pid-label {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.crumb-data__pid-label { font-size: 11px; }
+.crumb-data__entry {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+.crumb-data__entry:first-child,
+.crumb-data__group + .crumb-data__entry { border-top: 0; }
+.crumb-data__id { display: grid; gap: 2px; }
+.crumb-data__title {
+  font-family: var(--font-display);
+  font-style: var(--display-italic, normal);
+  font-size: var(--size-4);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+  text-wrap: pretty;
+}
+.crumb-data__title--clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.crumb-data__pid-block { display: grid; gap: var(--space-1); }
+.crumb-data__pid {
+  display: flex;
+  align-items: stretch;
+  background: var(--surface-sunken);
+  border: 1px solid var(--rule);
+}
+.crumb-data__code {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  line-height: 1.5;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  user-select: all;
+}
+.crumb-data__copy-wrap {
+  position: relative;
+  flex: none;
+  display: flex;
+  border-left: 1px solid var(--rule);
+}
+/* Without JS the button stays hidden; its cell goes with it. */
+.crumb-data__copy-wrap:has(> .crumb-data__copy[hidden]) { display: none; }
+.crumb-data__copy {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+/* `display: grid` above would defeat the `hidden` attribute. */
+.crumb-data__copy[hidden] { display: none; }
+.crumb-data__copy:hover { color: var(--accent-strong); background: var(--hover-fill); }
+.crumb-data__copy:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.crumb-data__dot {
+  display: none;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--accent-strong);
+}
+.crumb-data__tip {
+  display: none;
+  position: absolute;
+  right: -1px;
+  bottom: calc(100% + 6px);
+  z-index: 2;
+  padding: 3px 8px;
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--surface);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+.crumb-data__tip-done { display: none; }
+.crumb-data__copy:hover + .crumb-data__tip,
+.crumb-data__copy:focus-visible + .crumb-data__tip { display: block; }
+/* The receipt: the glyph gives way to the dot, the tooltip says "Copied". */
+.crumb-data__entry.is-copied .crumb-data__copy { background: var(--hover-fill); }
+.crumb-data__entry.is-copied .crumb-data__copy svg { display: none; }
+.crumb-data__entry.is-copied .crumb-data__dot { display: inline-block; }
+.crumb-data__entry.is-copied .crumb-data__tip { display: block; }
+.crumb-data__entry.is-copied .crumb-data__tip-rest { display: none; }
+.crumb-data__entry.is-copied .crumb-data__tip-done { display: inline; }
+
+/* The listing form (Slice 7): what a narrative page's figure blocks render.
+   A count line under the head, one native fold per page section when there
+   are several (each fold's list scrolls with the panel's own list, never
+   on its own), and compact two-line entries (design HANDOFF §4). */
+.crumb-data__count {
+  margin: 0;
+  padding: var(--space-2) var(--space-5);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+/* The head's bottom rule sits above the count line; each fold's top rule
+   below it. */
+.crumb-data__section { border-top: 1px solid var(--rule); }
+.crumb-data__fold-summary {
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: var(--size-3);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+}
+.crumb-data__fold-summary::-webkit-details-marker { display: none; }
+.crumb-data__fold-summary:hover { background: var(--hover-fill); }
+.crumb-data__fold-summary:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.crumb-data__fold-title { flex: 1 1 auto; min-width: 0; }
+.crumb-data__fold-count,
+.crumb-data__fold-caret {
+  flex: none;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+}
+/* A text glyph, not a rotated one: ▸ closed, ▾ open. */
+.crumb-data__fold-caret::before { content: "▸"; }
+.crumb-data__fold[open] > .crumb-data__fold-summary .crumb-data__fold-caret::before { content: "▾"; }
+.crumb-data__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.crumb-data__entry--compact { padding-block: var(--space-3); }
+.crumb-data__entry--compact .crumb-data__id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-3);
+}
+.crumb-data__entry--compact .crumb-data__title { font-size: var(--size-3); }
+.crumb-data__line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.crumb-data__line .crumb-data__pid { flex: 1 1 auto; min-width: 0; }
+.crumb-data__line .dasch-link { flex: none; }
+
+/* "Open in DSP": DaSCH's brand blue and the mark, never the ↗ of .ext-link. */
+.dasch-link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 32px;
+  font-family: 'Lora', Georgia, serif;
+  font-size: var(--size-2);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--dasch-brand);
+  text-decoration: none;
+}
+.dasch-link__mark { width: 1.48em; height: 1.2em; }
+.dasch-link__text {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--dasch-brand) 45%, transparent);
+  text-underline-offset: 0.15em;
+}
+.dasch-link:hover .dasch-link__text { text-decoration-color: currentColor; }
+.dasch-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* A narrow panel (a 320px phone) stacks its head: the logo over the lede. */
+@container crumbdata (max-width: 20rem) {
+  .crumb-data__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+  }
+  .crumb-data__head .dasch-logo__img { top: 0; }
+  .crumb-data__lede { padding-left: 0; border-left: 0; }
+}
+
+/* THE PHONE ROW: at 40rem and below the crumb line is one row that never wraps.
+   - Only the back link gives way (down to its floor, its label ellipsized),
+     also while "Copied" widens the share cell. The row therefore needs the
+     floor, the gap and both action cells: the 23rem rule below drops the
+     dataset label where they no longer fit.
+   - Only a row's trail is hidden (N3's crumb line has no row and keeps its
+     trail), with `display: none` so that no link stays focusable unseen.
+   - Keep this block after the base rules and after the panel's @supports
+     block: it overrides both by order alone. With no `anchor()` left in the
+     panel's insets, the anchored block's `position-anchor` has no effect. */
+@media (max-width: 40rem) {
+  .breadcrumb { padding-top: var(--space-3); }
+  .breadcrumb__row { flex-wrap: nowrap; align-items: center; }
+  .breadcrumb__row .breadcrumb__list { display: none; }
+  .crumb-back {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.35em;
+    min-height: 44px;
+    min-width: 5.5rem;
+    font-family: var(--font-meta);
+    font-size: var(--size-1);
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  /* On the label, not the link: `text-overflow` does not reach the bare text
+     of an inline-flex box. */
+  .crumb-back__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* The auto margin keeps the frame at the right where no back link
+     precedes it (the site index). */
+  .crumb-actions { display: flex; margin-left: auto; }
+  .crumb-actions > * + * { border-left: 1px solid var(--rule); border-top: 0; }
+  .crumb-actions__row,
+  .crumb-data__summary { min-height: 36px; padding-inline: var(--space-3); }
+  .crumb-label--long { display: none; }
+  .crumb-label--short { display: inline; }
+  /* The panel spans the row, just under it. */
+  .crumb-data__panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    top: calc(100% + var(--space-1));
+  }
+}
+/* Below 23rem (368px) the dataset action shows its mark alone: the German row
+   needs 366px with both labels (two 20px gutters, the back link's 5.5rem
+   floor, the 24px gap, 214px of actions). The label is clipped, not removed,
+   like every visually hidden label here. */
+@media (max-width: 23rem) {
+  .crumb-data__summary .crumb-label--short {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .crumb-data__summary .dasch-mark { margin-right: 0.3em; }
+}
+
+/* A currentColor mask turns invisible or solid under forced colours. */
+@media (forced-colors: active) {
+  .dasch-mark { forced-color-adjust: none; background-color: CanvasText; }
+  .dasch-link__mark { forced-color-adjust: none; background-color: LinkText; }
+  .crumb-data__dot { forced-color-adjust: none; background-color: Highlight; }
+  /* Its ink-on-surface fill becomes Canvas on Canvas: only a border shows it. */
+  .crumb-data__tip { border: 1px solid CanvasText; }
+}
+/* BACKLINKS (Slice 9) -- END */
+
+/* when a breadcrumb is present, the page header sits closer to it */
+.shell__main:has(.breadcrumb) .page { padding-top: var(--space-6); }
+
+.page {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: clamp(var(--space-7), 6vw, var(--space-9)) var(--gutter) var(--space-9);
+}
+
+/* ---- footer ----------------------------------------------------------- */
+.shell__footer {
+  border-top: var(--rule-weight) solid var(--rule);
+  background: var(--surface-sunken);
+  margin-top: var(--space-9);
+}
+.footer__inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: var(--space-7) var(--gutter);
+}
+/* keep the brand chip content-sized (like the header), not stretched across
+   its full-width grid row — justify-self overrides the grid default of stretch */
+.footer__mark { align-self: start; justify-self: start; }
+.footer__desc {
+  color: var(--ink-muted);
+  font-size: var(--size-3);
+  line-height: var(--leading-loose);
+  margin: 0;
+}
+/* discreet DaSCH attribution — never dominant chrome */
+.footer__attr {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  line-height: var(--leading-snug);
+}
+.footer__attr a { color: var(--ink-muted); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 0.18em; }
+.footer__attr strong { color: var(--ink-muted); font-weight: var(--weight-semibold); }
+
+/* ---- site-index footer (general · CPE-as-a-DaSCH-product) ------------- */
+.shell__footer--index { background: var(--surface-sunken); }
+/* --dasch (petrol) is defined in tokens.css and intentionally unused
+   elsewhere; the index-footer product tagline below is its single consumption
+   site — a discreet DaSCH-brand accent on the CPE product footer only, never on
+   project pages. Applied to the tagline (on --surface-sunken) for AA contrast,
+   not to the inverted .brand__mark chip. --dasch-brand (the "Open in DSP"
+   links on project pages) is a different token. */
+.footer-index__inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: var(--space-8) var(--gutter);
+}
+/* the chip is an inline <span>; make it a content-width block so its
+   margin-bottom actually separates it from the tagline below */
+.footer-index__product .footer__mark { display: block; width: fit-content; margin-bottom: var(--space-4); }
+.footer-index__tagline {
+  font-family: var(--font-display);
+  font-style: var(--display-italic, normal);
+  font-size: var(--size-5);
+  line-height: var(--leading-snug);
+  color: var(--dasch);
+  margin: 0 0 var(--space-3);
+  text-wrap: balance;
+}
+.footer-index__desc {
+  color: var(--ink-muted);
+  font-size: var(--size-3);
+  line-height: var(--leading-loose);
+  margin: 0;
+}
+@media (max-width: 860px) {
+  .footer-index__org { padding-top: var(--space-6); border-top: var(--rule-weight) solid var(--rule); }
+}
+
+/* the official DaSCH logo lockup */
+.dasch-logo { display: inline-block; line-height: 0; }
+.dasch-logo__img { height: 2.5rem; width: auto; display: block; }
+.dasch-logo__img--dark { display: none; }
+[data-appearance="dark"] .dasch-logo__img--light { display: none; }
+[data-appearance="dark"] .dasch-logo__img--dark { display: block; }
+.dasch-logo:hover { opacity: 0.82; }
+/* Logo swaps to the reversed variant only under explicit dark (cookie-driven);
+   CPE defaults to light, so there is no OS-preference logo swap. */
+/* the project footer's lockup (Slice 9): smaller than the site index's 2.5rem */
+.footer__lockup { padding: 2px; }
+.footer__lockup .dasch-logo__img { height: 1.75rem; }
+
+.footer-index__orgname {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  line-height: var(--leading-snug);
+  color: var(--ink-faint);
+  margin: var(--space-3) 0 0;
+}
+
+.footer-index__links {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+/* footer links share the understated header-nav treatment: muted at rest,
+   accent border-bottom on hover (no link-colour underline) — casing kept.
+   A 24px target (WCAG 2.5.8): the text sits at the foot of the box, so the
+   line's own leading is the gap above the hover border, with no padding. */
+.footer-index__links a {
+  display: inline-flex;
+  align-items: flex-end;
+  min-height: 24px;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ink-muted);
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.footer-index__links a:hover { color: var(--accent-strong); border-bottom-color: var(--accent); }
+/* middot between the distinct links — the row gap sits to its left, the
+   margin to its right, so the dot reads as centred between the two items */
+.footer-index__links li + li::before {
+  content: "·";
+  margin-right: var(--space-4);
+  color: var(--rule-strong);
+}
+
+.footer-index__social {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.footer-index__social a {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+.footer-index__social a:hover { color: var(--accent-strong); }
+
+/* full-width base strip — the © line, mirroring dasch.swiss */
+.footer-index__base {
+  border-top: var(--rule-weight) solid var(--rule);
+}
+.footer-index__rights {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+}
+
+/* ---- no opacity-based entrance animation -----------------------------
+   Content is visible by default — safe for print, PDF export, reduced-motion,
+   and backgrounded iframes. Motion lives in hover/interaction states only. */

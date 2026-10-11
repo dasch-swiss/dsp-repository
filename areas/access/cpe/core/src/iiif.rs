@@ -17,7 +17,7 @@ use std::borrow::Cow;
 
 /// Width (px) requested for list thumbnails via the IIIF Image API `size`
 /// parameter. The display box is 6rem (96px, see `.rl-annot__thumb` in
-/// `dsp-incubator cpe/static/cpe/grid.css`); 384 is 4x that, so the image stays
+/// `areas/access/cpe/components/style/grid.css`); 384 is 4x that, so the image stays
 /// crisp up to 3x-DPI screens while still downloading a few KB instead of the
 /// multi-MB full image. At ≤640px the phone row layout widens the box to 7.5rem
 /// (120px); 384 is still 3.2x that.
@@ -31,9 +31,9 @@ pub(crate) const THUMB_WIDTH: u32 = 384;
 ///
 /// Its CSS boxes (see the "display-size CSS box needs a paired fetch-size
 /// constant" Non-obvious constraint in `dsp-incubator cpe/CLAUDE.md`):
-/// - the book reader's stage (`--stage-h`, `dsp-incubator cpe/static/cpe/record.css`). A book page
-///   is portrait, so the stage's height binds it: 900 covers a page at 1× up to the stage's 92rem
-///   ceiling, and no further;
+/// - the book reader's stage (`--stage-h`, `areas/access/cpe/components/style/record.css`). A book
+///   page is portrait, so the stage's height binds it: 900 covers a page at 1× up to the stage's
+///   92rem ceiling, and no further;
 /// - the record viewer's stand (`component::media`), where a landscape image is bound by the
 ///   column's width instead;
 /// - the member scan (`compound_viewer::render_member_scan`, `.cv-member__scan img` in
@@ -43,8 +43,8 @@ pub(crate) const PLATE_WIDTH: u32 = 900;
 /// Width (px) requested for embedded-media strip thumbnails via the IIIF
 /// Image API `size` parameter.
 ///
-/// Paired with the strip-thumb CSS box in `dsp-incubator
-/// cpe/static/cpe/media.css`, which renders at 52px — 208 is 4x that,
+/// Paired with the strip-thumb CSS box in
+/// `areas/access/cpe/components/style/media.css`, which renders at 52px — 208 is 4x that,
 /// deliberately NOT the reference design's `96`, so the thumbnail stays crisp
 /// up to Retina/3x-DPI screens (mirrors `THUMB_WIDTH`'s rationale above; the
 /// reference design's `96` was sized for a 24px display box, which does not
@@ -54,8 +54,8 @@ pub(crate) const STRIP_THUMB_WIDTH: u32 = 208;
 /// Width (px) requested for grid-mode tile images (`.gm__box`) via the IIIF
 /// Image API `size` parameter.
 ///
-/// Paired with the `.gm__box` CSS box in `dsp-incubator
-/// cpe/static/cpe/grid.css`: change both together. The box's
+/// Paired with the `.gm__box` CSS box in
+/// `areas/access/cpe/components/style/grid.css`: change both together. The box's
 /// `minmax(--tile-min, 1fr)` track has a floor of at most 16rem (256px) and
 /// stretches a tile until one more column fits. With three or more columns and
 /// the 24px `--grid-gap` the widest tile is `(4 × 256 + 24) / 3`, about 349px;
@@ -68,7 +68,7 @@ pub(crate) const STRIP_THUMB_WIDTH: u32 = 208;
 pub(crate) const GRID_TILE_WIDTH: u32 = 512;
 
 /// Largest side (px) requested for a tall grid tile, paired with the tall box
-/// (`.gm[data-tile="tall"] .gm__box`, `dsp-incubator cpe/static/cpe/grid.css`),
+/// (`.gm[data-tile="tall"] .gm__box`, `areas/access/cpe/components/style/grid.css`),
 /// whose height is capped at 70svh: 1× on a 1440px-tall window, 1.6× on a 900px
 /// one.
 pub(crate) const GRID_TALL_FETCH_PX: i64 = 1000;
@@ -125,7 +125,7 @@ pub fn iiif_tall_tile_url(uri: &str, w: Option<i64>, h: Option<i64>) -> Cow<'_, 
 }
 
 /// Width (px) requested for a `strip-row` tile, paired with the
-/// `.strip__bed` box (`dsp-incubator cpe/static/cpe/incunabula.css`), 2× its
+/// `.strip__bed` box (`areas/access/cpe/components/style/incunabula.css`), 2× its
 /// widest tile: change both together.
 pub(crate) const STRIP_TILE_FETCH_PX: u32 = 192;
 
@@ -199,26 +199,26 @@ pub fn iiif_info_json_url(uri: &str) -> Option<String> {
 }
 
 /// Largest side (px) requested for a woodcut crop, paired with the 24rem
-/// crop bed (`.case__bed`, `dsp-incubator cpe/static/cpe/incunabula.css`), ≥ 2×
+/// crop bed (`.case__bed`, `areas/access/cpe/components/style/incunabula.css`), ≥ 2×
 /// at desk. The request is further clamped to the region's own pixel size
 /// ([`iiif_region_url`]).
 pub const CROP_FETCH_PX: i64 = 800;
 
 /// Largest side (px) requested for a detail crop, paired with the 4.5rem
-/// detail bed (`.case__detail .case__bed`, `dsp-incubator
-/// cpe/static/cpe/incunabula.css`): a
+/// detail bed (`.case__detail .case__bed`,
+/// `areas/access/cpe/components/style/incunabula.css`): a
 /// 2.5:1 strip 4.5rem tall is about 180 × 72 CSS px, so 400 covers 2×.
 pub const DETAIL_FETCH_PX: i64 = 400;
 
 /// Largest side (px) requested for a whole page in a page case, paired with
 /// the 15rem whole-page bed (`.case--page .case__crop`,
-/// `dsp-incubator cpe/static/cpe/incunabula.css`). Clamped to the image's own
+/// `areas/access/cpe/components/style/incunabula.css`). Clamped to the image's own
 /// size ([`iiif_confined_url`]).
 pub const PAGE_FETCH_PX: i64 = 480;
 
 /// Largest side (px) requested for an edition card's cover plate, paired with
-/// the 15rem plate (`.edition__plate`, `dsp-incubator
-/// cpe/static/cpe/incunabula.css`), 2× its 240 CSS px. Its own constant
+/// the 15rem plate (`.edition__plate`,
+/// `areas/access/cpe/components/style/incunabula.css`), 2× its 240 CSS px. Its own constant
 /// although it equals [`PAGE_FETCH_PX`]: each fetch size pairs with exactly one
 /// CSS box. Clamped to the image's own size ([`iiif_confined_url`]).
 pub const PLATE_CARD_FETCH_PX: i64 = 480;

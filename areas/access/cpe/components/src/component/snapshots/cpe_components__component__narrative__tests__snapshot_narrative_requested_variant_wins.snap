@@ -1,0 +1,5 @@
+---
+source: engine/src/component/narrative.rs
+expression: out
+---
+<article class="editorial page"><div class="narr"><div class="prose"><p class="editorial__open">Contenu français distinct</p></div></div></article>

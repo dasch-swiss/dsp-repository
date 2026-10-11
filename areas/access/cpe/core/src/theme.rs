@@ -13,7 +13,7 @@
 //! emits it as `data-accent`, `data-bg`, and `data-pick` attributes on `<html>`.
 //! Absent `theme {}` block ⇒ `ThemeKnob::default()` (Ochre accent + Tint
 //! background + Newsreader typeface). The allowed values are authoritative from
-//! `dsp-incubator cpe/static/cpe/tokens.css` (`data-accent` ∈ {ochre, green,
+//! `areas/access/cpe/components/style/tokens.css` (`data-accent` ∈ {ochre, green,
 //! teal, red}; `data-bg` ∈ {neutral, tint}; `data-pick` ∈ the 11 faces in
 //! `Typeface::all()`).
 
@@ -231,8 +231,8 @@ const NEWSREADER_FAMILY: &str =
     "Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600";
 const SPECTRAL_FAMILY: &str = "Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600";
 const FIGTREE_FAMILY: &str = "Figtree:wght@400;500;600";
-/// Lora, also the fixed face of `.dasch-link` (`dsp-incubator
-/// cpe/static/cpe/shell.css`), which `component::document_head` loads on every
+/// Lora, also the fixed face of `.dasch-link`
+/// (`areas/access/cpe/components/style/shell.css`), which `component::document_head` loads on every
 /// project page.
 #[doc(hidden)]
 pub const LORA_FAMILY: &str = "Lora:ital,wght@0,400;0,500;0,600;1,400";

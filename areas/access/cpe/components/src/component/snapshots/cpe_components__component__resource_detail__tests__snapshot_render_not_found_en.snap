@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: out
+---
+<article class="notfound notfound--terse page"><div class="notfound__inner"><p class="notfound__code">404 — not found</p><h1 class="notfound__title">There is no Character at this address.</h1><p class="notfound__msg">The identifier in this address does not name a Character in this project. Records are sometimes re-modelled after a link or citation is made.</p><p class="notfound__or"><a href="/alice-in-daschland/characters">Browse all Character</a><a href="/alice-in-daschland/">Project home</a></p><p class="notfound__or"><span>Or browse:</span><a href="/alice-in-daschland/">Home</a><a href="/alice-in-daschland/wonderland">Wonderland</a><a href="/alice-in-daschland/looking-glass">Looking-Glass</a></p></div></article>

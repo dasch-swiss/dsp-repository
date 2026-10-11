@@ -250,6 +250,8 @@
 <li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>access-server</code> (CLI with subcommands).</li>
+<li><strong>Data</strong>: DPE's JSON corpus at <code>/app/server/data</code> (<code>DPE_DATA_DIR</code>), and <code>sync</code>'s committed snapshots and curation files
+(<code>areas/access/sync/data/</code>) at <code>/app/sync/data</code>. Nothing in the binary reads the latter yet; <code>ops-deploy</code> sets <code>SYNC_DATA_DIR</code> to that path.</li>
 </ul>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <p>The <code>access-server</code> binary provides three subcommands:</p>

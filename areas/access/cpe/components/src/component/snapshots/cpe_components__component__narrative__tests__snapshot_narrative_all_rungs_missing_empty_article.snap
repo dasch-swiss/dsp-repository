@@ -1,0 +1,5 @@
+---
+source: engine/src/component/narrative.rs
+expression: out
+---
+<article class="editorial page"></article>

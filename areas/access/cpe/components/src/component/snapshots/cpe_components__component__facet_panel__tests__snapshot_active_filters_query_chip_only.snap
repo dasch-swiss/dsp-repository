@@ -1,0 +1,5 @@
+---
+source: engine/src/component/facet_panel.rs
+expression: out
+---
+<div class="filterbar" id="filters-character-list" aria-live="polite" aria-atomic="true"><span class="filterbar__lbl">Filters</span><form class="filterchip-form" method="get" action="/alice-in-daschland/characters"><button class="filterchip filterchip--query" type="submit" name="q" value="" data-on:click__prevent="document.getElementById('q').value = ''; @get('/alice-in-daschland/characters/_search?q=')" aria-label="Clear search"><span class="q">&quot;rab&quot;</span><span class="filterchip__x" aria-hidden="true">×</span></button></form><a class="filterbar__clear" href="/alice-in-daschland/characters" data-on:click__prevent="document.getElementById('q').value = ''; @get('/alice-in-daschland/characters/_facets')">Clear all</a></div>

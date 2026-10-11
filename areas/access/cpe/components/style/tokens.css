@@ -1,0 +1,295 @@
+/* ============================================================================
+   CPE — Configurable Presentation Environment
+   DESIGN TOKENS  ·  the system from which CPE's CSS is derived
+   ----------------------------------------------------------------------------
+   Authored by hand over CSS custom properties. No framework, no build step.
+   Three layers:
+     1. PRIMITIVES   raw scales (type, space, the neutral ramp recipe)
+     2. SEMANTIC     roles that components consume (--surface, --ink, --rule…)
+     3. KNOB         the small whitelist a project may override
+                     (accent · typeface)  +  appearance (light/dark)
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ---- TYPE PRIMITIVES ------------------------------------------------- */
+  /* A major-third-ish editorial scale. Base is a comfortable reading size. */
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-text:    "Newsreader", Georgia, "Times New Roman", serif;
+  --font-meta:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --size-1: 0.7813rem;   /* 12.5px · micro labels, captions            */
+  --size-2: 0.875rem;    /* 14px   · meta, fine print                  */
+  --size-3: 1rem;        /* 16px   · ui, dense values                  */
+  --size-4: 1.1875rem;   /* 19px   · BODY reading size                 */
+  --size-5: 1.4375rem;   /* 23px   · lede, large value                 */
+  --size-6: 1.875rem;    /* 30px   · section heading (h2)              */
+  --size-7: 2.625rem;    /* 42px   · page heading (h1)                 */
+  --size-8: 3.75rem;     /* 60px   · record / display title            */
+  --size-9: clamp(3rem, 8.5vw, 5.25rem);     /* 48–84px · index hero (fluid for long DE words) */
+
+  --leading-tight: 1.12;
+  --leading-snug:  1.28;
+  --leading-body:  1.62;
+  --leading-loose: 1.78;
+
+  --tracking-tight: -0.014em;
+  --tracking-normal: 0;
+  --tracking-label: 0.12em;   /* small-caps / eyebrow labels           */
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+
+  /* ---- SPACE PRIMITIVES ------------------------------------------------ */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+
+  /* ---- MEASURE / LAYOUT ------------------------------------------------ */
+  --measure: 38rem;          /* ~64ch reading column                    */
+  --measure-narrow: 20rem;
+  /* The outer frame box, gutters included (`.page` is border-box): the frame
+     fills the window up to 2200px and is centred beyond it.
+     The boot warning `HeaderRowOverBudget` computes the header row's width
+     from this cap and the gutter below (HEADER_DESK_BUDGET_PX,
+     core/src/validate/header_budget.rs); a test pins both lines: change
+     the formula there with either. */
+  --shell-max: 137.5rem;
+  --gutter: clamp(1.25rem, 3.2vw + 0.4rem, 5rem);
+  --rail-w: clamp(14rem, 9rem + 6vw, 21rem);     /* the browse facet rail */
+  /* A grid tile's floor. Its 16rem ceiling sizes `GRID_TILE_WIDTH`
+     (core/src/iiif.rs): raise both together. */
+  --tile-min: clamp(11rem, 7rem + 5vw, 16rem);
+  /* A narrative's side track, and the composition it makes with the reading
+     measure (`--read`, grid.css): the width of a breakout. */
+  --fig-w: clamp(15rem, 6rem + 12vw, 26rem);
+  --narr-max: calc(var(--read) + var(--space-9) + var(--fig-w));
+  /* The shell header's row at every width; its hairline adds --rule-weight. */
+  --header-h: 4rem;
+  /* Where content clears the sticky header: its 65px plus 1rem (81px). The
+     one offset for `html`'s scroll padding and every sticky top below it.
+     shell.css's no-popover fallback unpins the header and sets it to 1rem. */
+  --header-clear: calc(var(--header-h) + var(--rule-weight) + var(--space-4));
+
+  /* ---- SHAPE ----------------------------------------------------------- */
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --radius-3: 8px;
+  --hair: 1px;
+  --rule-weight: 1px;
+
+  /* ---- THE NEUTRAL RAMP (derived from the accent) ----------------------
+     Every neutral is generated from ONE hue + ONE chroma so the whole UI
+     carries a faint wash of the project's accent. Lightness stays fixed per
+     role; the hue follows --accent-tint-h (set by the accent knob below), so
+     the background temperature changes automatically with the accent.        */
+  --neutral-hue: var(--accent-tint-h);   /* hue only matters if chroma > 0   */
+  --neutral-chroma: 0.006;               /* default wash; overridden by data-bg */
+  --surface-l: 0.978;                    /* page surface lightness; per data-bg */
+  --accent-tint-chroma: 0.022; /* faint accent wash for wells            */
+
+  /* ---- ACCENT (knob · default = heritage ochre) ------------------------ */
+  --accent:        var(--accent-ochre);
+  --accent-strong: oklch(0.44 0.108 72);
+  --accent-tint-h: 73;
+  --accent-tint-c: 0.05;
+
+  /* ---- MOTION ---------------------------------------------------------- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 240ms;
+}
+
+/* ===========================================================================
+   ACCENT KNOB  ·  data-accent on <html>
+   Light: matched lightness & chroma, hue varies. --accent reads its
+   --accent-<name> primitive below, light and dark: edit the colour there.
+   --accent-strong is set per scope, here and in the dark scopes after these.
+   =========================================================================== */
+:root[data-accent="ochre"] { --accent: var(--accent-ochre);  --accent-strong: oklch(0.44 0.108 72);  --accent-tint-h: 73;  --accent-tint-c: 0.05; }
+:root[data-accent="green"] { --accent: var(--accent-green); --accent-strong: oklch(0.42 0.094 158); --accent-tint-h: 156; --accent-tint-c: 0.045; }
+:root[data-accent="teal"]  { --accent: var(--accent-teal);  --accent-strong: oklch(0.42 0.096 234); --accent-tint-h: 232; --accent-tint-c: 0.045; }
+:root[data-accent="red"]   { --accent: var(--accent-red);   --accent-strong: oklch(0.40 0.158 23);  --accent-tint-h: 22;  --accent-tint-c: 0.06; }
+
+:root[data-appearance="dark"][data-accent="ochre"] { --accent-strong: oklch(0.80 0.09 76); }
+:root[data-appearance="dark"][data-accent="green"] { --accent-strong: oklch(0.79 0.08 152); }
+:root[data-appearance="dark"][data-accent="teal"]  { --accent-strong: oklch(0.79 0.075 228); }
+:root[data-appearance="dark"][data-accent="red"]   { --accent-strong: oklch(0.74 0.12 34); }
+
+/* NAMED ACCENT PRIMITIVES — so a surface that shows every project's accent
+   (the site-index teaser cards) reads a token, not a hard-coded literal.
+   The [data-accent] scopes above read --accent from these, light and dark. */
+:root {
+  --accent-ochre: oklch(0.585 0.094 73);
+  --accent-green: oklch(0.545 0.078 156);
+  --accent-teal:  oklch(0.545 0.082 232);
+  --accent-red:   oklch(0.515 0.135 22);
+}
+:root[data-appearance="dark"] {
+  --accent-ochre: oklch(0.74 0.095 75);
+  --accent-green: oklch(0.72 0.085 152);
+  --accent-teal:  oklch(0.72 0.085 228);
+  --accent-red:   oklch(0.66 0.14 30);
+}
+
+/* ===========================================================================
+   BACKGROUND knob  ·  data-bg on <html>
+   "neutral" = pure grey scale · "tint" = faint wash of the active accent hue.
+   Drives only the chroma of the neutral ramp; lightness is unchanged.
+   =========================================================================== */
+:root[data-bg="neutral"] { --neutral-chroma: 0;     --surface-l: 0.978; }
+:root[data-bg="tint"]    { --neutral-chroma: 0.004; --surface-l: 0.978; }
+
+/* ===========================================================================
+   SEMANTIC ROLES — LIGHT
+   Components only ever read these, never the primitives above.
+   =========================================================================== */
+:root {
+  --surface:        oklch(var(--surface-l) var(--neutral-chroma) var(--neutral-hue));
+  --surface-raised: oklch(1 0 0);
+  --surface-sunken: oklch(0.976 calc(var(--neutral-chroma) * 1.4) var(--neutral-hue));
+  --surface-inset:  oklch(0.964 calc(var(--neutral-chroma) * 1.6) var(--neutral-hue));
+
+  --ink:        oklch(0.255 calc(var(--neutral-chroma) * 2.2) var(--neutral-hue));
+  --ink-muted:  oklch(0.40 calc(var(--neutral-chroma) * 1.8) var(--neutral-hue));
+  /* AAA ink ramp (Phase 3.8): muted L 0.40, faint L 0.44 so meta/labels/captions
+     clear WCAG AAA (7:1) on every light surface (surface · sunken · inset);
+     --ink-faint still clearly lighter than --ink-muted. */
+  --ink-faint:  oklch(0.44 calc(var(--neutral-chroma) * 1.6) var(--neutral-hue));
+
+  --rule:        oklch(0.90 calc(var(--neutral-chroma) * 1.6) var(--neutral-hue));
+  --rule-strong: oklch(0.80 calc(var(--neutral-chroma) * 1.6) var(--neutral-hue));
+
+  --accent-tint: oklch(0.965 var(--accent-tint-c) var(--accent-tint-h));
+  /* hover highlight — a visible-but-soft accent-tinted fill for block hovers.
+     Lazily resolved, so it adapts to the dark-mode accent/surface too. */
+  --hover-fill: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  --link:        var(--accent-strong);
+  --link-underline: oklch(0.74 0.06 var(--accent-tint-h));
+  --focus:       oklch(0.55 0.16 250);
+
+  --shadow-card: 0 1px 2px oklch(0.4 0.03 var(--neutral-hue) / 0.04),
+                 0 8px 24px -12px oklch(0.4 0.03 var(--neutral-hue) / 0.12);
+
+  /* DaSCH institutional brand colour — used only on the CPE/DaSCH product
+     footer (site index), never as project chrome. Deep petrol, distinct
+     from any project accent. */
+  --dasch: oklch(0.46 0.084 232);
+  /* DaSCH's own logo blue, a different token from --dasch: the "Open in DSP"
+     links (`.dasch-link`) on project pages, and nothing else. */
+  --dasch-brand: #336790;
+
+  /* Role aliases: no new colours. The CPE chip (header, footers, site index)
+     and the sticky header's fill. */
+  --chip: var(--ink);
+  --header-fill: var(--surface);
+}
+
+/* ===========================================================================
+   SEMANTIC ROLES — DARK  (the same roles, own lightness and chroma; accents
+   come from the per-accent dark scopes above)
+   =========================================================================== */
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+
+  /* One chroma factor (×1.2) for every neutral: near-neutral surfaces that
+     keep only a quiet tint of the accent hue. */
+  --surface:        oklch(0.215 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+  --surface-raised: oklch(0.255 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+  --surface-sunken: oklch(0.185 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+  --surface-inset:  oklch(0.29 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+
+  --ink:        oklch(0.93 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+  --ink-muted:  oklch(0.80 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+  --ink-faint:  oklch(0.74 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+
+  --rule:        oklch(0.37 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+  --rule-strong: oklch(0.52 calc(var(--neutral-chroma) * 1.2) var(--neutral-hue));
+
+  --accent-tint:   oklch(0.28 0.03 var(--accent-tint-h));
+  --link:          var(--accent-strong);
+  --link-underline: oklch(0.55 0.07 var(--accent-tint-h));
+  --focus:         oklch(0.72 0.13 250);
+
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3),
+                 0 10px 30px -14px oklch(0 0 0 / 0.55);
+  --dasch: oklch(0.72 0.10 232);
+  --dasch-brand: oklch(0.76 0.085 245);
+
+  --chip: var(--ink-muted);
+}
+
+/* The header fill is translucent only where color-mix() computes: a var()
+   holding an uncomputable value would leave the header transparent, so the
+   opaque --surface above stays the value everywhere else. */
+@supports (background: color-mix(in oklab, red 50%, transparent)) {
+  :root { --header-fill: color-mix(in oklab, var(--surface) 86%, transparent); }
+  :root[data-appearance="dark"] { --header-fill: color-mix(in oklab, var(--surface) 95%, transparent); }
+}
+
+/* Appearance default: LIGHT. Dark applies ONLY when the project/user sets an
+   explicit `data-appearance="dark"` on <html> (driven by the appearance cookie).
+   We deliberately do NOT follow the OS `prefers-color-scheme` — CPE defaults to
+   light and the header toggle is the single switch. */
+
+/* ===========================================================================
+   DIRECTION  ·  data-direction="edition" on <html>
+   Serif-led literary digital edition — the single expression of the tokens.
+   =========================================================================== */
+:root[data-direction="edition"] {
+  --font-display: "Newsreader", Georgia, serif;
+  --font-text:    "Newsreader", Georgia, serif;
+  --measure: 36rem;
+  --radius-card: 0px;
+  --rule-weight: 1px;
+  --h1-weight: 500;
+  --h2-weight: 500;
+  --display-italic: italic;   /* edition leans on italic display       */
+}
+
+/* ===========================================================================
+   TYPEFACE  ·  data-font = a face group (only groups options in the design
+                tool's Tweaks panel; CPE never emits it)
+              ·  data-pick = the actual face(s), fully defined here
+   ----------------------------------------------------------------------------
+   ⚠ SOURCE-ORDER INVARIANT: these `data-pick` rules MUST stay AFTER the
+   `data-direction="edition"` block above. Both target `:root[attr]` (equal
+   specificity), so a non-default face (e.g. data-pick="figtree") only overrides
+   the edition font + --display-italic because it appears later in the cascade.
+   Reordering would silently break the project's typeface. The engine
+   `Typeface` exposes every face below, and `document_head` loads only the
+   families of the project's own face (`Typeface::font_families`).
+   ----------------------------------------------------------------------------
+   A project picks one face, or a serif-title / sans-text pairing, in
+   `theme { typeface }`. Everything else (sizes, spacing, the accent wash)
+   holds constant.
+   =========================================================================== */
+/* — Casual · sans-led, approachable — */
+:root[data-pick="figtree"]   { --font-display: "Figtree", system-ui, sans-serif;         --font-text: "Figtree", system-ui, sans-serif;         --display-italic: normal; }
+:root[data-pick="hanken"]    { --font-display: "Hanken Grotesk", system-ui, sans-serif;   --font-text: "Hanken Grotesk", system-ui, sans-serif;   --display-italic: normal; }
+:root[data-pick="schibsted"] { --font-display: "Schibsted Grotesk", system-ui, sans-serif; --font-text: "Schibsted Grotesk", system-ui, sans-serif; --display-italic: normal; }
+
+/* — Balanced · the middle road, incl. serif-title / sans-text pairings — */
+:root[data-pick="spectral"] { --font-display: "Spectral", Georgia, serif; --font-text: "Spectral", Georgia, serif; --display-italic: normal; }
+:root[data-pick="lora"]     { --font-display: "Lora", Georgia, serif;     --font-text: "Lora", Georgia, serif;     --display-italic: normal; }
+:root[data-pick="literata"] { --font-display: "Literata", Georgia, serif; --font-text: "Literata", Georgia, serif; --display-italic: normal; }
+:root[data-pick="spectral-figtree"]  { --font-display: "Spectral", Georgia, serif;   --font-text: "Figtree", system-ui, sans-serif; --display-italic: normal; }
+:root[data-pick="newsreader-figtree"] { --font-display: "Newsreader", Georgia, serif; --font-text: "Figtree", system-ui, sans-serif; --display-italic: italic; }
+
+/* — Bookish · serif-led, literary — */
+:root[data-pick="newsreader"] { --font-display: "Newsreader", Georgia, serif;  --font-text: "Newsreader", Georgia, serif;  --display-italic: italic; }
+:root[data-pick="garamond"]   { --font-display: "EB Garamond", Georgia, serif; --font-text: "EB Garamond", Georgia, serif; --display-italic: italic; }
+:root[data-pick="crimson"]    { --font-display: "Crimson Pro", Georgia, serif; --font-text: "Crimson Pro", Georgia, serif; --display-italic: normal; }
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

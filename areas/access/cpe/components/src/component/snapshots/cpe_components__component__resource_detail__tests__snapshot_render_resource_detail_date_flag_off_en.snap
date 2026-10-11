@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: "render_dated_book(date, false, \"en\")"
+---
+<article class="record page"><header class="record__head"><div class="record__class"><p class="eyebrow">Book</p><span class="record__id">narrenschiff-dt</span></div><h1 class="record__title">Das Narrenschiff</h1></header><div class="record__body record__body--noimg"><div class="props"><div class="prop"><div class="prop__label">Pub Date</div><div class="prop__value"><span class="v-date">11 February 1494</span></div></div><div class="prop"><div class="prop__label">Place</div><div class="prop__value"><span class="v-text">Basel</span></div></div></div></div></article>

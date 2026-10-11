@@ -265,7 +265,7 @@ fn push_block_separator(buf: &mut String) {
 /// `pub` so crates other than `cpe-core` can call it: `labels::resolve_property_label`
 /// falls back to it for both `component::resource_detail`'s property `<dt>` labels
 /// and `query::reads::ProjectReads::facet_options`'s facet group labels, and the
-/// tests of `dsp-incubator cpe/components` and `dsp-incubator cpe/web` call it
+/// tests of `cpe-components` and `dsp-incubator cpe/web` call it
 /// directly.
 pub fn humanize_property_name(name: &str) -> String {
     name.split(['-', '_', ' '])

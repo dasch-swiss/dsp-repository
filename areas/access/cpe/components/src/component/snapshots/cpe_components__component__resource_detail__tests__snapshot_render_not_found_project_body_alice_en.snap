@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: out
+---
+<article class="notfound page"><div class="notfound__inner"><p class="notfound__code">404 — not found</p><h1 class="notfound__title">This page does not exist.</h1><p class="notfound__msg">The address you followed does not name anything in this project. It may have been re-modelled since the link was made, or the address may be incomplete.</p><p class="notfound__way"><a href="/alice-in-daschland/"><span>Alice in DaSCHland — project home</span><span aria-hidden="true">→</span></a></p><p class="notfound__or"><span>Or browse:</span><a href="/alice-in-daschland/">Home</a><a href="/alice-in-daschland/wonderland">Wonderland</a><a href="/alice-in-daschland/looking-glass">Looking-Glass</a></p></div></article>

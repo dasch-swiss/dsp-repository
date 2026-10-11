@@ -2,8 +2,8 @@
 //! project's one-row desk header would need more width than the desk
 //! breakpoint leaves it.
 //!
-//! The estimate mirrors the desk form in `dsp-incubator
-//! cpe/static/cpe/shell.css` (the desk query's block): a change to a size, gap
+//! The estimate mirrors the desk form in
+//! `areas/access/cpe/components/style/shell.css` (the desk query's block): a change to a size, gap
 //! or face there moves the estimate, and `estimate_matches_the_measured_rows`
 //! pins it to widths measured in Chrome.
 
@@ -19,7 +19,7 @@ const HEADER_DESK_GUTTER_BASE_PX: f64 = 0.4 * 16.0;
 /// window less two gutters, rounded down (1,170px at 1264px). It holds while
 /// the breakpoint is below the frame cap (`--shell-max`, 2200px) and inside the
 /// gutter's fluid range (425px to 2300px), both from
-/// `dsp-incubator cpe/static/cpe/tokens.css`: a change to either token changes
+/// `areas/access/cpe/components/style/tokens.css`: a change to either token changes
 /// this formula. It assumes overlay scrollbars: a
 /// classic scrollbar takes about 15px more.
 const HEADER_DESK_BUDGET_PX: u32 = (HEADER_DESK_BREAKPOINT_PX as f64

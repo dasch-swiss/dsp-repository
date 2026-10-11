@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: "render_resource_detail(&book, cfg, &make_lang(\"en\")).into_string()"
+---
+<article class="record page"><header class="record__head"><div class="record__class"><p class="eyebrow">Book</p><span class="record__id">narrenschiff-dt</span></div><h1 class="record__title">[Das] Narrenschiff (dt.)</h1><p class="record__alt">Das Narren Schyff</p><p class="record__author">Sebastian Brant</p><p class="record__imprint">Basel · Johann Bergmann de Olpe · 3 March 1495 · 328 pages</p></header><div class="record__body record__body--noimg"><div class="props"><div class="prop"><div class="prop__label">Shelfmark</div><div class="prop__value"><span class="v-text">AN V 3</span></div></div></div></div></article>

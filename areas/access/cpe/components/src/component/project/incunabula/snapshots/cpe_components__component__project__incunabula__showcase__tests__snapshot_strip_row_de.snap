@@ -1,0 +1,6 @@
+---
+source: engine/src/component/project/incunabula/showcase.rs
+assertion_line: 1647
+expression: "render_strips(\"de\")"
+---
+<ul class="strips" role="list"><li><a class="strip" href="/incunabula/strips/r-4" aria-label="Randleiste r_4"><span class="strip__bed"><img loading="lazy" src="https://iiif.dasch.swiss/0803/r-4.jp2/full/192,/0/default.jpg" alt=""></span><span class="strip__id">r_4</span></a></li><li><a class="strip" href="/incunabula/strips/l-3a" aria-label="Randleiste l_3a"><span class="strip__bed"></span><span class="strip__id">l_3a</span></a></li></ul>

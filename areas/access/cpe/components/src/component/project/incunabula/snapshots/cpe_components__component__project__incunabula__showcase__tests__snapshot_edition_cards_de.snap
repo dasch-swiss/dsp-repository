@@ -1,0 +1,6 @@
+---
+source: engine/src/component/project/incunabula/showcase.rs
+assertion_line: 1539
+expression: "render_editions(\"de\")"
+---
+<ul class="editions" role="list"><li class="edition"><a class="edition__link" href="/incunabula/books/narrenschiff-lat-maerz"><span class="edition__plate"><img loading="lazy" src="https://iiif.dasch.swiss/0803/narrenschiff-lat-maerz.jp2/full/!480,480/0/default.jpg" alt=""></span><span class="edition__text"><span class="eyebrow">Latein</span><span class="edition__title">[Das] Narrenschiff (lat.) [März 1497]</span><span class="edition__imprint">Basel · Johann Bergmann de Olpe · 1. März 1497 · 302 Seiten</span><span class="edition__read">Lesen<span aria-hidden="true"> →</span></span></span></a></li><li class="edition"><a class="edition__link" href="/incunabula/books/narrenschiff-dt"><span class="edition__plate"><img loading="lazy" src="https://iiif.dasch.swiss/0803/narrenschiff-dt.jp2/full/!480,480/0/default.jpg" alt=""></span><span class="edition__text"><span class="eyebrow">Deutsch</span><span class="edition__title">[Das] Narrenschiff (dt.)</span><span class="edition__imprint">Basel · Johann Bergmann de Olpe · 3. März 1495 · 328 Seiten</span><span class="edition__read">Lesen<span aria-hidden="true"> →</span></span></span></a></li></ul>

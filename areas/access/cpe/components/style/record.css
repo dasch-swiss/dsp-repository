@@ -1,0 +1,1217 @@
+/* ============================================================================
+   CPE — RECORD ARCHETYPE  (Archetype B)
+   A single Resource: title, properties rendered by value type, Representation.
+   Layout: stacked critical-apparatus, single reading column (edition).
+   ========================================================================== */
+
+.record { max-width: var(--shell-max); }
+
+/* ---- record header ---------------------------------------------------- */
+.record__head { margin-bottom: var(--space-7); }
+.record__class {
+  display: flex; align-items: baseline; gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.record__class .record__id {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+}
+.record__title {
+  font-size: var(--size-8);
+  font-weight: var(--h1-weight, 500);
+  font-style: var(--display-italic, normal);
+  letter-spacing: -0.018em;
+  margin: 0;
+}
+/* The optional header slots under the title (`alt-title-property`,
+   `author-property`, `imprint`; book-page design-doc §3), each emitted only
+   when it has text. */
+.record__alt {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.record__author {
+  margin: var(--space-5) 0 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-5);
+  color: var(--ink);
+}
+.record__imprint {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  color: var(--ink-muted);
+  font-feature-settings: "tnum" 1;
+}
+
+/* ---- the intro (Incunabula Slice 3, decision 8) ------------------------
+   A `narrative-for` hit's prose, rendered wrapper-free inside `.prose`
+   (`markdown::render_markdown_fragment` — never `render_editorial`, which
+   would nest a second `.page` root). Capped at 38rem per §4.5 regardless of
+   the surrounding grid track width; the grid itself (`display: grid` +
+   track template on `.record__body--intro`) lives in media.css, scoped
+   inside a media query, so it can out-specify grid.css's body rules — see
+   that file's comment for the full cascade-order rationale. */
+.record__intro .prose { max-width: 38rem; }
+/* Justified text (`<html data-align="justify">`), the intro's half of
+   editorial.css's rules. The `prose` container is the intro, so the query
+   reads the intro's own column. A size container needs `width: 100%` (it
+   collapses to nothing in the reader's flex column) and keeps its last
+   child's margin inside; a plain record drops that margin, which otherwise
+   adds to the intro's own (media.css, the same `:not()` list). */
+html[data-align="justify"] .record__intro { container: prose / inline-size; width: 100%; }
+html[data-align="justify"] .record:not(.record--reader, .record--viewer) .record__intro .prose > :last-child { margin-bottom: 0; }
+html[data-align="justify"] .record__intro .prose > p {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphenate-limit-chars: 7 3 3;
+  text-wrap: wrap;
+}
+@container prose (min-width: 30rem) {
+  html[data-align="justify"] .record__intro .prose > p { text-align: justify; text-align-last: start; }
+}
+
+/* the quote, given a quiet epigraph treatment right under the title
+   (accent rule + italic) — the oversized decorative marks are gone */
+.record__quote {
+  margin: var(--space-5) 0 0;
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--accent);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-6);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  max-width: 32ch;
+  letter-spacing: var(--tracking-tight);
+}
+.record__quote .mark { display: none; }
+/* attribution under the quote — mirrors the editorial-home epigraph cite */
+.record__quote .record__cite {
+  display: block;
+  margin-top: var(--space-3);
+  font-family: var(--font-meta);
+  font-style: normal;
+  font-size: var(--size-2);
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+}
+.record__quote .record__cite::before { content: "— "; }
+
+/* ---- record body (properties; the viewer column beside them) ----------
+   Layout lives in grid.css (the body) and media.css (the viewer split). */
+
+/* ============================================================================
+   PROPERTY LIST  — the definition pattern, expressed per direction
+   ========================================================================== */
+.props { margin: 0; }
+.prop {
+  padding: 0 0 var(--space-7);
+}
+.prop:last-child { padding-bottom: 0; }
+
+.prop__label {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: var(--weight-medium);
+}
+/* A value with no break opportunity (a long word, a shelfmark, an id) breaks
+   anywhere rather than widening the page past a phone's window. */
+.prop__value { color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.prop__value > :last-child { margin-bottom: 0; }
+
+/* multi-valued non-list property — one block per value, stacked.
+   No invented separator character: the values may themselves contain
+   commas (prose comments, citations), so a comma join would read two
+   distinct values as one run-on sentence. Deliberately NOT used for a
+   multi-valued Link property, which stays comma-joined inline (short,
+   name-like fragments — see render_property_block). */
+.v-multi__item { margin-bottom: var(--space-3); }
+.v-multi__item:last-child { margin-bottom: 0; }
+
+/* EDITION: label stacked above value */
+[data-direction="edition"] .prop__label { display: block; margin-bottom: var(--space-3); }
+
+/* ============================================================================
+   VALUE-TYPE VOCABULARY  — a treatment for every Property value type
+   ========================================================================== */
+
+/* text — short string */
+.v-text { font-size: var(--size-4); }
+.v-text--lead { font-size: var(--size-5); font-family: var(--font-display); }
+
+/* richtext — rendered prose */
+.v-richtext { font-size: var(--size-4); line-height: var(--leading-body); }
+.v-richtext p { margin: 0 0 var(--space-4); }
+.v-richtext .src {
+  font-style: italic; color: var(--ink-faint); font-size: 0.92em;
+}
+/* scene-break — an <hr> in richtext is an HTML5 *thematic break* (a scene
+   change), not a visual rule. Source prose (e.g. Carroll's chapter text) marks
+   these with runs of asterisks; render a centred three-star divider instead of
+   a line, and collapse consecutive breaks (multi-line `* * *` transitions) into
+   a single divider. */
+.v-richtext hr {
+  border: 0;
+  margin: var(--space-5) 0;
+  text-align: center;
+}
+.v-richtext hr::before {
+  content: "* * *";
+  color: var(--ink-faint);
+  font-size: var(--size-4);
+  letter-spacing: 0.3em;
+}
+.v-richtext hr + hr { display: none; }
+
+/* integer / decimal — tabular, technical */
+.v-number {
+  font-family: var(--font-meta);
+  font-feature-settings: "tnum" 1;
+  font-size: var(--size-4);
+  color: var(--ink);
+}
+.v-number .unit { color: var(--ink-faint); font-size: 0.82em; margin-left: 0.35em; }
+
+/* boolean — a quiet flag */
+.v-bool { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-meta); font-size: var(--size-3); }
+.v-bool::before {
+  content: "";
+  width: 0.62em; height: 0.62em; border-radius: 50%;
+  background: var(--accent);
+}
+.v-bool[data-on="false"] { color: var(--ink-faint); }
+.v-bool[data-on="false"]::before { background: var(--rule-strong); }
+
+/* date — with precision */
+.v-date { font-family: var(--font-meta); font-size: var(--size-3); color: var(--ink); }
+/* the date and .prec are separated by a real space text node (a11y — screen
+   readers need a word boundary in textContent), so margin-left only needs to
+   cover the remainder of the visual gap beyond that space. */
+.v-date .prec { color: var(--ink-faint); font-size: 0.82em; margin-left: 0.15em; letter-spacing: 0.04em; }
+
+/* list-value (single) — a single controlled term */
+.term {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--surface-inset);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  padding: 0.32em 0.7em;
+  white-space: nowrap;
+}
+
+/* list-value (multi) — keyword set; hierarchy preserved, leaf emphasised */
+.keyword-set { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.keyword {
+  display: inline-flex; align-items: baseline; gap: 0.1em;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  padding: 0.3em 0.6em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.keyword .path { color: var(--ink-faint); }
+/* DEVIATION #8 (a11y note): .keyword .path::after and .ext-link::after are
+   decorative pseudo-element content (›, ↗). They are generated CSS content and
+   not read by screen readers in practice; no markup change needed. External links
+   rendered in Rust will carry rel="noopener noreferrer". */
+.keyword .path::after { content: "›"; margin: 0 0.25em; color: var(--rule-strong); }
+.keyword .leaf { color: var(--ink); font-weight: var(--weight-medium); }
+/* group facet: tint the leaf by its top-level theme via data-facet (optional) */
+
+/* link (external) — leaves the dataset */
+.ext-link {
+  display: inline-flex; align-items: baseline; gap: 0.4em;
+  font-family: var(--font-meta);
+  font-size: var(--size-2);
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-color: var(--link-underline);
+  text-underline-offset: 0.2em;
+  /* long unbreakable URLs (e.g. catalogue links) must wrap instead of
+     forcing horizontal scroll; `anywhere` shrinks min-content so the
+     inline-flex item can actually shrink below its text's natural width */
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+}
+.ext-link::after { content: "↗"; font-size: 0.9em; color: var(--ink-faint); }
+.ext-link:hover { text-decoration-color: var(--link); }
+
+/* link (internal) — cross-reference to another Resource */
+.int-link {
+  display: inline-flex; align-items: baseline; gap: 0.45em;
+  color: var(--ink);
+  font-size: var(--size-3);
+  text-decoration: none;
+}
+.int-link .rel { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+.int-link .ref { color: var(--link); text-decoration: underline; text-decoration-color: var(--link-underline); text-underline-offset: 0.18em; }
+.int-link:hover .ref { text-decoration-color: var(--link); }
+
+/* link (unresolved target, E7) — never link-shaped: not an <a>, not
+   focusable, no accent, no error colour. Demoted mono id + a system-
+   annotation mark, per docs/design/empty-states/handoff/README.md §E7.
+   Merged from cpe-empty-states.css §2. ADAPTATION: the handoff's fallback
+   target is `.idval`, which does not exist in this codebase — the
+   existing `code` element (already used for the bare identifier) is the
+   real target here instead. */
+.unresolved {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+  color: var(--ink-faint);
+}
+
+.unresolved code { color: var(--ink-faint); }
+
+.unresolved__mark {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-bottom: 1px dotted var(--rule-strong);
+  padding-bottom: 1px;
+}
+
+/* ---- COMPOUND-VIEWER NAVIGATOR ----------------------------------------
+   One-member-at-a-time nav (compound resources: Story → chapters, etc.).
+   The member root carries `.page` (the shared centered max-width + gutter
+   box — see the LAYOUT note at the top of grid.css); `display:block` gives a
+   single reading column inside it (like `.editorial.page`)
+   rather than the 12-col grid. Only the nav row and its controls carry the
+   `.compound-*` class names.
+   BACKLOG: unify with .figure__nav when the carousel is reworked
+            (image re-model — see BACKLOG.md). */
+.compound-viewer.page { display: block; }
+/* NOTE: `#compound-viewer`'s real no-JS focus path is documented in
+   compound_viewer.rs; its (suppressed) focus ring is set further down. The
+   bespoke `.compound-nav`/
+   `.compound-step`/`.compound-count` rules that used to sit here are gone:
+   embedded-media plan step 7 replaced that markup with the shared `.pg`
+   primitive (styled in media.css), used by both the plate and the
+   compound-viewer foot nav. */
+
+/* edition figure: a quieter plate (border/treatment differ; column is shared) */
+
+/* ---- FEATURED glimpse: the same archetype, spotlit ------------------- */
+.featured__reimagined {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-5);
+  color: var(--accent-strong);
+  margin: var(--space-2) 0 0;
+}
+.record--featured .record__quote { font-size: var(--size-7); max-width: 26ch; margin-top: var(--space-5); }
+
+/* ============================================================================
+   BROWSE LAYOUT  —  search row + facet sidebar + filterbar + resource list
+   (FP-2 + search-bar)
+   `render_body` composes an optional `search-bar`, a `facet-panel`, and its
+   target `resource-list` as FLAT direct children of `section.browse.page`
+   (3 children with no search-bar, 4 with one — no wrapper div; see design
+   decision 1 in docs/plans/phase-5-browse-redesign/implementation-plan.md and
+   docs/plans/search-bar/implementation-plan.md; a wrapper made the list a
+   grandchild and broke the `.browse > .page` neutralizer below, reintroducing
+   a doubled dead band): the search row (`.search-row` — grid child, NOT a
+   `.page`-carrying component, mirrors `.filterbar`'s non-`.page` treatment),
+   the facet rail, the active-filter chip row (`.filterbar` — a second view of
+   the same facet data, also NOT itself a `.page`-carrying component), and the
+   list. All keep their own layout roles while their centering/gutter is
+   neutralized here, since the wrapper already supplies it. Below 860px the
+   grid collapses to a single column (search row, then rail, then filterbar,
+   then list, in that stacked order). The search-row track is unconditional —
+   a page with no search-bar just has an empty `auto` (0-height) row 1; the
+   rail/filterbar/list still occupy rows 2/3 correctly.
+   ========================================================================== */
+.browse.page {
+  display: grid;
+  /* The rail grows with the window (`--rail-w`, tokens.css); the list takes
+     the rest and may shrink below its content (`minmax(0, …)`). */
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  /* Explicit row tracks: row 1 = search row, row 2 = filterbar, row 3 = list.
+     Required so the rail's `grid-row: 1 / span 3` (below) actually spans all
+     three rows — with NO explicit row tracks, a negative line (`1 / -1`)
+     collapses to a single-row span instead. */
+  grid-template-rows: auto auto 1fr;
+  /* Generous gutter between the facet rail and the list (wider than the
+     12-col --grid-gap, which read as cramped against the list rules); it
+     grows with the window like the rail. */
+  column-gap: clamp(var(--space-6), 3vw, var(--space-9));
+  /* NOT a positive row-gap: row-gap is unconditional and would offset the
+     list down from the rail's top even when the filterbar is empty. The
+     filterbar↔list gap instead comes from `.filterbar`'s own margin-bottom,
+     which naturally stops applying once `.filterbar:empty { display: none }`
+     takes over (mirrors the existing `.browse > .facet-panel.page
+     { margin-bottom }` collapse pattern below). */
+  row-gap: 0;
+  align-items: start;
+}
+/* The wrapper supplies the centered max-width + gutter; neutralize the inner
+   components' own centering so they fill their grid track. `grid-column: auto`
+   is load-bearing: grid.css pins every `.page > *` to `grid-column: 1 / -1`
+   (full width), which would make these two children stack; this lets them flow
+   into the wrapper's 2 columns instead. (`.browse > .page` = specificity 0,2,0,
+   so it wins over grid.css's `.page > *` at 0,1,0.) */
+.browse > .page {
+  grid-column: auto;
+  max-width: none;
+  /* Reset margin + padding entirely: the `.browse.page` wrapper already supplies
+     the centered max-width, gutter, AND the clamp() top/bottom page padding.
+     Without resetting padding-block too, each inner `.page` re-applies its own
+     ~6vw top padding on top of the wrapper's → a doubled dead band at the top. */
+  margin: 0;
+  padding: 0;
+}
+/* Explicit per-child grid placement (specificity 0,2,0 each — matches/out-
+   specifies `.browse > .page` above and out-specifies grid.css's later-loaded
+   `.page > * { grid-column: 1 / -1 }` blanket rule at 0,1,0, regardless of
+   load order). The rail spans all three rows (`span 3`, NOT `1 / -1` — see
+   the `grid-template-rows` note above). The search row and filterbar are the
+   subtle ones: they deliberately carry no `.page` class, so without these
+   rules grid.css's blanket rule (0,1,0) would be the only match and snap them
+   full-width over the rail; `.browse > .search-row` / `.browse > .filterbar`
+   (0,2,0) fix that. */
+.browse > .search-row { grid-column: 2; grid-row: 1; }
+.browse > .facet-panel { grid-column: 1; grid-row: 1 / span 3; }
+.browse > .filterbar { grid-column: 2; grid-row: 2; }
+.browse > .resource-list-section { grid-column: 2; grid-row: 3; }
+/* Narrow: the wrapper grid collapses so search row / rail / filterbar / list
+   stack in document order; add a gap below the panel and below a populated
+   filterbar to separate them from what follows. */
+@media (max-width: 860px) {
+  .browse.page { display: block; }
+  .browse > .facet-panel.page { margin-bottom: var(--space-6); }
+  .browse > .search-row,
+  .browse > .facet-panel,
+  .browse > .filterbar,
+  .browse > .resource-list-section {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* ============================================================================
+   FACET PANEL  —  facet groups + toggle options (Phase 5 facet-panel)
+   The panel is a vertical stack of groups. It always renders inside `.browse`
+   (a facet-panel's target list is boot-required to exist, so it is always
+   paired), which supplies the centered box, the page gutter, and the rail↔list
+   gutter — the panel itself only lays out its groups. `display:flex` (0,2,0)
+   opts the `.page` root out of grid.css's 12-col grid (`.page`, 0,1,0).
+   ========================================================================== */
+
+/* ---- Narrow-viewport disclosure (owner responsive pass) -------------------
+   Above the 860px browse breakpoint the panel is a flat rail and the
+   <summary> is hidden — identical to how it has always rendered. Below it,
+   the browse grid collapses to document order, which stacked the entire facet
+   vocabulary ABOVE the results; the disclosure lets it fold away.
+
+   The server always emits `<details open>`, so every page load is open. The
+   `::details-content` override covers the one residual case (fold at narrow
+   width, then widen without reloading) on engines that support it; elsewhere
+   a reload resolves it.
+   ------------------------------------------------------------------------- */
+.facet-panel__disclosure { border: 0; margin: 0; padding: 0; }
+.facet-panel__toggle {
+  display: none;               /* wide: the panel is a flat rail, no control */
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: var(--space-3) 0;
+  border-bottom: var(--rule-weight) solid var(--rule);
+  list-style: none;            /* suppress the UA triangle; we draw our own */
+}
+.facet-panel__toggle::-webkit-details-marker { display: none; }
+.facet-panel__toggle:hover { color: var(--ink); }
+.facet-panel__toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+/* Our own marker: a hairline chevron that rotates on open, matching the
+   hairline stroke idiom rather than introducing a filled icon. */
+.facet-panel__toggle::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.45em; height: 0.45em;
+  /* optical centring: a rotated square hangs low against uppercase mono */
+  margin-block: -0.15em 0;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.facet-panel__disclosure[open] > .facet-panel__toggle::after {
+  transform: rotate(225deg);
+  margin-block: 0.15em 0;
+}
+/* Collapsed: the rule under the summary is the only thing separating it from
+   the list below, so keep it; open, the first facet group supplies its own. */
+.facet-panel__disclosure[open] > .facet-panel__toggle { border-bottom-color: transparent; }
+
+@media (max-width: 860px) {
+  .facet-panel__toggle { display: flex; }
+  /* The panel's own bottom margin is for the expanded state; collapsed it
+     leaves a dead band above the list. */
+  .browse > .facet-panel.page:has(.facet-panel__disclosure:not([open])) { margin-bottom: var(--space-3); }
+}
+@media (min-width: 861px) {
+  /* Never collapsed at rail widths, even if folded while narrow. */
+  .facet-panel__disclosure::details-content { content-visibility: visible; block-size: auto; }
+}
+
+/* ---- Panel container ----------------------------------------------------- */
+.facet-panel.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6); /* inert today: the disclosure is the only child; groups are spaced by `.facet-group + .facet-group` */
+}
+
+/* ---- Facet group --------------------------------------------------------- */
+/* Content-sized: never flex-grow, or a short group (e.g. Role) stretches tall
+   and pads dead space below its options. */
+.facet-group { flex: 0 0 auto; }
+/* The groups sit inside `details.facet-panel__disclosure`, the panel's only
+   flex child, so the panel's `gap` never reaches them; space them here with
+   the same step, or a group's last option (or its "N more" summary) runs
+   straight into the next group's heading. */
+.facet-group + .facet-group { margin-top: var(--space-6); }
+
+.facet-group__title {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: var(--weight-medium);
+  margin: 0 0 var(--space-3);
+}
+
+/* ---- Options list -------------------------------------------------------- */
+.facet-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* No inner scrollbox: the panel is not sticky (unlike the compound-viewer's
+     `.cv-toc__list`), so a long group (e.g. the 52 keyword options) just grows
+     the rail and the whole page scrolls. A fixed 24rem cap previously clipped
+     that group needlessly — the same class of bug fixed for `.cv-toc__list`
+     (see its comment): don't cap a non-sticky list to an arbitrary small box. */
+}
+
+/* `.facet-option` (the <li>) needs no rules — the toggle link's padding
+   provides the row rhythm, mirroring .rl-annot__item. */
+
+/* ---- Per-group disclosure (G4) -------------------------------------------
+   A facet group above FACET_GROUP_COLLAPSE_THRESHOLD (16) shows its 12 densest
+   options plus every selected one, and folds the rest behind this `<details>`.
+   Unlike `.facet-panel__disclosure` above — which only exists below the 860px
+   browse breakpoint — this one is live at EVERY width: a 94-season group is
+   unusable as a flat rail on a desktop too.
+
+   Deliberately minimal: the mockup specifies nothing beyond the disclosure
+   itself, so the summary is styled as the same faint mono label the group
+   heading uses, and the remainder list reuses `.facet-options` verbatim (no
+   indent, no separate rhythm) so an opened group reads as one continuous list.
+   ------------------------------------------------------------------------- */
+.facet-group__more { border: 0; margin: 0; padding: 0; }
+.facet-group__more-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: var(--space-2) 0 0;
+  list-style: none;            /* suppress the UA triangle; we draw our own */
+}
+.facet-group__more-toggle::-webkit-details-marker { display: none; }
+.facet-group__more-toggle:hover { color: var(--ink); }
+.facet-group__more-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+/* Same hairline chevron as the panel-level summary, so the two disclosures
+   read as one family rather than two unrelated controls. */
+.facet-group__more-toggle::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.4em; height: 0.4em;
+  margin-block: -0.15em 0;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.facet-group__more[open] > .facet-group__more-toggle::after {
+  transform: rotate(225deg);
+  margin-block: 0.15em 0;
+}
+/* The remainder list sits flush under the visible one; the summary's own top
+   padding is the only separation, so an opened group reads continuously. */
+.facet-options--rest { padding-top: var(--space-2); }
+
+/* ---- Toggle link --------------------------------------------------------- */
+.facet-option__toggle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: var(--size-3);
+  line-height: var(--leading-snug);
+  transition: color var(--dur) var(--ease);
+}
+.facet-option__toggle:hover {
+  color: var(--accent-strong);
+}
+
+/* Selected state — the "ink-fill" idiom.
+   A selected toggle carries aria-current="true" (link role; aria-pressed is
+   invalid on links). */
+.facet-option__toggle[aria-current="true"] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+/* ---- Check-box glyph (CSS-drawn, no SVG icon) --------------------------- */
+.facet-option__box {
+  /* A hairline square that fills solid when selected. Inlined on `<span
+     aria-hidden="true">` so screen readers skip it. */
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75em;
+  height: 0.75em;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius-1);
+  background: transparent;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  vertical-align: middle;
+  position: relative;
+  top: -0.05em; /* optical alignment with the text baseline */
+}
+.facet-option__toggle[aria-current="true"] .facet-option__box {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+/* ---- Label and count ---------------------------------------------------- */
+.facet-option__label {
+  flex: 1;
+  overflow-wrap: break-word;
+}
+.facet-option__count {
+  flex-shrink: 0;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  font-feature-settings: "tnum" 1; /* tabular figures for stable column widths */
+  color: var(--ink-faint);
+}
+
+/* ---- Empty state --------------------------------------------------------- */
+.facet-panel__empty {
+  font-size: var(--size-3);
+  color: var(--ink-faint);
+  font-style: italic;
+  margin: 0;
+  padding-block: var(--space-3);
+}
+
+/* ============================================================================
+   FILTERBAR + CHIPS + PER-GROUP CLEAR  (FP-2, token-only, verbatim from
+   cpe-variants.css except two deliberate adaptations noted inline: the
+   `.filterbar:empty` rule, and the per-group clear reveal on `:focus-within`
+   in addition to `:hover` for keyboard/SR reachability, replacing the
+   prototype's `[data-on="true"]`.)
+   ========================================================================== */
+.filterbar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-4); min-height: 1.6em; }
+.filterbar:empty { display: none; }
+.filterbar__lbl { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); margin-right: var(--space-1); }
+.filterchip { display: inline-flex; align-items: center; gap: 0.5em; position: relative; font-family: var(--font-meta); font-size: var(--size-1); background: var(--ink); color: var(--surface); border: 0; border-radius: var(--radius-1); padding: 0.3em 0.35em 0.3em 0.6em; cursor: pointer; line-height: 1; text-decoration: none; }
+/* WCAG 2.5.8 (min 24x24px target): the pill's own rendered box (~20px tall)
+   is enlarged via an invisible ::after overlay rather than growing the
+   visible chip, mirroring `.search-bar__clear`/`.search-bar__go` in grid.css. */
+.filterchip::after { content: ""; position: absolute; top: 50%; left: 50%; width: 100%; height: 24px; min-width: 24px; transform: translate(-50%, -50%); }
+.filterchip__x { display: inline-flex; font-size: 1.1em; line-height: 0.6; opacity: 0.7; }
+.filterchip:hover .filterchip__x { opacity: 1; }
+.filterchip--query { padding-left: 0.55em; }
+.filterchip--query .q { font-family: var(--font-text); font-style: italic; font-size: 1.15em; letter-spacing: 0; }
+/* The query chip's no-JS fallback is a real <form><button> (needs name="q"
+   value=""), unlike the facet chips' plain <a>. `display: contents` makes the
+   wrapper invisible to `.filterbar`'s flex layout, so the button lays out as
+   if it were a direct flex child (search-bar plan step 9). */
+.filterchip-form { display: contents; }
+.filterbar__clear { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; background: transparent; border: 0; }
+.filterbar__clear:hover { color: var(--accent-strong); }
+.facet-group__titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.facet-group__titlerow .facet-group__title { margin: 0; }
+.facet-group__clear { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; background: transparent; border: 0; opacity: 0; transition: opacity var(--dur) var(--ease); }
+.facet-group:hover .facet-group__clear, .facet-group:focus-within .facet-group__clear { opacity: 1; }
+.facet-group__clear:hover { color: var(--accent-strong); }
+/* Both are 24px targets by the padding rule under `.cv-aside__more`. */
+
+/* ============================================================================
+   COMPOUND-VIEWER CONTENTS RAIL  (CV-2, token-only, verbatim from
+   cpe-variants.css except two deliberate adaptations noted inline: the
+   collapse breakpoint is CPE's shared 860px (source used 760px), and
+   `[aria-current="page"]` (source used `[aria-current="true"]`) to match the
+   markup emitted by `render_compound_viewer`. `.cv-compound-head*` IS
+   emitted — the navigator's own empty-branch head, when a compound source
+   resolves but has no parts (empty-states-not-found plan E5); it is not
+   the styled parent-record archetype `dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md`'s Slice-3b status note
+   discusses — see the class rules below.)
+   ========================================================================== */
+/* `#compound-viewer`'s `scroll-margin-top` (Incunabula Slice 3b step 2, Q9;
+   re-fixed twice more since — D5-gate round, then the
+   reader-paging-fragment-swap plan step 6) is GONE (owner decision
+   2026-09-29): no href/action in this codebase carries the `#compound-viewer`
+   fragment any more (see `links.rs`'s `member_href_for` and
+   `compound_viewer.rs`'s `build_compound_href`), so there is no anchor-landing
+   scroll left to correct for. The element still receives focus — via the
+   no-JS `tabindex="-1"` container landing after ordinary same-document
+   navigation, and via the fragment-swap's programmatic focus-restore call
+   (`preventScroll: true`, so that path never scrolls either) — but neither
+   path is a browser anchor jump. The register's `#annotations` and
+   `.anno__entry` targets do get one (ANNOTATIONS block below), and so does
+   the reader's head, the arrival scroll's stacked target. */
+/* The programmatic focus-restore call (`bin/src/router.rs`'s
+   `compound_fragment_response`) moves focus onto this `tabindex="-1"`
+   container, so screen-reader users land on the new page. It is a
+   programmatic focus target, not a control (not in the tab order), so it
+   draws no ring: browsers match `:focus-visible` here even after a mouse
+   click, and a box around the whole component reads as an error. Links,
+   buttons and inputs inside keep their own rings. */
+#compound-viewer:focus { outline: none; }
+.cv-toc { display: grid; grid-template-columns: minmax(12rem, 16rem) 1fr; column-gap: var(--space-7); align-items: start; }
+/* Q7 (Slice 3b, owner-accepted): at ≤860px the rail stacks BELOW the reader
+   by CSS `order`, so an anchored page step lands on the member head rather
+   than on up to a viewport of chapter list. The markup is unchanged (rail
+   first). Known trade-off: at ≤860px the DOM / focus order (rail first) no
+   longer matches the visual order (reader first) — WCAG 1.3.2 Meaningful
+   Sequence / 2.4.3 Focus Order territory, recorded and accepted in Q7. The
+   ≤860px separating margin moved from `.cv-toc__reader` onto the rail, which
+   is now the second block. `align-items: stretch` (and the rail's
+   `align-self: stretch` below) keep both blocks full-width, as `display:
+   block` had them; the base `start` would shrink-wrap them in a column. */
+@media (max-width: 860px) {
+  .cv-toc { display: flex; flex-direction: column; align-items: stretch; }
+  .cv-toc__contents { order: 1; margin-top: var(--space-6); }
+}
+.cv-toc__contents { position: sticky; top: var(--header-clear); align-self: start; }
+@media (max-width: 860px) { .cv-toc__contents { position: static; align-self: stretch; } }
+.cv-toc__cap { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); margin: 0 0 var(--space-3); padding-inline-start: var(--space-2); }
+/* Cap the sticky rail at the viewport (below its sticky top, less 2rem) so a very
+   long Story keeps a compact, on-screen rail; shorter contents lists (e.g. Alice's
+   13 chapters) fit fully with no scrollbar. Was a fixed 28rem, which needlessly
+   clipped lists that the taller reader column left plenty of room for. */
+.cv-toc__list { list-style: none; margin: 0; padding: 0 var(--space-2) 0 0; border-top: 1px solid var(--rule); max-height: calc(100vh - var(--header-clear) - 2rem); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule-strong) transparent; }
+.cv-toc__list::-webkit-scrollbar { width: 0.4rem; }
+.cv-toc__list::-webkit-scrollbar-track { background: transparent; }
+.cv-toc__list::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: var(--radius-1); }
+.cv-toc__item { border-bottom: 1px solid var(--rule); }
+.cv-toc__link { display: flex; gap: var(--space-3); align-items: baseline; padding: var(--space-2) 0 var(--space-2) var(--space-2); text-decoration: none; color: var(--ink-muted); font-size: var(--size-3); line-height: var(--leading-snug); transition: color var(--dur) var(--ease); cursor: pointer; }
+.cv-toc__link:hover { color: var(--accent-strong); }
+/* Inset focus ring: `.cv-toc__list` is an `overflow-y: auto` scroll container,
+   which clips the default outward ring (outline-offset:3px) on the first/last
+   (and edge) items. An inset ring sits inside the link box and is never clipped.
+   The link carries a left inset (padding-inline-start on `.cv-toc__link`, matched
+   on `.cv-toc__cap`) so the ring clears the leading number instead of overlapping
+   it. */
+.cv-toc__link:focus-visible { outline-offset: -2px; }
+.cv-toc__num { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); min-width: 1.8em; font-feature-settings: "tnum" 1; flex: 0 0 auto; }
+.cv-toc__link[aria-current="page"] { color: var(--ink); font-weight: var(--weight-medium); }
+.cv-toc__link[aria-current="page"] .cv-toc__num { color: var(--accent-strong); }
+/* `compound-viewer index="collapsed"|"none"` (Slice 3b D4 / Q2): no rail, so
+   a collapsed index is a closed `details.cv-index` under the pager whose
+   summary reuses the rail caption's type. The list keeps its own
+   `.cv-toc__list` rules (self-scrolling cap). Existing tokens only. */
+.cv-index { margin-top: var(--space-5); max-width: var(--read, 40rem); }
+.cv-index__cap { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); padding: var(--space-2) 0 var(--space-2) var(--space-2); cursor: pointer; }
+.cv-index__cap:hover { color: var(--ink-muted); }
+.cv-member__head { margin-bottom: var(--space-4); }
+.cv-member__eyebrow { margin: 0 0 var(--space-2); }
+.cv-member__title { font-size: var(--size-7); font-weight: var(--h1-weight, 500); font-style: var(--display-italic, normal); letter-spacing: -0.018em; margin: 0; line-height: var(--leading-tight); }
+.cv-member__title a { color: var(--ink); text-decoration: none; transition: color var(--dur) var(--ease); }
+.cv-member__title a:hover { color: var(--accent-strong); }
+.cv-member__props { max-width: var(--read, 40rem); }
+/* The member's scan (`compound-viewer media="…"`, Incunabula Slice 2
+   decision 11): a plain, non-interactive `figure.cv-member__scan > img` —
+   deliberately NOT `.rv__stand` (that assumes an absolutely-positioned,
+   height-bounded canvas and dark-background shadows). Bounded to 30rem tall
+   (DESIGN.md §4.6's `--stage-h:30rem`), never upscaled. Display-box↔fetch-size
+   coupling: the `src` is fetched at `PLATE_WIDTH` (900px,
+   `core/src/iiif.rs`) — keep the two in step if this box grows. */
+.cv-member__scan { margin: 0 0 var(--space-5); }
+/* A definite height (not `height: auto`) so the box is reserved before the
+   scan arrives: under real navigation (slice 3b D5) every page step is a
+   fresh document, and an auto-sized unloaded <img> collapses to 0 and then
+   shifts the props down when it paints. `object-fit: contain` keeps the
+   aspect ratio when `max-width` clamps a wide scan. */
+.cv-member__scan img { display: block; height: 30rem; width: auto; max-width: 100%; object-fit: contain; object-position: left top; }
+
+/* ============================================================================
+   COMPOUND-VIEWER `layout="pages"`  (the book-page handoff,
+   docs/design/book-page/design-doc.md §4). One column: the identity head,
+   the stage, the `.pg--reader` pager row (media.css) with its page picker,
+   then — with no rail — a collapsed index. Existing tokens only.
+   ========================================================================== */
+/* ---- the book composition (design-doc §2, plan Choices B/C) -------------
+   The pages reader renders INSIDE its record:
+   `article.record.page.record--reader > div.record__tracks > head + reader +
+   body`. The DOM order is the stacked order (head → reader → intro →
+   Apparat). The article is the `book` query container; `.record__tracks`
+   exists because a container query never styles its own container.
+   Thresholds are on the record's CONTENT box: 62rem is a window of about
+   1074px less both gutters (`--gutter`, 3.2vw + 0.4rem there), 35.99rem a
+   window of about 629px. rem thresholds also trip at 200% text zoom. */
+.record--reader { container: book / inline-size; }
+.record--reader .record__tracks { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: var(--space-7); }
+/* The reader's head lands 0.5rem below the sticky reader's top: `html`'s
+   --header-clear padding plus this margin (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`, 2026-10-08). This grid
+   is also the arrival scroll's stacked test. */
+.record--reader header.cv-member__head { scroll-margin-top: calc(var(--space-5) - var(--space-4)); }
+/* The tracks' row gap spaces the head; its own margin would double it. */
+.record--reader .record__tracks > .record__head { margin-bottom: 0; }
+/* The reader is a grandchild of the record's `.page`: neutralise its own
+   `.page` box (a descendant rule, as `.browse > .page` does for its child).
+   (0,3,0) ties shell.css's `.shell__main:has(.breadcrumb) .page` and wins by
+   load order. */
+.record--reader .compound-viewer.page { max-width: none; margin: 0; padding: 0; }
+/* The companion's intro measure (design-doc 8.6), scoped so no other intro
+   moves. */
+.record--reader .record__intro .prose { max-width: 48ch; }
+/* The companion stacks intro then Apparat in ONE column at every width:
+   beside the reader the column is too narrow for two tracks, and stacked the
+   order must stay header → reader → intro → Apparat. (0,3,0) beats
+   media.css's (0,2,0) `.record__body--noimg.record__body--intro` grid, which
+   loads later; its `> *` rule is then inert. */
+.record--reader .record__body--noimg.record__body--intro { display: flex; flex-direction: column; gap: var(--space-7); }
+@container book (min-width: 62rem) {
+  /* The text track keeps a reading measure (never under 22rem, never over
+     --read); the reader takes the rest. `cqi` is the `book` container's. */
+  .record--reader .record__tracks {
+    grid-template-columns: minmax(22rem, min(var(--read), 36cqi)) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: clamp(var(--space-7), 3.5cqi, var(--space-9));
+  }
+  /* (0,3,0) beats grid.css's `.record__head { grid-column: 1 / -1 }`, which
+     loads later. */
+  .record--reader .record__tracks > .record__head { grid-column: 1; grid-row: 1; }
+  .record--reader .record__tracks > .record__body { grid-column: 1; grid-row: 2; }
+  .record--reader .record__tracks > .compound-viewer { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  .record--reader .compound-viewer--pages { --stage-h: clamp(24rem, 100svh - 17rem - var(--stage-trim, 0px), 92rem); }
+}
+/* Sticky only on windows at least 48rem tall. Below it the
+   reader scrolls with the page. Stacked, it never sticks: it would cover the
+   Apparat. The arrival scroll reads this `position: sticky` to tell the two
+   layouts apart (annotation.rs, `ARRIVAL_INIT_EXPR`). The desk stage's 17rem
+   budgets the pinned reader: this sticky top (--header-clear, 81px) plus
+   191px for its own chrome (head, pager, links row). A taller top or more
+   chrome puts the pinned reader's end below the window, and a page with
+   strip links already does (cpe/CLAUDE.md, the reader's chrome budget). The
+   stage reaches its 24rem floor at a 41rem window, under this gate. */
+@media (min-height: 48rem) {
+  @container book (min-width: 62rem) {
+    .record--reader .record__tracks > .compound-viewer { position: sticky; top: var(--header-clear); }
+    /* An open page description grows the pinned reader's head, so the stage
+       gives back three of its lines. A longer description still outgrows
+       the window; never cap it with `overflow` on the reader, which would
+       clip the picker's upward panel. */
+    .record--reader .compound-viewer--pages:has(.cv-aside__more[open]) { --stage-trim: 4.6rem; }
+  }
+}
+@container book (max-width: 35.99rem) {
+  .record--reader .compound-viewer--pages { --stage-h: clamp(22rem, 100svh - 15.5rem, 40rem); }
+  /* A shorter head, so the scan starts within the first screen. */
+  .record--reader .record__tracks { row-gap: var(--space-6); }
+  .record__title { font-size: var(--size-7); line-height: var(--leading-tight); }
+  .record__author { margin-top: var(--space-2); }
+}
+/* On a phone the reader is taller than the window, so its one pager sticks
+   to the bottom while the reader is on screen. Not under a 30rem window (a
+   phone in landscape): header, pager and the stage's 22rem floor need 463px.
+   `.record--reader` is in the selector to beat media.css's later
+   `.pg--reader`. Sticky needs every ancestor up to the page to keep
+   `overflow: visible`. The scroll margin (the 46px pager and a focus ring)
+   stops the browser's focus scroll above the pager. */
+@media (min-height: 30rem) {
+  @container book (max-width: 35.99rem) {
+    .record--reader .pg--reader { position: sticky; bottom: 0; z-index: 6; margin-top: 0; background: var(--surface); }
+    .record--reader :is(a, button, summary, input, [tabindex]) { scroll-margin-bottom: 3.5rem; }
+  }
+}
+/* The pager row never wraps: below a 520px reader the target names go (the
+   step keeps its word and its `title`), and in the narrowest box the words
+   are clipped visually but stay in the accessible name. */
+@container book (max-width: 32.49rem) {
+  .pg--reader .pg__name { display: none; }
+}
+@container book (max-width: 20rem) {
+  .pg--reader .pg__word { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+}
+/* Reader head (§4.1): identity only — the eyebrow, the h2 in display italic
+   `--size-6`, and the page description as an italic aside. */
+.compound-viewer--pages .cv-member__title { font-size: var(--size-6); }
+.cv-member__of { font-family: var(--font-meta); font-style: normal; font-size: var(--size-2); color: var(--ink-faint); font-feature-settings: "tnum" 1; }
+/* The aside (owner, step 6a — replaces decision 10's two-line clamp): ONE
+   reserved line, reserved even when empty, so the stage and the pager sit at
+   the same height on every page. The text is cut to the line with an
+   ellipsis (the full text stays in the DOM for assistive technology); a
+   native `details` "more" reveals it in place, and the page turn's swap
+   brings it back closed. Open/closed words are CSS, never a `data-*` write. */
+/* `height`, not `min-height`: the row is exactly one text line whether it
+   holds text, the expander or nothing, so no page moves the pager by even a
+   pixel. Open, it grows. */
+.cv-member__aside { display: flex; align-items: baseline; gap: var(--space-3); height: calc(var(--size-4) * var(--leading-snug)); margin: var(--space-2) 0 0; font-size: var(--size-4); font-style: italic; color: var(--ink-muted); line-height: var(--leading-snug); timeline-scope: --cv-aside; }
+.cv-member__aside:has(.cv-aside__more[open]) { height: auto; }
+.cv-aside__text { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; scroll-timeline: --cv-aside inline; }
+.cv-member__aside:has(.cv-aside__more[open]) .cv-aside__text { white-space: normal; overflow: visible; }
+.cv-aside__more { flex: none; font-family: var(--font-meta); font-style: normal; font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.cv-aside__more > summary { list-style: none; cursor: pointer; color: var(--ink-faint); padding: 0 var(--space-2); border-radius: var(--radius-1); }
+.cv-aside__more > summary::-webkit-details-marker { display: none; }
+.cv-aside__more > summary:hover { color: var(--accent-strong); background: var(--hover-fill); }
+.cv-aside__more > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cv-aside__close, .cv-aside__more[open] .cv-aside__open { display: none; }
+.cv-aside__more[open] .cv-aside__close { display: inline; }
+/* 24px targets (WCAG 2.5.8) whose row must not grow: the padding that brings
+   the box to 24px is taken back by the margin. The reader's head keeps one
+   height on every page, with or without an annotation count, or the pager
+   moves; a facet group's options stay put when its "clear" appears. Where a
+   taller row harms nothing, `min-height: 24px` is the plain form. This rule
+   stays after every `padding` on these four (the summary's shorthand above). */
+a.cv-anno-count, .cv-aside__more > summary, .filterbar__clear, .facet-group__clear { padding-block: max(0px, (24px - 1lh) / 2); margin-block: min(0px, (1lh - 24px) / 2); }
+/* The expander shows only when the text overflows its line. The text is a
+   scroll container (`overflow: hidden`), so its scroll timeline is active
+   exactly when it overflows, and only then does the animation apply
+   `visibility: visible`. Open, the text no longer overflows; `[open]` keeps
+   the expander visible so it can close. Without scroll-driven animations the
+   engine's character budget (`ASIDE_FALLBACK_BUDGET`, the `--long` class)
+   decides instead. The timeline reaches the expander, a sibling of the text,
+   only through the aside's `timeline-scope`, so both conditions gate it: a
+   browser with one but not the other takes the fallback. */
+@keyframes cv-aside-overflow { from, to { visibility: visible; } }
+@supports (animation-timeline: scroll()) and (timeline-scope: --x) {
+  .cv-aside__more { visibility: hidden; animation: cv-aside-overflow linear both; animation-timeline: --cv-aside; }
+  .cv-aside__more[open] { visibility: visible; }
+}
+@supports not ((animation-timeline: scroll()) and (timeline-scope: --x)) {
+  .cv-member__aside:not(.cv-member__aside--long) .cv-aside__more { display: none; }
+}
+/* The stale-address status line (design-doc §4.4, plan Choice H), between
+   the head and the stage. Empty, it takes no space; stale, it sits on a
+   top hairline. */
+.cv-status:not(:empty) { margin: 0 0 var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--rule); }
+.cv-status__msg { margin: 0; font-size: var(--size-4); color: var(--ink-muted); line-height: var(--leading-snug); }
+.cv-status__meta { margin: var(--space-1) 0 0; font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
+/* The member-links row under the pager (step 6a): a mono caption, then the
+   links. Below the pager, so it never moves it. */
+.cv-links { margin: var(--space-3) 0 0; font-size: var(--size-3); color: var(--ink-muted); }
+.cv-links__label { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); margin-inline-end: var(--space-2); }
+/* A short label is under 24px wide (WCAG 2.5.8); `.int-link` is the flex box. */
+.cv-links a { min-width: 24px; justify-content: center; }
+/* The stage (§4.2): a plain sizing wrapper around the record viewer's own
+   unit (`media::render_viewer_unit` — banner, canvas, bar), no bed and no
+   border of its own. `--stage-h` is the unit's outer (frame) height,
+   viewport-relative so the reader's head, stage and pager fit one screen
+   (set on the reader article, so the picker panel sizes against it too).
+   Its 12rem, like the desk's 17rem, also covers the sticky header. The
+   `.rv` inside gives up the unit's two border rules. (0,2,0)
+   beats media.css's `.rv` (0,1,0) whatever the load order. No
+   `image-viewer` rule here: media.css's `.rv image-viewer` sizes it.
+   Display-box↔fetch-size coupling: the fallback `<img>` is fetched at
+   `PLATE_WIDTH` (900px, `core/src/iiif.rs`). Its doc comment
+   says how tall a stage it covers: check it before raising any form's
+   ceiling here (the two-track form's 92rem is the tallest). */
+.compound-viewer--pages { --stage-h: clamp(28rem, 100svh - 12rem, 56rem); }
+.cv-stage { min-width: 0; }
+.cv-stage .rv { height: calc(var(--stage-h) - 2 * var(--rule-weight)); }
+/* WIDER (the unit's `$expand`): the reader article toggles `.is-wide`, and
+   the stage grows to the record viewer's wide height. The wide formula keeps
+   ~21rem of chrome (the article's top padding, the head and the pager)
+   plus the header's --header-h below the viewport. `max()`
+   against `--stage-h`: WIDER never makes the stage shorter than the base
+   height, which on most screens is already the taller of the two. */
+.compound-viewer--pages.is-wide .cv-stage .rv { height: max(calc(var(--stage-h) - 2 * var(--rule-weight)), clamp(calc(30rem - 2 * var(--rule-weight)), calc(100svh - var(--header-h) - 21rem), 72rem)); }
+
+/* E5 — compound-with-no-members empty branch (empty-states-not-found plan
+   step 7): `.cv-compound-head` (eyebrow + big italic title for the
+   compound's PARENT resource — built for the first time here, mirrors
+   `.cv-member__head`/`.cv-member__title`'s scale) + the region-scale serif
+   sentence (`.compound-viewer__empty`, previously unstyled — this is its
+   first real design pass) + the parent's own `.props` (reuses
+   `.cv-member__props` above, same reading-measure treatment). */
+.cv-compound-head { margin-bottom: var(--space-5); }
+.cv-compound-head__eyebrow { margin: 0 0 var(--space-2); }
+.cv-compound-head__title { font-size: var(--size-7); font-weight: var(--h1-weight, 500); font-style: var(--display-italic, normal); letter-spacing: -0.018em; margin: 0; line-height: var(--leading-tight); }
+.compound-viewer__empty { font-size: var(--size-5); font-style: italic; color: var(--ink-muted); max-width: var(--read, 40rem); margin: 0 0 var(--space-6); }
+
+/* N1/N2/N3 — the not-found body (empty-states-not-found plan step 8; N1/N2
+   land in step 9 reusing this same block — this step owns the whole
+   `.notfound*` block, per the plan). One anatomy, `.notfound--terse` is N3's
+   scaled-down variant (smaller title, tighter top padding — N3 renders below
+   a real chrome header on a matched route, unlike N1/N2's bare 404). Merged
+   from the design handoff's §3 (`cpe-empty-states.css`), unchanged. */
+.notfound.page { padding-block: var(--space-9) var(--space-10); }
+.notfound--terse.page { padding-block: var(--space-7) var(--space-9); }
+
+/* `width: 100%` is required: the box is a grid item of `.notfound.page` and a
+   column flexbox, so with `auto` margins alone it shrinks to its longest line. */
+.notfound__inner {
+  max-width: 42rem;
+  width: 100%;
+  margin-inline: auto;
+  padding-block: clamp(var(--space-6), 8vh, var(--space-10));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.notfound__code {
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.notfound__title {
+  font-family: var(--font-display);
+  font-size: var(--size-7);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+.notfound--terse .notfound__title { font-size: var(--size-6); }
+
+.notfound__msg {
+  font-size: var(--size-4);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+  text-wrap: pretty;
+  margin: 0;
+}
+
+/* The one exception to the mono-recovery rule: on a 404, getting somewhere IS
+   the content, so the primary exit borrows the editorial invitation row.
+   Not rendered on N3 (step 9's N1 body). */
+.notfound__way {
+  margin-top: var(--space-4);
+  border-block: 1px solid var(--rule);
+}
+.notfound__way a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--size-5);
+  letter-spacing: var(--tracking-tight);
+  transition: color var(--dur) var(--ease);
+}
+.notfound__way a:hover { color: var(--accent-strong); }
+.notfound__way a > span:last-child { font-family: var(--font-meta); color: var(--accent); }
+
+/* Secondary/mono exits row. N1 (step 9): at most three project pages. N3
+   (this step): exactly the browse-all + project-home pair (0 or 1 + 1
+   items — see `render_not_found`). */
+.notfound__or {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65em;
+  font-family: var(--font-meta);
+  font-size: var(--size-1);
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin: var(--space-2) 0 0;
+}
+.notfound--terse .notfound__or { margin-top: var(--space-3); }
+.notfound__or a { color: var(--ink-muted); }
+.notfound__or a:hover { color: var(--accent-strong); }
+
+/* ---- the page picker (design-doc §4.3, plan Choices E–G) ----------------
+   `details#cv-picker` in the `.pg--reader` centre. The panel opens UPWARDS
+   over the stage, anchored to the pager row (`.pg--reader` is its
+   positioned ancestor), at most 85% of the stage frame, and scrolls on its
+   own. Its jump-mark band is sticky at the panel's top;
+   `scroll-padding-top` keeps a zero-JS fragment jump's heading below it (the
+   delegated handler measures the band instead). Every scroll is instant.
+   The panel floats over the viewer (owner, 2026-09-30): it overhangs the
+   row by `--space-4` on each side and stops `--space-2` above it. The
+   overhang must stay inside the page gutters: `--gutter`'s 1.25rem floor
+   is wider than `--space-4`, so a stacked reader never overflows. In the
+   phone form (the block below the picker's rules) the panel has no overhang
+   and its height is capped against the window, not the stage. */
+.pg__centre { display: flex; justify-content: center; min-width: 0; }
+.pk__summary { list-style: none; display: inline-flex; align-items: center; gap: 0.4em; min-height: 44px; padding: 0 var(--space-3); font-family: var(--font-meta); font-size: var(--size-2); color: var(--ink); white-space: nowrap; cursor: pointer; }
+.pk__summary::-webkit-details-marker { display: none; }
+.pk__summary:hover { color: var(--accent-strong); background: var(--hover-fill); }
+.pk__summary:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.pk[open] > .pk__summary { box-shadow: inset 0 -2px 0 var(--ink); }
+.pk__caret { color: var(--ink-faint); transition: transform var(--dur) var(--ease); }
+.pk[open] .pk__caret { transform: rotate(180deg); }
+.pk__panel { position: absolute; inset-inline: calc(-1 * var(--space-4)); bottom: calc(100% + var(--space-2)); z-index: 4; max-height: calc(var(--stage-h) * 0.85); overflow-y: auto; overscroll-behavior: contain; scroll-padding-top: 3rem; scrollbar-width: thin; scrollbar-color: var(--rule-strong) transparent; text-align: start; background: var(--surface-raised); border: 1px solid var(--rule-strong); box-shadow: var(--shadow-card); }
+.pk__band { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); padding: var(--space-2) var(--space-4); background: var(--hover-fill); border-bottom: 1px solid var(--rule-strong); }
+.pk__index { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); margin-inline-end: var(--space-2); }
+.pk__mark { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; font-family: var(--font-display); font-style: italic; font-size: var(--size-3); color: var(--ink); text-decoration: none; }
+.pk__mark:hover { color: var(--accent-strong); background: var(--surface-raised); }
+.pk__mark[aria-current="true"] { text-decoration: underline; text-underline-offset: 0.2em; }
+.pk__mark:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.pk__group { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); column-gap: var(--space-3); padding: var(--space-4); border-top: 1px solid var(--rule); }
+.pk__band + .pk__group { border-top: 0; }
+.pk__head { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; font-weight: normal; }
+/* A mark moves focus here programmatically. After a keyboard activation the
+   heading is where the next Tab starts, so it shows the ring (WCAG 2.4.7);
+   after a pointer click it draws none. */
+.pk__head:focus { outline: none; }
+.pk__head:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pk__headmark { font-family: var(--font-display); font-style: italic; font-size: var(--size-4); line-height: 1; color: var(--ink); }
+.pk__head--key .pk__headmark { font-size: var(--size-6); }
+.pk__meta { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
+.pk__leaves, .pk__flat { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+/* A gathering draws its own collation: one hairline-framed column per leaf,
+   recto over verso. */
+.pk__leaves { grid-template-columns: repeat(auto-fill, 4.5rem); }
+.pk__leaf { display: flex; flex-direction: column; border: 1px solid var(--rule); }
+.pk__cell { display: flex; flex-direction: column; min-height: 40px; }
+.pk__cell + .pk__cell { border-top: 1px solid var(--rule); }
+.pk__flat { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
+.pk__flat--num { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.pk__entry { display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 var(--space-2); font-family: var(--font-meta); font-size: var(--size-2); color: var(--ink-muted); text-decoration: none; }
+.pk__flat:not(.pk__flat--num) .pk__entry { justify-content: flex-start; }
+.pk__entry:hover { color: var(--accent-strong); background: var(--hover-fill); }
+.pk__entry:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.pk__entry[aria-current="page"] { color: var(--ink); font-weight: var(--weight-medium); background: var(--surface-sunken); text-decoration: underline 2px; text-underline-offset: 0.35em; }
+.pk__entry--dash { font-family: var(--font-display); font-style: italic; color: var(--ink-faint); }
+@container book (max-width: 35.99rem) {
+  .pk__panel { inset-inline: 0; max-height: min(72svh, 36rem); }
+  /* One row that scrolls sideways, label and legend with it. It shows no
+     scrollbar, so the fade over its last 2rem is the only cue; the end
+     padding and scroll padding keep the last mark, and a mark scrolled to
+     by focus, clear of the fade. */
+  .pk__band { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; gap: 0 var(--space-1); padding-inline-end: 2rem; scroll-padding-inline-end: 2rem; -webkit-mask: linear-gradient(90deg, #000 calc(100% - 2rem), transparent); mask: linear-gradient(90deg, #000 calc(100% - 2rem), transparent); }
+  .pk__band > * { flex: none; scroll-snap-align: start; }
+  .pk__mark { min-width: 32px; min-height: 32px; }
+  .pk__group { grid-template-columns: minmax(0, 1fr); }
+  .pk__leaves { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .pk__leaves .pk__entry { padding: 0; }
+  .pk__flat--num { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+/* ============================================================================
+   ANNOTATIONS (Slice 6) — the register of a `pages` reader's page
+   (annotations design-doc §4, plan D10/D13). `div#cv-annotations` is the
+   reader's second `_compound` patch target: the third child of
+   `.record__tracks` on every page of an annotated reader, empty on a page
+   without a register. Empty, it must be no grid item at all — the tracks
+   have a `row-gap` at every width, so even an empty item would add a row
+   and a gap — and the desk row template changes only via `:has()`, so an
+   unannotated page keeps today's rows and gaps exactly. A patch target may
+   be `display: none`: DataStar morphs it by id regardless.
+   ========================================================================== */
+#cv-annotations:empty { display: none; }
+@container book (min-width: 62rem) {
+  /* Last in the companion column, beside the reader: head, body, then the
+     register; the reader spans all three rows. `:has()` gives (1,4,0), which
+     beats the two-row rules above. */
+  .record--reader .record__tracks:has(> #cv-annotations:not(:empty)) { grid-template-rows: auto auto 1fr; }
+  .record--reader .record__tracks:has(> #cv-annotations:not(:empty)) > .compound-viewer { grid-row: 1 / span 3; }
+  .record--reader .record__tracks > #cv-annotations { grid-column: 1; grid-row: 3; margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--rule-strong); }
+  /* The bookmark re-opens the book below a stacked register only. (1,1,0)
+     beats the base `.anno-bookmark` rule, which loads later. */
+  #cv-annotations .anno-bookmark { display: none; }
+}
+.anno__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--space-3) var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px solid var(--rule); }
+.anno__title { display: grid; gap: var(--space-2); min-width: 0; }
+.anno__cap { margin: 0; font-family: var(--font-display); font-style: var(--display-italic, normal); font-weight: var(--weight-medium); font-size: var(--size-5); line-height: 1.2; }
+/* The arrival note (plan D11): no height until it has text. It stays in flow,
+   never `display: none`, so the live region exists before its text arrives. */
+.anno__arrival { margin: 0; font-size: var(--size-2); line-height: var(--leading-snug); color: var(--ink-muted); }
+.anno__arrival:not(:empty) { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule); }
+.anno__list { list-style: none; margin: 0; padding: 0; }
+/* The entry's fill bleeds past the column edge (design-doc §4). */
+.anno__entry { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: var(--space-4); padding: var(--space-4) var(--space-3) var(--space-4) var(--space-2); margin: 0 calc(-1 * var(--space-3)) 0 calc(-1 * var(--space-2)); border-bottom: 1px solid var(--rule); transition: background var(--dur) var(--ease); }
+/* The chip is chrome, never the annotation's colour. */
+.anno__chip { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; padding: 0; font-family: var(--font-meta); font-size: var(--size-1); font-weight: 600; font-feature-settings: "tnum" 1; color: var(--ink); background: transparent; border: 1px solid var(--ink-faint); border-radius: var(--radius-1); cursor: pointer; }
+/* Emphasised (hovered, focused, pinned or arrived at: `.is-em`, set from the
+   same focus the viewer draws) and pinned (`aria-pressed`) read alike. */
+.anno__entry.is-em { background: var(--hover-fill); }
+.anno__chip[aria-pressed="true"], .anno__entry.is-em .anno__chip { color: var(--surface); background: var(--ink); border-color: var(--ink); }
+/* A partner link's landing (`#annotation-<id>`, plan D14) pins its entry with
+   no JS, as an emphasis does. */
+.anno__entry:target { background: var(--hover-fill); box-shadow: inset 2px 0 0 var(--ink); }
+.anno__entry:target .anno__chip { color: var(--surface); background: var(--ink); border-color: var(--ink); }
+@media (forced-colors: active) { .anno__entry:target { outline: 2px solid Highlight; outline-offset: -2px; } }
+/* Forced colours drop the fills above, which are the only pressed and
+   emphasised cue: give both an outline the system palette keeps. */
+@media (forced-colors: active) {
+  .anno__entry.is-em { outline: 2px solid Highlight; outline-offset: -2px; }
+  .anno__chip[aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: 1px; }
+}
+/* An entry lands 0.5rem below the sticky reader's top: `html`'s
+   --header-clear padding plus this margin. No `scroll-margin-bottom`: the
+   arrival scrolls an entry to the window's end, and a margin would lift the
+   sticky reader above it. */
+#annotations, .anno__entry { scroll-margin-top: calc(var(--space-5) - var(--space-4)); }
+.anno__chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.anno__nonum { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; color: var(--ink-faint); }
+.anno__body { min-width: 0; }
+.anno__shape { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); margin: 0; font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-faint); line-height: 1.75rem; }
+/* The annotation's own colour, `--iv-c` on the entry (the overlay's name). */
+.anno__swatch { width: 0.5625rem; height: 0.5625rem; background: var(--iv-c); box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.25); }
+.anno__remark { margin: 0.125rem 0 0; font-size: var(--size-4); line-height: var(--leading-snug); text-wrap: pretty; }
+/* Annotation-link lines (design-doc §4, F9): the link name then its partner on one
+   wrapping row; several partners stack under the name. */
+.anno__links { display: grid; gap: var(--space-3); margin-top: 0.625rem; }
+.anno__link { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.anno__link--multi { display: grid; gap: 4px; justify-items: start; }
+.anno__link-name, .prop__rel-name { font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--ink-muted); }
+.anno__partner, .prop__rel-to { color: var(--ink); text-decoration: none; }
+a.anno__partner, a.prop__rel-to { border-bottom: 1px solid var(--link-underline); }
+a.anno__partner:hover, a.prop__rel-to:hover { border-bottom-color: currentColor; }
+/* The Apparat's links row (`group links-label=`, plan D9): each link name
+   over its partner books. */
+.prop__rel { display: grid; gap: 4px; justify-items: start; }
+.prop__rel + .prop__rel { margin-top: var(--space-3); }
+.prop__rel-to em { font-family: var(--font-display); font-size: var(--size-4); }
+.anno__book { font-family: var(--font-display); font-size: var(--size-3); }
+.anno__page { font-family: var(--font-meta); font-size: var(--size-2); }
+.anno-bookmark { display: grid; gap: var(--space-2); margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--rule-strong); }
+.anno-bookmark .record__class { margin: 0; }
+.anno-bookmark__title { margin: 0; font-family: var(--font-display); font-style: var(--display-italic, normal); font-weight: var(--weight-medium); font-size: var(--size-5); line-height: 1.2; }
+/* Signposts (design-doc §5): the project accent, never an annotation's
+   colour, and no added height. The dot is decorative; each signpost names
+   the fact in its accessible name. */
+.anno-dot { display: inline-block; flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); vertical-align: 0.15em; }
+@media (forced-colors: active) { .anno-dot { background: CanvasText; } }
+.cv-member__eyebrow:has(> .cv-anno-count) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.cv-anno-count .anno-dot { width: 6px; height: 6px; margin-inline-end: 6px; vertical-align: 0.1em; }
+/* The picker: a legend at the band's end, and annotated entries in the
+   accent, which wins over the current page's ink (its underline stays). */
+.pk__legend { margin-inline-start: auto; font-family: var(--font-meta); font-size: var(--size-1); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--accent-strong); white-space: nowrap; }
+.pk__legend .anno-dot { margin-inline-end: 6px; }
+/* Must stay after `.pk__entry[aria-current="page"]`: same specificity. */
+.pk__entry.pk__entry--anno { color: var(--accent-strong); }
+.pk__entry .anno-dot, .pk__mark .anno-dot, .pk__headmark .anno-dot { margin-inline-start: 3px; }
+.pk__headmark .anno-dot { vertical-align: middle; }

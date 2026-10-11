@@ -1,0 +1,24 @@
+---
+source: engine/src/component/editorial.rs
+expression: out
+---
+<article class="editorial page"><div class="narr"><header class="editorial__head"><h1>Alice im DaSCHland</h1></header><div class="prose editorial__intro">
+<p class="editorial__lede"><em>Immer kurioser und kurioser!</em></p><p class="editorial__open">A<strong>lice im DaSCHland</strong> ist ein Vorzeigeprojekt des Schweizerischen
+Datenzentrums für die Geisteswissenschaften (DaSCH). Es nimmt Lewis Carrolls
+beide Alice-Geschichten — <em>Alices Abenteuer im Wunderland</em> (1865) und <em>Alice
+hinter den Spiegeln</em> — und modelliert sie als reich verknüpften
+geisteswissenschaftlichen Datensatz.</p><p>Erkunden Sie die <strong>Figuren</strong> des Wunderlands, die <strong>Geschichten</strong> und ihre
+<strong>Kapitel</strong>, die realen und die Wunderland-<strong>Orte</strong> sowie die <strong>Ereignisse</strong>,
+die sie verbinden — dazu Hörbuchaufnahmen, historische <strong>Buchausgaben</strong> und
+digitalisierte <strong>Illustrationen</strong>.</p>
+<p>Und es gibt eine Wendung: Im DaSCHland wird Carrolls Personal für eine Welt der
+Daten neu erdacht. Das Weisse Kaninchen wird zu <strong>RabbIT</strong>, einem kybernetischen
+Archivar, der ewig Zeitstempeln hinterherjagt; die Grinsekatze zur
+<strong>Quantenkatze</strong>; die Herzkönigin zur <strong>Datenkönigin</strong>, die Gefühle mit
+Metadaten verdrahtet.</p>
+<blockquote class="epigraph"><p>„Wir sind hier alle verrückt."</p><cite>die Grinsekatze</cite></blockquote></div></div><div class="narr narr-wide"><div class="editorial__sections"><section class="editorial__section"><h2 id="sec-1">Die Figuren kennenlernen</h2><p>Entdecken Sie das gesamte Personal von <em>Alice im Wunderland</em> als verknüpften
+Datensatz. Jede Figurenseite zeigt Beschreibung, Rolle und thematische
+Schlagworte aus den 0854-Quelldaten.</p>
+<ul class="invite-list"><li><a href="/alice-in-daschland/characters/CH_001"><span class="invite__name">Alice</span><span class="invite__gloss">die neugierige junge Protagonistin</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/characters/CH_002"><span class="invite__name">Weisses Kaninchen</span><span class="invite__gloss">immer auf der Jagd nach der Zeit</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/characters/CH_005"><span class="invite__name">Grinsekatze</span><span class="invite__gloss">Meisterin der Verschwinde-Tricks</span><span class="invite__arrow">→</span></a></li></ul></section><section class="editorial__section"><h2 id="sec-2">Die Orte erkunden</h2><p>Die Geschichten bewegen sich zwischen der realen Welt und dem Wunderland. Jede
+Ortsseite zeigt ihre Beschreibung und ihren Typ.</p>
+<ul class="invite-list"><li><a href="/alice-in-daschland/locations/L_001"><span class="invite__name">Flussufer</span><span class="invite__gloss">wo Alices Abenteuer beginnt</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/locations/L_002"><span class="invite__name">Kaninchenbau</span><span class="invite__gloss">der Eingang zum Wunderland</span><span class="invite__arrow">→</span></a></li><li><a href="/alice-in-daschland/locations/L_003"><span class="invite__name">Haus der Herzogin</span><span class="invite__gloss">ein chaotisches Wunderland-Zuhause</span><span class="invite__arrow">→</span></a></li></ul></section></div></div></article>

@@ -1,0 +1,5 @@
+---
+source: engine/src/component/annotation.rs
+expression: "overlay(&[numbered(1, rect), numbered(2, circle)])"
+---
+<svg data-iv-overlay viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" data-class="{'anno-off': !$_annoShow}"><g data-iv-shape="rect" style="--iv-c:#ff3333;--iv-on:#000"><rect data-iv-part="halo" x="10.000" y="2.000" width="50.000" height="30.000"></rect><rect data-iv-part="line" x="10.000" y="2.000" width="50.000" height="30.000"></rect></g><g data-iv-shape="circle" style="--iv-c:#3333ff;--iv-on:#fff"><ellipse data-iv-part="halo" cx="64.600" cy="63.100" rx="4.600" ry="3.100"></ellipse><ellipse data-iv-part="line" cx="64.600" cy="63.100" rx="4.600" ry="3.100"></ellipse></g></svg><span data-iv-tag="rect" data-iv-x="10.000" data-iv-y="2.000" data-iv-align="start" data-iv-place="below" style="--iv-c:#ff3333;--iv-on:#000;left:10.000%;top:2.000%" aria-hidden="true" data-class="{'anno-off': !$_annoShow}">1</span><span data-iv-tag="circle" data-iv-x="64.600" data-iv-y="60.000" data-iv-align="center" style="--iv-c:#3333ff;--iv-on:#fff;left:64.600%;top:60.000%" aria-hidden="true" data-class="{'anno-off': !$_annoShow}">2</span>

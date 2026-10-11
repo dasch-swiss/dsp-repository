@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Three of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, and its image viewer, `cpe-image-viewer` in `image-viewer/`. Its component library, store, page assembly and routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Four of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, and its image viewer, `cpe-image-viewer` in `image-viewer/`. Its store, page assembly and routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -53,7 +53,37 @@ Its vocabulary and its specification are not in this repository yet. Until DEV-7
 
 The tests that tie this crate to files of the incubator are the incubator's, run against its vendored copy of
 the crate. They check two things: the specification's worked example lowers to what Incunabula's `config.kdl`
-lowers to, and the header budget in `validate/header_budget.rs` matches `dsp-incubator cpe/static/cpe/tokens.css`.
+lowers to, and the header budget in `validate/header_budget.rs` matches `tokens.css`, which the incubator reads
+from its vendored copy of `components/style/`.
+
+## The component library
+
+`cpe-components` in `components/` renders what `cpe-core`'s IR describes, as Maud functions that return
+`Markup`. It holds:
+
+- the components a page is assembled from (`component`): the editorial and narrative renderers, the resource
+  list with its facet panel and search bar, the record with its media viewer and compound viewer, the
+  annotation register, the page picker and the data links;
+- the chrome message catalogue (`chrome`): `ChromeMsg`, the strings of the interface itself in every language
+  CPE offers, as distinct from the labels a project's KDL declares;
+- the per-project components (`component::project`) and their registry, `PROJECT_RENDERERS` (private to the crate): a component
+  one project needs and no other, found by its `(project, name)` pair, with `cpe-core`'s
+  `validate/project_components.rs` as the validation half of the same seam;
+- the seven stylesheets the markup is written against, as plain files in `components/style/`: `tokens`,
+  `shell`, `editorial`, `record`, `grid`, `media` and `incunabula`.
+
+It depends on `cpe-core` and `cpe-image-viewer`, and on no `axum`, no `rusqlite` and no Mosaic crate
+(ADR-0007). The crate neither embeds nor serves the stylesheets, and nothing in this repository serves them
+yet: a host does, and until DEV-7465 brings CPE's host here that host is the incubator's binary, from its
+vendored copy. `shell.css` refers to `dasch-fingerprint.svg` by a URL relative to itself; that file, the two
+logos and `datastar.js` stay with the incubator's binary until then. No playground shows the components
+here; the crate's snapshot tests guard their markup.
+
+The glossary of the components' terms (component, compound, chrome message, register) is
+`dsp-incubator cpe/CONTEXT.md` until DEV-7465, and the catalogue of components is
+`dsp-incubator cpe/docs/COMPONENT_LIBRARY.md`. A comment in the crate that cites a decision record of the
+incubator names it by its path, `dsp-incubator cpe/docs/adr/<file name>`: the incubator's numbers are not
+this repository's.
 
 ## The image viewer
 

@@ -8,7 +8,7 @@
 //!
 //! These are the project-declared strings (`chrome {}`, `labels {}`, nav
 //! labels, glosses, order rows); the engine's own built-in strings are
-//! the `ChromeMsg` catalog in `dsp-incubator cpe/components` (`chrome`). A new
+//! the `ChromeMsg` catalog in `cpe-components` (`chrome`). A new
 //! resolver over the IR's label types goes here, not in a component.
 
 use crate::ir::{ChromeString, ClassLabel, PropertyLabel, SiteConfig};

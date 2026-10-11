@@ -75,9 +75,9 @@ pub struct MediaThumb {
 
 /// The one meaning of "tall" for a box `w` wide and `h` high: at least three
 /// times as high as wide. A 1:3 box is tall. It decides `data-tile="tall"`,
-/// which selects the tall-tile rules in `dsp-incubator cpe/static/cpe/grid.css`, and
+/// which selects the tall-tile rules in `areas/access/cpe/components/style/grid.css`, and
 /// `data-frame="tall"` (`component::media::frame_is_tall`), which selects the
-/// tall-frame rules in `dsp-incubator cpe/static/cpe/media.css`.
+/// tall-frame rules in `areas/access/cpe/components/style/media.css`.
 #[doc(hidden)]
 pub fn is_tall(w: i64, h: i64) -> bool {
     w > 0 && h >= 3 * w

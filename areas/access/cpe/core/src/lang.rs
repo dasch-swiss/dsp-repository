@@ -58,7 +58,7 @@ pub fn resolve(preferences: &[String], site: &SiteConfig) -> Lang {
 ///
 /// This is what lets the bin's site index (which has no project to resolve
 /// a language against) obtain a [`Lang`] and reuse the `pub` engine chrome catalog
-/// (`chrome` in `dsp-incubator cpe/components`) directly, rather than mirroring it
+/// (`chrome` in `cpe-components`) directly, rather than mirroring it
 /// bin-side.
 pub fn resolve_builtin(preferences: &[String]) -> Lang {
     resolve_against(preferences, &BUILTIN_LANGUAGES, "en")

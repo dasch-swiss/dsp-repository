@@ -1,0 +1,15 @@
+---
+source: engine/src/component/editorial.rs
+expression: out
+---
+<article class="editorial page"><div class="narr"><header class="editorial__head"><p class="eyebrow editorial__kicker">Basler Frühdrucke · 1471–1504</p><h1>Die Bilderfolgen der Basler Frühdrucke</h1>
+<p class="editorial__subtitle">Spätmittelalterliche Didaxe als Bild-Text-Lektüre</p></header><div class="prose editorial__intro"><p class="editorial__lede"><em>Neunzehn illustrierte Frühdrucke aus vier Basler Offizinen, Seite für Seite lesbar – und die Frage, wie Bild und Text im späten Mittelalter zusammen gelesen wurden.</em></p><p class="editorial__open">Basel war im letzten Drittel des 15. Jahrhunderts das wichtigste Zentrum des frühen Buchdrucks auf dem Gebiet der heutigen Schweiz.
+Was hier zwischen 1471 und 1504 aus vier Offizinen hervorging, bildet nach dem Bildersturm der Reformation die bedeutendste erhaltene Basler Bildfolge des Spätmittelalters:
+neunzehn Exemplare mit über tausend Holzschnitten.</p><p>Die Texte sind fast durchweg deutsche und lateinische Kompilationen religiös-didaktischen Inhalts. Berühmte Bücher – das <em>Narrenschiff</em>, das <em>Zeitglöcklein</em> –
+stehen neben kaum bekannten wie den seelsorgerischen Schriften Ludwig Mosers und Johannes Meders.</p>
+<p>Die Leitfrage des Projekts ist das Verhältnis von Bild und Text: Jeder Druck wird als kalkulierte Bild-Text-Kompilation gelesen, nicht als „Text mit Illustrationen“.
+Wie die Holzschnitte für Lesende und Zuhörende des späten Mittelalters funktionierten, lässt sich nur an der Seite selbst prüfen –
+deshalb ist hier jedes Exemplar vollständig aufblätterbar.</p>
+</div></div><div class="narr narr-wide"><div class="editorial__sections"><section class="editorial__section"><h2 id="wege">Zwei Wege hinein</h2><ul class="invite-list"><li><a href="/incunabula/narrenschiff"><span class="invite__name">Das Narrenschiff</span><span class="invite__gloss">Drei Ausgaben, ein Bildprogramm – und das einzige Buch mit Randleisten.</span><span class="invite__arrow">→</span></a></li><li><a href="/incunabula/woodcuts"><span class="invite__name">Der wiederverwendete Holzschnitt</span><span class="invite__gloss">Ein Stock, mehrfach gedruckt: was die Bearbeitenden auf den Scans markiert haben.</span><span class="invite__arrow">→</span></a></li></ul></section><h2 id="zeitleiste">Zeitleiste</h2>
+<p>Neunzehn Bände, vier Offizinen, dreiunddreissig Jahre. Jeder Balken steht für ein Buch; ist nur ein Zeitraum bekannt, spannt er sich über alle infrage kommenden Jahre.</p>
+</div></div></article>

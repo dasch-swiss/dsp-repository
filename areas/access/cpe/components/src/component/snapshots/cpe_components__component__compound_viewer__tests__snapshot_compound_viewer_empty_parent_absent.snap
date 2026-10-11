@@ -1,0 +1,5 @@
+---
+source: engine/src/component/compound_viewer.rs
+expression: out
+---
+<section class="compound-viewer page" id="compound-viewer" tabindex="-1"><p class="compound-viewer__empty">This compound has no members.</p></section>

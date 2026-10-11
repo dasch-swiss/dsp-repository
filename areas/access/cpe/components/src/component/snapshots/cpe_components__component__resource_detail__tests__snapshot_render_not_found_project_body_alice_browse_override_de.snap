@@ -1,0 +1,5 @@
+---
+source: engine/src/component/resource_detail.rs
+expression: out
+---
+<article class="notfound page"><div class="notfound__inner"><p class="notfound__code">404 — nicht gefunden</p><h1 class="notfound__title">Diese Seite existiert nicht.</h1><p class="notfound__msg">Die Adresse, der Sie gefolgt sind, bezeichnet nichts in diesem Projekt. Sie wurde möglicherweise seit der Erstellung des Links umstrukturiert, oder die Adresse ist unvollständig.</p><p class="notfound__way"><a href="/alice-in-daschland/"><span>Alice in DaSCHland — Projektstartseite</span><span aria-hidden="true">→</span></a></p><p class="notfound__or"><span>Oder durchsuchen:</span><a href="/alice-in-daschland/characters">Figuren</a><a href="/alice-in-daschland/chapters">Alle Kapitel</a><a href="/alice-in-daschland/story">/story</a></p></div></article>

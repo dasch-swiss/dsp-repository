@@ -1,0 +1,5 @@
+---
+source: engine/src/component/compound_viewer.rs
+expression: out
+---
+<article class="compound-viewer page" id="compound-viewer" tabindex="-1" data-on:popstate__window="if (location.pathname + location.search !== window.__cpeReaderUrl) { location.reload(); }"><script>window.__cpeReaderUrl = location.pathname + location.search;</script><header class="cv-member__head"><p class="eyebrow cv-member__eyebrow">StoryChapter · 01</p><h2 class="cv-member__title"><a href="/alice-in-daschland/chapters/SCH_001">The Only Chapter</a></h2></header><div class="cv-member__props"></div></article>

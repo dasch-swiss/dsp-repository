@@ -1,0 +1,5 @@
+---
+source: engine/src/component/breadcrumb.rs
+expression: out
+---
+<nav class="breadcrumb" aria-label="Breadcrumb"><ol class="breadcrumb__list"><li class="breadcrumb__item"><a href="/">CPE</a></li><li class="breadcrumb__sep" aria-hidden="true">›</li><li class="breadcrumb__item"><a href="/alice-in-daschland/">Alice in DaSCHland</a></li><li class="breadcrumb__sep" aria-hidden="true">›</li><li class="breadcrumb__item breadcrumb__current" aria-current="page">Not found</li></ol></nav>

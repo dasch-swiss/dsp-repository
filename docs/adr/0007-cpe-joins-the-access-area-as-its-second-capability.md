@@ -292,7 +292,7 @@ Enforced by: review, for a later crate that moves before its churn in the incuba
 
 Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-11 (DEV-7401) below.
 
-## Amendment (2026-10-11, DEV-7401) — the churn rule is replaced, and the image viewer's interim packaging
+## Amendment (2026-10-11, DEV-7401) — the churn rule is replaced, the image viewer's interim packaging, and the stylesheets
 
 - **The churn sentence of the amendment of 2026-10-02 (DEV-7400) is replaced by ADR-0011.** "A crate moves
   when its churn in the incubator has dropped, not in dependency order" no longer holds: a CPE crate moves
@@ -310,5 +310,10 @@ Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-
 - **No project bundle is embedded.** The retirement of "bundles embedded at build time" above is about
   project bundles and stands: the viewer's files are engine files, and no project content is compiled into
   any crate.
+- **The stylesheets live with the component library, as plain files.** `cpe-components` moved to
+  `areas/access/cpe/components`, and the seven stylesheets its markup is written against moved with it, to
+  that crate's `style/` directory. The crate neither embeds nor serves them: the host does. Until DEV-7465
+  brings CPE's host here, that host is the incubator's binary, which serves them from its vendored copy;
+  nothing in this repository serves them yet.
 
 Enforced by: review.

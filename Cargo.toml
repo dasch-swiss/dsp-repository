@@ -10,6 +10,7 @@ members = [
   "areas/access/dpe/web",
   "areas/access/dpe/server",
   "areas/access/server",
+  "areas/access/cpe/components",
   "areas/access/cpe/core",
   "areas/access/cpe/image-viewer",
   "areas/access/cpe/ports",

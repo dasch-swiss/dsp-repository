@@ -1,0 +1,8 @@
+---
+source: engine/src/component/mod.rs
+expression: out
+---
+<article class="record page"><header class="record__head"><div class="record__class"><p class="eyebrow">Character</p><span class="record__id">CH_001</span></div><h1 class="record__title">Alice</h1></header><div class="record__body record__body--noimg record__body--intro"><div class="record__intro"><div class="prose"><p>An <em>English</em> introduction.</p>
+<p>Second paragraph.</p>
+</div></div><div class="record__apparat"><div class="props"><div class="prop"><div class="prop__label">Description</div><div class="prop__value"><div class="v-richtext"><p>A <strong>curious</strong> girl who falls into Wonderland.</p>
+</div></div></div><div class="prop"><div class="prop__label">Role</div><div class="prop__value"><span class="term">Protagonist</span></div></div></div></div></div></article>

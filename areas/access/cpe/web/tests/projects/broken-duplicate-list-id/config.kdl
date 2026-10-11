@@ -1,0 +1,14 @@
+// broken-duplicate-list-id — fires DuplicateResourceListId.
+// Two resource-list components share the same id "items".
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    resource-list id="items" class="Thing"
+}
+
+page id="other" route="/other" {
+    resource-list id="items" class="Thing"
+}

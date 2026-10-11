@@ -1,0 +1,15 @@
+// broken-incoming-links-unknown-label — fires UnknownIncomingLinksLabel
+// (Warning). An `incoming-links label=` id that is not declared as a
+// chrome { string } id. Validation should SUCCEED overall (warning only,
+// not hard-fail) — the list still renders, captioned with the source
+// class's capitalised plural.
+site {
+    title "Broken Incoming Links Unknown Label"
+    languages "de" "en"
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="not-declared" class="Page" "strip-left"
+    }
+}

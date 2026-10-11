@@ -1,0 +1,13 @@
+// broken-narrative-layout-not-first — fires NarrativeLayoutNotFirst.
+// A page's layout is read from its first narrative; `side=` on the second
+// would be ignored, so it is rejected.
+// Expected: exactly {NarrativeLayoutNotFirst { page: "/" }}.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md"
+    narrative file="more.md" side="start"
+}

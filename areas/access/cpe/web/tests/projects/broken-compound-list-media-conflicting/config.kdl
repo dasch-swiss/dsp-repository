@@ -1,0 +1,25 @@
+// broken-compound-list-media-conflicting — fires ConflictingMediaProperty
+// between a compound-viewer's media registration and a resource-list's, over
+// the same class, with NO resource-detail page at all (Step 11: the
+// resource-list check now runs against the merged map, so a list
+// disagreeing with a compound-registered class also conflicts).
+//
+// The compound-viewer (/book, a literal source) binds Page's media property
+// to "image"; the resource-list (/pages, same class) declares a different
+// one, "scan". Each declaration is on its own page (fixture-layout rule);
+// `limit 6` on the resource-list avoids the default PerPage pagination so it
+// cannot collide with any other config-internal check.
+site {
+    title "Broken Compound List Media Conflicting"
+    languages "de" "en"
+}
+
+page id="book" route="/book" {
+    compound-viewer source="B1" layout="contents" index="rail" media="image"
+}
+
+page id="pages" route="/pages" {
+    resource-list class="Page" media="scan" {
+        limit 6
+    }
+}

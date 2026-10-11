@@ -1,0 +1,13 @@
+// broken-narrative-for-duplicate — fires DuplicateNarrativeFor (Error).
+// Two `narrative-for` child nodes name the same resource id.
+site {
+    title "Broken Narrative For Duplicate"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        narrative-for "r1" file="a.md"
+        narrative-for "r1" file="a.md"
+    }
+}

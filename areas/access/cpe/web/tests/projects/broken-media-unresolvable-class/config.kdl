@@ -1,0 +1,12 @@
+// broken-media-unresolvable-class — fires UnresolvableMediaClass (hard-fail).
+// resource-detail declares 'media' but has no 'class' attribute and its
+// id is a $param reference — no way to resolve which class 'media' applies
+// to at boot.
+site {
+    title "Broken Media Unresolvable Class"
+    languages "de" "en"
+}
+
+page id="thing" route="/things/:id" {
+    resource-detail id="$id" media="portrait"
+}

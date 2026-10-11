@@ -1,0 +1,19 @@
+// broken-sparse-property-param — fires SparseProperty (warn) on a
+// PARAMETERISED resource-detail.
+//
+// The sparse-show-properties check used to run for a literal-id
+// resource-detail only, so `/things/:id` — the common shape (Incunabula's,
+// HdM's and Alice's detail pages are all parameterised) — got no coverage at
+// all. With a declared `class`, the sparse half now runs over the class.
+//
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Sparse Property (parameterised)"
+    languages "de" "en"
+}
+
+page id="thing" route="/things/:id" {
+    resource-detail id="$id" class="Thing" title-property="nonexistent-prop" {
+        show-properties "name" "missing-prop"
+    }
+}

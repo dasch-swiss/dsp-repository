@@ -1,0 +1,8 @@
+// broken-annotation-link-empty — fires MalformedAnnotation for an annotation
+// link with no target row.
+site {
+    title "Broken Annotation Link Empty"
+    languages "de" "en"
+}
+
+page id="home" route="/"

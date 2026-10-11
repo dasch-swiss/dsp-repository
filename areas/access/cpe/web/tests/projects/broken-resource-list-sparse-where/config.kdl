@@ -1,0 +1,15 @@
+// broken-resource-list-sparse-where — fires SparseResourceListProperty (warning).
+// A resource-list whose WHERE property exists in the data but not on class 'Widget'.
+// 'name' is on 'Thing' resources but not on 'Widget' resources.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+// Mirrors broken-resource-list-sparse, but uses a `where` clause instead of `sort`.
+site {
+    title "Broken Resource List Sparse Where"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class="Widget" {
+        where property="name" equals="test"
+    }
+}

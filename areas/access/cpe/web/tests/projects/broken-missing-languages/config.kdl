@@ -1,0 +1,6 @@
+// broken-missing-languages — fires MissingSiteLanguages.
+site {
+    title "T"
+}
+
+page id="home" route="/"

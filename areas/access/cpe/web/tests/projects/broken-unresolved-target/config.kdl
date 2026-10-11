@@ -1,0 +1,13 @@
+// broken-unresolved-target — fires UnresolvedTarget.
+// facet-panel target "no-such-list" does not exist on this page.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="browse" route="/browse" {
+    resource-list id="items" class="Thing"
+    facet-panel target="no-such-list" {
+        facet property="status" kind="text"
+    }
+}

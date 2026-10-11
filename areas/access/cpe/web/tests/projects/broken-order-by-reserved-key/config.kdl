@@ -1,0 +1,20 @@
+// broken-order-by-reserved-key — fires ReservedOrderKey (Error): `key="name"` collides with
+// the built-in Name A-Z ordering. A lowering error (config-internal), so it
+// has no -raw sibling.
+site {
+    title "Broken Order By Reserved Key"
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key="name" property="pub-date" label="order-book-date"
+    }
+}

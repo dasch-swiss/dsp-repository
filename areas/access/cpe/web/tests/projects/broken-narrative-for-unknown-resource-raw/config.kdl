@@ -1,0 +1,22 @@
+// broken-narrative-for-unknown-resource-raw — exercises
+// check_narrative_for_data_into_raw (the Err/raw branch of
+// validate_with_data).
+//
+// Strategy: the site block is deliberately broken (missing 'title') so that
+// validate() returns Err and validate_with_data takes the Err/raw branch,
+// which calls check_narrative_for_data_into_raw. The narrative-for id
+// 'ghost' does not exist in data.sql, so UnknownNarrativeForResource is
+// appended to the already-failing report.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownNarrativeForResource
+// (Warning).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        narrative-for "ghost" file="a.md"
+    }
+}

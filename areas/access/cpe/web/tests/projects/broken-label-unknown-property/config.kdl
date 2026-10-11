@@ -1,0 +1,16 @@
+// broken-label-unknown-property — fires UnknownLabel (warn).
+// A property label naming a property absent from the project's data.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Label Unknown Property"
+    languages "de" "en"
+}
+
+labels {
+    property "unknown-field" {
+        de "Unbekanntes Feld"
+        en "Unknown Field"
+    }
+}
+
+page id="home" route="/"

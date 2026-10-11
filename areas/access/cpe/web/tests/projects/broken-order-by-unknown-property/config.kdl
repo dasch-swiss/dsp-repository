@@ -1,0 +1,19 @@
+// broken-order-by-unknown-property — fires UnknownResourceListProperty (Error): the `order-by`
+// property exists nowhere in the data.
+site {
+    title "Broken Order By Unknown Property"
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key="date" property="no-such-prop" label="order-book-date"
+    }
+}

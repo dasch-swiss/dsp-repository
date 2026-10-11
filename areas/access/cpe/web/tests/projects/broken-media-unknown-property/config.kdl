@@ -1,0 +1,11 @@
+// broken-media-unknown-property — fires UnknownMediaProperty (hard-fail).
+// resource-detail declares media="no-such-prop" which exists nowhere in
+// the data.
+site {
+    title "Broken Media Unknown Property"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="no-such-prop"
+}

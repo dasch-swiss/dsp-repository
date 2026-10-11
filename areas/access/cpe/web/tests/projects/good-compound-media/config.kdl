@@ -1,0 +1,10 @@
+// good-compound-media — a `$param` compound-viewer whose media="image" is a
+// Page→Image link to a class carrying representations rows. Loads clean.
+site {
+    title "Good Compound Media"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail" media="image"
+}

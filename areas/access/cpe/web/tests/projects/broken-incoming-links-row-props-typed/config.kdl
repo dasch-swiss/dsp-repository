@@ -1,0 +1,19 @@
+// broken-incoming-links-row-props-typed — the remaining row-property tiers:
+//   group-by="count"   stored as integer                 → IncomingLinksRowPropertyWrongType
+//   row-aside="note"   text on w1 only (w2 links too)    → SparseIncomingLinksRowProperty (Warning)
+site {
+    title "Broken Incoming Links row properties"
+    languages "de" "en"
+    chrome {
+        string "works-by" {
+            de "Werke"
+            en "Works"
+        }
+    }
+}
+
+page id="person" route="/people/:id" {
+    resource-detail id="$id" class="Person" {
+        incoming-links label="works-by" class="Work" group-by="count" row-aside="note" "composer"
+    }
+}

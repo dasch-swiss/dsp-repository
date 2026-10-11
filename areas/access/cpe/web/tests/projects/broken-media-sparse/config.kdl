@@ -1,0 +1,10 @@
+// broken-media-sparse — fires SparseMediaProperty (advisory Warning, not a
+// hard-fail). 'portrait' exists on Location but not on Character.
+site {
+    title "Broken Media Sparse"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="portrait"
+}

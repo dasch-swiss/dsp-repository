@@ -1,0 +1,15 @@
+// good-facet — clean baseline for facet-panel validation.
+// A resource-list with a facet-panel using kind="list" on a 'list_value' property
+// that exists on every resource of the target class.
+// Must load with NO errors and NO warnings (not even SparseFacetProperty).
+site {
+    title "Good Facet"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="category" kind="list"
+    }
+}

@@ -1,0 +1,13 @@
+// broken-group-unknown-label — fires UnknownGroupLabel (Warning).
+// A `group label=` id that is not declared as a chrome { string } id.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Group Unknown Label"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        group label="not-declared" "name"
+    }
+}

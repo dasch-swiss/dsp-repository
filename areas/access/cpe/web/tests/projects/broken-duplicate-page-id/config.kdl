@@ -1,0 +1,8 @@
+// broken-duplicate-page-id — fires DuplicatePageId.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/"
+page id="home" route="/about"

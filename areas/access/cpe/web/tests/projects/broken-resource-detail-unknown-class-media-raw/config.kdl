@@ -1,0 +1,18 @@
+// broken-resource-detail-unknown-class-media-raw — exercises
+// check_resource_detail_media_into_raw's cascade suppression. A port of
+// broken-resource-detail-unknown-class-media/ with the site block deliberately broken
+// (missing 'title') so validate_with_data takes the Err/raw branch.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownResourceDetailClass (Error).
+// No SparseMediaProperty/UnknownMediaProperty/IncompatibleMediaProperty — the media
+// four-check must be skipped when the declared class is unknown.
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Charakter" media="image" {
+        show-properties "name"
+    }
+}

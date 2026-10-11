@@ -1,0 +1,18 @@
+// broken-heading-id-duplicate-on-page — fires DuplicateHeadingIdOnPage.
+// Two narratives of one page both carry the heading id 'ways'; each file is
+// valid on its own, so only the page-level check sees it. The second page
+// reuses 'elsewhere' from the first, which is allowed: ids are per page.
+// Expected: exactly {DuplicateHeadingIdOnPage { id: "ways", page: "/" }}.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md"
+    narrative file="more.md"
+}
+
+page id="other" route="/other" {
+    narrative file="more.md"
+}

@@ -1,0 +1,22 @@
+// broken-compound-list-media-conflicting-raw — a port of
+// broken-compound-list-media-conflicting/ with the site block deliberately
+// broken (missing 'title') so validate() returns Err and validate_with_data
+// takes the Err/raw branch. Exercises
+// check_compound_viewer_media_into_raw -> check_resource_list_media_into_raw
+// ordering with NO resource-detail page in the mix at all.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + ConflictingMediaProperty (Error).
+site {
+    // title intentionally omitted -> MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="book" route="/book" {
+    compound-viewer source="B1" layout="contents" index="rail" media="image"
+}
+
+page id="pages" route="/pages" {
+    resource-list class="Page" media="scan" {
+        limit 6
+    }
+}

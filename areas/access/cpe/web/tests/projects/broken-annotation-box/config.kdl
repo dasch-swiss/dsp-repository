@@ -1,0 +1,8 @@
+// broken-annotation-box — fires MalformedAnnotation for a box that runs past
+// the image's right edge (x + w > 1).
+site {
+    title "Broken Annotation Box"
+    languages "de" "en"
+}
+
+page id="home" route="/"

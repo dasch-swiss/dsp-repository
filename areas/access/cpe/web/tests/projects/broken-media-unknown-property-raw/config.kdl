@@ -1,0 +1,17 @@
+// broken-media-unknown-property-raw — exercises check_resource_detail_media_into_raw.
+//
+// Strategy: a port of broken-media-unknown-property/ with the site block
+// deliberately broken (missing 'title') so that validate() returns Err and
+// validate_with_data takes the Err/raw branch. The resource-detail still
+// declares media="no-such-prop", which exists nowhere in the data, so the
+// raw sibling appends UnknownMediaProperty to the already-failing report.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownMediaProperty (Error).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="no-such-prop"
+}

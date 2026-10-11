@@ -1,0 +1,23 @@
+// broken-order-by-unknown-property-raw — exercises check_resource_list_data_into_raw.
+// A port of broken-order-by-unknown-property/ with the site title deliberately
+// omitted so validate_with_data takes the Err/raw branch; the raw pass must
+// still check the raw `order-by` child's property.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownResourceListProperty (Error).
+site {
+    // title intentionally omitted -> MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key="date" property="no-such-prop" label="order-book-date"
+    }
+}

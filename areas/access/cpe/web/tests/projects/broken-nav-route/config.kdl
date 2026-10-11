@@ -1,0 +1,13 @@
+// broken-nav-route — fires UnresolvedNavRoute.
+// Nav item "Nowhere" points at route "/nowhere" which is not a declared page route.
+// Nav item "Home" correctly points at route "/" which is declared.
+site {
+    title "T"
+    languages "de" "en"
+    nav {
+        item label="Home" route="/"
+        item label="Nowhere" route="/nowhere"
+    }
+}
+
+page id="home" route="/"

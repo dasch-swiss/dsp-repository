@@ -1,0 +1,9 @@
+// broken-annotation-link-empty-raw — broken-annotation-link-empty's data with the site
+// title omitted, so lowering fails (MissingSiteTitle) and validate_with_data
+// takes its raw arm, which must still report MalformedAnnotation.
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="home" route="/"

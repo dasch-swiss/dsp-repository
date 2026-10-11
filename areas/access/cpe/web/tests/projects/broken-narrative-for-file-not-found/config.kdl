@@ -1,0 +1,14 @@
+// broken-narrative-for-file-not-found — fires NarrativeFileNotFound
+// (Error), via `narrative-for`'s `file=` attribute specifically (distinct
+// from the page-level `narrative` fixture broken-narrative-missing).
+// 'missing.md' is not in the narrative/ inventory.
+site {
+    title "Broken Narrative For File Not Found"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        narrative-for "r1" file="missing.md"
+    }
+}

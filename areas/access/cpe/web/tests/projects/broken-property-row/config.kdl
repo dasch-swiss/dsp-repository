@@ -1,0 +1,11 @@
+// broken-property-row — fires MalformedPropertyRow for three violation classes:
+//   - a 'text' row with NULL value_text
+//   - a 'date' row with NULL date_start
+//   - a 'link' row with NULL target_id
+// Proves accumulation: all three diagnostics are reported in one pass.
+site {
+    title "Broken Property Row"
+    languages "de" "en"
+}
+
+page id="home" route="/"

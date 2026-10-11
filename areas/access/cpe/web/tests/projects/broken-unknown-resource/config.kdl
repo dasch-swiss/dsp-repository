@@ -1,0 +1,10 @@
+// broken-unknown-resource — fires UnknownResource.
+// A resource-detail with a literal id that is absent from data.sql.
+site {
+    title "Broken Unknown Resource"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="ghost-resource"
+}

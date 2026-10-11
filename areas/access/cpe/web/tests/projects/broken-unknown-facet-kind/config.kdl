@@ -1,0 +1,12 @@
+// broken-unknown-facet-kind — fires UnknownFacetKind.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="browse" route="/browse" {
+    resource-list id="items" class="Thing"
+    facet-panel target="items" {
+        facet property="status" kind="rainbow"
+    }
+}

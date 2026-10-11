@@ -1,0 +1,13 @@
+// broken-sparse-property — fires SparseProperty (warn).
+// A resource-detail naming a show-property that is not present on the class.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Sparse Property"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" title-property="nonexistent-prop" {
+        show-properties "name" "missing-prop"
+    }
+}

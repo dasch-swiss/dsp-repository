@@ -1,0 +1,17 @@
+// broken-incoming-links-unknown-property-raw — exercises check_incoming_links_data_into_raw.
+// A port of broken-incoming-links-unknown-property/ with the site block deliberately
+// broken (missing 'title') so validate_with_data takes the Err/raw
+// branch; the raw pass must still run the incoming-links data check on
+// the raw `incoming-links` child.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownIncomingLinksProperty (Error).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "strip-middle"
+    }
+}

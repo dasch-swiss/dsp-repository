@@ -1,0 +1,15 @@
+// broken-compound-with-paged-list — fires CompoundViewerWithPagedList
+// (Error). A `compound-viewer` and a paginating `resource-list`
+// (`PerPage`, via `per-page`) on the same page both read the `?page=`
+// query key with different meanings (member address vs. page number).
+site {
+    title "Broken Compound With Paged List"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail"
+    resource-list id="books" class="Book" {
+        per-page 10
+    }
+}

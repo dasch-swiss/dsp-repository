@@ -1,0 +1,13 @@
+// good-compound-media-no-members — a `$param` compound-viewer with
+// media="image" in a project with NO compound_parts rows at all. The member
+// class set is empty, so the media check is skipped — never an Error (that
+// would abort the whole binary, dsp-incubator cpe/docs/adr/0002-deployment-topology.md), and never resource-detail's
+// UnresolvableMediaClass.
+site {
+    title "Good Compound Media No Members"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail" media="image"
+}

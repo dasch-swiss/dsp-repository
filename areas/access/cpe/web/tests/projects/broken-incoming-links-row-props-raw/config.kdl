@@ -1,0 +1,26 @@
+// broken-incoming-links-row-props-raw — exercises the HdM Slice 3 row-property
+// checks in check_incoming_links_data_into_raw. A port of
+// broken-incoming-links-row-props/ with the site block deliberately broken
+// (missing 'title') so validate_with_data takes the Err/raw branch; the raw
+// pass must read group-by/row-label/row-aside/sort-property with the silent
+// reader and still run all three row-property tiers.
+//
+// Expected diagnostics: MissingSiteTitle (Error) +
+// UnknownIncomingLinksRowProperty (sort-property) + IncomingLinksRowPropertyWrongType
+// (row-aside) + SparseIncomingLinksRowProperty (row-label).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+    chrome {
+        string "works-by" {
+            de "Werke"
+            en "Works"
+        }
+    }
+}
+
+page id="person" route="/people/:id" {
+    resource-detail id="$id" class="Person" {
+        incoming-links label="works-by" class="Work" group-by="category" row-label="title" row-aside="count" sort-property="nope" "composer"
+    }
+}

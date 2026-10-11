@@ -1,0 +1,12 @@
+// broken-timeline-extent-attr-wrong-type — fires InvalidAttributeType (Error): extent-property=1 is an integer, not
+// a string. The reporting reader must surface it rather than silently
+// dropping the extent segment.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="pub-date" lane-property="office" extent-property=1 axis-start=1470 axis-end=1506
+}

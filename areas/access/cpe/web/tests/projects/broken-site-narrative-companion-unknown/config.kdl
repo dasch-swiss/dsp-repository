@@ -1,0 +1,10 @@
+// broken-site-narrative-companion-unknown — fires UnknownSiteValue.
+// `site { narrative-companion }` takes "rail" or "text".
+// Expected: exactly {UnknownSiteValue { key: "narrative-companion", value: "figures", .. }}.
+site {
+    title "T"
+    languages "de" "en"
+    narrative-companion "figures"
+}
+
+page id="home" route="/"

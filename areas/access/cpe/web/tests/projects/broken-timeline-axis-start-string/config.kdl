@@ -1,0 +1,11 @@
+// broken-timeline-axis-start-string — fires InvalidAttributeType (Error): axis-start="1470" is a string,
+// not an integer.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="pub-date" lane-property="office" extent-property="extent" axis-start="1470" axis-end=1506
+}

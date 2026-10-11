@@ -1,0 +1,13 @@
+// good-compound-pages — the pages reader: layout="pages" index="none"
+// media="image" paired with a same-id resource-detail carrying NO media
+// (the navigator owns the images, dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md). Loads clean — zero
+// diagnostics.
+site {
+    title "Good Compound Pages"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book"
+    compound-viewer source="$id" layout="pages" index="none" media="image"
+}

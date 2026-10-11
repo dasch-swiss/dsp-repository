@@ -1,0 +1,12 @@
+// broken-narrative-companion-wrong-type — fires InvalidAttributeType.
+// `companion` is a string attribute; a boolean must be reported, never read
+// as absent.
+// Expected: exactly {InvalidAttributeType}.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md" companion=#true
+}

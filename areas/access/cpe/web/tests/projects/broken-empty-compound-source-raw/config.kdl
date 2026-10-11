@@ -1,0 +1,19 @@
+// broken-empty-compound-source-raw — exercises check_compound_viewer_data_into_raw.
+//
+// Strategy: the site block is deliberately broken (missing 'title') so that
+// validate() returns Err and validate_with_data takes the Err/raw branch,
+// which calls check_compound_viewer_data_into_raw. The compound-viewer has a
+// literal source="EMPTY_ST" that exists in data.sql but has no compound_parts
+// rows → EmptyCompoundSource warning is appended to the already-failing report.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + EmptyCompoundSource (Warning).
+// The whole load still fails (hard-fail due to the config-internal error), so
+// both diagnostics surface in the ValidationReport returned to the caller.
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="story" route="/story" {
+    compound-viewer source="EMPTY_ST" layout="contents" index="rail"
+}

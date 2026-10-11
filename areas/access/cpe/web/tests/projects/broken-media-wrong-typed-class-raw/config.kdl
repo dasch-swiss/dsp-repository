@@ -1,0 +1,23 @@
+// broken-media-wrong-typed-class-raw — the RAW-arm half of the pair.
+//
+// Identical to broken-media-wrong-typed-class/ except the site block is
+// deliberately broken (missing 'title'), forcing validate_with_data into the
+// Err/raw branch.
+//
+// This fixture pins Step 7's inverted premise: config-internal lowering
+// (`lower_resource_detail`'s REPORTING `get_typed_string_attr` for `class`)
+// runs once, before the fork, so InvalidAttributeType reaches this arm too.
+// `check_resource_detail_media_into_raw`'s guard then skips the
+// present-but-wrong-typed class/id case, so UnresolvableMediaClass does NOT
+// also fire here.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + InvalidAttributeType
+// (Error), and NOT UnresolvableMediaClass.
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class=42 media="no-such-prop"
+}

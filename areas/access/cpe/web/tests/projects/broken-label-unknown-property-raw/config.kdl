@@ -1,0 +1,26 @@
+// broken-label-unknown-property-raw — exercises check_labels_data_into_raw.
+//
+// Strategy: a port of broken-label-unknown-property/ with the site block
+// deliberately broken (missing 'title') so that validate() returns Err and
+// validate_with_data takes the Err/raw branch. `labels` is a TOP-LEVEL raw
+// field, still populated even though check_and_lower_site produced no
+// SiteConfig — which is what makes this raw sibling possible at all.
+//
+// The contrast with the source fixture is the point: broken-label-unknown-property
+// validates *clean* (warning only), while this variant hard-fails on the missing
+// title yet must still surface the warning.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownLabel (Warning).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+labels {
+    property "unknown-field" {
+        de "Unbekanntes Feld"
+        en "Unknown Field"
+    }
+}
+
+page id="home" route="/"

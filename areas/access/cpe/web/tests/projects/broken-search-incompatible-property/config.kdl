@@ -1,0 +1,12 @@
+// broken-search-incompatible-property — fires IncompatibleSearchProperty (hard-fail).
+// A search-bar declares a searchable property whose value_type is 'integer',
+// neither 'text' nor 'richtext'. FTS5 indexing cannot be built on it.
+site {
+    title "Broken Search Incompatible Property"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    search-bar target="things" searches="views"
+}

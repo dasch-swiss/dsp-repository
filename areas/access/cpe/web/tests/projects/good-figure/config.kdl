@@ -1,0 +1,26 @@
+// good-figure — clean baseline for the figure-block slot: a timeline in
+// section 'four' of the narrative before it, with a count line and a more
+// link. Loaded as "incunabula".
+site {
+    title "Figure Fixture"
+    languages "de" "en"
+    chrome {
+        string "four-count" {
+            de "4 Fälle"
+            en "4 cases"
+        }
+        string "strips-all" {
+            de "Alle Randleisten"
+            en "All border strips"
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="woodcuts.md"
+    timeline class="Book" date-property="pub-date" lane-property="office" axis-start=1470 axis-end=1506 section="four" count="four-count" more-label="strips-all" more-route="/strips"
+}
+
+page id="strips" route="/strips" {
+    narrative file="strips.md"
+}

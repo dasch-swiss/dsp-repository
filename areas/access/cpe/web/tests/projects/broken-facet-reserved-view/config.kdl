@@ -1,0 +1,18 @@
+// broken-facet-reserved-view — fires ReservedFacetProperty (hard-fail).
+// A facet-panel's `property` is "view", which collides with the grid-mode
+// `?view=` query key the engine's resource-list renderer reads
+// (`parse_view_param`). Facet values are read back via the property name
+// used as a query key, so this would silently shadow the reserved key at
+// runtime. Pure config check — fires regardless of data. Mirrors
+// broken-facet-reserved-property (the "sort" case).
+site {
+    title "Broken Facet Reserved View"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="view" kind="list"
+    }
+}

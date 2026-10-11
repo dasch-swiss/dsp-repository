@@ -1,0 +1,13 @@
+// broken-resource-list-prop — fires UnknownResourceListProperty (hard-fail).
+// A resource-list whose where clause names a property that exists nowhere.
+site {
+    title "Broken Resource List Property"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class="Thing" {
+        where property="no-such-prop" equals="value"
+        sort property="another-missing-prop"
+    }
+}

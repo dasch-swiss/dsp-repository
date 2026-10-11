@@ -1,0 +1,14 @@
+// broken-gloss-property-and-parts — fires InvalidAttributeType (Error): a
+// gloss is either `property="…"` or a block of parts, never both.
+site {
+    title "Broken Gloss Property And Parts"
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        gloss property="pub-place" {
+            part property="extent"
+        }
+    }
+}

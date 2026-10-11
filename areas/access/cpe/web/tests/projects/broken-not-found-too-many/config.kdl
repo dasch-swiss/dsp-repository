@@ -1,0 +1,19 @@
+// broken-not-found-too-many — fires TooManyNotFoundBrowseLinks
+// (Incunabula Slice 8 / G11). Four browse links, every route declared: the
+// only fault is exceeding the design cap of three.
+site {
+    title "T"
+    languages "de" "en"
+    not-found {
+        browse route="/a"
+        browse route="/b"
+        browse route="/c"
+        browse route="/d"
+    }
+}
+
+page id="home" route="/"
+page id="a" route="/a"
+page id="b" route="/b"
+page id="c" route="/c"
+page id="d" route="/d"

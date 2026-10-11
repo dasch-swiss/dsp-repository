@@ -1,0 +1,15 @@
+// broken-compound-media-ownership (Incunabula Slice 3b D2, dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md) — a
+// resource-detail with `media=` on the same resource ($id) as its page's
+// compound-viewer navigator would render the compound's images twice; the
+// navigator owns them. The resource-detail's own `media` is otherwise
+// perfectly valid (mirrors good-compound-media's shape) so
+// CompoundMediaOwnership is isolated.
+site {
+    title "Broken Compound Media Ownership"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book" media="image"
+    compound-viewer source="$id" layout="contents" index="rail"
+}

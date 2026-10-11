@@ -1,0 +1,10 @@
+// broken-languages-wrong-type — fires InvalidFieldType.
+// languages has a non-string entry (integer 42) PLUS both required languages as strings.
+// Expected: exactly {InvalidFieldType}; NO MissingRequiredLanguage because "de" and "en"
+// are present as valid string entries.
+site {
+    title "T"
+    languages 42 "de" "en"
+}
+
+page id="home" route="/"

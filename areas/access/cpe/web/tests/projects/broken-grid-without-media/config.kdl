@@ -1,0 +1,12 @@
+// broken-grid-without-media — fires GridWithoutMedia (hard-fail).
+// resource-list opts into grid mode (grid=#true) but declares no `media`
+// attribute — grid mode has nothing to source tile images from. Otherwise a
+// perfectly valid resource-list on a class that validates fine.
+site {
+    title "Broken Grid Without Media"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing" grid=#true
+}

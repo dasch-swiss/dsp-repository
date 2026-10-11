@@ -1,0 +1,8 @@
+// broken-annotation-color — fires MalformedAnnotation for an uppercase
+// colour (the store holds lowercase #rrggbb).
+site {
+    title "Broken Annotation Color"
+    languages "de" "en"
+}
+
+page id="home" route="/"

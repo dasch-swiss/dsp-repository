@@ -1,0 +1,18 @@
+// broken-group-sparse-member-raw — exercises check_resource_detail_data_into_raw's
+// `group` positional-args extraction (step 1). The site block is
+// deliberately broken (missing 'title') so validate_with_data takes the
+// Err/raw branch, and the raw pass must still collect the `group` child's
+// positional args to run the SparseProperty check on the literal-id
+// resource-detail.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + SparseProperty (Warning).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        group label="group-cap" "missing-prop"
+    }
+}

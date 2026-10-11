@@ -1,0 +1,21 @@
+// good-group-narrative-for — positive path: one `group` (all members
+// present on the class, valid label) AND one `narrative-for` entry (valid
+// resource id, valid file), both resolving cleanly. Zero diagnostics.
+site {
+    title "Good Group And Narrative For"
+    languages "de" "en"
+    chrome {
+        string "group-cap" {
+            de "Angaben"
+            en "Details"
+        }
+    }
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        show-properties "name"
+        group label="group-cap" "creator"
+        narrative-for "r1" file="intro.md"
+    }
+}

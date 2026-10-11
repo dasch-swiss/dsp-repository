@@ -1,0 +1,12 @@
+// broken-not-found-wrong-type — a wrong-typed `browse label=` must report
+// InvalidAttributeType, not vanish into "no label" (Incunabula Slice 8 /
+// G11, the reporting-reader rule).
+site {
+    title "T"
+    languages "de" "en"
+    not-found {
+        browse route="/" label=42
+    }
+}
+
+page id="home" route="/"

@@ -1,0 +1,15 @@
+// broken-compound-index-unknown — `index` is a closed vocabulary
+// ("rail" | "collapsed" | "none"); an unrecognized value is
+// InvalidAttributeType alone. A `$id` param source is required: the invalid
+// `index` forces the raw/into_raw validation branch, whose
+// check_compound_viewer_data_into_raw sibling scans the RAW component tree
+// regardless — a literal source with no compound_parts rows would also
+// fire EmptyCompoundSource there.
+site {
+    title "Broken Compound Index Unknown"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="grid"
+}

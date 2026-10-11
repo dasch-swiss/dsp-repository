@@ -1,0 +1,14 @@
+// broken-compound-index-missing (Q1) — `index` is required on
+// compound-viewer; omitting it is MissingRequiredAttribute alone. A `$id`
+// param source is required: the missing `index` forces the raw/into_raw
+// validation branch, whose check_compound_viewer_data_into_raw sibling
+// scans the RAW component tree regardless — a literal source with no
+// compound_parts rows would also fire EmptyCompoundSource there.
+site {
+    title "Broken Compound Index Missing"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents"
+}

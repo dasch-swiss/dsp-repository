@@ -1,0 +1,20 @@
+// broken-incoming-links-duplicate — fires DuplicateIncomingLinks (Error).
+// A `resource-detail` declares two `incoming-links` children — at most
+// one reverse-link list per record.
+site {
+    title "Broken Incoming Links Duplicate"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "strip-left"
+        incoming-links label="pages-using" class="Page" "strip-right"
+    }
+}

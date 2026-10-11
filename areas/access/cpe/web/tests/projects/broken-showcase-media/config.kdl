@@ -1,0 +1,29 @@
+// broken-showcase-media — the edition cards' media is a text property, and an imprint unit sits on a text part
+// Loaded as "incunabula" (edition-cards and strip-row are registered for it).
+site {
+    title "Showcase Fixture"
+    languages "de" "en"
+    chrome {
+        string "edition-german" {
+            de "Deutsch"
+            en "German"
+        }
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "{n} pages"
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="narrenschiff.md"
+    edition-cards section="editions" media="name" {
+        book "bk-dt" lang-label="edition-german"
+        book "bk-aug" lang-label="edition-german"
+        imprint {
+            part property="pub-place" unit="gloss-extent"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+    strip-row section="editions" class="BorderStrip" media="image" uses-property="page-uses" min-uses=2 limit=12
+}

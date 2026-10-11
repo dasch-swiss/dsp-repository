@@ -1,0 +1,19 @@
+// broken-order-by-sparse — fires SparseResourceListProperty (Warning): the `order-by`
+// property `extent` exists in the data (on Map) but on no Book. Load succeeds.
+site {
+    title "Broken Order By Sparse"
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key="extent" property="extent" direction="desc" label="order-book-date"
+    }
+}

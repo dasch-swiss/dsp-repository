@@ -1,0 +1,11 @@
+// good-compound-viewer-param — a compound-viewer with a $param source on a
+// parameterised page. No EmptyCompoundSource warning should fire because $param
+// sources are runtime-data-dependent and are explicitly skipped.
+site {
+    title "Good Compound Viewer Param"
+    languages "de" "en"
+}
+
+page id="story" route="/story/:id" {
+    compound-viewer source="$id" layout="contents" index="rail"
+}

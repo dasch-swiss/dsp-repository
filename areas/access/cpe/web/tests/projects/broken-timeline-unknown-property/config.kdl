@@ -1,0 +1,11 @@
+// broken-timeline-unknown-property — fires UnknownTimelineProperty (Error): date-property "publication-date"
+// exists nowhere in the data.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="publication-date" lane-property="office" extent-property="extent" axis-start=1470 axis-end=1506
+}

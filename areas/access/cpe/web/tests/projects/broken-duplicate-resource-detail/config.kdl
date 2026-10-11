@@ -1,0 +1,11 @@
+// broken-duplicate-resource-detail — fires DuplicateSingletonComponent for
+// "resource-detail": two resource-detail components on the same page.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1"
+    resource-detail id="r2"
+}

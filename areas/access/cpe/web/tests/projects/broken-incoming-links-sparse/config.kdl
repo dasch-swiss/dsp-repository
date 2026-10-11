@@ -1,0 +1,19 @@
+// broken-incoming-links-sparse — fires SparseIncomingLinksProperty (Warning): 'side'
+// exists in the data (on BorderStrip) but on no resource of the source
+// class Page. Validation should SUCCEED overall (warning only).
+site {
+    title "Broken Incoming Links sparse"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "side"
+    }
+}

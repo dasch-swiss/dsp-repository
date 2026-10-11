@@ -1,0 +1,17 @@
+// broken-compound-layout-missing — `layout` is required on compound-viewer
+// (Incunabula Slice 3b D3); omitting it is MissingRequiredAttribute alone.
+// A `$id` param source is required here, not just for isolation at the
+// lowered-config level: the missing `layout` forces the raw/into_raw
+// validation branch (lowering as a whole failed), and its
+// check_compound_viewer_data_into_raw sibling scans the RAW component tree
+// regardless of `layout` — a literal source with no compound_parts rows
+// would also fire EmptyCompoundSource there. `$id` skips that check
+// entirely (data-dependent, param sources are never checked at boot).
+site {
+    title "Broken Compound Layout Missing"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" index="rail"
+}

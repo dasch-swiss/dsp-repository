@@ -1,0 +1,9 @@
+// broken-unexpected-toplevel — fires UnexpectedTopLevelNode.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+unknown-node {}
+
+page id="home" route="/"

@@ -1,0 +1,10 @@
+// broken-resource-list-class — fires UnknownResourceListClass (hard-fail).
+// A resource-list references class="NoSuchClass" which is absent from data.sql.
+site {
+    title "Broken Resource List Class"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class="NoSuchClass"
+}

@@ -1,0 +1,17 @@
+// broken-duplicate-facet-panel — fires DuplicateSingletonComponent for
+// "facet-panel": two facet-panel components on the same page, both
+// targeting the same resource-list.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="category" kind="list"
+    }
+    facet-panel target="things" {
+        facet property="category" kind="list"
+    }
+}

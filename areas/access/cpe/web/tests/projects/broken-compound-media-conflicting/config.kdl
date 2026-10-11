@@ -1,0 +1,22 @@
+// broken-compound-media-conflicting — fires ConflictingMediaProperty
+// (hard-fail) between a resource-detail's media registration and a
+// compound-viewer's, over the same class (Step 11: compound-viewer media
+// now feeds the shared class->media map).
+//
+// The resource-detail (/pages/:id) binds Page's media property to "image";
+// the compound-viewer (/book, a literal source) declares a different one,
+// "scan", for its Page members. Each conflicting declaration is on its own
+// page (see the plan's fixture-layout rule) so neither MultipleImageViewers
+// nor CompoundViewerWithPagedList can fire and mask the assertion.
+site {
+    title "Broken Compound Media Conflicting"
+    languages "de" "en"
+}
+
+page id="page" route="/pages/:id" {
+    resource-detail id="$id" class="Page" media="image"
+}
+
+page id="book" route="/book" {
+    compound-viewer source="B1" layout="contents" index="rail" media="scan"
+}

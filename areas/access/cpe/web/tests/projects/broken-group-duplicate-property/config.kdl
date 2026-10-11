@@ -1,0 +1,19 @@
+// broken-group-duplicate-property — fires DuplicateGroupedProperty (Error).
+// A `group` names a property already named by `show-properties`.
+site {
+    title "Broken Group Duplicate Property"
+    languages "de" "en"
+    chrome {
+        string "group-cap" {
+            de "Angaben"
+            en "Details"
+        }
+    }
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        show-properties "name"
+        group label="group-cap" "name"
+    }
+}

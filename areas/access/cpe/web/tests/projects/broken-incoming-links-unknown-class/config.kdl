@@ -1,0 +1,18 @@
+// broken-incoming-links-unknown-class — fires UnknownIncomingLinksClass (Error): the source
+// class 'Paeg' does not exist in the data.
+site {
+    title "Broken Incoming Links unknown-class"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Paeg" order="compound-seq" "strip-left"
+    }
+}

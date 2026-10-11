@@ -1,0 +1,11 @@
+// broken-empty-compound-source — fires EmptyCompoundSource (warn).
+// A compound-viewer with a literal source id that has no compound_parts rows.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Empty Compound Source"
+    languages "de" "en"
+}
+
+page id="story" route="/story" {
+    compound-viewer source="ST_001" layout="contents" index="rail"
+}

@@ -1,0 +1,17 @@
+// broken-pages-beside-record-viewer (Incunabula Slice 3b step 6, dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md) —
+// a `pages` reader mounts the record viewer's own unit, and so does any
+// resource-detail with `media=`; two on one page drive each other's
+// page-global signals. The resource-detail's id ("other_book", a literal) is
+// a DIFFERENT expression from the compound-viewer's source ($id), so
+// CompoundMediaOwnership does NOT fire — this isolates MultipleImageViewers
+// alone. The compound-viewer's own `media` is set so PagesLayoutWithoutMedia
+// does not also fire.
+site {
+    title "Broken Pages Beside Record Viewer"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="other_book" class="Book" media="image"
+    compound-viewer source="$id" layout="pages" index="rail" media="image"
+}

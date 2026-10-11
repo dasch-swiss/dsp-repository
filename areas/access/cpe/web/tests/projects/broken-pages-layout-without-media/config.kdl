@@ -1,0 +1,12 @@
+// broken-pages-layout-without-media (Incunabula Slice 3b D3) — the `pages`
+// layout is scan-first; without `media=` it has no scan to show. A `$id`
+// param source keeps this config-internal (skips the data-dependent
+// EmptyCompoundSource check entirely), isolating PagesLayoutWithoutMedia.
+site {
+    title "Broken Pages Layout Without Media"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="pages" index="rail"
+}

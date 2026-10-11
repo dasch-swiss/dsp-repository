@@ -1,0 +1,10 @@
+// broken-timeline-axis-start-missing — fires MissingRequiredAttribute (Error): axis-start is absent.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="pub-date" lane-property="office" extent-property="extent" axis-end=1506
+}

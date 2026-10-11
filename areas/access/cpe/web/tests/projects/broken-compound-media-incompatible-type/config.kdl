@@ -1,0 +1,12 @@
+// broken-compound-media-incompatible-type — fires IncompatibleMediaProperty
+// (hard-fail) for a `$param`-sourced compound-viewer. The member class is
+// resolved from the data (every compound_parts child's class → {Page}), and
+// 'note' exists on Page but is 'text'-typed, not 'link'.
+site {
+    title "Broken Compound Media Incompatible Type"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail" media="note"
+}

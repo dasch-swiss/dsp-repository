@@ -1,0 +1,908 @@
+// Incunabula — "Bilderfolgen Basler Frühdrucke" (DSP shortcode 0803).
+// Nineteen illustrated Basel incunabula, 1471–1504, from four printing offices.
+//
+// READ THIS AS A SPECIFICATION, NOT AS A FINISHED FILE.
+// This is the Stage-D draft of the whole site (all seven screens as
+// ./DESIGN.md records them), written against the config language that
+// EXISTS TODAY (docs/src/cpe/config-language.md). Every line the engine
+// cannot honour yet is a comment marked
+//
+//     // NEEDS-ENGINE: <gap id> — <what is missing>
+//
+// naming a gap from DESIGN.md §10 (G1–G12, authoritative) — or
+// `// GAP (not in G1–G12): …` for something the design wants that no gap
+// row covers. A `// SLICE <n>:` comment marks a line whose *data* is not
+// generated yet. Nothing here is invented KDL: a parse failure in this
+// file aborts the WHOLE binary at boot and takes Alice down with it
+// (dsp-incubator cpe/docs/adr/0002-deployment-topology.md), so a missing node is always a comment, never fake syntax.
+//
+// Slice 1 (Books only) is the buildable part and needs ZERO engine
+// changes — see the `labels { property "name" }` note below for why.
+//
+// Terminology: CPE's noun is **annotation** (DSP's knora-base `Region`
+// maps onto it). "Region" appears below only when quoting DSP/mockup
+// vocabulary.
+
+site {
+    // `title` is chrome-id-or-literal, like `description`/`eyebrow`: the
+    // project's official short title from its DSP metadata (owner decision
+    // 2026-10-02; see the `site-title` string below).
+    title "site-title"
+    description "site-description"
+    eyebrow "site-eyebrow"
+    // Cover image: a crop of the Stultifera navis (1497) title-page
+    // woodcut, from the project's own 0803 IIIF scans. Credit per the
+    // project's stated CC BY 4.0 licence on the DaSCH repository page,
+    // plus the Basel UB shelfmark.
+    cover-image "assets/cover.webp"
+    image-credit "Universitätsbibliothek Basel · CC BY 4.0"
+    languages "de" "en"
+    default-language "de"
+    // G12 closed in Slice 8: the date renderer's precision word
+    // (Tag/Monat/Jahr/Zeitraum, plus the calendar word only for a
+    // Gregorian-dated book at day/month precision) is a project-level opt-in.
+    date-precision-word #true
+    // Narrative prose and book introductions are justified and hyphenated
+    // where their column is at least 30rem wide. Lists, glosses, captions
+    // and the lede stay ragged.
+    text-align "justify"
+    // The 404's three browse links (Slice 8 / G11): no `label=` on any of
+    // them — all three routes have a matching nav item
+    // (nav-books/nav-woodcuts/nav-strips), so the label falls back to the
+    // nav label ("Bücher"/"Holzschnitte"/"Randleisten" DE; "Books"/
+    // "Woodcuts"/"Border strips" EN).
+    not-found {
+        browse route="/books"
+        browse route="/woodcuts"
+        browse route="/strips"
+    }
+
+    // Five nav items in the design, DESIGN.md §4.1
+    // (INC.ui.<lang>.nav). All five are live now — nav-strips (SLICE 5) was
+    // the last, restored in lockstep with its /strips page (see below).
+    nav {
+        item label="nav-home" route="/"
+        item label="nav-books" route="/books"
+        // The two showcase pages: each nav item and its page route stay
+        // together, per the UnresolvedNavRoute rule (a nav route must match
+        // a declared page route exactly or boot hard-fails).
+        item label="nav-narrenschiff" route="/narrenschiff"
+        item label="nav-woodcuts" route="/woodcuts"
+        // SLICE 5: the fifth nav item was restored IN SYNC with the
+        // /strips page below. A nav route must match a declared page
+        // route exactly or boot hard-fails (UnresolvedNavRoute) — so
+        // this line and the /strips page were restored together.
+        item label="nav-strips" route="/strips"
+    }
+
+    // Project-authored chrome. DE/EN are both authoritative here — the
+    // ontology's DE column is the only complete one, so EN is authored
+    // by us (SITE_CONCEPT §4). Completeness is a boot hard-fail.
+    chrome {
+        // The footer/site-index description (INC.ui.<lang>.footerDesc).
+        string "site-description" {
+            de "Neunzehn illustrierte Basler Frühdrucke aus vier Offizinen, 1471–1504, mit über tausend Holzschnitten – vollständig digitalisiert und Seite für Seite lesbar."
+            en "Nineteen illustrated early printed books from four Basel printing offices, 1471–1504, carrying over a thousand woodcuts – digitised in full and readable page by page."
+        }
+        // Authored here, not in the mockup: the site index has no
+        // counterpart in the Claude Design concept (it is engine chrome).
+        string "site-eyebrow" {
+            de "Basler Frühdrucke · 1471–1504"
+            en "Early Basel prints · 1471–1504"
+        }
+        string "nav-home" {
+            de "Startseite"
+            en "Home"
+        }
+        string "nav-books" {
+            de "Bücher"
+            en "Books"
+        }
+        // A proper noun in both languages (the mockup keeps it unchanged).
+        string "nav-narrenschiff" {
+            de "Narrenschiff"
+            en "Narrenschiff"
+        }
+        string "nav-woodcuts" {
+            de "Holzschnitte"
+            en "Woodcuts"
+        }
+        // Referenced (SLICE 5): the nav-strips item and its /strips page
+        // are both live now, alongside "nav-narrenschiff" and
+        // "nav-woodcuts" above.
+        string "nav-strips" {
+            de "Randleisten"
+            en "Border strips"
+        }
+        // The reader's member-links caption (`compound-viewer member-links
+        // label=`, book-page step 6a): the page's border strips, listed
+        // under the pager.
+        string "reader-strips" {
+            de "Randleisten"
+            en "Border strips"
+        }
+        // The book page's Apparat group cap (`group label=`), transcribed
+        // verbatim from the mockup (DESIGN.md §4.5).
+        string "group-apparatus" {
+            de "Apparat"
+            en "Apparatus"
+        }
+        // The Apparat's book-to-book links row (`group links-label=`,
+        // annotations design-doc §12). Singular even over two partners.
+        string "related-book" {
+            de "Verwandtes Buch"
+            en "Related book"
+        }
+        // The strip detail's incoming-links caption (G7) — not a stored
+        // property, so it lives here rather than in `labels {}`.
+        string "pages-using" {
+            de "Seiten mit dieser Leiste"
+            en "Pages using this strip"
+        }
+        // The books list's ordering rows, in the mockup's copy
+        // (design/incunabula-content.js L63 DE, L104 EN). `order-book-date`
+        // relabels the built-in "As curated" row, which IS the date order;
+        // "Titel Z–A" is not in the mockup and mirrors its A–Z row.
+        string "order-book-date" {
+            de "Nach Datum"
+            en "By date"
+        }
+        string "order-book-title-asc" {
+            de "Titel A–Z"
+            en "Title A–Z"
+        }
+        string "order-book-title-desc" {
+            de "Titel Z–A"
+            en "Title Z–A"
+        }
+        string "order-book-extent" {
+            de "Nach Umfang"
+            en "By length"
+        }
+        // The books-list gloss's extent unit (mockup `pagesN`,
+        // design/incunabula-content.js L70 DE, L111 EN). `{n}` is the page
+        // count; there is no plural form (every book has 23+ pages).
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "{n} pages"
+        }
+        // The project's official short title (DSP project metadata,
+        // `name` DE / `abstract.en` EN; owner decision 2026-10-02) — the
+        // `<title>`, brand lockup, breadcrumb and site-index teaser name.
+        string "site-title" {
+            de "Die Bilderfolgen der Basler Frühdrucke"
+            en "The image sequences of Basel's early prints"
+        }
+        // /woodcuts (Slice 7): the authored remarks of the cases no single
+        // link joins (E2, E3 two links each, E6 none; DATA_ISSUES), and the
+        // count line of the inside-one-book block. Each remark describes the
+        // picture in the words of its page description (data) and names its
+        // three places; it says nothing about the links (owner, 2026-10-07:
+        // the project's voice, not the dataset's).
+        // "14" is the number of distinct page pairs inside one book joined
+        // by a kept link; a smoke test recomputes it from data.sql.
+        string "showcase-remark-e2" {
+            de "Ein Narr mit dem Kummet um den Hals geht mit Büchse und Löffel auf den Trog der Schweine und Gänse zu – in allen drei Ausgaben vom selben Stock: c3v der deutschen, d1r beider lateinischen."
+            en "A fool with a horse collar round his neck walks with box and spoon towards the trough of the pigs and geese – from the same block in all three editions: c3v of the German, d1r of both Latin ones."
+        }
+        string "showcase-remark-e3" {
+            de "Ein Narr verprügelt einen Mann auf der Strasse, Zuschauer suchen ihn zu besänftigen – in allen drei Ausgaben vom selben Stock: b6v der deutschen, c5r beider lateinischen."
+            en "A fool beats a man in the street while onlookers try to calm him – from the same block in all three editions: b6v of the German, c5r of both Latin ones."
+        }
+        string "showcase-remark-e6" {
+            de "Ein Narr fällt von seinem Esel, weil er den Sattelgurt nicht festgezogen hat – in allen drei Ausgaben vom selben Stock: b8v der deutschen, c7r beider lateinischen."
+            en "A fool falls from his donkey because he has not buckled the girth – from the same block in all three editions: b8v of the German, c7r of both Latin ones."
+        }
+        string "showcase-count-within-book" {
+            de "6 von 14 Wiederholungen · je eine aus sechs der sieben Bücher"
+            en "6 of 14 repetitions · one each from six of the seven books"
+        }
+        // /narrenschiff (Slice 7): the edition cards' language eyebrows and
+        // the two more links. `{n}` in "strips-all" is the number of border
+        // strips in the data, filled by the strip row. Design drafts, for the
+        // copy pass.
+        string "edition-german" {
+            de "Deutsch"
+            en "German"
+        }
+        string "edition-latin" {
+            de "Latein"
+            en "Latin"
+        }
+        string "strips-all" {
+            de "Alle {n} Randleisten"
+            en "All {n} border strips"
+        }
+        string "reuse-all" {
+            de "Alle wiederverwendeten Holzschnitte"
+            en "All re-used woodcuts"
+        }
+    }
+
+    // DESIGN.md §4.1: the mockup's project knob.
+    theme {
+        accent "ochre"
+        background "tint"
+        // The mockup's Tweaks value is `bookish`, which is a *voice*
+        // (the design tool's grouping of three faces), not a `data-pick`
+        // face. The config enum takes the face; the bookish voice's
+        // default face is `newsreader` (config-language.md, theme
+        // table). Writing "bookish" here would be an unrecognised
+        // value and a boot hard-fail.
+        typeface "newsreader"
+    }
+}
+
+// Display labels for properties and Classes, DE + EN, from
+// INC.ui.<lang>.labels / .cls (design/incunabula-content.js L42–50 /
+// L41 DE, L83–91 / L82 EN) — DESIGN.md §4.12.
+//
+// Completeness (every declared language present) is a boot HARD-FAIL
+// (IncompleteLabelTranslation), so both languages are filled in for
+// every entry. Data-existence is only advisory (UnknownLabel, Warning),
+// which is why the later-slice entries below can be declared now: until
+// their data lands they each emit one non-gating boot warning.
+labels {
+    // ---- Book (Slice 1 — the properties the store builder emits) ----
+    //
+    // THE TRICK THAT MAKES SLICE 1 NEED ZERO ENGINE CHANGES.
+    // Incunabula's display title is not called "name" in the source,
+    // and `resource_list`/`compound_viewer` hardcode the literal
+    // property "name". That is not a blocker: CPE's property
+    // vocabulary is OURS (cpe/CLAUDE.md — Knora/DSP terms live only
+    // inside the data loader: a project's `translate.*`, or the store
+    // builder for Incunabula), so the store builder maps the Book's
+    // title onto the property `name`, and this label gives it the
+    // right DISPLAY
+    // label. The same applies to a Page, where `name` is the page id.
+    // "Generalize the display property" stays a real plan item, but it
+    // is not a Slice-1 dependency (DESIGN.md §10, "A gap that is NOT
+    // real").
+    property "name" {
+        de "Titel"
+        en "Title"
+    }
+    property "alt-title" {
+        de "Weiterer Titel"
+        en "Alternative title"
+    }
+    property "creator" {
+        de "Autor"
+        en "Author"
+    }
+    property "publisher" {
+        de "Drucker"
+        en "Printer"
+    }
+    // Authored here (not in INC.ui): the office lane is the books
+    // list's theme chip and the home timeline's lane. The book page's
+    // Apparat does not list it.
+    property "office" {
+        de "Offizin"
+        en "Printing office"
+    }
+    property "pub-place" {
+        de "Druckort"
+        en "Place of printing"
+    }
+    property "pub-date" {
+        de "Druckdatum"
+        en "Date of printing"
+    }
+    // G12 closed in Slice 8. The stored ISO date_start/date_end +
+    // date_precision now also carries a curated display string
+    // (date_display/value_lang) and the source calendar (date_calendar)
+    // on the SAME `pub-date` row, and the renderer emits the precision
+    // word ("Tag"/"Monat"/"Jahr"/"Zeitraum") plus the calendar word for a
+    // Gregorian-dated book at day/month precision — see `site { date-precision-word }` above.
+    // The former duplicate `date-display` text property (and its label)
+    // is gone; a book page shows one date row. DESIGN.md §4.11.
+    property "shelfmark" {
+        de "Standort"
+        en "Shelfmark"
+    }
+    property "catalogue-uri" {
+        de "Katalog"
+        en "Catalogue"
+    }
+    property "physical" {
+        de "Physische Beschreibung"
+        en "Physical description"
+    }
+    property "extent" {
+        de "Umfang"
+        en "Extent"
+    }
+    // The media property (link → Image). Suppressed from the plain
+    // property rows wherever a `resource-detail media="image"` declares
+    // it; declared so the label exists where chrome needs it.
+    property "image" {
+        de "Bild"
+        en "Image"
+    }
+
+    // ---- Page apparatus ------------------------------------------------
+    // Live since Slice 2 — these labels resolve against real Page data,
+    // no UnknownLabel warning.
+    property "description" {
+        de "Beschreibung"
+        en "Description"
+    }
+    property "comment" {
+        de "Kommentar"
+        en "Comment"
+    }
+    property "page-id" {
+        de "Seitenbezeichnung"
+        en "Page label"
+    }
+    property "seq-number" {
+        de "Scan-Nr."
+        en "Scan no."
+    }
+    // `note`/`citation` are declared but deferred — Slice 3 decision 3
+    // leaves the book-level "Anmerkung"/"Verweis" presentation unbuilt
+    // (needs a Book-level dump extraction plus two further generic
+    // value-presentation mechanisms). See docs/BACKLOG.md's "Incunabula's
+    // `citation` and `note` properties" entry. No data emits these
+    // properties yet, so they still warn UnknownLabel until that lands.
+    property "note" {
+        de "Anmerkung"
+        en "Note"
+    }
+    property "citation" {
+        de "Verweis"
+        en "Reference"
+    }
+    // Border strips.
+    property "side" {
+        de "Position"
+        en "Side"
+    }
+    property "strip-left" {
+        de "Randleiste links"
+        en "Border strip, left"
+    }
+    property "strip-right" {
+        de "Randleiste rechts"
+        en "Border strip, right"
+    }
+    // The strip detail's own stored count (D5 deviation — see the
+    // `// Theme chip` comment on the /strips page below).
+    property "page-uses" {
+        de "Verwendet auf"
+        en "Used on"
+    }
+
+    // ---- Classes (INC.ui.<lang>.cls) ---------------------------------
+    // Every declared class carries a `plural { … }`. Plurals are NOT
+    // search-only (an earlier comment here claimed they fed the
+    // search-bar's no-match copy alone — wrong, and it left the ACTIVE
+    // Slice-1 routes reading "Buch"/"Alle Buch durchsuchen").
+    // `resolve_class_plural` falls back to the SINGULAR label when no
+    // plural is declared, and its live callers on already-served pages
+    // are:
+    //   - the browse breadcrumb's current segment (/books)
+    //   - the resource-detail breadcrumb's class crumb (/books/:id)
+    //   - the not-found "browse all" exit (/books/<unknown>)
+    // plus the search-bar no-match copy on projects that have one.
+    // The not-found page's OWN class crumb deliberately stays SINGULAR —
+    // `mod.rs`'s `None =>` arm (unresolved id) calls `resolve_class_label`,
+    // not the plural resolver used by the resolved-record crumb — so this
+    // is not a bug to "fix" by wiring it to the plural too.
+    // Also stays singular by engine design: the browse page's own surf-head
+    // title (`resource_list.rs`'s `render_surf_head`) uses `resolve_class_label`,
+    // so `/incunabula/books` displays "Buch · 19 Einträge" — the plural {}
+    // blocks above do not touch that string, even though it's the most
+    // prominent class noun on the page.
+    // Casing convention (same as Alice, design-doc §4): the breadcrumb
+    // goes through `resolve_class_plural_capitalized` (capitalizes the
+    // first char), the "browse all" / no-match sentences use the string
+    // VERBATIM — so DE is capitalized (German nouns) and EN is lowercase
+    // sentence case, and both surfaces read correctly in both languages.
+    // Both declared languages are required on every plural: an
+    // incomplete label translation is a boot hard-fail
+    // (IncompleteLabelTranslation) and, per dsp-incubator cpe/docs/adr/0002-deployment-topology.md, aborts the whole
+    // binary — taking the Alice demo down with it.
+    class "Book" {
+        de "Buch"
+        en "Book"
+        plural {
+            de "Bücher"
+            en "books"
+        }
+    }
+    // SLICE 2.
+    class "Page" {
+        de "Seite"
+        en "Page"
+        plural {
+            de "Seiten"
+            en "pages"
+        }
+    }
+    class "BorderStrip" {
+        de "Randleiste"
+        en "Border strip"
+        plural {
+            de "Randleisten"
+            en "border strips"
+        }
+    }
+    // Embedded-only in presentation (dsp-incubator cpe/docs/adr/0008-images-are-embedded-only-resources.md) — no detail page binds
+    // it, so no eyebrow renders this label yet.
+    class "Image" {
+        de "Bild"
+        en "Image"
+        plural {
+            de "Bilder"
+            en "images"
+        }
+    }
+}
+
+// ===================================================================
+// 1. Home — the narrative entry (DESIGN.md §4.2, §4.3)
+// ===================================================================
+// The editorial archetype carries the head, the drop-cap opening, the
+// epigraph, the five office groups with their invite lists, and the two
+// showcase invites — all of that is Markdown convention, no config node.
+// narrative/home.de.md is the default-language variant, so the boot
+// check (NarrativeFileNotFound) is satisfied without a base home.md.
+page id="home" route="/" {
+    narrative file="home.md"
+    timeline class="Book" date-property="pub-date" lane-property="office" \
+             extent-property="extent" axis-start=1470 axis-end=1506
+    narrative file="home-offices.md"
+}
+
+// ===================================================================
+// 2. Books list (DESIGN.md §4.4) — annotated rows, sorted by date
+// ===================================================================
+// SLICE 1 — buildable today. 19 Books, one page.
+page id="books" route="/books" {
+    // List | Grid toggle: `grid=#true` (URL-bearing `?view=grid`,
+    // real navigation, not a fragment swap) — REQUIRES `media`.
+    // The ordering panel (DESIGN.md §4.4): the built-in "As curated" row is
+    // relabelled "Nach Datum", because the default order below IS the date
+    // order — keep the two in step, no boot check ties them. The built-in
+    // name rows order by `sort-key` (the title without a leading "[Das] ")
+    // and read "Titel A–Z"/"Titel Z–A".
+    resource-list id="book-list" class="Book" media="image" grid=#true \
+        order-default-label="order-book-date" \
+        order-name-property="sort-key" \
+        order-name-label="order-book-title-asc" \
+        order-name-desc-label="order-book-title-desc" {
+        // Default order = by date.
+        sort property="pub-date"
+        per-page 24
+
+        // The one declared option (Slice 8 / G9 — the runtime `?sort=`
+        // vocabulary generalized to declared per-list options). `extent`
+        // reuses the existing `extent` property (owner decision,
+        // 2026-09-23). There is no `date` option: the default row is it.
+        order-by key="extent" property="extent"   direction="desc" label="order-book-extent"
+
+        // Row gloss: the design's composed line (mockup L896,
+        // "printer · place · date · N Seiten"), a missing part skipped
+        // rather than shown as "—", plus the four featured books' authored
+        // teaser after " — " (docs/plans/incunabula-books-browse/).
+        gloss {
+            part property="publisher"
+            part property="pub-place"
+            part property="pub-date"
+            part property="extent" unit="gloss-extent"
+            teaser property="teaser"
+        }
+
+        // Theme chip = the office lane.
+        // NOTE: a chip renders only for a `list`-typed value (single
+        // value → .term pill, multi-valued → .keyword pills); text
+        // values contribute nothing. `office` must therefore be
+        // emitted as a list value by the store builder for this to show.
+        chip property="office"
+
+        // GAP (not in G1–G12): the design's ROLE line is the author,
+        // rendered under the name as a single .term pill. There is no
+        // role/theme distinction in config — the look falls out of
+        // value cardinality — and `creator` is a text value, so
+        // `chip property="creator"` would render nothing. The author
+        // therefore has no home on the row today.
+    }
+    // Thumb = the book's curated cover page (the curated `cover_page`
+    // the port serves), via this list's own `media="image"` above.
+    // A `resource-detail media=…` on the same Class only needs to AGREE
+    // with this one if it declares one at all (see ConflictingMediaProperty) —
+    // it does not need to declare one to feed this thumb.
+}
+
+// ===================================================================
+// 3. Book page (DESIGN.md §4.5) + the reader (§4.6)
+// ===================================================================
+// SLICE 1 — the header and the Apparat are buildable today; the reader
+// column below needs Slice 2's Page data, and its overlays Stage E.
+page id="book" route="/books/:id" {
+    // D6: the book page shows no book image of its own — the Book →
+    // `image` link is the `/books` listing thumbnail only.
+    // The record header (book-page design-doc §3): the alt title, the
+    // author and the imprint (place · printer · date · extent) sit under the
+    // h1, so none of them repeats in the Apparat below. The trailing `\` is
+    // a KDL line continuation (escline).
+    resource-detail id="$id" class="Book" title-property="name" \
+        alt-title-property="alt-title" author-property="creator" {
+        imprint {
+            part property="pub-place"
+            part property="publisher"
+            part property="pub-date"
+            part property="extent" unit="gloss-extent"
+        }
+        // The Apparat: what the header does not already say, under one
+        // hairline-ruled cap (the generic `group` child, G8). `image` is
+        // deliberately not listed — this `resource-detail` has no `media=`
+        // attribute of its own (D6: the book page shows no book image), so
+        // there is no media property to suppress. `links-label` closes it
+        // with the book's resource-level annotation links (the Latin
+        // translation, the three books bound in one volume).
+        group label="group-apparatus" links-label="related-book" "shelfmark" "physical" "catalogue-uri"
+
+        // SLICE 2/3: "Verweis" (`citation`, a compact mono run with a
+        // "+N weitere" tail) and "Anmerkung" (`note`, behind a
+        // zero-JS <details> per D6) were considered for this slice but
+        // deliberately deferred (decision 3) — they need a new Book-level
+        // extraction path against an uncommitted dump plus two further
+        // generic value-presentation mechanisms, neither named by Slice 3's
+        // PROJECT_PLAN entry. Backlogged.
+
+        // SLICE 3: the `narrative-for` lookup (O6) landed. Per D6 only
+        // these four books carry an introduction.
+        narrative-for "narrenschiff-dt"      file="book-narrenschiff-dt.md"
+        narrative-for "postilla"             file="book-postilla.md"
+        narrative-for "bereitung"            file="book-bereitung.md"
+        narrative-for "zeitgloecklein-1492"  file="book-zeitgloecklein-1492.md"
+    }
+
+    // Pairing `resource-detail` with a same-id `compound-viewer` (dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md)
+    // makes the reader the one member list, rendered inside the record's
+    // article.
+
+    // The reader (book-page design-doc §4): an identity head, the stage
+    // mounting the record viewer's own unit (its legal run in the banner
+    // above the canvas, decision 9), and the pager row directly under it;
+    // no member properties. It renders inside the record's article, as a
+    // sticky second track at desk widths. `index="none"`: a book has up to
+    // 511 pages, so the pager and its page picker are the navigation.
+    // `picker="signatures"` groups the pages by the book's own gatherings,
+    // read from the page labels; a book whose labels mostly do not parse
+    // (melusine, reise, itinerarius-peregrinatio) falls back to numbered
+    // runs by itself. Every step and picker entry is a bare `?page=<id>`
+    // link; with JS it swaps the reader in place and writes the address
+    // (dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md's `_compound` exception). No emitted URL carries
+    // `#compound-viewer`.
+    // `member-links`: the page's border strips as one captioned row of
+    // links under the pager (owner, step 6a) — the page's own links, not
+    // the book's, so they stay out of the Apparat.
+    // `annotations=#true`: the shown page's annotation register, from the
+    // engine's `annotations` store (dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md; G5 closed): numbered,
+    // largest shape first, after the reader in the companion column.
+    compound-viewer source="$id" layout="pages" index="none" media="image" picker="signatures" annotations=#true {
+        member-links label="reader-strips" "strip-left" "strip-right"
+    }
+    //
+    // G12 closed in Slice 8. (Page resources carry no date property, so
+    // this reader renders no date row either way — see the `pub-date`
+    // note in labels {} above for where the precision word lands.)
+    // The accent dot marking an annotated page (pager, picker, eyebrow)
+    // comes with `annotations=#true`; it needs no config of its own.
+}
+
+// ===================================================================
+// 4. Narrenschiff — showcase 1 (DESIGN.md §4.7)
+// ===================================================================
+// LIVE. The narrative's three `##` sections each carry a figure block
+// (Slice 7, per-project components, per O4).
+page id="narrenschiff" route="/narrenschiff" {
+    narrative file="narrenschiff.md"
+
+    // Every number the narrative states, with its source and its guard:
+    // DESIGN.md §10, "Slice 7 status".
+    // The three editions: each card shows the book's cover plate (its
+    // `image`, the curated cover page) and the book page's own imprint line,
+    // and links to the reader.
+    edition-cards section="editions" media="image" {
+        book "narrenschiff-dt"         lang-label="edition-german"
+        book "narrenschiff-lat-maerz"  lang-label="edition-latin"
+        book "narrenschiff-lat-august" lang-label="edition-latin"
+        imprint {
+            part property="pub-place"
+            part property="publisher"
+            part property="pub-date"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+    // The strips used on more than 8 pages, most-used first, capped at 12;
+    // the more link's `{n}` is every strip of the class.
+    strip-row section="strips" class="BorderStrip" media="image" \
+        uses-property="page-uses" min-uses=9 limit=12 \
+        more-label="strips-all" more-route="/strips"
+    // The teaser: E1 and E2, written exactly as on /woodcuts below (KDL has
+    // no include); a smoke test asserts the two pages render them alike.
+    // narrenschiff.{de,en}.md (#reuse) counts seven blocks between the
+    // editions: /woodcuts's E1–E6 plus F4, which is in its own section there.
+    woodcut-cases section="reuse" layout="edition" media="image" \
+        more-label="reuse-all" more-route="/woodcuts" {
+        // E1: dt. c1v ↔ Aug. c8r.
+        case schramm=1124 title="Kap. 13 · Von der Buhlerei" remark-link="jwSBbhl4U_6dIifcGTn0Qg" {
+            crop "bsX4cDKkW3GMC8_Ms2tOpw" alt="Holzschnitt zu Kap. 13: Von der Buhlerei."
+            crop "gAfAiG_-U4itgN8Gdr9Ipw" alt="Holzschnitt zu Kap. 13: Von der Buhlerei."
+        }
+        // E2: dt. c3v ↔ März d1r ↔ Aug. d1r, joined by two links.
+        case schramm=1125 title="Kap. 14 · Von falschen Vorstellungen über Gott" remark="showcase-remark-e2" {
+            crop "2IqZQvJ8VjyKQUN16phyfg" alt="Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott."
+            crop "xXOFHTwyUHeFuDoXLQk9Vw" alt="Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott."
+            crop "WpNfSfnWUhmTwLQvByNxZQ" alt="Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott."
+        }
+    }
+}
+
+// ===================================================================
+// 5. Woodcuts — showcase 2 (DESIGN.md §4.8)
+// ===================================================================
+// LIVE. The narrative's four `##` sections each carry a block of woodcut
+// crop cases (Slice 7, the per-project `woodcut-cases` component, per O4).
+page id="woodcuts" route="/woodcuts" {
+    narrative file="woodcuts.md"
+
+    // Slice 7: the woodcut crop cases (the Q5 selection), each block after
+    // its `## … {#id}` section. Every alt, title source, excerpt and Schramm
+    // number is verbatim data, held to the store by the boot checks
+    // (ShowcaseExcerptMismatch, ShowcaseSchrammMismatch); a crop with no
+    // `alt` gets the composed one, because its page names no woodcut. A
+    // `remark-link` prints the link's own comment, sics kept; `remark=` names
+    // an authored chrome string, used where no single link joins the case.
+    // Editions read German, then März, then August. E1 and E2 are written
+    // again on /narrenschiff; a smoke test keeps the two copies alike.
+    // woodcuts.{de,en}.md (#editions) counts these six blocks, three in all
+    // three editions; narrenschiff.{de,en}.md (#reuse) counts them plus F4
+    // (#four) as seven. Adding or dropping a case changes both sentences.
+    // Every number both narratives state, with its source and its guard:
+    // DESIGN.md §10, "Slice 7 status".
+    woodcut-cases section="editions" layout="edition" media="image" {
+        // E1: dt. c1v ↔ Aug. c8r.
+        case schramm=1124 title="Kap. 13 · Von der Buhlerei" remark-link="jwSBbhl4U_6dIifcGTn0Qg" {
+            crop "bsX4cDKkW3GMC8_Ms2tOpw" alt="Holzschnitt zu Kap. 13: Von der Buhlerei."
+            crop "gAfAiG_-U4itgN8Gdr9Ipw" alt="Holzschnitt zu Kap. 13: Von der Buhlerei."
+        }
+        // E2: dt. c3v ↔ März d1r ↔ Aug. d1r, joined by two links.
+        case schramm=1125 title="Kap. 14 · Von falschen Vorstellungen über Gott" remark="showcase-remark-e2" {
+            crop "2IqZQvJ8VjyKQUN16phyfg" alt="Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott."
+            crop "xXOFHTwyUHeFuDoXLQk9Vw" alt="Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott."
+            crop "WpNfSfnWUhmTwLQvByNxZQ" alt="Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott."
+        }
+        // E3: dt. b6v ↔ März c5r ↔ Aug. c5r, joined by two links.
+        case schramm=1121 title="Kap. 10 · Vom rechten Verhalten gegenüber dem Nächsten" remark="showcase-remark-e3" {
+            crop "5fuEx8evUUSs2FZT01qgzg" alt="Holzschnitt zu Kap. 10: Vom rechten Verhalten gegenüber dem Nächsten."
+            crop "3YVDBltbVHak_lZfX9Ocaw" alt="Holzschnitt zu Kap. 10: Vom rechten Verhalten gegenüber dem Nächsten."
+            crop "IbLaQ8JHU_WH1Mx2BWqr4Q" alt="Holzschnitt zu Kap. 10: Vom rechten Verhalten gegenüber dem Nächsten."
+        }
+        // E6: dt. b8v ↔ März c7r ↔ Aug. c7r, joined by no link (DATA_ISSUES).
+        case schramm=1123 title="Kap. 12 · Von Unbedachtsamkeit" remark="showcase-remark-e6" {
+            crop "GOkuI_IxVuSKMRZmCypz7Q" alt="Holzschnitt zu Kap. 12: Von Unbedachtsamkeit."
+            crop "089fJhP1WuylV1wftl5Y_Q" alt="Holzschnitt zu Kap. 12: Von Unbedachtsamkeit."
+            crop "yff9qPTdUhyLasCbp4sw0A" alt="Holzschnitt zu Kap. 12: Von Unbedachtsamkeit."
+        }
+        // E4: dt. b7v ↔ Aug. c6r.
+        case schramm=1122 title="Kap. 11 · Von Missachtung der Heiligen Schrift" remark-link="ylNmIB2eWUOLl3MtTZ5dYw" {
+            crop "FMz9WIT5XYOOGtQG8Bi38w" alt="Holzschnitt zu Kap. 11: Von Missachtung der Heiligen Schrift."
+            crop "r55aYMuiVN2B0wSGgtqPDQ" alt="Holzschnitt zu Kap. 11: Von Missachtung der Heiligen Schrift."
+        }
+        // E5: dt. b3v ↔ März c2r, and the hand-written note on b3v the
+        // remark names. b3v's woodcut line is run into its note line
+        // (DATA_ISSUES S4), so the case has no title and b3v the composed alt.
+        case schramm=1118 remark-link="ggDWsmYKUd2RWy3w9PcD1w" {
+            crop "EDqDFUAsXtSuBreIXyuCiQ"
+            crop "MJBQMyqjUEe8FjFwRUAL4Q" alt="Holzschnitt zu Kap. 7: Vom Zwietracht stiften."
+            detail "XTtkp_hEUDWO828r2pb2PA" alt="Handschriftliche Bemerkung in der Zeichnung"
+        }
+    }
+    woodcut-cases section="four" layout="four" media="image" {
+        // F4: dt. b4v and o7v, Aug. c3r and m5r. o7v and m5r open Kap. 84.
+        case schramm=1119 title="Kap. 8 · Guten Rat verschmähen" remark-link="YLToxLUYXx62qcjRXHArNg" {
+            crop "Uimrq1KxV3uL8HCjEll9HA" alt="Holzschnitt zu Kap. 8: Guten Rat verschmähen."
+            crop "LPw7a0ubUDKfjSWAc4-ECg" alt="Holzschnitt zu Kap. 84: Vom Festhalten am Guten."
+            crop "x3NCLnuhVVW4WEDYFzCxhQ" alt="Holzschnitt zu Kap. 8: Guten Rat verschmähen."
+            crop "OWvgOgSkU3WzmRHxXWJuCQ" alt="Holzschnitt zu Kap. 84: Vom Festhalten am Guten."
+        }
+    }
+    // One pair from each of six of the seven books that have one (OQ4).
+    // "showcase-count-within-book" says "six of the seven books", and
+    // woodcuts.{de,en}.md (#within-book) names the Postilla (B1) and the
+    // German Narrenschiff (B6) pairs; adding or dropping a case here changes
+    // the count line, and dropping B1 or B6 changes that paragraph.
+    // Where a description gives the woodcut's subject on its own line, the
+    // alt is that subject.
+    woodcut-cases section="within-book" layout="compact" media="image" count="showcase-count-within-book" {
+        // B1: Postilla e3r ↔ e4r.
+        case schramm=356 remark-link="00bnHlmDVIq_Blb4DvKGiQ" {
+            crop "ik1KkbHvUjSBN5mBGn3Vuw" alt="Jesus predigt den Jüngern"
+            crop "lp0ibqQ0VPiOmO2GPauECw" alt="Jesus predigt den Jüngern"
+        }
+        // B2: Bereitung p7r ↔ q4v.
+        case schramm=458 remark-link="fUyzGd_SUSqZkqdkeukZYw" {
+            crop "xhvat7JpVLOR7uRfjZmmcA" alt="Jesus vor Pilatus"
+            crop "cRDtdyM2V4y2Jivpcspcmg"
+        }
+        // B3: Brandan a4v ↔ a6v.
+        case schramm=507 remark-link="XyNTVX1oW2e2xA0WxFKAHA" {
+            crop "nhNN3aJfUcmtP1eqdUaB0w" alt="Holzschnitt: Brandan und drei Gefährten sitzen in einem Segelschiff."
+            crop "zQvZ3O9qXqeKjKJEuSorYA"
+        }
+        // B4: Quadragesimale f6v ↔ g6v.
+        case schramm=482 remark-link="5HOuD4RvV2q9UM6JWKDGPg" {
+            crop "b_wN1AStVpm-zSVjQgyiAg"
+            crop "BkvPTT11VZGpGNMSzQ3C3Q"
+        }
+        // B5: Reise 46r ↔ 68r.
+        case schramm=450 remark-link="gClNTN1TWhqzzyisZm2mAA" {
+            crop "HqIPyPXNWcaWuMLVwgfXBA" alt="Eine Kugelform mit Wellenstruktur auf einer Oberfläche"
+            crop "gwnDFsXKU_md8lCuXC0sNw" alt="ein wellenförmiges Rund auf einer Oberfläche"
+        }
+        // B6: Narrenschiff dt. c5v ↔ u1r. Four links join the pair; this one
+        // says the most.
+        case schramm=1127 remark-link="Z1zy2TYbWn-IaJPhGhkgGA" {
+            crop "JBcwyVX6VJaZ0rwQFxr8PQ" alt="Holzschnitt zu Kap. 16: Von Völlerei und Prassen."
+            crop "jvK6NqNkVbGcccz0EyWC6Q" alt="Holzschnitt identisch mit Kap. 16: Eine Narrengruppe sitzt an einem Tisch."
+        }
+    }
+    // Links set on whole pages, not on regions: each page case shows both
+    // pages and names its link.
+    woodcut-cases section="between-books" layout="compact" media="image" {
+        // P1: walfart h8r ↔ Zeitglöcklein [1490] c6v. The link's comment
+        // repeats its name, so there is no remark.
+        page-case link="oinJvxRSWC6VCHoXjEHrtA" {
+            page "walfart-h8r"
+            page "zeitgloecklein-1490-c6v"
+        }
+        // P2: De generatione a3r ↔ walfart d6v.
+        page-case link="voBOw9dGXw-f3h9Tn76ZBw" remark-excerpt="Holzschnitt: Anbetung des Kindes." {
+            page "de-generatione-a3r"
+            page "walfart-d6v"
+        }
+        // P3: the printer's mark, März t1v ↔ Aug. x4v.
+        page-case link="_j3T1ZACWzGNux_T6tlnCA" remark-link="_j3T1ZACWzGNux_T6tlnCA" {
+            page "narrenschiff-lat-maerz-t1v"
+            page "narrenschiff-lat-august-x4v"
+        }
+    }
+}
+
+// ===================================================================
+// 6. Border strips — browse (DESIGN.md §4.9)
+// ===================================================================
+// SLICE 5 — live. 38 strip types.
+page id="strips" route="/strips" {
+    // List | Grid toggle: `grid=#true` (URL-bearing `?view=grid`,
+    // real navigation, not a fragment swap) — REQUIRES `media`.
+    // `tile-ratio`: a strip is about nine times as high as wide, so its
+    // grid tile is too.
+    resource-list id="strip-list" class="BorderStrip" media="image" grid=#true tile-ratio="1:9" {
+        sort property="name"
+        per-page 24
+        gloss property="description"
+        // D5 deviation: the design's theme chip is "auf N Seiten", a COUNT
+        // of the reverse-resolved pages, not a stored property — `chip
+        // property=` renders only for a `list_value`, and a scalar-count
+        // chip kind is backlog, not this slice. `page-uses` stands in as an
+        // integer property on the detail page instead (see below).
+        // Role line = side (links / rechts): `side` must be emitted
+        // as a list value for the .term pill to render.
+        chip property="side"
+    }
+}
+
+// ===================================================================
+// 7. Border strip detail (DESIGN.md §4.9)
+// ===================================================================
+// SLICE 5 — a media record: the props first, the strip plate beside.
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" title-property="name" media="image" {
+        show-properties "description" "side" "page-uses" "comment"
+        // G7 — live. The principal content of this page: every Page
+        // whose strip-left/strip-right property targets this strip,
+        // in codicological (compound-seq) order, captioned "Seiten mit
+        // dieser Leiste" (site.chrome, below — not a stored property).
+        incoming-links label="pages-using" class="Page" order="compound-seq" \
+            "strip-left" "strip-right"
+    }
+}
+
+// ===================================================================
+// 404 (DESIGN.md §4.10)
+// ===================================================================
+// Not a page: the 404s are the router fallback + the unknown-id branch, an
+// engine-owned surface. The 404's three browse links (`site.not-found`) are
+// project-configurable (Slice 8 / G11, decision 8) — see `site {}` above.
+// The design's settings (Colophon) screen is not built: the settings page
+// was removed (general chrome, owner decision D2).
+
+// ===================================================================
+// The remodel mapping
+// ===================================================================
+// How the archive's data becomes this project's store: the shortcode, the
+// sentinel for a missing value, the closed vocabularies, which archive class
+// and property is which CPE class and property, and how a resource gets its
+// id, its image, its parent and its counts. The block is the store builder's
+// input: data.sql is built from the archive snapshot, this block and the
+// project's hook, which may do only what the `hook` node below lists. A
+// change here changes data.sql, and the builder's freshness test fails until
+// the file is built again. The web binary does not use the block: it only
+// validates it at boot, then drops it.
+remodel {
+    shortcode "0803"
+    sentinel "[missing]"
+    hook {
+        key "sort_key" class="Book"
+        key "catalogue_uri" class="Book"
+        key "catalogue_uri_replaces" class="Book"
+        provides "sort-key" class="Book"
+        provides "side" class="BorderStrip"
+        overrides "catalogue-uri" class="Book"
+        drops class="Page"
+    }
+
+    list "office" {
+        list-node "amerbach" { de "Johann Amerbach"; en "Johann Amerbach" }
+        list-node "bergmann" { de "Johann Bergmann de Olpe"; en "Johann Bergmann de Olpe" }
+        list-node "furter" { de "Michael Furter"; en "Michael Furter" }
+        list-node "ysenhut" { de "Lienhart Ysenhut"; en "Lienhart Ysenhut" }
+        list-node "other" { de "Richel · Wolff · ohne genannten Drucker"; en "Richel · Wolff · unnamed printer" }
+    }
+    list "side" {
+        list-node "left" { de "links"; en "left" }
+        list-node "right" { de "rechts"; en "right" }
+    }
+
+    class "Book" iri="http://www.knora.org/ontology/0803/incunabula#Book" no-addresses=#true {
+        id curated-key="slug"
+        property "name" from="label" curated-key="title_override"
+        property "alt-title" iri="http://www.knora.org/ontology/0803/incunabula#hasTitle" type="text" exclude-label=#true
+        property "creator" iri="http://www.knora.org/ontology/0803/incunabula#hasCreator" type="text"
+        property "publisher" iri="http://www.knora.org/ontology/0803/incunabula#hasPublisher" type="text"
+        property "pub-place" iri="http://www.knora.org/ontology/0803/incunabula#hasPubloc" type="text" max=1 sentinel="absent"
+        property "shelfmark" iri="http://www.knora.org/ontology/0803/incunabula#hasLocation" type="text" max=1
+        property "physical" iri="http://www.knora.org/ontology/0803/incunabula#hasPhysicalDesc" type="text" max=1
+        property "catalogue-uri" iri="http://www.knora.org/ontology/0803/incunabula#hasUri" type="uri" max=1
+        property "pub-date" iri="http://www.knora.org/ontology/0803/incunabula#hasPubdate" type="date" min=1 max=1 display-key="date_display"
+        curated "office" key="office" type="list" list="office" min=1
+        curated "teaser" key="teaser" type="per-language"
+        member-count "extent" of="Page"
+        cover curated-key="cover_page"
+    }
+    images class="Image" iiif-base="https://iiif.dasch.swiss/0803/" {
+        authorship "Universitätsbibliothek Basel"
+        license "CC BY 4.0"
+    }
+    class "Page" iri="http://www.knora.org/ontology/0803/incunabula#Page" image=#true {
+        member-of "Book" seq="seq-number"
+        id from="property" property="name" under-parent=#true
+        property "name" "page-id" iri="http://www.knora.org/ontology/0803/incunabula#hasPagenum" type="text" min=1 max=1 empty="refuse" sentinel="keep"
+        property "description" iri="http://www.knora.org/ontology/0803/incunabula#hasDescription" type="text" max=1
+        property "comment" iri="http://www.knora.org/ontology/0803/incunabula#hasComment" type="text"
+        property "strip-left" iri="http://www.knora.org/ontology/0803/incunabula#hasBandTypeL" type="link" max=1 target="BorderStrip"
+        property "strip-right" iri="http://www.knora.org/ontology/0803/incunabula#hasBandTypeR" type="link" max=1 target="BorderStrip"
+    }
+    class "BorderStrip" iri="http://www.knora.org/ontology/0803/incunabula#Band" image=#true {
+        id curated-key="slug" from="label"
+        property "name" iri="http://www.knora.org/ontology/0803/incunabula#hasTitle" type="text" curated-key="name" min=1 max=1 empty="refuse" sentinel-within="keep"
+        property "description" iri="http://www.knora.org/ontology/0803/incunabula#hasDescription" type="text" max=1 sentinel="absent" sentinel-within="keep"
+        property "comment" iri="http://www.knora.org/ontology/0803/incunabula#hasComment" type="text" empty="refuse" sentinel-within="keep"
+        incoming-count "page-uses" from="Page" {
+            via "strip-left"
+            via "strip-right"
+        }
+    }
+
+    annotations {
+        on "Page"
+        link-targets "Book" "Page"
+    }
+}

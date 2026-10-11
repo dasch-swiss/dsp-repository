@@ -262,7 +262,7 @@ pub fn resolve_class_plural_capitalized(labels: &[ClassLabel], class: &str, lang
 /// string has a translation for `lang`, the translation is returned.
 /// Otherwise the literal `label` value is used as-is.
 ///
-/// Per `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`: nav `label` is "chrome
+/// Per `docs/src/cpe/config-language.md`: nav `label` is "chrome
 /// string id OR literal".
 pub fn nav_label<'a>(site: &'a SiteConfig, item: &'a crate::ir::NavItem, lang: &Lang) -> &'a str {
     chrome_lookup(site, &item.label, lang).unwrap_or(&item.label)

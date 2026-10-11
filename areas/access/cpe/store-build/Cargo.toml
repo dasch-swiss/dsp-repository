@@ -1,0 +1,16 @@
+[package]
+name = "cpe-store-build"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+cpe-core = { path = "../core" }
+cpe-ports = { path = "../ports" }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+unicode-normalization = { workspace = true }
+
+[dev-dependencies]
+rusqlite = { workspace = true }
+sync-store = { path = "../../sync/store" }

@@ -1,0 +1,74 @@
+// A project that exists only for the store builder's tests. Its `remodel` block uses every node
+// and attribute a project without a hook can write, so a feature of the mapping that the real
+// projects do not use still has a test.
+
+site {
+    title "Plain"
+    languages "de" "en"
+    default-language "de"
+}
+
+remodel {
+    shortcode "0123"
+    sentinel "[unbekannt]"
+
+    // Declared against the order of their ids: a node's `seq` is its position here.
+    list "genre" {
+        list-node "sermon" { de "Predigt"; en "Sermon" }
+        list-node "almanac" { de "Kalender"; en "Almanac" }
+        list-node "other" { de "Übriges"; en "Other" }
+    }
+    list "technique" {
+        list-node "woodcut" { de "Holzschnitt"; en "Woodcut" }
+        list-node "engraving" { de "Kupferstich"; en "Engraving" }
+    }
+
+    class "Work" iri="http://www.knora.org/ontology/0123/plain#Work" no-addresses=#true {
+        id curated-key="slug"
+        property "name" from="label" curated-key="title_override"
+        property "alt-title" iri="http://www.knora.org/ontology/0123/plain#hasTitle" type="text" exclude-label=#true
+        property "place" iri="http://www.knora.org/ontology/0123/plain#hasPlace" type="text" max=1 sentinel="absent"
+        property "note" iri="http://www.knora.org/ontology/0123/plain#hasNote" type="text" empty="drop" sentinel="refuse" sentinel-within="refuse"
+        property "homepage" iri="http://www.knora.org/ontology/0123/plain#hasHomepage" type="uri" max=1 sentinel="absent" sentinel-within="keep"
+        property "made" iri="http://www.knora.org/ontology/0123/plain#hasDate" type="date" min=1 max=1 display-key="date_display"
+        curated "genre" key="genre" type="list" list="genre" min=1
+        curated "blurb" key="blurb" type="per-language"
+        curated "credit" key="credit" type="text"
+        member-count "extent" of="Leaf"
+        cover curated-key="cover"
+    }
+    images class="Image" iiif-base="https://iiif.example.org/0123/" {
+        authorship "Stadtbibliothek Musterstadt"
+        license "CC0 1.0"
+    }
+    class "Leaf" iri="http://www.knora.org/ontology/0123/plain#Leaf" image=#true {
+        member-of "Work" seq="position"
+        id from="property" property="name" under-parent=#true
+        property "name" "leaf-id" iri="http://www.knora.org/ontology/0123/plain#hasNumber" type="text" min=1 max=1 empty="refuse" sentinel="keep"
+        property "caption" iri="http://www.knora.org/ontology/0123/plain#hasCaption" type="text" max=1 sentinel-within="keep"
+        property "ornament" iri="http://www.knora.org/ontology/0123/plain#hasOrnament" type="link" max=1 target="Ornament"
+        property "ornament-verso" iri="http://www.knora.org/ontology/0123/plain#hasOrnamentVerso" type="link" max=1 target="Ornament"
+    }
+    class "Ornament" iri="http://www.knora.org/ontology/0123/plain#Ornament" {
+        id curated-key="slug" from="label"
+        property "name" iri="http://www.knora.org/ontology/0123/plain#hasTitle" type="text" curated-key="name" min=1 max=1 empty="refuse"
+        curated "technique" key="technique" type="list" list="technique"
+        incoming-count "uses" from="Leaf" {
+            via "ornament"
+            via "ornament-verso"
+        }
+    }
+    class "Person" iri="http://www.knora.org/ontology/0123/plain#Person" {
+        id from="label"
+        property "name" from="label"
+    }
+    class "Keyword" iri="http://www.knora.org/ontology/0123/plain#Keyword" {
+        id from="iri"
+        property "name" iri="http://www.knora.org/ontology/0123/plain#hasTerm" type="text" min=1 max=1
+    }
+
+    annotations {
+        on "Leaf"
+        link-targets "Work" "Leaf"
+    }
+}

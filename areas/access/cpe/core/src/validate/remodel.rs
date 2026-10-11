@@ -29,7 +29,7 @@
 //!   `lower_class`, or in `ClassStructure::lower_child`), or the node is allowed and never read;
 //! - a `DiagnosticKind` in `src/diagnostic.rs` for each new defect, with its severity arm in the
 //!   same file;
-//! - the grammar table and the validation list in `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`;
+//! - the grammar table and the validation list in `docs/src/cpe/config-language.md`;
 //! - `dsp-incubator cpe/CONTEXT.md`, when the node introduces a new noun.
 //!
 //! The node checks and readers every `lower_*` fn shares live in

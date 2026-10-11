@@ -87,3 +87,31 @@ feed is the port" (a reading capability's crates see its own `ports` crate and n
 crates or Chischtli; **structure**), and one test per read model that rebuilds it from empty against a
 `Fake<Port>` and asserts what the capability serves is unchanged (**static-analysis**); "the port
 speaks archive-shaped facts" and "never repaired in place" stay with review.
+
+Note (2026-10-11, DEV-7465): "and never `sync`'s store crates" is narrowed for a capability's tests; see the
+amendment of 2026-10-11 (DEV-7465) below.
+
+## Amendment (2026-10-11, DEV-7465) — a reading capability's tests may build `sync`'s adapter
+
+"Enforced by" says that a reading capability's crates see their own `ports` crate "and never `sync`'s store
+crates or Chischtli". Its reason is the second clause of the decision: "The only feed is the capability's
+own port against `sync`". This amendment narrows that sentence (as decided by the owner, 2026-10-11):
+
+- **A crate of a reading capability may name `sync`'s store crate as a dev-dependency, and only as one.**
+  `cpe-store-build` is the first: its tests build Incunabula's store from the committed 0803 snapshot, and
+  only `sync-store`'s adapter reads that file. For a library or a binary as built for use the sentence
+  stands: Cargo gives a dev-dependency to test builds alone, so the read model still has one feed.
+- **The reason of the clause holds.** Such a test constructs `LiveArchiveProjection` and hands the builder
+  what the port serves. It reads through the port and never opens `sync`'s data itself.
+- **What changed** is that a read model's tests need the real snapshot, which the sentence did not foresee.
+  Two other ways to give it to them were weighed and not chosen: keeping those tests in the composition
+  root, which `ARCH-MAP.md` holds to wiring only, and committing a second copy of the snapshot as a
+  fixture of the capability.
+
+Enforced by: static-analysis for CPE until Bazel `visibility`. `.github/scripts/check-cpe-seam.sh`, run by
+`just check`, has a rule for it (rule 4): no manifest under `areas/access/cpe/` names a crate of
+`areas/access/sync/` outside a dev-dependencies table. The rule lets through more than the first point
+names: any crate of `areas/access/sync/`, not the store crate alone, as a dev-dependency of any CPE crate.
+It reads manifests and no source, so what a test does with the adapter is review: a `use` of it in a
+`#[cfg(test)]` module of a library passes as one in a file under `tests/` does, and neither is checked to
+read through the port. Review for any other reading capability.

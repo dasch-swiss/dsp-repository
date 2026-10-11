@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. No binary mounts the host crate yet; the crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. `access-server` mounts the host crate's router at the base; the crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -197,7 +197,10 @@ against them.
 the request's language and appearance preferences, the discovery of project folders, the table of static
 files and the inventory of the projects' assets. No type of another CPE crate is in its `pub` items,
 `cpe-ports`' excepted; a test of the crate holds that. It installs no tracing layer and binds no port: its
-host does.
+host does. A host's tracing layer sees the router as one service, so every response of a route carries
+the route's template in its extensions (`MatchedRoute`, the base in front), and the host names its request
+span by it. `access-server` is that host: it nests the router at the base and activates CPE over
+`sync-store`'s adapter.
 
 `CpeConfig` is read from `cpe.toml` and `CPE_*`: the projects directory (`CPE_PROJECTS_DIR`), the public
 origin (`CPE_PUBLIC_ORIGIN`) and the base (`CPE_BASE`). Reading it cannot fail. A value that cannot be used
@@ -258,11 +261,12 @@ this one.
 
 `just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007, amendment
 of 2026-10-11, DEV-7401). No crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`,
-which `sync-store` implements; no manifest under `areas/access/cpe/` depends on a Mosaic crate;
+which `sync-store` implements, and `cpe-server`, which `access-server` mounts (amendment of 2026-10-12); no manifest under `areas/access/cpe/` depends on a Mosaic crate;
 `cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate; no manifest under
 `areas/access/cpe/` names a crate of `areas/access/sync/` outside a dev-dependencies table (ADR-0008,
 amendment of 2026-10-11); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
-but `cpe-core` and `cpe-ports` (the script's `CPE_EDGES`; ADR-0007, amendment of 2026-10-11, DEV-7465). A
+but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but `cpe-store` (the script's `CPE_EDGES`;
+ADR-0007, amendments of 2026-10-11, DEV-7465, and of 2026-10-12). A
 rename (`package = "…"`) of a CPE, Mosaic or `sync` crate in the workspace root is reported where it is
 declared, whichever crate inherits it. The
 first, second and fourth rules cover a new crate without an edit. A new crate that must stay a leaf has to be

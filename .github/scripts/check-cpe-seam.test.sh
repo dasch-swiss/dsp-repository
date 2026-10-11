@@ -51,7 +51,7 @@ crate() {
   printf '[package]\nname = "%s"\nversion = "0.1.0"\n\n[dependencies]\n' "$2" >"$1/Cargo.toml"
 }
 
-# base_repo: an uncommitted throwaway tree with six CPE crates, two Mosaic
+# base_repo: an uncommitted throwaway tree with seven CPE crates, two Mosaic
 # crates, a DPE crate, sync-store and a workspace root without [package]. It
 # passes the gate as it is. Echoes the path; stage_repo finishes it.
 base_repo() {
@@ -63,6 +63,7 @@ base_repo() {
   crate "$dir/areas/access/cpe/image-viewer" cpe-image-viewer
   crate "$dir/areas/access/cpe/store" cpe-store
   crate "$dir/areas/access/cpe/store-build" cpe-store-build
+  crate "$dir/areas/access/cpe/server" cpe-server
   crate "$dir/modules/mosaic/tiles" mosaic-tiles
   crate "$dir/modules/mosaic/playground" mosaic-playground
   crate "$dir/areas/access/dpe/web" dpe-web
@@ -122,7 +123,7 @@ repo="$(base_repo)"
 stage_repo "$repo"
 gate_in "$repo"
 check "the base fixture passes" 0 "$RC"
-check_msg "the success line counts what it checked" "✓ CPE seam: 10 manifests checked against 6 CPE and 2 Mosaic crates" "$OUT"
+check_msg "the success line counts what it checked" "✓ CPE seam: 11 manifests checked against 7 CPE and 2 Mosaic crates" "$OUT"
 exec_in "$repo"
 check "the executed script passes on the base fixture" 0 "$RC"
 rm -rf "$repo"
@@ -152,6 +153,16 @@ check "rule 1: a DPE crate depending on cpe-image-viewer fails" 1 "$RC"
 
 case_run areas/access/sync/store 'cpe-ports = { path = "../../cpe/ports" }'
 check "rule 1: sync-store depending on cpe-ports passes" 0 "$RC"
+
+# The composition root mounts the host crate and hands it the port's adapter.
+case_run areas/access/server 'cpe-server = { path = "../cpe/server" }
+cpe-ports = { path = "../cpe/ports" }'
+check "rule 1: the composition root depending on cpe-server and cpe-ports passes" 0 "$RC"
+# The store is not an exception: the adapter is sync-store's.
+case_run areas/access/server 'cpe-server = { path = "../cpe/server" }
+cpe-store = { path = "../cpe/store" }'
+check "rule 1: the composition root depending on cpe-store fails" 1 "$RC"
+check_msg "rule 1: the violation names the store" "areas/access/server/Cargo.toml depends on cpe-store (rule 1" "$OUT"
 
 # --- The matcher: every spelling of a dependency, in every table.
 case_run "$DPE" 'cpe-core.workspace = true'
@@ -468,8 +479,21 @@ check_msg "rule 5: the dev-dependency violation names the rule" "$CPE/store-buil
 case_run "$CPE/store-build" 's = { package = "cpe-store", path = "../store" }'
 check "rule 5: a rename of cpe-store in the builder fails" 1 "$RC"
 check_msg "rule 5: the rename violation names the rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 5" "$OUT"
-# A crate that is not in the list is free: the page assembly and the host
-# depend on the store, and the host on the builder.
+# The host crate: every CPE crate but the store, which it reaches through the
+# page assembly.
+case_run "$CPE/server" 'cpe-core = { path = "../core" }
+cpe-ports = { path = "../ports" }
+cpe-store-build = { path = "../store-build" }
+cpe-web = { path = "../web" }
+cpe-components = { path = "../components" }
+cpe-image-viewer = { path = "../image-viewer" }'
+check "rule 5: cpe-server depending on the six crates listed for it passes" 0 "$RC"
+case_run "$CPE/server" 'cpe-web = { path = "../web" }
+cpe-store = { path = "../store" }'
+check "rule 5: cpe-server depending on cpe-store fails" 1 "$RC"
+check_msg "rule 5: the violation names the host crate and the store" "$CPE/server/Cargo.toml depends on cpe-store (rule 5" "$OUT"
+# A crate that is not in the list is free: the page assembly depends on the
+# store.
 case_run "$CPE/web" 'cpe-store = { path = "../store" }
 cpe-store-build = { path = "../store-build" }
 cpe-components = { path = "../components" }'
@@ -594,7 +618,7 @@ printf 'cpe-core = { path = "areas/access/cpe/core" }\n\n[workspace.dependencies
 stage_repo "$repo"
 gate_in "$repo"
 check "a package = key in a root dependency table does not make the root a crate" 0 "$RC"
-check_msg "the root is not counted as a crate" "✓ CPE seam: 10 manifests checked" "$OUT"
+check_msg "the root is not counted as a crate" "✓ CPE seam: 11 manifests checked" "$OUT"
 rm -rf "$repo"
 repo="$(base_repo)"
 printf '\n[workspace.dependencies.foo]\npath = "areas/access/cpe/core"\npackage = "cpe-core"\n' >>"$repo/Cargo.toml"

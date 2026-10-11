@@ -1,4 +1,4 @@
-# bacon config for the dev loops. `serve` is DPE (`just dev` / `just dev-otel`);
+# bacon config for the dev loops. `serve` is the area binary, DPE and CPE (`just dev` / `just dev-otel`);
 # `serve-editor` is the metadata editor (`just dev-editor` / `just dev-editor-otel`).
 
 default_job = "serve"
@@ -14,9 +14,19 @@ background = false
 on_change_strategy = "kill_then_restart"
 # Graceful SIGINT so the server releases its port before restart.
 kill = ["kill", "-s", "INT"]
-# Also watch the composition root, the tiles crate and the `shared-*` crates,
-# so changes in any of them rebuild — none lives under `areas/access/dpe`.
-watch = ["areas/access/dpe", "areas/access/server", "shared", "modules/mosaic/tiles/src"]
+# Also watch the composition root, CPE, `sync`, the tiles crate and the
+# `shared-*` crates, so changes in any of them rebuild — none lives under
+# `areas/access/dpe`.
+watch = [
+  "areas/access/dpe",
+  "areas/access/server",
+  "areas/access/cpe",
+  "areas/access/sync",
+  "shared",
+  "modules/mosaic/tiles/src",
+]
+# CPE is mounted only with a base.
+env = { CPE_BASE = "/cpe" }
 
 [jobs.serve-editor]
 command = ["cargo", "run", "--bin", "editor-server", "--", "serve"]

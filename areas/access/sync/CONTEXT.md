@@ -3,8 +3,9 @@
 The Access Area's `sync` capability: the single writer of the archive projection (ADR-0003, ADR-0008) and
 the first Access-Area capability without a screen (ADR-0007). It exists so far at its minimum, the crate
 `sync-store` in `store/`, which serves CPE's archive projection port from one committed snapshot and one
-committed curation file per known project in `data/`, with no Chischtli, replay or bus; nothing constructs
-it until DEV-7400. ADR-0007's DEV-7399 amendment records why the committed projection is interim-DAO. The
+committed curation file per known project in `data/`, with no Chischtli, replay or bus. `access-server`
+constructs it over the directory `SYNC_DATA_DIR` names (default `areas/access/sync/data`) and hands it to
+CPE's activation. ADR-0007's DEV-7399 amendment records why the committed projection is interim-DAO. The
 port's terms (Archive projection port, Project snapshot, Source property, Archive-shaped fact, Annotation,
 Curation) are in
 [`../cpe/CONTEXT.md`](../cpe/CONTEXT.md), the Access Area's in [`../CONTEXT.md`](../CONTEXT.md), the

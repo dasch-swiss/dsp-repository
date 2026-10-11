@@ -1,6 +1,7 @@
 //! `access-server`, the Access Area's composition root: CLI, config loading,
 //! observability, the OTel layers and the untraced routes. Mounts DPE's
-//! router (`dpe-server`), the one capability that exists today.
+//! router (`dpe-server`) and, under its base, CPE's (`cpe-server`), which it
+//! activates over `sync`'s archive projection (`sync-store`).
 
 use std::process::ExitCode;
 

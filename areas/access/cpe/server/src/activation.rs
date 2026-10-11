@@ -100,7 +100,11 @@ fn load_all(config: &CpeConfig, store_sql: impl Fn(&DiscoveredProject, &str) -> 
         request::OriginConfig::new(config.public_origin.as_deref()),
         &base,
     )
-    .layer(axum::middleware::from_fn(request::resolve_request_prefs));
+    .layer(axum::middleware::from_fn(request::resolve_request_prefs))
+    .layer(axum::middleware::from_fn_with_state(
+        base.clone(),
+        request::report_matched_route,
+    ));
     Activated { router, projects }
 }
 
@@ -273,6 +277,21 @@ mod tests {
         (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
     }
 
+    /// The route template the answer to `uri` reports, if it reports one.
+    async fn matched_route(router: &axum::Router, uri: &str) -> Option<String> {
+        let request = axum::http::Request::builder()
+            .uri(uri)
+            .body(axum::body::Body::empty())
+            .expect("hand-crafted test request is well-formed");
+        let response = tower::ServiceExt::oneshot(router.clone(), request)
+            .await
+            .expect("oneshot against an in-process router never fails");
+        response
+            .extensions()
+            .get::<crate::MatchedRoute>()
+            .map(|route| route.as_str().to_owned())
+    }
+
     #[tokio::test]
     async fn an_activated_project_serves_its_pages_through_a_router_taken_before() {
         let root = projects(&[("things", THINGS)]);
@@ -304,6 +323,16 @@ mod tests {
         assert_eq!(status, StatusCode::NOT_FOUND);
         let (status, _, _) = get_from(&before, "/_static/cpe/tokens.css").await;
         assert_eq!(status, StatusCode::OK);
+        assert_eq!(
+            matched_route(&before, "/things/things/lamp").await.as_deref(),
+            Some("/things/things/{id}")
+        );
+        assert_eq!(
+            matched_route(&before, "/things/things/no-such-thing").await.as_deref(),
+            Some("/things/things/{id}")
+        );
+        assert_eq!(matched_route(&before, "/things/no-such-page").await, None);
+        assert_eq!(matched_route(&before, "/no-such-project/").await, None);
         assert_eq!(
             cpe.projects(),
             vec![ProjectSummary {

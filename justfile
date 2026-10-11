@@ -79,7 +79,7 @@ check-composition-root-deps:
 # A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
 # the workspace still compiles, so only a grep catches the boundary break.
 
-# Verify CPE's dependency seam: only its port is used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate, a sync crate is a dev-dependency only, the store and its builder use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007, ADR-0008)
+# Verify CPE's dependency seam: only its port and its host crate are used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate, a sync crate is a dev-dependency only, the store, its builder and the host crate use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007, ADR-0008)
 check-cpe-seam:
     bash .github/scripts/check-cpe-seam.sh
 
@@ -142,9 +142,9 @@ fix:
 build:
     cargo build --all-targets
 
-# Run server
+# Run server. CPE is mounted only with a base, so it is set here.
 run:
-    cargo run --bin access-server --release -- serve
+    CPE_BASE=/cpe cargo run --bin access-server --release -- serve
 
 # Validate all data files in the default data directory
 validate-data:

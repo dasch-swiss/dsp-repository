@@ -42,7 +42,8 @@
 //! shape, so both are dropped. An annotation target is never a value node, so one that is not a
 //! resource of the file is refused ([`InvalidFact::UnknownTarget`]).
 //!
-//! Nothing constructs the adapter yet; wiring it into `access-server` is DEV-7400.
+//! `access-server` constructs the adapter, over the directory `SYNC_DATA_DIR` names, and hands
+//! it to CPE's activation.
 
 use std::fs;
 use std::path::{Path, PathBuf};

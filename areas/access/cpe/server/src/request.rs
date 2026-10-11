@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use axum::extract::Request;
+use axum::extract::{MatchedPath, Request, State};
 use axum::http::HeaderMap;
 use axum::middleware::Next;
 use axum::response::Response;
@@ -88,6 +88,25 @@ pub(crate) async fn resolve_request_prefs(mut req: Request, next: Next) -> Respo
     req.extensions_mut().insert(appearance);
 
     next.run(req).await
+}
+
+/// Puts the route that matched into the response's extensions, as
+/// [`crate::MatchedRoute`]. The answer for a path that matches no route gets
+/// none.
+pub(crate) async fn report_matched_route(
+    State(base): State<cpe_core::url::Base>,
+    req: Request,
+    next: Next,
+) -> Response {
+    let route = req
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|matched| crate::MatchedRoute(base.request_path(matched.as_str())));
+    let mut response = next.run(req).await;
+    if let Some(route) = route {
+        response.extensions_mut().insert(route);
+    }
+    response
 }
 
 /// Pure extraction helper — testable without building a full `Request`.

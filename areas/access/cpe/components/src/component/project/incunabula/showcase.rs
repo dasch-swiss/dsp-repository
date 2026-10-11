@@ -63,7 +63,7 @@ pub(crate) fn render_registered(
         return html! {};
     };
     let env = Env {
-        links: &LinkResolver::new(ctx.project_id, ctx.link_routes),
+        links: &LinkResolver::new(ctx.urls(), ctx.link_routes),
         chrome: &site.chrome,
         lang: &ctx.lang,
     };
@@ -542,7 +542,7 @@ pub(crate) fn render_edition_cards_registered(
     let (Component::EditionCards { books, imprint, .. }, ComponentData::EditionCards(payload)) = (c, data) else {
         return html! {};
     };
-    let links = LinkResolver::new(ctx.project_id, ctx.link_routes);
+    let links = LinkResolver::new(ctx.urls(), ctx.link_routes);
     render_edition_cards(books, imprint, payload, &links, site, &ctx.lang)
 }
 
@@ -651,7 +651,7 @@ pub(crate) fn render_strip_row_registered(
     let (Component::StripRow { .. }, ComponentData::StripRow(payload)) = (c, data) else {
         return html! {};
     };
-    let links = LinkResolver::new(ctx.project_id, ctx.link_routes);
+    let links = LinkResolver::new(ctx.urls(), ctx.link_routes);
     render_strip_row(payload, &links, &ctx.lang)
 }
 
@@ -803,7 +803,7 @@ mod tests {
 
     fn render_as(layout: CaseLayout, cases: &[ShowcaseCase], payload: &WoodcutCasesPayload, code: &str) -> String {
         let routes = routes();
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         let chrome = chrome();
         let lang = lang(code);
         let env = Env { links: &links, chrome: &chrome, lang: &lang };
@@ -1378,7 +1378,7 @@ mod tests {
     fn a_crop_without_a_book_route_is_not_a_link() {
         let (cases, payload) = e1();
         let routes = HashMap::new();
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         let de = lang("de");
         let env = Env { links: &links, chrome: &[], lang: &de };
         let out = render_woodcut_cases(CaseLayout::Edition, &cases, &payload, &env).into_string();
@@ -1527,7 +1527,7 @@ mod tests {
     fn render_editions(code: &str) -> String {
         let (cards, imprint, payload) = editions();
         let routes = routes();
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         render_edition_cards(&cards, &imprint, &payload, &links, &narrenschiff_site(), &lang(code)).into_string()
     }
 
@@ -1574,7 +1574,7 @@ mod tests {
         let (cards, imprint, mut payload) = editions();
         payload.books.retain(|b| b.resource.id != "narrenschiff-dt");
         let routes = routes();
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         let out =
             render_edition_cards(&cards, &imprint, &payload, &links, &narrenschiff_site(), &lang("de")).into_string();
         assert_eq!(out.matches("<li class=\"edition\">").count(), 1, "{out}");
@@ -1584,7 +1584,7 @@ mod tests {
     fn an_edition_card_without_a_book_route_is_not_a_link_and_offers_no_read() {
         let (cards, imprint, payload) = editions();
         let routes = HashMap::new();
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         let out =
             render_edition_cards(&cards, &imprint, &payload, &links, &narrenschiff_site(), &lang("de")).into_string();
         assert!(!out.contains("<a "), "{out}");
@@ -1608,7 +1608,7 @@ mod tests {
 
     fn render_strips(code: &str) -> String {
         let routes = HashMap::from([("BorderStrip".to_owned(), "/strips/:id".to_owned())]);
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         render_strip_row(&strips(), &links, &lang(code)).into_string()
     }
 

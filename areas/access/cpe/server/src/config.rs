@@ -30,6 +30,14 @@ pub struct CpeConfig {
     /// logs once that it is derived.
     pub public_origin: Option<String>,
 
+    /// The path CPE is mounted at (`CPE_BASE`): empty for a mount at the root
+    /// of the host, else a path that starts with `/` and does not end with
+    /// one, e.g. `/cpe`. Every link, redirect and cookie CPE writes starts
+    /// with it, and a host mounts CPE's router at [`crate::Cpe::base`], so the
+    /// two cannot differ.
+    #[serde(deserialize_with = "text_from_scalar")]
+    pub base: String,
+
     /// Why the files and variables could not be read, when [`CpeConfig::load`]
     /// fell back to the defaults. Never read from a file or a variable.
     #[serde(skip)]
@@ -41,6 +49,7 @@ impl Default for CpeConfig {
         Self {
             projects_dir: PathBuf::from("areas/access/cpe/projects"),
             public_origin: None,
+            base: String::new(),
             load_error: None,
         }
     }
@@ -53,7 +62,7 @@ impl CpeConfig {
         let figment = Figment::new()
             .merge(Serialized::defaults(CpeConfig::default()))
             .merge(Toml::file("cpe.toml"))
-            .merge(Env::prefixed("CPE_").only(&["projects_dir", "public_origin"]));
+            .merge(Env::prefixed("CPE_").only(&["projects_dir", "public_origin", "base"]));
         match figment.extract::<Self>() {
             Ok(mut config) => {
                 config.public_origin = config.public_origin.filter(|origin| !origin.trim().is_empty());
@@ -78,27 +87,46 @@ impl CpeConfig {
         if let Some(error) = &self.load_error {
             return Some(error.clone());
         }
+        if let Err(reason) = self.parsed_base() {
+            return Some(format!("CPE_BASE {reason}"));
+        }
         let origin = self.public_origin.as_deref().filter(|origin| !origin.trim().is_empty())?;
         validate_origin("CPE_PUBLIC_ORIGIN", origin).err()
+    }
+
+    /// The base CPE is mounted at. A value that is refused gives the root:
+    /// CPE then answers 503 wherever its host mounts it.
+    pub(crate) fn base_or_root(&self) -> cpe_core::url::Base {
+        self.parsed_base().unwrap_or_default()
+    }
+
+    fn parsed_base(&self) -> Result<cpe_core::url::Base, cpe_core::url::BaseError> {
+        cpe_core::url::Base::parse(&self.base)
     }
 }
 
 /// figment reads an environment value that looks like a number or a boolean as one, and a folder
 /// may be named `2024`.
 fn path_from_scalar<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<PathBuf, D::Error> {
+    text_from_scalar(deserializer).map(PathBuf::from)
+}
+
+/// The value as the text it was written as. A base that figment read as a number is then refused
+/// by the base's own rule, with a reason that names `CPE_BASE`.
+fn text_from_scalar<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum Scalar {
-        Text(PathBuf),
+        Text(String),
         Unsigned(u64),
         Signed(i64),
         Bool(bool),
     }
     Ok(match Scalar::deserialize(deserializer)? {
-        Scalar::Text(path) => path,
-        Scalar::Unsigned(number) => PathBuf::from(number.to_string()),
-        Scalar::Signed(number) => PathBuf::from(number.to_string()),
-        Scalar::Bool(flag) => PathBuf::from(flag.to_string()),
+        Scalar::Text(text) => text,
+        Scalar::Unsigned(number) => number.to_string(),
+        Scalar::Signed(number) => number.to_string(),
+        Scalar::Bool(flag) => flag.to_string(),
     })
 }
 
@@ -155,7 +183,70 @@ mod tests {
         let config = CpeConfig::default();
         assert_eq!(config.projects_dir, PathBuf::from("areas/access/cpe/projects"));
         assert!(config.public_origin.is_none());
+        assert_eq!(config.base, "", "CPE is mounted at the root unless a base is configured");
+        assert_eq!(config.base_or_root(), cpe_core::url::ROOT);
         assert!(config.refusal().is_none());
+    }
+
+    fn with_base(base: &str) -> CpeConfig {
+        CpeConfig { base: base.to_owned(), ..CpeConfig::default() }
+    }
+
+    #[test]
+    fn a_base_is_read_and_accepted() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("CPE_BASE", "/cpe");
+            let config = CpeConfig::load();
+            assert_eq!(config.base, "/cpe");
+            assert!(config.refusal().is_none(), "{:?}", config.refusal());
+            assert_eq!(config.base_or_root().as_str(), "/cpe");
+            Ok(())
+        });
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("CPE_BASE", "");
+            let config = CpeConfig::load();
+            assert!(config.refusal().is_none(), "{:?}", config.refusal());
+            assert_eq!(config.base_or_root(), cpe_core::url::ROOT);
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn a_base_without_a_leading_slash_or_with_a_trailing_one_is_refused() {
+        for bad in [
+            "cpe",
+            "cpe/",
+            "/cpe/",
+            "/",
+            "//evil.example",
+            "/cpe/../x",
+            "https://evil.example",
+            "/c pe",
+        ] {
+            let config = with_base(bad);
+            let reason = config.refusal().unwrap_or_else(|| panic!("{bad:?} should be refused"));
+            assert!(reason.contains("CPE_BASE"), "the reason names the variable: {reason}");
+            assert_eq!(
+                config.base_or_root(),
+                cpe_core::url::ROOT,
+                "{bad:?}: a refused base is never written"
+            );
+        }
+    }
+
+    /// figment reads `2024` as a number. It loads, and the base's own rule refuses it.
+    #[test]
+    fn a_refused_base_loads_and_is_refused_with_the_variables_name() {
+        for bad in ["cpe/", "2024", "true"] {
+            figment::Jail::expect_with(|jail| {
+                jail.set_env("CPE_BASE", bad);
+                let config = CpeConfig::load();
+                assert_eq!(config.base, bad);
+                let reason = config.refusal().expect("the base is refused");
+                assert!(reason.contains("CPE_BASE"), "{reason}");
+                Ok(())
+            });
+        }
     }
 
     #[test]

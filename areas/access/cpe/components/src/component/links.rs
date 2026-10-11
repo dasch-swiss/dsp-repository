@@ -10,6 +10,7 @@
 use std::collections::HashMap;
 
 use cpe_core::ir::AnnotationPartner;
+use cpe_core::url::ProjectUrls;
 use cpe_core::util::percent_encode_component;
 
 use crate::component::dom::entry_id;
@@ -17,12 +18,12 @@ use crate::component::pager::override_query_param;
 
 // ── LinkResolver ──────────────────────────────────────────────────────────────
 
-/// Resolves a `target_id` + `target_class` pair into a project-relative href.
+/// Resolves a `target_id` + `target_class` pair into the href of that resource's page.
 ///
 /// Built once per request from the project's `class_routes` map (class → route
 /// template like `"/characters/:id"`). `href` substitutes the single `:param`
-/// in the route template with the (URL-path-encoded) `target_id` and prefixes
-/// `/{project_id}`.
+/// in the route template with the (URL-path-encoded) `target_id` and builds
+/// the page's URL from it (`ProjectUrls::page`).
 ///
 /// Returns `None` when `target_class` is absent or has no binding in the map —
 /// the caller falls back to the plain-text `span.v-text` label in that case.
@@ -31,7 +32,7 @@ use crate::component::pager::override_query_param;
 /// page assembly and is never part of the public engine surface.
 #[doc(hidden)]
 pub struct LinkResolver<'a> {
-    project_id: &'a str,
+    project: ProjectUrls<'a>,
     class_routes: &'a HashMap<String, String>,
 }
 
@@ -39,8 +40,8 @@ impl<'a> LinkResolver<'a> {
     /// Create a new resolver. Both references must outlive the resolver (they
     /// borrow from the project which outlives the request).
     #[doc(hidden)]
-    pub fn new(project_id: &'a str, class_routes: &'a HashMap<String, String>) -> Self {
-        Self { project_id, class_routes }
+    pub fn new(project: ProjectUrls<'a>, class_routes: &'a HashMap<String, String>) -> Self {
+        Self { project, class_routes }
     }
 
     /// Build the href for an internal link, or `None` when the class has no
@@ -49,7 +50,7 @@ impl<'a> LinkResolver<'a> {
     /// - `target_id` empty → `None` (avoids emitting a trailing-slash URL).
     /// - `target_class: None` → `None` (no class known, cannot route).
     /// - class absent from `class_routes` → `None` (graceful degradation).
-    /// - class present → `/{project_id}<route_with_id_substituted>`.
+    /// - class present → `<base>/<project id><route_with_id_substituted>`.
     ///
     /// Boot invariants: `project_id` is validated `^[a-z0-9][a-z0-9-]*$` and
     /// the route template is boot-validated to contain exactly one `:param`
@@ -63,7 +64,7 @@ impl<'a> LinkResolver<'a> {
         let class = target_class?;
         let template = self.class_routes.get(class)?;
         let path = substitute_route_param(template, target_id);
-        Some(format!("/{}{}", self.project_id, path))
+        Some(self.project.page(&path))
     }
 
     /// Build the href for a compound MEMBER shown inside its parent's reader

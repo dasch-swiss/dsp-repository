@@ -19,8 +19,13 @@ use cpe_core::theme::Appearance;
 pub struct RenderContext<'a> {
     pub lang: Lang,
     pub project_id: &'a str,
-    /// URI path used to build language-switcher and appearance-toggle hrefs.
-    /// Excludes the query string — both switchers reconstruct the query via
+    /// The path CPE is mounted at. Every URL a renderer writes starts with
+    /// it: build one with [`RenderContext::urls`], never from `project_id`.
+    pub base: &'a cpe_core::url::Base,
+    /// The request's public path, the base included (the reader compares it
+    /// with `location.pathname`). The language-switcher and appearance-toggle
+    /// hrefs are built from it. Excludes the query string — both switchers
+    /// reconstruct the query via
     /// `resource_list::override_query_param(current_query, …)` rather than
     /// dropping it, so the current request's other params (facets, sort, …)
     /// survive the switch.
@@ -148,6 +153,13 @@ pub struct RenderContext<'a> {
     /// (`PageScope::Page`) whose record declares such a group; empty
     /// otherwise, which renders no row.
     pub resource_links: &'a [cpe_core::ir::ResourceLink],
+}
+
+impl<'a> RenderContext<'a> {
+    /// The URLs of this request's project, under the base.
+    pub fn urls(&self) -> cpe_core::url::ProjectUrls<'a> {
+        self.base.project(self.project_id)
+    }
 }
 
 /// Bare-filename → UTF-8 content store for a project's narrative files.

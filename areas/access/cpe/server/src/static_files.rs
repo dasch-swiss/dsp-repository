@@ -11,7 +11,7 @@ use axum::response::{IntoResponse, Response};
 
 use crate::router::content_type;
 
-/// `(path under /_static/, bytes)`.
+/// `(path under a static directory, bytes)`.
 static FILES: &[(&str, &[u8])] = &[
     ("cpe/editorial.css", include_bytes!("../../components/style/editorial.css")),
     ("cpe/grid.css", include_bytes!("../../components/style/grid.css")),
@@ -32,7 +32,8 @@ static FILES: &[(&str, &[u8])] = &[
     ("datastar.js", include_bytes!("../../public/vendor/datastar.js")),
 ];
 
-/// Answer `/_static/{*path}`: the file of that exact name, or 404.
+/// Answer `{*path}` of a static directory (`cpe_core::url::StaticDir`): the file of that exact
+/// name, or 404.
 pub(crate) fn serve(path: &str) -> Response {
     match FILES.iter().find(|(name, _)| *name == path) {
         Some((name, bytes)) => (
@@ -75,6 +76,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         )
         .oneshot(
             Request::builder()

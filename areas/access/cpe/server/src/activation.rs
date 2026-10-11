@@ -15,7 +15,7 @@ use crate::discovery::{self, DiscoveredProject};
 use crate::{assets, request, router, CpeConfig, ProjectSummary};
 
 /// What `cpe-core`'s `ReservedProjectId` check is given. The id rule already refuses every id that
-/// starts with `_`, and that is what keeps a project off `/_static` and `/_assets`.
+/// starts with `_`, and that is what keeps a project off CPE's own `_static` directory.
 const RESERVED_IDS: &[&str] = &["_static"];
 
 /// CPE once its projects are loaded: the router that serves them and the
@@ -84,12 +84,13 @@ fn load_all(config: &CpeConfig, store_sql: impl Fn(&DiscoveredProject, &str) -> 
         "CPE's projects are loaded"
     );
 
+    let base = config.base_or_root();
     let projects = loaded
         .iter()
         .map(|project| ProjectSummary {
             id: project.id().to_owned(),
             title: project.title(&cpe_core::lang::resolve(&[], &project.config().site)).to_owned(),
-            url: format!("/{}/", project.id()),
+            url: base.project(project.id()).home(),
         })
         .collect();
     let router = router::build(
@@ -97,6 +98,7 @@ fn load_all(config: &CpeConfig, store_sql: impl Fn(&DiscoveredProject, &str) -> 
         &unavailable,
         &assets::AssetInventory::of(&served),
         request::OriginConfig::new(config.public_origin.as_deref()),
+        &base,
     )
     .layer(axum::middleware::from_fn(request::resolve_request_prefs));
     Activated { router, projects }
@@ -189,6 +191,7 @@ fn with_routes_that_register(project: Project) -> Result<Arc<Project>, String> {
             &[],
             &assets::AssetInventory::default(),
             request::OriginConfig::new(None),
+            &cpe_core::url::ROOT,
         );
     }))
     .map_err(|_| "two of its routes are the same to the router".to_owned())?;

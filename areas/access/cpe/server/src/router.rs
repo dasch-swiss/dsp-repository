@@ -3,6 +3,12 @@
 //!
 //! ## Routing design
 //!
+//! The routes are the paths below the mount: a host nests this router at the
+//! base, and a handler sees the request path without it. What a handler
+//! writes into its answer (a page's links, a `Location`, a cookie's `Path`)
+//! is built from the base (`cpe_core::url`), and no handler writes the request
+//! path there in any other way.
+//!
 //! Every page is registered under its full path (`/<project id><route>`), so
 //! an unknown path under a project matches no route and reaches the fallback.
 //! [`build`] always sets that fallback. It renders the project's not-found
@@ -30,6 +36,7 @@ use axum::response::{IntoResponse, Redirect, Response, Sse};
 use axum::routing::get;
 use axum::Router;
 use cpe_core::theme::Appearance;
+use cpe_core::url::{Base, ROOT};
 use datastar::prelude::{ExecuteScript, PatchElements, PatchSignals};
 use futures_util::stream;
 
@@ -90,56 +97,58 @@ fn status_code(status: cpe_core::view_data::PageStatus) -> StatusCode {
 /// `assets` is every loaded project's asset inventory. Each handler closure
 /// gets a clone of `origin_cfg` and resolves its own request's public origin
 /// from it, so one process can answer under several hosts.
+///
+/// `base` is where a host mounts the router. No route holds it: the route
+/// paths are the layout of `cpe_core::url` at the root, and `base` goes into
+/// what the handlers answer.
 pub(crate) fn build(
     projects: &[Arc<cpe_web::project::Project>],
     unavailable: &[String],
     assets: &AssetInventory,
     origin_cfg: crate::request::OriginConfig,
+    base: &Base,
 ) -> Router {
-    let assets = assets.clone();
-    let mut app = Router::new()
-        .route(
-            &axum_route("/_static/*path"),
-            get(|Path(path): Path<String>| std::future::ready(static_files::serve(&path))),
-        )
-        // A project's own files (a cover image). Reserved under `/_assets`,
-        // beside `/_static`: a project id never starts with `_`
-        // (`InvalidProjectId`), so neither can collide with a project's pages.
-        .route(
-            &axum_route("/_assets/:project_id/*path"),
-            get(move |Path((project_id, path)): Path<(String, String)>| {
-                std::future::ready(assets.serve(&project_id, &path))
-            }),
-        )
-        // `cpe-image-viewer` asset route — every media-bearing
-        // `resource-detail` page embeds `<image-viewer>` via the record
-        // viewer (`render_media_viewer`); this serves the crate's module,
-        // OpenSeadragon, and control sprites under `ASSET_PREFIX`.
-        .route(
-            &axum_route(&format!("{}/*path", cpe_image_viewer::ASSET_PREFIX)),
-            get(serve_viewer_asset),
-        );
+    // The shared static files for a page without a project (CPE's own
+    // not-found). The viewer's files sit in a directory of the same table, as
+    // `document_head` asks for them.
+    let mut app = static_routes(Router::new(), &ROOT.static_dir());
     for project in projects {
+        let routes = ROOT.project(project.id());
+        // The same files once more under the project, where its pages load
+        // them from, and the project's own files (a cover image). Both
+        // segments start with `_`, which the first segment of a page's route
+        // never does (`DiagnosticKind::ReservedRoute`), so neither can
+        // collide with a page.
+        app = static_routes(app, &routes.static_dir());
+        let project_assets = assets.clone();
+        let project_id = project.id().to_owned();
+        app = app.route(
+            &axum_route(&routes.asset("*path")),
+            get(move |Path(path): Path<String>| std::future::ready(project_assets.serve(&project_id, &path))),
+        );
         for (idx, page) in project.config().pages.iter().enumerate() {
             // Build the full path for this page.
+            let home = routes.home();
             let p = if page.route == "/" {
-                format!("/{}", project.id())
+                home.trim_end_matches('/').to_owned()
             } else {
-                format!("/{}{}", project.id(), page.route)
+                routes.page(&page.route)
             };
 
             if page.params.is_empty() {
                 // Static page: no path parameters — use the simple handler.
-                app = app.route(&axum_route(&p), get(make_handler(Arc::clone(project), idx, origin_cfg.clone())));
+                app = app.route(
+                    &axum_route(&p),
+                    get(make_handler(Arc::clone(project), idx, origin_cfg.clone(), base.clone())),
+                );
 
                 // For the root page, also register the trailing-slash form.
                 // axum 0.8 does not automatically redirect or match `/<id>/`
                 // when only `/<id>` is registered, so both must be explicit.
                 if page.route == "/" {
-                    let p_slash = format!("/{}/", project.id());
                     app = app.route(
-                        &axum_route(&p_slash),
-                        get(make_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        &axum_route(&home),
+                        get(make_handler(Arc::clone(project), idx, origin_cfg.clone(), base.clone())),
                     );
                 }
 
@@ -162,7 +171,12 @@ pub(crate) fn build(
                         format!("{}/{}", p, cpe_components::component::facet_panel::FACET_FRAGMENT_SEGMENT);
                     app = app.route(
                         &axum_route(&facets_path),
-                        get(make_facet_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_facet_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
 
@@ -180,7 +194,12 @@ pub(crate) fn build(
                         format!("{}/{}", p, cpe_components::component::resource_list::SORT_FRAGMENT_SEGMENT);
                     app = app.route(
                         &axum_route(&sort_path),
-                        get(make_sort_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_sort_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
 
@@ -200,7 +219,12 @@ pub(crate) fn build(
                         format!("{}/{}", p, cpe_components::component::search_bar::SEARCH_FRAGMENT_SEGMENT);
                     app = app.route(
                         &axum_route(&search_path),
-                        get(make_search_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_search_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
 
@@ -227,7 +251,12 @@ pub(crate) fn build(
                     );
                     app = app.route(
                         &axum_route(&compound_path),
-                        get(make_compound_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_compound_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
             } else {
@@ -236,7 +265,12 @@ pub(crate) fn build(
                 // registering. The config/IR are not changed.
                 app = app.route(
                     &axum_route(&p),
-                    get(make_parameterized_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                    get(make_parameterized_handler(
+                        Arc::clone(project),
+                        idx,
+                        origin_cfg.clone(),
+                        base.clone(),
+                    )),
                 );
 
                 // No record-viewer fragment route here either (see the note in
@@ -254,7 +288,12 @@ pub(crate) fn build(
                         format!("{}/{}", p, cpe_components::component::facet_panel::FACET_FRAGMENT_SEGMENT);
                     app = app.route(
                         &axum_route(&facets_path),
-                        get(make_facet_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_facet_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
 
@@ -270,7 +309,12 @@ pub(crate) fn build(
                         format!("{}/{}", p, cpe_components::component::resource_list::SORT_FRAGMENT_SEGMENT);
                     app = app.route(
                         &axum_route(&sort_path),
-                        get(make_sort_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_sort_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
 
@@ -284,7 +328,12 @@ pub(crate) fn build(
                         format!("{}/{}", p, cpe_components::component::search_bar::SEARCH_FRAGMENT_SEGMENT);
                     app = app.route(
                         &axum_route(&search_path),
-                        get(make_search_fragment_handler(Arc::clone(project), idx, origin_cfg.clone())),
+                        get(make_search_fragment_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                        )),
                     );
                 }
 
@@ -314,6 +363,7 @@ pub(crate) fn build(
                             Arc::clone(project),
                             idx,
                             origin_cfg.clone(),
+                            base.clone(),
                         )),
                     );
                 }
@@ -323,7 +373,22 @@ pub(crate) fn build(
 
     // A router without a fallback of its own inherits the outer router's when
     // it is nested, which would hand CPE's unknown paths to another capability.
-    app.fallback(fallback_handler(Arc::new(projects.to_vec()), unavailable.into(), origin_cfg))
+    app.fallback(fallback_handler(
+        Arc::new(projects.to_vec()),
+        unavailable.into(),
+        origin_cfg,
+        base.clone(),
+    ))
+}
+
+/// Serve the static table, and the viewer's files in its `image-viewer`
+/// directory, from `dir`.
+fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
+    app.route(
+        &axum_route(&dir.file("*path")),
+        get(|Path(path): Path<String>| std::future::ready(static_files::serve(&path))),
+    )
+    .route(&axum_route(&dir.file("image-viewer/*path")), get(serve_viewer_asset))
 }
 
 /// Router-wide fallback for any path that matched no route registered above.
@@ -350,7 +415,7 @@ pub(crate) fn build(
 ///
 /// **Security-load-bearing: this handler performs NO redirect and sets NO
 /// cookie.** It must NEVER call `override_redirect` or
-/// `redirect_without_keys` — both echo `uri.path()` into a `Location` header, which under a
+/// `redirect_without_keys` — both echo the request path into a `Location` header, which under a
 /// catch-all fallback is an open redirect via any `//attacker.example/...`-shaped path
 /// (browsers treat a scheme-relative `Location` as a redirect to that host).
 /// It renders the body directly and never returns early with anything but
@@ -358,8 +423,8 @@ pub(crate) fn build(
 ///
 /// **`current_path` for the chrome is pinned**, never the unmatched request
 /// path, and no query string is carried over: the project's 404 passes
-/// `/<project>/` (project home) with `current_query: None`, and CPE's own
-/// takes no path at all. The failed path therefore appears nowhere in the
+/// the project's home (`ProjectUrls::home`) with `current_query: None`, and
+/// CPE's own takes no path at all. The failed path therefore appears nowhere in the
 /// response — not in the visible copy, not in the lang-switcher or
 /// appearance-toggle hrefs `shell_header` builds from
 /// `current_path`/`current_query` either. Consequence: the language switcher
@@ -379,6 +444,7 @@ fn fallback_handler(
     projects: Arc<Vec<Arc<cpe_web::project::Project>>>,
     unavailable: Arc<[String]>,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
@@ -426,8 +492,9 @@ fn fallback_handler(
                 // The raw first segment matched a loaded project id.
                 let site = &project.config().site;
                 let lang = cpe_core::lang::resolve(&requested.prefs, site);
-                let home_path = format!("/{}/", project.id());
+                let home_path = base.project(project.id()).home();
                 let ctx = cpe_components::component::context::RenderContext {
+                    base: &base,
                     lang,
                     project_id: project.id(),
                     current_path: &home_path,
@@ -457,7 +524,7 @@ fn fallback_handler(
             None => {
                 // No loaded project id matches the raw first segment.
                 let lang = cpe_core::lang::resolve_builtin(&requested.prefs);
-                cpe_web::page::render_not_found_site(&lang, appearance)
+                cpe_web::page::render_not_found_site(&base, &lang, appearance)
             }
         };
 
@@ -557,7 +624,7 @@ fn canonical_page_query(query: Option<&str>, page: u32) -> String {
 /// `ResourceListPage`. The one extra count+hydrate (and the page's side
 /// lookups) on an out-of-range request is the accepted cost of that order.
 /// `Location` is always a relative `path?query`, never built from
-/// `Host`/origin.
+/// `Host`/origin. `path` is the request's public path, the base included.
 fn canonical_page_redirect(
     path: &str,
     query: Option<&str>,
@@ -747,11 +814,14 @@ impl cpe_core::view_data::PageParams for RequestParams<'_> {
 /// The cookie value is always the resolved language code (validated before
 /// this call), never the raw query-string value. This prevents cookie
 /// poisoning with unvalidated input.
-fn attach_lang_cookie(resp: &mut Response, requested: &RequestedLang, cookie_value: &str) {
+///
+/// Its `Path` is the base (`Base::cookie_path`), so the cookie reaches every
+/// project of CPE and nothing else on the host.
+fn attach_lang_cookie(resp: &mut Response, requested: &RequestedLang, cookie_value: &str, base: &Base) {
     if requested.from_query {
-        let cookie = format!("lang={cookie_value}; Path=/; SameSite=Lax");
+        let cookie = format!("lang={cookie_value}; Path={}; SameSite=Lax", base.cookie_path());
         let hv = HeaderValue::from_str(&cookie)
-            .expect("Set-Cookie value built from a validated language code has no control chars");
+            .expect("Set-Cookie value built from a validated language code and base has no control chars");
         resp.headers_mut().insert(header::SET_COOKIE, hv);
     }
 }
@@ -764,17 +834,19 @@ fn attach_lang_cookie(resp: &mut Response, requested: &RequestedLang, cookie_val
 ///   `appearance=light` value to persist.
 /// - `None` (unknown/unparseable value) → no cookie at all.
 ///
-/// The cookie value is a fixed literal, never the raw query string.
-fn attach_appearance_cookie(resp: &mut Response, requested: &RequestedAppearance) {
+/// The cookie value is a fixed literal, never the raw query string. Its
+/// `Path` is the base, as the language cookie's.
+fn attach_appearance_cookie(resp: &mut Response, requested: &RequestedAppearance, base: &Base) {
     if requested.from_query {
+        let path = base.cookie_path();
         let cookie = match requested.value {
-            Some(Appearance::Dark) => "appearance=dark; Path=/; SameSite=Lax",
+            Some(Appearance::Dark) => format!("appearance=dark; Path={path}; SameSite=Lax"),
             // Light is the default; clear any persisted dark choice.
-            Some(Appearance::Light) => "appearance=; Path=/; Max-Age=0; SameSite=Lax",
+            Some(Appearance::Light) => format!("appearance=; Path={path}; Max-Age=0; SameSite=Lax"),
             None => return,
         };
-        // Safety: the cookie string is a fixed literal with no control chars.
-        let hv = HeaderValue::from_str(cookie).expect("Set-Cookie literal for appearance has no control chars");
+        let hv = HeaderValue::from_str(&cookie)
+            .expect("Set-Cookie for appearance has a validated base and no control chars");
         // Append (not insert) so a lang cookie is not displaced.
         resp.headers_mut().append(header::SET_COOKIE, hv);
     }
@@ -790,10 +862,11 @@ const STRIPPED_QUERY_KEYS: &[&str] = &["appearance", "accent", "background", "ty
 /// If the query carries any of `keys` (bare or `key=value`), return a 303 to
 /// the SAME path with every such pair dropped and the rest kept in order, and
 /// attach the appearance cookie (a no-op unless `?appearance=` parsed).
-/// Returns `None` when no pair matches. The `Location` is `uri.path()`, so a
-/// caller must be a matched route, never the catch-all fallback (whose path
-/// may be `//host/…`).
-fn redirect_without_keys(uri: &Uri, keys: &[&str], appearance: &RequestedAppearance) -> Option<Response> {
+/// Returns `None` when no pair matches. The `Location` is the base and
+/// `uri.path()`, so a caller must be a matched route, never the catch-all
+/// fallback (whose path may be `//host/…`, which at a root mount would be
+/// written as it is).
+fn redirect_without_keys(uri: &Uri, keys: &[&str], appearance: &RequestedAppearance, base: &Base) -> Option<Response> {
     let pairs: Vec<&str> = uri.query().unwrap_or("").split('&').filter(|kv| !kv.is_empty()).collect();
     let kept: Vec<&str> = pairs
         .iter()
@@ -803,23 +876,23 @@ fn redirect_without_keys(uri: &Uri, keys: &[&str], appearance: &RequestedAppeara
     if kept.len() == pairs.len() {
         return None;
     }
-    let path = uri.path();
+    let path = base.request_path(uri.path());
     let location = if kept.is_empty() {
-        path.to_owned()
+        path
     } else {
         format!("{path}?{}", kept.join("&"))
     };
     // Redirect::to yields 303 See Other (a GET on the clean URL).
     let mut resp = Redirect::to(&location).into_response();
-    attach_appearance_cookie(&mut resp, appearance);
+    attach_appearance_cookie(&mut resp, appearance, base);
     Some(resp)
 }
 
 /// Project pages: any [`STRIPPED_QUERY_KEYS`] key → 303 to the clean URL,
 /// setting only the appearance cookie. A guard-return at the top of each
 /// project handler, before any rendering.
-fn override_redirect(uri: &Uri, appearance: &RequestedAppearance) -> Option<Response> {
-    redirect_without_keys(uri, STRIPPED_QUERY_KEYS, appearance)
+fn override_redirect(uri: &Uri, appearance: &RequestedAppearance, base: &Base) -> Option<Response> {
+    redirect_without_keys(uri, STRIPPED_QUERY_KEYS, appearance, base)
 }
 
 /// Create a handler closure for a specific project page.
@@ -838,10 +911,11 @@ fn make_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
-        let path = req.uri().path().to_owned();
+        let path = base.request_path(req.uri().path());
         let requested = req
             .extensions()
             .get::<RequestedLang>()
@@ -865,7 +939,7 @@ fn make_handler(
         // `?appearance=` or a retired knob key: 303 to the clean URL (setting
         // only the appearance cookie). Guard-return before rendering, so the
         // page re-renders from the cookie on the redirected request.
-        if let Some(redirect) = override_redirect(req.uri(), &requested_appearance) {
+        if let Some(redirect) = override_redirect(req.uri(), &requested_appearance, &base) {
             return std::future::ready(redirect);
         }
 
@@ -899,6 +973,7 @@ fn make_handler(
             return std::future::ready(redirect);
         }
         let ctx = cpe_components::component::context::RenderContext {
+            base: &base,
             lang,
             project_id: project.id(),
             current_path: &path,
@@ -930,7 +1005,7 @@ fn make_handler(
         // Overrides are never `from_query` here (that path 303-redirects above),
         // so only the lang cookie is set on a rendered response.
         let mut resp = (http_status, markup).into_response();
-        attach_lang_cookie(&mut resp, &requested, &cookie_value);
+        attach_lang_cookie(&mut resp, &requested, &cookie_value, &base);
 
         std::future::ready(resp)
     }
@@ -949,10 +1024,11 @@ fn make_parameterized_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Path<HashMap<String, String>>, Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |Path(path_params): Path<HashMap<String, String>>, req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
-        let path = req.uri().path().to_owned();
+        let path = base.request_path(req.uri().path());
         let requested = req
             .extensions()
             .get::<RequestedLang>()
@@ -978,7 +1054,7 @@ fn make_parameterized_handler(
         let route_params: Vec<(String, String)> = path_params.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
 
         // Any stripped key → 303 to the clean URL (guard-return).
-        if let Some(redirect) = override_redirect(req.uri(), &requested_appearance) {
+        if let Some(redirect) = override_redirect(req.uri(), &requested_appearance, &base) {
             return std::future::ready(redirect);
         }
 
@@ -1008,6 +1084,7 @@ fn make_parameterized_handler(
             return std::future::ready(redirect);
         }
         let ctx = cpe_components::component::context::RenderContext {
+            base: &base,
             lang,
             project_id: project.id(),
             current_path: &path,
@@ -1038,7 +1115,7 @@ fn make_parameterized_handler(
 
         // Overrides are never `from_query` here (that path 303-redirects above).
         let mut resp = (http_status, markup).into_response();
-        attach_lang_cookie(&mut resp, &requested, &cookie_value);
+        attach_lang_cookie(&mut resp, &requested, &cookie_value, &base);
 
         std::future::ready(resp)
     }
@@ -1079,8 +1156,7 @@ fn strip_datastar_marker(raw_query: Option<&str>) -> Option<String> {
 /// the suffix means a caller passed the wrong segment: a debug build panics on it, and a release
 /// build returns `full_path` unchanged.
 fn strip_fragment_suffix<'a>(full_path: &'a str, segment: &str) -> &'a str {
-    let suffix = format!("/{segment}");
-    let page = full_path.strip_suffix(suffix.as_str());
+    let page = full_path.strip_suffix(segment).and_then(|page| page.strip_suffix('/'));
     debug_assert!(
         page.is_some(),
         "{full_path:?} does not end with the fragment segment /{segment}"
@@ -1091,26 +1167,24 @@ fn strip_fragment_suffix<'a>(full_path: &'a str, segment: &str) -> &'a str {
 /// Build the "throwaway" [`cpe_components::component::context::RenderContext`] the crumb-patch
 /// helper below needs — one shared by all three fragment handlers
 /// (`_facets`/`_sort`/`_search`). A
-/// crumb-line re-render only ever reads `lang`/`project_id`/`current_path`/
+/// crumb-line re-render only ever reads `base`/`lang`/`project_id`/`current_path`/
 /// `current_query`/`link_routes`/`media_properties`/
 /// `class_list_routes`/`public_origin` off the context — every resource/
 /// media/facet-selection field is irrelevant to composing a crumb line, so
 /// this helper hardcodes them to their empty/default values rather than
 /// making every call site plumb a dozen fields it will never use.
 fn crumb_render_ctx<'a>(
-    project: &'a cpe_web::project::Project,
-    current_path: &'a str,
-    current_query: Option<&'a str>,
-    lang: &cpe_core::lang::Lang,
-    public_origin: &'a str,
+    req: &CrumbPatchRequest<'a>,
     empty_compound_parents: &'a HashMap<String, cpe_core::ir::Resource>,
     empty_media_thumbs: &'a HashMap<String, cpe_core::ir::MediaThumb>,
 ) -> cpe_components::component::context::RenderContext<'a> {
+    let project = req.project;
     cpe_components::component::context::RenderContext {
-        lang: lang.clone(),
+        base: req.base,
+        lang: req.lang.clone(),
         project_id: project.id(),
-        current_path,
-        current_query,
+        current_path: req.current_path,
+        current_query: req.current_query,
         route_params: &[],
         appearance: cpe_core::theme::Appearance::default(),
         selected_image: 0,
@@ -1122,7 +1196,7 @@ fn crumb_render_ctx<'a>(
         compound_members: &[],
         compound_parents: empty_compound_parents,
         class_list_routes: project.class_list_routes(),
-        public_origin,
+        public_origin: req.public_origin,
         incoming_links: None,
         resource_links: &[],
     }
@@ -1139,6 +1213,7 @@ struct CrumbPatchRequest<'a> {
     current_path: &'a str,
     current_query: Option<&'a str>,
     public_origin: &'a str,
+    base: &'a Base,
 }
 
 /// Build the crumb-patch SSE `Event` for the BROWSE crumb-line variant —
@@ -1157,15 +1232,7 @@ fn browse_crumb_patch_event(
 ) -> Option<Event> {
     let empty_compound_parents: HashMap<String, cpe_core::ir::Resource> = HashMap::new();
     let empty_media_thumbs: HashMap<String, cpe_core::ir::MediaThumb> = HashMap::new();
-    let crumb_ctx = crumb_render_ctx(
-        req.project,
-        req.current_path,
-        req.current_query,
-        req.lang,
-        req.public_origin,
-        &empty_compound_parents,
-        &empty_media_thumbs,
-    );
+    let crumb_ctx = crumb_render_ctx(req, &empty_compound_parents, &empty_media_thumbs);
     let crumb_markup =
         cpe_web::page::render_browse_breadcrumb_for_page(req.page, &crumb_ctx, comp_data, &req.project.config().site)?;
     let crumb_id = cpe_components::component::breadcrumb::crumb_element_id(&format!("share-{list_id}"));
@@ -1219,12 +1286,14 @@ fn make_compound_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         std::future::ready(compound_fragment_response(
             &project,
             page_idx,
             &origin_cfg,
+            &base,
             &req,
             &HashMap::new(),
         ))
@@ -1243,9 +1312,17 @@ fn make_compound_fragment_handler_param(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Path<HashMap<String, String>>, Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |Path(path_params): Path<HashMap<String, String>>, req: Request| {
-        std::future::ready(compound_fragment_response(&project, page_idx, &origin_cfg, &req, &path_params))
+        std::future::ready(compound_fragment_response(
+            &project,
+            page_idx,
+            &origin_cfg,
+            &base,
+            &req,
+            &path_params,
+        ))
     }
 }
 
@@ -1285,6 +1362,7 @@ fn compound_fragment_response(
     project: &Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: &crate::request::OriginConfig,
+    base: &Base,
     req: &Request,
     route_params: &HashMap<String, String>,
 ) -> Response {
@@ -1318,9 +1396,11 @@ fn compound_fragment_response(
 
     // Compute current_path: strip the trailing `/_compound` suffix so
     // emitted hrefs remain page-relative (avoid `…/_compound/_compound`).
-    let full_path = req.uri().path();
-    let current_path =
-        strip_fragment_suffix(full_path, cpe_components::component::compound_viewer::COMPOUND_FRAGMENT_SEGMENT);
+    let full_path = base.request_path(req.uri().path());
+    let current_path = strip_fragment_suffix(
+        &full_path,
+        cpe_components::component::compound_viewer::COMPOUND_FRAGMENT_SEGMENT,
+    );
 
     // An erroring fragment answers a bare 500; the store then runs no side
     // lookup. The fragment never renders the Apparat's resource links.
@@ -1347,6 +1427,7 @@ fn compound_fragment_response(
     let route_params_vec: Vec<(String, String)> = route_params.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
 
     let ctx = cpe_components::component::context::RenderContext {
+        base,
         lang: lang.clone(),
         project_id: project.id(),
         current_path,
@@ -1666,6 +1747,7 @@ fn make_facet_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
@@ -1694,9 +1776,9 @@ fn make_facet_fragment_handler(
 
         // Compute current_path: strip the trailing `/_facets` suffix so emitted
         // toggle hrefs remain page-relative (avoid `…/_facets/_facets`).
-        let full_path = req.uri().path();
+        let full_path = base.request_path(req.uri().path());
         let current_path =
-            strip_fragment_suffix(full_path, cpe_components::component::facet_panel::FACET_FRAGMENT_SEGMENT);
+            strip_fragment_suffix(&full_path, cpe_components::component::facet_panel::FACET_FRAGMENT_SEGMENT);
 
         // Resolve component data (static page — empty path params).
         // Project::page_data reads facet params and merges them into the list query;
@@ -1845,7 +1927,7 @@ fn make_facet_fragment_handler(
         // Build the ResourceListCfg via the shared factory (hides pub(crate) LinkResolver).
         let resolved_gloss = list_gloss.map(|g| cpe_core::labels::resolve_gloss(&project.config().site, g, &lang));
         let list_cfg = cpe_components::component::resource_list::ResourceListCfg::with_links(
-            project.id(),
+            base.project(project.id()),
             project.class_routes(),
             current_path,
             current_query,
@@ -1902,6 +1984,7 @@ fn make_facet_fragment_handler(
             current_path,
             current_query,
             public_origin: &public_origin,
+            base: &base,
         };
         if let Some(crumb_event) = browse_crumb_patch_event(&crumb_req, &comp_data, list_id) {
             events.push(Ok::<Event, Infallible>(crumb_event));
@@ -1951,6 +2034,7 @@ fn make_sort_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
@@ -1979,9 +2063,9 @@ fn make_sort_fragment_handler(
         // Compute current_path: strip the trailing `/_sort` suffix so the
         // rendered list's pager/sort-control hrefs remain page-relative (avoid
         // `…/_sort/_sort`).
-        let full_path = req.uri().path();
+        let full_path = base.request_path(req.uri().path());
         let current_path =
-            strip_fragment_suffix(full_path, cpe_components::component::resource_list::SORT_FRAGMENT_SEGMENT);
+            strip_fragment_suffix(&full_path, cpe_components::component::resource_list::SORT_FRAGMENT_SEGMENT);
 
         // Resolve component data (static page — empty path params; a
         // parameterised list page would need its Path params threaded here,
@@ -2095,7 +2179,7 @@ fn make_sort_fragment_handler(
         // LinkResolver) — same approach as the facet fragment handler.
         let resolved_gloss = list_gloss.map(|g| cpe_core::labels::resolve_gloss(&project.config().site, g, &lang));
         let list_cfg = cpe_components::component::resource_list::ResourceListCfg::with_links(
-            project.id(),
+            base.project(project.id()),
             project.class_routes(),
             current_path,
             current_query,
@@ -2138,6 +2222,7 @@ fn make_sort_fragment_handler(
             current_path,
             current_query,
             public_origin: &public_origin,
+            base: &base,
         };
         if let Some(crumb_event) = browse_crumb_patch_event(&crumb_req, &comp_data, list_id) {
             events.push(Ok::<Event, Infallible>(crumb_event));
@@ -2191,6 +2276,7 @@ fn make_search_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
+    base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
@@ -2215,9 +2301,9 @@ fn make_search_fragment_handler(
 
         // Compute current_path: strip the trailing `/_search` suffix so emitted
         // hrefs remain page-relative (avoid `…/_search/_search`).
-        let full_path = req.uri().path();
+        let full_path = base.request_path(req.uri().path());
         let current_path =
-            strip_fragment_suffix(full_path, cpe_components::component::search_bar::SEARCH_FRAGMENT_SEGMENT);
+            strip_fragment_suffix(&full_path, cpe_components::component::search_bar::SEARCH_FRAGMENT_SEGMENT);
 
         // Resolve component data (static page — empty path params; a
         // parameterised search page would need its Path params threaded here,
@@ -2357,7 +2443,7 @@ fn make_search_fragment_handler(
         // Build the ResourceListCfg via the shared factory (hides pub(crate) LinkResolver).
         let resolved_gloss = list_gloss.map(|g| cpe_core::labels::resolve_gloss(&project.config().site, g, &lang));
         let list_cfg = cpe_components::component::resource_list::ResourceListCfg::with_links(
-            project.id(),
+            base.project(project.id()),
             project.class_routes(),
             current_path,
             current_query,
@@ -2419,6 +2505,7 @@ fn make_search_fragment_handler(
             current_path,
             current_query,
             public_origin: &public_origin,
+            base: &base,
         };
         if let Some(crumb_event) = browse_crumb_patch_event(&crumb_req, &comp_data, list_id) {
             events.push(Ok::<Event, Infallible>(crumb_event));
@@ -2435,7 +2522,7 @@ fn make_search_fragment_handler(
 
 /// Serve an embedded `cpe-image-viewer` asset (the module, vendored
 /// OpenSeadragon, control sprites). `path` is the wildcard-captured suffix
-/// from `{ASSET_PREFIX}/*path`; `cpe_image_viewer::asset` is traversal-proof
+/// from `static_routes`' `image-viewer/*path`; `cpe_image_viewer::asset` is traversal-proof
 /// (rejects empty/dot/`..` segments), so the untrusted request tail can be
 /// forwarded straight in without a separate check.
 async fn serve_viewer_asset(Path(path): Path<String>) -> Response {
@@ -2611,6 +2698,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2644,6 +2732,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2680,6 +2769,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         )
         .layer(from_fn(resolve_request_prefs));
         let response = router
@@ -2736,6 +2826,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2790,6 +2881,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2826,6 +2918,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2860,6 +2953,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         )
         .layer(from_fn(resolve_request_prefs));
         let response = router
@@ -2894,6 +2988,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2928,6 +3023,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2963,6 +3059,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -2991,6 +3088,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .clone()
@@ -3051,6 +3149,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -3090,6 +3189,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         )
         .layer(from_fn(resolve_request_prefs));
         let response = router
@@ -3224,6 +3324,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -3272,6 +3373,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -3352,7 +3454,7 @@ mod tests {
         ] {
             let raw = format!("/alice-in-daschland/characters?lang=de&{retired}&accents=1&view=grid");
             let uri: Uri = raw.parse().expect("test uri parses");
-            let resp = override_redirect(&uri, &no_appearance())
+            let resp = override_redirect(&uri, &no_appearance(), &cpe_core::url::ROOT)
                 .unwrap_or_else(|| panic!("{retired} must produce a redirect"));
             assert_eq!(resp.status(), StatusCode::SEE_OTHER);
             assert_eq!(
@@ -3372,7 +3474,7 @@ mod tests {
             .parse()
             .expect("test uri parses");
         let appearance = RequestedAppearance { value: Some(Appearance::Dark), from_query: true };
-        let resp = override_redirect(&uri, &appearance).expect("redirect");
+        let resp = override_redirect(&uri, &appearance, &cpe_core::url::ROOT).expect("redirect");
         assert_eq!(location(&resp), "/alice-in-daschland/?lang=de");
         assert_eq!(set_cookies(&resp), vec!["appearance=dark; Path=/; SameSite=Lax"]);
     }
@@ -3381,7 +3483,7 @@ mod tests {
     fn override_redirect_none_without_override_keys() {
         let uri: Uri = "/alice-in-daschland/?lang=de".parse().expect("test uri parses");
         assert!(
-            override_redirect(&uri, &no_appearance()).is_none(),
+            override_redirect(&uri, &no_appearance(), &cpe_core::url::ROOT).is_none(),
             "no stripped keys → no redirect"
         );
     }
@@ -4179,6 +4281,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4231,6 +4334,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4290,6 +4394,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4349,6 +4454,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4396,6 +4502,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4450,6 +4557,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4490,6 +4598,7 @@ mod tests {
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(
@@ -4580,6 +4689,7 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))
@@ -4669,6 +4779,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))
@@ -4936,6 +5047,7 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))
@@ -5081,6 +5193,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
             &[],
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
+            &cpe_core::url::ROOT,
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))

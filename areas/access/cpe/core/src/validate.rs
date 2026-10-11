@@ -4481,10 +4481,10 @@ fn pairs_with_navigator(detail_id: Option<&str>, body: &[Component]) -> bool {
 /// Return `true` if any path segment of `route` begins with `_`.
 ///
 /// The engine reserves the `_`-prefixed route namespace for engine-registered
-/// routes (`/_static/…`, `/_assets/…`, the `_<component>` fragment segments). A
-/// config page must not declare a route whose first (or any) segment starts
-/// with `_`. Splitting on `/` and ignoring empty segments means a leading
-/// slash (`"/_foo"`) is handled
+/// routes (`<base>/<id>/_static/…`, `<base>/<id>/_assets/…`, the `_<component>`
+/// fragment segments). A config page must not declare a route whose first (or
+/// any) segment starts with `_`. Splitting on `/` and ignoring empty segments
+/// means a leading slash (`"/_foo"`) is handled
 /// correctly. `:param` segments never start with `_`, so they are unaffected.
 fn route_first_segment_is_reserved(route: &str) -> bool {
     route.split('/').filter(|seg| !seg.is_empty()).any(|seg| seg.starts_with('_'))
@@ -10044,7 +10044,7 @@ site {
     /// must carry the `assets/` segment (see `DiscoveredProject::
     /// asset_files`) — every test in this group uses that production
     /// shape. This one additionally pins the NESTED case: the path-shape
-    /// validator and the runtime `/_assets/{id}/{*path}` route both accept
+    /// validator and the runtime `<base>/{id}/_assets/{*path}` route both accept
     /// a subdirectory, so the inventory walk must reach it too.
     #[test]
     fn cover_image_matches_assets_prefixed_inventory() {

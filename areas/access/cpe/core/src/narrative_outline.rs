@@ -17,6 +17,8 @@
 
 use pulldown_cmark::{html as cmark_html, Event, Parser, Tag, TagEnd};
 
+use crate::url::Base;
+
 // ── Invite-list item parsing ───────────────────────────────────────────────────
 
 /// Attempt to parse an invite-list item from a paragraph's inline events.
@@ -430,6 +432,25 @@ pub fn editorial_events(src: &str) -> Vec<Event<'_>> {
             other => other,
         })
         .collect()
+}
+
+/// Put the base in front of every link and image destination of `events`
+/// that names a path of CPE ([`Base::content_link`]). Applied to the stream
+/// before anything is rendered or parsed from it, so an invite item's href
+/// and a link in prose get the same answer.
+pub fn rebase_links(events: &mut [Event<'_>], base: &Base) {
+    for event in events {
+        let (Event::Start(Tag::Link { dest_url, .. }) | Event::Start(Tag::Image { dest_url, .. })) = event else {
+            continue;
+        };
+        let rebased = match base.content_link(dest_url) {
+            std::borrow::Cow::Owned(rebased) => Some(rebased),
+            std::borrow::Cow::Borrowed(_) => None,
+        };
+        if let Some(rebased) = rebased {
+            *dest_url = rebased.into();
+        }
+    }
 }
 
 #[cfg(test)]

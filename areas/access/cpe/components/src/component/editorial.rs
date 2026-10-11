@@ -12,7 +12,9 @@
 //! 2. Filter `Event::Html` / `Event::InlineHtml` — strip all author raw HTML (same as the shared
 //!    `markdown_to_html` pipeline).
 //! 3. Collect into `Vec<Event>` — buffer the event stream so look-ahead and multi-event replacement
-//!    can work without unbalancing `Start`/`End` pairs.
+//!    can work without unbalancing `Start`/`End` pairs. Link and image destinations that name a
+//!    path of CPE get the base here (`narrative_outline::rebase_links`), before anything reads the
+//!    stream.
 //! 4. Stateful rewrite over the Vec — recognise editorial conventions and replace groups of events
 //!    with trusted `Event::Html` wrappers. Each convention has a **plain-prose fallback** when
 //!    unmatched.
@@ -881,6 +883,9 @@ fn segment_html(full_html: &str) -> Option<EditorialSegments> {
 /// renders figure mode (see `rewrite_events`), empty leaves the output
 /// exactly as it is without figures.
 ///
+/// `base` is where CPE is mounted: a destination that starts with one `/`
+/// gets it in front, in prose and in invite lists alike.
+///
 /// `id_offset` is the number of top-level `##` headings in the page's
 /// narratives before this one; generated heading ids count on from it (see
 /// `rewrite_events`).
@@ -890,12 +895,15 @@ fn segment_html(full_html: &str) -> Option<EditorialSegments> {
 /// document with neither head nor intro (sections or parts only, or the
 /// fallback) leaves it out and says so in [`Editorial::rail_placed`].
 pub(crate) fn render_editorial(
+    base: &cpe_core::url::Base,
     src: &str,
     figures: &[FigureBlock],
     id_offset: usize,
     rail: Option<&Rail<'_>>,
 ) -> Editorial {
-    let filtered = editorial_events(src);
+    let mut filtered = editorial_events(src);
+    // Before the first pass: an invite item's href is read from this stream.
+    cpe_core::narrative_outline::rebase_links(&mut filtered, base);
 
     // First pass: drop cap enabled.
     let mut body_html = rewrite_events(&filtered, false, figures, id_offset);
@@ -979,7 +987,7 @@ mod tests {
     // ── Helper ───────────────────────────────────────────────────────────────
 
     fn render(src: &str) -> String {
-        render_editorial(src, &[], 0, None).markup.into_string()
+        render_editorial(&cpe_core::url::ROOT, src, &[], 0, None).markup.into_string()
     }
 
     // ── Heading ids ──────────────────────────────────────────────────────────
@@ -1018,14 +1026,18 @@ mod tests {
         let second = "## C\n\nText.\n";
         let offset = top_level_headings(first).len();
         assert_eq!(offset, 2);
-        let mut got = h2_ids(&render_editorial(first, &[], 0, None).markup.into_string());
-        got.extend(h2_ids(&render_editorial(second, &[], offset, None).markup.into_string()));
+        let mut got = h2_ids(&render_editorial(&cpe_core::url::ROOT, first, &[], 0, None).markup.into_string());
+        got.extend(h2_ids(
+            &render_editorial(&cpe_core::url::ROOT, second, &[], offset, None)
+                .markup
+                .into_string(),
+        ));
         assert_eq!(got, ids(&["a", "sec-2", "sec-3"]));
     }
 
     #[test]
     fn generated_ids_count_on_from_the_offset() {
-        let out = render_editorial("## One\n\nText.\n\n## Two\n\nText.\n", &[], 4, None)
+        let out = render_editorial(&cpe_core::url::ROOT, "## One\n\nText.\n\n## Two\n\nText.\n", &[], 4, None)
             .markup
             .into_string();
         assert_eq!(h2_ids(&out), ids(&["sec-5", "sec-6"]));
@@ -1076,7 +1088,7 @@ mod tests {
     fn render_with_rail(src: &str, figures: &[FigureBlock]) -> (String, bool) {
         let entries = [entry("a", "A & B"), entry("sec-2", "Two")];
         let rail = Rail { entries: &entries, label: "On this page" };
-        let out = render_editorial(src, figures, 0, Some(&rail));
+        let out = render_editorial(&cpe_core::url::ROOT, src, figures, 0, Some(&rail));
         (out.markup.into_string(), out.rail_placed)
     }
 
@@ -1128,7 +1140,7 @@ mod tests {
     /// Without a rail the output is what it was: no `nav`, nothing placed.
     #[test]
     fn no_rail_is_rendered_unless_one_is_given() {
-        let out = render_editorial("# T\n\nIntro.\n\n## A\n\nText.\n", &[], 0, None);
+        let out = render_editorial(&cpe_core::url::ROOT, "# T\n\nIntro.\n\n## A\n\nText.\n", &[], 0, None);
         assert!(!out.rail_placed);
         assert!(!out.markup.into_string().contains("narr__side"));
     }
@@ -1148,7 +1160,7 @@ mod tests {
                 entry("sec-6", "Last one"),
             ]
         );
-        let rendered = h2_ids(&render_editorial(src, &[], 3, None).markup.into_string());
+        let rendered = h2_ids(&render_editorial(&cpe_core::url::ROOT, src, &[], 3, None).markup.into_string());
         let listed: Vec<Option<String>> = entries.into_iter().map(|e| Some(e.id)).collect();
         assert_eq!(rendered, listed);
     }
@@ -1167,7 +1179,9 @@ mod tests {
         let listed: Vec<String> = rail_entries(src, 7).into_iter().map(|e| e.id).collect();
         assert_eq!(listed, ["sec-8", "sec-9", "named", "sec-11", "sec-12"]);
         for figures in [vec![], vec![block("named", "A")]] {
-            let out = render_editorial(src, &figures, 7, None).markup.into_string();
+            let out = render_editorial(&cpe_core::url::ROOT, src, &figures, 7, None)
+                .markup
+                .into_string();
             let rendered: Vec<String> = h2_ids(&out).into_iter().flatten().collect();
             assert_eq!(rendered, listed, "{out}");
         }
@@ -1268,7 +1282,9 @@ mod tests {
         let count = top_level_headings(src).len();
         assert_eq!(count, 4);
         for figures in [vec![], vec![block("part", "A")]] {
-            let out = render_editorial(src, &figures, 10, None).markup.into_string();
+            let out = render_editorial(&cpe_core::url::ROOT, src, &figures, 10, None)
+                .markup
+                .into_string();
             let top: Vec<Option<String>> = h2_ids(&out).into_iter().flatten().map(Some).collect();
             assert_eq!(top, ids(&["sec-11", "sec-12", "part", "sec-14"]), "{out}");
         }
@@ -1297,7 +1313,7 @@ mod tests {
 
         // With a figure block named for it the section still renders as an
         // invite section, and the block is placed nowhere.
-        let out = render_editorial(GROUPS_DOC, &[block("offices", "A")], 0, None)
+        let out = render_editorial(&cpe_core::url::ROOT, GROUPS_DOC, &[block("offices", "A")], 0, None)
             .markup
             .into_string();
         assert!(out.contains(r#"<div class="invite-groups">"#), "got: {out}");
@@ -1351,7 +1367,9 @@ mod tests {
     #[test]
     fn figure_mode_splits_at_each_idd_h2_and_places_blocks_in_order() {
         let figures = [block("four", "A"), block("between", "C"), block("four", "B")];
-        let out = render_editorial(FIGURE_DOC, &figures, 0, None).markup.into_string();
+        let out = render_editorial(&cpe_core::url::ROOT, FIGURE_DOC, &figures, 0, None)
+            .markup
+            .into_string();
         let expected_parts = concat!(
             r#"<div class="editorial__parts">"#,
             r#"<section class="editorial__part" aria-labelledby="four"><div class="prose editorial__part-prose">"#,
@@ -1396,7 +1414,9 @@ mod tests {
             }),
             ..block("four", "A")
         }];
-        let out = render_editorial(FIGURE_DOC, &figures, 0, None).markup.into_string();
+        let out = render_editorial(&cpe_core::url::ROOT, FIGURE_DOC, &figures, 0, None)
+            .markup
+            .into_string();
         assert!(
             out.contains(concat!(
                 r#"<div class="editorial__figure"><div class="block">A</div>"#,
@@ -1421,7 +1441,9 @@ mod tests {
     #[test]
     fn figure_mode_parts_never_take_the_lede_or_the_drop_cap() {
         let src = "# T\n\n## Four {#four}\n\n*Note.*\n\nProse.\n";
-        let out = render_editorial(src, &[block("four", "A")], 0, None).markup.into_string();
+        let out = render_editorial(&cpe_core::url::ROOT, src, &[block("four", "A")], 0, None)
+            .markup
+            .into_string();
         assert!(!out.contains("editorial__lede"), "got: {out}");
         assert!(!out.contains("editorial__open"), "got: {out}");
         assert!(out.contains("<p><em>Note.</em></p>"), "got: {out}");
@@ -1438,7 +1460,9 @@ mod tests {
             .iter()
             .map(|id| block(id, id))
             .collect();
-        let out = render_editorial(src, &figures, 0, None).markup.into_string();
+        let out = render_editorial(&cpe_core::url::ROOT, src, &figures, 0, None)
+            .markup
+            .into_string();
         let parts: Vec<String> = section_headings(src)
             .into_iter()
             .filter(|h| !h.holds_invite_list)
@@ -1850,6 +1874,25 @@ mod tests {
 
     // ── Article structure ─────────────────────────────────────────────────────
 
+    /// An invite item's href is parsed from the event stream, a prose link is
+    /// written by `push_html`: both read the stream the base was put into.
+    #[test]
+    fn under_a_base_an_invite_item_and_a_prose_link_get_it() {
+        let base = cpe_core::url::Base::parse("/cpe").expect("/cpe is a base");
+        let src = concat!(
+            "# T\n\nSee [the books](/p/books) and [elsewhere](https://example.org/).\n\n",
+            "## Start\n\n- [Books](/p/books) — All of them.\n- [Out](//other.example/x) — Not ours.\n",
+        );
+        let out = render_editorial(&base, src, &[], 0, None).markup.into_string();
+        assert_eq!(out.matches(r#"href="/cpe/p/books""#).count(), 2, "{out}");
+        assert!(out.contains(r#"href="https://example.org/""#), "{out}");
+        assert!(out.contains(r#"href="//other.example/x""#), "{out}");
+        assert!(!out.contains(r#"href="/p/books""#), "{out}");
+
+        let at_root = render_editorial(&cpe_core::url::ROOT, src, &[], 0, None).markup.into_string();
+        assert_eq!(at_root.matches(r#"href="/p/books""#).count(), 2, "{at_root}");
+    }
+
     #[test]
     fn render_editorial_has_article_editorial_page() {
         let out = render("# Title\n\nContent.");
@@ -1980,9 +2023,15 @@ mod tests {
 
     #[test]
     fn render_parts_without_head_or_intro_has_no_empty_wrapper() {
-        let out = render_editorial("## Four {#four}\n\nProse.\n", &[block("four", "A")], 0, None)
-            .markup
-            .into_string();
+        let out = render_editorial(
+            &cpe_core::url::ROOT,
+            "## Four {#four}\n\nProse.\n",
+            &[block("four", "A")],
+            0,
+            None,
+        )
+        .markup
+        .into_string();
         assert!(
             out.starts_with(concat!(
                 r#"<article class="editorial page"><div class="narr narr-wide">"#,

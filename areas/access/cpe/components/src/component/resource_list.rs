@@ -410,7 +410,7 @@ impl<'a> ResourceListCfg<'a> {
     /// back to plain-text (no link).
     #[allow(clippy::too_many_arguments)]
     pub fn with_links(
-        project_id: &'a str,
+        urls: cpe_core::url::ProjectUrls<'a>,
         link_routes: &'a std::collections::HashMap<String, String>,
         current_path: &'a str,
         current_query: Option<&'a str>,
@@ -430,7 +430,7 @@ impl<'a> ResourceListCfg<'a> {
         order_options: &'a [OrderRow<'a>],
     ) -> Self {
         Self {
-            links: Some(LinkResolver::new(project_id, link_routes)),
+            links: Some(LinkResolver::new(urls, link_routes)),
             current_path,
             current_query,
             list_id,
@@ -1482,7 +1482,7 @@ mod tests {
     }
 
     fn make_resolver(project_id: &'static str, routes: &'static HashMap<String, String>) -> LinkResolver<'static> {
-        LinkResolver::new(project_id, routes)
+        LinkResolver::new(cpe_core::url::ROOT.project(project_id), routes)
     }
 
     fn make_routes() -> HashMap<String, String> {

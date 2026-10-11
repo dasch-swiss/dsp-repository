@@ -590,7 +590,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   its validation against a project's facts (`ValidationContext`, `validate::facts::ProjectFacts`),
   the IR a valid configuration lowers to (`ir::SiteConfig`, `ir::Component`, `remodel::Remodel`),
   CPE's presentation types (`ir::Resource`, `ir::Property`, which are not `cpe_ports::Resource`) and
-  the diagnostics a broken one produces (`Diagnostic`, `DiagnosticKind`, `ValidationReport`). In
+  the diagnostics a broken one produces (`Diagnostic`, `DiagnosticKind`, `ValidationReport`), and the URLs
+  CPE writes (`url::Base`, `url::ProjectUrls`, `url::StaticDir`). In
   `cpe-image-viewer`: `Viewer` (the builder that renders the element), `Auth`, `asset` (an embedded
   file by request path, traversal-proof), `head_tag`, `ASSET_PREFIX`. In
   `cpe-components`: the component modules under `component` (`editorial`, `narrative`, `markdown`,
@@ -611,8 +612,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `page::CompoundFragmentOutput`, `page::render_not_found_project`, `page::render_not_found_site`,
   `page::render_browse_breadcrumb_for_page`, `page::SearchFragmentSurface`, `page::document_head`,
   `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
-  `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`), `Cpe` (`new`, `activate`, `router`,
-  `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498) and `ProjectSummary`
+  `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`), `Cpe` (`new`, `activate`, `router`,
+  `base`, `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498) and `ProjectSummary`
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, to be mounted by areas/access/server
   on the area's origin beside DPE's routes (planned), and `Cpe::activate`, which takes the port. No `pub` item of
   `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE
@@ -691,8 +692,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `spawn_blocking` or to `deadpool-sqlite`, as the editor does, changes concurrency and is a follow-up. The
   pages `cpe-web` renders are pinned by its 30
   snapshots, and every validation rule by a fixture project under `web/tests/projects/`
-  (**static-analysis**). The URLs it writes are root-absolute, so it cannot be mounted under a prefix yet
-  (**review**). `public/vendor/datastar.js` is checked against its README by `just verify-checksums`
+  (**static-analysis**). Every URL CPE writes is built by `cpe_core::url` from the base, `CPE_BASE`, which
+  `Cpe::base()` returns and a host mounts the router at; `cpe-server`'s `base_tests` crawl Incunabula and the
+  fixture projects under `/cpe` and fail on a URL outside it on a page they reach (**static-analysis**); that a
+  URL is built through that module at all, and not joined by hand, is **review**. `public/vendor/datastar.js` is checked against its README by `just verify-checksums`
   (**static-analysis**); the three SVG files in `public/` are DaSCH's own and carry no checksum.
   `cpe-components` splices rendered Markdown and a few constants through `PreEscaped` (**review**; DPE's
   three-site rule does not apply here). `cpe-store-build`'s library reads nothing but what it is given, and its generic code names no project
@@ -736,7 +739,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   in one host), and nothing is written to disk. `projects/incunabula/` is
   committed configuration, narrative and assets, **single writer** the project's developers (**review**); the process reads it at activation and never writes it. `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `1c69bcc24108`
+- **Fingerprint:** `55903c7641cf`
 
 ### areas/access/datei
 

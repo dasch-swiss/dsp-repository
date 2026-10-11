@@ -118,7 +118,7 @@ pub(crate) const REVEAL_EXPR: &str = "{hidden: false}";
 
 /// Render the crumb line's dataset row: `details#crumb-data`, closed (the
 /// server never writes `open`), its summary over the panel.
-pub(crate) fn render_data_panel(panel: &DataPanel, lang: &Lang) -> Markup {
+pub(crate) fn render_data_panel(panel: &DataPanel, lang: &Lang, statics: &cpe_core::url::StaticDir) -> Markup {
     let groups = panel.annotations.iter().flat_map(|g| &g.entries);
     // A listing is named by its counts, never entry by entry: it can hold
     // dozens of entries.
@@ -153,13 +153,13 @@ pub(crate) fn render_data_panel(panel: &DataPanel, lang: &Lang) -> Markup {
                 div.crumb-data__head {
                     img .dasch-logo__img
                         .dasch-logo__img--light
-                        src="/_static/cpe/dasch-logo-colour.svg"
+                        src=(statics.file("cpe/dasch-logo-colour.svg"))
                         alt=(ChromeMsg::DaschAriaLabel.text(lang))
                         width="2147"
                         height="621";
                     img .dasch-logo__img
                         .dasch-logo__img--dark
-                        src="/_static/cpe/dasch-logo-white.svg"
+                        src=(statics.file("cpe/dasch-logo-white.svg"))
                         alt=(ChromeMsg::DaschAriaLabel.text(lang))
                         width="2148"
                         height="622";
@@ -1156,7 +1156,7 @@ mod tests {
 
     fn rendered_listing(sections: &[&str], code: &str) -> String {
         let panel = listing_panel(sections, code, &[]).expect("a panel");
-        render_data_panel(&panel, &lang(code)).into_string()
+        render_data_panel(&panel, &lang(code), &cpe_core::url::ROOT.project("p").static_dir()).into_string()
     }
 
     #[test]
@@ -1263,7 +1263,7 @@ mod tests {
             &arks(&["narrenschiff", "c1v"], &["r1", "r2"]),
         )
         .expect("a panel");
-        render_data_panel(&panel, &lang(code)).into_string()
+        render_data_panel(&panel, &lang(code), &cpe_core::url::ROOT.project("p").static_dir()).into_string()
     }
 
     /// The value of the first `attr="…"` after `from` in `out`.

@@ -174,7 +174,7 @@ page (a path under no loaded project, in bare chrome). It composes `cpe-componen
 the document head and the chrome around them. `share_link` composes the canonical URL of a view, so that two requests for the same view give the
 same link.
 
-The URLs the crate writes are root-absolute (`/_static/…`, `/<project>/…`): it has no base path yet.
+Every URL the crate writes is built by `cpe_core::url` from the **Base** its caller hands it.
 Its markup is pinned by 30 snapshots in `web/src/snapshots/`, and `web/tests/projects/` holds 234 fixture
 projects, one per validation rule or page shape; `tests/validation.rs` loads each through `Project::load`.
 Some fixtures and snapshots carry the names of the incubator's other projects as test data; those projects
@@ -185,7 +185,8 @@ are not in this repository.
 `public/` holds the files every CPE page refers to and no project owns: the two DaSCH logos and
 `dasch-fingerprint.svg`, which `components/style/shell.css` refers to by a relative URL. `public/vendor/`
 holds the vendored `datastar.js` with a `README.md` that records its checksum, which `just verify-checksums`
-recomputes. `cpe-server` embeds these files and the seven stylesheets and serves them under `/_static/`; a
+recomputes. `cpe-server` embeds these files and the seven stylesheets and serves them under each project's
+`_static/` and, for CPE's own not-found page, under CPE's own; a
 test there fails when a file of the three directories has no row in its table. `cpe-web`'s tests read
 `datastar.js` and four of the stylesheets to hold the markup's attributes, breakpoints and class names
 against them.
@@ -198,9 +199,18 @@ files and the inventory of the projects' assets. No type of another CPE crate is
 `cpe-ports`' excepted; a test of the crate holds that. It installs no tracing layer and binds no port: its
 host does.
 
-`CpeConfig` is read from `cpe.toml` and `CPE_*`: the projects directory (`CPE_PROJECTS_DIR`) and the public
-origin (`CPE_PUBLIC_ORIGIN`). Reading it cannot fail. A value that cannot be used is kept as a refusal, and
-`Cpe`'s router then answers 503 on every path.
+`CpeConfig` is read from `cpe.toml` and `CPE_*`: the projects directory (`CPE_PROJECTS_DIR`), the public
+origin (`CPE_PUBLIC_ORIGIN`) and the base (`CPE_BASE`). Reading it cannot fail. A value that cannot be used
+is kept as a refusal, and `Cpe`'s router then answers 503 on every path.
+
+**Base**:
+The path CPE is mounted at: empty at the root of the host, else a path with a leading slash and no trailing
+one (`/cpe`). `Cpe::base()` is its one source: the host mounts `Cpe::router()` there, and `cpe_core::url`
+writes it in front of every link, redirect and cookie path. The router's own routes do not hold it. A
+project's pages are at `<base>/<project id>/…`, the shared static files at `<base>/<project id>/_static/…`
+(and at `<base>/_static/…` for CPE's own not-found page; the 503 page loads no file), a project's own files at
+`<base>/<project id>/_assets/…`. A link in a narrative that starts with one `/` gets the base in front.
+_Avoid_: prefix, mount path
 
 **Activation**:
 `Cpe::activate(&dyn ArchiveProjection)`: the one step that loads the projects. For each project folder it

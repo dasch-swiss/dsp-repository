@@ -1054,12 +1054,12 @@ fn render_compound_contents(members: &[MemberHeader], links: Option<&LinkResolve
 /// - The identifier is never restated in this body's copy — callers must NOT plumb the unknown id
 ///   in here.
 ///
-/// All hrefs are project-prefixed (`/<project_id>/…` or `/<project_id>{route}`)
+/// All hrefs are built from `urls` (the project's home or one of its routes)
 /// — config-derived and never path-derived, so they can never carry the
 /// unknown identifier or leave the origin.
 pub fn render_not_found(
     class: Option<&str>,
-    project_id: &str,
+    urls: cpe_core::url::ProjectUrls<'_>,
     site: &SiteConfig,
     class_list_routes: &HashMap<String, String>,
     lang: &Lang,
@@ -1082,11 +1082,11 @@ pub fn render_not_found(
     let browse_all: Option<(String, String)> = class.and_then(|class| {
         class_list_routes.get(class).map(|route| {
             let plural = cpe_core::labels::resolve_class_plural(class_labels, class, lang);
-            (nf_browse_all_text(&plural, lang), format!("/{project_id}{route}"))
+            (nf_browse_all_text(&plural, lang), urls.page(route))
         })
     });
 
-    let project_home_href = format!("/{project_id}/");
+    let project_home_href = urls.home();
 
     let exits_line = html! {
         p.notfound__or {
@@ -1105,7 +1105,7 @@ pub fn render_not_found(
         None,
         Some(html! {
             (exits_line)
-            (render_or_browse_line(site, project_id, lang))
+            (render_or_browse_line(site, urls, lang))
         }),
     )
 }
@@ -1128,7 +1128,7 @@ pub fn not_found_heading(class: Option<&str>, class_labels: &[cpe_core::ir::Clas
 /// `not-found { browse }` entries when there are any,
 /// else the first three nav items. Shared by the unknown-path page
 /// (`render_not_found_project_body`) and the unknown-record page (`render_not_found`).
-fn render_or_browse_line(site: &SiteConfig, project_id: &str, lang: &Lang) -> Markup {
+fn render_or_browse_line(site: &SiteConfig, urls: cpe_core::url::ProjectUrls<'_>, lang: &Lang) -> Markup {
     let browse_links: Vec<(&str, &str)> = if site.not_found_browse.is_empty() {
         site.nav
             .iter()
@@ -1146,7 +1146,7 @@ fn render_or_browse_line(site: &SiteConfig, project_id: &str, lang: &Lang) -> Ma
         p.notfound__or {
             span { (ChromeMsg::NfOrBrowse.text(lang)) }
             @for (route, label) in &browse_links {
-                a href=(format!("/{project_id}{route}")) { (label) }
+                a href=(urls.page(route)) { (label) }
             }
         }
     }
@@ -1165,13 +1165,13 @@ fn render_or_browse_line(site: &SiteConfig, project_id: &str, lang: &Lang) -> Ma
 /// This is the `.notfound__inner` body only — `render_not_found_project`
 /// (`dsp-incubator cpe/web`'s `page` module) wraps it in the full bespoke page shell (chrome
 /// deltas: no breadcrumb, no search box, no `aria-current`).
-pub fn render_not_found_project_body(site: &SiteConfig, project_id: &str, lang: &Lang) -> Markup {
+pub fn render_not_found_project_body(site: &SiteConfig, urls: cpe_core::url::ProjectUrls<'_>, lang: &Lang) -> Markup {
     let code = ChromeMsg::NfCode.text(lang);
     let heading = ChromeMsg::NfPathTitle.text(lang);
     let message = ChromeMsg::NfPathMsg.text(lang);
 
     let home_label = nf_home_text(cpe_core::labels::site_title(site, lang), lang);
-    let home_href = format!("/{project_id}/");
+    let home_href = urls.home();
 
     // The "Or browse:" links: `render_or_browse_line` (shared with the unknown-record page).
     render_notfound_shell(
@@ -1180,7 +1180,7 @@ pub fn render_not_found_project_body(site: &SiteConfig, project_id: &str, lang: 
         heading,
         Some(message),
         Some((&home_label, &home_href)),
-        Some(render_or_browse_line(site, project_id, lang)),
+        Some(render_or_browse_line(site, urls, lang)),
     )
 }
 
@@ -3260,7 +3260,7 @@ mod tests {
         let routes: HashMap<String, String> = [("Character".to_owned(), "/characters".to_owned())].into();
         let out = render_not_found(
             Some("Character"),
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             &make_alice_not_found_site(),
             &routes,
             &make_lang("en"),
@@ -3274,7 +3274,7 @@ mod tests {
         let routes: HashMap<String, String> = [("Character".to_owned(), "/characters".to_owned())].into();
         let out = render_not_found(
             Some("Character"),
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             &make_alice_not_found_site(),
             &routes,
             &make_lang("de"),
@@ -3333,7 +3333,9 @@ mod tests {
     #[test]
     fn snapshot_render_not_found_project_body_alice_en() {
         let site = make_alice_not_found_site();
-        let out = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("en")).into_string();
+        let out =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("en"))
+                .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -3341,7 +3343,9 @@ mod tests {
     #[test]
     fn snapshot_render_not_found_project_body_alice_de() {
         let site = make_alice_not_found_site();
-        let out = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("de")).into_string();
+        let out =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("de"))
+                .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -3387,8 +3391,12 @@ mod tests {
 
     #[test]
     fn not_found_browse_empty_falls_back_to_first_three_nav_items() {
-        let out = render_not_found_project_body(&make_alice_not_found_site(), "alice-in-daschland", &make_lang("en"))
-            .into_string();
+        let out = render_not_found_project_body(
+            &make_alice_not_found_site(),
+            cpe_core::url::ROOT.project("alice-in-daschland"),
+            &make_lang("en"),
+        )
+        .into_string();
         assert_eq!(
             nf_browse_links(&out),
             vec![
@@ -3402,7 +3410,9 @@ mod tests {
     #[test]
     fn not_found_browse_labels_resolve_nav_then_explicit_then_route() {
         let site = make_alice_not_found_site_with_browse();
-        let en = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("en")).into_string();
+        let en =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("en"))
+                .into_string();
         assert_eq!(
             nf_browse_links(&en),
             vec![
@@ -3411,7 +3421,9 @@ mod tests {
                 ("/alice-in-daschland/story".to_owned(), "/story".to_owned()),
             ]
         );
-        let de = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("de")).into_string();
+        let de =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("de"))
+                .into_string();
         let de_labels: Vec<String> = nf_browse_links(&de).into_iter().map(|(_, t)| t).collect();
         assert_eq!(de_labels, vec!["Figuren", "Alle Kapitel", "/story"]);
     }
@@ -3425,7 +3437,9 @@ mod tests {
             route: "/characters".to_owned(),
             label: Some("Everyone in the book".to_owned()),
         }];
-        let out = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("de")).into_string();
+        let out =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("de"))
+                .into_string();
         assert_eq!(
             nf_browse_links(&out),
             vec![("/alice-in-daschland/characters".to_owned(), "Everyone in the book".to_owned())]
@@ -3445,12 +3459,16 @@ mod tests {
                 ("de".to_owned(), "Das Spiegelarchiv".to_owned()),
             ],
         });
-        let en = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("en")).into_string();
+        let en =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("en"))
+                .into_string();
         assert!(
             en.contains("The Looking-Glass Archive — project home"),
             "N1 home row must use the EN site title: {en}"
         );
-        let de = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("de")).into_string();
+        let de =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("de"))
+                .into_string();
         assert!(
             de.contains("Das Spiegelarchiv — Projektstartseite"),
             "N1 home row must use the DE site title: {de}"
@@ -3462,7 +3480,9 @@ mod tests {
     #[test]
     fn snapshot_render_not_found_project_body_alice_browse_override_en() {
         let site = make_alice_not_found_site_with_browse();
-        let out = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("en")).into_string();
+        let out =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("en"))
+                .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -3470,7 +3490,9 @@ mod tests {
     #[test]
     fn snapshot_render_not_found_project_body_alice_browse_override_de() {
         let site = make_alice_not_found_site_with_browse();
-        let out = render_not_found_project_body(&site, "alice-in-daschland", &make_lang("de")).into_string();
+        let out =
+            render_not_found_project_body(&site, cpe_core::url::ROOT.project("alice-in-daschland"), &make_lang("de"))
+                .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -3482,7 +3504,7 @@ mod tests {
         let routes: HashMap<String, String> = HashMap::new();
         let out = render_not_found(
             None,
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             &make_alice_not_found_site(),
             &routes,
             &make_lang("en"),
@@ -3513,7 +3535,7 @@ mod tests {
         let routes: HashMap<String, String> = HashMap::new();
         let out = render_not_found(
             Some("Character"),
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             &make_alice_not_found_site(),
             &routes,
             &make_lang("en"),
@@ -3546,9 +3568,20 @@ mod tests {
         let site = make_alice_not_found_site();
         let routes: HashMap<String, String> = [("Character".to_owned(), "/characters".to_owned())].into();
         for code in ["en", "de"] {
-            let n3 = render_not_found(Some("Character"), "alice-in-daschland", &site, &routes, &make_lang(code))
-                .into_string();
-            let n1 = render_not_found_project_body(&site, "alice-in-daschland", &make_lang(code)).into_string();
+            let n3 = render_not_found(
+                Some("Character"),
+                cpe_core::url::ROOT.project("alice-in-daschland"),
+                &site,
+                &routes,
+                &make_lang(code),
+            )
+            .into_string();
+            let n1 = render_not_found_project_body(
+                &site,
+                cpe_core::url::ROOT.project("alice-in-daschland"),
+                &make_lang(code),
+            )
+            .into_string();
             let n3_lines = notfound_or_lines(&n3);
             assert_eq!(n3_lines.len(), 2, "N3 has exits + or-browse lines: {n3}");
             assert!(n3_lines[0].contains("/alice-in-daschland/characters"));
@@ -3569,7 +3602,7 @@ mod tests {
         let site = make_alice_not_found_site_with_browse();
         let out = render_not_found(
             Some("Character"),
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             &site,
             &HashMap::new(),
             &make_lang("en"),
@@ -3604,7 +3637,7 @@ mod tests {
         project_id: &'a str,
         routes: &'a std::collections::HashMap<String, String>,
     ) -> LinkResolver<'a> {
-        LinkResolver::new(project_id, routes)
+        LinkResolver::new(cpe_core::url::ROOT.project(project_id), routes)
     }
 
     fn make_routes(pairs: &[(&str, &str)]) -> std::collections::HashMap<String, String> {
@@ -3731,7 +3764,7 @@ mod tests {
     #[test]
     fn render_value_link_with_resolver_bound_class_emits_int_link_anchor() {
         let routes = make_routes(&[("Character", "/characters/:id")]);
-        let resolver = LinkResolver::new("alice-in-daschland", &routes);
+        let resolver = LinkResolver::new(cpe_core::url::ROOT.project("alice-in-daschland"), &routes);
         let v = PropertyValue::Link {
             target_id: "CH_002".to_owned(),
             target_label: Some("The White Rabbit".to_owned()),
@@ -3761,7 +3794,7 @@ mod tests {
     fn render_value_link_with_resolver_unbound_class_falls_back_to_v_text() {
         // Resolver has Character bound, but the link is to a Location.
         let routes = make_routes(&[("Character", "/characters/:id")]);
-        let resolver = LinkResolver::new("alice-in-daschland", &routes);
+        let resolver = LinkResolver::new(cpe_core::url::ROOT.project("alice-in-daschland"), &routes);
         let v = PropertyValue::Link {
             target_id: "LOC_001".to_owned(),
             target_label: Some("Wonderland".to_owned()),
@@ -3783,7 +3816,7 @@ mod tests {
     fn render_value_link_unresolved_with_resolver_stays_unresolved() {
         // target_label: None → span.unresolved regardless of resolver.
         let routes = make_routes(&[("Character", "/characters/:id")]);
-        let resolver = LinkResolver::new("alice-in-daschland", &routes);
+        let resolver = LinkResolver::new(cpe_core::url::ROOT.project("alice-in-daschland"), &routes);
         let v = PropertyValue::Link {
             target_id: "CH_BROKEN".to_owned(),
             target_label: None,
@@ -3825,7 +3858,7 @@ mod tests {
             ],
         };
         let routes = make_routes(&[("Character", "/characters/:id")]);
-        let resolver = LinkResolver::new("alice-in-daschland", &routes);
+        let resolver = LinkResolver::new(cpe_core::url::ROOT.project("alice-in-daschland"), &routes);
         let out = render_property_block(&prop, &make_lang("en"), &[], Some(&resolver), false).into_string();
 
         // Both anchors must be present.
@@ -3882,7 +3915,7 @@ mod tests {
             ],
         };
         let routes = make_routes(&[("Character", "/characters/:id")]);
-        let resolver = LinkResolver::new("alice-in-daschland", &routes);
+        let resolver = LinkResolver::new(cpe_core::url::ROOT.project("alice-in-daschland"), &routes);
         let out = render_property_block(&prop, &make_lang("en"), &[], Some(&resolver), false).into_string();
 
         // Bound value → int-link; unbound value → plain v-text; comma between.
@@ -4032,7 +4065,7 @@ mod tests {
         let resource = make_alice_resource(); // has `related` Link to CH_002 (Character class)
         let show_props: Vec<String> = vec!["related".to_owned()];
         let routes = make_routes(&[("Character", "/characters/:id")]);
-        let resolver = LinkResolver::new("alice-in-daschland", &routes);
+        let resolver = LinkResolver::new(cpe_core::url::ROOT.project("alice-in-daschland"), &routes);
         let cfg = ResourceDetailCfg {
             reader: None,
             annotations: None,
@@ -4270,7 +4303,7 @@ mod tests {
         }];
         let routes = make_routes(&[("Book", "/books/:id")]);
         let cfg = ResourceDetailCfg {
-            links: Some(LinkResolver::new("incunabula", &routes)),
+            links: Some(LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes)),
             ..grouped_cfg(&[], &groups)
         };
         let out = render_resource_detail(&resource, cfg, &make_lang("de")).into_string();
@@ -4753,7 +4786,7 @@ mod tests {
             annotations: None,
             current_path: "/demo/bands/BAND_01",
             current_query,
-            links: Some(LinkResolver::new("demo", &routes)),
+            links: Some(LinkResolver::new(cpe_core::url::ROOT.project("demo"), &routes)),
             property_labels: &labels,
             incoming: incoming_links.as_ref().map(|il| IncomingCfg {
                 caption: "Folios",
@@ -4887,7 +4920,7 @@ mod tests {
         let cfg = ResourceDetailCfg {
             reader: None,
             annotations: None,
-            links: Some(LinkResolver::new("demo", &routes)),
+            links: Some(LinkResolver::new(cpe_core::url::ROOT.project("demo"), &routes)),
             groups: &groups,
             incoming: Some(IncomingCfg {
                 caption: "Folios",

@@ -28,6 +28,7 @@
 //! (`crate::chrome::ChromeMsg::BreadcrumbLabel`).
 
 use cpe_core::lang::Lang;
+use cpe_core::url::{ProjectUrls, StaticDir};
 use cpe_core::util::js_string_escape;
 use maud::{html, Markup};
 
@@ -92,7 +93,7 @@ pub struct ShareControl<'a> {
 /// - `share` — the share control parameters (right edge of the crumb row).
 /// - `data` — the dataset panel under Copy link, or `None` for no panel row.
 pub fn render_breadcrumb(
-    project_id: &str,
+    urls: ProjectUrls<'_>,
     project_title: &str,
     class_crumb: Option<(&str, &str)>,
     resource_title: &str,
@@ -100,12 +101,19 @@ pub fn render_breadcrumb(
     share: &ShareControl<'_>,
     data: Option<&DataPanel>,
 ) -> Markup {
-    let project_href = format!("/{}/", project_id);
-    let mut links = vec![CPE_CRUMB, CrumbLink::new(&project_href, project_title)];
+    let site_href = urls.site_home();
+    let project_href = urls.home();
+    let mut links = vec![cpe_crumb(&site_href), CrumbLink::new(&project_href, project_title)];
     if let Some((label, href)) = class_crumb {
         links.push(CrumbLink::new(href, label));
     }
-    render_crumb_row(&links, resource_title, lang, share, data)
+    render_crumb_row(
+        &links,
+        resource_title,
+        lang,
+        share,
+        data.map(|panel| (panel, urls.static_dir())),
+    )
 }
 
 /// Render the browse crumb-line variant: `CPE › project › class-label`
@@ -116,14 +124,15 @@ pub fn render_breadcrumb(
 /// `render_browse_breadcrumb_for_page` — any page
 /// with a `ResourceList` component carrying a declared `id`.
 pub fn render_browse_breadcrumb(
-    project_id: &str,
+    urls: ProjectUrls<'_>,
     project_title: &str,
     class_label: &str,
     lang: &Lang,
     share: &ShareControl<'_>,
 ) -> Markup {
-    let project_href = format!("/{}/", project_id);
-    let links = [CPE_CRUMB, CrumbLink::new(&project_href, project_title)];
+    let site_href = urls.site_home();
+    let project_href = urls.home();
+    let links = [cpe_crumb(&site_href), CrumbLink::new(&project_href, project_title)];
     render_crumb_row(&links, class_label, lang, share, None)
 }
 
@@ -158,7 +167,7 @@ pub struct NarrativeMemberSegment<'a> {
 /// — any page with a `Narrative` component and no
 /// `ResourceDetail` component.
 pub fn render_narrative_breadcrumb(
-    project_id: &str,
+    urls: ProjectUrls<'_>,
     project_title: &str,
     page_title: Option<&str>,
     member: Option<&NarrativeMemberSegment<'_>>,
@@ -166,16 +175,18 @@ pub fn render_narrative_breadcrumb(
     share: &ShareControl<'_>,
     data: Option<&DataPanel>,
 ) -> Markup {
-    let project_href = format!("/{}/", project_id);
+    let site_href = urls.site_home();
+    let project_href = urls.home();
     let project = CrumbLink::new(&project_href, project_title);
     let (links, current) = match (page_title, member) {
-        (None, _) => (vec![CPE_CRUMB], project_title),
-        (Some(title), None) => (vec![CPE_CRUMB, project], title),
-        (Some(title), Some(member)) => {
-            (vec![CPE_CRUMB, project, CrumbLink::new(member.page_href, title)], member.label)
-        }
+        (None, _) => (vec![cpe_crumb(&site_href)], project_title),
+        (Some(title), None) => (vec![cpe_crumb(&site_href), project], title),
+        (Some(title), Some(member)) => (
+            vec![cpe_crumb(&site_href), project, CrumbLink::new(member.page_href, title)],
+            member.label,
+        ),
     };
-    render_crumb_row(&links, current, lang, share, data)
+    render_crumb_row(&links, current, lang, share, data.map(|panel| (panel, urls.static_dir())))
 }
 
 /// Render the site-index crumb-line variant: the degenerate single "CPE"
@@ -185,7 +196,7 @@ pub fn render_narrative_breadcrumb(
 /// `dsp-incubator cpe/engine` facade's re-export: the site index is the one
 /// page the host renders itself, hand-mirroring the chrome.
 pub fn render_site_index_breadcrumb(lang: &Lang, share: &ShareControl<'_>) -> Markup {
-    render_crumb_row(&[], CPE_CRUMB.label, lang, share, None)
+    render_crumb_row(&[], CPE_LABEL, lang, share, None)
 }
 
 /// Render the unknown-record not-found breadcrumb variant.
@@ -209,17 +220,18 @@ pub fn render_site_index_breadcrumb(lang: &Lang, share: &ShareControl<'_>) -> Ma
 /// detail/browse/narrative/site-index; a 404 page is none of those, and
 /// "copy a link to a page that doesn't resolve" is not a stated use case.
 pub fn render_not_found_breadcrumb(
-    project_id: &str,
+    urls: ProjectUrls<'_>,
     project_title: &str,
     class_crumb: Option<(&str, &str)>,
     lang: &Lang,
 ) -> Markup {
-    let project_href = format!("/{}/", project_id);
+    let site_href = urls.site_home();
+    let project_href = urls.home();
     html! {
         nav.breadcrumb aria-label=(ChromeMsg::BreadcrumbLabel.text(lang)) {
             ol.breadcrumb__list {
                 li.breadcrumb__item {
-                    a href="/" { "CPE" }
+                    a href=(site_href) { (CPE_LABEL) }
                 }
                 li.breadcrumb__sep aria-hidden="true" { "›" }
                 li.breadcrumb__item {
@@ -271,8 +283,12 @@ impl<'a> CrumbLink<'a> {
     }
 }
 
-/// The site index, the first crumb of every trail.
-const CPE_CRUMB: CrumbLink<'static> = CrumbLink { href: "/", label: "CPE" };
+const CPE_LABEL: &str = "CPE";
+
+/// CPE's own start (`Base::home`), the first crumb of every trail.
+fn cpe_crumb(site_href: &str) -> CrumbLink<'_> {
+    CrumbLink::new(site_href, CPE_LABEL)
+}
 
 /// Build the shared `nav.breadcrumb > div.breadcrumb__row > (a.crumb-back,
 /// ol.breadcrumb__list, div.crumb-actions)` shape from a trail: its linked
@@ -300,7 +316,7 @@ fn render_crumb_row(
     current: &str,
     lang: &Lang,
     share: &ShareControl<'_>,
-    data: Option<&DataPanel>,
+    data: Option<(&DataPanel, StaticDir)>,
 ) -> Markup {
     let crumb_id = crumb_element_id(share.id);
     html! {
@@ -325,7 +341,9 @@ fn render_crumb_row(
                 }
                 div.crumb-actions {
                     div.crumb-actions__row { (render_share_control(share, lang)) }
-                    @if let Some(panel) = data { (render_data_panel(panel, lang)) }
+                    @if let Some((panel, statics)) = &data {
+                        (render_data_panel(panel, lang, statics))
+                    }
                 }
             }
         }
@@ -468,7 +486,7 @@ mod tests {
     fn breadcrumb_contains_cpe_link_to_root() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -481,11 +499,52 @@ mod tests {
         assert!(out.contains("CPE"), "CPE label must appear, got: {out}");
     }
 
+    /// Under a base, the crumbs and the dataset panel's files start with it.
+    #[test]
+    fn breadcrumb_under_a_base_writes_it_in_front_of_every_url() {
+        let lang = make_lang("en");
+        let base = cpe_core::url::Base::parse("/cpe").expect("/cpe is a base");
+        let panel = DataPanel {
+            entries: vec![super::super::data_entries::DataEntry {
+                role: "Book".to_owned(),
+                title: "R".to_owned(),
+                title_lang: None,
+                number: None,
+                class: Some("Book".to_owned()),
+                ark: "https://ark.dasch.swiss/ark:/72163/1/0803/x".to_owned(),
+            }],
+            annotations: None,
+            listing: None,
+        };
+        let out = render_breadcrumb(
+            base.project("p"),
+            "P",
+            Some(("Books", "/cpe/p/books")),
+            "R",
+            &lang,
+            &share("share-p", "https://repository.example/cpe/p/books/r"),
+            Some(&panel),
+        )
+        .into_string();
+        assert!(out.contains(r#"href="/cpe/""#), "the CPE crumb: {out}");
+        assert!(out.contains(r#"href="/cpe/p/""#), "the project crumb: {out}");
+        assert!(out.contains(r#"href="/cpe/p/books""#), "the class crumb: {out}");
+        assert!(out.contains(r#"src="/cpe/p/_static/"#), "a file of the dataset panel: {out}");
+        assert!(
+            out.contains(r#"href="https://repository.example/cpe/p/books/r""#),
+            "the share link: {out}"
+        );
+        assert!(!out.contains("/cpe/cpe"), "the base is written once: {out}");
+        for path in out.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
+            assert!(path.starts_with("/cpe/"), "{path} leaves the base: {out}");
+        }
+    }
+
     #[test]
     fn breadcrumb_contains_project_link() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -505,7 +564,7 @@ mod tests {
     fn breadcrumb_current_item_has_aria_current_and_no_link() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -538,7 +597,7 @@ mod tests {
     fn breadcrumb_has_nav_with_aria_label() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "my-project",
+            cpe_core::url::ROOT.project("my-project"),
             "My Project",
             None,
             "A Resource",
@@ -565,7 +624,7 @@ mod tests {
     fn breadcrumb_separators_are_aria_hidden() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -586,7 +645,7 @@ mod tests {
     fn breadcrumb_aria_label_localizes_for_de_fr_it() {
         let lang = make_lang("de");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -602,7 +661,7 @@ mod tests {
 
         let lang = make_lang("fr");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -618,7 +677,7 @@ mod tests {
 
         let lang = make_lang("it");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -639,7 +698,7 @@ mod tests {
     fn share_control_has_href_and_stable_id() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -665,7 +724,7 @@ mod tests {
     fn share_control_label_is_copy_link_at_rest() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -729,7 +788,7 @@ mod tests {
     fn share_control_data_signals_scoped_to_copied() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -748,7 +807,7 @@ mod tests {
     fn share_control_uses_data_class_never_bare_hidden() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -772,7 +831,7 @@ mod tests {
     fn share_control_click_writes_clipboard_and_sets_copied_signal() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -795,7 +854,7 @@ mod tests {
     fn share_control_has_scoped_aria_live_status_span() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -814,7 +873,7 @@ mod tests {
     fn share_control_accessible_name_suffix_is_appended() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -838,7 +897,7 @@ mod tests {
     fn share_control_accessible_name_has_no_suffix_when_none() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -861,7 +920,7 @@ mod tests {
     fn share_control_localizes_for_de() {
         let lang = make_lang("de");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -883,7 +942,7 @@ mod tests {
     fn crumb_row_wraps_list_and_control() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -929,11 +988,13 @@ mod tests {
     fn every_copy_link_crumb_variant_carries_the_frame() {
         let lang = make_lang("en");
         let s = share("share-x", "https://example.com/x");
-        let record = render_breadcrumb("p", "P", None, "R", &lang, &s, None).into_string();
+        let record = render_breadcrumb(cpe_core::url::ROOT.project("p"), "P", None, "R", &lang, &s, None).into_string();
         assert_framed(&record, "record");
-        let browse = render_browse_breadcrumb("p", "P", "Things", &lang, &s).into_string();
+        let browse = render_browse_breadcrumb(cpe_core::url::ROOT.project("p"), "P", "Things", &lang, &s).into_string();
         assert_framed(&browse, "browse");
-        let narrative = render_narrative_breadcrumb("p", "P", Some("Page"), None, &lang, &s, None).into_string();
+        let narrative =
+            render_narrative_breadcrumb(cpe_core::url::ROOT.project("p"), "P", Some("Page"), None, &lang, &s, None)
+                .into_string();
         assert_framed(&narrative, "narrative");
         let site_index = render_site_index_breadcrumb(&lang, &s).into_string();
         assert_framed(&site_index, "site index");
@@ -957,9 +1018,18 @@ mod tests {
             annotations: None,
             listing: None,
         };
-        let record = render_breadcrumb("p", "P", None, "R", &lang, &s, Some(&panel)).into_string();
-        let narrative =
-            render_narrative_breadcrumb("p", "P", Some("Page"), None, &lang, &s, Some(&panel)).into_string();
+        let record =
+            render_breadcrumb(cpe_core::url::ROOT.project("p"), "P", None, "R", &lang, &s, Some(&panel)).into_string();
+        let narrative = render_narrative_breadcrumb(
+            cpe_core::url::ROOT.project("p"),
+            "P",
+            Some("Page"),
+            None,
+            &lang,
+            &s,
+            Some(&panel),
+        )
+        .into_string();
         for (variant, out) in [("record", &record), ("narrative", &narrative)] {
             assert!(
                 out.contains("</span></div><details class=\"crumb-data\" id=\"crumb-data\""),
@@ -967,7 +1037,7 @@ mod tests {
             );
             assert!(out.ends_with("</details></div></div></nav>"), "{variant}: {out}");
         }
-        let browse = render_browse_breadcrumb("p", "P", "Things", &lang, &s).into_string();
+        let browse = render_browse_breadcrumb(cpe_core::url::ROOT.project("p"), "P", "Things", &lang, &s).into_string();
         let site_index = render_site_index_breadcrumb(&lang, &s).into_string();
         for (variant, out) in [("browse", &browse), ("site index", &site_index)] {
             assert!(!out.contains("crumb-data"), "{variant}: {out}");
@@ -977,7 +1047,9 @@ mod tests {
     #[test]
     fn not_found_breadcrumb_has_no_frame() {
         let lang = make_lang("en");
-        let out = render_not_found_breadcrumb("p", "P", Some(("Things", "/p/things")), &lang).into_string();
+        let out =
+            render_not_found_breadcrumb(cpe_core::url::ROOT.project("p"), "P", Some(("Things", "/p/things")), &lang)
+                .into_string();
         assert!(!out.contains("crumb-actions"), "N3 has no Copy link, so no frame, got: {out}");
     }
 
@@ -995,9 +1067,19 @@ mod tests {
     fn record_back_link_goes_to_the_class_crumb_or_else_the_project() {
         let lang = make_lang("en");
         let s = share("share-x", "https://example.com/x");
-        let with_class = render_breadcrumb("p", "P", Some(("Things", "/p/things")), "R", &lang, &s, None).into_string();
+        let with_class = render_breadcrumb(
+            cpe_core::url::ROOT.project("p"),
+            "P",
+            Some(("Things", "/p/things")),
+            "R",
+            &lang,
+            &s,
+            None,
+        )
+        .into_string();
         assert_eq!(back_link(&with_class), Some(("/p/things", "Things")));
-        let without = render_breadcrumb("p", "P", None, "R", &lang, &s, None).into_string();
+        let without =
+            render_breadcrumb(cpe_core::url::ROOT.project("p"), "P", None, "R", &lang, &s, None).into_string();
         assert_eq!(back_link(&without), Some(("/p/", "P")));
     }
 
@@ -1005,7 +1087,7 @@ mod tests {
     fn browse_back_link_goes_to_the_project() {
         let lang = make_lang("en");
         let s = share("share-x", "https://example.com/x");
-        let out = render_browse_breadcrumb("p", "P", "Things", &lang, &s).into_string();
+        let out = render_browse_breadcrumb(cpe_core::url::ROOT.project("p"), "P", "Things", &lang, &s).into_string();
         assert_eq!(back_link(&out), Some(("/p/", "P")));
     }
 
@@ -1013,7 +1095,8 @@ mod tests {
     fn project_home_back_link_goes_to_the_site_index() {
         let lang = make_lang("en");
         let s = share("share-x", "https://example.com/x");
-        let out = render_narrative_breadcrumb("p", "P", None, None, &lang, &s, None).into_string();
+        let out = render_narrative_breadcrumb(cpe_core::url::ROOT.project("p"), "P", None, None, &lang, &s, None)
+            .into_string();
         assert_eq!(back_link(&out), Some(("/", "CPE")));
     }
 
@@ -1021,7 +1104,9 @@ mod tests {
     fn narrative_page_back_link_goes_to_the_project() {
         let lang = make_lang("en");
         let s = share("share-x", "https://example.com/x");
-        let out = render_narrative_breadcrumb("p", "P", Some("Page"), None, &lang, &s, None).into_string();
+        let out =
+            render_narrative_breadcrumb(cpe_core::url::ROOT.project("p"), "P", Some("Page"), None, &lang, &s, None)
+                .into_string();
         assert_eq!(back_link(&out), Some(("/p/", "P")));
     }
 
@@ -1030,7 +1115,16 @@ mod tests {
         let lang = make_lang("en");
         let s = share("share-x", "https://example.com/x");
         let member = NarrativeMemberSegment { page_href: "/p/page", label: "Chapter · 07" };
-        let out = render_narrative_breadcrumb("p", "P", Some("Page"), Some(&member), &lang, &s, None).into_string();
+        let out = render_narrative_breadcrumb(
+            cpe_core::url::ROOT.project("p"),
+            "P",
+            Some("Page"),
+            Some(&member),
+            &lang,
+            &s,
+            None,
+        )
+        .into_string();
         assert_eq!(back_link(&out), Some(("/p/page", "Page")));
     }
 
@@ -1046,7 +1140,9 @@ mod tests {
     #[test]
     fn not_found_breadcrumb_has_no_back_link_and_no_row() {
         let lang = make_lang("en");
-        let out = render_not_found_breadcrumb("p", "P", Some(("Things", "/p/things")), &lang).into_string();
+        let out =
+            render_not_found_breadcrumb(cpe_core::url::ROOT.project("p"), "P", Some(("Things", "/p/things")), &lang)
+                .into_string();
         assert!(!out.contains("crumb-back"), "{out}");
         assert!(
             out.starts_with("<nav class=\"breadcrumb\" aria-label=\"Breadcrumb\"><ol class=\"breadcrumb__list\">"),
@@ -1067,7 +1163,8 @@ mod tests {
         ] {
             let lang = make_lang(code);
             let s = share("share-x", "https://example.com/x");
-            let out = render_browse_breadcrumb("p", "P", "Things", &lang, &s).into_string();
+            let out =
+                render_browse_breadcrumb(cpe_core::url::ROOT.project("p"), "P", "Things", &lang, &s).into_string();
             let link = format!(
                 "<div class=\"breadcrumb__row\"><a class=\"crumb-back\" href=\"/p/\">\
                  <span class=\"visually-hidden\">{prefix}</span> \
@@ -1085,7 +1182,7 @@ mod tests {
     fn browse_breadcrumb_has_three_crumbs_class_label_current() {
         let lang = make_lang("en");
         let out = render_browse_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             "Characters",
             &lang,
@@ -1102,7 +1199,7 @@ mod tests {
     fn snapshot_browse_breadcrumb_en() {
         let lang = make_lang("en");
         let out = render_browse_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             "Characters",
             &lang,
@@ -1116,7 +1213,7 @@ mod tests {
     fn snapshot_browse_breadcrumb_de() {
         let lang = make_lang("de");
         let out = render_browse_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             "Figuren",
             &lang,
@@ -1132,7 +1229,7 @@ mod tests {
     fn narrative_breadcrumb_with_page_title_has_three_crumbs() {
         let lang = make_lang("en");
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some("Wonderland"),
             None,
@@ -1150,7 +1247,7 @@ mod tests {
     fn narrative_breadcrumb_project_home_has_two_crumbs_project_current() {
         let lang = make_lang("en");
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             None,
@@ -1171,7 +1268,7 @@ mod tests {
     fn snapshot_narrative_breadcrumb_with_title_en() {
         let lang = make_lang("en");
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some("Wonderland"),
             None,
@@ -1187,7 +1284,7 @@ mod tests {
     fn snapshot_narrative_breadcrumb_with_title_de() {
         let lang = make_lang("de");
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some("Wunderland"),
             None,
@@ -1203,7 +1300,7 @@ mod tests {
     fn snapshot_narrative_breadcrumb_project_home_en() {
         let lang = make_lang("en");
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             None,
@@ -1219,7 +1316,7 @@ mod tests {
     fn snapshot_narrative_breadcrumb_project_home_de() {
         let lang = make_lang("de");
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             None,
@@ -1241,7 +1338,7 @@ mod tests {
             label: "Chapter · 07",
         };
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some("Wonderland"),
             Some(&member),
@@ -1287,7 +1384,7 @@ mod tests {
             label: "Chapter · 07",
         };
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some("Wonderland"),
             Some(&member),
@@ -1310,7 +1407,7 @@ mod tests {
             label: "Kapitel · 07",
         };
         let out = render_narrative_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some("Wunderland"),
             Some(&member),
@@ -1358,7 +1455,7 @@ mod tests {
     fn snapshot_breadcrumb_en() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -1379,7 +1476,7 @@ mod tests {
     fn share_control_reactive_href_attr_renders_data_attr_when_present() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -1405,7 +1502,7 @@ mod tests {
     fn share_control_no_reactive_href_attr_when_none() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -1424,7 +1521,7 @@ mod tests {
     fn snapshot_breadcrumb_record_with_reactive_href_en() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -1446,7 +1543,7 @@ mod tests {
     fn snapshot_breadcrumb_de() {
         let lang = make_lang("de");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "Alice",
@@ -1467,7 +1564,7 @@ mod tests {
     fn breadcrumb_class_crumb_inserted_between_project_and_current() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some(("Characters", "/alice-in-daschland/characters")),
             "White Rabbit",
@@ -1502,7 +1599,7 @@ mod tests {
     fn breadcrumb_no_class_crumb_when_none() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             None,
             "White Rabbit",
@@ -1522,7 +1619,7 @@ mod tests {
     fn snapshot_breadcrumb_with_class_crumb_en() {
         let lang = make_lang("en");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some(("Character", "/alice-in-daschland/characters")),
             "White Rabbit",
@@ -1541,7 +1638,7 @@ mod tests {
     fn snapshot_breadcrumb_with_class_crumb_de() {
         let lang = make_lang("de");
         let out = render_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some(("Figur", "/alice-in-daschland/characters")),
             "Weißes Kaninchen",
@@ -1561,7 +1658,13 @@ mod tests {
     #[test]
     fn not_found_breadcrumb_without_class_crumb_has_three_items() {
         let lang = make_lang("en");
-        let out = render_not_found_breadcrumb("alice-in-daschland", "Alice in DaSCHland", None, &lang).into_string();
+        let out = render_not_found_breadcrumb(
+            cpe_core::url::ROOT.project("alice-in-daschland"),
+            "Alice in DaSCHland",
+            None,
+            &lang,
+        )
+        .into_string();
         assert_eq!(
             out.matches("breadcrumb__item").count(),
             3, // CPE, project, current — no class crumb
@@ -1577,7 +1680,7 @@ mod tests {
     fn not_found_breadcrumb_with_class_crumb_has_four_items_and_live_link() {
         let lang = make_lang("en");
         let out = render_not_found_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some(("Characters", "/alice-in-daschland/characters")),
             &lang,
@@ -1598,7 +1701,13 @@ mod tests {
     #[test]
     fn not_found_breadcrumb_current_item_has_aria_current_and_no_link() {
         let lang = make_lang("en");
-        let out = render_not_found_breadcrumb("alice-in-daschland", "Alice in DaSCHland", None, &lang).into_string();
+        let out = render_not_found_breadcrumb(
+            cpe_core::url::ROOT.project("alice-in-daschland"),
+            "Alice in DaSCHland",
+            None,
+            &lang,
+        )
+        .into_string();
         assert!(
             out.contains("aria-current=\"page\""),
             "current item must have aria-current=page, got: {out}"
@@ -1615,7 +1724,7 @@ mod tests {
     fn snapshot_not_found_breadcrumb_with_class_crumb_en() {
         let lang = make_lang("en");
         let out = render_not_found_breadcrumb(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             "Alice in DaSCHland",
             Some(("Characters", "/alice-in-daschland/characters")),
             &lang,
@@ -1627,7 +1736,13 @@ mod tests {
     #[test]
     fn snapshot_not_found_breadcrumb_without_class_crumb_en() {
         let lang = make_lang("en");
-        let out = render_not_found_breadcrumb("alice-in-daschland", "Alice in DaSCHland", None, &lang).into_string();
+        let out = render_not_found_breadcrumb(
+            cpe_core::url::ROOT.project("alice-in-daschland"),
+            "Alice in DaSCHland",
+            None,
+            &lang,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
     }
 }

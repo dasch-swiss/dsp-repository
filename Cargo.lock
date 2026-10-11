@@ -599,6 +599,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpe-image-viewer"
+version = "0.8.7"
+dependencies = [
+ "maud",
+]
+
+[[package]]
 name = "cpe-ports"
 version = "0.8.7"
 

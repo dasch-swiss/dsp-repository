@@ -136,7 +136,7 @@ impl DiscoveredProject {
     ///
     /// The walk is **recursive**: a file in a subfolder is listed with its
     /// full relative path (`"assets/covers/x.webp"`). Neither the
-    /// `cover-image` path-shape validator nor the `/_assets/{id}/{*path}`
+    /// `cover-image` path-shape validator nor the `/{id}/_assets/{*path}`
     /// route rejects a nested path, and `CoverImageNotFound` treats this list
     /// as complete, so a flat walk would refuse a nested cover image that the
     /// route serves. Keep it recursive, or the validator and the route

@@ -962,7 +962,7 @@ mod tests {
 
     fn render_in(page: &CompoundPage, member_class_label: &str, lang: &Lang) -> String {
         let routes = HashMap::from([("Book".to_owned(), "/books/:id".to_owned())]);
-        let links = LinkResolver::new("incunabula", &routes);
+        let links = LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes);
         render_annotations_target(page, member_class_label, &BOOKMARK, &links, lang).into_string()
     }
 

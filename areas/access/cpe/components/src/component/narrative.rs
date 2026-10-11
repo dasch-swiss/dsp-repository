@@ -89,7 +89,9 @@ pub fn resolve_narrative_content<'a>(
 /// the number of top-level `##` headings in the page's narratives before
 /// this one, and `rail` is the page rail, for the page's first narrative
 /// only (see `editorial::render_editorial` for both).
+#[allow(clippy::too_many_arguments)]
 pub fn render_narrative(
+    base: &cpe_core::url::Base,
     file: &str,
     lang: &Lang,
     default_lang: &Lang,
@@ -99,7 +101,7 @@ pub fn render_narrative(
     rail: Option<&Rail<'_>>,
 ) -> Editorial {
     match resolve_narrative_content(file, lang, default_lang, narrative) {
-        Some(src) => crate::component::editorial::render_editorial(src, figures, id_offset, rail),
+        Some(src) => crate::component::editorial::render_editorial(base, src, figures, id_offset, rail),
         // All three rungs missed — an invariant violation after boot validation
         // (validation guarantees the base-or-default rung exists); emit an empty
         // article rather than panicking so the page still renders.
@@ -162,7 +164,7 @@ mod tests {
         let candidate = resolve_variant("home.md", &lang);
         assert_eq!(candidate.as_ref(), "home.de.md");
         // render_narrative should use the de variant
-        let out = render_narrative("home.md", &lang, &lang, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &lang, &lang, &store, &[], 0, None)
             .markup
             .into_string();
         assert!(out.contains("de content"), "expected de content in output, got: {out}");
@@ -173,7 +175,7 @@ mod tests {
         // "home.md" + lang "de" — store only has "home.md", no "home.de.md" → base
         let lang = make_lang("de");
         let store = make_store(&[("home.md", "base content")]);
-        let out = render_narrative("home.md", &lang, &lang, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &lang, &lang, &store, &[], 0, None)
             .markup
             .into_string();
         assert!(
@@ -190,7 +192,7 @@ mod tests {
         assert_eq!(candidate.as_ref(), "readme");
         // render_narrative finds "readme" in the store
         let store = make_store(&[("readme", "readme content")]);
-        let out = render_narrative("readme", &lang, &lang, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "readme", &lang, &lang, &store, &[], 0, None)
             .markup
             .into_string();
         assert!(out.contains("readme content"), "expected readme content, got: {out}");
@@ -302,7 +304,7 @@ mod tests {
         let requested = make_lang("fr");
         let default = make_lang("en");
         let store = make_store(&[]); // empty store
-        let out = render_narrative("home.md", &requested, &default, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &requested, &default, &store, &[], 0, None)
             .markup
             .into_string();
         assert_eq!(
@@ -315,7 +317,7 @@ mod tests {
     fn render_narrative_wraps_in_editorial_article() {
         let lang = make_lang("en");
         let store = make_store(&[("home.md", "# Hello\n\nSome content.")]);
-        let out = render_narrative("home.md", &lang, &lang, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &lang, &lang, &store, &[], 0, None)
             .markup
             .into_string();
         assert!(
@@ -337,7 +339,7 @@ mod tests {
             ("home.fr.md", "Contenu français distinct"),
             ("home.en.md", "Distinct English content"),
         ]);
-        let out = render_narrative("home.md", &requested, &default, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &requested, &default, &store, &[], 0, None)
             .markup
             .into_string();
         insta::assert_snapshot!(out);
@@ -350,7 +352,7 @@ mod tests {
         let requested = make_lang("fr");
         let default = make_lang("en");
         let store = make_store(&[("home.en.md", "English only content")]);
-        let out = render_narrative("home.md", &requested, &default, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &requested, &default, &store, &[], 0, None)
             .markup
             .into_string();
         insta::assert_snapshot!(out);
@@ -363,7 +365,7 @@ mod tests {
         let requested = make_lang("fr");
         let default = make_lang("en");
         let store = make_store(&[]);
-        let out = render_narrative("home.md", &requested, &default, &store, &[], 0, None)
+        let out = render_narrative(&cpe_core::url::ROOT, "home.md", &requested, &default, &store, &[], 0, None)
             .markup
             .into_string();
         insta::assert_snapshot!(out);

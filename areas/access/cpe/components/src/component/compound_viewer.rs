@@ -1635,7 +1635,7 @@ mod tests {
     }
 
     fn make_resolver<'a>(project_id: &'a str, routes: &'a HashMap<String, String>) -> LinkResolver<'a> {
-        LinkResolver::new(project_id, routes)
+        LinkResolver::new(cpe_core::url::ROOT.project(project_id), routes)
     }
 
     fn make_cfg<'a>(
@@ -3488,7 +3488,7 @@ mod tests {
             index: MemberIndex::Off,
             media_property: Some("image"),
             class_labels: &class_labels,
-            links: Some(LinkResolver::new("incunabula", &routes)),
+            links: Some(LinkResolver::new(cpe_core::url::ROOT.project("incunabula"), &routes)),
             member_links,
             ..make_cfg(None, "/incunabula/books/B1", None)
         };

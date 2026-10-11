@@ -51,7 +51,15 @@ use maud::{html, Markup, DOCTYPE};
 /// `typeface` picks the Google Fonts families to load: `Some(t)` (a project
 /// page) loads `t`'s families plus Lora (the fixed `.dasch-link` face) and IBM
 /// Plex Mono; `None` (a page outside any project) loads Newsreader and Plex Mono.
-pub fn document_head(site_title: &str, view_transitions: bool, typeface: Option<Typeface>) -> Markup {
+///
+/// `statics` is where this page loads the shared static files from: its
+/// project's directory, or CPE's own for a page without a project.
+pub fn document_head(
+    site_title: &str,
+    view_transitions: bool,
+    typeface: Option<Typeface>,
+    statics: &cpe_core::url::StaticDir,
+) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -64,27 +72,27 @@ pub fn document_head(site_title: &str, view_transitions: bool, typeface: Option<
             // (Self-hosting them as woff2 is backlogged.)
             link rel="stylesheet" href=(google_fonts_href(typeface));
             // Design-system CSS — order is load order (tokens first, grid last).
-            link rel="stylesheet" href="/_static/cpe/tokens.css";
-            link rel="stylesheet" href="/_static/cpe/shell.css";
-            link rel="stylesheet" href="/_static/cpe/editorial.css";
-            link rel="stylesheet" href="/_static/cpe/record.css";
-            link rel="stylesheet" href="/_static/cpe/grid.css";
+            link rel="stylesheet" href=(statics.file("cpe/tokens.css"));
+            link rel="stylesheet" href=(statics.file("cpe/shell.css"));
+            link rel="stylesheet" href=(statics.file("cpe/editorial.css"));
+            link rel="stylesheet" href=(statics.file("cpe/record.css"));
+            link rel="stylesheet" href=(statics.file("cpe/grid.css"));
             // The plate column + .pg pager
             // primitive. Sixth file; see
             // dsp-incubator cpe/docs/adr/0005-css-baseline.md.
-            link rel="stylesheet" href="/_static/cpe/media.css";
+            link rel="stylesheet" href=(statics.file("cpe/media.css"));
             // Incunabula's per-project components (the timeline, the
             // showcase figures). Seventh file, after media.css.
-            link rel="stylesheet" href="/_static/cpe/incunabula.css";
+            link rel="stylesheet" href=(statics.file("cpe/incunabula.css"));
             // DataStar v1.0.2 — ES module (defer-by-default; no async).
-            script type="module" src="/_static/datastar.js" {}
+            script type="module" src=(statics.file("datastar.js")) {}
             // Registers the `<image-viewer>`
             // custom element globally. Emitted unconditionally (not gated on
             // whether the page actually mounts a viewer) so the design-system
             // contract stays in this one function — the module itself is
             // tiny and the heavy OpenSeadragon bundle stays lazy-loaded by
             // the element only on pages that actually contain one.
-            (cpe_image_viewer::head_tag(cpe_image_viewer::ASSET_PREFIX))
+            (cpe_image_viewer::head_tag(&statics.file("image-viewer")))
             @if view_transitions {
                 style { (VIEW_TRANSITION_STYLE) }
             }
@@ -441,7 +449,14 @@ pub fn render_page(
     let (body, layout) = render_body(page, ctx, narrative, components, &default_lang, site);
 
     let inner = html! {
-        (document_head(&page_title, view_transitions, Some(site.theme.typeface)))
+        ({
+            document_head(
+                &page_title,
+                view_transitions,
+                Some(site.theme.typeface),
+                &ctx.urls().static_dir(),
+            )
+        })
         body {
             // A11y: skip-to-content link, first child of <body> on every
             // full-page renderer (both not-found pages mirror it).
@@ -462,7 +477,7 @@ pub fn render_page(
                     @if let Some(ref bc) = breadcrumb_markup { (bc) }
                     (body)
                 }
-                (shell_footer(site, &ctx.lang))
+                (shell_footer(site, &ctx.lang, &ctx.urls().static_dir()))
             }
         }
     };
@@ -528,7 +543,14 @@ pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> M
     let lang = &ctx.lang;
     let title = format!("{} — {}", site_title(site, lang), ChromeMsg::NfPathTitle.text(lang));
     let inner = html! {
-        (document_head(&title, false, Some(site.theme.typeface)))
+        ({
+            document_head(
+                &title,
+                false,
+                Some(site.theme.typeface),
+                &ctx.urls().static_dir(),
+            )
+        })
         body {
             (skip_link(lang))
             div.shell {
@@ -537,12 +559,12 @@ pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> M
                     ({
                         resource_detail::render_not_found_project_body(
                             site,
-                            ctx.project_id,
+                            ctx.urls(),
                             lang,
                         )
                     })
                 }
-                (shell_footer(site, lang))
+                (shell_footer(site, lang, &ctx.urls().static_dir()))
             }
         }
     };
@@ -562,7 +584,9 @@ pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> M
 /// no project whose pages could be offered), product-default theme knob
 /// (ochre · tint · newsreader). `lang` is one of the built-in languages
 /// (`cpe_core::lang::resolve_builtin`): there is no project to declare any.
-pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
+pub fn render_not_found_site(base: &cpe_core::url::Base, lang: &Lang, appearance: Appearance) -> Markup {
+    let home = base.home();
+    let statics = &base.static_dir();
     use cpe_components::chrome::ChromeMsg;
     let code = ChromeMsg::NfCode.text(lang);
     let heading = ChromeMsg::NfSiteTitle.text(lang);
@@ -574,7 +598,7 @@ pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
         code,
         heading,
         Some(message),
-        Some((all_projects_label, "/")),
+        Some((all_projects_label, &home)),
         None,
     );
 
@@ -602,6 +626,7 @@ pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
                     "CPE — Configurable Presentation Environment",
                     false,
                     None,
+                    statics,
                 )
             })
             body {
@@ -610,14 +635,14 @@ pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
                     header class="shell__header" {
                         div class="header__inner" {
                             a   class="brand"
-                                href="/"
+                                href=(home)
                                 aria-label=(ChromeMsg::SiteIndexAriaLabel.text(lang))
                             {
                                 span class="brand__mark" { "CPE" }
                             }
                             div class="header__controls header__controls--push" {
                                 a   class="theme-toggle"
-                                    href=(format!("/?appearance={toggle_target}"))
+                                    href=(format!("{home}?appearance={toggle_target}"))
                                     aria-label=(toggle_label)
                                     title=(toggle_label)
                                 {
@@ -646,10 +671,10 @@ pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
                                     aria-label=(ChromeMsg::DaschAriaLabel.text(lang))
                                 {
                                     img class="dasch-logo__img dasch-logo__img--light"
-                                        src="/_static/cpe/dasch-logo-colour.svg"
+                                        src=(statics.file("cpe/dasch-logo-colour.svg"))
                                         alt=(ChromeMsg::DaschAriaLabel.text(lang));
                                     img class="dasch-logo__img dasch-logo__img--dark"
-                                        src="/_static/cpe/dasch-logo-white.svg"
+                                        src=(statics.file("cpe/dasch-logo-white.svg"))
                                         alt=(ChromeMsg::DaschAriaLabel.text(lang));
                                 }
                                 p class="footer-index__orgname" {
@@ -994,7 +1019,7 @@ pub(crate) fn render_record_breadcrumb_for_page(
                             let class_crumb: Option<(String, String)> = class.as_deref().and_then(|c| {
                                 ctx.class_list_routes.get(c).map(|route| {
                                     let label = resolve_class_plural_capitalized(&site.class_labels, c, &ctx.lang);
-                                    let href = format!("/{}{}", ctx.project_id, route);
+                                    let href = ctx.urls().page(route);
                                     (label, href)
                                 })
                             });
@@ -1009,7 +1034,7 @@ pub(crate) fn render_record_breadcrumb_for_page(
                                 None,
                             );
                             Some(breadcrumb::render_breadcrumb(
-                                ctx.project_id,
+                                ctx.urls(),
                                 site_title(site, &ctx.lang),
                                 class_crumb.as_ref().map(|(label, href)| (label.as_str(), href.as_str())),
                                 resource_title,
@@ -1028,12 +1053,12 @@ pub(crate) fn render_record_breadcrumb_for_page(
                             let class_crumb: Option<(String, String)> = class.as_deref().and_then(|c| {
                                 ctx.class_list_routes.get(c).map(|route| {
                                     let label = resolve_class_label(&site.class_labels, c, &ctx.lang);
-                                    let href = format!("/{}{}", ctx.project_id, route);
+                                    let href = ctx.urls().page(route);
                                     (label, href)
                                 })
                             });
                             Some(breadcrumb::render_not_found_breadcrumb(
-                                ctx.project_id,
+                                ctx.urls(),
                                 site_title(site, &ctx.lang),
                                 class_crumb.as_ref().map(|(label, href)| (label.as_str(), href.as_str())),
                                 &ctx.lang,
@@ -1178,7 +1203,7 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
             format!("{class_label} · {:02}", cp.index)
         })
     });
-    let page_href = format!("/{}{}", ctx.project_id, page.route);
+    let page_href = ctx.urls().page(&page.route);
     let member_segment = member_label
         .as_deref()
         .map(|label| breadcrumb::NarrativeMemberSegment { page_href: &page_href, label });
@@ -1191,7 +1216,7 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
     let panel = data_links::page_data_panel(page, components, &site.class_labels, &ctx.lang, data_arks, Some(&listing));
 
     Some(breadcrumb::render_narrative_breadcrumb(
-        ctx.project_id,
+        ctx.urls(),
         site_title(site, &ctx.lang),
         page_title.as_deref(),
         member_segment.as_ref(),
@@ -1338,7 +1363,7 @@ pub fn render_browse_breadcrumb_for_page(
     };
 
     Some(breadcrumb::render_browse_breadcrumb(
-        ctx.project_id,
+        ctx.urls(),
         site_title(site, &ctx.lang),
         &class_label,
         &ctx.lang,
@@ -1429,10 +1454,10 @@ pub(crate) fn shell_header(site: &SiteConfig, ctx: &RenderContext<'_>, current_r
             div.header__inner {
                 // Brand: CPE wordmark → "/" + project name → project home
                 div.brand {
-                    a.brand__mark href="/" { "CPE" }
+                    a.brand__mark href=(ctx.base.home()) { "CPE" }
                     span.brand__sep { "/" }
                     // `title` carries the full name where the row ellipsises it.
-                    a.brand__project href=(format!("/{}/", ctx.project_id)) title=(title) { (title) }
+                    a.brand__project href=(ctx.urls().home()) title=(title) { (title) }
                 }
                 button.header__menu-btn type="button" popovertarget=(HEADER_MENU_ID) {
                     span.header__menu-bars aria-hidden="true" {
@@ -1456,7 +1481,7 @@ pub(crate) fn shell_header(site: &SiteConfig, ctx: &RenderContext<'_>, current_r
                     {
                         @for item in &site.nav {
                             @let is_active = nav_item_is_active(&item.route, current_route);
-                            a   href=(format!("/{}{}", ctx.project_id, item.route))
+                            a   href=(ctx.urls().page(&item.route))
                                 aria-current=[is_active.then_some("page")]
                             { (nav_label(site, item, &ctx.lang)) }
                         }
@@ -1592,7 +1617,7 @@ pub(crate) fn shell_header_controls(site: &SiteConfig, ctx: &RenderContext<'_>) 
 /// as nav `label` (see `nav_label`/`chrome_lookup`): resolved via
 /// `chrome_lookup(site, desc, lang)`, falling back to the literal value when
 /// `desc` doesn't match a declared chrome-string id.
-pub(crate) fn shell_footer(site: &SiteConfig, lang: &Lang) -> Markup {
+pub(crate) fn shell_footer(site: &SiteConfig, lang: &Lang, statics: &cpe_core::url::StaticDir) -> Markup {
     html! {
         footer.shell__footer {
             div.footer__inner {
@@ -1607,13 +1632,13 @@ pub(crate) fn shell_footer(site: &SiteConfig, lang: &Lang) -> Markup {
                 {
                     img .dasch-logo__img
                         .dasch-logo__img--light
-                        src="/_static/cpe/dasch-logo-colour.svg"
+                        src=(statics.file("cpe/dasch-logo-colour.svg"))
                         alt=""
                         width="2147"
                         height="621";
                     img .dasch-logo__img
                         .dasch-logo__img--dark
-                        src="/_static/cpe/dasch-logo-white.svg"
+                        src=(statics.file("cpe/dasch-logo-white.svg"))
                         alt=""
                         width="2148"
                         height="622";
@@ -2097,8 +2122,7 @@ fn render_body(
             block: render_component(c, ctx, narrative, slot(i), default_lang, site),
             count: figure_slot.count.as_deref().and_then(label),
             more: figure_slot.more.as_ref().and_then(|more| {
-                label(&more.label)
-                    .map(|label| editorial::FigureLink { label, href: format!("/{}{}", ctx.project_id, more.route) })
+                label(&more.label).map(|label| editorial::FigureLink { label, href: ctx.urls().page(&more.route) })
             }),
         });
     }
@@ -2150,6 +2174,7 @@ fn render_body(
         if let Component::Narrative { file, .. } = &page.body[i] {
             let is_first = requested.is_some_and(|(first, ..)| first == i);
             let rendered = cpe_components::component::narrative::render_narrative(
+                ctx.base,
                 file,
                 &ctx.lang,
                 default_lang,
@@ -2398,7 +2423,7 @@ fn render_reader_annotations(
         id: &record.id,
         title: values::resolve_title_str(record, title_property.as_deref(), &ctx.lang),
     };
-    let links = links::LinkResolver::new(ctx.project_id, ctx.link_routes);
+    let links = links::LinkResolver::new(ctx.urls(), ctx.link_routes);
     Some(annotation::render_annotations_target(
         compound,
         &member_class_label,
@@ -2465,7 +2490,7 @@ fn render_list_component(
     let resolved_gloss = gloss.as_ref().map(|g| resolve_gloss(site, g, &ctx.lang));
     match data {
         ComponentData::List(list_page) => {
-            let resolver = links::LinkResolver::new(ctx.project_id, ctx.link_routes);
+            let resolver = links::LinkResolver::new(ctx.urls(), ctx.link_routes);
             let cfg = resource_list::ResourceListCfg {
                 links: Some(resolver),
                 current_path: ctx.current_path,
@@ -2526,7 +2551,7 @@ fn render_compound_component(
     };
     match data {
         ComponentData::Compound(compound_page) => {
-            let resolver = links::LinkResolver::new(ctx.project_id, ctx.link_routes);
+            let resolver = links::LinkResolver::new(ctx.urls(), ctx.link_routes);
             // The member's media property: the `compound-viewer media="…"`
             // attribute when set, else
             // the class→media-property map
@@ -2719,7 +2744,7 @@ fn render_detail_component(
     };
     match data {
         ComponentData::Detail(Some(resource)) => {
-            let resolver = links::LinkResolver::new(ctx.project_id, ctx.link_routes);
+            let resolver = links::LinkResolver::new(ctx.urls(), ctx.link_routes);
             // The media link property —
             // resolved here (render_component has the resource's class)
             // and threaded via cfg so render_resource_detail can exclude
@@ -2778,6 +2803,7 @@ fn render_detail_component(
                         div.prose {
                             ({
                                 cpe_components::component::markdown::render_markdown_fragment(
+                                    ctx.base,
                                     src,
                                 )
                             })
@@ -2844,9 +2870,7 @@ fn render_detail_component(
             };
             resource_detail::render_resource_detail(resource, cfg, &ctx.lang)
         }
-        _ => {
-            resource_detail::render_not_found(class.as_deref(), ctx.project_id, site, ctx.class_list_routes, &ctx.lang)
-        }
+        _ => resource_detail::render_not_found(class.as_deref(), ctx.urls(), site, ctx.class_list_routes, &ctx.lang),
     }
 }
 
@@ -3758,6 +3782,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["de".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -3792,6 +3817,60 @@ mod tests {
             "title, brand (text and `title`) and crumb each carry the DE site title: {out}"
         );
         assert!(!out.contains("site-title"), "the raw chrome id must never render: {out}");
+    }
+
+    /// Under a base, a page's links, the files it loads and its share link
+    /// all start with the base, and none holds it twice.
+    #[test]
+    fn render_page_writes_the_base_in_front_of_every_url() {
+        let site = make_alice_site();
+        let page = make_alice_page();
+        let narrative = make_alice_narrative();
+        let lang = resolve(&["en".to_owned()], &site);
+        let base = cpe_core::url::Base::parse("/cpe").expect("/cpe is a base");
+        let ctx = RenderContext {
+            base: &base,
+            lang,
+            project_id: "alice-in-daschland",
+            current_path: "/cpe/alice-in-daschland/",
+            route_params: &[],
+            current_query: None,
+            appearance: Appearance::Light,
+            selected_image: 0,
+            link_routes: &EMPTY_ROUTES,
+            media_properties: &EMPTY_ROUTES,
+            media_items: &EMPTY_MEDIA,
+            strip_open: true,
+            media_thumbs: &EMPTY_MEDIA_THUMBS,
+            compound_members: &[],
+            compound_parents: &EMPTY_PARENTS,
+            class_list_routes: &EMPTY_ROUTES,
+            public_origin: "https://repository.example",
+            incoming_links: None,
+            resource_links: &[],
+        };
+        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        assert!(
+            out.contains(r#"href="/cpe/alice-in-daschland/""#),
+            "the project's start page: {out}"
+        );
+        assert!(out.contains(r#"href="/cpe/""#), "CPE's own start: {out}");
+        assert!(
+            out.contains(r#"href="/cpe/alice-in-daschland/_static/cpe/tokens.css""#),
+            "a stylesheet: {out}"
+        );
+        assert!(
+            out.contains(r#"src="/cpe/alice-in-daschland/_static/datastar.js""#),
+            "a script: {out}"
+        );
+        assert!(
+            out.contains(r#"href="https://repository.example/cpe/alice-in-daschland/""#),
+            "the share link: {out}"
+        );
+        assert!(!out.contains("/cpe/cpe"), "the base is written once: {out}");
+        for path in out.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
+            assert!(path.starts_with("/cpe/"), "{path} leaves the base: {out}");
+        }
     }
 
     // ── Layer-1: resolve_property_label ──────────────────────────────────────
@@ -4076,6 +4155,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4107,6 +4187,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["de".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4145,6 +4226,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4182,6 +4264,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4215,7 +4298,7 @@ mod tests {
         let positions: Vec<usize> = order
             .iter()
             .map(|css| {
-                out.find(&format!("/_static/cpe/{css}"))
+                out.find(&format!("\"/alice-in-daschland/_static/cpe/{css}\""))
                     .unwrap_or_else(|| panic!("output must link {css}, got: {out}"))
             })
             .collect();
@@ -4245,6 +4328,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4285,6 +4369,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4325,6 +4410,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4359,6 +4445,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4397,6 +4484,7 @@ mod tests {
         let site = make_alice_site();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4439,6 +4527,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4478,6 +4567,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4523,6 +4613,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4569,6 +4660,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["de".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4640,7 +4732,7 @@ mod tests {
     fn footer_attribution_absent_renders_engine_string_with_dasch_emphasis() {
         let site = make_alice_site();
         let lang = resolve(&["en".to_owned()], &site);
-        let out = shell_footer(&site, &lang).into_string();
+        let out = shell_footer(&site, &lang, &cpe_core::url::ROOT.project("p").static_dir()).into_string();
         let attr = footer_attr_of(&out);
         assert!(
             attr.contains("<strong>DaSCH</strong>"),
@@ -4655,9 +4747,19 @@ mod tests {
     #[test]
     fn footer_attribution_chrome_id_translates_per_language_as_plain_text() {
         let site = site_with_footer_attribution("footer-credit");
-        let en = shell_footer(&site, &resolve(&["en".to_owned()], &site)).into_string();
+        let en = shell_footer(
+            &site,
+            &resolve(&["en".to_owned()], &site),
+            &cpe_core::url::ROOT.project("p").static_dir(),
+        )
+        .into_string();
         assert_eq!(footer_attr_of(&en), "Data CC BY 4.0, DaSCH.");
-        let de = shell_footer(&site, &resolve(&["de".to_owned()], &site)).into_string();
+        let de = shell_footer(
+            &site,
+            &resolve(&["de".to_owned()], &site),
+            &cpe_core::url::ROOT.project("p").static_dir(),
+        )
+        .into_string();
         assert_eq!(
             footer_attr_of(&de),
             "Daten CC BY 4.0, DaSCH.",
@@ -4669,7 +4771,12 @@ mod tests {
     fn footer_attribution_literal_renders_verbatim() {
         let site = site_with_footer_attribution("Scans courtesy of DaSCH and UB Basel.");
         for code in ["en", "de"] {
-            let out = shell_footer(&site, &resolve(&[code.to_owned()], &site)).into_string();
+            let out = shell_footer(
+                &site,
+                &resolve(&[code.to_owned()], &site),
+                &cpe_core::url::ROOT.project("p").static_dir(),
+            )
+            .into_string();
             assert_eq!(footer_attr_of(&out), "Scans courtesy of DaSCH and UB Basel.");
         }
     }
@@ -4692,7 +4799,7 @@ mod tests {
         for code in ["en", "de", "fr", "it"] {
             let lang = resolve(&[code.to_owned()], &site);
             assert_eq!(lang.as_str(), code);
-            let out = shell_footer(&site, &lang).into_string();
+            let out = shell_footer(&site, &lang, &cpe_core::url::ROOT.project("p").static_dir()).into_string();
             let lockup = footer_lockup_of(&out);
             assert!(lockup.contains("href=\"https://www.dasch.swiss\""), "{code}: {lockup}");
             assert!(!lockup.contains("target="), "{code}: same tab, {lockup}");
@@ -4701,9 +4808,9 @@ mod tests {
             assert!(lockup.contains(&format!("aria-label=\"{name}\"")), "{code}: {lockup}");
             for img in [
                 "<img class=\"dasch-logo__img dasch-logo__img--light\" \
-                 src=\"/_static/cpe/dasch-logo-colour.svg\" alt=\"\"",
+                 src=\"/p/_static/cpe/dasch-logo-colour.svg\" alt=\"\"",
                 "<img class=\"dasch-logo__img dasch-logo__img--dark\" \
-                 src=\"/_static/cpe/dasch-logo-white.svg\" alt=\"\"",
+                 src=\"/p/_static/cpe/dasch-logo-white.svg\" alt=\"\"",
             ] {
                 assert!(lockup.contains(img), "{code}: {lockup}");
             }
@@ -4718,7 +4825,12 @@ mod tests {
     #[test]
     fn footer_lockup_survives_a_footer_attribution_override() {
         let site = site_with_footer_attribution("footer-credit");
-        let out = shell_footer(&site, &resolve(&["de".to_owned()], &site)).into_string();
+        let out = shell_footer(
+            &site,
+            &resolve(&["de".to_owned()], &site),
+            &cpe_core::url::ROOT.project("p").static_dir(),
+        )
+        .into_string();
         assert!(footer_lockup_of(&out).contains("Schweizerisches Daten-"));
         assert_eq!(footer_attr_of(&out), "Daten CC BY 4.0, DaSCH.");
     }
@@ -4737,6 +4849,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["de".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4785,6 +4898,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -4839,6 +4953,7 @@ mod tests {
         let narrative = make_alice_narrative(); // "home.md" -> "# Welcome\n\n..."
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/wonderland",
@@ -4888,6 +5003,7 @@ mod tests {
         let resource = make_alice_resource();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -4971,6 +5087,7 @@ mod tests {
             navigator: false,
         };
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&["de".to_owned()], &site),
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -5123,6 +5240,7 @@ mod tests {
         appearance: Appearance,
     ) -> RenderContext<'a> {
         RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&["de".to_owned()], site),
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/books/CH_001",
@@ -5424,6 +5542,7 @@ mod tests {
             }),
         ];
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&["en".to_owned()], &site),
             project_id: "incunabula",
             current_path: "/incunabula/",
@@ -5495,6 +5614,7 @@ mod tests {
         ]);
         let ids_in = |lang: &str| {
             let ctx = RenderContext {
+                base: &cpe_core::url::ROOT,
                 lang: resolve(&[lang.to_owned()], &site),
                 project_id: "alice-in-daschland",
                 current_path: "/alice-in-daschland/",
@@ -5733,7 +5853,7 @@ mod tests {
         let browse = rail_document(&site, &make_nonfaceted_browse_page(), &rail_store(&[]));
         let ctx = make_browse_ctx(lang.clone(), "/alice-in-daschland/", None);
         let n1 = render_not_found_project(&site, &ctx).into_string();
-        let n2 = render_not_found_site(&lang, Appearance::Light).into_string();
+        let n2 = render_not_found_site(&cpe_core::url::ROOT, &lang, Appearance::Light).into_string();
         for (name, document) in [("browse", browse), ("N1", n1), ("N2", n2)] {
             assert!(html_tag(&document).contains("data-accent"), "{name}");
             assert!(!document.contains("data-narr"), "{name}: {document}");
@@ -5801,7 +5921,7 @@ mod tests {
             let tag = html_tag(&document);
             assert!(tag.contains(r#" data-align="justify""#), "{name}: {tag}");
         }
-        let n2 = render_not_found_site(&lang, Appearance::Light).into_string();
+        let n2 = render_not_found_site(&cpe_core::url::ROOT, &lang, Appearance::Light).into_string();
         assert!(html_tag(&n2).contains("data-accent"), "{n2}");
         assert!(!n2.contains("data-align"), "{n2}");
     }
@@ -5904,7 +6024,7 @@ mod tests {
         let documents = [
             rail_document(&site, &page, &store),
             render_not_found_project(&site, &ctx).into_string(),
-            render_not_found_site(&lang, Appearance::Dark).into_string(),
+            render_not_found_site(&cpe_core::url::ROOT, &lang, Appearance::Dark).into_string(),
         ];
 
         let mut names: Vec<String> = vec!["tile".to_owned(), "frame".to_owned()];
@@ -5994,6 +6114,7 @@ mod tests {
             }),
         ];
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&["en".to_owned()], &site),
             project_id: "incunabula",
             current_path: "/incunabula/narrenschiff",
@@ -6183,6 +6304,7 @@ mod tests {
         };
         let route_params = [("id".to_owned(), "B1".to_owned())];
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&["de".to_owned()], &site),
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/books/B1",
@@ -6307,6 +6429,7 @@ mod tests {
             navigator: false,
         };
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&[lang.to_owned()], &site),
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -6433,6 +6556,7 @@ mod tests {
             navigator: false,
         };
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&[lang.to_owned()], &site),
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -6572,6 +6696,7 @@ mod tests {
         let lang = resolve(&["en".to_owned()], &site);
         let class_list_routes: HashMap<String, String> = [("Character".to_owned(), "/characters".to_owned())].into();
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -6662,6 +6787,7 @@ mod tests {
         let resource = make_alice_resource();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -6704,6 +6830,7 @@ mod tests {
         let resource = make_alice_resource();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -6784,6 +6911,7 @@ mod tests {
         );
 
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -6918,6 +7046,7 @@ mod tests {
         let base = "http://localhost:8080/alice-in-daschland/characters/CH_001";
         for (index, query, member_part) in [(2, "page=Two&lang=de", "page=M_2&"), (1, "page=One&lang=de", "")] {
             let ctx = RenderContext {
+                base: &cpe_core::url::ROOT,
                 lang: resolve(&["en".to_owned()], &site),
                 project_id: "alice-in-daschland",
                 current_path: "/alice-in-daschland/characters/CH_001",
@@ -6990,6 +7119,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/NOPE",
@@ -7055,6 +7185,7 @@ mod tests {
         let lang = resolve(&["en".to_owned()], &site);
         let class_list_routes: HashMap<String, String> = [("Character".to_owned(), "/characters".to_owned())].into();
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/NOPE",
@@ -7159,6 +7290,7 @@ mod tests {
 
     fn make_browse_ctx<'a>(lang: Lang, current_path: &'a str, current_query: Option<&'a str>) -> RenderContext<'a> {
         RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path,
@@ -7381,7 +7513,7 @@ mod tests {
         let thumbs = std::collections::HashMap::new();
         let routes = std::collections::HashMap::new();
         let cfg = ResourceListCfg::with_links(
-            "alice-in-daschland",
+            cpe_core::url::ROOT.project("alice-in-daschland"),
             &routes,
             "/alice-in-daschland/characters",
             None,
@@ -7688,6 +7820,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -7725,6 +7858,7 @@ mod tests {
         let narrative = make_alice_narrative(); // "# Welcome" — H1
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/",
@@ -7762,6 +7896,7 @@ mod tests {
         let resource = make_alice_resource();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -7801,6 +7936,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/NOPE",
@@ -7856,6 +7992,7 @@ mod tests {
         };
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/about",
@@ -7982,6 +8119,7 @@ mod tests {
         let resource = make_alice_resource();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -8017,6 +8155,7 @@ mod tests {
         let resource = make_alice_resource();
         let lang = resolve(&["de".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -8075,6 +8214,7 @@ mod tests {
         let media = make_media_items();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/CH_001",
@@ -8107,6 +8247,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/NOPE",
@@ -8140,6 +8281,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["de".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters/NOPE",
@@ -8217,6 +8359,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -8318,6 +8461,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -8399,6 +8543,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -8529,6 +8674,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -8639,6 +8785,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -8832,6 +8979,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/chapters",
@@ -8890,6 +9038,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/chapters",
@@ -8950,6 +9099,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/chapters",
@@ -9013,6 +9163,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/chapters",
@@ -9075,6 +9226,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -9167,6 +9319,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -9248,6 +9401,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/characters",
@@ -9337,6 +9491,7 @@ mod tests {
         let narrative = make_alice_narrative();
         let lang = resolve(&["en".to_owned()], &site);
         let ctx = RenderContext {
+            base: &cpe_core::url::ROOT,
             lang,
             project_id: "alice-in-daschland",
             current_path: "/alice-in-daschland/chapters",
@@ -9522,6 +9677,7 @@ mod tests {
         route_params: &'a [(String, String)],
     ) -> RenderContext<'a> {
         RenderContext {
+            base: &cpe_core::url::ROOT,
             lang: resolve(&[code.to_owned()], site),
             project_id: "incunabula",
             current_path: path,

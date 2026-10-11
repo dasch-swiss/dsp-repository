@@ -36,7 +36,7 @@ pub struct ProjectSummary {
     pub id: String,
     /// `site.title`, in the project's default language.
     pub title: String,
-    /// The path of the project's start page.
+    /// The path of the project's start page, [`Cpe::base`] included.
     pub url: String,
 }
 
@@ -45,6 +45,7 @@ pub struct ProjectSummary {
 #[derive(Clone)]
 pub struct Cpe {
     config: Arc<CpeConfig>,
+    base: Arc<cpe_core::url::Base>,
     /// `None` until the projects are loaded. A guard is held only to read or
     /// replace the `Arc`, never across an `.await`.
     active: Arc<RwLock<Option<Arc<activation::Activated>>>>,
@@ -60,7 +61,8 @@ impl Cpe {
         if let Some(reason) = config.refusal() {
             tracing::error!(
                 reason,
-                "CPE's configuration is refused and CPE is unavailable: where its router is mounted, every path answers 503"
+                "CPE's configuration is refused and CPE is unavailable: where its router is mounted, every path answers 503; \
+                 with `CPE_BASE` refused the base is empty, and a host that serves CPE only under a base does not mount it"
             );
         } else if config.derives_origin() {
             tracing::info!(
@@ -68,7 +70,11 @@ impl Cpe {
                  from X-Forwarded-Proto and Host"
             );
         }
-        Self { config: Arc::new(config.clone()), active: Arc::default() }
+        Self {
+            config: Arc::new(config.clone()),
+            base: Arc::new(config.base_or_root()),
+            active: Arc::default(),
+        }
     }
 
     /// Load every project folder, each with a store built from
@@ -130,8 +136,25 @@ impl Cpe {
         self.active.read().unwrap_or_else(PoisonError::into_inner).clone()
     }
 
+    /// The path a host mounts [`Cpe::router`] at: empty for the root of the
+    /// host, else a path like `/cpe`, with a leading slash and no trailing
+    /// one. This is `CPE_BASE`, and the one source of it: CPE writes it in
+    /// front of every link, redirect and cookie path, so a router mounted
+    /// anywhere else serves pages whose links leave the mount.
+    ///
+    /// Empty too when the configured value is refused. CPE then answers 503
+    /// on every path, wherever it is mounted; a host that serves CPE only
+    /// under a base has nowhere to mount it, and serves no CPE.
+    #[must_use]
+    pub fn base(&self) -> &str {
+        self.base.as_str()
+    }
+
     /// CPE's routes: the shared static files, each project's assets and
     /// pages, and CPE's own fallback. It carries no tracing layer.
+    ///
+    /// The routes are the paths below [`Cpe::base`]: the host removes the
+    /// base before the request arrives here, as `axum::Router::nest` does.
     ///
     /// The router has one service, a fallback that answers every path and
     /// method: 503 until the projects are loaded, and the loaded projects'
@@ -162,6 +185,9 @@ impl Cpe {
         self.activated().map(|activated| activated.projects.clone()).unwrap_or_default()
     }
 }
+
+#[cfg(test)]
+mod base_tests;
 
 #[cfg(test)]
 mod tests {
@@ -236,7 +262,8 @@ mod tests {
             "/",
             "/delta/",
             "/_static/cpe/tokens.css",
-            "/_assets/alpha/assets/cover.webp",
+            "/alpha/_static/cpe/tokens.css",
+            "/alpha/_assets/assets/cover.webp",
             "/nope",
         ] {
             let (status, headers, body) = get(&cpe, uri).await;
@@ -352,10 +379,14 @@ mod tests {
 
     #[tokio::test]
     async fn the_image_viewer_route_is_not_shadowed_by_the_static_table() {
-        let cpe = Cpe::from_sql_folders(&config_for(&fixture().join("no-such-folder")));
-        let uri = format!("{}/image-viewer.js", cpe_image_viewer::ASSET_PREFIX);
-        let (status, _, _) = get(&cpe, &uri).await;
-        assert_eq!(status, StatusCode::OK, "{uri}");
+        let cpe = Cpe::from_sql_folders(&config_for(&fixture()));
+        for uri in [
+            "/_static/image-viewer/image-viewer.js",
+            "/delta/_static/image-viewer/image-viewer.js",
+        ] {
+            let (status, _, _) = get(&cpe, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+        }
     }
 
     /// Two pages whose routes axum cannot tell apart. `Router::route` panics on such a pair, so the

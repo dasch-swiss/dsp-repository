@@ -69,8 +69,8 @@ pub enum DiagnosticKind {
     DuplicatePageRoute,
     /// A page `route` has a first path segment beginning with `_`. The engine
     /// reserves the `_`-prefixed route namespace for engine-registered routes
-    /// (e.g. `/_static/…`, `/_assets/…`, the `_<component>` fragment
-    /// segments); a config page must not claim one, or it would silently
+    /// (e.g. `<base>/<id>/_static/…`, `<base>/<id>/_assets/…`, the `_<component>`
+    /// fragment segments); a config page must not claim one, or it would silently
     /// collide with the reserved route.
     ReservedRoute,
     /// Two `resource-list` components on the same page share the same `id`.

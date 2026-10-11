@@ -388,7 +388,7 @@ pub(crate) fn render_registered(
                 extent_property: extent_property.as_deref(),
                 axis_start: *axis_start,
                 axis_end: *axis_end,
-                links: LinkResolver::new(ctx.project_id, ctx.link_routes),
+                links: LinkResolver::new(ctx.urls(), ctx.link_routes),
             };
             render_timeline(payload, &cfg, &ctx.lang)
         }
@@ -1187,7 +1187,7 @@ mod tests {
             extent_property: Some("extent"),
             axis_start: START,
             axis_end: END,
-            links: LinkResolver::new("demo", routes),
+            links: LinkResolver::new(cpe_core::url::ROOT.project("demo"), routes),
         };
         render_timeline(p, &cfg, &lang(code)).into_string()
     }

@@ -147,9 +147,9 @@ Project-level metadata and chrome.
   is not an exemption**: declaring a `cover-image` when the project has no
   `assets/` directory at all is the same hard-fail, since the truthful
   answer to "does this file exist?" is still no. Served at runtime via the
-  engine-reserved `/_assets/{project-id}/{*path}` route (see "Route
-  patterns" below) — the site index's project-card `<img src>` is exactly
-  `/_assets/<project-id>/<cover-image path>`. Absent → the site-index
+  engine-reserved `/{project-id}/_assets/{*path}` route under CPE's base (see
+  "Route patterns" below) — a site index's project-card `<img src>` is
+  `<base>/<project-id>/_assets/<cover-image path>`. Absent → the site-index
   card shows a same-height imageless ghost slot instead of a broken image.
 - `image-credit` — credit/rights line shown under the cover image on the
   site index's project card (e.g. `"Foto: Alberto Venzago"`, or
@@ -1216,11 +1216,12 @@ under `/<project-id>`.
 - Routes are unique within the project (hard-fail).
 - Every `$param` reference matches a declared route param on the
   enclosing page (hard-fail).
-- Routes don't collide with engine-reserved routes (`/`, `/_static/*`,
-  `/_assets/{project-id}/{*path}` — the `cover-image` asset route, see
-  "`site` block" above) at the project level — i.e., `/incunabula/_static/foo`
-  is allowed (it's an incunabula route, not the engine's static route), but
-  `/incunabula/` always exists (the project home).
+- Routes don't collide with engine-reserved routes: under a project,
+  `/incunabula/_static/*` (the shared static files) and
+  `/incunabula/_assets/*` (the project's own files, the `cover-image` asset
+  route, see "`site` block" above) are the engine's, which is why a page
+  route's first segment must not start with `_`; `/incunabula/` always exists
+  (the project home).
 
 **`resource-detail`'s recognised child nodes** (engine-hygiene-3 item 1):
 `show-properties`, `group`, `narrative-for`, `incoming-links`, `imprint` —
@@ -2860,7 +2861,7 @@ a user-facing guide.)
   values are out of scope. If a project needs computed binding, it
   uses the custom-component escape hatch.
 - **Per-page CSS** — all CSS comes from the token-CSS system at
-  `/_static/cpe/*.css`. No `style="..."` inline declarations in config.
+  `<base>/<project-id>/_static/cpe/*.css`. No `style="..."` inline declarations in config.
   Per-project theming uses the `theme {}` knob; a `style.css` override
   is possible but deferred (see BACKLOG).
 - **Per-component layout primitives** — CSS handles layout; the

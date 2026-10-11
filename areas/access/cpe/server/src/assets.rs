@@ -41,7 +41,7 @@ impl AssetInventory {
         Self(Arc::new(by_project))
     }
 
-    /// Answer `/_assets/{project_id}/{*path}`: the file, or 404 for anything
+    /// Answer `/{project_id}/_assets/{*path}`: the file, or 404 for anything
     /// that is not a key of the inventory.
     pub(crate) fn serve(&self, project_id: &str, path: &str) -> Response {
         match self.0.get(project_id).and_then(|files| files.get(path)) {
@@ -64,13 +64,9 @@ impl AssetInventory {
 mod tests {
     use std::path::Path;
 
-    use axum::body::Body;
-    use axum::http::Request;
-    use tower::ServiceExt;
-
     use super::*;
     use crate::discovery::discover;
-    use crate::request::OriginConfig;
+    use crate::tests::{config_for, fixture};
 
     fn fixture_assets() -> AssetInventory {
         AssetInventory::of(&discover(
@@ -87,16 +83,12 @@ mod tests {
             .expect("the header is ASCII")
     }
 
-    async fn get(uri: &str) -> Response {
-        crate::router::build(&[], &[], &fixture_assets(), OriginConfig::fixed("http://localhost:8080"))
-            .oneshot(
-                Request::builder()
-                    .uri(uri)
-                    .body(Body::empty())
-                    .expect("hand-crafted test request is well-formed"),
-            )
-            .await
-            .expect("oneshot against an in-process router never fails")
+    /// `uri` answered by CPE over the fixture projects: a project's files are
+    /// routed under the project, so the route exists for a loaded project only.
+    async fn get(uri: &str) -> (StatusCode, axum::http::HeaderMap) {
+        let cpe = crate::Cpe::from_sql_folders(&config_for(&fixture()));
+        let (status, headers, _) = crate::tests::get(&cpe, uri).await;
+        (status, headers)
     }
 
     #[tokio::test]
@@ -162,9 +154,22 @@ mod tests {
 
     #[tokio::test]
     async fn assets_route_serves_project_cover_image() {
-        let response = get("/_assets/alpha/assets/cover.webp").await;
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(header_value(&response, header::CONTENT_TYPE), "image/webp");
+        let (status, headers) = get("/alpha/_assets/assets/cover.webp").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers[header::CONTENT_TYPE], "image/webp");
+        assert_eq!(headers[header::CONTENT_SECURITY_POLICY], ASSET_CSP);
+    }
+
+    /// A project's files are served under the project's own segment and at no other path.
+    #[tokio::test]
+    async fn the_assets_are_under_the_project_and_nowhere_else() {
+        for uri in [
+            "/_assets/alpha/assets/cover.webp",
+            "/_assets/assets/cover.webp",
+            "/delta/_assets/assets/cover.webp",
+        ] {
+            assert_eq!(get(uri).await.0, StatusCode::NOT_FOUND, "{uri}");
+        }
     }
 
     /// The route decodes percent-escapes before the lookup, so each tail below
@@ -173,27 +178,28 @@ mod tests {
     /// is reached at all.
     #[tokio::test]
     async fn assets_route_answers_404_to_every_tail_that_is_not_an_inventory_key() {
-        assert_eq!(get("/_assets/alpha/assets/cover.webp").await.status(), StatusCode::OK);
+        assert_eq!(get("/alpha/_assets/assets/cover.webp").await.0, StatusCode::OK);
         for uri in [
-            "/_assets/alpha/assets/../config.kdl",
-            "/_assets/alpha/../alpha/config.kdl",
-            "/_assets/alpha/%2e%2e/alpha/assets/cover.webp",
-            "/_assets/alpha/assets/%2e%2e/config.kdl",
-            "/_assets/alpha/assets%2f..%2fconfig.kdl",
-            "/_assets/alpha/..%2fconfig.kdl",
-            "/_assets/alpha/assets%5c..%5cconfig.kdl",
-            "/_assets/alpha/assets/..%5cconfig.kdl",
-            "/_assets/alpha/assets/cover.webp%00",
-            "/_assets/alpha/%00",
-            "/_assets/alpha//etc/passwd",
-            "/_assets/alpha/%2fetc%2fpasswd",
-            "/_assets/alpha/config.kdl",
-            "/_assets/%2e%2e/alpha/assets/cover.webp",
-            "/_assets/..%2falpha/assets/cover.webp",
-            "/_assets/no-such-project/assets/cover.webp",
-            "/_assets/ALPHA/assets/cover.webp",
+            "/alpha/_assets/assets/../config.kdl",
+            "/alpha/_assets/../alpha/config.kdl",
+            "/alpha/_assets/../config.kdl",
+            "/alpha/_assets/%2e%2e/alpha/assets/cover.webp",
+            "/alpha/_assets/assets/%2e%2e/config.kdl",
+            "/alpha/_assets/assets%2f..%2fconfig.kdl",
+            "/alpha/_assets/..%2fconfig.kdl",
+            "/alpha/_assets/assets%5c..%5cconfig.kdl",
+            "/alpha/_assets/assets/..%5cconfig.kdl",
+            "/alpha/_assets/assets/cover.webp%00",
+            "/alpha/_assets/%00",
+            "/alpha/_assets//etc/passwd",
+            "/alpha/_assets/%2fetc%2fpasswd",
+            "/alpha/_assets/config.kdl",
+            "/%2e%2e/alpha/_assets/assets/cover.webp",
+            "/..%2falpha/_assets/assets/cover.webp",
+            "/no-such-project/_assets/assets/cover.webp",
+            "/ALPHA/_assets/assets/cover.webp",
         ] {
-            assert_eq!(get(uri).await.status(), StatusCode::NOT_FOUND, "{uri}");
+            assert_eq!(get(uri).await.0, StatusCode::NOT_FOUND, "{uri}");
         }
     }
 }

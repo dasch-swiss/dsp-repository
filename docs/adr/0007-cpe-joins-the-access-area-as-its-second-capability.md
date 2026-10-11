@@ -169,6 +169,8 @@ prefix, or how CPE's routes share the origin with DPE's. This amendment narrows 
   prototype's reserved `_` segments. The same engine file is then fetched once per project, which
   content-hashed names and long cache lifetimes make negligible; a single shared `/cpe/_static/` would not
   exist on a project's own hostname.
+  Note (2026-10-11, DEV-7438): `/cpe/_static/…` exists too, for CPE's own not-found page; see the
+  amendment of 2026-10-11 (DEV-7438) below.
 - **`/` and everything outside `/cpe` stay DPE's, including its 404; CPE answers its own not-found under
   `/cpe`.** CPE's router keeps its own catch-all (a project's 404 under a known project, a plain CPE 404
   otherwise), and a nested router's catch-all wins over DPE's for paths under the prefix (axum 0.8.9,
@@ -189,6 +191,8 @@ both under the `/cpe` mount and at a root mount.
 
 Enforced by: routing tests in `areas/access/server` for the prefix, `/cpe/`, and which side answers a 404
 (static-analysis, landing with DEV-7438); review for URLs built from the configured base.
+Note (2026-10-11, DEV-7438): URLs built from the base are tested now; see the amendment of 2026-10-11
+(DEV-7438) below.
 
 ## Amendment (2026-09-29, DEV-7399) — the committed projection is interim-DAO
 
@@ -427,3 +431,38 @@ Enforced by: static-analysis for the facade (`cpe-server`'s test `no_pub_item_na
 text check over the crate's two files with `pub` items), for the 503 and 404 behaviour (the tests of
 `cpe-server`'s `activation` module over `FakeArchiveProjection`) and for Incunabula's store text (the same
 module's test of its length and SHA-256); review for the rest, the strict mode included until DEV-7403.
+
+## Amendment (2026-10-11, DEV-7438) — the base as built, pages without a project, links in content
+
+The amendment of 2026-09-29 (DEV-7405) says CPE builds every URL from a configured base. This amendment
+records how, and two cases that amendment did not cover:
+
+- **The base has one source.** It is `CPE_BASE` in `cpe-server`'s configuration: empty for a mount at the
+  root of the host, else a path with a leading slash and no trailing one (`/cpe`). `Cpe::base()` returns it,
+  and a composition root mounts the router there and writes no prefix of its own. A value of another shape
+  is refused: CPE then answers 503 and its host keeps running.
+- **One module builds the URLs.** `cpe_core::url` joins the base, the project id and the two reserved
+  segments, and nothing else does. A handler sees the request path without the base; the page's own path,
+  both redirects, the share links and the reader's history URLs are the base and that path. The `lang` and
+  `appearance` cookies have `Path=<base>` (`/` at a root mount), so they reach every project of CPE and
+  nothing else on the host.
+- **The layout holds at every base, the empty one included.** The shared files are at
+  `<base>/<project id>/_static/…` and a project's own at `<base>/<project id>/_assets/…`. The prototype's
+  `/_static/…` and `/_assets/<project id>/…` are gone, at a root mount too.
+- **A page without a project loads the shared files from `<base>/_static/…`.** CPE's own not-found page
+  has no project, so there is no project prefix to load them from. The same table is served at both places,
+  and a project's pages use only their own. The reason for the per-project path is untouched: that page does
+  not exist on a project's own hostname. The 503 page has no project either and loads no file at all: while
+  it is the answer, every path under the base is answered by it, the static files included.
+- **A link in a project's content that starts with one `/` gets the base in front.** Narrative Markdown
+  and its invite lists name pages as `/incunabula/books`; the renderer writes `<base>/incunabula/books`.
+  A destination that starts with `//`, has a scheme, is a fragment or is relative is written as it is.
+  The content is not changed, and so it still names the project segment, against "resolved in one place"
+  above: a project-relative link form would close that and is not built. A link in a property value (a
+  rich-text value from the archive) is not narrative and is written as it is.
+
+Enforced by: static-analysis for the URLs of the pages a crawl reaches (`cpe-server`'s `base_tests`: a crawl
+of Incunabula and of the fixture projects under `/cpe` that fails on any path or public-origin URL outside
+the base, with both redirects, both cookies and the refused base; `cpe-core`'s tests of `url`); review for a
+URL being built through `cpe_core::url` at all. The crawl does not see a page it does not reach, nor a path
+that carries the base and was joined by hand, and no check reads the source for one.

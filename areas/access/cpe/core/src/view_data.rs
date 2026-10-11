@@ -82,7 +82,7 @@ pub enum FetchOutcome {
 }
 
 /// The outcome of a whole page request, which the host maps to its response
-/// status (the bin: 200, 404, 500).
+/// status (200, 404, 500).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PageStatus {
     /// Every data-backed slot was found, or the page has none.
@@ -143,8 +143,8 @@ pub enum PageScope {
 
 /// The request values page data depends on.
 ///
-/// Declared here and implemented by the host (the bin), so every
-/// query-string reader and decode point stays the host's: the store asks for
+/// Declared here and implemented in `dsp-incubator cpe/bin`, so every
+/// query-string reader and decode point stays there: the store asks for
 /// a value at the point it needs it and never parses the query string.
 ///
 /// `Sync`, so a `PageRequest` (which holds `&dyn PageParams`) is `Send` and

@@ -13,7 +13,7 @@
 //! `component::annotation`.
 
 /// The DOM id of the header controls (`div.header__controls`). The full page
-/// renders it once, and the bin's `_compound` handler patches it, so the
+/// renders it once, and the host's `_compound` handler patches it, so the
 /// language and appearance hrefs follow the reader's `?page=`.
 pub const HEADER_CONTROLS_ID: &str = "header-controls";
 

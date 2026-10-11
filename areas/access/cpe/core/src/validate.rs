@@ -1884,24 +1884,23 @@ fn check_search_bar_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts, repo
     }
 }
 
-/// Query keys the bin reads from the request query string for its own
+/// Query keys the host reads from the request query string for its own
 /// purposes (theme/appearance overrides, i18n, pagination, sort, membership
 /// index, DataStar's own reserved key, resets, the search box's own `?q=`
 /// reader, and the record viewer's thumb-strip fold state `?strip=` —
 /// reserved so a project could never author a colliding
 /// property name, …). Facet values are read back at request time via the facet's
-/// `property` name used *as* a query key (see the bin's facet-narrowing
+/// `property` name used *as* a query key (see the host's facet-narrowing
 /// wiring), so a facet property colliding with one of these would be
-/// silently shadowed by (or shadow) the bin's own handling of that key. `"q"`
+/// silently shadowed by (or shadow) the host's own handling of that key. `"q"`
 /// specifically guards against a **facet** `property` attribute literally
 /// named `q` colliding with the search box's own `?q=` reader — it is not a
 /// `search-bar` `searches` property-name concern (those are checked
 /// elsewhere, by `check_search_bar_data`, for existence/type, not reservation).
 ///
-/// MUST stay in sync with the query keys the bin or engine renderers read
-/// (`dsp-incubator cpe/bin/src/lib.rs`, `dsp-incubator cpe/bin/src/router.rs`, and — since
-/// grid-mode's `?view=`, read by `component::resource_list::parse_view_param` inside the engine,
-/// not the bin — the engine's own component renderers too). This const duplicates the
+/// MUST stay in sync with the query keys read in `dsp-incubator cpe/bin/src/lib.rs`,
+/// `dsp-incubator cpe/bin/src/router.rs` and `cpe-components` (grid-mode's `?view=` is
+/// read there, by `component::resource_list::parse_view_param`). This const duplicates the
 /// knowledge deliberately.
 const RESERVED_FACET_PROPERTIES: &[&str] = &[
     "accent",
@@ -1940,7 +1939,7 @@ fn check_single_facet(
     report: &mut ValidationReport,
 ) {
     // Guard 0 (pure config, no data): a facet property must not shadow a
-    // reserved query key the bin reads for its own purposes. Checked first —
+    // reserved query key the host reads for its own purposes. Checked first —
     // it needs no query and applies regardless of `kind`.
     if RESERVED_FACET_PROPERTIES.contains(&facet.property.as_str()) {
         report.push(Diagnostic {
@@ -2831,7 +2830,7 @@ mod annotation_check_tests {
 
 /// Is `s` a plain DSP data ARK URL, i.e.
 /// `^https://ark\.dasch\.swiss/ark:/72163/1/[0-9A-F]{4}/[A-Za-z0-9_=]+$`?
-/// Hand-written: the engine has no regex dependency. A version ARK's
+/// Hand-written: this crate has no regex dependency. A version ARK's
 /// `.<timestamp>` suffix, `http:`, another host, a trailing `/`, a lowercase
 /// shortcode, an unescaped `-` and `''` all fail. `dsp-incubator
 /// cpe/tools/dao-lift/src/ark.rs` holds the same matcher for `cpe-export`'s own
@@ -3997,7 +3996,7 @@ fn check_and_lower_site(
     // ── not-found { browse } ──────────────────────────────────────────────────
     // Route existence is checked in `validate_inner`
     // beside `check_nav_routes` (it needs the lowered page routes); the
-    // design cap of three is checked here.
+    // cap of three is checked here.
     if raw.not_found_browse.len() > NOT_FOUND_BROWSE_MAX {
         let message = format!(
             "not-found declares {} browse links; at most {NOT_FOUND_BROWSE_MAX} are allowed",
@@ -4055,8 +4054,8 @@ fn check_and_lower_site(
     })
 }
 
-/// The design cap on `site { not-found { browse } }` entries ("at most three…
-/// never the whole nav").
+/// The cap on `site { not-found { browse } }` entries: at most three,
+/// never the whole nav.
 const NOT_FOUND_BROWSE_MAX: usize = 3;
 
 /// Lower an optional string-valued `site {}` child captured raw by
@@ -4152,7 +4151,7 @@ fn check_and_lower_pages(
 
         // ReservedRoute — the engine reserves `_`-prefixed route segments for
         // engine-registered routes (`_static`, `_assets`, the `_<component>`
-        // fragment segments). Those routes are registered by the bin and never
+        // fragment segments). Those routes are registered by the host and never
         // appear in config, so this only guards config-declared routes.
         if route_first_segment_is_reserved(&route) {
             report.push(Diagnostic::error_spanless(
@@ -4805,7 +4804,7 @@ fn check_narrative_file(
 
     // NarrativeFileNotFound — must be in the inventory.
     // An empty slice means the caller found no narrative/ dir, so existence
-    // is not checked (the bin supplies the inventory; no dir → no constraint).
+    // is not checked (the host supplies the inventory; no dir → no constraint).
     if !ctx.narrative_files.is_empty() {
         let base_exists = ctx.narrative_files.iter().any(|f| f == file);
         if !base_exists {
@@ -6887,7 +6886,7 @@ fn lower_sort(raw: &crate::config::Component, report: &mut ValidationReport) -> 
 /// Check a string value for a leading `$` — if present, treat it as a
 /// `$paramName` reference and validate against `page_params`.
 ///
-/// Known PoC limitation: a literal value beginning with `$` (e.g. `"$usd"`)
+/// Known limitation: a literal value beginning with `$` (e.g. `"$usd"`)
 /// is treated as a param reference; there is no escaping in v1.
 fn check_param_refs_in_value(value: &str, page_params: &[String], span: Span, report: &mut ValidationReport) {
     if let Some(param_name) = value.strip_prefix('$') {
@@ -10207,8 +10206,8 @@ page id="home" route="/" {{
         // "q" is the search box's own query-string key (?q=); a facet property
         // literally named "q" would collide with it. Direct assertion on the
         // const's contents — simplest and sufficient, no fixture needed just
-        // for this (the pre-existing `broken-facet-reserved-property` fixture/
-        // Layer-4 test already proves the *check* fires for a reserved name,
+        // for this (the `broken-facet-reserved-property` fixture/
+        // Layer-4 test proves the *check* fires for a reserved name,
         // using "sort"; this proves "q" is a member of the reserved set).
         assert!(
             RESERVED_FACET_PROPERTIES.contains(&"q"),
@@ -10220,7 +10219,7 @@ page id="home" route="/" {{
     fn reserved_facet_properties_contains_strip() {
         // "strip" is the record viewer's thumb-strip fold state (?strip=),
         // reserved so a facet property literally named
-        // `strip` can never collide with the bin's reader (mirrors the "q"
+        // `strip` can never collide with the host's reader (mirrors the "q"
         // reservation above).
         assert!(
             RESERVED_FACET_PROPERTIES.contains(&"strip"),

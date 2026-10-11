@@ -104,7 +104,7 @@ pub(crate) fn first_heading(md: &str) -> Option<String> {
 /// `first_heading`'s answer when the document has no (non-empty) `<h1>`.
 ///
 /// **Why this exists.** An editorial narrative may open with a leading
-/// level-3 heading that is a *label*, not a section heading — the design's
+/// level-3 heading that is a *label*, not a section heading — the
 /// eyebrow/kicker, rendered by `component::editorial`'s `rewrite_events` as
 /// `p.eyebrow.editorial__kicker` at the top of `header.editorial__head`
 /// (see that module's "Conventions recognised" list). Incunabula's
@@ -329,12 +329,12 @@ pub fn variant_filename(file: &str, lang: &str) -> Option<String> {
 /// multi-word query arrives escaped: `+` from the zero-JS
 /// `<form method=get>` fallback's `application/x-www-form-urlencoded`
 /// submission, or `%20` from the DataStar debounced-live path's
-/// `encodeURIComponent`. Mirrors the bin's `read_search_query_param`
+/// `encodeURIComponent`. Mirrors `read_search_query_param`
 /// (`dsp-incubator cpe/bin/src/router.rs`) exactly (same `+`-then-percent
 /// decode order — a literal `+` means a space per the form-encoding convention,
 /// applied BEFORE `%XX` percent-decoding, since raw percent-decoding alone does
-/// not treat `+` specially) — the engine needs its own copy since it cannot
-/// depend on the `bin` crate.
+/// not treat `+` specially) — this crate keeps its own copy since it cannot
+/// depend on the host crate.
 ///
 /// Never panics: falls back to the raw (still `+`-decoded) input on any
 /// invalid UTF-8 percent sequence.
@@ -379,7 +379,7 @@ pub fn hidden_pairs_dropping(current_query: Option<&str>, drop: &[&str]) -> Vec<
 
 /// Extract and decode the `q` value from a raw query string — the engine's
 /// single canonical "read the search query" accessor, mirroring `sort_param`
-/// (`component::resource_list`)'s bin-agnostic split-on-`&`/`=` pattern but
+/// (`component::resource_list`)'s host-agnostic split-on-`&`/`=` pattern but
 /// additionally decoding via [`decode_query_value`] (search's `q` is the
 /// first free-text query value the engine reads — see that fn's doc
 /// comment). Every call site that needs the live `q` value — the search row
@@ -522,7 +522,7 @@ pub fn escape_js_string_literal(s: &str) -> String {
 /// (re-exported from `dsp-incubator cpe/engine`) because that handler
 /// is built in the binary, a separate crate — unlike `encode_get_arg`, which
 /// targets a different context (a `@get('…')` URL argument, not a JS string
-/// literal) and has no bin-side caller.
+/// literal) and has no caller in the host.
 ///
 /// Escapes, in order: `\` and `'` (breaking out of the single-quoted JS
 /// string literal itself); `<` as `\x3C` (defeating any `</script>`

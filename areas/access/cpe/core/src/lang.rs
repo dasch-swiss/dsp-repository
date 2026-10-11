@@ -14,7 +14,7 @@ pub const BUILTIN_LANGUAGES: [&str; 4] = ["en", "de", "fr", "it"];
 /// Built by `resolve` (against a specific project's declared
 /// `site.languages`, falling back to `site.default_language`) or by
 /// `resolve_builtin` (against the engine's own [`BUILTIN_LANGUAGES`], no
-/// `SiteConfig` involved — used by the bin's site index, which has no
+/// `SiteConfig` involved — used by the host's site index, which has no
 /// per-project language declaration to resolve against). Callers should not
 /// construct this type directly.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,7 +43,7 @@ fn resolve_against(preferences: &[String], candidates: &[&str], default: &str) -
 /// Resolve an ordered preference list against a project's declared languages.
 ///
 /// Returns the first `preferences` entry that matches one of
-/// `site.languages` (plain equality — the bin middleware is responsible
+/// `site.languages` (plain equality — the host's middleware is responsible
 /// for lowercasing and stripping region subtags before calling this
 /// function). Falls back to `site.default_language` when no preference
 /// matches.
@@ -56,10 +56,10 @@ pub fn resolve(preferences: &[String], site: &SiteConfig) -> Lang {
 /// languages ([`BUILTIN_LANGUAGES`]), with no project `SiteConfig` involved.
 /// Falls back to `"en"` when no preference matches.
 ///
-/// This is what lets the bin's site index (which has no project to resolve
+/// This is what lets the host's site index (which has no project to resolve
 /// a language against) obtain a [`Lang`] and reuse the `pub` engine chrome catalog
 /// (`chrome` in `cpe-components`) directly, rather than mirroring it
-/// bin-side.
+/// in the host.
 pub fn resolve_builtin(preferences: &[String]) -> Lang {
     resolve_against(preferences, &BUILTIN_LANGUAGES, "en")
 }
@@ -115,8 +115,8 @@ mod tests {
     }
 
     /// "en-us" does not match "en" here because `resolve` uses plain equality.
-    /// Region-stripping is the bin middleware's responsibility (tested at the
-    /// bin layer), so after stripping "en-US" → "en" before calling
+    /// Region-stripping is the host middleware's responsibility (tested
+    /// in the host), so after stripping "en-US" → "en" before calling
     /// `resolve`.
     #[test]
     fn does_not_match_regional_subtag() {

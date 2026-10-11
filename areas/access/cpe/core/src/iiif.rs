@@ -45,10 +45,8 @@ pub(crate) const PLATE_WIDTH: u32 = 900;
 ///
 /// Paired with the strip-thumb CSS box in
 /// `areas/access/cpe/components/style/media.css`, which renders at 52px — 208 is 4x that,
-/// deliberately NOT the reference design's `96`, so the thumbnail stays crisp
-/// up to Retina/3x-DPI screens (mirrors `THUMB_WIDTH`'s rationale above; the
-/// reference design's `96` was sized for a 24px display box, which does not
-/// match this port's 52px strip-thumb box).
+/// so the thumbnail stays crisp
+/// up to Retina/3x-DPI screens (mirrors `THUMB_WIDTH`'s rationale above).
 pub(crate) const STRIP_THUMB_WIDTH: u32 = 208;
 
 /// Width (px) requested for grid-mode tile images (`.gm__box`) via the IIIF

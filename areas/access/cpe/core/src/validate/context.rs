@@ -5,20 +5,20 @@
 
 /// Caller-supplied context for a single project's validation.
 ///
-/// The engine owns the validation checks; the caller (bin) supplies the
+/// This crate owns the validation checks; the caller (the host) supplies the
 /// values it alone can enumerate (reserved ids, narrative file inventory).
 pub struct ValidationContext<'a> {
     /// The project id (the kebab-case directory name under `projects/`).
     pub project_id: &'a str,
-    /// Engine-reserved ids the bin must not use as project ids. The bin
-    /// passes `&["_static"]`; the engine owns the check.
+    /// Engine-reserved ids the host must not use as project ids. The host
+    /// passes `&["_static"]`; this crate owns the check.
     pub reserved_ids: &'a [&'static str],
     /// Bare relative names from the project's `narrative/` directory,
-    /// enumerated by the bin before calling `validate`. Used by the narrative
+    /// enumerated by the host before calling `validate`. Used by the narrative
     /// checks.
     pub narrative_files: &'a [String],
     /// Relative names from the project's `assets/` directory, enumerated by
-    /// the bin before calling `validate`. Unlike `narrative_files` (which
+    /// the host before calling `validate`. Unlike `narrative_files` (which
     /// genuinely is bare), each entry carries the `assets/` segment as its
     /// own first path component (e.g. `"assets/cover.webp"`), matching how
     /// `cover-image` is authored in config. Used by the site index card's

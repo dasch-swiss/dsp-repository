@@ -1,8 +1,8 @@
-//! Renderer for the `search-bar` component (design-doc §5.3).
+//! Renderer for the `search-bar` component.
 //!
 //! Emits a labelled `form.search-row` — the `SEARCH` band that sits above the
 //! filterbar on a faceted browse page, or directly above the list on a
-//! non-faceted one (see `render_body`'s doc comment in `cpe_web::page` for
+//! non-faceted one (see `render_body`'s doc comment in `dsp-incubator cpe/web`'s `page` module for
 //! the two placements and the `.page`/no-`.page` split between them).
 //!
 //! ## "Active" is visual, not the data-layer tokenizer test
@@ -34,8 +34,8 @@ use crate::chrome::ChromeMsg;
 /// The URL path segment that identifies the search-bar fragment endpoint.
 ///
 /// The fragment endpoint lives at `{page-path}/{SEARCH_FRAGMENT_SEGMENT}?…`.
-/// Both the engine (to build the live-fetch/clear `@get` URLs) and the bin (to
-/// register the Axum route, step 10) reference this constant so no
+/// Both the engine (to build the live-fetch/clear `@get` URLs) and `dsp-incubator cpe/bin` (to
+/// register the Axum route) reference this constant so no
 /// magic-string mismatch is possible. Mirrors `FACET_FRAGMENT_SEGMENT` /
 /// `SORT_FRAGMENT_SEGMENT`.
 pub const SEARCH_FRAGMENT_SEGMENT: &str = "_search";
@@ -62,7 +62,7 @@ pub struct SearchBarCfg<'a> {
     /// emitted.
     pub placeholder: Option<&'a str>,
     /// `true` when this row renders standalone (no `.browse` wrapper —
-    /// design-doc's non-faceted case, e.g. Alice's `/chapters`): the root
+    /// the non-faceted case, e.g. Alice's `/chapters`): the root
     /// carries `.page` for its own centering. `false` when rendered as a
     /// flat grid child of `section.browse.page` (mirrors `.filterbar`, which
     /// also deliberately carries no `.page` — see `record.css`): the
@@ -74,12 +74,12 @@ pub struct SearchBarCfg<'a> {
 /// prefix and the no-JS carry-over hidden inputs: every param from
 /// `current_query` EXCEPT `q`, `page`, and `datastar` (a search change always
 /// resets to page 1; `datastar` is the reserved DataStar-fetch marker key —
-/// see `validate.rs`'s `RESERVED_FACET_PROPERTIES` / `bin/src/router.rs`'s
+/// see `validate.rs`'s `RESERVED_FACET_PROPERTIES` / `dsp-incubator cpe/bin/src/router.rs`'s
 /// `strip_datastar_marker`). Mirrors `resource_list::preserved_query_dropping_sort_and_page`
 /// exactly, with `q`/`page`/`datastar` dropped instead of `sort`/`page`.
 ///
-/// `pub(crate)` — reused by `facet_panel::render_query_chip` (search-bar plan
-/// step 9), so the filterbar's query-chip `×` builds the *same* preserved
+/// `pub(crate)` — reused by `facet_panel::render_query_chip`,
+/// so the filterbar's query-chip `×` builds the *same* preserved
 /// query and hits the *same* `_search` fragment endpoint as this row's own
 /// `×` clear button, rather than a second, possibly-divergent computation.
 pub(crate) fn preserved_query_dropping_q_and_page(current_query: Option<&str>) -> String {
@@ -154,10 +154,10 @@ pub(crate) fn search_fragment_prefix(action_path: &str, preserved_qs: &str) -> S
 ///   cpe/docs/adr/0007-fragment-swaps-are-transient.md`-compatible). The expression is a FIXED
 ///   template string (never built from reflected user input), so it never needs Maud escaping.
 /// - **Submit `→`** — a REAL plain form submit, deliberately with NO `data-on:click` override, even
-///   under JS (design-doc §8.2: "`→` remains a real submit... for visitors who prefer to commit" —
-///   a deliberate choice, not an oversight, distinct from clearing's "return to default" transient
-///   framing per `dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`). It does NOT
-///   carry `aria-disabled` while empty (dropped — an a11y review finding: the control remains fully
+///   under JS (`→` remains a real submit for visitors who prefer to commit — a deliberate choice,
+///   not an oversight, distinct from clearing's "return to default" transient framing per
+///   `dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`). It does NOT carry
+///   `aria-disabled` while empty (dropped — an a11y review finding: the control remains fully
 ///   operable, just a benign reload, so announcing it as disabled was inconsistent) — the
 ///   empty-state dimming is still visual-only, driven by `grid.css`'s
 ///   `.search-bar:not([data-active="true"]) .search-bar__go` selector against the SAME
@@ -196,8 +196,7 @@ pub fn render_search_bar(cfg: &SearchBarCfg<'_>, lang: &Lang) -> Markup {
 
     // The form's children — built once and interpolated into whichever root
     // (`.search-row.page` or `.search-row`) `cfg.standalone` selects, so the
-    // whole body is never duplicated (see Part D of the search-bar plan's
-    // step-7 prompt for why `standalone` can't be resolved inside this fn
+    // whole body is never duplicated (`standalone` can't be resolved inside this fn
     // alone and must arrive pre-decided via `cfg`).
     let body = html! {
         @for (k, v) in &hidden_pairs {
@@ -289,17 +288,17 @@ mod tests {
 
     // ── Layer-1: preserved_query_dropping_q_and_page ──────────────────────────
 
-    /// `view=grid` survives while `q`/`page`/`datastar` drop (grid-mode plan
-    /// decision 12 — each query-param-preserving helper needs its own
-    /// explicit assertion; no prior test covered this helper at all).
+    /// `view=grid` survives while `q`/`page`/`datastar` drop (each
+    /// query-param-preserving helper needs its own
+    /// explicit assertion).
     #[test]
     fn preserved_query_dropping_q_and_page_preserves_view() {
         let qs = preserved_query_dropping_q_and_page(Some("view=grid&q=rab&page=2&datastar=true&lang=de"));
         assert_eq!(qs, "view=grid&lang=de");
     }
 
-    /// `view=grid` survives while `q`/`page`/`datastar` drop (grid-mode plan
-    /// decision 12) — the pairs-based twin of
+    /// `view=grid` survives while `q`/`page`/`datastar` drop
+    /// — the pairs-based twin of
     /// `preserved_query_dropping_q_and_page_preserves_view` above.
     #[test]
     fn search_hidden_drop_preserves_view() {
@@ -380,7 +379,7 @@ mod tests {
     /// its fixed page-singleton `id="q"`) in the SAME expression that fires
     /// the `_search` fragment fetch — `#q` sits outside the SSE swap region,
     /// so without this the stale typed text would linger after the results
-    /// reset (owner-approved fix).
+    /// reset.
     #[test]
     fn clear_click_handler_also_blanks_the_input() {
         let cfg = SearchBarCfg {
@@ -449,7 +448,7 @@ mod tests {
         );
     }
 
-    /// Regression (slice-2 step 8a): a carried-over (non-`q`) pair's hidden
+    /// Regression: a carried-over (non-`q`) pair's hidden
     /// input holds the DECODED value — the browser re-encodes on GET submit,
     /// so a raw `%20` would round-trip as `%2520`.
     #[test]

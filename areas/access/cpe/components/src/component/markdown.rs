@@ -46,7 +46,7 @@ fn markdown_to_html(src: &str, sanitize_links: bool) -> String {
 /// **not** scheme-filtered — this is for trusted, project-authored Markdown
 /// (narrative intros, home pages), where `#anchor`/relative links are
 /// intentional. For richtext property values (untrusted-ish content), use
-/// [`render_richtext_fragment`] instead.
+/// `render_richtext_fragment` instead.
 pub fn render_markdown_fragment(src: &str) -> Markup {
     PreEscaped(markdown_to_html(src, false))
 }
@@ -69,11 +69,10 @@ pub(crate) fn render_richtext_fragment(src: &str) -> Markup {
 mod tests {
     use super::*;
 
-    // These tests target render_markdown_fragment, which now serves only the
+    // These tests target render_markdown_fragment, which serves only the
     // narrative-for book-intro path (the richtext property-value path is
     // render_richtext_fragment, tested separately below). The raw-HTML-filtering
-    // tests are security-sensitive and must stay covered even though the old
-    // render_markdown wrapper was removed.
+    // tests are security-sensitive and must stay covered.
 
     #[test]
     fn fragment_renders_h1_heading() {

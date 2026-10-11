@@ -1,4 +1,4 @@
-//! Renderer for the `compound-viewer` component (CV-2: two-column reader).
+//! Renderer for the `compound-viewer` component (two-column reader).
 //!
 //! Takes a `CompoundPage` and renders an `<article id="compound-viewer">` with:
 //! - An empty-state line when `total == 0`.
@@ -11,44 +11,43 @@
 //!   `component::media`'s plate — see below — at the foot). `index="collapsed"`/`"none"` skip the
 //!   two-column `div.cv-toc` entirely.
 //! - `layout="pages"` (the book reader): an identity head (no member properties), the stage, and
-//!   the `.pg--reader` pager row — see [`render_pages_head`] and [`render_reader_pager`]. Paired
-//!   with a `resource-detail`, it renders inside that record's article (`component::render_body`).
+//!   the `.pg--reader` pager row — see `render_pages_head` and `render_reader_pager`. Paired with a
+//!   `resource-detail`, it renders inside that record's article (`component::render_body`).
 //!
 //! ## Navigation pattern
 //!
 //! `?page=<member-id>` full-page reloads, no `#compound-viewer` fragment in
-//! the emitted URL (owner decision 2026-09-29 — see below; Incunabula Slice 2
-//! step 7 — was `?member=N`, which is still READ, so old links land on the
+//! the emitted URL (see below;
+//! `?member=N` is still READ, so old links land on the
 //! same member; see `ProjectReads::compound_parts` for the `page` resolver); the
-//! `article` receives `tabindex="-1"` so focus lands
-//! on the member block after a no-JS reload (mirrors `#record-figure`).
-//! Contents-rail links use the same `?page=<id>` href (via
+//! `article` receives `tabindex="-1"` as the forward-click swap's focus target (see
+//! `render_cv_root`): no focus lands on the member block after a no-JS reload (mirrors
+//! `#record-figure`). Contents-rail links use the same `?page=<id>` href (via
 //! `build_compound_href`) — clicking a rail entry navigates like a prev/next
 //! step, just to an arbitrary member.
 //!
 //! Every active (non-inert) rail link and pager step is a plain `<a href>`
-//! navigation (the no-JS/initial-load path, unchanged since Incunabula
-//! Slice 3b step 2) that ALSO carries `data-on:click__prevent="@get(…)"`
-//! (`reader-paging-fragment-swap` plan Step 4 — the `_compound` fragment
-//! swap revived): the member shown is URL-bearing state, so a JS-enhanced
+//! navigation (the no-JS/initial-load path)
+//! that ALSO carries `data-on:click__prevent="@get(…)"`
+//! (the `_compound` fragment
+//! swap): the member shown is URL-bearing state, so a JS-enhanced
 //! click swaps `#compound-viewer` (the DOM element id — never present in any
-//! emitted href/action, see the owner-decision note below) in place AND
+//! emitted href/action, see below) in place AND
 //! updates the address bar via `history.pushState`, while the plain `href`
 //! remains the byte-identical
 //! no-JS fallback (a full page load, still tracked by Back/reload). Inert
 //! boundary spans carry neither `href` nor `data-on` — nothing to enhance.
 //! The `pages` reader's page picker entries are plain links too, with no
 //! per-entry `data-on`: one delegated handler on the panel makes the same
-//! `@get` — see [`render_picker`].
+//! `@get` — see `render_picker`.
 //!
-//! **Back/Forward is a real page load (Option B, owner decision
-//! 2026-09-28).** The `_compound` swap above only ever runs on a FORWARD
+//! **Back/Forward is a real page load.** The `_compound` swap above only ever runs on a FORWARD
 //! click; browser Back/Forward never calls it. Instead, a plain
 //! `window`-level `popstate` listener (`data-on:popstate__window`, a fixed
 //! STATIC expression with no per-render interpolation — see
-//! [`render_cv_root`]) compares `location.pathname + location.search`
+//! `render_cv_root`) compares `location.pathname + location.search`
 //! against `window.__cpeReaderUrl` (a one-way, plain `window` property, NOT
-//! a DataStar signal — see [`render_cv_root`]'s doc comment for why): a
+//! a DataStar signal — see `render_cv_root`'s doc comment for why): a
 //! mismatch means the browser has actually navigated to a different
 //! path+query since this page last showed one (a genuine Back/Forward
 //! across the reader's own pushed history entries), so the listener does a
@@ -58,10 +57,7 @@
 //! `pathname + search` (never the full URL/hash) is what excludes a
 //! same-document hash-only history move (the skip link, an incoming-links
 //! row's in-page anchor) from triggering a reload — those change
-//! `location.hash` alone, which the comparison never reads. This supersedes
-//! the earlier `pushState`/`replaceState` discrimination via an
-//! `X-CPE-Popstate` request header (three review rounds, each finding a new
-//! bug) — see this task's CLAUDE.md entry.
+//! `location.hash` alone, which the comparison never reads.
 //!
 //! ## a11y idioms (mirror the `.pg` primitive)
 //!
@@ -69,34 +65,27 @@
 //!   position (screen reader doesn't re-announce on nav). The `pages` layout's `.pg--reader` row
 //!   uses a static "Turn pages" label instead (`ChromeMsg::CompoundPagerLabel`).
 //! - `span.pg__count` holds the mutable position as plain visible text, and carries
-//!   `aria-live="polite" aria-atomic="true"` (`reader-paging-fragment-swap` plan Step 5a) — member
-//!   paging reverted from real navigation (D5, W4 review finding) back to a same-document
-//!   `pushState`/fragment swap (Step 3b), so the "n / N" string is no longer announced by a
-//!   full-page reload; the live region announces it instead, complementing (not substituting for)
-//!   the focus-restore call Step 3b also adds. Now the SAME idiom as `component::media`'s own
-//!   `.pg__count` (a separate hand-rolled copy), whose paging has always been a same-page `$plate`
-//!   signal flip.
+//!   `aria-live="polite" aria-atomic="true"`: member paging is a same-document `pushState`/fragment
+//!   swap, so the "n / N" string is not announced by a full-page reload; the live region announces
+//!   it instead, complementing (not substituting for) the focus-restore call. The SAME idiom as
+//!   `component::media`'s own `.pg__count` (a separate hand-rolled copy), whose paging is a
+//!   same-page `$plate` signal flip.
 //! - Boundary ends are inert `span.pg__step[aria-disabled aria-hidden]` (no wrap-around); the
 //!   `aria-hidden` removes the decorative glyph from the a11y tree. The `pages` layout's
 //!   `.pg--reader` row differs: its inert end keeps its word and is not `aria-hidden` (see
-//!   [`render_reader_pager`]).
+//!   `render_reader_pager`).
 //! - The contents rail's current entry carries `aria-current="page"`; the `nav.cv-toc__contents`
 //!   `aria-label` is localized "Contents" (static — the caption `p.cv-toc__cap` carries the mutable
 //!   "Contents · N parts" extent as plain visible text, not an `aria-live` region — the rail itself
 //!   is not expected to change shape across a member swap).
 //!
-//! The prev/next foot nav mirrors the `.pg` primitive's markup shape
-//! (`component::pager::render_pager` — embedded-media plan step 7, the SAME
-//! shape `component::media`'s plate pager uses) but is rendered by this
-//! module's own [`render_compound_pager`] rather than calling `render_pager`
-//! directly (`reader-paging-fragment-swap` plan Step 4): the active steps
-//! here additionally carry `data-on:click__prevent`, which `render_pager`'s
-//! shared signature has no parameter for. The href composition and the
+//! The prev/next foot nav has the `.pg` primitive's markup shape (the SAME
+//! shape `component::media`'s plate pager uses), rendered by this
+//! module's own `render_compound_pager`: the active steps
+//! here additionally carry `data-on:click__prevent`.
+//! The href composition and the
 //! `?page=<member-id>` (vs. the plate's `?img=`) param semantics stay
-//! compound-viewer-specific regardless (the compound side was a 1-based
-//! `?member=N` at the time of the original unification; step 7 moved the
-//! emitted form to member ids). The former bespoke `.compound-nav`/
-//! `.compound-step`/`.compound-count` markup is gone.
+//! compound-viewer-specific regardless.
 use cpe_core::iiif::iiif_plate_url;
 use cpe_core::ir::{
     ClassLabel, CompoundLayout, CompoundPage, MemberIndex, PickerMode, PropertyLabel, PropertyValue, Resource,
@@ -120,13 +109,12 @@ use crate::component::resource_detail::{render_property_block, render_value};
 use crate::component::values::{member_text, resolve_title_str};
 
 /// The URL path segment that identifies the compound-viewer fragment
-/// endpoint — revived (`reader-paging-fragment-swap` plan Step 1) after its
-/// Slice 3b retirement, now as a URL-writing `pushState` swap for FORWARD
-/// clicks only (Option B, owner decision 2026-09-28 — Back/Forward is a
+/// endpoint, a URL-writing `pushState` swap for FORWARD
+/// clicks only (Back/Forward is a
 /// real page load and never reaches this endpoint at all; see the
 /// `data-on:popstate__window` doc comment below). The fragment endpoint
 /// lives at `{page-path}/{COMPOUND_FRAGMENT_SEGMENT}?…`. Both the engine (to
-/// build the `data-on:click__prevent` `@get` URLs) and the bin (to register
+/// build the `data-on:click__prevent` `@get` URLs) and `dsp-incubator cpe/bin` (to register
 /// the Axum route) reference this constant so no magic-string mismatch is
 /// possible. Mirrors `FACET_FRAGMENT_SEGMENT` / `SORT_FRAGMENT_SEGMENT` /
 /// `SEARCH_FRAGMENT_SEGMENT`.
@@ -137,7 +125,7 @@ pub const COMPOUND_FRAGMENT_SEGMENT: &str = "_compound";
 /// Borrowed context needed by `render_compound_viewer`.
 ///
 /// Mirrors `ResourceDetailCfg`/`ResourceListCfg` in its shape: thin borrow
-/// struct, no IR cloning. Built by `render_component` in `cpe_web::page`
+/// struct, no IR cloning. Built by `render_component` in `dsp-incubator cpe/web`'s `page` module
 /// from the `RenderContext` fields.
 pub struct CompoundViewerCfg<'a> {
     /// Optional link resolver for turning the member's class into a detail href.
@@ -154,42 +142,40 @@ pub struct CompoundViewerCfg<'a> {
     /// Raw query string of the current request (everything after `?`, no `?`).
     /// Used to build compound hrefs that preserve lang/appearance params while
     /// setting `page=<member-id>` and dropping any stale `member=` (see
-    /// [`reader_query`]; `?member=N` is still READ, never re-emitted).
+    /// `reader_query`; `?member=N` is still READ, never re-emitted).
     /// `None` when the request had no query string.
     #[doc(hidden)]
     pub current_query: Option<&'a str>,
     /// The media link property name for the member's class. Taken from the
-    /// `compound-viewer media="…"` attribute when set (Incunabula Slice 2
-    /// decision 11), else resolved by the caller from
-    /// `RenderContext.media_properties` keyed by `member.class`
-    /// (embedded-media plan step 6c). Either way it is excluded from the
+    /// `compound-viewer media="…"` attribute when set,
+    /// else resolved by the caller from
+    /// `RenderContext.media_properties` keyed by `member.class`.
+    /// Either way it is excluded from the
     /// member's plain property list — suppressed exactly like
     /// `resource_detail::render_resource_detail`'s `.props` list. Whether the
     /// member's scan is SHOWN is decided by `CompoundPage.member_media`, not
     /// by this field: only the opt-in `media=` attribute fills it, so a
-    /// reader without it keeps the ratified "compound-reader members show no
+    /// reader without it keeps the "compound-reader members show no
     /// images" behaviour.
     pub media_property: Option<&'a str>,
     /// Declared class labels (`labels { class "…" { … } }`), used to resolve
-    /// (a) the per-member eyebrow's class name (empty-states-not-found plan
-    /// step 7 — wired in the same pass as the empty-branch eyebrow, replacing
-    /// the previously "deliberately humanized" raw `member.class`; see
-    /// CLAUDE.md's compound-viewer flag, dropped in step 10) and (b) on the
+    /// (a) the per-member eyebrow's class name
+    /// and (b) on the
     /// empty branch, the parent's own eyebrow. Empty slice ⇒ humanized
-    /// fallback (pre-labels-mechanism behaviour) — same contract as
+    /// fallback — same contract as
     /// `ResourceDetailCfg.class_labels`.
     #[doc(hidden)]
     pub class_labels: &'a [ClassLabel],
     /// Declared property labels (`labels { property "…" { … } }`), used by
     /// both the empty branch's parent `.props` list and the populated
-    /// branches' member property rows (Incunabula Slice 2 step 6b — was
-    /// empty-branch-only), via `resource_detail`'s own label resolution —
+    /// branches' member property rows,
+    /// via `resource_detail`'s own label resolution —
     /// "same as the detail page". Empty slice ⇒ humanized fallback.
     #[doc(hidden)]
     pub property_labels: &'a [PropertyLabel],
-    /// The compound's parent Resource (empty-states-not-found plan step 7,
-    /// E5), threaded via `RenderContext.compound_parents` — resolved by the
-    /// bin only when a compound resolved to `total == 0`.
+    /// The compound's parent Resource, for the empty state,
+    /// threaded via `RenderContext.compound_parents` — resolved by the
+    /// host only when a compound resolved to `total == 0`.
     ///
     /// `None` on every populated branch (`total >= 1`) and on the empty
     /// branch when the parent's source id itself doesn't resolve to a
@@ -200,19 +186,19 @@ pub struct CompoundViewerCfg<'a> {
     /// panic.
     #[doc(hidden)]
     pub parent: Option<&'a Resource>,
-    /// The `pages` reader's page picker (`compound-viewer picker="…"`,
-    /// book-page Choice E), drawn in the pager row's centre at `total >= 2`
-    /// (see [`render_picker`]). `None` ⇒ the centre keeps its count.
+    /// The `pages` reader's page picker (`compound-viewer picker="…"`),
+    /// drawn in the pager row's centre at `total >= 2`
+    /// (see `render_picker`). `None` ⇒ the centre keeps its count.
     #[doc(hidden)]
     pub picker: Option<PickerMode>,
-    /// The declared reader layout (`compound-viewer layout="…"`, Slice 3b
-    /// D3): `Contents` (head → scan → props → pager) or `Pages` (an
+    /// The declared reader layout (`compound-viewer layout="…"`):
+    /// `Contents` (head → scan → props → pager) or `Pages` (an
     /// identity-only head, the stage, then the `.pg--reader` pager row; the
-    /// member's properties are not shown — see [`render_pages_head`]).
+    /// member's properties are not shown — see `render_pages_head`).
     #[doc(hidden)]
     pub layout: CompoundLayout,
-    /// How the member index is shown (`compound-viewer index="…"`, Slice 3b
-    /// D4 / Q2), honoured at `total >= 2`:
+    /// How the member index is shown (`compound-viewer index="…"`),
+    /// honoured at `total >= 2`:
     /// - `Rail` — the sticky `nav.cv-toc__contents` beside the reader;
     /// - `Collapsed` — no `div.cv-toc`: the reader, then a closed `details.cv-index` holding the
     ///   list;
@@ -220,37 +206,37 @@ pub struct CompoundViewerCfg<'a> {
     #[doc(hidden)]
     pub index: MemberIndex,
     /// Whether this compound-viewer is paired with a same-`id`
-    /// `resource-detail` on its page (`ir::Component::CompoundViewer.paired`,
-    /// W7 review finding). `true` narrows the empty (`total == 0`) branch to
+    /// `resource-detail` on its page (`ir::Component::CompoundViewer.paired`).
+    /// `true` narrows the empty (`total == 0`) branch to
     /// the "no members" sentence alone, even when `parent` resolves — the
     /// paired record already renders that resource's own title/eyebrow/
     /// properties, so the empty branch must not repeat them (`dsp-incubator
-    /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md` D1).
+    /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md`).
     #[doc(hidden)]
     pub paired: bool,
-    /// `site.date_precision_word` (Incunabula Slice 8, decision 4): threaded
+    /// `site.date_precision_word`: threaded
     /// into every member/parent property row's `render_property_block`, so
     /// both reader layouts render dates exactly as the record page does.
     #[doc(hidden)]
     pub date_precision_word: bool,
-    /// The `member-links` row (book-page step 6a): its resolved caption and
+    /// The `member-links` row: its resolved caption and
     /// the member `link` properties it lists. `None` ⇒ no row. Rendered by
-    /// the `pages` layout only (see [`render_member_links`]).
+    /// the `pages` layout only (see `render_member_links`).
     #[doc(hidden)]
     pub member_links: Option<(&'a str, &'a [String])>,
-    /// Whether a stale `?page=` gets its `history.replaceState` correction
-    /// (book-page step 10). `true` only on the full-page render: the
+    /// Whether a stale `?page=` gets its `history.replaceState` correction.
+    /// `true` only on the full-page render: the
     /// `_compound` fragment never corrects the address (it has just written
-    /// it itself). See [`stale_url_correction`].
+    /// it itself). See `stale_url_correction`.
     #[doc(hidden)]
     pub emit_url_correction: bool,
 }
 
 /// The `data-on:popstate__window` directive shared by every populated
-/// compound-viewer root — Option B (owner decision 2026-09-28,
-/// `reader-paging-fragment-swap`'s revision of its own Step 5): a single
+/// compound-viewer root:
+/// a single
 /// FIXED, STATIC expression with no per-render interpolation at all (not
-/// even a `COMPOUND_FRAGMENT_SEGMENT` reference any more — this listener
+/// even a `COMPOUND_FRAGMENT_SEGMENT` reference — this listener
 /// never calls `@get` or touches the fragment endpoint).
 ///
 /// Back/Forward navigation is a real page load: on `popstate`, if
@@ -263,7 +249,7 @@ pub struct CompoundViewerCfg<'a> {
 /// ordinary `?page=`/`?member=` resolution `render_page` always does lands
 /// on the right member. No `@get`, no SSE, no history-API write of any
 /// kind here — the write side lives entirely in `compound_fragment_get`'s
-/// forward-click swap (`bin/src/router.rs`'s `compound_fragment_response`,
+/// forward-click swap (`dsp-incubator cpe/bin/src/router.rs`'s `compound_fragment_response`,
 /// its own `pushState`).
 ///
 /// Comparing only `pathname + search` (never the full URL, never
@@ -273,13 +259,8 @@ pub struct CompoundViewerCfg<'a> {
 /// comparison never reads, so the listener no-ops and the hash-only jump
 /// behaves like ordinary same-document anchor navigation.
 ///
-/// This supersedes the `X-CPE-Popstate` request-header discrimination
-/// between a `popstate`-triggered `@get` and a forward click
-/// (`pushState`/`replaceState`, a `$currentPageQuery` DataStar signal) that
-/// three successive review rounds each found a new bug in — see this
-/// task's CLAUDE.md entry for the full history. `location.reload()` needs
-/// no such discrimination: there is no swap request to disambiguate any
-/// more.
+/// Do not discriminate `popstate` by a request header or a DataStar signal:
+/// a reload has no swap request to disambiguate.
 const POPSTATE_RELOAD_EXPR: &str =
     "if (location.pathname + location.search !== window.__cpeReaderUrl) { location.reload(); }";
 
@@ -288,9 +269,9 @@ const POPSTATE_RELOAD_EXPR: &str =
 /// "URL the reader currently shows" value [`POPSTATE_RELOAD_EXPR`] compares
 /// against.
 ///
-/// Deliberately a plain `window` PROPERTY, not a DataStar signal (owner
-/// decision 2026-09-28, Option B) — no two-way signal syncing, and never a
-/// reactively-written `data-*` attribute (CLAUDE.md's DataStar directive-
+/// Deliberately a plain `window` PROPERTY, not a DataStar signal
+/// — no two-way signal syncing, and never a
+/// reactively-written `data-*` attribute (`dsp-incubator cpe/CLAUDE.md`'s DataStar directive-
 /// scope constraint: a `data-*` attribute is for markup, not a scratch
 /// variable). Two writers only, by design:
 ///
@@ -321,15 +302,15 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// never carries `data-class` at all. They are two static Maud shapes, not
 /// one with a conditionally-appended class.
 ///
-/// `id="compound-viewer" tabindex="-1"` is a real focus target, but — since
-/// the owner decision of 2026-09-29 removed the `#compound-viewer` fragment
-/// from every emitted href/action — a plain real navigation (a no-JS page
-/// step, Back/Forward, an incoming-links row) no
-/// longer lands focus here; the only remaining mechanism that does is the
+/// `id="compound-viewer" tabindex="-1"` is a real focus target, but no
+/// emitted href/action carries a `#compound-viewer` fragment,
+/// so a plain real navigation (a no-JS page
+/// step, Back/Forward, an incoming-links row) does
+/// not land focus here; the only mechanism that does is the
 /// JS-enhanced forward-click swap's programmatic focus-restore call
-/// (`bin/src/router.rs`'s `compound_fragment_response`, `preventScroll:
-/// true`). See the `tabindex="-1"` Non-obvious constraint in `CLAUDE.md`
-/// for the full history. `.page` is the shared centered max-width + gutter
+/// (`dsp-incubator cpe/bin/src/router.rs`'s `compound_fragment_response`, `preventScroll:
+/// true`). See the `tabindex="-1"` Non-obvious constraint in `dsp-incubator cpe/CLAUDE.md`.
+/// `.page` is the shared centered max-width + gutter
 /// box every
 /// top-level component root must carry (like `article.record.page` /
 /// `section.resource-list-section.page`) — without it content hugs the
@@ -339,7 +320,7 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// [`POPSTATE_RELOAD_EXPR`] (`data-on:popstate__window`) are FIXED,
 /// per-render-invariant strings — no `cfg` value is interpolated into
 /// either — so the emitted markup, this fn's own open-tag bytes included,
-/// stays byte-identical across every render (PRD invariant I3), unlike the
+/// stays byte-identical across every render, unlike the
 /// per-member `@get(...)` expressions the pager/rail carry.
 ///
 /// `stale` (the `pages` layout only): the reader is `aria-describedby` its
@@ -347,7 +328,7 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// focus reaches the reader — a status region's parse-time text is never
 /// announced on arrival.
 ///
-/// `url_fix` (step 10): a `history.replaceState` statement prepended to the
+/// `url_fix`: a `history.replaceState` statement prepended to the
 /// init script, so the seed then reads the corrected `location` — see
 /// [`stale_url_correction`].
 ///
@@ -419,7 +400,7 @@ fn pages_keydown(page: &CompoundPage) -> std::borrow::Cow<'static, str> {
 /// - `total >= 2` → `<article id="compound-viewer" tabindex="-1"><div class="cv-toc">` two-column
 ///   layout: `nav.cv-toc__contents` (the contents rail, one entry per `page.members`, current one
 ///   marked `aria-current="page"`) beside `div.cv-toc__reader` (member head + properties +
-///   [`render_compound_pager`]'s prev/next pager at the foot — an `aria-live="polite"
+///   `render_compound_pager`'s prev/next pager at the foot — an `aria-live="polite"
 ///   aria-atomic="true"` position indicator, since member paging is a same-document fragment swap
 ///   again (`reader-paging-fragment-swap`); boundary ends use inert `span`s).
 pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, lang: &Lang) -> Markup {
@@ -430,9 +411,9 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         // `render_cv_root`'s doc comment for the current (JS-swap-only)
         // focus-landing mechanism.
         //
-        // Paired (W7 review fix): a sibling `resource-detail` on this page
+        // Paired: a sibling `resource-detail` on this page
         // already renders the SAME parent resource's title/eyebrow/properties
-        // (`dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md` D1) — showing
+        // (`dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md`) — showing
         // `cfg.parent`'s head + `.props` here too would duplicate that record. Degrade to
         // the sentence alone. The store still resolves `cfg.parent` for a paired source
         // (`PageData.compound_parents`), only so the sentence can name the
@@ -520,12 +501,10 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
 
     // Generic `{class} · NN` eyebrow (1-based ordinal, zero-padded to ≥2
     // digits) — deliberately NOT an Alice-specific `chapter-number`/"Prologue"
-    // label; keeps the component generic (design decision 2, CLAUDE.md
+    // label; keeps the component generic (`dsp-incubator cpe/CLAUDE.md`'s
     // vocabulary rule). `{:02}` is fine at Alice's 13 chapters; noted for
-    // larger compounds. The class name is now resolved through declared
-    // labels (empty-states-not-found plan step 7 — was raw `member.class`;
-    // see CLAUDE.md's "deliberately humanized eyebrow" flag, dropped in
-    // step 10), so this eyebrow and the empty branch's parent eyebrow
+    // larger compounds. The class name is resolved through declared
+    // labels, so this eyebrow and the empty branch's parent eyebrow
     // resolve identically.
     let member_class_label = cpe_core::labels::resolve_class_label(cfg.class_labels, &member.class, lang);
     let head_markup = match cfg.layout {
@@ -548,15 +527,15 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         html! {
             @for prop in &member.properties {
                 // Skip the "name" property (shown as the title above) and the
-                // member class's media link property, if any (embedded-media
-                // plan step 6c — never printed as a plain int-link/unresolved
+                // member class's media link property, if any (never
+                // printed as a plain int-link/unresolved
                 // list here; the member's own detail page owns its plate).
                 @if {
                     prop.name != "name"
                         && cfg.media_property.is_none_or(|mp| prop.name != mp)
                 } {
                     // Member property labels resolve through the declared
-                    // `labels {}` (Incunabula Slice 2 step 6b), same as the
+                    // `labels {}`, same as the
                     // detail page and this component's own empty branch.
                     ({
                         render_property_block(
@@ -572,7 +551,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         }
     };
 
-    // ── Member scan (opt-in `media=`, decision 11) ───────────────────────────
+    // ── Member scan (opt-in `media=`) ───────────────────────────
     let scan_markup = || render_member_scan(page.member_media.first(), title);
 
     // ── `pages` layout, total == 1: head + stage, no pager row ──────────────
@@ -603,7 +582,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         return render_cv_root(None, None, false, None, body);
     }
 
-    // ── total >= 2: two-column CV-2 reader (contents rail + foot nav) ────────
+    // ── total >= 2: two-column reader (contents rail + foot nav) ────────
     let index = page.index;
     // 1-based prev/next positions.
     let prev_member: Option<u32> = index.checked_sub(1).filter(|&n| n >= 1);
@@ -613,7 +592,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     let next_member: Option<u32> =
         (usize::try_from(index).unwrap_or(usize::MAX) < total).then(|| index.saturating_add(1));
 
-    // Links address a member by its id (`?page=<id>`, step 7); map the
+    // Links address a member by its id (`?page=<id>`); map the
     // 1-based position to `members[n - 1]`. `members.len() == total`, and
     // both positions lie in `1..=total`, so the lookup never misses.
     let member_id_at = |n: u32| -> Option<&str> {
@@ -626,7 +605,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     let prev_href: Option<String> = prev_id.map(|id| build_compound_href(cfg.current_path, cfg.current_query, id));
     let next_href: Option<String> = next_id.map(|id| build_compound_href(cfg.current_path, cfg.current_query, id));
     // The `data-on:click__prevent` `@get(...)` counterpart to each plain
-    // href above (`reader-paging-fragment-swap` plan Step 4) — `None`
+    // href above — `None`
     // exactly when `*_href` is `None` (an inert boundary end gets neither).
     let prev_get: Option<String> = prev_id.map(|id| compound_fragment_get(cfg.current_path, cfg.current_query, id));
     let next_get: Option<String> = next_id.map(|id| compound_fragment_get(cfg.current_path, cfg.current_query, id));
@@ -685,7 +664,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         }
     };
 
-    // ── `pages` layout (design-doc book-page §4.1–§4.3) ─────────────────────
+    // ── `pages` layout ─────────────────────
     // One column: the identity head, the stage, the `.pg--reader` pager row
     // directly under it, then — with no rail — a collapsed index.
     // `index="rail"` wraps it in the same `div.cv-toc` as the contents
@@ -722,7 +701,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
             }
         };
         let stage = render_pages_stage(page, title, lang);
-        // WIDER's host (Slice 3b step 6): the unit's `$expand` toggles
+        // WIDER's host: the unit's `$expand` toggles
         // `.is-wide` here, exactly as `article.record--viewer` does — only
         // when the stage (and so the `$expand` signal) renders.
         let wide = stage.is_some().then_some(PAGES_WIDE_CLASS_ATTR);
@@ -758,13 +737,11 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     let nav_aria = compound_nav_label(total, lang);
     let (prev_label, next_label) = compound_step_labels(lang);
 
-    // Mirrors the shared `.pg` primitive's markup shape (embedded-media plan
-    // step 7 — was the bespoke `.compound-nav`/`.compound-step`/
-    // `.compound-count` markup; same shape, same inert-ends idiom — the
-    // links address members by id, `?page=<id>`, step 7) via this module's
-    // own `render_compound_pager` (Step 4 — see its doc comment for why this
-    // is no longer `component::pager::render_pager` directly). Still moved
-    // to the foot of `.cv-toc__reader`.
+    // Mirrors the shared `.pg` primitive's markup shape (same
+    // inert-ends idiom — the
+    // links address members by id, `?page=<id>`) via this module's
+    // own `render_compound_pager`. At
+    // the foot of `.cv-toc__reader`.
     let nav_markup = render_compound_pager(
         &nav_aria,
         prev_label,
@@ -774,7 +751,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         next_href.as_deref().zip(next_get.as_deref()),
     );
 
-    // ── Collapsed / no index (Slice 3b D4 / Q2) ──────────────────────────────
+    // ── Collapsed / no index ──────────────────────────────
     // No `div.cv-toc`: the reader's blocks sit directly in the article, then
     // (collapsed only) a closed `details.cv-index` with the rail's caption as
     // its summary.
@@ -812,7 +789,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     render_cv_root(None, None, false, None, body)
 }
 
-// ── Page picker (book-page design-doc §4.3, plan Choices E–G) ────────────────
+// ── Page picker ────────────────
 
 /// The picker's fixed `<details>` id: a page holds at most one navigator.
 const PICKER_ID: &str = "cv-picker";
@@ -822,7 +799,7 @@ const PICKER_ID: &str = "cv-picker";
 /// and drag the sticky reader.
 const PICKER_TOGGLE_EXPR: &str = "if (!el.open) return; const p = el.querySelector('.pk__panel'); const c = p.querySelector('[aria-current=page]'); if (c) p.scrollTop = c.offsetTop - p.clientHeight / 3;";
 
-/// The panel's one delegated click handler (Choice G). A jump mark
+/// The panel's one delegated click handler. A jump mark
 /// (`href="#cv-pk-<n>"`) scrolls the panel to its group's heading below the
 /// sticky band and focuses it — the window never scrolls. Any other link is
 /// an entry: close the picker, return focus to its summary, and make the
@@ -879,7 +856,7 @@ fn picker_group_names(group: &PickerGroup, lang: &Lang) -> (String, String) {
     }
 }
 
-/// One picker entry: a plain link with the steps' own href (Choice G — no
+/// One picker entry: a plain link with the steps' own href (no
 /// per-entry `data-on`), `aria-current="page"` on the current page. Its name
 /// is the full label; where the visible text differs (a signature shown
 /// without its key, a dash, or one of several pages stacked in one cell)
@@ -969,7 +946,7 @@ fn render_picker_body(group: &PickerGroup, page: &CompoundPage, cfg: &CompoundVi
     }
 }
 
-/// The page picker in the `.pg--reader` centre (design-doc §4.3): a
+/// The page picker in the `.pg--reader` centre: a
 /// `details#cv-picker` whose panel opens upwards over the stage, anchored to
 /// the pager row. The panel holds a sticky band of jump marks (one per group,
 /// the current group's `aria-current="true"`), then one `section` per group:
@@ -1097,7 +1074,7 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
 
 // ── Member scan ───────────────────────────────────────────────────────────────
 
-/// Render the current member's scan (Incunabula Slice 2 decision 11): the
+/// Render the current member's scan: the
 /// FIRST linked Image's safe `Image` representation as a plain,
 /// non-interactive `figure.cv-member__scan > img`.
 ///
@@ -1107,8 +1084,8 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
 /// page-global signals would collide.
 ///
 /// - `src` is `iiif_plate_url` (fetch width `PLATE_WIDTH`, paired with the `.cv-member__scan img`
-///   rule in `static/cpe/record.css` — the display-box↔fetch-size coupling rule); a non-IIIF-shaped
-///   safe URI is used verbatim, mirroring the record viewer's `.rv__stand` fallback.
+///   rule in `style/record.css` — the display-box↔fetch-size coupling rule); a non-IIIF-shaped safe
+///   URI is used verbatim, mirroring the record viewer's `.rv__stand` fallback.
 /// - `width`/`height` come from the representation (CLS-safe with no CSS dependency), omitted when
 ///   unknown.
 /// - `alt` is the representation's own `alt`, else `member_title` (the member's resolved name — the
@@ -1144,14 +1121,14 @@ fn member_scan_img(image: Option<&Resource>, member_title: &str) -> Option<Marku
     })
 }
 
-// ── `pages` layout (design-doc book-page §4) ─────────────────────────────────
+// ── `pages` layout ─────────────────────────────────
 
 /// `data-class` binding for the `pages` article when its stage renders: the
 /// record viewer unit's `$expand` (WIDER) toggles `.is-wide`, the same idiom
 /// `article.record--viewer` uses (a class, never a reactive `data-*` write).
 const PAGES_WIDE_CLASS_ATTR: &str = "{'is-wide': $expand}";
 
-/// Book-page step 12 (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`'s proposed
+/// Keyboard paging (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`'s
 /// sub-item 3): ←/→ page the `pages` reader while focus is inside it (the article's own `keydown`,
 /// not `__window`, so the scoping is free). It clicks the step's own
 /// `a[rel=prev|next]`, so the steps' handler runs; at an inert end there is
@@ -1174,7 +1151,7 @@ const PAGES_STATUS_ID: &str = "cv-status";
 /// `member` beside it, and the fragment-request marker.
 const URL_CORRECTION_DROP: &[&str] = &["page", "member", "datastar"];
 
-/// Book-page step 10 (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`'s proposed
+/// Stale-address correction (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`'s
 /// sub-item 1): on a full-page render of a stale `?page=`, a `history.replaceState(null, '',
 /// '<url>');` that corrects the address to the page actually shown — the current path
 /// and query minus [`URL_CORRECTION_DROP`]: the bare book URL on page 1 (what
@@ -1210,7 +1187,7 @@ fn stale_url_correction(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>) -> Opt
     ))
 }
 
-/// The `pages` reader's status region (design-doc §4.4, plan Choice H),
+/// The `pages` reader's status region,
 /// between the head and the stage. Always rendered, empty unless the
 /// address's `?page=` named no page of this book; then it says so, with the
 /// value (escaped), and names the page actually shown. HTTP stays 200 and
@@ -1244,10 +1221,10 @@ const ASIDE_FALLBACK_BUDGET: usize = 60;
 
 /// A target name renders beside its step word only up to this many
 /// characters; a longer one lives in the step's `title` alone, so the row
-/// never wraps (design-doc §4.3).
+/// never wraps.
 const PAGER_NAME_MAX_CHARS: usize = 10;
 
-/// The `pages` reader head (design-doc 8.3, §4.1): identity only, and the
+/// The `pages` reader head: identity only, and the
 /// position shows exactly once. The label is the member's `name`:
 ///
 /// - label ≠ position: eyebrow `{class} · n / N`, `h2` = the label;
@@ -1305,7 +1282,7 @@ fn render_pages_head(
             }
             // Always rendered: an empty aside still reserves its one line,
             // so the stage and the pager sit at the same height on every
-            // page (owner, step 6a).
+            // page.
             div.cv-member__aside.cv-member__aside--long[long] {
                 @if let Some(aside) = aside {
                     span.cv-aside__text {
@@ -1324,7 +1301,7 @@ fn render_pages_head(
     }
 }
 
-/// The `member-links` row under the `pages` pager (book-page step 6a):
+/// The `member-links` row under the `pages` pager:
 /// `p.cv-links`, its caption, then every `link` value of the listed member
 /// properties in order, each through `resource_detail::render_value` (an
 /// `a.int-link` to the target's detail page when its class is bound).
@@ -1358,10 +1335,10 @@ fn render_member_links(member: &Resource, cfg: &CompoundViewerCfg<'_>, lang: &La
 }
 
 /// The `pages` layout's stage: `div.cv-stage`, a plain sizing wrapper holding
-/// the record viewer's own unit (`media::render_viewer_unit` — Q3, owner
-/// 2026-09-23: the reader's scan is the full IIIF viewer exactly as Alice's
+/// the record viewer's own unit (`media::render_viewer_unit`:
+/// the reader's scan is the full IIIF viewer exactly as Alice's
 /// record pages have it, reused, never a fork). The unit's `.rv__banner`
-/// carries the Image's legal run above the canvas (plan decision 9).
+/// carries the Image's legal run above the canvas.
 ///
 /// One member image per document: the unit gets `member_media[..1]`, so it
 /// takes the single-image path — no `$plate` paging, no source swap. Its id
@@ -1374,8 +1351,8 @@ fn render_member_links(member: &Resource, cfg: &CompoundViewerCfg<'_>, lang: &La
 /// the unit draws them only when its `<image-viewer>` mounts and the image
 /// has both dimensions.
 ///
-/// No Image / no safe representation ⇒ `None`: no stage, no absent state
-/// (DESIGN.md §9 artefact 4), and so no WIDER host wiring either.
+/// No Image / no safe representation ⇒ `None`: no stage, no absent state,
+/// and so no WIDER host wiring either.
 fn render_pages_stage(page: &CompoundPage, member_title: &str, lang: &Lang) -> Option<Markup> {
     let image = page.member_media.first()?;
     image_repr(image)?;
@@ -1423,7 +1400,7 @@ struct ReaderStep {
     annotated: bool,
 }
 
-/// The `pages` reader's pager row (design-doc §4.3): `nav.pg.pg--reader`,
+/// The `pages` reader's pager row: `nav.pg.pg--reader`,
 /// three tracks — Zurück, `centre` (the live count, or the page picker with
 /// its own hidden live count), Weiter.
 ///
@@ -1510,20 +1487,12 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
     }
 }
 
-// ── Prev/next pager (data-on-enhanced, compound-local) ─────────────────────────
+// ── Prev/next pager (DataStar-enhanced, compound-local) ────────────────────────
 
-/// The compound-viewer's own `.pg` prev/next pager renderer
-/// (`reader-paging-fragment-swap` plan Step 4): the SAME markup shape as
-/// `component::pager::render_pager`, but with `data-on:click__prevent`
-/// wired onto each active (non-inert) step. `render_pager`'s shared
-/// signature takes a plain `Option<&str>` href per step, with no room for a
-/// companion `@get(...)` expression, so this module renders its own copy
-/// rather than widening that shared signature (mirrors the precedent
-/// `component::media` already set — see `pager.rs`'s module doc — hand-
-/// rolling its own `.pg` markup where a caller's step-click behaviour
-/// diverges from the shared primitive's fixed contract). Byte-identical to
-/// `render_pager`'s output for a caller that never sets the second tuple
-/// element to a non-empty `@get(...)` string.
+/// The compound-viewer's own `.pg` prev/next pager renderer:
+/// the `.pg` markup shape with `data-on:click__prevent`
+/// wired onto each active (non-inert) step, beside the plain href
+/// (`component::media` hand-rolls its own `.pg` markup too — see `pager.rs`'s module doc).
 ///
 /// Each `Some((href, get))` pair is one active step: `href` is the plain
 /// no-JS/initial-load `<a href>` (unchanged), `get` is the ALREADY-BUILT
@@ -1565,12 +1534,12 @@ fn build_compound_href(current_path: &str, current_query: Option<&str>, member_i
     member_href_for(current_path, current_query, member_id)
 }
 
-/// The fragment-endpoint counterpart to [`build_compound_href`]
-/// (`reader-paging-fragment-swap` plan Step 4): the SAME [`reader_query`] (so
+/// The fragment-endpoint counterpart to [`build_compound_href`]:
+/// the SAME [`reader_query`] (so
 /// `page=<member_id>` and every other preserved param match the plain href
 /// exactly), but rooted at `{path}/{COMPOUND_FRAGMENT_SEGMENT}` instead of
 /// `path` itself. Neither this nor [`member_href_for`] ever appends a
-/// `#compound-viewer` suffix any more (owner decision 2026-09-29) — the
+/// `#compound-viewer` suffix — the
 /// fragment response patches `#compound-viewer` directly by DOM id, not by
 /// following an anchor, and a forward-click swap's focus lands there via a
 /// programmatic `ExecuteScript` call, not a browser anchor jump. Shares
@@ -1692,8 +1661,7 @@ mod tests {
         }
     }
 
-    /// Like `make_cfg`, but with a compound parent Resource set (E5 tests —
-    /// empty-states-not-found plan step 7).
+    /// Like `make_cfg`, but with a compound parent Resource set (empty-state tests).
     fn make_cfg_with_parent<'a>(
         routes: Option<&'a HashMap<String, String>>,
         current_path: &'a str,
@@ -1724,13 +1692,12 @@ mod tests {
         element(out, "<nav class=\"cv-toc__contents\"", "</nav>")
     }
 
-    /// Test builder for `CompoundPage`, added when `members` joined the
-    /// struct (CV-2) to avoid repeating the field list at ~20 call sites.
+    /// Test builder for `CompoundPage`, which avoids repeating the field list at ~20 call sites.
     /// Pass `vec![]` for `members` in tests that don't exercise the contents
     /// rail; pass a `members` vec consistent with `total` for rail-focused
     /// tests (see `make_story_headers`).
     ///
-    /// Since step 7 (`?page=<member-id>`) the prev/next hrefs read the
+    /// The prev/next hrefs read the
     /// neighbour's id from `members`, so an empty `members` with
     /// `total >= 2` would break the `members.len() == total` invariant the
     /// renderer relies on. Such a call is filled with `total` generic
@@ -1977,8 +1944,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: real navigation + fragment-swap enhancement (Slice 3b step 2,
-    // D5; revived + enhanced by reader-paging-fragment-swap plan Step 4) ──────
+    // ── Layer-1: real navigation + fragment-swap enhancement ──────────────────
 
     /// Member paging is a real page load (every active pager step / rail
     /// link carries a plain `href` — the byte-identical no-JS/initial-load
@@ -2050,7 +2016,7 @@ mod tests {
     /// Single member (total=1): no nav rendered at all, so no
     /// `data-on:click__prevent`/`data-on:submit__prevent` — but the root
     /// still unconditionally carries its own `data-on:popstate__window`
-    /// (Option B, owner decision 2026-09-28 — every populated
+    /// (every populated
     /// compound-viewer root needs Back/Forward to work, regardless of
     /// whether it has a pager or rail at all), and the plain
     /// `window.__cpeReaderUrl` init script the listener compares against.
@@ -2130,12 +2096,12 @@ mod tests {
         assert!(out.contains("Only Chapter"), "total=1 must still show member title, got: {out}");
         // Layout contract: the root MUST carry `.page` (the shared centered
         // box). Without it the content hugs the viewport edges — see the
-        // LAYOUT CONTRACT note in static/cpe/grid.css.
+        // LAYOUT CONTRACT note in style/grid.css.
         assert!(
             out.contains("class=\"compound-viewer page\""),
             "member root must carry `.page` (centered box), got: {out}"
         );
-        // total==1 must NOT render the CV-2 contents rail.
+        // total==1 must NOT render the contents rail.
         assert!(
             !out.contains("cv-toc"),
             "total=1 must not render the .cv-toc contents rail, got: {out}"
@@ -2170,7 +2136,7 @@ mod tests {
             "empty compound must not have an article container, got: {out}"
         );
         // The empty branch's root carries the SAME no-JS focus anchor as the
-        // populated branches (empty-states-not-found plan step 7).
+        // populated branches.
         assert!(
             out.contains("id=\"compound-viewer\""),
             "empty-branch root must carry id=\"compound-viewer\", got: {out}"
@@ -2193,10 +2159,10 @@ mod tests {
         );
     }
 
-    // ── Layer-1: E5 — empty compound with a resolved parent ──────────────────
+    // ── Layer-1: empty compound with a resolved parent ──────────────────
 
     /// A resolved compound parent renders `.cv-compound-head` (eyebrow + big
-    /// italic title) + the class-aware `compound.no_members` sentence + the
+    /// italic title) + the class-aware `compound_no_members_text` sentence + the
     /// parent's own `.props` — no `.cv-toc`, no member head, no pager.
     #[test]
     fn empty_compound_with_parent_renders_head_and_props() {
@@ -2300,12 +2266,12 @@ mod tests {
         );
     }
 
-    /// W7 review fix: a PAIRED compound-viewer (a sibling `resource-detail`
+    /// A PAIRED compound-viewer (a sibling `resource-detail`
     /// on the same page already renders this parent resource) must degrade
     /// to the sentence alone even when the parent DOES resolve — no
     /// `.cv-compound-head`, no `h2`, no `.props` — because that record
     /// already owns the title/eyebrow/properties (`dsp-incubator
-    /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md` D1).
+    /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md`).
     #[test]
     fn empty_compound_paired_degrades_to_sentence_alone_even_with_parent() {
         let page = make_compound_page(None, 1, 0, vec![]);
@@ -2365,7 +2331,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: E5 snapshots ──────────────────────────────────────────────────
+    // ── Layer-3: empty-compound snapshots ──────────────────────────────────────────────────
 
     /// (f) Empty compound WITH a resolved parent — `.cv-compound-head` + props.
     #[test]
@@ -2434,9 +2400,8 @@ mod tests {
     }
 
     /// `span.pg__count` carries `aria-live="polite" aria-atomic="true"`
-    /// (`reader-paging-fragment-swap` plan Step 5a) — member paging reverted
-    /// from real navigation (D5, W4 review finding) back to a same-document
-    /// swap, so the live region is what announces a page step now. Same
+    /// — member paging is a same-document
+    /// swap, so the live region is what announces a page step. Same
     /// idiom as `media.rs`'s own reactive `.pg__count`.
     #[test]
     fn compound_count_has_aria_live() {
@@ -2452,7 +2417,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: CV-2 contents rail ───────────────────────────────────────────
+    // ── Layer-1: contents rail ───────────────────────────────────────────
 
     /// `total >= 2` renders one `.cv-toc__item` per `page.members`, in order,
     /// with the current member marked `aria-current="page"` and the rest not.
@@ -2570,8 +2535,8 @@ mod tests {
         );
     }
 
-    /// The member eyebrow is the generic `{class} · NN` form (design decision
-    /// 2) — not an Alice-specific chapter label.
+    /// The member eyebrow is the generic `{class} · NN` form
+    /// — not an Alice-specific chapter label.
     #[test]
     fn member_eyebrow_is_generic_class_and_ordinal() {
         let routes = make_routes();
@@ -2674,7 +2639,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Member scan (`media=`, Incunabula Slice 2 decision 11) ────────────────
+    // ── Member scan (`media=`) ────────────────
 
     const SCAN_URI: &str = "https://iiif.example.org/0803/p1.jpx/full/max/0/default.jpg";
 
@@ -2834,7 +2799,7 @@ mod tests {
     }
 
     /// Snapshot: member property rows resolve through declared `labels {}`
-    /// (Incunabula Slice 2 step 6b) — `description` renders its declared DE
+    /// — `description` renders its declared DE
     /// label `Seitenbeschreibung`, not the humanized `Description`. No `media`
     /// ⇒ no scan, and the (unsuppressed) `image` row still prints.
     #[test]
@@ -2857,7 +2822,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// Owner decision 2026-09-29: no emitted `href` or `action` attribute
+    /// No emitted `href` or `action` attribute
     /// anywhere in the compound-viewer's own markup — the pager, the
     /// contents rail, or the page picker's entries — may carry a
     /// `#compound-viewer` (or any other) fragment. The picker's in-panel jump
@@ -2889,7 +2854,7 @@ mod tests {
         }
     }
 
-    // ── Member index modes (Incunabula Slice 3b step 4, D4 / Q2) ─────────────
+    // ── Member index modes ─────────────
 
     /// A synthetic 3-member compound on member 2.
     fn render_index_mode(index: MemberIndex) -> String {
@@ -2939,7 +2904,7 @@ mod tests {
         assert!(out.ends_with("</nav></article>"), "got: {out}");
     }
 
-    // ── `pages` layout (Incunabula Slice 3b step 5, D12) ─────────────────────
+    // ── `pages` layout ─────────────────────
 
     /// A synthetic Page Image carrying `authorship` + `license` (no
     /// `copyright`) — the legal run is `"Test Library · CC BY 4.0"`.
@@ -3003,7 +2968,7 @@ mod tests {
         render_compound_viewer(&page, &cfg, &make_lang("en")).into_string()
     }
 
-    /// (h) Incunabula Slice 8 step 2: the `contents` layout renders a
+    /// (h) The `contents` layout renders a
     /// member's date through `render_property_block`, so the
     /// `site.date_precision_word` flag reaches it. The `pages` layout shows
     /// no member property rows at all, date included.
@@ -3068,7 +3033,7 @@ mod tests {
     /// The `pages` article's open tag, WIDER host wiring included.
     const PAGES_ROOT_OPEN: &str = r#"<article class="compound-viewer compound-viewer--pages page" id="compound-viewer" tabindex="-1" aria-labelledby="cv-title" data-class="{'is-wide': $expand}" data-on:popstate__window="if (location.pathname + location.search !== window.__cpeReaderUrl) { location.reload(); }""#;
 
-    /// Book-page step 12: the ←/→ handler sits on the `pages` article only
+    /// The ←/→ handler sits on the `pages` article only
     /// (focus-scoped, not `__window`), with every guard, and clicks the
     /// steps' own `rel` links.
     #[test]
@@ -3126,8 +3091,8 @@ mod tests {
             !out.contains("em-head") && !out.contains("cv-member__props") && !out.contains("cv-pages"),
             "got: {out}"
         );
-        // Step 6 (Q3): the legal run sits in the unit's banner, above the
-        // canvas — the record viewer's own markup, no step-5 legal band.
+        // The legal run sits in the unit's banner, above the
+        // canvas — the record viewer's own markup, no separate legal band.
         let banner_at = out.find(r#"<div class="rv__banner""#).expect("banner");
         let canvas_at = out.find(r#"class="rv__canvas""#).expect("canvas");
         let run_at = out
@@ -3444,7 +3409,7 @@ mod tests {
         assert!(out.contains("· 1 / 1"), "got: {out}");
     }
 
-    // ── `pages` reader head + pager row (book-page design-doc §4.1, §4.3) ─────
+    // ── `pages` reader head + pager row ─────
 
     /// The `pages` pager row of `out`.
     fn reader_pager(out: &str) -> &str {
@@ -3636,7 +3601,7 @@ mod tests {
     }
 
     /// A stale `?page=` says so, names the page shown, and describes the
-    /// reader (plan Choice H). The value is escaped.
+    /// reader. The value is escaped.
     #[test]
     fn pages_status_names_the_stale_value_and_the_page_shown() {
         let out = render_stale(Some("zzz"), "de");
@@ -3919,7 +3884,7 @@ mod tests {
         }
     }
 
-    /// The `member-links` row (step 6a) renders under the pager, inside the
+    /// The `member-links` row renders under the pager, inside the
     /// reader article, listing each link value in property order as an
     /// `int-link` to the target's `/strips/:id` page.
     #[test]
@@ -3963,7 +3928,7 @@ mod tests {
         assert!(!out.contains("cv-links"), "got: {out}");
     }
 
-    /// design-doc 8.3, label ≠ position: the eyebrow carries `n / N`, the
+    /// Label ≠ position: the eyebrow carries `n / N`, the
     /// h2 the label — the position shows once.
     #[test]
     fn pages_head_label_differs_from_position() {
@@ -3975,7 +3940,7 @@ mod tests {
         );
     }
 
-    /// design-doc 8.3, label = position: the eyebrow is the class alone and
+    /// Label = position: the eyebrow is the class alone and
     /// the h2 carries `n` plus a mono `/ N`.
     #[test]
     fn pages_head_label_equals_position() {
@@ -3989,7 +3954,7 @@ mod tests {
         );
     }
 
-    /// design-doc 8.3, no label: the eyebrow says so and the h2 is the
+    /// No label: the eyebrow says so and the h2 is the
     /// position.
     #[test]
     fn pages_head_without_label_shows_the_position() {
@@ -4015,7 +3980,7 @@ mod tests {
 
     /// The description follows the h2 as a one-line italic aside whose dash
     /// is hidden from assistive technology, with the native "more"
-    /// disclosure beside it (owner, step 6a). A short text is not `--long`,
+    /// disclosure beside it. A short text is not `--long`,
     /// so without scroll-driven animations the expander stays hidden.
     #[test]
     fn pages_head_description_is_an_aside() {

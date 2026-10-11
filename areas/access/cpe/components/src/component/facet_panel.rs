@@ -9,7 +9,7 @@
 //! Each option renders as `<a class="facet-option__toggle" href="…"
 //! data-on:click__prevent="@get('…')">`. The `href` is the no-JS fallback: a full-page reload with
 //! the toggled query string. The `@get` URL is the DataStar fragment URL (`{path}/_facets?{qs}`),
-//! built via [`encode_get_arg`][cpe_core::util::encode_get_arg] to percent-encode `'`, `` ` ``, and
+//! built via [`cpe_core::util::encode_get_arg`] to percent-encode `'`, `` ` ``, and
 //! `\` so the URL cannot break out of the `@get('…')` JS-string context.
 //!
 //! ## URL encoding
@@ -18,8 +18,8 @@
 //! (`role`, `keyword`, `location-type`) and list-node-id values (`R_01`, `K_005`,
 //! `lt-wonderland`) are ASCII-safe, consistent with the existing `page`/`lang`/`img`
 //! params in `override_query_param`. Percent-encoding for non-ASCII real-project node
-//! ids and for query-structural chars (`&`, `=`, `+`) is a scoped BACKLOG deferral
-//! (see BACKLOG.md "Facet param encoding"). Note this distinction: Maud's HTML-attribute
+//! ids and for query-structural chars (`&`, `=`, `+`) is not done.
+//! Note this distinction: Maud's HTML-attribute
 //! escaping handles the `href` value; only the `@get('…')` JS-string context needs
 //! `encode_get_arg`.
 //!
@@ -31,12 +31,12 @@
 //!
 //! Both emit a localized "no filters available" note.
 //!
-//! ## Per-group disclosure (G4)
+//! ## Per-group disclosure
 //!
-//! A group with more than [`FACET_GROUP_COLLAPSE_THRESHOLD`] options shows its
-//! [`FACET_GROUP_VISIBLE_COUNT`] densest options plus every selected option
+//! A group with more than `FACET_GROUP_COLLAPSE_THRESHOLD` options shows its
+//! `FACET_GROUP_VISIBLE_COUNT` densest options plus every selected option
 //! hoisted out of the tail, and folds the unselected remainder into a per-group
-//! `<details class="facet-group__more">`. See [`split_group_options`] for the
+//! `<details class="facet-group__more">`. See `split_group_options` for the
 //! rule and the two constants' doc comments for why 16 and 12 differ. Groups at
 //! or below the threshold render byte-identically to how they always have.
 //!
@@ -46,34 +46,34 @@
 //! not `aria-pressed` (invalid on a link element). Same idiom as the
 //! language switcher.
 //!
-//! ## Per-group clear + active-filter chips (FP-2)
+//! ## Per-group clear + active-filter chips
 //!
 //! Each group heading sits in a `div.facet-group__titlerow` alongside an
 //! `a.facet-group__clear` "clear" link, shown only when that group has ≥1
 //! selected option (`:hover`/`:focus-within`-revealed, record.css). It clears
-//! only that group's params via [`clear_group_query`] — other groups'
+//! only that group's params via `clear_group_query` — other groups'
 //! selections and unrelated params (lang, appearance) are preserved.
 //!
 //! [`render_active_filters`] renders a **separate** `div.filterbar` — a second
 //! view of the same `groups` data, composed by `render_body` alongside
-//! `render_facet_panel`'s own output (design decision 1, phase-5 plan). It is
+//! `render_facet_panel`'s own output. It is
 //! NOT called from inside `render_facet_panel`.
 //!
-//! ## Query chip (search-bar plan step 9)
+//! ## Query chip
 //!
 //! [`render_active_filters`] also takes an optional `query: Option<&str>` —
 //! the sibling search-bar's ACTIVE query (never a raw-non-empty string; the
 //! caller gates on the same `SearchSurface`/tokenizer test as the list
 //! narrowing itself). When `Some`, a `.filterchip--query` chip renders
-//! **before** the facet chips (design-doc §1's row order), and the filterbar
+//! **before** the facet chips, and the filterbar
 //! is non-empty even when no facet is selected. Unlike the facet chips (plain
 //! `<a href>`), the query chip's no-JS fallback is a real `<form method=get>`
-//! wrapping a `type="submit" name="q" value=""` button (design-doc §5.3),
+//! wrapping a `type="submit" name="q" value=""` button,
 //! since a link alone cannot post an empty `q` — `.filterchip-form { display:
 //! contents; }` (record.css) makes the wrapper invisible to the `.filterbar`
 //! flex layout. Clearing it hits the *same* `_search` fragment endpoint (2-event
 //! swap: filterbar + list) the search row's own `×` uses — facet counts stay
-//! static (design-doc §8.5), so the panel is never re-rendered by this action.
+//! static, so the panel is never re-rendered by this action.
 
 use cpe_core::ir::{any_facet_selected, FacetGroup, FacetOption};
 use cpe_core::lang::Lang;
@@ -83,7 +83,7 @@ use maud::{html, Markup};
 use super::search_bar;
 use crate::chrome::{facet_empty_group_text, facet_group_remainder_text, remove_filter_label, ChromeMsg};
 
-// ── Per-group disclosure split (G4) ───────────────────────────────────────────
+// ── Per-group disclosure split ───────────────────────────────────────────
 
 /// A facet group with **more than** this many options collapses: only
 /// [`FACET_GROUP_VISIBLE_COUNT`] options stay in the flat list, the rest go
@@ -91,11 +91,11 @@ use crate::chrome::{facet_empty_group_text, facet_group_remainder_text, remove_f
 /// renders byte-identically to how it always has.
 ///
 /// ⚠️ **16 and [`FACET_GROUP_VISIBLE_COUNT`]'s 12 are two DELIBERATELY DIFFERENT
-/// numbers — do not "simplify" them into one.** The HdM design (Assumption A5)
-/// asks for the 94-node season group to show its 12 densest options behind a
-/// disclosure, *and* shows the 13-node `Jahrzehnt` (decade) group flat. A single
-/// number of 12 would collapse the decade group and contradict the mockup; a
-/// single number of 16 would show 16 seasons instead of the specified 12. The
+/// numbers — do not "simplify" them into one.** The HdM
+/// 94-node season group shows its 12 densest options behind a
+/// disclosure, *and* the 13-node `Jahrzehnt` (decade) group shows flat. A single
+/// number of 12 would collapse the decade group; a
+/// single number of 16 would show 16 seasons instead of 12. The
 /// gap between the two is the point: a group only slightly over the visible
 /// count is not worth a disclosure.
 pub(crate) const FACET_GROUP_COLLAPSE_THRESHOLD: usize = 16;
@@ -109,10 +109,10 @@ pub(crate) const FACET_GROUP_COLLAPSE_THRESHOLD: usize = 16;
 /// filtered by — which means the visible count can legitimately exceed 12.
 ///
 /// ⚠️ See [`FACET_GROUP_COLLAPSE_THRESHOLD`]: 12 and 16 are two deliberately
-/// different numbers (A5), not a redundancy to collapse.
+/// different numbers, not a redundancy to collapse.
 pub(crate) const FACET_GROUP_VISIBLE_COUNT: usize = 12;
 
-/// Split a group's options into (visible, hidden) per the G4 rule.
+/// Split a group's options into (visible, hidden).
 ///
 /// At or below [`FACET_GROUP_COLLAPSE_THRESHOLD`] the group is left completely
 /// alone — `(all, &[])` — which is what guarantees byte-identical markup for
@@ -148,7 +148,7 @@ fn split_group_options(options: &[FacetOption]) -> (Vec<&FacetOption>, Vec<&Face
 /// The URL path segment that identifies the facet-panel fragment endpoint.
 ///
 /// The fragment endpoint lives at `{page-path}/{FACET_FRAGMENT_SEGMENT}?…`.
-/// Both the engine (to build `data-on:click__prevent` `@get` URLs) and the bin
+/// Both the engine (to build `data-on:click__prevent` `@get` URLs) and `dsp-incubator cpe/bin`
 /// (to register the Axum route) reference this constant so no magic-string
 /// mismatch is possible. Mirrors `SORT_FRAGMENT_SEGMENT` and
 /// `SEARCH_FRAGMENT_SEGMENT`.
@@ -162,7 +162,7 @@ pub const FACET_FRAGMENT_SEGMENT: &str = "_facets";
 /// facet panel carries no `LinkResolver` (facet toggles are same-page
 /// query-param links, not detail-page links), so all fields are public types
 /// (`&str` / `Option<&str>`). Both the engine's `render_component` arm AND the
-/// bin's `_facets` fragment handler can construct this struct directly, without
+/// `dsp-incubator cpe/bin`'s `_facets` fragment handler can construct this struct directly, without
 /// a factory method.
 pub struct FacetPanelCfg<'a> {
     /// The `id` of the target `resource-list` component. Used to build
@@ -181,19 +181,18 @@ pub struct FacetPanelCfg<'a> {
 /// Render a facet-panel as a `<section class="facet-panel page">`.
 ///
 /// Structure:
-/// - Empty branch (a) / **E3b**: `groups` is empty → renders **nothing** (`html!{}`) — per the
-///   design, a rail with no groups to offer is furniture with nothing to do (handoff §E3). This is
-///   the raw render function's own fallback for a defensive/direct-dispatch caller; the normal
-///   production path (`render_body`) doesn't call this function at all in that case — it switches
-///   the whole page layout to the non-faceted shape instead (see `render_body`'s "E3b" doc note),
-///   dropping the `.browse` grid's rail column entirely rather than emitting an empty section for
-///   it.
-/// - Empty branch (b) / **E3a**: groups present but a given group has zero options → that group
-///   still renders `<section.facet-group>` with its heading + a localized "{group} has no options
-///   yet" note ([`facet_empty_group_text`]) — slot scale, per the design.
+/// - Empty branch (a): `groups` is empty → renders **nothing** (`html!{}`) — a rail with no groups
+///   to offer is furniture with nothing to do. This is the raw render function's own fallback for a
+///   defensive/direct-dispatch caller; the normal production path (`render_body`) doesn't call this
+///   function at all in that case — it switches the whole page layout to the non-faceted shape
+///   instead (see `render_body`), dropping the `.browse` grid's rail column entirely rather than
+///   emitting an empty section for it.
+/// - Empty branch (b): groups present but a given group has zero options → that group still renders
+///   `<section.facet-group>` with its heading + a localized "{group} has no options yet" note
+///   (`facet_empty_group_text`) — slot scale.
 /// - Populated branch: groups rendered as flex-row wrappers with toggle-link options inside.
 ///
-/// The populated and per-group-empty (E3a) branches emit
+/// The populated and per-group-empty branches emit
 /// `id="facets-{cfg.list_id}"` and `aria-label` (localized "Filters") on the
 /// root for DataStar swap targeting and accessibility.
 ///
@@ -209,7 +208,7 @@ pub fn render_facet_panel(groups: &[FacetGroup], cfg: &FacetPanelCfg<'_>, lang: 
     let panel_label = ChromeMsg::FacetFiltersWord.text(lang);
     let panel_id = format!("facets-{}", cfg.list_id);
 
-    // ── Empty branch (a) / E3b: no groups at all — render nothing ───────────
+    // ── Empty branch (a): no groups at all — render nothing ───────────
     if groups.is_empty() {
         return html! {};
     }
@@ -267,15 +266,14 @@ pub fn render_facet_panel(groups: &[FacetGroup], cfg: &FacetPanelCfg<'_>, lang: 
                             }
                         }
                         @if group.options.is_empty() {
-                            // Empty branch (b) / E3a: group present but no
+                            // Empty branch (b): group present but no
                             // options. Render heading + the group-specific
-                            // note (step 1's `facet.empty_group` / `_fallback`
-                            // formatter), NOT a bare empty <ul>.
+                            // note (`facet_empty_group_text`), NOT a bare empty <ul>.
                             p.facet-panel__empty {
                                 (facet_empty_group_text(&group.label.to_lowercase(), lang))
                             }
                         } @else {
-                            // G4 per-group disclosure. `visible` is the whole
+                            // Per-group disclosure. `visible` is the whole
                             // group at or below FACET_GROUP_COLLAPSE_THRESHOLD
                             // (so those groups keep byte-identical markup);
                             // above it, the 12 densest plus every selected
@@ -334,7 +332,7 @@ pub fn render_facet_panel(groups: &[FacetGroup], cfg: &FacetPanelCfg<'_>, lang: 
 ///
 /// Factored out of `render_facet_panel`'s option loop only so the visible list
 /// and the per-group `<details>` remainder list emit **the same** markup from
-/// one place. The emitted bytes are unchanged from the pre-G4 inline loop.
+/// one place.
 fn render_facet_option(cfg: &FacetPanelCfg<'_>, property: &str, opt: &FacetOption) -> Markup {
     let href = toggle_href(cfg, property, &opt.value);
     let frag = fragment_href(cfg, property, &opt.value);
@@ -357,18 +355,17 @@ fn render_facet_option(cfg: &FacetPanelCfg<'_>, property: &str, opt: &FacetOptio
 
 /// Render the active-filter chip row: `<div class="filterbar" id="filters-{list_id}">`.
 ///
-/// This is a **second view** of the same `groups` data `render_facet_panel` renders
-/// (design decision 1, phase-5 browse-redesign plan): a flat `.browse` grid child
+/// This is a **second view** of the same `groups` data `render_facet_panel` renders:
+/// a flat `.browse` grid child
 /// placed by the composition layer (`render_body`), and a **third** DataStar patch
 /// region of the `_facets` fragment endpoint alongside the panel and the list — see
-/// `FACET_FRAGMENT_SEGMENT` and the bin's `make_facet_fragment_handler`.
+/// `FACET_FRAGMENT_SEGMENT` and `dsp-incubator cpe/bin`'s `make_facet_fragment_handler`.
 ///
 /// - **Empty** (no option across any group is `selected` AND `query` is `None`): emits the bare
 ///   `<div id="filters-{list_id}">` with **no children** — a stable morph target that collapses via
 ///   `.filterbar:empty { display: none; }` (record.css), rather than being omitted entirely (an
 ///   absent element cannot be a DataStar patch target). An active query alone (no facet selected)
-///   is enough to make the bar non-empty (search-bar plan step 9 — design-doc §3 "Active, matches":
-///   the query chip renders with no facet chips beside it).
+///   is enough to make the bar non-empty (the query chip renders with no facet chips beside it).
 /// - **Populated**: an optional `.filterchip--query` chip (`query.is_some()`, see the module doc
 ///   comment) **first**, then one ink-fill `.filterchip` `<a>` per selected option — the chip's
 ///   `href`/`@get` **toggles that option OFF** (same `toggle_href`/`fragment_href` the rail uses),
@@ -386,7 +383,7 @@ fn render_facet_option(cfg: &FacetPanelCfg<'_>, property: &str, opt: &FacetOptio
 /// rule can lay out a component's own children; this element instead sits as
 /// a *sibling* grid child of `.browse.page` and is placed by `record.css`'s
 /// `.browse > .filterbar` rule (specificity 0,2,0 — out-specifies the 0,1,0
-/// blanket rule that would otherwise snap it full-width; see design decision 1).
+/// blanket rule that would otherwise snap it full-width).
 ///
 /// The root also carries `aria-live="polite" aria-atomic="true"` (a11y
 /// review fix) — this small chip row, not the large `facet-panel` section
@@ -417,7 +414,7 @@ pub fn render_active_filters(
         None => cfg.current_path.to_owned(),
     };
     let clear_all_frag = encode_get_arg(&clear_all_fragment_href(cfg, &facet_keys));
-    // "Clear all" drops `q` too (design-doc §8.4), so it must also EMPTY the
+    // "Clear all" drops `q` too, so it must also EMPTY the
     // search field — but `#q` lives in the search row, OUTSIDE this filter bar's
     // `_facets`/`_search` swap, so it is never re-rendered and would otherwise
     // keep the stale typed text after the reset. Reference `#q` document-wide
@@ -465,8 +462,7 @@ pub fn render_active_filters(
 /// Render the query chip: `<form method=get>` (a mini no-JS form — the chip
 /// button needs `name="q" value=""`, unlike the facet chips' plain `<a
 /// href>`, which cannot post an empty value) wrapping a `button.filterchip
-/// .filterchip--query` (design-doc §5.3's pseudo-markup, ported literally:
-/// the design's own example quotes the query in straight ASCII `"…"`, a fixed
+/// .filterchip--query` (the query is quoted in straight ASCII `"…"`, a fixed
 /// typographic treatment set by CSS italics — not a per-language quote glyph
 /// like `search_no_match_text`'s DE „…"/FR «…»).
 ///
@@ -476,7 +472,7 @@ pub fn render_active_filters(
 /// [`search_bar::preserved_query_dropping_q_and_page`] /
 /// [`cpe_core::util::hidden_pairs_dropping`] + [`search_bar::SEARCH_HIDDEN_DROP`]) and the same
 /// `SEARCH_FRAGMENT_SEGMENT` fragment endpoint (a 2-event swap: filterbar +
-/// list — facet counts stay static per design-doc §8.5, so this action never
+/// list — facet counts stay static, so this action never
 /// re-renders the facet panel). The aria-label reuses `ChromeMsg::SearchClear`
 /// ("Clear search") — the same string the search row's own `×` carries — no
 /// new chrome message needed for a control with identical behaviour.
@@ -546,9 +542,8 @@ fn kept_pairs(current_query: Option<&str>, drop: impl Fn(&str) -> bool) -> Optio
 /// Build the query string for the filterbar's "Clear all" link.
 ///
 /// Drops every `key=value` pair whose key appears in `facet_keys`, AND drops
-/// the `page` param (resetting to page 1), AND drops `q` (search-bar plan
-/// step 9 — "Clear all" clears the active search too, per design-doc §8.4:
-/// "`Clear all` clears everything"). All other params (e.g. `lang`,
+/// the `page` param (resetting to page 1), AND drops `q` ("Clear all"
+/// clears everything, the active search too). All other params (e.g. `lang`,
 /// `appearance`) are preserved so clicking "Clear all" doesn't strip
 /// unrelated user preferences — consistent with the individual toggle links.
 /// Dropping `q` is unconditional and harmless when absent (a no-op filter).
@@ -588,7 +583,7 @@ pub(crate) fn clear_group_query(current_query: Option<&str>, property: &str) -> 
 /// Value encoding: keys/values are assumed ASCII-safe (Alice's facet ids are
 /// ASCII — `role`, `R_01`, `keyword`, `K_005`, `lt-wonderland`). Percent-
 /// encoding for non-ASCII node ids and for query-structural chars (`&`, `=`,
-/// `+`) is a BACKLOG deferral (see module doc). A future hardening pass must
+/// `+`) is not done (see module doc). A future hardening pass must
 /// encode before this function is called, not inside it.
 #[must_use]
 pub(crate) fn toggle_query_param(current_query: Option<&str>, key: &str, value: &str) -> String {
@@ -754,7 +749,7 @@ mod tests {
 
     /// `n` unselected options in **descending count** order — the order
     /// `query::list_facet_values` already returns (`ORDER BY cnt DESC, label,
-    /// target_id`), so index 0..12 really is the "12 densest" prefix the G4
+    /// target_id`), so index 0..12 really is the "12 densest" prefix the
     /// split takes.
     fn make_options(n: usize) -> Vec<FacetOption> {
         (0..n)
@@ -827,8 +822,8 @@ mod tests {
         assert_eq!(qs, "lang=de&appearance=dark&role=R_01&keyword=K_005");
     }
 
-    /// `view=grid` survives a facet toggle (grid-mode plan decision 12 —
-    /// each query-param-preserving helper needs its own explicit assertion).
+    /// `view=grid` survives a facet toggle (each
+    /// query-param-preserving helper needs its own explicit assertion).
     #[test]
     fn toggle_query_param_preserves_view() {
         let qs = toggle_query_param(Some("lang=de&view=grid&role=R_01"), "keyword", "K_005");
@@ -863,9 +858,9 @@ mod tests {
 
     // ── Layer-1: empty branches ────────────────────────────────────────────────
 
-    /// E3b: `groups` is empty — `render_facet_panel` renders literally
+    /// `groups` is empty — `render_facet_panel` renders literally
     /// nothing (no rail, no placeholder section, no `.page`). The "no rail"
-    /// composition itself lives in `render_body` (`cpe_web::page`); this
+    /// composition itself lives in `render_body` (`dsp-incubator cpe/web`'s `page` module); this
     /// tests the raw render function's own defensive fallback.
     #[test]
     fn empty_branch_no_groups_renders_nothing() {
@@ -875,7 +870,7 @@ mod tests {
         assert_eq!(out, "", "E3b (no groups) must render nothing, got: {out}");
     }
 
-    /// E3a: groups present but all have zero options — root still carries `.page`.
+    /// Groups present but all have zero options — root still carries `.page`.
     #[test]
     fn empty_branch_groups_no_options_has_page_class() {
         let groups = vec![make_group("role", "Role", vec![])];
@@ -899,7 +894,7 @@ mod tests {
         );
     }
 
-    /// DE empty-state message (E3a — German uses the non-inflecting fallback).
+    /// DE empty-state message (German uses the non-inflecting fallback).
     #[test]
     fn empty_branch_de_message() {
         let groups = vec![make_group("role", "Rolle", vec![])];
@@ -977,7 +972,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// (c) E3b: no groups — renders nothing (empty string).
+    /// (c) No groups — renders nothing (empty string).
     #[test]
     fn snapshot_facet_panel_empty_no_groups() {
         let cfg = make_cfg("character-list", "/alice-in-daschland/characters", None);
@@ -986,7 +981,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// (d) E3a: group present but zero options.
+    /// (d) Group present but zero options.
     #[test]
     fn snapshot_facet_panel_empty_group_no_options() {
         let groups = vec![make_group("role", "Role", vec![])];
@@ -996,16 +991,15 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// (e) G4: a group ABOVE `FACET_GROUP_COLLAPSE_THRESHOLD`, collapsed.
+    /// (e) A group ABOVE `FACET_GROUP_COLLAPSE_THRESHOLD`, collapsed.
     ///
     /// Built from **36** options on purpose: 36 is Alice's real distinct
     /// `keyword` list-node count on `/alice-in-daschland/characters` (281
     /// `keyword` rows over 54 Characters in
-    /// `projects/alice-in-daschland/data.sql`), the one live, owner-reviewed
+    /// `projects/alice-in-daschland/data.sql`), the one live
     /// surface this engine-wide threshold changes. The synthetic fixtures are
     /// never built from Alice's data, so without this pin the collapse of a
-    /// real browse would be a silent consequence rather than a reviewed
-    /// artefact. Summary must read "24 more options".
+    /// real browse would be a silent consequence. Summary must read "24 more options".
     #[test]
     fn snapshot_facet_panel_group_above_threshold_collapsed() {
         let groups = vec![make_group("keyword", "Keyword", make_options(36))];
@@ -1015,7 +1009,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-2: G4 per-group disclosure split ────────────────────────────────
+    // ── Layer-2: per-group disclosure split ────────────────────────────────
 
     /// The 94-option season group: 12 visible, 82 behind the `<details>`.
     #[test]
@@ -1066,7 +1060,7 @@ mod tests {
         );
     }
 
-    /// 13 options (the mockup's `Jahrzehnt` decade group) render flat — this is
+    /// 13 options (the `Jahrzehnt` decade group) render flat — this is
     /// exactly why the threshold (16) and the visible count (12) are two
     /// different numbers.
     #[test]
@@ -1120,7 +1114,7 @@ mod tests {
 
     /// Remainder 1 takes the SINGULAR plural arm. This assertion is only
     /// meaningful because the chosen copy names the thing counted
-    /// ("option"/"options", "Option"/"Optionen") — the mockup's noun-less
+    /// ("option"/"options", "Option"/"Optionen") — a noun-less
     /// "Show N more" / "N weitere anzeigen" would have made One and Other
     /// byte-identical apart from the numeral, i.e. a test that cannot fail.
     #[test]
@@ -1260,7 +1254,7 @@ mod tests {
         assert_eq!(result, None);
     }
 
-    /// `view=grid` survives "Clear all" (grid-mode plan decision 12 — this is
+    /// `view=grid` survives "Clear all" (this is
     /// DELIBERATE, not incidental: "Clear all" clears *filters*, and the view
     /// is not a filter, so `view` must be preserved here unlike `q`/facets/`page`).
     #[test]
@@ -1279,7 +1273,7 @@ mod tests {
         assert_eq!(result, Some("lang=de&keyword=K_001".to_owned()));
     }
 
-    /// `view=grid` survives a per-group clear (grid-mode plan decision 12).
+    /// `view=grid` survives a per-group clear.
     #[test]
     fn clear_group_query_preserves_view() {
         let result = clear_group_query(Some("lang=de&view=grid&role=R_01&page=2"), "role");
@@ -1475,12 +1469,11 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-1/3: query chip (search-bar plan step 9) ────────────────────────
+    // ── Layer-1/3: query chip ────────────────────────
 
     /// An active query with NO facet selected still makes the filterbar
-    /// non-empty (design-doc §3 "Active, matches": the query chip renders
-    /// alone). Regression guard for the `!has_selected && query.is_none()`
-    /// gate change.
+    /// non-empty (the query chip renders
+    /// alone). Guards the `!has_selected && query.is_none()` gate.
     #[test]
     fn active_filters_non_empty_with_query_only_no_facets_selected() {
         let groups = vec![make_group(
@@ -1519,7 +1512,7 @@ mod tests {
         );
     }
 
-    /// Query chip renders BEFORE the facet chips (design-doc §1's row order).
+    /// Query chip renders BEFORE the facet chips.
     #[test]
     fn active_filters_query_chip_renders_before_facet_chips() {
         let groups = vec![make_group(
@@ -1561,7 +1554,7 @@ mod tests {
 
     /// The query chip's `×` `@get` targets the `_search` fragment endpoint
     /// (2-event filterbar+list swap), NOT `_facets` — clearing the query
-    /// never re-renders the facet panel (design-doc §8.5: facet counts stay
+    /// never re-renders the facet panel (facet counts stay
     /// static).
     #[test]
     fn active_filters_query_chip_fragment_targets_search_segment() {
@@ -1576,7 +1569,7 @@ mod tests {
         );
     }
 
-    /// `clear_filters_query` now drops `q` too (search-bar plan step 9) — the
+    /// `clear_filters_query` drops `q` too — the
     /// filterbar's own "Clear all" href reflects this.
     #[test]
     fn clear_filters_query_now_drops_q_too() {
@@ -1633,8 +1626,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// Query chip + a selected facet chip side by side (design-doc §3
-    /// "Query + facets").
+    /// Query chip + a selected facet chip side by side.
     #[test]
     fn snapshot_active_filters_query_and_facet_chips() {
         let groups = vec![make_group(

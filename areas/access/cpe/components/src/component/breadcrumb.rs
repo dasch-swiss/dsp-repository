@@ -5,10 +5,9 @@
 //! `a.crumb-back` (the one link a phone shows in place of the path), the
 //! `ol.breadcrumb__list` path on the left and, at the right edge, the
 //! `div.crumb-actions` frame whose first row holds the "Copy link" share
-//! control (share-view plan). Only the record and narrative variants can
-//! carry a dataset panel ([`DataPanel`]) in that frame — see
-//! `docs/plans/share-view/implementation-plan.md` step 3 and the design
-//! doc's "Anatomy". Four crumb-line SHAPES share the row/control
+//! control. Only the record and narrative variants can
+//! carry a dataset panel ([`DataPanel`]) in that frame.
+//! Four crumb-line SHAPES share the row/control
 //! machinery:
 //!
 //! 1. [`render_breadcrumb`] — the resource-detail trail (`CPE › project › resource-title`), or `CPE
@@ -36,7 +35,7 @@ use super::data_links::{render_data_panel, DataPanel};
 use crate::chrome::ChromeMsg;
 
 /// Parameters for the "Copy link" control at the right edge of the crumb
-/// line (share-view plan step 3).
+/// line.
 ///
 /// Callers pre-compose `href` via `share_link::compose_canonical_query` +
 /// `compose_absolute_url` — this module only renders markup, never touches
@@ -44,22 +43,21 @@ use crate::chrome::ChromeMsg;
 pub struct ShareControl<'a> {
     /// Stable per-region id, emitted as the control `<a>`'s `id` attribute
     /// so a fragment swap that replaces the crumb line does not orphan the
-    /// keyboard focus ring (design doc "Build notes" — "Focus").
+    /// keyboard focus ring.
     pub id: &'a str,
     /// The already-composed absolute URL to copy / follow.
     pub href: &'a str,
     /// State-in-words suffix appended after
     /// [`ChromeMsg::CopyLinkLongPrefix`] as ` — <suffix>` (browse surfaces
-    /// only, per design doc "Strings" — "On record/reader the control
-    /// never announces which state it caught"). Composing this suffix is
-    /// step 5's job; this step only accepts the parameter.
+    /// only: on record/reader the control
+    /// never announces which state it caught). The caller composes this suffix.
     pub accessible_name_suffix: Option<&'a str>,
     /// An OPTIONAL reactive `data-attr` object-literal expression
     /// (`"{'href': …}"`) that overrides `href` client-side once DataStar
-    /// hydrates (share-view plan step 7, decision 5). `href` is a plain
+    /// hydrates. `href` is a plain
     /// HTML attribute, not `data-*`-namespaced, so writing it reactively
-    /// via `data-attr` is the sanctioned exception documented in decision
-    /// 5 — it does NOT violate the "never reactively write a `data-*`
+    /// via `data-attr` is a sanctioned exception
+    /// — it does NOT violate the "never reactively write a `data-*`
     /// attribute" rule (that rule is about DataStar's own `data-*`
     /// namespace, e.g. `data-signals`/`data-bind`).
     ///
@@ -70,9 +68,8 @@ pub struct ShareControl<'a> {
     /// override. The static `href` field above always stays the no-JS /
     /// initial-load value; this expression only overrides it once JS runs.
     ///
-    /// **Unverified in-browser** (see the share-view plan's own risk
-    /// note and `docs/plans/share-view/issues.md`) — step 8's job to
-    /// confirm the vendored DataStar bundle accepts a `data-attr` object
+    /// **Unverified in-browser**: whether
+    /// the vendored DataStar bundle accepts a `data-attr` object
     /// literal whose value indexes a JS array literal (of server-precomposed,
     /// canonical, per-plate-index URLs) by `$plate`.
     pub reactive_href_attr: Option<&'a str>,
@@ -86,8 +83,8 @@ pub struct ShareControl<'a> {
 /// - `class_crumb` — an OPTIONAL live-linked class segment inserted between the project and
 ///   resource-title crumbs (`CPE › project › class › resource`), `Some((label, href))`. `None`
 ///   yields the original 3-crumb trail unchanged — the fallback when the resource's class has no
-///   registered browse route (no dead segment, no unlinked text). Mirrors the N3 not-found
-///   breadcrumb's `class_crumb` resolution ([`render_not_found_breadcrumb`]) — same
+///   registered browse route (no dead segment, no unlinked text). Mirrors the unknown-record
+///   not-found breadcrumb's `class_crumb` resolution ([`render_not_found_breadcrumb`]) — same
 ///   `resolve_class_label` + `class_list_routes` seam, just on the resolved-record path instead of
 ///   the unresolved-id path.
 /// - `resource_title` — the resolved resource title for the current-page crumb.
@@ -113,10 +110,10 @@ pub fn render_breadcrumb(
 
 /// Render the browse crumb-line variant: `CPE › project › class-label`
 /// (the class label is the current item — the page IS the browse listing
-/// for that class, so it carries no link; share-view plan step 3).
+/// for that class, so it carries no link).
 ///
-/// Wired at its production call site in `cpe_web::page`'s
-/// `render_browse_breadcrumb_for_page` (share-view plan step 5) — any page
+/// Wired at its production call site in `dsp-incubator cpe/web`'s `page` module's
+/// `render_browse_breadcrumb_for_page` — any page
 /// with a `ResourceList` component carrying a declared `id`.
 pub fn render_browse_breadcrumb(
     project_id: &str,
@@ -131,7 +128,7 @@ pub fn render_browse_breadcrumb(
 }
 
 /// A trailing member segment on a "reader" (compound-viewer) narrative
-/// page — owner decision, fix 3 of the 2026-09-01 verification round: the
+/// page: the
 /// crumb's last segment must name the ON-SCREEN member, not just the page.
 /// When present, `page_title` (which would otherwise be the unlinked
 /// current item) becomes a live link to `page_href` (the page's own path,
@@ -151,14 +148,14 @@ pub struct NarrativeMemberSegment<'a> {
 
 /// Render the narrative crumb-line variant: `CPE › project › page-title`,
 /// or `CPE › project` alone when `page_title` is `None` (the project home
-/// page — decision 3: "project home: `CPE › Project`"; share-view plan
-/// step 3). On a reader (compound-viewer) page, `member` adds a fourth
-/// segment naming the on-screen member (fix 3, 2026-09-01 verification
-/// round) — see [`NarrativeMemberSegment`]. `data` is the dataset panel under
+/// page — "project home: `CPE › Project`").
+/// On a reader (compound-viewer) page, `member` adds a fourth
+/// segment naming the on-screen member
+/// — see [`NarrativeMemberSegment`]. `data` is the dataset panel under
 /// Copy link, or `None` for no panel row.
 ///
-/// Wired at its production call site in `cpe_web::page`'s `render_page`
-/// (share-view plan step 4) — any page with a `Narrative` component and no
+/// Wired at its production call site in `dsp-incubator cpe/web`'s `page` module's `render_page`
+/// — any page with a `Narrative` component and no
 /// `ResourceDetail` component.
 pub fn render_narrative_breadcrumb(
     project_id: &str,
@@ -182,18 +179,16 @@ pub fn render_narrative_breadcrumb(
 }
 
 /// Render the site-index crumb-line variant: the degenerate single "CPE"
-/// crumb (current, unlinked) — decision 3, share-view plan step 3.
+/// crumb (current, unlinked).
 ///
-/// Wired at its production call site in the bin's `site_index`
-/// (`bin/src/router.rs`, share-view plan step 4) — re-exported by the
-/// `cpe-engine` facade (`engine/src/lib.rs`) so the bin, the one
-/// bin/engine-boundary exception that hand-mirrors chrome, can call it directly.
+/// Called by `site_index` in `dsp-incubator cpe/bin/src/router.rs`, through the
+/// `dsp-incubator cpe/engine` facade's re-export: the site index is the one
+/// page the host renders itself, hand-mirroring the chrome.
 pub fn render_site_index_breadcrumb(lang: &Lang, share: &ShareControl<'_>) -> Markup {
     render_crumb_row(&[], CPE_CRUMB.label, lang, share, None)
 }
 
-/// Render the N3 not-found breadcrumb variant (empty-states-not-found plan
-/// step 8).
+/// Render the unknown-record not-found breadcrumb variant.
 ///
 /// `CPE › project › class (live link) › "Not found"` — the class crumb is
 /// present only when `class_crumb` is `Some((label, href))`, giving
@@ -201,21 +196,16 @@ pub fn render_site_index_breadcrumb(lang: &Lang, share: &ShareControl<'_>) -> Ma
 /// class with no registered browse route — see `render_not_found`'s and
 /// `Project::class_list_routes`'s doc comments for the same fallback rule).
 ///
-/// **Owner decision (plan approval, 2026-08-31): the class crumb appears
-/// ONLY on this not-found variant.** `render_breadcrumb` (the 3-crumb trail
-/// for a resolved record page) is deliberately untouched — normal record
-/// pages do NOT gain a class crumb in this task.
-///
-/// The current-item label is the localized `nf.crumb` string ("Not found"),
+/// The current-item label is the localized `ChromeMsg::NfCrumb` string ("Not found"),
 /// never the unknown identifier — the identifier is never restated anywhere
-/// in N3's visible copy.
+/// in that page's visible copy.
 ///
 /// **No `div.breadcrumb__row`, on purpose:** below 40rem `shell.css` (THE
 /// PHONE ROW) hides a row's trail, because a row has a back link in its
 /// place. This variant has no back link, so its trail must stay outside a row.
 ///
-/// **Out of scope for the share-view plan (step 3):** this variant does
-/// NOT gain a share control — the plan's four crumb-line variants are
+/// **No share control:** this variant does
+/// NOT gain one — the four crumb-line variants with one are
 /// detail/browse/narrative/site-index; a 404 page is none of those, and
 /// "copy a link to a page that doesn't resolve" is not a stated use case.
 pub fn render_not_found_breadcrumb(
@@ -251,7 +241,7 @@ pub fn render_not_found_breadcrumb(
 }
 
 /// Derive the crumb line's own stable element id from the share control's
-/// id (share-view plan step 6 — the whole crumb line, not just the control
+/// id (the whole crumb line, not just the control
 /// anchor, is a second DataStar patch target inside the `_facets`/`_sort`/
 /// `_search` fragment responses, since both the composed href
 /// AND the state-bearing accessible name can change on a refinement).
@@ -259,7 +249,7 @@ pub fn render_not_found_breadcrumb(
 /// Mirrors `share.id`'s `share-<region>` shape with a `crumb-` prefix, so
 /// both ids derive from the same region key (project id or list id)
 /// without threading a second id parameter through every crumb-line
-/// variant fn. `bin/src/router.rs`'s fragment handlers call this directly
+/// variant fn. `dsp-incubator cpe/bin/src/router.rs`'s fragment handlers call this directly
 /// (never hardcode a `"crumb-…"` string literal) to compute the same
 /// `PatchElements` selector the full-page render already emits.
 pub fn crumb_element_id(share_id: &str) -> String {
@@ -301,8 +291,8 @@ const CPE_CRUMB: CrumbLink<'static> = CrumbLink { href: "/", label: "CPE" };
 /// its first row, `div.crumb-actions__row`, holds Copy link, and the
 /// dataset panel row (`data`) goes under it inside the same frame.
 ///
-/// The `nav.breadcrumb` root carries its own stable `id` ([`crumb_element_id`],
-/// share-view plan step 6) so a refinement fragment response can target the
+/// The `nav.breadcrumb` root carries its own stable `id` ([`crumb_element_id`])
+/// so a refinement fragment response can target the
 /// whole crumb line — not just the share control's own `<a>` — with a
 /// `datastar-patch-elements` event.
 fn render_crumb_row(
@@ -342,12 +332,11 @@ fn render_crumb_row(
     }
 }
 
-/// Render the "Copy link" share control (design doc "Anatomy" / "Build
-/// notes").
+/// Render the "Copy link" share control.
 ///
 /// One `<a>` carrying the composed `href`, `title`/`aria-label` =
 /// [`ChromeMsg::CopyLinkLongPrefix`] (plus `share.accessible_name_suffix`
-/// when present), the chain-glyph SVG (verbatim from the design doc) +
+/// when present), the chain-glyph SVG +
 /// copied-state dot, two label spans, and an adjacent visually-hidden
 /// `aria-live="polite"` status span.
 ///
@@ -361,14 +350,14 @@ fn render_crumb_row(
 /// scoped to the control's own wrapper; the receipt swap (glyph → dot,
 /// label → "Copied") is driven by `data-class`/`data-text` reading
 /// `$copied` — never a reactively-written `data-*` attribute, and never
-/// `hidden` (see `cpe/CLAUDE.md`'s DataStar gotchas).
+/// `hidden` (see `dsp-incubator cpe/CLAUDE.md`'s DataStar gotchas).
 ///
-/// **Timeout idiom not yet browser-verified** (plan risk note — step 8's
-/// job): the 2.4s reset is a plain `setTimeout` inside the `data-on:click`
+/// **Timeout idiom not yet browser-verified**:
+/// the 2.4s reset is a plain `setTimeout` inside the `data-on:click`
 /// expression. If the vendored DataStar bundle cannot schedule a JS
-/// timeout from inside a directive expression, this needs the plan's
-/// documented fallback (a one-line `data-on:click` calling a tiny inline
-/// helper) — logged in `docs/plans/share-view/issues.md`.
+/// timeout from inside a directive expression, this needs a
+/// fallback (a one-line `data-on:click` calling a tiny inline
+/// helper).
 fn render_share_control(share: &ShareControl<'_>, lang: &Lang) -> Markup {
     let prefix = ChromeMsg::CopyLinkLongPrefix.text(lang);
     let long_name = match share.accessible_name_suffix {
@@ -415,7 +404,7 @@ fn render_share_control(share: &ShareControl<'_>, lang: &Lang) -> Markup {
     }
 }
 
-/// The chain glyph SVG, verbatim from the design doc's "Anatomy" (14×14,
+/// The chain glyph SVG (14×14,
 /// viewBox `0 0 16 16`, stroke-only, `currentColor`).
 fn chain_glyph() -> Markup {
     html! {
@@ -592,8 +581,7 @@ mod tests {
         );
     }
 
-    /// The breadcrumb `aria-label` is now localized via the chrome catalog
-    /// (previously a hardcoded EN literal with no branching at all).
+    /// The breadcrumb `aria-label` is localized via the chrome catalog.
     #[test]
     fn breadcrumb_aria_label_localizes_for_de_fr_it() {
         let lang = make_lang("de");
@@ -1053,8 +1041,8 @@ mod tests {
         assert!(!out.contains("crumb-back"), "{out}");
     }
 
-    /// N3 is not built through the row: no back link, and its trail directly
-    /// under the `nav`, which the phone rule hiding a row's trail relies on.
+    /// The unknown-record breadcrumb is not built through the row: no back link, and its trail
+    /// directly under the `nav`, which the phone rule hiding a row's trail relies on.
     #[test]
     fn not_found_breadcrumb_has_no_back_link_and_no_row() {
         let lang = make_lang("en");
@@ -1243,8 +1231,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_narrative_breadcrumb — reader member segment (fix 3, 2026-09-01
-    // owner verification round) ─────────────────────────────────────────
+    // ── render_narrative_breadcrumb — reader member segment ─────────────────────
 
     #[test]
     fn narrative_breadcrumb_with_member_has_four_crumbs_title_links_member_current() {
@@ -1271,7 +1258,7 @@ mod tests {
             4,
             "CPE, project, page-title (now linked), member: four items, got: {out}"
         );
-        // The page-title segment is now a live link to the page path (no
+        // The page-title segment is a live link to the page path (no
         // ?member).
         assert!(
             out.contains("href=\"/alice-in-daschland/wonderland\">Wonderland</a>"),
@@ -1386,7 +1373,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Share control — record `?img=` client tracking (share-view plan step 7) ──
+    // ── Share control — record `?img=` client tracking ──
 
     #[test]
     fn share_control_reactive_href_attr_renders_data_attr_when_present() {
@@ -1569,7 +1556,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_not_found_breadcrumb (N3, empty-states-not-found plan step 8) ──
+    // ── render_not_found_breadcrumb ──
 
     #[test]
     fn not_found_breadcrumb_without_class_crumb_has_three_items() {

@@ -631,7 +631,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
   single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
   target design, the store is not built). `cpe-ports`, `cpe-core`, `cpe-components` and `cpe-image-viewer` hold none.
-- **Fingerprint:** `eb3675be1355`
+- **Fingerprint:** `e0b5847c956f`
 
 ### areas/access/datei
 

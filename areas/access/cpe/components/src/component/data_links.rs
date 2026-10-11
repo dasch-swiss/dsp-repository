@@ -2,12 +2,12 @@
 //! DSP data ARK, in the order the panel lists them.
 //!
 //! Only the record and narrative crumb lines carry a panel; the browse and
-//! site-index crumb lines never do, and N3's not-found crumb has no frame at all.
+//! site-index crumb lines never do, and the unknown-record not-found crumb has no frame at all.
 //!
-//! A narrative page with figure blocks (Slice 7) lists what they render in the
+//! A narrative page with figure blocks lists what they render in the
 //! panel's listing form: a count line, one fold per page section when there
 //! is more than one, case groups and compact two-line entries. The record and
-//! reader panels keep their Slice 9 form.
+//! reader panels do not use it.
 
 use cpe_core::ir::{AnnotationEntry, ClassLabel, Component, CompoundPage, DataArks, Page, Resource, SiteConfig};
 use cpe_core::labels::{resolve_class_label, resolve_class_plural};
@@ -95,8 +95,8 @@ pub struct ListingSource<'a> {
 // `data-text`, `data-attr`) on `;`, so those must stay `;`-free; only the
 // `data-on` click is a statement body.
 
-/// The panel's receipt signal: `''`, or the copied entry's `li` id. The bin's
-/// `copied_signal_reset_event` (`bin/src/router.rs`) resets the same key on
+/// The panel's receipt signal: `''`, or the copied entry's `li` id.
+/// `copied_signal_reset_event` (`dsp-incubator cpe/bin/src/router.rs`) resets the same key on
 /// every swap, since `data-signals` never resets an existing signal; keep the
 /// two in step. The `_` prefix keeps it out of every `@get`.
 pub(crate) const DATA_SIGNALS: &str = "{_dataCopied: ''}";
@@ -331,8 +331,7 @@ fn render_entry(entry: &DataEntry, position: usize, compact: bool, lang: &Lang) 
     }
 }
 
-/// The copy glyph (two offset rectangles), verbatim from the design's
-/// `CrumbLine.dc.html`: 14×14, viewBox `0 0 16 16`, stroke-only,
+/// The copy glyph (two offset rectangles): 14×14, viewBox `0 0 16 16`, stroke-only,
 /// `currentColor`.
 fn copy_glyph() -> Markup {
     html! {
@@ -354,7 +353,7 @@ fn copy_glyph() -> Markup {
 
 /// The page's dataset panel: the first resolved `resource-detail` record, the
 /// reader's shown member, then that member's numbered annotations under their
-/// group head, then what the page's figure blocks list ([`collect_listing`],
+/// group head, then what the page's figure blocks list (`collect_listing`,
 /// only with a `listing` source), each only when it has a data ARK. Nothing
 /// else the page renders is listed: list rows, timeline markers, incoming
 /// links, link targets and page-level annotation links never are. `None` when
@@ -474,7 +473,7 @@ fn listing_counts(sections: &[DataSection], class_labels: &[ClassLabel], lang: &
         .collect()
 }
 
-/// The panel's Slice 9 part: the record, the reader's shown member and its
+/// The panel's entry part: the record, the reader's shown member and its
 /// annotations.
 fn collect_page_entries(
     page: &Page,
@@ -865,7 +864,7 @@ mod tests {
         assert_eq!(summary(&panel), [pair("Book", "[Das] Narrenschiff (dt.)")]);
     }
 
-    // ── The listing form (Slice 7, figure blocks) ────────────────────────────
+    // ── The listing form (figure blocks) ────────────────────────────
 
     use cpe_core::ir::{
         AnnotationCrop, CaseLayout, FigureSlot, MemberParent, PagePlate, ShowcaseCase, ShowcaseCrop, SiteConfig,

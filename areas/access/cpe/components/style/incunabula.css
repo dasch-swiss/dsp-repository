@@ -1,12 +1,11 @@
-/* Incunabula's per-project components (components/src/component/project/
+/* Incunabula's per-project components (src/component/project/
    incunabula/), one delimited block each. Linked on every page, after
    media.css (`document_head`). */
 
 /* ============================================================================
-   CPE — TIMELINE (`.tl`) — Incunabula Slice 4
-   Transcribed from the concept mockup, projects/incunabula/design/
-   Incunabula.dc.html L64–84 (markup) and L814–864 (geometry). Renderer:
-   components/src/component/project/incunabula/timeline.rs (`render_timeline`).
+   CPE — TIMELINE (`.tl`)
+   Renderer:
+   src/component/project/incunabula/timeline.rs (`render_timeline`).
    Inline `style=` carries ONLY the data-driven numbers — each bar's
    left/width/top, each lane track's min-height, each tick's width, and the
    grid overlay's background-size. Everything else lives here, on existing
@@ -32,9 +31,10 @@
 .editorial.page + .tl.page { padding-top: var(--space-6); }
 .editorial + .tl > * { margin-top: 0; }
 
-/* Both variants are always in the markup (decision 4 — zero JS); exactly one
+/* Both variants are always in the markup (zero JS); exactly one
    is visible at a time via `display`, never the `hidden` attribute (defeated
-   by any explicit `display` on the same element — see CLAUDE.md). Lanes are
+   by any explicit `display` on the same element — see
+   dsp-incubator cpe/CLAUDE.md). Lanes are
    the default; the decades list takes over at the house 860px breakpoint. */
 .tl__lanes { display: block; }
 .tl__decades { display: none; }
@@ -57,8 +57,8 @@
 
 /* The tick row. Its left padding is the lane label column PLUS the lane
    row's column gap, so the tick percentages measure the same box the lane
-   track does and each tick sits at its year's pct() position. (The mockup
-   pads by the label column alone, which shifts the ticks left of the track
+   track does and each tick sits at its year's pct() position. (Padding
+   by the label column alone would shift the ticks left of the track
    by one gap.) Grid lines are drawn every 3 years, so only ticks that land
    on a multiple of 3 (here: 1470 and 1500) actually coincide with a line. */
 .tl__ticks {
@@ -119,7 +119,7 @@
 }
 
 /* A bar — an empty link; left/width/top are inline. No per-bar year label:
-   the mockup's own decision (nineteen labels in one band read as noise). */
+   nineteen labels in one band read as noise. */
 .tl__bar {
   position: absolute;
   display: block;
@@ -133,7 +133,7 @@
   background: var(--accent-tint);
   border: 1px solid var(--accent);
 }
-/* Hover (mockup `barHover`) and keyboard focus flip the same pair: on a
+/* Hover and keyboard focus flip the same pair: on a
    0.85rem-high bar the colour change is what the eye finds. The global
    :focus-visible ring (shell.css) still applies on top. */
 .tl__bar:hover,
@@ -153,7 +153,7 @@
 
 /* ---- the decades variant --------------------------------------------------
    Below 860px only (see the switch above). No tick axis, no key line, no
-   office grouping — the mockup designs none for this variant. */
+   office grouping in this variant. */
 .tl__decades { margin-top: var(--space-5); }
 
 .tl__decade {
@@ -199,11 +199,10 @@
 }
 
 /* ============================================================================
-   CPE — SHOWCASE (`.cases`, `.case`, `.editions`, `.strips`) — Incunabula Slice 7
+   CPE — SHOWCASE (`.cases`, `.case`, `.editions`, `.strips`)
    The woodcut crop figure of /woodcuts and /narrenschiff, and
-   /narrenschiff's edition cards and strip row, built to
-   projects/incunabula/design/showcases/design/HANDOFF.md §1–2. Renderer:
-   components/src/component/project/incunabula/showcase.rs. Inline `style=`
+   /narrenschiff's edition cards and strip row. Renderer:
+   src/component/project/incunabula/showcase.rs. Inline `style=`
    carries only each crop's pixel aspect `--ar`; existing tokens only.
    ========================================================================== */
 
@@ -266,7 +265,7 @@
 }
 
 /* The bed keeps the crop's ratio whether or not the image loads. Its 24rem
-   height pairs with CROP_FETCH_PX (core/src/iiif.rs, 800 px,
+   height pairs with CROP_FETCH_PX (areas/access/cpe/core/src/iiif.rs, 800 px,
    ≥ 2× at desk): change both together. */
 .case__bed {
   display: block;
@@ -301,7 +300,7 @@
   transition: border-color var(--dur) var(--ease);
 }
 /* A long book title wraps to at most three lines; the full title stays in
-   the link's accessible name (D9). */
+   the link's accessible name. */
 .case__cap em {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -347,7 +346,7 @@ a.case__detail:focus-visible {
 
 /* A failed image: the bed keeps its ratio, so the row does not reflow; the
    image hides and the label and the alt copy show, centred. `is-failed` is
-   added client-side (D10), or server-side when there is no image URL. */
+   added client-side, or server-side when there is no image URL. */
 .case__bed.is-failed {
   display: grid;
   place-content: center;
@@ -386,7 +385,7 @@ a.case__detail:focus-visible {
 }
 
 /* Page cases: whole pages 15rem tall, paired with PAGE_FETCH_PX
-   (core/src/iiif.rs, 480 px): change both together. */
+   (areas/access/cpe/core/src/iiif.rs, 480 px): change both together. */
 .case--page .case__crop { max-width: calc(var(--ar) * 15rem); }
 .case__whole { font-size: 0.6875rem; }
 .case__note {
@@ -397,9 +396,9 @@ a.case__detail:focus-visible {
   color: var(--ink-faint);
 }
 
-/* The detail crop (E5): its own link under the row, a 4.5rem bed beside
+/* The detail crop: its own link under the row, a 4.5rem bed beside
    the eyebrow and page label. The height pairs with DETAIL_FETCH_PX
-   (core/src/iiif.rs, 400 px): change both together. */
+   (areas/access/cpe/core/src/iiif.rs, 400 px): change both together. */
 .case__detail {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -461,7 +460,7 @@ a.case__detail:hover .case__arrow { color: var(--accent-strong); }
   transition: background var(--dur) var(--ease);
 }
 /* The plate's 15rem height pairs with PLATE_CARD_FETCH_PX
-   (core/src/iiif.rs, 480 px): change both together. */
+   (areas/access/cpe/core/src/iiif.rs, 480 px): change both together. */
 .edition__plate {
   display: block;
   height: 15rem;
@@ -526,7 +525,7 @@ a.edition__link:hover { background: var(--hover-fill); }
   text-decoration: none;
   transition: background var(--dur) var(--ease);
 }
-/* The tile image is fetched STRIP_TILE_FETCH_PX wide (core/src/iiif.rs,
+/* The tile image is fetched STRIP_TILE_FETCH_PX wide (areas/access/cpe/core/src/iiif.rs,
    192 px), 2× the widest tile here: change both together. */
 .strip__bed {
   display: block;
@@ -558,7 +557,7 @@ a.strip:focus-visible {
   outline-offset: 3px;
 }
 
-/* Narrow forms, at the site's 640px tier (D19): a compact block takes one
+/* Narrow forms, at the site's 640px tier: a compact block takes one
    column, a pair stays side by side, three and four wrap two-up, and every
    crop is capped at 13.5rem tall so a lone last crop keeps its row-mates'
    height. Edition cards become rows (an 8.5rem plate beside the text), and

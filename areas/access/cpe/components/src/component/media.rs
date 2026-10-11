@@ -17,7 +17,7 @@
 //! `component::pager`); compound-viewer foot nav uses it too.
 //!
 //! Markup class names follow the record-viewer design bundle
-//! (`docs/design/embedded-media/record-viewer/`, `cpe/static/cpe/media.css`)
+//! (`style/media.css`)
 //! — `.rv*`, `.em-*` strip/caption leftovers, `.pg*`. Interactive chrome is
 //! DataStar signal state (no URL write per `dsp-incubator
 //! cpe/docs/adr/0007-fragment-swaps-are-transient.md`); zero-JS falls back to real `?img=` /
@@ -32,36 +32,27 @@ use maud::{html, Markup};
 use crate::chrome::{plate_pager_labels, ChromeMsg};
 use crate::component::pager::override_query_param;
 
-/// Render the record viewer (`.rv-col`) for a host resource-detail page —
-/// record-viewer plan step 4, the plan's early hands-on checkpoint slice.
+/// Render the record viewer (`.rv-col`) for a host resource-detail page.
 ///
-/// Mounts the `cpe-image-viewer` crate's `<image-viewer>` custom
-/// element for a **single** image (`items[0]`). Multi-source sequence
-/// paging — the `.pg`/strip pager below — is record-viewer plan step 8;
-/// until then a host with more than one linked image shows only its
-/// first, with no pager and no strip (a known, deliberate, temporary
-/// regression on this feature branch — see the TRANSITIONAL note at this
-/// function's one call site, `resource_detail::render_resource_detail`).
+/// Mounts the `cpe-image-viewer` crate's `<image-viewer>` custom element.
 ///
 /// Emits the `.rv-unit`/`.rv`/`.rv__bar` frame
-/// (`docs/design/embedded-media/record-viewer/record-viewer-handoff.md`
-/// §2–4) with the picture's legal run (author · copyright · licence,
-/// [`compose_legal_run`] — AC4/I3), the access line when restricted, one
-/// zoom-in chip wired via DataStar (plan risk R2 — the checkpoint this
-/// step is named for validates DataStar driving the crate's JS control
-/// surface via `data-on:click` and reading its `viewer-zoom` event via
+/// with the picture's legal run (author · copyright · licence,
+/// `compose_legal_run`), the access line when restricted, the
+/// zoom chips wired via DataStar (DataStar drives the crate's JS control
+/// surface via `data-on:click` and reads its `viewer-zoom` event via
 /// `data-on:viewer-zoom`), and a caption below the frame (the image's own
 /// `description`, falling back to `alternative-description`).
 ///
-/// The `$rail` signal (three-state — `closed`|`adjust`|`details`, AC6) drives
-/// both drawers (step 6): the bar's Details/Adjust toggles and the rails' `x`
+/// The `$rail` signal (three-state — `closed`|`adjust`|`details`) drives
+/// both drawers: the bar's Details/Adjust toggles and the rails' `x`
 /// close buttons all write `$rail`; the rails read it via a reactive
 /// `data-attr` object binding (`{'aria-hidden': …}`), and `.rv` reveals the open rail via a
 /// reactive `.rail-adjust`/`.rail-details` CLASS (`data-class`) — never a reactive
 /// `data-*` attribute, which collides with DataStar's own `data-*` namespace
-/// (see the `.rv` element's inline note). The WIDER chip (`data-expand`, step
-/// 7) must use the same class-toggle idiom, not a reactive `data-expand`
-/// attribute. There is no whole-column fallback component any more — the
+/// (see the `.rv` element's inline note). The WIDER chip (`data-expand`)
+/// must use the same class-toggle idiom, not a reactive `data-expand`
+/// attribute. There is no whole-column fallback component — the
 /// zero-JS/pre-upgrade path is the crate's own `.fallback()` markup (a plain
 /// `<img>`) rendered per-image inside the canvas.
 pub fn render_media_viewer(
@@ -92,13 +83,13 @@ pub fn render_media_viewer(
     let sel0 = selected.clamp(1, n) - 1;
     let label = ChromeMsg::PlateIllustrationsLabel.text(lang);
     // The crate requires a DOM `id` **stable across re-renders** (idiomorph
-    // keys on it). The viewer is now ONE multi-source element for the whole
-    // host (step 8), so its id is per-HOST, not per-image: the first image's
+    // keys on it). The viewer is ONE multi-source element for the whole
+    // host, so its id is per-HOST, not per-image: the first image's
     // id is stable across `?img=` reloads (the item LIST is unchanged; only the
     // selection differs) and unique to this host's viewer.
     let viewer_id = format!("rv-{}", items[0].id);
 
-    // Sequence paging (`.pg` pager + strip, §3.1/AC17) — the SAME gate the
+    // Sequence paging (`.pg` pager + strip) — the SAME gate the
     // unit applies internally (`render_viewer_unit`'s `can_sequence`).
     let can_sequence = has_sequence_pager(items);
 
@@ -122,11 +113,11 @@ pub fn render_media_viewer(
                 )
             })
             // Pager + caption + strip live in `.rv-col`, OUTSIDE the frame
-            // (AC10 pager outside the frame; AC11 strip in the viewer column).
+            // (the pager outside the frame; the strip in the viewer column).
             // All three page via the `$plate` signal + `goToPage()` (JS) or a
-            // real `?img=N` full reload (zero-JS) — NEVER a URL write (I6) and
-            // NEVER the `_plate` `@get` fragment endpoint (that is the old
-            // plate's model; the record viewer's is pre-render + toggle, §3.1).
+            // real `?img=N` full reload (zero-JS) — NEVER a URL write and
+            // NEVER the `_plate` `@get` fragment endpoint (the record viewer's
+            // model is pre-render + toggle).
             @if can_sequence { (render_rv_pager(sel0, n, &viewer_id, host_path, host_query, lang)) }
             (render_caption_blocks(items, sel0, can_sequence, lang))
             @if can_sequence {
@@ -148,7 +139,7 @@ pub fn render_media_viewer(
 
 /// The `data-attr` binding a WIDER host puts on the blocks the wide viewer
 /// steps over (the record's head + body, the `pages` reader's member props):
-/// genuinely `inert` + `aria-hidden` while `$expand` is set (AC9), not merely
+/// genuinely `inert` + `aria-hidden` while `$expand` is set, not merely
 /// `display:none`'d in CSS, so focus/AT cannot reach the stepped-aside
 /// controls. `inert`/`aria-hidden` are NOT `data-*` attributes, so binding
 /// them reactively is safe (only reactive `data-*` writes collide). Explicit
@@ -163,7 +154,7 @@ pub(crate) const HIDDEN_WHEN_WIDE_ATTR: &str =
     "{'inert': $expand ? 'true' : false, 'aria-hidden': $expand ? 'true' : 'false'}";
 
 /// The record viewer's **unit** — `div.rv-unit > div.rv { banner, canvas, bar }`
-/// — extracted from [`render_media_viewer`] (Incunabula Slice 3b step 6, Q3) so
+/// — extracted from [`render_media_viewer`] so
 /// the compound viewer's `pages` stage mounts the SAME surface, not a fork.
 ///
 /// Takes its items, the 0-based selection `sel0` (already clamped into
@@ -194,7 +185,7 @@ pub(crate) fn render_viewer_unit(
 ) -> Markup {
     let n = items.len();
     // Sequence paging (multi-source `<image-viewer>` + `.pg` pager + strip +
-    // the `$plate` per-image toggle, §3.1/AC17) is offered only when EVERY
+    // the `$plate` per-image toggle) is offered only when EVERY
     // image is IIIF-viewable, so `goToPage(n)`'s page index stays aligned 1:1
     // with the pre-rendered per-image blocks and the `?img=` selection. A set
     // with any non-IIIF image (no current Alice host — the demo is all IIIF)
@@ -227,7 +218,7 @@ pub(crate) fn render_viewer_unit(
         format!("{{'is-restricted': [{flags}][$plate]}}")
     });
 
-    // Control gates (AC3×AC8): the zoom cluster's `data-on:click` targets
+    // Control gates: the zoom cluster's `data-on:click` targets
     // `getElementById(viewer_id)` and its disabled bindings read
     // `$atHome`/`$atNative`, which only exist when a mounted `<image-viewer>`
     // is present. In sequence mode the multi-source viewer always mounts (every
@@ -237,7 +228,7 @@ pub(crate) fn render_viewer_unit(
     } else {
         viewer_will_mount(selected)
     };
-    // Fix 8: the Details toggle/rail stays reachable even when no viewer mounts.
+    // The Details toggle/rail stays reachable even when no viewer mounts.
     let has_details = if can_sequence {
         true
     } else {
@@ -262,8 +253,8 @@ pub(crate) fn render_viewer_unit(
             data-restricted=(if restricted_sel { "true" } else { "false" })
             data-class=[restricted_class.as_deref()]
         {
-            // `rail` (AC6, three-state: closed|adjust|details) and the 7
-            // Adjust signals (AC7/R9) are declared here, on `.rv` — the
+            // `rail` (three-state: closed|adjust|details) and the 7
+            // Adjust signals are declared here, on `.rv` — the
             // nearest common ancestor of both the bar's Details/Adjust
             // toggles (which write `$rail`) and the rail markup inside
             // `.rv__canvas` (which reads it) — rather than on
@@ -274,8 +265,8 @@ pub(crate) fn render_viewer_unit(
             // (`data-class`), NOT a reactive `data-*` attribute. `data-*`
             // is DataStar's OWN reserved namespace: its internal
             // MutationObserver watches every `data-*` attribute change, so
-            // having DataStar WRITE a `data-*` attribute (the earlier
-            // `data-attr-data-rail` bound to `$rail` / `.adj` `data-attr-data-touched`)
+            // having DataStar WRITE a `data-*` attribute (e.g. a `data-attr`
+            // whose object sets `data-rail` from `$rail`, or `data-touched` on `.adj`)
             // re-enters that observer and derails DataStar's whole
             // binding-application pass — signals still initialise, but no
             // `data-on`/`data-attr` binding on the page ever wires up, so
@@ -287,9 +278,9 @@ pub(crate) fn render_viewer_unit(
             // reactively-WRITTEN `data-*` attributes collide; a STATIC
             // `data-*` CSS hook like `data-restricted` is an unknown plugin
             // DataStar simply skips.) There is no zero-JS drawer state:
-            // drawers are transient client-side enhancement (Decision 2),
+            // drawers are transient client-side enhancement,
             // so closed-by-default with no JS is correct.
-            // `expand` (step 7, WIDER) is declared here alongside `rail`
+            // `expand` (WIDER) is declared here alongside `rail`
             // and the adjust values so all viewer signals live in one
             // block. It is read by an ANCESTOR — `article.record--viewer`
             // toggles its `.is-wide` class from `$expand` via `data-class`
@@ -297,7 +288,7 @@ pub(crate) fn render_viewer_unit(
             // are global, not DOM-scoped (the zoom signals below are read
             // cross-element the same way). `.rv` sits in `.rv-col`, a
             // sibling of the WIDER-hidden head/body, so this declaration
-            // stays live while expanded. `plate` (step 8, §3.1/AC17) is
+            // stays live while expanded. `plate` is
             // declared here too — the single source of truth for which
             // image shows: it toggles every per-image bar/Details/caption
             // block, drives the strip's `aria-current`, and is set (with a
@@ -306,10 +297,10 @@ pub(crate) fn render_viewer_unit(
                 data-signals=(signals)
                 data-class="{'rail-adjust': $rail === 'adjust', 'rail-details': $rail === 'details'}"
             {
-                // Owner checkpoint round C: the picture's legal record
-                // moved from the bar to a top banner ROW (never an
+                // The picture's legal record
+                // sits in a top banner ROW (never an
                 // overlay over the picture — "nothing persistent is ever
-                // set over the picture" still stands, §3 below). `.rv`'s
+                // set over the picture" still stands). `.rv`'s
                 // three grid rows are banner / canvas / bar, in that
                 // document order.
                 (render_viewer_banner(items, sel0, can_sequence, lang))
@@ -331,11 +322,11 @@ pub(crate) fn render_viewer_unit(
     }
 }
 
-/// The §3.1 per-image show/hide wiring (AC17) as a reactive `data-attr`
+/// The per-image show/hide wiring as a reactive `data-attr`
 /// expression: block `i` is visible iff it is the selected `$plate`. The
 /// caller pairs this with a STATIC maud `hidden[i != sel0]` boolean attribute
 /// (the zero-JS path — with no JS only the server-selected block shows, so the
-/// N legal records are never simultaneously visible; C2/AC15). Object form
+/// N legal records are never simultaneously visible). Object form
 /// ONLY — NEVER the `data-attr-hidden` hyphen suffix (the vendored bundle
 /// splits plugin from arg on a COLON and silently ignores hyphen args), and
 /// NEVER `data-show` (JS-only `display` toggle — leaves all N visible with JS
@@ -350,8 +341,7 @@ fn plate_hidden_attr(i: usize) -> String {
 /// `render_viewer_canvas` call sites declare via `data-signals`, and the
 /// second half of [`viewer_reset_signals_json`]'s combined reset literal. A
 /// single `const` so the two declaration sites and the reset fn can never
-/// drift on this half's key set (`reader-paging-fragment-swap` review
-/// Fix 6).
+/// drift on this half's key set.
 const CANVAS_SIGNALS_DEFAULT: &str =
     "atHome: true, atNative: false, atMin: true, atMax: false, viewerError: false, scale: 'FIT'";
 
@@ -367,11 +357,9 @@ const RV_SIGNALS_RESET: &str = "rail: 'closed', expand: false, plate: 0, stripOp
      brightness: 1, contrast: 1, saturation: 1, exposure: 0, gamma: 1, hue: 0, invert: false";
 
 /// The viewer unit's full DEFAULT/reset signal set — the `.rv`-level group
-/// ([`RV_SIGNALS_RESET`]) and the `.rv__canvas`-level group
-/// ([`CANVAS_SIGNALS_DEFAULT`]) combined into ONE `{key: value, ...}`
-/// literal, in the same shape `bin/src/router.rs`'s
-/// `compound_fragment_response` used to hand-write before
-/// `reader-paging-fragment-swap`'s review Fix 6 extracted this fn — the two
+/// (`RV_SIGNALS_RESET`) and the `.rv__canvas`-level group
+/// (`CANVAS_SIGNALS_DEFAULT`) combined into ONE `{key: value, ...}`
+/// literal — the two
 /// groups have disjoint top-level keys, so one object literal covers both.
 /// The router's `layout="pages"` `_compound` swap patches this single
 /// literal as one `PatchSignals` event, resetting a freshly-swapped-in
@@ -380,12 +368,12 @@ const RV_SIGNALS_RESET: &str = "rail: 'closed', expand: false, plate: 0, stripOp
 /// declare at first render (modulo `plate`/`stripOpen`, which are
 /// RENDER-TIME values there and RESET defaults here, by design) — a future
 /// key rename/addition at either declaration site must be mirrored in
-/// [`RV_SIGNALS_RESET`]/[`CANVAS_SIGNALS_DEFAULT`], or the router's reset
+/// `RV_SIGNALS_RESET`/`CANVAS_SIGNALS_DEFAULT`, or the router's reset
 /// silently stops covering it. Never add an annotation key here: the
 /// annotation signals have their own reset
 /// (`annotation::annotation_reset_signals_json`), which deliberately leaves
 /// the toggle alone so it survives a page turn. `pub`, not `pub(crate)`,
-/// because the bin (a separate crate) calls it directly.
+/// because `dsp-incubator cpe/bin` (a separate crate) calls it directly.
 pub fn viewer_reset_signals_json() -> String {
     format!("{{{RV_SIGNALS_RESET}, {CANVAS_SIGNALS_DEFAULT}}}")
 }
@@ -395,7 +383,7 @@ pub fn viewer_reset_signals_json() -> String {
 /// this — Debug escapes some code points (e.g. bidi-control characters) as
 /// braced `\u{XXXX}`, while JS string literals require unbraced 4-digit
 /// `\uXXXX` — so embedding a Debug-formatted string directly into a JS
-/// expression (as `render_rv_strip` used to) can emit a syntax error for text
+/// expression can emit a syntax error for text
 /// containing such code points. This escapes exactly what a JS
 /// double-quoted literal needs: backslash, double quote, and C0 control
 /// characters; everything else (including non-ASCII text) passes through
@@ -428,11 +416,11 @@ fn iiif_source_for(item: &Resource) -> Option<String> {
     cpe_core::iiif::iiif_info_json_url(&repr.uri)
 }
 
-/// Whether [`render_media_viewer`] offers the `.pg` sequence pager (§3.1,
+/// Whether [`render_media_viewer`] offers the `.pg` sequence pager (the
 /// `can_sequence` in that function) for `items` — i.e. more than one linked
 /// image AND every one of them is IIIF-sequenceable. Exposed so
-/// `cpe_web::page`'s breadcrumb/share-control wiring (share-view plan step
-/// 7) can gate the record surface's reactive `?img=` `href` tracking on the
+/// `dsp-incubator cpe/web`'s `page` module's breadcrumb/share-control wiring
+/// can gate the record surface's reactive `?img=` `href` tracking on the
 /// SAME condition `render_media_viewer` itself uses to decide whether the
 /// `$plate` signal has anything to page through — a record with 0/1 images,
 /// or a mixed IIIF/non-IIIF set, has no pager and so nothing for the share
@@ -443,8 +431,8 @@ pub fn has_sequence_pager(items: &[Resource]) -> bool {
 }
 
 /// Render the per-image caption blocks below the frame (`.em-col__meta`). In
-/// sequence mode every image's caption is pre-rendered and toggled by `$plate`
-/// (§3.1); otherwise only the selected image's caption renders. A caption is
+/// sequence mode every image's caption is pre-rendered and toggled by `$plate`;
+/// otherwise only the selected image's caption renders. A caption is
 /// the image's own `description` (falling back to `alternative-description`);
 /// an image with neither contributes an empty block so the `$plate` index
 /// alignment holds (its `.em-col__meta` is simply empty).
@@ -473,21 +461,10 @@ fn render_caption_blocks(items: &[Resource], sel0: usize, can_sequence: bool, la
     }
 }
 
-/// One inline SVG icon from the viewer-chrome glyph set
-/// (`Icon.prompt.md`/`icon-paths.md`) — 16×16, `stroke-width:1.1`,
+/// One inline SVG icon from the viewer-chrome glyph set — 16×16, `stroke-width:1.1`,
 /// `fill:none`, `stroke:currentColor`, matching `.ico` in `media.css`.
-/// Scoped to viewer chrome only (see `Icon.prompt.md`'s ratified-scope
-/// contract) — never reach for this outside `component::media`; the browse
+/// Scoped to viewer chrome only — never reach for this outside `component::media`; the browse
 /// surfaces deliberately stay typographic (`→ ↗ › ·`).
-///
-/// [`Icon::Plus`] (step 4), [`Icon::Minus`] and [`Icon::Home`] (step 5, the
-/// zoom-out and fit/home chips), [`Icon::Sliders`] and [`Icon::X`] (step 6,
-/// the Adjust bar toggle and both rails' close controls), and
-/// [`Icon::Maximize`] (step 7, the WIDER toggle) each land in the step that
-/// first calls them — mirroring this crate's dead-code-until-a-caller-exists
-/// discipline (see `find_text_property`'s doc comment): an unused enum variant
-/// trips `dead_code` under the clippy `-D warnings` gate exactly like an unused
-/// function does.
 enum Icon {
     Plus,
     Minus,
@@ -499,14 +476,13 @@ enum Icon {
 
 /// Render one [`Icon`] as `<svg class="ico" aria-hidden="true">…</svg>`. The
 /// caller is responsible for an accessible name (`title`+`aria-label` on the
-/// enclosing control) when the icon is not purely decorative — per
-/// `Icon.prompt.md`, none of the viewer-chrome glyphs are ever the *sole*
+/// enclosing control) when the icon is not purely decorative —
+/// none of the viewer-chrome glyphs are ever the *sole*
 /// accessible label on their own (every chip pairs one with a `title`).
 ///
 /// Each variant maps to one or more path `d` strings plus, for
-/// [`Icon::Sliders`] only, three `<circle>` "thumb" marks (verbatim from
-/// `icon-paths.md`) — the only glyph in this set that isn't pure strokes.
-/// [`Icon::Home`] is two overlapping strokes (roofline + walls).
+/// [`Icon::Sliders`] only, three `<circle>` "thumb" marks — the only glyph in this set that isn't
+/// pure strokes. [`Icon::Home`] is two overlapping strokes (roofline + walls).
 fn ico(icon: Icon) -> Markup {
     let ds: &[&str] = match icon {
         Icon::Plus => &["M8 3.4V12.6M3.4 8h9.2"],
@@ -517,8 +493,7 @@ fn ico(icon: Icon) -> Markup {
         Icon::X => &["M4.3 4.3 11.7 11.7M11.7 4.3 4.3 11.7"],
     };
     // Only Sliders has thumb circles; every other variant's slice is empty,
-    // so this branch is a no-op for them — Plus/Minus/Home's output stays
-    // byte-identical to before this refactor.
+    // so this branch is a no-op for them.
     let circles: &[(&str, &str, &str)] = match icon {
         Icon::Sliders => &[("10.4", "4.3", "1.5"), ("5.6", "8", "1.5"), ("11.4", "11.7", "1.5")],
         _ => &[],
@@ -541,7 +516,7 @@ fn ico(icon: Icon) -> Markup {
 /// canvas wrapper `<div>` instead; the crate's `viewer-zoom` `CustomEvent`
 /// is documented as bubbling for exactly this reason).
 ///
-/// Sets the `$scale` signal `.rv__scale`'s `data-text` reads (AC8's
+/// Sets the `$scale` signal `.rv__scale`'s `data-text` reads (the
 /// continuous-zoom readout): `FIT` at home (or before the crate has an
 /// opened image — `ratioToHome` is `null` until then), else `×N` from
 /// `ratioToHome`, with `· native` appended at the top of the ladder.
@@ -557,10 +532,10 @@ fn ico(icon: Icon) -> Markup {
 /// `viewer-zoom` event additively for this fix) is exactly the scale a
 /// "×N from FIT" readout needs: 1 at home, and always above 1 after any
 /// zoom-in. `data-on:*` expressions are the trimmed function body verbatim
-/// (no implicit `return`, per `TECH_STACK.md`'s DataStar grammar note) —
+/// (no implicit `return`) —
 /// `evt` is the crate's `CustomEvent`, `$scale` is the signal.
 ///
-/// Step 5 (AC8's disabled-state wiring) extends the same expression to also
+/// The disabled-state wiring extends the same expression to also
 /// set `$atHome`/`$atNative` from the event payload — one bubbling listener,
 /// three signals, rather than three separate `data-on:viewer-zoom` bindings
 /// on the same element (DataStar allows only one `data-on:<event>` per
@@ -572,30 +547,30 @@ fn ico(icon: Icon) -> Markup {
 const VIEWER_ZOOM_EXPR: &str = "$scale = (evt.detail.atHome || evt.detail.ratioToHome == null) ? 'FIT' : ('×' + evt.detail.ratioToHome.toFixed(2) + (evt.detail.atNative ? ' · native' : '')); $atHome = evt.detail.atHome; $atNative = evt.detail.atNative; $atMin = evt.detail.atMin; $atMax = evt.detail.atMax";
 
 /// The `data-on:viewer-error` expression bound alongside [`VIEWER_ZOOM_EXPR`]
-/// on `.rv__canvas` (same bubbling-listener rationale). AC8: "`viewer-error`
-/// → a quiet mono line in the bar, not a dialog." The crate's `viewer-error`
+/// on `.rv__canvas` (same bubbling-listener rationale). A `viewer-error`
+/// is a quiet mono line in the bar, not a dialog. The crate's `viewer-error`
 /// `CustomEvent` detail is either an `Error` (has `.message`) or a plain
 /// value (see `cpe-image-viewer`'s `assets/image-viewer.js`'s
-/// `_fail`/`_failLight`) — never a guaranteed human-readable string, so this
+/// `_fail`) — never a guaranteed human-readable string, so this
 /// deliberately does NOT surface `evt.detail` verbatim to the visitor (that
 /// would risk showing a raw technical error). It only flips a boolean
 /// signal; the translated line text itself
 /// ([`ChromeMsg::RvViewerErrorLabel`]) is static SSR markup shown/hidden by
 /// a static `hidden` attribute plus a reactive `data-attr` binding (never
-/// `data-show` — see AC17's `data-show` prohibition).
+/// `data-show` — see the `data-show` prohibition).
 const VIEWER_ERROR_EXPR: &str = "$viewerError = true";
 
 /// Whether [`render_viewer_canvas`] will mount a real `<image-viewer>`
 /// element for `image` — i.e. it has a safe-external-URL `Image`
 /// representation AND that URI is IIIF-shaped
 /// ([`cpe_core::iiif::iiif_info_json_url`] returns `Some`). Shares
-/// [`render_viewer_canvas`]'s exact filter chain (AC3) so the two functions
+/// [`render_viewer_canvas`]'s exact filter chain so the two functions
 /// can never disagree about which branch fired — used by
-/// [`render_viewer_bar`] to gate the zoom cluster (AC8): the chips'
+/// [`render_viewer_bar`] to gate the zoom cluster: the chips'
 /// `data-on:click` targets `document.getElementById(viewer_id)` and their
 /// disabled-state bindings read `$atHome`/`$atNative`, both only ever valid
-/// when a real viewer is mounted (see step 5's issue journal — the degraded/
-/// no-viewer branches previously still rendered live-looking, enabled-by-
+/// when a real viewer is mounted (otherwise the degraded/
+/// no-viewer branches would render live-looking, enabled-by-
 /// default zoom chips wired to a `getElementById` that resolves to `null`).
 fn viewer_will_mount(image: &Resource) -> bool {
     image_repr(image).is_some_and(|repr| cpe_core::iiif::iiif_info_json_url(&repr.uri).is_some())
@@ -607,7 +582,7 @@ fn viewer_will_mount(image: &Resource) -> bool {
 /// IIIF-shaped. Unlike [`viewer_will_mount`], this does NOT require IIIF —
 /// [`render_details_rail`] only ever reads `repr`/EAV data, never the
 /// mounted `<image-viewer>` element, so it renders in both of
-/// [`render_viewer_canvas`]'s branches (Fix 8: the Details drawer must stay
+/// [`render_viewer_canvas`]'s branches (the Details drawer must stay
 /// reachable for a degraded/non-IIIF image, not just a fully mounted one).
 /// Used by [`render_viewer_bar`] to gate the Details toggle button
 /// independently of `has_viewer`.
@@ -632,14 +607,14 @@ pub(crate) fn overlay_will_draw(image: &Resource) -> bool {
     viewer_will_mount(image) && image_repr(image).and_then(fit_dims).is_some()
 }
 
-/// Render `.rv__canvas` — the crate's territory (record-viewer plan step 4),
-/// plus (step 6) both drawers, mounted here because the handoff's DOM tree
-/// (§1) nests `.rv__rail--adjust`/`.rv__rail--details` inside `.rv__canvas`
+/// Render `.rv__canvas` — the crate's territory,
+/// plus both drawers, mounted here because
+/// `.rv__rail--adjust`/`.rv__rail--details` sit inside `.rv__canvas`
 /// alongside `<image-viewer>` — they cover the canvas row only, never the
-/// bar (I2). Mounts `Viewer::new` with `tile-sources` from
+/// bar. Mounts `Viewer::new` with `tile-sources` from
 /// [`cpe_core::iiif::iiif_info_json_url`]; degrades to the plain
 /// plate `<img>` inside `.rv__stand`, with **no** `<image-viewer>` element at
-/// all, when the stored URI is not IIIF-shaped (AC3 — never `.expect()` a
+/// all, when the stored URI is not IIIF-shaped (never `.expect()` a
 /// `Some`). Missing/unsafe representations degrade further to the shared
 /// image-placeholder note, same as the plate. The Details rail is emitted in
 /// BOTH the `Some(info_json)` and `None` arms — it only needs `repr`/EAV data,
@@ -663,9 +638,8 @@ fn render_viewer_canvas(
     let selected = &items[sel0];
     // No safe Image representation for the selected image (missing
     // Representation, or a URI that fails the safe-external-URL allowlist)
-    // degrades to the shared designed absent mark (E4), rendered directly
-    // into the canvas's own `.rv__stand` box. The retired `.figure__note`
-    // placeholder is gone; no
+    // degrades to the shared designed absent mark, rendered directly
+    // into the canvas's own `.rv__stand` box. No
     // Details/Adjust rail renders here either — both are gated on the same
     // `image_repr`/`details_will_render` check, which also fails here.
     let Some(repr_sel) = image_repr(selected) else {
@@ -755,9 +729,9 @@ fn render_viewer_canvas(
                 }
             }
         }
-        // AC3: a non-IIIF/malformed URI degrades to the plain plate for this
+        // A non-IIIF/malformed URI degrades to the plain plate for this
         // image — never mount `<image-viewer>` on a `None` tile-source. The
-        // Details rail still renders (Fix 8) — it only needs `repr`/EAV data.
+        // Details rail still renders — it only needs `repr`/EAV data.
         None => html! {
             div.rv__canvas {
                 div.rv__stand { (fallback_img) }
@@ -770,9 +744,8 @@ fn render_viewer_canvas(
 /// The safe IIIF-shaped `Image` representation of one resource, if any — the
 /// shared `find(Image).filter(safe-url)` chain used across the viewer for
 /// tile-source, plate, dimensions, and IIIF-source reads. `pub(crate)`
-/// (Slice 3 review, suggestion) — `compound_viewer.rs`'s `pages` layout
-/// scan/stage shares this exact body (was a byte-identical private copy,
-/// `safe_image_repr`) since it needs the same "has a scan" gate.
+/// — `compound_viewer.rs`'s `pages` layout
+/// scan/stage shares this exact body since it needs the same "has a scan" gate.
 pub(crate) fn image_repr(item: &Resource) -> Option<&cpe_core::ir::Representation> {
     item.representations
         .iter()
@@ -785,7 +758,7 @@ pub(crate) fn image_repr(item: &Resource) -> Option<&cpe_core::ir::Representatio
 /// its images client-side, so the frame cannot follow the image shown: one
 /// image that is not tall, or of unknown size, keeps the default split.
 /// `true` renders `data-frame="tall"`, which selects the tall-frame rules in
-/// `static/cpe/media.css`.
+/// `style/media.css`.
 pub(crate) fn frame_is_tall(items: &[Resource]) -> bool {
     !items.is_empty()
         && items.iter().all(|item| {
@@ -795,12 +768,11 @@ pub(crate) fn frame_is_tall(items: &[Resource]) -> bool {
         })
 }
 
-/// Render `.rv__rail.rv__rail--details` (AC5/AC6, record-viewer plan step 6)
-/// — the picture's second-order fields (`RightsFields.prompt.md`'s
-/// `variant="details"`): the restricted-access prose (only when
+/// Render `.rv__rail.rv__rail--details`
+/// — the picture's second-order fields: the restricted-access prose (only when
 /// `restricted`), identifier, dimensions, IIIF source. Never the bar's
-/// author/copyright/licence/access-state fields (I4 — those stay in
-/// [`render_viewer_bar`] only). No DESCRIPTION row (Fix 9) — the plate
+/// author/copyright/licence/access-state fields (those stay in
+/// [`render_viewer_bar`] only). No DESCRIPTION row — the plate
 /// caption below the frame already shows the image's `description` (falling
 /// back to `alternative-description`), so a DESCRIPTION row here duplicated
 /// visible content whenever a description was present.
@@ -808,7 +780,7 @@ pub(crate) fn frame_is_tall(items: &[Resource]) -> bool {
 /// `repr` is the same `Representation` [`render_viewer_canvas`] already found
 /// — dimensions and the IIIF source both read it directly, so unlike the
 /// bar's fields this drawer never needs its own existence check for either.
-/// Called from BOTH of [`render_viewer_canvas`]'s branches (Fix 8 —
+/// Called from BOTH of [`render_viewer_canvas`]'s branches (
 /// `viewer_id` is still needed here even in the `None`/no-mounted-viewer
 /// branch, purely as the DOM id of the bar's Details toggle button, which
 /// exists whenever this rail does; see [`details_will_render`]) — so it
@@ -816,14 +788,14 @@ pub(crate) fn frame_is_tall(items: &[Resource]) -> bool {
 fn render_details_rail(items: &[Resource], sel0: usize, can_sequence: bool, viewer_id: &str, lang: &Lang) -> Markup {
     let close_label = ChromeMsg::RvDrawerCloseLabel.text(lang);
     let region_label = ChromeMsg::RvDetailsToggleLabel.text(lang);
-    // Fix 5: closing the rail via its own X restores focus to the bar
+    // Closing the rail via its own X restores focus to the bar
     // toggle that opened it (mirrors `reset_click`'s multi-statement
     // `format!` idiom below in `render_adjust_rail`).
-    // Fix B (round 2): move focus to the toggle BEFORE flipping `$rail`,
+    // Move focus to the toggle BEFORE flipping `$rail`,
     // so focus never sits inside a region that has just gone
     // `aria-hidden="true"` (this rail is always visible/focusable, so no
     // `setTimeout` is needed for this direction, unlike the open case
-    // below which waits on the just-opened rail's DOM to settle). Fix A:
+    // below which waits on the just-opened rail's DOM to settle).
     // `preventScroll: true` guards against scrolling the canvas's
     // `overflow:hidden` box while the OTHER rail is still transitioning
     // off-screen.
@@ -856,7 +828,7 @@ fn render_details_rail(items: &[Resource], sel0: usize, can_sequence: bool, view
             }
             div.rv__rail-body {
                 // The rail SHELL (head + close + aria-hidden) is shared across
-                // the sequence; only its FIELD content is per-image (§3.1). In
+                // the sequence; only its FIELD content is per-image. In
                 // sequence mode every image's `.rv-details` is pre-rendered and
                 // toggled by `$plate` (static `hidden` + reactive `data-attr` —
                 // see `plate_hidden_attr`); otherwise only the selected image.
@@ -884,10 +856,10 @@ fn render_details_rail(items: &[Resource], sel0: usize, can_sequence: bool, view
     }
 }
 
-/// Render one image's `dl.rf` Details fields (AC5): restricted-access prose
+/// Render one image's `dl.rf` Details fields: restricted-access prose
 /// (when the image is `limited-view`), identifier (`<id> · plate i of n` when
 /// the host has more than one image AND those images are reachable via the
-/// pager/strip — `can_sequence` — AC5/§3.1/Fix 4; the plate suffix is omitted
+/// pager/strip — `can_sequence`; the plate suffix is omitted
 /// for a lone image, and ALSO omitted when `n > 1` but `!can_sequence` — some
 /// of the host's images aren't IIIF, so there is no pager/strip to reach
 /// them, and printing "plate i of n" there would falsely imply other
@@ -931,19 +903,18 @@ fn render_details_fields(image: &Resource, i: usize, n: usize, can_sequence: boo
     }
 }
 
-/// Render `.rv__rail.rv__rail--adjust` (AC6/AC7/R9, record-viewer plan step
-/// 6) — the crate's `Viewer::adjust(true)` panel skin: 7 operators
+/// Render `.rv__rail.rv__rail--adjust` — the crate's `Viewer::adjust(true)` panel skin: 7 operators
 /// (brightness · contrast · saturation · exposure · gamma · hue · invert),
 /// `RESET ALL`, and the transient-looking note.
 ///
-/// **The units bridge (R9, load-bearing):** the design's slider ranges are
+/// **The units bridge (load-bearing):** the slider ranges are
 /// display units the crate's setters do NOT take directly. Brightness/
 /// contrast/saturation are 0–1-ish multipliers here (defaults `1`) but the
 /// crate's OSD setters take **percent** (`setBrightness(100)` ==
 /// `brightness(100%)`), so each `data-on:input` multiplies the signal by 100
 /// before calling the setter. Exposure/gamma/hue are pass-through — the
 /// crate's setters already take the same native units (0-centered fraction,
-/// a gamma multiplier, and degrees respectively) the design's readout shows.
+/// a gamma multiplier, and degrees respectively) the readout shows.
 fn render_adjust_rail(viewer_id: &str, lang: &Lang) -> Markup {
     let close_label = ChromeMsg::RvDrawerCloseLabel.text(lang);
     let region_label = ChromeMsg::RvAdjustToggleLabel.text(lang);
@@ -957,9 +928,9 @@ fn render_adjust_rail(viewer_id: &str, lang: &Lang) -> Markup {
          $gamma = 1; $hue = 0; $invert = false; \
          document.getElementById('{viewer_id_js}').resetAdjust()"
     );
-    // Fix 5: closing the rail via its own X restores focus to the bar
-    // toggle that opened it. Fix B (round 2): focus moves BEFORE `$rail`
-    // flips (see `render_details_rail`'s matching comment). Fix A:
+    // Closing the rail via its own X restores focus to the bar
+    // toggle that opened it. Focus moves BEFORE `$rail`
+    // flips (see `render_details_rail`'s matching comment).
     // `preventScroll: true` guards the transitioning-off-screen rail case.
     let close_click = format!(
         "document.getElementById('{viewer_id_js}-adjust-toggle')?.focus({{ preventScroll: true }}); \
@@ -1111,12 +1082,12 @@ fn render_adjust_rail(viewer_id: &str, lang: &Lang) -> Markup {
     }
 }
 
-/// Render one image's legal record (AC4/I3): the restricted ACCESS line
+/// Render one image's legal record: the restricted ACCESS line
 /// (when the image is `limited-view`) above the author · copyright · licence
 /// run (`compose_legal_run` — omits absent fields, shows copyright only when
 /// present ∧ ≠ licence). Used per-image by [`render_viewer_banner`]'s
 /// `.rv__legal` (one block per image in sequence mode, toggled by `$plate`;
-/// the selected image alone otherwise). Never the Details-drawer fields (I4).
+/// the selected image alone otherwise). Never the Details-drawer fields.
 fn render_legal_block(image: &Resource, lang: &Lang) -> Markup {
     let restricted = find_bool_property(image, "limited-view").unwrap_or(false);
     let author = find_text_property(image, "authorship", lang);
@@ -1143,12 +1114,11 @@ fn render_legal_block(image: &Resource, lang: &Lang) -> Markup {
 }
 
 /// Render `.rv__banner` — a solid-bed row above the canvas holding ONLY the
-/// picture's legal record (access line + author · copyright · licence run,
-/// AC4/I3). Owner checkpoint round C: this used to sit inside `.rv__bar`
-/// beside the controls; it now has its own top row so the bar can stay a
+/// picture's legal record (access line + author · copyright · licence run).
+/// It has its own top row so the bar can stay a
 /// controls-only strip. This is a banner ROW, not an overlay — it never
 /// composites over the canvas (the "nothing persistent is ever set over the
-/// picture" rule in §3 of media.css still stands; a banner row is simply a
+/// picture" rule of `style/media.css` section 3 still stands; a banner row is simply a
 /// second use of the same rule, at the top instead of the bottom). It draws
 /// on the SAME near-black bed as the rest of `.rv` (no background of its
 /// own) and the same `--on-bed`/`--on-bed-muted`/`--on-bed-faint` ink ramp —
@@ -1156,8 +1126,8 @@ fn render_legal_block(image: &Resource, lang: &Lang) -> Markup {
 /// quiet text on the dark bed" note).
 ///
 /// In sequence mode every image's legal block is pre-rendered and toggled by
-/// `$plate` (§3.1 — static `hidden` + reactive `data-attr`, so the N legal
-/// records are never simultaneously visible with JS off, C2/AC15); otherwise
+/// `$plate` (static `hidden` + reactive `data-attr`, so the N legal
+/// records are never simultaneously visible with JS off); otherwise
 /// only the selected image's block. `min-height: var(--bar-h)` (shared with
 /// the bar) is only a FLOOR — the banner's content varies per image (an
 /// ACCESS line when restricted, a licence run that wraps differently per
@@ -1185,37 +1155,37 @@ fn render_viewer_banner(items: &[Resource], sel0: usize, can_sequence: bool, lan
 }
 
 /// Render `.rv__bar` — the full `.rv__ctrls` row: the Details/Adjust drawer
-/// toggles (AC6, step 6) beside the zoom cluster (out/in + fit-to-view, step
-/// 5's AC8 continuous-zoom disabled-state wiring, and the quiet
-/// `viewer-error` line) plus the `WIDER` toggle (step 7, AC9 — a layout-only
+/// toggles beside the zoom cluster (out/in + fit-to-view, the
+/// continuous-zoom disabled-state wiring, and the quiet
+/// `viewer-error` line) plus the `WIDER` toggle (a layout-only
 /// control rendered whenever the bar renders). Details/Adjust write the
 /// SAME single-valued `$rail` signal ([`render_media_viewer`]'s `.rv`
 /// `data-signals`) via a toggle-or-close ternary each — mutual exclusion
-/// (AC6) falls out of that shared signal, not from any coordination between
+/// falls out of that shared signal, not from any coordination between
 /// the two buttons.
 ///
-/// Owner checkpoint round C: the picture's legal record moved OUT of this
-/// bar into [`render_viewer_banner`], a new top row — the bar is controls-
-/// only now. The `viewer-error` status line stays here (AC8: "a quiet mono
-/// line in the bar, not a dialog" — that instruction is about the bar
-/// specifically, not the legal record's old position in it).
+/// The picture's legal record is not in this
+/// bar but in [`render_viewer_banner`], the top row — the bar is controls-
+/// only. The `viewer-error` status line stays here ("a quiet mono
+/// line in the bar, not a dialog").
 ///
 /// `has_viewer` (from [`viewer_will_mount`]) gates the scale readout, the
 /// three zoom chips, and the Adjust toggle + `viewer-error` status line.
 /// [`render_viewer_canvas`] only emits `$atHome`/`$atNative`/`$viewerError`
 /// (via `data-signals`) and the `viewer-zoom`/`viewer-error` listeners on the
 /// `Some(info_json)` mounted-viewer branch; when it degrades to the plain
-/// `.rv__stand` fallback (AC3 — non-IIIF URI or no safe representation) there
+/// `.rv__stand` fallback (non-IIIF URI or no safe representation) there
 /// is no `<image-viewer>` element for `document.getElementById(viewer_id)` to
-/// find and no signals for `data-attr-aria-disabled`/`data-attr-hidden` to read.
+/// find and no signals for the `aria-disabled`/`hidden` bindings (object-form
+/// `data-attr`) to read.
 /// Rendering the cluster anyway would produce chips that read as *enabled*
 /// (an undeclared DataStar signal is falsy, so `aria-disabled="$atHome"`
 /// never fires) and whose `data-on:click` throws against `null` — silently
 /// broken chrome over a plain `<img>`. Omitting the cluster entirely is the
-/// correct degradation, matching AC3's "never render a live-looking control
+/// correct degradation, matching "never render a live-looking control
 /// with nothing behind it" spirit.
 ///
-/// `has_details` (from [`details_will_render`], Fix 8) gates the Details
+/// `has_details` (from [`details_will_render`]) gates the Details
 /// toggle button INDEPENDENTLY of `has_viewer` — it only needs `repr`/EAV
 /// data, so it renders even when no `<image-viewer>` mounted (a degraded/
 /// non-IIIF image), keeping the Details drawer reachable in that case. The
@@ -1240,7 +1210,7 @@ fn render_viewer_bar(viewer_id: &str, has_viewer: bool, has_details: bool, lang:
     let details_label = ChromeMsg::RvDetailsToggleLabel.text(lang);
     let adjust_label = ChromeMsg::RvAdjustToggleLabel.text(lang);
     let wider_label = ChromeMsg::RvWiderToggleLabel.text(lang);
-    // WIDER (AC9, step 7): a pure layout toggle — the properties step aside and
+    // WIDER: a pure layout toggle — the properties step aside and
     // the viewer column takes the whole measure. It flips the `$expand` boolean
     // signal; `article.record--viewer` reacts by toggling its `.is-wide` class
     // (via `data-class`, resource_detail.rs) and by making its head + body
@@ -1250,12 +1220,12 @@ fn render_viewer_bar(viewer_id: &str, has_viewer: bool, has_details: bool, lang:
     // single constant label + reactive `aria-pressed` conveys the toggle state
     // (mirroring the Details/Adjust toggles) — no label swap on expand.
     let wider_click = "$expand = !$expand";
-    // Fix 4: opening a rail (never closing) moves focus into it once the DOM
+    // Opening a rail (never closing) moves focus into it once the DOM
     // update settles — the rails render before this bar in `.rv__canvas`, so
     // forward-Tab from the toggle alone would skip right over the just-opened
     // rail's content. Focuses the rail's own close button (`.vctl` inside
     // `.rv__rail-head`) — the simplest, always-present target.
-    // Fix A (round 2): `preventScroll: true` guards against scrolling the
+    // `preventScroll: true` guards against scrolling the
     // canvas's `overflow:hidden` box, since the target rail may still be
     // `transform: translateX(100%)` at the moment focus lands.
     let details_click = format!(
@@ -1269,9 +1239,9 @@ fn render_viewer_bar(viewer_id: &str, has_viewer: bool, has_details: bool, lang:
 
     html! {
         div.rv__bar {
-            // AC8: "viewer-error → a quiet mono line in the bar, not a
+            // "viewer-error → a quiet mono line in the bar, not a
             // dialog." Hidden via a static `hidden` attribute + a reactive
-            // `data-attr` binding, never `data-show` (see AC17's `data-show`
+            // `data-attr` binding, never `data-show` (see the `data-show`
             // prohibition — `data-show` only hides reactively client-side,
             // leaving the line visible pre-hydration/with JS off, and
             // `viewer-error` only ever fires from the crate's own JS
@@ -1281,10 +1251,7 @@ fn render_viewer_bar(viewer_id: &str, has_viewer: bool, has_details: bool, lang:
             // reactive small-status idiom (`facet_panel.rs`'s
             // `div.filterbar`) — a small status element, never the whole
             // swapped region. `compound_viewer.rs`'s own `span.pg__count`
-            // also carries `aria-live` now (`reader-paging-fragment-swap`
-            // plan Step 5a — member paging reverted to a same-document swap;
-            // see that module's doc comment), so this is no longer a
-            // contrast case, just a second independent instance of the same
+            // also carries `aria-live`, a second independent instance of the same
             // idiom. Gated by `has_viewer` — see the function doc comment.
             @if has_viewer {
                 span
@@ -1371,14 +1338,14 @@ fn render_viewer_bar(viewer_id: &str, has_viewer: bool, has_details: bool, lang:
     }
 }
 
-// ── record-viewer sequence paging (§3.1/AC10/AC11, plan step 8) ──────────────
+// ── record-viewer sequence paging ──────────────
 //
 // The record viewer pages a SINGLE multi-source `<image-viewer>` client-side:
 // the `.pg` pager and the thumb strip set the `$plate` signal and call
 // `goToPage(n)` on the element, while a real `?img=N` href is the zero-JS
-// full-reload fallback. This is the §3.1 pre-render+toggle model — NEVER the
+// full-reload fallback. This is the pre-render+toggle model — NEVER the
 // plate's `_plate` `@get` fragment swap (which would re-init the viewer and
-// lose zoom/adjust state), and NEVER a URL write / `pushState` (I6/`dsp-incubator
+// lose zoom/adjust state), and NEVER a URL write / `pushState` (`dsp-incubator
 // cpe/docs/adr/0007-fragment-swaps-are-transient.md`).
 
 /// The shared JS action for a pager step or strip thumb navigating to the
@@ -1394,13 +1361,13 @@ fn rv_page_click(target1: usize, viewer_id: &str) -> String {
     )
 }
 
-/// The record-viewer `.pg` pager (AC10). Reuses the shared `.pg`/`.pg__step`/
+/// The record-viewer `.pg` pager. Reuses the shared `.pg`/`.pg__step`/
 /// `.pg__count` markup primitive but is **fully reactive**: unlike a
 /// server-rendered pager whose prev/next hrefs fix `?img=` targets at render
 /// time, both arrows derive their step from the LIVE `$plate` signal at click time
 /// (`$plate = $plate ± 1; goToPage($plate + 1)`), and their disabled state binds
 /// to `$plate` too. This is essential because paging is client-side with no
-/// re-render — a server-fixed target (the earlier bug) would page image 1→2
+/// re-render — a server-fixed target would page image 1→2
 /// once and then keep pointing at image 2, with prev never re-enabling.
 ///
 /// Both ends are always an `<a>` (never swapped for an inert `<span>`), so the
@@ -1471,7 +1438,7 @@ fn render_rv_pager(
     }
 }
 
-/// The record-viewer thumb strip (`.em-col__strip`, AC11). Like the pager it
+/// The record-viewer thumb strip (`.em-col__strip`). Like the pager it
 /// reuses the plate's strip markup but drives the `$plate`/`goToPage` action.
 /// The fold is client-side transient state (`$stripOpen`, defaulting to the
 /// server's `?strip=`): the `ul.em-strip` is ALWAYS rendered (so the JS toggle
@@ -1544,7 +1511,7 @@ fn render_rv_strip(
 }
 
 /// Render one `.em-thumb` in the record-viewer strip: a zero-JS `<a>` to the
-/// target image, enhanced with the §3.1 `$plate`/`goToPage` action. `k` is the
+/// target image, enhanced with the `$plate`/`goToPage` action. `k` is the
 /// thumb's 0-based position; `sel0` the server-selected index. `aria-current`
 /// (the selected-thumb highlight, `media.css` `.em-thumb[aria-current="true"]`)
 /// is static for the initial paint and reactively bound to `$plate` so it
@@ -1587,8 +1554,7 @@ fn render_rv_thumb(
 }
 
 /// Find `name`'s first `Boolean` value on `resource` (the plate access
-/// line's `limited-view` reader — moved here from the removed
-/// `component::zoom` when the zoom-state surface was retired).
+/// line's `limited-view` reader).
 pub(crate) fn find_bool_property(resource: &Resource, name: &str) -> Option<bool> {
     let property = resource.properties.iter().find(|p| p.name == name)?;
     property.values.iter().find_map(|v| match v {
@@ -1598,7 +1564,7 @@ pub(crate) fn find_bool_property(resource: &Resource, name: &str) -> Option<bool
 }
 
 /// Find `name`'s first language-picked `Text`/`Richtext` value on `resource`,
-/// non-empty (record-viewer plan step 3 — mirrors [`find_bool_property`], but
+/// non-empty (mirrors [`find_bool_property`], but
 /// for the Image resource's own legal/descriptive EAV fields — `authorship`,
 /// `copyright`, `license`, `description` — which are text-typed and therefore
 /// subject to the same requested-lang → universal → any-present fallback
@@ -1606,9 +1572,6 @@ pub(crate) fn find_bool_property(resource: &Resource, name: &str) -> Option<bool
 /// Richtext is returned as its raw markdown text — this crate does not render
 /// markdown inside the viewer's bar/Details drawer (those fields are plain
 /// mono prose, not a richtext flow).
-///
-/// First production caller: step 4's `render_viewer_bar` (legal run) and
-/// `render_media_viewer` (caption).
 pub(crate) fn find_text_property(resource: &Resource, name: &str, lang: &Lang) -> Option<String> {
     let property = resource.properties.iter().find(|p| p.name == name)?;
     crate::component::values::pick_values(property, lang)
@@ -1622,8 +1585,7 @@ pub(crate) fn find_text_property(resource: &Resource, name: &str, lang: &Lang) -
 }
 
 /// Compose the picture's legally load-bearing run — author · copyright ·
-/// licence, in that order — for the viewer bar's `.rv__legal .em-legal__run`
-/// (`RightsFields.prompt.md` / record-viewer plan AC4, invariant I3).
+/// licence, in that order — for the viewer bar's `.rv__legal .em-legal__run`.
 ///
 /// Each field is omitted when absent or empty (never a dangling separator or
 /// an empty leading entry). Copyright joins the run **only when it is present
@@ -1631,8 +1593,6 @@ pub(crate) fn find_text_property(resource: &Resource, name: &str, lang: &Lang) -
 /// copyright restrictions" beside "Public domain" states the same fact twice;
 /// a legal record that repeats itself teaches a reader to skim it. When
 /// copyright and licence are equal only the licence is emitted.
-///
-/// First production caller: step 4's `render_viewer_bar`.
 pub(crate) fn compose_legal_run(author: Option<&str>, copyright: Option<&str>, license: Option<&str>) -> Vec<String> {
     let author = author.filter(|s| !s.is_empty());
     let copyright = copyright.filter(|s| !s.is_empty());
@@ -1654,18 +1614,11 @@ pub(crate) fn compose_legal_run(author: Option<&str>, copyright: Option<&str>, l
 }
 
 /// Format a Representation's stored pixel dimensions for the viewer's Details
-/// drawer DIMENSIONS row (record-viewer plan step 3 / §5 `RightsFields.prompt.md`
-/// "details" variant), e.g. `"690 × 1024 px"`.
+/// drawer DIMENSIONS row, e.g. `"690 × 1024 px"`.
 ///
 /// `None` when either dimension is unknown or non-positive — the
 /// `representations.width`/`.height` columns are nullable, and a 0×0 or
 /// negative reading is not a real dimension to display.
-///
-/// First production caller: step 6's [`render_details_rail`] (AC5: rank —
-/// dimensions live in Details, never duplicated in the bar). Step 3 added
-/// this as a pure helper ahead of its caller, mirroring
-/// `iiif::iiif_info_json_url`'s own dead-code-until-a-caller-exists pattern
-/// (the plan's round-1/round-2 review Criticals C1/C3).
 pub(crate) fn image_dimensions(repr: &cpe_core::ir::Representation) -> Option<String> {
     match (repr.width, repr.height) {
         (Some(w), Some(h)) if w > 0 && h > 0 => Some(format!("{w} × {h} px")),
@@ -1744,7 +1697,7 @@ mod tests {
         img
     }
 
-    // ── find_text_property (record-viewer plan step 3) ─────────────────────
+    // ── find_text_property ─────────────────────
 
     fn image_with_text_props(id: &str, props: &[(&str, &str)]) -> Resource {
         let mut img = image(id, "https://iiif.demo.dasch.swiss:443/0854/a.jpx/full/max/0/default.jpg");
@@ -1791,7 +1744,7 @@ mod tests {
         );
     }
 
-    // ── compose_legal_run (record-viewer plan step 3 — AC4/I3) ─────────────
+    // ── compose_legal_run ─────────────
 
     #[test]
     fn compose_legal_run_all_present_and_distinct() {
@@ -1848,7 +1801,7 @@ mod tests {
         assert_eq!(run, vec!["No known copyright restrictions"]);
     }
 
-    // ── image_dimensions (record-viewer plan step 3) ────────────────────────
+    // ── image_dimensions ────────────────────────
 
     fn repr_with_size(width: Option<i64>, height: Option<i64>) -> cpe_core::ir::Representation {
         cpe_core::ir::Representation {
@@ -1892,7 +1845,7 @@ mod tests {
         assert_eq!(image_dimensions(&repr), None);
     }
 
-    // ── render_media_viewer (record-viewer plan step 4) ─────────────────────
+    // ── render_media_viewer ─────────────────────
 
     /// Same shape as [`image_with_text_props`] but for the picture's legal
     /// EAV triple, for `render_viewer_bar`'s markup-integration coverage.
@@ -1909,7 +1862,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_iiif_uri_mounts_image_viewer_element() {
-        // AC3's positive path: an IIIF-shaped URI (`iiif_info_json_url` returns
+        // The positive path: an IIIF-shaped URI (`iiif_info_json_url` returns
         // `Some`) must mount the crate's `<image-viewer>` — not just the
         // `.rv__stand` fallback every other test in this module exercises.
         let items = vec![image(
@@ -1955,7 +1908,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_non_iiif_uri_degrades_to_plain_stand_no_image_viewer() {
-        // AC3's degradation path: a non-IIIF URI must never mount
+        // The degradation path: a non-IIIF URI must never mount
         // <image-viewer> at all (never .expect() a Some tile-source).
         let items = vec![image("I_999", "https://example.org/img.jpg")];
         let out = render_media_viewer(&items, "Alice", 1, "/host", None, false, &lang()).into_string();
@@ -1972,7 +1925,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_composes_legal_run_into_bar_markup() {
-        // AC4/I3 markup-integration: step 3 unit-tested `compose_legal_run` as
+        // Markup integration: the unit tests cover `compose_legal_run` as
         // a pure function; this confirms `render_viewer_bar` actually reads
         // the real `authorship`/`copyright`/`license` property names and
         // joins the result into `.rv__legal .em-legal__run` with the ` · `
@@ -2033,7 +1986,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_zoom_chip_wires_datastar_click_and_scale_readout() {
-        // R2 — the checkpoint this step is named for: DataStar must drive the
+        // DataStar must drive the
         // crate's JS control surface (zoomIn) and read its viewer-zoom event
         // into the .rv__scale readout.
         let items = vec![image(
@@ -2078,7 +2031,7 @@ mod tests {
         );
     }
 
-    // ── render_media_viewer zoom cluster (record-viewer plan step 5) ────────
+    // ── render_media_viewer zoom cluster ────────
 
     #[test]
     fn render_media_viewer_zoom_out_and_home_chips_wire_datastar_click() {
@@ -2099,7 +2052,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_zoom_chips_bind_disabled_state_to_zoom_signals() {
-        // AC8: three distinct edges — zoom-out disables at $atMin (the zoom-out
+        // Three distinct edges — zoom-out disables at $atMin (the zoom-out
         // floor, 0.9× fit), fit/home at $atHome (at fit), zoom-in at $atMax (max
         // magnification, NOT $atNative — magnifying past screen-1:1 up to
         // maxZoomPixelRatio is allowed). Ties each disabled-state binding to its
@@ -2135,7 +2088,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_zoom_chips_carry_title_and_aria_label() {
-        // AC13: every icon-only chip carries both `title` and `aria-label`
+        // Every icon-only chip carries both `title` and `aria-label`
         // (the accessible name survives the container-query icon-only
         // collapse, which hides the chip's text `span` but never touches
         // `title`/`aria-label`).
@@ -2154,14 +2107,14 @@ mod tests {
 
     #[test]
     fn render_media_viewer_degraded_canvas_omits_zoom_cluster_and_error_line() {
-        // AC3×AC8: when render_viewer_canvas degrades to the plain .rv__stand
+        // When render_viewer_canvas degrades to the plain .rv__stand
         // fallback (no mounted <image-viewer>), the zoom chips' data-on:click
         // targets a getElementById that resolves to null and their
-        // data-attr-aria-disabled bindings read signals that were never
+        // `aria-disabled` bindings (object-form `data-attr`) read signals that were never
         // declared (falsy — rendering as enabled) — so the zoom cluster and
         // the viewer-error line, which can only ever be populated by that
         // missing element's events, must be entirely absent, not merely
-        // inert-looking. `.rv__ctrls` itself still renders (Fix 8) — it now
+        // inert-looking. `.rv__ctrls` itself still renders — it
         // hosts the Details toggle, which only needs `repr`/EAV data, not a
         // mounted viewer.
         let items = vec![image("I_999", "https://example.org/img.jpg")];
@@ -2221,7 +2174,7 @@ mod tests {
             out.contains("data-on:viewer-error=\"$viewerError = true\""),
             "the canvas must listen for the crate's viewer-error event, got: {out}"
         );
-        // Fix C (round 2): pin the actual `.rv__err` markup as one contiguous
+        // Pin the actual `.rv__err` markup as one contiguous
         // substring — the previous three-way `&&` (checking `"class=\"rv__err\""`,
         // `"hidden"`, and the `data-attr` binding separately) was trivially
         // satisfied by the two rails' unrelated `aria-hidden="..."` attributes
@@ -2241,7 +2194,7 @@ mod tests {
         );
     }
 
-    // ── render_viewer_canvas drawers (record-viewer plan step 6) ───────────
+    // ── render_viewer_canvas drawers ───────────
 
     #[test]
     fn render_media_viewer_rail_signal_declared_on_rv_with_reactive_class_binding() {
@@ -2306,7 +2259,7 @@ mod tests {
         );
     }
 
-    // ── sequence paging (record-viewer plan step 8, §3.1/AC10/AC11/AC17) ──────
+    // ── sequence paging ──────
 
     fn three_iiif_images() -> Vec<Resource> {
         vec![
@@ -2336,11 +2289,11 @@ mod tests {
     fn render_media_viewer_sequence_pages_client_side_never_url_or_fragment() {
         let items = three_iiif_images();
         let out = render_media_viewer(&items, "Alice", 1, "/p/CH_001", None, false, &lang()).into_string();
-        // §3.1: pager/strip set `$plate` and call `goToPage` on the element…
+        // Pager/strip set `$plate` and call `goToPage` on the element…
         assert!(out.contains("$plate = "), "must set the $plate signal, got: {out}");
         assert!(out.contains(").goToPage("), "must page the element via goToPage, got: {out}");
-        // …and NEVER `@get` the retired plate's `_plate` fragment endpoint, and
-        // NEVER write the URL / history (I6/`dsp-incubator
+        // …and NEVER `@get` a `_plate` fragment endpoint, and
+        // NEVER write the URL / history (`dsp-incubator
         // cpe/docs/adr/0007-fragment-swaps-are-transient.md`).
         assert!(
             !out.contains("_plate"),
@@ -2363,7 +2316,7 @@ mod tests {
         // selected = 2 (1-based) → sel0 = 1.
         let out = render_media_viewer(&items, "Alice", 2, "/p/CH_001", None, false, &lang()).into_string();
         // Every image's legal/Details/caption block is pre-rendered and toggled
-        // by `$plate` via the object-form `data-attr` (AC17) — never the
+        // by `$plate` via the object-form `data-attr` — never the
         // hyphen-suffix `data-attr-hidden` (silently ignored) or `data-show`.
         for i in 0..3 {
             assert!(
@@ -2376,7 +2329,7 @@ mod tests {
             "must use object-form data-attr, not the ignored hyphen/`data-show` forms, got: {out}"
         );
         // Zero-JS: the NON-selected blocks carry a static `hidden`; the selected
-        // one (sel0 = 1) does not — so with JS off only image 2 shows (AC15/C2).
+        // one (sel0 = 1) does not — so with JS off only image 2 shows.
         assert!(
             out.contains("plate 1 of 3") && out.contains("plate 2 of 3") && out.contains("plate 3 of 3"),
             "each image's Details must carry its `plate i of n` identifier, got: {out}"
@@ -2605,15 +2558,11 @@ mod tests {
         );
     }
 
-    // ── record-viewer plan step 6 — test-reviewer checkpoint follow-ups ────
-    // (AC5's no-glyph Details toggle, AC7's data-touched dimming, AC6/AC13's
-    // aria-hidden on closed rails, AC13's aria-pressed + close-control
-    // accessible names, R9's per-operator range bounds — all correctly
-    // implemented but previously uncovered by a test.)
+    // ── Details toggle, dimming, closed rails, accessible names, range bounds ────
 
     #[test]
     fn render_media_viewer_details_toggle_has_no_glyph_adjust_toggle_does() {
-        // AC5: "the bar's Details toggle carries no glyph (mono label — the
+        // "The bar's Details toggle carries no glyph (mono label — the
         // six-glyph set is scoped to controls that act on the picture)."
         let items = vec![image(
             "I_051",
@@ -2645,7 +2594,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_adjust_rows_bind_untouched_class_to_their_own_default() {
-        // AC7: "data-touched dimming" — each of the seven rows dims when at its
+        // "data-touched dimming" — each of the seven rows dims when at its
         // default, via a reactive `.untouched` CLASS toggle (NOT a reactive
         // `data-*` attribute, which would derail DataStar's binding pass — see
         // `render_media_viewer`). Each must test its OWN default (a shared/
@@ -2673,8 +2622,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_closed_rails_carry_aria_hidden_binding() {
-        // AC6: "aria-hidden when closed". AC13: built per-step, not swept
-        // later.
+        // "aria-hidden when closed".
         let items = vec![image(
             "I_051",
             "https://iiif.demo.dasch.swiss:443/0854/a.jpx/full/max/0/default.jpg",
@@ -2692,7 +2640,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_toggles_and_invert_chip_bind_aria_pressed() {
-        // AC13: aria-pressed on every toggle, including the invert chip.
+        // aria-pressed on every toggle, including the invert chip.
         let items = vec![image(
             "I_051",
             "https://iiif.demo.dasch.swiss:443/0854/a.jpx/full/max/0/default.jpg",
@@ -2714,7 +2662,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_rail_close_buttons_carry_title_and_aria_label() {
-        // AC13: icon-only chips carry title + aria-label — the two rails'
+        // Icon-only chips carry title + aria-label — the two rails'
         // `x` close controls are icon-only.
         let items = vec![image(
             "I_051",
@@ -2732,7 +2680,7 @@ mod tests {
 
     #[test]
     fn render_media_viewer_adjust_rows_carry_design_pinned_range_bounds() {
-        // R9: the design table's slider min/max/step per operator — a typo'd
+        // The slider min/max/step per operator — a typo'd
         // bound is invisible to the units-bridge setter-call assertions
         // alone.
         let items = vec![image(
@@ -2758,9 +2706,9 @@ mod tests {
         );
     }
 
-    // ── Step 11: snapshot matrix ────────────────────────────────────────────
+    // ── Snapshot matrix ────────────────────────────────────────────
     //
-    // A representative matrix, not a full cross-product (per the plan): open
+    // A representative matrix, not a full cross-product: open
     // vs restricted, single vs sequence (CH_001-shaped — several images incl.
     // one `limited-view`, mirroring the real Alice demo's `?img=56` plate),
     // EN vs DE. Drawer/expand/zoom states are client-side signals that don't
@@ -2768,7 +2716,7 @@ mod tests {
     // the unit tests above, not chased here. `data-appearance` (dark mode)
     // never appears in this module's own output — it's emitted once on
     // `<html>` by `render_page` — so the "one dark" axis is covered by a
-    // full-page snapshot in `cpe_web::page` instead.
+    // full-page snapshot in `dsp-incubator cpe/web`'s `page` module instead.
 
     fn lang_de() -> Lang {
         let site = SiteConfig {

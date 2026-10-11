@@ -201,9 +201,9 @@ fn split_on_separators(label: &str) -> Vec<&str> {
 /// Format a date value to its plain-text display string — the date only, no
 /// precision word, no markup. The one text formatter every date surface
 /// shares: the `span.v-date` value, the browse-row gloss, and the timeline
-/// tooltip (Slice 4). Returns `""` for a non-`Date` value.
+/// tooltip. Returns `""` for a non-`Date` value.
 ///
-/// Decision order (Incunabula Slice 8 step 2):
+/// Decision order:
 /// 1. **Degenerate range** — a value that is not a range per [`cpe_core::ir::date_is_range`] (no
 ///    `end`, or `end` equal to `start` at the precision) renders as a single date, never `X–X`.
 /// 2. **Display string** — a curated `display` whose `display_lang` is `None` or the request

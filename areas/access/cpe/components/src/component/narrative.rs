@@ -14,7 +14,7 @@ use crate::component::editorial::{Editorial, FigureBlock, Rail};
 /// Compute the resolved filename for a narrative `file` + `lang`.
 ///
 /// Delegates to `util::variant_filename` (last-dot stem/ext split, shared
-/// with `validate`'s D3 probe): `Some(candidate)` builds
+/// with `validate`'s variant probe): `Some(candidate)` builds
 /// `"<stem>.<lang>.<ext>"` (e.g. `"home.de.md"`); `None` (no extension, no
 /// variant form possible) falls back to `file` as-is. The caller decides
 /// present-vs-fallback by looking the result up in the store.
@@ -74,7 +74,7 @@ pub fn resolve_narrative_content<'a>(
 ///    `default_lang == lang` (already tried in step 1).
 /// 3. `file` (the base form).
 ///
-/// If none of the three are present (should not happen after Phase-2
+/// If none of the three are present (should not happen after boot
 /// validation), render an empty `<article class="editorial page">` — never
 /// `.expect()`/panic.
 ///
@@ -101,7 +101,7 @@ pub fn render_narrative(
     match resolve_narrative_content(file, lang, default_lang, narrative) {
         Some(src) => crate::component::editorial::render_editorial(src, figures, id_offset, rail),
         // All three rungs missed — an invariant violation after boot validation
-        // (D3 guarantees the base-or-default rung exists); emit an empty
+        // (validation guarantees the base-or-default rung exists); emit an empty
         // article rather than panicking so the page still renders.
         None => Editorial {
             markup: html! {
@@ -227,7 +227,7 @@ mod tests {
     fn resolve_narrative_content_falls_back_to_default_variant() {
         // requested="fr", default="en"; store has ONLY home.en.md (no home.fr.md,
         // no bare home.md) → the EN content is returned. This is the
-        // Alice-shaped case — the whole point of D1.
+        // Alice-shaped case.
         let requested = make_lang("fr");
         let default = make_lang("en");
         let store = make_store(&[("home.en.md", "en content")]);
@@ -294,7 +294,7 @@ mod tests {
         // three rungs missed) → empty <article class="editorial page">. The
         // `.page` class is NOT optional on this branch: the shared layout
         // contract requires every component root to carry it on EVERY return
-        // branch, empty states included (see `static/cpe/grid.css`'s LAYOUT
+        // branch, empty states included (see `style/grid.css`'s LAYOUT
         // CONTRACT note). Uses
         // distinct requested/default langs to confirm the empty-article edge
         // case end-to-end through render_narrative, not just

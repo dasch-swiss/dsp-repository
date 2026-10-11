@@ -67,9 +67,9 @@ impl<'a> LinkResolver<'a> {
     }
 
     /// Build the href for a compound MEMBER shown inside its parent's reader
-    /// (Incunabula Slice 5 step 6, the incoming-links list's rung 2):
-    /// `<parent href>?page=<member_id>`, no `#compound-viewer` anchor (owner
-    /// decision 2026-09-29), or `None` when the parent's class has no detail
+    /// (the incoming-links list's rung 2):
+    /// `<parent href>?page=<member_id>`, no `#compound-viewer` anchor,
+    /// or `None` when the parent's class has no detail
     /// binding.
     ///
     /// Built from a FRESH query (`member_href_for` with no base query) —
@@ -148,8 +148,8 @@ fn substitute_route_param(template: &str, id: &str) -> String {
 
 // ── Reader member links ─────────────────────────────────────────────────────
 
-/// Compose the reader query for a link to the member with id `member_id`
-/// (Incunabula Slice 2 step 7, decision 7): the inherited query with any
+/// Compose the reader query for a link to the member with id `member_id`:
+/// the inherited query with any
 /// stale `member=` dropped and `page=<member_id>` set (replaced or
 /// appended) via `override_query_param`. Every other param (lang,
 /// appearance, …) is preserved in place.
@@ -180,12 +180,12 @@ pub(crate) fn reader_query(current_query: Option<&str>, member_id: &str) -> Stri
     override_query_param(Some(&base), "page", &encoded)
 }
 
-/// The ONE member-link URL shape (Incunabula Slice 5 step 6):
+/// The ONE member-link URL shape:
 /// `{path}?{reader_query(base_query, member_id)}` — no `#compound-viewer`
-/// fragment (owner decision 2026-09-29: no URL emitted by this codebase ever
+/// fragment (no URL emitted by this codebase ever
 /// carries that anchor; the element `id="compound-viewer"` itself stays, as
 /// the target of the fragment-swap's programmatic focus-restore call, but no
-/// href/action points at it any more).
+/// href/action points at it).
 ///
 /// Two callers, two base queries: the reader's own rail/prev-next links
 /// (`compound_viewer::build_compound_href`) pass the CURRENT query, so
@@ -202,7 +202,7 @@ pub(crate) fn member_href_for(path: &str, base_query: Option<&str>, member_id: &
 mod tests {
     use super::*;
 
-    // ── Layer-1: reader_query (step 7 — `page=<id>`, stale `member=` dropped) ─
+    // ── Layer-1: reader_query (`page=<id>`, stale `member=` dropped) ─
 
     #[test]
     fn reader_query_none_query_is_page_only() {

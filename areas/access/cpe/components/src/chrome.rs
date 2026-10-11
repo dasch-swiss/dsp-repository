@@ -4,13 +4,13 @@
 //!
 //! This is cross-cutting data shared by every renderer (not a per-surface
 //! renderer itself), so it is a top-level module of `cpe-components`, beside
-//! `component`. It is `pub` because the bin's site index reads it, through the
-//! `cpe-engine` facade's `chrome` path. It belongs to the components crate, so
+//! `component`. It is `pub` because the site index of `dsp-incubator cpe/bin` reads it, through the
+//! `dsp-incubator cpe/engine` facade's `chrome` path. It belongs to the components crate, so
 //! `cpe-core` (the domain crate) cannot import it.
 //!
 //! Two message shapes:
 //!
-//! - **Fixed messages** — [`ChromeMsg`], an enum where every variant carries an [`L4`] (all four
+//! - **Fixed messages** — [`ChromeMsg`], an enum where every variant carries an `L4` (all four
 //!   built-in languages, no exceptions). Call sites read `ChromeMsg::ClearAll.text(lang)`. A
 //!   handful of thin `pub(crate)` wrapper functions group related fixed messages back into the
 //!   tuples call sites already expect (e.g. `bool_labels` → `(yes, no)`), without introducing a
@@ -24,8 +24,7 @@
 //! **"pre-existing draft"** (migrated verbatim from a per-module
 //! `match lang.as_str()` helper that predates this catalog — do not silently
 //! reword it here) or **"new"** (authored for this catalog's gap-fill). Both
-//! are still unreviewed drafts pending native-speaker review — see
-//! `docs/plans/chrome-localization/translations-to-review.md`.
+//! are still unreviewed drafts pending native-speaker review.
 
 use std::borrow::Cow;
 
@@ -71,22 +70,20 @@ impl L4 {
 /// `ChromeMsg::Variant.text(lang)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChromeMsg {
-    // ── `cpe-web`'s `page` module — shell chrome ─────────────────────────────────
+    // ── `dsp-incubator cpe/web`'s `page` module — shell chrome ───────────────────
     /// The skip-to-content link's visible/accessible text. Shared verbatim by
-    /// `render_page`, N1, and the bin's `site_index` (independent full-page
-    /// renderers — see `CLAUDE.md`'s Non-obvious constraints). Pre-existing draft (was
-    /// `skip_link_label`, EN/DE only; fr/it are new).
+    /// `render_page`, the unknown-path page, and `dsp-incubator cpe/bin`'s `site_index`
+    /// (independent full-page renderers — see `dsp-incubator cpe/CLAUDE.md`'s Non-obvious
+    /// constraints). Pre-existing draft (EN/DE only; fr/it are new).
     SkipToContent,
     /// Appearance-toggle accessible name when the toggle currently offers
     /// "switch to light" (i.e. the page is in dark mode). Shared verbatim by
-    /// `shell_header` and the bin's `site_index`. New — previously a bare EN
-    /// literal with no language branching at all.
+    /// `shell_header` and `dsp-incubator cpe/bin`'s `site_index`. New.
     ThemeToggleToLight,
     /// Appearance-toggle accessible name when the toggle offers "switch to
     /// dark". See [`ChromeMsg::ThemeToggleToLight`].
     ThemeToggleToDark,
-    /// `aria-label` for the primary navigation `<nav>`. New — previously a
-    /// bare EN literal `"Primary"` with no language branching.
+    /// `aria-label` for the primary navigation `<nav>`. New.
     NavPrimaryLabel,
     /// The language row's label in the header menu panel ("Sprache"), and the
     /// prefix of [`language_current_text`].
@@ -104,28 +101,22 @@ pub enum ChromeMsg {
     /// The visually hidden end of the panel form's appearance name, after
     /// " – " ("umschalten"), so the name starts with the visible label.
     ThemeSwitchSuffix,
-    /// The per-project footer attribution sentence (`p.footer__attr`). New —
-    /// previously a bare EN literal split across a `<strong>DaSCH</strong>`
-    /// mid-sentence fragment. Flattened to a single sentence with "DaSCH" as
-    /// a plain proper noun (no `<strong>`) — see
-    /// `docs/plans/chrome-localization/translations-to-review.md` for why the
-    /// emphasis was dropped (its position varies by language, e.g. German
-    /// puts "des DaSCH" at the end).
+    /// The per-project footer attribution sentence (`p.footer__attr`). New. A
+    /// single sentence with "DaSCH" as a plain proper noun (no `<strong>`): the
+    /// position of an emphasis would vary by language, e.g. German puts
+    /// "des DaSCH" at the end.
     FooterAttribution,
     /// `aria-label` of the DaSCH lockup in the per-project footer: the org's
-    /// long name, unlike `DaschAriaLabel`'s bare "DaSCH". en/de are the
-    /// design's `ProjectFooter.dc.html` `STR.logoName`; fr/it keep the English
-    /// official name (drafts, see the Slice 9 `translations-to-review.md`).
+    /// long name, unlike `DaschAriaLabel`'s bare "DaSCH". fr/it keep the English
+    /// official name (drafts).
     FooterDaschLabel,
 
     // ── `component/breadcrumb.rs` ──────────────────────────────────────────
-    /// `aria-label` for the resource-detail breadcrumb `<nav>`. New —
-    /// previously a bare EN literal `"Breadcrumb"` with no language branching.
+    /// `aria-label` for the resource-detail breadcrumb `<nav>`. New.
     BreadcrumbLabel,
     /// The phone back link's visually hidden prefix ("Back:"), before the
     /// parent crumb's label. It ends in a colon so that the label needs no
-    /// declension. fr/it are unreviewed drafts (see
-    /// `docs/plans/launch-gating-design/layout/translations-to-review.md`).
+    /// declension. fr/it are unreviewed drafts.
     CrumbBackPrefix,
 
     // ── `component/facet_panel.rs` ─────────────────────────────────────────
@@ -145,10 +136,9 @@ pub enum ChromeMsg {
 
     // ── `component/compound_viewer.rs` ─────────────────────────────────────
     /// Generic (non-class-aware) empty-state message for a compound with no
-    /// members. Pre-existing draft (was `compound_empty_state`). Since
-    /// empty-states-not-found plan step 7 (E5), the class-aware
+    /// members. Pre-existing draft. The class-aware
     /// `compound_no_members_text` is used whenever the compound's parent
-    /// Resource resolves; this variant is now reserved for the degrade path
+    /// Resource resolves; this variant is reserved for the degrade path
     /// where the parent's source id itself doesn't resolve (no class known
     /// to interpolate).
     CompoundEmptyState,
@@ -157,13 +147,12 @@ pub enum ChromeMsg {
     CompoundPrevLabel,
     /// Next-control accessible name ("Next"). See [`ChromeMsg::CompoundPrevLabel`].
     CompoundNextLabel,
-    /// Static `aria-label` for the CV-2 contents-rail `<nav>` ("Contents").
+    /// Static `aria-label` for the compound viewer's contents-rail `<nav>` ("Contents").
     /// Pre-existing draft (was `compound_contents_label`).
     CompoundContentsLabel,
     /// Static `aria-label` of the `pages` reader's pager row
     /// (`nav.pg.pg--reader`, "Turn pages"). The `contents` layout keeps
-    /// [`compound_nav_label`]'s count-bearing label. FR/IT drafts — see
-    /// `docs/plans/incunabula-book-page/translations-to-review.md`.
+    /// `compound_nav_label`'s count-bearing label. FR/IT drafts.
     CompoundPagerLabel,
     /// The `pages` reader head's eyebrow suffix for a member with no label
     /// ("no label", as in `PAGE · NO LABEL`). FR/IT drafts — see
@@ -195,7 +184,7 @@ pub enum ChromeMsg {
     /// An unparsed run between two gatherings ("Other"): its mark and name.
     PickerOther,
     /// The `pages` reader's stale-address line, before the `?page=` value
-    /// ("The address names no page of this book:"; design-doc §4.4). FR/IT
+    /// ("The address names no page of this book:"). FR/IT
     /// drafts — see [`ChromeMsg::CompoundPagerLabel`].
     CompoundStaleAddress,
 
@@ -206,9 +195,7 @@ pub enum ChromeMsg {
     /// Boolean-value "No" label. See [`ChromeMsg::BoolYes`].
     BoolNo,
     /// Date precision word for a day-precise single date (`span.prec`, only
-    /// when `site { date-precision-word #true }` — Incunabula Slice 8,
-    /// decision 4). New; fr/it drafts — see
-    /// `docs/plans/incunabula-slice-8-ordering-dates-copy/translations-to-review.md`.
+    /// when `site { date-precision-word #true }`). New; fr/it drafts.
     DatePrecDay,
     /// Date precision word for a month-precise single date. See
     /// [`ChromeMsg::DatePrecDay`].
@@ -217,12 +204,12 @@ pub enum ChromeMsg {
     /// [`ChromeMsg::DatePrecDay`].
     DatePrecYear,
     /// Date precision word for a range (`ir::date_is_range` — there is no
-    /// stored `range` precision, decision 2). See [`ChromeMsg::DatePrecDay`].
+    /// stored `range` precision). See [`ChromeMsg::DatePrecDay`].
     DatePrecRange,
     /// Calendar word appended (` · gregorianisch`) after the precision word
     /// when a date's `calendar` is Gregorian and its precision is not year
     /// (`component::values::calendar_word`). Julian is the unmarked case and
-    /// has no word (decision 5, owner). See [`ChromeMsg::DatePrecDay`].
+    /// has no word. See [`ChromeMsg::DatePrecDay`].
     CalendarGregorian,
     /// Carousel prev-control accessible name ("Previous image"). Pre-existing
     /// draft (was one half of `carousel_control_labels`).
@@ -233,9 +220,8 @@ pub enum ChromeMsg {
     /// `aria-label` for the carousel `<nav>` element. Pre-existing draft (was
     /// `carousel_nav_label`).
     CarouselNavLabel,
-    /// `aria-label` for the media plate's `.pg` pager `<nav>` (embedded-media
-    /// plan step 6c). fr/it are fresh drafts pending native-speaker review
-    /// (see `docs/plans/embedded-media/translations-to-review.md`).
+    /// `aria-label` for the media plate's `.pg` pager `<nav>`. fr/it are fresh
+    /// drafts pending native-speaker review.
     PlatePagerNavLabel,
     /// Prev-control accessible name on the media plate's `.pg` pager
     /// ("Previous image"). See [`ChromeMsg::PlatePagerNavLabel`].
@@ -257,12 +243,8 @@ pub enum ChromeMsg {
     /// Placeholder text for an unresolved list value. Pre-existing draft (was
     /// `unresolved_list_placeholder`).
     UnresolvedListPlaceholder,
-    /// Image-placeholder `<figure aria-label>` on the E4 absent-plate stage
-    /// ("Image unavailable"). Pre-existing draft; promoted to a plain
-    /// variant (was the sole surviving element of the retired
-    /// `image_placeholder_strings` tuple helper — the other three elements
-    /// were deleted along with `.figure__note` when the absent plate (E4)
-    /// replaced it).
+    /// Image-placeholder `<figure aria-label>` on the absent-plate stage
+    /// ("Image unavailable"). Pre-existing draft.
     ImagePlaceholderAriaLabel,
 
     // ── `component/resource_list.rs` ───────────────────────────────────────
@@ -270,7 +252,7 @@ pub enum ChromeMsg {
     /// `pager_nav_label`).
     PagerNavLabel,
 
-    // ── bin `router.rs` — site index ───────────────────────────────────────
+    // ── `dsp-incubator cpe/bin/src/router.rs` — site index ───────────────────────────────────────
     /// `aria-label` on the site-index brand link ("CPE — site index"). New.
     SiteIndexAriaLabel,
     /// `aria-label`/`alt` for the DaSCH logo lockup in the site-index footer.
@@ -285,9 +267,7 @@ pub enum ChromeMsg {
     /// Per-project "Enter" call-to-action. New.
     SiteIndexEnterCta,
     /// Site-index footer tagline — the expansion of the "CPE" acronym
-    /// ("Configurable Presentation Environment"). New — flagged in the
-    /// review doc: the owner may prefer to keep the English expansion in
-    /// every language since the acronym itself ("CPE") stays untranslated.
+    /// ("Configurable Presentation Environment"). New.
     SiteIndexTagline,
     /// Site-index footer PoC description paragraph. New.
     SiteIndexPocDesc,
@@ -296,8 +276,7 @@ pub enum ChromeMsg {
 
     // ── `component/search_bar.rs` ───────────────────────────────────────────
     /// The search row's visible `<label>` text ("Search"). New — fr/it are
-    /// unreviewed drafts (see
-    /// `docs/plans/chrome-localization/translations-to-review.md`).
+    /// unreviewed drafts.
     SearchLabel,
     /// The search submit control's `title`/`aria-label` ("Search"/"Suchen" —
     /// distinct from [`ChromeMsg::SearchLabel`] in German, hence a separate
@@ -313,55 +292,53 @@ pub enum ChromeMsg {
 
     // ── `component/media.rs` — the plate access line ──────────────────────
     /// The plate's ACCESS line for a restricted (`limited-view`) image
-    /// (`.em-access`, embedded-media plan step 10). One source of truth for
+    /// (`.em-access`). One source of truth for
     /// the restricted-view sentence.
     RfAccessRestricted,
 
     // ── `component/media.rs` — the record viewer's zoom chrome ────────────
     /// `title`/`aria-label` on the viewer bar's "zoom in" chip
-    /// (`data-viewer-zoom="in"`, record-viewer plan step 4). New — fr/it are
+    /// (`data-viewer-zoom="in"`). New — fr/it are
     /// unreviewed drafts pending native-speaker review, per this catalog's
     /// usual provenance discipline (see the module doc comment above).
     RvZoomInLabel,
     /// `title`/`aria-label` on the viewer bar's "zoom out" chip
-    /// (`data-viewer-zoom="out"`, record-viewer plan step 5). New — fr/it
+    /// (`data-viewer-zoom="out"`). New — fr/it
     /// are unreviewed drafts pending native-speaker review.
     RvZoomOutLabel,
     /// `title`/`aria-label` on the viewer bar's "fit to view" chip
-    /// (`data-viewer-zoom="home"`, record-viewer plan step 5). New — fr/it
+    /// (`data-viewer-zoom="home"`). New — fr/it
     /// are unreviewed drafts pending native-speaker review.
     RvZoomHomeLabel,
     /// The quiet mono line shown in `.rv__bar` when the crate's
-    /// `viewer-error` event fires (AC8 — "not a dialog", record-viewer plan
-    /// step 5). Deliberately a translated, generic sentence, not the raw
+    /// `viewer-error` event fires ("not a dialog"). Deliberately a
+    /// translated, generic sentence, not the raw
     /// JS error text — see `VIEWER_ERROR_EXPR`'s doc comment in
     /// `component/media.rs`. New — fr/it are unreviewed drafts pending
     /// native-speaker review.
     RvViewerErrorLabel,
 
     // ── `component/media.rs` — the record viewer's drawers ────────────────
-    /// The bar's "Details" drawer toggle — mono label, deliberately no icon
-    /// per `icon-paths.md`'s control→glyph table ("Details toggle | none —
-    /// mono label only"), record-viewer plan step 6. Also doubles as the
+    /// The bar's "Details" drawer toggle — mono label, deliberately no icon.
+    /// Also doubles as the
     /// Details rail's own head label. New — fr/it are unreviewed drafts
     /// pending native-speaker review.
     RvDetailsToggleLabel,
-    /// The bar's "Adjust" drawer toggle (paired with [`Icon::Sliders`],
-    /// record-viewer plan step 6). Also doubles as the Adjust rail's own
+    /// The bar's "Adjust" drawer toggle (paired with `Icon::Sliders`).
+    /// Also doubles as the Adjust rail's own
     /// head label. New — fr/it are unreviewed drafts pending native-speaker
     /// review.
     RvAdjustToggleLabel,
     /// `title`/`aria-label` on the bar's WIDER toggle (icon-only, paired with
-    /// [`Icon::Maximize`]; `aria-pressed` conveys the pressed/expanded state
-    /// so the label itself stays constant — record-viewer plan step 7, AC9).
+    /// `Icon::Maximize`; `aria-pressed` conveys the pressed/expanded state
+    /// so the label itself stays constant).
     /// New — fr/it are unreviewed drafts pending native-speaker review.
     RvWiderToggleLabel,
-    /// `title`/`aria-label` on each rail's `x` close control (record-viewer
-    /// plan step 6). New — fr/it are unreviewed drafts pending
+    /// `title`/`aria-label` on each rail's `x` close control.
+    /// New — fr/it are unreviewed drafts pending
     /// native-speaker review.
     RvDrawerCloseLabel,
-    /// The Details drawer's DESCRIPTION row label (`RightsFields.prompt.md`'s
-    /// `variant="details"`, record-viewer plan step 6). New — fr/it are
+    /// The Details drawer's DESCRIPTION row label. New — fr/it are
     /// unreviewed drafts pending native-speaker review.
     RvFieldDescription,
     /// The Details drawer's ACCESS row label (restricted images only). See
@@ -377,12 +354,12 @@ pub enum ChromeMsg {
     /// [`ChromeMsg::RvFieldDescription`].
     RvFieldIiifSource,
     /// The Details drawer's ACCESS row prose — a longer restricted-view
-    /// explanation than the bar's rank-line [`ChromeMsg::RfAccessRestricted`]
-    /// (`RightsFields.prompt.md`: "ACCESS is prose, and only in `details`").
+    /// explanation than the bar's rank-line [`ChromeMsg::RfAccessRestricted`].
+    /// ACCESS is prose, and only in the Details drawer.
     /// New — fr/it are unreviewed drafts pending native-speaker review.
     RvAccessRestrictedLong,
-    /// The Adjust drawer's brightness row label (`AdjustPanel.prompt.md`,
-    /// record-viewer plan step 6 / R9). New — fr/it are unreviewed drafts
+    /// The Adjust drawer's brightness row label.
+    /// New — fr/it are unreviewed drafts
     /// pending native-speaker review.
     RvAdjustBrightness,
     /// The Adjust drawer's contrast row label. See
@@ -405,20 +382,17 @@ pub enum ChromeMsg {
     /// chip doesn't need a second, different label). See
     /// [`ChromeMsg::RvAdjustBrightness`].
     RvAdjustInvert,
-    /// The Adjust drawer's `RESET ALL` foot control
-    /// (`AdjustPanel.prompt.md`: "One `RESET ALL`, never a per-slider
-    /// reset"). New — fr/it are unreviewed drafts pending native-speaker
+    /// The Adjust drawer's `RESET ALL` foot control: one `RESET ALL`, never a
+    /// per-slider reset. New — fr/it are unreviewed drafts pending native-speaker
     /// review.
     RvAdjustResetLabel,
     /// The Adjust drawer's transient-looking note, read inside the scrolling
-    /// body after the seven rows it explains (`AdjustPanel.prompt.md` §"the
-    /// note reads inside the body AFTER the controls"). New — fr/it are
+    /// body after the seven rows it explains. New — fr/it are
     /// unreviewed drafts pending native-speaker review.
     RvAdjustNote,
 
     // ── `component/resource_detail.rs` — `.pgroup`, the host's own rights ──
-    /// `.pgroup__head`'s title (record-viewer plan step 9, AC4 —
-    /// `RightsFields.prompt.md`'s `variant="record"`). CSS applies
+    /// `.pgroup__head`'s title. CSS applies
     /// `text-transform: uppercase`, so the source string stays normal-case
     /// (matches every other `.rf`/label string in this catalog). New — fr/it
     /// are unreviewed drafts pending native-speaker review.
@@ -430,32 +404,28 @@ pub enum ChromeMsg {
     /// The `.pgroup` licence row label. See [`ChromeMsg::RvHostRightsTitle`].
     RvFieldLicense,
     /// The fallback `.pgroup__title` cap of a config-declared property group
-    /// (`resource-detail { group label="…" … }`, Incunabula Slice 3 / G8),
+    /// (`resource-detail { group label="…" … }`),
     /// used when the group's `label=` chrome id does not resolve for the
     /// current language (boot-flagged as `UnknownGroupLabel`). CSS applies
     /// `text-transform: uppercase`. New — fr/it are unreviewed drafts pending
     /// native-speaker review.
     PropertyGroupTitle,
     /// The empty sentence of a `resource-detail`'s `incoming-links` list
-    /// (Incunabula Slice 5 / G7) — the list resolved and nothing links to
+    /// — the list resolved and nothing links to
     /// this record. Engine voice: names neither the source nor the target
     /// class. New — fr/it are unreviewed drafts pending native-speaker
     /// review.
     IncomingLinksEmpty,
 
-    // ── `component/timeline.rs` — the timeline (Incunabula Slice 4) ───────
+    // ── `component/project/incunabula/timeline.rs` — the timeline ───────
     /// The key line below the timeline's lanes variant, explaining the bar
     /// grammar. Engine-owned (it describes the component's own visual
-    /// grammar, so a second project reusing the timeline inherits it). DE/EN
-    /// verbatim from the Incunabula mockup (`Incunabula.dc.html`); fr/it are
-    /// unreviewed drafts — see
-    /// `docs/plans/incunabula-slice-4-timeline/translations-to-review.md`.
+    /// grammar, so a second project reusing the timeline inherits it). fr/it are
+    /// unreviewed drafts.
     TimelineKey,
 
     // ── `component/project/incunabula/showcase.rs` — crop figures ────────
-    // Incunabula showcase handoff (Slice 7) `showcase-data.js` `S`; fr/it are
-    // unreviewed drafts, see
-    // `docs/plans/incunabula-slice-7-showcases/translations-to-review.md`.
+    // fr/it are unreviewed drafts.
     /// The hidden end of a crop link's accessible name, after the book and
     /// page ("— Seite öffnen").
     CaseOpenPage,
@@ -479,14 +449,12 @@ pub enum ChromeMsg {
 
     // ── `component/editorial.rs` — the page rail ──────────────────────────
     /// The page rail's visible caption ("Auf dieser Seite"), which also
-    /// names its `nav`. fr/it are unreviewed drafts (see
-    /// `docs/plans/launch-gating-design/layout/translations-to-review.md`).
+    /// names its `nav`. fr/it are unreviewed drafts.
     NarrativeRailLabel,
 
     // ── `component/resource_list.rs` — grid-mode view toggle ──────────────
-    /// The view-toggle's visible/accessible label ("View"). New — freshly
-    /// drafted for the grid-mode plan (decision 11); fr/it are unreviewed
-    /// drafts (see `docs/plans/grid-mode/translations-to-review.md`).
+    /// The view-toggle's visible/accessible label ("View"). New; fr/it are unreviewed
+    /// drafts.
     ViewLabel,
     /// The view-toggle's "List" option label. See [`ChromeMsg::ViewLabel`].
     ViewOptionList,
@@ -496,130 +464,112 @@ pub enum ChromeMsg {
     /// tile with no representation to show. See [`ChromeMsg::ViewLabel`].
     GridNoImage,
 
-    // ── empty-states-not-found plan (catalogue step) ───────────────────────
-    /// E1 — resource-list empty-class message ("This class contains no
-    /// resources."). New; italic `--ink-faint` per the handoff. See
-    /// `docs/design/empty-states/handoff/strings.md` `list.empty_class`.
+    // ── empty states and not-found pages ───────────────────────────────────
+    /// Resource-list empty-class message ("This class contains no
+    /// resources."). New; italic `--ink-faint`.
     ListEmptyClass,
-    /// E3a — facet-group empty-state fallback for a language that cannot
+    /// Facet-group empty-state fallback for a language that cannot
     /// grammatically inflect the `{group}` slot (German compounds — see
-    /// [`facet_empty_group_text`]). New. `strings.md`
-    /// `facet.empty_group_fallback`.
+    /// `facet_empty_group_text`). New.
     FacetEmptyGroupFallback,
-    /// E4 — "No image" mono mark, all three plate scales. Rendered uppercase
-    /// by CSS — keep the string lower-case. New. `strings.md`
-    /// `image.absent_label`.
+    /// Absent-image "No image" mono mark, all three plate scales. Rendered uppercase
+    /// by CSS — keep the string lower-case. New.
     ImageAbsentLabel,
-    /// E4 — figure-scale absent-image explanation ("This resource has no
-    /// representation in the archive."). New. `strings.md`
-    /// `image.absent_record`.
+    /// Figure-scale absent-image explanation ("This resource has no
+    /// representation in the archive."). New.
     ImageAbsentRecord,
-    /// E4 — dark-plate-scale absent-image explanation ("This plate could not
-    /// be resolved."). New. `strings.md` `image.absent_plate`.
+    /// Dark-plate-scale absent-image explanation ("This plate could not
+    /// be resolved."). New.
     ImageAbsentPlate,
-    /// E4 — plate legal-band caption substitute when no attribution exists
-    /// ("IIIF · not available"). New. `strings.md` `image.caption_absent`.
+    /// Absent-image plate legal-band caption substitute when no attribution exists
+    /// ("IIIF · not available"). New.
     ImageCaptionAbsent,
-    /// E2 — narrowed-to-zero "Clear all filters" action label. Distinct text
+    /// Narrowed-to-zero "Clear all filters" action label. Distinct text
     /// from [`ChromeMsg::FacetClearAllLabel`] ("Clear all") — the empty-state
     /// action has no adjacent "FILTERS" label to supply the missing noun, so
-    /// it spells "filters" out. New. `strings.md` `empty.clear_filters`.
+    /// it spells "filters" out. New.
     EmptyClearFilters,
-    /// E7 — the unresolved-link mark's mono text ("unresolved"). Rendered
-    /// uppercase by CSS — keep the string lower-case. New. `strings.md`
-    /// `value.unresolved`.
+    /// The unresolved-link mark's mono text ("unresolved"). Rendered
+    /// uppercase by CSS — keep the string lower-case. New.
     ValueUnresolved,
-    /// E7 — `title` attribute on the unresolved-link mark. New. `strings.md`
-    /// `value.unresolved_title`.
+    /// `title` attribute on the unresolved-link mark. New.
     ValueUnresolvedTitle,
-    /// N1/N2/N3 — the mono "404 — not found" mark. Rendered uppercase by
-    /// CSS; em dash. New. `strings.md` `nf.code`.
+    /// The mono "404 — not found" mark of every not-found page. Rendered uppercase by
+    /// CSS; em dash. New.
     NfCode,
-    /// N1 `<h1>` — "This page does not exist." New. `strings.md`
-    /// `nf.path_title`.
+    /// The unknown-path page's `<h1>` — "This page does not exist." New.
     NfPathTitle,
-    /// N1 body message. New. `strings.md` `nf.path_msg`.
+    /// The unknown-path page's body message. New.
     NfPathMsg,
-    /// N1 secondary line — "Or browse:", introducing at most three nav pages.
-    /// New. `strings.md` `nf.or_browse`.
+    /// The unknown-path page's secondary line — "Or browse:", introducing at most three nav pages.
+    /// New.
     NfOrBrowse,
-    /// N2 `<h1>` — "This address does not name a project." New. `strings.md`
-    /// `nf.site_title`.
+    /// The unknown-project page's `<h1>` — "This address does not name a project." New.
     NfSiteTitle,
-    /// N2 body message. New. `strings.md` `nf.site_msg`.
+    /// The unknown-project page's body message. New.
     NfSiteMsg,
-    /// N2's only invitation row — "All projects", linking to `/`. New.
-    /// `strings.md` `nf.all_projects`.
+    /// The unknown-project page's only invitation row — "All projects", linking to `/`. New.
     NfAllProjects,
-    /// N3 `<h1>` fallback, used where a language has no comfortable singular
+    /// The unknown-record page's `<h1>` fallback, used where a language has no comfortable singular
     /// for a configured class label, or the page's class is unset. New.
-    /// `strings.md` `nf.id_title_fallback`.
     NfIdTitleFallback,
-    /// N3 exit — "Project home". New. `strings.md` `nf.project_home`.
+    /// The unknown-record page's exit — "Project home". New.
     NfProjectHome,
-    /// N3 breadcrumb current-item label — "Not found". New. `strings.md`
-    /// `nf.crumb`.
+    /// The unknown-record page's breadcrumb current-item label — "Not found". New.
     NfCrumb,
 
-    // ── share-view plan — copy-link control ────────────────────────────────
+    // ── share view — copy-link control ─────────────────────────────────────
     /// The copy-link control's resting visible/accessible label ("Copy
-    /// link"), design-doc §8.4. New — fr/it are unreviewed drafts pending
-    /// native-speaker review (see
-    /// `docs/plans/share-view/translations-to-review.md`).
+    /// link"). New — fr/it are unreviewed drafts pending
+    /// native-speaker review.
     CopyLinkLabel,
     /// The copy-link control's 2.4s "copied" receipt label, replacing
-    /// [`ChromeMsg::CopyLinkLabel`] in place (design-doc §8.4 "Confirmation").
+    /// [`ChromeMsg::CopyLinkLabel`] in place.
     /// New — fr/it are unreviewed drafts pending native-speaker review.
     CopyLinkCopied,
     /// The `aria-live` announcement fired on a successful copy — distinct
-    /// from the visible [`ChromeMsg::CopyLinkCopied`] receipt (design-doc
-    /// "Strings" §, AT live status row). New — fr/it are unreviewed drafts,
+    /// from the visible [`ChromeMsg::CopyLinkCopied`] receipt. New — fr/it are unreviewed drafts,
     /// drafted (not migrated) in the same register as the EN/DE source
-    /// sentences; see
-    /// `docs/plans/share-view/translations-to-review.md`.
+    /// sentences.
     CopyLinkLive,
     /// The `title`/`aria-label` accessible-name **prefix** ("Copy link to
-    /// this view") — a later step appends ` — <state in words>` on browse
-    /// surfaces (design-doc "Strings" §, "Accessible-name prefix" row); this
+    /// this view") — the caller appends ` — <state in words>` on browse
+    /// surfaces; this
     /// variant is only the prefix string itself. New — fr/it are unreviewed
-    /// drafts, drafted in the same register as the EN/DE source sentences;
-    /// see `docs/plans/share-view/translations-to-review.md`.
+    /// drafts, drafted in the same register as the EN/DE source sentences.
     CopyLinkLongPrefix,
     /// The phone crumb row's short resting label ("Copy"). It must stay a
     /// substring of [`ChromeMsg::CopyLinkLongPrefix`], the control's
-    /// accessible name (WCAG 2.5.3). fr/it are unreviewed drafts (see
-    /// `docs/plans/launch-gating-design/layout/translations-to-review.md`).
+    /// accessible name (WCAG 2.5.3). fr/it are unreviewed drafts.
     CopyLinkShort,
 
-    // ── browse-controls plan — ordering control + pager ────────────────────
+    // ── browse controls — ordering control + pager ─────────────────────────
     /// The ordering control's visible/`aria-label` prefix ("Order:
-    /// <current>"), handoff §4 `order_label`. New — fr/it are unreviewed
-    /// drafts pending native-speaker review (see
-    /// `docs/plans/browse-controls/translations-to-review.md`).
+    /// `<current>`"). New — fr/it are unreviewed
+    /// drafts pending native-speaker review.
     OrderLabel,
     /// "As curated" row label — the page's configured order, wire value
-    /// `default`. Handoff §4 `order_curated`. New — fr/it unreviewed drafts.
+    /// `default`. New — fr/it unreviewed drafts.
     OrderCurated,
-    /// "Name A–Z" row label, wire value `name`. Handoff §4 `order_name_asc`.
+    /// "Name A–Z" row label, wire value `name`.
     /// New — de is identical to en; fr/it may differ and are unreviewed
     /// drafts.
     OrderNameAsc,
-    /// "Name Z–A" row label, wire value `name-desc`. Handoff §4
-    /// `order_name_desc`. New — de is identical to en; fr/it may differ and
-    /// are unreviewed drafts.
+    /// "Name Z–A" row label, wire value `name-desc`. New — de is identical to en; fr/it may differ
+    /// and are unreviewed drafts.
     OrderNameDesc,
-    /// "Identifier" row label, wire value `id`. Handoff §4 `order_id`. New —
+    /// "Identifier" row label, wire value `id`. New —
     /// fr/it unreviewed drafts.
     OrderId,
-    /// Pager inert/active "Previous" end label. Handoff §4 `pager_prev`.
+    /// Pager inert/active "Previous" end label.
     /// New — fr/it unreviewed drafts.
     PagerPrev,
-    /// Pager inert/active "Next" end label. Handoff §4 `pager_next`. New —
+    /// Pager inert/active "Next" end label. New —
     /// fr/it unreviewed drafts.
     PagerNext,
 
     // ── `component/annotation.rs` — the annotation register ───────────────
-    // Annotations design-doc §12; fr/it are unreviewed drafts.
+    // fr/it are unreviewed drafts.
     /// A rectangle annotation's shape word ("Rectangle").
     AnnoShapeRectangle,
     /// A polygon annotation's shape word ("Polygon").
@@ -655,15 +605,14 @@ pub enum ChromeMsg {
     ColourWhite,
 
     // ── `component/data_links.rs` — the crumb line's dataset panel ────────
-    // Backlinks design `CrumbLine.dc.html` `STR`; fr/it are unreviewed drafts.
+    // fr/it are unreviewed drafts.
     /// An annotation's role word in the panel ("Region").
     DataRegion,
     /// The panel's summary label ("Show in dataset").
     DataSummary,
     /// The summary's short label on the phone crumb row ("Dataset"). It must
     /// stay a substring of [`ChromeMsg::DataSummary`], which starts the
-    /// summary's accessible name (WCAG 2.5.3). fr/it are unreviewed drafts
-    /// (see `docs/plans/launch-gating-design/layout/translations-to-review.md`).
+    /// summary's accessible name (WCAG 2.5.3). fr/it are unreviewed drafts.
     DataSummaryShort,
     /// The open panel's group name ("In the dataset · DSP").
     DataCaption,
@@ -1768,13 +1717,11 @@ pub(crate) fn bool_labels(lang: &Lang) -> (&'static str, &'static str) {
     (ChromeMsg::BoolYes.text(lang), ChromeMsg::BoolNo.text(lang))
 }
 
-// ── Dates (Incunabula Slice 8, decision 3 review note) ─────────────────────
+// ── Dates ──────────────────────────────────────────────────────────────────
 //
 // The long form a date value composes from its ISO bounds when its curated
-// display string is written in ANOTHER language than the request's (the
-// mockup's `dateLabel`, `design/Incunabula.dc.html:590-600`). New; fr/it are
-// drafts — see
-// `docs/plans/incunabula-slice-8-ordering-dates-copy/translations-to-review.md`.
+// display string is written in ANOTHER language than the request's. New; fr/it are
+// drafts.
 
 /// The localized name of month `n` (1 = January … 12 = December), in the
 /// running-text case each language uses inside a date (`Februar`, `February`,
@@ -1860,8 +1807,7 @@ pub(crate) fn date_long_text(year: &str, month: &str, day: Option<u32>, lang: &L
     }
 }
 
-/// `(prev, next)` media-plate `.pg` pager control accessible names
-/// (embedded-media plan step 6c).
+/// `(prev, next)` media-plate `.pg` pager control accessible names.
 pub(crate) fn plate_pager_labels(lang: &Lang) -> (&'static str, &'static str) {
     (
         ChromeMsg::PlatePagerPrevLabel.text(lang),
@@ -1869,8 +1815,8 @@ pub(crate) fn plate_pager_labels(lang: &Lang) -> (&'static str, &'static str) {
     )
 }
 
-/// The record-viewer Details "plate i of n" identifier suffix (AC5,
-/// record-viewer plan step 8) — appended after an image's own id when its host
+/// The record-viewer Details "plate i of n" identifier suffix,
+/// appended after an image's own id when its host
 /// carries more than one image. `i` and `n` are 1-based / total. New — fr/it
 /// are unreviewed drafts pending native-speaker review.
 pub(crate) fn rv_plate_of(i: usize, n: usize, lang: &Lang) -> String {
@@ -1882,8 +1828,8 @@ pub(crate) fn rv_plate_of(i: usize, n: usize, lang: &Lang) -> String {
     }
 }
 
-/// The browse pager's "Page {n} of {N}" position text (browse-controls plan
-/// decision 8) — used both in the nav `aria-label` (always) and, at `last >=
+/// The browse pager's "Page {n} of {N}" position text,
+/// used both in the nav `aria-label` (always) and, at `last >=
 /// 9`, as the visible `.pager__of` replacement for numbered links. fr/it are
 /// unreviewed drafts pending native-speaker review.
 pub(crate) fn pager_page_of(page: usize, last: usize, lang: &Lang) -> String {
@@ -1896,7 +1842,7 @@ pub(crate) fn pager_page_of(page: usize, last: usize, lang: &Lang) -> String {
 }
 
 /// The browse pager's per-number `aria-label` ("Page {n}") for each
-/// `.pager__num` link (browse-controls plan decision 8). fr/it are
+/// `.pager__num` link. fr/it are
 /// unreviewed drafts pending native-speaker review.
 pub(crate) fn pager_page_n(page: usize, lang: &Lang) -> String {
     match lang.as_str() {
@@ -1952,9 +1898,8 @@ pub(crate) fn plural_category(n: usize, lang: &Lang) -> PluralCategory {
 /// ASCII U+0027 and a hand-typed space on U+0020, both of which render as the
 /// wrong glyph while still reading "right" in source.
 ///
-/// The `de`/`it` choice is the **Swiss** convention and a deliberate
-/// divergence from DESIGN.md §4.4's own mockup example (`8.942`) — owner
-/// decision, 2026-09-16 (plan assumption A13).
+/// The `de`/`it` choice is the **Swiss** convention, a deliberate
+/// choice over `8.942`.
 ///
 /// No CLDR/ICU dependency, mirroring [`plural_category`]'s same deliberate
 /// choice.
@@ -1963,7 +1908,7 @@ pub(crate) fn plural_category(n: usize, lang: &Lang) -> PluralCategory {
 /// [`count_resources_text`] / [`count_of_text`] and nowhere else. It is
 /// deliberately NOT applied to [`pager_page_of`] / [`pager_page_n`] ("Seite 1
 /// von 373"), [`rv_plate_of`], [`index_count_text`], or the facet-panel's
-/// `span.facet-option__count`: the mockup specifies grouping in the count line
+/// `span.facet-option__count`: grouping belongs to the count line
 /// and nowhere else, and no shipped project reaches four digits in those
 /// places. Do not "finish the job" by spreading it.
 pub(crate) fn group_thousands(n: usize, lang: &Lang) -> String {
@@ -2095,8 +2040,7 @@ fn dative_plural_de(noun: &str) -> Cow<'_, str> {
 /// (the narrowed count), in all four languages: "1 von 8’942 Aufführungen",
 /// never "1 von 8’942 Aufführung". That is why this fn takes only
 /// `noun_other`; `m >= 2` whenever this form renders in practice (the caller
-/// only reaches it when `m != total`). The earlier "**Not a plural case**"
-/// note this comment replaces became false when the noun arrived.
+/// only reaches it when `m != total`).
 ///
 /// The `"de"` arm additionally case-inflects `noun_other` to the dative via
 /// [`dative_plural_de`] — `von` governs the dative, which German's regular
@@ -2135,8 +2079,8 @@ pub fn count_of_text(total: usize, m: usize, noun_other: &str, plural_declared: 
     }
 }
 
-/// The `incoming-links` capped-list count line (item 6, Backlog hardening
-/// batch 3): `render_incoming_links` appends this after the `ul` only when
+/// The `incoming-links` capped-list count line:
+/// `render_incoming_links` appends this after the `ul` only when
 /// the spec's `limit` actually cut rows (`rows.len() < total`). Noun-free
 /// (no article/plural agreement needed — `shown`/`total` are bare numbers),
 /// so unlike [`count_of_text`] there is no `plural_declared`/noun parameter.
@@ -2156,14 +2100,13 @@ pub(crate) fn incoming_links_shown_text(shown: usize, total: usize, lang: &Lang)
 
 /// Wrap `q` in the language's own quote-mark pair, for the "Copy link"
 /// share control's state-bearing accessible-name suffix on browse surfaces
-/// (share-view plan step 5 — design doc "Strings": `"3 of 54 · Supporting ·
+/// (for example `"3 of 54 · Supporting ·
 /// Fantasy · “hat”"`). Plain text, never [`Markup`] — this string is
 /// embedded verbatim into an HTML `title`/`aria-label` attribute (Maud
 /// escapes the whole attribute value at the call site), not into the page
 /// body, so it intentionally uses the *typographic* quote pair for every
 /// language (EN “ ” included) rather than
-/// [`narrowed_to_zero_text`]'s DE „…" quirk (that one is copied verbatim
-/// from the search-bar design doc's literal body-copy text and is not a
+/// [`narrowed_to_zero_text`]'s DE „…" quirk (that one is fixed body copy and is not a
 /// general DE-quoting convention to reuse here).
 #[doc(hidden)]
 pub fn localized_quote(q: &str, lang: &Lang) -> String {
@@ -2189,7 +2132,7 @@ pub fn language_current_text(endonym: &str, lang: &Lang) -> String {
 
 /// Localized `aria-label` for the facet filter chip's remove control:
 /// "Remove filter: {label}". Parameterized (not plural). Pre-existing draft,
-/// migrated verbatim (was `remove_filter_label`).
+/// migrated verbatim.
 pub(crate) fn remove_filter_label(lang: &Lang, label: &str) -> String {
     match lang.as_str() {
         "de" => format!("Filter entfernen: {label}"),
@@ -2564,9 +2507,9 @@ pub(crate) fn compound_contents_cap(total: usize, lang: &Lang) -> String {
 /// group total. Callers must not invoke this with `n == 0`: at a remainder of
 /// zero the disclosure is not rendered at all (never "Show 0 more").
 ///
-/// Count-inflected in all four builtin languages, deliberately. The mockup's
-/// own wording ("N weitere anzeigen" / "Show N more") has **no noun**, so its
-/// `One` and `Other` arms would be byte-identical apart from the numeral and a
+/// Count-inflected in all four builtin languages, deliberately. A wording
+/// without a noun ("N weitere anzeigen" / "Show N more") would make the
+/// `One` and `Other` arms byte-identical apart from the numeral, and a
 /// singular test could not fail. Naming the thing counted ("option(s)" /
 /// "Option(en)" / "opzione"/"opzioni") makes the singular arm genuinely
 /// observable, at the cost of one extra word. The noun is "option", not
@@ -2592,38 +2535,34 @@ pub(crate) fn facet_group_remainder_text(n: usize, lang: &Lang) -> String {
 }
 
 /// Localized "narrowed to zero" message for a resource-list's empty state, as
-/// ready-to-embed [`Markup`] — E2's formatter, generalized from the old
-/// two-template `search_no_match_text` (search-bar plan) to a third
-/// (`query.is_none() && filters_active`) branch covering
-/// `strings.md`'s `empty.filters` key. `noun` is a pre-resolved, already
+/// ready-to-embed [`Markup`]. Its third
+/// (`query.is_none() && filters_active`) branch covers
+/// facet-only narrowing. `noun` is a pre-resolved, already
 /// localized **plural** class noun (e.g. "characters"/"Figuren"; passed
 /// through verbatim, NOT cased or pluralized here). `query` is `Some(q)` when
 /// a search query is active (`q` is the literal raw search string) and `None`
 /// otherwise; `filters_active` is `true` when at least one facet is
 /// currently selected. Callers must only invoke this when `query.is_some() ||
-/// filters_active` — the empty-class case (E1, neither active) has its own
+/// filters_active` — the empty-class case (neither active) has its own
 /// message ([`ChromeMsg::ListEmptyClass`]).
 ///
 /// Three templates:
-/// - `query.is_some() && !filters_active` → `empty.query` ("No {noun} match {q}.")
-/// - `query.is_none() && filters_active` → `empty.filters` ("No {noun} match these filters.") — no
-///   `<em>`, no query to escape.
-/// - `query.is_some() && filters_active` → `empty.query_filters` ("No {noun} match {q} with these
-///   filters.")
+/// - `query.is_some() && !filters_active` → ("No {noun} match {q}.")
+/// - `query.is_none() && filters_active` → ("No {noun} match these filters.") — no `<em>`, no query
+///   to escape.
+/// - `query.is_some() && filters_active` → ("No {noun} match {q} with these filters.")
 ///
-/// **The query renders inside `<em>`, quote marks and all** (design-doc §3
-/// "Active, no matches" / §5.1's `.search-empty__msg em` rule). `noun` and
+/// **The query renders inside `<em>`, quote marks and all** (the
+/// `.search-empty__msg em` rule styles it). `noun` and
 /// `query` are interpolated via Maud's own `(expr)` auto-escaping inside the
 /// `html!` call below — never `PreEscaped`/`format!` — so a
 /// `"`/`<script>`-bearing query still renders HTML-escaped, safely nested
 /// inside the `<em>`.
 ///
 /// The DE query templates intentionally use the German low-quote `„` …
-/// straight `"` pair (not curly `“ … ”`) — copied verbatim from the design
-/// doc's literal text (`docs/design/search-bar/design-doc.md` §4); do not
-/// "fix" it. The new filters-only branch has no query to quote. New — fr/it
-/// are unreviewed drafts (see
-/// `docs/plans/empty-states-not-found/translations-to-review.md`).
+/// straight `"` pair (not curly `“ … ”`); do not
+/// "fix" it. The filters-only branch has no query to quote. New — fr/it
+/// are unreviewed drafts.
 #[doc(hidden)]
 pub fn narrowed_to_zero_text(noun: &str, query: Option<&str>, filters_active: bool, lang: &Lang) -> Markup {
     match (lang.as_str(), query, filters_active) {
@@ -2705,7 +2644,7 @@ pub fn narrowed_to_zero_text(noun: &str, query: Option<&str>, filters_active: bo
         },
         // Neither active — not a valid call per the doc contract above.
         // Per this codebase's convention (panic on a named-invariant
-        // violation, see `docs/dev/coding-conventions.md`), callers must
+        // violation, see `dsp-incubator cpe/docs/dev/coding-conventions.md`), callers must
         // gate on query/filters activity before calling this function;
         // silently degrading to a filters-only template would mask a caller
         // bug instead of surfacing it.
@@ -2718,7 +2657,7 @@ pub fn narrowed_to_zero_text(noun: &str, query: Option<&str>, filters_active: bo
     }
 }
 
-/// E3a — localized "no {group} recorded" empty message for a facet group
+/// Localized "no {group} recorded" empty message for a facet group
 /// with no options, as plain text (interpolated by the caller's `(expr)` —
 /// no inline markup needed). `group` is the pre-resolved, already localized
 /// facet-group label, lower-cased (e.g. "themes").
@@ -2727,8 +2666,8 @@ pub fn narrowed_to_zero_text(noun: &str, query: Option<&str>, filters_active: bo
 /// German compounds (e.g. "Themenklasse") don't fit this sentence shape
 /// grammatically; see [`ChromeMsg::FacetEmptyGroupFallback`]
 /// ("Für diese Klasse sind keine Werte erfasst."). New — fr/it are drafts.
-/// Consumed by `facet_panel::render_facet_panel`'s per-group empty (E3a)
-/// branch (empty-states-not-found plan step 4), which lower-cases the
+/// Consumed by `facet_panel::render_facet_panel`'s per-group empty
+/// branch, which lower-cases the
 /// group's resolved label before passing it here.
 pub(crate) fn facet_empty_group_text(group: &str, lang: &Lang) -> String {
     match lang.as_str() {
@@ -2739,16 +2678,13 @@ pub(crate) fn facet_empty_group_text(group: &str, lang: &Lang) -> String {
     }
 }
 
-/// E5 — localized "no parts recorded" empty message for a compound with no
+/// Localized "no parts recorded" empty message for a compound with no
 /// members, as plain text. `class_singular` is the pre-resolved, already
-/// localized **singular** class label (`strings.md`'s `compound.no_members`
-/// table row spells its slot `{class}`, but the sentence shape ("for this
-/// {class}") is grammatically singular — treated as a `{class_singular}`
-/// slot here; flagged as an open question for the owner in
-/// `translations-to-review.md`). New — fr/it are drafts.
+/// localized **singular** class label (the sentence shape, "for this
+/// {class}", is grammatically singular). New — fr/it are drafts.
 ///
 /// Consumed by `compound_viewer::render_compound_viewer`'s empty branch
-/// (empty-states-not-found plan step 7) when the compound's parent Resource
+/// when the compound's parent Resource
 /// resolves; `class_singular` is `resolve_class_label`'s output for the
 /// parent's class. When the parent itself doesn't resolve, the renderer
 /// falls back to the non-class-aware [`ChromeMsg::CompoundEmptyState`]
@@ -2759,10 +2695,8 @@ pub(crate) fn compound_no_members_text(class_singular: &str, lang: &Lang) -> Str
         // `enregistrement` m. / `record` m.) and carry the class noun after
         // "der Kategorie" / "de la catégorie" / "della categoria", so no
         // sentence has to agree in gender with an interpolated class label it
-        // knows nothing about. The earlier wording ("dieses {X}" / "pas de
-        // {X}") was hardcoded neuter resp. required elision — see
-        // `nf_id_title_text`'s doc comment for the same defect on "kein
-        // Figur"/"pas de Image". EN needs no such anchor and is unchanged.
+        // knows nothing about ("dieses {X}" would be hardcoded neuter, "pas de
+        // {X}" would need elision). EN needs no such anchor.
         "de" => format!("Für diesen Eintrag der Kategorie {class_singular} sind keine Teile erfasst."),
         "fr" => format!("Aucune partie n'est répertoriée pour cet enregistrement de la catégorie {class_singular}."),
         "it" => format!("Nessuna parte è registrata per questo record della categoria {class_singular}."),
@@ -2770,11 +2704,10 @@ pub(crate) fn compound_no_members_text(class_singular: &str, lang: &Lang) -> Str
     }
 }
 
-/// E6 — count-aware "N projects" text for the site-index head device.
-/// Mirrors [`count_resources_text`]'s shape (see [`plural_category`]) but
-/// with the "projects" noun; the handoff's "· M available" segment is
-/// intentionally omitted (no data source — see the plan's current-state
-/// deltas). New.
+/// Count-aware "N projects" text for the site-index head device.
+/// Mirrors [`count_resources_text`]'s shape (see `plural_category`) but
+/// with the "projects" noun; it has no "· M available" segment
+/// (no data source). New.
 pub fn index_count_text(n: usize, lang: &Lang) -> String {
     match (lang.as_str(), plural_category(n, lang)) {
         ("de", PluralCategory::One) => format!("{n} Projekt"),
@@ -2788,7 +2721,7 @@ pub fn index_count_text(n: usize, lang: &Lang) -> String {
     }
 }
 
-/// N1 — "{project} — project home" invitation-row text. `project` is the
+/// The unknown-path page's "{project} — project home" invitation-row text. `project` is the
 /// project's title, as the header renders it. New.
 pub(crate) fn nf_home_text(project: &str, lang: &Lang) -> String {
     match lang.as_str() {
@@ -2799,8 +2732,8 @@ pub(crate) fn nf_home_text(project: &str, lang: &Lang) -> String {
     }
 }
 
-/// N3 `<h1>` — "There is no {class_singular} at this address." `class_singular`
-/// is the pre-resolved, already localized singular class label. Callers
+/// The unknown-record page's `<h1>` — "There is no {class_singular} at this address."
+/// `class_singular` is the pre-resolved, already localized singular class label. Callers
 /// unable to supply a comfortable singular for the language (or with no
 /// class at all) use [`ChromeMsg::NfIdTitleFallback`] instead. New.
 pub(crate) fn nf_id_title_text(class_singular: &str, lang: &Lang) -> String {
@@ -2809,10 +2742,9 @@ pub(crate) fn nf_id_title_text(class_singular: &str, lang: &Lang) -> String {
         // `enregistrement` m. / `record` m.) and carry the class noun after
         // "der Kategorie" / "de la catégorie" / "della categoria", so neither
         // sentence has to agree in gender with an interpolated class label it
-        // knows nothing about. DE/IT moved onto this anchor in the backlog
-        // quick-wins batch; FR followed in batch 3 (its "pas de {X}" would
-        // have needed elision before a vowel-initial label, e.g. "pas de
-        // Image"). EN needs no such anchor and is unchanged.
+        // knows nothing about (French "pas de {X}" would
+        // need elision before a vowel-initial label, e.g. "pas de
+        // Image"). EN needs no such anchor.
         "de" => {
             format!("Unter dieser Adresse gibt es keinen Eintrag der Kategorie {class_singular}.")
         }
@@ -2826,7 +2758,7 @@ pub(crate) fn nf_id_title_text(class_singular: &str, lang: &Lang) -> String {
     }
 }
 
-/// N3 body message, count-neutral, parameterized by the singular class
+/// The unknown-record page's body message, count-neutral, parameterized by the singular class
 /// label. New.
 pub(crate) fn nf_id_msg_text(class_singular: &str, lang: &Lang) -> String {
     match lang.as_str() {
@@ -2853,7 +2785,7 @@ pub(crate) fn nf_id_msg_text(class_singular: &str, lang: &Lang) -> String {
     }
 }
 
-/// N3 exit — "Browse all {class}", `class` being the pre-resolved, already
+/// The unknown-record page's exit — "Browse all {class}", `class` being the pre-resolved, already
 /// localized **plural** class label (never singular — "Browse all
 /// characters", not "Browse all character"). New.
 pub(crate) fn nf_browse_all_text(class_plural: &str, lang: &Lang) -> String {
@@ -2865,13 +2797,12 @@ pub(crate) fn nf_browse_all_text(class_plural: &str, lang: &Lang) -> String {
     }
 }
 
-// ── Timeline (Incunabula Slice 4) ──────────────────────────────────────────────
+// ── Timeline ──────────────────────────────────────────────
 //
 // Built from `L4` TEMPLATES, not a `match lang.as_str()` with a `_` catch-all:
 // the struct literal makes a missing language a compile error, which a string
 // match can never do. Each template is picked with `L4::pick` and its
-// placeholder (`{n}` / `{year}`) substituted. fr/it are unreviewed drafts — see
-// `docs/plans/incunabula-slice-4-timeline/translations-to-review.md`.
+// placeholder (`{n}` / `{year}`) substituted. fr/it are unreviewed drafts.
 
 /// The singular (`PluralCategory::One`) arm of [`timeline_extent_text`].
 const TIMELINE_EXTENT_ONE: L4 = L4 {
@@ -2906,11 +2837,6 @@ const TIMELINE_DECADE_LABEL: L4 = L4 {
 /// helper may panic on — has no `usize` form and takes the `Other` arm. The
 /// number is **not** grouped into thousands: a page count is small, and
 /// [`group_thousands`] is scoped to the browse count line.
-///
-/// No `expect(dead_code)` of its own: once the timeline module's
-/// `marker_label` (itself under that module's `expect(dead_code, …)`) called
-/// it, rustc stopped reporting it dead and an own `expect` went unfulfilled
-/// (Slice 4 step 3).
 pub(crate) fn timeline_extent_text(n: i64, lang: &Lang) -> String {
     let category = usize::try_from(n).map_or(PluralCategory::Other, |u| plural_category(u, lang));
     let template = match category {
@@ -2922,24 +2848,17 @@ pub(crate) fn timeline_extent_text(n: i64, lang: &Lang) -> String {
 
 /// The decades variant's decade label: DE `1470er`, EN `1470s`.
 ///
-/// A deliberate deviation from the mockup, which emits `"1470er"` in both
-/// languages (`d + "er"`): localizing follows HdM's `decade` list nodes
+/// Both languages get their own form; EN does not reuse the German
+/// `"1470er"`. Localizing follows HdM's `decade` list nodes
 /// (DE `1760er` / EN `1760s`) and the rule that an EN visitor never reads
 /// German.
-///
-/// No `expect(dead_code)` of its own: once the timeline module's decades
-/// markup (itself under that module's `expect(dead_code, …)`) called it,
-/// rustc stopped reporting it dead and an own `expect` went unfulfilled —
-/// same shape as [`timeline_extent_text`] above (Slice 4 step 5).
 pub(crate) fn timeline_decade_label(start_year: i32, lang: &Lang) -> String {
     TIMELINE_DECADE_LABEL.pick(lang).replace("{year}", &start_year.to_string())
 }
 
-// ── Showcase crop figures (Incunabula Slice 7) ────────────────────────────────
+// ── Showcase crop figures ────────────────────────────────
 //
-// `L4` templates like the timeline's above. de/en from the handoff's
-// `showcase-data.js`; fr/it are unreviewed drafts, see
-// `docs/plans/incunabula-slice-7-showcases/translations-to-review.md`.
+// `L4` templates like the timeline's above. fr/it are unreviewed drafts.
 
 const CASE_IMPRESSIONS_ONE: L4 = L4 {
     en: "{n} impression",
@@ -3110,7 +3029,7 @@ mod tests {
         cpe_core::lang::resolve(&[code.to_owned()], &site)
     }
 
-    // ── month_name / date_long_text (Incunabula Slice 8 step 2) ─────────────
+    // ── month_name / date_long_text ─────────────
 
     #[test]
     fn month_name_covers_twelve_months_in_four_languages() {
@@ -3139,7 +3058,7 @@ mod tests {
         assert_eq!(date_long_text("1491", "Februar", None, &lang("de")), "Februar 1491");
     }
 
-    // ── Timeline (Incunabula Slice 4 step 2) ────────────────────────────────
+    // ── Timeline ────────────────────────────────
 
     #[test]
     fn timeline_key_in_four_languages() {
@@ -3471,7 +3390,7 @@ mod tests {
         assert_eq!(count_resources_text(2, "record", "record", &lang("it")), "2 record");
     }
 
-    /// The count itself is grouped (A12.1 / A13).
+    /// The count itself is grouped.
     #[test]
     fn count_resources_text_groups_thousands() {
         assert_eq!(
@@ -3687,8 +3606,8 @@ mod tests {
 
     #[test]
     fn narrowed_to_zero_text_query_only_across_langs() {
-        // The query (with its quote marks) renders inside `<em>` — design-doc
-        // §3/§5.1's `.search-empty__msg em` rule.
+        // The query (with its quote marks) renders inside `<em>` — the
+        // `.search-empty__msg em` rule styles it.
         assert_eq!(
             narrowed_to_zero_text("characters", Some("xyzzy"), false, &lang("en")).into_string(),
             "No characters match <em>&quot;xyzzy&quot;</em>."
@@ -3727,7 +3646,7 @@ mod tests {
         );
     }
 
-    /// E2 new branch — `empty.filters` (facet-only narrowing, no active
+    /// Facet-only narrowing (no active
     /// query, no `<em>` to escape).
     #[test]
     fn narrowed_to_zero_text_filters_only_across_langs() {
@@ -3848,7 +3767,7 @@ mod tests {
         assert_eq!(index_count_text(2, &lang("it")), "2 progetti");
     }
 
-    // ── N1/N2/N3 parameterized helpers ───────────────────────────────────────
+    // ── not-found page parameterized helpers ───────────────────────────────────────
 
     #[test]
     fn nf_home_text_interpolates_project_per_lang() {
@@ -3879,7 +3798,7 @@ mod tests {
         assert_eq!(
             nf_id_title_text("Figur", &lang("de")),
             // Genderless: the article agrees with `Eintrag`, not with the
-            // interpolated class noun (which was "kein Figur" before).
+            // interpolated class noun (not "kein Figur").
             "Unter dieser Adresse gibt es keinen Eintrag der Kategorie Figur."
         );
         assert_eq!(
@@ -3891,7 +3810,7 @@ mod tests {
             "A questo indirizzo non esiste alcun record della categoria personaggio."
         );
         // Guards against "pas de Image" recurring: with the anchor noun
-        // taking the article, a vowel-initial class label no longer needs
+        // taking the article, a vowel-initial class label needs no
         // elision.
         assert!(nf_id_title_text("image", &lang("fr")).contains("de la catégorie image"));
     }
@@ -4055,7 +3974,7 @@ mod tests {
         }
     }
 
-    // ── browse-controls plan — ordering control + pager strings ─────────────
+    // ── browse controls — ordering control + pager strings ─────────────
 
     #[test]
     fn order_label_text_per_lang() {

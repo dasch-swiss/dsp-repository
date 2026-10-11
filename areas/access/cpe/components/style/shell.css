@@ -43,7 +43,7 @@ body {
 /* Off-screen but present in the accessibility tree — NOT display:none (which
    removes an element from the tree entirely). Standard clip-rect idiom. Used
    for the page <h1> injected on pages with no visible heading of their own
-   (see page_heading / page_has_visible_h1 in web/src/page.rs). */
+   (see page_heading / page_has_visible_h1 in dsp-incubator cpe/web/src/page.rs). */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -57,7 +57,7 @@ body {
 }
 
 /* Skip-to-content link — the first child of <body> on every full-page
-   renderer (render_page, N1, site_index, N2). Off-screen via
+   renderer (render_page, the unknown-path page, site_index, the unknown-project page). Off-screen via
    the same clip-rect idiom as .visually-hidden while unfocused; on :focus it
    becomes a normal fixed-positioned, visible element pinned to the top-left
    of the viewport so a keyboard user sees exactly where it landed. */
@@ -140,13 +140,13 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
    popover="auto" holding the nav and #header-controls). From 79rem
    #header-menu is restyled in flow as the desk row and the burger hides;
    below it the burger opens #header-menu as a panel under the row.
-   ⚠️ 79rem is `HEADER_DESK_BREAKPOINT_PX` (core/src/markup_contract.rs),
+   ⚠️ 79rem is `HEADER_DESK_BREAKPOINT_PX` (areas/access/cpe/core/src/markup_contract.rs),
    which the resize-hide on #header-menu and the boot budget
-   (core/src/validate/header_budget.rs) are built from. The two media
+   (areas/access/cpe/core/src/validate/header_budget.rs) are built from. The two media
    queries below spell it as a literal, and a test pins them to the
    constant: change the constant and both queries together.
    Every desk and panel rule is scoped under #header-menu or
-   .header__menu-btn, so the site index and N2 (chip + appearance only)
+   .header__menu-btn, so the site index and the unknown-project page (chip + appearance only)
    keep only the row, brand and .theme-toggle rules. */
 .shell__header {
   border-bottom: var(--rule-weight) solid var(--rule);
@@ -172,7 +172,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 
 /* CPE wordmark — CPE looks like itself, not DaSCH */
 /* Baseline within the brand: the small CPE chip sits on the project name's
-   text baseline (the design's lockup), not floating centered against its
+   text baseline, not floating centered against its
    line-box. The outer .header__inner centers the brand as a block. */
 .brand {
   display: flex;
@@ -209,7 +209,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 }
 .brand__sep { color: var(--ink-faint); font-weight: 300; }
 
-/* header utilities group: the site index's and N2's appearance box */
+/* header utilities group: the site index's and the unknown-project page's appearance box */
 .header__controls { display: inline-flex; align-items: center; gap: var(--space-3); }
 .header__controls--push { margin-left: auto; }
 
@@ -301,7 +301,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
    least 24px to spare: the frame leaves 1,170px there, about 15px less
    beside a classic scrollbar.
    The boot warning `HeaderRowOverBudget` estimates this row from the sizes
-   and gaps below (core/src/validate/header_budget.rs): change both. */
+   and gaps below (areas/access/cpe/core/src/validate/header_budget.rs): change both. */
 @media (min-width: 79rem) {
   .header__inner { gap: var(--space-6); }
   .shell__header .header__menu-btn { display: none; }
@@ -560,9 +560,9 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
     white-space: nowrap;
     border: 0;
   }
-  /* The site index's and N2's appearance box gets the phone tap target. */
+  /* The site index's and the unknown-project page's appearance box gets the phone tap target. */
   .header__controls--push .theme-toggle { width: 44px; height: 44px; }
-  /* 6px, not the design's 4px: the panel scrolls (overflow-y), so it would
+  /* 6px, not 4px: the panel scrolls (overflow-y), so it would
      clip the top of the first link's 2px + 3px-offset focus ring. */
   #header-menu:popover-open { display: block; padding: 6px var(--gutter) 24px; }
   #header-menu .header__nav a:last-child { border-bottom: 1px solid var(--rule-strong); }
@@ -684,8 +684,8 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 .breadcrumb__item a:hover { color: var(--accent-strong); border-bottom-color: var(--accent); }
 .breadcrumb__current { color: var(--ink); }
 
-/* crumb line as a wrapping flex row — path left, `.crumb-actions` frame right
-   (share-view plan step 3). No fixed widths anywhere in this block: DE
+/* crumb line as a wrapping flex row — path left, `.crumb-actions` frame right.
+   No fixed widths anywhere in this block: DE
    labels run ~45% longer than EN, and above 40rem the row must wrap, never
    truncate. Below 40rem it is one line (THE PHONE ROW, in BACKLINKS). */
 .breadcrumb__row {
@@ -701,7 +701,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 .crumb-back,
 .crumb-label--short { display: none; }
 
-/* "Copy link" share control (share-view plan step 3, design doc "Anatomy") */
+/* "Copy link" share control */
 .crumb-share {
   display: inline-flex;
   align-items: baseline;
@@ -737,13 +737,13 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
   border-radius: 50%;
   background: var(--accent-strong);
 }
-/* Copied state: glyph → dot, no transition on the swap (design doc — "the
-   receipt must not fade in"). This is a plain class-driven display swap,
+/* Copied state: glyph → dot, no transition on the swap (the
+   receipt must not fade in). This is a plain class-driven display swap,
    not the `hidden` attribute, so it carries no `[hidden]`/`display`
-   conflict (see cpe/CLAUDE.md's DataStar gotchas). */
+   conflict (see dsp-incubator cpe/CLAUDE.md's DataStar gotchas). */
 .crumb-share__link.is-copied .crumb-share__glyph { display: none; }
 .crumb-share__link.is-copied .crumb-share__dot { display: inline-block; }
-/* Design doc "Anatomy": the copied-state dot carries its own
+/* The copied-state dot carries its own
    `margin-right: 0.5em` (vs. the wrapper's shared 0.4em for the resting
    glyph) — so the dot reads like the glyph it replaces, spaced slightly
    wider to match its rounder shape. Applied to `.crumb-share__mark` (the
@@ -769,12 +769,12 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 }
 
 /* ============================================================================
-   BACKLINKS (Slice 9) — the crumb line's framed action block: Copy link in
-   its first row, the dataset panel row under it (design: CrumbLine.dc.html).
+   BACKLINKS — the crumb line's framed action block: Copy link in
+   its first row, the dataset panel row under it.
    Above 40rem, no `margin-left: auto` on the frame: `.breadcrumb__row`'s
    space-between keeps it at the right on a shared line, and a frame that
-   wraps onto its own line starts at the left, as the design's narrow board
-   draws it. Below 40rem the row does not wrap (THE PHONE ROW).
+   wraps onto its own line starts at the left. Below 40rem the row does not
+   wrap (THE PHONE ROW).
    ========================================================================= */
 .crumb-actions {
   anchor-name: --crumb-actions; /* the dataset panel's anchor, see the panel */
@@ -836,7 +836,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 .dasch-mark { width: 14px; height: 11.4px; margin-right: 0.4em; }
 
 /* The panel overlays the page under the frame and must stay inside the
-   viewport at every width (plan D14). Its containing block is the crumb row,
+   viewport at every width. Its containing block is the crumb row,
    never the frame: a frame that wraps onto its own line sits at the row's
    left, and a 31rem panel hung from its right edge would leave the viewport.
    Without anchor positioning the panel hangs from the row's right edge. With
@@ -1024,10 +1024,10 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 .crumb-data__entry.is-copied .crumb-data__tip-rest { display: none; }
 .crumb-data__entry.is-copied .crumb-data__tip-done { display: inline; }
 
-/* The listing form (Slice 7): what a narrative page's figure blocks render.
+/* The listing form: what a narrative page's figure blocks render.
    A count line under the head, one native fold per page section when there
    are several (each fold's list scrolls with the panel's own list, never
-   on its own), and compact two-line entries (design HANDOFF §4). */
+   on its own), and compact two-line entries. */
 .crumb-data__count {
   margin: 0;
   padding: var(--space-2) var(--space-5);
@@ -1126,7 +1126,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
      also while "Copied" widens the share cell. The row therefore needs the
      floor, the gap and both action cells: the 23rem rule below drops the
      dataset label where they no longer fit.
-   - Only a row's trail is hidden (N3's crumb line has no row and keeps its
+   - Only a row's trail is hidden (the unknown-record crumb line has no row and keeps its
      trail), with `display: none` so that no link stays focusable unseen.
    - Keep this block after the base rules and after the panel's @supports
      block: it overrides both by order alone. With no `anchor()` left in the
@@ -1195,7 +1195,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
   /* Its ink-on-surface fill becomes Canvas on Canvas: only a border shows it. */
   .crumb-data__tip { border: 1px solid CanvasText; }
 }
-/* BACKLINKS (Slice 9) -- END */
+/* BACKLINKS -- END */
 
 /* when a breadcrumb is present, the page header sits closer to it */
 .shell__main:has(.breadcrumb) .page { padding-top: var(--space-6); }
@@ -1280,7 +1280,7 @@ p { margin: 0 0 var(--space-5); text-wrap: pretty; }
 .dasch-logo:hover { opacity: 0.82; }
 /* Logo swaps to the reversed variant only under explicit dark (cookie-driven);
    CPE defaults to light, so there is no OS-preference logo swap. */
-/* the project footer's lockup (Slice 9): smaller than the site index's 2.5rem */
+/* the project footer's lockup: smaller than the site index's 2.5rem */
 .footer__lockup { padding: 2px; }
 .footer__lockup .dasch-logo__img { height: 1.75rem; }
 

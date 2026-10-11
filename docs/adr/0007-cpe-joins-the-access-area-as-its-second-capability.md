@@ -258,3 +258,27 @@ prototype apart from the `/cpe` prefix) are unchanged.
 
 Enforced by: review, for a crate moving into `areas/access/cpe` with its incubator copy re-vendored and
 an empty `just vendor-diff` there.
+
+## Amendment (2026-10-11, DEV-7464) — `cpe-core` moved before its churn dropped
+
+The DEV-7400 amendment says: "A crate moves when its churn in the incubator has dropped, not in dependency
+order". Its reason is in the incubator's go-live plan (`dsp-incubator/cpe/docs/INCUNABULA_GO_LIVE.md`,
+"Moving"): "moving a still-busy crate turns every prototype change into a cross-repo change". This
+amendment makes one exception to that sentence and leaves it standing:
+
+- **`cpe-core`, CPE's domain crate, moved to `areas/access/cpe/core` while it was still changing** (as
+  decided by the owner, 2026-10-11). Its churn had not dropped: 23 commits in 30 days on its paths in the
+  incubator (`cpe/core` and, before the crate split of 2026-10-10, `cpe/engine/src`), measured 2026-10-11,
+  12 of them in October; the latest, dsp-incubator#502 of that day, added about 5,400 lines. That showed no
+  quiet period to wait for, and waiting kept the component library (DEV-7401) and the store, page assembly
+  and wiring (DEV-7465) blocked: `cpe-core` depends on no other CPE crate, and both depend on it.
+- **The rule stands for the crates that follow.** A later crate still moves once its churn in the incubator
+  has dropped. Dropping the rule for them would be a changed decision and a new record (ADR-0006).
+- **The cost the rule avoided is accepted for this crate.** From the move on, a change to the config
+  language is a PR here, followed by a pin move in the incubator, which vendors the crate back.
+- **The config-language specification and CPE's glossary stay in the incubator until DEV-7465.**
+  `dsp-incubator/cpe/docs/CONFIG_LANGUAGE.md` and `dsp-incubator/cpe/CONTEXT.md` are neither moved nor
+  copied; `areas/access/cpe/CONTEXT.md` points to them. A config-language change therefore lands in two
+  steps: the code here, then the document in the incubator's pin-move PR.
+
+Enforced by: review, for a later crate that moves before its churn in the incubator has dropped.

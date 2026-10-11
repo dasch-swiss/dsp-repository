@@ -10,6 +10,7 @@ members = [
   "areas/access/dpe/web",
   "areas/access/dpe/server",
   "areas/access/server",
+  "areas/access/cpe/core",
   "areas/access/cpe/ports",
   "areas/access/sync/store",
   "areas/deposit/editor/core",
@@ -98,6 +99,13 @@ async-trait = "0.1"
 # term types, no triplestore. `rdf-12` stays off: the format has no RDF 1.2 triple terms.
 oxttl = { version = "0.2.4", default-features = false }
 oxrdf = { version = "0.3.4", default-features = false }
+# cpe-core's config language. `span` is required: diagnostics carry source positions. Held at 6.5:
+# kdl 6.6 and later need Rust 1.95 and turn `serde` on by default.
+kdl = { version = "~6.5", features = ["span"] }
+percent-encoding = "2"
+# cpe-core renders authored Markdown. Its types cross into CPE's component library, so both
+# crates take this one entry (DEV-7401). Without default features: they add only the CLI's `getopts`.
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 
 # Build profiles
 [profile.release]

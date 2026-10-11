@@ -1,7 +1,6 @@
-//! The vendored `cpe-components`' `style/tokens.css` holds the two values the vendored `cpe-core`'s
-//! desk-row budget is computed from (`HEADER_DESK_BUDGET_PX` in its
-//! `src/validate/header_budget.rs`). dsp-repository has no test that reads both, so the guard is
-//! here and runs at every pin move.
+//! `cpe-components`' `style/tokens.css` holds the two values `cpe-core`'s desk-row budget is
+//! computed from (`HEADER_DESK_BUDGET_PX` in its `src/validate/header_budget.rs`). This test
+//! reads both, so a change to one without the other fails here.
 
 use cpe_core::markup_contract::HEADER_DESK_BREAKPOINT_PX;
 

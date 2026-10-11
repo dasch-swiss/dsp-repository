@@ -11,7 +11,7 @@ problem: >
   now although its churn has not dropped: copy it to `areas/access/cpe/core`, clean its comments, then
   have the incubator build against a vendored copy.
 symptoms: []
-status: in-progress
+status: complete
 ---
 
 # Execution Journal: 01-feat-move-cpe-core-plan
@@ -20,7 +20,8 @@ status: in-progress
 
 | repo           | base_commit | branch            | merge_strategy | status      | pr |
 |----------------|-------------|-------------------|----------------|-------------|----|
-| dsp-repository | d9839d34    | worktree-DEV-7464 | rebase         | in-progress | —  |
+| dsp-repository | d9839d34    | worktree-DEV-7464 | rebase         | shipped     | https://github.com/dasch-swiss/dsp-repository/pull/470 (merged 2026-10-11, `a9f90359`) |
+| dsp-incubator  | 4139af98    | worktree-DEV-7464 | rebase         | shipped     | https://github.com/dasch-swiss/dsp-incubator/pull/505 (draft) |
 
 ## Phases
 
@@ -28,7 +29,7 @@ status: in-progress
 |-------|-------------|-------------------------|-------------------|
 | 1     | reviewed    | dsp-repository@ca9dc3ba | 2                 |
 | 2     | reviewed    | dsp-repository@654fe5b2 | 1                 |
-| 3     | gated (H1)  |                         | 0                 |
+| 3     | reviewed    | dsp-incubator@4139af98  | 1                 |
 
 ## Chunk queue
 
@@ -39,6 +40,8 @@ Plan decision 6 makes Phase 1 exactly one commit, so the phase's dsp-repository 
 | 1.1 | dsp-repository | `areas/access/cpe/core/**`, `Cargo.toml`, `Cargo.lock`, `CONVENTIONS.md`, `docs/src/git-conventions.md`, `docs/src/repo_structure.md`, `areas/access/cpe/CONTEXT.md`, `areas/access/CONTEXT.md`, `CONTEXT.md`, `docs/adr/0007-*.md`, `ARCH-MAP.md` | — | every dsp-repository checkbox of Phase 1, "Confirm the branch …" through "Commit as `feat(cpe-core)` …" | 549 tests pass and equal the source list less three names; `diff -r` against the formatted baseline shows only the plan's table of edits; `just check` and `just test` pass; one commit | plan § "Edits Phase 1 makes to the copied source", § "Crate manifest and workspace entries"; SRC = dsp-incubator 1cd5781f987ed860218462c086c77ce759185fcc; baseline at `.claude/tmp/cpe-core-baseline-src` | — |
 | 2.1 | dsp-repository | `areas/access/cpe/core/src/**`, `ARCH-MAP.md` | — | every dsp-repository checkbox of Phase 2, "Record `git rev-parse HEAD` …" through "Commit as `docs(cpe-core)` …" (plan decision 6: one commit) | the normaliser diff against 654fe5b2 is empty or rustfmt re-joins; every `"` line of `git diff -U0` read; the checklist's pattern search leaves only kept comments; `cargo doc -p cpe-core --no-deps` prints no warning; test list equals `.claude/tmp/cpe-core-tests-phase1.txt`; `just check` and `just test` pass; one commit | plan § "Comment rules (Phase 2)", § "Verification design"; Phase 1 commit 654fe5b2; candidate lister `.claude/tmp/hits.py`; SRC worktree dsp-incubator `.claude/worktrees/DEV-7464` | — |
 | 2.2 | dsp-repository | none (push, PR #470 body) | 2.1 | "Push the branch", "Open a draft PR …", "Run `just commit-lint` with `PR_BODY` …" | branch pushed; PR #470 body rewritten from the template with `allow-many-commits` ticked; `just commit-lint` passes | plan § "Human Actions", § "Dependencies & Risks"; journal `## Deviations`, `## Deferrals` | — |
+| 3.1 | dsp-incubator | `cpe/core/**` (deleted), `cpe/vendor/{CRATES,PIN,README.md,dsp-repository/**}`, `cpe/Cargo.toml`, `cpe/Cargo.lock`, `cpe/store-build/**`, `cpe/web/tests/**`, `cpe/Dockerfile`, `cpe/justfile`, `cpe/tools/crate-deps.py`, `cpe/CLAUDE.md`, `cpe/CONTEXT.md`, `cpe/docs/**`, `cpe/static/cpe/*.css`, `cpe/projects/incunabula/DESIGN.md`, every other `cpe/core` or `core/src` citation | — | every dsp-incubator checkbox of Phase 3 from "Confirm the branch …" through "Run `git diff --name-only origin/main..HEAD` …" (the incubator lands a PR as one commit) | workspace test names equal `cpe/scratch/workspace-tests-before.txt` (3065 names) apart from the module path of the three re-homed tests; `just cpe test` passes; `vendor-diff: empty (a9f90359…)`; `just cpe ci` passes; one commit `refactor(cpe): build against the vendored cpe-core (DEV-7464)` | plan § "Phase 3"; `<pin>` = dsp-repository a9f90359525d3e1aff6e5f73d83125fc9fc25039; old pin 14cc0c12; SRC = 1cd5781f; the deleted tests' text is at incubator `4139af98:cpe/core/src/validate.rs` and `…/validate/header_budget.rs` | — |
+| 3.2 | dsp-incubator | none (push, draft PR) | 3.1 | "Open a draft PR …" | branch pushed; draft PR open, assigned, no reviewers, no auto-merge | plan § "Human Actions"; incubator `cpe/vendor/README.md` "Moving the pin" | — |
 
 ## Chunks
 
@@ -50,6 +53,9 @@ Plan decision 6 makes Phase 1 exactly one commit, so the phase's dsp-repository 
 | 2.1 | dsp-repository | complete | cbfbbc4c | Applied the plan's ordered *Comment rules* to the comments of 19 of the crate's 28 source files (9 held nothing to change): ids, plan and backlog names and design-note pointers removed; rule-defining pointers written from the incubator's root; history restated in the present tense; "Phase 2" named as validation; incubator crates named by path; `src/lib.rs` reworded; 11 private intra-doc links turned into code spans. Normaliser diff against 654fe5b2 empty for all 28 files; one non-whole-line change (`config.rs`, trailing comment, no string literal); test list equal (549); `cargo doc` prints no warning; `just check`, `just test` pass; Fingerprint `b3c426012964` | none |
 | 2.3 | dsp-repository | complete | fe2a95e1 (cbfbbc4c amended, as the plan's "Commits" paragraph asks) | Review fix round 1 (rust, consistency, simplicity, dune): two CSS selectors in `iiif.rs` got back the descendant space a re-wrap had removed (`.gm[data-tile="tall"] .gm__box`, `.case__detail .case__bed`); `validate.rs` names `serve_project_asset` in `dsp-incubator cpe/bin/src/router.rs`; stray spaces (`showcase.rs:1`, `→ .keyword`, two `a/ b` joins); `any_facet_selected` named in the `ir.rs` re-export sentence; three "old …" phrasings and one double dash reworded. Proofs, test list, `cargo doc`, `just check`, `just test` re-run and pass; Fingerprint `a451b7ac4751`. Re-review of the fix diff (consistency, simplicity, dune): no findings | none |
 | 2.2 | dsp-repository | complete | — (no commit: push and PR body) | Pushed `worktree-DEV-7464` (ca9dc3ba..fe2a95e1, a plain push). Rewrote the body of draft PR #470 from the repository's template: the three commits, Review Notes with each commit's check, the two accepted deviations, the recorded debt, the DUNE-001 deferral, H1-H4; `allow-many-commits` ticked. `just commit-lint` with `PR_BODY` from the live PR passes (3 commits, no merge commit) | none |
+| 3.1 | dsp-incubator | complete | a56c242f | Rebased on incubator `origin/main` 4139af98; `git log SRC..origin/main -- cpe/core` prints nothing. `<pin>` = dsp-repository a9f90359525d3e1aff6e5f73d83125fc9fc25039 (on `origin/main`, Phase 1 commit 9b431e6d its ancestor). Deleted `cpe/core`, vendored `areas/access/cpe/core` (pin 14cc0c12 → a9f90359; `cpe-ports`, `sync-store` and `areas/access/sync/data` unchanged between the pins, so no other dsp-repository commit to name). The four inherited dependency lines are byte-equal to the monorepo root's at the pin; `Cargo.lock` unchanged. Re-homed the three tests (`store-build/tests/it/worked_example.rs`, `web/tests/header_budget.rs`), each shown to fail when its input file changes. Repointed `geometry.rs`, the Dockerfile, the justfile, `tools/crate-deps.py` and every `core/src` citation; docs, ADR notes and `vendor/README.md` say the crate is vendored. Test names: 3065 before and after, differing only in the module path of the three. `just cpe test`, `vendor-diff: empty (a9f90359…)`, `crate-deps-check` (`core-framework-refs=0`), `module-graph-check` and `just cpe ci` pass; no ignored file under `cpe/vendor` | none |
+| 3.3 | dsp-incubator | complete | 613dcc15 (a56c242f amended: the incubator lands a PR as one commit) | Review fix round 1 (consistency, simplicity, dune, rust; no Critical, four Warnings from simplicity, the rest Suggestions): `tools/crate-deps.py` no longer threads a `core_src` parameter, it scans `<root>/core/src` with the vendored `areas/access/cpe` directory as the real workspace's root; `cpe/justfile` has a `core` variable; `cpe/CLAUDE.md` and the ADR-0013 note point to `vendor/README.md`'s "`cpe-core`" section instead of repeating its list, and the history bullet and the churn figure are gone; stale statements corrected in `docs/CONFIG_LANGUAGE.md` (where the worked-example test lives), `docs/dev/coding-conventions.md` and `docs/dev/testing-strategy.md`; "monorepo PR" in the added prose. `just cpe ci` passes. Re-review of the fix diff (consistency, simplicity, dune): no Critical, no Warning | none |
+| 3.2 | dsp-incubator | complete | — (no commit: push and PR) | Pushed `worktree-DEV-7464` (new branch, a plain push of 613dcc15) and opened draft PR #505 on dsp-incubator, assigned to the owner, no reviewers, no auto-merge. `git diff --name-only origin/main..HEAD` lists only paths under `cpe/`, and under `cpe/projects/` only `incunabula/DESIGN.md` | none |
 
 ## Deferrals
 
@@ -62,6 +68,16 @@ Plan decision 6 makes Phase 1 exactly one commit, so the phase's dsp-repository 
   `check-composition-root-deps.sh` covers `areas/access/server` only, and `ir::DataArks::from_stored` is `pub`.
   The reviewer proposes a `Cargo.toml` grep run by `just check` (the mechanism ADR-0007 names). A new gate is
   outside this plan; the rule is recorded as **review** in `ARCH-MAP.md`. For the session's final review.
+- `scope` (Phase 3, dune-reviewer, native high, advisory because the incubator has no `ARCH-MAP.md`; verified by
+  reading `cpe/tools/vendor.sh`): `just cpe vendor-diff` prints a difference and exits 0, and `fmt-check` and `lint`
+  skip the vendored tree, so an edit of the vendored `cpe-core` passes `just cpe ci`. That is ADR-0013's exit rule,
+  decided for small `cpe-ports` patches. The reviewer proposes that an unexplained difference fails unless a
+  hand-kept list names the patched crate. Changing the rule is an incubator ADR-0013 amendment, outside this plan;
+  named in PR #505's description. For the session's final review.
+- Phase 3, dune-reviewer (low): the monorepo side does not name the incubator's guard tests. A comment at
+  `areas/access/cpe/core/src/validate/header_budget.rs` naming `dsp-incubator cpe/web/tests/header_budget.rs`, and one
+  at the remodel lowering naming `cpe/store-build/tests/it/worked_example.rs`, is a dsp-repository PR. Not made:
+  the phase has no dsp-repository group, and it would move the pin again.
 
 ## Deviations
 
@@ -77,6 +93,13 @@ Plan decision 6 makes Phase 1 exactly one commit, so the phase's dsp-repository 
   `cpe-core` being unlicensed like every workspace crate". Owner's answer: accepted by the session in the unsupervised run of 2026-10-11; for the owner to confirm at PR review.
 - Plan checkbox "`cargo doc -p cpe-core --no-deps`; it prints no warning": untrue at 76fabe10, see *Deferrals*.
   Owner's answer: accepted by the session in the unsupervised run of 2026-10-11; for the owner to confirm at PR review.
+- Incubator acceptance criterion "No `cpe/core` or `core/src` reference is left outside `cpe/vendor/`,
+  `cpe/docs/plans/` and `cpe/tools/crate-deps-fixtures/` that does not name the vendored path". As committed
+  (613dcc15): true everywhere but `cpe/tools/crate-deps.py`, which says `core/src` in its docstring, two messages
+  and its `--root` help. The tool scans `<root>/core/src`; the root is the vendored `areas/access/cpe` directory in
+  the real workspace and a fixture directory in the self-test, as the plan's own checkbox asks ("a fixture root
+  keeps its own `core/src`"). Proposed wording: add "and `cpe/tools/crate-deps.py`, where `core/src` is relative to
+  the scanned root" to the criterion's exclusions. Owner's answer (2026-10-11): accepted; the criterion excludes the tool.
 
 ## Side findings
 
@@ -120,3 +143,33 @@ Plan decision 6 makes Phase 1 exactly one commit, so the phase's dsp-repository 
   `src/remodel.rs` in `validate/remodel.rs` could be read as relative to the module.
 - Not acted on from the round-1 re-review (suggestion): the `cpe-ports` Key entities in `ARCH-MAP.md` still name a
   bare `Resource`; the `ir::Resource` clause beside it carries the distinction.
+- Phase 3: no incubator test expected "ADR-0012" in a diagnostic message (only comments name it), so the checkbox
+  for those tests changed nothing. `cpe/Cargo.lock` did not change: a path package has no source line.
+- Phase 3: the harness refuses any compound shell command whose text holds the checkout path (it contains
+  "GitHub"), also without a git call. A two-line helper under `cpe/scratch/` that runs a snippet from the worktree
+  root (`python3 -I run.py '<snippet>'`) was the way through; `git show --output=` does not redirect a blob.
+- Phase 3 review, suggestions not acted on: a `cpe/vendor/CLAUDE.md` saying the tree is read-only, and a pointer
+  near the top of `cpe/CLAUDE.md` (the entry sits at line 3375 of 4,500); `vendor-diff` comparing the inherited
+  dependency lines with the monorepo root's at the pin (seven keys, compared by hand today); the full vendored path
+  in CSS and code comments where "`cpe-core`'s `iiif.rs`" would do (the plan asks for the path); the path repeated
+  in `geometry.rs`'s failure message; the long `BACKLOG.md` heading; `crate-deps.py`'s exit-2 and violation lines
+  print `core/src/…` relative to the scanned root, and its fixture docstring still calls the case directory "the
+  workspace root"; the `CLAUDE.md` pointer's parenthesis names three of the README section's five items; the
+  removed `CLAUDE.md` bullet (the crate's comments cite the incubator by path; two diagnostics lost "(ADR-0012)")
+  is now only in the commit body and PR #505; `INCUNABULA_GO_LIVE.md` no longer carries the churn figure, which
+  ADR-0007's amendment in dsp-repository holds.
+
+## Closeout
+
+- root_cause: `cpe-core` lived in dsp-incubator while the rest of CPE was moving to dsp-repository crate by crate
+  (ADR-0007, amendment of 2026-10-02), so DEV-7401 and DEV-7465 had nothing to build against.
+- investigation: three plan statements did not hold when run. `cargo deny check` is red on `main` for reasons the
+  move does not add to; the copied source printed 11 rustdoc warnings; and #469, which merged in between, added two
+  curated keys the incubator's store build refuses, so its pin move needed a change of its own (dsp-incubator#503)
+  before Phase 3 could stay a pure crate swap.
+- solution: dsp-repository#470 copied the crate to `areas/access/cpe/core` as a formatted copy with a small table
+  of edits, then cleaned its comments in a comment-only commit. dsp-incubator#505 deletes `cpe/core`, vendors the
+  crate at `a9f90359` and re-homes the three tests that read incubator files.
+- prevention: the workspace test-name lists before and after each step are compared, not counted; the incubator's
+  `vendor-diff` is empty at the pin; a change to the config language is now a dsp-repository PR followed by a pin
+  move. Open: `vendor-diff` exits 0 on a difference, and nothing mechanical limits who may depend on `cpe-core`.

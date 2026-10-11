@@ -7,10 +7,9 @@
 //! This crate depends on `cpe-core` and `cpe-image-viewer`. Page assembly, which calls these
 //! renderers and builds their config carriers, lives elsewhere.
 //!
-//! `pub` in this crate means visible to the sibling CPE crates. The host's surface is
-//! only what `dsp-incubator cpe/engine` re-exports: the module `chrome` and a list of names from
-//! `component`'s children; `component` itself is not exposed as a module. Items marked
-//! `#[doc(hidden)]` are not host API.
+//! `pub` in this crate means visible to CPE's other crates. A composition root sees none of
+//! it: `cpe-server`, the crate a composition root depends on, re-exports nothing of this
+//! crate. Items marked `#[doc(hidden)]` are for the sibling crates and their tests.
 
 pub mod chrome;
 pub mod component;

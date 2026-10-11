@@ -1,0 +1,18 @@
+// Fixture for the `_search` fragment-handler E3b regression test
+// (empty-states-not-found plan, test-reviewer finding 2). A resource-list
+// with BOTH a facet-panel that declares ZERO `facet` children (resolving to
+// `Component::FacetPanel.facets == vec![]`, so `facet_groups` is always
+// `Some([])` — the E3b condition) AND a search-bar targeting the same list.
+// `eta` (a real, non-empty facet group) already covers the ordinary
+// two-event faceted case; this fixture proves the handler keys on
+// NON-EMPTY resolved groups, not mere `Some`-ness.
+site {
+    title "Theta Fixture"
+    languages "en" "de"
+}
+page id="home" route="/"
+page id="widgets" route="/widgets" {
+    resource-list id="widgets" class="Widget"
+    facet-panel target="widgets"
+    search-bar target="widgets" searches="name"
+}

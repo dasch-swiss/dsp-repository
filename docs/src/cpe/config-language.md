@@ -167,8 +167,14 @@ Project-level metadata and chrome.
 
 `cover-image`/`image-credit`/`eyebrow` are all optional and purely additive —
 they affect **only** the cross-project `/` site index's project-card
-presentation, never a project's own pages. Alice's `config.kdl` is the
-worked example:
+presentation, never a project's own pages. `cpe-server` has no site index:
+the index is a page of the incubator's binary, and `Cpe::projects()` gives a
+host a project's id, title and start URL and none of the three. Here they are
+parsed, checked as said above and kept on the loaded project
+(`cpe_web::project::Project`), the cover image is served with the project's
+other assets, and no page shows them. Wherever this document says what the
+site index does with a value, it describes that page. Alice's `config.kdl` is
+the worked example:
 
 ```kdl
 site {

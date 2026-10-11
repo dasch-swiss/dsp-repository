@@ -5,15 +5,12 @@
 //! The crate is framework-free: it depends on no `maud`, `axum` or `rusqlite`.
 //! The store reaches the validator through `validate::facts::ProjectFacts`.
 //!
-//! `pub` in this crate means visible to CPE's other crates. Until DEV-7465, the host's surface
-//! is only what `dsp-incubator cpe/engine` re-exports: the modules `diagnostic`, `ir`, `lang` and
-//! `theme`, and a list of names from `labels`, `markup_contract`, `util`, `validate`
-//! and `view_data`. The other modules are not exposed. Items marked `#[doc(hidden)]`
-//! are not host API.
+//! `pub` in this crate means visible to CPE's other crates. A composition root sees none of
+//! it: `cpe-server`, the crate a composition root depends on, names no type of this crate in a
+//! `pub` signature. Items marked `#[doc(hidden)]` are for the sibling crates and their tests.
 //!
-//! That facade re-exports `ir::DataArks`, so `DataArks::from_stored` is reachable from
-//! the host. A host must never call it: a value built from unchecked strings reaches
-//! an `href`.
+//! `ir::DataArks::from_stored` is for the store alone: a value built from unchecked strings
+//! reaches an `href`.
 
 mod config;
 pub mod diagnostic;

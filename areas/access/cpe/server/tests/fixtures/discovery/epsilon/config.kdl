@@ -1,0 +1,12 @@
+// Fixture for static-route literal-id resource-detail tests.
+// The /featured page has a resource-detail with a literal id "res-01".
+site {
+    title "Epsilon Fixture"
+    languages "en" "de"
+}
+page id="home" route="/"
+page id="featured" route="/featured" {
+    resource-detail id="res-01" title-property="name" {
+        show-properties "name" "quote"
+    }
+}

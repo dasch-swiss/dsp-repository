@@ -1,0 +1,25 @@
+// Fixture for Step 5 parameterised-route tests.
+// Declares a home page and a resource-detail page wired to `:id`.
+//
+// `image-credit` also doubles (site-index-cards task) as the chrome-id
+// resolution fixture for the site-index teaser's credit line — this
+// project is otherwise unrelated to that task, but every discovered
+// project renders a teaser card on `/`, so this is a convenient existing
+// project to carry it rather than adding a dedicated new fixture dir.
+site {
+    title "Delta Fixture"
+    languages "en" "de"
+    image-credit "delta-credit"
+    chrome {
+        string "delta-credit" {
+            en "Delta EN Credit"
+            de "Delta DE Credit"
+        }
+    }
+}
+page id="home" route="/"
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" title-property="name" {
+        show-properties "name" "quote"
+    }
+}

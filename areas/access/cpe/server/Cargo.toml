@@ -1,0 +1,27 @@
+[package]
+name = "cpe-server"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+axum = { workspace = true }
+cpe-components = { path = "../components" }
+cpe-core = { path = "../core" }
+cpe-image-viewer = { path = "../image-viewer" }
+cpe-web = { path = "../web" }
+datastar = { workspace = true }
+figment = { version = "0.10", features = ["env", "toml"] }
+futures-util = { workspace = true }
+maud = { workspace = true }
+percent-encoding = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+# `test` feature enables figment::Jail for isolated env-var config tests.
+figment = { version = "0.10", features = ["env", "toml", "test"] }
+tempfile = "3"
+tokio = { workspace = true }
+tower = { workspace = true, features = ["util"] }

@@ -3572,7 +3572,10 @@ fn check_project_id(project_id: &str, reserved_ids: &[&str], report: &mut Valida
     }
 }
 
-fn is_valid_project_id(id: &str) -> bool {
+/// Whether `id` can be a project id: `^[a-z0-9][a-z0-9-]*$`. A host applies it
+/// to a folder name before it takes the folder as a project, since the id is
+/// also a URL segment.
+pub fn is_valid_project_id(id: &str) -> bool {
     if id.is_empty() {
         return false;
     }

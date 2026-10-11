@@ -78,3 +78,14 @@ The file was derived once, by a script that is not kept, and is edited by hand f
 regenerated. Since dsp-incubator#500 (DEV-7496, merged 2026-10-10) it is the only copy of
 Incunabula's curation: the incubator deleted the source files above and builds its store from this
 file, which it vendors. A curation change is made here and reaches the incubator when it re-vendors.
+
+Edited by hand since
+  2026-10-11 (DEV-7497)  catalogue_uri and catalogue_uri_replaces, on the three Books held in Cologne:
+                         the replacement and dead cells of CATALOGUE_OVERRIDES in dsp-incubator's
+                         cpe/store-build/src/projects/incunabula/catalogue.rs, at commit
+                         1cd5781f987ed860218462c086c77ce759185fcc, copied verbatim.
+
+catalogue_uri is written in place of a Book's catalogue address, which is dead in the archive.
+catalogue_uri_replaces is that dead address: the replacement holds only while 0803.nq has exactly it,
+and the committed tests check that. Once a regenerated 0803.nq has the mended address, the Book's two
+cells are emptied.

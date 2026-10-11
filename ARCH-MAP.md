@@ -712,7 +712,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   file changes their expectations in the same commit (**review**). The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
   (**review**), is read only by the committed-file tests.
-- **Fingerprint:** `59101ce70bc4`
+- **Fingerprint:** `86509dcb212a`
 
 ### areas/access/media
 

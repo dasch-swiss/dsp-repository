@@ -20,7 +20,7 @@
 // ── Per-project theme knob ────────────────────────────────────────────────────
 
 /// The accent colour for the project. Controls the `data-accent` attribute on
-/// `<html>`. The design-system `tokens.css` defines colour-token overrides for
+/// `<html>`. `areas/access/cpe/components/style/tokens.css` defines colour-token overrides for
 /// each value under `[data-accent="<value>"]`.
 ///
 /// `Ochre` is the default — the "warm scholarly" option most suited to
@@ -71,7 +71,7 @@ impl Accent {
 
 /// The background tint for the project. Controls the `data-bg` attribute on
 /// `<html>`. `Tint` applies a faint warm wash; `Neutral` leaves the surface
-/// fully neutral. Together with the accent, this is the §8 "warmth lever".
+/// fully neutral. Together with the accent, it sets how warm the surface reads.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Background {
     /// Neutral surface — no tint applied.
@@ -107,7 +107,7 @@ impl Background {
 }
 
 /// The typeface for the project. Controls the `data-pick` attribute on
-/// `<html>`. The design-system `tokens.css` defines a font-token override for
+/// `<html>`. `areas/access/cpe/components/style/tokens.css` defines a font-token override for
 /// each value under `[data-pick="<value>"]`.
 ///
 /// The enum value *is* the `data-pick` face name, so it round-trips exactly like

@@ -237,8 +237,8 @@ pub enum DiagnosticKind {
     ///
     /// `source` is the literal Resource id declared on the `compound-viewer`.
     EmptyCompoundSource { source: String },
-    /// A `facet` declares a `kind` that is valid but not implemented in this
-    /// slice (everything except `list`). The page cannot function until the
+    /// A `facet` declares a `kind` that is valid but not implemented
+    /// (everything except `list`). The page cannot function until the
     /// facet kind is supported. This is a hard-fail.
     ///
     /// `kind` is the raw kind string from the facet; `page` is the page route.
@@ -324,11 +324,11 @@ pub enum DiagnosticKind {
     /// `property` is the where-clause property name; `class` is the
     /// resource-list's declared class; `page` is the page route.
     IncompatibleWhereValue { property: String, class: String, page: String },
-    /// A `facet`'s `property` shadows one of the query-string keys the bin
+    /// A `facet`'s `property` shadows one of the query-string keys the host
     /// reads for its own purposes (theme/appearance overrides, pagination,
     /// sort, i18n, …). Facet values are read back at request time via the
     /// property name used as a query key, so a collision would silently
-    /// shadow (or be shadowed by) the bin's own handling of that key. This is
+    /// shadow (or be shadowed by) the host's own handling of that key. This is
     /// a hard-fail: the page would misbehave at runtime in a way boot
     /// validation can and should catch.
     ///
@@ -744,7 +744,7 @@ pub enum DiagnosticKind {
     /// `key` is the repeated key.
     DuplicateOrderKey { key: String },
     /// A `resource-list { order-by key="…" }` key is empty or contains a
-    /// character outside `[a-z0-9-]`. The bin never percent-decodes `?sort=`,
+    /// character outside `[a-z0-9-]`. The host never percent-decodes `?sort=`,
     /// so such a key would be form-encoded on submit, never match, and silently
     /// fall back to "As curated" — a config-internal hard-fail, span-located.
     ///
@@ -766,8 +766,8 @@ pub enum DiagnosticKind {
     /// broken link on the 404 page. Hard-fail.
     UnresolvedNotFoundBrowseRoute,
     /// `site { not-found { … } }` declares more than three `browse` entries.
-    /// The design caps the 404's browse exits at three ("at most three… never
-    /// the whole nav"). Hard-fail.
+    /// The 404 page offers at most three browse exits, never
+    /// the whole nav. Hard-fail.
     TooManyNotFoundBrowseLinks,
     /// A `timeline axis-start=`/`axis-end=` integer does not fit in an `i32`.
     /// KDL integers arrive as `i128`; the value is range-checked before any
@@ -1368,7 +1368,7 @@ fn offset_to_line_col(source: &str, offset: usize) -> (usize, usize) {
 /// because the source text is not available here). This form is used when
 /// `ValidationReport` sits inside a `LoadError::Validation(report)` and
 /// something calls `report.to_string()` without the source — e.g. the
-/// auto-derived `Display` from `#[error(transparent)]`. The bin always calls
+/// auto-derived `Display` from `#[error(transparent)]`. The host calls
 /// `report.render(source, label)` for the located form.
 impl std::fmt::Display for ValidationReport {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

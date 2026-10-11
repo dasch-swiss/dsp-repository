@@ -54,7 +54,7 @@ pub fn site_title<'a>(site: &'a SiteConfig, lang: &Lang) -> &'a str {
 /// calls this same helper, so the full-page and fragment paths are provably
 /// identical.
 ///
-/// Exposed as `pub` (re-exported by `dsp-incubator cpe/engine`) so the bin's
+/// Exposed as `pub` (re-exported by `dsp-incubator cpe/engine`) so the host's
 /// three `_facets`/`_sort`/`_search` fragment handlers — which read the raw
 /// `Component::ResourceList` fields directly rather than going through
 /// `render_component` — can resolve the same overrides for a swapped-in list,
@@ -97,7 +97,7 @@ pub struct ResolvedGlossPart<'a> {
     pub unit: Option<&'a str>,
 }
 
-/// Resolve a list's gloss for `lang`. `render_list_component` and the bin's
+/// Resolve a list's gloss for `lang`. `render_list_component` and the host's
 /// `_facets`/`_sort`/`_search` fragment handlers all call this one helper, so
 /// a full-page render and a swapped-in list render the same gloss.
 pub fn resolve_gloss<'a>(site: &'a SiteConfig, gloss: &'a crate::ir::Gloss, lang: &Lang) -> ResolvedGloss<'a> {
@@ -134,7 +134,7 @@ pub fn resolve_parts<'a>(
 /// undeclared id, so the fallback is a pure safety net).
 ///
 /// The one resolver for declared rows, `pub` for the same reason as
-/// [`resolve_order_name_labels`]: `render_list_component` and the bin's
+/// [`resolve_order_name_labels`]: `render_list_component` and the host's
 /// `_facets`/`_sort`/`_search` fragment handlers all call it, so a full-page
 /// render and a swapped-in list render the same panel.
 pub fn resolve_order_options<'a>(
@@ -153,7 +153,7 @@ pub fn resolve_order_options<'a>(
 
 /// Resolve a property's display label: the declared translation for `lang` if
 /// a `labels { property "…" { … } }` entry exists and has one, else the
-/// humanized property name (the pre-existing fallback — unchanged behaviour
+/// humanized property name (the fallback
 /// for projects that declare no labels).
 ///
 /// Called by `ProjectReads::facet_options` (facet-group headings) and

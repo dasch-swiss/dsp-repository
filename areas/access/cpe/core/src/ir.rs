@@ -318,7 +318,7 @@ pub struct ResourceListPage {
 }
 
 /// A lightweight header for one member of a compound, used to render the
-/// CV-2 contents rail (`.cv-toc__list`) without hydrating every member's
+/// contents rail (`.cv-toc__list`) without hydrating every member's
 /// full `Resource`.
 ///
 /// Returned in `compound_parts.seq, child_id` order by
@@ -346,7 +346,7 @@ pub struct MemberHeader {
 ///
 /// Invariant: `members.len() == total`. `members` carries a lightweight
 /// header (id/class/name) for every member in the compound (in
-/// `compound_parts.seq, child_id` order), used to render the CV-2 contents
+/// `compound_parts.seq, child_id` order), used to render the contents
 /// rail; `member` is the hydrated `Resource` at the 1-based `index`.
 #[derive(Debug, PartialEq)]
 pub struct CompoundPage {
@@ -1221,11 +1221,11 @@ pub enum Component {
         sorts: Vec<Sort>,
         /// Pagination strategy; defaults to `PerPage(20)`.
         pagination: Pagination,
-        /// The row gloss (RL-2 annotated rows). `None` ⇒ no gloss line. Maps
+        /// The row gloss (annotated rows). `None` ⇒ no gloss line. Maps
         /// `gloss property="…"` ([`Gloss::Property`]) or a `gloss { part …;
         /// teaser … }` block ([`Gloss::Composed`]).
         gloss: Option<Gloss>,
-        /// Row chips (RL-2 `.rl-annot__meta`) with an optional per-chip shape
+        /// Row chips (`.rl-annot__meta`) with an optional per-chip shape
         /// override. Absent `kind` ⇒ the cardinality rule: a
         /// single-valued list property renders as a `.term` chip, a
         /// multi-valued one as `.keyword` chips (same single-vs-multi split as

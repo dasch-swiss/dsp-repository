@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Seven of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, and its page assembly, `cpe-web` in `web/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. The routes are still in `dsp-incubator` (`cpe/bin`); the crates moved in one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. No binary mounts the host crate yet; the crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -79,14 +79,13 @@ the header budget in `validate/header_budget.rs` matches `tokens.css` in `compon
   `shell`, `editorial`, `record`, `grid`, `media` and `incunabula`.
 
 It depends on `cpe-core` and `cpe-image-viewer`, and on no `axum`, no `rusqlite` and no Mosaic crate
-(ADR-0007). The crate neither embeds nor serves the stylesheets, and nothing in this repository serves them
-yet: a host does, and until DEV-7465 brings CPE's host here that host is the incubator's binary, from its
-vendored copy. `shell.css` refers to `dasch-fingerprint.svg` by a URL relative to itself; that file, the two
-logos and `datastar.js` stay with the incubator's binary until then. No playground shows the components
-here; the crate's snapshot tests guard their markup.
+(ADR-0007). The crate neither embeds nor serves the stylesheets: `cpe-server` does, from a compiled-in
+table. `shell.css` refers to `dasch-fingerprint.svg` by a URL relative to itself, so that file, which is in
+`public/`, is served from the same directory of URLs. No playground shows the components here; the crate's
+snapshot tests guard their markup.
 
 The glossary of the components' terms (component, compound, chrome message, register) is
-`dsp-incubator cpe/CONTEXT.md` until DEV-7465, and the catalogue of components is
+`dsp-incubator cpe/CONTEXT.md`, and the catalogue of components is
 `dsp-incubator cpe/docs/COMPONENT_LIBRARY.md`. A comment in the crate that cites a decision record of the
 incubator names it by its path, `dsp-incubator cpe/docs/adr/<file name>`: the incubator's numbers are not
 this repository's.
@@ -112,7 +111,9 @@ validator reads a project's data, and it assembles a request's `cpe_core::view_d
 `axum`.
 
 The crate does not fill the store. `db::open_project_db` takes SQL text and executes it over the schema; what
-writes that text from a project snapshot is the builder, `cpe-store-build`. The builder does not depend on
+writes that text from a project snapshot is the builder, `cpe-store-build`, called by `cpe-server` at
+**Activation**. A store exists in memory only: none is committed or written to disk, and each start builds it
+again. The builder does not depend on
 this crate, but it includes `schema.sql` as a file: a change to the schema is a change to what the builder
 writes, and the builder's tests load their output under it.
 
@@ -182,14 +183,58 @@ are not in this repository.
 `public/` holds the files every CPE page refers to and no project owns: the two DaSCH logos and
 `dasch-fingerprint.svg`, which `components/style/shell.css` refers to by a relative URL. `public/vendor/`
 holds the vendored `datastar.js` with a `README.md` that records its checksum, which `just verify-checksums`
-recomputes. No crate embeds or serves these files yet; `cpe-web`'s tests read `datastar.js` and four of the
-stylesheets to hold the markup's attributes, breakpoints and class names against them.
+recomputes. `cpe-server` embeds these files and the seven stylesheets and serves them under `/_static/`; a
+test there fails when a file of the three directories has no row in its table. `cpe-web`'s tests read
+`datastar.js` and four of the stylesheets to hold the markup's attributes, breakpoints and class names
+against them.
+
+## The host crate
+
+`cpe-server` in `server/` is what a composition root sees of CPE: `CpeConfig` and `Cpe`. It holds the routes,
+the request's language and appearance preferences, the discovery of project folders, the table of static
+files and the inventory of the projects' assets. No type of another CPE crate is in its `pub` items,
+`cpe-ports`' excepted; a test of the crate holds that. It installs no tracing layer and binds no port: its
+host does.
+
+`CpeConfig` is read from `cpe.toml` and `CPE_*`: the projects directory (`CPE_PROJECTS_DIR`) and the public
+origin (`CPE_PUBLIC_ORIGIN`). Reading it cannot fail. A value that cannot be used is kept as a refusal, and
+`Cpe`'s router then answers 503 on every path.
+
+**Activation**:
+`Cpe::activate(&dyn ArchiveProjection)`: the one step that loads the projects. For each project folder it
+reads the configuration, the narrative and the assets from disk, asks the port once for the **Project
+snapshot** of the shortcode the **Mapping** declares, builds the store with `cpe-store-build` and the
+project's **Hook**, and loads the project (`cpe-web`'s `Project::load`), which validates the configuration
+against the store. It is blocking, returns nothing and does not panic; a host calls it once, off the async
+runtime, after its listener is bound. `Cpe::router` may be taken and mounted before: it answers 503 until
+activation has finished and the projects' routes from then on.
+_Avoid_: boot, start-up (the process is already serving), warm (DPE's verb, which fills a cache; activation
+builds what is served). One project's step inside it is its load.
+
+**Unavailable project**:
+A project folder that did not activate: its configuration does not parse or validate, the port has no
+snapshot for its shortcode or cannot be read, the build refuses the data, or any of these panics. It is
+logged with its id, and every path under its prefix is answered 503 with `Retry-After` and
+`Cache-Control: no-store`; the other projects are served ("a project fails alone", ADR-0007, amendment of
+2026-10-11 on activation). 404 is for a path that names no project folder. A folder is a project when its
+name passes the **Project id** rule and it holds a `config.kdl`; a folder that fails the rule is logged and
+is not a project.
+ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-7403's.
+_Avoid_: missing project (that is the 404).
+
+Nothing in a request reaches the file system. Discovery lists the projects directory without following a
+symbolic link, the assets are read into memory at activation, and a request's project segment and path are
+looked up as strings.
+
+`Cpe::from_sql_folders` is hidden from the documentation and loads project folders that hold a committed
+`data.sql`. It is for the incubator's host and for tests, and ends with DEV-7498.
 
 ## The project folders
 
 A project is a folder under `projects/`, named by its **Project id**. `projects/incunabula/` holds
 `config.kdl`, the Markdown files under `narrative/`, the files
-under `assets/`, and four documents about the project's data (`SHAPE.md`, `CURATION.md`, `PROVENANCE.md`,
+under `assets/` (`cpe-server` reads them at **Activation**, from `CPE_PROJECTS_DIR`), and four documents about
+the project's data (`SHAPE.md`, `CURATION.md`, `PROVENANCE.md`,
 `DATA_ISSUES.md`). Those four were written in the incubator and still describe its pipeline in places: its
 committed `data.sql`, its `vendor/` directory, its `just cpe` recipes and other files of the incubator (its
 design documents, its mockup, its scripts, `dao-lift`) are not in this repository. A citation that starts

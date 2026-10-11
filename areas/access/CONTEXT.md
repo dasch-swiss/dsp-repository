@@ -11,7 +11,7 @@ The Discovery and Presentation Environment: the public, unauthenticated, read-on
 _Avoid_: Discovery and Presentation Platform, the repository (DPE is one window onto it), the frontend.
 
 **CPE**:
-The Configurable Presentation Environment: the hypermedia server for project-specific presentations over the same data, configured per project. Its port onto the archive projection (`cpe-ports`), its domain crate (`cpe-core`: the config language, its validation and the IR), its component library (`cpe-components`, with its stylesheets), an interim image viewer (`cpe-image-viewer`), its read-side store (`cpe-store`), the builder that fills it (`cpe-store-build`) and its page assembly (`cpe-web`) are here, with Incunabula's project folder and CPE's shared static files; its routes are not. Its own vocabulary is in [`cpe/CONTEXT.md`](cpe/CONTEXT.md).
+The Configurable Presentation Environment: the hypermedia server for project-specific presentations over the same data, configured per project. Its port onto the archive projection (`cpe-ports`), its domain crate (`cpe-core`: the config language, its validation and the IR), its component library (`cpe-components`, with its stylesheets), an interim image viewer (`cpe-image-viewer`), its read-side store (`cpe-store`), the builder that fills it (`cpe-store-build`), its page assembly (`cpe-web`) and its host crate (`cpe-server`: the configuration, the routes and the activation that builds each project's store from the port) are here, with Incunabula's project folder and CPE's shared static files; `access-server` does not mount it yet. Its own vocabulary is in [`cpe/CONTEXT.md`](cpe/CONTEXT.md).
 _Avoid_: custom frontend, project website.
 
 **DaTEI**:

@@ -23,9 +23,10 @@ block is absent: a project with no `list` has no list tables, one with no `membe
 `resources` and `properties` are never empty.
 
 The rendered text for Incunabula is, byte for byte, the `data.sql` the prototype in `dsp-incubator` embeds. That
-includes the header comment, so `sql::header` still writes the prototype's regenerate command
-(`just cpe store-build <project> --inplace`), which does not exist here. Changing the header or the layout changes
-that text.
+file is not in this repository; `cpe-server`'s test `incunabulas_store_text_is_the_one_the_prototype_embeds` holds
+the text to that file's length and SHA-256. The text includes the header comment, so `sql::header` still writes the
+prototype's regenerate command (`just cpe store-build <project> --inplace`), which does not exist here. Changing
+the header or the layout changes the text, and then that test's two constants.
 
 ## How a build runs
 

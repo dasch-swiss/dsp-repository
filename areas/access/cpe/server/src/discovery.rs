@@ -2,8 +2,8 @@
 //!
 //! A direct subfolder is a project when its name passes `cpe-core`'s id rule
 //! and it holds a `config.kdl`; the name is the project id and the URL
-//! segment. `data.sql` is optional, `narrative/` is flat and `assets/` is
-//! walked to any depth.
+//! segment. `narrative/` is flat and `assets/` is walked to any depth. A
+//! `data.sql` is read by `Cpe::from_sql_folders` alone.
 //!
 //! Nothing here follows a symbolic link, and every path read is built from a
 //! directory listing, never from a request.
@@ -94,16 +94,27 @@ impl DiscoveredProject {
         is_regular_file(&self.dir.join("data.sql"))
     }
 
-    /// The contents of `config.kdl` and `data.sql`. A missing `data.sql`
-    /// yields `""`, which loads as an empty store.
+    /// The content of `config.kdl`.
+    pub(crate) fn config_source(&self) -> Result<String, SourcesError> {
+        self.read_utf8("config.kdl")
+    }
+
+    /// The content of `data.sql`.
+    pub(crate) fn data_sql(&self) -> Result<String, SourcesError> {
+        self.read_utf8("data.sql")
+    }
+
+    /// `config.kdl` and `data.sql` for the router's tests, whose fixtures
+    /// include a folder without a `data.sql`: it yields `""`, which loads as
+    /// an empty store.
+    #[cfg(test)]
     pub(crate) fn sources(&self) -> Result<(String, String), SourcesError> {
-        let config = self.read_utf8("config.kdl")?;
         let data = if self.has_data_sql() {
-            self.read_utf8("data.sql")?
+            self.data_sql()?
         } else {
             String::new()
         };
-        Ok((config, data))
+        Ok((self.config_source()?, data))
     }
 
     /// The bare file names in the project's `narrative/` folder (e.g.
@@ -183,8 +194,18 @@ pub(crate) fn discover(root: &Path) -> Vec<DiscoveredProject> {
         .filter_map(|entry| {
             let id = entry.file_name().into_string().ok()?;
             let dir = entry.path();
-            (cpe_core::validate::is_valid_project_id(&id) && is_regular_file(&dir.join("config.kdl")))
-                .then_some(DiscoveredProject { id, dir })
+            if !is_regular_file(&dir.join("config.kdl")) {
+                return None;
+            }
+            if !cpe_core::validate::is_valid_project_id(&id) {
+                // Such a folder is not a project, so its name is answered 404 and not 503.
+                tracing::warn!(
+                    folder = id.as_str(),
+                    "a folder with a config.kdl has a name that is no project id; it is not served"
+                );
+                return None;
+            }
+            Some(DiscoveredProject { id, dir })
         })
         .collect();
     projects.sort_by(|a, b| a.id.cmp(&b.id));
@@ -302,18 +323,23 @@ mod tests {
 
     #[test]
     fn sources_reads_config_and_data() {
-        let (config, data) = project("alpha").sources().expect("alpha has valid UTF-8 sources");
+        let alpha = project("alpha");
+        let config = alpha.config_source().expect("alpha's config.kdl is valid UTF-8");
+        let data = alpha.data_sql().expect("alpha's data.sql is valid UTF-8");
         assert!(!config.is_empty(), "alpha config.kdl should have content");
         assert!(!data.is_empty(), "alpha data.sql should have content");
     }
 
     #[test]
-    fn sources_tolerates_missing_data_sql() {
+    fn a_missing_data_sql_is_reported_and_not_read_as_empty() {
         let gamma = project("gamma");
         assert!(!gamma.has_data_sql());
-        let (config, data) = gamma.sources().expect("gamma has valid UTF-8 sources");
-        assert!(!config.is_empty(), "gamma config.kdl should have content");
-        assert_eq!(data, "", "gamma has no data.sql, should return empty string");
+        assert!(!gamma.config_source().expect("gamma's config.kdl is valid UTF-8").is_empty());
+        let error = gamma.data_sql().expect_err("gamma has no data.sql");
+        assert!(
+            error.to_string().starts_with("project 'gamma': data.sql cannot be read"),
+            "{error}"
+        );
     }
 
     #[test]
@@ -321,7 +347,7 @@ mod tests {
         let root = tempfile::tempdir().expect("a temporary directory");
         let dir = make_project(root.path(), "broken");
         fs::write(dir.join("config.kdl"), [0xff, 0xfe]).expect("config.kdl is overwritten");
-        let error = discover(root.path())[0].sources().expect_err("invalid UTF-8 is an error");
+        let error = discover(root.path())[0].config_source().expect_err("invalid UTF-8 is an error");
         assert_eq!(error.to_string(), "project 'broken': config.kdl is not valid UTF-8");
     }
 

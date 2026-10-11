@@ -257,7 +257,7 @@ fn cookie_lang(headers: &HeaderMap) -> Option<String> {
 ///
 /// A configured origin (`CPE_PUBLIC_ORIGIN`) is used for every request. With
 /// none, the origin is derived **per request** from `X-Forwarded-Proto`
-/// (fallback `http`) + `Host` ([`derive_request_origin`]), so local
+/// and `Host` ([`derive_request_origin`], which says what it takes of them), so local
 /// development, a preview deployment and the stable service each report
 /// their own host with no configuration. One origin resolved at start would
 /// be wrong for a preview deployed under another host with the same
@@ -307,20 +307,30 @@ impl OriginConfig {
 }
 
 /// Derive an absolute origin (`scheme://host`, no path, no trailing slash)
-/// from one request's own headers: `X-Forwarded-Proto` (fallback `http`) +
-/// `Host` — Cloud Run sets both on every request it proxies, and a local
-/// `curl`/browser request always carries `Host`. Falls back to
-/// `http://localhost:<port>` only when `Host` is entirely absent (no
-/// realistic HTTP client omits it, but this keeps the function total —
-/// never panics).
+/// from one request's own headers: `X-Forwarded-Proto` and `Host`. Cloud Run
+/// sets both on every request it proxies, and a local `curl` or browser
+/// request always carries `Host`.
+///
+/// Both headers are a client's to send, and the origin becomes the start of
+/// the share links' `href`. So the scheme is `https` or `http` and nothing
+/// else (`http` for any other value), and a `Host` that
+/// [`crate::config::is_origin_host`] refuses is treated as absent:
+/// `http://localhost:<port>`. Never panics.
 pub(crate) fn derive_request_origin(headers: &HeaderMap, port: u16) -> String {
-    match headers.get(axum::http::header::HOST).and_then(|v| v.to_str().ok()) {
-        Some(host) => {
-            let proto = headers.get("x-forwarded-proto").and_then(|v| v.to_str().ok()).unwrap_or("http");
-            format!("{proto}://{host}")
-        }
-        None => format!("http://localhost:{port}"),
-    }
+    let host = headers
+        .get(axum::http::header::HOST)
+        .and_then(|value| value.to_str().ok())
+        .filter(|host| crate::config::is_origin_host(host));
+    let Some(host) = host else {
+        return format!("http://localhost:{port}");
+    };
+    let sent = headers.get("x-forwarded-proto").and_then(|value| value.to_str().ok());
+    let scheme = if sent.is_some_and(|sent| sent.eq_ignore_ascii_case("https")) {
+        "https"
+    } else {
+        "http"
+    };
+    format!("{scheme}://{host}")
 }
 
 #[cfg(test)]
@@ -672,6 +682,59 @@ mod tests {
     fn derive_request_origin_falls_back_to_localhost_when_host_missing() {
         let headers = HeaderMap::new();
         assert_eq!(derive_request_origin(&headers, 3000), "http://localhost:3000");
+    }
+
+    #[test]
+    fn derive_request_origin_takes_no_scheme_but_http_and_https() {
+        for (sent, used) in [
+            ("https", "https"),
+            ("HTTPS", "https"),
+            ("http", "http"),
+            ("javascript", "http"),
+            ("data:text/html,x", "http"),
+            ("https, http", "http"),
+            ("", "http"),
+        ] {
+            let mut headers = HeaderMap::new();
+            headers.insert("host", "preview.example.test".parse().unwrap());
+            headers.insert("x-forwarded-proto", sent.parse().unwrap());
+            assert_eq!(
+                derive_request_origin(&headers, 80),
+                format!("{used}://preview.example.test"),
+                "{sent:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn derive_request_origin_takes_a_host_only_under_the_configured_origins_rule() {
+        for good in ["preview.example.test", "localhost:8080", "[::1]:3000", "127.0.0.1"] {
+            let mut headers = HeaderMap::new();
+            headers.insert("host", good.parse().unwrap());
+            assert_eq!(derive_request_origin(&headers, 80), format!("http://{good}"), "{good:?}");
+        }
+        let long = "a".repeat(256);
+        for bad in [
+            "evil.example/path",
+            "user@evil.example",
+            "evil.example\\@good.example",
+            "a b",
+            "x\"onmouseover=\"y",
+            "evil.example?q",
+            "evil.example#f",
+            ":8080",
+            "",
+            long.as_str(),
+        ] {
+            let mut headers = HeaderMap::new();
+            headers.insert("host", bad.parse().unwrap());
+            headers.insert("x-forwarded-proto", "https".parse().unwrap());
+            assert_eq!(
+                derive_request_origin(&headers, 80),
+                "http://localhost:80",
+                "{bad:?} is answered as a request without a Host"
+            );
+        }
     }
 
     #[test]

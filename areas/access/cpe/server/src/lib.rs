@@ -1,18 +1,22 @@
-//! `cpe-server`: CPE's configuration and router.
+//! `cpe-server`: CPE's configuration, its router and the activation of its projects.
 //!
 //! This crate is a library only; a composition root owns `main`, the listener
-//! and the tracing layers, and mounts [`Cpe::router`]. Nothing here may name a
-//! type of `cpe-core`, `cpe-store`, `cpe-store-build`, `cpe-web`,
-//! `cpe-components` or `cpe-image-viewer` in a `pub` signature: that boundary
-//! is what lets a host depend on this crate alone. `tests::no_pub_item_names_another_cpe_crate`
-//! holds it, and relies on this file and `config.rs` importing none of those
-//! crates with `use`.
+//! and the tracing layers, mounts [`Cpe::router`] and calls [`Cpe::activate`].
+//! Nothing here may name a type of `cpe-core`, `cpe-store`, `cpe-store-build`,
+//! `cpe-web`, `cpe-components` or `cpe-image-viewer` in a `pub` signature:
+//! that boundary is what lets a host depend on this crate and `cpe-ports`
+//! alone. `tests::no_pub_item_names_another_cpe_crate` holds it, and relies on
+//! this file and `config.rs` importing no CPE crate with `use`.
 //!
-//! CPE never stops its host. No constructor here fails or panics on what it
-//! finds: a configuration that is refused, a projects folder that is missing
-//! and a project that does not load are logged and answered over HTTP (see
-//! `unavailable`).
+//! CPE never stops its host. Nothing here fails or panics on what it finds: a
+//! configuration that is refused, a projects folder that is missing, a
+//! projection that cannot be read and a project that does not load are logged
+//! and answered over HTTP (see `unavailable`).
+//!
+//! A project's store comes from the port and from nowhere else (ADR-0008): `activation` is where
+//! it is built, and [`Cpe::activate`] is the one way in that a host is meant to use.
 
+mod activation;
 mod assets;
 mod config;
 mod discovery;
@@ -21,13 +25,9 @@ mod router;
 mod static_files;
 mod unavailable;
 
-use std::sync::Arc;
+use std::sync::{Arc, PoisonError, RwLock};
 
 pub use config::CpeConfig;
-
-/// What `cpe-core`'s `ReservedProjectId` check is given. The id rule already refuses every id that
-/// starts with `_`, and that is what keeps a project off `/_static` and `/_assets`.
-const RESERVED_IDS: &[&str] = &["_static"];
 
 /// One project CPE serves, as a host needs it to link there.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -40,16 +40,22 @@ pub struct ProjectSummary {
     pub url: String,
 }
 
-/// CPE, built from its config. Cheap to clone.
+/// CPE, built from its config. Cheap to clone, and every clone and every
+/// router taken from one shares what [`Cpe::activate`] stores.
 #[derive(Clone)]
 pub struct Cpe {
-    router: axum::Router,
-    projects: Vec<ProjectSummary>,
+    config: Arc<CpeConfig>,
+    /// `None` until the projects are loaded. A guard is held only to read or
+    /// replace the `Arc`, never across an `.await`.
+    active: Arc<RwLock<Option<Arc<activation::Activated>>>>,
 }
 
 impl Cpe {
-    /// CPE with no project loaded: every path is answered 503. Does no I/O
-    /// and cannot fail. A configuration that is refused is logged here.
+    /// CPE with no project loaded: every path is answered 503 until
+    /// [`Cpe::activate`] has run. Does no I/O and cannot fail. A
+    /// configuration that is refused is logged here, and then `activate`
+    /// loads nothing.
+    #[must_use]
     pub fn new(config: &CpeConfig) -> Self {
         if let Some(reason) = config.refusal() {
             tracing::error!(
@@ -62,7 +68,36 @@ impl Cpe {
                  from X-Forwarded-Proto and Host"
             );
         }
-        Self { router: unavailable::router(), projects: Vec::new() }
+        Self { config: Arc::new(config.clone()), active: Arc::default() }
+    }
+
+    /// Load every project folder, each with a store built from
+    /// `projection`'s snapshot of its shortcode, and serve them from then on.
+    ///
+    /// Blocking: it reads the projects folder and asks the projection once
+    /// per project, so an async host calls it inside `spawn_blocking`, after
+    /// its listener is bound. It returns nothing and never panics. A project
+    /// that does not load is logged with its id and answers 503 on its
+    /// prefix, and the others are served; a path that names no project is
+    /// CPE's not-found. A later call loads everything again and replaces
+    /// what is served; if it panics outside a project's own load, what was
+    /// served before stays.
+    ///
+    /// "Never panics" rests on unwinding: a binary built with
+    /// `panic = "abort"` loses it.
+    pub fn activate(&self, projection: &dyn cpe_ports::ArchiveProjection) {
+        if self.config.refusal().is_some() {
+            return;
+        }
+        let config = &self.config;
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| activation::from_projection(config, projection)))
+        {
+            Ok(activated) => self.store(activated),
+            Err(payload) => tracing::error!(
+                panic = activation::panic_message(payload.as_ref()),
+                "CPE's activation panicked; what was served before is still served"
+            ),
+        }
     }
 
     /// CPE over the project folders that hold a `data.sql`, each opened from
@@ -74,125 +109,57 @@ impl Cpe {
     /// A folder without a `data.sql`, and a project that does not load, are
     /// answered 503 on their prefix; the others are served.
     #[doc(hidden)]
+    #[must_use]
     pub fn from_sql_folders(config: &CpeConfig) -> Self {
-        if config.refusal().is_some() {
-            return Self::new(config);
+        let cpe = Self::new(config);
+        if config.refusal().is_none() {
+            cpe.store(activation::from_sql_folders(config));
         }
+        cpe
+    }
 
-        let mut loaded = Vec::new();
-        let mut served = Vec::new();
-        let mut unavailable = Vec::new();
-        for discovered in discovery::discover(&config.projects_dir) {
-            if !discovered.has_data_sql() {
-                tracing::error!(
-                    project_id = discovered.id.as_str(),
-                    "project has no data.sql; its prefix answers 503"
-                );
-                unavailable.push(discovered.id);
-                continue;
-            }
-            match load_from_sql(&discovered).and_then(with_routes_that_register) {
-                Ok(project) => {
-                    loaded.push(project);
-                    served.push(discovered);
-                }
-                Err(report) => {
-                    tracing::error!(
-                        project_id = discovered.id.as_str(),
-                        report = report.as_str(),
-                        "project does not load; its prefix answers 503"
-                    );
-                    unavailable.push(discovered.id);
-                }
-            }
-        }
-        tracing::info!(
-            projects_dir = %config.projects_dir.display(),
-            served = loaded.len(),
-            unavailable = unavailable.len(),
-            "CPE's projects are loaded"
-        );
+    fn store(&self, activated: activation::Activated) {
+        let activated = Some(Arc::new(activated));
+        let replaced = std::mem::replace(&mut *self.active.write().unwrap_or_else(PoisonError::into_inner), activated);
+        // The projects served before are dropped here, after the guard: requests do not wait for
+        // it.
+        drop(replaced);
+    }
 
-        let projects = loaded
-            .iter()
-            .map(|project| ProjectSummary {
-                id: project.id().to_owned(),
-                title: project.title(&cpe_core::lang::resolve(&[], &project.config().site)).to_owned(),
-                url: format!("/{}/", project.id()),
-            })
-            .collect();
-        let router = router::build(
-            &loaded,
-            &unavailable,
-            &assets::AssetInventory::of(&served),
-            request::OriginConfig::new(config.public_origin.as_deref()),
-        )
-        .layer(axum::middleware::from_fn(request::resolve_request_prefs));
-        Self { router, projects }
+    fn activated(&self) -> Option<Arc<activation::Activated>> {
+        self.active.read().unwrap_or_else(PoisonError::into_inner).clone()
     }
 
     /// CPE's routes: the shared static files, each project's assets and
-    /// pages, and CPE's own fallback, so that a host that nests this router
-    /// keeps its own fallback for its own paths. It carries no tracing layer.
+    /// pages, and CPE's own fallback. It carries no tracing layer.
+    ///
+    /// The router has one service, a fallback that answers every path and
+    /// method: 503 until the projects are loaded, and the loaded projects'
+    /// router from then on, whenever this router was taken. Because it has a
+    /// fallback of its own, a host that nests it keeps its own fallback for
+    /// its own paths only.
     pub fn router(&self) -> axum::Router {
-        self.router.clone()
-    }
-
-    /// The projects CPE serves, sorted by id. A host that wants a list of
-    /// them renders it from this.
-    pub fn projects(&self) -> Vec<ProjectSummary> {
-        self.projects.clone()
-    }
-}
-
-/// Refuse a project whose routes axum cannot register. `Router::route` panics on two routes it
-/// cannot tell apart (`/books/:id` beside `/books/:name`), and validation does not rule that pair
-/// out. The trial registration here runs the same code as the real one and turns the panic into a
-/// refused project.
-fn with_routes_that_register(project: cpe_web::project::Project) -> Result<Arc<cpe_web::project::Project>, String> {
-    let project = Arc::new(project);
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let _trial = router::build(
-            std::slice::from_ref(&project),
-            &[],
-            &assets::AssetInventory::default(),
-            request::OriginConfig::new(None),
-        );
-    }))
-    .map_err(|_| "two of its routes are the same to the router".to_owned())?;
-    Ok(project)
-}
-
-/// Read one project folder and load it from its `data.sql`. The error is a
-/// report ready to log; a validation report is rendered here, while the
-/// config source it points into is at hand.
-fn load_from_sql(discovered: &discovery::DiscoveredProject) -> Result<cpe_web::project::Project, String> {
-    let (config_src, data_sql) = discovered.sources().map_err(|error| error.to_string())?;
-    let narrative_files = discovered.narrative_files();
-    let asset_files = discovered.asset_files();
-    let narrative_contents = discovered.narrative_contents().map_err(|error| error.to_string())?;
-    let ctx = cpe_core::validate::context::ValidationContext {
-        project_id: &discovered.id,
-        reserved_ids: RESERVED_IDS,
-        narrative_files: &narrative_files,
-        asset_files: &asset_files,
-    };
-    match cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &narrative_contents) {
-        Ok(project) => {
-            for warning in project.warnings() {
-                tracing::warn!(
-                    project_id = discovered.id.as_str(),
-                    kind = ?warning.kind,
-                    message = warning.message.as_str(),
-                    "validation warning"
-                );
+        let cpe = self.clone();
+        axum::Router::new().fallback(move |request: axum::extract::Request| {
+            let activated = cpe.activated();
+            async move {
+                match activated {
+                    Some(activated) => {
+                        // A router's error type is `Infallible`.
+                        let Ok(response) = tower::ServiceExt::oneshot(activated.router.clone(), request).await;
+                        response
+                    }
+                    None => unavailable::response(),
+                }
             }
-            Ok(project)
-        }
-        Err(cpe_web::project::LoadError::Validation(report)) => {
-            Err(report.render(&config_src, &format!("{}/config.kdl", discovered.id)))
-        }
-        Err(other) => Err(other.to_string()),
+        })
+    }
+
+    /// The projects CPE serves, sorted by id; empty until they are loaded. A
+    /// host that wants a list of them renders it from this.
+    #[must_use]
+    pub fn projects(&self) -> Vec<ProjectSummary> {
+        self.activated().map(|activated| activated.projects.clone()).unwrap_or_default()
     }
 }
 
@@ -206,18 +173,18 @@ mod tests {
 
     use super::*;
 
-    fn fixture() -> PathBuf {
+    pub(crate) fn fixture() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/discovery")
     }
 
-    fn config_for(projects_dir: &Path) -> CpeConfig {
+    pub(crate) fn config_for(projects_dir: &Path) -> CpeConfig {
         CpeConfig {
             projects_dir: projects_dir.to_owned(),
             ..CpeConfig::default()
         }
     }
 
-    async fn get(cpe: &Cpe, uri: &str) -> (StatusCode, axum::http::HeaderMap, String) {
+    pub(crate) async fn get(cpe: &Cpe, uri: &str) -> (StatusCode, axum::http::HeaderMap, String) {
         let response = cpe
             .router()
             .oneshot(
@@ -235,7 +202,7 @@ mod tests {
         (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
     }
 
-    fn assert_unavailable(status: StatusCode, headers: &axum::http::HeaderMap, what: &str) {
+    pub(crate) fn assert_unavailable(status: StatusCode, headers: &axum::http::HeaderMap, what: &str) {
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{what}");
         assert!(headers.contains_key(header::RETRY_AFTER), "{what}: Retry-After");
         assert_eq!(headers[header::CACHE_CONTROL], "no-store", "{what}");
@@ -262,7 +229,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn before_anything_is_loaded_every_path_is_answered_503() {
+    async fn before_anything_is_loaded_every_path_and_method_is_answered_503() {
         let cpe = Cpe::new(&config_for(&fixture()));
         assert!(cpe.projects().is_empty());
         for uri in [
@@ -272,9 +239,21 @@ mod tests {
             "/_assets/alpha/assets/cover.webp",
             "/nope",
         ] {
-            let (status, headers, _) = get(&cpe, uri).await;
+            let (status, headers, body) = get(&cpe, uri).await;
             assert_unavailable(status, &headers, uri);
+            assert!(!body.contains("nope"), "the 503 page names no request path: {body}");
         }
+        let post = Request::builder()
+            .method("POST")
+            .uri("/anything/at/all")
+            .body(Body::empty())
+            .expect("hand-crafted test request is well-formed");
+        let response = cpe
+            .router()
+            .oneshot(post)
+            .await
+            .expect("oneshot against an in-process router never fails");
+        assert_unavailable(response.status(), response.headers(), "POST");
     }
 
     #[tokio::test]

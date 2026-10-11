@@ -101,6 +101,8 @@ own port against `sync`". This amendment narrows that sentence (as decided by th
   `cpe-store-build` is the first: its tests build Incunabula's store from the committed 0803 snapshot, and
   only `sync-store`'s adapter reads that file. For a library or a binary as built for use the sentence
   stands: Cargo gives a dev-dependency to test builds alone, so the read model still has one feed.
+  Note (2026-10-11, DEV-7465): `cpe-server` is the second. Its tests build Incunabula's store from the
+  same snapshot, through the same adapter.
 - **The reason of the clause holds.** Such a test constructs `LiveArchiveProjection` and hands the builder
   what the port serves. It reads through the port and never opens `sync`'s data itself.
 - **What changed** is that a read model's tests need the real snapshot, which the sentence did not foresee.

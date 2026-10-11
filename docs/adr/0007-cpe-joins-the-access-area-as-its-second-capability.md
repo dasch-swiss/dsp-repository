@@ -292,7 +292,7 @@ Enforced by: review, for a later crate that moves before its churn in the incuba
 
 Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-11 (DEV-7401) below.
 
-## Amendment (2026-10-11, DEV-7401) — the churn rule is replaced, the image viewer's interim packaging, and the stylesheets
+## Amendment (2026-10-11, DEV-7401) — the churn rule is replaced, the image viewer's interim packaging, the stylesheets, and the seam as checked
 
 - **The churn sentence of the amendment of 2026-10-02 (DEV-7400) is replaced by ADR-0011.** "A crate moves
   when its churn in the incubator has dropped, not in dependency order" no longer holds: a CPE crate moves
@@ -315,5 +315,24 @@ Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-
   that crate's `style/` directory. The crate neither embeds nor serves them: the host does. Until DEV-7465
   brings CPE's host here, that host is the incubator's binary, which serves them from its vendored copy;
   nothing in this repository serves them yet.
+- **The seam is checked, and wider than the sentence above states it.** The component-library clause says
+  that CPE's web crate never depends on `mosaic-tiles` and that no crate outside `areas/access/cpe/` depends
+  on CPE's library. `.github/scripts/check-cpe-seam.sh` checks three rules over the tracked `Cargo.toml`
+  files, for every crate of the capability:
+  1. No crate outside `areas/access/cpe/` depends on a CPE crate, the port excepted. `cpe-ports` is the one
+     crate another capability may depend on, because the provider of a port implements it (`sync-store`
+     today).
+  2. No manifest under `areas/access/cpe/` depends on a Mosaic crate (any crate of `modules/mosaic/`, not
+     `mosaic-tiles` alone).
+  3. `cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate, each other included.
 
-Enforced by: review.
+  `cpe-image-viewer` has no exemption for a later consumer outside the capability: such a consumer changes
+  the check and this record together. The script excepts crates from rule 1 by a list of paths. DEV-7465
+  adds the host-facing crates to it (`cpe-server` and, for a `Live<Port>` adapter, `cpe-store`) when
+  `access-server` mounts CPE. Rule 3 is by a second list, `LEAVES`; a new crate that must stay a leaf is
+  added to it. What the script does not check is review: that no CPE crate depends on DPE's domain, store or
+  web crates or on `sync`'s store (ADR-0008), and `cpe-components`' own dependency list (no `axum`, no
+  `rusqlite`).
+
+Enforced by: static-analysis (`check-cpe-seam.sh`, run by `just check`) until Bazel `visibility`, for the
+seam; review for the rest.

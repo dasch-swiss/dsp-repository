@@ -76,6 +76,13 @@ check-shared-paths:
 check-composition-root-deps:
     bash .github/scripts/check-composition-root-deps.sh
 
+# A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
+# the workspace still compiles, so only a grep catches the boundary break.
+
+# Verify CPE's dependency seam: only its port is used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate. Run by `just check`. (DEV-7401, ADR-0007)
+check-cpe-seam:
+    bash .github/scripts/check-cpe-seam.sh
+
 # `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
 # fine and the control is inert, so only a grep or a browser catches it.
 
@@ -98,7 +105,7 @@ check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-composition-root-deps check-datastar-delimiters check-adr-refs check-live-tests-ignored
+check: verify-checksums check-shared-paths check-composition-root-deps check-cpe-seam check-datastar-delimiters check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -171,6 +178,7 @@ test:
     bash .github/scripts/verify-checksums.test.sh
     bash .github/scripts/check-shared-paths.test.sh
     bash .github/scripts/check-composition-root-deps.test.sh
+    bash .github/scripts/check-cpe-seam.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
     bash .github/scripts/check-adr-refs.test.sh
     bash .github/scripts/check-live-tests-ignored.test.sh

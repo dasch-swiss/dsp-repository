@@ -10,10 +10,9 @@
 //! taken there, short-scoped, and never returned. Page assembly (`Project`, in
 //! `cpe-web`) owns the connection's `Mutex`.
 //!
-//! `pub` in this crate means visible to the sibling CPE crates. The host's surface is
-//! only what `dsp-incubator cpe/engine` re-exports, which is three names (`DbError`, `QueryError`
-//! and `search_index_name`); neither `db` nor `query` is exposed as a module. Items
-//! marked `#[doc(hidden)]` are not host API.
+//! `pub` in this crate means visible to CPE's other crates. A composition root sees none of
+//! it: `cpe-server`, the crate a composition root depends on, re-exports nothing of this
+//! crate. Items marked `#[doc(hidden)]` are for the sibling crates and their tests.
 
 pub mod db;
 pub mod query;

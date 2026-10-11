@@ -1,0 +1,16 @@
+// Fixture config for discovery tests, extended (site-index teaser cards
+// step 3) to exercise accent/eyebrow/credit/cover-image on the site-index
+// teaser: a non-default accent, a configured eyebrow, and a cover image +
+// credit (the `assets/cover.webp` file already ships alongside this fixture
+// from the `/_assets` route tests).
+site {
+    title "Alpha Fixture"
+    languages "de" "en"
+    theme {
+        accent "green"
+    }
+    eyebrow "Test Eyebrow"
+    cover-image "assets/cover.webp"
+    image-credit "Alpha Credit"
+}
+page id="home" route="/"

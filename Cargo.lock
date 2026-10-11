@@ -622,6 +622,28 @@ name = "cpe-ports"
 version = "0.8.7"
 
 [[package]]
+name = "cpe-server"
+version = "0.8.7"
+dependencies = [
+ "axum",
+ "cpe-components",
+ "cpe-core",
+ "cpe-image-viewer",
+ "cpe-web",
+ "datastar",
+ "figment",
+ "futures-util",
+ "maud",
+ "percent-encoding",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tracing",
+]
+
+[[package]]
 name = "cpe-store"
 version = "0.8.7"
 dependencies = [

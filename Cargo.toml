@@ -14,6 +14,7 @@ members = [
   "areas/access/cpe/core",
   "areas/access/cpe/image-viewer",
   "areas/access/cpe/ports",
+  "areas/access/cpe/server",
   "areas/access/cpe/store",
   "areas/access/cpe/store-build",
   "areas/access/cpe/web",
@@ -42,6 +43,7 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 axum = { version = "0.8.9", features = ["macros", "ws"] }
 insta = { version = "1.47", features = ["yaml", "filters"] }
 datastar = { version = "0.3", features = ["axum"] }
+futures-util = "0.3"
 # Templating (`axum` feature gives `impl IntoResponse for Markup`).
 maud = { version = "0.27", features = ["axum"] }
 log = "0.4.30"

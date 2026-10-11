@@ -1,0 +1,13 @@
+// Fixture for search-bar query injection (step 6) tests.
+// A single search-only (non-faceted) resource-list with a search-bar
+// targeting it. No facet-panel — this fixture exists to prove a
+// search-only page also shows "N of M" (unfiltered_total).
+site {
+    title "Zeta Fixture"
+    languages "en" "de"
+}
+page id="home" route="/"
+page id="things" route="/things" {
+    resource-list id="things" class="Thing"
+    search-bar target="things" searches="name"
+}

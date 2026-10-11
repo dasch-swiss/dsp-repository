@@ -1,0 +1,17 @@
+// Fixture for the `_search` fragment-handler router tests (step 10).
+// A resource-list with BOTH a facet-panel (kind="list" on "category") and a
+// search-bar targeting it — proves `_search` emits TWO PatchElements events
+// (filterbar + list) on a faceted page. `zeta` (search-only, no facet-panel)
+// already covers the ONE-event non-faceted case.
+site {
+    title "Eta Fixture"
+    languages "en" "de"
+}
+page id="home" route="/"
+page id="widgets" route="/widgets" {
+    resource-list id="widgets" class="Widget"
+    facet-panel target="widgets" {
+        facet property="category" kind="list"
+    }
+    search-bar target="widgets" searches="name"
+}

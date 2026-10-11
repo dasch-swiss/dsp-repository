@@ -1,0 +1,6 @@
+// minimal fixture config for discovery tests
+site {
+    title "Gamma Fixture"
+    languages "de" "en"
+}
+page id="home" route="/"

@@ -210,12 +210,11 @@ fn query_lang(query: Option<&str>) -> Option<String> {
 
 /// Extract the 1-based `img` index from the query string (e.g. `?img=2&lang=de`).
 ///
-/// **1-based** (embedded-media plan step 6 — `?img=` flipped from the old
-/// 0-based carousel semantics to reconcile with `?member=` and the designed
-/// `.pg` pager). Returns the parsed positive integer when the key is present
-/// and parseable; defaults to `1` (the first image) when absent, zero, or
-/// unparseable (any garbage value is silently treated as the start of the
-/// sequence). Callers clamp against the actual media-item count.
+/// **1-based**, like `?member=` and the `.pg` pager. Returns the parsed
+/// positive integer when the key is present and parseable; defaults to `1`
+/// (the first image) when absent, zero, or unparseable (any garbage value is
+/// silently treated as the start of the sequence). Callers clamp against the
+/// actual media-item count.
 pub(crate) fn query_img(query: Option<&str>) -> usize {
     query_pairs(query)
         .find(|(k, _)| *k == "img")
@@ -227,11 +226,10 @@ pub(crate) fn query_img(query: Option<&str>) -> usize {
 /// Extract the record viewer's thumb-strip fold state from the query string
 /// (`?strip=0` closed; absent or any other value → open).
 ///
-/// Open-on-load is the designed default (embedded-media plan step 6c). The
-/// record-viewer's own strip fold is a client-side `$stripOpen` signal (never
-/// a URL write, ADR-0007); `?strip=` stays only the initial-load / zero-JS
-/// full-reload condition read here (the retired `_plate` fragment endpoint
-/// this comment used to describe is gone — record-viewer plan step 12).
+/// Open-on-load is the default. The record-viewer's own strip fold is a
+/// client-side `$stripOpen` signal (never a URL write,
+/// `dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`);
+/// `?strip=` is only the initial-load / zero-JS full-reload condition read here.
 pub(crate) fn query_strip(query: Option<&str>) -> bool {
     query_pairs(query)
         .find(|(k, _)| *k == "strip")

@@ -538,9 +538,9 @@ mod tests {
         ("/incunabula/strips/l-10", "<h1 class=\"record__title\">l_10"),
     ];
 
-    /// The length and the SHA-256 of the store text built for Incunabula. They are those of
-    /// `dsp-incubator cpe/projects/incunabula/data.sql`, the file the prototype embeds, so the
-    /// store opened here holds what the prototype's does. That file is not in this repository.
+    /// The length and the SHA-256 of the store's SQL text as built for Incunabula from the
+    /// committed 0803 snapshot. They are those of
+    /// `dsp-incubator cpe/projects/incunabula/data.sql` at `d68f214b`.
     ///
     /// The text follows the committed 0803 data, Incunabula's `remodel` block and the builder.
     /// When one of them changes it on purpose, put the two values the failure prints here.

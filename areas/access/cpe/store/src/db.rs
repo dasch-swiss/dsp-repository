@@ -9,7 +9,7 @@ use rusqlite::Connection;
 const SCHEMA_SQL: &str = include_str!("../schema.sql");
 
 /// What can go wrong while building a project's in-memory database.
-/// Each variant pins the boot step that failed and carries the
+/// Each variant pins the step that failed and carries the
 /// underlying SQLite error as its source.
 #[derive(Debug, thiserror::Error)]
 pub enum DbError {
@@ -31,8 +31,9 @@ pub enum DbError {
 /// pragma is per-connection and a no-op once a transaction is open, so
 /// it must be set on the bare connection first (see `dsp-incubator cpe/docs/SCHEMA.md`).
 ///
-/// `data_sql` is trusted project data (build-embedded at boot), never
-/// request input — it is executed verbatim via `execute_batch`.
+/// `data_sql` is trusted project data (the store text built at activation, or a
+/// project's committed `data.sql`), never request input — it is executed
+/// verbatim via `execute_batch`.
 pub fn open_project_db(data_sql: &str) -> Result<Connection, DbError> {
     let mut conn = Connection::open_in_memory().map_err(DbError::Open)?;
     conn.pragma_update(None, "foreign_keys", true).map_err(DbError::Pragma)?;

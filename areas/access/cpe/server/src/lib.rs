@@ -103,8 +103,8 @@ impl Cpe {
     /// CPE over the project folders that hold a `data.sql`, each opened from
     /// that SQL text. Blocking: it reads the projects folder.
     ///
-    /// For the prototype's host and for tests only. It ends with DEV-7498,
-    /// which leaves no project with a committed `data.sql`.
+    /// For the incubator's host and for tests only. Removable once no project
+    /// ships a `data.sql` (DEV-7498).
     ///
     /// A folder without a `data.sql`, and a project that does not load, are
     /// answered 503 on their prefix; the others are served.

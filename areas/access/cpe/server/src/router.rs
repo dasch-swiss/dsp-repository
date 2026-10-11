@@ -44,7 +44,7 @@ use crate::{static_files, unavailable};
 ///
 /// CPE's config files and IR use `:name` syntax; this boundary translation is
 /// applied **only** where the route string is handed to `app.route(…)`. The
-/// config language, IR, param-extractor, and Alice's config.kdl are unchanged.
+/// config language, the IR and the param-extractor keep `:name`.
 ///
 /// Paths with no param segments pass through unchanged.
 /// See the unit tests in the `tests` module for examples.
@@ -150,9 +150,9 @@ pub(crate) fn build(
                 // returns: four `datastar-patch-elements` events in one SSE stream — panel
                 // (#facets-<list-id>), filterbar (#filters-<list-id>), list
                 // (#<list-id>), crumb line (#crumb-<list-id>) — plus a
-                // `datastar-patch-signals` $copied reset. The filterbar is a third patch
-                // region (design decision 1, phase-5 browse-redesign plan) so the
-                // active-filter chip row never goes stale on a JS facet interaction.
+                // `datastar-patch-signals` $copied reset. The filterbar is its own patch
+                // region so the active-filter chip row never goes stale on a JS facet
+                // interaction.
                 let has_facet_panel = page
                     .body
                     .iter()
@@ -204,23 +204,17 @@ pub(crate) fn build(
                     );
                 }
 
-                // No `_plate` fragment route here (record-viewer plan step 12):
-                // every `resource-detail` with media renders `record--viewer`
-                // now, whose pager pages client-side via the `$plate` signal +
-                // `goToPage` (never `@get`/a `_plate` fragment — ADR-0007).
-                // The plate renderer that fragment endpoint used to serve is
-                // deleted entirely, so there is no route to register here;
-                // removed alongside the parameterised branch's registration
-                // below. See CLAUDE.md's embedded-media/record-viewer entries.
+                // No fragment route for the record viewer: every `resource-detail`
+                // with media renders `record--viewer`, whose pager pages client-side
+                // via the `$plate` signal + `goToPage`, never `@get`
+                // (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`).
 
                 // Register a DataStar SSE compound-viewer fragment route for
                 // every static page whose body contains a CompoundViewer
-                // component — the revived `_compound` route
-                // (reader-paging-fragment-swap plan Step 1). A static-source
-                // compound-viewer (Alice's `/wonderland`/`/looking-glass`)
-                // never needs a route param, so `make_compound_fragment_handler`
-                // (no `Path` extractor) is correct here, mirroring the
-                // static-page facet/sort/search registrations above.
+                // component. A static-source compound-viewer never needs a
+                // route param, so `make_compound_fragment_handler` (no `Path`
+                // extractor) is correct here, mirroring the static-page
+                // facet/sort/search registrations above.
                 let has_compound_viewer = page
                     .body
                     .iter()
@@ -245,14 +239,12 @@ pub(crate) fn build(
                     get(make_parameterized_handler(Arc::clone(project), idx, origin_cfg.clone())),
                 );
 
-                // No `_plate` fragment route here either (see the matching
-                // note in the static-page branch above) — the plate renderer
-                // it would have served is deleted; removed, step 12.
+                // No record-viewer fragment route here either (see the note in
+                // the static-page branch above).
 
                 // Register a DataStar SSE facet fragment route for every parameterised
                 // page whose body contains a FacetPanel component. Symmetrical with the
-                // static-page branch; Alice's faceted pages are static, so this branch
-                // is a forward-compatibility guard for future parameterised faceted pages.
+                // static-page branch.
                 let has_facet_panel_param = page
                     .body
                     .iter()
@@ -268,9 +260,7 @@ pub(crate) fn build(
 
                 // Register a DataStar SSE sort fragment route for every parameterised
                 // page whose body contains a ResourceList component. Symmetrical with
-                // the static-page branch; Alice's sortable lists are all static, so
-                // this branch is a forward-compatibility guard for future
-                // parameterised list pages.
+                // the static-page branch.
                 let has_resource_list_param = page
                     .body
                     .iter()
@@ -286,9 +276,7 @@ pub(crate) fn build(
 
                 // Register a DataStar SSE search fragment route for every
                 // parameterised page whose body contains a SearchBar component.
-                // Symmetrical with the static-page branch; Alice's search-bar
-                // pages are all static, so this branch is a forward-compatibility
-                // guard for future parameterised search pages.
+                // Symmetrical with the static-page branch.
                 let has_search_bar_param =
                     page.body.iter().any(|c| matches!(c, cpe_core::ir::Component::SearchBar { .. }));
                 if has_search_bar_param {
@@ -302,16 +290,14 @@ pub(crate) fn build(
 
                 // Register a DataStar SSE compound-viewer fragment route for
                 // every parameterised page whose body contains a
-                // CompoundViewer component — the revived `_compound` route
-                // (reader-paging-fragment-swap plan Step 1). Unlike the
-                // static-page branch above, this registration needs REAL
-                // `Path` extraction (`make_compound_fragment_handler_param`,
-                // following `make_parameterized_handler`'s pattern) — NOT
+                // CompoundViewer component. Unlike the static-page branch
+                // above, this registration needs REAL `Path` extraction
+                // (`make_compound_fragment_handler_param`, following
+                // `make_parameterized_handler`'s pattern) — NOT
                 // `make_facet_fragment_handler`'s param-less shape: a
                 // route-param compound page's `compound-viewer source="$id"`
-                // (Incunabula's book reader, `/incunabula/books/:id`, this
-                // plan's primary target) needs the real `:id` value to
-                // resolve at all.
+                // (Incunabula's book reader, `/incunabula/books/:id`) needs
+                // the real `:id` value to resolve at all.
                 let has_compound_viewer_param = page
                     .body
                     .iter()
@@ -381,7 +367,7 @@ pub(crate) fn build(
 /// the same 404.
 ///
 /// Reads `RequestedLang`/`RequestedAppearance` from request extensions
-/// defensively (defaulting to empty prefs / no appearance) — `Cpe::from_sql_folders`
+/// defensively (defaulting to empty prefs / no appearance) — `activation`
 /// layers `resolve_request_prefs` over the whole router including this
 /// fallback, but router-only tests build a bare `Router` without it,
 /// mirroring every other handler in this file.
@@ -497,14 +483,13 @@ fn parse_u32_param(query: Option<&str>, name: &str) -> u32 {
 /// Returns the parsed value when present and `>= 1`; defaults to `1` in all
 /// failure cases: absent, empty, non-numeric, or zero. On a numeric value
 /// that overflows `u32` (`ParseIntError::kind() == IntErrorKind::PosOverflow`)
-/// this SATURATES to `u32::MAX` instead of falling back to `1` — the engine's
-/// pagination arithmetic clamps `page` to the last page *before* multiplying
-/// (`project.rs:237-243`), so an absurdly large `page` still lands on the
-/// last page like any other out-of-range value, and `canonical_page_redirect`
-/// can canonicalise it to that effective page in one hop (decision 9). Parses
-/// itself rather than delegating to `parse_u32_param` (which maps overflow to
-/// `1`, same as every other failure case) — `parse_u32_param` itself is
-/// unchanged and still used by other callers (e.g. `member`).
+/// this SATURATES to `u32::MAX` instead of falling back to `1` — the
+/// pagination arithmetic behind `Project::page_data` clamps `page` to the
+/// last page *before* multiplying, so an absurdly large `page` still lands
+/// on the last page like any other out-of-range value, and
+/// `canonical_page_redirect` can canonicalise it to that effective page in
+/// one hop. Parses itself rather than delegating to `parse_u32_param`, which
+/// maps overflow to `1`, same as every other failure case.
 fn parse_page_param(query: Option<&str>) -> u32 {
     let raw = query_pairs(query).find(|(k, _)| *k == "page").map(|(_, v)| v);
     match raw {
@@ -525,7 +510,7 @@ fn parse_page_param(query: Option<&str>) -> u32 {
 /// pair wins, regardless of emptiness. A bare `?page` (no `=`) yields
 /// `Some("")`. `None` iff no `page` key is present at all. Deliberately
 /// **not** `query_param_one`, which skips empty values — that would make
-/// `?page=&page=2` non-idempotent under `canonical_page_redirect` (decision 9).
+/// `?page=&page=2` non-idempotent under `canonical_page_redirect`.
 fn raw_page_param(query: Option<&str>) -> Option<&str> {
     query_pairs(query).find(|(k, _)| *k == "page").map(|(_, v)| v)
 }
@@ -538,8 +523,8 @@ fn raw_page_param(query: Option<&str>) -> Option<&str> {
 ///
 /// `canonical_page_query(None, 2)` → `"page=2"`.
 ///
-/// Deliberately NOT built on the engine's `override_query_param` (see
-/// decision 9): that helper rewrites each matching pair in place
+/// Deliberately NOT built on `cpe-components`' `override_query_param`:
+/// that helper rewrites each matching pair in place
 /// (`?page=&page=2` → `page=1&page=1`), which is loop-safe but not
 /// canonical — a different semantics than this needs.
 fn canonical_page_query(query: Option<&str>, page: u32) -> String {
@@ -554,8 +539,7 @@ fn canonical_page_query(query: Option<&str>, page: u32) -> String {
 /// Guard-return for the two HTML page handlers: when a **page** request's
 /// raw `page` param is present and does not match the effective page after
 /// clamping, produce a `303 See Other` to the same path with exactly one
-/// canonical `page=<effective>` and every other pair preserved in order
-/// (decision 9).
+/// canonical `page=<effective>` and every other pair preserved in order.
 ///
 /// `None` (no redirect) when:
 /// - `status != 200` (a 404-ing sibling component must not be masked as a 303 → 404 — the visitor
@@ -570,8 +554,8 @@ fn canonical_page_query(query: Option<&str>, page: u32) -> String {
 ///
 /// Called as a guard-return right AFTER `Project::page_data` (not before)
 /// because it needs the effective (clamped) `page` from the hydrated
-/// `ResourceListPage` — this costs one extra count+hydrate (and the page's
-/// side lookups) on an out-of-range request, accepted at prototype scale.
+/// `ResourceListPage`. The one extra count+hydrate (and the page's side
+/// lookups) on an out-of-range request is the accepted cost of that order.
 /// `Location` is always a relative `path?query`, never built from
 /// `Host`/origin.
 fn canonical_page_redirect(
@@ -613,29 +597,21 @@ fn query_param_one<'q>(query: Option<&'q str>, key: &str) -> Option<&'q str> {
 
 /// Read and decode the search-bar's `?q=` value: the free-text search query.
 ///
-/// **Why this exists (and every other query reader in this codebase does
-/// NOT decode):** `query_pairs`/`query_param_one`/`query_param_all`
-/// (`request.rs`, this file) split a raw query string on `&`
-/// then `=` and hand back byte slices verbatim — no percent-decoding, no
-/// `+`-means-space handling. That has never mattered before `search-bar`:
-/// every OTHER query value this codebase reads (facet/list-node ids, the
-/// `?sort=` closed vocabulary, language codes, numeric `page`/`member`
-/// indices, theme knob values) is a closed-vocabulary identifier that never
-/// legitimately contains a space or a reserved URL character. `q` is the
-/// first genuinely free-text query value: a real search term routinely
-/// contains a space (`"quantum cat"`), and BOTH of `search-bar`'s two input
-/// paths produce escaped bytes for that space — the zero-JS
-/// `<form method=get>` fallback submits `application/x-www-form-urlencoded`
-/// (space → `+`), and the DataStar debounced-live path's
-/// `encodeURIComponent` (see the render-fn step) escapes it as `%20` — so
-/// `q` needs BOTH percent-decoding and `+`→space handling to read correctly,
-/// which is exactly what `percent_encoding` plus a `+`→space pre-pass gives
-/// us. Rather than widen the shared `query_pairs` family (which would ripple
-/// through every existing caller/test for a fix only `q` currently needs),
-/// this is a small, dedicated reader — call THIS everywhere `q` is read
-/// (pass 1 here, and the render/fragment-handler code that reads it later),
-/// never raw `query_param_one(current_query, "q")`, so decoding can never be
-/// forgotten at one call site and not another.
+/// **Why `q` alone is decoded:** `query_pairs`/`query_param_one`/
+/// `query_param_all` (`request.rs`, this file) split a raw query string on
+/// `&` then `=` and hand back byte slices verbatim — no percent-decoding, no
+/// `+`-means-space handling. Every OTHER query value read here (facet/
+/// list-node ids, the `?sort=` closed vocabulary, language codes, numeric
+/// `page`/`member` indices) is a closed-vocabulary identifier that never
+/// legitimately contains a space or a reserved URL character. `q` is free
+/// text: a search term routinely contains a space (`"quantum cat"`), and
+/// BOTH of `search-bar`'s two input paths produce escaped bytes for that
+/// space — the zero-JS `<form method=get>` fallback submits
+/// `application/x-www-form-urlencoded` (space → `+`), and the DataStar
+/// debounced-live path's `encodeURIComponent` escapes it as `%20` — so `q`
+/// needs BOTH percent-decoding and `+`→space handling. Call THIS everywhere
+/// `q` is read, never raw `query_param_one(current_query, "q")`, so decoding
+/// is never forgotten at one call site and not another.
 ///
 /// Returns `""` (never panics) when the key is absent or decoding fails.
 fn read_search_query_param(query: Option<&str>) -> String {
@@ -653,7 +629,7 @@ fn read_search_query_param(query: Option<&str>) -> String {
 /// Resolve the effective sort criteria for a `ResourceList` request, in
 /// three tiers: (1) the raw `?sort=` value parsed via `Sort::parse_wire` (the
 /// built-ins); else (2) the value matched against the list's declared
-/// `order-by` keys (`order_options`, Incunabula Slice 8 G9 — the option's
+/// `order-by` keys (`order_options` — the option's
 /// `OrderOption::sort`); else (3) `config_sorts`. Tier 3 also covers an
 /// absent param, `"default"`, and any unrecognized token — the documented
 /// silent "As curated" fallback.
@@ -701,7 +677,7 @@ pub(crate) fn query_param_all(query: Option<&str>, key: &str) -> Vec<String> {
 }
 
 /// Cap on the number of distinct values a single facet query-param key may
-/// contribute to a `TargetIn` where-clause (item 7, engine hygiene batch 3).
+/// contribute to a `TargetIn` where-clause.
 pub(crate) const MAX_FACET_VALUES: usize = 256;
 
 /// Return the deduplicated, capped set of values for a repeated facet
@@ -728,9 +704,9 @@ pub(crate) fn facet_param_values(query: Option<&str>, key: &str) -> Vec<String> 
 /// The request's query values as the store asks for them
 /// ([`cpe_core::view_data::PageParams`], read by `Project::page_data`).
 ///
-/// Each method calls the reader that owns that value today, so the decode
+/// Each method calls the reader that owns that value, so the decode
 /// points stay here: `?q=` is decoded only by `read_search_query_param`, and
-/// a compound reader's `?page=` reaches the engine raw (it decodes it once,
+/// a compound reader's `?page=` reaches `Project::page_data` raw (it is decoded once,
 /// when it resolves the member).
 struct RequestParams<'q>(Option<&'q str>);
 
@@ -853,8 +829,8 @@ fn override_redirect(uri: &Uri, appearance: &RequestedAppearance) -> Option<Resp
 ///    that do not layer the middleware).
 /// 2. Resolves the language against the project's declared languages.
 /// 3. Builds the page's data with one `Project::page_data` call (`PageScope::Page`); route params
-///    are empty for static pages — Phase-2 validation forbids `$param` ids on static routes, so
-///    this is a safe invariant.
+///    are empty for static pages — validation (`UndeclaredRouteParam`) forbids `$param` ids on
+///    static routes, so this is a safe invariant.
 /// 4. Calls `render_page` to produce the full HTML document.
 /// 5. If `from_query` is set, attaches a `Set-Cookie` response header using the resolved language
 ///    code (never the raw `?lang=` value).
@@ -898,7 +874,8 @@ fn make_handler(
         let strip_open = crate::request::query_strip(req.uri().query());
 
         // Static pages have no path params; $param ids on static routes are
-        // forbidden by Phase-2 validation, so an empty map is always correct.
+        // forbidden by validation (`UndeclaredRouteParam`), so an empty map is
+        // always correct.
         let route_params = HashMap::new();
         let params = RequestParams(query_str.as_deref());
         let request = cpe_core::view_data::PageRequest {
@@ -917,7 +894,7 @@ fn make_handler(
             resource_links,
         } = project.page_data(page, &request, &lang);
         let http_status = status_code(status);
-        // Canonical page 303 (decision 9) — guard-return, HTML page handler only.
+        // Canonical page 303 — guard-return, HTML page handler only.
         if let Some(redirect) = canonical_page_redirect(&path, query_str.as_deref(), http_status, &components) {
             return std::future::ready(redirect);
         }
@@ -1026,7 +1003,7 @@ fn make_parameterized_handler(
             resource_links,
         } = project.page_data(page, &request, &lang);
         let http_status = status_code(status);
-        // Canonical page 303 (decision 9) — guard-return, HTML page handler only.
+        // Canonical page 303 — guard-return, HTML page handler only.
         if let Some(redirect) = canonical_page_redirect(&path, query_str.as_deref(), http_status, &components) {
             return std::future::ready(redirect);
         }
@@ -1094,7 +1071,7 @@ fn strip_datastar_marker(raw_query: Option<&str>) -> Option<String> {
 }
 
 /// Compute the parent-page path by stripping the trailing `/<segment>` fragment suffix
-/// (e.g. `/_carousel`) from the request path.
+/// (e.g. `/_facets`) from the request path.
 ///
 /// Every DataStar fragment handler needs the *page's* path (not the fragment endpoint's) so
 /// hrefs it emits stay page-relative instead of accumulating a repeated `/_<segment>/_<segment>`
@@ -1113,7 +1090,7 @@ fn strip_fragment_suffix<'a>(full_path: &'a str, segment: &str) -> &'a str {
 
 /// Build the "throwaway" [`cpe_components::component::context::RenderContext`] the crumb-patch
 /// helper below needs — one shared by all three fragment handlers
-/// (`_facets`/`_sort`/`_search`, share-view plan step 6). A
+/// (`_facets`/`_sort`/`_search`). A
 /// crumb-line re-render only ever reads `lang`/`project_id`/`current_path`/
 /// `current_query`/`link_routes`/`media_properties`/
 /// `class_list_routes`/`public_origin` off the context — every resource/
@@ -1164,9 +1141,9 @@ struct CrumbPatchRequest<'a> {
     public_origin: &'a str,
 }
 
-/// Build the crumb-patch SSE `Event` for the BROWSE crumb-line variant
-/// (share-view plan step 6) — shared by the `_facets`/`_sort`/`_search`
-/// fragment handlers. Recomposes the crumb line via the SAME
+/// Build the crumb-patch SSE `Event` for the BROWSE crumb-line variant —
+/// shared by the `_facets`/`_sort`/`_search` fragment handlers.
+/// Recomposes the crumb line via the SAME
 /// `cpe_web::page::render_browse_breadcrumb_for_page` helper the full-page
 /// render calls — the caller must never re-derive the crumb inline. Returns
 /// `None` when the page has no id-bearing `ResourceList` (the helper's own
@@ -1197,8 +1174,7 @@ fn browse_crumb_patch_event(
 }
 
 /// Build the `datastar-patch-signals` SSE `Event` that resets the
-/// page-global `$copied` "Copied" receipt to `false` (share-view
-/// design doc, Build notes "Swap-stable" — browser-verified 2026-09-01).
+/// page-global `$copied` "Copied" receipt to `false`.
 ///
 /// `$copied` is a DataStar signal, not an element — it survives ANY
 /// element patch untouched (re-applying `data-signals="{copied:false}"`
@@ -1211,7 +1187,7 @@ fn browse_crumb_patch_event(
 /// One shared fn so all three handlers can't drift on the signal name or
 /// the JSON shape.
 ///
-/// `_dataCopied` is the dataset panel's receipt (the engine's
+/// `_dataCopied` is the dataset panel's receipt (`cpe-components`'
 /// `data_links::DATA_SIGNALS`), reset the same way; on a page without a panel
 /// the key is created and never read.
 fn copied_signal_reset_event() -> Event {
@@ -1219,30 +1195,26 @@ fn copied_signal_reset_event() -> Event {
 }
 
 /// Create a handler closure for a DataStar SSE fragment for the
-/// compound-viewer member pager, for a STATIC page (no path params) —
-/// revives the `_compound` route retired at Incunabula Slice 3b
-/// (`reader-paging-fragment-swap` plan Step 1), now as a URL-writing
-/// `pushState` swap for FORWARD clicks only (Option B, owner decision
-/// 2026-09-28 — Back/Forward is a real page load and never reaches this
-/// handler at all). Mirrors `make_facet_fragment_handler`'s overall shape
-/// (doc comment, arg shape, `strip_datastar_marker`/`strip_fragment_suffix`
-/// use) — the route-param sibling below is the one exception (real `Path`
-/// extraction, `make_parameterized_handler`'s pattern), since a
-/// static-source compound-viewer (Alice's `/wonderland`/`/looking-glass`)
-/// never needs one.
+/// compound-viewer member pager, for a STATIC page (no path params): a
+/// URL-writing `pushState` swap for FORWARD clicks only (Back/Forward is a
+/// real page load and never reaches this handler). Mirrors
+/// `make_facet_fragment_handler`'s overall shape (arg shape,
+/// `strip_datastar_marker`/`strip_fragment_suffix` use) — the route-param
+/// sibling below is the one exception (real `Path` extraction,
+/// `make_parameterized_handler`'s pattern), since a static-source
+/// compound-viewer never needs one.
 ///
 /// This handler is registered at
 /// `/{project}/{page}/{COMPOUND_FRAGMENT_SEGMENT}` for every STATIC page
 /// whose body contains a `CompoundViewer` component. It renders the viewer +
 /// crumb + header controls (and, on an annotated reader, the
 /// `#cv-annotations` register) via
-/// `cpe_web::page::render_compound_fragment` (Step 1a's new engine
-/// entry point), resets the annotation signals (annotated readers only),
-/// `$copied` and (on a `layout="pages"` swap) the
-/// viewer's page-global signals (Step 3a), and pushes the `pushState` +
-/// `window.__cpeReaderUrl` update + title/focus `ExecuteScript` (Step 3b,
-/// revised for Option B) — see [`compound_fragment_response`]'s own doc
-/// comment for the full event shape and ordering.
+/// `cpe_web::page::render_compound_fragment`, resets the annotation signals
+/// (annotated readers only), `$copied` and (on a `layout="pages"` swap) the
+/// viewer's page-global signals, and pushes the `pushState` +
+/// `window.__cpeReaderUrl` update + title/focus `ExecuteScript` — see
+/// [`compound_fragment_response`]'s own doc comment for the full event shape
+/// and ordering.
 fn make_compound_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1263,7 +1235,7 @@ fn make_compound_fragment_handler(
 /// real `Path<HashMap<String, String>>` (`make_parameterized_handler`'s
 /// pattern), because a route-param compound page's `compound-viewer
 /// source="$id"` needs the real `:id` value to resolve at all (Incunabula's
-/// book reader, `/incunabula/books/:id` — this plan's primary target).
+/// book reader, `/incunabula/books/:id`).
 /// `make_facet_fragment_handler`'s param-less shape (`&HashMap::new()`) is
 /// fine for `_facets`/`_sort`/`_search` — no facet/sort/search page needs a
 /// route param to resolve — but wrong here.
@@ -1284,19 +1256,18 @@ fn make_compound_fragment_handler_param(
 /// SSE must NOT 303: same rationale as the facet/sort/search handlers —
 /// `override_redirect` never runs here (only `datastar` is stripped from
 /// `current_query`), and a redirect would break the SSE response;
-/// `canonical_page_redirect` (decision 9) is never called from any fragment
+/// `canonical_page_redirect` is never called from any fragment
 /// handler, this one included.
 ///
 /// This handler is reached ONLY by a JS-enhanced FORWARD click (a pager
-/// step, a rail link, or a page-picker entry) — Option B (owner decision
-/// 2026-09-28) made Back/Forward a real page load instead, so it never
-/// calls `@get` any more and never reaches this handler at all; see
+/// step, a rail link, or a page-picker entry). Back/Forward is a real page
+/// load: it never calls `@get` and never reaches this handler; see
 /// `cpe-components`' `data-on:popstate__window` doc comment
 /// (`component::compound_viewer`) for the `location.reload()` mechanism.
-/// There is therefore no `pushState`-vs-`replaceState` discrimination left
-/// to make here — every response always `pushState`s.
+/// There is therefore no `pushState`-vs-`replaceState` discrimination to
+/// make here — every response always `pushState`s.
 ///
-/// Event order (`reader-paging-fragment-swap` plan Steps 2/3, mirroring how
+/// Event order (mirroring how
 /// `_facets`/`_sort`/`_search` order their own events): `PatchElements` for
 /// `#compound-viewer`, then an optional `PatchElements` for `#crumb-<id>`,
 /// then a `PatchElements` for `#header-controls` (every swap, so the
@@ -1306,10 +1277,10 @@ fn make_compound_fragment_handler_param(
 /// `#cv-annotations` followed by a `PatchSignals` resetting the annotation
 /// signals (`cpe_components::component::annotation::annotation_reset_signals_json`), then an
 /// optional `PatchSignals` resetting the `<image-viewer>` unit's
-/// page-global signals (Step 3a, `layout="pages"` swaps only), then
+/// page-global signals (`layout="pages"` swaps only), then
 /// `copied_signal_reset_event()` (every swap), then one `ExecuteScript`
 /// combining `pushState` + the `window.__cpeReaderUrl` update + title +
-/// focus-restore (Step 3b, revised for Option B).
+/// focus-restore.
 fn compound_fragment_response(
     project: &Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1396,7 +1367,7 @@ fn compound_fragment_response(
         resource_links: &[],
     };
 
-    // `render_compound_fragment` (Step 1a) internally re-derives the viewer
+    // `render_compound_fragment` internally re-derives the viewer
     // markup, crumb line, title, and canonical URL via the SAME calls
     // `render_page` makes for this page — so this handler cannot drift from
     // the full-page render on any of the four.
@@ -1463,13 +1434,12 @@ fn compound_fragment_response(
         events.push(Ok::<Event, Infallible>(reset.into()));
     }
 
-    // Step 3a — reset the `<image-viewer>` unit's TWO page-global signal
+    // Reset the `<image-viewer>` unit's TWO page-global signal
     // groups (`.rv` and the separate `.rv__canvas` zoom-state group — see
     // `component::media::render_viewer_unit`/`render_viewer_canvas` for the
     // exact declared initial values this mirrors) on a `layout="pages"`
     // swap only. Re-declaring `data-signals` on the freshly patched markup
-    // does NOT reset an already-changed signal client-side (CLAUDE.md's
-    // page-global DataStar signal constraint) — without this event a
+    // does NOT reset an already-changed signal client-side — without this event a
     // visitor who opened Adjust/Details or zoomed in before paging keeps
     // stale drawer/zoom/scale state after the swap. `layout="contents"` has
     // no viewer unit and skips this event entirely. Both signal groups have
@@ -1481,7 +1451,7 @@ fn compound_fragment_response(
         )
     });
     if is_pages_layout {
-        // Review Fix 6 — the reset literal is now composed by
+        // The reset literal is composed by
         // `cpe_components::component::media::viewer_reset_signals_json` (mirrors
         // `component::media`'s own `.rv`/`.rv__canvas` `data-signals`
         // declarations), not hand-written here, so the two can never drift
@@ -1492,26 +1462,23 @@ fn compound_fragment_response(
 
     // Also on EVERY swap (both layouts): reset the share-view `$copied`
     // signal, exactly like the other three fragment handlers do alongside
-    // their own crumb patch (CLAUDE.md's "any swap that patches the crumb
-    // resets `copied`" contract).
+    // their own crumb patch: any swap that patches the crumb resets `copied`.
     events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
-    // Step 3b (Option B, owner decision 2026-09-28) — pushState + the
-    // window.__cpeReaderUrl update + title + focus script. This handler is
-    // reached ONLY by a forward click (see the fn doc comment above), so
-    // there is no popstate-vs-forward-click discrimination left to make:
+    // pushState + the window.__cpeReaderUrl update + title + focus script.
+    // This handler is reached ONLY by a forward click (see the fn doc comment
+    // above), so there is no popstate-vs-forward-click discrimination to make:
     // every response always pushes state, unconditionally.
     //
-    // The canonical URL is anchor-free at the source (`share_href_for_reader`,
-    // item 21, and — since owner decision 2026-09-29 — every other reader
-    // href/action builder too): no call-site stripping needed any more.
+    // The canonical URL is anchor-free at the source (`share_href_for_reader`
+    // and every other reader href/action builder): no call-site stripping is
+    // needed.
     let canonical_url = output.canonical_url.as_str();
     // `pushState` must receive a RELATIVE (origin-free) URL, never the
     // absolute `canonical_url`: per the WHATWG spec it throws
     // `SecurityError` if the given URL's origin differs from the document's
     // real origin, a plausible failure mode given `public_origin` is itself
-    // derived per-request from headers (this exact derivation caused one
-    // real bug before, per CLAUDE.md's share-view entry). A relative URL is
+    // derived per-request from headers. A relative URL is
     // always same-origin by construction. `canonical_url` was built from
     // this SAME `public_origin` (via `ctx.public_origin`), so stripping it
     // back off is a guaranteed-matching prefix strip, not a best-effort one.
@@ -1547,8 +1514,7 @@ fn compound_fragment_response(
 }
 
 /// Everything `cpe_web::page::SearchFragmentSurface::resolve` needs for one
-/// `resource-list`, scanned out of `page.body` + its resolved `ComponentData`
-/// (search-bar plan step 10).
+/// `resource-list`, scanned out of `page.body` + its resolved `ComponentData`.
 ///
 /// The three fragment handlers (`_facets`/`_sort`/`_search`) all call
 /// `render_resource_list`/`render_active_filters` DIRECTLY — unlike the
@@ -1606,11 +1572,8 @@ fn resolve_search_wiring<'a>(
 
 /// Build the `Option<cpe_web::page::SearchFragmentSurface>` for `list_id`, or
 /// `None` when NEITHER a search-bar targets it NOR any facet is actually
-/// active (empty-states-not-found plan step 2 generalization — previously
-/// this returned `None` whenever `SearchWiring.search_bar_scope` was `None`,
-/// which missed the facet-only-no-search-bar case entirely: a page with a
-/// facet-panel but no search-bar could narrow to zero and still show nothing
-/// but the bare `.resource-list__empty` message). `filters_active` is
+/// active. A page with a facet-panel but no search-bar can narrow to zero
+/// too, so the surface does not depend on a search-bar. `filters_active` is
 /// [`cpe_core::ir::any_facet_selected`] on `wiring.facet_groups` — the SAME
 /// predicate that gates `unfiltered_total` in the store's page builder
 /// (`query::page`), so copy and count can never disagree.
@@ -1618,11 +1581,11 @@ fn resolve_search_wiring<'a>(
 /// **`?q=` is never read when no search-bar targets `list_id`** —
 /// `read_search_query_param` is only called inside the `Some(scope)` arm; the
 /// `None` arm passes an empty `q` without touching the query string's `q` key
-/// at all (mirrors the engine's own `build_narrowed_owned`).
+/// at all (mirrors `cpe_web::page`'s `build_narrowed_owned`).
 ///
 /// The caller then passes `.as_ref().and_then(|s| s.search_surface())`/
 /// `.active_query()`/`.narrowed_surface()` to `ResourceListCfg`/
-/// `render_active_filters` exactly like the engine's own `render_body` does
+/// `render_active_filters` exactly like `cpe_web::page`'s `render_body` does
 /// internally.
 fn build_search_fragment_surface(
     project: &cpe_web::project::Project,
@@ -1664,7 +1627,7 @@ fn build_search_fragment_surface(
 ///
 /// 1. Strips the `datastar` key from the query string (DataStar appends it on `@get` requests;
 ///    removing it prevents the re-rendered toggle hrefs from accumulating it on the next click —
-///    matches the compound/carousel handlers).
+///    matches the compound handler).
 /// 2. Calls `Project::page_data` with the stripped query so both `Facets(..)` and the narrowed
 ///    `List(..)` are built with the correct active facet state.
 /// 3. Renders the `FacetPanel` slot via `render_facet_panel`, the same slot's active-filter chip
@@ -1673,34 +1636,32 @@ fn build_search_fragment_surface(
 ///    `ResourceListCfg::with_links` and direct `FacetPanelCfg` construction —
 ///    `render_active_filters` reuses the same `FacetPanelCfg` as the panel).
 /// 4. Emits **four** `PatchElements` events in one SSE stream — panel, filterbar, list (any order
-///    is safe; this order mirrors `render_body`'s composition order) and the recomposed crumb line
-///    (share-view plan step 6). Panel selector: `#facets-<list-id>`; filterbar selector:
-///    `#filters-<list-id>`; list selector: `#<list-id>`; crumb selector: `#crumb-<list-id>`. The
-///    filterbar is a **third** patch region (design decision 1, phase-5 browse-redesign plan) —
+///    is safe; this order mirrors `render_body`'s composition order) and the recomposed crumb line.
+///    Panel selector: `#facets-<list-id>`; filterbar selector: `#filters-<list-id>`; list selector:
+///    `#<list-id>`; crumb selector: `#crumb-<list-id>`. The filterbar is its own patch region —
 ///    without it the chip row would go stale on a JS facet interaction (a removed chip would
 ///    linger; Clear-all lives inside the row it must clear). The crumb event is an `Option` (a
 ///    defensive degrade when the page has no id-bearing resource-list), so this is "up to four".
 ///    `_sort` still morphs only the list + crumb — sort never changes facets.
 /// 5. Emits, in addition, ONE `PatchSignals` `$copied` reset event (`copied_signal_reset_event` — a
 ///    distinct SSE event type, not counted towards the `datastar-patch-elements` total above), so a
-///    refinement landing mid-receipt clears the "Copied" state. Five SSE events total on Alice's
-///    faceted pages.
+///    refinement landing mid-receipt clears the "Copied" state: five SSE events in all.
 ///
 /// SSE must NOT 303: the `override_redirect` guard is deliberately absent — only `datastar`
 /// is stripped from `current_query`. A redirect would break the SSE response.
 ///
-/// This handler takes only `Request` (no `Path` extractor) because Alice's faceted pages are
-/// STATIC. For a parameterised faceted page, the route path ends with `/{segment}` after any
-/// path params, so the same no-Path-extractor approach works: path params are NOT in the
+/// This handler takes only `Request` (no `Path` extractor). For a parameterised faceted page,
+/// the route path ends with `/{segment}` after any path params, so the same
+/// no-Path-extractor approach works: path params are NOT in the
 /// `_facets` URL (they are part of the registered route prefix).
 ///
 /// ## Shared cfg-builder contract
 ///
-/// Both the page handler (via `render_component` in the engine) and this fragment handler
+/// Both the page handler (via `render_component` in `cpe-web`) and this fragment handler
 /// build `FacetPanelCfg` and `ResourceListCfg` from the same inputs. `FacetPanelCfg` has
-/// all-`pub` fields so the bin constructs it directly. `ResourceListCfg` exposes
+/// all-`pub` fields, so this crate constructs it directly. `ResourceListCfg` exposes
 /// `ResourceListCfg::with_links` (a factory that hides the `pub(crate)` `LinkResolver`)
-/// so the bin can build it without naming the crate-internal type.
+/// so this crate can build it without naming the crate-internal type.
 fn make_facet_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1724,7 +1685,7 @@ fn make_facet_fragment_handler(
 
         // Build current_query from the request query, stripping the `datastar` key.
         // DataStar appends a `datastar=<json>` marker on @get requests; removing it
-        // prevents the swapped-in hrefs from accumulating it (mirrors compound/carousel).
+        // prevents the swapped-in hrefs from accumulating it (mirrors the compound handler).
         // The stripped query still carries the facet params (?role=R_01, etc.) so
         // FacetPanelCfg.current_query is correct for regenerating toggle hrefs.
         let raw_query = req.uri().query();
@@ -1783,7 +1744,7 @@ fn make_facet_fragment_handler(
         // Zip page.body against comp_data to find the matching slots.
         let mut facet_groups: Option<&[cpe_core::ir::FacetGroup]> = None;
         let mut list_page: Option<&cpe_core::ir::ResourceListPage> = None;
-        // RL-2 annotated-row config, captured from the target list so the
+        // Annotated-row config, captured from the target list so the
         // swapped-in fragment renders the same gloss + chips as the full page.
         let mut list_gloss: Option<&cpe_core::ir::Gloss> = None;
         let mut list_chips: &[cpe_core::ir::ChipSpec] = &[];
@@ -1793,9 +1754,8 @@ fn make_facet_fragment_handler(
         let mut list_order_options: &[cpe_core::ir::OrderOption] = &[];
         let mut list_grid = false;
         let mut list_tile_ratio = None;
-        // The list's raw class name (empty-states-not-found plan step 2, E1)
-        // — threaded through `with_links` so `render_surf_head` can resolve
-        // the eyebrow independent of `list.items`.
+        // The list's raw class name — threaded through `with_links` so
+        // `render_surf_head` can resolve the eyebrow independent of `list.items`.
         let mut list_class: &str = "";
 
         for (c, d) in page.body.iter().zip(comp_data.iter()) {
@@ -1854,21 +1814,20 @@ fn make_facet_fragment_handler(
         // Build the FacetPanelCfg — all fields are pub, no factory needed.
         let panel_cfg = cpe_components::component::facet_panel::FacetPanelCfg { list_id, current_path, current_query };
 
-        // Resolve the search-fragment surface (search-bar plan step 10) — `None`
-        // when this list has no search-bar at all. A facet toggle can happen
-        // while a search is active (Alice's `/characters`/`/locations` have
-        // both), so this handler's swapped-in filterbar/list must stay in sync
+        // Resolve the search-fragment surface — `None` when this list has no
+        // search-bar at all. A facet toggle can happen while a search is active,
+        // so this handler's swapped-in filterbar/list must stay in sync
         // with the active `?q=`, exactly like the initial page render.
         let search_data =
             build_search_fragment_surface(&project, page, &comp_data, list_id, current_path, current_query, &lang);
         let search_surface = search_data.as_ref().and_then(|s| s.search_surface());
         let active_query = search_data.as_ref().and_then(|s| s.active_query());
-        // The narrowed-to-zero surface (E2) — `Some` iff an active search
+        // The narrowed-to-zero surface — `Some` iff an active search
         // query and/or an active facet is in effect, regardless of whether
         // this page has a search-bar at all.
         let narrowed_surface = search_data.as_ref().and_then(|s| s.narrowed_surface());
 
-        // A12.4 - resolve the chrome-id ordering-label overrides (id-only,
+        // Resolve the chrome-id ordering-label overrides (id-only,
         // never literal text) — the same seam render_list_component uses
         // for a full-page/list render.
         let (order_name_label, order_name_desc_label, order_default_label) =
@@ -1879,7 +1838,7 @@ fn make_facet_fragment_handler(
                 list_order_default_label,
                 &lang,
             );
-        // Incunabula Slice 8 (G9): the list's declared `order-by` rows, via
+        // The list's declared `order-by` rows, via
         // the same `pub` resolver `render_list_component` calls.
         let order_rows = cpe_core::labels::resolve_order_options(&project.config().site, list_order_options, &lang);
 
@@ -1932,7 +1891,7 @@ fn make_facet_fragment_handler(
             Ok::<Event, Infallible>(list_event),
         ];
 
-        // Fourth patch target (share-view plan step 6): the crumb-line
+        // Fourth patch target: the crumb-line
         // recomposed for the new facet state. Built via the SAME
         // `render_browse_breadcrumb_for_page` helper `render_page`'s
         // initial render calls — never re-derive the crumb here.
@@ -1948,9 +1907,8 @@ fn make_facet_fragment_handler(
             events.push(Ok::<Event, Infallible>(crumb_event));
         }
 
-        // Reset the page-global $copied "Copied" receipt (share-view design
-        // doc, Build notes "Swap-stable") — a refinement landing mid-receipt
-        // clears it since the copied link is no longer this view.
+        // Reset the page-global $copied "Copied" receipt — a refinement landing
+        // mid-receipt clears it since the copied link is no longer this view.
         events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
         // Emit all five events in one SSE stream (panel, filterbar, list, crumb, copied-reset).
@@ -1967,25 +1925,21 @@ fn make_facet_fragment_handler(
 /// `ResourceList` component. When a row in the ordering control's
 /// `<details>` panel is submitted, this handler:
 ///
-/// 1. Strips the `datastar` key from the query string (mirrors the facet/ compound/carousel
-///    handlers).
+/// 1. Strips the `datastar` key from the query string (mirrors the facet and compound handlers).
 /// 2. Calls `Project::page_data` with the stripped query — `?sort=` is already honoured there via
-///    `resolve_sorts` (Step 2), so the returned `List(..)` reflects the new sort order.
+///    `resolve_sorts`, so the returned `List(..)` reflects the new sort order.
 /// 3. Renders the first named (`id: Some(..)`) `ResourceList` slot via `render_resource_list` and
 ///    emits its `PatchElements` event targeting `#<list-id>`, plus a crumb-line `PatchElements`
 ///    event (present whenever the page has an id-bearing resource-list, which every
 ///    `_sort`-registered page does — the `Option` is a defensive degrade, not a text-diff check)
 ///    and a `PatchSignals` copied-reset event — up to three events total (list, crumb,
 ///    copied-reset). Facets/filters are untouched — sort never changes them (contrast with
-///    `_facets`'s three-region morph). Per the browse-controls plan, the smoke test pins the
-///    *datastar-patch-elements* event count at exactly 2 for Alice's sort scenario (list + crumb;
-///    the `PatchSignals` copied-reset event is a distinct SSE event type and isn't counted towards
-///    that number).
+///    `_facets`'s three-region morph).
 ///
-/// SSE must NOT 303: same rationale as the facet/compound/carousel handlers —
+/// SSE must NOT 303: same rationale as the facet and compound handlers —
 /// `override_redirect` never runs here (only `datastar` is stripped from
 /// `current_query`), and a redirect would break the SSE response. For the
-/// same reason, `canonical_page_redirect` (decision 9) is never called from
+/// same reason, `canonical_page_redirect` is never called from
 /// this handler — the canonical-page 303 fires only from the two HTML page
 /// handlers, never from any fragment/SSE handler, this one included.
 ///
@@ -2017,7 +1971,7 @@ fn make_sort_fragment_handler(
         // Build current_query from the request query, stripping the `datastar` key.
         // DataStar appends a `datastar=<json>` marker on @get requests; removing it
         // prevents the re-rendered list's hrefs from accumulating it (mirrors the
-        // facet/compound/carousel handlers).
+        // facet and compound handlers).
         let raw_query = req.uri().query();
         let filtered_query: Option<String> = strip_datastar_marker(raw_query);
         let current_query: Option<&str> = filtered_query.as_deref().filter(|s| !s.is_empty());
@@ -2031,7 +1985,7 @@ fn make_sort_fragment_handler(
 
         // Resolve component data (static page — empty path params; a
         // parameterised list page would need its Path params threaded here,
-        // mirroring `make_carousel_fragment_handler`). `?sort=` is honoured
+        // mirroring `make_compound_fragment_handler_param`). `?sort=` is honoured
         // inside `Project::page_data` via `resolve_sorts`.
         let params = RequestParams(current_query);
         let route_params = HashMap::new();
@@ -2049,7 +2003,7 @@ fn make_sort_fragment_handler(
         // Find the first named ResourceList (id: Some(..)) and its rendered data.
         let mut list_id: Option<&str> = None;
         let mut list_page: Option<&cpe_core::ir::ResourceListPage> = None;
-        // RL-2 annotated-row config, captured so the swapped list keeps its
+        // Annotated-row config, captured so the swapped list keeps its
         // gloss + chips after a sort change.
         let mut list_gloss: Option<&cpe_core::ir::Gloss> = None;
         let mut list_chips: &[cpe_core::ir::ChipSpec] = &[];
@@ -2059,7 +2013,7 @@ fn make_sort_fragment_handler(
         let mut list_order_options: &[cpe_core::ir::OrderOption] = &[];
         let mut list_grid = false;
         let mut list_tile_ratio = None;
-        // The list's raw class name (empty-states-not-found plan step 2, E1).
+        // The list's raw class name.
         let mut list_class: &str = "";
         for (c, d) in page.body.iter().zip(comp_data.iter()) {
             if let (
@@ -2106,7 +2060,7 @@ fn make_sort_fragment_handler(
             }
         };
 
-        // Resolve the search-fragment surface (search-bar plan step 10) — `None`
+        // Resolve the search-fragment surface — `None`
         // when this list has no search-bar at all. A sort change can happen
         // while a search is active, so the re-sorted list must keep showing
         // "N of M"/the scope note/the no-match state, exactly like the
@@ -2117,11 +2071,12 @@ fn make_sort_fragment_handler(
             build_search_fragment_surface(&project, page, &comp_data, list_id, current_path, current_query, &lang);
         let search_surface = search_data.as_ref().and_then(|s| s.search_surface());
         // `_sort` never touches facets/the query, but a sort change CAN land
-        // on an already-narrowed-to-zero list (E2) — the re-sorted list must
-        // keep showing the narrowed-to-zero body, not degrade to E1.
+        // on an already-narrowed-to-zero list — the re-sorted list must keep
+        // showing the narrowed-to-zero body, not degrade to the
+        // genuinely-empty-class message.
         let narrowed_surface = search_data.as_ref().and_then(|s| s.narrowed_surface());
 
-        // A12.4 - resolve the chrome-id ordering-label overrides (id-only,
+        // Resolve the chrome-id ordering-label overrides (id-only,
         // never literal text) — the same seam render_list_component uses
         // for a full-page/list render.
         let (order_name_label, order_name_desc_label, order_default_label) =
@@ -2132,7 +2087,7 @@ fn make_sort_fragment_handler(
                 list_order_default_label,
                 &lang,
             );
-        // Incunabula Slice 8 (G9): the list's declared `order-by` rows, via
+        // The list's declared `order-by` rows, via
         // the same `pub` resolver `render_list_component` calls.
         let order_rows = cpe_core::labels::resolve_order_options(&project.config().site, list_order_options, &lang);
 
@@ -2171,7 +2126,7 @@ fn make_sort_fragment_handler(
 
         let mut events = vec![Ok::<Event, Infallible>(list_event)];
 
-        // Second patch target (share-view plan step 6): the crumb-line
+        // Second patch target: the crumb-line
         // recomposed for the new sort state (the href's facet/query/page
         // params don't change, but the sort change is real refinement
         // state — recompose via the SAME `render_browse_breadcrumb_for_page`
@@ -2188,9 +2143,8 @@ fn make_sort_fragment_handler(
             events.push(Ok::<Event, Infallible>(crumb_event));
         }
 
-        // Reset the page-global $copied "Copied" receipt (share-view design
-        // doc, Build notes "Swap-stable") — a refinement landing mid-receipt
-        // clears it since the copied link is no longer this view.
+        // Reset the page-global $copied "Copied" receipt — a refinement landing
+        // mid-receipt clears it since the copied link is no longer this view.
         events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
         // Emit all three events (list, crumb, copied-reset) in one SSE stream.
@@ -2201,39 +2155,34 @@ fn make_sort_fragment_handler(
 
 /// Create a handler closure for a DataStar SSE fragment that re-renders the
 /// filterbar (when the page has a facet-panel) and the target `resource-list`
-/// after a live search keystroke or the search row's `×` clear (search-bar
-/// plan step 10).
+/// after a live search keystroke or the search row's `×` clear.
 ///
 /// This handler is registered at `/{project}/{page}/{SEARCH_FRAGMENT_SEGMENT}`
 /// for every page (static **and** parameterised) whose body contains a
 /// `SearchBar` component. When the search input's debounced
 /// `data-on:input`/the `×` clear button fires, this handler:
 ///
-/// 1. Strips the `datastar` key from the query string (mirrors the facet/sort/ compound/carousel
+/// 1. Strips the `datastar` key from the query string (mirrors the facet, sort and compound
 ///    handlers).
-/// 2. Calls `Project::page_data` with the stripped query — `?q=` is already honoured there (Step
-///    6), so the returned `List(..)` reflects the narrowed/unnarrowed set.
+/// 2. Calls `Project::page_data` with the stripped query — `?q=` is honoured there, so the returned
+///    `List(..)` reflects the narrowed/unnarrowed set.
 /// 3. Resolves the search-fragment surface via `build_search_fragment_surface` (the SAME
-///    `SearchFragmentSurface` seam `_facets`/`_sort` now share) — populates
-///    `ResourceListCfg.search` only when `?q=` is active, and the filterbar's query-chip text the
-///    same way.
+///    `SearchFragmentSurface` seam `_facets`/`_sort` share) — populates `ResourceListCfg.search`
+///    only when `?q=` is active, and the filterbar's query-chip text the same way.
 /// 4. Emits **three** `PatchElements` events (`#filters-<list-id>` + `#<list-id>` + the recomposed
-///    crumb line `#crumb-<list-id>`, share-view plan step 6) when this list also has a facet-panel
-///    resolving to at least one non-empty group (Alice's `/characters`/`/locations`); **two**
-///    (`#<list-id>` + the crumb line) when it does not — either no `FacetPanel` at all (Alice's
-///    `/chapters`) or one that resolves to zero groups (the E3b case, pinned by
+///    crumb line `#crumb-<list-id>`) when this list also has a facet-panel resolving to at least
+///    one non-empty group; **two** (`#<list-id>` + the crumb line) when it does not — either no
+///    `FacetPanel` at all or one that resolves to zero groups (pinned by
 ///    `search_fragment_zero_groups_facet_panel_returns_one_event`). Neither layout renders a
-///    filterbar element to patch (design-doc §3 "Non-faceted page: same row, no FILTERS row at
-///    all"). The crumb event is an `Option` (a defensive degrade when no id-bearing resource-list
-///    resolves), so those are upper bounds. The search row itself (`#q`/`.search-row`) is in
-///    NEITHER selector — it sits outside the swapped region by design (design-doc §8.2), so the
-///    caret/selection is never disturbed. Emitted in addition is ONE `PatchSignals` `$copied` reset
-///    event (`copied_signal_reset_event` — a distinct SSE event type, not counted towards the
-///    `datastar-patch-elements` totals above), so a search landing mid-receipt clears the "Copied"
-///    state: four SSE events on a faceted page, three on a non-faceted one.
+///    filterbar element to patch. The crumb event is an `Option` (a defensive degrade when no
+///    id-bearing resource-list resolves), so those are upper bounds. The search row itself
+///    (`#q`/`.search-row`) is in NEITHER selector — it sits outside the swapped region by design,
+///    so the caret/selection is never disturbed. Emitted in addition is ONE `PatchSignals`
+///    `$copied` reset event (`copied_signal_reset_event` — a distinct SSE event type, not counted
+///    towards the `datastar-patch-elements` totals above), so a search landing mid-receipt clears
+///    the "Copied" state: four SSE events on a faceted page, three on a non-faceted one.
 /// 5. The facet-panel itself (`#facets-<list-id>`) is never patched here — facet counts stay static
-///    regardless of the active search (design-doc §8.5), so only `_facets` (a real facet toggle)
-///    ever re-renders it.
+///    regardless of the active search, so only `_facets` (a real facet toggle) ever re-renders it.
 ///
 /// SSE must NOT 303: same rationale as the other fragment handlers —
 /// `override_redirect` never runs here (only `datastar` is stripped from
@@ -2272,8 +2221,8 @@ fn make_search_fragment_handler(
 
         // Resolve component data (static page — empty path params; a
         // parameterised search page would need its Path params threaded here,
-        // mirroring `make_carousel_fragment_handler`). `?q=` is already
-        // honoured inside `Project::page_data` (step 6).
+        // mirroring `make_compound_fragment_handler_param`). `?q=` is
+        // honoured inside `Project::page_data`.
         let params = RequestParams(current_query);
         let route_params = HashMap::new();
         let request = cpe_core::view_data::PageRequest {
@@ -2291,7 +2240,7 @@ fn make_search_fragment_handler(
         // Boot invariant: if a SearchBar is configured, its target is a same-page
         // ResourceList with an id (UnresolvedTarget validation hard-fails otherwise).
         // NOTE: handles the first SearchBar on the page only; a multi-search-bar
-        // page would need a loop here (no such page exists today).
+        // page would need a loop here.
         let list_id: &str = match page.body.iter().find_map(|c| {
             if let cpe_core::ir::Component::SearchBar { target, .. } = c {
                 Some(target.as_str())
@@ -2310,7 +2259,7 @@ fn make_search_fragment_handler(
             }
         };
 
-        // Extract the target List data (+ RL-2 gloss/chips) and, if this page
+        // Extract the target List data (+ gloss/chips) and, if this page
         // has a FacetPanel bound to the same list, its resolved Facets data —
         // `with_facets`/the 1-vs-2-event decision below both key off whether
         // `facet_groups` resolved to `Some`.
@@ -2324,7 +2273,7 @@ fn make_search_fragment_handler(
         let mut list_grid = false;
         let mut list_tile_ratio = None;
         let mut facet_groups: Option<&[cpe_core::ir::FacetGroup]> = None;
-        // The list's raw class name (empty-states-not-found plan step 2, E1).
+        // The list's raw class name.
         let mut list_class: &str = "";
 
         for (c, d) in page.body.iter().zip(comp_data.iter()) {
@@ -2390,7 +2339,7 @@ fn make_search_fragment_handler(
         let active_query = search_data.as_ref().and_then(|s| s.active_query());
         let narrowed_surface = search_data.as_ref().and_then(|s| s.narrowed_surface());
 
-        // A12.4 - resolve the chrome-id ordering-label overrides (id-only,
+        // Resolve the chrome-id ordering-label overrides (id-only,
         // never literal text) — the same seam render_list_component uses
         // for a full-page/list render.
         let (order_name_label, order_name_desc_label, order_default_label) =
@@ -2401,7 +2350,7 @@ fn make_search_fragment_handler(
                 list_order_default_label,
                 &lang,
             );
-        // Incunabula Slice 8 (G9): the list's declared `order-by` rows, via
+        // The list's declared `order-by` rows, via
         // the same `pub` resolver `render_list_component` calls.
         let order_rows = cpe_core::labels::resolve_order_options(&project.config().site, list_order_options, &lang);
 
@@ -2436,12 +2385,11 @@ fn make_search_fragment_handler(
         // there) and emit a second event. Non-faceted page: the list event
         // alone (no `.filterbar` element exists in the DOM to patch).
         //
-        // Keyed on NON-EMPTY resolved groups, not mere `Some`-ness
-        // (empty-states-not-found plan step 4, E3b) — a `FacetPanel` that
-        // resolves to zero groups renders no rail AND no `.filterbar` (see
-        // `render_body`'s E3b layout switch in the engine), so patching
-        // `#filters-{list_id}` here would target a `<div>` the non-faceted
-        // layout never emits.
+        // Keyed on NON-EMPTY resolved groups, not mere `Some`-ness — a
+        // `FacetPanel` that resolves to zero groups renders no rail AND no
+        // `.filterbar` (see `render_body`'s layout switch in `cpe_web::page`),
+        // so patching `#filters-{list_id}` here would target a `<div>` the
+        // non-faceted layout never emits.
         let mut events: Vec<Result<Event, Infallible>> = match facet_groups.filter(|g| !g.is_empty()) {
             Some(groups) => {
                 let panel_cfg =
@@ -2460,9 +2408,8 @@ fn make_search_fragment_handler(
             None => vec![Ok(list_event)],
         };
 
-        // One more patch target (share-view plan step 6): the crumb-line
-        // recomposed for the new search state (2→3 events on a faceted
-        // page, 1→2 on non-faceted). Built via the SAME
+        // One more patch target: the crumb-line recomposed for the new
+        // search state. Built via the SAME
         // `render_browse_breadcrumb_for_page` helper `render_page`'s
         // initial render calls — never re-derive the crumb here.
         let crumb_req = CrumbPatchRequest {
@@ -2477,9 +2424,8 @@ fn make_search_fragment_handler(
             events.push(Ok::<Event, Infallible>(crumb_event));
         }
 
-        // Reset the page-global $copied "Copied" receipt (share-view design
-        // doc, Build notes "Swap-stable") — a refinement landing mid-receipt
-        // clears it since the copied link is no longer this view.
+        // Reset the page-global $copied "Copied" receipt — a refinement landing
+        // mid-receipt clears it since the copied link is no longer this view.
         events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
         let sse_stream = stream::iter(events);
@@ -2681,7 +2627,6 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // No longer "placeholder" — the new router calls render_page.
         // The fixture config has no description and no chrome/narrative,
         // so we check for the site title and the rendered page structure.
         assert!(body.contains("Alpha Fixture"), "expected site title 'Alpha Fixture' in: {body}");
@@ -2723,9 +2668,10 @@ mod tests {
     }
 
     /// Unknown nested path under a known project → 404 via the router
-    /// fallback (N1). `?lang=en` forces English — the alpha fixture declares
-    /// `languages "de" "en"` (de first, hence de-default); the middleware
-    /// must be layered for the fallback to see the query-derived `RequestedLang`.
+    /// fallback (the project's not-found page). `?lang=en` forces English — the
+    /// alpha fixture declares `languages "de" "en"` (de first, hence
+    /// de-default); the middleware must be layered for the fallback to see the
+    /// query-derived `RequestedLang`.
     #[tokio::test]
     async fn unknown_nested_path_returns_404() {
         let projects = load_fixture_projects();
@@ -2755,8 +2701,9 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // N1 markers: mono code + heading, project chrome (brand shows the
-        // project title), no breadcrumb, no search box.
+        // The project's not-found page (`N1` in the messages): mono code +
+        // heading, project chrome (brand shows the project title), no
+        // breadcrumb, no search box.
         assert!(
             body.contains("404 — not found"),
             "N1 must render the mono nf.code mark, got: {body}"
@@ -2805,8 +2752,9 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // N2 markers: mono code + heading, site (bare) chrome, single "All
-        // projects" exit to "/", index footer.
+        // CPE's own not-found page (`N2` in the messages): mono code + heading,
+        // bare chrome, single "All projects" exit to "/" (which this router
+        // answers with this same page), index footer.
         assert!(
             body.contains("404 — not found"),
             "N2 must render the mono nf.code mark, got: {body}"
@@ -2833,7 +2781,7 @@ mod tests {
         );
     }
 
-    /// `/nope` (no known project prefix) renders the site's bare chrome (N2).
+    /// `/nope` (no known project prefix) renders bare chrome (CPE's own not-found page).
     #[tokio::test]
     async fn fallback_unknown_top_level_path_uses_site_chrome() {
         let delta = load_delta_project();
@@ -2936,9 +2884,8 @@ mod tests {
     }
 
     /// Project-id matching is raw string equality — case is NOT folded.
-    /// `DELTA` (uppercased) must not match the loaded
-    /// `delta` project id, so this renders N2 (site chrome),
-    /// not N1.
+    /// `DELTA` (uppercased) must not match the loaded `delta` project id, so
+    /// this renders CPE's own not-found page (bare chrome), not the project's.
     #[tokio::test]
     async fn fallback_project_id_match_does_not_fold_case() {
         let delta = load_delta_project();
@@ -2963,7 +2910,7 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // N2 marker (see `unknown_project_returns_404`).
+        // CPE's not-found marker (see `unknown_project_returns_404`).
         assert!(
             body.contains("This address does not name a project."),
             "case-mismatched segment must render N2 (site chrome), got: {body}"
@@ -2972,7 +2919,7 @@ mod tests {
 
     /// Project-id matching is raw, undecoded byte equality — percent-encoded
     /// segments are NOT decoded before the comparison. `%64elta`
-    /// must not match `delta`, so this renders N2 (site chrome).
+    /// must not match `delta`, so this renders CPE's own not-found page.
     #[tokio::test]
     async fn fallback_project_id_match_does_not_percent_decode() {
         let delta = load_delta_project();
@@ -2997,7 +2944,7 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // N2 marker (see `unknown_project_returns_404`).
+        // CPE's not-found marker (see `unknown_project_returns_404`).
         assert!(
             body.contains("This address does not name a project."),
             "percent-encoded segment must render N2 (site chrome), got: {body}"
@@ -3035,7 +2982,7 @@ mod tests {
     /// must appear nowhere in the response — not the body, not any header
     /// (in particular not in a lang-switcher/appearance-toggle href, which
     /// would happen if `current_path` were NOT pinned to the project
-    /// home/site index).
+    /// home, or to `/` outside a project).
     #[tokio::test]
     async fn fallback_never_reflects_the_failed_path() {
         let delta = load_delta_project();
@@ -3073,7 +3020,7 @@ mod tests {
         );
     }
 
-    // --- Parameterised route tests (Step 5) ---
+    // --- Parameterised route tests ---
 
     /// Load the delta fixture project, which has a resource-detail page at
     /// `/characters/:id` with two known characters (alice, white-rabbit).
@@ -3174,8 +3121,7 @@ mod tests {
         );
     }
 
-    // --- Static-route literal-id resource-detail tests (regression guard for the
-    //     make_handler fix) ---
+    // --- Static-route literal-id resource-detail tests ---
 
     /// Load the epsilon fixture project, which has a static `/featured` page with
     /// a literal-id `resource-detail id="res-01"`.
@@ -3199,7 +3145,7 @@ mod tests {
 
     /// Load the zeta fixture project: a single search-only (non-faceted)
     /// `resource-list id="things" class="Thing"` with a `search-bar
-    /// target="things" searches="name"` on `/things`. Used by the step-6
+    /// target="things" searches="name"` on `/things`. Used by the
     /// search-query-injection tests.
     fn load_zeta_project() -> Arc<cpe_web::project::Project> {
         let discovered = discover(&discovery_fixture());
@@ -3223,7 +3169,7 @@ mod tests {
     /// with BOTH a `facet-panel` (kind="list" on "category") AND a `search-bar
     /// target="widgets" searches="name"` on `/widgets` — the faceted
     /// counterpart to `zeta` (search-only, no facet-panel), used by the
-    /// step-10 `_search` fragment-handler router tests (2-event case).
+    /// `_search` fragment-handler router tests.
     fn load_eta_project() -> Arc<cpe_web::project::Project> {
         let discovered = discover(&discovery_fixture());
         let eta = discovered
@@ -3244,10 +3190,10 @@ mod tests {
 
     /// Load the theta fixture project: `resource-list id="widgets" class="Widget"`
     /// with BOTH a `facet-panel target="widgets"` declaring ZERO `facet`
-    /// children (so its resolved groups are always `Some([])` — the E3b
-    /// condition) AND a `search-bar target="widgets" searches="name"` — the
-    /// zero-groups counterpart to `eta` (real, non-empty facet group), used
-    /// by the `_search` fragment-handler E3b regression test.
+    /// children (so its resolved groups are always `Some([])`) AND a
+    /// `search-bar target="widgets" searches="name"` — the zero-groups
+    /// counterpart to `eta` (real, non-empty facet group), used by the
+    /// `_search` fragment-handler zero-groups test.
     fn load_theta_project() -> Arc<cpe_web::project::Project> {
         let discovered = discover(&discovery_fixture());
         let theta = discovered
@@ -3268,11 +3214,8 @@ mod tests {
 
     /// GET `/epsilon/featured` → 200 + literal-id resource data rendered.
     ///
-    /// Guards the `make_handler` fix: a static route with a literal-id
-    /// `resource-detail` must resolve and render the resource (not the
-    /// not-found body). Regression test for the bug where `make_handler`
-    /// passed an all-None resolved slice, causing literal-id resources to
-    /// render the not-found body instead of their data.
+    /// A static route with a literal-id `resource-detail` must resolve and
+    /// render the resource, not the not-found body.
     #[tokio::test]
     async fn static_literal_id_resource_detail_renders_resource() {
         let epsilon = load_epsilon_project();
@@ -3347,13 +3290,12 @@ mod tests {
                 .into(),
         )
         .expect("UTF-8 body");
-        // The not-found body must be rendered inside chrome (not a bare 404) —
-        // N3's terse anatomy (empty-states-not-found plan step 8). The delta
-        // fixture's `resource-detail` declares no `class`, so the class-less
-        // fallback copy applies (`nf.id_title_fallback` — no id_msg
-        // paragraph, no browse-all exit; see `render_not_found`'s doc
-        // comment) — the not-found breadcrumb's current-item text ("Not
-        // found") is the most reliable marker regardless of class presence.
+        // The not-found body must be rendered inside chrome (not a bare 404).
+        // The delta fixture's `resource-detail` declares no `class`, so the
+        // class-less fallback copy applies (`nf.id_title_fallback` — no id_msg
+        // paragraph, no browse-all exit; see `render_not_found`'s doc comment) —
+        // the not-found breadcrumb's current-item text ("Not found") is the
+        // most reliable marker regardless of class presence.
         assert!(
             body.contains("class=\"notfound")
                 && (body.contains("There is nothing at this address.")
@@ -3515,9 +3457,9 @@ mod tests {
 
     #[test]
     fn parse_page_param_overflow_saturates_to_u32_max() {
-        // Value exceeds u32::MAX — saturates rather than falling back to 1
-        // (decision 9): the engine clamps to the last page before
-        // multiplying, so an absurd page still lands on the last page.
+        // Value exceeds u32::MAX — saturates rather than falling back to 1:
+        // pagination clamps to the last page before multiplying, so an
+        // absurd page still lands on the last page.
         assert_eq!(parse_page_param(Some("page=99999999999")), u32::MAX);
         // A 40-digit numeric string lands the same way.
         assert_eq!(
@@ -3983,7 +3925,7 @@ mod tests {
         );
     }
 
-    // ── resolve_sorts: declared `order-by` options (Incunabula Slice 8, G9) ────
+    // ── resolve_sorts: declared `order-by` options ─────────────────────────────
 
     fn declared_order_options() -> Vec<cpe_core::ir::OrderOption> {
         vec![
@@ -4048,7 +3990,7 @@ mod tests {
         assert_eq!(resolve_sorts(Some("sort=date"), &config, &[], None), config);
     }
 
-    // ── search-bar query injection (step 6) ────────────────────────────────────
+    // ── search-bar query injection ─────────────────────────────────────────────
 
     #[test]
     fn zeta_search_query_narrows_list_and_sets_unfiltered_total() {
@@ -4228,8 +4170,7 @@ mod tests {
     }
 
     /// GET `/zeta/things?q=rab` → 200 + narrowed list content (zero-JS `?q=`
-    /// narrowing end-to-end; the search row itself doesn't render yet — that's
-    /// step 7 — but the list content is already narrowed).
+    /// narrowing end-to-end).
     #[tokio::test]
     async fn zeta_http_get_things_with_query_narrows_response_body() {
         let zeta = load_zeta_project();
@@ -4275,14 +4216,13 @@ mod tests {
         );
     }
 
-    // ── `_search` fragment handler (step 10) ──────────────────────────────────
+    // ── `_search` fragment handler ────────────────────────────────────────────
 
     /// A faceted page's `_search` fragment (`eta`, facet-panel + search-bar
     /// both bound to `widgets`) returns THREE `datastar-patch-elements`
     /// events — filterbar (`#filters-widgets`) + list (`#widgets`) + the
-    /// recomposed crumb line (`#crumb-widgets`, share-view plan step 6) —
-    /// never the panel (`#facets-widgets`; facet counts stay static,
-    /// design-doc §8.5).
+    /// recomposed crumb line (`#crumb-widgets`) — never the panel
+    /// (`#facets-widgets`; facet counts stay static).
     #[tokio::test]
     async fn search_fragment_faceted_returns_two_events() {
         let eta = load_eta_project();
@@ -4324,9 +4264,9 @@ mod tests {
             !body.contains("selector #facets-widgets"),
             "must NOT patch the facet panel — facet counts stay static, got: {body}"
         );
-        // Fourth (well — third here) patch target: the recomposed crumb
-        // line (share-view plan step 6), carrying the active `?q=` in its
-        // composed href and its state-bearing accessible name.
+        // Third patch target here: the recomposed crumb line, carrying the
+        // active `?q=` in its composed href and its state-bearing accessible
+        // name.
         assert!(
             body.contains("selector #crumb-widgets"),
             "must patch the crumb line #crumb-widgets, got: {body}"
@@ -4340,9 +4280,8 @@ mod tests {
 
     /// A non-faceted page's `_search` fragment (`zeta`, search-bar only, no
     /// facet-panel) returns exactly TWO events — the list plus the
-    /// recomposed crumb line (`#crumb-things`, share-view plan step 6);
-    /// there is no filterbar element in the DOM to patch (design-doc §3
-    /// "Non-faceted page: same row, no FILTERS row at all").
+    /// recomposed crumb line (`#crumb-things`); there is no filterbar
+    /// element in the DOM to patch.
     #[tokio::test]
     async fn search_fragment_non_faceted_returns_one_event() {
         let zeta = load_zeta_project();
@@ -4391,20 +4330,17 @@ mod tests {
         );
     }
 
-    /// E3b regression (empty-states-not-found plan step 4): a page with BOTH
-    /// a facet-panel that resolves to ZERO groups (`theta` — `facet-panel
-    /// target="widgets"` with no `facet` children) AND a search-bar on the
-    /// same list must still emit exactly TWO `datastar-patch-elements` events
-    /// (the list plus the recomposed crumb line, share-view plan step 6),
-    /// never THREE — a wrong implementation that reverted
-    /// `make_search_fragment_handler`'s gate from "non-empty groups" to
-    /// mere `facet_groups.is_some()` would emit an extra event trying to
-    /// patch `#filters-widgets`, a `<div>` the zero-groups (non-faceted)
-    /// layout never renders. `search_fragment_faceted_returns_two_events`
-    /// (real, non-empty facet group) and
-    /// `search_fragment_non_faceted_returns_one_event` (no facet-panel
-    /// component at all) both already pass under the reverted
-    /// implementation too — this is the one case that would catch it.
+    /// A page with BOTH a facet-panel that resolves to ZERO groups (`theta` —
+    /// `facet-panel target="widgets"` with no `facet` children) AND a search-bar
+    /// on the same list must emit exactly TWO `datastar-patch-elements` events
+    /// (the list plus the recomposed crumb line), never THREE. A gate in
+    /// `make_search_fragment_handler` on mere `facet_groups.is_some()` instead
+    /// of "non-empty groups" would emit an extra event trying to patch
+    /// `#filters-widgets`, a `<div>` the zero-groups (non-faceted) layout never
+    /// renders. `search_fragment_faceted_returns_two_events` (real, non-empty
+    /// facet group) and `search_fragment_non_faceted_returns_one_event` (no
+    /// facet-panel component at all) pass under that gate too — this is the
+    /// one case that catches it.
     #[tokio::test]
     async fn search_fragment_zero_groups_facet_panel_returns_one_event() {
         let theta = load_theta_project();
@@ -4450,9 +4386,8 @@ mod tests {
     }
 
     /// The `_search` fragment's swapped-in list shows the localized "N of M"
-    /// narrowed count (the same `unfiltered_total` gate step 6 wired into
-    /// `build_component_data`, now correctly reaching the RENDERED fragment
-    /// via `SearchFragmentSurface` — step 10's actual fix).
+    /// narrowed count: the `unfiltered_total` gate reaches the RENDERED
+    /// fragment via `SearchFragmentSurface`.
     #[tokio::test]
     async fn search_fragment_query_narrows_with_unfiltered_total() {
         let eta = load_eta_project();
@@ -4502,7 +4437,7 @@ mod tests {
         );
     }
 
-    /// Caret-safety contract (design-doc §8.2): the search row's `#q` input
+    /// Caret-safety contract: the search row's `#q` input
     /// and `.search-row` element are in NEITHER `_search` target selector —
     /// they never appear in the fragment response at all, so the live
     /// keystroke that triggered the request can never disturb its own
@@ -4586,8 +4521,7 @@ mod tests {
         );
     }
 
-    // --- Parameterised compound-viewer pages: real-navigation paging (Incunabula Slice 3b step 2)
-    // ---
+    // --- Parameterised compound-viewer pages: real-navigation paging ---
 
     /// A minimal equivalent of `cpe-web`'s `tests/projects/good-compound-viewer-param/`
     /// (that fixture has no `compound_parts` rows, so it cannot answer for a
@@ -4598,8 +4532,7 @@ mod tests {
     ///   `/books/:id` reader shape);
     ///
     /// plus one static page with NO `CompoundViewer` at all (`/plain`) —
-    /// the `_compound` route-existence negative case (reader-paging-
-    /// fragment-swap plan Step 1's inverted `param_compound_fragment_route_is_gone`).
+    /// the `_compound` route-existence negative case.
     fn load_param_compound_project() -> Arc<cpe_web::project::Project> {
         let config_src = r#"
 site {
@@ -4669,7 +4602,7 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
         (status, content_type, body)
     }
 
-    // --- Incoming links (Incunabula Slice 5 step 6, G7) ---
+    // --- Incoming links ---
 
     /// A synthetic strip/page/book bag: `b1`/`b2` BorderStrips (only `b1` is
     /// linked to), Pages `p1`/`p2` that are members of Book `bk1`, and a
@@ -4775,10 +4708,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
 
     #[test]
     fn resolve_incoming_links_honours_small_limit() {
-        // Step 12 (item 6): the smoke harness has no cheap way to load a
-        // modified shipped config with `limit=`, so this is covered at the
-        // router level instead, per the plan's explicit fallback — a spec
-        // whose `limit` is smaller than its full match count.
+        // A spec whose `limit` is smaller than its full match count.
         let project = load_incoming_project();
         let page = project
             .config()
@@ -4830,10 +4760,8 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
 
     /// Member paging on a parameterised reader is a real page load AND
     /// progressively enhanced: `?page=<id>` and the legacy `?member=N` both
-    /// land on the same member of a full page (the byte-identical no-JS
-    /// path, unchanged since Incunabula Slice 3b), and every active pager
-    /// step / rail link ALSO carries `data-on:click__prevent` (reader-paging-
-    /// fragment-swap plan Step 4).
+    /// land on the same member of a full page (the no-JS path), and every
+    /// active pager step / rail link ALSO carries `data-on:click__prevent`.
     #[tokio::test]
     async fn param_compound_paging_is_real_navigation() {
         for base in ["/param-compound/story/ST_001", "/param-compound/books/ST_001"] {
@@ -4856,8 +4784,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
                     "{uri}: SCH_002 is the current rail entry, got: {rail}"
                 );
                 // Every active pager step / rail link ALSO carries
-                // `data-on:click__prevent` now (reader-paging-fragment-swap
-                // plan Step 4 — the `_compound` fragment swap revived,
+                // `data-on:click__prevent` (the `_compound` fragment swap,
                 // progressively enhancing the same plain `href` this test
                 // already asserts above), unlike an inert boundary span.
                 for (name, el) in [("pager", &pager), ("rail", &rail)] {
@@ -4870,11 +4797,9 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         }
     }
 
-    /// The `_compound` fragment endpoint is revived (reader-paging-
-    /// fragment-swap plan Step 1) — inverted from the retired
-    /// `param_compound_fragment_route_is_gone` test this replaces: on both
-    /// parameterised page shapes it now answers a real SSE stream (not the
-    /// router fallback), with an event patching `#compound-viewer`.
+    /// The `_compound` fragment endpoint: on both parameterised page shapes
+    /// it answers a real SSE stream (not the router fallback), with an event
+    /// patching `#compound-viewer`.
     #[tokio::test]
     async fn param_compound_fragment_route_exists() {
         for uri in [
@@ -4894,11 +4819,9 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         }
     }
 
-    /// The route-existence NEGATIVE case (Step 1's test requirement,
-    /// mirroring `param_compound_fragment_route_is_gone`'s shape but
-    /// inverted): a page with no `CompoundViewer` component never gets a
-    /// `_compound` route registered at all, so it 404s gracefully through
-    /// the router fallback — not an SSE stream, not a panic.
+    /// The route-existence NEGATIVE case: a page with no `CompoundViewer`
+    /// component never gets a `_compound` route registered at all, so it 404s
+    /// gracefully through the router fallback — not an SSE stream, not a panic.
     #[tokio::test]
     async fn compound_fragment_route_absent_for_page_without_compound_viewer() {
         let (status, content_type, _body) = get_param_compound("/param-compound/plain/_compound").await;
@@ -4911,7 +4834,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
 
     /// A route-param compound page's `_compound` request resolves the REAL
     /// `$id` value — not `ComponentData::Other` — via
-    /// `make_compound_fragment_handler_param`'s `Path` extraction (Step 1).
+    /// `make_compound_fragment_handler_param`'s `Path` extraction.
     /// The book page (`/books/:id`, mirroring Incunabula's reader) is the
     /// load-bearing case: its `compound-viewer source="$id"` needs the route
     /// param, unlike `_facets`/`_sort`/`_search`, which never need one. The
@@ -4934,16 +4857,15 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         );
     }
 
-    // --- reader-paging-fragment-swap plan Steps 2/3 ---
+    // --- The `_compound` fragment's events ---
 
-    /// PRD invariant I3 (the morph contract, mirroring DPE's
+    /// The morph contract (mirroring DPE's
     /// `morph_contract_project_tabs_open_tag_identical`-style test): the
     /// `_compound` fragment's `#compound-viewer` markup must open with the
     /// byte-identical tag `render_page`'s own CompoundViewer render produces
     /// for the same page/state — both paths go through the SAME
-    /// `render_compound_fragment`/`render_component` call internally
-    /// (Step 1a), so this is a regression guard against future drift, not a
-    /// speculative check.
+    /// `render_compound_fragment`/`render_component` call internally, so this
+    /// guards against drift between the two.
     #[tokio::test]
     async fn compound_fragment_viewer_open_tag_matches_full_page_render() {
         let (full_status, _ct, full_body) = get_param_compound("/param-compound/books/ST_001?page=SCH_002").await;
@@ -4969,7 +4891,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
 
     /// A `layout="pages"` compound-viewer fixture — the param-compound
     /// project above is `layout="contents"` throughout, which cannot cover
-    /// Step 3a's viewer-signal `PatchSignals` reset (pages-layout only).
+    /// the viewer-signal `PatchSignals` reset (pages-layout only).
     fn load_pages_compound_project() -> Arc<cpe_web::project::Project> {
         let config_src = r#"
 site {
@@ -5006,10 +4928,8 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
     }
 
     /// GET `uri` against a router over the pages-compound project; returns
-    /// (status, body). Option B (owner decision 2026-09-28) retired the
-    /// `X-CPE-Popstate` request header entirely — this handler is now
-    /// reached only by a forward click, so there is nothing left to vary
-    /// per request beyond the URI.
+    /// (status, body). The handler is reached only by a forward click, so
+    /// there is nothing to vary per request beyond the URI.
     async fn get_pages_compound(uri: &str) -> (StatusCode, String) {
         let router = build(
             &[load_pages_compound_project()],
@@ -5032,7 +4952,7 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
         (status, body)
     }
 
-    /// SSE event count and shape, `layout="contents"` (Step 2/3 test plan):
+    /// SSE event count and shape, `layout="contents"`:
     /// viewer `PatchElements`, crumb `PatchElements`, `#header-controls`
     /// `PatchElements` (sent even with no crumb) — the compound-only
     /// `/story/:id` fixture page has no sibling `ResourceDetail`/
@@ -5040,9 +4960,8 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
     /// crumb here; the param-compound project's `/books/:id` page (used in
     /// the other tests in this section) DOES pair a `resource-detail`, so
     /// its crumb patch is exercised there. No viewer-signal `PatchSignals`
-    /// (contents layout has no viewer unit) — only the `$copied` reset
-    /// (Option B retired the `currentPageQuery` `PatchSignals` companion
-    /// event entirely) — then the `ExecuteScript`.
+    /// (contents layout has no viewer unit) — only the `$copied` reset — then
+    /// the `ExecuteScript`.
     #[tokio::test]
     async fn compound_fragment_sse_shape_contents_layout() {
         let (status, _ct, body) = get_param_compound("/param-compound/story/ST_001/_compound?page=SCH_002").await;
@@ -5073,7 +4992,7 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
         );
     }
 
-    /// SSE event count and shape, `layout="pages"` (Step 3a): the SAME
+    /// SSE event count and shape, `layout="pages"`: the SAME
     /// shape as the contents-layout case (`#header-controls` included),
     /// PLUS one extra `PatchSignals` event resetting the `<image-viewer>` unit's page-global
     /// signals — 2 `PatchSignals` total ($copied + the viewer reset).
@@ -5244,10 +5163,9 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         assert!(body.contains(r#"<div id="cv-annotations"></div>"#), "{body}");
     }
 
-    /// Step 3b (Option B): a forward click always emits `history.pushState`
-    /// and the paired `window.__cpeReaderUrl` update — never `replaceState`,
-    /// which no longer exists anywhere in this handler (Back/Forward is a
-    /// real page load now, see `cpe_components::component::compound_viewer`'s
+    /// A forward click always emits `history.pushState` and the paired
+    /// `window.__cpeReaderUrl` update — never `replaceState` (Back/Forward is
+    /// a real page load, see `cpe_components::component::compound_viewer`'s
     /// `data-on:popstate__window` doc comment).
     #[tokio::test]
     async fn compound_fragment_execute_script_pushes_state_on_forward_click() {
@@ -5272,8 +5190,8 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
     /// (origin-free — starts with `/`, no scheme/host), never the absolute
     /// `canonical_url` (`SecurityError` risk per the WHATWG spec if origin
     /// derivation ever mismatches), and carries neither the `_compound`
-    /// fragment-endpoint segment nor the `#compound-viewer` anchor (item 21
-    /// — anchor-free at the source now). The `window.__cpeReaderUrl` update
+    /// fragment-endpoint segment nor the `#compound-viewer` anchor (the URL is
+    /// anchor-free at the source). The `window.__cpeReaderUrl` update
     /// carries the SAME relative URL — the two must never drift.
     #[tokio::test]
     async fn compound_fragment_execute_script_canonical_url_is_anchor_and_segment_free() {
@@ -5305,9 +5223,8 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         );
     }
 
-    /// Option B retired the whole `X-CPE-Popstate` request header / guarded
-    /// `replaceState` / `currentPageQuery` `PatchSignals` machinery — assert
-    /// none of it survives anywhere in a `_compound` fragment response.
+    /// A `_compound` fragment response carries no `X-CPE-Popstate` handling, no
+    /// guarded `replaceState` and no `currentPageQuery` `PatchSignals`.
     #[tokio::test]
     async fn compound_fragment_response_never_carries_retired_popstate_machinery() {
         let (status, body) = get_pages_compound("/pages-compound/story/ST_001/_compound?page=SCH_002").await;
@@ -5320,7 +5237,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         }
     }
 
-    /// Step 3b: both the title and the URL are escaped via `js_string_escape`
+    /// Both the title and the URL are escaped via `js_string_escape`
     /// — asserted on a title containing an apostrophe (`ST_001`'s
     /// `name` = "Alice's Story", `title-property="name"` on `/books/:id`).
     #[tokio::test]

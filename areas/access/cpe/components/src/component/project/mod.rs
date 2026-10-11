@@ -4,16 +4,14 @@
 //! Everything under `component::project::<project-id>` is a component written
 //! for one project, not part of the generic v1 component library beside it.
 //! The module path is the whole signal: a component living here is the
-//! `docs/cpe-poc.md` §8.2 escape hatch (engine gap G1), built concretely first
-//! per owner decision O7 (`docs/plans/incunabula-design-handoff/`), and only
-//! afterwards registered through the `(project, name)` seam that `dsp-incubator
-//! cpe/docs/adr/0011-per-project-components.md` (Incunabula Slice 4, step 9) records.
+//! per-project escape hatch, registered through the `(project, name)` seam that `dsp-incubator
+//! cpe/docs/adr/0011-per-project-components.md` records.
 //!
 //! Like every other component, a per-project component takes pre-fetched data
 //! (no DB access) and renders synchronously.
 //!
 //! Rendering, a figure-block slot's `{n}` and the dataset-panel listing find a
-//! component's functions through its [`PROJECT_RENDERERS`] row, keyed on the
+//! component's functions through its `PROJECT_RENDERERS` row, keyed on the
 //! rendering project's id and the variant's `registry_name`. The validator
 //! half, and the rule that keeps the two tables in step, is
 //! `validate::project_components`.
@@ -84,8 +82,8 @@ const PROJECT_RENDERERS: &[ProjectRenderer] = &[
         name: "edition-cards",
         render: incunabula::showcase::render_edition_cards_registered,
         slot_n: None,
-        // D12: the edition cards' Books are not listed (the design's flat
-        // `/narrenschiff`), nor are the strip row's BorderStrips.
+        // The edition cards' Books are not listed, nor are the strip row's
+        // BorderStrips.
         data_listing: None,
     },
     ProjectRenderer {
@@ -114,7 +112,7 @@ pub fn render(c: &ir::Component, ctx: &RenderContext<'_>, data: &ComponentData, 
 }
 
 /// The `{n}` of the slot of `c` (a per-project component of `project`), from
-/// its data slot, through its row's [`ProjectRenderer::slot_n`].
+/// its data slot, through its row's `ProjectRenderer::slot_n`.
 pub fn slot_n(project: &str, c: &ir::Component, data: &ComponentData) -> Option<usize> {
     let row = lookup(project, c.registry_name()?)?;
     row.slot_n?(data)

@@ -1,7 +1,7 @@
 //! Editorial home transformer: Markdown source → editorial `Markup`.
 //!
-//! Converts Markdown to the design's editorial article archetype
-//! (`article.editorial.page`). Used exclusively by [`render_narrative`] for
+//! Converts Markdown to the editorial article archetype
+//! (`article.editorial.page`). Used exclusively by `render_narrative` for
 //! the project home page; the richtext path (`render_richtext_fragment`) is
 //! completely untouched.
 //!
@@ -214,7 +214,7 @@ fn render_invite_item(item: &InviteItem) -> Markup {
 
 // ── Leading-kicker detection ───────────────────────────────────────────────────
 
-/// Recognise a **leading kicker** (the design's eyebrow) at `idx` and return
+/// Recognise a **leading kicker** (the eyebrow) at `idx` and return
 /// the index of its closing `End` event, or `None` when this level-3 heading
 /// is an ordinary `<h3>`.
 ///
@@ -693,7 +693,7 @@ impl RailEntry {
 }
 
 /// One rail entry per top-level `##` of a narrative, in document order, each
-/// with the id [`render_editorial`] gives that heading when it is called with
+/// with the id `render_editorial` gives that heading when it is called with
 /// the same `id_offset`.
 pub fn rail_entries(src: &str, id_offset: usize) -> Vec<RailEntry> {
     top_level_headings(src)
@@ -731,7 +731,7 @@ impl Render for Rail<'_> {
     }
 }
 
-/// What [`render_editorial`] returns.
+/// What `render_editorial` returns.
 pub struct Editorial {
     pub markup: Markup,
     /// The rail it was given is in `markup`. `false` when it was given none,
@@ -775,8 +775,7 @@ const SECTION_MARKER: &str = r#"<section class="editorial__section">"#;
 /// Attempt to segment the rewritten HTML into head / intro / sections.
 ///
 /// Splits on the first `<section class="editorial__section">` and on the
-/// first `</h1>` before it. Four shapes (decision 2, option i, Incunabula
-/// Slice 4):
+/// first `</h1>` before it. Four shapes:
 ///
 /// - **h1 + sections** ⇒ head + intro + sections (intro always emitted).
 /// - **h1, no section** ⇒ head + intro (intro omitted when empty); no sections panel.
@@ -1532,8 +1531,6 @@ mod tests {
     #[test]
     fn dropcap_handles_non_ascii_initial() {
         // German opening: <strong>Über</strong> alles → "Ü<strong>ber</strong> alles"
-        // (the comment used to name a different input and an output carrying
-        // the empty `<strong></strong>` this pass no longer produces).
         let result = dropcap_ready("<strong>Über</strong> alles");
         assert_eq!(
             result, "Ü<strong>ber</strong> alles",
@@ -1604,10 +1601,9 @@ mod tests {
     /// opaquely by the `BlockQuote` arm (plain `push_html`, never recursed
     /// through `rewrite_events`'s own h2/invite-list matching), so it never
     /// produces a `SECTION_MARKER` — the drop-cap-suppression gate, derived
-    /// from `rewrite_events`'s own output, must NOT fire here. Regression
-    /// test for the disagreement between the old `has_section_without_h1`
-    /// re-scan (which found the h2 + list textually, ignoring the
-    /// blockquote) and `segment_html`'s real "neither" shape.
+    /// from `rewrite_events`'s own output, must NOT fire here: a textual
+    /// re-scan for an h2 + list would find the pair and ignore the
+    /// blockquote, against `segment_html`'s real "neither" shape.
     #[test]
     fn h1_less_document_with_section_only_inside_blockquote_keeps_open_class() {
         let src = "Some intro without a heading.\n\n> ## Inside a quote\n>\n> - [A](/a) \u{2014} gloss";
@@ -1863,7 +1859,7 @@ mod tests {
         );
     }
 
-    // ── segment_html: the four section shapes (decision 2, option i) ─────────
+    // ── segment_html: the four section shapes ─────────
 
     const SEC: &str = r#"<section class="editorial__section"><h2>Ways in</h2></section>"#;
 

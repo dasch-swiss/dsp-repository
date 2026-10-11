@@ -31,7 +31,7 @@
    section (`div.cases`, `ul.editions`, `ul.strips`) is centred by that
    narrative's `article.editorial.page` and carries no `.page` of its own;
    their required `section=` (validate/showcase.rs `require_section`) is what
-   keeps them out of an unslotted render. See cpe/CLAUDE.md.
+   keeps them out of an unslotted render. See dsp-incubator cpe/CLAUDE.md.
 
    ⚠️ A constrained dimension (max-width/max-height) must not GROW inside a
    narrower media query — it should hold steady or shrink further as the
@@ -83,16 +83,13 @@
 .editorial__intro    { max-width: var(--read); margin-bottom: var(--space-8); }
 .editorial__sections { max-width: var(--read); display: flex; flex-direction: column; gap: var(--space-8); }
 
-/* (The oversized site-index hero was dropped from the design; the project
-   list leads directly. No .index-hero placement is needed.) */
+/* The site index has no hero: the project list leads directly. */
 
 /* ---- Record (character / location / featured) -------------------------- */
 .record__head { grid-column: 1 / -1; }
-/* The carousel-era `.record__figure` sizing rules (max-width: 20rem plate,
-   1600px side-column placement) are GONE with the carousel: the record
-   viewer (`.rv-col`, media.css) owns its own layout, and nothing emits the
-   `record__figure` class any more (only the `#record-figure` anchor id
-   survives, for the no-JS focus contract). */
+/* The record viewer (`.rv-col`, media.css) owns its own layout, and nothing emits a
+   `record__figure` class (only the `#record-figure` anchor id
+   exists, for the no-JS focus contract). */
 .record__body:not(.record__body--noimg) { display: block; }
 /* `.pgroup` (host-rights, Apparat, incoming-links — every `.pgroup` section
    inside `.record__body` is a SIBLING of `div.props`, never a descendant;
@@ -117,7 +114,7 @@
 /* A plain record (no reader, no viewer) is one centred column at the reading
    measure: head, props and ungrouped groups share its left edge. The body
    itself is not capped, so a grouped incoming-links list keeps the full
-   width under the column (media.css, HDM SLICE 3).
+   width under the column (media.css).
    The head is a grid item of `article.record.page`: with `auto` margins it
    would shrink to its title's width and centre that, so it needs
    `width: 100%`. Props and groups are block children and need none; with a
@@ -143,7 +140,6 @@
 .footer-index__product { grid-column: 1 / 7; }         /* left half  */
 .footer-index__org { grid-column: 7 / 13; }            /* right half */
 
-/* DEVIATION #6: .sg__lede removed — styleguide remnant, not shipped. */
 
 /* ============================================================================
    BROWSE  —  resource-list + pager
@@ -211,8 +207,8 @@
 .search-bar__input:placeholder-shown ~ .search-bar__clear { display: none; }
 .search-bar__go { font-size: var(--size-4); color: var(--ink-muted); }
 .search-bar__go:hover { color: var(--accent-strong); }
-/* Empty-state dimming, CSS-only (a11y review: the `→` submit stays fully
-   operable while empty — a benign reload — so it no longer carries
+/* Empty-state dimming, CSS-only (the `→` submit stays fully
+   operable while empty — a benign reload — so it does not carry
    `aria-disabled`). Keyed off the input's own emptiness (`:placeholder-shown`)
    rather than the server `data-active`, so it un-dims reactively as you type. */
 .search-bar__input:placeholder-shown ~ .search-bar__go { color: var(--ink-faint); cursor: default; }
@@ -231,7 +227,7 @@
 .search-empty__act:hover { color: var(--accent-strong); }
 .search-empty__hint { font-family: var(--font-meta); font-size: var(--size-1); color: var(--ink-faint); }
 
-/* ── ordering control (details/summary disclosure, replaces .sortctl) ──
+/* ── ordering control (details/summary disclosure) ──
    `.orderctl` is the <form> wrapper; the mono meta face/size lives HERE
    (not on `.viewtoggle__lbl`'s own rule — that class is reused verbatim,
    no second rule, and inherits face/size from this wrapper). */
@@ -272,7 +268,7 @@
 /* ── annotated rows (text-first markup, optional thumb) ──
    The thumb follows the text in markup but `order: -1` shows it LEFT of the
    text on desktop, so a short title doesn't sit a wide empty band away from
-   its image (owner decision D11, layout review 2026-10-07). A row without an
+   its image. A row without an
    image renders no `<img>`, so it gets no left gutter. The ≤640px phone
    layout places the thumb by grid area instead (right of the gloss). */
 .rl-annot { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
@@ -318,8 +314,8 @@ a.rl-annot__row:hover { background: var(--hover-fill); padding-inline: var(--spa
   .rl-annot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-8); }
 }
 /* ---- Pager --------------------------------------------------------------- */
-/* NOTE: this no longer mirrors .figure__nav (the carousel is gone) — the
-   pager is now a standalone foot bar: a hairline rule above prev/numbers/next
+/* The
+   pager is a standalone foot bar: a hairline rule above prev/numbers/next
    in a space-between row, its own idiom. */
 .pager {
   display: flex;
@@ -386,9 +382,9 @@ a.pager__num:hover { color: var(--accent-strong); }
 .pager__nums + .pager__of { display: none; }
 
 /* ============================================================================
-   GRID MODE  —  browse gallery view (ported from docs/design/grid-mode/grid-mode.css)
+   GRID MODE  —  browse gallery view
    Grid mode is a VIEW of the resource list, not a page: same resources, same
-   narrowing, same order. See the design doc for the full rationale.
+   narrowing, same order.
    ========================================================================== */
 
 /* ---- the view toggle ------------------------------------------------------
@@ -397,7 +393,7 @@ a.pager__num:hover { color: var(--accent-strong); }
    idiom. Real <a> links carrying ?view= — so it works zero-JS; aria-current
    announces the state. No icon: the two words are the mark. */
 .viewtoggle { display: inline-flex; align-items: baseline; gap: var(--space-3); font-family: var(--font-meta); font-size: var(--size-1); }
-/* surf-head's right side now carries two controls: view, then sort */
+/* surf-head's right side carries two controls: view, then sort */
 .surf-head__ctl { display: flex; align-items: baseline; gap: var(--space-5); flex-wrap: wrap; justify-content: flex-end; }
 .viewtoggle__lbl { color: var(--ink-faint); letter-spacing: var(--tracking-label); text-transform: uppercase; }
 .viewtoggle__opts { display: inline-flex; align-items: stretch; border: 1px solid var(--rule); border-radius: var(--radius-1); overflow: hidden; }
@@ -419,7 +415,7 @@ a.pager__num:hover { color: var(--accent-strong); }
 .gm__tile:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 /* 3:4 unless the list sets a ratio: the renderer writes `--tile-ratio` inline
    on `ul.gm` (`resource-list tile-ratio=`). The image is contained, never
-   cropped. Its fetch width is `GRID_TILE_WIDTH` (core/src/iiif.rs), sized
+   cropped. Its fetch width is `GRID_TILE_WIDTH` (areas/access/cpe/core/src/iiif.rs), sized
    for a tile of at most about 349px: change both together. A tall list
    fetches by the tall rule's constant instead (below). */
 .gm__box { position: relative; aspect-ratio: var(--tile-ratio, 3 / 4); display: grid; place-items: center; overflow: hidden; }
@@ -428,8 +424,6 @@ a.pager__num:hover { color: var(--accent-strong); }
   font-family: var(--font-display); font-style: var(--display-italic, normal);
   color: var(--ink); letter-spacing: var(--tracking-tight); line-height: var(--leading-tight);
 }
-/* DEVIATION: .gm__alt (design doc's optional alternate-name accent) dropped —
-   no counterpart in engine config, would be dead CSS (plan decision 9). */
 
 .gm { display: grid; gap: var(--space-6) var(--grid-gap); border-top: 1px solid var(--rule); padding-top: var(--space-6); }
 /* The tile floor grows with the window (`--tile-min`, tokens.css). The ≤860px
@@ -442,12 +436,11 @@ a.pager__num:hover { color: var(--accent-strong); }
 
 /* the text tile answers a missing image with WORDS, on the same box —
    paper rather than the inset bed: a complete tile, just unillustrated.
-   DEVIATION: selector strengthened from the design doc's bare `.gm__box--text`
-   (specificity 0,1,0) to `.gm .gm__box.gm__box--text` (0,3,0) — the bare form
-   loses to `.gm .gm__box` (0,2,0) regardless of source order, so its
+   The selector is `.gm .gm__box.gm__box--text` (0,3,0): a bare `.gm__box--text`
+   (0,1,0) loses to `.gm .gm__box` (0,2,0) regardless of source order, so its
    `background: transparent` could never win. */
 .gm .gm__box.gm__box--text { background: transparent; border-style: solid; border-color: var(--rule); }
-/* OWNER TWEAK (step-6 hands-on review, deviation from the reference CSS):
+/* The text tile:
    the "No illustration" label leads the tile — ink, not faint — with more
    air before the gloss, and the gloss is clamped to 3 lines with an
    ellipsis (the rl-annot__gloss clamp idiom, one line longer).
@@ -462,7 +455,7 @@ a.pager__num:hover { color: var(--accent-strong); }
 /* Tall tiles (`data-tile="tall"`, set where `ir::is_tall` holds: a ratio at
    least three times as high as wide, e.g. border strips): narrow columns,
    and a box capped to the window's height. The box's 70svh cap pairs with
-   `GRID_TALL_FETCH_PX` (core/src/iiif.rs). */
+   `GRID_TALL_FETCH_PX` (areas/access/cpe/core/src/iiif.rs). */
 .gm[data-tile="tall"] {
   grid-template-columns: repeat(auto-fill, minmax(clamp(4.75rem, 2.5rem + 2.6vw, 7.5rem), 1fr));
   column-gap: var(--space-4);
@@ -493,7 +486,6 @@ a.pager__num:hover { color: var(--accent-strong); }
   .footer__inner,
   .footer-index__inner { grid-template-columns: 1fr; }
 
-  /* DEVIATION #6: .sg__lede removed from this collapse list (styleguide remnant). */
   .record__head, .props,
   .footer__mark, .footer__desc, .footer__lockup, .footer__attr,
   .footer-index__product, .footer-index__org,

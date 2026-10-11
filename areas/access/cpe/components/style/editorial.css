@@ -40,8 +40,8 @@
 .prose strong { font-weight: var(--weight-semibold); color: var(--ink); }
 .prose em { font-style: italic; }
 /* Inline Markdown `code` (e.g. a property name like `hasPublisher` in a
-   narrative) — the mockup's `.idval`. Without this rule the UA's generic
-   `monospace` rendered at the full 19px body size, visibly too big and heavy.
+   narrative). Without this rule the UA's generic
+   `monospace` renders at the full 19px body size, visibly too big and heavy.
    The project's meta face, sized relative to the surrounding text. */
 .prose code { font-family: var(--font-meta); font-size: 0.8em; }
 
@@ -70,7 +70,7 @@ html[data-align="justify"] .editorial__sections > p {
   html[data-align="justify"] .editorial__sections > p { text-align: justify; text-align-last: start; }
 }
 
-/* DEVIATION #4: wrap drop-cap in @supports so it degrades on Firefox
+/* The drop-cap sits in @supports so that it degrades on Firefox
    (which has no support for initial-letter). Plain first paragraph without
    the drop-cap is the correct fallback. */
 @supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
@@ -164,7 +164,7 @@ html[data-align="justify"] .editorial__sections > p {
    The query container is `.editorial__section`, NOT `.invite-list`: a
    container query can never style its own container, and the stacked form
    has to set `display: block` on the list itself. Every `ul.invite-list` is
-   emitted inside a `section.editorial__section` (components/src/component/
+   emitted inside a `section.editorial__section` (src/component/
    editorial.rs, `render_invite_list` — the only emission site, including
    the `div.prose` fallback path, which keeps the section wrappers inside
    it). A grouped list sits in a `section.invite-group` inside that section, which is the
@@ -476,7 +476,7 @@ html[data-align="justify"] .editorial__sections > p {
 /* ============================================================================
    SITE INDEX  (cross-project landing at "/")
    Lighter shell — this page introduces CPE itself. No hero: the list of
-   projects leads directly (the oversized hero was dropped from the design).
+   projects leads directly.
    ========================================================================== */
 /* The head is as wide as three cards (plus its own two gutters: it is
    border-box and the gutter is its padding). A `max-width`, never a `width`:
@@ -508,13 +508,13 @@ html[data-align="justify"] .editorial__sections > p {
 }
 .project-list > li { min-width: 0; }
 
-/* ---- teaser card (settled design — see
-   docs/design/site-index-cards/design-output.md's "Card anatomy"). One
+/* ---- teaser card.
+   One
    <a class="teaser"> per project; the whole card is the link. Square
    corners + a hairline border are the argued exception to "rules over
-   boxes" (§8.1). A 3px top rule in the project's OWN accent (via
+   boxes". A 3px top rule in the project's OWN accent (via
    [data-accent], below) is the only per-project differentiation — it
-   never touches type, link color, or fill (§8.3). */
+   never touches type, link color, or fill. */
 .teaser {
   display: flex;
   flex-direction: column;
@@ -534,7 +534,7 @@ html[data-align="justify"] .editorial__sections > p {
 .teaser[data-accent="red"]   { border-top-color: var(--accent-red); }
 
 /* Plate: inset image slot — paper margin + hairline border, so the picture
-   reads as belonging to the card rather than capping it (§8.2). */
+   reads as belonging to the card rather than capping it. */
 .teaser__plate { flex: none; padding: var(--space-3) var(--space-3) 0; }
 .teaser__img,
 .teaser__ghost {
@@ -623,7 +623,7 @@ html[data-align="justify"] .editorial__sections > p {
 }
 
 /* Footer row: Enter → (site's own --accent-strong — never the per-card
-   accent, §8.3) + the demoted mono /slug/ path (§8.4). */
+   accent) + the demoted mono /slug/ path. */
 .teaser__foot {
   flex: none;
   display: flex;

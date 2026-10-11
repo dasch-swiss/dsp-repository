@@ -1,14 +1,13 @@
-//! Incunabula's showcase figures (Slice 7): the woodcut crop cases of
+//! Incunabula's showcase figures: the woodcut crop cases of
 //! `/woodcuts` and `/narrenschiff`, and `/narrenschiff`'s edition cards and
-//! strip row, built to the Claude Design handoff
-//! (`projects/incunabula/design/showcases/design/HANDOFF.md` §1–2).
+//! strip row.
 //!
 //! A case is one woodblock's impressions side by side at one height: each
 //! crop is cut from its page scan by the annotation's box (IIIF `pct:`, see
 //! `iiif::crop_region`) and links to its page in the reader with
 //! that annotation addressed. A page case shows two whole pages joined by a
 //! page-level link instead, each linking to that link's register entry.
-//! Styles are the `SHOWCASE` block of `static/cpe/incunabula.css`; inline
+//! Styles are the `SHOWCASE` block of `style/incunabula.css`; inline
 //! `style=` carries only the crop's pixel aspect `--ar`.
 //!
 //! Every text from the store (titles, alts, link comments, excerpts) and
@@ -71,8 +70,8 @@ pub(crate) fn render_registered(
     render_woodcut_cases(*layout, cases, payload, &env)
 }
 
-/// The dataset-panel listing of `woodcut-cases` (its row's `data_listing`,
-/// plan D12): one group per case, in render order, listing exactly what the
+/// The dataset-panel listing of `woodcut-cases` (its row's `data_listing`):
+/// one group per case, in render order, listing exactly what the
 /// case renders. A crop case lists the Region of every crop and of its detail
 /// (not in a compact block, which shows none), headed by its Schramm number,
 /// else by its pages; a page case lists its two Pages, headed "Seitenebene"
@@ -227,7 +226,7 @@ pub(crate) fn case_dom_id(key: &str) -> String {
     format!("case-{key}")
 }
 
-/// One crop case, HANDOFF §1 with D18's two corrections: the hidden lead
+/// One crop case: the hidden lead
 /// follows `div.case__id` (which names the group, so the lead must stay out
 /// of it), and the row carries `role="list"` (its `list-style: none` drops
 /// list semantics in Safari). The root is `figure[role=group]` and must
@@ -381,7 +380,7 @@ fn crop_parts<'a>(crop: &'a ShowcaseCrop, source: &'a AnnotationCrop, max_px: i6
 
 /// One crop: a link around the bed and the caption (book title, page label,
 /// arrow). The link's accessible name reads alt, book, page and the hidden
-/// "— open the page" (D18); a crop with no link drops that phrase. An image
+/// "— open the page"; a crop with no link drops that phrase. An image
 /// URI that fails `is_safe_external_url` renders the failed bed.
 fn render_crop(crop: &ShowcaseCrop, source: &AnnotationCrop, env: &Env<'_>) -> Markup {
     let parts = crop_parts(crop, source, CROP_FETCH_PX, env);
@@ -475,7 +474,7 @@ fn render_item(item: Item<'_>, lang: &Lang) -> Markup {
 
 /// A bed: the image (absent when there is no URL, so the bed renders
 /// failed), the failed-state label and a copy of the alt. Exactly one copy of
-/// the alt is in the accessibility tree in each state (D10).
+/// the alt is in the accessibility tree in each state.
 fn render_bed(src: Option<&str>, alt: &str, alt_lang: &str, lang: &Lang) -> Markup {
     html! {
         span class=(if src.is_some() { "case__bed" } else { "case__bed is-failed" }) {
@@ -493,7 +492,7 @@ fn render_bed(src: Option<&str>, alt: &str, alt_lang: &str, lang: &Lang) -> Mark
     }
 }
 
-/// The detail crop (HANDOFF §1.5): its own link under the row, a small bed
+/// The detail crop: its own link under the row, a small bed
 /// beside an eyebrow ("Detail · b3v") and the page label. The link's name
 /// reads alt, eyebrow, book and the hidden "— open the page"; the visible
 /// page label is hidden from it, since the eyebrow already names the page.
@@ -529,7 +528,7 @@ fn render_detail(detail: &ShowcaseCrop, source: &AnnotationCrop, env: &Env<'_>) 
     }
 }
 
-// ── Edition cards and the strip row (HANDOFF §2, `/narrenschiff`) ────────────
+// ── Edition cards and the strip row (`/narrenschiff`) ────────────
 
 /// The registered render function of `edition-cards` (row
 /// `("incunabula", "edition-cards")`). Renders nothing for a slot without
@@ -744,7 +743,7 @@ mod tests {
         }
     }
 
-    /// E1 as configured: Schramm 1124, its title, the link comment, the
+    /// One case as configured: Schramm 1124, its title, the link comment, the
     /// first alt from the data and the second composed.
     fn e1() -> (Vec<ShowcaseCase>, WoodcutCasesPayload) {
         let cases = vec![ShowcaseCase::Crops {
@@ -811,7 +810,7 @@ mod tests {
         render_woodcut_cases(layout, cases, payload, &env).into_string()
     }
 
-    /// The project's authored remark of E2 (design draft).
+    /// The project's authored remark for the Kap. 14 case.
     fn chrome() -> Vec<ChromeString> {
         vec![ChromeString {
             id: "showcase-remark-e2".to_owned(),
@@ -849,7 +848,7 @@ mod tests {
         }
     }
 
-    /// E2 as configured: three editions of Kap. 14, an authored remark.
+    /// As configured: three editions of Kap. 14, an authored remark.
     fn e2() -> (Vec<ShowcaseCase>, WoodcutCasesPayload) {
         let alt = "Holzschnitt zu Kap. 14: Von falschen Vorstellungen über Gott.";
         let cases = vec![ShowcaseCase::Crops {
@@ -885,7 +884,7 @@ mod tests {
         (cases, payload)
     }
 
-    /// F4: four impressions in one row, the link comment with its double
+    /// Four impressions in one row, the link comment with its double
     /// space.
     fn f4() -> (Vec<ShowcaseCase>, WoodcutCasesPayload) {
         let comment = "Der Holzschnitt wird viermal verwendet: In der lateinischen Fassung des \
@@ -925,7 +924,7 @@ mod tests {
         (cases, payload)
     }
 
-    /// B1 and B2, a compact pair of cases inside one book; B2's second page
+    /// A compact pair of cases inside one book; the second case's second page
     /// has no woodcut line, so its alt is composed.
     fn compact_pair() -> (Vec<ShowcaseCase>, WoodcutCasesPayload) {
         let case = |schramm, link: &str, a: ShowcaseCrop, b: ShowcaseCrop| ShowcaseCase::Crops {
@@ -990,7 +989,7 @@ mod tests {
         }
     }
 
-    /// P3: the printer's mark on the last page of both Latin editions, the
+    /// The printer's mark on the last page of both Latin editions, the
     /// page-level link's own comment as the remark.
     fn p3() -> (Vec<ShowcaseCase>, WoodcutCasesPayload) {
         let link_id = "_j3T1ZACWzGNux_T6tlnCA";
@@ -1032,7 +1031,7 @@ mod tests {
         (cases, payload)
     }
 
-    /// E5: two impressions and the detail under the row that backs the
+    /// Two impressions and the detail under the row that backs the
     /// remark.
     fn e5() -> (Vec<ShowcaseCase>, WoodcutCasesPayload) {
         let remark = "Weiedervwendung des selben Holzschnittes. In der deutschen Ausgabe ist in \
@@ -1655,7 +1654,7 @@ mod tests {
         assert_eq!(out.matches("<img").count(), 1, "{out}");
     }
 
-    // ── Dataset-panel listing (plan D12) ─────────────────────────────────────
+    // ── Dataset-panel listing ─────────────────────────────────────
 
     const ARK: &str = "https://ark.dasch.swiss/ark:/72163/1/0803/";
 

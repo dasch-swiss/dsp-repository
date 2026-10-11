@@ -61,13 +61,13 @@
      fills the window up to 2200px and is centred beyond it.
      The boot warning `HeaderRowOverBudget` computes the header row's width
      from this cap and the gutter below (HEADER_DESK_BUDGET_PX,
-     core/src/validate/header_budget.rs); a test pins both lines: change
+     areas/access/cpe/core/src/validate/header_budget.rs); a test pins both lines: change
      the formula there with either. */
   --shell-max: 137.5rem;
   --gutter: clamp(1.25rem, 3.2vw + 0.4rem, 5rem);
   --rail-w: clamp(14rem, 9rem + 6vw, 21rem);     /* the browse facet rail */
   /* A grid tile's floor. Its 16rem ceiling sizes `GRID_TILE_WIDTH`
-     (core/src/iiif.rs): raise both together. */
+     (areas/access/cpe/core/src/iiif.rs): raise both together. */
   --tile-min: clamp(11rem, 7rem + 5vw, 16rem);
   /* A narrative's side track, and the composition it makes with the reading
      measure (`--read`, grid.css): the width of a breakout. */
@@ -160,7 +160,7 @@
 
   --ink:        oklch(0.255 calc(var(--neutral-chroma) * 2.2) var(--neutral-hue));
   --ink-muted:  oklch(0.40 calc(var(--neutral-chroma) * 1.8) var(--neutral-hue));
-  /* AAA ink ramp (Phase 3.8): muted L 0.40, faint L 0.44 so meta/labels/captions
+  /* AAA ink ramp: muted L 0.40, faint L 0.44 so meta/labels/captions
      clear WCAG AAA (7:1) on every light surface (surface · sunken · inset);
      --ink-faint still clearly lighter than --ink-muted. */
   --ink-faint:  oklch(0.44 calc(var(--neutral-chroma) * 1.6) var(--neutral-hue));
@@ -256,8 +256,8 @@
 }
 
 /* ===========================================================================
-   TYPEFACE  ·  data-font = a face group (only groups options in the design
-                tool's Tweaks panel; CPE never emits it)
+   TYPEFACE  ·  data-font = a face group (a grouping only; CPE never emits
+                it)
               ·  data-pick = the actual face(s), fully defined here
    ----------------------------------------------------------------------------
    ⚠ SOURCE-ORDER INVARIANT: these `data-pick` rules MUST stay AFTER the

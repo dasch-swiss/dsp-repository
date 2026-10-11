@@ -14,8 +14,8 @@ use cpe_core::theme::Appearance;
 
 /// Context threaded through the renderer for a single HTTP request.
 ///
-/// `route_params` is carried empty this slice; it is forward-shaped for
-/// param-page wiring (task two) without requiring a signature change then.
+/// `route_params` is carried empty; it is forward-shaped for
+/// param-page wiring without requiring a signature change then.
 pub struct RenderContext<'a> {
     pub lang: Lang,
     pub project_id: &'a str,
@@ -31,7 +31,7 @@ pub struct RenderContext<'a> {
     /// existing params (e.g. `lang`, `appearance`) while overriding only `img`.
     /// `None` when the request had no query string.
     pub current_query: Option<&'a str>,
-    /// Route parameters extracted by the router (empty this slice).
+    /// Route parameters extracted by the router (empty).
     pub route_params: &'a [(String, String)],
     /// Resolved colour scheme for this request (default [`Appearance::Light`]).
     ///
@@ -52,7 +52,7 @@ pub struct RenderContext<'a> {
     /// component. Pass an empty map (or `&HashMap::new()`) when the caller has
     /// no project context (e.g. engine unit tests that only test narrative pages).
     pub link_routes: &'a HashMap<String, String>,
-    /// Class-to-media-property map (embedded-media plan step 5), threaded the
+    /// Class-to-media-property map, threaded the
     /// same way as `link_routes`.
     ///
     /// Borrowed from `Project::media_properties()`. Consumed at the
@@ -61,11 +61,11 @@ pub struct RenderContext<'a> {
     /// (the record viewer renders it separately) — see `component::media`.
     pub media_properties: &'a HashMap<String, String>,
     /// Pre-hydrated Image resources linked from the current page's single
-    /// `resource-detail` resource via its class's media property (embedded-media
-    /// plan step 6c). Empty when the resource's class has no media property, or
+    /// `resource-detail` resource via its class's media property.
+    /// Empty when the resource's class has no media property, or
     /// when the property has no values. The store fetches it
     /// (`PageData.media_items`, through `ProjectReads::media_items`) and the
-    /// bin passes it in — renderers have no DB access of their own. A page has at most one
+    /// host passes it in — renderers have no DB access of their own. A page has at most one
     /// `resource-detail` (boot-enforced `DuplicateSingletonComponent`), so one slice suffices —
     /// no per-component indexing is needed.
     pub media_items: &'a [Resource],
@@ -73,16 +73,15 @@ pub struct RenderContext<'a> {
     /// default open/`true`). The record viewer's own strip fold is a
     /// client-side `$stripOpen` signal (never a URL write, `dsp-incubator
     /// cpe/docs/adr/0007-fragment-swaps-are-transient.md`); `?strip=` stays only the
-    /// initial-load / zero-JS full-reload condition (the retired `_plate` fragment endpoint
-    /// this comment used to describe is gone — record-viewer plan step 12).
+    /// initial-load / zero-JS full-reload condition.
     pub strip_open: bool,
     /// Id → thumb (raw representation-URI + stored width) map for the page's
-    /// `resource-list` browse-row thumbnails (embedded-media plan step 6d),
+    /// `resource-list` browse-row thumbnails,
     /// threaded the same way as `media_items`.
     ///
     /// The store fetches it (`PageData.media_thumbs`, through
     /// `ProjectReads::media_thumbs(class_media_property, &ids)`) after the
-    /// list's own read (`ids` = the resolved page's item ids), and the bin
+    /// list's own read (`ids` = the resolved page's item ids), and the host
     /// passes it in — renderers have no DB access of their own. Empty
     /// when the page has no `resource-list`, its `media` attribute is absent, or
     /// no row resolved a thumbnail. A page has at most one `resource-list`
@@ -94,16 +93,16 @@ pub struct RenderContext<'a> {
     pub media_thumbs: &'a HashMap<String, cpe_core::ir::MediaThumb>,
     /// Lightweight member headers for the page's (at most one, boot-enforced
     /// `DuplicateSingletonComponent`) `resource-detail` resource, when that
-    /// resource is itself a compound parent (record-viewer plan step 9 —
-    /// `.rv-contents`, AC11). Empty when the resource has no `compound_parts`
+    /// resource is itself a compound parent (`.rv-contents`).
+    /// Empty when the resource has no `compound_parts`
     /// rows of its own (the common case) or the page has no resource-detail at
     /// all. The store fetches it (`PageData.compound_members`, through
-    /// `ProjectReads::compound_member_headers`) and the bin passes it in —
+    /// `ProjectReads::compound_member_headers`) and the host passes it in —
     /// renderers have no DB access of their own. Threaded the same way as
     /// `media_items`.
     pub compound_members: &'a [cpe_core::ir::MemberHeader],
     /// Compound-parent Resource lookup, keyed by the compound's resolved
-    /// source id (empty-states-not-found plan step 7, E5).
+    /// source id.
     ///
     /// Borrowed like `link_routes`/`media_properties` (never owned — an owned
     /// map would force clones at every literal). The store
@@ -117,42 +116,34 @@ pub struct RenderContext<'a> {
     /// resolve to a Resource at all; the renderer degrades to the sentence
     /// alone rather than panicking.
     pub compound_parents: &'a HashMap<String, Resource>,
-    /// Class-to-list-route map (N3, empty-states-not-found plan step 8),
-    /// threaded the same way as `link_routes`. Unused by any renderer in
-    /// step 7 (`#[allow(dead_code)]` on the placeholder value at every bin
-    /// construction site until step 8 wires `render_not_found`/the
-    /// breadcrumb to it) — added here alongside `compound_parents` so both
-    /// new `RenderContext` fields ripple through the ~7 bin literals and the
-    /// engine test fixtures in one coordinated pass (see the plan's step 7
-    /// "Touch-point warning").
+    /// Class-to-list-route map (the unknown-record page),
+    /// threaded the same way as `link_routes`.
     pub class_list_routes: &'a HashMap<String, String>,
-    /// This REQUEST's resolved public origin (share-view plan step 1;
-    /// **revised 2026-09-01**, owner verification round): `CPE_PUBLIC_ORIGIN`
+    /// This REQUEST's resolved public origin: `CPE_PUBLIC_ORIGIN`
     /// when set (env override, unconditional), else derived fresh for THIS
-    /// request from `X-Forwarded-Proto`/`Host` — no longer a single value
-    /// resolved once at bin boot and shared across every request/environment
-    /// (see `bin/src/lib.rs`'s `OriginConfig` and
-    /// `docs/plans/share-view/implementation-plan.md`'s decision 4). No
+    /// request from `X-Forwarded-Proto`/`Host` — not a single value
+    /// resolved once at host boot and shared across every request/environment
+    /// (see `dsp-incubator cpe/bin/src/lib.rs`'s `OriginConfig`). No
     /// trailing slash. Threaded the same way as `current_path`/
     /// `current_query`; passed to `share_link::compose_absolute_url` when
     /// building the "Copy link" control's href.
     pub public_origin: &'a str,
     /// The resolved incoming-links rows for the page's (at most one)
-    /// `resource-detail` resource (Incunabula Slice 5, G7), when that
+    /// `resource-detail` resource, when that
     /// component declares an `incoming-links` child. Threaded exactly like
     /// `compound_members`: the store fetches them (`PageData.incoming_links`,
-    /// through `ProjectReads::incoming_links`) and the bin passes them in.
+    /// through `ProjectReads::incoming_links`) and the host passes them in.
     ///
     /// `None` ⇒ no list renders at all — either the page declares no
     /// `incoming-links`, or the lookup failed (a query failure must never
     /// claim "nothing links here"). `Some(&IncomingLinks { rows: vec![], .. })`
-    /// ⇒ the caption + the empty sentence. `IncomingLinks.total` (item 6,
-    /// Backlog hardening batch 3) is the UNCAPPED match count; the renderer
+    /// ⇒ the caption + the empty sentence. `IncomingLinks.total`
+    /// is the UNCAPPED match count; the renderer
     /// shows an honest "N of M" line only when `rows.len() < total`.
     pub incoming_links: Option<&'a cpe_core::ir::IncomingLinks>,
     /// The resource-level annotation-link partners of the page's (at most
-    /// one) `resource-detail` resource (`ProjectReads::resource_links`;
-    /// Incunabula Slice 6, D9), for a `group links-label=` row. The store
+    /// one) `resource-detail` resource (`ProjectReads::resource_links`),
+    /// for a `group links-label=` row. The store
     /// fetches them (`PageData.resource_links`) only for a full-page request
     /// (`PageScope::Page`) whose record declares such a group; empty
     /// otherwise, which renders no row.
@@ -161,7 +152,7 @@ pub struct RenderContext<'a> {
 
 /// Bare-filename → UTF-8 content store for a project's narrative files.
 ///
-/// Built at `Project::load` time from the pairs the bin supplies (the bin
+/// Built at `Project::load` time from the pairs the host supplies (the host
 /// reads the embedded `narrative/` directory; the engine stays I/O-free).
 /// Keys are bare filenames (e.g. `"home.md"`, `"home.de.md"`); values are
 /// the full UTF-8 content. `BTreeMap` gives deterministic iteration order,
@@ -177,7 +168,7 @@ impl NarrativeStore {
     /// Build a store from an slice of `(filename, content)` pairs.
     ///
     /// Duplicate filenames keep the last occurrence (BTreeMap insert
-    /// semantics); the bin deduplicates at the source so this is a
+    /// semantics); the host deduplicates at the source so this is a
     /// belt-and-suspenders guard.
     pub fn from_pairs(pairs: &[(String, String)]) -> Self {
         let map = pairs.iter().map(|(k, v)| (k.clone(), v.clone())).collect();

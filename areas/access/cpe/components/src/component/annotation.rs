@@ -1,5 +1,5 @@
 //! The annotation register of a `pages` reader's page (`dsp-incubator
-//! cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md`; annotations design-doc §4):
+//! cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md`):
 //! `div#cv-annotations`, the reader's second `_compound` patch target, holding
 //! `section#annotations` and the stacked-width bookmark. The page's overlay markup (the shapes and
 //! tags drawn on the scan) and the pure geometry and colour helpers live here too; nothing here
@@ -33,7 +33,7 @@ const RESETTABLE_SIGNALS: &str = "_annoHover: '', _annoPin: '', _annoArrive: '',
 /// The `data-signals` declaration on `article.record--reader`: the
 /// resettable signals plus `_annoShow` (the toggle, on by default). The
 /// article is outside every `_compound` patch target, so no swap
-/// re-declares the toggle and it survives a page turn (plan D12).
+/// re-declares the toggle and it survives a page turn.
 pub(crate) fn annotation_signals_decl() -> String {
     format!("{{_annoShow: true, {RESETTABLE_SIGNALS}}}")
 }
@@ -44,7 +44,7 @@ pub fn annotation_reset_signals_json() -> String {
     format!("{{{RESETTABLE_SIGNALS}}}")
 }
 
-/// The arrival (plan D12): a `data-init` on `article.record--reader`, which
+/// The arrival: a `data-init` on `article.record--reader`, which
 /// no swap re-inserts, so it runs once per real load. A `#annotation-<id>`
 /// hash for a numbered entry here emphasises its shape (no zoom). The note
 /// needs a `navigate` load (the referrer survives a reload and Back/Forward)
@@ -82,7 +82,7 @@ pub(crate) const ARRIVAL_INIT_EXPR: &str = "\
     }";
 
 /// Clears the arrival note: the toggle, a pin and a zoom away from fit each
-/// end the arrival (design-doc §3.5); a page turn resets it with the rest.
+/// end the arrival; a page turn resets it with the rest.
 const NOTE_CLEAR: &str = "$_annoNote = ''";
 
 /// The stage's `viewer-zoom` listener on a page with a register: a zoom away
@@ -93,7 +93,7 @@ pub(crate) fn zoom_away_expr() -> String {
     format!("if (!evt.detail.atHome) {NOTE_CLEAR}")
 }
 
-// ── Interaction (design-doc §6, plan D16) ─────────────────────────────────────
+// ── Interaction ─────────────────────────────────────
 
 /// The id drawn emphasised, as a JS expression: the pin wins over a hover,
 /// which wins over the arrival emphasis. The viewer's `setOverlayState`
@@ -106,7 +106,7 @@ pub(crate) const FOCUS_EXPR: &str = "($_annoPin || $_annoHover || $_annoArrive)"
 pub(crate) const READER_VIEWER_EXPR: &str = "document.querySelector('#compound-viewer image-viewer')";
 
 /// Pin `id` and zoom onto its shape, or, when `id` is already pinned, unpin
-/// and return to fit (D16 F10). A pin clears the arrival note. `id` and
+/// and return to fit. A pin clears the arrival note. `id` and
 /// `viewer` are JS expressions; the viewer calls are optional-chained, since
 /// a page may have no mounted viewer (a non-IIIF scan) and still pins in the
 /// register. Pass no zoom options: the padding and cap are the viewer's.
@@ -117,7 +117,7 @@ pub(crate) fn pin_toggle_expr(id: &str, viewer: &str) -> String {
     )
 }
 
-/// Esc unpins and returns to fit (D16 F11), then returns, so a keydown
+/// Esc unpins and returns to fit, then returns, so a keydown
 /// expression may go on after it for other keys. Bound twice: on the reader
 /// and on the register, which sits outside `#compound-viewer`. Ignored in
 /// an open `details`, and, wherever focus is, while the crumb line's dataset
@@ -219,7 +219,7 @@ pub(crate) fn register_page_label(page: &CompoundPage, member: &Resource, lang: 
     member_text(member, "name", lang).map_or_else(|| page.index.to_string(), str::to_owned)
 }
 
-/// `section#annotations` (design-doc §4): a head repeating the reader's
+/// `section#annotations`: a head repeating the reader's
 /// identity line over the heading, then one `li` per entry in register order.
 fn render_register(page: &CompoundPage, member_class_label: &str, page_label: &str, partners: &Partners<'_>) -> Markup {
     let lang = partners.lang;
@@ -260,7 +260,7 @@ fn render_register(page: &CompoundPage, member_class_label: &str, page_label: &s
                     { (ChromeMsg::AnnoShowOnScan.text(lang)) }
                 }
             }
-            // The arrival note (plan D11), filled by `ARRIVAL_INIT_EXPR`;
+            // The arrival note, filled by `ARRIVAL_INIT_EXPR`;
             // empty, and so no height, otherwise.
             p.anno__arrival role="status" data-text="$_annoNote" {}
             // `role="list"`: `list-style: none` drops the list semantics in
@@ -330,7 +330,7 @@ pub(crate) fn group_by_link_name<'a, T>(
     lines
 }
 
-/// An entry's partners as link lines (plan D8): one line per link name, in
+/// An entry's partners as link lines: one line per link name, in
 /// first-seen order, so the links of one woodcut read as one line; within a
 /// line one partner per partner page, the page's lowest-numbered annotation
 /// (a page partner, unnumbered, ranks last).
@@ -352,7 +352,7 @@ fn link_lines(partners: &[AnnotationPartner]) -> Vec<LinkLine<'_>> {
 }
 
 impl Partners<'_> {
-    /// `div.anno__links` for an entry's partners (design-doc §4): per line
+    /// `div.anno__links` for an entry's partners: per line
     /// the link name, then each partner named by its book's title ("this
     /// book" for the shown one) and its page. Nothing when it has none.
     /// `number` is the entry's own (`None` on a page-level entry), for the
@@ -464,7 +464,7 @@ fn render_numbered_entry(number: u32, annotation: &Annotation, lines: &Markup, l
             data-on:focusout=(leave)
         {
             // A button with or without JS: the number stays visible; with JS
-            // it pins and zooms (D16). Inert without JS.
+            // it pins and zooms. Inert without JS.
             button
                 .anno__chip
                 type="button"
@@ -513,7 +513,7 @@ fn render_page_entry(link: &AnnotationLink, lines: &Markup, lang: &Lang) -> Mark
     }
 }
 
-/// The bookmark under the register at stacked widths (design-doc §4): the
+/// The bookmark under the register at stacked widths: the
 /// book's identity line over its title, before the book's intro resumes.
 fn render_bookmark(bookmark: &Bookmark<'_>) -> Markup {
     html! {
@@ -542,7 +542,7 @@ pub(crate) fn shape_word(shape: AnnotationShape) -> ChromeMsg {
 const OFF_CLASS_EXPR: &str = "{'anno-off': !$_annoShow}";
 
 /// The page's drawn shapes and their number tags, in the overlay markup
-/// contract of `dasch-image-viewer`'s README ("Overlay layer"): one
+/// contract of `cpe-image-viewer`'s README ("Overlay layer"): one
 /// `svg[data-iv-overlay]` in a `0 0 100 100` box, then one tag per shape.
 /// Shapes follow register order, so a nested smaller shape (numbered later)
 /// paints on top and wins the hit. The tags carry `left`/`top` too, which
@@ -655,11 +655,11 @@ pub(crate) struct TagAnchor {
     pub(crate) below: bool,
 }
 
-/// An anchor above this fraction of the image's height hangs its tag below
-/// (design-doc F14): above it, the tag would sit in the letterbox.
+/// An anchor above this fraction of the image's height hangs its tag below:
+/// above it, the tag would sit in the letterbox.
 const TAG_BELOW_MAX_Y: f64 = 0.05;
 
-/// The tag anchor of a shape (design-doc §3.2): a rectangle's top-left
+/// The tag anchor of a shape: a rectangle's top-left
 /// corner (tag left-aligned), a circle's top point, or a polygon's topmost
 /// vertex, leftmost on a tie (both centred). The two rules keep nested
 /// shapes' tags apart.
@@ -723,7 +723,7 @@ fn relative_luminance([r, g, b]: [u8; 3]) -> f64 {
     0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
 }
 
-/// The text colour on `hex` (design-doc §3.2): black or white, whichever has
+/// The text colour on `hex`: black or white, whichever has
 /// the higher WCAG contrast against it; black on a tie. `None` for a value
 /// that is not `#rrggbb`.
 pub(crate) fn on_colour(hex: &str) -> Option<&'static str> {
@@ -753,7 +753,7 @@ const HUE_BUCKETS: [(f64, ChromeMsg); 8] = [
     (360.0, ChromeMsg::ColourRed),
 ];
 
-/// The colour term for `hex` (design F2): a lightness or saturation
+/// The colour term for `hex`: a lightness or saturation
 /// extreme names black, white or grey, else the HSL hue's bucket names it.
 /// Every `#rrggbb` gets a term, so no project needs a colour table. `None`
 /// for a value that is not `#rrggbb`.

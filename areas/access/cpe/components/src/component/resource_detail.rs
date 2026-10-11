@@ -18,7 +18,7 @@
 //! - `Link { target_label: Some }` → `<a class="int-link">` when the target class is bound in the
 //!   `LinkResolver`; otherwise falls back to `span.v-text` plain.
 //! - `Link { target_label: None, target_class: None }` (target does not exist) → `span.unresolved`
-//!   with the E7 mono UNRESOLVED mark.
+//!   with the mono UNRESOLVED mark.
 //! - `Link { target_label: None, target_class: Some(_) }` (target exists, just has no `name`) →
 //!   plain `code` — this value resolves.
 //! - `ListValue` (multi) → `ul.keyword-set > li.keyword` (path + leaf split).
@@ -43,7 +43,7 @@ use crate::component::values::{
 
 // ── Config borrow struct ──────────────────────────────────────────────────────
 
-/// One resolved config property group (G8 + HdM Slice 3 `empty=`).
+/// One resolved config property group.
 #[derive(Debug, Clone, Copy)]
 pub struct GroupCfg<'a> {
     /// The resolved caption (chrome id or `ChromeMsg::PropertyGroupTitle`).
@@ -54,7 +54,7 @@ pub struct GroupCfg<'a> {
     /// member is absent on the record. `None` ⇒ an all-absent group renders
     /// nothing.
     pub empty: Option<&'a str>,
-    /// The closing links row (`group links-label=`, Incunabula Slice 6 D9).
+    /// The closing links row (`group links-label=`).
     /// `None` ⇒ no row: undeclared, or the record has no resource-level
     /// link partners.
     pub links: Option<GroupLinks<'a>>,
@@ -98,14 +98,14 @@ pub struct ResourceDetailCfg<'a> {
     pub id: &'a str,
     pub title_property: Option<&'a str>,
     pub show_properties: &'a [String],
-    /// The class's media link property name (embedded-media plan step 6c),
+    /// The class's media link property name,
     /// resolved by the caller from `RenderContext.media_properties`. When
     /// `Some`, excluded from the `.props` list (the record viewer renders it
     /// separately via `media_items`); `render_property_block` itself never
     /// learns the class.
     pub media_property: Option<&'a str>,
-    /// Pre-hydrated Image resources linked via `media_property` (embedded-media
-    /// plan step 6c), in seqnum order. Empty when `media_property` is `None` or
+    /// Pre-hydrated Image resources linked via `media_property`,
+    /// in seqnum order. Empty when `media_property` is `None` or
     /// the property has no values — the record viewer (`record--viewer`) is
     /// only rendered when non-empty.
     pub media_items: &'a [Resource],
@@ -115,7 +115,7 @@ pub struct ResourceDetailCfg<'a> {
     /// Thumb-strip fold state (`?strip=`, default open).
     pub strip_open: bool,
     /// Lightweight member headers for `resource`, when it is itself a compound
-    /// parent (record-viewer plan step 9 — `.rv-contents`, AC11). Empty for
+    /// parent (`.rv-contents`). Empty for
     /// every non-compound host (the common case — Alice's Characters,
     /// Locations, and StoryChapters are never compound parents), in which case
     /// `.rv-contents` is omitted entirely. Pre-hydrated by the store
@@ -129,7 +129,7 @@ pub struct ResourceDetailCfg<'a> {
     pub current_query: Option<&'a str>,
     /// Optional resolver for turning `Link` values into clickable `<a class="int-link">`.
     ///
-    /// `None` → all links fall back to `span.v-text` (the pre-Phase-5 behaviour).
+    /// `None` → all links fall back to `span.v-text`.
     /// `Some(resolver)` → links whose target class is bound in the map become
     /// clickable; those without a binding still fall back to `span.v-text`.
     #[doc(hidden)]
@@ -139,24 +139,24 @@ pub struct ResourceDetailCfg<'a> {
     /// `resolve_property_label` for every rendered `.prop` block; a property
     /// with no matching declared label (or no translation for the current
     /// language) falls back to `humanize_property_name`. Empty slice ⇒ every
-    /// label is humanized (pre-labels-mechanism behaviour, unchanged).
+    /// label is humanized.
     pub property_labels: &'a [cpe_core::ir::PropertyLabel],
     /// Declared class labels (`labels { class "…" { … } }`), used to resolve
     /// the header eyebrow (`p.eyebrow`) text. Passed to `resolve_class_label`;
     /// a class with no matching declared label (or no translation for the
     /// current language) falls back to `humanize_property_name`. Empty slice
-    /// ⇒ the eyebrow is humanized (pre-labels-mechanism behaviour, unchanged).
+    /// ⇒ the eyebrow is humanized.
     pub class_labels: &'a [cpe_core::ir::ClassLabel],
-    /// Config-declared property groups (Incunabula Slice 3 / G8), in
+    /// Config-declared property groups, in
     /// declaration order: see `GroupCfg` (resolved caption, member property
     /// names, optional resolved empty sentence). The
     /// caller resolves each `group label=` chrome id (falling back to
     /// `ChromeMsg::PropertyGroupTitle`). Each non-empty group renders as a
-    /// `section.pgroup` after the flat `div.props`. Empty ⇒ pre-G8 behaviour
+    /// `section.pgroup` after the flat `div.props`. Empty ⇒ the group-less behaviour
     /// exactly; non-empty with an empty `show_properties` ⇒ the flat list is
     /// EMPTY and `div.props` is omitted (not "every property").
     pub groups: &'a [GroupCfg<'a>],
-    /// The record's rendered intro narrative (Incunabula Slice 3 / O6 —
+    /// The record's rendered intro narrative (
     /// `narrative-for`), already language-resolved and rendered to a
     /// `div.prose` by `render_component`. The **one owned field** of this
     /// otherwise borrowed struct, deliberately: the HTML is produced in the
@@ -166,8 +166,7 @@ pub struct ResourceDetailCfg<'a> {
     /// `record__body--intro`; `None` ⇒ the body markup is unchanged.
     pub intro: Option<Markup>,
     /// Whether this record is paired with a same-id `compound-viewer` on its
-    /// page — the boot fact `Component::ResourceDetail.navigator` (Incunabula
-    /// Slice 3b step 7, D1/D10, `dsp-incubator
+    /// page — the boot fact `Component::ResourceDetail.navigator` (`dsp-incubator
     /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md`). `true` ⇒ `.rv-contents` does
     /// not render (the navigator is the one member list); `false` ⇒ a compound
     /// parent lists its members in `.rv-contents`.
@@ -185,13 +184,12 @@ pub struct ResourceDetailCfg<'a> {
     /// `div.record__tracks`, so its DOM order follows the stacked order.
     /// Ignored when `reader` is `None`.
     pub annotations: Option<Markup>,
-    /// The record's incoming-links list (Incunabula Slice 5, G7; grouped in
-    /// HdM Slice 3, G3) — see [`IncomingCfg`]. Renders as
+    /// The record's incoming-links list — see [`IncomingCfg`]. Renders as
     /// `section.pgroup.incoming` after the last config group. `None` ⇒
     /// nothing (no spec, or the lookup failed).
     #[doc(hidden)]
     pub incoming: Option<IncomingCfg<'a>>,
-    /// `site.date_precision_word` (Incunabula Slice 8, decision 4): append
+    /// `site.date_precision_word`: append
     /// the `span.prec` precision word to every date value this record
     /// renders. `false` ⇒ dates render exactly as before. In the imprint it
     /// adds only the Gregorian calendar marker, never the precision word.
@@ -203,7 +201,7 @@ pub struct ResourceDetailCfg<'a> {
 }
 
 /// Everything [`render_incoming_links`] needs, resolved by `render_component`
-/// (HdM Slice 3 — one carrier, so neither the renderer nor its call site
+/// (one carrier, so neither the renderer nor its call site
 /// grows an argument list).
 ///
 /// Row options (`row-label`/`row-aside`) need no field here: the query layer
@@ -217,7 +215,7 @@ pub struct IncomingCfg<'a> {
     #[doc(hidden)]
     pub caption: &'a str,
     /// The rows the store fetched. `rows: vec![]` ⇒ ungrouped: the caption +
-    /// the empty sentence; grouped: nothing at all (decision 14).
+    /// the empty sentence; grouped: nothing at all.
     /// `total` is the uncapped match count — an "N of M" line renders only
     /// when `rows.len() < total`, in both modes.
     #[doc(hidden)]
@@ -318,10 +316,10 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     });
 
     // Determine property render order, excluding title_property, "quote", and
-    // the media link property (embedded-media plan step 6c — the record viewer
+    // the media link property (the record viewer
     // renders it separately, never as a plain property row).
     let excluded = |name: &str| title_prop_name == Some(name) || name == "quote" || cfg.media_property == Some(name);
-    // G8: once any `group` is declared, an absent/empty `show-properties`
+    // Once any `group` is declared, an absent/empty `show-properties`
     // means "no flat rows" — never "every property", or grouped members would
     // render twice (flat and under their cap).
     let ordered: Vec<&Property> = if cfg.show_properties.is_empty() && !cfg.groups.is_empty() {
@@ -349,7 +347,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
             .collect()
     };
 
-    // Config property groups (G8): same title/quote/media exclusion as the
+    // Config property groups: same title/quote/media exclusion as the
     // flat list; a group with no present member renders nothing.
     let groups_markup: Vec<Markup> = cfg
         .groups
@@ -371,8 +369,8 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
             )
         })
         .collect();
-    // With no groups the flat `div.props` is always emitted (byte-identical
-    // to pre-G8); with groups it is omitted when it has no rows.
+    // With no groups the flat `div.props` is always emitted;
+    // with groups it is omitted when it has no rows.
     let emit_flat_props = cfg.groups.is_empty() || !ordered.is_empty();
 
     let has_media = !cfg.media_items.is_empty();
@@ -382,12 +380,10 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     } else {
         "record__body record__body--noimg"
     };
-    // record-viewer plan Decision 6: automatic, scoped to the resource-detail
-    // media column, no new config attribute — every resource-detail with
-    // media renders `record--viewer` (the deep-zoom viewer) unconditionally;
-    // the old `record--media` grid is no longer reachable from this call site.
-    // The plate renderer that used to fill that grid is gone entirely — the
-    // viewer's own per-image `.fallback` markup (component::media) is now the
+    // Automatic, scoped to the resource-detail
+    // media column, no config attribute — every resource-detail with
+    // media renders `record--viewer` (the deep-zoom viewer) unconditionally.
+    // The viewer's own per-image `.fallback` markup (component::media) is the
     // sole zero-JS/pre-upgrade path.
     // A pages reader forbids `media=` on the same record
     // (`MultipleImageViewers`), so `record--reader` never meets
@@ -402,20 +398,18 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     } else {
         "record page"
     };
-    // WIDER (record-viewer plan step 7, AC9). The expand state is a CSS *class*
+    // WIDER. The expand state is a CSS *class*
     // (`.is-wide`, toggled by DataStar from the `$expand` boolean signal), NOT a
     // reactive `data-expand` attribute — reactively writing a `data-*` attribute
     // collides with DataStar's own `data-*` MutationObserver and silently
-    // derails the whole binding pass (the bug that killed the step-6 drawers;
-    // see media.rs `render_media_viewer` and the issues journal). Gated on
+    // derails the whole binding pass (see media.rs `render_media_viewer`). Gated on
     // `has_media`: only a viewer record carries the `$expand` signal (declared
-    // in media.rs's `.rv` block) and the WIDER toggle. The old static
-    // `data-expand="off"` attribute is gone — nothing keys on it any more.
+    // in media.rs's `.rv` block) and the WIDER toggle.
     let wide_class: Option<&str> = has_media.then_some("{'is-wide': $expand}");
     // Static, never written reactively (the trap above is about reactive
     // writes). Only a viewer record has a frame to size.
     let tall_frame = (cfg.reader.is_none() && super::media::frame_is_tall(cfg.media_items)).then_some("tall");
-    // The head + body are made GENUINELY inert while expanded (AC9), not merely
+    // The head + body are made GENUINELY inert while expanded, not merely
     // `display:none`'d in CSS — the binding is `media::HIDDEN_WHEN_WIDE_ATTR`,
     // shared with the compound viewer's `pages` reader so the two WIDER hosts
     // cannot drift (see its doc comment for the `'true'`/`false` rationale).
@@ -426,9 +420,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     // humanized class name (unchanged fallback).
     let class_label = cpe_core::labels::resolve_class_label(cfg.class_labels, &resource.class, lang);
 
-    // Build the record viewer for the resource's linked Image resources
-    // (record-viewer plan step 4 — supersedes the plate at this call site;
-    // see the TRANSITIONAL note above).
+    // Build the record viewer for the resource's linked Image resources.
     let viewer_markup = if has_media {
         super::media::render_media_viewer(
             cfg.media_items,
@@ -445,9 +437,9 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
 
     // The host's own rights (`.pgroup`) and its compound-member list
     // (`.rv-contents`) are both part of the `record__body` structure
-    // (record-viewer plan step 9, AC4/AC11) — siblings of `.props`, never
+    // — siblings of `.props`, never
     // nested inside it. Both degrade to nothing when the host carries no
-    // rights properties / is not a compound parent (R8). The host rights only
+    // rights properties / is not a compound parent. The host rights only
     // ever apply to a viewer record (a non-media resource-detail has no
     // picture whose rights the host's need to stay distinct from).
     let host_rights_markup = if has_media {
@@ -455,7 +447,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     } else {
         html! {}
     };
-    // `.rv-contents` is the compound-member FALLBACK (Slice 3b D10, Q5): it
+    // `.rv-contents` is the compound-member FALLBACK: it
     // renders iff no navigator shows the members on this page, with or
     // without media — a compound parent's members are listed somewhere,
     // exactly once.
@@ -466,8 +458,8 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     };
 
     // Everything the body holds besides an intro — the flat rows, config
-    // groups, host rights and contents. Emitted bare when there is no intro
-    // (byte-identical to pre-O6), wrapped in `div.record__apparat` when there
+    // groups, host rights and contents. Emitted bare when there is no intro,
+    // wrapped in `div.record__apparat` when there
     // is one.
     let apparat_markup = html! {
         @if emit_flat_props {
@@ -486,7 +478,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
             }
         }
         @for group in &groups_markup { (group) }
-        // G7: the incoming-links list — record content, so it sits with the
+        // The incoming-links list — record content, so it sits with the
         // record's own groups (after the LAST one), before the host-rights /
         // compound apparatus. Not gated on `has_media`.
         @if let Some(incoming) = cfg.incoming {
@@ -502,7 +494,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
         (host_rights_markup)
         (contents_markup)
     };
-    // O6: an intro adds the `--intro` modifier (the step-4 two-column grid).
+    // An intro adds the `--intro` modifier (the two-column grid).
     let body_class: std::borrow::Cow<'static, str> = if cfg.intro.is_some() {
         format!("{body_class} record__body--intro").into()
     } else {
@@ -530,7 +522,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     let body_markup = html! {
         div class=(body_class) data-attr=[hidden_when_wide] {
             @if let Some(ref intro) = cfg.intro {
-                // Exactly two grid items (decision 8's review note): the
+                // Exactly two grid items: the
                 // intro, then ONE apparat wrapper around everything else.
                 // No `.page` — the intro is not a component root.
                 div.record__intro { (intro) }
@@ -573,10 +565,9 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
                 // `article.record--viewer` — `media.css`'s
                 // `.record--viewer > .rv-col { grid-column: 2; grid-row: 1 / span 2;
                 // position: sticky; … }` selector requires that exact parentage to
-                // place it in the sticky right-hand column (record-viewer plan AC1 /
-                // invariant I5). Nesting it inside `.record__body` (a grandchild)
-                // silently drops it out of grid placement entirely — a real bug this
-                // sibling structure fixes (inherited from the plate's own fix here).
+                // place it in the sticky right-hand column.
+                // Nesting it inside `.record__body` (a grandchild)
+                // silently drops it out of grid placement entirely.
                 (viewer_markup)
                 (body_markup)
             }
@@ -584,8 +575,8 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     }
 }
 
-/// Render one config-declared property group (Incunabula Slice 3 / G8) in the
-/// existing `.pgroup` class family (decision 10): `section.pgroup >
+/// Render one config-declared property group in the
+/// existing `.pgroup` class family: `section.pgroup >
 /// header.pgroup__head > span.pgroup__title` + a `div.props` of
 /// `render_property_block` rows, in declaration order. Deliberately no
 /// `span.pgroup__of` — that subject line belongs to the host-rights block.
@@ -604,7 +595,7 @@ fn render_property_group(
 ) -> Markup {
     let caption = group.caption;
     if properties.is_empty() && group.links.is_none() {
-        // `empty=` (HdM Slice 3): the caption plus a plain italic sentence.
+        // `empty=`: the caption plus a plain italic sentence.
         return match group.empty {
             Some(text) => html! {
                 section.pgroup {
@@ -640,7 +631,7 @@ fn render_property_group(
     }
 }
 
-/// A group's links row (Incunabula Slice 6, D9): a `.prop` captioned by
+/// A group's links row: a `.prop` captioned by
 /// `links-label=`, one line per link name, each name over the partners it
 /// joins the record to, each its title and an arrow. A resource listed twice
 /// on one line keeps its first listing: a resource link carries no number to
@@ -684,7 +675,7 @@ fn render_group_links(row: &GroupLinks<'_>, links: Option<&LinkResolver<'_>>) ->
     }
 }
 
-/// Render a record's incoming-links list (Incunabula Slice 5 / G7) in the
+/// Render a record's incoming-links list in the
 /// `.pgroup` caption idiom: `section.pgroup.incoming > header.pgroup__head >
 /// span.pgroup__title { caption }` + `ul.incoming__list` of
 /// `li.incoming__item` rows, each the source's name (a link, or a plain
@@ -694,29 +685,28 @@ fn render_group_links(row: &GroupLinks<'_>, links: Option<&LinkResolver<'_>>) ->
 /// Hrefs, first rung that resolves wins — generic, no project literal:
 /// 1. the source's OWN detail page (`LinkResolver::href`);
 /// 2. else, for a compound member whose PARENT's class is bound, the member inside its parent's
-///    reader (`LinkResolver::member_href` — `?page=<id>`, no `#compound-viewer` anchor (owner
-///    decision 2026-09-29), never carrying the current query);
+///    reader (`LinkResolver::member_href` — `?page=<id>`, no `#compound-viewer` anchor, never
+///    carrying the current query);
 /// 3. else a plain span (the engine's usual graceful degradation).
 ///
 /// `rows` empty ⇒ the caption + `p.resource-list__empty`
 /// (`ChromeMsg::IncomingLinksEmpty`) — "nothing links here" is a real
 /// answer. The caller renders nothing at all for `None`.
 ///
-/// **Row anatomy (HdM Slice 3, decision 7).** The link text is the row's
+/// **Row anatomy.** The link text is the row's
 /// `row-label` value ([`IncomingLink::label`]) else its `name`; a
 /// `row-aside` value ([`IncomingLink::aside`]) follows as a faint
-/// `span.incoming__aside`. Both are `None` unless the spec declares them, so
-/// a list without them renders byte-identically to Incunabula Slice 5.
+/// `span.incoming__aside`. Both are `None` unless the spec declares them.
 ///
-/// **Grouped mode (HdM Slice 3, G3)** — `cfg.grouping` is `Some`: see
+/// **Grouped mode** — `cfg.grouping` is `Some`: see
 /// [`render_grouped_incoming`].
 ///
-/// **Row cap (item 6, Backlog hardening batch 3).** `incoming.rows` is
+/// **Row cap.** `incoming.rows` is
 /// already capped to the spec's `limit` by the query layer;
 /// `incoming.total` is the uncapped match count. Only when `rows.len() <
 /// total` (the list really is capped) a `p.incoming__count` line renders
 /// after the `ul`, via `chrome::incoming_links_shown_text` — in grouped mode
-/// too (decision 10). No link, no pager, no show-all — see
+/// too. No link, no pager, no show-all — see
 /// [`cpe_core::ir::IncomingLinksSpec`]'s doc comment for the deferred design
 /// work this defers.
 fn render_incoming_links(
@@ -916,15 +906,14 @@ fn incoming_row_href(row: &IncomingLink, links: Option<&LinkResolver<'_>>) -> Op
         .or_else(|| row.parent.as_ref().and_then(|p| links.member_href(&p.id, &p.class, &row.id)))
 }
 
-/// Render `.pgroup` — the HOST resource's own rights (record-viewer plan
-/// step 9, AC4, `RightsFields.prompt.md`'s `variant="record"`): rights holder ·
+/// Render `.pgroup` — the HOST resource's own rights: rights holder ·
 /// edition · licence, each a **separate row** (never merged into a run the way
 /// the picture's bar does — "No known copyright restrictions" beside "Public
 /// domain" is one fact stated twice for the picture, but the host's rights
 /// holder / edition / licence are three independent claims that never
 /// collapse). Unframed, in the properties flow, on the page surface — the
 /// visual opposite of the image's legal band on the picture's own bed
-/// (containment carries the distinction, §3 of the design handoff).
+/// (containment carries the distinction).
 ///
 /// Reads three fixed EAV property names directly off `resource`
 /// (`rights-holder`, `edition`, `license`) via `media::find_text_property` —
@@ -935,14 +924,12 @@ fn incoming_row_href(row: &IncomingLink, links: Option<&LinkResolver<'_>>) -> Op
 /// `title_property` are never excluded from the record header.
 ///
 /// **Omitted entirely** when none of the three properties resolve to a
-/// non-empty value (R8 — most Alice hosts carry no rights EAV of their own;
+/// non-empty value (most Alice hosts carry no rights EAV of their own;
 /// `.pgroup` degrades to nothing rather than an empty shell).
 ///
-/// The header names the subject in words (`RightsFields.prompt.md`: "the
-/// drawer's own head names it" / "naming the subject in words") — the
+/// The header names the subject in words — the
 /// resolved class label + the resource's own id, e.g. "Character · CH_001".
-/// Deviation from the design's literal "RIGHTS & ATTRIBUTION · THIS CHAPTER"
-/// wording (logged in the issues journal): a gendered "THIS <CLASS>"
+/// It is not "RIGHTS & ATTRIBUTION · THIS CHAPTER": a gendered "THIS <CLASS>"
 /// demonstrative does not translate uniformly across en/de/fr/it without
 /// per-class grammatical-gender data this project does not have, so the
 /// subject is named as "{Class} · {id}" instead — still names the subject in
@@ -988,14 +975,13 @@ fn render_host_rights_group(resource: &Resource, class_label: &str, lang: &Lang)
     }
 }
 
-/// Render `.rv-contents` — the compound member list, in the reading column
-/// (record-viewer plan step 9, AC11, design handoff §6). Navigates the
+/// Render `.rv-contents` — the compound member list, in the reading column. Navigates the
 /// *resource* (the host's own members), never the *picture* — the thumb strip
 /// (`.em-col__strip`, in the viewer column) is the picture's own paging and is
-/// a completely separate question (§6: "Two questions; do not merge").
+/// a completely separate question; do not merge the two.
 ///
 /// **Omitted entirely** when `members` is empty — the host is not a compound
-/// parent, or has no members (R8: no Alice Character/Location/StoryChapter is
+/// parent, or has no members (no Alice Character/Location/StoryChapter is
 /// ever a compound parent; only the two Story resources are, and neither has
 /// a `resource-detail`/media page of its own, so this never renders in the
 /// Alice demo today — the omission path is what's exercised).
@@ -1045,23 +1031,21 @@ fn render_compound_contents(members: &[MemberHeader], links: Option<&LinkResolve
     }
 }
 
-/// Render the N3 not-found body — an unknown resource id on a matched,
-/// project-prefixed `resource-detail` route (empty-states-not-found plan
-/// step 8).
+/// Render the unknown-record not-found body — an unknown resource id on a matched,
+/// project-prefixed `resource-detail` route.
 ///
-/// Terse `.notfound--terse` anatomy (design handoff §3): a mono `nf.code`
-/// mark, an `h1.notfound__title` at `--size-6`, an optional `nf.id_msg`
-/// paragraph, then one mono exits line (`nf.browse_all` + `nf.project_home`),
-/// then N1's "Or browse:" line (`render_or_browse_line` — the same list N1
-/// shows: `not-found { browse }` when declared, else the first three nav
-/// items). The second line is an owner-decided deviation (2026-10-02) from
-/// the N3 handoff's single mono line (`COMPONENT_LIBRARY.md`, N1–N3).
+/// Terse `.notfound--terse` anatomy: a mono `ChromeMsg::NfCode`
+/// mark, an `h1.notfound__title` at `--size-6`, an optional `nf_id_msg_text`
+/// paragraph, then one mono exits line (`nf_browse_all_text` + `ChromeMsg::NfProjectHome`),
+/// then the unknown-path page's "Or browse:" line (`render_or_browse_line` — the same list
+/// that page shows: `not-found { browse }` when declared, else the first three nav
+/// items). The second line is deliberate.
 ///
 /// - `class` is the `resource-detail`'s declared `class` attribute
 ///   (`Component::ResourceDetail.class`), if any. `Some` → the heading and message use the resolved
 ///   singular class label (`resolve_class_label` via `class_labels`); `None` (class-less detail
-///   pages) → the heading falls back to `nf.id_title_fallback` and no `nf.id_msg` paragraph is
-///   rendered (the message's copy structurally requires a class noun).
+///   pages) → the heading falls back to `ChromeMsg::NfIdTitleFallback` and no `nf_id_msg_text`
+///   paragraph is rendered (the message's copy structurally requires a class noun).
 /// - `site` supplies the class labels and the "Or browse:" list.
 /// - `class_list_routes` is the project's class→list-route map (`Project::class_list_routes`). The
 ///   "Browse all {class}" exit renders only when `class` is `Some` AND has an entry in this map (a
@@ -1126,8 +1110,8 @@ pub fn render_not_found(
     )
 }
 
-/// N3's `h1` text — "There is no {class} at this address." with the resolved
-/// singular class label, or the class-neutral `nf.id_title_fallback` for a
+/// The unknown-record page's `h1` text — "There is no {class} at this address." with the resolved
+/// singular class label, or the class-neutral `ChromeMsg::NfIdTitleFallback` for a
 /// class-less detail page. Shared by `render_not_found` (the body) and
 /// `compose_page_title` (the `<title>`), so the two never diverge.
 pub fn not_found_heading(class: Option<&str>, class_labels: &[cpe_core::ir::ClassLabel], lang: &Lang) -> String {
@@ -1141,9 +1125,9 @@ pub fn not_found_heading(class: Option<&str>, class_labels: &[cpe_core::ir::Clas
 }
 
 /// The 404s' mono "Or browse:" line: the project's declared
-/// `not-found { browse }` entries when there are any (Incunabula Slice 8 /
-/// G11, decision 8), else the first three nav items. Shared by N1
-/// (`render_not_found_project_body`) and N3 (`render_not_found`).
+/// `not-found { browse }` entries when there are any,
+/// else the first three nav items. Shared by the unknown-path page
+/// (`render_not_found_project_body`) and the unknown-record page (`render_not_found`).
 fn render_or_browse_line(site: &SiteConfig, project_id: &str, lang: &Lang) -> Markup {
     let browse_links: Vec<(&str, &str)> = if site.not_found_browse.is_empty() {
         site.nav
@@ -1168,19 +1152,19 @@ fn render_or_browse_line(site: &SiteConfig, project_id: &str, lang: &Lang) -> Ma
     }
 }
 
-/// Render the N1 not-found **body** — an unmatched, project-prefixed path
+/// Render the unknown-path not-found **body** — an unmatched, project-prefixed path
 /// (router fallback with the raw first path segment matching a loaded
-/// project id; empty-states-not-found plan step 9).
+/// project id).
 ///
-/// Full `.notfound` anatomy (design handoff §"N1"): mono `nf.code`, `h1` at
-/// `--size-7` (`nf.path_title`), `nf.path_msg`, then the one editorial
-/// invitation row (`nf.home`, project title, accent `→`) to the project
+/// Full `.notfound` anatomy: mono `ChromeMsg::NfCode`, `h1` at
+/// `--size-7` (`ChromeMsg::NfPathTitle`), `ChromeMsg::NfPathMsg`, then the one editorial
+/// invitation row (`nf_home_text`, project title, accent `→`) to the project
 /// home, and a mono `"Or browse:"` line with **at most three** of the
 /// project's nav pages (`site.nav.iter().take(3)`).
 ///
 /// This is the `.notfound__inner` body only — `render_not_found_project`
-/// (`cpe_web::page`) wraps it in the full bespoke page shell (chrome deltas: no
-/// breadcrumb, no search box, no `aria-current`).
+/// (`dsp-incubator cpe/web`'s `page` module) wraps it in the full bespoke page shell (chrome
+/// deltas: no breadcrumb, no search box, no `aria-current`).
 pub fn render_not_found_project_body(site: &SiteConfig, project_id: &str, lang: &Lang) -> Markup {
     let code = ChromeMsg::NfCode.text(lang);
     let heading = ChromeMsg::NfPathTitle.text(lang);
@@ -1189,8 +1173,7 @@ pub fn render_not_found_project_body(site: &SiteConfig, project_id: &str, lang: 
     let home_label = nf_home_text(cpe_core::labels::site_title(site, lang), lang);
     let home_href = format!("/{project_id}/");
 
-    // The "Or browse:" links: `render_or_browse_line` (shared with N3) —
-    // byte-identical to the pre-G11 rendering when nothing is declared.
+    // The "Or browse:" links: `render_or_browse_line` (shared with the unknown-record page).
     render_notfound_shell(
         false,
         code,
@@ -1218,16 +1201,18 @@ fn not_found_browse_label<'a>(site: &'a SiteConfig, browse: &'a cpe_core::ir::No
         .map_or(browse.route.as_str(), |item| cpe_core::labels::nav_label(site, item, lang))
 }
 
-/// Shared `.notfound` anatomy shell (N1/N2/N3 — empty-states-not-found plan
-/// steps 8/9). `terse` selects N3's `.notfound--terse` scaled-down variant.
+/// Shared `.notfound` anatomy shell of the three not-found pages (unknown path, unknown
+/// project, unknown record). `terse` selects the unknown-record page's `.notfound--terse`
+/// scaled-down variant.
 ///
-/// `way` is the one editorial invitation row (N1's project-home link, N2's
-/// all-projects link) — `None` on N3, which has no invitation row at all.
-/// `or_line` is the trailing mono exits line (N1's `"Or browse:"` + nav
-/// pages, N3's browse-all/project-home pair) — `None` on N2, which has no
+/// `way` is the one editorial invitation row (the unknown-path page's project-home link, the
+/// unknown-project page's all-projects link) — `None` on the unknown-record page, which has
+/// no invitation row at all. `or_line` is the trailing mono exits line (the unknown-path
+/// page's `"Or browse:"` + nav pages, the unknown-record page's browse-all/project-home
+/// pair) — `None` on the unknown-project page, which has no
 /// "or browse" line (there is no project whose pages could be offered).
-/// Both are independently optional; N1 renders both, N2 only `way`, N3 only
-/// `or_line`.
+/// Both are independently optional; the unknown-path page renders both, the
+/// unknown-project page only `way`, the unknown-record page only `or_line`.
 pub fn render_notfound_shell(
     terse: bool,
     code: &str,
@@ -1400,13 +1385,13 @@ fn render_keyword_item(value: &PropertyValue, lang: &Lang) -> Markup {
 /// - `Link { target_label: Some }` → `<a class="int-link" href=…>` when the resolver binds the
 ///   target's class; otherwise `span.v-text` fallback.
 /// - `Link { target_label: None, target_class: None }` (target does not exist) → `span.unresolved`
-///   with the E7 UNRESOLVED mark.
+///   with the UNRESOLVED mark.
 /// - `Link { target_label: None, target_class: Some(_) }` (target exists, no `name`) → plain `code`
 ///   — this value resolves, no mark.
 /// - `ListValue { label: Some }` (single) → `span.term`.
 /// - `ListValue { label: None }` → `span.unresolved` placeholder.
 ///
-/// Dates render without the precision word; see [`render_value_opts`].
+/// Dates render without the precision word; see `render_value_opts`.
 pub fn render_value(value: &PropertyValue, lang: &Lang, links: Option<&LinkResolver<'_>>) -> Markup {
     render_value_opts(value, lang, links, false)
 }
@@ -1474,7 +1459,7 @@ pub(crate) fn render_value_opts(
         PropertyValue::Link { target_label: Some(label), target_id, target_class } => {
             // Try to resolve a clickable href via the LinkResolver.
             // If the resolver is absent or the class has no binding, fall back
-            // to the plain-text label (the pre-Phase-5 Decision-7 behaviour).
+            // to the plain-text label.
             if let Some(url) = links.and_then(|r| r.href(target_id, target_class.as_deref())) {
                 // Emit the .int-link anchor with the inner structure that record.css expects:
                 // - `.ref` wraps the label text (styled as the link).
@@ -1492,14 +1477,14 @@ pub(crate) fn render_value_opts(
         }
         // Target exists but has no resolvable `name` — this value resolves
         // (it names a real resource), so it renders as a plain mono id, never
-        // the UNRESOLVED mark. E7's scope is a missing *target*, not a
+        // the UNRESOLVED mark. The mark's scope is a missing *target*, not a
         // missing *label* on an existing target.
         PropertyValue::Link { target_label: None, target_id, target_class: Some(_) } => {
             html! {
                 code { (target_id) }
             }
         }
-        // Target does not exist at all — E7's unresolved-link mark.
+        // Target does not exist at all — the unresolved-link mark.
         PropertyValue::Link { target_label: None, target_id, target_class: None } => {
             let mark = ChromeMsg::ValueUnresolved.text(lang);
             let title = ChromeMsg::ValueUnresolvedTitle.text(lang);
@@ -1531,10 +1516,10 @@ pub(crate) fn render_value_opts(
 }
 
 /// Render a date value's `span.v-date`: [`format_date_text`] plus, only when
-/// `precision_word` (`site { date-precision-word #true }`, decision 4), a
+/// `precision_word` (`site { date-precision-word #true }`), a
 /// trailing `span.prec` holding the precision word (`Tag`/`Monat`/`Jahr`, or
 /// `Zeitraum` for a range) and the calendar word per `values::calendar_word`
-/// (Gregorian at day or month precision; Julian is unmarked, decision 5).
+/// (Gregorian at day or month precision; Julian is unmarked).
 fn format_date(value: &PropertyValue, lang: &Lang, precision_word: bool) -> Markup {
     let text = format_date_text(value, lang);
     let word = match value {
@@ -1818,7 +1803,7 @@ mod tests {
         assert_eq!(text("1475-01-01", Some("1499-12-31"), DatePrecision::Year), "1475\u{2013}1499");
     }
 
-    // ── Date rendering (Incunabula Slice 8 step 2) ────────────────────────────
+    // ── Date rendering ────────────────────────────
 
     fn date_value(
         start: &str,
@@ -1838,7 +1823,7 @@ mod tests {
         }
     }
 
-    /// (a) The named G12 bug: a day-precise value stored with `end == start`
+    /// (a) A day-precise value stored with `end == start`
     /// renders ONE date, never `1471-03-21–1471-03-21`, and its precision
     /// word is the day's, not the range's.
     #[test]
@@ -1881,7 +1866,7 @@ mod tests {
         assert_eq!(format_date_text(&universal, &make_lang("de")), "um 1491");
     }
 
-    /// (d) A display string in ANOTHER language composes the mockup's long
+    /// (d) A display string in ANOTHER language composes the long
     /// form from the ISO bounds — never the other language's string, never
     /// ISO truncation.
     #[test]
@@ -1946,7 +1931,7 @@ mod tests {
     }
 
     /// (f) Each precision word, the Gregorian calendar word, and NO calendar
-    /// word for Julian or an absent calendar (decision 5, owner).
+    /// word for Julian or an absent calendar.
     #[test]
     fn date_precision_words_and_only_the_gregorian_calendar_word() {
         let prec = |precision, end: Option<&str>, calendar, code| {
@@ -2328,7 +2313,7 @@ mod tests {
 
     #[test]
     fn render_value_link_unresolved_shows_mark() {
-        // E7: target_class is None → the target genuinely does not exist.
+        // target_class is None → the target genuinely does not exist.
         let v = PropertyValue::Link {
             target_id: "CH_BROKEN".to_owned(),
             target_label: None,
@@ -2373,7 +2358,7 @@ mod tests {
     fn render_value_link_target_exists_but_no_label_is_plain_mono_id() {
         // target_class: Some(_) with target_label: None → the target
         // resolves (it names a real resource with no `name` property), so
-        // it must NOT get the UNRESOLVED mark — E7 gates on the target
+        // it must NOT get the UNRESOLVED mark — the mark gates on the target
         // being genuinely missing.
         let v = PropertyValue::Link {
             target_id: "CH_NO_NAME".to_owned(),
@@ -2691,9 +2676,9 @@ mod tests {
 
     #[test]
     fn render_resource_detail_no_noimg_when_has_image() {
-        // Embedded-media plan step 6c: "has an image" is now driven by
+        // "Has an image" is driven by
         // `cfg.media_items` (pre-hydrated linked Image resources), not the
-        // host's own (now-empty) `representations` field.
+        // host's own `representations` field.
         let resource = Resource {
             id: "CH_001".to_owned(),
             class: "Character".to_owned(),
@@ -2748,11 +2733,10 @@ mod tests {
              (record-viewer plan step 4 — record--media is no longer reachable \
              from render_resource_detail), got: {out}"
         );
-        // AC3: this fixture's URI (`https://example.org/img.jpg`) is not
+        // This fixture's URI (`https://example.org/img.jpg`) is not
         // IIIF-shaped, so the viewer must degrade to the plain `.rv__stand`
         // fallback and never mount `<image-viewer>` at all — asserted explicitly here
-        // (not just incidentally via the snapshot tests below) since this is
-        // the test AC3's degradation path names.
+        // (not just incidentally via the snapshot tests below).
         assert!(
             !out.contains("<image-viewer"),
             "a non-IIIF representation must never mount <image-viewer>, got: {out}"
@@ -2765,7 +2749,7 @@ mod tests {
 
     #[test]
     fn render_resource_detail_wider_wires_expand_class_and_inert_head_body() {
-        // WIDER (record-viewer plan step 7, AC9): a media-bearing record's
+        // WIDER: a media-bearing record's
         // article toggles `.is-wide` from `$expand` via `data-class` (NOT a
         // reactive `data-expand` attribute — that would collide with DataStar's
         // `data-*` namespace), and its head + body become genuinely inert +
@@ -2920,7 +2904,7 @@ mod tests {
 
     // ── Title resolution ──────────────────────────────────────────────────────
 
-    // BACKLOG "DE-language title snapshot coverage gap": the Alice fixture's
+    // The Alice fixture's
     // `name` value is identical in EN/DE ("Alice"), so the snapshot tests never
     // exercised the DE branch of `resolve_title_str`'s language pick. This
     // fixture uses EN/DE values that genuinely differ so a wrong-language bug
@@ -3039,9 +3023,9 @@ mod tests {
         }
     }
 
-    /// The Alice resource's linked media (embedded-media plan step 6c — an
+    /// The Alice resource's linked media (an
     /// image is its own Resource; a host embeds it via a `link` property, so
-    /// `make_alice_resource` itself no longer carries a `representations` row).
+    /// `make_alice_resource` itself carries no `representations` row).
     fn make_alice_media() -> Vec<Resource> {
         vec![Resource {
             id: "I_001".to_owned(),
@@ -3090,7 +3074,7 @@ mod tests {
         }
     }
 
-    // ── v-date snapshots (Incunabula Slice 8 step 2) ──────────────────────────
+    // ── v-date snapshots ──────────────────────────
 
     /// A Book with a title, a publication date and a place — the book-page
     /// row shape the date renderer's snapshots pin.
@@ -3206,7 +3190,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// Config-translatable-labels Step 4: with `property_labels`/`class_labels`
+    /// With `property_labels`/`class_labels`
     /// declared, the header eyebrow and the `role` property's `div.prop__label`
     /// must show the DECLARED translation, not the humanized fallback
     /// (`make_alice_cfg`'s empty-slice tests above lock the fallback path;
@@ -3299,10 +3283,10 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// An Alice-shaped `SiteConfig` for the N1 project-404 body: the real
+    /// An Alice-shaped `SiteConfig` for the project-404 body: the real
     /// project title and its real six-item nav (chrome-id labels, EN/DE), so
-    /// the `site.nav.iter().take(3)` cap is exercised — the baseline Incunabula
-    /// Slice 8 step 8 must leave byte-identical when no `not-found {}` block
+    /// the `site.nav.iter().take(3)` cap is exercised — the baseline that
+    /// stays byte-identical when no `not-found {}` block
     /// is declared.
     fn make_alice_not_found_site() -> SiteConfig {
         use cpe_core::ir::{ChromeString, NavItem};
@@ -3345,8 +3329,7 @@ mod tests {
         }
     }
 
-    /// N1 baseline (Incunabula Slice 8 step 7, ahead of step 8's G11 render
-    /// change): the Alice project-404 body, EN.
+    /// Baseline: the Alice project-404 body, EN.
     #[test]
     fn snapshot_render_not_found_project_body_alice_en() {
         let site = make_alice_not_found_site();
@@ -3354,7 +3337,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// N1 baseline, DE — see `snapshot_render_not_found_project_body_alice_en`.
+    /// Baseline, DE — see `snapshot_render_not_found_project_body_alice_en`.
     #[test]
     fn snapshot_render_not_found_project_body_alice_de() {
         let site = make_alice_not_found_site();
@@ -3387,7 +3370,7 @@ mod tests {
         site
     }
 
-    /// The `(href, text)` pairs of the N1 body's "Or browse:" links.
+    /// The `(href, text)` pairs of the project-404 body's "Or browse:" links.
     fn nf_browse_links(out: &str) -> Vec<(String, String)> {
         let start = out.find("<p class=\"notfound__or\">").expect("N1 body renders the or-line");
         let end = start + out[start..].find("</p>").expect("or-line closes");
@@ -3449,7 +3432,7 @@ mod tests {
         );
     }
 
-    /// A chrome-id `site.title` resolves per language in N1's home invitation
+    /// A chrome-id `site.title` resolves per language in the project-404 body's home invitation
     /// row; the raw id never renders.
     #[test]
     fn render_not_found_project_localizes_site_title() {
@@ -3492,7 +3475,7 @@ mod tests {
     }
 
     /// Class-less detail page (`Component::ResourceDetail.class == None`):
-    /// falls back to `nf.id_title_fallback`, no `nf.id_msg` paragraph, no
+    /// falls back to `ChromeMsg::NfIdTitleFallback`, no `nf_id_msg_text` paragraph, no
     /// browse-all exit (project home only).
     #[test]
     fn render_not_found_with_no_class_falls_back_to_class_neutral_copy() {
@@ -3556,9 +3539,8 @@ mod tests {
             .collect()
     }
 
-    /// N3 keeps its class-specific exits line and then ends with N1's own
-    /// "Or browse:" line — byte-identical to N1's for the same site
-    /// (owner decision 2026-10-02: exactly N1's list).
+    /// The unknown-record page keeps its class-specific exits line and then ends with the
+    /// project-404 body's own "Or browse:" line — byte-identical to it for the same site.
     #[test]
     fn render_not_found_ends_with_n1_or_browse_line() {
         let site = make_alice_not_found_site();
@@ -4087,11 +4069,11 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-3 snapshot: E7 unresolved link ──────────────────────────────────
+    // ── Layer-3 snapshot: unresolved link ──────────────────────────────────
 
     /// Snapshot of render_resource_detail with an unresolved `related` Link
     /// value (target does not exist: `target_label: None`, `target_class:
-    /// None`) — the E7 UNRESOLVED mark, not the resolved `.int-link`/`.v-text`
+    /// None`) — the UNRESOLVED mark, not the resolved `.int-link`/`.v-text`
     /// path exercised by `snapshot_render_resource_detail_en` (link-with-label)
     /// and `snapshot_render_resource_detail_with_int_link`.
     #[test]
@@ -4117,7 +4099,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── G8: config property groups ────────────────────────────────────────────
+    // ── Config property groups ────────────────────────────────────────────
 
     fn text_prop(name: &str, text: &str) -> Property {
         Property {
@@ -4269,7 +4251,7 @@ mod tests {
         }
     }
 
-    /// The Apparat's related-book row (Slice 6 D9): one name over two
+    /// The Apparat's related-book row: one name over two
     /// partners, a second name over one, and a link to the same partner
     /// twice collapsed.
     #[test]
@@ -4375,7 +4357,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Slice 3b step 7: the navigator-keyed record ───────────────────────────
+    // ── The navigator-keyed record ───────────────────────────
 
     fn make_members() -> Vec<MemberHeader> {
         vec![
@@ -4452,7 +4434,7 @@ mod tests {
         render_resource_detail(&make_alice_resource(), cfg, &make_lang("de")).into_string()
     }
 
-    /// The start-reading link is gone (owner, 2026-09-29): a navigator record
+    /// No start-reading link: a navigator record
     /// with members renders no link, and no link-only left column.
     #[test]
     fn navigator_record_renders_no_start_reading_link() {
@@ -4667,7 +4649,7 @@ mod tests {
         assert_eq!(article_tag(&[]), r#"<article class="record page">"#);
     }
 
-    // ── Slice 5 step 6: the incoming-links list (G7) ──────────────────────────
+    // ── The incoming-links list ──────────────────────────
     //
     // A synthetic bag, not a project's data: a `Band` target, sources of two
     // classes — `Folio` (own detail binding) and `Leaf` (no binding; a member
@@ -4734,10 +4716,9 @@ mod tests {
         ]
     }
 
-    /// `total` overrides `rows.len()` when `Some` (item 6, Backlog hardening
-    /// batch 3) — the count line renders only when the given total exceeds
-    /// the row count. `None` ⇒ uncapped (`total == rows.len()`), matching the
-    /// pre-item-6 behaviour every pre-existing caller here relies on.
+    /// `total` overrides `rows.len()` when `Some`
+    /// — the count line renders only when the given total exceeds
+    /// the row count. `None` ⇒ uncapped (`total == rows.len()`).
     fn render_incoming_with_total(
         rows: Option<&[IncomingLink]>,
         total: Option<usize>,
@@ -4990,12 +4971,10 @@ mod tests {
         insta::assert_snapshot!(render_incoming(Some(&rows), &[], None, "de"));
     }
 
-    // ── HdM Slice 3 step 4: grouped incoming links + row anatomy ──────────────
+    // ── Grouped incoming links + row anatomy ──────────────
 
     /// The ungrouped `section.pgroup.incoming` for [`three_rung_rows`] in
-    /// `en`, exactly as the Incunabula Slice 5 renderer emitted it BEFORE the
-    /// grouped mode landed (copied verbatim from the pre-change
-    /// `snapshot_render_resource_detail_incoming_noimg_en` snapshot — the
+    /// `en`: the markup the ungrouped mode must keep emitting (the
     /// `/strips/:id` shape: three rungs, a `via` marker per row, no aside).
     const UNGROUPED_THREE_RUNG_EN: &str = concat!(
         r#"<section class="pgroup incoming"><header class="pgroup__head"><span class="pgroup__title">Folios</span></header>"#,
@@ -5268,7 +5247,7 @@ mod tests {
         assert!(!out.contains("Nothing links here."), "{out}");
     }
 
-    // ── Record header slots (book-page design-doc §3) ─────────────────────────
+    // ── Record header slots ─────────────────────────
 
     fn texts_prop(name: &str, values: &[&str]) -> Property {
         Property {
@@ -5384,7 +5363,7 @@ mod tests {
         );
     }
 
-    /// Decision 12: the imprint drops the precision word but keeps the
+    /// The imprint drops the precision word but keeps the
     /// Gregorian marker, and only under the site flag.
     #[test]
     fn head_imprint_carries_the_gregorian_marker_under_the_flag() {

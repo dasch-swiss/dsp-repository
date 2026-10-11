@@ -1,5 +1,5 @@
-//! The `pages` reader's page-picker grouping (book-page plan step 7,
-//! Choice F): a pure, total function from a compound's members to the
+//! The `pages` reader's page-picker grouping:
+//! a pure, total function from a compound's members to the
 //! picker's groups. No rendering here — `compound_viewer` draws the groups.
 //!
 //! Two modes (`ir::PickerMode`):
@@ -8,8 +8,7 @@
 //! - **Signatures:** the book's own collation, read from each page label's leading signature token
 //!   (`a1r` → gathering `a`, leaf 1, recto):
 //!   1. a label is a signature when its leading token is 1–3 of `[A-Za-z&?]`, digits and `r`/`v`,
-//!      followed by the end or one of whitespace `,` `;` `(`. `&` and `?` are gathering marks too
-//!      (plan decision 11);
+//!      followed by the end or one of whitespace `,` `;` `(`. `&` and `?` are gathering marks too;
 //!   2. the gathering key is case-sensitive (`A` ≠ `a`);
 //!   3. a group is a contiguous run of one key; a key recurring after another starts a new group;
 //!   4. unparsed labels before the first signature are the front flyleaves (Vorsatz), after the
@@ -24,7 +23,7 @@
 
 use cpe_core::ir::{MemberHeader, PickerMode};
 
-/// Pages per numbered run (the design's value; no attribute until a second
+/// Pages per numbered run (a constant; no attribute until a second
 /// project needs another).
 pub(crate) const RUN_LENGTH: usize = 20;
 
@@ -168,7 +167,7 @@ struct Signature<'a> {
     side_only: &'a str,
 }
 
-/// Parse a label's leading signature token (Choice F rule 1), or `None`.
+/// Parse a label's leading signature token (rule 1), or `None`.
 fn parse_signature(label: &str) -> Option<Signature<'_>> {
     let key_len = label
         .bytes()
@@ -263,7 +262,7 @@ impl Run {
     }
 }
 
-/// Signatures mode, or `None` when fewer than half the labels parse (F6).
+/// Signatures mode, or `None` when fewer than half the labels parse.
 fn signatures(members: &[MemberHeader]) -> Option<Vec<PickerGroup>> {
     let sigs: Vec<Option<Signature<'_>>> = members.iter().map(|m| parse_signature(&m.name)).collect();
     let parsed = sigs.iter().filter(|s| s.is_some()).count();

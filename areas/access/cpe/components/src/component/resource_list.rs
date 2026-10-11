@@ -1,4 +1,4 @@
-//! Renderer for the `resource-list` component (RL-2: surf-head + annotated rows).
+//! Renderer for the `resource-list` component (surf-head + annotated rows).
 //!
 //! Takes a `ResourceListPage` and renders a `<ul class="rl-annot">` with
 //! one `<li>` per resource row, plus an optional `<nav class="pager">` for
@@ -6,19 +6,17 @@
 //!
 //! ## Surf-head
 //! A `.surf-head` sits above the list — in both the populated AND the empty
-//! branch (a11y fix: the empty branch used to omit `.surf-head` entirely,
-//! which removed the `span.surf-head__count` live region from the DOM on a
-//! facet-narrowed-to-zero morph, so the "0 results" state was never
-//! announced): class label + result count ("N <class plural>", or "N of M
-//! <class plural>" when
+//! branch (without it the `span.surf-head__count` live region leaves the DOM on a
+//! facet-narrowed-to-zero morph, and the "0 results" state is never
+//! announced): class label + result count ("N `<class plural>`", or "N of M
+//! `<class plural>`" when
 //! `list.unfiltered_total` is `Some(m)` and `m != list.total`) on the left,
 //! the shared ordering control (`render_order_control`) on the right. The
 //! class label is resolved from `cfg.class` (the IR `ResourceList.class`) —
-//! independent of `list.items` (empty-states-not-found plan step 2) — so
+//! independent of `list.items` — so
 //! `span.surf-head__title` is populated in the empty branch too. When a
 //! search scope note renders, a `span.surf-head__sep[aria-hidden] "·"`
-//! separates it from the count (browse-controls plan decision 11 —
-//! `.search-scope::before` is retired in favor of this explicit span).
+//! separates it from the count.
 //!
 //! ## Row structure
 //! Each row is text-first in markup (CSS shows the thumbnail left of the text
@@ -26,7 +24,7 @@
 //! - A name resolved via `resolve_title_str(resource, Some("name"), lang)`.
 //! - An optional thumbnail, looked up in `cfg.media_thumbs` by the resource's id (a safe-URI
 //!   id→raw-URI map the store builds, `PageData.media_thumbs`, after the list's own read). No
-//!   per-row eyebrow — the class label moved to the surf-head.
+//!   per-row eyebrow — the class label is in the surf-head.
 //!
 //! When the resource's class is bound in `cfg.links` the row is wrapped in
 //! `<a href="…">` (accessible name = the name text). Unbound class → plain
@@ -46,12 +44,11 @@
 //! control floor — see the renderer's doc comment). When `cfg.list_id` is
 //! `None`, no `data-on:submit__prevent` is emitted and the form is a plain
 //! GET. The `<details>` always renders without `open` (server-closed on
-//! every render — see decision 6 in the browse-controls plan).
+//! every render).
 //!
 //! ## Pager
-//! `render_browse_pager` (browse-controls plan decision 8; the `.pg` primitive
-//! in `component/pager.rs` also has a `render_pager` — the distinct name
-//! avoids a grep hazard between the two different markup contracts). Rendered
+//! `render_browse_pager` (a different markup contract from the `.pg` primitive's).
+//! Rendered
 //! only when `list.pagination == Pagination::PerPage(n)` AND `last > 1` (more
 //! than one page exists). The nav `aria-label` always carries the position
 //! ("Page navigation, Page 2 of 3"), so position is conveyed once even when
@@ -85,17 +82,17 @@ use crate::component::values::{
 /// endpoint.
 ///
 /// The fragment endpoint lives at `{page-path}/{SORT_FRAGMENT_SEGMENT}?…`.
-/// Both the engine (to build the `data-on:submit` `@get` URL) and the bin (to
+/// Both the engine (to build the `data-on:submit` `@get` URL) and `dsp-incubator cpe/bin` (to
 /// register the Axum route) reference this constant so no magic-string
 /// mismatch is possible. Mirrors `FACET_FRAGMENT_SEGMENT` /
 /// `SEARCH_FRAGMENT_SEGMENT`.
 pub const SORT_FRAGMENT_SEGMENT: &str = "_sort";
 
-// ── View mode (grid-mode plan decision 2) ─────────────────────────────────────
+// ── View mode ─────────────────────────────────────
 
 /// The resource-list's current presentation: rows (`List`, the default) or
 /// tiles (`Grid`). `pub(crate)` — nothing outside `cpe-components` names this type;
-/// the bin never reads `?view=` at all (see [`parse_view_param`]).
+/// the host never reads `?view=` at all (see [`parse_view_param`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ViewMode {
     List,
@@ -157,16 +154,15 @@ pub(crate) fn drop_query_param(current_query: Option<&str>, key: &str) -> Option
     }
 }
 
-// ── Search-aware rendering surface (search-bar plan step 8) ──────────────────
+// ── Search-aware rendering surface ──────────────────
 
 /// The search-aware rendering surface for a `resource-list` whose sibling
 /// `search-bar` has an **active** query (≥1 usable term after tokenization —
 /// [`cpe_core::util::is_active_search_query`], never raw non-emptiness).
 ///
-/// **Populated-list scope note ONLY** (empty-states-not-found plan step 2
-/// trimmed this type down to its one remaining field — the empty-branch
-/// message/hint/clear-actions this type used to also carry moved to
-/// [`NarrowedSurface`], which generalizes the activity gate to
+/// **Populated-list scope note ONLY** (the empty-branch
+/// message/hint/clear-actions are carried by
+/// [`NarrowedSurface`], whose activity gate is
 /// `query active || filters active` instead of query-only). Constructing a
 /// `SearchSurface` is only possible via [`SearchSurface::for_query`], whose
 /// smart constructor enforces the "active query" invariant: no call site can
@@ -175,16 +171,16 @@ pub(crate) fn drop_query_param(current_query: Option<&str>, key: &str) -> Option
 /// search.
 ///
 /// **`pub`, not `pub(crate)`** — `SearchSurface` appears in
-/// `ResourceListCfg::with_links`'s (a `pub fn`) parameter list, which the bin
+/// `ResourceListCfg::with_links`'s (a `pub fn`) parameter list, which `dsp-incubator cpe/bin`
 /// calls across the crate boundary; a `pub(crate)` type there is a hard
 /// compile error ("private type in public interface"), not just a lint.
 /// Its field stays `pub(crate)`, and [`SearchSurface::for_query`] is
 /// `#[doc(hidden)] pub` for page assembly only, the one place the
-/// active-search gate lives. So the bin can only ever hold or pass an
+/// active-search gate lives. So the host can only ever hold or pass an
 /// `Option<SearchSurface>` opaquely: it can neither construct one with a
 /// dead query nor read the field directly.
 pub struct SearchSurface<'a> {
-    /// The mono caption appended after the surf-head count (design-doc §1):
+    /// The mono caption appended after the surf-head count:
     /// `"matching name and description"` / `"in Name und Beschreibung"`.
     /// A project-declared `chrome { string }` id referenced by `search-bar
     /// scope="…"` (mirrors `placeholder`'s "id, not literal" convention —
@@ -207,11 +203,11 @@ impl<'a> SearchSurface<'a> {
     }
 }
 
-// ── Narrowed-to-zero rendering surface (empty-states-not-found plan step 2) ──
+// ── Narrowed-to-zero rendering surface ──
 
 /// The narrowed-to-zero rendering surface for a `resource-list` empty branch
-/// (E2 — an active search query and/or active facet narrowing produced zero
-/// results), generalized from the search-bar plan's search-only
+/// (an active search query and/or active facet narrowing produced zero
+/// results), a generalization of the search-only
 /// `SearchSurface` above. Distinct from it in one crucial way: `SearchSurface`
 /// exists to carry the POPULATED-list scope note and is gated on an active
 /// search query ALONE (unchanged, still `ResourceListCfg.search`);
@@ -247,7 +243,7 @@ pub struct NarrowedSurface<'a> {
 
 impl<'a> NarrowedSurface<'a> {
     /// Smart constructor: returns `None` when NEITHER a search query nor a
-    /// facet is active (the empty-class case, E1, has its own message and
+    /// facet is active (the empty-class case has its own message and
     /// never reaches this type). `clear_all_href.is_some()` IS "filters
     /// active" — the caller (`SearchFragmentSurface::narrowed_surface`)
     /// already derives it from `any_facet_selected`, so this constructor
@@ -277,7 +273,7 @@ impl<'a> NarrowedSurface<'a> {
 /// Borrowed context needed by `render_resource_list`.
 ///
 /// Mirrors `ResourceDetailCfg` in its shape: thin borrow struct, no IR
-/// cloning. Built by `render_component` in `cpe_web::page` from the
+/// cloning. Built by `render_component` in `dsp-incubator cpe/web`'s `page` module from the
 /// `RenderContext` fields.
 pub struct ResourceListCfg<'a> {
     /// Optional link resolver for turning resource class → detail href.
@@ -309,8 +305,8 @@ pub struct ResourceListCfg<'a> {
     /// IR `ResourceList.gloss`.
     #[doc(hidden)]
     pub gloss: Option<&'a ResolvedGloss<'a>>,
-    /// Row chips (`.rl-annot__meta`), each with an optional shape override
-    /// (A12.3): an absent `kind` derives the shape from cardinality — a
+    /// Row chips (`.rl-annot__meta`), each with an optional shape override:
+    /// an absent `kind` derives the shape from cardinality — a
     /// single-valued list value → `.term`, multi-valued → `.keyword` (same
     /// single-vs-multi split as `resource-detail`); an explicit `kind`
     /// overrides that for every label of that property. Empty ⇒ no chips.
@@ -319,11 +315,9 @@ pub struct ResourceListCfg<'a> {
     pub chips: &'a [cpe_core::ir::ChipSpec],
     /// The raw (unresolved) `Class` name this list renders — from the IR
     /// `ResourceList.class` — used by `render_surf_head` to resolve the
-    /// eyebrow class label **independent of `list.items`**
-    /// (empty-states-not-found plan step 2, E1): the old resolution read
-    /// `list.items.first()`, which left the eyebrow blank on every empty
-    /// branch (nothing to read a class from) — a real class-level bug this
-    /// field fixes, not just a genuinely-empty-list cosmetic gap.
+    /// eyebrow class label **independent of `list.items`**:
+    /// `list.items.first()` would leave the eyebrow blank on every empty
+    /// branch (nothing to read a class from).
     #[doc(hidden)]
     pub class: &'a str,
     /// Declared class-label translations, used to resolve the surf-head class
@@ -333,45 +327,43 @@ pub struct ResourceListCfg<'a> {
     /// fallback) — unchanged behaviour for projects that declare no labels.
     #[doc(hidden)]
     pub class_labels: &'a [cpe_core::ir::ClassLabel],
-    /// The search-aware rendering surface (search-bar plan step 8): `Some`
+    /// The search-aware rendering surface: `Some`
     /// iff a sibling `search-bar`'s query is active (see
     /// [`SearchSurface::for_query`]). `None` ⇒ no scope note is shown next to
-    /// the count. Note: this field NO LONGER decides the empty-branch body —
+    /// the count. Note: this field does not decide the empty-branch body —
     /// see [`Self::narrowed`] — it exists purely for the populated-list scope
-    /// note (design-doc §1) now.
+    /// note.
     #[doc(hidden)]
     pub search: Option<SearchSurface<'a>>,
-    /// The narrowed-to-zero rendering surface (empty-states-not-found plan
-    /// step 2, E2): `Some` iff an active search query and/or an active facet
-    /// narrowing is in effect (see [`NarrowedSurface::build`]) — generalizes
-    /// the old `search`-only gate so a facet-only page with NO search-bar at
+    /// The narrowed-to-zero rendering surface:
+    /// `Some` iff an active search query and/or an active facet
+    /// narrowing is in effect (see [`NarrowedSurface::build`]), so
+    /// a facet-only page with NO search-bar at
     /// all still shows the narrowed-to-zero body rather than degrading to the
     /// genuinely-empty-class message. `None` ⇒ a zero-item list is a
-    /// genuinely empty class (E1, `p.resource-list__empty` +
+    /// genuinely empty class (`p.resource-list__empty` +
     /// `ChromeMsg::ListEmptyClass`).
     #[doc(hidden)]
     pub narrowed: Option<NarrowedSurface<'a>>,
-    /// Id → raw representation-URI map for the browse-row thumbnail
-    /// (embedded-media plan step 6d). Built by the caller via
+    /// Id → raw representation-URI map for the browse-row thumbnail.
+    /// Built by the caller via
     /// `ProjectReads::media_thumbs(class_media_property, &ids)` after
     /// `list_resources`, keyed by the SAME `list.items[i].id` values this cfg
     /// renders. An id absent from the map (no media property configured, or
     /// the resource has no media values) renders no thumbnail — never a
     /// placeholder. `render_row` looks the raw URI up here and calls
     /// `iiif_thumb_url_clamped` on it (with the entry's `width`) to get the
-    /// sized `<img src>` — mirrors how `first_safe_image` used to read a
-    /// per-row `representations` field before the image class re-model (that
-    /// field is now always empty for non-Image classes). The width clamp
-    /// avoids requesting a IIIF size wider than the target image's own
+    /// sized `<img src>` (the `representations` field is always empty for non-Image classes). The
+    /// width clamp avoids requesting a IIIF size wider than the target image's own
     /// native width, which Sipi (IIIF v3) 400s.
     #[doc(hidden)]
     pub media_thumbs: &'a HashMap<String, MediaThumb>,
-    /// Grid-mode opt-in, from the IR `ResourceList.grid` (grid-mode plan).
+    /// Grid-mode opt-in, from the IR `ResourceList.grid`.
     /// `false` ⇒ the view toggle never renders and `?view=grid` is silently
     /// ignored (renders rows) — a `grid: false` list can never render tiles,
     /// even with `view=grid` in the query. `true` ⇒ the toggle renders and
-    /// `render_resource_list` derives the active [`ViewMode`] from
-    /// `current_query` via [`parse_view_param`].
+    /// `render_resource_list` derives the active `ViewMode` from
+    /// `current_query` via `parse_view_param`.
     #[doc(hidden)]
     pub grid: bool,
     /// The grid tile's aspect ratio, from the IR `ResourceList.tile_ratio`.
@@ -380,14 +372,14 @@ pub struct ResourceListCfg<'a> {
     #[doc(hidden)]
     pub tile_ratio: Option<TileRatio>,
     /// Resolved chrome-**id** override for the "Name A–Z" ordering label
-    /// (A12.4) — id only, never literal text — already run through
+    /// — id only, never literal text — already run through
     /// `chrome_lookup` by the caller.
     /// `None` ⇒ use the `ChromeMsg::OrderNameAsc` default — never an empty
     /// label.
     #[doc(hidden)]
     pub order_name_label: Option<&'a str>,
     /// Resolved chrome-**id** override for the "Name Z–A" ordering label
-    /// (A12.4) — id only, never literal text — already run through
+    /// — id only, never literal text — already run through
     /// `chrome_lookup` by the caller.
     /// `None` ⇒ use the `ChromeMsg::OrderNameDesc` default — never an empty
     /// label.
@@ -398,7 +390,7 @@ pub struct ResourceListCfg<'a> {
     /// `ChromeMsg::OrderCurated` default — never an empty label.
     #[doc(hidden)]
     pub order_default_label: Option<&'a str>,
-    /// The list's declared `order-by` options (Incunabula Slice 8, G9) as
+    /// The list's declared `order-by` options as
     /// already-resolved `(key, label)` rows, in config order — built by
     /// [`cpe_core::labels::resolve_order_options`], never raw chrome ids. Rendered after
     /// the four built-in rows. Empty ⇒ the panel is exactly the four
@@ -409,8 +401,8 @@ pub struct ResourceListCfg<'a> {
 
 impl<'a> ResourceListCfg<'a> {
     /// Construct a `ResourceListCfg` with a `LinkResolver` built from the provided
-    /// class-to-route map. The bin calls this (in the `_facets` fragment handler) so
-    /// it never needs to name `LinkResolver` directly (which is `#[doc(hidden)]` and
+    /// class-to-route map. `dsp-incubator cpe/bin` calls this (in the `_facets` fragment handler)
+    /// so it never needs to name `LinkResolver` directly (which is `#[doc(hidden)]` and
     /// not part of the intended public surface).
     ///
     /// Pass `link_routes = &HashMap::new()` for tests or contexts without route
@@ -467,25 +459,20 @@ impl<'a> ResourceListCfg<'a> {
 /// - Populated branch: `.surf-head` (class label + result count + sort control) above `<ul
 ///   class="rl-annot">` with one `<li class="rl-annot__item">` per resource (link when class is
 ///   bound, plain div when not, optional thumbnail) + optional pager.
-/// - Empty branch: `.surf-head` (same markup as the populated branch, showing the "0 <class
-///   plural>"/"0 of M <class plural>" count, and a class-label eyebrow that no longer depends on
-///   `list.items`) above one of two bodies — **`cfg.narrowed.is_some()`** (E2 — an active search
-///   query and/or an active facet narrowed the list to zero, empty-states-not-found plan step
-///   2) ⇒ `.search-empty` (message + clear actions + hint, per
-///   [`NarrowedSurface`]'s activity gates), else (E1 — the genuinely-empty
-///   class) `p.resource-list__empty` with `ChromeMsg::ListEmptyClass` — no
-///   pager either way. `list.items.is_empty()` alone cannot distinguish these
-///   two cases (both reach this branch); `cfg.narrowed` is the only signal
-///   that does (NOT `cfg.search`, which is search-only and would miss a
-///   facet-only narrowing on a page with no search-bar). The `.surf-head` is
-///   rendered here too — not only in the populated branch — so that
-///   `span.surf-head__count` (the live region) exists at the same leading
-///   position in both branches;
-///   idiomorph then preserves+updates that node across a
-///   populated↔empty morph instead of removing/inserting it, which is what
-///   makes the "0 results" transition announced to a screen reader (a11y
-///   fix — a live-region node inserted fresh by a mutation is generally not
-///   announced).
+/// - Empty branch: `.surf-head` (same markup as the populated branch, showing the "0 `<class
+///   plural>`"/"0 of M `<class plural>`" count, and a class-label eyebrow that does not depend on
+///   `list.items`) above one of two bodies — **`cfg.narrowed.is_some()`** (an active search query
+///   and/or an active facet narrowed the list to zero) ⇒ `.search-empty` (message + clear actions +
+///   hint, per [`NarrowedSurface`]'s activity gates), else (the genuinely-empty class)
+///   `p.resource-list__empty` with `ChromeMsg::ListEmptyClass` — no pager either way.
+///   `list.items.is_empty()` alone cannot distinguish these two cases (both reach this branch);
+///   `cfg.narrowed` is the only signal that does (NOT `cfg.search`, which is search-only and would
+///   miss a facet-only narrowing on a page with no search-bar). The `.surf-head` is rendered here
+///   too — not only in the populated branch — so that `span.surf-head__count` (the live region)
+///   exists at the same leading position in both branches; idiomorph then preserves+updates that
+///   node across a populated↔empty morph instead of removing/inserting it, which is what makes the
+///   "0 results" transition announced to a screen reader (a11y fix — a live-region node inserted
+///   fresh by a mutation is generally not announced).
 /// - Pager (`<nav class="pager">`) shown iff `pagination == PerPage(n)` and total pages > 1.
 ///
 /// This section is the DataStar swap target of both the `_facets` and
@@ -498,7 +485,7 @@ impl<'a> ResourceListCfg<'a> {
 /// aria-atomic="true"` (see `render_surf_head`) — no focus/URL change
 /// (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`).
 pub fn render_resource_list(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, lang: &Lang) -> Markup {
-    // ONE derivation point (grid-mode plan decision 2): `view=grid` with
+    // ONE derivation point: `view=grid` with
     // `cfg.grid: false` can never render tiles — an ungridded class silently
     // ignores `?view=grid`, same posture as an unknown `?sort=` value. The
     // computed `ViewMode` is passed into `render_surf_head` as a parameter so
@@ -517,9 +504,9 @@ pub fn render_resource_list(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, 
         // populated branch.
         let surf_head_markup = render_surf_head(list, cfg, view, lang);
         // `cfg.narrowed.is_some()` is the ONLY signal that distinguishes a
-        // narrowed-to-zero list (E2 — an active search query and/or active
-        // facet, design-doc §3 "Active, no matches") from a genuinely-empty
-        // class (E1) — `list.items.is_empty()` alone is true in both cases.
+        // narrowed-to-zero list (an active search query and/or active
+        // facet) from a genuinely-empty
+        // class — `list.items.is_empty()` alone is true in both cases.
         let body_markup = match &cfg.narrowed {
             Some(surface) => html! {
                 div.search-empty {
@@ -599,13 +586,13 @@ pub fn render_resource_list(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, 
 /// function's rustdoc).
 ///
 /// The class label is resolved from `cfg.class` (the IR `ResourceList.class`
-/// — always resolvable, independent of `list.items`; empty-states-not-found
-/// plan step 2, E1) via `resolve_class_label` — the declared translation for
+/// — always resolvable, independent of `list.items`)
+/// via `resolve_class_label` — the declared translation for
 /// the current request language when a `labels { class "…" { … } }` entry
-/// exists and has one, else the raw/humanized class name. Previously this
-/// read `list.items.first()`, which left `span.surf-head__title` blank on
-/// EVERY empty branch (nothing to read a class from) — a real bug this field
-/// fixes, not a cosmetic one: the genuinely-empty-class message needs a
+/// exists and has one, else the raw/humanized class name. Reading
+/// `list.items.first()` instead would leave `span.surf-head__title` blank on
+/// EVERY empty branch (nothing to read a class from),
+/// and the genuinely-empty-class message needs a
 /// titled head to read as "this Class has no resources", not "‹blank› has no
 /// resources". The count text is "N <class plural>" (e.g. "8’942
 /// Aufführungen" — the class's own declared noun, grouped by
@@ -614,9 +601,9 @@ pub fn render_resource_list(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, 
 /// localized "N of M <class plural>" form.
 ///
 /// `span.surf-head__count` carries `id="browse-count"` (the search input's
-/// `aria-describedby` target while a query is active, per design-doc §5.3 —
-/// search-bar plan step 8) plus `aria-live="polite" aria-atomic="true"`
-/// (a11y review fix) — this small element, not the whole
+/// `aria-describedby` target while a query is active)
+/// plus `aria-live="polite" aria-atomic="true"`
+/// — this small element, not the whole
 /// `resource-list-section` root, is the live region a screen reader
 /// announces after a `_facets`/`_sort` morph. It is preserved as the same DOM
 /// node across the morph (both fragment endpoints patch the section whose
@@ -627,7 +614,7 @@ pub fn render_resource_list(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, 
 ///
 /// When `cfg.search` is `Some` (an active search query) AND its `scope_note`
 /// is non-empty, a `span.search-scope` mono caption is appended right after
-/// the count (design-doc §1's "scope note" — e.g. `"3 of 20 · matching name
+/// the count (the scope note — e.g. `"3 of 20 · matching name
 /// and description"`), rendering the caller-precomputed
 /// `SearchSurface::scope_note` verbatim (Maud-escaped, never `PreEscaped`).
 /// `scope_note` is the project-declared `search-bar scope="…"` chrome-string
@@ -641,7 +628,7 @@ fn render_surf_head(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, view: Vi
     // ("8’942 Aufführungen", not "8942 Einträge") — singular from
     // `resolve_class_label` (same value as the head title above), plural from
     // `resolve_class_plural`, both already available from `cfg`. The browse
-    // breadcrumb's accessible name (`cpe_web::page`) resolves the SAME two
+    // breadcrumb's accessible name (`dsp-incubator cpe/web`'s `page` module) resolves the SAME two
     // nouns through the SAME split; keep the two in lockstep.
     let class_plural = cpe_core::labels::resolve_class_plural(cfg.class_labels, cfg.class, lang);
     let count_text = match list.unfiltered_total {
@@ -678,9 +665,9 @@ fn render_surf_head(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, view: Vi
     }
 }
 
-/// Render the List↔Grid view toggle (grid-mode plan decision 7). Only called
+/// Render the List↔Grid view toggle. Only called
 /// when `cfg.grid` is `true` — an ungridded class never renders this markup
-/// at all (absent, not disabled — design §8.5).
+/// at all (absent, not disabled).
 ///
 /// `role="group"` + `aria-labelledby` points at the visible `span.viewtoggle__lbl`
 /// (fixed `id="viewtoggle-lbl"` — safe because `DuplicateSingletonComponent`
@@ -718,9 +705,8 @@ fn render_view_toggle(cfg: &ResourceListCfg<'_>, view: ViewMode, lang: &Lang) ->
 /// Extract the raw `?sort=` value from `current_query`, if present with a
 /// non-empty value.
 ///
-/// Mirrors the bin's `query_param_one`, but the engine needs its own tiny
-/// read here — the bin's helper is private to `router.rs` and the engine
-/// cannot depend on the bin crate.
+/// Mirrors `query_param_one` in `dsp-incubator cpe/bin/src/router.rs`, which is private to
+/// that file; this crate cannot depend on the host crate.
 fn sort_param(current_query: Option<&str>) -> Option<&str> {
     let q = current_query?;
     for pair in q.split('&') {
@@ -739,9 +725,9 @@ fn sort_param(current_query: Option<&str>) -> Option<&str> {
 
 /// Render one resource as a `<li class="rl-annot__item">`.
 ///
-/// Row inner content (RL-2 "annotated rows"): the text-first
+/// Row inner content ("annotated rows"): the text-first
 /// `div.rl-annot__main` carries the name (no per-row eyebrow — the class label
-/// moved to the surf-head), an optional one-line `p.rl-annot__gloss` (from
+/// is in the surf-head), an optional one-line `p.rl-annot__gloss` (from
 /// `cfg.gloss`), and an optional `div.rl-annot__meta` chip row (from
 /// `cfg.chips`). An optional thumbnail follows in markup; CSS shows it left of
 /// the text on desktop (`order: -1`) and right of the gloss on phones. A record
@@ -792,7 +778,7 @@ fn render_row(resource: &Resource, cfg: &ResourceListCfg<'_>, lang: &Lang) -> Ma
 
 // ── Grid tile rendering (grid-mode) ─────────────────────────────────────────────
 
-/// Render one resource as a `<li>` grid tile (grid-mode plan decision 8):
+/// Render one resource as a `<li>` grid tile:
 /// `a.gm__tile` (or `div.gm__tile` non-link fallback, mirroring `render_row`'s
 /// class-has-no-detail-binding degradation) wrapping `div.gm__box` (image or
 /// text-tile fallback) + `div.gm__name` (the resolved title, same
@@ -801,8 +787,8 @@ fn render_row(resource: &Resource, cfg: &ResourceListCfg<'_>, lang: &Lang) -> Ma
 /// Image tile: the resource's `cfg.media_thumbs` URI, filtered through
 /// `is_safe_external_url` (same as `render_row`), sized via
 /// `iiif_grid_tile_url_clamped`/`GRID_TILE_WIDTH`, or via
-/// `iiif_tall_tile_url` on a list whose `tile_ratio` is tall. `alt=""` is DELIBERATE (decision 8
-/// — the anchor already contains the name in `.gm__name`, so a named alt
+/// `iiif_tall_tile_url` on a list whose `tile_ratio` is tall. `alt=""` is DELIBERATE (the
+/// anchor already contains the name in `.gm__name`, so a named alt
 /// double-announces "Alice Alice"; mirrors `render_row`'s decorative `alt=""`).
 ///
 /// Text tile (no safe media URI): `div.gm__box.gm__box--text > div.gm__text >
@@ -861,7 +847,7 @@ fn render_grid_tile(resource: &Resource, cfg: &ResourceListCfg<'_>, lang: &Lang)
     }
 }
 
-// ── Row gloss + chips (RL-2 annotated rows) ────────────────────────────────────
+// ── Row gloss + chips (annotated rows) ────────────────────────────────────
 
 /// A rendered row gloss line.
 struct RowGloss<'a> {
@@ -922,8 +908,8 @@ fn composed_gloss_text(
 /// gloss simply renders no gloss line (never the resource id, unlike the
 /// title's id fallback). Richtext is rendered as **plain text** (Maud-escaped);
 /// the gloss is a scannable summary, not rendered Markdown. A `Date` value
-/// renders through `values::format_date_text` (Incunabula Slice 8,
-/// decision 13) — the same plain date text the detail page shows, and never
+/// renders through `values::format_date_text`
+/// — the same plain date text the detail page shows, and never
 /// the precision word (that is `span.prec` markup, detail-page only).
 fn row_gloss_text<'a>(resource: &'a Resource, gloss: Option<&ResolvedGloss<'_>>, lang: &Lang) -> Option<Cow<'a, str>> {
     let prop_name = match gloss? {
@@ -952,7 +938,7 @@ enum Chip<'a> {
 /// Collect the row chips from the configured chip specs, in config order.
 ///
 /// For each chip spec, the resource's language-picked list-value labels
-/// decide the shape: an explicit `kind` (A12.3) overrides the shape for
+/// decide the shape: an explicit `kind` overrides the shape for
 /// EVERY label of that property (`Term` → one `.term` per label, not "first
 /// only"; `Keyword` → one `.keyword` per label). An absent `kind` derives the
 /// shape from cardinality (mirroring `resource-detail`'s single-vs-multi
@@ -1071,10 +1057,9 @@ fn render_chip_keyword(label: &str) -> Markup {
 
 /// Normalize a raw `?sort=` value to one of the recognized display keys —
 /// the three non-default built-ins, or a key the list declares via
-/// `order-by` (`options`, Incunabula Slice 8 G9) — or `"default"` when the
-/// value is `None`, `Some("default")`, or unrecognized (browse-controls plan
-/// decision 7 — `class` is no longer recognized for DISPLAY, though
-/// `Sort::parse_wire` still parses it at the wire level; a hand-typed
+/// `order-by` (`options`) — or `"default"` when the
+/// value is `None`, `Some("default")`, or unrecognized (`class` is not recognized for DISPLAY,
+/// though `Sort::parse_wire` still parses it at the wire level; a hand-typed
 /// `?sort=class` renders the summary as "As curated" with no active mark —
 /// documented limitation).
 fn normalize_sort_key<'a>(current: Option<&'a str>, options: &[OrderRow<'_>]) -> &'a str {
@@ -1091,8 +1076,8 @@ fn normalize_sort_key<'a>(current: Option<&'a str>, options: &[OrderRow<'_>]) ->
 /// declared `order-by` options render after them, in config order.
 const BUILTIN_ORDER_KEYS: [&str; 4] = ["default", "name", "name-desc", "id"];
 
-/// Resolve the visible label for a normalized ordering key (browse-controls
-/// plan decision 2 — `As curated` / `Name A–Z` / `Name Z–A` / `Identifier`,
+/// Resolve the visible label for a normalized ordering key
+/// (`As curated` / `Name A–Z` / `Name Z–A` / `Identifier`,
 /// plus a declared option's resolved label). `key` must be one of
 /// [`BUILTIN_ORDER_KEYS`] or a declared option's key; any other value falls
 /// back to the `default` label (mirrors `normalize_sort_key`'s own
@@ -1100,7 +1085,7 @@ const BUILTIN_ORDER_KEYS: [&str; 4] = ["default", "name", "name-desc", "id"];
 ///
 /// `default_override`/`name_override`/`name_desc_override` are the per-list
 /// chrome-string-**id** overrides for the "As curated", "Name A–Z" and
-/// "Name Z–A" rows (`order-default-label`, and A12.4's pair) — id only, never
+/// "Name Z–A" rows (`order-default-label`, and the name pair) — id only, never
 /// literal text — already resolved by the caller via
 /// [`cpe_core::labels::resolve_order_name_labels`]. `None` (absent attribute, or an id
 /// that failed to resolve) falls back to the `ChromeMsg` default — never an
@@ -1149,7 +1134,7 @@ fn preserved_query_dropping_sort_and_page(current_query: Option<&str>) -> String
         .join("&")
 }
 
-/// Render the ordering control (browse-controls plan decisions 2–6): a
+/// Render the ordering control: a
 /// `<form method="get">` (`.orderctl`) with hidden inputs preserving the
 /// current query (minus `sort`/`page`), a `<details id="orderctl">`
 /// disclosure holding the four ordering rows as submit buttons, and a
@@ -1162,7 +1147,7 @@ fn preserved_query_dropping_sort_and_page(current_query: Option<&str>) -> String
 /// `submitter` — no implicit-submission ambiguity to guard against.
 ///
 /// When `cfg.list_id` is `Some`, the `<form>` carries
-/// `data-on:submit__prevent` (decision 4): a submitter-initiated submit
+/// `data-on:submit__prevent`: a submitter-initiated submit
 /// closes the panel, refocuses the summary (both at click time, before the
 /// fetch — the user's own dismissal act, `dsp-incubator
 /// cpe/docs/adr/0007-fragment-swaps-are-transient.md`'s disclosure-widget exception), and fires the
@@ -1170,7 +1155,7 @@ fn preserved_query_dropping_sort_and_page(current_query: Option<&str>) -> String
 /// any engine running the v1 DataStar bundle, since `SubmitEvent.submitter` ships in Chrome
 /// 81/Firefox 75/Safari 15.4) falls back to `el.submit()` — a never-a-dead-control
 /// floor, NOT a working degrade: it carries no submitter, so the GET lands
-/// on the default order and the visitor's pick is lost (journaled). When
+/// on the default order and the visitor's pick is lost. When
 /// `cfg.list_id` is `None`, no `data-on:submit__prevent` is emitted and the
 /// form is a plain GET.
 ///
@@ -1179,7 +1164,7 @@ fn preserved_query_dropping_sort_and_page(current_query: Option<&str>) -> String
 /// quotes must stay literal; the prefix's own `'` → `%27` is what blocks a
 /// JS-string breakout from a crafted preserved query pair.
 ///
-/// The `<details>` always renders WITHOUT an `open` attribute (decision 6):
+/// The `<details>` always renders WITHOUT an `open` attribute:
 /// the server always renders the panel closed, and a re-render (via the
 /// `_sort` swap, itself inside the swapped `#<list-id>` region) snaps it
 /// shut via Idiomorph removing the absent attribute.
@@ -1193,7 +1178,7 @@ fn preserved_query_dropping_sort_and_page(current_query: Option<&str>) -> String
 /// submit ever landed, silently eating every WebKit row click. A
 /// `tabindex="-1"` element is never a legitimate focus TARGET a visitor
 /// tabbed to on purpose, so excluding it (`tabIndex >= 0`) still closes the
-/// panel on a real Tab-away/click-elsewhere while no longer misfiring on
+/// panel on a real Tab-away/click-elsewhere without misfiring on
 /// WebKit's own click-focus quirk.
 fn render_order_control(cfg: &ResourceListCfg<'_>, current_sort: Option<&str>, lang: &Lang) -> Markup {
     let label_text = ChromeMsg::OrderLabel.text(lang);
@@ -1310,8 +1295,8 @@ fn render_order_control(cfg: &ResourceListCfg<'_>, current_sort: Option<&str>, l
 // ── Pager ─────────────────────────────────────────────────────────────────────
 
 /// Above this many pages, the numbered-links middle (`.pager__nums`) is
-/// replaced by a single "Page n of N" `span.pager__of` (browse-controls plan
-/// decision 8) — a wall of 100+ number links is unusable, and CSS-hiding them
+/// replaced by a single "Page n of N" `span.pager__of`
+/// — a wall of 100+ number links is unusable, and CSS-hiding them
 /// all above this threshold instead of the position text keeps the pager
 /// legible without ever emitting the whole run of links to the DOM.
 pub(crate) const PAGER_NUMBERED_MAX: usize = 8;
@@ -1352,7 +1337,7 @@ fn render_browse_pager(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, lang:
         nav.pager aria-label=(nav_aria) {
             // Prev step: active anchor or inert span at first page. No
             // `aria-hidden` — the inert end stays readable, the AT cue is the
-            // absence of a link (browse-controls plan decision 8).
+            // absence of a link.
             @if let Some(ref h) = prev_href {
                 a.pager__step href=(h) { (prev_word) }
             } @else {
@@ -1370,9 +1355,9 @@ fn render_browse_pager(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, lang:
                         }
                     }
                 }
-                // Always emitted (decision 8): the nav label already speaks the
+                // Always emitted: the nav label already speaks the
                 // position, so this is redundant here — hidden above 640px by
-                // CSS (not written in this step).
+                // CSS.
                 span.pager__of aria-hidden="true" { (of_text) }
             } @else {
                 // No numbered links at this page count — the position text is
@@ -1452,7 +1437,7 @@ mod tests {
     use super::*;
 
     /// Empty id→thumb map, used by tests/helpers with no thumbnails to
-    /// configure (mirrors `cpe_web::page`'s `EMPTY_ROUTES`/`EMPTY_MEDIA` —
+    /// configure (mirrors `dsp-incubator cpe/web`'s `page` module's `EMPTY_ROUTES`/`EMPTY_MEDIA` —
     /// a `'static` empty map so it can be borrowed from a function that
     /// returns a `ResourceListCfg`, not just a `let`-bound temporary).
     static EMPTY_THUMBS: std::sync::LazyLock<HashMap<String, MediaThumb>> = std::sync::LazyLock::new(HashMap::new);
@@ -1510,11 +1495,11 @@ mod tests {
         ResourceListPage { items, total, page, pagination, unfiltered_total: None }
     }
 
-    // ── A11y audit (Step 4): row thumbnail decorative alt ────────────────────
+    // ── Row thumbnail decorative alt ────────────────────
 
     /// A row thumbnail is decorative — the adjacent `.rl-annot__name` is its
     /// accessible label — so it must render `alt=""`, never a meaningful alt
-    /// derived from the resource. Regression guard for the a11y audit.
+    /// derived from the resource.
     #[test]
     fn row_thumbnail_alt_is_empty_and_decorative() {
         let resource = make_resource("CH_001", "Character", "Alice");
@@ -1656,7 +1641,7 @@ mod tests {
     }
 
     /// `view=grid` survives a `page=N` override on `resource_list`'s OWN
-    /// `override_query_param` (grid-mode plan decision 12) — this is a
+    /// `override_query_param` — this is a
     /// separate, independently-maintained copy from `component::pager`'s
     /// (see pager.rs's `override_query_param_preserves_view`), so it needs
     /// its own coverage.
@@ -1680,7 +1665,7 @@ mod tests {
         assert_eq!(href, "/alice-in-daschland/characters?lang=de&page=3");
     }
 
-    // ── Unit: pager inert-end logic (browse-controls plan) ──────────────────────
+    // ── Unit: pager inert-end logic ──────────────────────
 
     fn base_cfg<'a>(
         resolver: LinkResolver<'a>,
@@ -1871,7 +1856,7 @@ mod tests {
         );
     }
 
-    // ── Unit: localized helpers (now sourced from the chrome catalog) ────────
+    // ── Unit: localized helpers (sourced from the chrome catalog) ────────
 
     #[test]
     fn pager_nav_label_de() {
@@ -1954,8 +1939,8 @@ mod tests {
         );
     }
 
-    /// `?sort=class` also falls back to "As curated" (decision 7 — `class`
-    /// is no longer recognized for display).
+    /// `?sort=class` also falls back to "As curated" (`class`
+    /// is not recognized for display).
     #[test]
     fn order_control_summary_text_and_aria_label_when_current_class() {
         let cfg = make_sort_cfg("/alice/characters", Some("sort=class"), None);
@@ -1974,7 +1959,7 @@ mod tests {
 
     /// Each of the four recognized keys — including `default` — marks
     /// exactly the matching row `aria-current="true"`, and no other row
-    /// (decision 2: "the chosen row carries aria-current=true", which
+    /// ("the chosen row carries aria-current=true", which
     /// applies to every row including the default "As curated" one).
     #[test]
     fn order_control_aria_current_on_matching_row_for_each_key() {
@@ -2123,7 +2108,7 @@ mod tests {
         );
     }
 
-    /// Regression (slice-2 step 8a): a carried-over pair arrives
+    /// Regression: a carried-over pair arrives
     /// percent-/`+`-encoded on the wire; its hidden input's `value=` must
     /// hold the DECODED text, since the browser re-encodes it on the GET
     /// submit. Raw `q=quantum+cat` written verbatim would re-submit as
@@ -2218,7 +2203,7 @@ mod tests {
     }
 
     /// No `<select>`/`<noscript>` anywhere in the rendered control — the
-    /// native `<select>` is dropped entirely (handoff §1).
+    /// native `<select>` is dropped entirely.
     #[test]
     fn order_control_has_no_select_or_noscript() {
         let cfg = make_sort_cfg("/alice/characters", None, Some("character-list"));
@@ -2229,7 +2214,7 @@ mod tests {
     }
 
     /// The `<details>` carries the keydown/outside/focusout dismissal
-    /// attributes (decision 5).
+    /// attributes.
     #[test]
     fn order_control_details_carries_dismissal_attributes() {
         let cfg = make_sort_cfg("/alice/characters", None, None);
@@ -2259,7 +2244,7 @@ mod tests {
         assert_eq!(count, 4, "must render exactly four submit rows, got: {out}");
     }
 
-    /// The `<details>` never carries an `open` attribute (decision 6).
+    /// The `<details>` never carries an `open` attribute.
     #[test]
     fn order_control_details_has_no_open_attribute() {
         let cfg = make_sort_cfg("/alice/characters", Some("sort=name"), None);
@@ -2330,7 +2315,7 @@ mod tests {
         );
     }
 
-    // ── Unit: order_label_for_key overrides (A12.4) ───────────────────────────
+    // ── Unit: order_label_for_key overrides ───────────────────────────
 
     /// An override for "name" is returned verbatim, without touching the
     /// `ChromeMsg` default.
@@ -2464,10 +2449,10 @@ mod tests {
         );
     }
 
-    /// Pluralization (Step 6) across de/fr/it for `n ∈ {0, 1, 2}`, exercised
+    /// Pluralization across de/fr/it for `n ∈ {0, 1, 2}`, exercised
     /// through the actual `render_surf_head` call site (not just the
     /// `chrome::count_resources_text` unit tests). French singularizes `n ==
-    /// 0` too (see `chrome::plural_category`). Since A12.1 the inflected noun
+    /// 0` too (see `chrome::plural_category`). The inflected noun
     /// is the CLASS noun, so this fixture declares per-language singular and
     /// plural `ClassLabel`s for `Character`; an invariable noun (Italian's
     /// borrowed "record") is simply declared identically in both slots.
@@ -2514,10 +2499,10 @@ mod tests {
         }
     }
 
-    /// A12.1: the count noun is the class's DECLARED plural when there is one,
+    /// The count noun is the class's DECLARED plural when there is one,
     /// and the humanized class name when there is no `ClassLabel` at all —
-    /// never the generic engine noun (`Einträge`/`resources`) the pre-A12.1
-    /// `chrome::count_resources_text` hardcoded. Undeclared is a degradation
+    /// never a generic engine noun (`Einträge`/`resources`).
+    /// Undeclared is a degradation
     /// `validate::check_class_plurals` already warns about
     /// (`MissingClassPlural`); it must NOT be papered over with a fallback.
     #[test]
@@ -2634,15 +2619,15 @@ mod tests {
         );
     }
 
-    /// A11y fix regression guard: the EMPTY branch of `render_resource_list`
+    /// A11y regression guard: the EMPTY branch of `render_resource_list`
     /// (reached via `list.items.is_empty()`) must still render
     /// `span.surf-head__count` with `aria-live="polite" aria-atomic="true"` —
     /// mirrors `surf_head_count_has_aria_live_polite` (the populated-branch
     /// version) but through the public `render_resource_list` entry point
     /// with an empty items list, so the live region exists at the same
     /// leading position in both branches and a facet-narrowed-to-zero morph
-    /// is announced to a screen reader (previously the empty branch omitted
-    /// `.surf-head` entirely, so the live-region node did not exist to be
+    /// is announced to a screen reader (without `.surf-head` the
+    /// live-region node would not exist to be
     /// preserved+updated by idiomorph across the morph).
     #[test]
     fn resource_list_empty_branch_still_has_surf_head_count_live_region() {
@@ -2940,9 +2925,9 @@ mod tests {
             "empty list must show empty-state message, got: {out}"
         );
         assert!(!out.contains("class=\"pager\""), "empty list must not have a pager, got: {out}");
-        // Regression guard (search-bar plan step 8): a genuinely-empty list
+        // Regression guard: a genuinely-empty list
         // with NO search (`cfg.search: None`) must keep rendering the
-        // unchanged pre-existing `.resource-list__empty` state — never
+        // `.resource-list__empty` state — never
         // `.search-empty`, and never a scope note (only `cfg.search: Some`
         // ever appends one).
         assert!(
@@ -3061,7 +3046,7 @@ mod tests {
 
     /// (g) Composed: `list_id: Some` (DataStar-enhanced sort control) + a
     /// facet-narrowed list (`unfiltered_total: Some(54)`, `total: 8`) + an
-    /// active `?sort=` value in `current_query` — the three RL-2/FP-2
+    /// active `?sort=` value in `current_query` — the three
     /// browse-surface features rendered together through the public
     /// `render_resource_list` entry point. `surf_head_shows_n_of_m_when_narrowed`
     /// and `order_control_data_on_submit_present_with_list_id` each exercise one
@@ -3134,7 +3119,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// Incunabula Slice 8 (G9): a list declaring two `order-by` options, with
+    /// A list declaring two `order-by` options, with
     /// one of them active (`?sort=date`) — the panel renders the four
     /// built-ins then the two declared rows in config order, the active
     /// declared row carries `aria-current`, and the summary/status read its
@@ -3198,7 +3183,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Unit: declared order-by options (Incunabula Slice 8, G9) ──────────────
+    // ── Unit: declared order-by options ──────────────
 
     const DECLARED_ROWS: [OrderRow<'static>; 2] = [
         OrderRow { key: "date", label: "Date" },
@@ -3401,7 +3386,7 @@ mod tests {
         assert!(!out.contains("page=3"), "last page: must have no href with page=3, got: {out}");
     }
 
-    // ── RL-2 gloss + chips (annotated rows) ───────────────────────────────────
+    // ── Gloss + chips (annotated rows) ───────────────────────────────────
 
     /// A Character-like resource with a richtext `description` (gloss source), a
     /// single-valued `role` list value (→ `.term`), and a multi-valued `keyword`
@@ -3469,7 +3454,7 @@ mod tests {
         assert_eq!(row_gloss_text(&r, None, &lang), None);
     }
 
-    /// (g) Incunabula Slice 8, decision 13: a `date` gloss property renders
+    /// (g) A `date` gloss property renders
     /// `format_date_text` — the plain date, the degenerate range collapsed,
     /// the display string honoured — and NEVER the precision word.
     #[test]
@@ -3894,7 +3879,7 @@ mod tests {
         );
     }
 
-    /// An explicit `kind: Some(Keyword)` on a single-valued property (A12.3)
+    /// An explicit `kind: Some(Keyword)` on a single-valued property
     /// overrides the cardinality rule: the one label still renders as
     /// `.keyword`, not `.term`.
     #[test]
@@ -3913,7 +3898,7 @@ mod tests {
         );
     }
 
-    /// An explicit `kind: Some(Term)` on a multi-valued property (A12.3)
+    /// An explicit `kind: Some(Term)` on a multi-valued property
     /// overrides the cardinality rule for EVERY label — N `.term` chips, not
     /// a run of `.keyword`s.
     #[test]
@@ -3935,7 +3920,7 @@ mod tests {
     }
 
     /// `kind: None` is the existing cardinality rule, unchanged — a
-    /// regression guard so A12.3 cannot silently move today's default
+    /// regression guard so the `kind` override cannot silently move today's default
     /// behaviour (assert the exact markup, not just the enum variant).
     #[test]
     fn chips_none_kind_keeps_todays_cardinality_rule() {
@@ -3956,7 +3941,7 @@ mod tests {
         );
     }
 
-    /// (h) Full RL-2 annotated row through the public renderer: name + gloss +
+    /// (h) Full annotated row through the public renderer: name + gloss +
     /// role (.term) + keyword (.keyword) chips.
     #[test]
     fn snapshot_resource_list_annotated_rows_gloss_and_chips() {
@@ -3998,13 +3983,12 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// A12.3 + A12.4, combined, through the public renderer: a `kind:
+    /// Combined, through the public renderer: a `kind:
     /// Some(Keyword)` chip override on a single-valued property (HdM's
     /// `source` — one label rendering `.keyword`, not `.term`), plus both
-    /// ordering-label overrides set (HdM's "Zeile A–Z"/"Zeile Z–A"). New
-    /// fixture — the plan's defaults-unchanged gate requires every OTHER
-    /// chip/order snapshot to stay byte-identical; this is the only one that
-    /// exercises the new attributes.
+    /// ordering-label overrides set (HdM's "Zeile A–Z"/"Zeile Z–A"). This
+    /// is the only chip/order snapshot that
+    /// exercises these attributes.
     #[test]
     fn snapshot_resource_list_chip_kind_override_and_order_label_overrides() {
         let items = vec![make_annotated_resource("CH_001", "Alice")];
@@ -4047,7 +4031,7 @@ mod tests {
 
     /// A declared `labels { class "…" { … } }` translation is used for the
     /// surf-head `span.surf-head__title`, in preference to the raw/humanized
-    /// class name — the resolver call site this step wires in
+    /// class name — the resolver call site in
     /// `render_surf_head`. The declared translation ("Cast Member") is
     /// deliberately different from both the raw class name ("Character") and
     /// its humanized form (a no-op here, since "Character" has no
@@ -4095,18 +4079,17 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Search-aware rendering (SearchSurface, search-bar plan step 8) ───────
+    // ── Search-aware rendering (SearchSurface) ───────
 
-    /// Build a `SearchSurface` for a given (already-active) query — now just
-    /// the populated-list scope note (empty-states-not-found plan step 2
-    /// trimmed this type down; the empty-branch fields moved to
+    /// Build a `SearchSurface` for a given (already-active) query —
+    /// the populated-list scope note (the empty-branch fields are on
     /// `NarrowedSurface`, see `make_narrowed_surface` below).
     fn make_search_surface(q: &str) -> SearchSurface<'_> {
         SearchSurface::for_query(q, "matching Name and Description")
             .expect("test helper is only ever called with an active query")
     }
 
-    /// Build a `NarrowedSurface` (empty-states-not-found plan step 2) — the
+    /// Build a `NarrowedSurface` — the
     /// literal stand-in for what `SearchFragmentSurface::narrowed_surface`
     /// would have resolved. `query_active` gates the hint/clear-search fields
     /// exactly like `NarrowedSurface::build` does for real, AND selects
@@ -4182,8 +4165,7 @@ mod tests {
     }
 
     /// The `span.surf-head__sep[aria-hidden]` separator is present IFF the
-    /// scope note renders — never emitted when there is no scope note
-    /// (decision 11).
+    /// scope note renders — never emitted when there is no scope note.
     #[test]
     fn surf_head_separator_present_iff_scope_note_present() {
         let items = vec![make_resource("CH_001", "Character", "Alice")];
@@ -4291,8 +4273,8 @@ mod tests {
     }
 
     /// Active-query NO-MATCH, non-faceted (`clear_all_href: None`): only the
-    /// "Clear search" action renders — never "Clear all" (design-doc §3: that
-    /// action only appears "when facets are on").
+    /// "Clear search" action renders — never "Clear all" (that
+    /// action only appears when facets are on).
     #[test]
     fn snapshot_resource_list_search_no_match_no_facets() {
         let mut list = make_list_page(vec![], 0, 1, Pagination::PerPage(24));
@@ -4335,7 +4317,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Grid mode (grid-mode plan step 4) ─────────────────────────────────────
+    // ── Grid mode ─────────────────────────────────────
 
     fn make_grid_cfg<'a>(
         current_path: &'a str,
@@ -4757,8 +4739,8 @@ mod tests {
         );
     }
 
-    /// Regression twin of `row_thumbnail_alt_is_empty_and_decorative`
-    /// (decision 8): the grid tile image must also be `alt=""`.
+    /// Regression twin of `row_thumbnail_alt_is_empty_and_decorative`:
+    /// the grid tile image must also be `alt=""`.
     #[test]
     fn grid_tile_thumbnail_alt_is_empty_and_decorative() {
         let resource = make_resource("CH_001", "Character", "Alice");
@@ -4880,7 +4862,7 @@ mod tests {
 
     #[test]
     fn grid_tile_image_tile_never_shows_gloss() {
-        // Decision 8: no chips, no gloss on IMAGE tiles — gloss only appears
+        // No chips, no gloss on IMAGE tiles — gloss only appears
         // in the text-tile fallback.
         let resource = make_annotated_resource("CH_001", "Alice");
         let mut thumbs = HashMap::new();
@@ -5008,7 +4990,7 @@ mod tests {
         );
     }
 
-    // ── Decision-12 preserved-query assertions ────────────────────────────────
+    // ── Preserved-query assertions ────────────────────────────────
 
     /// `preserved_query_dropping_sort_and_page` must preserve `view` (it only
     /// drops `sort`/`page`).
@@ -5022,7 +5004,7 @@ mod tests {
     /// `override_query_param`) preserve every other param — covered above by
     /// `view_toggle_list_href_drops_view_and_preserves_other_params` /
     /// `view_toggle_grid_href_sets_view_grid_and_preserves_other_params`; this
-    /// assertion closes the decision-12 audit item for the grid-toggle-specific
+    /// assertion covers the grid-toggle-specific
     /// helper (`drop_query_param`) directly.
     #[test]
     fn drop_query_param_preserves_view_when_dropping_a_different_key() {
@@ -5033,11 +5015,11 @@ mod tests {
     // ── Layer-3 snapshots: surf-head grid states + grid populated ────────────
 
     /// Surf-head WITHOUT the grid toggle (grid: false) — still gets the
-    /// `.surf-head__ctl` wrapper (additive markup change, decision 7), but no
+    /// `.surf-head__ctl` wrapper, but no
     /// `.viewtoggle__opts` (the actual view-toggle markup — the ordering
     /// control's own `span.viewtoggle__lbl` deliberately reuses the label
-    /// class verbatim per browse-controls plan decision 2, so a bare
-    /// "viewtoggle" substring check would now false-positive on it).
+    /// class verbatim, so a bare
+    /// "viewtoggle" substring check would false-positive on it).
     #[test]
     fn snapshot_surf_head_non_grid_class_has_ctl_wrapper_no_toggle() {
         let list = make_list_page(
@@ -5150,7 +5132,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// Empty-in-grid (decision 10): a zero-item list rendered with the grid
+    /// Empty-in-grid: a zero-item list rendered with the grid
     /// toggle on (`?view=grid`) must still fall into the existing
     /// empty-state branch — but the surf-head's view toggle must survive
     /// into that branch, not disappear along with the (absent) items.
@@ -5190,10 +5172,10 @@ mod tests {
     }
 
     /// Filters-only NO-MATCH, NO search query and NO search-bar at all
-    /// (empty-states-not-found plan step 2, E2 "facet-only" case): the
+    /// (the facet-only case): the
     /// narrowed-to-zero body renders from `cfg.narrowed` alone — `cfg.search`
-    /// stays `None` throughout (there is no search-bar on this page), which
-    /// is exactly the gap the old `cfg.search`-only gate could not close.
+    /// stays `None` throughout (there is no search-bar on this page), so a
+    /// `cfg.search`-only gate would miss this case.
     /// Only "Clear all filters" renders (no "Clear search", no hint — both
     /// gated on an active QUERY, which is absent here).
     #[test]

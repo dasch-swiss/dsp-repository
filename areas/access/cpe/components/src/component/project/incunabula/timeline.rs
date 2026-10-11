@@ -1,16 +1,15 @@
-//! The Incunabula timeline — geometry (Slice 4 step 3), the lanes markup
-//! (step 4) and the decades markup + the 860px switch (step 5).
+//! The Incunabula timeline — geometry, the lanes markup
+//! and the decades markup + the 860px switch.
 //!
 //! The geometry functions are pure: no Maud, no `RenderContext`, no DB. Both
 //! variants ([`render_timeline`] emits both, unconditionally — the CSS media
 //! query, not Rust, decides which one is visible) are built on top of them;
-//! styles live in the `TIMELINE` block of `static/cpe/incunabula.css`, and inline `style=` carries
+//! styles live in the `TIMELINE` block of `style/incunabula.css`, and inline `style=` carries
 //! only the data-driven numbers.
 //!
-//! Every number reproduces the concept mockup (`projects/incunabula/design/
-//! Incunabula.dc.html` L814–864): `pct(y) = (y − start) / span × 100`, a point
-//! bar `2.2 %` wide, a ranged bar `max(pct(end + 1) − left, 2.4) %`, and the
-//! mockup's greedy sub-row packer with its `1.6 %` gap.
+//! The numbers are fixed: `pct(y) = (y − start) / span × 100`, a point
+//! bar `2.2 %` wide, a ranged bar `max(pct(end + 1) − left, 2.4) %`, and a
+//! greedy sub-row packer with a `1.6 %` gap.
 //!
 //! **Range-ness is never `end.is_some()`.** Every Incunabula date stores an
 //! `end`, point dates included (`'1489','1489'`), so range-ness comes from
@@ -26,29 +25,29 @@ use crate::component::context::RenderContext;
 use crate::component::links::LinkResolver;
 use crate::component::values::{format_date_text, resolve_title_str};
 
-/// A point bar's width, in percent of the track (mockup: `2.2`).
+/// A point bar's width, in percent of the track.
 const POINT_WIDTH_PCT: f64 = 2.2;
-/// The minimum width of a ranged bar, in percent of the track (mockup: `2.4`).
+/// The minimum width of a ranged bar, in percent of the track.
 const MIN_SPAN_WIDTH_PCT: f64 = 2.4;
 /// The horizontal gap the sub-row packer keeps between two bars on one row,
-/// in percent of the track (mockup: `1.6`).
+/// in percent of the track.
 const ROW_GAP_PCT: f64 = 1.6;
 /// The grid-line interval, in years ("Rasterlinien alle drei Jahre").
 const GRID_YEARS: f64 = 3.0;
 /// The tick and decade interval, in years.
 const DECADE: i32 = 10;
-/// A title longer than this many chars is shortened (mockup: `54`).
+/// A title longer than this many chars is shortened.
 const SHORT_TITLE_MAX: usize = 54;
 /// A shortened title is cut to this many chars before the ellipsis (`52`).
 const SHORT_TITLE_CUT: usize = 52;
 /// The separator between a marker label's segments.
 const LABEL_SEPARATOR: &str = " \u{00B7} "; // U+00B7 MIDDLE DOT
-/// The height of one lane sub-row, in rem (mockup: `row * 1.35 + "rem"`).
+/// The height of one lane sub-row, in rem.
 const ROW_HEIGHT_REM: f64 = 1.35;
 /// The label of the final lane collecting markers with no (known) lane value.
 const NO_LANE_LABEL: &str = "\u{2014}"; // U+2014 EM DASH
 /// The property holding a marker's title — the `name`-property convention
-/// `resource_list` shares (`projects/incunabula/DESIGN.md` §10).
+/// `resource_list` shares.
 const TITLE_PROPERTY: &str = "name";
 
 /// One Resource placed on the timeline.
@@ -70,8 +69,7 @@ pub(crate) struct Marker<'a> {
     /// id)`, see [`lay_out_lane`] / [`decade_groups`]) — never for display or
     /// geometry. A zero-padded ISO string compares chronologically as a plain
     /// string, and a coarser precision (a shorter string that is a prefix of a
-    /// finer one, e.g. `"1495"` vs. `"1495-03-03"`) sorts first, matching the
-    /// mockup's stable JS sort by year.
+    /// finer one, e.g. `"1495"` vs. `"1495-03-03"`) sorts first.
     pub date_start: String,
     /// The lane's list-node id; `None` ⇒ the `—` lane.
     pub lane: Option<&'a str>,
@@ -107,9 +105,9 @@ pub(crate) fn pct(year: i32, axis_start: i32, axis_end: i32) -> f64 {
 /// `pct(min(y + 10, axis_end)) − pct(y)` wide, then `axis_end` itself with an
 /// `auto` width. For 1470–1506: `[1470, 1480, 1490, 1500, 1506]`, the first
 /// three 27.78 %, 1500 16.67 % — the widths sum to exactly 100 %, so the last
-/// label starts on the track's right edge. (Deliberate deviation from the
-/// mockup, which gives every decade tick 27.78 %: the row then totals ~111 %
-/// and flex-shrink drags every label left of its grid line.)
+/// label starts on the track's right edge. (Giving every decade tick
+/// 27.78 % would total ~111 %,
+/// and flex-shrink would drag every label left of its grid line.)
 pub(crate) fn ticks(axis_start: i32, axis_end: i32) -> Vec<Tick> {
     let mut out: Vec<Tick> = decade_starts(axis_start, axis_end)
         .into_iter()
@@ -156,8 +154,8 @@ pub(crate) fn marker_years(start: &str, end: Option<&str>, precision: DatePrecis
 /// end to `None` — never compute this from a raw `PropertyValue::Date.end`.
 ///
 /// The axis end is inclusive (`year == axis_end` is a valid marker position,
-/// per `docs/CONFIG_LANGUAGE.md`/`docs/COMPONENT_LIBRARY.md`), but a bar
-/// painted at `left = 100%` would otherwise extend past the track: a point's
+/// per `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`/`dsp-incubator cpe/docs/COMPONENT_LIBRARY.md`),
+/// but a bar painted at `left = 100%` would otherwise extend past the track: a point's
 /// fixed width pushes its right edge to `100 + POINT_WIDTH_PCT`, and a range
 /// whose end is `axis_end` computes its right edge at `pct(axis_end + 1)`,
 /// also past 100. Clamp rather than drop the marker: a point is shifted
@@ -187,7 +185,7 @@ pub(crate) fn bar_geometry(marker: &Marker<'_>, axis_start: i32, axis_end: i32) 
     }
 }
 
-/// The mockup's greedy sub-row packer, verbatim (L834–836): each bar takes the
+/// The greedy sub-row packer: each bar takes the
 /// first row whose recorded right edge `r` satisfies `left >= r + 1.6`, and
 /// records `left + width` as that row's new right edge.
 ///
@@ -230,7 +228,7 @@ pub(crate) fn lay_out_lane<'m, 'a>(
         .collect()
 }
 
-/// The mockup's `shortTitle`: a title over 54 chars is cut to 52, stripped of
+/// The short title: a title over 54 chars is cut to 52, stripped of
 /// a trailing run of ` `, `,` and `;` (`/[ ,;]+$/`), and ended with `…`.
 /// Counts `char`s, never bytes (titles carry `ö`/`ü`).
 pub(crate) fn short_title(title: &str) -> String {
@@ -400,24 +398,24 @@ pub(crate) fn render_registered(
 
 /// Render the timeline as `section.tl.page`, containing **both** variants —
 /// `div.tl__lanes` and `div.tl__decades` — unconditionally. `incunabula.css`
-/// shows one and `display: none`s the other at the 860px breakpoint (decision
-/// 4); no DataStar, no `hidden` attribute, no client script.
+/// shows one and `display: none`s the other at the 860px breakpoint;
+/// no DataStar, no `hidden` attribute, no client script.
 ///
 /// Lanes: one per vocabulary node (in `payload.lanes` = `seq` order) that has
 /// at least one marker, then — when any exist — a final `—` lane for markers
 /// whose lane value is missing or names a node outside the vocabulary (never
 /// silently dropped). A Resource with no parsable date is skipped (with a
 /// `tracing` warning). With no markers at all the root is a bare, childless
-/// `section.tl.page`: the mockup designs no empty state, and none is invented.
+/// `section.tl.page`: there is no empty state.
 ///
-/// Unlike the mockup (one lane per office, even an empty one), a vocabulary
+/// A vocabulary
 /// node with no marker gets no lane — a deliberate choice; all five Incunabula
 /// offices are non-empty, so the output is the same there.
 ///
 /// Decades: one `div.tl__decade` per non-empty decade (membership by start
 /// year), items sorted by `(date_start, id)`, using the same `href`/no-route
 /// fallback as a lane's bars. No key line, no axis, no office grouping in
-/// this variant (per the mockup).
+/// this variant.
 pub(crate) fn render_timeline(payload: &TimelinePayload, cfg: &TimelineCfg<'_>, lang: &Lang) -> Markup {
     let resources = &payload.resources.items;
     let built: Vec<(Marker<'_>, Option<String>)> = resources
@@ -450,7 +448,7 @@ pub(crate) fn render_timeline(payload: &TimelinePayload, cfg: &TimelineCfg<'_>, 
         };
     }
     let markers: Vec<&Marker<'_>> = built.iter().map(|(m, _)| m).collect();
-    // `decade_groups` takes owned `Marker`s (see step 3); the decades block
+    // `decade_groups` takes owned `Marker`s; the decades block
     // below borrows from this alongside `markers`.
     let owned_markers: Vec<Marker<'_>> = built.iter().map(|(m, _)| m.clone()).collect();
     let href_of =
@@ -678,8 +676,8 @@ mod tests {
         }
     }
 
-    /// The 19 Books as stored in `projects/incunabula/data.sql` (re-verified
-    /// at step 3): `(id, date_start, date_end, precision, office node)`.
+    /// The 19 Books as stored in `projects/incunabula/data.sql`:
+    /// `(id, date_start, date_end, precision, office node)`.
     /// Point dates store `end == start`.
     const BOOKS: [(&str, &str, &str, DatePrecision, &str); 19] = [
         ("bereitung", "1489", "1489", DatePrecision::Year, "office-amerbach"),
@@ -992,7 +990,7 @@ mod tests {
 
     #[test]
     fn short_title_of_the_three_long_real_titles() {
-        // `name` values in data.sql, re-verified at step 3 (97, 93, 56 chars).
+        // `name` values in data.sql (97, 93, 56 chars).
         assert_eq!(
             short_title(
                 "walfart oder bilgerschafft der aller seligisten Jungfrouwen Marie \
@@ -1121,7 +1119,7 @@ mod tests {
         assert_eq!(en.label, "Die wunderbare Meerfahrt des hl. Brandan · 19 February 1491");
     }
 
-    // ── render_timeline (step 4) — small synthetic resource bags ─────────────
+    // ── render_timeline — small synthetic resource bags ─────────────
 
     /// A synthetic Book: `name` (universal text), `pub-date` (year precision,
     /// `end` stored even for a point, as in Incunabula's data), an optional
@@ -1271,8 +1269,8 @@ mod tests {
     #[test]
     fn out_of_axis_markers_are_dropped_from_both_variants() {
         // `before` (1450) predates START (1470); `after` (1520) postdates END
-        // (1506). Both must be absent from the lanes view (which used to
-        // place them at an unclamped, off-track `pct(year)`) AND the decades
+        // (1506). Both must be absent from the lanes view (not placed
+        // at an unclamped, off-track `pct(year)`) AND the decades
         // view (which already dropped them implicitly via its bucket range) —
         // the point of the fix is that both variants agree on the same set.
         let p = payload(

@@ -3,6 +3,7 @@
 #   access-server  (static musl binary)
 #   public/        (static assets + the content-hashed app.<hash>.css)
 #   data/          (JSON data files)
+#   sync/data/     (sync's committed snapshots and curation files)
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
@@ -11,6 +12,7 @@ WORKDIR /app
 COPY --chmod=755 access-server /app/access-server
 COPY public /app/public
 COPY data /app/server/data
+COPY sync/data /app/sync/data
 
 ENV RUST_LOG="info"
 # Enable backtrace capture for the structured panic hook in access-server.

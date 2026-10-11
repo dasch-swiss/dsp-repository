@@ -11,7 +11,7 @@ problem: >
   dsp-incubator. This plan moves both into `areas/access/cpe`, adds the mechanical check of CPE's
   dependency seam that ADR-0007 names, and ends with the incubator building against the vendored copies.
 symptoms: []
-status: in-progress
+status: complete
 ---
 
 # Execution Journal: 01-feat-move-cpe-components-plan
@@ -20,7 +20,7 @@ status: in-progress
 
 | repo          | base_commit                              | branch            | merge_strategy | status      | pr |
 |---------------|------------------------------------------|-------------------|----------------|-------------|----|
-| dsp-incubator | 4b1cb8201648157abb502a9b0f3bf1c1e25745c2 | worktree-DEV-7401 | squash         | in-progress | —  |
+| dsp-incubator | 4b1cb8201648157abb502a9b0f3bf1c1e25745c2 | worktree-DEV-7401 | squash         | shipped | https://github.com/dasch-swiss/dsp-incubator/pull/508 |
 | dsp-repository | 1a503920c11c73065b0b06e615c966df010b4ffe | worktree-DEV-7401-image-viewer (PR A), worktree-DEV-7401 (PR B) | rebase | shipped | https://github.com/dasch-swiss/dsp-repository/pull/471 (PR A), https://github.com/dasch-swiss/dsp-repository/pull/475 (PR B) |
 
 ## Phases
@@ -32,7 +32,7 @@ status: in-progress
 | 3     | reviewed    | dsp-repository@5f05aac4, dsp-incubator@4b1cb8201648157abb502a9b0f3bf1c1e25745c2 | 2                 |
 | 4     | reviewed    | dsp-repository@3652cd0b                                | 1                 |
 | 4a    | reviewed    | dsp-repository@a4c61106                                | 0                 |
-| 5     | gated (H2, H3, H4) |                                                 | 0                 |
+| 5     | reviewed    | dsp-incubator@3698056c8554586dd5fad3d37e8dca4a07c166c4 (was `bf0ab767…` until #506 landed mid-phase; rebased) | 1                 |
 
 ## Chunk queue
 
@@ -51,6 +51,11 @@ status: in-progress
 | 4a.2 | dsp-repository | `areas/access/cpe/core/src/**/*.rs` (comments only), `ARCH-MAP.md` (Fingerprint, which also covers 4a.1's files) | 4a.1 | "- [ ] `cpe-core`: apply the rules …", "- [ ] Commit as `docs(cpe-core): remove design and plan references the first pass left (DEV-7401)`", "- [ ] Recompute the `areas/access/cpe` Fingerprint …" | every `.rs` file equal to its previous version after the Phase 3 normaliser; test list of `cpe-core` unchanged; `cargo doc -p cpe-core --no-deps` prints no new warning | plan § *Comment rules (Phase 3)* and the Phase 4a preamble; edits in `.claude/tmp/p4a-core.py` | — |
 | 4a.3 | dsp-repository | `areas/access/cpe/ports/src/**/*.rs` (comments only) | — | "- [ ] `cpe-ports`: apply the rules …", "- [ ] If it changed: commit as `docs(cpe-ports): …`" | the same proof as 4a.2, or a journal row saying no comment needs a change | plan § *Comment rules (Phase 3)* and the Phase 4a preamble | — |
 | 4a.4 | dsp-repository | none (gate) | 4a.1, 4a.2, 4a.3 | "- [ ] `just check` passes", "- [ ] `just test` passes" | both exit 0 on the phase's head | — | — |
+| 5.1 | dsp-incubator | none (rebase, checks, scratch files) | — | "- [ ] Discard the uncommitted arrangement of Phase 3 …", "- [ ] Confirm `cpe/vendor/CRATES` lists `areas/access/cpe/core` …", "- [ ] Run `git diff SRC origin/main -- cpe/components cpe/static/cpe` …", "- [ ] Run `git log SRC..origin/main -- shared/dasch-image-viewer` …", "- [ ] Set `<pin>` …", "- [ ] Save the names of every test in the workspace …" | branch on `origin/main` (`bf0ab767`), clean; drift is DEV-7464's comment repoints only; the pin's three files exist; `p5-test-list-before.txt` saved | plan § Phase 5, first six checkboxes; brief's notes | — |
+| 5.2 | dsp-incubator | `cpe/vendor/CRATES`, `cpe/vendor/PIN`, `cpe/vendor/dsp-repository/**`, `cpe/Cargo.toml`, `cpe/Cargo.lock`, `cpe/components/**` (deleted), `cpe/static/cpe/*.css` (deleted), `cpe/web/Cargo.toml`, `cpe/web/src/page.rs`, `cpe/web/tests/header_budget.rs`, `cpe/bin/Cargo.toml`, `cpe/bin/src/router.rs`, `cpe/bin/build.rs`, `cpe/Dockerfile`, `.github/workflows/cpe.yml`, `cpe/justfile`, `cpe/tools/crate-deps.py`, other readers of `static/cpe/*.css` | 5.1 | from "- [ ] Add `areas/access/cpe/image-viewer` and `areas/access/cpe/components` to `cpe/vendor/CRATES`" to "- [ ] Run `just cpe crate-deps-check` … and `just cpe module-graph-check`; both pass" (the workspace does not build between these steps, so one chunk) | the workspace builds against the two vendored crates; the new router test fails without the vendored-style lookup and passes with it; `just cpe test`, `crate-deps-check`, `module-graph-check` pass | plan § *Where the stylesheets are served from*, § *Phase 5 is a delta on DEV-7464's incubator PR*; `git show bf0ab767` for the shape | — |
+| 5.3 | dsp-incubator | `cpe/vendor/README.md`, `cpe/docs/design/claude-design-workflow.md`, `shared/README.md`, `shared/dasch-image-viewer/README.md`, `cpe/docs/INCUNABULA_GO_LIVE.md`, `cpe/docs/adr/0001`, `0005`, `0010`, `0013`, `cpe/CLAUDE.md`, `cpe/CONTEXT.md`, `cpe/docs/ARCHITECTURE.md`, every other hit of the plan's `git grep` that states a current rule or path | 5.2 | from "- [ ] Run `git grep -n 'cpe/components…'`" to "- [ ] Correct `cpe/CLAUDE.md`, `cpe/CONTEXT.md` and `cpe/docs/ARCHITECTURE.md` …" | no current-rule sentence outside the excluded directories names `cpe/components`, `components/src` (without the vendored prefix), `static/cpe/*.css` or CPE's use of `dasch-image-viewer` as present | plan § Phase 5 docs checkboxes; `git show bf0ab767 -- cpe/docs cpe/CLAUDE.md cpe/vendor/README.md` | — |
+| 5.4 | dsp-incubator | none new (gates; the squash) | 5.2, 5.3 | "- [ ] Compare the workspace's test names …", "- [ ] Run `just cpe test` …", "- [ ] Run `git status --porcelain --ignored cpe/vendor` …", "- [ ] Run `just cpe vendor-diff` …", "- [ ] Run `just cpe ci` …", "- [ ] Commit `cpe/vendor/PIN`, the vendored tree … together as `refactor(cpe): …`" | test list = saved + the viewer's + the router test; all five gates pass; the branch holds one commit on `origin/main` | plan § Phase 5, gate checkboxes | — |
+| 5.5 | dsp-incubator | none (push, PR) | 5.4, the phase review | "- [ ] Open a draft PR with `gh pr create` …" | one draft PR, assigned, "Fixes DEV-7401", H2 unticked under "Human Actions" | brief's `decided_behaviours` and notes | — |
 
 ## Chunks
 
@@ -81,16 +86,71 @@ status: in-progress
 | FR2.1 | dsp-repository | complete | 0bbea754 (`fixup!` of 05420fbf) | Final review, fix round 2, seam. Tests first: 9 new assertions in `check-cpe-seam.test.sh`, 2 of 103 failed before the script changed (the root fixture with a plain `cpe-core = { path = … }` under `[workspace.dependencies]` and a `[workspace.dependencies.foo]` table holding `package = "x"`: rule 1 reported and 9 manifests counted); the other 7 pin what must stay (a rename in a root dependency table fails; a crate outside with top-level `package.` keys is checked as a crate; a crate outside with `[dependencies.foo]` and `package = "cpe-core"` fails rule 1; a string value `description = "a, cpe-core. b"` is reported). `has_package` is awk, as `crate_name` is: the `[package]` header, with the same pattern as `crate_name`'s, counts anywhere; a `package.` or `package =` key counts only before the first table header. Measured on `/usr/bin/awk` and gawk 5.3.2 with the same answers: CRLF `[package]` yes, `[ package ] # c` yes, a `package =` key in a table body no, top-level `package = {…}` yes, `[package.metadata.x]` alone no. The inline-table matcher is unchanged; its comment says a string value containing `, name.` or `, name =` is reported and why. ADR-0007's amendment of 2026-10-11 gained two sentences at the end of the seam bullet (`LEAVES` is the list rule 3 goes by; what the script does not check is review, in `ARCH-MAP.md`'s words), and CPE's `CONTEXT.md` the second of them; no existing sentence edited. No rule added; tools unchanged; `check-composition-root-deps.sh` untouched. Proofs: 103 assertions pass under `/bin/bash` 3.2.57 and bash 5.3.9; `just check-cpe-seam` on the tree: 21 manifests, 4 CPE and 2 Mosaic crates, 1 excepted, as before; the negative smoke (`cpe-components` in `areas/access/dpe/web/Cargo.toml`) fails with the manifest, the dependency and rule 1, and `git status --porcelain areas/access/dpe Cargo.lock` is empty after the restore. Fingerprint `e730df0462f6` over the staged tree (269 files; the recipe hashes `areas/access/cpe/CONTEXT.md`). `just check` exit 0 and `just test` exit 0 on the tree holding FR2.1 and FR2.2. Commands in `.claude/tmp/fr2-proof.sh`, `fr2-gate.sh`, `fr2-commit.sh`. | none |
 | FR2.2 | dsp-repository | complete | 93b5a770 (`fixup!` of PR A's commit; the session folds it) | Final review, fix round 2, ADR-0007: a blank line between the DEV-7464 amendment's "Enforced by" line and the dated note under it, which Markdown rendered as one paragraph. The other two dated notes (under the DEV-7400 churn bullet and under "The rule stands for the crates that follow") already have one. One inserted line, nothing else. | none |
 | FR3.1 | dsp-repository | complete | e88c747e (`fixup!` of PR A's commit; the session folds it) | Finalizer proposals, `areas/access/cpe/image-viewer/src/lib.rs`, comments only, 2 edits. The comment in `Viewer::render` states the rule (both attributes omitted at their defaults, so a consumer that never calls `.chrome()` / `.page()` gets no `chrome` or `page` attribute) where it said "byte-identical markup to before these existed (additive)"; true to the code under it (`chrome` true gives `None`, `initial_page` `None` gives no `page`) and pinned by `chrome_is_on_by_default_and_omitted_from_markup` and `page_is_absent_by_default`. The module doc says "the bundled `image-viewer.js`" where it said "vendored"; the other three "vendored" in the file name OpenSeadragon and stay. `tests/render.rs` has neither pattern in a comment. Proofs: `git diff` 2 insertions, 3 deletions, whole-line comments only; `just fmt` changed nothing; `cargo test -p cpe-image-viewer` 1 + 26 + 2 doc tests pass; `cargo doc -p cpe-image-viewer --no-deps` no warning; `just check` exit 0. `ARCH-MAP.md` untouched. | none |
+| 5.1 | dsp-incubator | complete | — (no commit by design) | Discarded Phase 3's uncommitted `cpe/Cargo.toml` and `cpe/Cargo.lock`, fetched, rebased `worktree-DEV-7401` onto `origin/main` = `bf0ab767b53c4ce102e6dcedf2880989200e3c19` (#505, and #504 below it); the branch had no commit of its own. `cpe/vendor/CRATES` lists `areas/access/cpe/core`, `ports` and `areas/access/sync/store`; `PIN` was `a9f90359…`. `git diff SRC origin/main -- cpe/components cpe/static/cpe`: nothing under `cpe/components`; 14 changed lines in five stylesheets (`grid`, `incunabula`, `record`, `shell`, `tokens`), each a comment whose `core/src/…` path gained the `vendor/dsp-repository/areas/access/cpe/` prefix (DEV-7464's repoints), no rule changed. `git log SRC..origin/main -- shared/dasch-image-viewer`: empty, the viewer has not changed since `SRC`. `<pin>` = `5569c52c61c85402210cb51cceed76180b492825`, an ancestor of dsp-repository's `origin/main`; the two manifests and `.github/scripts/check-cpe-seam.sh` exist there. Workspace test names before any change: `p5-test-list-before.txt` in the scratch directory, 3065 lines (the number #505's commit message gives). `eng_yaml.py resolve` prints `{}` (the incubator has no `eng.yaml`), so the brief's commands apply. | none |
+| 5.2 | dsp-incubator | complete | db499162 (work in progress; squashed by 5.4) | `cpe/vendor/CRATES` lists five crates (added `areas/access/cpe/components` and `image-viewer`); `just cpe vendor 5569c52c…` wrote the tree and `PIN`. Beside the two new crates the pin move changed 13 files of the vendored `cpe-core` (comments only: dsp-repository's `0154cbe2` repointed its citations and `5569c52c` took its design and plan references out); `cpe-ports`, `sync-store` and `sync/data` are unchanged. `cpe/components` (git sees most files as renames into the vendored path) and the seven stylesheets under `cpe/static/cpe/` are deleted; the three SVGs and `datastar.js` stay. `cpe/Cargo.toml`: members and `[workspace.dependencies]` point at the vendored paths, `dasch-image-viewer` is replaced by `cpe-image-viewer`, `maud` gained the monorepo's `axum` feature and `insta` was added; `p5-keys.py` compares all 13 inherited dependency lines of the five vendored manifests with the monorepo root at the pin: equal. `Cargo.lock`: `cpe-image-viewer` in, `dasch-image-viewer` out, `insta`'s feature dependencies. `cpe-web` and the bin depend on `cpe-image-viewer` (`cpe_image_viewer::` in `page.rs` and `router.rs`). `router.rs`: module-level `COMPONENT_STYLES` (`include_dir!` of the vendored `style/`) and `serve_static_or_stylesheet`, which looks `cpe/<name>.css` up there through `serve_static` (same segment check) and hands every other path to `serve_static` over `cpe/static`; `build`'s signature and `lib.rs` unchanged. New test `router::tests::static_route_serves_vendored_stylesheets_beside_the_static_bundle` (the seven stylesheets, `tokens.css` byte-equal to the vendored file with its content type and `nosniff`, the two SVGs, five refused paths); it failed with 404 before the lookup existed. `build.rs` has the third `rerun-if-changed` line. The three `include_str!` in `page.rs` and the one in `web/tests/header_budget.rs` read the vendored `style/`. Dockerfile: the two `COPY` lines gone, header reworded; `prototype.json` keeps `"build_context": "root"`. `cpe.yml`: `shared/dasch-image-viewer/**` out of both path filters. `justfile`: a `components` variable beside `core`, used by `watch` (which also watches the vendored `style/`) and both module-graph loops. `crate-deps.py`: `cpe-image-viewer` allowed for `cpe-components` and `cpe-web`, ungoverned itself, no fixture changed. Gates on the tree: `just cpe test` exit 0 (18 test binaries; bin 249, components 980, core 549, viewer 1 + 26), no `.snap.new`; `crate-deps-check` ok (`packages=7`); `module-graph-check` ok on the vendored `components/src` under the unchanged `MODULES["components"]`; `fmt-check` and `lint` pass; `git status --porcelain --ignored cpe/vendor` lists no ignored file. | none |
+| 5.3 | dsp-incubator | complete | 3e3dd965 (work in progress; squashed by 5.4) | Documents, 25 files. Mechanical, as #505 did for `core/src` (`p5-docs.py`, 57 lines): `components/src/…` and `components/Cargo.toml` citations name the vendored path in `cpe/CLAUDE.md`, `CONTEXT.md`, the top-level `docs/*.md`, `docs/dev/*.md`, `docs/adr/*.md` and the two projects' `DESIGN.md`; `static/cpe/<one of the seven>.css` and `static/cpe/*.css` name `vendor/…/components/style/…` in the same files except the ADRs (`/_static/cpe/…` URLs are not touched). By hand (`p5-docs-hand.py`): `cpe/vendor/README.md` (inherited keys of both crates and that `version` is not one; a new section "`cpe-components` and `cpe-image-viewer`": stylesheets vendored with the crate and served by the bin, `dasch-fingerprint.svg` beside `shell.css`, `MODULES["components"]`, the three guard tests, the viewer as a cut-down copy whose fixes land in the monorepo first, the `crate-deps.py` edge); `claude-design-workflow.md` (the mirror's source is dsp-repository's `areas/access/cpe/components/style`); `shared/README.md` and the root `README.md` (consumer column); `shared/dasch-image-viewer/README.md` (a section on the cut-down copy, with a table of what a fix has to be applied to); `INCUNABULA_GO_LIVE.md` (DEV-7401 ticked; the moving rule cites the monorepo's `docs/adr/0011-cpe-crates-move-in-dependency-order.md`); dated notes in ADR-0001, ADR-0005, ADR-0010 and ADR-0013; `cpe/CLAUDE.md` (a new current-state entry `cpe-components-vendored`, the `watch` paragraph, the architecture paragraph, the dependency rule); `ARCHITECTURE.md` (the two `/_static` passages, the crate list with `cpe-components` as vendored and a `cpe-image-viewer` bullet, both check descriptions); `README.md` (repo layout); `coding-conventions.md`, `testing-strategy.md`, `TECH_STACK.md`, `CONTEXT.md` and `COMPONENT_LIBRARY.md` (CPE mounts the vendored `cpe-image-viewer`). Corrected because the move made them false: "five places read `schema.sql`" is four (the page-picker test helper is gone; `CLAUDE.md`, and a note in ADR-0001 where the mechanical repoint of that line was undone), and `testing-strategy.md`'s "one `cpe-components` test reads Incunabula's `data.sql`". Left as history: the log entries of `CLAUDE.md` that say `shared/dasch-image-viewer` "gained" something, `PROJECT_PLAN.md` checklists, `BACKLOG.md`, design briefs and handoffs under `docs/design/` and `projects/*/design/`, `hdm/DESIGN_BRIEF.md`. `just cpe fmt-check` passes; no code file in this commit. | none |
+| 5.4 | dsp-incubator | complete | 3e3a7c6b (the one commit; amended by review fixes, see FR rows) | Gates on the tree of 5.2 + 5.3: workspace test names `p5-test-list-after.txt`, 3095 lines; `diff` against the saved 3065 shows 30 added lines and none removed: `cpe-image-viewer`'s 29 (26 in `tests/render.rs`, `tests::asset_names_are_unique`, two doc tests listed under the vendored path) and `router::tests::static_route_serves_vendored_stylesheets_beside_the_static_bundle`. `just cpe ci` exit 0 (`p5-ci-1.log`): `vendor-diff: empty (5569c52c61c85402210cb51cceed76180b492825)`, `fmt-check`, `lint`, `module-graph-check`, `crate-deps: ok packages=7 core-framework-refs=0`, `test` (18 binaries, 0 failed; 980 component, 549 core, 1 + 26 viewer, 249 bin, 71 smoke), `translate-check`, `dao-lift-ci`; no `.snap.new`; `git status --porcelain --ignored cpe/vendor` lists no ignored file. `origin/main` had moved by one commit while the phase ran (`3698056c`, #506, which edits the `types:` line of every workflow, `cpe.yml` included): the branch was rebased onto it without conflict (the phase base is `3698056c` from here on), then `git reset --soft origin/main` and one commit; `git diff --name-only origin/main..HEAD` lists paths under `cpe/`, `.github/workflows/cpe.yml`, `shared/README.md`, `shared/dasch-image-viewer/README.md` and the root `README.md` (one table cell). The WIP commits `db499162` and `3e3dd965` are folded into it. `docker build` was not run locally; the PR's preview job is its gate. | none |
+| FR5.1 | dsp-incubator | complete | a36af283 (amended into the one commit, which was 3e3a7c6b before) | Phase review, fix round 1 (`p5-fr1.py`, 8 files; `phase5-fr1.patch`). `router.rs`: `serve_static_or_stylesheet` lost the redundant `!name.contains('/')` (a nested name misses in the flat directory either way, and the segment check is `serve_static`'s), its doc comment says what the code does; the test iterates `COMPONENT_STYLES.files()` where it listed six names, asserts no subdirectory and seven files, and its not-served list says it is about routing (the "refused" loop passed without the segment check: rust reviewer, Warning). `shared/dasch-image-viewer/README.md`: the consumer example named CPE's bin crate, which no longer depends on the crate; it names `image-viewer-showcase` (consistency, Warning), and "CPE does exactly this" and "the shape CPE uses" went. History wording removed (code-simplicity, Warnings): `cpe/CLAUDE.md` ("went when that crate moved", "any more", the 980 count), `cpe/vendor/README.md` ("any more"), `shared/README.md` ("consumed it until DEV-7401"), `testing-strategy.md`. `hdm/DESIGN_BRIEF.md`'s sentence repointed like its two siblings. Dockerfile comment names the viewer's `include_bytes!` table. `just cpe ci` exit 0 on the result (`p5-ci-2.log`, `vendor-diff: empty`). Folded into the one commit by `git commit --amend` (nothing was pushed). | none |
+| 5.5 | dsp-incubator | complete | — (push and PR; no new commit) | Pushed `worktree-DEV-7401` (first push, one commit `a36af283` on `origin/main` `3698056c`) and opened the draft PR dasch-swiss/dsp-incubator#508 with `gh pr create --draft --assignee @me`: "Fixes DEV-7401"; a "Human Actions" section with H2 unticked (the four things to look at, and that this build serves the stylesheets from the vendored `style/`), H5 and H9; the pin move with the five dsp-repository commits; the viewer's log since `SRC` (empty); verification; review notes (`biz`'s sync script, the `crate-deps.py` fixtures). No reviewer requested, no comment posted, not marked ready, no auto-merge. CI on the PR, checked once after it finished: `all-green` pass, `test (cpe)` pass (4m52s), `test (image-viewer-showcase)` and `test (shared/dasch-image-viewer)` pass (the README edit triggers them), both `preview` jobs pass (cpe's, 9m27s, is the first Docker build of the changed Dockerfile). The re-review of the fix diff (consistency, with the simplicity questions) was clean. | none |
+| 5.R1 | dsp-incubator | complete | 58ff6768 (the one commit, rebased; it was 3a14fc8b) | After the closeout: the incubator's `main` moved to `d84e06c7` (#507, `vendor-diff` fails on a difference `vendor/PATCHED` does not list) and #508 conflicted. `git rebase origin/main`; one conflict, the tail of ADR-0013, resolved by keeping #507's amendment and this PR's DEV-7401 note after it. `cpe/CLAUDE.md`, `cpe/vendor/README.md`, `cpe/justfile` and `cpe/docs/TECH_STACK.md` merged without a conflict. The non-vendored diff between the old and the new commit equals #507's diff apart from that placement, and the vendored tree, `CRATES` and `PIN` are unchanged. No `vendor/PATCHED`: `just cpe vendor-diff` prints `vendor-diff: empty (5569c52c…)`, so nothing had to be listed and the tree was not re-vendored. Green: `vendor-selftest`, `vendor-diff`, `crate-deps-check`, `module-graph-check`, `just cpe ci` (which runs `test`), `bash biz/scripts/sync-cpe-css.sh check` (exit 0, the known drift warnings); the workspace test-name list equals `p5-test-list-after.txt` (3095). Commit message unchanged (it says nothing about `vendor-diff`). Force-pushed with lease; the PR body's verification line now names `vendor-selftest` and the absent `PATCHED`. Review (consistency, old commit against new, non-vendored): no finding. CI on `58ff6768`: `all-green`, `test (cpe)` (5m31s), the other four `test` jobs and the four `preview` jobs pass. The PR is a draft, mergeable. | none |
 
 ## Deferrals
 
-- none
+- **Phase 5, `scope`: `biz/` and `pou/` read the deleted stylesheets' old path.** `biz/scripts/sync-cpe-css.sh`
+  copies `../cpe/static/cpe/*.css` into `biz/src/styles/cpe/` (`just biz sync-cpe-css`), and its `check` mode runs
+  in `just biz ci`. The directory still exists (the three SVGs), so `check` now prints six `::warning::` lines
+  and exits 0 as before, and `sync` fails at the first `cp`. Comments in `biz/src/index.css`, `biz/justfile`,
+  `biz/src/styles/cpe/VENDORED.txt`, `biz/docs/…` and `pou/src/index.css` name the same path. Not changed: the
+  plan's scope is `cpe/` and the shared crate's READMEs, and the incubator's squash guardrail keeps a PR inside
+  its prototype. The fix is one line (`SRC` default to
+  `../cpe/vendor/dsp-repository/areas/access/cpe/components/style`) plus the comments, as a `biz` PR. Named in
+  PR C's description.
 
 ## Deviations
+
+- **Phase 5, `crate-deps.py`'s fixtures (proposed, not committed).** Decided (the plan's checkbox): "no fixture
+  file changes". Committed: none. Finding (devops and consistency reviewers, Warning): the two new `ALLOWED`
+  edges (`cpe-components` and `cpe-web` to `cpe-image-viewer`) and the `ungoverned cpe-image-viewer` line are
+  exercised by no fixture, so `--self-test` would pass with a typo in the table; only the real-workspace run in
+  `just cpe ci` covers them (it does, and passes). Proposed: a copy of `pass-real-shape` with the viewer as a
+  member, and one negative case (`cpe-store -> cpe-image-viewer`). For the owner.
 
 - **Phase 4, tools the seam check uses (committed, 05420fbf).** Decided: the check is "bash + git + awk only". Committed: it also calls `grep` (the matcher), and `wc` and `tr` for the success line, as `check-composition-root-deps.sh` and `check-shared-paths.sh` do; its header lists "bash (3.2 and later), git, awk, grep". Reason: the prototype the plan verified ("BSD and GNU `grep` and `awk`") is grep-based, and the plan's own matcher description is a line grep. No behaviour of the three rules differs. For the owner: keep, or ask for an awk-only matcher.
 
 ## Side findings
+
+- **Phase 5 review** (2026-10-11; reviewers: consistency, rust, devops, code-simplicity, as the brief names
+  them; dune not run). No Critical. Fixed in fix round 1: see row FR5.1. Refuted by measurement: "the pin may
+  not be reachable from dsp-repository `main`" (devops): `git merge-base --is-ancestor 5569c52c… origin/main`
+  holds, and `vendor-diff` fetched it. Not taken, for the session's final review or the PR description:
+  - The same statement in several documents (code-simplicity): "a component or CSS change is a monorepo PR and a
+    pin move", the three guard tests by name, "a viewer fix lands in the monorepo first", the
+    `cpe-image-viewer` edge of `crate-deps.py` each appear in `cpe/vendor/README.md`, `cpe/CLAUDE.md`,
+    `ARCHITECTURE.md` and one or two more. The plan's checkboxes ask for each of those documents to say it, and
+    #505 wrote `cpe-core` the same way; `vendor/README.md` is the one to keep if they are trimmed.
+  - `shared/dasch-image-viewer/README.md`'s table of what a fix has to be applied to repeats, inverted, the
+    vendored README's "What was removed" (code-simplicity). Kept: the plan's checkbox asks for that list.
+  - `shared/dasch-image-viewer/assets/image-viewer.js:584` names `cpe/static/cpe/media.css` as the twin of its
+    overlay rules (consistency). Not edited: the shared crate is unchanged apart from its README by decision.
+    The twin is now the vendored `components/style/media.css`, and dsp-repository's copy of the JS already
+    says so.
+  - `cpe/bin/Cargo.toml`'s `maud = { workspace = true, features = ["axum"] }` is redundant since the workspace
+    line carries the feature; `cpe-web` keeps `insta = "1"` beside the new workspace `insta` line, so
+    `cargo test -p cpe-web` alone builds `insta` without `yaml` and `filters` (rust; neither line is this
+    phase's, and `cpe-web`'s snapshots pass both ways).
+  - `just cpe watch` does not watch the vendored `image-viewer` (devops); it never watched `cpe-ports` or
+    `sync-store` either.
+  - `cpe/CLAUDE.md:971`'s "(embedded-media, current)" label over "Engine consumes `shared/dasch-image-viewer`"
+    (consistency): a log entry, covered by the new `cpe-components-vendored` entry.
+  - `docker build` was not run locally; the PR's preview job builds the image.
+- **Phase 5: the incubator's `main` moved twice under the phase.** #505 and #504 before it started (the brief's
+  base), #506 while it ran. Both rebases were conflict-free. #506 removed `ready_for_review` from every
+  workflow's `types:`.
+- **Phase 5 scratch** (same scratch directory): `p5-tick.py`, `p5-row.py`, `p5-journal.py`, `p5-keys.py`
+  (inherited-key comparison) with `p5-mono-root-Cargo.toml`, `p5-docs.py` (mechanical repoints), `p5-docs-hand.py`
+  and `p5-fr1.py` (hand edits, each replacement asserted to match once), `p5-test-list-before.txt` and
+  `p5-test-list-after.txt`, `p5-test-1.log`, `p5-ci-1.log`, `p5-ci-2.log`, `p5-msg.txt` (the commit message),
+  `phase5-review.patch`, `phase5-review-files.txt`, `phase5-fr1.patch`.
 
 - **Final review, fix round 1 (FR1.1–FR1.4): for the session.**
   - **Folding stops twice on `ARCH-MAP.md`'s Fingerprint line.** `05420fbf` is not the last commit that touches
@@ -362,3 +422,44 @@ status: in-progress
   `worktree-DEV-7401` (#475), not three branches, because #470 merged first. Both PRs are drafts, assigned
   to the owner, with no reviewer requested.
 
+- **Phase 5, gates and close** (session, 2026-10-11). #471 and #475 merged at 15:05 UTC; the pin is
+  `5569c52c61c85402210cb51cceed76180b492825`. DEV-7464's incubator PR (#505) had merged before. H2, the
+  owner's browser check, was not confirmed when the phase started; the owner said to continue, so the
+  incubator PR (#508) is a draft with H2 as an unticked line in its description, and the check is made on the
+  re-vendored build. `pr-finalizer` ran on #471, #475 and #508; its two comment proposals for the viewer were
+  folded into the viewer commit before the merge, and it changed nothing on #475 and #508.
+
+- **Phase 5, rebase after the closeout (5.R1)** (2026-10-11). This entry was added after the journal was
+  closed; no status changed. #507 landed on the incubator's `main` while #508 was open. The saved list
+  `p5-test-list-after.txt` was made with a bare `cargo test -- --list`; with `--all-targets`, which
+  `just cpe test` uses, the list has 3093 names, because the viewer's two doc tests are not run. Compare
+  like with like. Scratch: `r1-gates.sh`, `r1-look.sh`, `r1-cmp.sh`, `r1-pr-body.py`, `r1-*.log`.
+
+## Closeout
+
+- root_cause: CPE's component library and the image viewer it renders through lived in dsp-incubator, so the
+  monorepo could not serve a CPE project; ADR-0007's rule tied a crate's move to its churn dropping, which
+  would have held the move back although the churn was the planned preparation for it.
+- investigation: the viewer could not move whole (two engines, an engine switch, `include_dir`, a build
+  script) and had one consumer, so it came as a cut-down copy inside the capability; equal markup was proved
+  with a matrix crate over both versions. `maudfmt` 0.1.8 panics on one `@match` form and mangles a nested
+  `html!`, which forced four small rewrites of the moved source. The comment clean-up needed a second,
+  stricter pass at the owner's request, and the same pass over the viewer and `cpe-core`. The seam check's
+  matcher went through three review rounds; each hole was first a failing test. #470 merged mid-run, so the
+  stack was rebased onto `main` and its fixups folded with a scripted rebase that recomputed the
+  `areas/access/cpe` Fingerprint per commit.
+- solution: `cpe-image-viewer` and `cpe-components` (with seven stylesheets as plain files) are in
+  `areas/access/cpe`; ADR-0011 replaces the churn rule; `check-cpe-seam.sh` checks the capability's three
+  dependency rules in `just check`; the incubator vendors both crates at the pin and serves the stylesheets
+  from the vendored `style/` (dsp-incubator #508).
+- prevention: the seam check and its 103-assertion test script; a test that every file under the viewer's
+  `assets/` has a row in the `include_bytes!` table, and one that the rows are unique; the incubator's
+  `vendor-diff` gate. Open items are listed under "Final review" above and in the three PR descriptions:
+  link-scheme filtering on the trusted-prose Markdown path, un-prefixed Datastar signals, CI not running the
+  `*.test.sh` scripts, `biz/scripts/sync-cpe-css.sh` in the incubator still reading the deleted stylesheets.
+
+
+- **After the closeout** (session, 2026-10-11). The owner confirmed H2 ("looks good in the browser") and asked
+  for `biz/scripts/sync-cpe-css.sh` to be repointed: it reads the vendored `style/` directory and records
+  `cpe/vendor/PIN`; biz's vendored copy itself was not re-synced (it already differed from CPE's CSS before
+  this work). Both are in dsp-incubator #508's one commit, with the rebase onto #507 of row 5.R1.

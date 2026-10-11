@@ -1,0 +1,11 @@
+[package]
+name = "cpe-core"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+kdl = { workspace = true }
+percent-encoding = { workspace = true }
+pulldown-cmark = { workspace = true }
+thiserror = { workspace = true }

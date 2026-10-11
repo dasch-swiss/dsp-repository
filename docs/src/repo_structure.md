@@ -17,7 +17,8 @@ areas/
 ├── access/                    # Access Area
 │   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
 │   │   └── Dockerfile         # Production container image
-│   ├── cpe/                   # Configurable Presentation Environment (only its port so far)
+│   ├── cpe/                   # Configurable Presentation Environment (its domain crate and its port so far)
+│   │   ├── core/              # CPE's domain: config language, validation, IR, diagnostics (crate: cpe-core)
 │   │   └── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
 │   ├── sync/                  # sync, the archive projection's writer (at its minimum so far)
 │   │   ├── store/             # Serves the committed snapshots and curation behind CPE's port (crate: sync-store)
@@ -63,6 +64,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `dpe-web` | `areas/access/dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `areas/access/dpe/server` | A library — DPE's router, config and validate logic; no binary |
 | `cpe-ports` | `areas/access/cpe/ports` | CPE's port onto the archive projection (ADR-0007, ADR-0008): the `ArchiveProjection` trait, its DTOs (archive-shaped facts and, beside them, per-resource curation, ADR-0010, proposed), an in-memory fake and the contract every adapter satisfies; depends on `std` alone |
+| `cpe-core` | `areas/access/cpe/core` | CPE's domain (ADR-0007): the KDL config language and its validation, the IR, diagnostics, labels, language, theme and the per-request view data; depends on `kdl`, `pulldown-cmark`, `percent-encoding` and `thiserror`, on no CPE crate, and on no `maud`, `axum` or `rusqlite` |
 | `sync-store` | `areas/access/sync/store` | `sync` at its minimum (ADR-0007): `LiveArchiveProjection`, CPE's `ArchiveProjection` served from the committed interim-DAO snapshots and the committed curation files in `areas/access/sync/data/`; depends on `cpe-ports` and no other CPE or DPE crate |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |

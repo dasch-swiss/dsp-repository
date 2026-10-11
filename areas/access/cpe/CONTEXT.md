@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). So far only its port onto the archive projection exists, the crate `cpe-ports` in `ports/`; its engine, store and routes are not built. CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Two of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, and its domain crate, `cpe-core` in `core/`. Its component library, store, page assembly and routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate (ADR-0007, 2026-10-02 and 2026-10-11 amendments). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -18,7 +18,7 @@ _Avoid_: dump (the archive's export format), delta, page (a snapshot is never pa
 
 **Archive-shaped fact**:
 A fact in the archive's shape: the canonical DAO model wherever its decisions have settled. Until DAO is published, `sync` serves it from an **interim format**, DAO-shaped where DAO has decided, with the deviations listed in `dao-lift`'s `FORMAT.md` in `dsp-incubator` (defined in [`../sync/CONTEXT.md`](../sync/CONTEXT.md)). That is a resource's class, label, typed values in archive order, file and membership, a list node's place in its tree, a date as calendar plus Julian Day Number and precision per bound, and what marks an **Annotation**: its motivation and targets. Values are named by their **Source property**, each value carries its UUID (a link has none), and ties in value order break by UUID. The port lifts membership (`isPartOf`, `seqnum`) out of the values and otherwise reshapes nothing. Fields DAO drops or leaves open (value order, a text's language, Julian Day Numbers, the file's asset name, the lists) say so in `cpe_ports` and are provisional. A resource carries its data ARK, which the adapter derives from the IRI until DAO carries it. What CPE makes of these facts (positional order from `seqnum`, reverse links, calendar dates, titles, IIIF URLs) is CPE's remodel, not the port's.
-_Avoid_: the CPE engine's presentation types (its `Resource`, `Property`, `Representation`, compound, property value), which the port must never speak; `cpe_ports::Resource` is the archive's resource, not CPE's.
+_Avoid_: CPE's presentation types (`cpe_core::ir::Resource`, `Property`, `Representation`, `PropertyValue`, a compound), which the port must never speak; `cpe_ports::Resource` is the archive's resource, not CPE's.
 
 **Annotation**:
 A resource the archive marks `oa:Annotation`: a Region or LinkObj, or a project subclass of either. It is an ordinary `cpe_ports::Resource` whose `annotation` field carries its `oa:motivatedBy` and `oa:hasTarget`; find annotations by that field, never by `class`, since a project may subclass `kb:Region` or `kb:LinkObj`.
@@ -35,6 +35,25 @@ a resource, a key, an optional language and a text. The port serves it beside th
 A key means nothing to the port or to `sync`: the project's KDL and hook give it its meaning.
 Interim: `sync` serves curation by a decision that is still proposed (ADR-0010; DEV-7488).
 _Avoid_: configuration (project-wide, declared in the project's KDL), archive fact.
+
+## The domain crate
+
+`cpe-core` in `core/` holds what a project's configuration means, with no framework in it: the KDL config
+language and its validation (`validate`), the IR a valid configuration lowers to (`ir`, `remodel`), the
+diagnostics a broken one produces (`diagnostic`), labels, language and theme, and the per-request view data
+(`view_data`). It depends on no other CPE crate and names no `maud`, `axum` or `rusqlite`.
+`cpe_core::ir::Resource` is CPE's presentation type, what a page shows; it is not `cpe_ports::Resource`, the
+archive's resource (see **Archive-shaped fact**).
+
+Its vocabulary and its specification are not in this repository yet. Until DEV-7465 moves them:
+
+- the glossary of CPE's own terms (Resource, Property, compound, component, remodel) is `dsp-incubator cpe/CONTEXT.md`;
+- the config-language specification is `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`. A change to the language
+  lands here as code and there, in the PR that moves the incubator's pin, as the document.
+
+The tests that tie this crate to files of the incubator are the incubator's, run against its vendored copy of
+the crate. They check two things: the specification's worked example lowers to what Incunabula's `config.kdl`
+lowers to, and the header budget in `validate/header_budget.rs` matches `dsp-incubator cpe/static/cpe/tokens.css`.
 
 ## What the port serves
 

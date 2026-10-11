@@ -5,7 +5,7 @@ GIT_TAG := `git describe --tags --exact-match 2>/dev/null || true`
 IMAGE_TAG := if GIT_TAG == "" { CARGO_VERSION + "-" + COMMIT_HASH } else { CARGO_VERSION }
 DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
-# DPE's published data set, which the editor recipes below read from and package.
+# DPE's published data set, which the image recipes below package and the editor recipes read from.
 
 DPE_DATA_DIR := "areas/access/dpe/server/data"
 
@@ -538,10 +538,49 @@ dev-otel:
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
     bacon serve
 
-# Build Docker image for DPE
+# Build the DPE Docker image locally; `arch=x86_64` reproduces the one CI publishes.
 [group('dpe')]
-build-docker-dpe:
-    docker build -f areas/access/server/Dockerfile -t dpe .
+build-docker-dpe arch="": css-release
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Same approach as `build-docker-editor`, which explains it: the image runs a
+    # static musl binary, so the compile happens in a `rust:<channel>-bookworm`
+    # container, and the staging below is the one `.github/actions/build-dpe` does.
+    arch="{{ arch }}"
+    if [ -z "$arch" ]; then
+        case "$(uname -m)" in
+            arm64 | aarch64) arch=aarch64 ;;
+            x86_64) arch=x86_64 ;;
+            *) echo "unsupported host arch $(uname -m) — pass arch=aarch64 or arch=x86_64" >&2; exit 1 ;;
+        esac
+    fi
+    case "$arch" in
+        aarch64) platform=linux/arm64 ;;
+        x86_64) platform=linux/amd64 ;;
+        *) echo "arch must be aarch64 or x86_64, got '$arch'" >&2; exit 1 ;;
+    esac
+    target="$arch-unknown-linux-musl"
+    rust_version="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
+    stage=target/dpe-staging
+    docker run --rm --platform "$platform" \
+        -v "$PWD":/work -w /work \
+        -e CARGO_TARGET_DIR=/work/target/container \
+        -e CARGO_HOME=/work/target/container-cargo-home \
+        "rust:$rust_version-bookworm" \
+        bash -eu -c "
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends musl-tools clang >/dev/null
+            rustup target add $target
+            cargo build -p access-server --release --target $target
+        "
+    rm -rf "$stage"
+    mkdir -p "$stage/sync"
+    cp "target/container/$target/release/access-server" "$stage/"
+    cp -r areas/access/dpe/public "$stage/"
+    cp -r {{ DPE_DATA_DIR }} "$stage/"
+    cp -r areas/access/sync/data "$stage/sync/"
+    cp areas/access/server/Dockerfile "$stage/"
+    docker build --platform "$platform" -f "$stage/Dockerfile" -t dpe "$stage"
 
 # Run DPE Docker container on port 8080
 [group('dpe')]

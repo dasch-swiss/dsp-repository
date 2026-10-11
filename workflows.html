@@ -263,6 +263,7 @@
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
 <tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-cpe-seam</code></td><td>Fail the build if a crate outside <code>areas/access/cpe/</code> depends on a CPE crate other than <code>cpe-ports</code>, a CPE crate depends on Mosaic, or <code>cpe-core</code>, <code>cpe-ports</code> or <code>cpe-image-viewer</code> depends on a CPE crate (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-adr-refs</code></td><td>Fail the build if a decision-record reference does not resolve to a record (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-live-tests-ignored</code></td><td>Fail the build if a dsp-cli live test is not <code>#[ignore]</code>d (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>

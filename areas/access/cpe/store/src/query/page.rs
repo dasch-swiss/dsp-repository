@@ -5,7 +5,7 @@
 //! per-slot [`ComponentData`]), rolls the slots' fetch outcomes up into the
 //! page's [`PageStatus`], and then runs the side-data lookups
 //! `RenderContext` borrows, only those the request's scope needs: which scope
-//! runs which lookup is the table on [`PageScope`](cpe_core::view_data::PageScope).
+//! runs which lookup is the table on [`PageScope`].
 //!
 //! A fragment scope whose status is [`PageStatus::Error`] runs no side
 //! lookup: its host answers a bare 500 without reading any.
@@ -13,8 +13,8 @@
 //! Pure assembly: every read goes through a `ProjectReads` method, one after
 //! another, and this module never takes the connection itself (the reads
 //! module owns that protocol). The request values come through
-//! [`PageParams`], so the host keeps every query-string reader and decode
-//! point.
+//! [`PageParams`](cpe_core::view_data::PageParams), so the host keeps every query-string reader and
+//! decode point.
 
 use std::collections::{HashMap, HashSet};
 
@@ -182,7 +182,7 @@ fn build_components(
             Component::FacetPanel { target, facets } => {
                 for facet in facets {
                     let ids = params.facet_values(&facet.property);
-                    // Caller contract (plan Step 1.2): only push a TargetIn clause when
+                    // Caller contract: only push a TargetIn clause when
                     // the id list is non-empty. An empty TargetIn would emit `AND 0`
                     // (never-match), which is a defensive dead branch not an intended path.
                     if !ids.is_empty() {
@@ -201,7 +201,7 @@ fn build_components(
                 // Multiple search-bars targeting the same list would last-write-
                 // win here, mirroring `list_meta`'s duplicate-id behavior — a
                 // defensive, shouldn't-happen case boot validation already
-                // prevents (`DuplicateResourceListId`), not a new concern.
+                // prevents (`DuplicateResourceListId`).
                 let q = params.search();
                 search_meta.insert(target.as_str(), (searches.as_slice(), q));
             }
@@ -216,7 +216,7 @@ fn build_components(
     // `FacetPanel` arm renders (`any_facet_selected`) — never on
     // `facet_wheres` non-emptiness (a hand-crafted bogus value like
     // `?role=NOPE` produces a non-empty `TargetIn` clause without selecting
-    // any REAL option; empty-states-not-found plan step 2). A page has at
+    // any REAL option). A page has at
     // most one `FacetPanel` (`DuplicateSingletonComponent`), so `target`
     // collisions are not a concern in practice, but `HashMap` handles a
     // last-write-win degrade gracefully regardless.
@@ -267,7 +267,7 @@ fn build_components(
             Component::ResourceDetail { id, .. } => {
                 let resource_id = match id {
                     None => {
-                        // Missing id: Phase-2 validation forbids this on a valid
+                        // Missing id: validation forbids this on a valid
                         // config; treat defensively as not-found rather than panic.
                         components.push(ComponentData::Detail(None));
                         outcomes.push(FetchOutcome::NotFound);
@@ -342,7 +342,7 @@ fn build_components(
                 // `any_facet_selected` predicate the pre-resolved
                 // `facet_groups_by_target` (pass 1.5) and the narrowed-to-zero
                 // rendering surface both use, so copy and count can never
-                // disagree (empty-states-not-found plan step 2).
+                // disagree.
                 let has_active_facets = id
                     .as_deref()
                     .and_then(|list_id| facet_groups_by_target.get(list_id))
@@ -441,13 +441,12 @@ fn build_components(
                 // `?member=` as a 1-based u32 (fallible; clamps done inside
                 // ProjectReads::compound_parts). Default 1 on all failure cases.
                 let member = params.member();
-                // `?page=<page-id|name|prefix>` (Incunabula Slice 2 step 7,
-                // decision 5) — handed over RAW: `ProjectReads::compound_parts`
+                // `?page=<page-id|name|prefix>` — handed over RAW: `ProjectReads::compound_parts`
                 // decodes it exactly once and, when it resolves, it beats
                 // `member`. This is the single parse point.
                 let page_param = params.reader_page();
 
-                // `media="…"` (Incunabula Slice 2 step 6b) rides on the
+                // `media="…"` rides on the
                 // compound payload: `compound_parts` hydrates the member's
                 // scan(s) into `member_media` in the same call, with no
                 // second load; so does the annotation register when the
@@ -514,7 +513,7 @@ fn build_components(
                 match resources.and_then(|resources| lanes.map(|lanes| (resources, lanes))) {
                     Ok((resources, lanes)) => {
                         // Widen the limit rather than narrow `.len()`
-                        // (no narrowing `as`, coding-conventions.md).
+                        // (no narrowing `as`).
                         if resources.items.len()
                             == usize::try_from(TIMELINE_HYDRATION_LIMIT).expect("u32 constant always fits in usize")
                         {
@@ -693,8 +692,8 @@ fn build_components(
 
 /// Resolve the pre-hydrated media items for the page's (at most one, boot-
 /// enforced `DuplicateSingletonComponent`) `ResourceDetail` slot, for
-/// threading through `RenderContext.media_items` (embedded-media plan step
-/// 6c). Returns an empty `Vec` when the page has no resolved resource-detail
+/// threading through `RenderContext.media_items`.
+/// Returns an empty `Vec` when the page has no resolved resource-detail
 /// resource, or the resource's class has no declared media property.
 ///
 /// Errors from `ProjectReads::media_items` are logged and treated as "no
@@ -730,8 +729,8 @@ fn media_items_for_page(
 }
 
 /// Resolve the page's (at most one) `resource-detail` resource's own compound
-/// member headers, for threading through `RenderContext.compound_members`
-/// (record-viewer plan step 9 — `.rv-contents`, AC11). Mirrors
+/// member headers, for threading through `RenderContext.compound_members`.
+/// Mirrors
 /// `media_items_for_page`'s shape exactly. Returns an empty `Vec` when the
 /// page has no resolved resource-detail resource, or that resource has no
 /// `compound_parts` rows of its own (the common case — none of Alice's
@@ -761,7 +760,7 @@ fn compound_members_for_page(reads: &ProjectReads<'_>, components: &[ComponentDa
 }
 
 /// Resolve the incoming-links rows for the page's (at most one)
-/// `resource-detail` resource (Incunabula Slice 5, G7), for threading through
+/// `resource-detail` resource, for threading through
 /// `RenderContext.incoming_links`. Mirrors `compound_members_for_page`.
 ///
 /// `None` when the page's `resource-detail` declares no `incoming-links`
@@ -797,7 +796,7 @@ pub fn incoming_links_for_page(
 }
 
 /// Resolve the resource-level annotation-link partners of the page's (at
-/// most one) `resource-detail` resource (Incunabula Slice 6, D9), for
+/// most one) `resource-detail` resource, for
 /// threading through `RenderContext.resource_links`.
 ///
 /// Empty unless that `resource-detail` declares a `group links-label=`, so a
@@ -834,7 +833,7 @@ fn resource_links_for_page(
 }
 
 /// Resolve the id → raw representation-URI map for the page's `resource-list`
-/// browse-row thumbnails (embedded-media plan step 6d), mirroring
+/// browse-row thumbnails, mirroring
 /// `media_items_for_page`'s shape.
 ///
 /// Finds the first `ResourceList` component with a declared `media` property
@@ -875,7 +874,7 @@ fn media_thumbs_for_page(
 }
 
 /// Resolve the compound-parent Resource for any `CompoundViewer` component
-/// that resolved to `total == 0` (empty-states-not-found plan step 7, E5),
+/// that resolved to `total == 0`,
 /// keyed by the compound's resolved source id — mirrors
 /// `media_thumbs_for_page`'s shape.
 ///

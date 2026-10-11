@@ -11,7 +11,7 @@
 //! `cpe-web`) owns the connection's `Mutex`.
 //!
 //! `pub` in this crate means visible to the sibling CPE crates. The host's surface is
-//! only what `cpe-engine` re-exports, which is three names (`DbError`, `QueryError`
+//! only what `dsp-incubator cpe/engine` re-exports, which is three names (`DbError`, `QueryError`
 //! and `search_index_name`); neither `db` nor `query` is exposed as a module. Items
 //! marked `#[doc(hidden)]` are not host API.
 

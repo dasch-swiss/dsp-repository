@@ -29,7 +29,7 @@ pub enum DbError {
 ///
 /// Foreign keys are enabled *before* any DDL runs: the `foreign_keys`
 /// pragma is per-connection and a no-op once a transaction is open, so
-/// it must be set on the bare connection first (see `docs/SCHEMA.md`).
+/// it must be set on the bare connection first (see `dsp-incubator cpe/docs/SCHEMA.md`).
 ///
 /// `data_sql` is trusted project data (build-embedded at boot), never
 /// request input — it is executed verbatim via `execute_batch`.

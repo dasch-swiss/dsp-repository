@@ -75,7 +75,7 @@ impl From<QueryError> for FactsError {
 
 /// The live store's answer to the validator's [`ProjectFacts`]: each method
 /// forwards to the query function of the same name (`showcase_annotation` to
-/// [`showcase_annotation_row`]). `Project::load` builds it over the freshly
+/// `showcase_annotation_row`). `Project::load` builds it over the freshly
 /// loaded connection.
 pub struct LiveProjectFacts<'conn> {
     conn: &'conn Connection,
@@ -188,7 +188,7 @@ impl ProjectFacts for LiveProjectFacts<'_> {
 ///
 /// Language resolution for labels:
 /// - `text`/`richtext` values are returned as-is (all langs); the renderer picks the matching
-///   language tag from the multi-valued set (Decision 5).
+///   language tag from the multi-valued set.
 /// - `link` target labels and `list_value` node labels are resolved to `lang` inside this function
 ///   (with fallback: requested → any first present).
 pub(crate) fn get_resource(conn: &Connection, id: &str, lang: &Lang) -> Result<Option<Resource>, QueryError> {
@@ -855,7 +855,7 @@ fn build_where(wheres: &[WhereClause]) -> Result<(String, Vec<rusqlite::types::V
                 }
                 // All values in an In clause must share the same type column.
                 // Pick from the first value; mixed types would yield no rows
-                // rather than an error (accepted — BACKLOG, Step 11).
+                // rather than an error (accepted).
                 let (col, _) = value_col_and_param(&values[0])?;
                 let placeholders = values.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
                 fragment.push_str(&format!(
@@ -926,9 +926,9 @@ fn build_where(wheres: &[WhereClause]) -> Result<(String, Vec<rusqlite::types::V
                 // ⚠️ PERFORMANCE: this is a CORRELATED subquery — SQLite re-runs
                 // it once per candidate row, so its inner lookup must be an
                 // index *seek*, never a scan. That is what
-                // `idx_properties_target(target_id, resource_id)` buys: with the
-                // older single-column `(target_id)` index SQLite seeked target_id
-                // and then scanned the whole bucket for that target hunting for
+                // `idx_properties_target(target_id, resource_id)` buys: with a
+                // single-column `(target_id)` index SQLite seeks target_id
+                // and then scans the whole bucket for that target hunting for
                 // `resource_id = r.id`, making every narrowed browse cost
                 // O(candidate rows x rows sharing the target) — 15.6 s for HdM's
                 // `?source=ib` (5,160 of 8,942 Performances). Don't narrow that
@@ -977,16 +977,15 @@ fn build_where(wheres: &[WhereClause]) -> Result<(String, Vec<rusqlite::types::V
 ///
 /// Sorts `searches` internally so callers can pass config-declaration order
 /// and still get the same table name every time (the boot builder and the
-/// bin's request-time lookup must derive the *same* name or a request hits
+/// host's request-time lookup must derive the *same* name or a request hits
 /// `no such table`). Sanitizes `class` and each search property name to
 /// `[A-Za-z0-9_]` (every other character replaced with `_`), then returns
 /// `search_<sanitized class>_<sorted sanitized names joined by _>`.
 ///
 /// Deterministic but not provably injective — e.g. `"a-b"` and `"a_b"` both
 /// sanitize to `"a_b"`, so two distinct (class, searches) inputs could
-/// theoretically collide on the same table name. Acceptable for now
-/// (documented limitation, not a bug to fix here); revisit with a hash
-/// suffix only if a real project needs it.
+/// theoretically collide on the same table name. An accepted
+/// limitation: a hash suffix is the remedy if a real project needs it.
 pub fn search_index_name(class: &str, searches: &[String]) -> String {
     fn sanitize(s: &str) -> String {
         s.chars()
@@ -1225,7 +1224,7 @@ pub fn data_arks(conn: &Connection) -> Result<DataArks, QueryError> {
 /// Mirrors `class_exists` — uses `EXISTS` so SQLite can short-circuit on the
 /// first matching row. Returns `Ok(false)` for an absent parent (not an error).
 ///
-/// Called from the boot validator (`check_compound_viewer_data` — step 5).
+/// Called from the boot validator (`check_compound_viewer_data`).
 pub(crate) fn compound_has_parts(conn: &Connection, parent_id: &str) -> Result<bool, QueryError> {
     let exists: bool = conn
         .query_row(
@@ -1245,8 +1244,8 @@ pub(crate) fn compound_has_parts(conn: &Connection, parent_id: &str) -> Result<b
 /// known at request time). A child id with no `resources` row contributes no
 /// class. Empty result ⇒ no members to validate against (not an error).
 ///
-/// Used by the `compound-viewer media="…"` boot validator (Incunabula Slice 2
-/// step 6b) to pick the class(es) `validate::media_property::check_single_media_property`
+/// Used by the `compound-viewer media="…"` boot validator
+/// to pick the class(es) `validate::media_property::check_single_media_property`
 /// runs against.
 pub(crate) fn compound_member_classes(conn: &Connection, parent_id: Option<&str>) -> Result<Vec<String>, QueryError> {
     let mut stmt = conn
@@ -1279,10 +1278,9 @@ pub(crate) fn compound_member_classes(conn: &Connection, parent_id: Option<&str>
 /// member has no `name` value at all, the aggregate is `NULL` and this
 /// function falls back to the member's `id` — `name` is never empty.
 ///
-/// Using the literal `"name"` here mirrors existing behavior:
-/// `compound_viewer`/`resource_list` already hardcode `Some("name")` via
-/// `resolve_title_str`. Generalizing to a per-class configured
-/// `title-property` is a BACKLOG item, not built here.
+/// The literal `"name"` here mirrors `compound_viewer`/`resource_list`,
+/// which hardcode `Some("name")` via `resolve_title_str`. A per-class
+/// configured `title-property` is not built.
 ///
 /// Returns an empty `Vec` when `parent_id` has no `compound_parts` rows
 /// (not an error — mirrors `compound_has_parts`'s empty-not-error semantics).
@@ -1332,10 +1330,10 @@ pub(crate) fn compound_part_headers(
     Ok(headers)
 }
 
-// ── Incoming links (reverse link resolution, Slice 5 G7a) ─────────────────────
+// ── Incoming links (reverse link resolution) ──────────────────────────────────
 
-/// Result-column indices of the OPTIONAL `incoming_links` columns (HdM Slice
-/// 3 / G3). The eight base columns are always `0..=7`; each optional column is
+/// Result-column indices of the OPTIONAL `incoming_links` columns.
+/// The eight base columns are always `0..=7`; each optional column is
 /// appended only when its spec field asks for it, so its index varies.
 #[derive(Debug, Default, Clone, Copy)]
 struct IncomingExtraCols {
@@ -2145,7 +2143,7 @@ pub(crate) fn link_targets(conn: &Connection, link_id: &str) -> Result<Option<Ve
     Ok(Some(rows))
 }
 
-// ── Embedded-media hydration (plan step 6a/6b) ────────────────────────────────
+// ── Embedded-media hydration ──────────────────────────────────────────────────
 
 /// Return the ordered list of target Image resource ids a host resource
 /// points at via its `link`-typed `property`, in `properties.seq` order.
@@ -2372,7 +2370,7 @@ fn build_property_value(
 /// present. Returns `None` when the target does not exist or has no `name`
 /// property.
 ///
-/// N+1: called once per link row. To be batched in Phase 5.
+/// N+1: called once per link row.
 fn get_resource_label(conn: &Connection, target_id: &str, lang: &Lang) -> Result<Option<String>, QueryError> {
     // Fetch all `name` rows for the target (implicitly confirms existence).
     let mut stmt = conn
@@ -2599,8 +2597,8 @@ pub(crate) fn property_value_types_on_class(
 /// resource contribute (a dangling target contributes no class — that case
 /// is separately flagged by `dangling_link_targets`/`UnknownLinkTarget`).
 ///
-/// Used by the `media="…"` boot validator (embedded-media plan
-/// step 5) to check that a `media` property's link targets belong to a class
+/// Used by the `media="…"` boot validator
+/// to check that a `media` property's link targets belong to a class
 /// whose resources carry `representations` rows (image-like).
 pub(crate) fn link_target_classes_on_class(
     conn: &Connection,
@@ -2628,8 +2626,8 @@ pub(crate) fn link_target_classes_on_class(
 
 /// Return `true` when at least one resource of `class` that carries a `link`
 /// value through any of `link_properties` has NO value for `property` — i.e.
-/// some `incoming-links` row would lack it (HdM Slice 3,
-/// `SparseIncomingLinksRowProperty`). Scoped to the linking resources, not the
+/// some `incoming-links` row would lack it
+/// (`SparseIncomingLinksRowProperty`). Scoped to the linking resources, not the
 /// whole class: a source resource that links nowhere can never be a row.
 /// `link_properties` empty ⇒ `false`.
 pub(crate) fn linking_resource_lacks_property(
@@ -3369,9 +3367,9 @@ mod tests {
 
     #[test]
     fn get_representations_reads_alt_and_attribution() {
-        // Verify that the new `alt` and `attribution` columns round-trip
+        // Verify that the `alt` and `attribution` columns round-trip
         // correctly through `get_representations` when they are non-NULL.
-        // Also exercises the `seq` index shift (was col 4, now col 6).
+        // Also exercises the `seq` column index (col 6).
         let conn = Connection::open_in_memory().expect("in-memory db should open");
         conn.pragma_update(None, "foreign_keys", true).expect("pragma should apply");
         conn.execute_batch(SCHEMA_SQL).expect("schema should apply");
@@ -3404,8 +3402,8 @@ mod tests {
 
     #[test]
     fn get_representations_null_alt_and_attribution_give_none() {
-        // Verify NULL columns round-trip to `None` (the existing dormant-column
-        // behaviour must remain intact when alt/attribution are absent).
+        // Verify NULL columns round-trip to `None` (the dormant-column
+        // behaviour when alt/attribution are absent).
         let conn = Connection::open_in_memory().expect("in-memory db should open");
         conn.pragma_update(None, "foreign_keys", true).expect("pragma should apply");
         conn.execute_batch(SCHEMA_SQL).expect("schema should apply");
@@ -4314,10 +4312,10 @@ mod tests {
 
     /// Resources with integer sort values including single- and double-digit
     /// numbers must sort in NUMERIC order (1, 2, 9, 10, 11, 12), NOT lexical
-    /// order (1, 10, 11, 12, 2, 9). This is a regression guard for the
-    /// original CAST(value_int AS TEXT) approach, which produced lexical sort.
+    /// order (1, 10, 11, 12, 2, 9), which a CAST(value_int AS TEXT) would
+    /// produce.
     ///
-    /// The fix: MIN(value_int) with NUMERIC affinity (no text cast) in the
+    /// MIN(value_int) with NUMERIC affinity (no text cast) in the
     /// language-aware COALESCE — integer values sort correctly because
     /// SQLite applies NUMERIC affinity when comparing/ordering INTEGER columns.
     #[test]
@@ -4868,7 +4866,7 @@ mod tests {
         assert!(headers.is_empty(), "parent with no compound_parts rows should return []");
     }
 
-    // ── incoming_links (Slice 5 G7a) ──────────────────────────────────────────
+    // ── incoming_links ────────────────────────────────────────────────────────
     //
     // Fixture: target strip T1 (and T2), compounds B1/B2 (class Book), Pages:
     // - P_a: B1 seq 2, name "zeta", strip-left → T1
@@ -4931,7 +4929,7 @@ mod tests {
         vec!["strip-left".to_owned(), "strip-right".to_owned()]
     }
 
-    /// An ungrouped spec with none of the G3 row options — the Incunabula
+    /// An ungrouped spec with none of the row options — the Incunabula
     /// `/strips/:id` shape.
     fn flat_spec(class: &str, properties: &[String], order: IncomingOrder, limit: u32) -> IncomingLinksSpec {
         IncomingLinksSpec {
@@ -4947,8 +4945,8 @@ mod tests {
         }
     }
 
-    /// The pre-G3 positional call shape, kept so the flat-list tests read as
-    /// before; builds a [`flat_spec`] and runs the real `incoming_links`.
+    /// A positional call shape for the flat-list tests; builds a
+    /// [`flat_spec`] and runs the real `incoming_links`.
     fn incoming_links_flat(
         conn: &Connection,
         target_id: &str,
@@ -5333,7 +5331,7 @@ mod tests {
     }
 
     /// The Incunabula `/strips/:id` shape (ungrouped, no row options) must
-    /// run LITERALLY the pre-G3 statement: every G3 lookup is emitted only
+    /// run LITERALLY the base statement: every optional lookup is emitted only
     /// when its spec field is `Some`.
     #[test]
     fn incoming_links_ungrouped_sql_is_unchanged() {
@@ -5374,7 +5372,7 @@ mod tests {
         assert_eq!(incoming_links_statement(&via, "T1", &lang).sql, PRE_G3_NAME_ORDER);
     }
 
-    // ── incoming_links grouped rows (HdM Slice 3 / G3) ────────────────────────
+    // ── incoming_links grouped rows ───────────────────────────────────────────
     //
     // Fixture: target Work W1; Performances link to it via `work`:
     // - Q1: decade D1840 (seq 1), genre "Oper", date "12.3.1841", sort-key "1841-03-12", source
@@ -5634,7 +5632,7 @@ mod tests {
         assert_eq!(result.total, 60, "the total stays uncapped");
     }
 
-    // ── media_item_ids / media_thumb_uris (embedded-media plan step 6a/6b) ────
+    // ── media_item_ids / media_thumb_uris ─────────────────────────────────────
     //
     // Fixture: CH_001 (a Character) → three Image targets (I_001, I_002,
     // I_003) via the `image` link property, seq 2, 0, 1 (deliberately out of
@@ -5835,7 +5833,7 @@ mod tests {
     }
 
     /// `TargetIn` with an empty list emits `AND 0` (no match).
-    /// This is the defensive dead branch — the bin guards against this.
+    /// This is the defensive dead branch — `query::page` guards against this.
     #[test]
     fn target_in_empty_ids_matches_nothing() {
         let conn = setup_facet_db();
@@ -5847,18 +5845,18 @@ mod tests {
 
     // ── WhereClause::Search / search_index_name ──────────────────────────────
 
-    /// Query-plan regression guard for the G11 performance defect (plan step 13).
+    /// Query-plan regression guard for the cost of facet narrowing.
     ///
-    /// The *deterministic* half of G11: `hdm_performances_timing`
-    /// (`bin/tests/smoke.rs`) measures wall-clock and therefore stays
+    /// The *deterministic* half of that guard: `hdm_performances_timing`
+    /// (`dsp-incubator cpe/bin/tests/smoke.rs`) measures wall-clock and therefore stays
     /// `#[ignore]`d, but the shape of the plan is a hard fact that does not
     /// vary with the machine, so it can and does gate CI.
     ///
     /// `build_where`'s `TargetIn` arm emits a CORRELATED subquery, re-evaluated
     /// once per candidate row. It is only affordable if SQLite can satisfy
     /// `pW.target_id = ? AND pW.resource_id = r.id` with a single index seek.
-    /// With the original `idx_properties_target ON properties(target_id)` it
-    /// could not: it seeked `target_id` and then SCANNED that target's whole
+    /// With a single-column `idx_properties_target ON properties(target_id)` it
+    /// cannot: it seeks `target_id` and then SCANS that target's whole
     /// bucket looking for `resource_id`, making a narrowed browse cost
     /// ~3-4 ms per matched row (HdM `?source=ib`: 15.6 s).
     ///
@@ -6664,7 +6662,7 @@ mod tests {
         }
     }
 
-    // ── Data ARKs (Slice 9) ───────────────────────────────────────────────────
+    // ── Data ARKs ─────────────────────────────────────────────────────────────
 
     #[test]
     fn data_arks_reads_both_tables_apart_and_omits_null_rows() {

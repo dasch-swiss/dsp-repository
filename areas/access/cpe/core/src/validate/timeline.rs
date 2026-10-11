@@ -1,4 +1,4 @@
-//! Lowering and boot checks of Incunabula's `timeline` (Slice 4), reached
+//! Lowering and boot checks of Incunabula's `timeline`, reached
 //! through its `validate::project_components` row.
 
 use super::attrs::{get_string_attr, get_typed_string_attr, require_integer_attr, require_string_attr};
@@ -8,8 +8,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticKind, Severity, ValidationReport};
 use crate::ir::Component;
 
 /// The shortest legal timeline axis, in years. The lanes variant draws one
-/// grid line every three years, so a shorter axis has no whole grid cell
-/// (Incunabula Slice 4, plan decision 6).
+/// grid line every three years, so a shorter axis has no whole grid cell.
 const TIMELINE_MIN_AXIS_SPAN: i64 = 3;
 
 /// Range-check a KDL axis integer (`i128`) into an `i32` year. `None` ⇒ out
@@ -25,7 +24,7 @@ fn timeline_axis_is_valid(axis_start: i32, axis_end: i32) -> bool {
     i64::from(axis_end) - i64::from(axis_start) >= TIMELINE_MIN_AXIS_SPAN
 }
 
-/// Lower a `timeline` node (Incunabula Slice 4).
+/// Lower a `timeline` node.
 ///
 /// `class`/`date-property`/`lane-property` are required strings
 /// (`require_string_attr`); `extent-property` is an optional string read with
@@ -91,7 +90,7 @@ pub(crate) fn lower_timeline(
     })
 }
 
-/// Data-dependent checks for one lowered `timeline` (Incunabula Slice 4) on
+/// Data-dependent checks for one lowered `timeline` on
 /// page `route` — see `check_single_timeline`. The class and properties are
 /// always literals. Reached through the timeline's `validate::project_components`
 /// row (`check_data`); a non-`Timeline` variant is ignored.
@@ -213,7 +212,7 @@ fn check_single_timeline(
 ///   absent-everywhere tier only;
 /// - a property absent from the data entirely → `UnknownTimelineProperty` (Error);
 /// - present in the data but carried by no resource of `class` (the union over the class — no
-///   per-resource coverage check, see `cpe/CLAUDE.md`'s `SparseProperty` note) →
+///   per-resource coverage check, see `dsp-incubator cpe/CLAUDE.md`'s `SparseProperty` note) →
 ///   `MissingTimelineProperty` (Error) for the date and lane, `SparseTimelineProperty` (Warning)
 ///   for the extent;
 /// - carried by the class with any stored `value_type` other than the role's →

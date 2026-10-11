@@ -23,12 +23,12 @@ pub(super) fn get_attr(raw: &crate::config::Component, key: &str) -> Option<Valu
 /// Get a named string attribute value from a raw component.
 ///
 /// Diagnostic-free by design: absent and present-but-wrong-typed both yield
-/// `None`, leaving the caller to decide whether that matters. This is now
-/// **only** for the `*_into_raw` raw-fallback siblings (which must never
+/// `None`, leaving the caller to decide whether that matters. This is **only**
+/// for the `*_into_raw` raw-fallback siblings (which must never
 /// double-report a value lowering already reported) and for the handful of
 /// config-internal pre-scans that run before lowering proper (e.g.
-/// `lower_page_body`'s `page_list_ids` pre-scan). Lowering itself no longer
-/// reads its own optional string attributes through this fn — it uses the
+/// `lower_page_body`'s `page_list_ids` pre-scan). Lowering itself does not read
+/// its own optional string attributes through this fn — it uses the
 /// REPORTING `get_typed_string_attr` (absent ⇒ `None`, present-but-wrong-typed
 /// ⇒ `InvalidAttributeType`) or, for required attributes, `require_string_attr`.
 ///
@@ -72,7 +72,7 @@ pub(super) fn get_string_attr(raw: &crate::config::Component, key: &str) -> Opti
 /// `resource-list`'s `id=`/`media=`, `resource-detail`'s `id=`/
 /// `title-property=`/`class=`/`media=`, `compound-viewer`'s `media=`/
 /// `picker=`, `search-bar`'s `placeholder=`/`scope=`, and `sort`'s
-/// `direction=` (Step 7). None of these is reachable from any `*_into_raw`
+/// `direction=`. None of these is reachable from any `*_into_raw`
 /// sibling — every raw sibling reads the corresponding attribute with the
 /// silent `get_string_attr` instead.
 pub(super) fn get_typed_string_attr(

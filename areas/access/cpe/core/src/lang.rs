@@ -3,10 +3,9 @@ use crate::ir::SiteConfig;
 /// The four built-in engine languages, in canonical order. Documents the
 /// chrome catalog's coverage in one place; **completeness is
 /// compile-time-guaranteed only across these four**. A project MAY declare a
-/// further language (`CONFIG_LANGUAGE.md` permits it if its own config-chrome
-/// completeness holds); such a page gets English engine chrome via the
-/// catalog's `L4::pick` `_ => en` arm — not a regression (identical to
-/// pre-catalog behaviour), just not "complete" in the sense the catalog
+/// further language (`dsp-incubator cpe/docs/CONFIG_LANGUAGE.md` permits it if its own
+/// config-chrome completeness holds); such a page gets English engine chrome via the
+/// catalog's `L4::pick` `_ => en` arm, which is not "complete" in the sense the catalog
 /// guarantees.
 pub const BUILTIN_LANGUAGES: [&str; 4] = ["en", "de", "fr", "it"];
 
@@ -58,8 +57,9 @@ pub fn resolve(preferences: &[String], site: &SiteConfig) -> Lang {
 /// Falls back to `"en"` when no preference matches.
 ///
 /// This is what lets the bin's site index (which has no project to resolve
-/// a language against) obtain a [`Lang`] and reuse the `pub` engine chrome
-/// catalog (`cpe_components::chrome`) directly, rather than mirroring it bin-side.
+/// a language against) obtain a [`Lang`] and reuse the `pub` engine chrome catalog
+/// (`chrome` in `dsp-incubator cpe/components`) directly, rather than mirroring it
+/// bin-side.
 pub fn resolve_builtin(preferences: &[String]) -> Lang {
     resolve_against(preferences, &BUILTIN_LANGUAGES, "en")
 }
@@ -116,7 +116,7 @@ mod tests {
 
     /// "en-us" does not match "en" here because `resolve` uses plain equality.
     /// Region-stripping is the bin middleware's responsibility (tested at the
-    /// bin layer in Step 4), so after stripping "en-US" → "en" before calling
+    /// bin layer), so after stripping "en-US" → "en" before calling
     /// `resolve`.
     #[test]
     fn does_not_match_regional_subtag() {

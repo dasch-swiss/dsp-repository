@@ -1,13 +1,13 @@
 //! KDL config parsing: turn a `config.kdl` source string into a typed
 //! [`RawConfig`] IR. Parse only — KDL syntax errors are the *only* failure
 //! mode. Semantic validation (required fields, uniqueness, component
-//! typing, reference resolution, …) is Phase 2's job (`validate` module).
+//! typing, reference resolution, …) is the `validate` module's job.
 
 use crate::diagnostic::Span;
 use crate::ir::Value;
 
 /// A parsed `config.kdl`. Site-level metadata is flattened onto this
-/// struct (no `Site` type — see CONTEXT.md on "site"); pages carry
+/// struct (no `Site` type — see `dsp-incubator cpe/CONTEXT.md` on "site"); pages carry
 /// generic component bodies. Presence/shape is NOT validated here.
 ///
 /// `languages` and `theme` entries are captured with their raw [`Value`]
@@ -88,15 +88,14 @@ pub(crate) enum RawLabelTarget {
 
 /// One raw `labels` entry: a `property "…" { … }` or `class "…" { … }`
 /// child of the top-level `labels { }` block, with its key, per-language
-/// (singular) translations, and an optional per-language `plural`
-/// (search-bar plan step 5b, #178 reconciliation — see `ir::ClassLabel`).
+/// (singular) translations, and an optional per-language `plural` (see `ir::ClassLabel`).
 #[derive(Debug)]
 pub(crate) struct RawLabel {
     pub(crate) target: RawLabelTarget,
     pub(crate) key: Option<String>,
     pub(crate) translations: Vec<(String, String)>, // (lang, text), order preserved
     /// Parsed from an optional nested `plural { <lang> "…" … }` child.
-    /// Empty when no `plural` child is present (today's shape, #178) — this
+    /// Empty when no `plural` child is present — this
     /// is not an error, just "undeclared". Structurally parsed for both
     /// `property` and `class` targets (parsing is symmetric and simplest to
     /// implement once), but only `class` entries' `plural` is actually
@@ -124,20 +123,20 @@ pub(crate) struct Page {
 }
 
 /// A generic component node inside a page body. Per-component typing
-/// (resource-list, narrative, …) is Phase 2's job; here every component
-/// is captured structurally so Phase 2 can type and validate it.
+/// (resource-list, narrative, …) is validation's job (the `validate` module); here every
+/// component is captured structurally so validation can type and check it.
 #[derive(Debug)]
 pub(crate) struct Component {
     pub(crate) name: String,
     pub(crate) args: Vec<Value>,            // positional args, in order
     pub(crate) attrs: Vec<(String, Value)>, // named attributes, in order
     pub(crate) children: Vec<Component>,    // nested nodes (where/sort/facet/…)
-    pub(crate) span: Span,                  // source location, for Phase 2 errors
+    pub(crate) span: Span,                  // source location, for validation errors
 }
 
 /// What can go wrong while parsing `config.kdl`. A single variant by
 /// design: the parser has exactly one failure mode (KDL syntax error).
-/// Phase 2 adds validation variants in a sibling `validate` module.
+/// Validation failures are not variants of this type: the sibling `validate` module reports them.
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("failed to parse config.kdl")]
@@ -147,7 +146,7 @@ pub enum ConfigError {
 /// Parse `source` as a `config.kdl` document and walk it into a typed
 /// [`RawConfig`]. The only failure mode is a KDL syntax error; a
 /// structurally incomplete-but-syntactically-valid config parses fine,
-/// yielding `None`/empty fields for the Phase 2 validator to check.
+/// yielding `None`/empty fields for validation (the `validate` module) to check.
 ///
 /// Unknown top-level nodes are preserved in `unknown_top_level` with their
 /// spans so the validator can emit `UnexpectedTopLevelNode` for each.
@@ -199,7 +198,7 @@ pub(crate) fn parse(source: &str) -> Result<RawConfig, ConfigError> {
             "page" => {
                 config.pages.push(walk_page(node));
             }
-            // Unknown top-level nodes are preserved for validation (Phase 2).
+            // Unknown top-level nodes are preserved for validation (the `validate` module).
             name => {
                 config.unknown_top_level.push((name.to_owned(), span_of(node)));
             }
@@ -265,8 +264,7 @@ fn walk_site(site: &kdl::KdlNode, config: &mut RawConfig) {
                 // absent).
                 config.date_precision_word = first_raw_arg(node);
             }
-            // G11 copy override (Incunabula Slice 8, decision 9): raw
-            // capture so validate can reject a non-string argument.
+            // Copy override: raw capture so validate can reject a non-string argument.
             "footer-attribution" => {
                 config.footer_attribution = first_raw_arg(node);
             }
@@ -291,7 +289,7 @@ fn walk_site(site: &kdl::KdlNode, config: &mut RawConfig) {
                     None => Vec::new(),
                 };
             }
-            // Unknown site children are ignored — Phase 2 validation.
+            // Unknown site children are ignored here: checking them is validation's job.
             _ => {}
         }
     }
@@ -345,16 +343,14 @@ fn walk_chrome(chrome: &kdl::KdlNode) -> Vec<ChromeString> {
 
 /// Walk a top-level `labels { property "…" { … } class "…" { … } }` block.
 /// Each child node is `property` or `class`; any other child name is
-/// silently ignored here (Phase 2 validation is not this layer's job).
+/// silently ignored here (validation is not this layer's job).
 ///
 /// Each `property`/`class` node's own children are per-language `<lang>
 /// "…"` singular-translation nodes, EXCEPT a child node literally named
 /// `"plural"` — that one nests its OWN `<lang> "…"` children (a separate
 /// per-language plural translation set) and is deliberately excluded from
-/// the singular `translations` Vec (search-bar plan step 5b, #178
-/// reconciliation). Back-compat: a `property`/`class` entry with no
-/// `plural` child parses exactly as before this step — `plural` is simply
-/// `Vec::new()`.
+/// the singular `translations` Vec. A `property`/`class` entry with no
+/// `plural` child parses with `plural` as `Vec::new()`.
 fn walk_labels(labels: &kdl::KdlNode) -> Vec<RawLabel> {
     let children = match labels.children() {
         Some(c) => c,
@@ -531,7 +527,7 @@ site {
 "#;
         let cfg = parse(src).expect("valid KDL should parse");
         assert_eq!(cfg.title, Some("My Project".to_owned()));
-        // languages are now raw (Value, Span) pairs
+        // languages are raw (Value, Span) pairs
         assert_eq!(cfg.languages.len(), 2);
         assert_eq!(cfg.languages[0].0, Value::String("de".to_owned()));
         assert_eq!(cfg.languages[1].0, Value::String("en".to_owned()));
@@ -654,9 +650,7 @@ labels {
         assert_eq!(class.translations.len(), 1);
         assert_eq!(class.translations[0], ("en".to_owned(), "Character".to_owned()));
 
-        // Regression guard (search-bar plan step 5b, #178 back-compat): a
-        // class entry with NO `plural` child must still parse with an empty
-        // `plural` Vec, exactly as it did before this step existed.
+        // A class entry with NO `plural` child must parse with an empty `plural` Vec.
         assert!(
             property.plural.is_empty(),
             "property entry with no `plural` child must have plural: vec![]"
@@ -669,8 +663,7 @@ labels {
 
     #[test]
     fn parses_optional_plural_child_on_class_label() {
-        // search-bar plan step 5b, #178 reconciliation: an optional nested
-        // `plural { <lang> "…" … }` child under a `labels { class }` entry.
+        // An optional nested `plural { <lang> "…" … }` child under a `labels { class }` entry.
         // The bare `<lang> "…"` children remain the singular label,
         // unaffected by the `plural` child's presence.
         let src = r#"
@@ -735,7 +728,7 @@ site {
         let cfg = parse(src).expect("valid KDL should parse");
         assert_eq!(cfg.theme.len(), 1);
         assert_eq!(cfg.theme[0].name, "primary-color");
-        // theme values are now raw (Value, Span) pairs
+        // theme values are raw (Value, Span) pairs
         let (val, _span) = cfg.theme[0].value.as_ref().expect("theme var should have a value");
         assert_eq!(val, &Value::String("#1a5490".to_owned()));
     }
@@ -826,7 +819,7 @@ widget {}
 page id="home" route="/"
 "#;
         let cfg = parse(src).expect("unknown top-level node should not error");
-        // The stray `widget` node is now preserved in `unknown_top_level`
+        // The stray `widget` node is preserved in `unknown_top_level`
         // so the validator can emit UnexpectedTopLevelNode.
         assert_eq!(cfg.pages.len(), 1);
         assert_eq!(cfg.pages[0].id, Some("home".to_owned()));
@@ -836,7 +829,7 @@ page id="home" route="/"
         assert!(cfg.chrome.is_empty());
         assert!(cfg.labels.is_empty());
         assert!(cfg.theme.is_empty());
-        // Unknown top-level nodes are captured for Phase 2 validation.
+        // Unknown top-level nodes are captured for validation (the `validate` module).
         assert_eq!(cfg.unknown_top_level.len(), 1);
         assert_eq!(cfg.unknown_top_level[0].0, "widget");
     }
@@ -844,7 +837,7 @@ page id="home" route="/"
     #[test]
     fn first_site_block_wins() {
         // The walk takes the first `site` block and ignores later ones
-        // (counting them is Phase 2 validation, not parsing).
+        // (counting them is validation, not parsing).
         let src = r#"
 site {
     title "First"

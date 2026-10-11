@@ -1,7 +1,7 @@
 //! Config-internal validation and lowering: raw IR → typed IR.
 //!
 //! The entry point for callers outside this module is [`load_config`]: it
-//! parses the KDL into a [`RawConfig`], then runs `validate_with_data` with a
+//! parses the KDL into a `RawConfig`, then runs `validate_with_data` with a
 //! [`ValidationContext`] from the caller. Validation accumulates all
 //! diagnostics in a [`ValidationReport`], **never short-circuiting**.
 //! A partial typed IR is built alongside; it is discarded on error and
@@ -72,12 +72,12 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
     // ── Site checks ───────────────────────────────────────────────────────────
     let site_result = check_and_lower_site(raw, ctx, &mut report);
 
-    // Default language for the narrative existence probe (D3): a narrative
-    // `file` must resolve to the base file OR the default-language variant —
-    // the two rungs D1's render-time fallback chain guarantees will render.
-    // `None` only when site lowering itself failed (already an error state);
-    // in that case keep the old, more lenient "any variant" probe rather than
-    // inventing extra noise on top of an already-broken site block.
+    // Default language for the narrative existence probe: a narrative `file`
+    // must resolve to the base file OR the default-language variant — the two
+    // rungs the render-time fallback chain guarantees will render. `None` only
+    // when site lowering itself failed (already an error state); in that case
+    // keep the more lenient "any variant" probe rather than inventing extra
+    // noise on top of an already-broken site block.
     let default_language: Option<String> = site_result.as_ref().map(|s| s.default_language.clone());
 
     // ── Page checks ───────────────────────────────────────────────────────────
@@ -106,12 +106,12 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
         // — acceptable for an advisory on a boot that hard-fails anyway.
         check_class_plurals(&site.class_labels, &mut report);
 
-        // ── Property-group + incoming-links captions (G8, G7) ─────────────────
+        // ── Property-group + incoming-links captions ─────────────────
         // Same placement rationale as `check_class_plurals`: config-internal,
         // needs the lowered `site.chrome`, runs before the fork.
         check_group_labels(&pages, &site.chrome, &mut report);
 
-        // ── Ordering-option labels (G9) ───────────────────────────────────────
+        // ── Ordering-option labels ───────────────────────────────────────
         // Same placement rationale: config-internal, needs `site.chrome`.
         check_order_labels(&pages, &site.chrome, &mut report);
 
@@ -298,8 +298,8 @@ pub(crate) fn validate_with_data(
     //
     // Strategy: call validate_inner() which returns (Some(config), report) or
     // (None, report). Unlike the public `validate` wrapper, this keeps the
-    // report even on success, because config-internal lowering can now also
-    // raise Warning-severity diagnostics (`MissingClassPlural`) that
+    // report even on success, because config-internal lowering can also raise
+    // Warning-severity diagnostics (`MissingClassPlural`) that
     // must reach `Project::warnings()`.
     match validate_inner(raw, ctx) {
         (Some(config), config_report) => {
@@ -317,12 +317,11 @@ pub(crate) fn validate_with_data(
             check_narrative_for_data(&config, data, &mut extra);
             check_incoming_links_data(&config, data, &mut extra);
             check_resource_list_data(&config, data, &mut extra);
-            // `media="…"` (embedded-media plan step 5, extended by Step 11
-            // to feed compound-viewer media into the same map): registration
-            // order is detail media -> compound-viewer media -> resource-list
-            // media, each contributing to (or checking against) one shared
-            // class->(property, page) map, so the list check sees every
-            // earlier registration's ConflictingMediaProperty potential.
+            // `media="…"`: registration order is detail media ->
+            // compound-viewer media -> resource-list media, each contributing
+            // to (or checking against) one shared class->(property, page) map,
+            // so the list check sees every earlier registration's
+            // ConflictingMediaProperty potential.
             let mut media_map = check_resource_detail_media(&config, data, &mut extra);
             check_compound_viewer_media(&config, data, &mut media_map, &mut extra);
             check_resource_list_media(&config, &media_map, data, &mut extra);
@@ -397,8 +396,8 @@ pub(crate) fn validate_with_data(
     }
 }
 
-/// A `resource-detail class="…"` existence check (Incunabula-hardening batch
-/// 3 item 2), mirroring `UnknownResourceListClass`/`UnknownIncomingLinksClass`/
+/// A `resource-detail class="…"` existence check, mirroring
+/// `UnknownResourceListClass`/`UnknownIncomingLinksClass`/
 /// `UnknownTimelineClass`. `Ok(false)` pushes `UnknownResourceDetailClass`
 /// (Error); `Err(e)` pushes `InternalQueryError`. Returns whether the class is
 /// known — callers use this to skip cascading checks (property/media) that
@@ -488,7 +487,7 @@ fn check_resource_detail_data(config: &ValidatedConfig, data: &dyn ProjectFacts,
                 // sparse half over the class itself.
                 if id_val.starts_with('$') {
                     // Skip the properties-on-class check when the class is
-                    // unknown (Step 9's cascade rule) — it already returns
+                    // unknown (the cascade rule) — it already returns
                     // silently on an empty property set, but skip it
                     // explicitly rather than relying on that.
                     if let Some(class_val) = class {
@@ -525,7 +524,7 @@ fn check_resource_detail_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts,
             // The class existence check runs before the `id_val … continue`
             // below, mirroring the success arm — it must not depend on `id`
             // being present. A wrong-typed `class` is `None` here (lowering
-            // already reported it, Step 7), so it's silently skipped.
+            // already reported it), so it's silently skipped.
             let class_val = get_string_attr(raw_comp, "class");
             let class_known = match &class_val {
                 Some(c) => check_resource_detail_class(c, page_route, data, report),
@@ -557,7 +556,7 @@ fn check_resource_detail_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts,
                         .collect()
                 });
 
-            // Extract every `group` child's members (G8) — positional string
+            // Extract every `group` child's members — positional string
             // args, label ignored (a missing label is lowering's Error, never
             // re-reported here).
             let mut group_members: Vec<String> = raw_comp
@@ -614,7 +613,7 @@ fn check_resource_detail_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts,
                 // Raw sibling of the success arm's parameterised branch: the
                 // class-keyed sparse half only. An absent/wrong-typed `class`
                 // silently continues (`get_string_attr` never reports). Skip
-                // when the class is unknown (Step 9's cascade rule).
+                // when the class is unknown (the cascade rule).
                 if let Some(ref class_val) = class_val {
                     if class_known {
                         check_resource_detail_properties_on_class(
@@ -636,9 +635,8 @@ fn check_resource_detail_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts,
 }
 
 /// `UnknownNarrativeForResource` (Warning) for every `narrative-for` entry on a
-/// lowered `resource-detail` whose resource id does not exist in the data
-/// (Incunabula Slice 3 / O6, decision 7). Runs on `$param` pages too — the
-/// `narrative-for` id is always a literal.
+/// lowered `resource-detail` whose resource id does not exist in the data. Runs
+/// on `$param` pages too — the `narrative-for` id is always a literal.
 fn check_narrative_for_data(config: &ValidatedConfig, data: &dyn ProjectFacts, report: &mut ValidationReport) {
     for page in &config.pages {
         for component in &page.body {
@@ -698,8 +696,8 @@ fn check_single_narrative_for(resource_id: &str, route: &str, data: &dyn Project
     }
 }
 
-/// Data-dependent checks for every lowered `resource-detail { incoming-links
-/// … }` (Incunabula Slice 5 / G7) — see `check_single_incoming_links`. Runs on
+/// Data-dependent checks for every lowered `resource-detail { incoming-links …
+/// }` — see `check_single_incoming_links`. Runs on
 /// `$param` pages too: the spec's class and properties are always literals.
 fn check_incoming_links_data(config: &ValidatedConfig, data: &dyn ProjectFacts, report: &mut ValidationReport) {
     for page in &config.pages {
@@ -759,7 +757,7 @@ fn check_incoming_links_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts, 
             let detail_class = get_string_attr(raw_comp, "class");
             let host_class = resolved_detail_class(&detail_id, &detail_class, data)
                 .filter(|host| matches!(data.class_exists(host), Ok(true)));
-            // HdM Slice 3 row properties, read with the SILENT reader (a
+            // The row properties, read with the SILENT reader (a
             // wrong-typed one was already reported by lowering) in the success
             // arm's order; `group-by="via"` names no source property.
             let group_by = get_string_attr(child, "group-by").filter(|g| g != "via");
@@ -797,8 +795,7 @@ fn check_incoming_links_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts, 
 ///   a target set that is empty (every link dangling) also skips it — that is `UnknownLinkTarget`'s
 ///   business, not this one's.
 ///
-/// Then the HdM Slice 3 row properties (`rows`) — see
-/// `check_incoming_row_property`.
+/// Then the row properties (`rows`) — see `check_incoming_row_property`.
 ///
 /// Every query failure is `InternalQueryError`, never dropped. Never
 /// short-circuits across properties.
@@ -968,7 +965,7 @@ fn check_single_incoming_links(
     }
 }
 
-/// The HdM Slice 3 (G3) row properties of one `incoming-links` child, as fed
+/// The row properties of one `incoming-links` child, as fed
 /// to `check_single_incoming_links` by BOTH `validate_with_data` arms. Each
 /// `Some` names a property of the source resource; `group_by` is only a
 /// property `group-by=` (the reserved `via` names none).
@@ -1009,7 +1006,7 @@ struct IncomingRowTarget<'a> {
     route: &'a str,
 }
 
-/// One `incoming-links` row property (HdM Slice 3), tiered like the link
+/// One `incoming-links` row property, tiered like the link
 /// properties but scoped to the source class:
 ///
 /// - absent from the data, or (class known) carried by no resource of the source class →
@@ -1152,7 +1149,7 @@ fn check_resource_list_data(config: &ValidatedConfig, data: &dyn ProjectFacts, r
                 if class.starts_with('$') {
                     continue;
                 }
-                // Gloss, chip, `order-by` (G9) and `order-name-property`
+                // Gloss, chip, `order-by` and `order-name-property`
                 // properties are validated for existence alongside where/sort
                 // props (same two-tier hard-fail/sparse-warn treatment).
                 let gloss_props: Vec<&str> = match gloss {
@@ -1389,7 +1386,7 @@ fn check_compound_viewer_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts,
     }
 }
 
-/// The `compound-viewer` `member-links` data checks (book-page step 6a),
+/// The `compound-viewer` `member-links` data checks,
 /// shared by both arms. The member classes come from the data (a literal
 /// `source`'s own parts, or every compound member for a `$param`), as for
 /// `check_single_compound_viewer_media`. A property on no member class is the
@@ -1496,9 +1493,8 @@ fn check_single_compound_viewer(source: &str, data: &dyn ProjectFacts, report: &
     }
 }
 
-/// Run `compound-viewer media="…"` validation (Incunabula Slice 2 step 6b,
-/// decision 11; extended to feed the shared class→media map in Step 11)
-/// across all pages of an already-validated config.
+/// Run `compound-viewer media="…"` validation across all pages of an
+/// already-validated config.
 ///
 /// Unlike `check_compound_viewer_data`, a `$param` source is NOT skipped: its
 /// member classes come from the data (every `compound_parts` child's class),
@@ -1525,12 +1521,13 @@ fn check_compound_viewer_media(
 }
 
 /// Raw-fallback sibling of `check_compound_viewer_media` (the both-arms rule,
-/// `cpe/CLAUDE.md`). `source` is required, so an absent/wrong-typed one was
-/// already reported by lowering's `require_string_attr` — silent `continue`.
-/// `media` is read through the silent `get_string_attr` (the `*_into_raw`
-/// contract); a present-but-wrong-typed `media` is now reported by lowering
-/// (`get_typed_string_attr`, Step 7), so this fn skips it too — one mistake,
-/// one diagnostic.
+/// `dsp-incubator cpe/CLAUDE.md`). `source` is required, so an
+/// absent/wrong-typed one was already reported by lowering's
+/// `require_string_attr` — silent `continue`. `media` is read through the
+/// silent `get_string_attr` (the `*_into_raw` contract); a
+/// present-but-wrong-typed `media` is reported by lowering
+/// (`get_typed_string_attr`), so this fn skips it too — one mistake, one
+/// diagnostic.
 fn check_compound_viewer_media_into_raw(
     raw: &RawConfig,
     data: &dyn ProjectFacts,
@@ -1651,7 +1648,7 @@ fn check_media_conflict(
 ///
 /// `component` names the declaration kind raising the diagnostic (e.g.
 /// `"compound-viewer"`), making the message source-neutral without a
-/// dedicated `DiagnosticKind` field for it (the plan's `{component}`
+/// dedicated `DiagnosticKind` field for it (the message's `{component}`
 /// placeholder).
 fn register_media_class(
     media_map: &mut std::collections::HashMap<String, (String, String)>,
@@ -1902,14 +1899,10 @@ fn check_search_bar_data_into_raw(raw: &RawConfig, data: &dyn ProjectFacts, repo
 /// elsewhere, by `check_search_bar_data`, for existence/type, not reservation).
 ///
 /// MUST stay in sync with the query keys the bin or engine renderers read
-/// (`bin/src/lib.rs`, `bin/src/router.rs`, and — since grid-mode's `?view=`,
-/// read by `component::resource_list::parse_view_param` inside the engine,
-/// not the bin — the engine's own component renderers too). Centralising the
-/// set is a separate (namespacing) backlog item; this const duplicates the
-/// knowledge deliberately in v1. The `?q=` reader itself is wired in a later
-/// step (search-bar plan step 6); `"q"` is added here proactively per the
-/// plan so a facet named `q` is rejected from the moment the reservation is
-/// documented, not only once the reader lands.
+/// (`dsp-incubator cpe/bin/src/lib.rs`, `dsp-incubator cpe/bin/src/router.rs`, and — since
+/// grid-mode's `?view=`, read by `component::resource_list::parse_view_param` inside the engine,
+/// not the bin — the engine's own component renderers too). This const duplicates the
+/// knowledge deliberately.
 const RESERVED_FACET_PROPERTIES: &[&str] = &[
     "accent",
     "appearance",
@@ -1968,7 +1961,7 @@ fn check_single_facet(
         return;
     }
 
-    // Only the `list` kind is implemented in this slice; all others are
+    // Only the `list` kind is implemented; all others are
     // valid IR kinds but unsupported here → hard-fail one diagnostic per facet.
     if facet.kind != FacetKind::List {
         let kind_str = match facet.kind {
@@ -2427,7 +2420,7 @@ fn check_single_resource_list<'a>(
             WhereClause::In { .. } | WhereClause::TargetIn { .. } => {}
             // `Search` carries no config-time-checkable value — its
             // target-class + searchable-property checks are a validation
-            // concern owned by `check_search_bar_data` (step 5), not this
+            // concern owned by `check_search_bar_data`, not this
             // generic where-value-compatibility pass.
             WhereClause::Search { .. } => {}
         }
@@ -2661,9 +2654,10 @@ fn check_malformed_property_rows(data: &dyn ProjectFacts, report: &mut Validatio
 }
 
 /// Slack on every annotation coordinate comparison, so a box that touches an
-/// image edge after a float round-trip still counts as inside. The store
-/// builder's geometry module (`store-build/src/generic/geometry.rs`) checks
-/// with the same value, and a test there reads the line below; keep the two equal.
+/// image edge after a float round-trip still counts as inside. The store builder's
+/// geometry module (`dsp-incubator cpe/store-build/src/generic/geometry.rs`)
+/// checks with the same value, and a test there reads the line below; keep the two
+/// equal.
 const ANNOTATION_TOLERANCE: f64 = 1e-9;
 
 /// The rules one `annotations` row breaks (dsp-incubator
@@ -2839,8 +2833,9 @@ mod annotation_check_tests {
 /// `^https://ark\.dasch\.swiss/ark:/72163/1/[0-9A-F]{4}/[A-Za-z0-9_=]+$`?
 /// Hand-written: the engine has no regex dependency. A version ARK's
 /// `.<timestamp>` suffix, `http:`, another host, a trailing `/`, a lowercase
-/// shortcode, an unescaped `-` and `''` all fail. `tools/dao-lift/src/ark.rs`
-/// holds the same matcher for `cpe-export`'s own check.
+/// shortcode, an unescaped `-` and `''` all fail. `dsp-incubator
+/// cpe/tools/dao-lift/src/ark.rs` holds the same matcher for `cpe-export`'s own
+/// check.
 pub(crate) fn is_plain_data_ark(s: &str) -> bool {
     let Some((shortcode, id)) = s.strip_prefix(crate::ir::DATA_ARK_PREFIX).and_then(|rest| rest.split_once('/')) else {
         return false;
@@ -2949,11 +2944,10 @@ fn check_link_targets(data: &dyn ProjectFacts, report: &mut ValidationReport) {
         Ok(p) => p,
         Err(e) => {
             // Unexpected query error on a freshly loaded DB — the query itself
-            // failed, not "a dangling link target was found". Previously this
-            // borrowed the sibling `check_malformed_property_rows`'s
-            // MalformedPropertyRow kind (rather than the misleading
-            // Warning-severity UnknownLinkTarget with empty ids); now it gets
-            // its own InternalQueryError kind instead of borrowing a sibling's.
+            // failed, not "a dangling link target was found". It gets its own
+            // InternalQueryError kind: not the sibling
+            // `check_malformed_property_rows`'s MalformedPropertyRow, and not
+            // the misleading Warning-severity UnknownLinkTarget with empty ids.
             push_internal_query_error(
                 report,
                 "link target existence",
@@ -3438,7 +3432,7 @@ fn detail_property_names<'a>(
 /// the id-keyed `properties_present_on_class_of` lookup applies — but the
 /// declared `class` is exactly as good an input for the sparse half, and it is
 /// the common case (Incunabula's, HdM's and Alice's detail pages are all
-/// parameterised), which previously got no coverage at all.
+/// parameterised).
 ///
 /// Same `SparseProperty` semantics as the literal-id path: a property absent
 /// from **every** resource of the class warns; a merely uneven one does not.
@@ -3696,7 +3690,7 @@ fn check_and_lower_site(
             Some(id) => id.clone(),
             None => {
                 // No id: skip lowering but don't add an error here (chrome id
-                // validation is not in this step's scope).
+                // validation is not this check's scope).
                 continue;
             }
         };
@@ -3752,15 +3746,15 @@ fn check_and_lower_site(
             }
         }
 
-        // IncompleteLabelTranslation (plural) — search-bar plan step 5b, #178
-        // reconciliation. Same completeness rule as the singular translations
-        // above, applied to `rl.plural`, but ONLY when a `plural` block is
-        // present at all (`rl.plural.is_empty()` ⇒ undeclared, not a
-        // violation — skip the check entirely) and ONLY for `class` entries
-        // (properties have no plural concept; `rl.plural` is simply never
-        // read for the `Property` arm). Reuses `IncompleteLabelTranslation`
-        // rather than a new `DiagnosticKind` — the message text says
-        // "PLURAL" so an operator can tell which block failed.
+        // IncompleteLabelTranslation (plural). Same completeness rule as the
+        // singular translations above, applied to `rl.plural`, but ONLY when a
+        // `plural` block is present at all (`rl.plural.is_empty()` ⇒
+        // undeclared, not a violation — skip the check entirely) and ONLY for
+        // `class` entries (properties have no plural concept; `rl.plural` is
+        // simply never read for the `Property` arm). Reuses
+        // `IncompleteLabelTranslation` rather than a new `DiagnosticKind` — the
+        // message text says "PLURAL" so an operator can tell which block
+        // failed.
         if rl.target == RawLabelTarget::Class && !rl.plural.is_empty() && !valid_languages.is_empty() {
             for lang in &valid_languages {
                 let has_translation = rl.plural.iter().any(|(l, _)| l == lang);
@@ -3901,21 +3895,20 @@ fn check_and_lower_site(
     // `labels::nav_label` resolves the id first. A label that matches a
     // chrome-string id the project ITSELF declares is therefore the intended
     // bilingual-nav idiom, not an accident — every nav item in all three
-    // shipped projects is written that way. A former
-    // `NavLabelChromeIdCollision` Warning fired on exactly that idiom (14
-    // warnings across 3 of 3 projects) and could not distinguish it from an
-    // accident, because the only ids it compared against were the project's
-    // own declared ones; it was pure boot-log noise and is removed. Don't
-    // reintroduce it without a set of ids the project did NOT declare to
-    // compare against.
+    // shipped projects is written that way. A `NavLabelChromeIdCollision`
+    // Warning on that idiom cannot distinguish it from an accident, because the
+    // only ids it can compare against are the project's own declared ones: it
+    // is pure boot-log noise. Don't add one without a set of ids the project
+    // did NOT declare to compare against.
 
     // ── cover-image ───────────────────────────────────────────────────────────
     if let Some(path) = &raw.cover_image {
         // InvalidCoverImagePath — bare relative path only: no ".." segment,
         // no leading '/', and no empty or dot-prefixed segment. This MUST
         // match the segment-rejection rules the runtime route
-        // (`serve_project_asset` in `bin/src/router.rs`) independently
-        // enforces — otherwise a path can boot-validate successfully yet
+        // (`serve_project_asset` in `dsp-incubator cpe/bin/src/router.rs`)
+        // independently enforces — otherwise a path can boot-validate
+        // successfully yet
         // 404 at request time (e.g. "assets/.cover.webp" or
         // "assets//cover.webp").
         let has_leading_slash = path.starts_with('/');
@@ -3940,7 +3933,7 @@ fn check_and_lower_site(
             // This DELIBERATELY diverges from the `narrative_files`
             // empty-slice guard below: that inventory is genuinely
             // optional ("caller found no narrative/ dir ⇒ don't
-            // constrain"), whereas failing open here let a project
+            // constrain"), whereas failing open here would let a project
             // declaring `site.cover-image` with no `assets/` directory
             // boot green and serve a broken <img> on the site index.
             // Don't "restore consistency" by reintroducing an
@@ -3953,10 +3946,10 @@ fn check_and_lower_site(
     }
 
     // ── date-precision-word ───────────────────────────────────────────────────
-    // `site { date-precision-word #true }` (Incunabula Slice 8, decision 4).
-    // Absent (or a bare node with no argument) ⇒ `false`. A non-boolean
-    // argument is `InvalidFieldType` — the kind for a wrong-typed `site {}`
-    // child (the `languages` precedent) — never a silent `false`.
+    // `site { date-precision-word #true }`. Absent (or a bare node with no
+    // argument) ⇒ `false`. A non-boolean argument is `InvalidFieldType` — the
+    // kind for a wrong-typed `site {}` child (the `languages` precedent) —
+    // never a silent `false`.
     let date_precision_word = match &raw.date_precision_word {
         None => false,
         Some((Value::Bool(b), _)) => *b,
@@ -3972,10 +3965,10 @@ fn check_and_lower_site(
     };
 
     // ── footer-attribution ─────────────────────────────────────────────────────
-    // G11 copy override (Incunabula Slice 8, decision 9): a
-    // chrome-id-or-literal string (the `description` precedent), resolved at
-    // render time; a non-string argument is `InvalidFieldType`, never a
-    // silent absence. Absent ⇒ `None` ⇒ the engine's own copy.
+    // Copy override: a chrome-id-or-literal string (the `description`
+    // precedent), resolved at render time; a non-string argument is
+    // `InvalidFieldType`, never a silent absence. Absent ⇒ `None` ⇒ the
+    // engine's own copy.
     let footer_attribution = lower_site_string(&raw.footer_attribution, "footer-attribution", report);
 
     // ── narrative-companion / narrative-side / text-align ─────────────────────
@@ -4002,7 +3995,7 @@ fn check_and_lower_site(
     );
 
     // ── not-found { browse } ──────────────────────────────────────────────────
-    // G11 (decision 8). Route existence is checked in `validate_inner`
+    // Route existence is checked in `validate_inner`
     // beside `check_nav_routes` (it needs the lowered page routes); the
     // design cap of three is checked here.
     if raw.not_found_browse.len() > NOT_FOUND_BROWSE_MAX {
@@ -4062,8 +4055,8 @@ fn check_and_lower_site(
     })
 }
 
-/// The design cap on `site { not-found { browse } }` entries (G11; the
-/// empty-states handoff's "at most three… never the whole nav").
+/// The design cap on `site { not-found { browse } }` entries ("at most three…
+/// never the whole nav").
 const NOT_FOUND_BROWSE_MAX: usize = 3;
 
 /// Lower an optional string-valued `site {}` child captured raw by
@@ -4119,11 +4112,11 @@ fn lower_site_choice<T: Default>(
 // ── Page checks ───────────────────────────────────────────────────────────────
 
 /// Validate pages (id/route uniqueness) and lower to the typed `Page` IR.
-/// Step 3: page bodies are now lowered via `lower_page_body`.
+/// Page bodies are lowered via `lower_page_body`.
 ///
 /// `default_language` — the project's resolved default language (`None` only
 /// when site lowering itself failed); threaded through to `lower_page_body`
-/// for the narrative existence probe (D3).
+/// for the narrative existence probe.
 fn check_and_lower_pages(
     raw: &RawConfig,
     ctx: &ValidationContext<'_>,
@@ -4145,14 +4138,14 @@ fn check_and_lower_pages(
         let id = match &raw_page.id {
             Some(id) => id.clone(),
             None => {
-                // Missing id — not a Step 2 check; page is skipped for now.
+                // Missing id — not checked here; the page is skipped.
                 continue;
             }
         };
         let route = match &raw_page.route {
             Some(r) => r.clone(),
             None => {
-                // Missing route — not a Step 2 check.
+                // Missing route — not checked here.
                 continue;
             }
         };
@@ -4197,9 +4190,9 @@ fn check_and_lower_pages(
         // Extract route params — `:param` segments in the route.
         let params = extract_route_params(&route);
 
-        // Step 3: lower the page body components.
-        // Route was present and parseable above, so $param resolution is
-        // always enabled (skip_param_check = false).
+        // Lower the page body components. Route was present and parseable
+        // above, so $param resolution is always enabled (skip_param_check =
+        // false).
         let (mut body, figure_slots) = lower_page_body(
             &raw_page.body,
             &params,
@@ -4240,7 +4233,7 @@ fn check_and_lower_pages(
                 body.iter().filter(|c| matches!(c, Component::SearchBar { .. })).count(),
             ),
             // The reader's fixed `id="compound-viewer"` / `id="cv-picker"`
-            // assume one navigator per page (Incunabula Slice 3b D2).
+            // assume one navigator per page.
             (
                 "compound-viewer",
                 body.iter().filter(|c| matches!(c, Component::CompoundViewer { .. })).count(),
@@ -4260,27 +4253,27 @@ fn check_and_lower_pages(
             }
         }
 
-        // DuplicateGroupedProperty (Incunabula Slice 3 / G8) — a property in
-        // two `group`s, or in a `group` and `show-properties`, would render
-        // twice on one record. Config-internal ⇒ checked here, before the
-        // success/raw fork, so both validation outcomes inherit it.
+        // DuplicateGroupedProperty — a property in two `group`s, or in a
+        // `group` and `show-properties`, would render twice on one record.
+        // Config-internal ⇒ checked here, before the success/raw fork, so both
+        // validation outcomes inherit it.
         check_duplicate_grouped_properties(&body, &route, report);
 
-        // DuplicateNarrativeFor (Incunabula Slice 3 / O6, decision 7) — two
-        // `narrative-for` entries for one resource id leave undecidable which
-        // intro renders. Config-internal ⇒ before the fork, like the above.
+        // DuplicateNarrativeFor — two `narrative-for` entries for one resource
+        // id leave undecidable which intro renders. Config-internal ⇒ before
+        // the fork, like the above.
         check_duplicate_narrative_for(&body, &route, report);
 
         // A showcase case key is a DOM id (`case-<key>`); lowering rejects a
         // repeat inside one block, this one across the page's blocks.
         showcase::check_duplicate_case_keys(&body, report);
 
-        // CompoundViewerWithPagedList (Slice 2 decision 4) — the
-        // compound-viewer reads `?page=<member-id|name|prefix>`, a paginating
-        // resource-list reads `?page=N`. On one page they would silently
-        // share the key, so the combination is a boot hard-fail. `PerPage` is
-        // also the lowered default when neither `per-page` nor `limit` is
-        // declared; only `limit` (no pager) is compatible.
+        // CompoundViewerWithPagedList — the compound-viewer reads
+        // `?page=<member-id|name|prefix>`, a paginating resource-list reads
+        // `?page=N`. On one page they would silently share the key, so the
+        // combination is a boot hard-fail. `PerPage` is also the lowered
+        // default when neither `per-page` nor `limit` is declared; only `limit`
+        // (no pager) is compatible.
         let has_compound_viewer = body.iter().any(|c| matches!(c, Component::CompoundViewer { .. }));
         let has_paged_list = body
             .iter()
@@ -4297,9 +4290,9 @@ fn check_and_lower_pages(
             ));
         }
 
-        // PagesLayoutWithoutMedia (Incunabula Slice 3b D3) — the `pages`
-        // layout is scan-first; without `media=` it has no scan to show.
-        // Config-internal ⇒ before the success/raw fork.
+        // PagesLayoutWithoutMedia — the `pages` layout is scan-first; without
+        // `media=` it has no scan to show. Config-internal ⇒ before the
+        // success/raw fork.
         if body
             .iter()
             .any(|c| matches!(c, Component::CompoundViewer { layout: CompoundLayout::Pages, media: None, .. }))
@@ -4365,7 +4358,7 @@ fn check_and_lower_pages(
             }
         }
 
-        // CompoundMediaOwnership (Incunabula Slice 3b D2, dsp-incubator
+        // CompoundMediaOwnership (dsp-incubator
         // cpe/docs/adr/0012-one-member-navigator-declared-layout.md) — a `resource-detail`
         // with `media=` on the same compound the page's navigator shows would render the
         // compound's images twice. The navigator owns them. Config-internal ⇒ before the
@@ -4388,7 +4381,7 @@ fn check_and_lower_pages(
             ));
         }
 
-        // MultipleImageViewers (Incunabula Slice 3b step 6, dsp-incubator
+        // MultipleImageViewers (dsp-incubator
         // cpe/docs/adr/0012-one-member-navigator-declared-layout.md) — a `pages` reader
         // mounts the record viewer's unit, and so does any `resource-detail` with `media=`;
         // the unit's signals are page-global, so two on one page drive each other. Reported
@@ -4413,10 +4406,10 @@ fn check_and_lower_pages(
             ));
         }
 
-        // The resource-detail `navigator` flag (Incunabula Slice 3b step 7,
-        // D1/D10) — the same `pairs_with_navigator` call
-        // `CompoundMediaOwnership` makes above, so the two cannot drift.
-        // Computed first (immutable borrow), then written.
+        // The resource-detail `navigator` flag — the same
+        // `pairs_with_navigator` call `CompoundMediaOwnership` makes above, so
+        // the two cannot drift. Computed first (immutable borrow), then
+        // written.
         let navigator_flags: Vec<bool> = body
             .iter()
             .map(|c| match c {
@@ -4430,15 +4423,14 @@ fn check_and_lower_pages(
             }
         }
 
-        // The compound-viewer `paired` flag (Slice 3 code review, W7) — the
-        // mirror image of `navigator` above: whether some `resource-detail`
-        // on this page shares this compound-viewer's `source` expression.
-        // `true` ⇒ the empty (`total == 0`) branch must not repeat that
-        // record's title/eyebrow/properties (dsp-incubator
-        // cpe/docs/adr/0012-one-member-navigator-declared-layout.md D1). A distinct pass
-        // from `navigator_flags` above (a different component variant), but
-        // through the SAME `pairs_with_navigator` predicate, so the two flags
-        // can never disagree for a given pairing (`render_body` relies on it).
+        // The compound-viewer `paired` flag — the mirror image of `navigator` above:
+        // whether some `resource-detail` on this page shares this compound-viewer's
+        // `source` expression. `true` ⇒ the empty (`total == 0`) branch must not
+        // repeat that record's title/eyebrow/properties (dsp-incubator
+        // cpe/docs/adr/0012-one-member-navigator-declared-layout.md). A distinct pass
+        // from `navigator_flags` above (a different component variant), but through
+        // the SAME `pairs_with_navigator` predicate, so the two flags can never
+        // disagree for a given pairing (`render_body` relies on it).
         let paired_flags: Vec<bool> = body
             .iter()
             .map(|c| match c {
@@ -4464,8 +4456,7 @@ fn check_and_lower_pages(
 /// Whether a `resource-detail` whose `id` expression is `detail_id` shows the
 /// same compound as a sibling `compound-viewer` in the lowered page `body` —
 /// i.e. whether that record is paired with a member navigator on its page
-/// (Incunabula Slice 3b D1/D2, dsp-incubator
-/// cpe/docs/adr/0012-one-member-navigator-declared-layout.md).
+/// (dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md).
 ///
 /// **Single source of truth** for the pairing: `CompoundMediaOwnership`,
 /// the resource-detail `navigator` flag and the compound-viewer `paired`
@@ -4509,7 +4500,7 @@ pub(crate) fn extract_route_params(route: &str) -> Vec<String> {
         .collect()
 }
 
-// ── Component lowering (Step 3) ───────────────────────────────────────────────
+// ── Component lowering ───────────────────────────────────────────────
 
 /// The six generic v1 component names, valid in every project. Per-project
 /// custom components (e.g. Incunabula's `timeline`) are not listed here: they
@@ -4557,7 +4548,7 @@ fn unknown_component_message(name: &str, project_id: &str) -> String {
 /// this page's components (used when the page route is absent/unparseable).
 ///
 /// `default_language` — threaded straight through to the `narrative`
-/// component arm's existence probe (D3); see `lower_narrative`.
+/// component arm's existence probe; see `lower_narrative`.
 ///
 /// Returns the typed body and, index-aligned with it, each component's
 /// figure-block slot (`Page::figure_slots`): a component and its slot are
@@ -4780,10 +4771,10 @@ fn check_narrative_layout_first(pages: &[Page], report: &mut ValidationReport) {
 
 /// The two boot checks every narrative `file="…"` value runs — shared by the
 /// page-level `narrative` component and `resource-detail`'s `narrative-for`
-/// child (Incunabula Slice 3 / O6, decision 7), so one mistake is one kind:
-/// `InvalidNarrativePath` (path separator / `..`) and `NarrativeFileNotFound`
-/// (neither the base file nor the default-language variant is in the
-/// inventory; skipped when the inventory is empty — "unknown, not checked").
+/// child, so one mistake is one kind: `InvalidNarrativePath` (path separator /
+/// `..`) and `NarrativeFileNotFound` (neither the base file nor the
+/// default-language variant is in the inventory; skipped when the inventory is
+/// empty — "unknown, not checked").
 ///
 /// Returns `true` when the file passed both checks; on `false` exactly one
 /// Error was pushed.
@@ -4818,14 +4809,13 @@ fn check_narrative_file(
     if !ctx.narrative_files.is_empty() {
         let base_exists = ctx.narrative_files.iter().any(|f| f == file);
         if !base_exists {
-            // D3: the narrative file must resolve to the base file (checked
-            // above) OR the default-language variant specifically — the two
-            // rungs D1's render-time fallback chain (requested → default →
-            // base) guarantees will always render. Non-default-language
-            // variants are optional: they're a nice-to-have that falls back
-            // to the default variant at render time, so their absence isn't
-            // a boot-time error. This is a narrower probe than the previous
-            // "any language variant" check.
+            // The narrative file must resolve to the base file (checked above)
+            // OR the default-language variant specifically — the two rungs the
+            // render-time fallback chain (requested → default → base)
+            // guarantees will always render. Non-default-language variants are
+            // optional: they're a nice-to-have that falls back to the default
+            // variant at render time, so their absence isn't a boot-time error.
+            // This is a narrower probe than an "any language variant" check.
             let default_variant_exists = match default_language {
                 Some(default_lang) => match crate::util::variant_filename(file, default_lang) {
                     Some(candidate) => ctx.narrative_files.iter().any(|f| f == &candidate),
@@ -4834,7 +4824,7 @@ fn check_narrative_file(
                     None => false,
                 },
                 // No resolved default language (site lowering itself failed)
-                // — fall back to the old lenient "any variant" probe so this
+                // — fall back to the lenient "any variant" probe so this
                 // check doesn't pile a second, less-precise error on top of
                 // an already-broken site block.
                 None => {
@@ -4881,11 +4871,11 @@ fn check_nav_routes(nav_items: &[crate::ir::NavItem], declared_routes: &[&str], 
     }
 }
 
-/// `site { not-found { browse route="…" } }` route existence (Incunabula
-/// Slice 8 / G11) — the same exact-match rule and message shape as
-/// `check_nav_routes`, reporting `UnresolvedNotFoundBrowseRoute`.
-/// Config-internal, so like `check_nav_routes` it runs before the
-/// `validate_with_data` fork and needs no `*_into_raw` sibling.
+/// `site { not-found { browse route="…" } }` route existence — the same
+/// exact-match rule and message shape as `check_nav_routes`, reporting
+/// `UnresolvedNotFoundBrowseRoute`. Config-internal, so like `check_nav_routes`
+/// it runs before the `validate_with_data` fork and needs no `*_into_raw`
+/// sibling.
 fn check_not_found_browse_routes(entries: &[NotFoundBrowse], declared_routes: &[&str], report: &mut ValidationReport) {
     for entry in entries {
         check_route_declared(
@@ -5034,7 +5024,7 @@ fn check_class_routes(pages: &[Page], report: &mut ValidationReport) {
 }
 
 /// Check for `resource-list` components with `grid=#true` but no `media`
-/// attribute (grid-mode plan decision 4).
+/// attribute.
 ///
 /// A config-internal pages walk, mirroring `check_class_routes`'s shape — no
 /// `ValidatedConfig`/data-accessor needed, so it runs inside `validate_inner`
@@ -5112,7 +5102,7 @@ pub fn build_class_routes(pages: &[Page]) -> std::collections::HashMap<String, S
     map
 }
 
-/// Build the class→list-route map (N3, empty-states-not-found plan step 8).
+/// Build the class→list-route map.
 ///
 /// Mirrors [`build_class_routes`]'s shape but reads `Component::ResourceList
 /// { class, .. }` on **parameter-less** pages (a browse page has zero `:param`
@@ -5125,7 +5115,7 @@ pub fn build_class_routes(pages: &[Page]) -> std::collections::HashMap<String, S
 /// sibling `check_class_routes` hard-fail (`AmbiguousClassRoute`).** Two
 /// browse pages over the same class is a legitimate config (e.g. a curated
 /// subset page and a full browse page for the same Class) — this map is
-/// **advisory**: it powers the N3 "Browse all {class}" link and breadcrumb
+/// **advisory**: it powers the "Browse all {class}" link and breadcrumb
 /// class crumb, never routing or link resolution for `link` property values.
 /// There is no corresponding `check_class_list_routes` hard-fail pass and none
 /// is needed — an arbitrary-but-deterministic choice between two equally
@@ -5159,8 +5149,7 @@ pub fn build_class_list_routes(pages: &[Page]) -> std::collections::HashMap<Stri
     map
 }
 
-// ── `media="…"` — the embedded-media axis (plan step 5, extended by
-// Step 11 to fold `compound-viewer media=` into the same map) ─────────
+// ── `media="…"` — the embedded-media axis ─────────────────────────────────────
 //
 // A `resource-detail`/`compound-viewer`/`resource-list` `media` attribute
 // names the host→image `link` property carrying a resource's (or a list
@@ -5227,7 +5216,7 @@ fn check_resource_detail_media(
                         // `check_resource_detail_class` — skip the media
                         // four-check and map registration to avoid cascading
                         // a `SparseMediaProperty`/etc. against a nonexistent
-                        // class (Step 9's cascade rule). A class resolved via
+                        // class (the cascade rule). A class resolved via
                         // a literal id's `class_of` is unaffected: that
                         // lookup only ever returns a class that exists.
                         let class_is_unknown_declared =
@@ -5276,8 +5265,8 @@ fn check_resource_detail_media(
 ///
 /// Extraction follows the `*_into_raw` contract — attributes are read via the
 /// silent `get_string_attr`, so an absent `media`/`id` means a plain
-/// `continue`. A present-but-wrong-typed `class` or `id`, though, is now
-/// reported by lowering (`get_typed_string_attr`, Step 7) — this fn guards
+/// `continue`. A present-but-wrong-typed `class` or `id`, though, is reported
+/// by lowering (`get_typed_string_attr`) — this fn guards
 /// against double-reporting that case; see the guard below. The check body
 /// itself is the shared `check_single_media_property` helper, identical to
 /// the success path.
@@ -5297,16 +5286,16 @@ fn check_resource_detail_media_into_raw(
             if raw_comp.name != "resource-detail" {
                 continue;
             }
-            // No `media` attribute, or a wrong-typed one — which lowering now
-            // reports (`get_typed_string_attr`, Step 7), so the success arm
+            // No `media` attribute, or a wrong-typed one — which lowering
+            // reports (`get_typed_string_attr`), so the success arm
             // sees `None` and skips this component too. Not this check's
             // business either way.
             let Some(media_prop) = get_string_attr(raw_comp, "media") else {
                 continue;
             };
 
-            // A present-but-wrong-typed `class` or `id` is now reported by
-            // lowering (`get_typed_string_attr`, Step 7) — `continue` rather
+            // A present-but-wrong-typed `class` or `id` is reported by lowering
+            // (`get_typed_string_attr`) — `continue` rather
             // than also emitting `UnresolvableMediaClass` here (one mistake,
             // one diagnostic). `get_string_attr` returns `None` for BOTH
             // "absent" and "present but wrong-typed", so distinguish the two
@@ -5340,7 +5329,7 @@ fn check_resource_detail_media_into_raw(
                 None => {
                     // A present-but-wrong-typed `class`/`id` was already
                     // filtered out above (lowering reports it via
-                    // `get_typed_string_attr`, Step 7) — this branch is only
+                    // `get_typed_string_attr`) — this branch is only
                     // reached for a genuinely absent/unresolvable class, so
                     // no double-report risk here. Covered by the fixture pair
                     // `broken-media-wrong-typed-class{,-raw}`.
@@ -5452,8 +5441,8 @@ fn check_resource_list_media_into_raw(
 /// `UnresolvableMediaClass`/`ConflictingMediaProperty` diagnostics), by which
 /// point the map is unambiguous.
 ///
-/// `resource-detail`, then `compound-viewer` declarations contribute (per
-/// Step 11 of the plan) — a `resource-list`-only `media` declaration with no
+/// `resource-detail`, then `compound-viewer` declarations contribute. A
+/// `resource-list`-only `media` declaration with no
 /// matching earlier binding does not appear in this map — it drives that
 /// list's own row thumbs directly, with nothing to suppress.
 pub fn build_media_properties(pages: &[Page], data: &dyn ProjectFacts) -> std::collections::HashMap<String, String> {
@@ -5466,15 +5455,14 @@ pub fn build_media_properties(pages: &[Page], data: &dyn ProjectFacts) -> std::c
                     // First registration wins (duplicates already caught by
                     // AmbiguousClassRoute for the parameterised case; two
                     // literal-id pages resolving the same class with
-                    // different media properties is an unhandled corner case
-                    // — see the embedded-media plan issues log).
+                    // different media properties is an unhandled corner case).
                     map.entry(resolved_class).or_insert_with(|| media_prop.clone());
                 }
             }
         }
     }
 
-    // `compound-viewer media="…"` (Step 11): resolve each member class the
+    // `compound-viewer media="…"`: resolve each member class the
     // same way `check_single_compound_viewer_media` does, and `or_insert`
     // it — a query error here means validation would already have raised
     // `InternalQueryError` for the same query, so it is safe to skip.
@@ -5577,7 +5565,8 @@ fn lower_resource_list(
                 // `chip property="…" kind="term"|"keyword"` — repeatable; each names a
                 // property whose values render as row chips. An absent `kind` derives the
                 // shape from cardinality at render time (single list value → .term, multi
-                // → .keyword, A12.3); an explicit `kind` overrides that for every label of
+                // → .keyword); an explicit `kind` overrides that for every label
+                // of
                 // the property.
                 if let Some(prop) = require_string_attr(child, "property", report) {
                     let kind = match get_typed_string_attr(child, "kind", report) {
@@ -5661,20 +5650,19 @@ fn lower_resource_list(
     };
 
     // `media` is an optional string attribute naming the host→image `link`
-    // property that carries this list's browse-row thumbs (embedded-media
-    // plan step 5). Data-existence/type/target-class checks happen in
+    // property that carries this list's browse-row thumbs.
+    // Data-existence/type/target-class checks happen in
     // `check_resource_list_media`; parsing here just captures the raw value.
     // A present-but-wrong-typed value is `InvalidAttributeType`
     // (`get_typed_string_attr`), never silently absent.
     let media = get_typed_string_attr(raw, "media", report);
 
     // `grid` is an optional KDL boolean attribute opting this list into grid
-    // mode (grid-mode plan decision 3). Absent ⇒ `false`. A wrong-typed value
-    // (e.g. `grid="true"` as a string, or `grid=1` as an integer) is itself
-    // reported by `get_bool_attr` as `InvalidAttributeType` — it must not
-    // silently lower to `false`, or the toggle would just never appear with
-    // no boot error. `grid: true` without `media` is checked separately by
-    // `check_grid_without_media` (decision 4).
+    // mode. Absent ⇒ `false`. A wrong-typed value (e.g. `grid="true"` as a
+    // string, or `grid=1` as an integer) is itself reported by `get_bool_attr`
+    // as `InvalidAttributeType` — it must not silently lower to `false`, or the
+    // toggle would just never appear with no boot error. `grid: true` without
+    // `media` is checked separately by `check_grid_without_media`.
     let grid = get_bool_attr(raw, "grid", report);
 
     // `tile-ratio="W:H"`: a string outside `TileRatio::parse`'s grammar is
@@ -5695,13 +5683,12 @@ fn lower_resource_list(
         ratio
     });
 
-    // `order-name-label`/`order-name-desc-label` (A12.4) — optional
+    // `order-name-label`/`order-name-desc-label` — optional
     // chrome-string-id overrides (id-only, never literal text) for the
     // "Name A–Z"/"Name Z–A" ordering-control labels, resolved at render time
     // exactly like `search-bar`'s `placeholder`/`scope`. Diagnostic-free when
     // absent; a wrong-typed value (`order-name-label=#true`) is reported as
-    // `InvalidAttributeType` rather than silently vanishing (Incunabula
-    // Slice 8 decision 11a).
+    // `InvalidAttributeType` rather than silently vanishing.
     let order_name_label = get_typed_string_attr(raw, "order-name-label", report);
     let order_name_desc_label = get_typed_string_attr(raw, "order-name-desc-label", report);
     // `order-default-label` relabels the built-in "As curated" row on the same
@@ -5730,10 +5717,10 @@ fn lower_resource_list(
     })
 }
 
-/// The built-in `?sort=` tokens a declared `order-by key=` may not reuse
-/// (Incunabula Slice 8 / G9): `default` (the "As curated" row) plus every
-/// token `Sort::parse_wire` recognises. MUST stay in sync with
-/// `Sort::parse_wire` and the ordering control's built-in rows.
+/// The built-in `?sort=` tokens a declared `order-by key=` may not reuse:
+/// `default` (the "As curated" row) plus every token `Sort::parse_wire`
+/// recognises. MUST stay in sync with `Sort::parse_wire` and the ordering
+/// control's built-in rows.
 const RESERVED_ORDER_KEYS: &[&str] = &["default", "name", "name-desc", "class", "id"];
 
 /// Lower one `resource-list { gloss … }` child.
@@ -5838,10 +5825,10 @@ fn lower_head_slots(raw: &crate::config::Component, report: &mut ValidationRepor
 }
 
 /// Lower one `resource-list { order-by key="…" property="…" direction="…"
-/// label="…" }` child (Incunabula Slice 8 / G9). `earlier` is the list's
-/// already-lowered options, for the duplicate check.
+/// label="…" }` child. `earlier` is the list's already-lowered options, for the
+/// duplicate check.
 ///
-/// Every attribute goes through a *reporting* reader (decision 11a): `key`,
+/// Every attribute goes through a *reporting* reader: `key`,
 /// `property` and `label` are required (`require_string_attr`), `direction`
 /// is optional (`get_typed_string_attr`, `asc` when absent) — so a
 /// wrong-typed value (`key=#true`) reports `InvalidAttributeType` instead of
@@ -5913,11 +5900,11 @@ fn lower_order_by(
 }
 
 /// `UnknownOrderLabel` for every `resource-list { order-by label="…" }` whose
-/// id is not a declared `chrome { string }` id (Incunabula Slice 8 / G9).
-/// Config-internal but needs the lowered chrome block, so `validate_inner`
-/// runs it beside `check_group_labels`, inside the `site_result` guard and
-/// before the `validate_with_data` fork — both arms see it, no `*_into_raw`
-/// sibling needed. A hard-fail: the engine has no default word to fall back to.
+/// id is not a declared `chrome { string }` id. Config-internal but needs the
+/// lowered chrome block, so `validate_inner` runs it beside
+/// `check_group_labels`, inside the `site_result` guard and before the
+/// `validate_with_data` fork — both arms see it, no `*_into_raw` sibling
+/// needed. A hard-fail: the engine has no default word to fall back to.
 fn check_order_labels(pages: &[Page], chrome: &[ChromeString], report: &mut ValidationReport) {
     for page in pages {
         for component in &page.body {
@@ -6054,7 +6041,7 @@ fn check_figure_more_routes(pages: &[Page], declared_routes: &[&str], report: &m
 /// property named by a `group` that is already named by `show-properties`, by
 /// an earlier group, or earlier in the same group. One diagnostic per
 /// repeated property name (never short-circuits). Duplicates *within*
-/// `show-properties` alone are out of scope (unchanged pre-G8 behaviour).
+/// `show-properties` alone are out of scope.
 fn check_duplicate_grouped_properties(body: &[Component], route: &str, report: &mut ValidationReport) {
     for component in body {
         let Component::ResourceDetail { show_properties, groups, .. } = component else {
@@ -6117,7 +6104,7 @@ fn check_duplicate_narrative_for(body: &[Component], route: &str, report: &mut V
     }
 }
 
-/// The grouped `incoming-links note-label=` chrome check (HdM Slice 3): an
+/// The grouped `incoming-links note-label=` chrome check: an
 /// undeclared id is `UnknownIncomingLinksNoteLabel` (Warning — the list
 /// renders without its note, the `UnknownIncomingLinksLabel` tier); a declared
 /// one is `IncomingLinksTextMissingPlaceholder` (Error) once per language whose
@@ -6158,11 +6145,11 @@ fn check_incoming_links_note_label(note: &str, route: &str, chrome: &[ChromeStri
 /// sibling needed. Advisory: the group renders under
 /// `ChromeMsg::PropertyGroupTitle` instead.
 ///
-/// The same pass also checks the `incoming-links` child's `label=`
-/// (Incunabula Slice 5 / G7): an undeclared id is `UnknownIncomingLinksLabel`
-/// (Warning) — the list falls back to the source class's capitalised plural.
-/// A group's `empty=` and `links-label=` ids follow the same rule
-/// (`UnknownGroupEmptyLabel`, `UnknownGroupLinksLabel`).
+/// The same pass also checks the `incoming-links` child's `label=`: an
+/// undeclared id is `UnknownIncomingLinksLabel` (Warning) — the list falls back
+/// to the source class's capitalised plural. A group's `empty=` and
+/// `links-label=` ids follow the same rule (`UnknownGroupEmptyLabel`,
+/// `UnknownGroupLinksLabel`).
 fn check_group_labels(pages: &[Page], chrome: &[ChromeString], report: &mut ValidationReport) {
     for page in pages {
         for component in &page.body {
@@ -6298,7 +6285,7 @@ fn lower_resource_detail(
     }
 
     // `id` is optional at this layer (required only outside a `:id` route,
-    // which is a Phase 3 data-dependent check). A present-but-wrong-typed
+    // which is a data-dependent check). A present-but-wrong-typed
     // value is `InvalidAttributeType` (`get_typed_string_attr`), never
     // silently absent.
     let id = get_typed_string_attr(raw, "id", report);
@@ -6334,21 +6321,20 @@ fn lower_resource_detail(
     let class = get_typed_string_attr(raw, "class", report);
 
     // `media` is an optional string attribute naming the host→image `link`
-    // property that feeds this resource's record viewer (embedded-media
-    // plan step 5). Data-existence/type/target-class/resolvable-class checks
+    // property that feeds this resource's record viewer.
+    // Data-existence/type/target-class/resolvable-class checks
     // happen in `check_resource_detail_media`; parsing here just captures
     // the raw value. A present-but-wrong-typed value is `InvalidAttributeType`
     // (`get_typed_string_attr`), never silently absent.
     let media = get_typed_string_attr(raw, "media", report);
 
-    // `group` (Incunabula Slice 3 / G8) — repeatable child node, in
-    // declaration order: a required `label=` chrome-string id plus positional
-    // string property names (the `show-properties` shape). A missing or
-    // wrong-typed `label` is reported by `require_string_attr` and that group
-    // is skipped. Duplicate members (`DuplicateGroupedProperty`) are checked
-    // in `check_and_lower_pages`, which knows the page route; the label's
-    // existence (`UnknownGroupLabel`) in `validate_inner`, which has the
-    // lowered chrome block.
+    // `group` — repeatable child node, in declaration order: a required
+    // `label=` chrome-string id plus positional string property names (the
+    // `show-properties` shape). A missing or wrong-typed `label` is reported by
+    // `require_string_attr` and that group is skipped. Duplicate members
+    // (`DuplicateGroupedProperty`) are checked in `check_and_lower_pages`,
+    // which knows the page route; the label's existence (`UnknownGroupLabel`)
+    // in `validate_inner`, which has the lowered chrome block.
     let groups = raw
         .children
         .iter()
@@ -6366,13 +6352,13 @@ fn lower_resource_detail(
         })
         .collect();
 
-    // `narrative-for` (Incunabula Slice 3 / O6) — repeatable child node: a
-    // required first positional string arg (the literal resource id) plus a
-    // required `file=`. The file runs the exact checks a page-level
-    // `narrative` does (`check_narrative_file`, decision 7). No `$param`
-    // interpolation in either value. Duplicate ids (`DuplicateNarrativeFor`)
-    // are checked in `check_and_lower_pages`, which knows the page route;
-    // resource existence (`UnknownNarrativeForResource`) is data-dependent.
+    // `narrative-for` — repeatable child node: a required first positional
+    // string arg (the literal resource id) plus a required `file=`. The file
+    // runs the exact checks a page-level `narrative` does
+    // (`check_narrative_file`). No `$param` interpolation in either value.
+    // Duplicate ids (`DuplicateNarrativeFor`) are checked in
+    // `check_and_lower_pages`, which knows the page route; resource existence
+    // (`UnknownNarrativeForResource`) is data-dependent.
     let narrative_for = raw
         .children
         .iter()
@@ -6390,7 +6376,7 @@ fn lower_resource_detail(
         })
         .collect();
 
-    // `incoming-links` (Incunabula Slice 5 / G7) — at most one child node.
+    // `incoming-links` — at most one child node.
     let incoming_links = lower_incoming_links(raw, report);
 
     let head = lower_head_slots(raw, report);
@@ -6411,8 +6397,8 @@ fn lower_resource_detail(
     })
 }
 
-/// Lower a `resource-detail`'s `incoming-links` child (Incunabula Slice 5 /
-/// G7): `label=` and `class=` are required strings (`require_string_attr`);
+/// Lower a `resource-detail`'s `incoming-links` child: `label=` and `class=`
+/// are required strings (`require_string_attr`);
 /// `order=` is an optional closed vocabulary read with the REPORTING
 /// `get_typed_string_attr` (`name` default · `id` · `compound-seq` — a
 /// wrong value or a non-string is `InvalidAttributeType`, never a silent
@@ -6424,7 +6410,7 @@ fn lower_resource_detail(
 /// all of them. The label's chrome-id existence is checked later, in
 /// `validate_inner` (`check_group_labels`), which has the lowered chrome.
 ///
-/// HdM Slice 3 (G3) adds the optional `group-by=` (`via` or a source
+/// Grouping takes the optional `group-by=` (`via` or a source
 /// property), `layout=` (`cards`|`columns`, default `columns`), `note-label=`
 /// (a chrome id), `row-label=`, `row-aside=` and `sort-property=`, all read
 /// with `get_typed_string_attr`. `layout=`/`note-label=` are ignored without
@@ -6447,7 +6433,7 @@ fn lower_incoming_links(raw: &crate::config::Component, report: &mut ValidationR
     let label = require_string_attr(first, "label", report);
     let class = require_string_attr(first, "class", report);
 
-    // HdM Slice 3 (G3) grouping + row anatomy — every attribute read with the
+    // Grouping + row anatomy — every attribute read with the
     // REPORTING readers before any early return below, so one child with
     // several mistakes reports all of them. `layout=`/`note-label=` without
     // `group-by=` are read (a wrong type or an unknown `layout` value still
@@ -6519,13 +6505,13 @@ fn lower_incoming_links(raw: &crate::config::Component, report: &mut ValidationR
         return None;
     }
 
-    // `limit=<int>` (item 6, Backlog hardening batch 3) — optional, config-internal
-    // (no raw-fallback sibling needed). Absent ⇒ DEFAULT_INCOMING_LINKS_LIMIT,
-    // or GROUPED_INCOMING_LIMIT_CEILING when `group-by=` is set (HdM Slice 3,
-    // decision 10 — resolved here because the query cannot tell a defaulted 50
-    // from an explicit `limit=50`). Present ⇒ always honoured; must be a
-    // positive integer that fits u32 (never an `as` cast — the
-    // `timeline::timeline_axis_year` convention).
+    // `limit=<int>` — optional, config-internal (no raw-fallback sibling
+    // needed). Absent ⇒ DEFAULT_INCOMING_LINKS_LIMIT, or
+    // GROUPED_INCOMING_LIMIT_CEILING when `group-by=` is set (resolved here
+    // because the query cannot tell a defaulted 50 from an explicit
+    // `limit=50`). Present ⇒ always honoured; must be a positive integer that
+    // fits u32 (never an `as` cast — the `timeline::timeline_axis_year`
+    // convention).
     let default_limit = if matches!(group_by, Ok(Some(_))) {
         GROUPED_INCOMING_LIMIT_CEILING
     } else {
@@ -6589,13 +6575,13 @@ fn lower_compound_viewer(
     // once, not only the first.
     let source = require_string_attr(raw, "source", report);
 
-    // `layout` (Incunabula Slice 3b D3) and `index` (D4 / Q1) are required,
-    // closed-vocabulary attributes: absent ⇒ `MissingRequiredAttribute`,
-    // wrong type or unknown value ⇒ `InvalidAttributeType` naming the
-    // vocabulary (the `chip kind=` precedent). Either error skips the whole
-    // component — no default layout or index exists anywhere in the engine.
-    // Both readers REPORT, so neither may be reached from a `*_into_raw`
-    // sibling (none is needed: the checks are config-internal).
+    // `layout` and `index` are required, closed-vocabulary attributes: absent ⇒
+    // `MissingRequiredAttribute`, wrong type or unknown value ⇒
+    // `InvalidAttributeType` naming the vocabulary (the `chip kind=`
+    // precedent). Either error skips the whole component — no default layout or
+    // index exists anywhere in the engine. Both readers REPORT, so neither may
+    // be reached from a `*_into_raw` sibling (none is needed: the checks are
+    // config-internal).
     let layout = require_string_attr(raw, "layout", report).and_then(|v| match v.as_str() {
         "contents" => Some(CompoundLayout::Contents),
         "pages" => Some(CompoundLayout::Pages),
@@ -6632,11 +6618,11 @@ fn lower_compound_viewer(
     }
 
     // `media` is an optional string attribute naming the member→image `link`
-    // property whose first target is shown as the member's scan (Incunabula
-    // Slice 2 decision 11). Read like `resource-detail`'s own `media`, with
-    // the REPORTING `get_typed_string_attr`: a present-but-wrong-typed value
-    // is `InvalidAttributeType`, never silently absent. The data-dependent
-    // checks live in `check_compound_viewer_media` and its raw sibling.
+    // property whose first target is shown as the member's scan. Read like
+    // `resource-detail`'s own `media`, with the REPORTING
+    // `get_typed_string_attr`: a present-but-wrong-typed value is
+    // `InvalidAttributeType`, never silently absent. The data-dependent checks
+    // live in `check_compound_viewer_media` and its raw sibling.
     let media = get_typed_string_attr(raw, "media", report);
 
     // `picker` (book-page Choice E): an optional closed vocabulary, read with
@@ -6661,7 +6647,7 @@ fn lower_compound_viewer(
         }
     });
 
-    // `member-links` (book-page step 6a): at most one child, the `group`
+    // `member-links`: at most one child, the `group`
     // shape — a required `label=` chrome id plus positional property names.
     // The label's existence is checked in `check_group_labels`; the
     // properties' existence and `link` type are data-dependent
@@ -6791,7 +6777,7 @@ fn lower_search_bar(
     // `searches` is required, so the REPORTING `require_string_attr`: an
     // absent value is `MissingRequiredAttribute` (via `require_string_attr`
     // itself), a present-but-wrong-typed value is `InvalidAttributeType`,
-    // never the old misleading `MissingRequiredAttribute`.
+    // never a misleading `MissingRequiredAttribute`.
     let first_search = require_string_attr(raw, "searches", report)?;
     let mut searches = vec![first_search];
     // Append positional args (the rest of the list-valued attribute).
@@ -6932,8 +6918,7 @@ mod tests {
     /// errors (all test fixtures should be syntactically valid).
     ///
     /// Wraps `validate_inner`, discarding the report on success — these unit
-    /// tests only assert on the error path (existing behaviour preserved
-    /// after `validate_inner` replaced the old `validate` wrapper).
+    /// tests only assert on the error path.
     fn run(src: &str, ctx: &ValidationContext<'_>) -> Result<ValidatedConfig, ValidationReport> {
         let raw = config::parse(src).expect("test fixture KDL must be syntactically valid");
         match validate_inner(&raw, ctx) {
@@ -7370,7 +7355,7 @@ page id="home" route="/"
         );
     }
 
-    // ── site { date-precision-word } lowering (Incunabula Slice 8 step 2) ─────
+    // ── site { date-precision-word } lowering ─────
 
     #[test]
     fn date_precision_word_true_reaches_site_config() {
@@ -7573,7 +7558,7 @@ page id="home" route="/"
         assert_eq!(kinds(&err), vec![DiagnosticKind::InvalidFieldType]);
     }
 
-    // ── site { footer-attribution, not-found } (Slice 8 / G11) ──
+    // ── site { footer-attribution, not-found } ──
 
     #[test]
     fn g11_overrides_reach_site_config() {
@@ -8225,7 +8210,7 @@ page id="home" route="/"
         assert_eq!(config.site.class_labels[0].class, "Character");
     }
 
-    // ── search-bar plan step 5b (#178 reconciliation): `plural` completeness ──
+    // ── `plural` completeness ──
 
     #[test]
     fn incomplete_plural_label_translation_fails_for_class() {
@@ -8298,12 +8283,11 @@ page id="home" route="/"
 
     #[test]
     fn class_label_with_no_plural_block_still_loads_clean() {
-        // Regression guard: a class label with NO `plural` block at all —
-        // today's (#178) shape — must still LOAD (it raises the advisory
-        // `MissingClassPlural` Warning, asserted by
+        // A class label with NO `plural` block at all must LOAD (it raises the
+        // advisory `MissingClassPlural` Warning, asserted by
         // `class_label_with_no_plural_block_warns`, never an Error). This
-        // proves the plural-COMPLETENESS check never fires on an absent
-        // (not merely incomplete) `plural` block.
+        // proves the plural-COMPLETENESS check never fires on an absent (not
+        // merely incomplete) `plural` block.
         let src = r#"
 site {
     title "T"
@@ -8536,9 +8520,9 @@ page id="home" route="/books"
         assert!(!is_valid_project_id("_static"));
     }
 
-    // ── Step 3: Component lowering tests ─────────────────────────────────────
+    // ── Component lowering tests ─────────────────────────────────────
 
-    // Minimal good config helper for Step 3 tests.
+    // Minimal good config helper for the lowering tests.
     const GOOD_SITE: &str = r#"
 site {
     title "Test Project"
@@ -8709,7 +8693,7 @@ page id="home" route="/" {{
     fn invalid_attr_type_grid_string_fails() {
         // `grid` must be a KDL boolean; a string value (`grid="true"`) must
         // itself be reported by `get_bool_attr` as InvalidAttributeType — not
-        // silently lowered to `false` with no boot error (decision 3).
+        // silently lowered to `false` with no boot error.
         let src = format!(
             r#"{}
 page id="home" route="/" {{
@@ -8748,9 +8732,9 @@ page id="home" route="/" {{
         );
     }
 
-    /// Incunabula Slice 8 decision 11a: `order-name-label`/
-    /// `order-name-desc-label` read via the reporting `get_typed_string_attr`,
-    /// so a wrong-typed value reports instead of silently vanishing.
+    /// `order-name-label`/`order-name-desc-label` read via the reporting
+    /// `get_typed_string_attr`, so a wrong-typed value reports instead of
+    /// silently vanishing.
     #[test]
     fn invalid_attr_type_order_name_labels_fail() {
         for attr in ["order-name-label", "order-name-desc-label"] {
@@ -9005,7 +8989,7 @@ site {
 
     #[test]
     fn invalid_attr_type_chip_kind_fails() {
-        // `chip kind` (A12.3) must be "term" or "keyword" — a closed vocabulary,
+        // `chip kind` must be "term" or "keyword" — a closed vocabulary,
         // no new DiagnosticKind.
         let src = format!(
             r#"{}
@@ -9031,9 +9015,9 @@ page id="home" route="/" {{
         // A present-but-wrong-TYPED `kind` (a bool, not a wrong-valued string)
         // must also be `InvalidAttributeType`, not silently swallowed into the
         // cardinality-derived fallback with no boot error at all. Mirrors
-        // `invalid_attr_type_grid_bool_fails`/`_integer_fails` above, and is
-        // the regression test for `get_typed_string_attr` replacing
-        // `get_string_attr` at this one lowering site.
+        // `invalid_attr_type_grid_bool_fails`/`_integer_fails` above: this
+        // lowering site reads `kind` with `get_typed_string_attr`, not
+        // `get_string_attr`.
         let src = format!(
             r#"{}
 page id="home" route="/" {{
@@ -9053,14 +9037,14 @@ page id="home" route="/" {{
         );
     }
 
-    // ── Step 7: wrong-typed optional string attributes in lowering ──────────
+    // ── Wrong-typed optional string attributes in lowering ──────────
     //
-    // Every optional string attribute read inside a `lower_*` fn now goes
-    // through the REPORTING `get_typed_string_attr` (or, for `search-bar`'s
-    // required `searches`, `require_string_attr`): absent ⇒ `None`, no
-    // diagnostic; present-but-wrong-typed ⇒ `InvalidAttributeType`. These
-    // tests pin that contract at every migrated site, plus the two guard
-    // tests for the "absent stays clean" and "one cascade is accepted" halves.
+    // Every optional string attribute read inside a `lower_*` fn goes through
+    // the REPORTING `get_typed_string_attr` (or, for `search-bar`'s required
+    // `searches`, `require_string_attr`): absent ⇒ `None`, no diagnostic;
+    // present-but-wrong-typed ⇒ `InvalidAttributeType`. These tests pin that
+    // contract at every such site, plus the two guard tests for the "absent
+    // stays clean" and "one cascade is accepted" halves.
 
     /// Every kind in the report is `InvalidAttributeType` (order-insensitive,
     /// any count ≥ 1) — used where a single config exercises more than one
@@ -9324,8 +9308,8 @@ page id="home" route="/" {{
 
     #[test]
     fn sort_wrong_typed_direction_is_invalid_attribute_type() {
-        // `direction=1` currently falls back to `Asc` silently at the value
-        // level, but must now report — it is present, just not a string.
+        // `direction=1` must report, not fall back to `Asc` silently — it is
+        // present, just not a string.
         let src = format!(
             r#"{}
 page id="home" route="/" {{
@@ -9347,7 +9331,7 @@ page id="home" route="/" {{
 
     #[test]
     fn absent_optional_string_attributes_stay_diagnostic_free() {
-        // Guards the "absent ⇒ no diagnostic" half of Step 7's contract.
+        // Guards the "absent ⇒ no diagnostic" half of the contract above.
         // Each component sits on its own page — a compound-viewer beside a
         // default-paginated list is `CompoundViewerWithPagedList`.
         let src = format!(
@@ -9378,8 +9362,8 @@ page id="c" route="/c" {{
 
     #[test]
     fn wrong_typed_resource_list_id_cascades_to_unresolved_target() {
-        // Pins the accepted cascade (Step 7 plan note): a wrong-typed list
-        // `id` is now `InvalidAttributeType` from lowering AND, because the
+        // Pins the accepted cascade: a wrong-typed list `id` is
+        // `InvalidAttributeType` from lowering AND, because the
         // pre-scan `page_list_ids` (built from the raw config, never the
         // lowered one) never sees a string id for this list either, a
         // facet-panel targeting it is `UnresolvedTarget` too. Both are true
@@ -9410,7 +9394,7 @@ page id="home" route="/" {{
     #[test]
     fn chip_kind_absent_lowers_to_none() {
         // `chip property="x"` with no `kind` lowers to `kind: None` — the
-        // existing cardinality-derived shape, unchanged (A12.3 default).
+        // existing cardinality-derived shape.
         let src = format!(
             r#"{}
 page id="home" route="/" {{
@@ -9559,7 +9543,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── CompoundViewerWithPagedList (Slice 2 decision 4) ─────────────────────
+    // ── CompoundViewerWithPagedList ─────────────────────
 
     fn has_compound_paged_list_error(report: &ValidationReport, route: &str) -> bool {
         report.iter().any(|d| {
@@ -9974,11 +9958,11 @@ page id="home" route="/" {{
         );
     }
 
-    // ── Bug 2 regression: bare ".." must trigger InvalidNarrativePath ─────────
+    // ── Bare ".." must trigger InvalidNarrativePath ─────────
 
     /// A narrative `file=".."` (bare double-dot, no slash) must be rejected.
-    /// Previously, `file.split('.').any(|seg| seg == "..")` never matched
-    /// because splitting ".." by '.' yields ["", "", ""], none equal "..".
+    /// `file.split('.').any(|seg| seg == "..")` would never match it: splitting
+    /// ".." by '.' yields ["", "", ""], none equal "..".
     #[test]
     fn narrative_bare_dotdot_fails() {
         let narrative_files: Vec<String> = vec![];
@@ -10075,11 +10059,10 @@ site {
         assert_eq!(result.site.cover_image, Some("assets/covers/nested.webp".to_owned()));
     }
 
-    /// Regression guard: a project declaring `cover-image` while its
-    /// `assets/` inventory is empty (typically: no `assets/` directory at
-    /// all) must NOT boot green. The check used to skip itself on an empty
-    /// inventory, so exactly this case — the one it exists to catch —
-    /// failed open and the site index served a broken `<img>`.
+    /// A project declaring `cover-image` while its `assets/` inventory is empty
+    /// (typically: no `assets/` directory at all) must NOT boot green. A check
+    /// that skips itself on an empty inventory fails open on exactly this case,
+    /// the one it exists to catch, and the site index serves a broken `<img>`.
     #[test]
     fn cover_image_with_empty_asset_inventory_fails() {
         let ctx = ctx_with_assets(&[]);
@@ -10532,9 +10515,9 @@ page id="detail" route="/items/:id" {{
         );
     }
 
-    // ── G8: `group` children on resource-detail ───────────────────────────────
+    // ── `group` children on resource-detail ───────────────────────────────
 
-    /// A site with one declared chrome id, `group-a`, for the G8 tests.
+    /// A site with one declared chrome id, `group-a`, for the `group` tests.
     const GROUP_SITE: &str = r#"
 site {
     title "Test Project"
@@ -10758,7 +10741,7 @@ site {
         assert_eq!(hits[0].severity, Severity::Warning);
     }
 
-    // ── G7: `incoming-links` child on resource-detail (Incunabula Slice 5) ────
+    // ── `incoming-links` child on resource-detail ────
 
     /// `GROUP_SITE`'s one declared chrome id, `group-a`, doubles as the
     /// declared incoming-links caption id.
@@ -10796,7 +10779,7 @@ site {
         );
     }
 
-    // ── HdM Slice 3 (G3): grouped incoming-links attributes ─────────────────
+    // ── Grouped incoming-links attributes ─────────────────
 
     #[test]
     fn incoming_links_lowers_grouping_and_row_attributes() {
@@ -11239,8 +11222,9 @@ page id="viewer" route="/view/:id" {{
         }
     }
 
-    /// The retired `jump-to-member`/`jump-placeholder` get no diagnostic:
-    /// CPE has no unknown-attribute check, so a stale one is ignored.
+    /// The attributes `jump-to-member`/`jump-placeholder`, which the engine
+    /// does not read, get no diagnostic: CPE has no unknown-attribute check, so
+    /// one is ignored.
     #[test]
     fn compound_viewer_ignores_the_retired_jump_attributes() {
         let result = run_compound_viewer(
@@ -11352,7 +11336,7 @@ page id="viewer" route="/view/:id" {{
         );
     }
 
-    // ── compound-viewer layout= / index= (Incunabula Slice 3b D3/D4) ─────────
+    // ── compound-viewer layout= / index= ─────────
 
     /// Lower one `compound-viewer` declaration (`attrs` = everything after
     /// the node name) on a `$id` page.
@@ -11740,7 +11724,7 @@ page id="book" route="/books/:id" {{
     }
 
     /// The lowered `paired` flag of the page's (single) `compound-viewer` —
-    /// the mirror of `lowered_navigator` (W7 review finding).
+    /// the mirror of `lowered_navigator`.
     fn lowered_paired(config: &ValidatedConfig) -> bool {
         config.pages[0]
             .body
@@ -11872,7 +11856,7 @@ page id="limited" route="/limited" {{
         }
     }
 
-    // ── Bug 3 regression: per-page / limit integer bounds ────────────────────
+    // ── Per-page / limit integer bounds ────────────────────
 
     /// `per-page 0` must be rejected (0 is not a positive integer).
     #[test]
@@ -12009,7 +11993,7 @@ page id="home" route="/" {{
         assert!(missing_count >= 2, "expected at least 2 MissingRequiredAttribute, got: {:?}", k);
     }
 
-    // ── O6: `narrative-for` children on resource-detail ───────────────────────
+    // ── `narrative-for` children on resource-detail ───────────────────────
 
     /// A `$id` book page whose `resource-detail` carries `detail_body`.
     fn narrative_for_src(detail_body: &str) -> String {
@@ -12125,7 +12109,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── G9: `order-by` options on resource-list (Incunabula Slice 8) ──────────
+    // ── `order-by` options on resource-list ──────────
 
     /// A site with two chrome strings the `order-by` tests can name as labels.
     const ORDER_SITE: &str = r#"
@@ -12235,7 +12219,7 @@ site {
 
     #[test]
     fn order_by_wrong_typed_attributes_report_instead_of_vanishing() {
-        // Decision 11a: every `order-by` attribute goes through a reporting
+        // Every `order-by` attribute goes through a reporting
         // reader, so `key=#true` (a bool, not a string) is a boot error — not
         // a silently-dropped option.
         for child in [
@@ -12346,7 +12330,7 @@ page id="b" route="/b" {{
         );
     }
 
-    // ── timeline (Incunabula Slice 4) ─────────────────────────────────────────
+    // ── timeline (Incunabula) ─────────────────────────────────────────
 
     fn timeline_src(attrs: &str) -> String {
         format!(

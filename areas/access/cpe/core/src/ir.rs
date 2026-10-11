@@ -75,9 +75,9 @@ pub struct MediaThumb {
 
 /// The one meaning of "tall" for a box `w` wide and `h` high: at least three
 /// times as high as wide. A 1:3 box is tall. It decides `data-tile="tall"`,
-/// which selects the tall-tile rules in `static/cpe/grid.css`, and
+/// which selects the tall-tile rules in `dsp-incubator cpe/static/cpe/grid.css`, and
 /// `data-frame="tall"` (`component::media::frame_is_tall`), which selects the
-/// tall-frame rules in `static/cpe/media.css`.
+/// tall-frame rules in `dsp-incubator cpe/static/cpe/media.css`.
 #[doc(hidden)]
 pub fn is_tall(w: i64, h: i64) -> bool {
     w > 0 && h >= 3 * w
@@ -437,7 +437,7 @@ pub struct IncomingLink {
     /// parent's own `seq`.
     pub parent: Option<MemberParent>,
     /// The row's group key when the spec groups by a source PROPERTY
-    /// (`group-by="<property>"`, HdM Slice 3 / G3). `None` when the spec is
+    /// (`group-by="<property>"`). `None` when the spec is
     /// ungrouped, groups by `via` (the key is [`Self::via`] itself), or the
     /// source carries no value for the group property (the trailing,
     /// headless group). A multi-valued group property contributes its first
@@ -455,7 +455,7 @@ pub struct IncomingLink {
 }
 
 /// The group an [`IncomingLink`] row belongs to under a property
-/// `group-by` (HdM Slice 3 / G3).
+/// `group-by`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GroupKey {
     /// A `list_value` group property: the list node.
@@ -660,11 +660,11 @@ pub struct ResourceLink {
     pub resource_label: String,
 }
 
-// ── Data ARKs (Slice 9) ───────────────────────────────────────────────────────
+// ── Data ARKs ─────────────────────────────────────────────────────────────────
 
 /// Every plain DSP data ARK URL starts with this: the fixed resolver, DaSCH's
-/// assigned number and dsp-api's ARK version. `tools/dao-lift/src/ark.rs` and
-/// the vendored `cpe-ports` crate's `DATA_ARK_PREFIX`, from which the ARKs of
+/// assigned number and dsp-api's ARK version. `dsp-incubator cpe/tools/dao-lift/src/ark.rs` and
+/// `cpe_ports::DATA_ARK_PREFIX`, from which the ARKs of
 /// Incunabula's store are built, spell the same prefix; the three must stay equal.
 pub(crate) const DATA_ARK_PREFIX: &str = "https://ark.dasch.swiss/ark:/72163/1/";
 
@@ -709,7 +709,7 @@ impl DataArks {
 // ── Top-level ─────────────────────────────────────────────────────────────────
 
 /// The fully-validated, typed IR produced by `validate::validate_with_data`.
-/// Replaces the loose `RawConfig` for Phase 3 rendering.
+/// Replaces the loose `RawConfig` for rendering.
 #[derive(Debug, PartialEq)]
 pub struct ValidatedConfig {
     pub site: SiteConfig,
@@ -755,21 +755,19 @@ pub struct SiteConfig {
     /// Absent `theme {}` block ⇒ `ThemeKnob::default()` (Ochre/Tint).
     /// Emitted as `data-accent` and `data-bg` on `<html>` by `render_page`.
     pub theme: crate::theme::ThemeKnob,
-    /// `site { date-precision-word #true }` (Incunabula Slice 8, decision 4):
-    /// append the localized precision word (`Tag`/`Monat`/`Jahr`/`Zeitraum`,
-    /// plus the Gregorian calendar word, not at year precision) after every rendered date value as
-    /// `span.prec`. Default `false` — a project that does not ask renders its
-    /// dates exactly as before.
+    /// `site { date-precision-word #true }`: append the localized precision word
+    /// (`Tag`/`Monat`/`Jahr`/`Zeitraum`, plus the Gregorian calendar word, not at year precision)
+    /// after every rendered date value as `span.prec`. Default `false` — a project that does not
+    /// ask renders its dates without the word.
     pub date_precision_word: bool,
-    /// `site { footer-attribution "…" }` (Incunabula Slice 8 / G11, decision
-    /// 9): a project override for the footer's attribution line.
+    /// `site { footer-attribution "…" }`: a project override for the footer's attribution line.
     /// Chrome-id-or-literal. `None` ⇒ `ChromeMsg::FooterAttribution`.
     pub footer_attribution: Option<String>,
-    /// `site { not-found { browse route="…" label="…" } }` (Incunabula Slice
-    /// 8 / G11, decision 8): the project 404's browse links, in declaration
-    /// order, at most three (`TooManyNotFoundBrowseLinks`). Each `route`
-    /// matches a declared page route exactly (`UnresolvedNotFoundBrowseRoute`).
-    /// Empty ⇒ the engine's default (the first three nav items).
+    /// `site { not-found { browse route="…" label="…" } }`: the project 404's browse links, in
+    /// declaration order, at most three (`TooManyNotFoundBrowseLinks`). Each
+    /// `route` matches a declared page route exactly
+    /// (`UnresolvedNotFoundBrowseRoute`). Empty ⇒ the engine's default (the
+    /// first three nav items).
     pub not_found_browse: Vec<NotFoundBrowse>,
     /// `site { narrative-companion "…" }`: what stands beside a narrative
     /// page's reading column unless the page's first `narrative` says
@@ -908,8 +906,8 @@ pub struct ChromeString {
     pub translations: Vec<(String, String)>, // (lang, text), order preserved
 }
 
-/// One captioned property group on a `resource-detail` (Incunabula Slice 3 /
-/// G8). Generic — any project may partition its detail properties this way.
+/// One captioned property group on a `resource-detail`. Generic — any project may partition its
+/// detail properties this way.
 ///
 /// Maps from `resource-detail { group label="<chrome-id>" "a" "b" … }`.
 #[derive(Debug, Clone, PartialEq)]
@@ -922,19 +920,18 @@ pub struct PropertyGroup {
     /// same shape as `show-properties`).
     pub properties: Vec<String>,
     /// Optional chrome-string **id** of an italic sentence shown under the
-    /// caption when EVERY member is absent on the record (HdM Slice 3 /
-    /// decision 6). `None` ⇒ an all-absent group renders nothing (unchanged).
-    /// An undeclared id is the Warning `UnknownGroupEmptyLabel`; the group
-    /// then renders as if `empty=` were unset.
+    /// caption when EVERY member is absent on the record. `None` ⇒ an all-absent group renders
+    /// nothing. An undeclared id is the Warning `UnknownGroupEmptyLabel`; the
+    /// group then renders as if `empty=` were unset.
     pub empty: Option<String>,
     /// Optional chrome-string **id** captioning a closing row that lists the
     /// record's resource-level annotation-link partners
-    /// (`ProjectReads::resource_links`; Incunabula Slice 6, D9). `None` ⇒ no row.
+    /// (`ProjectReads::resource_links`). `None` ⇒ no row.
     /// An undeclared id is the Warning `UnknownGroupLinksLabel`.
     pub links_label: Option<String>,
 }
 
-/// The `compound-viewer`'s `member-links` row (book-page step 6a): a caption
+/// The `compound-viewer`'s `member-links` row: a caption
 /// and the member `link` properties whose targets it lists, in order.
 ///
 /// Maps from `compound-viewer { member-links label="<chrome-id>" "a" "b" … }`.
@@ -948,9 +945,8 @@ pub struct MemberLinks {
     pub properties: Vec<String>,
 }
 
-/// One per-resource introduction on a `resource-detail` (Incunabula Slice 3 /
-/// O6). Generic — any project may attach a narrative file to specific
-/// resources this way.
+/// One per-resource introduction on a `resource-detail`. Generic — any project may attach a
+/// narrative file to specific resources this way.
 ///
 /// Maps from `resource-detail { narrative-for "<resource-id>" file="…" }`.
 #[derive(Debug, Clone, PartialEq)]
@@ -962,7 +958,7 @@ pub struct NarrativeFor {
     pub file: String,
 }
 
-/// The reverse-link list on a `resource-detail` (Incunabula Slice 5 / G7) —
+/// The reverse-link list on a `resource-detail` —
 /// the resources of one source `class` that point AT the rendered resource
 /// through any of the named `link` properties. Generic — any project may
 /// declare one.
@@ -985,23 +981,22 @@ pub struct IncomingLinksSpec {
     pub properties: Vec<String>,
     /// The list's ordering; `IncomingOrder::Name` when `order=` is absent.
     pub order: IncomingOrder,
-    /// The row cap (item 6, Backlog hardening batch 3). Always resolved —
-    /// never `Option` — to [`DEFAULT_INCOMING_LINKS_LIMIT`] when the optional
-    /// `limit=<int>` attribute is absent. A present-but-invalid value (not an
-    /// integer, or an integer outside `1..=u32::MAX`) is `InvalidAttributeType`
-    /// at lowering time (`validate::lower_incoming_links`), so this field is
-    /// always a valid positive cap by the time rendering sees it.
+    /// The row cap. Always resolved — never `Option` — to
+    /// [`DEFAULT_INCOMING_LINKS_LIMIT`] when the optional `limit=<int>`
+    /// attribute is absent. A present-but-invalid value (not an integer, or an
+    /// integer outside `1..=u32::MAX`) is `InvalidAttributeType` at lowering
+    /// time (`validate::lower_incoming_links`), so this field is always a valid
+    /// positive cap by the time rendering sees it.
     ///
     /// In grouped mode (`grouping: Some`) an absent `limit=` resolves to
-    /// [`GROUPED_INCOMING_LIMIT_CEILING`] instead (HdM Slice 3, decision 10),
-    /// so a cut never silently drops trailing groups; an explicit `limit=`
-    /// (including `limit=50`) is always honoured.
+    /// [`GROUPED_INCOMING_LIMIT_CEILING`] instead, so a cut never silently
+    /// drops trailing groups; an explicit `limit=` (including `limit=50`) is
+    /// always honoured.
     pub limit: u32,
-    /// Optional partitioning of the rows into headed groups (HdM Slice 3,
-    /// G3), from `group-by=`. `None` ⇒ today's flat list. The grouped-only
-    /// options (`layout=`, `note-label=`) live inside, so an option without a
-    /// grouping is unrepresentable; written without `group-by` they are
-    /// ignored.
+    /// Optional partitioning of the rows into headed groups, from `group-by=`. `None` ⇒ a flat
+    /// list. The grouped-only options (`layout=`, `note-label=`) live inside,
+    /// so an option without a grouping is unrepresentable; written without
+    /// `group-by` they are ignored.
     pub grouping: Option<IncomingGrouping>,
     /// Optional `row-label="<property>"`: a `text` property of the source
     /// resource used as the row's link text instead of its `name` (fallback
@@ -1016,7 +1011,7 @@ pub struct IncomingLinksSpec {
     pub sort_property: Option<String>,
 }
 
-/// What an `incoming-links` list is partitioned by (HdM Slice 3, G3), from
+/// What an `incoming-links` list is partitioned by, from
 /// `group-by="<name>"`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum IncomingGroupBy {
@@ -1028,7 +1023,7 @@ pub enum IncomingGroupBy {
     Property(String),
 }
 
-/// The grouped `incoming-links` layout (HdM Slice 3), from `layout=`. A
+/// The grouped `incoming-links` layout, from `layout=`. A
 /// closed vocabulary; meaningful only with `group-by`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum IncomingLayout {
@@ -1040,7 +1035,7 @@ pub enum IncomingLayout {
     Columns,
 }
 
-/// The grouping options of an `incoming-links` list (HdM Slice 3, G3).
+/// The grouping options of an `incoming-links` list.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IncomingGrouping {
     /// What the rows are partitioned by.
@@ -1056,24 +1051,23 @@ pub struct IncomingGrouping {
     pub note_label: Option<String>,
 }
 
-/// The `incoming-links limit=` default in grouped mode (HdM Slice 3,
-/// decision 10): a safety ceiling above any real fan-in (HdM's largest is
-/// 105), so group counts are true. Counts are exact only when no overall cut
-/// occurred (`rows.len() == total`).
+/// The `incoming-links limit=` default in grouped mode: a safety ceiling above any real fan-in
+/// (HdM's largest is 105), so group counts are true. Counts are exact only when
+/// no overall cut occurred (`rows.len() == total`).
 pub const GROUPED_INCOMING_LIMIT_CEILING: u32 = 1000;
 
 /// The built-in default for `incoming-links limit=` when the attribute is
-/// absent (item 6, Backlog hardening batch 3). Chosen to comfortably exceed
-/// every shipped project's largest reverse-link list (Incunabula's biggest
-/// border-strip fan-in is 23 rows) while still bounding a future large-fan-in
-/// class (e.g. HdM's Person ← Performance, G3) from rendering unboundedly.
+/// absent. Chosen to comfortably exceed every shipped project's largest
+/// reverse-link list (Incunabula's biggest border-strip fan-in is 23 rows)
+/// while still bounding a future large-fan-in class (e.g. HdM's Person ←
+/// Performance) from rendering unboundedly.
 pub const DEFAULT_INCOMING_LINKS_LIMIT: u32 = 50;
 
-/// The hydrated result of `query::incoming_links`/`ProjectReads::incoming_links`
-/// (item 6, Backlog hardening batch 3): the capped `rows` (at most `limit`
-/// long) alongside the UNCAPPED `total` match count, so the renderer can
-/// show an honest "N of M" line when `rows.len() < total`. `total == 0` iff
-/// `rows` is empty.
+/// The hydrated result of
+/// `query::incoming_links`/`ProjectReads::incoming_links`: the capped `rows` (at
+/// most `limit` long) alongside the UNCAPPED `total` match count, so the
+/// renderer can show an honest "N of M" line when `rows.len() < total`. `total
+/// == 0` iff `rows` is empty.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IncomingLinks {
     /// The capped rows, in the spec's declared `order`.
@@ -1096,8 +1090,7 @@ pub struct PropertyLabel {
 /// translations, and an optional per-language plural.
 ///
 /// Maps from `labels { class "name" { de "…" en "…" plural { de "…" en
-/// "…" } } }`. The `plural` child is optional (search-bar plan step 5b,
-/// #178 reconciliation) — `plural` is `Vec::new()` when undeclared, which
+/// "…" } } }`. The `plural` child is optional — `plural` is `Vec::new()` when undeclared, which
 /// is not an error; `labels::resolve_class_plural` falls back
 /// to the singular `translations` (and beyond that, humanization) in that
 /// case. There is deliberately no `plural` field on `PropertyLabel` —
@@ -1119,7 +1112,7 @@ pub struct Page {
     /// Route pattern, e.g. `"/"` or `"/books/:id"`.
     pub route: String,
     /// Route parameters extracted from the route pattern (`:param` → `"param"`).
-    /// Populated from the route at parse time; used by Step 3 `$param` checks.
+    /// Populated from the route at parse time; used by the `$param` checks.
     pub params: Vec<String>,
     /// Typed, validated body components in render order. Lowered from the raw
     /// KDL component nodes by the validator; components that fail validation
@@ -1182,21 +1175,21 @@ pub struct FigureMore {
 /// custom components `Timeline`, `WoodcutCases`, `EditionCards` and
 /// `StripRow` (`page` itself is the
 /// `Page` struct, not a body `Component` variant, so it is not counted among
-/// either the seven v1 components in `COMPONENT_LIBRARY.md` or this enum's
+/// either the seven v1 components in `dsp-incubator cpe/docs/COMPONENT_LIBRARY.md` or this enum's
 /// variants).
 ///
-/// Mapping to `COMPONENT_LIBRARY.md`:
+/// Mapping to `dsp-incubator cpe/docs/COMPONENT_LIBRARY.md`:
 /// - `Narrative` → the `narrative` component.
 /// - `ResourceList` → `resource-list`.
 /// - `ResourceDetail` → `resource-detail`.
 /// - `CompoundViewer` → `compound-viewer`.
 /// - `FacetPanel` → `facet-panel`.
 /// - `SearchBar` → `search-bar`.
-/// - `Timeline` → `timeline` (Incunabula Slice 4 — a per-project custom component registered in the
-///   `(project, name)` registry, see dsp-incubator cpe/docs/adr/0011-per-project-components.md —
-///   not one of the six generic v1 components above).
+/// - `Timeline` → `timeline` (a per-project custom component registered in the `(project, name)`
+///   registry, see dsp-incubator cpe/docs/adr/0011-per-project-components.md — not one of the six
+///   generic v1 components above).
 /// - `WoodcutCases` → `woodcut-cases`, `EditionCards` → `edition-cards`, `StripRow` → `strip-row`
-///   (Incunabula Slice 7, per-project).
+///   (Incunabula's, per-project).
 #[derive(Debug, PartialEq)]
 pub enum Component {
     /// Renders a Markdown file from the project's `narrative/` directory.
@@ -1233,20 +1226,20 @@ pub enum Component {
         /// teaser … }` block ([`Gloss::Composed`]).
         gloss: Option<Gloss>,
         /// Row chips (RL-2 `.rl-annot__meta`) with an optional per-chip shape
-        /// override (A12.3). Absent `kind` ⇒ today's cardinality rule: a
+        /// override. Absent `kind` ⇒ the cardinality rule: a
         /// single-valued list property renders as a `.term` chip, a
         /// multi-valued one as `.keyword` chips (same single-vs-multi split as
         /// `resource-detail`). Empty ⇒ no chips. Maps repeatable
         /// `chip property="…" kind="term"|"keyword"`.
         chips: Vec<ChipSpec>,
         /// Chrome-string **id** override for the "Name A–Z" ordering label
-        /// (A12.4) — id only, never literal text (`search-bar`'s
+        /// — id only, never literal text (`search-bar`'s
         /// `placeholder`/`scope` precedent). `None`, or an id that does not
         /// resolve, ⇒ the `ChromeMsg::OrderNameAsc` default.
         /// Maps `order-name-label="…"`.
         order_name_label: Option<String>,
         /// Chrome-string **id** override for the "Name Z–A" ordering label
-        /// (A12.4) — id only, never literal text. `None`, or an id that does
+        /// — id only, never literal text. `None`, or an id that does
         /// not resolve, ⇒ the `ChromeMsg::OrderNameDesc` default.
         /// Maps `order-name-desc-label="…"`.
         order_name_desc_label: Option<String>,
@@ -1262,24 +1255,22 @@ pub enum Component {
         /// The wire vocabulary is unchanged. Boot-validated for existence on
         /// the class like `sort`. Maps `order-name-property="…"`.
         order_name_property: Option<String>,
-        /// Project-declared ordering options (`order-by` children, Incunabula
-        /// Slice 8 / G9), in config order. Each adds a `?sort=<key>` to this
-        /// list's vocabulary on top of the built-ins. Empty ⇒ today's
-        /// built-in-only ordering exactly.
+        /// Project-declared ordering options (`order-by` children), in config order. Each adds a
+        /// `?sort=<key>` to this list's vocabulary on top of the built-ins. Empty ⇒ the
+        /// built-in ordering only.
         order_options: Vec<OrderOption>,
         /// The `link` property naming the embedded-media set for each row
-        /// (browse-row thumbs — embedded-media plan step 6). `None` ⇒ no thumb.
-        /// Maps `media="…"`. Boot-validated for existence/link-type/
-        /// image-likeness (same treatment as `where`/`sort`), and for
-        /// consistency against the class→media-property map built from
-        /// `resource-detail media="…"` declarations (a mismatch is a boot
-        /// hard-fail; a list-only declaration with no matching detail-page
-        /// entry is fine).
+        /// (browse-row thumbs). `None` ⇒ no thumb. Maps `media="…"`.
+        /// Boot-validated for existence/link-type/image-likeness (same
+        /// treatment as `where`/`sort`), and for consistency against the
+        /// class→media-property map built from `resource-detail media="…"`
+        /// declarations (a mismatch is a boot hard-fail; a list-only
+        /// declaration with no matching detail-page entry is fine).
         media: Option<String>,
         /// Grid-mode opt-in (`grid=#true`). `false` when absent. Requires
         /// `media` to be `Some` on the same `resource-list` —
         /// `check_grid_without_media` hard-fails a `grid: true` with no
-        /// `media` (grid-mode plan decision 4).
+        /// `media`.
         grid: bool,
         /// The grid tile's aspect ratio (`tile-ratio="W:H"`). `None` ⇒ the
         /// stylesheet's default. Requires `grid: true`
@@ -1305,30 +1296,26 @@ pub enum Component {
         /// absent ⇒ `None` (this page's resources are simply not link targets).
         class: Option<String>,
         /// The `link` property naming this resource's embedded-media set (the
-        /// record viewer — embedded-media plan step 6). `None` ⇒ no media.
-        /// Maps `media="…"`. Boot-validated: the property must exist
-        /// on the resolved class, be `link`-typed, and target a class whose
-        /// resources carry `representations` rows. `media` requires a
-        /// resolvable class — either this component's own `class` attribute,
-        /// or (for a literal `id`) the data-looked-up class of that resource —
-        /// a class-less `$param` page with no `class=` hard-fails
+        /// record viewer). `None` ⇒ no media. Maps `media="…"`. Boot-validated:
+        /// the property must exist on the resolved class, be `link`-typed, and
+        /// target a class whose resources carry `representations` rows. `media`
+        /// requires a resolvable class — either this component's own `class`
+        /// attribute, or (for a literal `id`) the data-looked-up class of that
+        /// resource — a class-less `$param` page with no `class=` hard-fails
         /// (`UnresolvableMediaClass`).
         media: Option<String>,
-        /// Captioned property groups (`group label="…" "a" "b" …` children,
-        /// Incunabula Slice 3 / G8), in declaration order. Each renders as a
-        /// `section.pgroup` after the flat `div.props`. Empty ⇒ today's
-        /// behaviour exactly. When non-empty and `show_properties` is `None`,
-        /// the flat list is **empty** (not "every property") — see
+        /// Captioned property groups (`group label="…" "a" "b" …` children), in declaration
+        /// order. Each renders as a `section.pgroup` after the flat `div.props`.
+        /// Empty ⇒ no group renders. When non-empty and `show_properties` is
+        /// `None`, the flat list is **empty** (not "every property") — see
         /// `render_resource_detail`.
         groups: Vec<PropertyGroup>,
         /// Per-resource introductions (`narrative-for "<id>" file="…"`
-        /// children, Incunabula Slice 3 / O6), in declaration order. When the
-        /// rendered resource's id matches an entry, its narrative file renders
-        /// as `div.record__intro` inside `.record__body`. Empty ⇒ no intro on
-        /// any record (today's markup exactly).
+        /// children), in declaration order. When the rendered resource's id
+        /// matches an entry, its narrative file renders as `div.record__intro`
+        /// inside `.record__body`. Empty ⇒ no intro on any record.
         narrative_for: Vec<NarrativeFor>,
-        /// The reverse-link list (`incoming-links …` child, Incunabula Slice 5
-        /// / G7). `None` ⇒ today's behaviour exactly.
+        /// The reverse-link list (`incoming-links …` child). `None` ⇒ no list.
         incoming_links: Option<IncomingLinksSpec>,
         /// The optional header slots (`alt-title-property=`,
         /// `author-property=`, an `imprint { part … }` child). `None` when
@@ -1336,14 +1323,13 @@ pub enum Component {
         head: Option<HeadSlots>,
         /// Whether this record is paired with a same-`id` `compound-viewer`
         /// on its page — a **boot fact**, set once per page in
-        /// `check_and_lower_pages` from `pairs_with_navigator` (Incunabula
-        /// Slice 3b D1/D10, dsp-incubator
-        /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md), never a config attribute and
-        /// never a per-request sibling scan. `true` ⇒ the record drops the
-        /// `.rv-contents` member list (the navigator is the one member list)
-        /// and, when the navigator is a populated `layout="pages"` reader,
-        /// renders it inside its own article (`render_body`); `false`
-        /// otherwise.
+        /// `check_and_lower_pages` from `pairs_with_navigator`
+        /// (dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md),
+        /// never a config attribute and never a per-request sibling scan.
+        /// `true` ⇒ the record drops the `.rv-contents` member list (the
+        /// navigator is the one member list) and, when the navigator is a
+        /// populated `layout="pages"` reader, renders it inside its own article
+        /// (`render_body`); `false` otherwise.
         navigator: bool,
     },
 
@@ -1355,13 +1341,12 @@ pub enum Component {
         /// compound parent.
         source: String,
         /// Optional member→image `link` property naming each member's scan
-        /// (`compound-viewer media="…"`, Incunabula Slice 2 decision 11).
-        /// Absent ⇒ today's behaviour exactly: no member image is rendered.
-        /// When set, the reader shows the current member's first linked
-        /// Image as a plain, non-interactive `figure.cv-member__scan > img`,
-        /// and the property is suppressed from the member's property list.
-        /// Boot-validated like `resource-detail`'s `media` against the
-        /// distinct classes of the compound's members, taken from the data
+        /// (`compound-viewer media="…"`). Absent ⇒ no member image is rendered.
+        /// When set, the reader shows the current member's first linked Image
+        /// as a plain, non-interactive `figure.cv-member__scan > img`, and the
+        /// property is suppressed from the member's property list.
+        /// Boot-validated like `resource-detail`'s `media` against the distinct
+        /// classes of the compound's members, taken from the data
         /// (`check_compound_viewer_media`).
         media: Option<String>,
         /// The `pages` reader's page picker (`compound-viewer picker="…"`,
@@ -1369,31 +1354,29 @@ pub enum Component {
         /// `None` ⇒ no picker: the centre keeps its count. Valid only with
         /// `layout="pages"` (`PagesLayoutOnly`).
         picker: Option<PickerMode>,
-        /// The reader's declared layout (`compound-viewer layout="…"`,
-        /// Incunabula Slice 3b D3). Required: an absent or unknown value is a
-        /// boot Error and the component is skipped — no default layout exists.
+        /// The reader's declared layout (`compound-viewer layout="…"`).
+        /// Required: an absent or unknown value is a boot Error and the
+        /// component is skipped — no default layout exists.
         layout: CompoundLayout,
-        /// How the member index is shown (`compound-viewer index="…"`,
-        /// Incunabula Slice 3b D4 / Q1). Required, like `layout`.
+        /// How the member index is shown (`compound-viewer index="…"`). Required, like `layout`.
         index: MemberIndex,
         /// Whether this compound-viewer is paired with a same-`id`
         /// `resource-detail` on its page — the mirror image of
         /// `ResourceDetail.navigator`, a **boot fact** set once per page in
         /// `check_and_lower_pages` from the SAME `pairs_with_navigator` call
-        /// (Incunabula Slice 3 code review, W7), never a config attribute and
-        /// never a per-request sibling scan. `true` ⇒ the empty (`total ==
-        /// 0`) branch renders the "no members" sentence alone — the paired
-        /// `resource-detail` already owns the title/eyebrow/properties, so
-        /// showing `cfg.parent`'s head+props here would duplicate them
-        /// (dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md D1). `false` ⇒
-        /// unchanged (a standalone compound-viewer with no paired record, e.g. Alice's
-        /// `/wonderland`, still degrades to the parent-head-and-properties branch).
+        /// call, never a config attribute and never a per-request sibling scan. `true` ⇒ the
+        /// empty (`total == 0`) branch renders the "no members" sentence alone — the paired
+        /// `resource-detail` already owns the title/eyebrow/properties, so showing
+        /// `cfg.parent`'s head+props here would duplicate them (dsp-incubator
+        /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md). `false` ⇒ a standalone
+        /// compound-viewer with no paired record, e.g. Alice's `/wonderland`, degrades to the
+        /// parent-head-and-properties branch.
         paired: bool,
         /// The member's outgoing links shown as one captioned row under the
-        /// `pages` pager (`compound-viewer { member-links label="…" "p" … }`,
-        /// book-page step 6a). `None` ⇒ no row. Valid only with
-        /// `layout="pages"` (`PagesLayoutOnly`): the `contents` layout
-        /// already lists every member property.
+        /// `pages` pager (`compound-viewer { member-links label="…" "p" … }`).
+        /// `None` ⇒ no row. Valid only with `layout="pages"`
+        /// (`PagesLayoutOnly`): the `contents` layout already lists every
+        /// member property.
         member_links: Option<MemberLinks>,
         /// Whether the reader renders the shown page's annotation register
         /// (`compound-viewer annotations=#true`, dsp-incubator
@@ -1431,20 +1414,18 @@ pub enum Component {
         /// Optional id of a project-declared `chrome { string }` holding the
         /// scope note (e.g. "Searches name and description") — an id, not a
         /// literal, resolved at render time via `chrome_lookup`. Mirrors
-        /// `placeholder`'s "id, not literal" convention; unvalidated for
-        /// id-existence today (see the plan's Risks section — boot-validating
-        /// this is deferred, matching `placeholder`'s current status).
+        /// `placeholder`'s "id, not literal" convention; like `placeholder`, it is not
+        /// validated for id-existence.
         scope: Option<String>,
     },
 
-    /// A per-project timeline (Incunabula Slice 4 — the first per-project
-    /// custom component, `docs/cpe-poc.md` §8.2 / DESIGN.md G1): one marker
+    /// Incunabula's timeline (a per-project component): one marker
     /// per resource of `class`, positioned on a fixed year axis by a `date`
     /// property and grouped into lanes by a `list_value` property.
     ///
     /// Maps `timeline class="…" date-property="…" lane-property="…"
     /// extent-property="…" axis-start=<int> axis-end=<int>`. The axis bounds
-    /// are explicit config, never derived from the data (plan decision 6).
+    /// are explicit config, never derived from the data.
     Timeline {
         /// The Class whose resources become markers (required).
         class: String,
@@ -1462,7 +1443,7 @@ pub enum Component {
         axis_end: i32,
     },
 
-    /// Incunabula's woodcut crop figures (Slice 7, a per-project component):
+    /// Incunabula's woodcut crop figures (a per-project component):
     /// per case, the impressions of one woodblock cut from their pages' scans
     /// by annotation, or two pages joined by a page-level link.
     ///
@@ -1477,7 +1458,7 @@ pub enum Component {
         cases: Vec<ShowcaseCase>,
     },
 
-    /// Incunabula's edition cards (Slice 7, a per-project component): one
+    /// Incunabula's edition cards (a per-project component): one
     /// card per book, its cover plate, a language eyebrow, its title and
     /// imprint, linking to the book's reader.
     ///
@@ -1494,7 +1475,7 @@ pub enum Component {
         imprint: Vec<GlossPart>,
     },
 
-    /// Incunabula's border-strip row (Slice 7, a per-project component): the
+    /// Incunabula's border-strip row (a per-project component): the
     /// resources of `class` used most often, as a row of tiles.
     ///
     /// Maps `strip-row section="…" class="…" media="…" uses-property="…"
@@ -1536,7 +1517,7 @@ impl Component {
     }
 }
 
-// ── Showcase figures (Incunabula Slice 7) ─────────────────────────────────────
+// ── Showcase figures (Incunabula) ─────────────────────────────────────────────
 
 /// How a `woodcut-cases` block sets its cases (`layout=`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1680,7 +1661,7 @@ pub struct StripRowPayload {
     pub class_total: usize,
 }
 
-// ── Timeline payload (Incunabula Slice 4) ─────────────────────────────────────
+// ── Timeline payload (Incunabula) ─────────────────────────────────────────────
 
 /// One lane of a `timeline`: a node of the lane property's list vocabulary,
 /// in vocabulary (`list_nodes.seq`) order.
@@ -1751,7 +1732,7 @@ pub struct HeadSlots {
     pub imprint: Vec<GlossPart>,
 }
 
-// ── Row chip shape (A12.3)─────────────────────────────────────────────────────
+// ── Row chip shape ────────────────────────────────────────────────────────────
 
 /// One configured row chip: the source property, plus an optional shape
 /// override. Maps repeatable `chip property="…" kind="…"` on `resource-list`.
@@ -1766,7 +1747,7 @@ pub struct ChipSpec {
 }
 
 /// The closed set of reader layouts a `compound-viewer layout="…"` attribute
-/// may name (Incunabula Slice 3b D3). Deliberately no `Default` impl: the
+/// may name. Deliberately no `Default` impl: the
 /// attribute is required, so no lowering path may invent a layout.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompoundLayout {
@@ -1778,8 +1759,8 @@ pub enum CompoundLayout {
 }
 
 /// The closed set of member-index presentations a `compound-viewer
-/// index="…"` attribute may name (Incunabula Slice 3b D4 / Q1). Deliberately
-/// no `Default` impl: the attribute is required.
+/// index="…"` attribute may name. Deliberately no `Default` impl: the attribute
+/// is required.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemberIndex {
     /// `index="rail"` — the sticky contents rail beside the reader.
@@ -1833,7 +1814,7 @@ pub type ResourceListId = String;
 
 /// A `where` filter child node on a `resource-list`.
 ///
-/// Maps the three `where` node shapes in `CONFIG_LANGUAGE.md`:
+/// Maps the three `where` node shapes in `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`:
 /// - `where property="…" equals=<v>` → `Equals`
 /// - `where property="…" in="<v1>" "<v2>" …` → `In`
 /// - `where property="…" range-start=<v> range-end=<v>` → `Range`
@@ -1938,8 +1919,8 @@ pub enum SortDir {
     Desc,
 }
 
-/// One project-declared ordering option on a `resource-list` (Incunabula
-/// Slice 8 / G9): a named `?sort=<key>` that orders the list by one property.
+/// One project-declared ordering option on a `resource-list`: a named `?sort=<key>` that orders
+/// the list by one property.
 ///
 /// Maps `order-by key="…" property="…" direction="asc"|"desc" label="…"`
 /// children, in config order. `?sort=` never takes a raw property name — it
@@ -1977,8 +1958,7 @@ impl OrderOption {
 ///
 /// Maps the mutually-exclusive `per-page <n>` / `limit <n>` child nodes.
 /// `per-page` is the default paginated form; `limit` is for non-paginated
-/// cases. Both present simultaneously is a `PaginationConflict` error
-/// (Step 3).
+/// cases. Both present simultaneously is a `PaginationConflict` error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pagination {
     /// Show `n` items per page (default 20).
@@ -1996,8 +1976,7 @@ impl Default for Pagination {
 /// Hydrated render-payload for one facet group (one property's options).
 ///
 /// Produced by `ProjectReads::facet_options` and carried in
-/// `ComponentData::Facets(Vec<FacetGroup>)` for the renderer. `Clone`
-/// (empty-states-not-found plan step 2) — the store's page builder
+/// `ComponentData::Facets(Vec<FacetGroup>)` for the renderer. `Clone`: the store's page builder
 /// (`query::page`) pre-resolves a page's facet groups once (so the `ResourceList` arm can
 /// gate `has_active_facets` on the SAME resolved selection data the
 /// `FacetPanel` arm renders, regardless of which comes first in `page.body`)
@@ -2037,16 +2016,16 @@ pub struct FacetOption {
 ///
 /// The ONE facet-activity predicate every caller that needs to know
 /// "are the facets actually narrowing this list" should use — engine-side
-/// (the bin has the same resolved `FacetGroup` data too, via
-/// `cpe_engine::any_facet_selected`). `FacetOption::selected` is set in
+/// (the binary has the same resolved `FacetGroup` data too, through
+/// `any_facet_selected`, which `dsp-incubator cpe/engine` re-exports).
+/// `FacetOption::selected` is set in
 /// `ProjectReads::facet_options` from whether the query-param value matches a
 /// REAL node id that occurs in the data — a hand-crafted bogus value
 /// (`?role=NOPE`) never sets any option's `selected`, so this predicate
-/// correctly reports "not active" for it (empty-states-not-found plan step 2).
-/// Do not derive "facets active" from raw query-param presence (e.g.
-/// `facet_wheres` non-emptiness in the page builder) — that conflates "a facet
-/// param was supplied" with "a facet param actually matched something",
-/// which is exactly what this predicate is for.
+/// correctly reports "not active" for it. Do not derive "facets active" from
+/// raw query-param presence (e.g. `facet_wheres` non-emptiness in the page
+/// builder) — that conflates "a facet param was supplied" with "a facet param
+/// actually matched something", which is exactly what this predicate is for.
 pub fn any_facet_selected(groups: &[FacetGroup]) -> bool {
     groups.iter().any(|g| g.options.iter().any(|o| o.selected))
 }
@@ -2062,7 +2041,7 @@ pub struct Facet {
 
 /// The closed set of facet control kinds.
 ///
-/// Sourced from `COMPONENT_LIBRARY.md` §`facet-panel` → Facet `kind`s.
+/// Sourced from `dsp-incubator cpe/docs/COMPONENT_LIBRARY.md` §`facet-panel` → Facet `kind`s.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FacetKind {
     /// Checkboxes listing distinct values.

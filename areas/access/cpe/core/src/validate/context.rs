@@ -14,8 +14,8 @@ pub struct ValidationContext<'a> {
     /// passes `&["_static"]`; the engine owns the check.
     pub reserved_ids: &'a [&'static str],
     /// Bare relative names from the project's `narrative/` directory,
-    /// enumerated by the bin before calling `validate`. Used by Step 3
-    /// narrative checks; ignored in Step 2.
+    /// enumerated by the bin before calling `validate`. Used by the narrative
+    /// checks.
     pub narrative_files: &'a [String],
     /// Relative names from the project's `assets/` directory, enumerated by
     /// the bin before calling `validate`. Unlike `narrative_files` (which

@@ -8,8 +8,8 @@
 //!
 //! These are the project-declared strings (`chrome {}`, `labels {}`, nav
 //! labels, glosses, order rows); the engine's own built-in strings are
-//! the `ChromeMsg` catalog in `cpe_components::chrome`. A new resolver over the
-//! IR's label types goes here, not in a component.
+//! the `ChromeMsg` catalog in `dsp-incubator cpe/components` (`chrome`). A new
+//! resolver over the IR's label types goes here, not in a component.
 
 use crate::ir::{ChromeString, ClassLabel, PropertyLabel, SiteConfig};
 use crate::lang::Lang;
@@ -47,21 +47,21 @@ pub fn site_title<'a>(site: &'a SiteConfig, lang: &Lang) -> &'a str {
     chrome_lookup(site, &site.title, lang).unwrap_or(&site.title)
 }
 
-/// Resolve the A12.4 `order-name-label`/`order-name-desc-label` overrides and
+/// Resolve the `order-name-label`/`order-name-desc-label` overrides and
 /// the `order-default-label` override, returned in that order —
 /// chrome-id attribute values, id-only, never literal text — through
 /// `chrome_lookup`. `render_list_component` (a fresh full-page/list render)
 /// calls this same helper, so the full-page and fragment paths are provably
-/// identical (Incunabula Slice 8 decision 11b).
+/// identical.
 ///
-/// Exposed as `pub` (re-exported by `cpe-engine`) so the bin's three
-/// `_facets`/`_sort`/`_search` fragment handlers — which read the raw
+/// Exposed as `pub` (re-exported by `dsp-incubator cpe/engine`) so the bin's
+/// three `_facets`/`_sort`/`_search` fragment handlers — which read the raw
 /// `Component::ResourceList` fields directly rather than going through
 /// `render_component` — can resolve the same overrides for a swapped-in list,
-/// without `cpe-engine` having to expose `chrome_lookup` itself. An absent
-/// attribute, or an id that fails to resolve, both yield `None` — never an
-/// empty label — leaving `order_label_for_key`'s `ChromeMsg` default in
-/// place.
+/// without `dsp-incubator cpe/engine` having to expose `chrome_lookup` itself.
+/// An absent attribute, or an id that fails to resolve, both yield `None` —
+/// never an empty label — leaving `order_label_for_key`'s `ChromeMsg` default
+/// in place.
 pub fn resolve_order_name_labels<'a>(
     site: &'a SiteConfig,
     order_name_label: Option<&str>,
@@ -126,13 +126,12 @@ pub fn resolve_parts<'a>(
         .collect()
 }
 
-/// Resolve a list's declared `order-by` options (Incunabula Slice 8, G9)
-/// into the `(key, label)` rows the ordering panel renders, in config order:
-/// each option's `label=` chrome-string id runs through `chrome_lookup` for
-/// `lang`, falling back to the option's **key** when the id has no
-/// translation (never an empty label, never a panic — boot validation's
-/// `UnknownOrderLabel` already rejects an undeclared id, so the fallback is
-/// a pure safety net).
+/// Resolve a list's declared `order-by` options into the `(key, label)` rows
+/// the ordering panel renders, in config order: each option's `label=`
+/// chrome-string id runs through `chrome_lookup` for `lang`, falling back to
+/// the option's **key** when the id has no translation (never an empty label,
+/// never a panic — boot validation's `UnknownOrderLabel` already rejects an
+/// undeclared id, so the fallback is a pure safety net).
 ///
 /// The one resolver for declared rows, `pub` for the same reason as
 /// [`resolve_order_name_labels`]: `render_list_component` and the bin's
@@ -181,9 +180,8 @@ pub fn resolve_class_label(labels: &[ClassLabel], class: &str, lang: &Lang) -> S
         .unwrap_or_else(|| crate::util::humanize_property_name(class))
 }
 
-/// Resolve a class's display-plural noun (search-bar plan step 5b, #178
-/// reconciliation — see `ir::ClassLabel`'s doc comment). This is what feeds
-/// the no-match `{noun}` slot in the search-bar template
+/// Resolve a class's display-plural noun (see `ir::ClassLabel`'s doc comment).
+/// This is what feeds the no-match `{noun}` slot in the search-bar template
 /// (`chrome::search_no_match_text`), e.g. `"characters"` (EN) / `"Figuren"`
 /// (DE) for a `?q=` search on `/characters` that matched nothing.
 ///
@@ -202,7 +200,7 @@ pub fn resolve_class_label(labels: &[ClassLabel], class: &str, lang: &Lang) -> S
 /// The declared plural string is used **VERBATIM** — this fn does **NO**
 /// casing/pluralization of its own. The project author is responsible for
 /// writing the correct case per language (e.g. lowercase `"characters"` for
-/// EN vs. capitalized `"Figuren"` for DE per design-doc §4) — both are
+/// EN vs. capitalized `"Figuren"` for DE) — both are
 /// stored as literal strings in `ClassLabel.plural` and returned as-is.
 pub fn resolve_class_plural(labels: &[ClassLabel], class: &str, lang: &Lang) -> String {
     let hit = match labels.iter().find(|l| l.class == class) {
@@ -247,16 +245,13 @@ pub fn class_plural_declared(labels: &[ClassLabel], class: &str) -> bool {
 /// `resolve_class_plural`) → capitalized singular `resolve_class_label`
 /// (rung 3, i.e. `resolve_class_plural`'s own fallback) → humanized. Because
 /// `resolve_class_plural` already folds rung 3 into its own return value,
-/// this fn is simply `resolve_class_plural` + [`crate::util::capitalize_first`]
+/// this fn is simply `resolve_class_plural` + `crate::util::capitalize_first`
 /// — capitalizing the SAME resolved string regardless of which rung produced
 /// it, never a second independent fallback chain.
 ///
-/// Supersedes an earlier choice (issues.md) to reuse the singular
-/// `resolve_class_label` for both the browse crumb's current segment and the
-/// resource-detail crumb's class segment "to match" each other — the owner's
-/// expected copy is the capitalized PLURAL noun in both places (e.g.
-/// `"Characters"`, not `"Character"`); the two surfaces still always agree
-/// with each other, just on the plural form instead of the singular one.
+/// The browse crumb's current segment and the resource-detail crumb's class
+/// segment both use the capitalized PLURAL noun (e.g. `"Characters"`, not
+/// `"Character"`), so the two surfaces always agree with each other.
 pub fn resolve_class_plural_capitalized(labels: &[ClassLabel], class: &str, lang: &Lang) -> String {
     crate::util::capitalize_first(&resolve_class_plural(labels, class, lang))
 }
@@ -267,13 +262,14 @@ pub fn resolve_class_plural_capitalized(labels: &[ClassLabel], class: &str, lang
 /// string has a translation for `lang`, the translation is returned.
 /// Otherwise the literal `label` value is used as-is.
 ///
-/// Per `CONFIG_LANGUAGE.md`: nav `label` is "chrome string id OR literal".
+/// Per `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`: nav `label` is "chrome
+/// string id OR literal".
 pub fn nav_label<'a>(site: &'a SiteConfig, item: &'a crate::ir::NavItem, lang: &Lang) -> &'a str {
     chrome_lookup(site, &item.label, lang).unwrap_or(&item.label)
 }
 
-/// One declared ordering option, resolved for rendering (Incunabula Slice 8,
-/// G9): the `?sort=` wire `key` and the visible `label` — already run through
+/// One declared ordering option, resolved for rendering: the `?sort=` wire
+/// `key` and the visible `label` — already run through
 /// the chrome-string lookup by [`resolve_order_options`], falling back
 /// to the key itself (never an empty label) when the id cannot be resolved.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

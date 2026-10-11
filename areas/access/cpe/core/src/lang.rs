@@ -3,7 +3,7 @@ use crate::ir::SiteConfig;
 /// The four built-in engine languages, in canonical order. Documents the
 /// chrome catalog's coverage in one place; **completeness is
 /// compile-time-guaranteed only across these four**. A project MAY declare a
-/// further language (`dsp-incubator cpe/docs/CONFIG_LANGUAGE.md` permits it if its own
+/// further language (`docs/src/cpe/config-language.md` permits it if its own
 /// config-chrome completeness holds); such a page gets English engine chrome via the
 /// catalog's `L4::pick` `_ => en` arm, which is not "complete" in the sense the catalog
 /// guarantees.

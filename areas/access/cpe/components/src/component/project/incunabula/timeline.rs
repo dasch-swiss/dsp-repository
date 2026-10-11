@@ -154,7 +154,7 @@ pub(crate) fn marker_years(start: &str, end: Option<&str>, precision: DatePrecis
 /// end to `None` — never compute this from a raw `PropertyValue::Date.end`.
 ///
 /// The axis end is inclusive (`year == axis_end` is a valid marker position,
-/// per `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`/`dsp-incubator cpe/docs/COMPONENT_LIBRARY.md`),
+/// per `docs/src/cpe/config-language.md`/`dsp-incubator cpe/docs/COMPONENT_LIBRARY.md`),
 /// but a bar painted at `left = 100%` would otherwise extend past the track: a point's
 /// fixed width pushes its right edge to `100 + POINT_WIDTH_PCT`, and a range
 /// whose end is `axis_end` computes its right edge at `pct(axis_end + 1)`,

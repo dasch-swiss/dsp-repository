@@ -25,7 +25,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just validate-data` | Validate all data files in the default data directory |
 | `just verify-checksums` | Check vendored JS against each `vendor/README.md` table and `tailwind.pins` for completeness (also run by `just check`) |
 | `just check-shared-paths` | Fail the build if a crate under `shared/` hardcodes a path into a service module (also run by `just check`) |
-| `just check-cpe-seam` | Fail the build if a crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`, a CPE crate depends on Mosaic, or `cpe-core`, `cpe-ports` or `cpe-image-viewer` depends on a CPE crate (also run by `just check`) |
+| `just check-cpe-seam` | Fail the build if a crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`, a CPE crate depends on Mosaic, `cpe-core`, `cpe-ports` or `cpe-image-viewer` depends on a CPE crate, a CPE crate names a crate of `areas/access/sync/` outside its dev-dependencies, or `cpe-store` or `cpe-store-build` depends on a CPE crate that is not listed for it (also run by `just check`) |
 | `just check-adr-refs` | Fail the build if a decision-record reference does not resolve to a record (also run by `just check`) |
 | `just check-live-tests-ignored` | Fail the build if a dsp-cli live test is not `#[ignore]`d (also run by `just check`) |
 | `just tailwind-pins-refresh <version>` | Re-pin the Tailwind standalone CLI digests for a new version |

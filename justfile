@@ -79,7 +79,7 @@ check-composition-root-deps:
 # A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
 # the workspace still compiles, so only a grep catches the boundary break.
 
-# Verify CPE's dependency seam: only its port is used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate. Run by `just check`. (DEV-7401, ADR-0007)
+# Verify CPE's dependency seam: only its port is used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate, a sync crate is a dev-dependency only, the store and its builder use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007, ADR-0008)
 check-cpe-seam:
     bash .github/scripts/check-cpe-seam.sh
 

@@ -1814,7 +1814,7 @@ pub type ResourceListId = String;
 
 /// A `where` filter child node on a `resource-list`.
 ///
-/// Maps the three `where` node shapes in `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`:
+/// Maps the three `where` node shapes in `docs/src/cpe/config-language.md`:
 /// - `where property="…" equals=<v>` → `Equals`
 /// - `where property="…" in="<v1>" "<v2>" …` → `In`
 /// - `where property="…" range-start=<v> range-end=<v>` → `Range`

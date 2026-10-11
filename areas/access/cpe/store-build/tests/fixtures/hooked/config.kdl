@@ -1,0 +1,49 @@
+// A project that exists only for the store builder's tests. Its `remodel` block declares a hook,
+// with one of each child, beside a cover, a link and annotations: what refuses a snapshot only
+// once a hook has dropped a resource. The hooks themselves are functions of the test file.
+
+site {
+    title "Hooked"
+    languages "de" "en"
+    default-language "de"
+}
+
+remodel {
+    shortcode "0123"
+    sentinel "[fehlt]"
+    hook {
+        key "rank" class="Volume"
+        provides "rank" class="Volume"
+        overrides "homepage" class="Volume"
+        drops class="Sheet"
+    }
+
+    list "grade" {
+        list-node "first" { de "Erste"; en "First" }
+        list-node "second" { de "Zweite"; en "Second" }
+    }
+
+    class "Volume" iri="http://www.knora.org/ontology/0123/hooked#Volume" {
+        id from="label"
+        property "name" from="label"
+        property "homepage" iri="http://www.knora.org/ontology/0123/hooked#hasHomepage" type="uri" max=1
+        member-count "extent" of="Sheet"
+        cover curated-key="cover"
+    }
+    images class="Image" iiif-base="https://iiif.example.org/0123/" {
+        authorship "Stadtbibliothek Musterstadt"
+        license "CC0 1.0"
+    }
+    class "Sheet" iri="http://www.knora.org/ontology/0123/hooked#Sheet" image=#true {
+        member-of "Volume"
+        id from="property" property="name" under-parent=#true
+        property "name" iri="http://www.knora.org/ontology/0123/hooked#hasNumber" type="text" min=1 max=1 empty="refuse" sentinel="keep"
+        property "description" iri="http://www.knora.org/ontology/0123/hooked#hasDescription" type="text" max=1
+        property "next" iri="http://www.knora.org/ontology/0123/hooked#hasNext" type="link" max=1 target="Sheet"
+    }
+
+    annotations {
+        on "Sheet"
+        link-targets "Volume" "Sheet"
+    }
+}

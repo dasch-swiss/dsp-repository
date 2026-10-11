@@ -39,6 +39,9 @@ and the behaviour a visitor sees, and KDL as the authoring language (rationale a
   project that needs no hook is configuration, narrative and assets only. No embedded scripting language:
   ADR-0002 already rejected untyped per-deployment configuration for Vitrinli because it is what no test
   covers and no agent can trace to an owner, and the authors of a CPE project are DaSCH developers.
+
+  Note (2026-10-11, DEV-7465): the hook is a module of the store builder, not a file of the project's
+  folder; see the amendment of 2026-10-11 (DEV-7465) below.
 - **A project fails alone.** Validation of a project's configuration against its store happens when the
   project is activated, not when the process boots; a project that does not validate is offline on its own
   prefix while DPE and every other project keep serving. A strict mode for development, CI and tests fails
@@ -47,6 +50,9 @@ and the behaviour a visitor sees, and KDL as the authoring language (rationale a
 - **A project is a folder.** Everything that belongs to one project lives under one directory of the
   capability, discovered by convention: its KDL, its narrative, its assets, and its hook if it has one.
   Adding a project adds a folder and touches no shared registry.
+
+  Note (2026-10-11, DEV-7465): a project with a hook also adds a module and a table row to the store
+  builder; see the amendment of 2026-10-11 (DEV-7465) below.
 - **CPE has its own component library, inside the capability.** A `cpe-{role}` crate holds CPE's design
   language (the token CSS and the components), because its editorial register is not Mosaic's and is not
   meant to be. Mosaic stays a root peer because the Deposit and Access Areas both use it. The seam is
@@ -148,6 +154,8 @@ prefix, or how CPE's routes share the origin with DPE's. This amendment narrows 
 - **CPE lives under `/cpe/`, as DPE lives under `/dpe/`, and a project under `/cpe/<shortname>/`.** The
   segment is the project's DSP shortname (`/cpe/incunabula/`). It is resolved in one place, so it can
   become the Shortcode later without touching every route.
+  Note (2026-10-11, DEV-7465): the segment is the project id, the name of the project's folder, which is
+  neither the shortname nor the Shortcode; see the amendment of 2026-10-11 (DEV-7465) below.
 - **CPE's router does not know its own prefix.** `areas/access/server` mounts it with `nest("/cpe", …)`,
   and CPE builds every URL it emits (links, redirects, asset references) from a configured base, never from
   a hardcoded `/cpe`. A project on its own hostname is not built, but stays possible by mounting the same
@@ -288,6 +296,9 @@ amendment makes one exception to that sentence and leaves it standing:
   copied; `areas/access/cpe/CONTEXT.md` points to them. A config-language change therefore lands in two
   steps: the code here, then the document in the incubator's pin-move PR.
 
+  Note (2026-10-11, DEV-7465): the specification is in this repository now, and the glossary is still the
+  incubator's; see the amendment of 2026-10-11 (DEV-7465) below.
+
 Enforced by: review, for a later crate that moves before its churn in the incubator has dropped.
 
 Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-11 (DEV-7401) below.
@@ -334,5 +345,42 @@ Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-
   web crates or on `sync`'s store (ADR-0008), and `cpe-components`' own dependency list (no `axum`, no
   `rusqlite`).
 
+  Note (2026-10-11, DEV-7465): the script has a fourth rule, for `sync`'s store as a dev-dependency
+  (ADR-0008, amendment of 2026-10-11), and a fifth, for the CPE crates that `cpe-store` and `cpe-store-build`
+  may depend on; see "Enforced by" of the amendment of 2026-10-11 (DEV-7465) below.
+
 Enforced by: static-analysis (`check-cpe-seam.sh`, run by `just check`) until Bazel `visibility`, for the
 seam; review for the rest.
+
+## Amendment (2026-10-11, DEV-7465) — the store builder, the config-language specification and Incunabula's folder
+
+- **`cpe-store-build` is a crate of the capability, in a role ADR-0003 does not list.** ADR-0003's crate
+  anatomy names a domain crate, a store, a web crate and `ports`. The builder, at
+  `areas/access/cpe/store-build`, is none of them, as `cpe-components` and `cpe-image-viewer` were not: it
+  turns the snapshot the port serves, and a project's `remodel {}` block, into the rows of CPE's store. It
+  is a library with no binary. It depends on `cpe-core` and `cpe-ports` and not on `cpe-store`, whose
+  schema it includes as a file. Folding it into `cpe-store` was weighed and not chosen: it would merge two
+  crates during a move (as decided by the owner, 2026-10-11).
+- **A project's hook is a module of the builder, not a file of the project's folder.** The remodelling
+  clause puts the hook "in the project's own folder", and "A project is a folder" says that adding a
+  project "touches no shared registry". The builder moved as it is in the incubator: a hook is a module
+  under `store-build/src/projects/` and one row of the const table `hooks::HOOKS` (as decided by the owner,
+  2026-10-11). The reasons that hold here: a function the builder calls has to be linked into the builder,
+  which needs one place that names it, and Rust under `projects/` would need its own rules for the
+  workspace, formatting, linting and unused dependencies. The cost is that a project with a hook adds a
+  module and one table row to `cpe-store-build`; a project without one is still a folder alone.
+- **The config-language specification is here.** It is `docs/src/cpe/config-language.md`, in the developer
+  documentation. This replaces the sentence of the amendment of 2026-10-11 (DEV-7464) that kept it in the
+  incubator: a change to the language now changes the code and the document in one PR. CPE's glossary is
+  still `dsp-incubator/cpe/CONTEXT.md`.
+- **Incunabula's folder is `areas/access/cpe/projects/incunabula/`.** The folder's name is the project id
+  (CPE's term, `areas/access/cpe/CONTEXT.md`): the project's URL segment and the key the hook table is read
+  by. It is not the project's Shortcode, `0803`. The folder holds what CPE reads (`config.kdl`,
+  `narrative/`, `assets/`) and the documents that describe the project's data (`SHAPE.md`, `CURATION.md`,
+  `PROVENANCE.md`, `DATA_ISSUES.md`). It holds no `data.sql`: the store is built from the port
+  (ADR-0008). The prototype's design documents stay in the incubator.
+
+Enforced by: static-analysis for the worked example of the specification, which a test of
+`cpe-store-build` holds equal to Incunabula's block, and for which CPE crates the builder and the store
+depend on (`check-cpe-seam.sh`, rule 5: `cpe-store-build` on `cpe-core` and `cpe-ports` alone, `cpe-store` on
+`cpe-core` alone; `cpe-web` and CPE's host depend on both and are not held to the rule); review for the rest.

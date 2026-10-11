@@ -30,6 +30,10 @@
 - [Machine-Readable Metadata](./dpe/machine-readable-metadata.md)
 - [FAIR Principles](./dpe/fair-principles.md)
 
+## CPE
+
+- [Config Language](./cpe/config-language.md)
+
 ## Editor
 
 - [Architecture](./editor/architecture.md)

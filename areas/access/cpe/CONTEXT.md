@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Five of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, and its store, `cpe-store` in `store/`. The builder that fills the store, the page assembly and the routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Six of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, and the builder that fills the store, `cpe-store-build` in `store-build/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`. The page assembly and the routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -36,6 +36,14 @@ A key means nothing to the port or to `sync`: the project's KDL and hook give it
 Interim: `sync` serves curation by a decision that is still proposed (ADR-0010; DEV-7488).
 _Avoid_: configuration (project-wide, declared in the project's KDL), archive fact.
 
+**Project id**:
+The name of a project's folder under `projects/`, `incunabula` for Incunabula. It is also the project's URL
+segment and the key its **Hook** is looked up by. `cpe-core` has its rule: kebab-case, and none of the
+reserved ids (`DiagnosticKind::InvalidProjectId`, `ReservedProjectId`). It is not the **Shortcode** of the
+root `CONTEXT.md`, which is the archive's key for the project (`0803`); that file avoids "project id" for the
+Shortcode, and in CPE the term means the folder's name only.
+_Avoid_: shortcode, slug, project name.
+
 ## The domain crate
 
 `cpe-core` in `core/` holds what a project's configuration means, with no framework in it: the KDL config
@@ -45,16 +53,14 @@ diagnostics a broken one produces (`diagnostic`), labels, language and theme, an
 `cpe_core::ir::Resource` is CPE's presentation type, what a page shows; it is not `cpe_ports::Resource`, the
 archive's resource (see **Archive-shaped fact**).
 
-Its vocabulary and its specification are not in this repository yet. Until DEV-7465 moves them:
+The config-language specification is [`docs/src/cpe/config-language.md`](../../../docs/src/cpe/config-language.md).
+A change to the language changes the code and that document in one PR. `cpe-store-build`'s test
+`worked_example` holds the specification's worked example of the `remodel` block equal to what Incunabula's
+`config.kdl` lowers to. The glossary of CPE's own terms (Resource, Property, compound, component, remodel) is
+not in this repository: it is `dsp-incubator cpe/CONTEXT.md`.
 
-- the glossary of CPE's own terms (Resource, Property, compound, component, remodel) is `dsp-incubator cpe/CONTEXT.md`;
-- the config-language specification is `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`. A change to the language
-  lands here as code and there, in the PR that moves the incubator's pin, as the document.
-
-The tests that tie this crate to files of the incubator are the incubator's, run against its vendored copy of
-the crate. They check two things: the specification's worked example lowers to what Incunabula's `config.kdl`
-lowers to, and the header budget in `validate/header_budget.rs` matches `tokens.css`, which the incubator reads
-from its vendored copy of `components/style/`.
+One test that ties this crate to another file is still the incubator's, run against its vendored copy: that
+the header budget in `validate/header_budget.rs` matches `tokens.css` in `components/style/`.
 
 ## The component library
 
@@ -106,7 +112,9 @@ validator reads a project's data, and it assembles a request's `cpe_core::view_d
 `axum`.
 
 The crate does not fill the store. `db::open_project_db` takes SQL text and executes it over the schema; what
-writes that text from a project snapshot is the builder, `cpe-store-build`, which is still in the incubator.
+writes that text from a project snapshot is the builder, `cpe-store-build`. The builder does not depend on
+this crate, but it includes `schema.sql` as a file: a change to the schema is a change to what the builder
+writes, and the builder's tests load their output under it.
 
 The crate does not own the connection either. `open_project_db` returns a `rusqlite::Connection`, its caller
 keeps it in a `Mutex`, and `query::reads::ProjectReads` takes every lock on it: short, never across the
@@ -115,16 +123,63 @@ is for CPE's other crates and not for a host.
 
 The schema's tables are CPE's presentation shape, not the archive's.
 
+## The store builder
+
+`cpe-store-build` in `store-build/` is the remodelling of ADR-0007: it turns a **Project snapshot** and a
+project's mapping into the rows of the store. It is a library with one entry,
+`build(&ProjectSnapshot, &Remodel, Option<&Hook>) -> Result<Store, BuildErrors>`, and it is pure: it reads no
+file, no clock and no environment. `sql::to_sql` renders the built `Store` as the SQL text `cpe-store` opens.
+
+**Mapping**:
+The `remodel {}` block of a project's `config.kdl`, lowered by `cpe-core` to `cpe_core::remodel::Remodel`: which
+archive classes and properties become which of CPE's, how a resource gets its id, the list vocabularies, the
+shortcode, the curated keys. The builder's `mapping` and `generic` modules apply it and name no project.
+_Avoid_: schema (the store's tables), configuration (the whole `config.kdl`).
+
+**Hook**:
+What one project needs and its mapping cannot say, as code: a module under `store-build/src/projects/` and
+one row of the const table `hooks::HOOKS`, looked up by the **Project id** (`hooks::resolve`). The
+block's `hook` node declares what the hook may read and change, and `build` refuses a hook without a
+declaration, a declaration without a hook, and any read or change beyond it. A hook works on a narrow
+`hook::Draft` of the mapped resources and never sees the snapshot. Incunabula has the only one. A project
+with a hook therefore adds a module and a table row to this crate, and its names to two hand-kept lists of
+the crate's `tests/it/hygiene.rs`; the crate's `README.md`, "Adding a project", has every step. A project
+without one is a folder alone (ADR-0007, amendment of 2026-10-11, DEV-7465).
+_Avoid_: script, plugin (a hook is compiled in and typed), registry entry in the project's folder.
+
+The crate depends on `cpe-core` and `cpe-ports`, and not on `cpe-store`: it includes `store/schema.sql` as text. Its tests over Incunabula read the committed
+0803 snapshot through `sync-store`'s adapter, which is a dev-dependency and never a dependency (ADR-0008,
+amendment of 2026-10-11). The rule table of what the builder does to each value is in its `README.md`.
+
+## The project folders
+
+A project is a folder under `projects/`, named by its **Project id**. `projects/incunabula/` holds
+`config.kdl`, the Markdown files under `narrative/`, the files
+under `assets/`, and four documents about the project's data (`SHAPE.md`, `CURATION.md`, `PROVENANCE.md`,
+`DATA_ISSUES.md`). Those four were written in the incubator and still describe its pipeline in places: its
+committed `data.sql`, its `vendor/` directory, its `just cpe` recipes and other files of the incubator (its
+design documents, its mockup, its scripts, `dao-lift`) are not in this repository. A citation that starts
+with `dsp-incubator`, as `dsp-incubator cpe/docs/…` does in these documents, in
+`docs/src/cpe/config-language.md` and in `store-build/README.md`, names a file of that repository and not of
+this one.
+
 ## The dependency seam
 
 `just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007, amendment
 of 2026-10-11, DEV-7401). No crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`,
-which `sync-store` implements; no manifest under `areas/access/cpe/` depends on a Mosaic crate; and
-`cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate. The first two rules cover a new CPE
-crate without an edit. A new crate that must stay a leaf has to be added to the script's `LEAVES`; one that a
+which `sync-store` implements; no manifest under `areas/access/cpe/` depends on a Mosaic crate;
+`cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate; no manifest under
+`areas/access/cpe/` names a crate of `areas/access/sync/` outside a dev-dependencies table (ADR-0008,
+amendment of 2026-10-11); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
+but `cpe-core` and `cpe-ports` (the script's `CPE_EDGES`; ADR-0007, amendment of 2026-10-11, DEV-7465). A
+rename (`package = "…"`) of a CPE, Mosaic or `sync` crate in the workspace root is reported where it is
+declared, whichever crate inherits it. The
+first, second and fourth rules cover a new crate without an edit. A new crate that must stay a leaf has to be
+added to the script's `LEAVES`, and one whose CPE dependencies are to be held to its `CPE_EDGES`; one that a
 crate outside the capability may depend on has to be added to its exception list. What the script does not
-check is review: that no CPE crate depends on DPE's domain, store or web crates or on `sync`'s store
-(ADR-0008), `cpe-components`' own dependency list (no `axum`, no `rusqlite`), and `cpe-store`'s (no `maud`, no
+check is review: that no CPE crate depends on DPE's domain, store or web crates, which CPE crates a crate
+outside `LEAVES` and `CPE_EDGES` depends on, `cpe-components`' own
+dependency list (no `axum`, no `rusqlite`), and `cpe-store`'s (no `maud`, no
 `axum`).
 
 ## What the port serves

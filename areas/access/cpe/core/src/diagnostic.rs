@@ -177,7 +177,7 @@ pub enum DiagnosticKind {
     MalformedDataArk,
     /// A `nav` item's `route` does not match any declared page route.
     ///
-    /// Per `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md` §nav, a nav item's
+    /// Per `docs/src/cpe/config-language.md` §nav, a nav item's
     /// `route` must match a declared page route exactly (the renderer's
     /// `is_active` comparison is exact string equality). A nav item pointing at
     /// a nonexistent route would never be highlighted as active and would

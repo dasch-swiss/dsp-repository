@@ -15,6 +15,7 @@ members = [
   "areas/access/cpe/image-viewer",
   "areas/access/cpe/ports",
   "areas/access/cpe/store",
+  "areas/access/cpe/store-build",
   "areas/access/sync/store",
   "areas/deposit/editor/core",
   "areas/deposit/editor/web",
@@ -50,7 +51,11 @@ serde = { version = "1", features = ["derive"] }
 # declaration order — which is what the 85 committed project files hold. Without
 # this every key in every file would be reordered alphabetically. Note that under
 # this feature `Map::remove` is swap-remove: use `retain` to drop members in place.
-serde_json = { version = "1", features = ["preserve_order"] }
+#
+# `float_roundtrip`: `cpe-store-build` parses the archive's annotation geometry and must write
+# the numbers as they are; without the feature some parse one unit in the last place off. Cargo
+# unifies features, so it is on for every crate of the workspace.
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.5.3"
 tower_governor = "0.6"
@@ -109,6 +114,9 @@ percent-encoding = "2"
 # cpe-core renders authored Markdown. Its types cross into CPE's component library, so both
 # crates take this one entry (DEV-7401). Without default features: they add only the CLI's `getopts`.
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+# cpe-store-build makes the ids in CPE's URLs from slugs (NFKD, combining marks dropped). The
+# requirement is that of `dao-lift` in dsp-incubator, whose slugs it must reproduce.
+unicode-normalization = "0.1.25"
 
 # Build profiles
 [profile.release]

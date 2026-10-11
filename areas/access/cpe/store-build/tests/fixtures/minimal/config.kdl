@@ -1,0 +1,13 @@
+// The least a `remodel` block can be: no list, no images, no membership, no annotations.
+
+site {
+    languages "en"
+}
+
+remodel {
+    shortcode "0001"
+    class "Thing" iri="http://www.knora.org/ontology/0001/minimal#Thing" {
+        id from="iri"
+        property "name" iri="http://www.knora.org/ontology/0001/minimal#hasName" type="text"
+    }
+}

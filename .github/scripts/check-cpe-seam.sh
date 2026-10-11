@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 #
-# CPE's dependency seam (ADR-0007, amendments of 2026-10-11; ADR-0008 for rule
-# 4; ARCH-MAP.md, areas/access/cpe). A grep until Bazel `visibility` lands. Five
-# rules over the tracked Cargo.toml files:
+# CPE's dependency seam (ADR-0007, amendments of 2026-10-11 and, for cpe-server
+# in rules 1 and 5, of 2026-10-12; ADR-0008 for rule 4; ARCH-MAP.md,
+# areas/access/cpe). A grep until Bazel `visibility` lands. Five rules over the
+# tracked Cargo.toml files:
 #
 #   1. Nothing outside areas/access/cpe/ depends on a CPE crate, except on the
-#      crates in PORT_EXCEPTIONS: sync-store implements the port, so cpe-ports
-#      is the one crate another capability may depend on. DEV-7465 adds the
-#      host-facing crates (cpe-server, cpe-store) there when access-server
-#      mounts CPE.
+#      crates in PORT_EXCEPTIONS: cpe-ports, which sync-store implements and
+#      the composition root hands over, and cpe-server, which the composition
+#      root mounts. cpe-store is not among them: the adapter of the port is
+#      sync-store's, so no host names the store.
 #   2. No manifest under areas/access/cpe/ depends on a Mosaic crate.
 #   3. The crates in LEAVES depend on no CPE crate, the port included.
 #   4. No manifest under areas/access/cpe/ names a crate of areas/access/sync/
@@ -21,10 +22,12 @@
 #      so they are reported.
 #   5. A crate in CPE_EDGES depends on no CPE crate but those listed for it, in
 #      any table, dev-dependencies included: cpe-store on cpe-core alone,
-#      cpe-store-build on cpe-core and cpe-ports. The builder does not depend
-#      on the store it fills, whose schema it includes as a file, and the store
-#      does not depend on the builder. A crate that is not in the list is not
-#      held to the rule: cpe-web and CPE's host depend on both.
+#      cpe-store-build on cpe-core and cpe-ports, cpe-server on every CPE crate
+#      but cpe-store. The builder does not depend on the store it fills, whose
+#      schema it includes as a file, and the store does not depend on the
+#      builder. The host crate reaches the store through cpe-web alone, so a
+#      second way to open one cannot be added there unnoticed. A crate that is
+#      not in the list is not held to the rule: cpe-web depends on the store.
 #
 # Forbidden names are the [package] names of areas/access/cpe/*/Cargo.toml,
 # modules/mosaic/*/Cargo.toml and areas/access/sync/*/Cargo.toml, so rules 1, 2
@@ -55,7 +58,7 @@
 #
 # Safe to `source`. Dependencies: bash (3.2 and later), git, awk, grep.
 
-PORT_EXCEPTIONS=('areas/access/cpe/ports/Cargo.toml')
+PORT_EXCEPTIONS=('areas/access/cpe/ports/Cargo.toml' 'areas/access/cpe/server/Cargo.toml')
 
 LEAVES=('areas/access/cpe/core/Cargo.toml' 'areas/access/cpe/ports/Cargo.toml' 'areas/access/cpe/image-viewer/Cargo.toml')
 
@@ -64,6 +67,7 @@ LEAVES=('areas/access/cpe/core/Cargo.toml' 'areas/access/cpe/ports/Cargo.toml' '
 CPE_EDGES=(
   'areas/access/cpe/store/Cargo.toml:cpe-core'
   'areas/access/cpe/store-build/Cargo.toml:cpe-core cpe-ports'
+  'areas/access/cpe/server/Cargo.toml:cpe-core cpe-ports cpe-store-build cpe-web cpe-components cpe-image-viewer'
 )
 
 # True if Cargo.toml $1 has a package table, in any spelling TOML allows: a

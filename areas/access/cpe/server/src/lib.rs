@@ -40,6 +40,20 @@ pub struct ProjectSummary {
     pub url: String,
 }
 
+/// The route that answered a request, as its template with [`Cpe::base`] in
+/// front, e.g. `/cpe/incunabula/books/{id}`. The response of every route
+/// carries one in its extensions; the answer for a path that matches no route
+/// carries none, so a host that names a span by it never names one by a path.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MatchedRoute(String);
+
+impl MatchedRoute {
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 /// CPE, built from its config. Cheap to clone, and every clone and every
 /// router taken from one shares what [`Cpe::activate`] stores.
 #[derive(Clone)]
@@ -151,7 +165,9 @@ impl Cpe {
     }
 
     /// CPE's routes: the shared static files, each project's assets and
-    /// pages, and CPE's own fallback. It carries no tracing layer.
+    /// pages, and CPE's own fallback. It carries no tracing layer, and a
+    /// host's layer sees one service here and no route: the route that
+    /// answered is in the response's extensions, as [`MatchedRoute`].
     ///
     /// The routes are the paths below [`Cpe::base`]: the host removes the
     /// base before the request arrives here, as `axum::Router::nest` does.

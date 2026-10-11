@@ -21,7 +21,7 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ### Routing, head, and the page shell (`dpe-server`)
 
-`dpe-server` is a library exposing DPE's router and config, with no binary of its own. The Access Area's composition root is the `access-server` binary (`areas/access/server`); see `areas/access/server/CLAUDE.md`. Page, fragment and API routes are declared in `server/src/router.rs` (`build_router`) with the native Axum router; `access-server`'s `serve.rs` merges `dpe-server`'s router, then declares the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the OTel layers:
+`dpe-server` is a library exposing DPE's router and config, with no binary of its own. The Access Area's composition root is the `access-server` binary (`areas/access/server`); see `areas/access/server/CLAUDE.md`. Page, fragment and API routes are declared in `server/src/router.rs` (`build_router`) with the native Axum router; `access-server`'s `serve.rs` merges `dpe-server`'s router and nests CPE's, then declares the two untraced routes, `/healthz` and `POST /telemetry/collect`, after the OTel layers:
 
 ```rust
 .route("/dpe/projects", get(projects_page_handler))

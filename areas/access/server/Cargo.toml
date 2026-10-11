@@ -14,15 +14,20 @@ path = "src/main.rs"
 dev = ["dpe-server/dev"]
 
 [dependencies]
+cpe-ports = { path = "../cpe/ports" }
+cpe-server = { path = "../cpe/server" }
 dpe-server = { path = "../dpe/server" }
+sync-store = { path = "../sync/store" }
 shared-telemetry = { path = "../../../shared/telemetry" }
 
 axum.workspace = true
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
 tokio.workspace = true
+tower = { workspace = true, features = ["util"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
+tracing-opentelemetry.workspace = true
 axum-tracing-opentelemetry.workspace = true
 init-tracing-opentelemetry.workspace = true
 opentelemetry.workspace = true
@@ -33,5 +38,4 @@ pyroscope.workspace = true
 tower_governor.workspace = true
 
 [dev-dependencies]
-tower = { workspace = true, features = ["util"] }
-tracing-opentelemetry.workspace = true
+tempfile = "3"

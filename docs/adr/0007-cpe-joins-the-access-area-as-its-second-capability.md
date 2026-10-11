@@ -164,6 +164,8 @@ prefix, or how CPE's routes share the origin with DPE's. This amendment narrows 
   and CPE builds every URL it emits (links, redirects, asset references) from a configured base, never from
   a hardcoded `/cpe`. A project on its own hostname is not built, but stays possible by mounting the same
   router at a different base.
+  Note (2026-10-12, DEV-7438): `access-server` nests it at `Cpe::base()` and writes no `/cpe` itself; see
+  the amendment of 2026-10-12 (DEV-7438) below.
 - **A project is self-contained under its prefix, assets included.** The engine's shared files are served
   at `/cpe/<shortname>/_static/…` and the project's own at `/cpe/<shortname>/_assets/…`, keeping the
   prototype's reserved `_` segments. The same engine file is then fetched once per project, which
@@ -351,7 +353,12 @@ Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-
   `cpe-image-viewer` has no exemption for a later consumer outside the capability: such a consumer changes
   the check and this record together. The script excepts crates from rule 1 by a list of paths. DEV-7465
   adds the host-facing crates to it (`cpe-server` and, for a `Live<Port>` adapter, `cpe-store`) when
-  `access-server` mounts CPE. Rule 3 is by a second list, `LEAVES`; a new crate that must stay a leaf is
+  `access-server` mounts CPE.
+
+  Note (2026-10-12, DEV-7438): the list got `cpe-server` and not `cpe-store`; see the amendment of
+  2026-10-12 below.
+
+  Rule 3 is by a second list, `LEAVES`; a new crate that must stay a leaf is
   added to it. What the script does not check is review: that no CPE crate depends on DPE's domain, store or
   web crates or on `sync`'s store (ADR-0008), and `cpe-components`' own dependency list (no `axum`, no
   `rusqlite`).
@@ -396,6 +403,9 @@ Enforced by: static-analysis for the worked example of the specification, which 
 depend on (`check-cpe-seam.sh`, rule 5: `cpe-store-build` on `cpe-core` and `cpe-ports` alone, `cpe-store` on
 `cpe-core` alone; `cpe-web` and CPE's host depend on both and are not held to the rule); review for the rest.
 
+Note (2026-10-12, DEV-7438): the host crate is held to rule 5 now, and does not depend on `cpe-store`; see
+the amendment of 2026-10-12 below.
+
 ## Amendment (2026-10-11, DEV-7465) — the host crate, activation, and what of "a project fails alone" is built
 
 - **A hook works on the mapped draft, not on the port's types.** The remodelling clause says a hook is a
@@ -408,6 +418,9 @@ depend on (`check-cpe-seam.sh`, rule 5: `cpe-store-build` on `cpe-core` and `cpe
   CPE crate appears in its `pub` items, `cpe-ports`' types excepted, so a composition root depends on
   `cpe-server` and `cpe-ports` and on nothing else of CPE. It serves the component library's stylesheets
   and the files of `areas/access/cpe/public/` from a compiled-in table. Nothing mounts it yet.
+
+  Note (2026-10-12, DEV-7438): `access-server` mounts it; see the amendment of 2026-10-12 below.
+
 - **A project's store is built at activation, from SQL text.** `Cpe::activate` is given the port. For each
   project folder it lowers the `remodel {}` block, asks the port once for the snapshot of the block's
   shortcode, builds the store's rows with `cpe-store-build` and the hook registered for the folder's name,
@@ -466,3 +479,47 @@ of Incunabula and of the fixture projects under `/cpe` that fails on any path or
 the base, with both redirects, both cookies and the refused base; `cpe-core`'s tests of `url`); review for a
 URL being built through `cpe_core::url` at all. The crawl does not see a page it does not reach, nor a path
 that carries the base and was joined by hand, and no check reads the source for one.
+
+## Amendment (2026-10-12, DEV-7438) — `access-server` mounts CPE, and the seam exception is `cpe-server`
+
+- **The area binary mounts CPE under its base.** `access-server` builds `Cpe` from `CpeConfig`, nests
+  `Cpe::router()` at `Cpe::base()` inside its OTel layers, and routes the base followed by `/` to CPE's
+  root, which a nested router does not match. It writes no path of CPE's. Every path under the base is
+  CPE's to answer, its not-found and its 503 included; every other path is answered as with no CPE in the
+  binary, DPE's `ServeDir` fallback included. CPE is nested and not merged because both routers end in a
+  fallback. `/healthz` and the telemetry collector stay outside the tracing layers.
+- **No base stops the binary.** A base that is a path the binary or DPE has a route for (`/healthz`,
+  `/telemetry/collect`, `/dpe/projects`) is mounted: the route keeps answering, and CPE answers what no route
+  does under it. Should the router's build panic with CPE at its base, `access-server` builds it without
+  CPE, logs an error that names `CPE_BASE` and its value, and serves DPE alone, as without a base. No base
+  does that with today's routes: the mount declares one route, `<base>/`, and the build panics only on a
+  second route for that path that answers every method.
+- **Without a base CPE is not mounted.** The amendment of 2026-10-11 (DEV-7438) allows an empty base, for a
+  host that serves CPE at its root, and says a refused base answers 503. In `access-server` neither is
+  mounted: a router cannot be nested at an empty path, and CPE merged at the root would answer DPE's paths.
+  With `CPE_BASE` unset or refused the binary serves DPE alone and logs it, as a warning for the unset value
+  and as CPE's own error for the refused one. The local run recipes set `CPE_BASE=/cpe`, and a deployment
+  has to set it.
+- **Activation runs in the background, after the listener is bound.** `access-server` constructs
+  `sync-store`'s `LiveArchiveProjection` over the directory `SYNC_DATA_DIR` names (default
+  `areas/access/sync/data`, for a run from the repository root) and calls `Cpe::activate` on the blocking
+  pool. DPE, `/healthz` and the collector answer at every moment; CPE answers 503 until activation has
+  finished. A data directory that is not there leaves each project at 503 and stops nothing.
+- **The seam exception is `cpe-server`, beside the port.** The amendment of 2026-10-11 (DEV-7401) expected
+  `cpe-server` "and, for a `Live<Port>` adapter, `cpe-store`" in the list of crates another crate may depend
+  on. The adapter of CPE's port is `sync-store`'s, so the composition root constructs it without naming
+  `cpe-store`, and the list is `cpe-ports` and `cpe-server`. The host crate is now also held to the rule
+  about which CPE crates a crate may depend on: every CPE crate but `cpe-store`, which it reaches through
+  `cpe-web`. This replaces "CPE's host ... not held to the rule" in the amendment of 2026-10-11 (DEV-7465).
+- **A CPE request's span is the area binary's, named by CPE's route.** `cpe-server` installs no request
+  span. To the host's tracing layer its router is one service, so each response of a route carries the
+  route's template (`cpe_server::MatchedRoute`), and `access-server` names the span by it:
+  `GET /cpe/incunabula/books/{id}`. A request that matches no route keeps the method alone, so a path never
+  becomes a span name. The spans are under DPE's telemetry identity, which is the binary's; `http.route`
+  stays empty on them.
+
+Enforced by: static-analysis for the mount, the request table, the unmounted cases, a base that is a route
+and a mount that panics, the held activation, the missing data directory and the span name (the tests of `access-server`'s `serve.rs`, one of them a search of
+every file of the crate's `src/` for a `"/cpe` literal), and for the seam (`check-cpe-seam.sh`, rules 1 and 5;
+`check-composition-root-deps.sh`); review for `serve()` itself, which no test runs: that it awaits and
+unwraps nothing of CPE's.

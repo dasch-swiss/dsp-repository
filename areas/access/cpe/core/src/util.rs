@@ -6,7 +6,7 @@ use pulldown_cmark::{Event, HeadingLevel, Options, Parser, TagEnd};
 /// The CommonMark parser options of the **richtext** path: property values
 /// (`component::markdown`'s fragments, including the `narrative-for` intros)
 /// and [`markdown_to_text`]'s FTS text. Editorial narratives and the heading
-/// traversal below parse with [`EDITORIAL_MARKDOWN_OPTIONS`] instead; extend
+/// traversal below parse with `EDITORIAL_MARKDOWN_OPTIONS` instead; extend
 /// the shared set here and both stay in sync.
 pub const MARKDOWN_OPTIONS: Options = Options::ENABLE_TABLES;
 
@@ -101,7 +101,7 @@ pub(crate) fn first_heading(md: &str) -> Option<String> {
 }
 
 /// The text of the **first level-1 heading** in `md`, falling back to
-/// [`first_heading`]'s answer when the document has no (non-empty) `<h1>`.
+/// `first_heading`'s answer when the document has no (non-empty) `<h1>`.
 ///
 /// **Why this exists.** An editorial narrative may open with a leading
 /// level-3 heading that is a *label*, not a section heading — the design's
@@ -109,7 +109,7 @@ pub(crate) fn first_heading(md: &str) -> Option<String> {
 /// `p.eyebrow.editorial__kicker` at the top of `header.editorial__head`
 /// (see that module's "Conventions recognised" list). Incunabula's
 /// narratives use it (`### Basler Frühdrucke · 1471–1504` above
-/// `# Die Bilderfolgen der Basler Frühdrucke`). Because [`first_heading`]
+/// `# Die Bilderfolgen der Basler Frühdrucke`). Because `first_heading`
 /// is level-blind, deriving the page `<title>` and the breadcrumb's
 /// page-title segment from it picked the kicker — the Incunabula home
 /// `<title>` read "… — Basler Frühdrucke · 1471–1504" and
@@ -117,7 +117,7 @@ pub(crate) fn first_heading(md: &str) -> Option<String> {
 /// Narrenschiff". A label is not a title, so title derivation prefers the
 /// `<h1>`.
 ///
-/// Falls back to [`first_heading`] (rather than `None`) so a document with
+/// Falls back to `first_heading` (rather than `None`) so a document with
 /// no `<h1>` at all keeps its previous, still-useful derived title — the
 /// only behaviour change is on documents that *do* have an `<h1>` which is
 /// not the first heading.
@@ -149,23 +149,20 @@ fn non_empty(text: String) -> Option<String> {
 
 /// Return `true` iff `md` contains a level-1 heading **anywhere** in
 /// document order (not just first). Used only for the h1-**injection**
-/// decision (`page_has_visible_h1` in `cpe_web::page`): a narrative whose
-/// first heading is level 2 but which contains a level-1 heading further
+/// decision (`page_has_visible_h1` in `dsp-incubator cpe/web`): a narrative
+/// whose first heading is level 2 but which contains a level-1 heading further
 /// down (e.g. `"## intro\n\n# title"`) already renders a visible `<h1>` via
-/// `editorial::render_editorial` (which passes every source heading through
-/// as a literal `<hN>` tag) — checking only the *first* heading's level
-/// would misclassify such a narrative as headless and inject a SECOND
-/// hidden `<h1>` on top of the real one (a latent double-`<h1>` bug fixed
-/// during the accessibility-pass review; not reachable in Alice's current
-/// content, but CPE hosts arbitrary project configs). `first_heading`
-/// deliberately discards heading level, so it cannot answer this question —
-/// hence this dedicated level-aware helper, expressed over the same
-/// [`headings`] traversal.
+/// `editorial::render_editorial` (which passes every source heading through as
+/// a literal `<hN>` tag) — checking only the *first* heading's level would
+/// misclassify such a narrative as headless and inject a SECOND hidden `<h1>`
+/// on top of the real one. `first_heading` deliberately discards heading level,
+/// so it cannot answer this question — hence this dedicated level-aware helper,
+/// expressed over the same `headings` traversal.
 ///
 /// Note this is `true` even for an *empty* level-1 heading (`"#  "`): the
 /// renderer emits `<h1></h1>` for it, so a visible h1 element really does
 /// exist and injecting another would still double up. This is deliberately
-/// unlike [`first_heading`]/[`page_title_heading`], which reject empty text
+/// unlike `first_heading`/[`page_title_heading`], which reject empty text
 /// because they answer a *text* question, not an *element-presence* one.
 ///
 /// Returns `false` when `md` has no level-1 heading at all (including no
@@ -187,7 +184,7 @@ pub fn narrative_contains_h1(md: &str) -> bool {
 /// **Block boundaries get a separating space.** Before the content of a new
 /// block-level element (`is_block_tag` — paragraph, heading, list item,
 /// block quote, table cell, …), a single space is inserted if the buffer is
-/// non-empty and doesn't already end in whitespace ([`push_block_separator`]).
+/// non-empty and doesn't already end in whitespace (`push_block_separator`).
 /// Without this, `"# Title\n\nSome text."` would concatenate the heading's
 /// text directly against the following paragraph's text with NO separator
 /// (`"TitleSome text."`), fusing two words into one un-matchable FTS token.
@@ -268,7 +265,8 @@ fn push_block_separator(buf: &mut String) {
 /// `pub` so crates other than `cpe-core` can call it: `labels::resolve_property_label`
 /// falls back to it for both `component::resource_detail`'s property `<dt>` labels
 /// and `query::reads::ProjectReads::facet_options`'s facet group labels, and the
-/// `cpe-components` and `cpe-web` tests call it directly.
+/// tests of `dsp-incubator cpe/components` and `dsp-incubator cpe/web` call it
+/// directly.
 pub fn humanize_property_name(name: &str) -> String {
     name.split(['-', '_', ' '])
         .filter(|word| !word.is_empty())
@@ -332,10 +330,10 @@ pub fn variant_filename(file: &str, lang: &str) -> Option<String> {
 /// `<form method=get>` fallback's `application/x-www-form-urlencoded`
 /// submission, or `%20` from the DataStar debounced-live path's
 /// `encodeURIComponent`. Mirrors the bin's `read_search_query_param`
-/// (`bin/src/router.rs`) exactly (same `+`-then-percent decode order — a
-/// literal `+` means a space per the form-encoding convention, applied
-/// BEFORE `%XX` percent-decoding, since raw percent-decoding alone does not
-/// treat `+` specially) — the engine needs its own copy since it cannot
+/// (`dsp-incubator cpe/bin/src/router.rs`) exactly (same `+`-then-percent
+/// decode order — a literal `+` means a space per the form-encoding convention,
+/// applied BEFORE `%XX` percent-decoding, since raw percent-decoding alone does
+/// not treat `+` specially) — the engine needs its own copy since it cannot
 /// depend on the `bin` crate.
 ///
 /// Never panics: falls back to the raw (still `+`-decoded) input on any
@@ -428,9 +426,9 @@ pub(crate) fn capitalize_first(s: &str) -> String {
 
 /// Substitute `value` for every `{n}` placeholder in a project-authored
 /// count template (a `resource-list` composed-gloss `unit=`, an
-/// `incoming-links note-label=`). As-is: no plural handling (HdM Slice 3,
-/// decision 13 — write the templates plural-neutral). Boot validation
-/// guarantees both template kinds contain `{n}` (`GlossUnitMissingPlaceholder`,
+/// `incoming-links note-label=`). As-is: no plural handling (write the
+/// templates plural-neutral). Boot validation guarantees both template kinds
+/// contain `{n}` (`GlossUnitMissingPlaceholder`,
 /// `IncomingLinksTextMissingPlaceholder`); a template without one renders
 /// unchanged.
 pub fn substitute_count(template: &str, value: &str) -> String {
@@ -458,11 +456,6 @@ pub fn substitute_count(template: &str, value: &str) -> String {
 /// on today's query strings is effectively a no-op — but it future-proofs
 /// against crafted query values (belt-and-suspenders, same rationale as the
 /// existing `replace('\'', "%27")` in the carousel/compound viewers).
-///
-/// This closes the BACKLOG "Harden DataStar @get argument encoding" item at
-/// the facet-panel seam (third `@get` use site), replacing the existing
-/// per-call inline `.replace('\'', "%27")` in carousel/compound with this
-/// shared, fuller implementation.
 pub fn encode_get_arg(s: &str) -> String {
     // Iterate over chars and replace dangerous JS-string-context chars.
     // Allocation is only done when one of the three chars is present.
@@ -499,9 +492,8 @@ pub fn encode_get_arg(s: &str) -> String {
 /// `\uXXXX` escape (via `char::encode_utf16`, so a character outside the
 /// BMP correctly becomes a surrogate pair of two `\uXXXX` escapes) — safe
 /// regardless of the input's content, not conditional on an assumed id
-/// shape (a resource id was previously interpolated unescaped into these
-/// literals, guarded only by a `debug_assert!` that is a no-op in a release
-/// build).
+/// shape: the allow-list, not a `debug_assert!` (a no-op in a release
+/// build), is what keeps a resource id from breaking out of these literals.
 pub fn escape_js_string_literal(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for ch in s.chars() {
@@ -521,15 +513,14 @@ pub fn escape_js_string_literal(s: &str) -> String {
 }
 
 /// Escape a string so it can be embedded as a single-quoted JS string
-/// literal inside a `data-text`/`data-on`/`data-attr` expression — or,
-/// since the `reader-paging-fragment-swap` plan's Step 3b, inside a
-/// literal `<script>…</script>` tag emitted by an `ExecuteScript` SSE
+/// literal inside a `data-text`/`data-on`/`data-attr` expression — or
+/// inside a literal `<script>…</script>` tag emitted by an `ExecuteScript` SSE
 /// patch (the `datastar` crate's `execute_script.rs` wraps the script that
-/// way). Originally written for the breadcrumb's localized chrome strings
-/// and for `cpe_web::page`'s record-surface reactive `href` array
-/// (share-view fix batch). `pub` (re-exported from `cpe-engine`) because the
-/// `_compound` fragment handler's pushState/title `ExecuteScript` (Step 3b)
-/// is built in the BIN, a separate crate — unlike `encode_get_arg`, which
+/// way). It serves the breadcrumb's localized chrome strings, the
+/// record-surface reactive `href` array of `dsp-incubator cpe/web` and the
+/// `_compound` fragment handler's pushState/title `ExecuteScript`. `pub`
+/// (re-exported from `dsp-incubator cpe/engine`) because that handler
+/// is built in the binary, a separate crate — unlike `encode_get_arg`, which
 /// targets a different context (a `@get('…')` URL argument, not a JS string
 /// literal) and has no bin-side caller.
 ///
@@ -571,7 +562,7 @@ pub fn js_string_escape(s: &str) -> String {
 const QUERY_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC.remove(b'-').remove(b'_').remove(b'.').remove(b'~');
 
 /// Percent-encode one query-string component (a key or a value) via
-/// [`QUERY_ENCODE_SET`].
+/// `QUERY_ENCODE_SET`.
 ///
 /// Shared by `share_link`'s canonical-query composer and `component::links`
 /// (the `?page=<member-id>` value, a resource id in a route's path segment
@@ -635,7 +626,7 @@ pub fn fts_match_expr(q: &str) -> Option<String> {
 /// there a real query here": the store's page builder (`query::page`,
 /// deciding whether to push a `WhereClause::Search` and compute the
 /// unfiltered "N of M" count) and the engine's own renderer construction
-/// (`SearchSurface::for_query`, step 8, deciding whether to show a no-match
+/// (`SearchSurface::for_query`, deciding whether to show a no-match
 /// state). Neither call site should re-derive "active" from raw-string
 /// non-emptiness (`!q.is_empty()`) — a whitespace-/punctuation-only `q` must
 /// be treated as inactive by both, and routing both through this one
@@ -755,9 +746,8 @@ mod tests {
         assert_eq!(js_string_escape(r"a'b\c"), r"a\'b\\c");
     }
 
-    /// Step 3b (`reader-paging-fragment-swap` plan): a title/URL sitting
-    /// inside a literal `<script>` tag must never let a `</script>`
-    /// substring through.
+    /// A title/URL sitting inside a literal `<script>` tag must never let a
+    /// `</script>` substring through.
     #[test]
     fn js_string_escape_escapes_angle_bracket() {
         assert_eq!(
@@ -925,7 +915,7 @@ mod tests {
         assert!(narrative_contains_h1("# Title\n\nBody."));
     }
 
-    /// The h1-injection-decision case FIX 2 closes: an h1 that is NOT first
+    /// The h1-injection-decision case: an h1 that is NOT first
     /// (an h2 precedes it) still counts as "this narrative has a visible
     /// h1" — checking only the first heading's level would (wrongly, for
     /// this decision) report `false`.

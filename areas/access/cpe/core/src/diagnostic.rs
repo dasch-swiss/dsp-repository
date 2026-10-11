@@ -154,32 +154,34 @@ pub enum DiagnosticKind {
     /// `build_property_value` would produce an incorrect result if the row
     /// were returned at request time.
     ///
-    /// Documented in `SCHEMA.md` §"Constraints not enforced in DDL" as a
-    /// boot-validator check. Enforced here so `build_property_value` can use
-    /// `expect()` calls backed by this boot-time invariant.
+    /// Documented in `dsp-incubator cpe/docs/SCHEMA.md` §"Constraints not
+    /// enforced in DDL" as a boot-validator check. Enforced here so
+    /// `build_property_value` can use `expect()` calls backed by this boot-time
+    /// invariant.
     MalformedPropertyRow,
     /// An `annotations` or `annotation_links` row breaks a rule the DDL does
     /// not enforce (dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md,
-    /// `SCHEMA.md` §"Constraints not enforced in DDL"): a box outside the image or with no
-    /// area, a polygon whose points are missing, unparseable, fewer than three or outside the
-    /// box, points on a non-polygon, a colour that is not lowercase `#rrggbb`, or a link
-    /// with no target. One diagnostic per violated rule. Hard-fail: the
-    /// annotation renderers rely on these invariants.
+    /// `dsp-incubator cpe/docs/SCHEMA.md` §"Constraints not enforced in DDL"): a box
+    /// outside the image or with no area, a polygon whose points are missing, unparseable,
+    /// fewer than three or outside the box, points on a non-polygon, a colour that is not
+    /// lowercase `#rrggbb`, or a link with no target. One diagnostic per violated rule.
+    /// Hard-fail: the annotation renderers rely on these invariants.
     MalformedAnnotation,
     /// A non-NULL `resources.ark` or `annotations.ark` is not a plain DSP data
     /// ARK URL, `https://ark.dasch.swiss/ark:/72163/1/<4 uppercase hex>/<id>`
-    /// with an id of `[A-Za-z0-9_=]+` (`SCHEMA.md` §"Constraints not enforced
-    /// in DDL"): a version ARK, another scheme or host, a trailing `/`, a
-    /// lowercase shortcode or `''`. One diagnostic per row. Hard-fail, so a
-    /// renderer may put a stored ARK into an `href` and rely on its prefix.
+    /// with an id of `[A-Za-z0-9_=]+` (`dsp-incubator cpe/docs/SCHEMA.md`
+    /// §"Constraints not enforced in DDL"): a version ARK, another scheme or
+    /// host, a trailing `/`, a lowercase shortcode or `''`. One diagnostic per
+    /// row. Hard-fail, so a renderer may put a stored ARK into an `href` and
+    /// rely on its prefix.
     MalformedDataArk,
     /// A `nav` item's `route` does not match any declared page route.
     ///
-    /// Per `CONFIG_LANGUAGE.md` §nav, a nav item's `route` must match a
-    /// declared page route exactly (the renderer's `is_active` comparison is
-    /// exact string equality). A nav item pointing at a nonexistent route
-    /// would never be highlighted as active and would produce a broken link.
-    /// This is a hard-fail.
+    /// Per `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md` §nav, a nav item's
+    /// `route` must match a declared page route exactly (the renderer's
+    /// `is_active` comparison is exact string equality). A nav item pointing at
+    /// a nonexistent route would never be highlighted as active and would
+    /// produce a broken link. This is a hard-fail.
     UnresolvedNavRoute,
     /// Two pages both declare the same `class` on their `resource-detail`
     /// component with a parameterised (`:param`) route. The class→route map
@@ -387,10 +389,9 @@ pub enum DiagnosticKind {
     /// SINGULAR label on all four plural-bearing surfaces (the search-bar
     /// no-match copy, the browse breadcrumb/eyebrow, `resource-detail`'s class
     /// crumb, and the 404 "browse all" exit), which reads wrong in every
-    /// language with an inflected plural — Incunabula shipped exactly this
-    /// ("Alle Buch durchsuchen"), caught only in review. The site still
-    /// renders, so this is advisory (`Severity::Warning`) rather than a
-    /// hard-fail.
+    /// language with an inflected plural (for Incunabula, "Alle Buch
+    /// durchsuchen"). The site still renders, so this is advisory
+    /// (`Severity::Warning`) rather than a hard-fail.
     ///
     /// `class` is the class name the label was declared under.
     MissingClassPlural { class: String },
@@ -403,10 +404,9 @@ pub enum DiagnosticKind {
     /// `lang` is the language code; `estimated_px` the estimate and
     /// `budget_px` the room, both in CSS px.
     HeaderRowOverBudget { lang: String, estimated_px: u32, budget_px: u32 },
-    /// A `media="…"` attribute (embedded-media plan step 5) names a
-    /// property that does not exist anywhere in the data. The plate/thumb
-    /// would always be empty at runtime, which is almost certainly a
-    /// configuration error. This is a hard-fail.
+    /// A `media="…"` attribute names a property that does not exist anywhere in
+    /// the data. The plate/thumb would always be empty at runtime, which is
+    /// almost certainly a configuration error. This is a hard-fail.
     ///
     /// `property` is the declared name; `class` is the resolved class;
     /// `page` is the page route.
@@ -450,9 +450,9 @@ pub enum DiagnosticKind {
     /// A `resource-detail`'s `media` attribute was declared without a
     /// resolvable class: the component has no `class="…"` attribute, and its
     /// `id` is either absent or a `$param` reference (so no literal-id
-    /// class lookup is possible either). Per the embedded-media plan, `media`
-    /// on `resource-detail` requires a resolvable class to validate and to
-    /// contribute to the class→media-property map. This is a hard-fail.
+    /// class lookup is possible either). `media` on `resource-detail` requires
+    /// a resolvable class to validate and to contribute to the
+    /// class→media-property map. This is a hard-fail.
     ///
     /// `page` is the page route.
     UnresolvableMediaClass { page: String },
@@ -506,61 +506,60 @@ pub enum DiagnosticKind {
     /// `page` is the page route.
     CompoundViewerWithPagedList { page: String },
     /// A `resource-detail` names the same property in two `group` children,
-    /// or in both a `group` and `show-properties` (Incunabula Slice 3 / G8,
-    /// decision 5). The property would render twice on one record — a
-    /// config-internal mistake no data can cause, so this is a hard-fail,
-    /// checked in `check_and_lower_pages` before the success/raw fork.
+    /// or in both a `group` and `show-properties`. The property would render
+    /// twice on one record — a config-internal mistake no data can cause, so
+    /// this is a hard-fail, checked in `check_and_lower_pages` before the
+    /// success/raw fork.
     ///
     /// `property` is the repeated property name; `page` is the page route.
     DuplicateGroupedProperty { property: String, page: String },
     /// A `resource-detail { group label="…" }` names a chrome id that is not
-    /// a declared `chrome { string }` of this project (Incunabula Slice 3 /
-    /// G8, decision 5). The group still renders, captioned with the engine
-    /// fallback `ChromeMsg::PropertyGroupTitle`, so this is advisory
-    /// (`Severity::Warning`) — the `UnknownLabel` / `MissingClassPlural`
-    /// precedent. Config-internal: checked in `validate_inner` inside the
-    /// `site_result` guard, before the `validate_with_data` fork.
+    /// a declared `chrome { string }` of this project. The group still renders,
+    /// captioned with the engine fallback `ChromeMsg::PropertyGroupTitle`, so
+    /// this is advisory (`Severity::Warning`) — the `UnknownLabel` /
+    /// `MissingClassPlural` precedent. Config-internal: checked in
+    /// `validate_inner` inside the `site_result` guard, before the
+    /// `validate_with_data` fork.
     ///
     /// `label` is the undeclared chrome id; `page` is the page route.
     UnknownGroupLabel { label: String, page: String },
     /// A `resource-detail { group empty="…" }` names a chrome id that is not
-    /// a declared `chrome { string }` of this project (HdM Slice 3, decision
-    /// 6). The group renders as if `empty=` were unset, so this is advisory
-    /// (`Severity::Warning`) — the `UnknownGroupLabel` tier. Config-internal:
-    /// checked beside `UnknownGroupLabel`.
+    /// a declared `chrome { string }` of this project. The group renders as if
+    /// `empty=` were unset, so this is advisory (`Severity::Warning`) — the
+    /// `UnknownGroupLabel` tier. Config-internal: checked beside
+    /// `UnknownGroupLabel`.
     ///
     /// `label` is the undeclared chrome id; `page` is the page route.
     UnknownGroupEmptyLabel { label: String, page: String },
     /// A `resource-detail { group links-label="…" }` names a chrome id that
-    /// is not a declared `chrome { string }` of this project (Incunabula
-    /// Slice 6, plan D9). The links row still renders, captioned with the
-    /// engine fallback `ChromeMsg::AnnoRelated`, so this is advisory
-    /// (`Severity::Warning`) — the `UnknownGroupLabel` tier. Config-internal:
-    /// checked beside `UnknownGroupLabel`.
+    /// is not a declared `chrome { string }` of this project. The links row
+    /// still renders, captioned with the engine fallback
+    /// `ChromeMsg::AnnoRelated`, so this is advisory (`Severity::Warning`) —
+    /// the `UnknownGroupLabel` tier. Config-internal: checked beside
+    /// `UnknownGroupLabel`.
     ///
     /// `label` is the undeclared chrome id; `page` is the page route.
     UnknownGroupLinksLabel { label: String, page: String },
     /// A `resource-detail { narrative-for "<id>" file="…" }` names a resource
-    /// id that does not exist in the data (Incunabula Slice 3 / O6, decision
-    /// 7). The intro simply never attaches — every record renders as if it
-    /// had none, a legal state — so this is advisory (`Severity::Warning`),
-    /// the `UnknownLabel` / `UnknownLinkTarget` shape. Data-dependent: checked
-    /// in both `validate_with_data` arms. The id is always a literal, so it
-    /// is checkable even on a `$param` page.
+    /// id that does not exist in the data. The intro simply never attaches —
+    /// every record renders as if it had none, a legal state — so this is
+    /// advisory (`Severity::Warning`), the `UnknownLabel` / `UnknownLinkTarget`
+    /// shape. Data-dependent: checked in both `validate_with_data` arms. The id
+    /// is always a literal, so it is checkable even on a `$param` page.
     ///
     /// `resource_id` is the unknown id; `page` is the page route.
     UnknownNarrativeForResource { resource_id: String, page: String },
     /// A `resource-detail` declares two `narrative-for` entries for the same
-    /// resource id (Incunabula Slice 3 / O6, decision 7). Config-internal —
-    /// which file should win is undecidable — so a hard-fail, checked in
-    /// `check_and_lower_pages` before the success/raw fork.
+    /// resource id. Config-internal — which file should win is undecidable — so
+    /// a hard-fail, checked in `check_and_lower_pages` before the success/raw
+    /// fork.
     ///
     /// `resource_id` is the repeated id; `page` is the page route.
     DuplicateNarrativeFor { resource_id: String, page: String },
-    /// A `compound-viewer layout="pages"` declares no `media=` (Incunabula
-    /// Slice 3b D3). The `pages` layout is scan-first, so without a member
-    /// image property it has nothing to show. Config-internal — a hard-fail,
-    /// checked in `check_and_lower_pages` before the success/raw fork.
+    /// A `compound-viewer layout="pages"` declares no `media=`. The `pages`
+    /// layout is scan-first, so without a member image property it has nothing
+    /// to show. Config-internal — a hard-fail, checked in
+    /// `check_and_lower_pages` before the success/raw fork.
     ///
     /// `page` is the page route.
     PagesLayoutWithoutMedia { page: String },
@@ -577,8 +576,8 @@ pub enum DiagnosticKind {
     /// is the page route.
     PagesLayoutOnly { feature: String, page: String },
     /// A `resource-detail` with `media=` whose `id` expression is identical to
-    /// a sibling `compound-viewer`'s `source` (Incunabula Slice 3b D2,
-    /// dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md): the navigator owns
+    /// a sibling `compound-viewer`'s `source` (dsp-incubator
+    /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md): the navigator owns
     /// the compound's images, so the record would show them a second time. Config-internal — a
     /// hard-fail, checked in `check_and_lower_pages` before the success/raw fork. Known limit:
     /// the record's image comes from the class map, so a `resource-detail
@@ -587,7 +586,7 @@ pub enum DiagnosticKind {
     /// `page` is the page route.
     CompoundMediaOwnership { page: String },
     /// A page declares a `compound-viewer layout="pages"` **and** any
-    /// `resource-detail` with `media=` (Incunabula Slice 3b step 6, dsp-incubator
+    /// `resource-detail` with `media=` (dsp-incubator
     /// cpe/docs/adr/0012-one-member-navigator-declared-layout.md). Both mount the record
     /// viewer's unit, whose signals (`rail`, `expand`, `plate`, the Adjust values, the zoom
     /// flags) are page-global, so the two viewers would drive each other. Config-internal — a
@@ -597,53 +596,52 @@ pub enum DiagnosticKind {
     ///
     /// `page` is the page route.
     MultipleImageViewers { page: String },
-    /// A `resource-detail` declares more than one `incoming-links` child
-    /// (Incunabula Slice 5 / G7). At most one reverse-link list per record, so
-    /// a config-internal hard-fail, raised by `lower_resource_detail` (which
-    /// is not given the page route — the diagnostic's span locates it).
+    /// A `resource-detail` declares more than one `incoming-links` child. At
+    /// most one reverse-link list per record, so a config-internal hard-fail,
+    /// raised by `lower_resource_detail` (which is not given the page route —
+    /// the diagnostic's span locates it).
     DuplicateIncomingLinks,
     /// A `resource-detail { incoming-links … }` child names no link property
-    /// — zero positional string args (Incunabula Slice 5 / G7). The list
-    /// would query nothing, so a config-internal hard-fail, raised by
-    /// `lower_resource_detail` (span-located, like `DuplicateIncomingLinks`).
+    /// — zero positional string args. The list would query nothing, so a
+    /// config-internal hard-fail, raised by `lower_resource_detail`
+    /// (span-located, like `DuplicateIncomingLinks`).
     IncomingLinksWithoutProperty,
     /// A `resource-detail { incoming-links label="…" }` names a chrome id that
-    /// is not a declared `chrome { string }` of this project (Incunabula
-    /// Slice 5 / G7). The list still renders, captioned with the source
-    /// class's capitalised plural, so this is advisory (`Severity::Warning`)
-    /// — the `UnknownGroupLabel` tier. Config-internal: checked in
-    /// `validate_inner` inside the `site_result` guard, before the
-    /// `validate_with_data` fork.
+    /// is not a declared `chrome { string }` of this project. The list still
+    /// renders, captioned with the source class's capitalised plural, so this
+    /// is advisory (`Severity::Warning`) — the `UnknownGroupLabel` tier.
+    /// Config-internal: checked in `validate_inner` inside the `site_result`
+    /// guard, before the `validate_with_data` fork.
     ///
     /// `label` is the undeclared chrome id; `page` is the page route.
     UnknownIncomingLinksLabel { label: String, page: String },
     /// An `incoming-links class="…"` names a class that does not exist in the
-    /// data (Incunabula Slice 5 / G7). The class is a query input — like a
-    /// `resource-list`'s `class` — so this is a hard-fail. Data-dependent:
-    /// checked in both `validate_with_data` arms.
+    /// data. The class is a query input — like a `resource-list`'s `class` — so
+    /// this is a hard-fail. Data-dependent: checked in both
+    /// `validate_with_data` arms.
     ///
     /// `class` is the unknown source class; `page` is the page route.
     UnknownIncomingLinksClass { class: String, page: String },
-    /// An `incoming-links` property does not exist anywhere in the data
-    /// (Incunabula Slice 5 / G7). A query input, so a hard-fail.
-    /// Data-dependent: checked in both `validate_with_data` arms.
+    /// An `incoming-links` property does not exist anywhere in the data. A
+    /// query input, so a hard-fail. Data-dependent: checked in both
+    /// `validate_with_data` arms.
     ///
     /// `property` is the unknown property; `class` the declared source class;
     /// `page` the page route.
     UnknownIncomingLinksProperty { property: String, class: String, page: String },
     /// An `incoming-links` property exists in the data but is carried by no
-    /// resource of the declared source class (Incunabula Slice 5 / G7) —
-    /// "sparse" in the codebase's sense: absent from the whole class, not
-    /// uneven across it. The list would always be empty for it, so advisory
-    /// (`Severity::Warning`). Data-dependent: checked in both arms.
+    /// resource of the declared source class — "sparse" in the codebase's
+    /// sense: absent from the whole class, not uneven across it. The list would
+    /// always be empty for it, so advisory (`Severity::Warning`).
+    /// Data-dependent: checked in both arms.
     ///
     /// `property` is the property; `class` the declared source class; `page`
     /// the page route.
     SparseIncomingLinksProperty { property: String, class: String, page: String },
     /// An `incoming-links` property is stored on the source class with a
-    /// `value_type` other than `link` (Incunabula Slice 5 / G7). Only `link`
-    /// rows carry a `target_id`, so the list could never match — a hard-fail.
-    /// Data-dependent: checked in both `validate_with_data` arms.
+    /// `value_type` other than `link`. Only `link` rows carry a `target_id`, so
+    /// the list could never match — a hard-fail. Data-dependent: checked in
+    /// both `validate_with_data` arms.
     ///
     /// `property` is the property; `value_type` the (lexicographically
     /// smallest) offending stored type; `class` the declared source class;
@@ -656,7 +654,7 @@ pub enum DiagnosticKind {
     },
     /// An `incoming-links` property is `link`-typed and present on the
     /// declared source class, but its resolvable targets never actually
-    /// belong to the page's own host class (batch 3 item 4) — the list this
+    /// belong to the page's own host class — the list this
     /// property drives will always be empty on this page. Advisory
     /// (`Severity::Warning`): every existing tier already passed, so this is
     /// a design smell, not a query-input mistake. Data-dependent: checked in
@@ -672,7 +670,7 @@ pub enum DiagnosticKind {
         page: String,
     },
     /// An `incoming-links note-label="…"` names a chrome id that is not a
-    /// declared `chrome { string }` of this project (HdM Slice 3). The list
+    /// declared `chrome { string }` of this project. The list
     /// still renders, without its note, so advisory (`Severity::Warning`) —
     /// the `UnknownIncomingLinksLabel` tier. Config-internal: checked in
     /// `validate_inner` (`check_group_labels`) inside the `site_result`
@@ -682,7 +680,7 @@ pub enum DiagnosticKind {
     UnknownIncomingLinksNoteLabel { label: String, page: String },
     /// An `incoming-links note-label=` chrome string is declared, but its
     /// translation for `lang` has no `{n}` placeholder, so the row count
-    /// would never appear (HdM Slice 3; the `GlossUnitMissingPlaceholder`
+    /// would never appear (the `GlossUnitMissingPlaceholder`
     /// tier). Config-internal, hard-fail.
     ///
     /// `label` is the chrome id; `lang` the offending language.
@@ -690,7 +688,7 @@ pub enum DiagnosticKind {
     /// An `incoming-links` row property — `row-label=`, `row-aside=`,
     /// `sort-property=` or a property `group-by=` — is absent from the
     /// declared source class entirely (absent from the data, or carried by no
-    /// resource of the class) (HdM Slice 3). A query input: every row would
+    /// resource of the class). A query input: every row would
     /// silently lose its label/aside/sort key/group, so a hard-fail.
     /// Data-dependent: checked in both `validate_with_data` arms.
     ///
@@ -705,7 +703,7 @@ pub enum DiagnosticKind {
     },
     /// An `incoming-links` row property is carried by the source class, but
     /// not by every source resource that links through the declared
-    /// properties (HdM Slice 3) — those rows fall back (name label, no aside,
+    /// properties — those rows fall back (name label, no aside,
     /// sorted last, trailing headless group). Advisory (`Severity::Warning`).
     /// Data-dependent: checked in both arms.
     ///
@@ -717,7 +715,7 @@ pub enum DiagnosticKind {
         page: String,
     },
     /// An `incoming-links` row property is stored on the source class with a
-    /// `value_type` its role cannot use (HdM Slice 3): `group-by`/`row-aside`
+    /// `value_type` its role cannot use: `group-by`/`row-aside`
     /// need `list_value` or `text`, `row-label`/`sort-property` need `text`.
     /// Any other type would lower cleanly and silently put every row in the
     /// no-key group, so a hard-fail. Data-dependent: checked in both arms.
@@ -733,49 +731,47 @@ pub enum DiagnosticKind {
     },
     /// A `resource-list { order-by key="…" }` names a key that collides with
     /// a built-in `?sort=` token — `default`, `name`, `name-desc`, `class` or
-    /// `id` (Incunabula Slice 8 / G9). The built-in would always win, so the
-    /// option could never be selected: a config-internal hard-fail, raised by
-    /// `lower_resource_list` (not given the page route — span-located).
+    /// `id`. The built-in would always win, so the option could never be
+    /// selected: a config-internal hard-fail, raised by `lower_resource_list`
+    /// (not given the page route — span-located).
     ///
     /// `key` is the colliding key.
     ReservedOrderKey { key: String },
-    /// A `resource-list` declares two `order-by` options with the same `key`
-    /// (Incunabula Slice 8 / G9). Which one `?sort=<key>` selects would be
-    /// undecidable, so a config-internal hard-fail, span-located.
+    /// A `resource-list` declares two `order-by` options with the same `key`.
+    /// Which one `?sort=<key>` selects would be undecidable, so a
+    /// config-internal hard-fail, span-located.
     ///
     /// `key` is the repeated key.
     DuplicateOrderKey { key: String },
     /// A `resource-list { order-by key="…" }` key is empty or contains a
-    /// character outside `[a-z0-9-]` (Incunabula Slice 8 / G9). The bin never
-    /// percent-decodes `?sort=`, so such a key would be form-encoded on
-    /// submit, never match, and silently fall back to "As curated" — a
-    /// config-internal hard-fail, span-located.
+    /// character outside `[a-z0-9-]`. The bin never percent-decodes `?sort=`,
+    /// so such a key would be form-encoded on submit, never match, and silently
+    /// fall back to "As curated" — a config-internal hard-fail, span-located.
     ///
     /// `key` is the offending key.
     InvalidOrderKey { key: String },
     /// A `resource-list { order-by label="…" }` names a chrome id that is not
-    /// a declared `chrome { string }` of this project (Incunabula Slice 8 /
-    /// G9). `label=` is required and id-only and the engine has no default
-    /// word for an arbitrary property, so a typo would render the raw key in
-    /// the UI: a hard-fail (unlike the advisory `UnknownGroupLabel`).
-    /// Config-internal: checked in `validate_inner` inside the `site_result`
-    /// guard, before the `validate_with_data` fork.
+    /// a declared `chrome { string }` of this project. `label=` is required and
+    /// id-only and the engine has no default word for an arbitrary property, so
+    /// a typo would render the raw key in the UI: a hard-fail (unlike the
+    /// advisory `UnknownGroupLabel`). Config-internal: checked in
+    /// `validate_inner` inside the `site_result` guard, before the
+    /// `validate_with_data` fork.
     ///
     /// `label` is the undeclared chrome id; `page` is the page route.
     UnknownOrderLabel { label: String, page: String },
     /// A `site { not-found { browse route="…" } }` entry's `route` does not
-    /// match any declared page route (Incunabula Slice 8 / G11). Same exact
-    /// string rule as `UnresolvedNavRoute` — a browse link to a nonexistent
-    /// route would be a broken link on the 404 page. Hard-fail.
+    /// match any declared page route. Same exact string rule as
+    /// `UnresolvedNavRoute` — a browse link to a nonexistent route would be a
+    /// broken link on the 404 page. Hard-fail.
     UnresolvedNotFoundBrowseRoute,
-    /// `site { not-found { … } }` declares more than three `browse` entries
-    /// (Incunabula Slice 8 / G11). The design caps the 404's browse exits at
-    /// three ("at most three… never the whole nav",
-    /// `docs/design/empty-states/handoff/README.md`). Hard-fail.
+    /// `site { not-found { … } }` declares more than three `browse` entries.
+    /// The design caps the 404's browse exits at three ("at most three… never
+    /// the whole nav"). Hard-fail.
     TooManyNotFoundBrowseLinks,
-    /// A `timeline axis-start=`/`axis-end=` integer does not fit in an `i32`
-    /// (Incunabula Slice 4). KDL integers arrive as `i128`; the value is
-    /// range-checked before any cast. A config-internal hard-fail, raised by
+    /// A `timeline axis-start=`/`axis-end=` integer does not fit in an `i32`.
+    /// KDL integers arrive as `i128`; the value is range-checked before any
+    /// cast. A config-internal hard-fail, raised by
     /// `validate::timeline::lower_timeline` (not given the page route —
     /// span-located).
     ///
@@ -783,24 +779,24 @@ pub enum DiagnosticKind {
     TimelineAxisOutOfRange { attribute: String },
     /// A `timeline`'s axis is empty or too short: `axis-end <= axis-start`, or
     /// a span below three years — the grid-line rule draws one line every
-    /// three years, so a shorter axis has no whole grid cell (Incunabula
-    /// Slice 4, plan decision 6). A config-internal hard-fail, span-located.
+    /// three years, so a shorter axis has no whole grid cell. A config-internal
+    /// hard-fail, span-located.
     InvalidTimelineAxis { axis_start: i32, axis_end: i32 },
-    /// A `timeline class="…"` names a class that does not exist in the data
-    /// (Incunabula Slice 4). The class is a query input, so a hard-fail.
-    /// Data-dependent: checked in both `validate_with_data` arms.
+    /// A `timeline class="…"` names a class that does not exist in the data.
+    /// The class is a query input, so a hard-fail. Data-dependent: checked in
+    /// both `validate_with_data` arms.
     ///
     /// `class` is the unknown class; `page` is the page route.
     UnknownTimelineClass { class: String, page: String },
     /// A `timeline` `date-property`/`lane-property`/`extent-property` does
-    /// not exist anywhere in the data (Incunabula Slice 4). Hard-fail.
-    /// Data-dependent: checked in both `validate_with_data` arms.
+    /// not exist anywhere in the data. Hard-fail. Data-dependent: checked in
+    /// both `validate_with_data` arms.
     ///
     /// `property` is the unknown property; `class` the timeline's class;
     /// `page` the page route.
     UnknownTimelineProperty { property: String, class: String, page: String },
     /// A `timeline` `date-property` or `lane-property` exists in the data but
-    /// is carried by no resource of the timeline's class (Incunabula Slice 4)
+    /// is carried by no resource of the timeline's class
     /// — "absent from the whole class", the codebase's sparse sense. A
     /// deliberate **hard-fail**, unlike the other sparse tiers: without a
     /// date every marker is skipped, without a lane every marker drops into
@@ -812,16 +808,16 @@ pub enum DiagnosticKind {
     /// page route.
     MissingTimelineProperty { property: String, class: String, page: String },
     /// A `timeline` `extent-property` exists in the data but is carried by no
-    /// resource of the timeline's class (Incunabula Slice 4). The extent
-    /// segment is optional, so advisory (`Severity::Warning`) — every marker
-    /// simply omits it. Data-dependent: checked in both arms.
+    /// resource of the timeline's class. The extent segment is optional, so
+    /// advisory (`Severity::Warning`) — every marker simply omits it.
+    /// Data-dependent: checked in both arms.
     ///
     /// `property` is the property; `class` the timeline's class; `page` the
     /// page route.
     SparseTimelineProperty { property: String, class: String, page: String },
     /// A `timeline` property is stored on the timeline's class with a
-    /// `value_type` other than the one its role requires (Incunabula Slice
-    /// 4): `date-property` needs `date`, `lane-property` needs `list_value`,
+    /// `value_type` other than the one its role requires: `date-property`
+    /// needs `date`, `lane-property` needs `list_value`,
     /// `extent-property` needs `integer`. Hard-fail. Data-dependent: checked
     /// in both `validate_with_data` arms.
     ///

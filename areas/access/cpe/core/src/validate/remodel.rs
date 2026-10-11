@@ -9,7 +9,7 @@
 //! holds one span per node and none per attribute.
 //!
 //! To add a node to the block, change all of these together:
-//! - the typed model in `core/src/remodel.rs`;
+//! - the typed model in `src/remodel.rs`;
 //! - a `lower_*` fn, which appends every defect and never returns early. It lives in this file or,
 //!   for a node of a feature group that has one, in that group's child module
 //!   (`validate/remodel/values.rs` holds a class's `property` and `curated` nodes,
@@ -22,15 +22,15 @@
 //! - for a node that adds to `RemodelClass::properties`, the lookup `Outline::property` in
 //!   `validate/remodel/structure.rs`, which takes a `property` node's position among its class's
 //!   `property` nodes for its index in that list;
-//! - for a new child module, its row in `MODULES` in `tools/module-graph.py`, in the commit that
-//!   adds the file;
+//! - for a new child module, its row in `MODULES` in `dsp-incubator cpe/tools/module-graph.py`, in
+//!   the commit that adds the file;
 //! - the parent's child allow-list (its `check_children` call), or the node is refused as an
 //!   unknown child, and the arm that hands the node to its `lower_*` fn (for a child of `class`: in
 //!   `lower_class`, or in `ClassStructure::lower_child`), or the node is allowed and never read;
-//! - a `DiagnosticKind` in `core/src/diagnostic.rs` for each new defect, with its severity arm in
-//!   the same file;
-//! - the grammar table and the validation list in `docs/CONFIG_LANGUAGE.md`;
-//! - `CONTEXT.md`, when the node introduces a new noun.
+//! - a `DiagnosticKind` in `src/diagnostic.rs` for each new defect, with its severity arm in the
+//!   same file;
+//! - the grammar table and the validation list in `dsp-incubator cpe/docs/CONFIG_LANGUAGE.md`;
+//! - `dsp-incubator cpe/CONTEXT.md`, when the node introduces a new noun.
 //!
 //! The node checks and readers every `lower_*` fn shares live in
 //! `validate/remodel/nodes.rs`; a child module of `validate::remodel` imports

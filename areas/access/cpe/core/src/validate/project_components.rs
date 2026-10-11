@@ -27,9 +27,10 @@
 //! (in `check_and_lower_pages`).
 //!
 //! The registry is split by crate: this half, in `cpe-core`, names only
-//! validation types, and the renderer half, in `cpe-components`, only render
-//! types, so the validator never imports a renderer. A second project reusing
-//! a component is one more row in each half pointing at the same functions.
+//! validation types, and the renderer half, in `dsp-incubator cpe/components`,
+//! only render types, so the validator never imports a renderer. A second
+//! project reusing a component is one more row in each half pointing at the
+//! same functions.
 
 use super::context::ValidationContext;
 use super::facts::ProjectFacts;
@@ -46,8 +47,8 @@ pub(crate) type CheckDataFn = fn(&ir::Component, &str, &dyn ProjectFacts, &mut V
 
 /// The raw-arm sibling of [`CheckDataFn`], run on the raw node when
 /// config-internal lowering already failed. Must stay silent on attribute
-/// defects lowering already reported (CLAUDE.md, "`validate_with_data`'s two
-/// arms are symmetric").
+/// defects lowering already reported (`dsp-incubator cpe/CLAUDE.md`,
+/// "`validate_with_data`'s two arms are symmetric").
 pub(crate) type CheckDataIntoRawFn = fn(&crate::config::Component, &str, &dyn ProjectFacts, &mut ValidationReport);
 
 /// One registered per-project component, as the validator sees it.

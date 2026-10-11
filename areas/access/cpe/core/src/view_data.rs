@@ -25,20 +25,19 @@ use crate::ir::{
 ///
 /// Variant semantics:
 /// - `Detail(Some(r))` — resource found and hydrated.
-/// - `Detail(None)` — resource not found → `render_not_found` body (preserves today's
-///   `Option<Resource>` 404 semantics exactly).
+/// - `Detail(None)` — resource not found → `render_not_found` body.
 /// - `List(page)` — paginated list; an empty list (`total == 0`) is valid.
 /// - `Compound(page)` — compound viewer page; an empty compound is valid.
 /// - `Facets(groups)` — facet-panel groups built by `ProjectReads::facet_options`; an empty `Vec`
 ///   means no facets are configured or all produced no options. Rendered by the `FacetPanel`
-///   component arm (step 4); ignored by `compose_page_title` and `first_resolved_resource` (no
-///   resource title).
-/// - `Timeline(payload)` — a `timeline`'s resources plus its lane vocabulary in `seq` order
-///   (Incunabula Slice 4); an empty `resources` list is valid.
-/// - `WoodcutCases(payload)` — the annotations and links a `woodcut-cases` block names (Incunabula
-///   Slice 7); an unknown id is simply absent.
+///   component arm; ignored by `compose_page_title` and `first_resolved_resource` (no resource
+///   title).
+/// - `Timeline(payload)` — a `timeline`'s resources plus its lane vocabulary in `seq` order; an
+///   empty `resources` list is valid.
+/// - `WoodcutCases(payload)` — the annotations and links a `woodcut-cases` block names; an unknown
+///   id is simply absent.
 /// - `EditionCards(payload)` / `StripRow(payload)` — the books of an `edition-cards` block, the
-///   strips of a `strip-row` (Slice 7).
+///   strips of a `strip-row`.
 /// - `Other` — non-data component (narrative, …); no fetch was needed.
 #[derive(Debug, PartialEq)]
 pub enum ComponentData {

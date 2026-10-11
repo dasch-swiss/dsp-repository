@@ -2,10 +2,10 @@
 //! project's one-row desk header would need more width than the desk
 //! breakpoint leaves it.
 //!
-//! The estimate mirrors the desk form in `static/cpe/shell.css` (the desk
-//! query's block): a change to a size, gap or face there moves the
-//! estimate, and `estimate_matches_the_measured_rows` pins it to widths
-//! measured in Chrome.
+//! The estimate mirrors the desk form in `dsp-incubator
+//! cpe/static/cpe/shell.css` (the desk query's block): a change to a size, gap
+//! or face there moves the estimate, and `estimate_matches_the_measured_rows`
+//! pins it to widths measured in Chrome.
 
 use crate::diagnostic::{Diagnostic, DiagnosticKind, Severity, ValidationReport};
 use crate::ir::SiteConfig;

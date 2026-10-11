@@ -11,8 +11,9 @@
 //! the page never splits at.
 //!
 //! It lives in `cpe-core`, which cannot depend on the component, store or
-//! page-assembly crates (`just cpe crate-deps-check`). A new reading of a narrative's
-//! structure goes here; only its rendering goes to `component::editorial`.
+//! page-assembly crates (the incubator's `just cpe crate-deps-check`). A new reading
+//! of a narrative's structure goes here; only its rendering goes to
+//! `component::editorial`.
 
 use pulldown_cmark::{html as cmark_html, Event, Parser, Tag, TagEnd};
 
@@ -388,10 +389,10 @@ pub struct TopHeading {
 }
 
 /// Every top-level `##` of an editorial narrative, in document order: the
-/// headings the renderer numbers and gives an id. `cpe_web::page`'s `render_body`
-/// counts them to give each narrative of a page its id offset, so this and
-/// `component::editorial`'s `rewrite_events` must agree on which headings
-/// count ([`top_heading_at`]).
+/// headings the renderer numbers and gives an id. `render_body` in `dsp-incubator
+/// cpe/web` (`page`) counts them to give each narrative of a page its id
+/// offset, so this and `component::editorial`'s `rewrite_events` must agree on
+/// which headings count ([`top_heading_at`]).
 pub fn top_level_headings(src: &str) -> Vec<TopHeading> {
     let events = editorial_events(src);
     let top = top_level_flags(&events);

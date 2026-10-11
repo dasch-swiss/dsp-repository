@@ -4,11 +4,11 @@
 //! `uri` as the canonical full-resolution IIIF Image API request:
 //! `{base}/{identifier}/full/max/0/default.jpg`, e.g.
 //! `https://iiif.demo.dasch.swiss:443/0854/6IQRqvpLkz5-XJnRjN1tjD9.jpx/full/max/0/default.jpg`
-//! (verified against `cpe/projects/alice-in-daschland/data.sql`'s `representations`
-//! table). Every helper here rewrites or derives from that `/full/max/` size
-//! segment; a URI that doesn't contain it (a non-IIIF URL, an already-sized
-//! URL, a placeholder) degrades gracefully — see each function's doc comment —
-//! rather than panicking or producing a malformed URL.
+//! (as in `dsp-incubator cpe/projects/alice-in-daschland/data.sql`'s
+//! `representations` table). Every helper here rewrites or derives from that
+//! `/full/max/` size segment; a URI that doesn't contain it (a non-IIIF URL, an
+//! already-sized URL, a placeholder) degrades gracefully — see each function's
+//! doc comment — rather than panicking or producing a malformed URL.
 //!
 //! This module is the single home for IIIF URL derivation; don't duplicate
 //! the `/full/max/` parsing elsewhere.
@@ -17,13 +17,12 @@ use std::borrow::Cow;
 
 /// Width (px) requested for list thumbnails via the IIIF Image API `size`
 /// parameter. The display box is 6rem (96px, see `.rl-annot__thumb` in
-/// grid.css); 384 is 4x that, so the image stays crisp up to 3x-DPI screens
-/// while still downloading a few KB instead of the multi-MB full image.
-/// At ≤640px the phone row layout widens the box to 7.5rem (120px); 384 is
-/// still 3.2x that.
+/// `dsp-incubator cpe/static/cpe/grid.css`); 384 is 4x that, so the image stays
+/// crisp up to 3x-DPI screens while still downloading a few KB instead of the
+/// multi-MB full image. At ≤640px the phone row layout widens the box to 7.5rem
+/// (120px); 384 is still 3.2x that.
 ///
-/// Keep this in step with `.rl-annot__thumb`'s width — the box was enlarged
-/// twice during the owner's responsive pass and a stale value here shows up
+/// Keep this in step with `.rl-annot__thumb`'s width: a stale value here shows up
 /// as soft thumbnails on HiDPI, which is easy to miss on a 1x display.
 pub(crate) const THUMB_WIDTH: u32 = 384;
 
@@ -31,10 +30,10 @@ pub(crate) const THUMB_WIDTH: u32 = 384;
 /// viewer's zero-JS fallback image and for the compound reader's member scan.
 ///
 /// Its CSS boxes (see the "display-size CSS box needs a paired fetch-size
-/// constant" Non-obvious constraint in `cpe/CLAUDE.md`):
-/// - the book reader's stage (`--stage-h`, `cpe/static/cpe/record.css`). A book page is portrait,
-///   so the stage's height binds it: 900 covers a page at 1× up to the stage's 92rem ceiling, and
-///   no further;
+/// constant" Non-obvious constraint in `dsp-incubator cpe/CLAUDE.md`):
+/// - the book reader's stage (`--stage-h`, `dsp-incubator cpe/static/cpe/record.css`). A book page
+///   is portrait, so the stage's height binds it: 900 covers a page at 1× up to the stage's 92rem
+///   ceiling, and no further;
 /// - the record viewer's stand (`component::media`), where a landscape image is bound by the
 ///   column's width instead;
 /// - the member scan (`compound_viewer::render_member_scan`, `.cv-member__scan img` in
@@ -44,32 +43,34 @@ pub(crate) const PLATE_WIDTH: u32 = 900;
 /// Width (px) requested for embedded-media strip thumbnails via the IIIF
 /// Image API `size` parameter.
 ///
-/// Paired with the strip-thumb CSS box in `cpe/static/cpe/media.css`, which
-/// renders at 52px — 208 is 4x that, deliberately NOT the reference design's
-/// `96`, so the thumbnail stays crisp up to Retina/3x-DPI screens (mirrors
-/// `THUMB_WIDTH`'s rationale above; the reference design's `96` was sized
-/// for a 24px display box, which does not match this port's 52px strip-thumb
-/// box).
+/// Paired with the strip-thumb CSS box in `dsp-incubator
+/// cpe/static/cpe/media.css`, which renders at 52px — 208 is 4x that,
+/// deliberately NOT the reference design's `96`, so the thumbnail stays crisp
+/// up to Retina/3x-DPI screens (mirrors `THUMB_WIDTH`'s rationale above; the
+/// reference design's `96` was sized for a 24px display box, which does not
+/// match this port's 52px strip-thumb box).
 pub(crate) const STRIP_THUMB_WIDTH: u32 = 208;
 
 /// Width (px) requested for grid-mode tile images (`.gm__box`) via the IIIF
 /// Image API `size` parameter.
 ///
-/// Paired with the `.gm__box` CSS box in `cpe/static/cpe/grid.css`: change
-/// both together. The box's `minmax(--tile-min, 1fr)` track has a floor of at
-/// most 16rem (256px) and stretches a tile until one more column fits. With
-/// three or more columns and the 24px `--grid-gap` the widest tile is
-/// `(4 × 256 + 24) / 3`, about 349px; a phone's two columns are about 167px.
-/// 512 is 2× at the floor and at least 1.47× at the widest tile. It assumes a
-/// device pixel ratio up to 2 and no `srcset`.
+/// Paired with the `.gm__box` CSS box in `dsp-incubator
+/// cpe/static/cpe/grid.css`: change both together. The box's
+/// `minmax(--tile-min, 1fr)` track has a floor of at most 16rem (256px) and
+/// stretches a tile until one more column fits. With three or more columns and
+/// the 24px `--grid-gap` the widest tile is `(4 × 256 + 24) / 3`, about 349px;
+/// a phone's two columns are about 167px. 512 is 2× at the floor and at least
+/// 1.47× at the widest tile. It assumes a device pixel ratio up to 2 and no
+/// `srcset`.
 ///
 /// Its own constant, not [`THUMB_WIDTH`]: each fetch size pairs with exactly
 /// one CSS box, and `.gm__box` is not `.rl-annot__thumb`.
 pub(crate) const GRID_TILE_WIDTH: u32 = 512;
 
 /// Largest side (px) requested for a tall grid tile, paired with the tall box
-/// (`.gm[data-tile="tall"] .gm__box`, `cpe/static/cpe/grid.css`), whose height
-/// is capped at 70svh: 1× on a 1440px-tall window, 1.6× on a 900px one.
+/// (`.gm[data-tile="tall"] .gm__box`, `dsp-incubator cpe/static/cpe/grid.css`),
+/// whose height is capped at 70svh: 1× on a 1440px-tall window, 1.6× on a 900px
+/// one.
 pub(crate) const GRID_TALL_FETCH_PX: i64 = 1000;
 
 /// Clamp a candidate IIIF request width to the target image's own stored
@@ -113,7 +114,7 @@ pub fn iiif_grid_tile_url_clamped(uri: &str, w: Option<i64>) -> Cow<'_, str> {
 }
 
 /// The image request of a tall grid tile: the whole image fitted into
-/// [`GRID_TALL_FETCH_PX`] and clamped to its own pixels
+/// `GRID_TALL_FETCH_PX` and clamped to its own pixels
 /// ([`iiif_confined_url`]). A tall image is bound by its height, which a
 /// width-sized request cannot clamp. With either stored side unknown it is the
 /// width-clamped request of an ordinary tile.
@@ -124,8 +125,8 @@ pub fn iiif_tall_tile_url(uri: &str, w: Option<i64>, h: Option<i64>) -> Cow<'_, 
 }
 
 /// Width (px) requested for a `strip-row` tile, paired with the
-/// `.strip__bed` box (`static/cpe/incunabula.css`), 2× its widest tile:
-/// change both together.
+/// `.strip__bed` box (`dsp-incubator cpe/static/cpe/incunabula.css`), 2× its
+/// widest tile: change both together.
 pub(crate) const STRIP_TILE_FETCH_PX: u32 = 192;
 
 /// Rewrite a IIIF Image API URL to request a `strip-row` tile, clamped like
@@ -192,41 +193,34 @@ pub fn iiif_strip_thumb_url(uri: &str) -> Option<String> {
 /// Returns `None` for a non-IIIF URI (no `/full/max/` segment) — see
 /// `iiif_plate_url`'s doc comment for the same graceful-degradation
 /// rationale.
-///
-/// Its first production caller was the removed zoom-state surface
-/// (`component::zoom`, rejected on owner review) — unreferenced outside
-/// tests since, until record-viewer plan step 4's `component::media::
-/// render_viewer_canvas`, which builds the `<image-viewer>`'s `tile-sources`
-/// from exactly this URL (dropping the `#[allow(dead_code)]` that covered
-/// the gap between the two callers, per the plan's round-1 review Critical
-/// C1).
 pub fn iiif_info_json_url(uri: &str) -> Option<String> {
     let (head, _tail) = uri.split_once("/full/max/")?;
     Some(format!("{head}/info.json"))
 }
 
 /// Largest side (px) requested for a woodcut crop, paired with the 24rem
-/// crop bed (`.case__bed`, `static/cpe/incunabula.css`), ≥ 2× at desk. The
-/// request is further clamped to the region's own pixel size
+/// crop bed (`.case__bed`, `dsp-incubator cpe/static/cpe/incunabula.css`), ≥ 2×
+/// at desk. The request is further clamped to the region's own pixel size
 /// ([`iiif_region_url`]).
 pub const CROP_FETCH_PX: i64 = 800;
 
 /// Largest side (px) requested for a detail crop, paired with the 4.5rem
-/// detail bed (`.case__detail .case__bed`, `static/cpe/incunabula.css`): a
+/// detail bed (`.case__detail .case__bed`, `dsp-incubator
+/// cpe/static/cpe/incunabula.css`): a
 /// 2.5:1 strip 4.5rem tall is about 180 × 72 CSS px, so 400 covers 2×.
 pub const DETAIL_FETCH_PX: i64 = 400;
 
 /// Largest side (px) requested for a whole page in a page case, paired with
 /// the 15rem whole-page bed (`.case--page .case__crop`,
-/// `static/cpe/incunabula.css`). Clamped to the image's own size
-/// ([`iiif_confined_url`]).
+/// `dsp-incubator cpe/static/cpe/incunabula.css`). Clamped to the image's own
+/// size ([`iiif_confined_url`]).
 pub const PAGE_FETCH_PX: i64 = 480;
 
 /// Largest side (px) requested for an edition card's cover plate, paired with
-/// the 15rem plate (`.edition__plate`, `static/cpe/incunabula.css`), 2× its
-/// 240 CSS px. Its own constant although it equals [`PAGE_FETCH_PX`]: each
-/// fetch size pairs with exactly one CSS box. Clamped to the image's own size
-/// ([`iiif_confined_url`]).
+/// the 15rem plate (`.edition__plate`, `dsp-incubator
+/// cpe/static/cpe/incunabula.css`), 2× its 240 CSS px. Its own constant
+/// although it equals [`PAGE_FETCH_PX`]: each fetch size pairs with exactly one
+/// CSS box. Clamped to the image's own size ([`iiif_confined_url`]).
 pub const PLATE_CARD_FETCH_PX: i64 = 480;
 
 /// The margin (% of the image) a crop adds on every side of an annotation's

@@ -1,4 +1,4 @@
-//! Lowering and boot checks of Incunabula's showcase figures (Slice 7):
+//! Lowering and boot checks of Incunabula's showcase figures:
 //! `woodcut-cases`, `edition-cards` and `strip-row`, each reached through its
 //! `validate::project_components` row.
 //!

@@ -1,14 +1,11 @@
-//! Canonical view-URL composer for the "Copy link" control (share-view
-//! plan, step 1). See `docs/plans/share-view/implementation-plan.md`
-//! decision 6 and the design doc's "What composes into the URL".
+//! Canonical view-URL composer for the "Copy link" control.
 //!
-//! This module is a pure, bin-agnostic composer: it takes the current
+//! This module is a pure, host-agnostic composer: it takes the current
 //! request's raw query string plus a small amount of config-derived
 //! context (the facet property names in rail order, and which surface is
 //! being viewed) and produces the canonical query string / absolute URL a
 //! visitor should be able to copy and share. It does **not** read request
-//! state, environment variables, or touch any renderer — later plan steps
-//! wire it into `breadcrumb.rs` and the bin's fragment handlers.
+//! state or environment variables, and touches no renderer.
 //!
 //! ## Canonicalization contract
 //!
@@ -20,15 +17,14 @@
 //! then re-encoded deterministically via
 //! [`cpe_core::util::percent_encode_component`].
 //!
-//! ## Param order (fixed, decision 6)
+//! ## Param order (fixed)
 //!
 //! `q` · facet params (rail order, repeated per value, values within a
 //! group sorted lexicographically + deduped — see below) · `sort` ·
 //! `view` · `page` (numeric, Browse-only) · `img` (1-based) · reader
 //! `page=<member-id>` (resolved, caller-supplied) · `lang` (preserved
-//! verbatim, wherever the engine already carries it — not part of the
-//! design's table, appended last since it is never part of a citable
-//! *refinement*).
+//! verbatim when the query carries it; appended last since it is never
+//! part of a citable *refinement*).
 //!
 //! Defaults are omitted: empty `q`, an empty facet value (a hand-crafted
 //! `?role=`), `sort=default` (per [`cpe_core::ir::Sort::parse_wire`]),
@@ -63,7 +59,7 @@
 use cpe_core::ir::Sort;
 use cpe_core::util::{decode_query_value, percent_encode_component};
 
-/// Documents the "Never" list from decision 6 — query keys the composer
+/// The "Never" list — query keys the composer
 /// must never emit, regardless of their presence in the raw input. Not
 /// consulted at runtime (the composer is an allowlist by construction —
 /// it never looks these keys up), but kept as a single source of truth
@@ -78,8 +74,7 @@ pub const NEVER_INCLUDED: &[&str] = &[
     "datastar",
 ];
 
-/// Which URL-bearing surface the current page is (decision 6 / design
-/// doc "Scope surfaces"). Determines which of `img` / the reader
+/// Which URL-bearing surface the current page is. Determines which of `img` / the reader
 /// `page=<member-id>` / the numeric pager `page` is meaningful — `img` is
 /// Record-only, the reader member Record/Reader-only, the numeric `page`
 /// Browse-only.
@@ -97,7 +92,7 @@ pub enum ViewSurface {
     Reader,
 }
 
-/// Compose the canonical query string for the current view (decision 6).
+/// Compose the canonical query string for the current view.
 ///
 /// `raw_query` is the current request's raw query string (no leading
 /// `?`), exactly as threaded through `RenderContext.current_query`.
@@ -111,13 +106,13 @@ pub enum ViewSurface {
 /// to build the full copyable link.
 ///
 /// `reader_member` is the **resolved** compound member id on a page that
-/// carries a compound-viewer, `None` on member 1 or on a page without one
-/// (Incunabula Slice 2 decision 7). The raw query cannot supply it: a typed
+/// carries a compound-viewer, `None` on member 1 or on a page without one.
+/// The raw query cannot supply it: a typed
 /// name/prefix or a legacy `?member=N` is canonicalised to the id only once
 /// the server has resolved it. Ignored on [`ViewSurface::Browse`].
 ///
-/// `declared_sort_keys` are the browse list's declared `order-by` keys
-/// (Incunabula Slice 8, G9): a `?sort=` value is kept when it is a
+/// `declared_sort_keys` are the browse list's declared `order-by` keys:
+/// a `?sort=` value is kept when it is a
 /// built-in `Sort::parse_wire` token OR one of these keys, else dropped.
 /// Consulted on [`ViewSurface::Browse`] only — the reader/record surfaces
 /// pass `&[]` (a declared key means nothing there). A plain `&[&str]`, like
@@ -162,7 +157,7 @@ pub fn compose_canonical_query(
     // `sort` — omitted when default. Reuses `Sort::parse_wire` (the same
     // closed-vocabulary parser the resource-list sort control uses) so
     // "what counts as default" can never drift between the two; a browse
-    // list's declared `order-by` key (G9) is kept too — any other token is
+    // list's declared `order-by` key is kept too — any other token is
     // a typo that falls back to "As curated" and must not be shared.
     if let Some(sort) = first_value(&decoded, "sort") {
         let declared = surface == ViewSurface::Browse && declared_sort_keys.contains(&sort);
@@ -182,7 +177,7 @@ pub fn compose_canonical_query(
 
     // `page` (numeric pager page) — `Browse`-only; omitted when 1, absent,
     // or unparseable. On a reader/record surface `?page=` addresses a
-    // compound member instead (Incunabula Slice 2 decision 7), so a numeric
+    // compound member instead, so a numeric
     // raw value (`?page=3` matching a member *name*) must never be echoed
     // as a pager page there — the member slot below carries the resolved id.
     if surface == ViewSurface::Browse {
@@ -213,9 +208,9 @@ pub fn compose_canonical_query(
         }
     }
 
-    // `lang` — preserved verbatim wherever the engine already carries it
-    // (decision 6). In practice `current_query` rarely carries `lang=`
-    // (the bin 303-redirects a `?lang=` override to a cookie + clean URL
+    // `lang` — preserved verbatim when the query carries it.
+    // In practice `current_query` rarely carries `lang=`
+    // (the host 303-redirects a `?lang=` override to a cookie + clean URL
     // before rendering), but if present it is a real property of what's
     // on screen and must round-trip like everything else above.
     if let Some(lang) = first_value(&decoded, "lang") {
@@ -278,7 +273,7 @@ fn all_values<'a>(pairs: &'a [(String, String)], key: &'a str) -> impl Iterator<
 }
 
 /// Parse a 1-based index param: `None`/empty/non-numeric/`0` all read as
-/// absent — mirrors the bin's own `query_img`/`?member=` clamping
+/// absent — mirrors the host's own `query_img`/`?member=` clamping
 /// convention (garbage silently reads as the first item).
 fn parse_one_based(raw: Option<&str>) -> Option<u32> {
     raw.and_then(|s| s.parse::<u32>().ok()).filter(|&n| n > 0)
@@ -451,7 +446,7 @@ mod tests {
         let out = compose_canonical_query(Some("sort=bogus"), &[], ViewSurface::Browse, None, &[]);
         assert_eq!(out, "");
         // An undeclared token is still dropped when the list declares
-        // OTHER order-by keys (Incunabula Slice 8, G9).
+        // OTHER order-by keys.
         let out = compose_canonical_query(Some("sort=bogus"), &[], ViewSurface::Browse, None, &["date", "extent"]);
         assert_eq!(out, "");
     }
@@ -465,7 +460,7 @@ mod tests {
         assert_eq!(out, "sort=name-desc");
     }
 
-    /// Incunabula Slice 8, G9: a browse list's declared `order-by` key is
+    /// A browse list's declared `order-by` key is
     /// kept in the canonical query (it is a real, shareable ordering), in
     /// the fixed `sort` slot.
     #[test]
@@ -480,9 +475,8 @@ mod tests {
         assert_eq!(out, "role=R_01&sort=date&page=2");
     }
 
-    /// A key that is no longer declared (Incunabula's retired `date` row,
-    /// now the relabelled default) drops out of the Copy link, while a
-    /// still-declared one (`extent`) is kept.
+    /// A key that is not declared drops out of the Copy link, while a
+    /// declared one (`extent`) is kept.
     #[test]
     fn sort_undeclared_key_is_dropped_declared_key_kept() {
         let declared = ["extent"];

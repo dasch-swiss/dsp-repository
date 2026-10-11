@@ -1,7 +1,5 @@
 //! A loaded project: parsed config + the in-memory SQLite + narrative
-//! content, all immutable after load (no hot-reload in v1). The per-page
-//! sub-router (the remaining ARCHITECTURE §"Project state" field) joins
-//! in Phase 3's router-wiring step.
+//! content, all immutable after load (no hot-reload).
 
 #[cfg(test)]
 use std::collections::BTreeSet;
@@ -38,7 +36,7 @@ pub struct Project {
     narrative: NarrativeStore,
     /// Warning-severity diagnostics produced during `validate_with_data`.
     /// Empty when the project loaded without data-check warnings.
-    /// Held here so the bin can log them at boot without the engine doing I/O.
+    /// Held here so the host can log them at boot; this crate does no I/O.
     load_warnings: Vec<Diagnostic>,
     /// Class→route map built from the validated config at load time.
     ///
@@ -52,25 +50,24 @@ pub struct Project {
     /// same class) are a boot hard-fail (`AmbiguousClassRoute`) and never reach
     /// this map. Empty for projects with no such pages.
     class_routes: std::collections::HashMap<String, String>,
-    /// Class→list-route map built from the validated config at load time (N3,
-    /// empty-states-not-found plan step 8).
+    /// Class→list-route map built from the validated config at load time.
     ///
     /// Maps a resource `class` string (e.g. `"Character"`) to the project-relative
     /// route (e.g. `"/characters"`) of a parameter-less `resource-list` page
-    /// browsing that class. Used by the not-found (N3) renderer and its
+    /// browsing that class. Used by the resource-not-found renderer and its
     /// breadcrumb to build the "Browse all {class}" exit and the live class
     /// crumb. **Advisory, not routing** — first registration wins across pages
     /// (no `AmbiguousClassRoute`-style hard-fail; see `build_class_list_routes`'s
     /// doc comment). Empty for projects with no browse pages.
     class_list_routes: std::collections::HashMap<String, String>,
     /// Class→media-property map built from `resource-detail media="…"`
-    /// declarations at load time (embedded-media plan step 5).
+    /// declarations at load time.
     ///
     /// Maps a resource `class` string (e.g. `"Character"`) to the property
     /// name (e.g. `"image"`) of the host→image `link` property carrying that
     /// class's embedded-media set. Used to suppress the media property when
     /// it would otherwise be rendered as a plain property row (the plate
-    /// column renders it separately — a later step). Only pages with a
+    /// column renders it separately). Only pages with a
     /// resolvable class (an explicit `class` attribute, or the data-looked-up
     /// class of a literal `id`) contribute; unresolvable bindings are a boot
     /// hard-fail (`UnresolvableMediaClass`) and never reach this map. Empty
@@ -78,20 +75,19 @@ pub struct Project {
     media_properties: std::collections::HashMap<String, String>,
     /// Every stored data ARK by id (`resources.ark`, `annotations.ark`), read
     /// once at load after `MalformedDataArk` passed. Empty for a project that
-    /// stores none (Alice, HdM).
+    /// stores none.
     data_arks: DataArks,
 }
 
 impl Project {
-    /// Mirrors boot steps 3.i–3.v: open the DB (schema + data), parse
-    /// the config, run the structural validator, and store the narrative
-    /// content supplied by the bin. Returns `Ok(Project)` only when
-    /// validation passes.
+    /// Opens the DB (schema + data), parses the config, runs the structural
+    /// validator, and stores the narrative content supplied by the host.
+    /// Returns `Ok(Project)` only when validation passes.
     ///
     /// The project id is available through `ctx.project_id`.
     ///
     /// `narrative` is a slice of `(filename, content)` pairs sourced from
-    /// the project's embedded `narrative/` directory. Pass `&[]` when the
+    /// the project's `narrative/` directory. Pass `&[]` when the
     /// project has no narrative content (e.g. in tests).
     pub fn load(
         ctx: &ValidationContext<'_>,
@@ -109,11 +105,11 @@ impl Project {
         // Build the class→route map after validation passes (unambiguous by invariant:
         // `check_class_routes` inside validate() catches and hard-fails on duplicates).
         let class_routes = build_class_routes(&config.pages);
-        // Class→list-route map (N3, step 8) — same "already validated, safe to
+        // Class→list-route map — same "already validated, safe to
         // build unconditionally" reasoning as `class_routes` above, but this map
         // has no corresponding hard-fail check (it's advisory; see the doc comment).
         let class_list_routes = build_class_list_routes(&config.pages);
-        // Class→media-property map (embedded-media plan step 5): built the
+        // Class→media-property map: built the
         // same way as `class_routes` above, but data-dependent (a literal-id
         // `resource-detail`'s class is looked up via `facts`), so it must
         // be built before `conn` moves into the `Mutex` below. Safe to build
@@ -151,7 +147,7 @@ impl Project {
     ///
     /// The contract and the lock protocol are `query::reads::ProjectReads::get_resource`'s.
     ///
-    /// `pub` only for the bin router's tests: a page's view data comes from
+    /// `pub` only for the host router's tests: a page's view data comes from
     /// [`Project::page_data`], so no production caller reads through here.
     #[doc(hidden)]
     pub fn get_resource(&self, id: &str, lang: &Lang) -> Result<Option<Resource>, QueryError> {
@@ -281,7 +277,7 @@ impl Project {
     /// `None` when the page's `resource-detail` declares no `incoming-links`,
     /// its resource did not resolve, or the lookup failed (logged).
     ///
-    /// `pub` only for the bin router's tests (its `#[cfg(test)]`
+    /// `pub` only for the host router's tests (its `#[cfg(test)]`
     /// `resolve_incoming_links` wrapper); production reads `page_data`.
     #[doc(hidden)]
     pub fn page_incoming_links(&self, page: &Page, components: &[ComponentData], lang: &Lang) -> Option<IncomingLinks> {
@@ -312,8 +308,8 @@ impl Project {
     /// or similar advisory diagnostics fired. The project is fully operational
     /// even when warnings are present — they do not block load.
     ///
-    /// The bin logs these at boot (via its own tracing setup) so the operator
-    /// can act on them without the engine needing to perform I/O.
+    /// The host logs these at boot (via its own tracing setup) so the operator
+    /// can act on them without this crate performing I/O.
     pub fn warnings(&self) -> &[Diagnostic] {
         &self.load_warnings
     }
@@ -340,12 +336,11 @@ impl Project {
         &self.data_arks
     }
 
-    /// The class→list-route map built from the validated config at load time
-    /// (N3, empty-states-not-found plan step 8).
+    /// The class→list-route map built from the validated config at load time.
     ///
     /// Maps a resource `class` name (e.g. `"Character"`) to the project-relative
     /// route of a parameter-less `resource-list` page browsing that class (e.g.
-    /// `"/characters"`). Used by the not-found (N3) renderer and its breadcrumb
+    /// `"/characters"`). Used by the resource-not-found renderer and its breadcrumb
     /// to build the "Browse all {class}" exit and the live class crumb.
     /// **Advisory** — first registration wins across pages; unlike
     /// `class_routes`, two browse pages over the same class is not a boot
@@ -355,10 +350,8 @@ impl Project {
         &self.class_list_routes
     }
 
-    /// The class→media-property map built from `resource-detail media="…"`
-    /// declarations at load time (embedded-media plan step 5), extended to
-    /// also fold in `compound-viewer media="…"` declarations over the same
-    /// classes (engine-hygiene batch 3, item 8) — `resource-detail`
+    /// The class→media-property map built from `resource-detail media="…"` and
+    /// `compound-viewer media="…"` declarations at load time: `resource-detail`
     /// registrations win first, `compound-viewer` registrations fill in
     /// any class not already covered.
     ///
@@ -372,7 +365,7 @@ impl Project {
     }
 
     /// Fetch the ordered, hydrated Image resources a host resource points at
-    /// via its `link`-typed `property` (embedded-media plan step 6a/6b).
+    /// via its `link`-typed `property`.
     ///
     /// The contract and the lock protocol are `query::reads::ProjectReads::media_items`'s.
     #[cfg(test)]
@@ -388,7 +381,7 @@ impl Project {
     /// The project's `site.title`, resolved chrome-id-or-literal for `lang`.
     ///
     /// Mirrors [`Project::description`] (see `labels::site_title`, which
-    /// every engine chrome surface uses). Used by the bin's site-index teaser.
+    /// every chrome surface uses). Used by a host's site-index teaser.
     pub fn title(&self, lang: &Lang) -> &str {
         cpe_core::labels::site_title(&self.config.site, lang)
     }
@@ -401,9 +394,9 @@ impl Project {
     /// `lang`, the translation is returned; otherwise the literal value is
     /// returned as-is. Returns `None` when `site.description` is unset.
     ///
-    /// Used by callers outside `cpe-web` (the bin's site-index teaser) that
-    /// need the resolved description without reaching into
-    /// `cpe_core::labels::chrome_lookup`, which the facade does not expose.
+    /// Used by callers outside `cpe-web` (a host's site-index teaser) that
+    /// need the resolved description without calling
+    /// `cpe_core::labels::chrome_lookup` themselves.
     pub fn description(&self, lang: &Lang) -> Option<&str> {
         self.config
             .site
@@ -607,9 +600,8 @@ page id="home" route="/"
     #[test]
     fn build_media_properties_includes_compound_member_class() {
         // A compound-viewer media="image" over Page members, with NO Page
-        // detail page in the config at all — build_media_properties (Step
-        // 11) must still register the class via the compound-viewer's own
-        // resolved member classes.
+        // detail page in the config at all — build_media_properties must still
+        // register the class via the compound-viewer's own resolved member classes.
         let config_src = r#"
 site {
     title "T"
@@ -637,7 +629,7 @@ page id="book" route="/book" {
         );
     }
 
-    // ── O6: `narrative-for` resource existence (both validate_with_data arms) ──
+    // ── `narrative-for` resource existence (both validate_with_data arms) ──────
 
     const NARRATIVE_FOR_DATA: &str = "INSERT INTO resources (id, class) VALUES ('b1', 'Book');";
 
@@ -1004,8 +996,8 @@ page id="home" route="/"
     // target="things" searches="name" "description"`. `Project::load` builds
     // the FTS5 index at boot (`query::build_search_indexes`); these tests
     // exercise it through the public query entry points with an injected
-    // `WhereClause::Search`, mirroring how the bin will inject one at request
-    // time (a later step). This integration test lives here, beside the
+    // `WhereClause::Search`, as a host injects one at request time. This
+    // integration test lives here, beside the
     // `Project` it drives and with the crate-internal test delegations
     // (`#[cfg(test)] pub(crate)`) in reach, rather than under `web/tests/`,
     // which only sees the public surface.
@@ -1108,7 +1100,7 @@ page id="home" route="/"
     // exercises `ProjectReads::compound_parts`'s lock-once-drop-before-hydrate
     // path at the unit layer (a regression that
     // re-locked the non-reentrant Mutex would hang here rather than only in
-    // the HTTP smoke test). Mirrors the query-layer fixture in `query.rs`'s
+    // a host's HTTP tests). Mirrors the query-layer fixture in `query.rs`'s
     // `setup_compound_headers_db` (see the `compound_part_headers` tests).
 
     /// A Story parent ("ST_001") with three StoryChapter members at
@@ -1224,9 +1216,9 @@ page id="home" route="/"
         assert_eq!(page.index, 1, "empty compound still reports index == 1 (documented invariant)");
     }
 
-    // ── resolve_page_param (Incunabula Slice 2 step 7, decision 5) ────────────
+    // ── resolve_page_param ────────────────────────────────────────────────────
     //
-    // Headers modelled on the real postilla book (Incunabula's `data.sql`): a
+    // Headers modelled on the real postilla book (Incunabula's data): a
     // lower-case first quire (`a1r; Titelblatt`, `a2v`) and a capital second
     // quire (`A1r` → `postilla-a1r`, member 207 of 340; `A2v`, whose id
     // carries the case-fold `-2` suffix because `a2v` took `postilla-a2v`), a
@@ -1405,7 +1397,7 @@ page id="home" route="/"
         assert_eq!((empty.total, empty.stale_page), (0, None));
     }
 
-    // ── media_items / media_thumbs integration tests (plan step 6a/6b) ───────
+    // ── media_items / media_thumbs integration tests ─────────────────────────
     //
     // A Character host resource ("c1") pointing at three Image resources via
     // its `image` link property, at seq 2, 0, 1 (deliberately out of id
@@ -1448,7 +1440,7 @@ page id="home" route="/"
 
     /// `compound_parts(…, Some(property), …)` fills `member_media` with the
     /// CURRENT member's linked Images (Seqnum order); `None` leaves it empty
-    /// (Incunabula Slice 2 step 6b — the member scan's data path).
+    /// (the member scan's data path).
     #[test]
     fn compound_parts_fills_member_media_only_when_a_property_is_given() {
         let sql = "
@@ -1603,7 +1595,7 @@ page id="home" route="/"
 
     #[test]
     fn facet_counts_are_static_regardless_of_active_selection() {
-        // AC4 (BACKLOG "count-stability smoke assertion"): facet option
+        // Facet option
         // counts are computed against the class + config `where`s only —
         // they are STATIC and must never be narrowed by the active facet
         // selection. `active_ids` may only ever set `FacetOption::selected`;
@@ -1761,7 +1753,7 @@ page id="home" route="/"
         assert_eq!(group.label, "Location Type", "hyphenated → title-cased words");
     }
 
-    /// Config-translatable-labels Step 4: when the project's `labels {
+    /// When the project's `labels {
     /// property "…" { … } }` block declares a translation for the facet's
     /// property, `facet_options` must return the DECLARED translation as
     /// `FacetGroup.label`, not the humanized property name (mirrors

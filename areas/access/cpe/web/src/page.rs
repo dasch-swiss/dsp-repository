@@ -1,7 +1,7 @@
 //! Page assembly for the Configurable Presentation Environment.
 //!
 //! `render_page` / `render_compound_fragment` / `document_head` — full document
-//! rendering, plus the N1/N2 full-page not-found renderers. The component
+//! rendering, plus the two full-page not-found renderers. The component
 //! renderers live in `cpe_components::component`; the private `use` below
 //! brings each child this file calls into scope by name.
 
@@ -32,14 +32,15 @@ use maud::{html, Markup, DOCTYPE};
 /// (with `display=swap` to avoid FOIT), the Newsreader + IBM Plex Mono font
 /// `<link>`, the 7 CSS `<link>`s in load order:
 /// `tokens.css` → `shell.css` → `editorial.css` → `record.css` → `grid.css`
-/// → `media.css` → `incunabula.css`, and (record-viewer plan step 1) `cpe_image_viewer::head_tag`
+/// → `media.css` → `incunabula.css`, and `cpe_image_viewer::head_tag`
 /// — the `<image-viewer>` custom-element registration, emitted globally on
 /// every page.
 ///
-/// Both `render_page` (engine) and `site_index` (bin, Step 5) call this so
-/// the design-system contract lives in one place — no bin/engine `<head>` drift.
+/// Every full page calls this (`render_page`, the two not-found renderers)
+/// so the design-system contract lives in one place — no `<head>` drift. The
+/// host's 503 page is the exception: it loads no file at all.
 ///
-/// `view_transitions` (Incunabula Slice 3b Q4): when `true`, the head also
+/// `view_transitions`: when `true`, the head also
 /// opts the document into cross-document View Transitions, under
 /// `prefers-reduced-motion: no-preference` only. Both documents of a
 /// navigation must opt in, so `render_page` passes `true` only on pages whose
@@ -49,7 +50,7 @@ use maud::{html, Markup, DOCTYPE};
 ///
 /// `typeface` picks the Google Fonts families to load: `Some(t)` (a project
 /// page) loads `t`'s families plus Lora (the fixed `.dasch-link` face) and IBM
-/// Plex Mono; `None` (the site index, N2) loads Newsreader and Plex Mono.
+/// Plex Mono; `None` (a page outside any project) loads Newsreader and Plex Mono.
 pub fn document_head(site_title: &str, view_transitions: bool, typeface: Option<Typeface>) -> Markup {
     html! {
         head {
@@ -68,7 +69,7 @@ pub fn document_head(site_title: &str, view_transitions: bool, typeface: Option<
             link rel="stylesheet" href="/_static/cpe/editorial.css";
             link rel="stylesheet" href="/_static/cpe/record.css";
             link rel="stylesheet" href="/_static/cpe/grid.css";
-            // Embedded-media plan step 6c: the plate column + .pg pager
+            // The plate column + .pg pager
             // primitive. Sixth file; see
             // dsp-incubator cpe/docs/adr/0005-css-baseline.md.
             link rel="stylesheet" href="/_static/cpe/media.css";
@@ -77,7 +78,7 @@ pub fn document_head(site_title: &str, view_transitions: bool, typeface: Option<
             link rel="stylesheet" href="/_static/cpe/incunabula.css";
             // DataStar v1.0.2 — ES module (defer-by-default; no async).
             script type="module" src="/_static/datastar.js" {}
-            // record-viewer plan step 1: registers the `<image-viewer>`
+            // Registers the `<image-viewer>`
             // custom element globally. Emitted unconditionally (not gated on
             // whether the page actually mounts a viewer) so the design-system
             // contract stays in this one function — the module itself is
@@ -107,7 +108,7 @@ fn google_fonts_href(typeface: Option<Typeface>) -> String {
     format!("https://fonts.googleapis.com/css2?{}&display=swap", query.join("&"))
 }
 
-/// The reader pages' cross-document View Transition opt-in (Slice 3b Q4),
+/// The reader pages' cross-document View Transition opt-in,
 /// emitted by [`document_head`] when `view_transitions` is `true`.
 const VIEW_TRANSITION_STYLE: &str =
     "@media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }";
@@ -117,9 +118,9 @@ const VIEW_TRANSITION_STYLE: &str =
 /// Derivation order:
 /// 1. First `resource-detail` body component with a positionally-resolved resource →
 ///    `resolve_title_str` (the same string the h1 / breadcrumb uses). Else (rung 1b), when the
-///    first `resource-detail` body component's slot is `Detail(None)` (an unknown id — the N3
-///    not-found body), N3's own `h1` (`resource_detail::not_found_heading`), so the 404 tab names
-///    what is missing (owner decision 2026-10-02).
+///    first `resource-detail` body component's slot is `Detail(None)` (an unknown id), the
+///    not-found body's own `h1` (`resource_detail::not_found_heading`), so the 404 tab names what
+///    is missing.
 /// 2. Else first `narrative` body component → `page_title_heading` of the language-resolved
 ///    Markdown content (same variant-resolution chain as `render_narrative`). That helper prefers
 ///    the `<h1>` over an earlier lower-level heading, so an editorial narrative opening with a
@@ -163,10 +164,10 @@ fn resolved_resource_title(page: &cpe_core::ir::Page, components: &[ComponentDat
         })
 }
 
-/// N3's `h1` text when the page's FIRST `ResourceDetail` body component has
+/// The not-found `h1` text when the page's FIRST `ResourceDetail` body component has
 /// an unresolved slot (`Detail(None)` — the unknown-id 404 body), else
 /// `None`. `compose_page_title`'s rung 1b; the heading comes from the same
-/// `resource_detail::not_found_heading` the N3 body renders.
+/// `resource_detail::not_found_heading` the not-found body renders.
 fn not_found_resource_heading(
     site: &SiteConfig,
     page: &cpe_core::ir::Page,
@@ -191,7 +192,7 @@ fn not_found_resource_heading(
 /// no heading. Shares the exact 3-step fallback chain `render_narrative`
 /// uses (requested variant → default-language variant → base file) via
 /// `narrative::resolve_narrative_content`, so title derivation and body
-/// rendering can never diverge. Extracted (share-view plan step 4) so
+/// rendering can never diverge. One function so
 /// `compose_page_title`'s rung 2 and the narrative crumb-line's page title
 /// (`render_page`'s breadcrumb wiring) resolve identically — never
 /// re-derive this chain separately.
@@ -201,7 +202,7 @@ fn not_found_resource_heading(
 /// leading `###` **kicker**, which `component::editorial` renders as
 /// `p.eyebrow.editorial__kicker` — a label, not the page's title. Because
 /// this one fn feeds both the `<title>` and the narrative breadcrumb's
-/// page-title segment, both were reading the kicker before the switch.
+/// page-title segment, the level-blind helper would put the kicker in both.
 fn resolved_narrative_component_title(
     page: &cpe_core::ir::Page,
     narrative: &NarrativeStore,
@@ -229,7 +230,7 @@ fn compose_page_title(
 
     // --- 1. resource-detail component with a resolved resource ----------------
     let resource_title: Option<String> = resolved_resource_title(page, components, lang)
-        // --- 1b. the first resource-detail is unresolved (N3) → its h1 -------
+        // --- 1b. the first resource-detail is unresolved → its h1 -------
         .or_else(|| not_found_resource_heading(site, page, components, lang));
 
     if let Some(rt) = resource_title {
@@ -267,12 +268,12 @@ fn compose_page_title(
 ///   language-resolved content has a level-1 heading **anywhere**
 ///   (`cpe_core::util::narrative_contains_h1`), not merely as its first heading. A narrative that
 ///   renders a visible h1 that isn't first (e.g. `"## intro\n\n# title"`) would otherwise be
-///   misclassified as headless, injecting a hidden h1 IN ADDITION to the real one — not reachable
-///   in Alice's current content, but CPE hosts arbitrary project configs. `page_title_heading`
-///   (used below, by `page_heading`, for a *different* decision — which heading's TEXT to reuse)
-///   prefers the h1's text but still answers `Some` for an h1-less document, so it cannot answer
-///   "is there an h1 anywhere" either; hence this dedicated boolean helper. All three heading
-///   helpers share one traversal in `util` (`headings`).
+///   misclassified as headless, injecting a hidden h1 IN ADDITION to the real one — rare, but CPE
+///   hosts arbitrary project configs. `page_title_heading` (used below, by `page_heading`, for a
+///   *different* decision — which heading's TEXT to reuse) prefers the h1's text but still answers
+///   `Some` for an h1-less document, so it cannot answer "is there an h1 anywhere" either; hence
+///   this dedicated boolean helper. All three heading helpers share one traversal in `util`
+///   (`headings`).
 /// - `ResourceList`, `CompoundViewer`, and `FacetPanel` never contribute a page-level `<h1>` (their
 ///   own internal headings are `h2` or lower).
 fn page_has_visible_h1(
@@ -332,16 +333,13 @@ fn page_heading(
     // chains cannot drift on which heading counts as the title — a leading
     // `###` kicker never does). Behaviour-neutral for a kicker-bearing page,
     // which always has an h1 and is therefore never headless.
-    // NOTE (residual, documented not fixed — FIX 4): this rung is only
+    // Known limit: this rung is only
     // reached by a headless narrative page whose route has NO matching
     // `nav` entry (rung 2 above already returns for every page that does).
     // For such an off-nav page, if the first heading happens to be an `h2`
     // (not `h1` — `page_has_visible_h1` already excluded true h1-having
     // pages from injection), the injected hidden h1's TEXT duplicates the
-    // visible `h2` text further down the page. Every Alice headless page has
-    // a nav entry and hits rung 2, so this never fires today; it remains a
-    // latent duplication for an off-nav narrative page in an arbitrary
-    // future config.
+    // visible `h2` text further down the page.
     let narrative_title: Option<String> = page.body.iter().find_map(|c| {
         if let Component::Narrative { file, .. } = c {
             narrative::resolve_narrative_content(file, lang, default_lang, narrative).and_then(page_title_heading)
@@ -379,9 +377,9 @@ fn page_heading(
 /// only the record and narrative crumb lines read it.
 ///
 /// Returns a `maud::Markup` value (the full document, including `<!DOCTYPE html>`).
-/// The caller is responsible for supplying `IntoResponse` (bin side).
-/// HTTP status is NOT encoded here — the bin handler maps its own `Result` to
-/// 200/404/500 (PRD Decision 4 and 8).
+/// The caller is responsible for supplying `IntoResponse`.
+/// HTTP status is NOT encoded here — the host's handler maps its own `Result` to
+/// 200/404/500.
 pub fn render_page(
     site: &SiteConfig,
     page: &cpe_core::ir::Page,
@@ -393,7 +391,7 @@ pub fn render_page(
     // The site's default-language `Lang`, resolved once per request.
     // `lang::resolve` with an empty preference slice always returns
     // `Lang(site.default_language.clone())` (see
-    // `vendor/dsp-repository/areas/access/cpe/core/src/lang.rs`). Shared by
+    // `cpe_core::lang`). Shared by
     // `compose_page_title` (title) and `render_body` → `render_narrative`
     // (body) so both stages resolve the narrative fallback chain identically.
     let default_lang = cpe_core::lang::resolve(&[], site);
@@ -413,34 +411,28 @@ pub fn render_page(
 
     // Derive the breadcrumb (crumb-line + share control) for this page. A
     // `ResourceDetail` component gets the ordinary 3-crumb trail (resolved
-    // resource) or the N3 not-found variant (unresolved id, empty-states-
-    // not-found plan step 8; owner-decided scope: N3's class crumb appears
+    // resource) or the not-found variant (unresolved id; the class crumb appears
     // ONLY on the 404 page — a resolved record page never gains a class
     // crumb here). Otherwise, a page with a `ResourceList` component (a
-    // declared `id`) gets the browse crumb-line variant (share-view plan
-    // step 5, `render_browse_breadcrumb_for_page`) — `CPE › project ›
+    // declared `id`) gets the browse crumb-line variant
+    // (`render_browse_breadcrumb_for_page`) — `CPE › project ›
     // class-label`, with a state-bearing accessible-name suffix. Otherwise,
     // a page with a `Narrative` component gets the narrative crumb-line
-    // variant (share-view plan step 4) — `CPE › project › page-title`, or
+    // variant — `CPE › project › page-title`, or
     // `CPE › project` alone on the project home page.
     //
-    // **Browse is checked BEFORE narrative** (fix batch for the share-view
-    // review findings) — deliberately the opposite precedence from
-    // `render_browse_breadcrumb_for_page`'s doc comment's original framing,
-    // which had narrative first. The bin's `_facets`/`_sort`/`_search`
+    // **Browse is checked BEFORE narrative.** The host's `_facets`/`_sort`/`_search`
     // fragment handlers unconditionally patch `#crumb-{list_id}` (the browse
-    // variant's id) — they have no narrative branch at all. A hypothetical
+    // variant's id) — they have no narrative branch at all. A
     // page combining a `ResourceList` (with declared `id`) and a `Narrative`
     // component must therefore render the SAME crumb id those handlers
     // patch, or a refinement response would target an id the full-page
-    // render never emitted. No live Alice page combines both today, but the
-    // precedence must match the fragment handlers' selector regardless. The
-    // engine owns this
-    // decision — the bin sets no flag.
+    // render never emitted. This function owns the
+    // decision — the host sets no flag.
     let breadcrumb_markup: Option<Markup> =
         render_crumb_line_for_page(page, ctx, narrative, site, components, data_arks);
 
-    // Slice 3b Q4: only a reader page opts into cross-document View
+    // Only a reader page opts into cross-document View
     // Transitions (see `document_head`).
     let view_transitions = page.body.iter().any(|c| matches!(c, Component::CompoundViewer { .. }));
 
@@ -452,8 +444,7 @@ pub fn render_page(
         (document_head(&page_title, view_transitions, Some(site.theme.typeface)))
         body {
             // A11y: skip-to-content link, first child of <body> on every
-            // full-page renderer (mirrored in N1 and the bin's
-            // site_index — see CLAUDE.md's Non-obvious constraints).
+            // full-page renderer (both not-found pages mirror it).
             (skip_link(&ctx.lang))
             div.shell {
                 (shell_header(site, ctx, &page.route))
@@ -464,8 +455,8 @@ pub fn render_page(
                         h1.visually-hidden { (h) }
                     }
                     // Breadcrumb — rendered above page content on resource-detail,
-                    // narrative (share-view plan step 4), and browse pages (step
-                    // 5): a sibling above `render_body`'s output, so on a browse
+                    // narrative, and browse pages:
+                    // a sibling above `render_body`'s output, so on a browse
                     // page it sits above the `.browse` grid rather than becoming a
                     // 5th flat grid child.
                     @if let Some(ref bc) = breadcrumb_markup { (bc) }
@@ -482,10 +473,10 @@ pub fn render_page(
 /// the language, the appearance, the project's `theme {}` knob, its text
 /// alignment when that is not the default (`data-align`) and, on a page with
 /// a narrative, its layout (`data-narr`, `data-narr-side`), around `inner`
-/// (the head and the body). `render_page` and N1
+/// (the head and the body). `render_page` and the project's not-found page
 /// (`render_not_found_project`) both call it, so the two project shells
-/// carry the same attributes. N2 and the site index have no project and
-/// write their own `<html>`.
+/// carry the same attributes. CPE's own not-found page has no project and
+/// writes its own `<html>`.
 ///
 /// No attribute written here may be named like a DataStar plugin
 /// (`data-text`, `data-show`, …): DataStar would evaluate its value.
@@ -513,13 +504,13 @@ pub(crate) fn project_html(
     }
 }
 
-/// Render the complete N1 page: the project's own bespoke 404 for an
+/// Render the project's not-found page: its own bespoke 404 for an
 /// unmatched path under a resolved project prefix.
 ///
 /// Bypasses `render_page` entirely — this is an independent full-page
 /// renderer, so it re-implements the skip link / `id="main"` /
-/// single-visible-`<h1>` discipline the others share (see CLAUDE.md's
-/// "Non-obvious constraints"). The full project chrome and the project's
+/// single-visible-`<h1>` discipline the others share.
+/// The full project chrome and the project's
 /// configured `theme {}` apply, through the same `shell_header` every project
 /// page uses. No `aria-current` on any nav item falls out of passing a
 /// `current_route` that matches no configured route (`""`). The body is
@@ -558,20 +549,19 @@ pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> M
     project_html(lang, ctx.appearance, site, None, inner)
 }
 
-/// Render the complete N2 page: the site's own 404 for a request whose first
+/// Render CPE's own not-found page: the 404 for a request whose first
 /// path segment does not match any loaded project id.
 ///
-/// Same `.notfound` anatomy as N1 (shared
+/// Same `.notfound` anatomy as the project's (shared
 /// `resource_detail::render_notfound_shell`), dressed
-/// by the **site's** bare chrome rather than a project's — mirrors
-/// `bin::router::site_index`'s header/footer markup exactly (the engine has
-/// no reach into that bin-only code, so this is a deliberate independent
-/// duplication, the same pattern `skip_link` already documents across the
-/// other full-page renderers). No project nav, no "or browse" line (there is
+/// by bare chrome rather than a project's. The header and footer are
+/// written out here: `shell_header` and `shell_footer` need a project's
+/// `SiteConfig`, so a change to their shared markup (the brand mark, the
+/// appearance toggle, the DaSCH logo) is repeated here by hand.
+/// No project nav, no "or browse" line (there is
 /// no project whose pages could be offered), product-default theme knob
-/// (ochre · tint · newsreader). Language still comes from the built-in
-/// resolution chain (`resolve_builtin`), so the site index's own bare
-/// language-agnostic header stays as-is — see the caller.
+/// (ochre · tint · newsreader). `lang` is one of the built-in languages
+/// (`cpe_core::lang::resolve_builtin`): there is no project to declare any.
 pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
     use cpe_components::chrome::ChromeMsg;
     let code = ChromeMsg::NfCode.text(lang);
@@ -694,20 +684,19 @@ pub fn render_not_found_site(lang: &Lang, appearance: Appearance) -> Markup {
 }
 
 /// The output of [`render_compound_fragment`]: everything the `_compound`
-/// DataStar fragment handler (bin, `reader-paging-fragment-swap` plan Step
-/// 2) needs to build its SSE response — the re-rendered `#compound-viewer`
+/// DataStar fragment handler (the host's)
+/// needs to build its SSE response — the re-rendered `#compound-viewer`
 /// markup, the recomposed crumb-line markup + its DOM patch-target id (when
 /// the page has a crumb line at all — see `crumb`'s own doc comment), the
 /// re-rendered header controls, and
 /// this page's derived `<title>` text + canonical URL — anchor-free, since
-/// `share_href_for_reader` (item 21, Step 3b) is now unconditionally
-/// anchor-free; the `_compound` handler's `.trim_end_matches` at the
-/// `pushState` call site is defensive-only, not load-bearing.
+/// `share_href_for_reader` is unconditionally
+/// anchor-free.
 pub struct CompoundFragmentOutput {
     /// The re-rendered `<article id="compound-viewer">` markup — built via
     /// the SAME `render_component` call `render_page`'s own `CompoundViewer`
     /// arm makes, so its root open tag is unconditionally identical between
-    /// a full-page render and a fragment response (PRD invariant I3).
+    /// a full-page render and a fragment response.
     pub viewer: Markup,
     /// The recomposed crumb-line markup for this page (paired with
     /// `crumb_id`, `None` together), via the SAME
@@ -754,19 +743,16 @@ pub struct CompoundFragmentOutput {
 /// the canonical URL — all via the SAME
 /// internal calls `render_page` makes for a compound-viewer page, so a
 /// fragment response can never drift from what a full-page load of the same
-/// state would show (PRD invariant I3, `reader-paging-fragment-swap` plan
-/// Step 1a). This is the ONE new `pub` engine entry point that closes the
-/// bin-visibility gap reviving `_compound` reintroduces — see CLAUDE.md's
-/// "Fragment endpoints" Non-obvious constraint and the plan's Step 1a for
-/// why a single entry point was chosen over widening `CompoundViewerCfg` /
-/// `render_compound_viewer` / `member_href_for` / both breadcrumb variants /
-/// `compose_page_title` / `js_string_escape` individually.
+/// state would show. This is the ONE `pub` entry point for the host's
+/// `_compound` handler, rather than making `CompoundViewerCfg`,
+/// `render_compound_viewer`, `member_href_for`, both breadcrumb variants,
+/// `compose_page_title` and `js_string_escape` individually `pub`.
 ///
 /// Returns `None` when `page` has no `CompoundViewer` component, or when
 /// `components` has no `ComponentData::Compound` payload at that component's
-/// slot — the caller (the bin's `_compound` handler, Step 2) treats either
+/// slot — the caller (the host's `_compound` handler) treats either
 /// as "nothing to render" and returns a bare non-200 status, per the other
-/// fragment handlers' convention (`bin/src/router.rs`).
+/// fragment handlers' convention.
 ///
 /// `data_arks` must be the same map `render_page` receives, so the swapped
 /// crumb line matches a full-page load.
@@ -819,7 +805,7 @@ pub fn render_compound_fragment(
     // Mirrors the crumb-line builders' own `share_href` composition (they
     // don't expose it) — record surface when the page has a
     // `ResourceDetail` (Incunabula's navigator-keyed book page), else the
-    // narrative/reader surface (Alice's `/wonderland`/`/looking-glass`).
+    // narrative/reader surface (a narrative page with a reader).
     let has_resource_detail = page.body.iter().any(|c| matches!(c, Component::ResourceDetail { .. }));
     let surface = if has_resource_detail {
         crate::share_link::ViewSurface::Record
@@ -859,7 +845,7 @@ fn render_crumb_line_for_page(
 }
 
 /// Resource-detail surfaces: the record crumb line (`CPE › project ›
-/// [class ›] resource-title`) plus its Copy-link control, or the N3
+/// [class ›] resource-title`) plus its Copy-link control, or the
 /// not-found crumb when the page's `resource-detail` id did not resolve.
 /// Returns `None` when the page has no `ResourceDetail` component.
 ///
@@ -888,14 +874,12 @@ pub(crate) fn render_record_breadcrumb_for_page(
                         Some(resource) => {
                             let resource_title =
                                 values::resolve_title_str(resource, title_property.as_deref(), &ctx.lang);
-                            // Share-view plan step 3: the detail-page control's
+                            // The detail-page control's
                             // href is the load-time canonical URL for the
                             // current page (no facets on a detail page, hence
-                            // the empty facet-property slice) — see
-                            // `docs/plans/share-view/implementation-plan.md`
-                            // step 3's "What NOT to do" (the record `?img=`
-                            // client-side tracking is step 7's job, not this
-                            // load-time href).
+                            // the empty facet-property slice). The record `?img=`
+                            // client-side tracking is the reactive href below, not this
+                            // load-time href.
                             let share_query = crate::share_link::compose_canonical_query(
                                 ctx.current_query,
                                 &[],
@@ -906,7 +890,7 @@ pub(crate) fn render_record_breadcrumb_for_page(
                             let share_href =
                                 share_href_for_reader(ctx.public_origin, ctx.current_path, &share_query, reader_member);
                             let share_id = format!("share-{}", ctx.project_id);
-                            // Step 7 (decision 5): when the record-viewer offers
+                            // When the record-viewer offers
                             // a `.pg` sequence pager (`media::has_sequence_pager`
                             // — the SAME gate `render_media_viewer` uses to
                             // decide whether `$plate` has anything to page
@@ -986,8 +970,7 @@ pub(crate) fn render_record_breadcrumb_for_page(
                                     // correct than a hand-built ternary/string
                                     // concatenation — every value the expression
                                     // can ever produce is visible, pre-composed,
-                                    // right here. UNVERIFIED IN-BROWSER — see
-                                    // `docs/plans/share-view/issues.md`.
+                                    // right here.
                                     format!("{{'href': [{}][$plate]}}", urls_js.join(","))
                                 });
                             let share = breadcrumb::ShareControl {
@@ -1005,11 +988,9 @@ pub(crate) fn render_record_breadcrumb_for_page(
                             // shows as the browse page's own current
                             // crumb/eyebrow, so the two surfaces read the same
                             // capitalized-plural class noun for the same class
-                            // (e.g. "Characters", not the singular "Character" —
-                            // see `docs/plans/share-view/issues.md`, which
-                            // supersedes this comment's earlier "singular to
-                            // match browse crumb" call: the browse crumb itself
-                            // now resolves the plural too, so this still agrees).
+                            // (e.g. "Characters", not the singular "Character":
+                            // the browse crumb itself
+                            // resolves the plural too, so the two agree).
                             let class_crumb: Option<(String, String)> = class.as_deref().and_then(|c| {
                                 ctx.class_list_routes.get(c).map(|route| {
                                     let label = resolve_class_plural_capitalized(&site.class_labels, c, &ctx.lang);
@@ -1038,7 +1019,7 @@ pub(crate) fn render_record_breadcrumb_for_page(
                             ))
                         }
                         None => {
-                            // N3 — unresolved id. A class crumb is only added
+                            // Unresolved id. A class crumb is only added
                             // when the page declares a `class` AND that class
                             // has a registered browse route (the advisory
                             // class→list-route map) — otherwise fall back to
@@ -1065,8 +1046,8 @@ pub(crate) fn render_record_breadcrumb_for_page(
         })
 }
 
-/// The resolved compound-reader member id for the Copy link (Incunabula
-/// Slice 2 decision 7): the id of the member on screen, read from the page's
+/// The resolved compound-reader member id for the Copy link:
+/// the id of the member on screen, read from the page's
 /// `ComponentData::Compound` (`members[index - 1]`), or `None` on member 1,
 /// on an empty compound, or on a page with no compound-viewer. This is the
 /// canonical form of whatever the request typed (`?page=<id|name|prefix>`
@@ -1081,42 +1062,38 @@ fn resolved_reader_member(components: &[ComponentData]) -> Option<&str> {
 /// Compose the Copy link href for a surface that may carry a resolved
 /// compound-reader member.
 ///
-/// **Unconditionally anchor-free (`reader-paging-fragment-swap` plan Step
-/// 3b, item 21)** — this fn used to append `#compound-viewer` when
-/// `reader_member` was `Some` and non-empty, mirroring the in-app member
-/// links (`links::member_href_for`). That anchor-appending was a
-/// pre-existing bug against PRD invariant I1/AC6 ("no `#compound-viewer`
-/// anywhere" in a copied link): member paging is now a URL-writing
+/// **Unconditionally anchor-free**: no `#compound-viewer` may appear
+/// anywhere in a copied link. Member paging is a URL-writing
 /// `pushState`/`popstate` swap (not a same-document anchor scroll), so no
-/// Copy-link caller needs the anchor to land correctly any more — the
+/// Copy-link caller needs the anchor to land correctly — the
 /// resolved `page=<member-id>` query param alone is enough. `reader_member`
 /// is kept as a parameter for call-site symmetry with
-/// `compose_canonical_query` (which still needs it to decide `page=`/`img=`
-/// composition) even though this fn itself no longer branches on it.
+/// `compose_canonical_query` (which needs it to decide `page=`/`img=`
+/// composition); this fn does not branch on it.
 fn share_href_for_reader(origin: &str, path: &str, query: &str, _reader_member: Option<&str>) -> String {
     crate::share_link::compose_absolute_url(origin, path, query)
 }
 
-/// Static surfaces (share-view plan step 4): a page with no
+/// Static surfaces: a page with no
 /// `ResourceDetail` component but WITH a `Narrative` component gets the
 /// narrative crumb-line variant (`CPE › project › page-title`, or
-/// `CPE › project` alone for the project home page — decision 3).
+/// `CPE › project` alone for the project home page).
 ///
-/// **Invariant (fix batch for the share-view review findings): a full-page
+/// **Invariant: a full-page
 /// variant choice must match which fragment handlers patch which crumb id.**
 /// `render_page`'s `.or_else` chain calls [`render_browse_breadcrumb_for_page`]
 /// BEFORE this fn, so a page that has BOTH a `ResourceList` (declared `id`)
 /// and a `Narrative` component renders the browse variant, never this one —
-/// the bin's `_facets`/`_sort`/`_search` fragment handlers unconditionally
+/// the host's `_facets`/`_sort`/`_search` fragment handlers unconditionally
 /// patch `#crumb-{list_id}` (the browse variant's id) and have no narrative
-/// branch at all, so this fn must never win that race. No live Alice page
-/// combines both today, but this fn must stay the LOWER-precedence arm.
+/// branch at all, so this fn must never win that race:
+/// it must stay the LOWER-precedence arm.
 ///
-/// A narrative page paired with a `compound-viewer` (Alice's
-/// `/wonderland`/`/looking-glass`) is the design doc's "reader" scope
+/// A narrative page paired with a `compound-viewer`
+/// is the "reader" scope
 /// surface — its href is composed via `ViewSurface::Reader`, which emits
 /// the resolved member as `page=<member-id>` (omitted entirely on member 1)
-/// and never `member=` (Incunabula Slice 2 decision 7). A plain narrative
+/// and never `member=`. A plain narrative
 /// page (no compound-viewer) carries no img/member/facet state at all;
 /// `ViewSurface::Browse` composes the same (empty) result for such a page
 /// since none of its gated params are present.
@@ -1124,7 +1101,7 @@ fn share_href_for_reader(origin: &str, path: &str, query: &str, _reader_member: 
 /// Called from `render_page`'s breadcrumb `.or_else` chain. A member change
 /// (`?page=` or a legacy `?member=`) is a full page load, so both the
 /// composed `href` and the last crumb segment (which names the on-screen
-/// member, see "Fix 3" in the body) follow it. Never duplicate this
+/// member) follow it. Never duplicate this
 /// composition.
 pub(crate) fn render_narrative_breadcrumb_for_page(
     page: &cpe_core::ir::Page,
@@ -1145,7 +1122,7 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
     } else {
         crate::share_link::ViewSurface::Browse
     };
-    // The resolved reader member (decision 7) — `None` on member 1 and on a
+    // The resolved reader member — `None` on member 1 and on a
     // plain narrative page (no `ComponentData::Compound`).
     let reader_member = resolved_reader_member(components);
     let share_query = crate::share_link::compose_canonical_query(ctx.current_query, &[], surface, reader_member, &[]);
@@ -1159,12 +1136,12 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
         // here.
         accessible_name_suffix: None,
         // No plate pager on a narrative/reader page — always a plain
-        // static href (step 7 is record-surface-only, decision 5).
+        // static href (the reactive href is record-surface-only).
         reactive_href_attr: None,
     };
 
     // Project home (route "/") is always the degenerate `CPE › Project`
-    // crumb (decision 3), regardless of whether home.md has its own
+    // crumb, regardless of whether home.md has its own
     // heading. Every other narrative page's title is its language-resolved
     // first heading, sharing the exact same derivation `compose_page_title`
     // uses.
@@ -1175,7 +1152,7 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
         resolved_narrative_component_title(page, narrative, &ctx.lang, &default_lang)
     };
 
-    // Fix 3 (2026-09-01 owner verification round): on a reader (compound-
+    // On a reader (compound-
     // viewer) page, the crumb's last segment must name the ON-SCREEN
     // member — for EVERY member index, including 1 (the crumb should
     // always describe what's on screen, not just "not the default"). The
@@ -1224,28 +1201,27 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
     ))
 }
 
-/// Browse surfaces (share-view plan step 5): a page whose body has a
+/// Browse surfaces: a page whose body has a
 /// `ResourceList` component with a declared `id` (required for it to be a
-/// `_facets`/`_sort` DataStar patch target in the first place — every
-/// Alice browse list carries one) gets the browse crumb-line variant
+/// `_facets`/`_sort` DataStar patch target in the first place)
+/// gets the browse crumb-line variant
 /// (`CPE › project › class-label`, [`breadcrumb::render_browse_breadcrumb`]).
 /// Called as the SECOND arm of `render_page`'s breadcrumb `.or_else` chain —
 /// only reached when the resource-detail arm didn't match, and checked
-/// BEFORE [`render_narrative_breadcrumb_for_page`] (fix batch for the
-/// share-view review findings).
+/// BEFORE `render_narrative_breadcrumb_for_page`.
 ///
 /// **Invariant: a full-page variant choice must match which fragment
-/// handlers patch which crumb id.** The bin's `_facets`/`_sort`/`_search`
+/// handlers patch which crumb id.** The host's `_facets`/`_sort`/`_search`
 /// fragment handlers unconditionally patch `#crumb-{list_id}` — this fn's
 /// own crumb id — with no narrative branch at all. A page combining a
-/// `ResourceList` (declared `id`) with a `Narrative` component (not a real
-/// Alice shape today) must therefore render THIS variant, not the narrative
+/// `ResourceList` (declared `id`) with a `Narrative` component
+/// must therefore render THIS variant, not the narrative
 /// one, or a refinement response would target an id the full-page render
 /// never emitted. This fn must stay the HIGHER-precedence arm relative to
-/// [`render_narrative_breadcrumb_for_page`].
+/// `render_narrative_breadcrumb_for_page`.
 ///
 /// Unlike every other crumb-line variant, the browse control's accessible
-/// name carries a **state-bearing** suffix (design doc "Strings" — "On
+/// name carries a **state-bearing** suffix ("On
 /// record/reader the control never announces which state it caught" is
 /// explicitly NOT true here): `<count-or-count-of-total> · <selected facet
 /// option labels, rail order> · “<active query>”`, segments joined by
@@ -1259,8 +1235,8 @@ pub(crate) fn render_narrative_breadcrumb_for_page(
 /// `Facet::property` order the href's rail-order facet-property slice also
 /// uses — one source of order for both.
 ///
-/// Called from `render_page`'s breadcrumb `.or_else` chain AND (share-view
-/// plan step 6) from the bin's `_facets`/`_sort`/`_search` fragment
+/// Called from `render_page`'s breadcrumb `.or_else` chain AND
+/// from the host's `_facets`/`_sort`/`_search` fragment
 /// handlers, which recompose this SAME crumb line after a refinement —
 /// never duplicate this composition.
 pub fn render_browse_breadcrumb_for_page(
@@ -1294,7 +1270,7 @@ pub fn render_browse_breadcrumb_for_page(
         _ => Vec::new(),
     };
 
-    // The list's declared `order-by` keys (Incunabula Slice 8, G9) — so a
+    // The list's declared `order-by` keys — so a
     // `?sort=<declared-key>` survives the Copy link. Derived here, IR-aware,
     // exactly like `facet_properties`; `share_link` stays IR-agnostic.
     let declared_sort_keys: Vec<&str> = match &page.body[list_idx] {
@@ -1357,7 +1333,7 @@ pub fn render_browse_breadcrumb_for_page(
         href: &share_href,
         accessible_name_suffix: Some(&accessible_name_suffix),
         // Browse surfaces have no plate pager (that's a record-detail-only
-        // concern, decision 5) — always a plain static href.
+        // concern) — always a plain static href.
         reactive_href_attr: None,
     };
 
@@ -1373,7 +1349,7 @@ pub fn render_browse_breadcrumb_for_page(
 /// Decode a single query-string value for `key` out of `current_query`, or
 /// `None` when absent. Mirrors `resource_list::sort_param`'s tiny reader
 /// shape but decodes the value via [`cpe_core::util::decode_query_value`] — `q`
-/// is free text (search-bar plan's `read_search_query_param` precedent),
+/// is free text,
 /// unlike `sort`'s closed-vocabulary identifier.
 fn raw_query_value(current_query: Option<&str>, key: &str) -> Option<String> {
     let q = current_query?;
@@ -1391,9 +1367,8 @@ fn raw_query_value(current_query: Option<&str>, key: &str) -> Option<String> {
 
 /// The skip-to-content link: `a.skip-link[href="#main"]`. Must be the first
 /// child of `<body>` on every full-page renderer — `render_page` (here),
-/// N1's `render_not_found_project`, and the bin's `site_index` (with its N2
-/// mirror; per CLAUDE.md's Non-obvious constraints, the engine cannot reach
-/// `site_index`'s bin-only markup, so it re-implements this inline).
+/// the project's `render_not_found_project`, and `render_not_found_site`.
+/// The host's 503 page has none: it has no header to skip.
 /// Its target is `id="main" tabindex="-1"` on `main.shell__main` — `main` is
 /// never a fragment-swap region of
 /// `dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`, so a `tabindex="-1"` focus
@@ -1408,9 +1383,9 @@ pub(crate) fn skip_link(lang: &Lang) -> Markup {
 /// The shared shell header: brand lockup, primary nav, and header controls
 /// (language switcher, appearance toggle).
 ///
-/// Used by `render_page` and N1's `render_not_found_project` so the chrome is
+/// Used by `render_page` and `render_not_found_project` so the chrome is
 /// identical. `current_route` is the route of the page being rendered, used
-/// for the nav `aria-current` highlight; N1 passes a route that matches no nav
+/// for the nav `aria-current` highlight; the latter passes a route that matches no nav
 /// item (a 404 is nowhere in the project — no nav item may be current there).
 ///
 /// A nav item is `aria-current` for its own route AND for any route
@@ -1452,7 +1427,7 @@ pub(crate) fn shell_header(site: &SiteConfig, ctx: &RenderContext<'_>, current_r
     html! {
         header.shell__header {
             div.header__inner {
-                // Brand: CPE wordmark → site index "/" + project name → project home
+                // Brand: CPE wordmark → "/" + project name → project home
                 div.brand {
                     a.brand__mark href="/" { "CPE" }
                     span.brand__sep { "/" }
@@ -1650,9 +1625,9 @@ pub(crate) fn shell_footer(site: &SiteConfig, lang: &Lang) -> Markup {
                 // if the sentence contains no "DaSCH".
                 //
                 // A project's `site { footer-attribution }` override
-                // (Incunabula Slice 8 / G11, decision 9) replaces the engine
+                // replaces the built-in
                 // string — chrome-id-or-literal, the `site.description` rule —
-                // and renders as PLAIN text: the DaSCH emphasis is the engine
+                // and renders as PLAIN text: the DaSCH emphasis is the built-in
                 // string's own markup, never applied to project copy.
                 p.footer__attr {
                     @if let Some(custom) = &site.footer_attribution {
@@ -1688,7 +1663,7 @@ fn lang_label(code: &str) -> String {
 /// Return the first `ComponentData::Detail(Some(r))` found in `components`.
 ///
 /// Used by `compose_page_title` and the breadcrumb derivation so both share
-/// one extraction path (DRY; review suggestion from the Phase-5 D2 plan).
+/// one extraction path.
 fn first_resolved_resource(components: &[ComponentData]) -> Option<&Resource> {
     components.iter().find_map(|cd| match cd {
         ComponentData::Detail(Some(r)) => Some(r),
@@ -1698,8 +1673,8 @@ fn first_resolved_resource(components: &[ComponentData]) -> Option<&Resource> {
 
 /// Groups a `ResourceList` (index `list`) with its optional target
 /// `FacetPanel` (`facet`) and/or `SearchBar` (`search`) — the generalization
-/// of the earlier facet+list-only pairing to a 3-way grouping (search-bar
-/// plan step 7). See `render_body`'s doc comment for the render-time
+/// of the facet+list pairing to a 3-way grouping.
+/// See `render_body`'s doc comment for the render-time
 /// consequences of each combination.
 struct BrowseGroup {
     search: Option<usize>,
@@ -1708,23 +1683,20 @@ struct BrowseGroup {
 }
 
 /// Owned, resolved search-fragment rendering data for one `resource-list`'s
-/// sibling `search-bar` (search-bar plan step 8; promoted to a `pub` type +
-/// API in step 10).
+/// sibling `search-bar`.
 ///
 /// **Two callers, one resolver.** `render_body` (this module) builds one via
 /// [`Self::resolve`] from IR it already has in hand (`BrowseGroup`/`Page`/
-/// `RenderContext`), for the full-page render path. The bin's
-/// `_facets`/`_sort`/`_search` fragment handlers (`bin/src/router.rs`) — which
+/// `RenderContext`), for the full-page render path. The host's
+/// `_facets`/`_sort`/`_search` fragment handlers — which
 /// call `render_resource_list`/`render_active_filters` DIRECTLY, bypassing
 /// `render_body`'s composition entirely — build one via the SAME
 /// [`Self::resolve`] from pieces they extract from `page.body` +
 /// `ComponentData` themselves. This is the ONE seam that resolves
 /// `chrome_lookup`, `resolve_class_plural`, `narrowed_to_zero_text`, and
 /// `facet_panel::clear_filters_query`, so both callers can never drift on
-/// scope-note/no-match/clear-href semantics. The bin must not call them
-/// itself: the first, second and fourth are not in the `cpe-engine` facade,
-/// and `narrowed_to_zero_text` is `#[doc(hidden)]` in the facade's `chrome`
-/// module, outside its intended surface.
+/// scope-note/no-match/clear-href semantics. The host must not call them
+/// itself, or its fragments drift from the full page.
 pub struct SearchFragmentSurface {
     /// The raw, already-decoded `?q=` value (may be empty/inactive — see
     /// [`Self::resolve`]'s doc comment; only [`Self::search_surface`] gates
@@ -1746,12 +1718,11 @@ impl SearchFragmentSurface {
     /// that gate belongs to [`Self::search_surface`] alone, so this fn never
     /// duplicates it. Call this ONLY when a search-bar targets the list at
     /// all (callers know this independently — e.g. `render_body`'s grouping,
-    /// or the bin scanning `page.body` for a matching `Component::SearchBar`);
-    /// there is no "no search-bar" `None` case here (contrast with the old
-    /// `build_search_owned`, which folded that check in via `group.search?`).
+    /// or a host scanning `page.body` for a matching `Component::SearchBar`);
+    /// there is no "no search-bar" `None` case here.
     ///
     /// The no-match noun comes from `resolve_class_plural` (the localized
-    /// **plural** class noun, search-bar plan step 5b) — never a `label`
+    /// **plural** class noun) — never a `label`
     /// chrome id. The scope note is the project-declared `search-bar
     /// scope="…"` chrome-string id (mirrors `placeholder` — resolved via
     /// `chrome_lookup`, never composed from `searches`/property names).
@@ -1762,9 +1733,8 @@ impl SearchFragmentSurface {
     /// `facet_panel::clear_filters_query`) — deliberately NOT
     /// `Component::FacetPanel.facets` (the config-declared facet list).
     /// `filters_active` (drives whether `clear_all_href` exists at all —
-    /// design-doc §3: that action only appears "when facets are ACTUALLY
-    /// narrowing", empty-states-not-found plan step 2 — resolves the
-    /// `with_facets` backlog item: presence of a facet-panel alone is NOT
+    /// that action only appears "when facets are ACTUALLY
+    /// narrowing": presence of a facet-panel alone is NOT
     /// enough) is derived from [`any_facet_selected`], not from
     /// `facet_groups.is_some()` — a page with a facet-panel but a
     /// hand-crafted bogus facet value (`?role=NOPE`) must NOT show "Clear
@@ -1786,8 +1756,8 @@ impl SearchFragmentSurface {
         let noun = resolve_class_plural(&site.class_labels, class, lang);
         // The query slot is `Some(&q)` ONLY when the query is actually
         // active — passing it unconditionally would render an empty-quoted
-        // "…match ""." on a filters-only narrowing (this fn is now reachable
-        // with an inactive/absent `q`, unlike before step 2 generalized it).
+        // "…match ""." on a filters-only narrowing (this fn is reachable
+        // with an inactive/absent `q`).
         let query_slot = query_active.then_some(q.as_str());
         // `narrowed_to_zero_text` panics (unreachable!) when called with
         // neither active — a real, frequent case here (`resolve` runs on
@@ -1801,12 +1771,12 @@ impl SearchFragmentSurface {
             maud::html! {}
         };
 
-        // The scope note is a project-declared `chrome { string }` id (per the
-        // plan's settled decision 5: `search-bar` gains ONLY `scope`, mirroring
+        // The scope note is a project-declared `chrome { string }` id
+        // (`search-bar` gains ONLY `scope`, mirroring
         // `placeholder`'s "id, not literal" convention) — a literal, per-page,
         // per-language string the project author writes directly (e.g.
         // "matching name and description"), resolved exactly like `placeholder`.
-        // NOT computed from `resolve_property_label`/`searches` — the engine does
+        // NOT computed from `resolve_property_label`/`searches` — this crate does
         // no property-name-to-prose composition here, only chrome-id lookup.
         // Undeclared/unresolved → empty string, which `render_surf_head` treats
         // as "omit the scope-note span entirely" (no dangling "· " artifact).
@@ -1822,9 +1792,8 @@ impl SearchFragmentSurface {
         };
 
         // "Clear all" only exists when at least one facet is ACTUALLY
-        // selected (design-doc §3: the no-match state's second action
-        // appears "when facets are on" — read as "actually narrowing", per
-        // the backlog resolution above).
+        // selected: the no-match state's second action appears when a
+        // facet narrows the list, not whenever the page has a facet panel.
         let facet_keys: Vec<&str> = facet_groups
             .map(|groups| groups.iter().map(|g| g.property.as_str()).collect())
             .unwrap_or_default();
@@ -1862,12 +1831,12 @@ impl SearchFragmentSurface {
     }
 
     /// The narrowed-to-zero rendering surface for `ResourceListCfg.narrowed`
-    /// (empty-states-not-found plan step 2, E2) — `Some` iff an active search
+    /// — `Some` iff an active search
     /// query and/or an active facet narrowing is in effect. Unlike
     /// [`Self::search_surface`] (gated on the query ALONE), this is what
     /// makes a facet-only page with zero matches and NO search-bar at all
     /// still show the narrowed-to-zero body instead of degrading to the
-    /// genuinely-empty-class message (E1).
+    /// genuinely-empty-class message.
     pub fn narrowed_surface(&self) -> Option<resource_list::NarrowedSurface<'_>> {
         let query_active = cpe_core::util::is_active_search_query(&self.q);
         resource_list::NarrowedSurface::build(
@@ -1880,11 +1849,10 @@ impl SearchFragmentSurface {
     }
 }
 
-/// Compute a [`SearchFragmentSurface`] for `group`'s `resource-list`, always —
-/// unlike the search-bar-plan-era `build_search_owned` this superseded, there
+/// Compute a [`SearchFragmentSurface`] for `group`'s `resource-list`, always: there
 /// is no "no search-bar" `None` case here: `render_body` only ever calls this
-/// for a group that has a facet-panel and/or a search-bar (empty-states-
-/// not-found plan step 2 — a facet-only group needs a narrowed-to-zero
+/// for a group that has a facet-panel and/or a search-bar (a facet-only
+/// group needs a narrowed-to-zero
 /// surface too, even with no search-bar to gate on). Thin IR-extraction
 /// wrapper around [`SearchFragmentSurface::resolve`] for `render_body`'s
 /// `BrowseGroup`-based call site; see that fn's doc comment for the
@@ -1894,7 +1862,7 @@ impl SearchFragmentSurface {
 /// None`) — `cpe_core::util::search_query_param` is only called inside the
 /// `Some(s)` arm below, so a page with a facet-panel but no search-bar never
 /// touches the query string's `q` key at all, keeping the "no search-bar ⇒
-/// `?q=` is never read" invariant explicit (mirrors the bin's
+/// `?q=` is never read" invariant explicit (mirrors the host's
 /// `build_search_fragment_surface`).
 fn build_narrowed_owned(
     group: &BrowseGroup,
@@ -1999,29 +1967,26 @@ fn render_search_row(c: &Component, ctx: &RenderContext<'_>, site: &SiteConfig, 
 }
 
 /// Render the page body, grouping each `resource-list` with its optional
-/// target `facet-panel` and/or `search-bar` (search-bar plan step 7
-/// generalizes the earlier facet+list-only pairing to this 3-way grouping).
+/// target `facet-panel` and/or `search-bar`.
 /// Four shapes, by what a `ResourceList` is targeted by:
 ///
-/// 1. **Facet + search** (Alice's `/characters`, `/locations`): ONE `section.browse.page` wrapper,
-///    direct children in this order: the search row, the facet rail, the active-filter chip row,
-///    the list. `.search-row` carries **NO** `.page` (a flat grid child, like `.filterbar` — CSS
-///    places it via `.browse > .search-row { grid-column: 2; grid-row: 1 }`, step 1 of the plan).
-/// 2. **Search only, no facet** (Alice's `/chapters`): **NO** `.browse` wrapper at all — the search
-///    row (**WITH** `.page`, since nothing else supplies centering here) immediately followed by
-///    the list, both standalone — regardless of the two components' declared order in `page.body`.
-/// 3. **Facet only, no search** (unchanged from the pre-search-bar behaviour): the pre-existing
-///    flat three-child `.browse.page` wrapper (rail, chip row, list) — see design decision 1 in
-///    `docs/plans/phase-5-browse-redesign/implementation-plan.md`: a wrapper div would make the
-///    list a *grandchild* of `.browse` and break the `.browse > .page` neutralizer (record.css),
-///    reintroducing a doubled dead band. Grid placement is done entirely in CSS via
-///    child-combinator selectors — do NOT refactor this into threading facet labels through
-///    `ResourceListCfg`; that alternative was explicitly rejected (the chip row is a second *view*
-///    of the facet-panel's own `groups` data, not list data).
+/// 1. **Facet + search**: ONE `section.browse.page` wrapper, direct children in this order: the
+///    search row, the facet rail, the active-filter chip row, the list. `.search-row` carries
+///    **NO** `.page` (a flat grid child, like `.filterbar` — CSS places it via `.browse >
+///    .search-row { grid-column: 2; grid-row: 1 }`).
+/// 2. **Search only, no facet**: **NO** `.browse` wrapper at all — the search row (**WITH**
+///    `.page`, since nothing else supplies centering here) immediately followed by the list, both
+///    standalone — regardless of the two components' declared order in `page.body`.
+/// 3. **Facet only, no search**: the flat three-child `.browse.page` wrapper (rail, chip row,
+///    list): a wrapper div would make the list a *grandchild* of `.browse` and break the `.browse >
+///    .page` neutralizer (record.css), reintroducing a doubled dead band. Grid placement is done
+///    entirely in CSS via child-combinator selectors — do NOT refactor this into threading facet
+///    labels through `ResourceListCfg`; that alternative was explicitly rejected (the chip row is a
+///    second *view* of the facet-panel's own `groups` data, not list data).
 /// 4. **Neither** — unchanged: the list renders standalone via `render_component`, exactly as any
 ///    other unpaired component.
 ///
-/// **E3b (empty-states-not-found plan step 4):** a `facet-panel` whose
+/// **An empty facet panel:** a `facet-panel` whose
 /// RESOLVED `FacetGroup` list is empty (zero configured facet children — a
 /// static config condition) is treated as if it were absent for layout
 /// purposes: it degrades to case 2 (if paired with a search-bar) or case 4
@@ -2217,8 +2182,8 @@ fn render_body(
                 ComponentData::Facets(groups) => Some(groups.as_slice()),
                 _ => None,
             });
-            // The group's narrowed-to-zero rendering surface (empty-states-
-            // not-found plan step 2) — computed once per group, regardless of
+            // The group's narrowed-to-zero rendering surface
+            // — computed once per group, regardless of
             // whether it has a search-bar and/or a facet-panel, so all three
             // consumers below (`search_surface`/`active_query`/
             // `narrowed_surface`) share one source of truth.
@@ -2226,16 +2191,16 @@ fn render_body(
             // Search-only surface (populated-list scope note) — `None` unless
             // a search query is active.
             let search_surface = narrowed_owned.search_surface();
-            // The filterbar's query chip (search-bar plan step 9) shows the
+            // The filterbar's query chip shows the
             // SAME "active" gate as `search_surface` itself — see
             // `SearchFragmentSurface::active_query`'s doc comment.
             let active_query: Option<&str> = narrowed_owned.active_query();
-            // The empty-branch narrowed-to-zero surface (E2) — `Some` iff a
+            // The empty-branch narrowed-to-zero surface — `Some` iff a
             // search query and/or a facet is actually active, regardless of
             // whether this group has a search-bar at all.
             let narrowed_surface = narrowed_owned.narrowed_surface();
 
-            // E3b (empty-states-not-found plan step 4): a `facet-panel`
+            // A `facet-panel`
             // targeting this list is only treated as "faceted" (browse-grid
             // + rail) when its RESOLVED groups are non-empty. A `facet-panel`
             // with zero configured facet children (`groups.is_empty()` — a
@@ -2243,7 +2208,7 @@ fn render_body(
             // `lower_facet_panel`) degrades this list to the SAME layout as
             // "no facet-panel at all" (case 2 / case 4 below) rather than
             // rendering an empty rail — an empty rail is furniture with
-            // nothing to do (handoff §E3). `f` stays a member of this
+            // nothing to do. `f` stays a member of this
             // `BrowseGroup` regardless (see `group_at` construction above),
             // so it is already marked `consumed` and will never fall through
             // to `render_component`'s `FacetPanel` arm and re-emit the rail.
@@ -2305,13 +2270,13 @@ fn render_body(
                     blocks.push(browse);
                 }
                 None => {
-                    // Case 2 (search-only, non-faceted) OR E3b (a facet-panel
-                    // targets this list but resolved to zero groups) — NO
+                    // Case 2 (search-only, non-faceted) OR a facet-panel that
+                    // targets this list but resolved to zero groups — NO
                     // `.browse` wrapper, no rail. The search row, if any,
                     // carries `.page` (its own centering — `render_search_row`'s
                     // `standalone: true` decides this) followed by the list,
                     // both standalone. `group.search` may legitimately be
-                    // `None` here (E3b with no sibling search-bar), in which
+                    // `None` here (an empty facet panel, no search-bar), in which
                     // case only the list renders — mirroring case 4.
                     let search_row = group.search.map(|s| render_search_row(&page.body[s], ctx, site, true));
                     let standalone = html! {
@@ -2447,13 +2412,13 @@ fn render_reader_annotations(
 /// search-aware rendering surface.
 ///
 /// Extracted out of `render_component`'s `Component::ResourceList` arm
-/// (search-bar plan step 8) so both callers share one path: `render_component`
+/// so both callers share one path: `render_component`
 /// itself (a lone, unpaired list — always `search: None`) and `render_body`
 /// (a list paired with a `search-bar`, which computes a real `SearchSurface`
 /// from cross-sibling data `render_component`'s generic one-component-at-a-
 /// time dispatch cannot see — mirrors why `render_body` calls
 /// `render_search_row` directly instead of going through `render_component`
-/// for the search row itself, step 7).
+/// for the search row itself).
 fn render_list_component(
     c: &Component,
     ctx: &RenderContext<'_>,
@@ -2481,14 +2446,14 @@ fn render_list_component(
              see both call sites (render_component's arm and render_body's group handling)"
         );
     };
-    // A12.4 — chrome-id ordering-label overrides (id-only, never literal
-    // text), resolved through the SAME `pub` helpers the bin's
-    // `_facets`/`_sort`/`_search` fragment handlers call (Incunabula Slice 8
-    // decision 11b), so the full-page and fragment paths are provably
+    // Chrome-id ordering-label overrides (id-only, never literal
+    // text), resolved through the SAME `pub` helpers the host's
+    // `_facets`/`_sort`/`_search` fragment handlers call,
+    // so the full-page and fragment paths are provably
     // identical: an absent attribute or an id that fails to resolve both
     // fall through to `None`, which `order_label_for_key` reads as "use the
     // `ChromeMsg` default" — never an empty label, and never the literal
-    // attribute text. The declared `order-by` rows (G9) resolve the same way.
+    // attribute text. The declared `order-by` rows resolve the same way.
     let (order_name_label_text, order_name_desc_label_text, order_default_label_text) = resolve_order_name_labels(
         site,
         order_name_label.as_deref(),
@@ -2508,12 +2473,11 @@ fn render_list_component(
                 // Pass the list's config id so the section can be a DataStar
                 // swap target (id="<list-id>"). `None` when no id is declared.
                 list_id: id.as_deref(),
-                // RL-2 annotated-row config: gloss + chip properties.
+                // Annotated-row config: gloss + chip properties.
                 gloss: resolved_gloss.as_ref(),
                 chips,
                 // The raw class name — resolved to a display label by
-                // `render_surf_head` itself, independent of `list.items`
-                // (empty-states-not-found plan step 2, E1).
+                // `render_surf_head` itself, independent of `list.items`.
                 class,
                 class_labels: &site.class_labels,
                 search,
@@ -2529,7 +2493,7 @@ fn render_list_component(
             resource_list::render_resource_list(list_page, &cfg, &ctx.lang)
         }
         // No list data resolved for this slot — render nothing. In practice
-        // the bin always supplies data for a ResourceList component, but
+        // the host always supplies data for a ResourceList component, but
         // fallback to empty is safer than a panic for a missing slot.
         _ => html! {},
     }
@@ -2539,7 +2503,7 @@ fn render_list_component(
 /// [`render_component`] and [`render_compound_fragment`]'s viewer share it.
 /// `emit_url_correction` is `true` only on the full page: a stale `?page=`
 /// gets its `history.replaceState` there, never in the `_compound` fragment
-/// (book-page step 10, `compound_viewer::stale_url_correction`).
+/// (`compound_viewer::stale_url_correction`).
 fn render_compound_component(
     c: &Component,
     ctx: &RenderContext<'_>,
@@ -2564,8 +2528,8 @@ fn render_compound_component(
         ComponentData::Compound(compound_page) => {
             let resolver = links::LinkResolver::new(ctx.project_id, ctx.link_routes);
             // The member's media property: the `compound-viewer media="…"`
-            // attribute when set (Incunabula Slice 2 decision 11), else
-            // (embedded-media plan step 6c) the class→media-property map
+            // attribute when set, else
+            // the class→media-property map
             // entry for the member's class — only resolvable once the
             // member is known, so always `None` on the empty branch.
             let member_media_property = compound_page.member.as_ref().and_then(|m| {
@@ -2574,8 +2538,8 @@ fn render_compound_component(
                     .or_else(|| ctx.media_properties.get(&m.class).map(String::as_str))
             });
 
-            // Resolve the compound parent from `ctx.compound_parents`
-            // (empty-states-not-found plan step 7, E5), keyed by the SAME
+            // Resolve the compound parent from `ctx.compound_parents`,
+            // keyed by the SAME
             // source-id resolution the store's page builder (`query::page`)
             // uses for its CompoundViewer arm (literal id, or `$param` looked
             // up in `ctx.route_params`) — `CompoundPage` carries no source id
@@ -2654,8 +2618,8 @@ fn render_component(
         // A lone `ResourceList` (no sibling `search-bar`) is the only shape
         // `render_component` is ever reached for generically — a
         // search-paired list is rendered directly by `render_body` via
-        // `render_list_component` with a real `SearchSurface` (search-bar
-        // plan step 8, mirroring step 7's `render_search_row` bypass for the
+        // `render_list_component` with a real `SearchSurface`
+        // (like the `render_search_row` bypass, for the
         // same reason: cross-sibling context `render_component` can't see).
         // `search: None` is therefore always correct here, but the call goes
         // through the shared helper regardless so the two call sites can
@@ -2685,8 +2649,7 @@ fn render_component(
             // outside `render_body`'s grouping logic) — `standalone: true` is
             // the safer default in that case (a lone search row with no
             // enclosing `.browse.page` still gets its own centering). `scope`
-            // is intentionally NOT read here — resolving it is step 8/10's
-            // job, in `resource_list.rs`.
+            // is intentionally NOT read here — `resource_list.rs` resolves it.
             let placeholder_text = placeholder.as_deref().and_then(|id| chrome_lookup(site, id, &ctx.lang));
             let cfg = search_bar::SearchBarCfg {
                 action_path: ctx.current_path,
@@ -2757,15 +2720,15 @@ fn render_detail_component(
     match data {
         ComponentData::Detail(Some(resource)) => {
             let resolver = links::LinkResolver::new(ctx.project_id, ctx.link_routes);
-            // The media link property (embedded-media plan step 6c) —
+            // The media link property —
             // resolved here (render_component has the resource's class)
             // and threaded via cfg so render_resource_detail can exclude
             // it from the plain `.props` list (it renders separately via
             // `ctx.media_items`). `render_property_block` itself never
             // learns the class.
             let media_property = ctx.media_properties.get(&resource.class).map(String::as_str);
-            // G8: resolve each group's `label=` chrome id for this
-            // language, falling back to the engine cap (an undeclared id
+            // Resolve each group's `label=` chrome id for this
+            // language, falling back to the built-in cap (an undeclared id
             // is already boot-flagged as `UnknownGroupLabel`). A local the
             // cfg borrows — it outlives `render_resource_detail` below.
             let resolved_groups: Vec<resource_detail::GroupCfg<'_>> = groups
@@ -2773,11 +2736,11 @@ fn render_detail_component(
                 .map(|g| {
                     let caption = chrome_lookup(site, &g.label, &ctx.lang)
                         .unwrap_or_else(|| cpe_components::chrome::ChromeMsg::PropertyGroupTitle.text(&ctx.lang));
-                    // `empty=` (HdM Slice 3): an undeclared id is already
+                    // `empty=`: an undeclared id is already
                     // boot-flagged `UnknownGroupEmptyLabel`; it renders
                     // as if unset.
                     let empty = g.empty.as_deref().and_then(|id| chrome_lookup(site, id, &ctx.lang));
-                    // Slice 6 D9: the closing links row, only when the
+                    // The closing links row, only when the
                     // record has resource-level partners; an undeclared
                     // caption is already boot-flagged `UnknownGroupLinksLabel`.
                     let links = g.links_label.as_deref().filter(|_| !ctx.resource_links.is_empty()).map(|id| {
@@ -2790,7 +2753,7 @@ fn render_detail_component(
                     resource_detail::GroupCfg { caption, properties: g.properties.as_slice(), empty, links }
                 })
                 .collect();
-            // O6: a `narrative-for` entry naming the RENDERED resource's
+            // A `narrative-for` entry naming the RENDERED resource's
             // id attaches its narrative file as the record's intro. The
             // content resolves through the one shared 3-rung chain
             // (requested → default variant → base) and renders through
@@ -2821,7 +2784,7 @@ fn render_detail_component(
                         }
                     }
                 });
-            // G7: the incoming-links caption — the spec's `label=` chrome
+            // The incoming-links caption — the spec's `label=` chrome
             // id for this language, else the SOURCE class's capitalized
             // plural (a list of Pages reads "Seiten"; an undeclared id is
             // already boot-flagged `UnknownIncomingLinksLabel`). Only
@@ -2832,7 +2795,7 @@ fn render_detail_component(
                     .map(str::to_owned)
                     .unwrap_or_else(|| resolve_class_plural_capitalized(&site.class_labels, &spec.class, &ctx.lang))
             });
-            // HdM Slice 3: the grouped list's `note-label` chrome id,
+            // The grouped list's `note-label` chrome id,
             // resolved for this language like every other chrome id (an
             // undeclared id is already boot-flagged
             // `UnknownIncomingLinksNoteLabel` ⇒ no note). `{n}` is
@@ -2906,15 +2869,14 @@ mod tests {
     /// tested separately in `resource_detail` tests.
     static EMPTY_ROUTES: std::sync::LazyLock<HashMap<String, String>> = std::sync::LazyLock::new(HashMap::new);
 
-    /// Empty media-items slice, mirroring `EMPTY_ROUTES` above (embedded-media
-    /// plan step 6c — `RenderContext.media_items`).
+    /// Empty media-items slice, mirroring `EMPTY_ROUTES` above
+    /// (`RenderContext.media_items`).
     static EMPTY_MEDIA: std::sync::LazyLock<Vec<Resource>> = std::sync::LazyLock::new(Vec::new);
 
     /// Empty compound-parents map, mirroring `EMPTY_ROUTES` above
-    /// (empty-states-not-found plan step 7 — `RenderContext.compound_parents`).
+    /// (`RenderContext.compound_parents`).
     /// `EMPTY_ROUTES` (a `HashMap<String, String>`) doubles as the
-    /// `class_list_routes` placeholder in every `RenderContext` literal below —
-    /// step 8 wires real values, this step only threads the field.
+    /// `class_list_routes` placeholder in every `RenderContext` literal below.
     static EMPTY_PARENTS: std::sync::LazyLock<HashMap<String, Resource>> = std::sync::LazyLock::new(HashMap::new);
 
     /// Empty media-thumbs map, mirroring `EMPTY_ROUTES` above — its own const
@@ -2925,9 +2887,8 @@ mod tests {
 
     // ── share_href_for_reader ────────────────────────────────────────────────────
 
-    /// Item 21 (`reader-paging-fragment-swap` plan Step 3b): a resolved
-    /// reader member no longer appends `#compound-viewer` — the fn is
-    /// unconditionally anchor-free now, regardless of `reader_member`.
+    /// A resolved reader member appends no `#compound-viewer` — the fn is
+    /// unconditionally anchor-free, regardless of `reader_member`.
     #[test]
     fn share_href_for_reader_no_anchor_when_member_resolved() {
         let href = share_href_for_reader("https://example.com", "/incunabula/books/b1", "page=b1-a1r", Some("b1-a1r"));
@@ -3026,7 +2987,7 @@ mod tests {
 
     // ── test helpers ─────────────────────────────────────────────────────────
 
-    /// The three states of an A12.4 override at the resolution seam itself:
+    /// The three states of an order-name label override at the resolution seam itself:
     /// absent, a declared chrome id, and — the branch the lower-layer
     /// `order_label_for_key` tests cannot reach, because they are handed an
     /// already-collapsed `None` — an attribute naming an id that is NOT
@@ -3105,7 +3066,7 @@ mod tests {
         );
     }
 
-    // ── G9: declared `order-by` options (Incunabula Slice 8) ─────────────────
+    // ── Declared `order-by` options ──────────────────────────────────────────
 
     fn make_order_options() -> Vec<cpe_core::ir::OrderOption> {
         vec![
@@ -3143,7 +3104,7 @@ mod tests {
     }
 
     /// Through `render_component` (the full-page path, which calls the `pub`
-    /// resolvers — decision 11b): a declared key marks its row
+    /// resolvers): a declared key marks its row
     /// `aria-current`, the panel has six rows, and the resolved label shows.
     #[test]
     fn resource_list_render_marks_declared_order_row_current() {
@@ -3250,7 +3211,7 @@ mod tests {
                         ("de".to_owned(), "Startseite".to_owned()),
                     ],
                 },
-                // search-bar plan step 8: the search-bar `scope` attribute is a
+                // The search-bar `scope` attribute is a
                 // project-declared chrome-string id (mirrors `placeholder`) —
                 // this project-authored literal is what `render_surf_head`'s
                 // scope note renders verbatim, NOT computed from `searches`.
@@ -3261,9 +3222,9 @@ mod tests {
                         ("de".to_owned(), "in Name und Beschreibung".to_owned()),
                     ],
                 },
-                // search-bar plan step 12: a DISTINCT scope-note id/text for the
-                // "non-faceted full-text scope" state (mirrors Alice's real
-                // `/chapters` — searches over name/description/full-text) — kept
+                // A DISTINCT scope-note id/text for the
+                // "non-faceted full-text scope" state (searches over
+                // name/description/full-text) — kept
                 // separate from `search-scope-note` above so the two states'
                 // snapshots are never accidentally identical.
                 ChromeString {
@@ -3443,7 +3404,7 @@ mod tests {
     }
 
     /// Rung 1b: an unknown id (the first resource-detail's slot is
-    /// `Detail(None)`, the N3 body) titles the tab with N3's own h1 —
+    /// `Detail(None)`, the not-found body) titles the tab with that body's own h1 —
     /// class-specific when the detail declares a `class`, class-neutral
     /// otherwise — localized, after the site title.
     #[test]
@@ -3492,9 +3453,9 @@ mod tests {
         assert_eq!(title, "Alice in DaSCHland", "no heading → result must be site.title alone");
     }
 
-    /// D1/Phase 3.9: when the requested language differs from the default and
+    /// When the requested language differs from the default and
     /// only the default-language variant is present (no requested-language
-    /// variant, no bare base file — the Alice-shaped "variant-only" case),
+    /// variant, no bare base file — the "variant-only" case),
     /// `compose_page_title` must derive its title from the SAME chain
     /// `render_narrative` uses (`resolve_narrative_content`), landing on the
     /// default-language variant's heading — not falling through to
@@ -3667,7 +3628,7 @@ mod tests {
         assert!(!page_has_visible_h1(&page, &narrative, &lang, &lang));
     }
 
-    /// FIX 2 regression: a narrative whose first heading is level 2 but which
+    /// A narrative whose first heading is level 2 but which
     /// contains a level-1 heading LATER in the document must still count as
     /// "has a visible h1" for the injection decision — checking only the
     /// FIRST heading's level would misclassify this page as headless and
@@ -3962,7 +3923,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: resolve_class_plural (search-bar plan step 5b) ──────────────
+    // ── Layer-1: resolve_class_plural ────────────────────────────────────────
 
     #[test]
     fn resolve_class_plural_returns_declared_plural_for_exact_lang() {
@@ -4314,7 +4275,7 @@ mod tests {
         }
     }
 
-    /// A11y (Step 6): the skip-link is the first child of `<body>`, and its
+    /// A11y: the skip-link is the first child of `<body>`, and its
     /// `href="#main"` target — `id="main" tabindex="-1"` — is on
     /// `main.shell__main`.
     #[test]
@@ -4424,18 +4385,13 @@ mod tests {
         );
     }
 
-    // ── reader-paging-fragment-swap step 6: the D5-gate measurement script is gone ──
+    // ── No header-height measurement script ─────────────────────────────────────────
 
-    /// `shell_header` no longer emits the `--shell-header-h` measurement
-    /// script (retired by the reader-paging-fragment-swap plan, step 6 — the
-    /// fragment-swap conversion of the pager/rail controls means no
-    /// JS-enhanced control ever triggers an anchor scroll any more; per the
-    /// owner decision of 2026-09-29 removing the `#compound-viewer` fragment
-    /// from every emitted href/action, `record.css` no longer has a
-    /// `scroll-margin-top` rule for it at all — there is no anchor-scroll
-    /// case left to handle). This replaces
-    /// `shell_header_emits_header_height_script_right_after_header`, which
-    /// asserted the opposite.
+    /// `shell_header` emits no `--shell-header-h` measurement
+    /// script: no
+    /// JS-enhanced control triggers an anchor scroll, no emitted href/action
+    /// carries the `#compound-viewer` fragment, and `record.css` has no
+    /// `scroll-margin-top` rule for it.
     #[test]
     fn shell_header_does_not_emit_header_height_script() {
         let site = make_alice_site();
@@ -4657,7 +4613,7 @@ mod tests {
         );
     }
 
-    // ── Footer attribution override (Incunabula Slice 8 / G11, decision 9) ──
+    // ── Footer attribution override ─────────────────────────────────────────
 
     /// Extract the `p.footer__attr` paragraph's inner HTML.
     fn footer_attr_of(out: &str) -> &str {
@@ -4718,7 +4674,7 @@ mod tests {
         }
     }
 
-    // ── DaSCH lockup in the project footer (Slice 9, O3 / D11) ──────────────
+    // ── DaSCH lockup in the project footer ──────────────────────────────────
 
     /// Extract the `a.footer__lockup` element, open tag through `</a>`.
     fn footer_lockup_of(out: &str) -> &str {
@@ -4821,8 +4777,7 @@ mod tests {
 
     /// The project home page (route "/") is narrative-only and gets the
     /// degenerate narrative crumb-line variant: `CPE › Project` alone (no
-    /// page-title crumb — decision 3), sharing the crumb machinery it
-    /// previously had none of at all (share-view plan step 4).
+    /// page-title crumb).
     #[test]
     fn render_page_project_home_narrative_has_degenerate_breadcrumb() {
         let site = make_alice_site();
@@ -4874,8 +4829,7 @@ mod tests {
     }
 
     /// A non-home narrative page gets the 3-crumb narrative variant with the
-    /// page's own resolved title as the current item (share-view plan
-    /// step 4).
+    /// page's own resolved title as the current item.
     #[test]
     fn render_page_non_home_narrative_has_page_title_breadcrumb() {
         let site = make_alice_site();
@@ -4994,9 +4948,9 @@ mod tests {
         );
     }
 
-    /// G8: render one `resource-detail` whose single `group` is captioned by
+    /// Render one `resource-detail` whose single `group` is captioned by
     /// chrome id `label`, through `render_component`'s real caption
-    /// resolution (declared id → `chrome_lookup`, else the engine fallback).
+    /// resolution (declared id → `chrome_lookup`, else the built-in fallback).
     fn render_grouped_detail(label: &str) -> String {
         let site = make_alice_site();
         let component = Component::ResourceDetail {
@@ -5060,7 +5014,7 @@ mod tests {
         assert!(!out.contains("no-such-id"), "never the raw id: {out}");
     }
 
-    // ── book-page step 5: the pages reader inside its record ─────────────────
+    // ── The pages reader inside its record ───────────────────────────────────
 
     /// A navigator page — `resource-detail id="$id"` beside its
     /// `layout="pages"` reader over `total` members — through `render_body`,
@@ -5823,8 +5777,8 @@ mod tests {
     }
 
     /// A justified project says so on both of its shells, a page and its
-    /// 404 (N1); `"start"`, the default, writes no attribute; the site's own
-    /// 404 (N2) has no project and never carries one.
+    /// 404; `"start"`, the default, writes no attribute; the site's own
+    /// 404 has no project and never carries one.
     #[test]
     fn text_align_is_emitted_on_both_project_shells() {
         let mut site = make_alice_site();
@@ -5904,7 +5858,7 @@ mod tests {
     fn no_layout_attribute_is_named_like_a_datastar_plugin() {
         const DATASTAR_JS: &str = include_str!("../../public/vendor/datastar.js");
         // The attribute plugins of DataStar 1.0; the last three are handled
-        // by the engine itself and have no `name:"…"` entry in the bundle.
+        // by DataStar's core and have no `name:"…"` entry in the bundle.
         const PLUGINS: [&str; 20] = [
             "attr",
             "bind",
@@ -6182,7 +6136,7 @@ mod tests {
         assert_eq!(out.matches(r#"id="compound-viewer""#).count(), 1, "{out}");
     }
 
-    /// Book-page step 10: a stale `?page=` on a two-page `pages` reader,
+    /// A stale `?page=` on a two-page `pages` reader,
     /// rendered as the full page (`render_page`) and as the `_compound`
     /// fragment (`render_compound_fragment`) for the same query.
     fn render_stale_book(query: &str) -> (String, String) {
@@ -6302,10 +6256,10 @@ mod tests {
         );
     }
 
-    // ── G7: the incoming-links caption, through `render_component` ────────────
+    // ── The incoming-links caption, through `render_component` ────────────────
     //
     // The ResourceDetail arm is the layer that PERFORMS the caption fallback
-    // (chrome id → source-class plural) and pairs it with the bin's rows.
+    // (chrome id → source-class plural) and pairs it with the host's rows.
 
     fn render_incoming_detail(label: &str, rows: Option<&[cpe_core::ir::IncomingLink]>, lang: &str) -> String {
         render_incoming_detail_grouped(label, rows, None, lang)
@@ -6440,7 +6394,7 @@ mod tests {
         assert!(!out.contains("Nichts verweist hierher."), "{out}");
     }
 
-    // ── O6: `narrative-for` intros, through `render_component` ────────────────
+    // ── `narrative-for` intros, through `render_component` ────────────────────
     //
     // `render_component`'s ResourceDetail arm is the layer that PERFORMS the
     // id match and the language fallback (`resolve_narrative_content`), so the
@@ -6584,7 +6538,7 @@ mod tests {
     /// The resource-detail breadcrumb gains a live-linked class segment
     /// (`CPE › project › class › resource-title`) when the page's
     /// `resource-detail` declares a `class` AND that class has a registered
-    /// browse route in `ctx.class_list_routes` — mirrors N3's
+    /// browse route in `ctx.class_list_routes` — mirrors the not-found variant's
     /// `render_page_not_found_breadcrumb_has_class_crumb_when_class_routed`,
     /// but on the resolved-record path.
     #[test]
@@ -6651,9 +6605,9 @@ mod tests {
         );
         // `resolve_class_plural_capitalized` is used — the SAME
         // capitalized-plural noun `render_browse_breadcrumb_for_page` shows
-        // on the browse page's own current crumb (owner-expected copy:
-        // "Characters", not the singular "Character" — see
-        // `docs/plans/share-view/issues.md`). This fixture declares `class
+        // on the browse page's own current crumb:
+        // "Characters", not the singular "Character".
+        // This fixture declares `class
         // "Character" { en "Character" plural { en "characters" } }`, so the
         // capitalized-plural and the raw singular/declared-plural strings
         // are all distinguishable here. Scope the assertions to the
@@ -6737,7 +6691,7 @@ mod tests {
         );
     }
 
-    /// Share-view plan step 4: the resource-detail control's href reflects
+    /// The resource-detail control's href reflects
     /// the request's own load-time `?img=` state (`ctx.current_query` is
     /// the raw request query string; `compose_canonical_query`'s
     /// `ViewSurface::Record` branch keeps `img` when it's > 1) — no new
@@ -6776,14 +6730,14 @@ mod tests {
             "share control href must carry the load-time ?img= state, got: {out}"
         );
         // Accessible name stays the bare prefix — record surfaces never
-        // announce which state they caught (design doc "Strings").
+        // announce which state they caught.
         assert!(
             out.contains("aria-label=\"Copy link to this view\""),
             "record share control must have no accessible-name suffix, got: {out}"
         );
     }
 
-    /// Test-reviewer gap fill (share-view plan): a REAL multi-image, all-IIIF
+    /// A REAL multi-image, all-IIIF
     /// `media_items` fixture drives `render_page`'s resource-detail branch
     /// through `media::has_sequence_pager` (true for this fixture — 3 images,
     /// every one IIIF-sequenceable) and asserts the resulting share-control
@@ -6863,10 +6817,10 @@ mod tests {
         // The reactive data-attr must be present (pager offered) and must be
         // canonical-by-construction: a JS array literal of ALL THREE
         // per-plate URLs, indexed by `$plate` — each one composed by the
-        // REAL `compose_canonical_query` + `compose_absolute_url` (fix batch
-        // for the share-view review findings), which puts `img` BEFORE
-        // `lang` (`?img=2&lang=de`, not the old hand-spliced
-        // `?lang=de&img=2` order this test used to enshrine).
+        // REAL `compose_canonical_query` + `compose_absolute_url`,
+        // which puts `img` BEFORE
+        // `lang` (`?img=2&lang=de`, never
+        // `?lang=de&img=2`).
         let raw_queries_per_index = ["lang=de&img=1", "lang=de&img=2", "lang=de&img=3"];
         let expected_urls: Vec<String> = raw_queries_per_index
             .iter()
@@ -6911,7 +6865,7 @@ mod tests {
         );
     }
 
-    /// Incunabula Slice 2 step 7 (decision 7 review note (ii)): a record page
+    /// A record page
     /// that ALSO carries a compound-viewer (the `/books/:id` shape) threads the
     /// RESOLVED reader member into both the static Copy-link href and every
     /// entry of the reactive `$plate` URL list — `img` · `page=<id>` · `lang`.
@@ -6990,8 +6944,7 @@ mod tests {
             let out = render_record_breadcrumb_for_page(&page, &ctx, &components, &site, &DataArks::default())
                 .expect("a resource-detail page has a record crumb")
                 .into_string();
-            // Item 21 (`reader-paging-fragment-swap` plan Step 3b):
-            // `share_href_for_reader` is unconditionally anchor-free now —
+            // `share_href_for_reader` is unconditionally anchor-free —
             // even a non-first member's static Copy-link href never carries
             // `#compound-viewer` any more (member paging is a URL-writing
             // pushState/popstate swap, not a same-document anchor scroll).
@@ -7024,8 +6977,7 @@ mod tests {
         }
     }
 
-    /// N3 (empty-states-not-found plan step 8) — deliberately flipped from the
-    /// pre-N3 behaviour: a resource-detail page with no resolved resource
+    /// A resource-detail page with no resolved resource
     /// (not found) DOES render a breadcrumb — the not-found variant
     /// (`CPE › project › "Not found"`). `make_character_page`'s
     /// `resource-detail` has `class: None`, so no class crumb is expected
@@ -7074,9 +7026,9 @@ mod tests {
         );
     }
 
-    /// N3's class crumb appears only when the page's `resource-detail`
+    /// The not-found class crumb appears only when the page's `resource-detail`
     /// declares a `class` AND that class has a registered browse route in
-    /// `ctx.class_list_routes` — owner-decided scope: a resolved record page
+    /// `ctx.class_list_routes` — a resolved record page
     /// never gains a class crumb (only the not-found variant does).
     #[test]
     fn render_page_not_found_breadcrumb_has_class_crumb_when_class_routed() {
@@ -7135,12 +7087,11 @@ mod tests {
         );
     }
 
-    // ── Breadcrumb: browse surfaces (share-view plan step 5) ──────────────────
+    // ── Breadcrumb: browse surfaces ───────────────────────────────────────────
 
     /// A faceted browse page: `FacetPanel` (real `Facet`s, rail order
-    /// role → theme) targeting a `ResourceList` — mirrors Alice's
-    /// `/characters`/`/locations` shape (contrast with `make_faceted_page`
-    /// above, whose `FacetPanel.facets` is deliberately empty for the E3b
+    /// role → theme) targeting a `ResourceList` (contrast with `make_faceted_page`
+    /// above, whose `FacetPanel.facets` is deliberately empty for the empty-facet-panel
     /// test).
     fn make_faceted_browse_page_with_facets() -> cpe_core::ir::Page {
         use cpe_core::ir::{Facet, FacetKind, Pagination};
@@ -7179,7 +7130,7 @@ mod tests {
     }
 
     /// A non-faceted browse page: a lone `ResourceList` with no sibling
-    /// `FacetPanel` — mirrors Alice's `/chapters` shape.
+    /// `FacetPanel`.
     fn make_nonfaceted_browse_page() -> cpe_core::ir::Page {
         cpe_core::ir::Page {
             id: "chapters".to_owned(),
@@ -7230,9 +7181,9 @@ mod tests {
     }
 
     /// Refined, faceted (role + theme selected, active query): the
-    /// accessible-name suffix matches the design doc's own example
+    /// accessible-name suffix matches this example
     /// verbatim ("3 of 54 <class plural> · Supporting · Fantasy · “hat”" —
-    /// A12.1 appended the class noun to the count segment; this fixture
+    /// the count segment carries the class noun; this fixture
     /// declares no `ClassLabel`, so the noun humanizes to "Character") and the href
     /// carries `q`/`role`/`theme` in canonical order.
     #[test]
@@ -7382,7 +7333,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    /// A12.1 drift guard: the browse crumb's accessible name and the
+    /// Drift guard: the browse crumb's accessible name and the
     /// resource-list surf-head must carry the SAME class noun. They are two
     /// independent call sites of the same
     /// `chrome::count_resources_text`/`count_of_text` split (documented on
@@ -7637,11 +7588,11 @@ mod tests {
         );
     }
 
-    /// Fix batch for the share-view review findings: a page combining a
-    /// `Narrative` component AND an id-bearing `ResourceList` (not a real
-    /// Alice shape today, but a config author could write one) must render
+    /// A page combining a
+    /// `Narrative` component AND an id-bearing `ResourceList` (a shape a
+    /// config author could write) must render
     /// the BROWSE crumb id (`crumb-{list_id}`), never the narrative one —
-    /// the bin's `_facets`/`_sort`/`_search` fragment handlers only ever
+    /// the host's `_facets`/`_sort`/`_search` fragment handlers only ever
     /// patch `#crumb-{list_id}`, so the full-page render must agree.
     #[test]
     fn render_page_prefers_browse_crumb_id_over_narrative_when_both_present() {
@@ -7701,7 +7652,7 @@ mod tests {
     // ── A11y: hidden-<h1> injection on headless pages ─────────────────────────
 
     /// A `ResourceList`-only page (no `Narrative`, no `ResourceDetail`) — the
-    /// canonical "headless" archetype (Alice's `/characters` shape).
+    /// canonical "headless" archetype.
     fn make_browse_page() -> cpe_core::ir::Page {
         cpe_core::ir::Page {
             id: "characters".to_owned(),
@@ -7879,11 +7830,11 @@ mod tests {
         assert_eq!(out.matches("<h1").count(), 1, "exactly one <h1> must be present, got: {out}");
     }
 
-    /// Integrated regression (FIX 3): a headless `Narrative` whose first
+    /// A headless `Narrative` whose first
     /// heading is H2 (no h1 anywhere) on a page whose route matches a
     /// declared `nav` entry must render exactly one `<h1>`, and its text
     /// must be the NAV LABEL — not the H2 heading text. Locks both the
-    /// no-double-h1 property (`page_has_visible_h1` / FIX 2) and the
+    /// no-double-h1 property (`page_has_visible_h1`) and the
     /// nav-label-preferred `page_heading` rung (inserted specifically to
     /// avoid a hidden-h1/visible-h2 text duplication).
     #[test]
@@ -8093,7 +8044,7 @@ mod tests {
     /// One linked (IIIF-shaped) Image resource for the record-viewer full-page
     /// snapshots — `data-appearance` is emitted once on `<html>` by
     /// `render_page`, not by the media renderer itself, so a dark-mode
-    /// snapshot only needs coverage at this full-page level (step 11).
+    /// snapshot only needs coverage at this full-page level.
     fn make_media_items() -> Vec<Resource> {
         vec![Resource {
             id: "I_001".to_owned(),
@@ -8111,7 +8062,7 @@ mod tests {
         }]
     }
 
-    /// Step 11's "one dark" snapshot axis: a resource-detail page with a real
+    /// The "one dark" snapshot axis: a resource-detail page with a real
     /// linked image, rendered with `Appearance::Dark` — confirms
     /// `data-appearance="dark"` propagates onto the same page shell that
     /// wraps the record viewer.
@@ -8352,10 +8303,10 @@ mod tests {
         );
     }
 
-    /// E3b (empty-states-not-found plan step 4): a `FacetPanel` targets this
+    /// An empty facet panel: a `FacetPanel` targets this
     /// list but its RESOLVED groups are empty (`Component::FacetPanel.facets`
     /// is `vec![]` in `make_faceted_page` — the static config condition that
-    /// makes E3b genuinely reachable). The whole `.browse` grid/rail must be
+    /// makes the case reachable). The whole `.browse` grid/rail must be
     /// absent — the page degrades to the non-faceted layout (`/chapters`'
     /// shape) — and the list renders full-measure, standalone.
     #[test]
@@ -8387,7 +8338,7 @@ mod tests {
             resource_links: &[],
         };
 
-        // The FacetPanel resolves to zero groups — the E3b condition.
+        // The FacetPanel resolves to zero groups — the empty-facet-panel condition.
         let facets_data: Vec<FacetGroup> = vec![];
 
         let list_page = ResourceListPage {
@@ -8399,7 +8350,7 @@ mod tests {
         };
 
         // components aligned 1:1 with page.body:
-        // [0] FacetPanel → Facets(vec![]) (E3b)
+        // [0] FacetPanel → Facets(vec![]) (empty)
         // [1] ResourceList → List(...)
         let components: Vec<ComponentData> = vec![ComponentData::Facets(facets_data), ComponentData::List(list_page)];
 
@@ -8429,7 +8380,7 @@ mod tests {
     }
 
     /// Facet-only page (FacetPanel + ResourceList, NO SearchBar) narrowed to
-    /// zero matches — empty-states-not-found plan step 2's core regression
+    /// zero matches — the core regression
     /// guard: the OLD `cfg.search`-only gate could never show the
     /// narrowed-to-zero body here (there is no search-bar to have an
     /// "active query"), degrading to the quiet, wrong `p.resource-list__empty`
@@ -8519,11 +8470,10 @@ mod tests {
     }
 
     // ── Layer-3: render_page with FacetPanel + ResourceList + SearchBar ──────
-    // (search-bar plan step 7 — the 3-way `render_body` grouping)
+    // (the 3-way `render_body` grouping)
 
     /// Build a page whose body has FacetPanel + ResourceList + SearchBar, all
-    /// three bound to the same list id (Alice's `/characters`/`/locations`
-    /// shape).
+    /// three bound to the same list id.
     fn make_faceted_search_page() -> cpe_core::ir::Page {
         use cpe_core::ir::{Pagination, Sort, SortDir, WhereClause};
         cpe_core::ir::Page {
@@ -8645,7 +8595,7 @@ mod tests {
             !out.contains("search-row page") && !out.contains("page search-row"),
             "the faceted search row must NOT carry its own .page class, got: {out}"
         );
-        // search-bar plan step 8: this fixture's `q=rab` is an ACTIVE, MATCHING
+        // This fixture's `q=rab` is an ACTIVE, MATCHING
         // query (`list_page.items` non-empty) — the full `render_page` →
         // `render_body` → `SearchSurface` → `render_resource_list` pipeline
         // must produce the surf-head's `id="browse-count"` + scope note, and
@@ -8662,8 +8612,8 @@ mod tests {
             !out.contains("search-empty"),
             "a matching query must NOT render .search-empty, got: {out}"
         );
-        // search-bar plan step 9: an active query + an active facet renders
-        // BOTH chip kinds in the filterbar (design-doc §3 "Query + facets").
+        // An active query + an active facet renders
+        // BOTH chip kinds in the filterbar.
         assert!(
             out.contains(r#"class="filterchip filterchip--query""#),
             "the filterbar must render the query chip, got: {out}"
@@ -8763,8 +8713,8 @@ mod tests {
         );
         // The two clear actions must drop DIFFERENT things: "Clear search"
         // drops only `q` (keeps the active `role=R_01` facet); "Clear all"
-        // drops BOTH the facet (`role`) AND `q` (search-bar plan step 9 —
-        // design-doc §8.4 "Clear all clears everything"), leaving the bare
+        // drops BOTH the facet (`role`) AND `q` ("Clear all clears
+        // everything"), leaving the bare
         // path. `facet_keys` must come from the group's RESOLVED facet data
         // (`ComponentData::Facets`), not the config's (empty, in this
         // fixture) `Component::FacetPanel.facets` list — a real regression
@@ -8778,8 +8728,8 @@ mod tests {
             "Clear all filters must drop both the role=R_01 facet and q=xyzzy \
              (step 9), leaving the bare path, got: {out}"
         );
-        // The filterbar itself must also render the query chip (design-doc
-        // §3 "Query + facets": both chip kinds side by side) — this fixture
+        // The filterbar itself must also render the query chip (query and
+        // facets: both chip kinds side by side) — this fixture
         // has an active (though non-matching) query AND a selected facet.
         assert!(
             out.contains(r#"class="filterchip filterchip--query""#),
@@ -8789,7 +8739,7 @@ mod tests {
     }
 
     /// Build a page whose body has ResourceList + SearchBar only (no
-    /// FacetPanel) — Alice's `/chapters` shape.
+    /// FacetPanel).
     fn make_search_only_page() -> cpe_core::ir::Page {
         use cpe_core::ir::{Pagination, Sort, SortDir};
         cpe_core::ir::Page {
@@ -8829,9 +8779,9 @@ mod tests {
     }
 
     /// Build a page whose body has ResourceList + SearchBar only, searching
-    /// over THREE properties incl. `full-text` (Alice's real `/chapters`
-    /// shape exactly — `searches "name" "description" "full-text"` — search-bar
-    /// plan step 12's "non-faceted full-text scope" state).
+    /// over THREE properties incl. `full-text`
+    /// (`searches "name" "description" "full-text"`: the
+    /// "non-faceted full-text scope" state).
     fn make_search_only_page_fulltext() -> cpe_core::ir::Page {
         use cpe_core::ir::{Pagination, Sort, SortDir};
         cpe_core::ir::Page {
@@ -8988,8 +8938,8 @@ mod tests {
     }
 
     /// The non-faceted shape's no-match state must offer ONLY "Clear search"
-    /// — no "Clear all" (design-doc §3: that action only appears "when
-    /// facets are on"). End-to-end companion to
+    /// — no "Clear all" (that action exists only when a facet is
+    /// selected). End-to-end companion to
     /// `snapshot_render_page_faceted_search_bar_no_match`.
     #[test]
     fn snapshot_render_page_non_faceted_search_bar_no_match() {
@@ -9048,8 +8998,8 @@ mod tests {
         );
     }
 
-    /// Fifth of the five search-bar states (search-bar plan step 12):
-    /// non-faceted, full-text scope — Alice's real `/chapters` shape, an
+    /// Fifth of the five search-bar states:
+    /// non-faceted, full-text scope — an
     /// active matching query over THREE searched properties (name,
     /// description, full-text). Proves the scope note reads the distinct
     /// full-text copy, not the two-property "matching name and description"
@@ -9108,7 +9058,7 @@ mod tests {
         );
     }
 
-    // ── Contract asserts (search-bar plan step 12) ────────────────────────────
+    // ── Contract asserts ──────────────────────────────────────────────────────
 
     /// `.browse.page` has exactly its four flat grid children, each present
     /// exactly once and in this order: the search row, the facet rail, the
@@ -9187,8 +9137,8 @@ mod tests {
             );
         }
 
-        // And in this exact order (design-doc §1's row order: SEARCH, then
-        // the pre-existing rail/filterbar/list order).
+        // And in this exact order (the row order: SEARCH, then
+        // the rail/filterbar/list order).
         let search_pos = browse_section.find(r#"class="search-row""#).expect("search row present");
         let facet_pos = browse_section.find(r#"class="facet-panel page""#).expect("facet rail present");
         let filterbar_pos = browse_section.find(r#"id="filters-"#).expect("filterbar present");
@@ -9282,11 +9232,10 @@ mod tests {
 
     /// The search-bar's own additions — the search row, the query chip, and
     /// the no-match state — introduce NO new `aria-live` region beyond the
-    /// pre-existing baseline: `.surf-head__count` + `.filterbar` (per
-    /// CLAUDE.md's a11y-review convention — the filterbar was already its own
-    /// small live region before search-bar existed) plus the ordering
-    /// control's own `#orderctl-status` (browse-controls plan decision 3 —
-    /// a dedicated status span announcing the current ordering), for a total
+    /// pre-existing baseline: `.surf-head__count` + `.filterbar` (the filterbar is its own
+    /// small live region) plus the ordering
+    /// control's own `#orderctl-status` (a
+    /// dedicated status span announcing the current ordering), for a total
     /// of THREE. Regression guard against a FOURTH live region creeping in
     /// (e.g. on the query chip or the search input itself, which would
     /// over-announce on every debounced keystroke).
@@ -9379,9 +9328,8 @@ mod tests {
         );
     }
 
-    /// No `<svg>` anywhere in the search row (design-doc §1: "search does not
-    /// earn a second icon" — a magnifier was explicitly rejected; every icon
-    /// is an entry in `COMPONENT_LIBRARY.md`'s icon ledger).
+    /// No `<svg>` anywhere in the search row: search does not
+    /// earn a second icon.
     #[test]
     fn contract_no_svg_in_search_row() {
         let site = make_alice_site();
@@ -9424,7 +9372,7 @@ mod tests {
         );
     }
 
-    // ── A11y audit (Step 2): ARIA + landmarks ─────────────────────────────────
+    // ── A11y: ARIA + landmarks ────────────────────────────────────────────────
 
     /// The ordering control's `<summary>` has an `aria-label` naming the
     /// current ordering, and every row button carries visible text —

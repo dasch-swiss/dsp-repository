@@ -18,7 +18,7 @@ use cpe_web::project::{LoadError, Project};
 // ── Fixture loader ────────────────────────────────────────────────────────────
 
 /// The `(name, content)` pairs of a fixture's `narrative/` files, sorted by
-/// name, as the bin passes them to `Project::load`; empty when the fixture has
+/// name, as a host passes them to `Project::load`; empty when the fixture has
 /// no `narrative/` dir. Without the contents the narrative-content checks
 /// (heading ids, figure sections) would validate every fixture clean.
 fn fixture_narratives(fixture_dir: &Path, fixture_name: &str) -> Vec<(String, String)> {
@@ -159,9 +159,9 @@ fn good_validates_clean() {
 
 #[test]
 fn good_narrative_partial_variants_validates_clean() {
-    // D3: a narrative file with only per-language variants (no bare "home.md")
+    // A narrative file with only per-language variants (no bare "home.md")
     // validates clean as long as the default-language variant ("home.en.md")
-    // exists — "fr" has no variant at all, which is fine (D1's render-time
+    // exists — "fr" has no variant at all, which is fine (the render-time
     // fallback chain covers it; this is a boot-validation test, not a render
     // test).
     assert_clean("good-narrative-partial-variants", "good-narrative-partial-variants");
@@ -414,7 +414,7 @@ fn broken_narrative_traversal() {
 
 #[test]
 fn broken_narrative_no_default_variant() {
-    // D3: only a non-default-language variant exists (home.fr.md); neither
+    // Only a non-default-language variant exists (home.fr.md); neither
     // the base file nor the default-language ("en") variant is present, so
     // NarrativeFileNotFound must still fire — the render-time fallback chain
     // has no guaranteed rung to land on.
@@ -480,7 +480,7 @@ fn broken_multi_accumulates_multiple_kinds() {
     );
 }
 
-// ── Step 4: data-dependent validation (Layer-4) ───────────────────────────────
+// ── Data-dependent validation ─────────────────────────────────────────────────
 
 /// Load a fixture by directory name, returning the loaded `Project` on success.
 /// Panics on non-validation errors (unexpected for these fixtures).
@@ -540,8 +540,8 @@ fn broken_sparse_property_succeeds_with_warnings_only() {
 #[test]
 fn broken_sparse_property_warnings_are_surfaced_on_project() {
     // After load succeeds, Project::warnings() must carry the SparseProperty
-    // diagnostics so callers (the bin) can log them. This is the primary
-    // assertion for AC6: warnings are not silently discarded.
+    // diagnostics so callers (the host) can log them: warnings are not
+    // silently discarded.
     let project = load_fixture_project("broken-sparse-property", "broken-sparse-property")
         .expect("broken-sparse-property should load successfully (warnings only)");
 
@@ -637,7 +637,7 @@ fn broken_nav_route_fires_exactly_one_unresolved_nav_route() {
     );
 }
 
-// ── G11: `site { not-found { browse } }` (Incunabula Slice 8) ─────────────────
+// ── `site { not-found { browse } }` ───────────────────────────────────────────
 
 #[test]
 fn broken_not_found_browse_route_fires_exactly_one() {
@@ -774,7 +774,7 @@ fn broken_annotation_fixtures_fail_in_both_arms() {
     }
 }
 
-// ── Stored data ARKs (MalformedDataArk, Slice 9) ─────────────────────────────
+// ── Stored data ARKs (MalformedDataArk) ──────────────────────────────────────
 
 /// `broken-data-ark` stores six malformed ARKs (a version ARK and `http:` on
 /// resources; a foreign host, a trailing `/`, a lowercase shortcode and `''`
@@ -922,7 +922,7 @@ fn broken_unknown_link_target_succeeds_with_warnings_only() {
 #[test]
 fn broken_unknown_link_target_warning_surfaced_on_project() {
     // After load succeeds, Project::warnings() must carry the UnknownLinkTarget
-    // diagnostic so callers (the bin) can log it.
+    // diagnostic so callers (the host) can log it.
     let project = load_fixture_project("broken-unknown-link-target", "broken-unknown-link-target")
         .expect("broken-unknown-link-target should load successfully (warnings only)");
 
@@ -1080,7 +1080,7 @@ fn broken_resource_list_sparse_succeeds_with_warnings_only() {
 #[test]
 fn broken_resource_list_sparse_warning_surfaced_on_project() {
     // After load succeeds, Project::warnings() must carry the SparseResourceListProperty
-    // diagnostic so callers (the bin) can log it.
+    // diagnostic so callers (the host) can log it.
     let project = load_fixture_project("broken-resource-list-sparse", "broken-resource-list-sparse")
         .expect("broken-resource-list-sparse should load successfully (warnings only)");
 
@@ -1158,7 +1158,7 @@ fn broken_resource_list_incompatible_where_succeeds_with_warnings_only() {
 #[test]
 fn broken_resource_list_incompatible_where_warning_surfaced_on_project() {
     // After load succeeds, Project::warnings() must carry the
-    // IncompatibleWhereValue diagnostic so callers (the bin) can log it.
+    // IncompatibleWhereValue diagnostic so callers (the host) can log it.
     let project = load_fixture_project(
         "broken-resource-list-incompatible-where",
         "broken-resource-list-incompatible-where",
@@ -1231,7 +1231,7 @@ fn good_resource_list_matching_where_type_no_incompatible_where_value_warning() 
 #[test]
 fn broken_facet_reserved_property_hard_fails() {
     // A facet-panel property="sort" collides with the reserved `?sort=` query
-    // key the bin reads at runtime → ReservedFacetProperty hard-fail.
+    // key the host reads at runtime → ReservedFacetProperty hard-fail.
     assert_exact_kinds(
         "broken-facet-reserved-property",
         "broken-facet-reserved-property",
@@ -1242,7 +1242,7 @@ fn broken_facet_reserved_property_hard_fails() {
 #[test]
 fn broken_facet_reserved_view_hard_fails() {
     // A facet-panel property="view" collides with the reserved grid-mode
-    // `?view=` query key the engine's resource-list renderer reads
+    // `?view=` query key the resource-list renderer reads
     // (`parse_view_param`) → ReservedFacetProperty hard-fail.
     assert_exact_kinds(
         "broken-facet-reserved-view",
@@ -1479,7 +1479,7 @@ fn broken_empty_compound_source_raw_branch_surfaces_warning() {
 #[test]
 fn broken_facet_unsupported_kind_hard_fails() {
     // A facet-panel with kind="date-decade" — a valid FacetKind but not
-    // implemented in this slice. UnsupportedFacetKind is a hard-fail.
+    // implemented. UnsupportedFacetKind is a hard-fail.
     assert_exact_kinds(
         "broken-facet-unsupported-kind",
         "broken-facet-unsupported-kind",
@@ -1561,7 +1561,7 @@ fn broken_facet_sparse_succeeds_with_warnings_only() {
 #[test]
 fn broken_facet_sparse_warning_surfaced_on_project() {
     // After load succeeds, Project::warnings() must carry the SparseFacetProperty
-    // diagnostic so callers (the bin) can log it.
+    // diagnostic so callers (the host) can log it.
     let project = load_fixture_project("broken-facet-sparse", "broken-facet-sparse")
         .expect("broken-facet-sparse should load successfully (warnings only)");
 
@@ -1688,7 +1688,7 @@ fn broken_search_sparse_succeeds_with_warnings_only() {
 #[test]
 fn broken_search_sparse_warning_surfaced_on_project() {
     // After load succeeds, Project::warnings() must carry the
-    // SparseSearchProperty diagnostic so callers (the bin) can log it.
+    // SparseSearchProperty diagnostic so callers (the host) can log it.
     // Mirrors broken_facet_sparse_warning_surfaced_on_project.
     let project = load_fixture_project("broken-search-sparse", "broken-search-sparse")
         .expect("broken-search-sparse should load successfully (warnings only)");
@@ -1733,7 +1733,7 @@ fn broken_search_sparse_warning_surfaced_on_project() {
 
 #[test]
 fn good_search_validates_clean_no_diagnostics() {
-    // good-search (added for FTS5 boot indexing, step 4) declares a
+    // good-search declares a
     // search-bar over "name" (text) and "description" (richtext), both
     // present on every 'Thing' resource — the happy path for the new
     // data-dependent checks. Must load with NO warnings:
@@ -1880,7 +1880,7 @@ fn good_label_known_produces_no_unknown_label_warnings() {
     );
 }
 
-// ── `media="…"` — embedded-media plan step 5 ─────────────────────────
+// ── `media="…"` ──────────────────────────────────────────────────────
 
 #[test]
 fn good_media_validates_clean_and_builds_map() {
@@ -1990,7 +1990,7 @@ fn broken_media_conflicting_property_hard_fails() {
     );
 }
 
-// ── `compound-viewer media="…"` (Incunabula Slice 2 step 6b) ──────────────────
+// ── `compound-viewer media="…"` ───────────────────────────────────────────────
 
 #[test]
 fn good_compound_media_loads_clean() {
@@ -2006,7 +2006,7 @@ fn good_compound_media_loads_clean() {
 #[test]
 fn good_compound_media_no_members_skips_rather_than_errors() {
     // `$param` source + no compound_parts rows anywhere ⇒ empty member-class
-    // set ⇒ the check is skipped. An Error here would abort the whole binary.
+    // set ⇒ the check is skipped. An Error here would refuse the project.
     let project = load_fixture_project("good-compound-media-no-members", "good-compound-media-no-members")
         .expect("an empty member-class set must skip the media check, not hard-fail");
     assert!(
@@ -2063,7 +2063,7 @@ fn broken_compound_media_incompatible_type_raw_branch_surfaces_error() {
 }
 
 // ── `compound-viewer media="…"` feeds the class->media map and
-//    ConflictingMediaProperty (engine-hygiene batch 3, item 8) ────────────────
+//    ConflictingMediaProperty ─────────────────────────────────────────────────
 
 #[test]
 fn broken_compound_media_conflicts_with_detail_registered_class() {
@@ -2168,7 +2168,7 @@ fn broken_list_conflicts_with_compound_registered_class_raw_branch_surfaces_erro
 }
 
 // ── `compound-viewer layout=`/`index=`, ownership, and the `pages` reader
-//    (Incunabula Slice 3b, step 8) ─────────────────────────────────────────────
+//    ───────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn broken_compound_layout_missing() {
@@ -2245,7 +2245,7 @@ fn broken_annotations_not_pages() {
 
 #[test]
 fn broken_compound_index_missing() {
-    // `index` is required (Q1); omitting it is MissingRequiredAttribute
+    // `index` is required; omitting it is MissingRequiredAttribute
     // alone.
     assert_exact_kinds(
         "broken-compound-index-missing",
@@ -2268,7 +2268,7 @@ fn broken_compound_index_unknown() {
 #[test]
 fn broken_pages_layout_without_media() {
     // The `pages` layout is scan-first; without `media=` it has no scan to
-    // show (D3). A `$id` param source keeps this config-internal, isolating
+    // show. A `$id` param source keeps this config-internal, isolating
     // PagesLayoutWithoutMedia.
     assert_exact_kinds(
         "broken-pages-layout-without-media",
@@ -2281,8 +2281,8 @@ fn broken_pages_layout_without_media() {
 fn broken_compound_media_ownership() {
     // A resource-detail with `media=` on the same resource as its page's
     // compound-viewer navigator would render the compound's images twice;
-    // the navigator owns them (D2,
-    // dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md).
+    // the navigator owns them
+    // (dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md).
     assert_exact_kinds(
         "broken-compound-media-ownership",
         "broken-compound-media-ownership",
@@ -2404,13 +2404,12 @@ fn broken_media_conflicting_raw_branch_surfaces_error() {
 
 #[test]
 fn broken_media_wrong_typed_class_reports_invalid_attribute_type_once() {
-    // Step 7 (report wrong-typed optional string attributes) inverts this
-    // pair's premise: `lower_resource_detail` now reads `class` with the
+    // `lower_resource_detail` reads `class` with the
     // REPORTING `get_typed_string_attr`, so `class=42` itself produces
     // `InvalidAttributeType` — and the raw-fallback guard in
-    // `check_resource_detail_media_into_raw` now skips the wrong-typed
+    // `check_resource_detail_media_into_raw` skips the wrong-typed
     // `class`/`id` case instead of also emitting `UnresolvableMediaClass`
-    // (one mistake, one diagnostic). Both fixtures now contain
+    // (one mistake, one diagnostic). Both fixtures contain
     // `InvalidAttributeType` and NOT `UnresolvableMediaClass`.
     //
     // The two fixtures differ only in whether `site { title }` is present,
@@ -2501,7 +2500,7 @@ fn good_baseline_has_empty_media_properties_map() {
     );
 }
 
-// ── `grid="…"` — grid-mode plan step 3 (GridWithoutMedia) ─────────────────────
+// ── `grid="…"` (GridWithoutMedia) ─────────────────────────────────────────────
 
 #[test]
 fn broken_grid_without_media_hard_fails() {
@@ -2522,9 +2521,8 @@ fn broken_grid_without_media_hard_fails() {
 fn broken_sparse_property_param_warns_over_the_declared_class() {
     // A parameterised resource-detail (`/things/:id`) names no single
     // resource, so the literal-id pair (UnknownResource + the id-keyed sparse
-    // lookup) cannot run — it used to be skipped entirely, leaving the common
-    // detail-page shape with no show-properties coverage at all. The declared
-    // `class` now drives the sparse half.
+    // lookup) cannot run. The declared
+    // `class` drives the sparse half.
     let project = load_fixture_project("broken-sparse-property-param", "broken-sparse-property-param")
         .expect("broken-sparse-property-param should load (SparseProperty is advisory)");
 
@@ -2602,7 +2600,7 @@ fn broken_sparse_property_param_raw_branch_surfaces_warning() {
     );
 }
 
-// ── Incunabula Slice 3 (step 6): group / narrative-for boot validation ───────
+// ── group / narrative-for boot validation ────────────────────────────────────
 
 #[test]
 fn broken_group_duplicate_property_hard_fails() {
@@ -2726,7 +2724,7 @@ fn broken_narrative_for_file_not_found_hard_fails() {
 #[test]
 fn broken_group_sparse_member_succeeds_with_warning() {
     // A group member absent from the resource's class is advisory
-    // (SparseProperty is a Warning) — load must succeed. Pins step 1's
+    // (SparseProperty is a Warning) — load must succeed. Pins the
     // detail_property_names extension to group members.
     let project = load_fixture_project("broken-group-sparse-member", "broken-group-sparse-member")
         .expect("broken-group-sparse-member should load successfully (warning only)");
@@ -2742,7 +2740,7 @@ fn broken_group_sparse_member_succeeds_with_warning() {
 #[test]
 fn broken_group_sparse_member_raw_branch_surfaces_warning() {
     // Layer-4 test for check_resource_detail_data_into_raw's `group`
-    // positional-args extraction (step 1), on the literal-id branch: the
+    // positional-args extraction, on the literal-id branch: the
     // fixture has MissingSiteTitle (forcing the Err/raw path) plus a group
     // member absent from the class. Both diagnostics must appear in one
     // returned Vec.
@@ -2776,7 +2774,7 @@ fn good_group_narrative_for_validates_clean() {
     assert_clean("good-group-narrative-for", "good-group-narrative-for");
 }
 
-// ── Incunabula Slice 5 (step 6): incoming-links boot validation ──────────────
+// ── incoming-links boot validation ───────────────────────────────────────────
 
 /// Assert a `-raw` fixture fails with BOTH the forcing `MissingSiteTitle` and
 /// `expected` — proving `check_incoming_links_data_into_raw` ran on the
@@ -2949,7 +2947,7 @@ fn broken_incoming_links_not_link_raw_branch_surfaces_error() {
     );
 }
 
-/// The three HdM Slice 3 row-property diagnostics
+/// The three row-property diagnostics
 /// `broken-incoming-links-row-props{,-raw}` must raise.
 fn row_props_kinds() -> Vec<DiagnosticKind> {
     let (class, page) = ("Work".to_owned(), "/people/:id".to_owned());
@@ -3103,7 +3101,7 @@ fn broken_incoming_links_unknown_label_succeeds_with_warning() {
     );
 }
 
-// ── `resource-detail class` existence check (Backlog hardening batch 3 item 2) ─
+// ── `resource-detail class` existence check ────────────────────────────────────
 
 fn characters_detail_page() -> String {
     "/characters/:id".to_owned()
@@ -3233,7 +3231,7 @@ fn broken_compound_with_paged_list_hard_fails() {
     );
 }
 
-// ── G9: `order-by` options on resource-list (Incunabula Slice 8) ──────────────
+// ── `order-by` options on resource-list ───────────────────────────────────────
 
 fn books_page() -> String {
     "/books".to_owned()
@@ -3278,7 +3276,7 @@ fn broken_order_by_unknown_label_hard_fails() {
 #[test]
 fn broken_order_by_wrong_typed_key_reports_instead_of_vanishing() {
     // `key=#true` must be a boot error, not a silently-dropped option
-    // (Slice 8 decision 11a — the reporting readers).
+    // (the reporting readers).
     assert_exact_kinds(
         "broken-order-by-wrong-type",
         "broken-order-by-wrong-type",
@@ -3445,7 +3443,7 @@ fn broken_head_slot_incompatible_raw_branch_surfaces_error() {
     }
 }
 
-// ── compound-viewer member-links (book-page step 6a) ─────────────────────────
+// ── compound-viewer member-links ─────────────────────────────────────────────
 
 fn member_link_not_link() -> DiagnosticKind {
     DiagnosticKind::IncompatibleGlossPart {
@@ -3519,11 +3517,11 @@ fn broken_order_by_sparse_property_loads_with_warning() {
     );
 }
 
-// ── timeline (Incunabula Slice 4) ─────────────────────────────────────────────
+// ── timeline ──────────────────────────────────────────────────────────────────
 //
-// Every timeline fixture is loaded as project "incunabula": step 8 keys the
-// component on `(project, name)`, so these fixtures pass through step 8
-// unchanged only if they are loaded as Incunabula from the start.
+// Every timeline fixture is loaded as project "incunabula": the
+// component is keyed on `(project, name)`, so a fixture loaded under
+// another id gets `UnknownComponent`.
 
 const TIMELINE_PROJECT: &str = "incunabula";
 
@@ -3682,7 +3680,7 @@ fn broken_timeline_axis_out_of_range_hard_fails() {
     );
 }
 
-/// Step 8's `(project, name)` keying: a project that is not Incunabula but
+/// The `(project, name)` keying: a project that is not Incunabula but
 /// declares `timeline` gets exactly `{UnknownComponent}` — no timeline data
 /// diagnostics from the raw arm, even when the data would also break the
 /// timeline's checks.
@@ -3713,7 +3711,7 @@ fn broken_timeline_date_wrong_type_raw_branch_surfaces_both() {
     );
 }
 
-// ── Figure-block slot (Incunabula Slice 7) ────────────────────────────────────
+// ── Figure-block slot ─────────────────────────────────────────────────────────
 //
 // The slotted component is the registered `timeline`, so these fixtures load
 // as "incunabula" (`assert_timeline_errors`).
@@ -3808,7 +3806,7 @@ fn broken_figure_label_fails() {
     );
 }
 
-// ── woodcut-cases (Incunabula Slice 7) ───────────────────────────────────────
+// ── woodcut-cases ────────────────────────────────────────────────────────────
 //
 // Every fixture is good-showcase with one change, loaded as "incunabula"; a
 // `-raw` sibling also drops the site title, so the raw arm must report the
@@ -3969,7 +3967,7 @@ fn broken_showcase_case_reports_every_malformed_case() {
     );
 }
 
-// ── edition-cards and strip-row (Incunabula Slice 7) ─────────────────────────
+// ── edition-cards and strip-row ──────────────────────────────────────────────
 //
 // Every fixture is good-showcase-cards with one change, loaded as
 // "incunabula"; a `-raw` sibling also drops the site title.

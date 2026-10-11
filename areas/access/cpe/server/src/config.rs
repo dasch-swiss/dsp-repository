@@ -48,7 +48,7 @@ impl Default for CpeConfig {
 
 impl CpeConfig {
     /// Reads `cpe.toml` and `CPE_*`. Infallible: a value figment cannot read
-    /// gives the defaults with [`CpeConfig::load_error`] set.
+    /// gives the defaults and is refused by `Cpe`, whose router answers 503.
     pub fn load() -> Self {
         let figment = Figment::new()
             .merge(Serialized::defaults(CpeConfig::default()))
@@ -102,6 +102,22 @@ fn path_from_scalar<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result
     })
 }
 
+/// The longest host an origin may have, in bytes: the limit of a DNS name.
+const MAX_ORIGIN_HOST: usize = 255;
+
+/// Whether `c` may stand in the host of an origin, its port included. Nothing
+/// else may: the origin is written into absolute links as it is.
+fn is_origin_host_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':' | '[' | ']')
+}
+
+/// Whether `host` (with its port, if it has one) can be the host of an
+/// origin. The configured origin and a request's `Host` header are held to
+/// this one rule.
+pub(crate) fn is_origin_host(host: &str) -> bool {
+    !host.is_empty() && !host.starts_with(':') && host.len() <= MAX_ORIGIN_HOST && host.chars().all(is_origin_host_char)
+}
+
 /// `value` must be an origin: `http://` or `https://`, a host, and nothing
 /// after it. A path would be repeated in every absolute link built from it.
 fn validate_origin(variable: &str, value: &str) -> Result<(), String> {
@@ -112,13 +128,13 @@ fn validate_origin(variable: &str, value: &str) -> Result<(), String> {
     if host.is_empty() || host.starts_with(':') {
         return Err(format!("{variable} has no host (got {value:?})"));
     }
-    if let Some(bad) = host
-        .chars()
-        .find(|c| !(c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':' | '[' | ']')))
-    {
+    if let Some(bad) = host.chars().find(|c| !is_origin_host_char(*c)) {
         return Err(format!(
             "{variable} must be an origin with no path, query or trailing slash (got {value:?}, found {bad:?})"
         ));
+    }
+    if host.len() > MAX_ORIGIN_HOST {
+        return Err(format!("{variable} has a host longer than {MAX_ORIGIN_HOST} bytes"));
     }
     Ok(())
 }

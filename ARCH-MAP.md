@@ -20,7 +20,7 @@ metadata editor to `areas/deposit/editor/` and DPE to `areas/access/dpe/` (ADR-0
 still lives under `modules/`; `areas/access/sync` exists at its minimum, the crate `sync-store` and
 the committed snapshot and curation it serves; `areas/access/cpe` holds its `CONTEXT.md`, the port crate
 `cpe-ports`, the domain crate `cpe-core`, the component library `cpe-components`, the interim image viewer
-`cpe-image-viewer`, the read-side store `cpe-store`, the store builder `cpe-store-build`, the page assembly `cpe-web`, Incunabula's project folder and CPE's shared static files, and serves nothing yet; of the five planned components,
+`cpe-image-viewer`, the read-side store `cpe-store`, the store builder `cpe-store-build`, the page assembly `cpe-web`, the host crate `cpe-server`, Incunabula's project folder and CPE's shared static files, and no binary mounts it yet; of the five planned components,
 `areas/access/media` holds nothing yet, and the
 other four hold only a `CONTEXT.md` at their target path. The rest of ADR-0002 (accepted, migration pending) moves Mosaic to the root,
 beside `shared/`, `vitrinli/` and `chischtli/`, so read the globs here as current state.
@@ -119,7 +119,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   The `Corpus`'s instance `OnceLock` caches load once per process and never invalidate.
-- **Fingerprint:** `11894ecd7d03`
+- **Fingerprint:** `beac7d3793a5`
 
 ### areas/access/server
 
@@ -548,7 +548,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/access/cpe/**` — today `ports/` (crate `cpe-ports`), `core/` (crate
   `cpe-core`), `components/` (crate `cpe-components`, with its stylesheets in `components/style/`),
   `image-viewer/` (crate `cpe-image-viewer`), `store/` (crate `cpe-store`, with its schema in
-  `store/schema.sql`), `store-build/` (crate `cpe-store-build`), `web/` (crate `cpe-web`), `projects/` (one folder per project,
+  `store/schema.sql`), `store-build/` (crate `cpe-store-build`), `web/` (crate `cpe-web`), `server/` (crate `cpe-server`), `projects/` (one folder per project,
   `projects/incunabula/` so far), `public/` (CPE's shared static files, with the vendored `datastar.js` in
   `public/vendor/`) and `CONTEXT.md` (CPE's vocabulary and what its port serves)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
@@ -556,22 +556,25 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   configured per project. The project-wide configuration is in the project's folder, its KDL
   (ADR-0007); per-resource curation comes through the port, beside the archive's facts and
   never as one (ADR-0010, proposed). `ports/`, the domain crate `core/`, the component library
-  `components/`, the image viewer `image-viewer/`, the read-side store `store/`, its builder `store-build/` and the page assembly `web/`
-  exist so far; the routes are
-  planned, and the crates move in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11
+  `components/`, the image viewer `image-viewer/`, the read-side store `store/`, its builder `store-build/`, the page assembly `web/`
+  and the host crate `server/` are here; the mount in areas/access/server is
+  planned. The crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11
   amendments; ADR-0011). `cpe-image-viewer` is the `<image-viewer>` web component on a vendored
   OpenSeadragon with its Maud builder: an interim, cut-down copy of `dsp-incubator
   shared/dasch-image-viewer` that the incubator's final viewer replaces. `cpe-components` renders what `cpe-core`'s IR describes, as
-  Maud functions; its seven stylesheets are plain files that the crate neither embeds nor serves, and that
-  nothing here serves until CPE's host arrives (DEV-7465). `cpe-store` is the derived read model (ADR-0008):
+  Maud functions; its seven stylesheets are plain files that the crate neither embeds nor serves: `cpe-server` does. `cpe-store` is the derived read model (ADR-0008):
   one in-memory SQLite database per project, opened from SQL text over `schema.sql`, and the query layer
   over it. `cpe-store-build` is the remodelling (ADR-0007): a pure library that turns a project snapshot and
   the `remodel {}` block of the project's KDL into the store's rows, with the project's hook where the block
   declares one, and renders them as that SQL text. `cpe-web` is the page assembly: `Project`, a project loaded
   from its KDL, its store's SQL text and its narrative, and the functions that render a page, the compound
   viewer's fragment and the not-found pages from `cpe-components`' parts; it holds no routes. `public/` holds
-  the files every CPE page refers to (two logos, the fingerprint, Datastar), which nothing here serves until
-  CPE's host arrives. A project is a folder under `projects/`: its KDL, its
+  the files every CPE page refers to (two logos, the fingerprint, Datastar). `cpe-server` is the host crate, a
+  facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. Activation
+  loads every project folder with a store built from the port's snapshot, and a project that does not
+  activate answers 503 on its own prefix while the others are served (ADR-0007, amendment of 2026-10-11 on
+  activation); the crate also serves the stylesheets and `public/` from a compiled-in table. A project is a
+  folder under `projects/`: its KDL, its
   narrative and its assets; a hook is not in the folder but a module of the builder (ADR-0007, amendment of
   2026-10-11, DEV-7465).
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
@@ -607,17 +610,20 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `get_resource`) and `project::LoadError`, `page::render_page`, `page::render_compound_fragment` and
   `page::CompoundFragmentOutput`, `page::render_not_found_project`, `page::render_not_found_site`,
   `page::render_browse_breadcrumb_for_page`, `page::SearchFragmentSurface`, `page::document_head`,
-  `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`
-- **Public interface:** its router (planned), mounted by areas/access/server on the area's
-  origin beside DPE's routes. `cpe/ports` is not an interface CPE offers but the ports CPE
+  `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
+  `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`), `Cpe` (`new`, `activate`, `router`,
+  `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498) and `ProjectSummary`
+- **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, to be mounted by areas/access/server
+  on the area's origin beside DPE's routes (planned), and `Cpe::activate`, which takes the port. No `pub` item of
+  `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE
   consumes: today `ArchiveProjection`, which `sync` implements. `pub` in `cpe-core` and in `cpe-components` means visible
   to CPE's other crates, not to a host: no crate of this repository outside the capability depends on either. The
   same holds for `cpe-store`, whose `pub` surface names `rusqlite::Connection` and `rusqlite::Error`, and for
-  `cpe-web`, whose `pub` items are what a host crate of the capability calls. Until
-  DEV-7465 the host-facing subset is what `dsp-incubator cpe/engine` re-exports.
+  `cpe-web`, whose `pub` items are what `cpe-server` calls.
 - **Local-context kit:** `areas/access/cpe/CONTEXT.md`, `areas/access/cpe/ports/src/lib.rs`,
   `areas/access/cpe/core/src/lib.rs`, `areas/access/cpe/components/src/lib.rs`,
   `areas/access/cpe/image-viewer/src/lib.rs`, `areas/access/cpe/store/src/lib.rs`,
+  `areas/access/cpe/server/src/lib.rs`, `areas/access/cpe/server/src/activation.rs`,
   `areas/access/cpe/ports/src/snapshot.rs`, `docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`,
   `docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md`,
   `docs/adr/0010-the-port-also-serves-per-resource-curation.md`,
@@ -634,7 +640,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   and reads `store/schema.sql` with `include_str!`; its tests alone depend on `sync-store` and `rusqlite`.
   `cpe-web` depends on `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and on `maud`,
   `rusqlite` and `thiserror`; its tests read `components/style/` and `public/vendor/datastar.js` with
-  `include_str!`.
+  `include_str!`. `cpe-server` depends on `cpe-core`, `cpe-ports`, `cpe-store-build`, `cpe-web`, `cpe-components`
+  and `cpe-image-viewer` (on `cpe-store` through `cpe-web` only; **review**: `check-cpe-seam.sh`'s `CPE_EDGES`
+  does not list the crate), and on `axum`, `tower`, `datastar`, `figment`,
+  `maud`, `serde`, `futures-util`, `percent-encoding`, `thiserror` and `tracing`; it reads `components/style/` and
+  `public/` with `include_bytes!`; its tests alone depend on `sync-store`, `sha2`, `tempfile` and `tokio`,
+  and on `figment`'s `test` feature.
   No CPE crate depends on
   modules/mosaic (ADR-0007). The crates still to come: shared/metadata, shared/telemetry (expected); never
   DPE's domain, store or web crates, and never `sync`'s store or Chischtli (ADR-0008), a dev-dependency on
@@ -645,7 +656,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `dpe/ports` and CPE implements, depending on `dpe/ports` alone. A *concept* both need lives
   in `shared/`; a shape never does
 - **Used by:** areas/access/sync (`sync-store`, the provider, depending on `cpe-ports` to
-  implement `ArchiveProjection` as `LiveArchiveProjection`); `cpe-components` is the consumer of `cpe-core` and of `cpe-image-viewer`, and `cpe-web` is its consumer, with CPE's host planned as a second; `cpe-store` is a consumer of `cpe-core`, and `cpe-web` is its consumer; `cpe-web` is a consumer of `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer` and has no consumer here yet: its planned one is CPE's host; `cpe-store-build` is a consumer of `cpe-core` and `cpe-ports` and has no consumer here yet: its planned one is CPE's host; areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`, and `check-cpe-seam.sh` forbids every CPE crate but `cpe-ports` until its exception list names `cpe-server` and `cpe-store`, DEV-7465)
+  implement `ArchiveProjection` as `LiveArchiveProjection`); `cpe-components` is the consumer of `cpe-core` and of `cpe-image-viewer`, and `cpe-web` and `cpe-server` are its consumers; `cpe-store` is a consumer of `cpe-core`, and `cpe-web` is its consumer; `cpe-web` is a consumer of `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and `cpe-server` is its consumer; `cpe-store-build` is a consumer of `cpe-core` and `cpe-ports`, and `cpe-server` is its consumer; `cpe-server` has no consumer here yet; areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`, and `check-cpe-seam.sh` forbids every CPE crate but `cpe-ports` until its exception list names `cpe-server` and `cpe-store`, DEV-7465)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
   in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA.
@@ -682,7 +693,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   nouns are added to it, **review**); a hook and the `hook` node of its
   project's block are held to each other by `build` (**run-time**) and by `tests/it/hooks.rs`
   (**static-analysis**). The SQL text it renders for Incunabula equals the prototype's committed `data.sql`
-  byte for byte, header included (**review**: nothing here holds that file). `cpe-core` is
+  byte for byte, header included (**static-analysis**: that file is not here, and a test of `cpe-server` holds the
+  text to its length and SHA-256). In `cpe-server`: no `pub` item names a type of another CPE crate but
+  `cpe-ports` (**static-analysis**: the crate's test `no_pub_item_names_another_cpe_crate`, a text check over
+  `lib.rs` and `config.rs`); CPE never stops its host, so no constructor fails, `activate` returns nothing and
+  catches a panic, and what did not load answers 503 with `Retry-After` and `Cache-Control:
+  no-store`, never 404 (**static-analysis**: the tests of its `activation` module, which hold a panic inside
+  one project's load; a panic outside it is caught too, and that is **review**, as is a binary built with
+  `panic = "abort"`); no request path is joined
+  onto a directory (structural where a request is answered, since `AssetInventory::serve` and
+  `static_files::serve` are given strings; **review** in `discovery`, the one module that reads the disk);
+  `sync-store` is a dev-dependency, so the crate's own code cannot name the adapter (**static-analysis**:
+  `check-cpe-seam.sh`, rule 4); that a host feeds a store through `Cpe::activate` and the port, and not through
+  the doc-hidden `Cpe::from_sql_folders` (a committed `data.sql`, kept for the incubator's host and for tests
+  until DEV-7498), is **review**; a request's origin, where none is configured, is taken from `Host` and
+  `X-Forwarded-Proto` under the rule the configured origin is held to (**static-analysis**: its tests). `cpe-core` is
   framework-free: that its manifest and sources name no `maud`, `axum` or `rusqlite` is **review**
   here, and is checked by the incubator's `just cpe crate-deps-check` at each pin move.
   That `cpe-image-viewer` depends on `maud` alone is **review**. Its vendored OpenSeadragon files
@@ -697,11 +722,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the project's KDL and hook (ADR-0010, proposed; **review**).
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
   single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
-  the schema and the queries are in `cpe-store` and what builds a store from a snapshot in `cpe-store-build`;
-  nothing calls the builder at run time yet, so no store exists at run time). `projects/incunabula/` is
-  committed configuration, narrative and assets, **single writer** the project's developers (**review**). `cpe-ports`, `cpe-core`,
-  `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and only its tests load one.
-- **Fingerprint:** `090a6193817e`
+  the schema and the queries are in `cpe-store` and what builds a store from a snapshot in `cpe-store-build`).
+  The store is built at every start and kept nowhere: `cpe-server`'s `Cpe::activate` builds each project's in
+  memory, **single writer** that call (or, until DEV-7498, `Cpe::from_sql_folders` in its place, never both
+  in one host), and nothing is written to disk. `projects/incunabula/` is
+  committed configuration, narrative and assets, **single writer** the project's developers (**review**); the process reads it at activation and never writes it. `cpe-ports`, `cpe-core`,
+  `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
+- **Fingerprint:** `cd2a647af070`
 
 ### areas/access/datei
 
@@ -789,8 +816,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `oxttl` (the strict N-Quads parser) and `oxrdf` (its terms), with no triplestore at the
   minimum; `thiserror`, `tracing`
 - **Used by:** areas/access/cpe (through `cpe-ports`; CPE's store is rebuilt from what `sync`
-  serves, ADR-0008; `cpe-store-build`'s tests build `sync-store`'s adapter over the committed data, as a
-  dev-dependency, ADR-0008's amendment of 2026-10-11); areas/access/server (adapter construction, from DEV-7400); later
+  serves, ADR-0008; the tests of `cpe-store-build` and of `cpe-server` build `sync-store`'s adapter over the
+  committed data, as a dev-dependency, ADR-0008's amendment of 2026-10-11); areas/access/server (adapter construction, from DEV-7400); later
   areas/access/dpe and the SPARQL endpoint, each through its own port
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008; whether `media`'s reading of the Access bucket counts

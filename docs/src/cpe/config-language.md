@@ -1,13 +1,21 @@
 # Config Language
 
 How a project's `config.kdl` is structured, how it composes
-components, and how the engine validates it at boot. Reads on top of
+components, and how the engine validates it. Reads on top of
 `dsp-incubator cpe/docs/COMPONENT_LIBRARY.md` (the components
 this file invokes) and `dsp-incubator cpe/docs/adr/0006-config-language-kdl.md`
 (why KDL).
 
 The language is implemented in `cpe-core`, at `areas/access/cpe/core`. A change
 to the language changes this document in the same PR.
+
+**"Boot", "hard-fail" and "the web binary" in this document.** The text was written for a binary
+that validated every project when it started and exited on an error. Here a project's configuration is
+validated at the project's **Activation** (`areas/access/cpe/CONTEXT.md`). So "at boot" reads "at the
+project's Activation", and a "hard-fail", or "boot fails", reads: the project is not served and its
+paths answer 503; the process and the other projects are unaffected. "The web binary" reads "the
+page assembly and its host crate" (`cpe-web`, `cpe-server`). The `--check` flag and the `cpe` command
+are the incubator binary's; neither exists here.
 
 ## The KDL primer (just enough)
 
@@ -599,8 +607,9 @@ block is the store builder's
 (`areas/access/cpe/store-build/README.md`) input: the builder
 lowers it through `cpe_core::validate::load_remodel` and builds the
 project's store from the archive snapshot, the block and, where the block
-declares one, the hook. The web binary validates the block at boot and then
-ignores it. For where Incunabula's data comes from, see
+declares one, the hook. Here the builder runs at the project's Activation, called by
+`cpe-server`; the page assembly validates the block with the rest of the file and does
+not use it. For where Incunabula's data comes from, see
 `areas/access/cpe/projects/incunabula/PROVENANCE.md`.
 
 The block is optional and top-level, at most once (see "Top-level

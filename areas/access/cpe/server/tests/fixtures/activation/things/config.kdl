@@ -1,0 +1,19 @@
+// A project whose store is built from a snapshot: a home page, one page per
+// Thing, and the `remodel` block that maps the archive's Thing to it.
+site {
+    title "Things Fixture"
+    languages "en" "de"
+}
+page id="home" route="/"
+page id="thing" route="/things/:id" {
+    resource-detail id="$id" title-property="name" {
+        show-properties "name"
+    }
+}
+remodel {
+    shortcode "0001"
+    class "Thing" iri="http://www.knora.org/ontology/0001/things#Thing" {
+        id from="iri"
+        property "name" iri="http://www.knora.org/ontology/0001/things#hasName" type="text"
+    }
+}

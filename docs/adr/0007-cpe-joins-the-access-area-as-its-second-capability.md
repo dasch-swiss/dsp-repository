@@ -41,12 +41,16 @@ and the behaviour a visitor sees, and KDL as the authoring language (rationale a
   covers and no agent can trace to an owner, and the authors of a CPE project are DaSCH developers.
 
   Note (2026-10-11, DEV-7465): the hook is a module of the store builder, not a file of the project's
-  folder; see the amendment of 2026-10-11 (DEV-7465) below.
+  folder, and it works on the builder's draft of the mapped resources, not on the port's types; see the
+  two amendments of 2026-10-11 (DEV-7465) below.
 - **A project fails alone.** Validation of a project's configuration against its store happens when the
   project is activated, not when the process boots; a project that does not validate is offline on its own
   prefix while DPE and every other project keep serving. A strict mode for development, CI and tests fails
   the whole start on the first invalid project, as the prototype's `--check` does; it is the same verb as
   DPE's `validate`, on the area binary.
+
+  Note (2026-10-11, DEV-7465): the first half is built, the strict mode is not; see the amendment of
+  2026-10-11 (DEV-7465) on activation below.
 - **A project is a folder.** Everything that belongs to one project lives under one directory of the
   capability, discovered by convention: its KDL, its narrative, its assets, and its hook if it has one.
   Adding a project adds a folder and touches no shared registry.
@@ -326,6 +330,9 @@ Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-
   that crate's `style/` directory. The crate neither embeds nor serves them: the host does. Until DEV-7465
   brings CPE's host here, that host is the incubator's binary, which serves them from its vendored copy;
   nothing in this repository serves them yet.
+
+  Note (2026-10-11, DEV-7465): CPE's host crate is here and serves them; see the amendment of 2026-10-11
+  (DEV-7465) on activation below.
 - **The seam is checked, and wider than the sentence above states it.** The component-library clause says
   that CPE's web crate never depends on `mosaic-tiles` and that no crate outside `areas/access/cpe/` depends
   on CPE's library. `.github/scripts/check-cpe-seam.sh` checks three rules over the tracked `Cargo.toml`
@@ -384,3 +391,39 @@ Enforced by: static-analysis for the worked example of the specification, which 
 `cpe-store-build` holds equal to Incunabula's block, and for which CPE crates the builder and the store
 depend on (`check-cpe-seam.sh`, rule 5: `cpe-store-build` on `cpe-core` and `cpe-ports` alone, `cpe-store` on
 `cpe-core` alone; `cpe-web` and CPE's host depend on both and are not held to the rule); review for the rest.
+
+## Amendment (2026-10-11, DEV-7465) — the host crate, activation, and what of "a project fails alone" is built
+
+- **A hook works on the mapped draft, not on the port's types.** The remodelling clause says a hook is a
+  function "over the port's types". As built, the builder first applies the project's mapping to the
+  snapshot, and the hook is then given a narrow draft of the mapped resources (`cpe_store_build::hook::Draft`):
+  it reads and changes what the block's `hook` node declares and never sees the snapshot. The port's types
+  stop at the builder's generic code.
+- **`cpe-server` is CPE's host crate.** It is at `areas/access/cpe/server` and holds CPE's configuration,
+  router and activation behind one type, `Cpe`, in the shape of `dpe-server`'s `Dpe`. No type of another
+  CPE crate appears in its `pub` items, `cpe-ports`' types excepted, so a composition root depends on
+  `cpe-server` and `cpe-ports` and on nothing else of CPE. It serves the component library's stylesheets
+  and the files of `areas/access/cpe/public/` from a compiled-in table. Nothing mounts it yet.
+- **A project's store is built at activation, from SQL text.** `Cpe::activate` is given the port. For each
+  project folder it lowers the `remodel {}` block, asks the port once for the snapshot of the block's
+  shortcode, builds the store's rows with `cpe-store-build` and the hook registered for the folder's name,
+  renders them as SQL text, and loads the project from that text as it would from a file. No store is
+  committed, embedded or kept: it is built again at every start (ADR-0008). Rendering text and parsing it
+  again costs a parse; in exchange the text for Incunabula is byte for byte the file the prototype embeds,
+  which a test holds. A builder that writes SQLite directly is left for later.
+- **What of "A project fails alone" is built.** `Cpe::new` reads nothing and cannot fail, and `activate`
+  returns nothing and never panics, so CPE cannot stop or delay the area binary. A project that does not
+  activate (its configuration, the projection, the build, validation, or a panic in any of them) is logged
+  with its id and is offline on its own prefix: every path under it is answered 503 with `Retry-After` and
+  `Cache-Control: no-store`, while the other projects are served. Until `activate` has finished, every CPE
+  path is answered that way. "Not ready" is kept apart from "not there": 404 is for a path that names no
+  project folder, and a missing projects directory therefore leaves every path not found, while missing
+  `sync` data leaves every project at 503. Validation happens at activation, as the clause says.
+  Not built: the strict mode that fails the whole start (the `validate` verb on the area binary) and the
+  designed offline page. Both are DEV-7403's. Until then nothing in CI fails on an invalid project
+  except `cpe-server`'s test that Incunabula activates from the committed data.
+
+Enforced by: static-analysis for the facade (`cpe-server`'s test `no_pub_item_names_another_cpe_crate`, a
+text check over the crate's two files with `pub` items), for the 503 and 404 behaviour (the tests of
+`cpe-server`'s `activation` module over `FakeArchiveProjection`) and for Incunabula's store text (the same
+module's test of its length and SHA-256); review for the rest, the strict mode included until DEV-7403.

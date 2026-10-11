@@ -1,13 +1,12 @@
 //! The answer for what CPE knows and cannot serve: status 503.
 //!
 //! "Not ready" is not "not there". A project that did not load, and all of
-//! CPE while nothing is loaded, answer 503 with `Retry-After` and
+//! CPE until its projects are loaded, answer 503 with `Retry-After` and
 //! `Cache-Control: no-store`, so that no client and no cache takes the answer
 //! for a missing page. 404 is kept for a path that names no project.
 
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::Router;
 use maud::{html, Markup, DOCTYPE};
 
 /// Seconds a client is asked to wait before it asks again.
@@ -24,11 +23,6 @@ pub(crate) fn response() -> Response {
         page(),
     )
         .into_response()
-}
-
-/// A router that answers every path and method with [`response`].
-pub(crate) fn router() -> Router {
-    Router::new().fallback(|| std::future::ready(response()))
 }
 
 /// The page's whole style. Light only, in the system's own typeface.
@@ -66,53 +60,19 @@ fn page() -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use axum::body::Body;
-    use axum::http::Request;
-    use tower::ServiceExt;
-
     use super::*;
 
     #[tokio::test]
-    async fn every_path_and_method_is_answered_503_and_never_cached() {
-        for (method, uri) in [
-            ("GET", "/"),
-            ("GET", "/incunabula/"),
-            ("GET", "/_static/cpe/tokens.css"),
-            ("POST", "/anything/at/all"),
-        ] {
-            let response = router()
-                .oneshot(
-                    Request::builder()
-                        .method(method)
-                        .uri(uri)
-                        .body(Body::empty())
-                        .expect("hand-crafted test request is well-formed"),
-                )
-                .await
-                .expect("oneshot against an in-process router never fails");
-            assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE, "{method} {uri}");
-            assert_eq!(response.headers()[header::RETRY_AFTER], RETRY_AFTER, "{method} {uri}");
-            assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store", "{method} {uri}");
-        }
-    }
-
-    #[tokio::test]
-    async fn the_body_is_a_page_that_names_no_request_path() {
-        let response = router()
-            .oneshot(
-                Request::builder()
-                    .uri("/MARKER_SEGMENT_XYZ")
-                    .body(Body::empty())
-                    .expect("hand-crafted test request is well-formed"),
-            )
-            .await
-            .expect("oneshot against an in-process router never fails");
+    async fn the_answer_is_503_never_cached_and_a_page() {
+        let response = response();
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(response.headers()[header::RETRY_AFTER], RETRY_AFTER);
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body.into()).expect("the page is UTF-8");
         assert!(body.contains("<h1>Temporarily unavailable</h1>"), "{body}");
-        assert!(!body.contains("MARKER_SEGMENT_XYZ"), "{body}");
     }
 
     /// What a browser would fetch, or a reader follow, from the page: nothing.

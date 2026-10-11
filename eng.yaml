@@ -38,6 +38,9 @@ overrides:
       - skill: eng:test-browser
         offer: ask
     reviewers: [eng:review:accessibility-reviewer, eng:review:ivan-reviewer]
+  # CPE's image viewer renders HTML and its JS builds its own controls, outside a `web/` crate.
+  - when: "areas/access/cpe/image-viewer/**"
+    reviewers: [eng:review:accessibility-reviewer, eng:review:ivan-reviewer]
   - when: "areas/*/*/style/*.css"
     verify:
       - skill: eng:test-browser

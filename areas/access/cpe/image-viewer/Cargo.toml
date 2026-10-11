@@ -1,0 +1,11 @@
+[package]
+name = "cpe-image-viewer"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+maud = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Two of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, and its domain crate, `cpe-core` in `core/`. Its component library, store, page assembly and routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate (ADR-0007, 2026-10-02 and 2026-10-11 amendments). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Three of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, and its image viewer, `cpe-image-viewer` in `image-viewer/`. Its component library, store, page assembly and routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -54,6 +54,17 @@ Its vocabulary and its specification are not in this repository yet. Until DEV-7
 The tests that tie this crate to files of the incubator are the incubator's, run against its vendored copy of
 the crate. They check two things: the specification's worked example lowers to what Incunabula's `config.kdl`
 lowers to, and the header budget in `validate/header_budget.rs` matches `dsp-incubator cpe/static/cpe/tokens.css`.
+
+## The image viewer
+
+`cpe-image-viewer` in `image-viewer/` is the `<image-viewer>` web component, an IIIF deep-zoom viewer on a
+vendored OpenSeadragon, with the `Viewer` Maud builder that renders the element and `asset()`, which serves
+the element's files to a host. It depends on `maud` alone and on no other CPE crate.
+
+It is interim: a cut-down copy of `dsp-incubator shared/dasch-image-viewer`, reduced to the one engine CPE
+uses (ADR-0007, amendment of 2026-10-11, DEV-7401). The full viewer, with its other engines, stays in the
+incubator, which chooses the final engine; the result replaces this crate. Until then a viewer fix lands here
+and is applied by hand there. Its README says what was removed.
 
 ## What the port serves
 

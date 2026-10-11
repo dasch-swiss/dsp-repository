@@ -249,6 +249,9 @@ reference. So the move is split (as decided by the owner, 2026-10-02; the plan i
   own record (`0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md`), and changes to it
   are PRs here. The store and page assembly move last, together with the
   wiring and the retirement of the prototype's binary.
+
+  Note (2026-10-11, DEV-7401): the churn sentence is replaced by ADR-0011; see the amendment of 2026-10-11
+  (DEV-7401) below.
 - **The vendored copy therefore starts before Incunabula is served from here,** one crate at a time.
   "Migrate, then delete" is unchanged: the prototype's own engine is removed once the monorepo CPE serves
   Incunabula, which by then is the removal of whatever has not moved yet.
@@ -274,6 +277,10 @@ amendment makes one exception to that sentence and leaves it standing:
   and wiring (DEV-7465) blocked: `cpe-core` depends on no other CPE crate, and both depend on it.
 - **The rule stands for the crates that follow.** A later crate still moves once its churn in the incubator
   has dropped. Dropping the rule for them would be a changed decision and a new record (ADR-0006).
+
+  Note (2026-10-11, DEV-7401): that new record now exists. ADR-0011 replaces the churn sentence, so the rule
+  no longer stands for the crates that follow, and this amendment's "Enforced by" line no longer applies;
+  see the amendment of 2026-10-11 (DEV-7401) below.
 - **The cost the rule avoided is accepted for this crate.** From the move on, a change to the config
   language is a PR here, followed by a pin move in the incubator, which vendors the crate back.
 - **The config-language specification and CPE's glossary stay in the incubator until DEV-7465.**
@@ -282,3 +289,26 @@ amendment makes one exception to that sentence and leaves it standing:
   steps: the code here, then the document in the incubator's pin-move PR.
 
 Enforced by: review, for a later crate that moves before its churn in the incubator has dropped.
+
+Note (2026-10-11, DEV-7401): replaced by ADR-0011; see the amendment of 2026-10-11 (DEV-7401) below.
+
+## Amendment (2026-10-11, DEV-7401) — the churn rule is replaced, and the image viewer's interim packaging
+
+- **The churn sentence of the amendment of 2026-10-02 (DEV-7400) is replaced by ADR-0011.** "A crate moves
+  when its churn in the incubator has dropped, not in dependency order" no longer holds: a CPE crate moves
+  when the next piece of work needs it here, in dependency order. The reasons and the decision are in
+  ADR-0011. Every other sentence of that amendment stands, and this record is not superseded.
+- **The image viewer is packaged, for now, as a cut-down copy inside the capability.** This record carries
+  the viewer's packaging "as an open question, not a decision". Until the incubator has chosen the final
+  engine, the answer is `cpe-image-viewer` at `areas/access/cpe/image-viewer`: a copy of the incubator's
+  `shared/dasch-image-viewer`, reduced to the one engine CPE uses (OpenSeadragon in a shadow root). It is
+  not in `shared/`, because it has one consumer, and it is not part of CPE's component library. The
+  incubator keeps developing its viewer; what it chooses replaces this crate. A viewer fix CPE needs before
+  then lands here and is applied by hand in the incubator. The question itself stays open.
+- **The workspace still has no `include_dir`.** The viewer's asset files (its JavaScript, the vendored
+  OpenSeadragon and its sprites) are compiled into its crate through an enumerated `include_bytes!` table.
+- **No project bundle is embedded.** The retirement of "bundles embedded at build time" above is about
+  project bundles and stands: the viewer's files are engine files, and no project content is compiled into
+  any crate.
+
+Enforced by: review.

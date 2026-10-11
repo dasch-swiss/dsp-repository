@@ -1,0 +1,17 @@
+// broken-incoming-links-misses-host-raw — a port of
+// broken-incoming-links-misses-host/ with the site block deliberately
+// broken (missing 'title') so validate_with_data takes the Err/raw
+// branch; the raw pass must still run the incoming-links data check
+// (including the new host-class tier) on the raw `incoming-links` child.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + IncomingLinksPropertyMissesHost (Warning).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "strip-left"
+    }
+}

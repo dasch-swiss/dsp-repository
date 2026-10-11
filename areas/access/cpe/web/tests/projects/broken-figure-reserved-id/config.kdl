@@ -1,0 +1,25 @@
+// broken-figure-reserved-id — heading ids that collide with engine-owned ids
+// (a literal and a prefix). Expected: InvalidHeadingId x2. Loaded as "incunabula".
+site {
+    title "Figure Fixture"
+    languages "de" "en"
+    chrome {
+        string "four-count" {
+            de "4 Fälle"
+            en "4 cases"
+        }
+        string "strips-all" {
+            de "Alle Randleisten"
+            en "All border strips"
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="woodcuts.md"
+    timeline class="Book" date-property="pub-date" lane-property="office" axis-start=1470 axis-end=1506 section="four"
+}
+
+page id="strips" route="/strips" {
+    narrative file="strips.md"
+}

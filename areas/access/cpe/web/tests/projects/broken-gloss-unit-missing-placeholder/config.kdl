@@ -1,0 +1,22 @@
+// broken-gloss-unit-missing-placeholder — fires GlossUnitMissingPlaceholder
+// (Error): the unit's `en` translation has no `{n}`, so the number would never
+// render in English.
+site {
+    title "Broken Gloss Unit Missing Placeholder"
+    languages "de" "en"
+    chrome {
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "pages"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        gloss {
+            part property="pub-place"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+}

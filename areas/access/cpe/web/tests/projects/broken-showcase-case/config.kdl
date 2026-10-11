@@ -1,0 +1,69 @@
+// broken-showcase-case — malformed blocks and cases. Expected: InvalidShowcaseCase x6 (one crop; two remark sources; one page; a detail in a compact block; an unknown layout; a key repeated across blocks) and MissingRequiredAttribute x2 (a block without section and media).
+// Loaded as "incunabula" (woodcut-cases is registered for it).
+site {
+    title "Showcase Fixture"
+    languages "de" "en"
+    chrome {
+        string "remark-e2" {
+            de "Ein Stock in zwei Ausgaben."
+            en "One block in two editions."
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="woodcuts.md"
+    woodcut-cases section="editions" layout="edition" media="image" {
+        case {
+            crop "an-c1v"
+        }
+        case remark-link="L-e1" remark="remark-e2" {
+            crop "an-c8r"
+            crop "an-c1v"
+        }
+        page-case link="L-page" {
+            page "pg-h8r"
+        }
+    }
+    woodcut-cases section="editions" layout="compact" media="image" {
+        case {
+            crop "an-c1v"
+            crop "an-c8r"
+            detail "an-note"
+        }
+    }
+    woodcut-cases section="editions" layout="grid" media="image" {
+        case {
+            crop "an-c1v"
+            crop "an-c8r"
+        }
+    }
+    woodcut-cases layout="edition" {
+        case {
+            crop "an-c1v"
+            crop "an-c8r"
+        }
+    }
+    woodcut-cases section="editions" layout="edition" media="image" {
+        case {
+            crop "an-c1v"
+            crop "an-c8r"
+        }
+    }
+    woodcut-cases section="editions" layout="edition" media="image" {
+        case {
+            crop "an-c1v"
+            crop "an-note"
+        }
+    }
+    woodcut-cases section="editions" layout="edition" media="image" {
+        case {
+            crop "an-c8r"
+            crop "an-c1v"
+        }
+        case {
+            crop "an-c8r"
+            crop "an-note"
+        }
+    }
+}

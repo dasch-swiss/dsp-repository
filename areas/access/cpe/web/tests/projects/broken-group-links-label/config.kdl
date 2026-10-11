@@ -1,0 +1,19 @@
+// broken-group-links-label — fires UnknownGroupLinksLabel (Warning).
+// A `group links-label=` id that is not declared as a chrome { string } id.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Group Links Label"
+    languages "de" "en"
+    chrome {
+        string "apparat" {
+            de "Apparat"
+            en "Apparatus"
+        }
+    }
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        group label="apparat" links-label="not-declared" "name"
+    }
+}

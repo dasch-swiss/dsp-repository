@@ -1,0 +1,18 @@
+// broken-incoming-links-unknown-property — fires UnknownIncomingLinksProperty (Error):
+// 'strip-middle' exists nowhere in the data.
+site {
+    title "Broken Incoming Links unknown-property"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "strip-middle"
+    }
+}

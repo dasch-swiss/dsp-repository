@@ -1,0 +1,12 @@
+// broken-timeline-date-not-on-class — fires MissingTimelineProperty (Error): date-property "scan-date" exists
+// in the data (on Page) but on no Book. A hard-fail, not the usual sparse
+// Warning — a timeline with no dates cannot place a single marker.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="scan-date" lane-property="office" extent-property="extent" axis-start=1470 axis-end=1506
+}

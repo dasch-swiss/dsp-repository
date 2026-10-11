@@ -645,6 +645,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpe-web"
+version = "0.8.7"
+dependencies = [
+ "cpe-components",
+ "cpe-core",
+ "cpe-image-viewer",
+ "cpe-store",
+ "insta",
+ "maud",
+ "rusqlite",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,0 +1,25 @@
+// broken-figure-no-narrative — a slotted timeline with no narrative before it.
+// Expected: FigureSectionWithoutNarrative (Error). Loaded as "incunabula".
+site {
+    title "Figure Fixture"
+    languages "de" "en"
+    chrome {
+        string "four-count" {
+            de "4 Fälle"
+            en "4 cases"
+        }
+        string "strips-all" {
+            de "Alle Randleisten"
+            en "All border strips"
+        }
+    }
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="pub-date" lane-property="office" axis-start=1470 axis-end=1506 section="four"
+    narrative file="woodcuts.md"
+}
+
+page id="strips" route="/strips" {
+    narrative file="strips.md"
+}

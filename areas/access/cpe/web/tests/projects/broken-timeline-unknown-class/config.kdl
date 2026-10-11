@@ -1,0 +1,10 @@
+// broken-timeline-unknown-class — fires UnknownTimelineClass (Error): class "Bok" is not in the data.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Bok" date-property="pub-date" lane-property="office" extent-property="extent" axis-start=1470 axis-end=1506
+}

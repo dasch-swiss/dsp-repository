@@ -1,0 +1,13 @@
+// good-narrative-partial-variants — proves D3 accepts a variant-only bundle
+// whose default-language variant exists; "fr" has no variant at all (D1's
+// render fallback chain covers it at render time — this is a boot-validation
+// test, not a render test).
+site {
+    title "T"
+    languages "en" "de" "fr"
+    default-language "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md"
+}

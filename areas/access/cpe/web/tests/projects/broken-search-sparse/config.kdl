@@ -1,0 +1,13 @@
+// broken-search-sparse — fires SparseSearchProperty (warning only, load succeeds).
+// A search-bar uses property="description" which exists on 'Other' class as
+// text but is absent from 'Thing' resources. The property exists somewhere in
+// the data (so UnknownSearchProperty does not fire), but not on the target class.
+site {
+    title "Broken Search Sparse"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    search-bar target="things" searches="description"
+}

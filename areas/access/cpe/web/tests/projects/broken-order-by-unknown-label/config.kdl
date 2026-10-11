@@ -1,0 +1,20 @@
+// broken-order-by-unknown-label — fires UnknownOrderLabel (Error): `label=` names a chrome id the
+// site does not declare. Config-internal (checked before the data fork), no
+// -raw sibling.
+site {
+    title "Broken Order By Unknown Label"
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key="date" property="pub-date" label="order-typo"
+    }
+}

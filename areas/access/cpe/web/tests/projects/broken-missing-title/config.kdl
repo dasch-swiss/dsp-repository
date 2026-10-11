@@ -1,0 +1,6 @@
+// broken-missing-title — fires MissingSiteTitle.
+site {
+    languages "de" "en"
+}
+
+page id="home" route="/"

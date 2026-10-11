@@ -1,0 +1,8 @@
+// broken-unknown-default-language — fires UnknownDefaultLanguage.
+site {
+    title "T"
+    languages "de" "en"
+    default-language "fr"
+}
+
+page id="home" route="/"

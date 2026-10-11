@@ -1,0 +1,12 @@
+// broken-order-name-property-unknown — fires UnknownResourceListProperty (Error): the
+// `order-name-property` exists nowhere in the data.
+site {
+    title "Broken Order Name Property Unknown"
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" order-name-property="no-such-prop" {
+        sort property="pub-date"
+    }
+}

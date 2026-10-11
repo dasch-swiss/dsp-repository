@@ -1,0 +1,14 @@
+// broken-not-found-browse-route — fires UnresolvedNotFoundBrowseRoute
+// (Incunabula Slice 8 / G11). The browse link "/books" matches a declared
+// page route; "/nowhere" does not.
+site {
+    title "T"
+    languages "de" "en"
+    not-found {
+        browse route="/books"
+        browse route="/nowhere"
+    }
+}
+
+page id="home" route="/"
+page id="books" route="/books"

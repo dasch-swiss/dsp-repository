@@ -1,0 +1,16 @@
+// good-media — a clean `media="…"` declaration on both
+// resource-detail and resource-list that must validate without errors.
+// Character.portrait is a link property targeting Image, whose resources
+// carry a representations row (image-like).
+site {
+    title "Good Media"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="portrait"
+}
+
+page id="characters" route="/characters" {
+    resource-list id="characters" class="Character" media="portrait"
+}

@@ -1,0 +1,14 @@
+// broken-resource-list-sparse — fires SparseResourceListProperty (warning).
+// A resource-list whose sort property exists in the data but not on class 'Widget'.
+// 'name' is on 'Thing' resources but not on 'Widget' resources.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Resource List Sparse"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class="Widget" {
+        sort property="name"
+    }
+}

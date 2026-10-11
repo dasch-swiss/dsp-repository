@@ -1,0 +1,11 @@
+// broken-picker-contents-layout — the page picker lives in the pages
+// reader's pager row, so a `picker` on layout="contents" could never take
+// effect: PagesLayoutOnly alone.
+site {
+    title "Broken Picker Contents Layout"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail" picker="numbered"
+}

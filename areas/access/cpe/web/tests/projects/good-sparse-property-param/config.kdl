@@ -1,0 +1,21 @@
+// good-sparse-property-param — the NON-firing case of the parameterised
+// sparse check: every name in `show-properties` (and `title-property`) is
+// present on at least one resource of the declared class, so the
+// class-keyed check produces no SparseProperty warning at all.
+//
+// Also pins the check's "sparse" semantics against a stricter reading:
+// `subtitle` is present on ONE of the two Things (1/2). A property that
+// exists on the class but not on every resource is NOT a warning — the
+// literal-id path has always used the same union semantics, and this
+// fixture keeps the parameterised path from drifting to per-resource
+// coverage.
+site {
+    title "Good Sparse Property (parameterised)"
+    languages "de" "en"
+}
+
+page id="thing" route="/things/:id" {
+    resource-detail id="$id" class="Thing" title-property="name" {
+        show-properties "name" "subtitle"
+    }
+}

@@ -1,0 +1,16 @@
+// broken-compound-media-incompatible-type-raw — exercises
+// check_compound_viewer_media_into_raw (the Err/raw branch of
+// validate_with_data). The site block is deliberately broken (missing
+// 'title') so lowering fails; the compound-viewer's LITERAL source 'b1' has a
+// Page member whose 'note' is text-typed, so the raw sibling appends
+// IncompatibleMediaProperty to the already-failing report.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + IncompatibleMediaProperty (Error).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="book" route="/book" {
+    compound-viewer source="b1" layout="contents" index="rail" media="note"
+}

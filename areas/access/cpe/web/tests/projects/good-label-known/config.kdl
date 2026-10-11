@@ -1,0 +1,21 @@
+// good-label-known — a labels block naming a property AND a class that both
+// exist in the data. Must validate clean: zero UnknownLabel warnings (the
+// true-negative counterpart to broken-label-unknown-property/-class, which
+// only cover the case where the named property/class is ABSENT).
+site {
+    title "Good Label Known"
+    languages "de" "en"
+}
+
+labels {
+    property "name" {
+        de "Bezeichnung"
+        en "Name"
+    }
+    class "Thing" {
+        de "Ding"
+        en "Thing"
+    }
+}
+
+page id="home" route="/"

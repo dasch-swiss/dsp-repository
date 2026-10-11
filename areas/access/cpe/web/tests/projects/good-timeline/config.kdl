@@ -1,0 +1,11 @@
+// good-timeline — clean baseline (Incunabula Slice 4). A timeline whose class
+// exists and whose date/lane/extent properties are carried by that class with
+// the right value types (date / list_value / integer). Loaded as "incunabula".
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="pub-date" lane-property="office" extent-property="extent" axis-start=1470 axis-end=1506
+}

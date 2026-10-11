@@ -1,0 +1,21 @@
+// broken-incoming-links-row-props-typed-raw — the remaining row-property tiers:
+//   group-by="count"   stored as integer                 → IncomingLinksRowPropertyWrongType
+//   row-aside="note"   text on w1 only (w2 links too)    → SparseIncomingLinksRowProperty (Warning)
+// Raw-arm twin of broken-incoming-links-row-props-typed/: the site block is deliberately broken so
+// validate_with_data takes the Err/raw branch; the same checks must still run.
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+    chrome {
+        string "works-by" {
+            de "Werke"
+            en "Works"
+        }
+    }
+}
+
+page id="person" route="/people/:id" {
+    resource-detail id="$id" class="Person" {
+        incoming-links label="works-by" class="Work" group-by="count" row-aside="note" "composer"
+    }
+}

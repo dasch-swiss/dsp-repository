@@ -1,0 +1,11 @@
+// broken-annotations-not-pages — the annotation register belongs to the
+// pages reader's page, so `annotations=#true` on layout="contents" could
+// never take effect: PagesLayoutOnly alone.
+site {
+    title "Broken Annotations Not Pages"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail" annotations=#true
+}

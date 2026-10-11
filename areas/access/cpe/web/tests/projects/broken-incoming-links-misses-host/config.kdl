@@ -1,0 +1,22 @@
+// broken-incoming-links-misses-host — fires IncomingLinksPropertyMissesHost
+// (Warning): 'strip-left' is a link-typed Page property, present, and
+// resolvable, but every one of its stored targets is a Woodcut, never a
+// BorderStrip — the host class of this page's own resource-detail. The list
+// would always be empty on this page. Validation should SUCCEED overall
+// (warning only).
+site {
+    title "Broken Incoming Links misses-host"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "strip-left"
+    }
+}

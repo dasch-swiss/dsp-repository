@@ -1,0 +1,14 @@
+// broken-two-compound-viewers (Incunabula Slice 3b D2, dsp-incubator cpe/docs/adr/0012-one-member-navigator-declared-layout.md) — two
+// compound-viewer components on one page is DuplicateSingletonComponent
+// alone (the `id="compound-viewer"`/`id="cv-picker"` fixed ids and the
+// page-global reader signals assume one navigator per page). Both use a
+// `$id` param source so no other data-dependent check can fire.
+site {
+    title "Broken Two Compound Viewers"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail"
+    compound-viewer source="$id" layout="contents" index="rail"
+}

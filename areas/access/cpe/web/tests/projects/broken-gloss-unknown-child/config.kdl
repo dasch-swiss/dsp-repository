@@ -1,0 +1,15 @@
+// broken-gloss-unknown-child — fires UnknownChildNode { component: "gloss" }
+// (Error): a gloss block recognises only `part` and `teaser`.
+site {
+    title "Broken Gloss Unknown Child"
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        gloss {
+            part property="pub-place"
+            prat property="extent"
+        }
+    }
+}

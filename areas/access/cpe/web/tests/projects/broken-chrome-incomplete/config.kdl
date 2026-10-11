@@ -1,0 +1,13 @@
+// broken-chrome-incomplete — fires IncompleteChromeTranslation.
+// chrome string "search-label" is missing the "de" translation.
+site {
+    title "T"
+    languages "de" "en"
+    chrome {
+        string "search-label" {
+            en "Search"
+        }
+    }
+}
+
+page id="home" route="/"

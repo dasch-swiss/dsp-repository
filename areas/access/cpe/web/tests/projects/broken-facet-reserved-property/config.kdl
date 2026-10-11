@@ -1,0 +1,17 @@
+// broken-facet-reserved-property — fires ReservedFacetProperty (hard-fail).
+// A facet-panel's `property` is "sort", which collides with the `?sort=`
+// query key the bin reads for the runtime sort override (bin/src/router.rs).
+// Facet values are read back via the property name used as a query key, so
+// this would silently shadow the reserved key at runtime. Pure config check —
+// fires regardless of data.
+site {
+    title "Broken Facet Reserved Property"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="sort" kind="list"
+    }
+}

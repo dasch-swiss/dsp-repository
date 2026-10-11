@@ -1,0 +1,31 @@
+// broken-showcase-label — a remark= naming no chrome string. Expected: UnknownShowcaseLabel.
+// Loaded as "incunabula" (woodcut-cases is registered for it).
+site {
+    title "Showcase Fixture"
+    languages "de" "en"
+    chrome {
+        string "remark-e2" {
+            de "Ein Stock in zwei Ausgaben."
+            en "One block in two editions."
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="woodcuts.md"
+    woodcut-cases section="editions" layout="edition" media="image" {
+        case schramm=1124 title="Kap. 13 · Von der Buhlerei" remark-link="L-e1" {
+            crop "an-c1v" alt="Holzschnitt zu Kap. 13: Von der Buhlerei."
+            crop "an-c8r" alt="Holzschnitt zu Kap. 13: Von der Buhlerei."
+            detail "an-note" alt="Handschriftliche Bemerkung in der Zeichnung"
+        }
+        case remark="remark-zz" {
+            crop "an-c8r"
+            crop "an-c1v"
+        }
+        page-case link="L-page" remark-excerpt="Anbetung des Kindes." {
+            page "pg-h8r"
+            page "pg-c6v"
+        }
+    }
+}

@@ -1,0 +1,10 @@
+// broken-timeline-axis-reversed — fires InvalidTimelineAxis (Error): axis-end 1470 <= axis-start 1506.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="pub-date" lane-property="office" extent-property="extent" axis-start=1506 axis-end=1470
+}

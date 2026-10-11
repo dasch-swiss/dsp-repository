@@ -1,0 +1,20 @@
+// broken-media-wrong-typed-class — the SUCCESS-arm half of the pair that pins
+// how a present-but-wrong-typed `class` on a media-declaring resource-detail
+// is reported.
+//
+// `lower_resource_detail` reads `class` with the REPORTING
+// `get_typed_string_attr` (Step 7), so `class=42` itself produces
+// InvalidAttributeType. `check_resource_detail_media`'s raw-fallback guard
+// then skips the wrong-typed class/id case, so UnresolvableMediaClass does
+// NOT also fire — one mistake, one diagnostic.
+//
+// Expected diagnostics: InvalidAttributeType (Error), and NOT
+// UnresolvableMediaClass.
+site {
+    title "Broken Media Wrong Typed Class"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class=42 media="no-such-prop"
+}

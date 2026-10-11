@@ -1,0 +1,11 @@
+// broken-site-date-precision-word-wrong-type — fires InvalidFieldType.
+// `date-precision-word` takes a KDL boolean (#true / #false); the string "yes"
+// must be reported, never silently read as `false` (Incunabula Slice 8 step 2).
+// Expected: exactly {InvalidFieldType}.
+site {
+    title "T"
+    languages "de" "en"
+    date-precision-word "yes"
+}
+
+page id="home" route="/"

@@ -1,0 +1,17 @@
+// broken-member-links-warnings — a `compound-viewer member-links` row with
+// an undeclared caption id and a property no member carries. Both are
+// advisory: the row falls back to the default caption and lists nothing for
+// the absent property. Loads.
+//
+// Expected diagnostics: UnknownGroupLabel (Warning) + SparseProperty (Warning).
+site {
+    title "Broken Member Links Warnings"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book"
+    compound-viewer source="$id" layout="pages" index="none" media="image" {
+        member-links label="no-such-caption" "strip-left" "strip-top"
+    }
+}

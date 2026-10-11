@@ -1,0 +1,10 @@
+// broken-narrative-missing — fires NarrativeFileNotFound.
+// narrative references "intro.md" which is not in the narrative/ inventory.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="intro.md"
+}

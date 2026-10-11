@@ -1,0 +1,11 @@
+// broken-search-unknown-property — fires UnknownSearchProperty (hard-fail).
+// A search-bar declares a searchable property that exists nowhere in the data.
+site {
+    title "Broken Search Unknown Property"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    search-bar target="things" searches="no-such-prop"
+}

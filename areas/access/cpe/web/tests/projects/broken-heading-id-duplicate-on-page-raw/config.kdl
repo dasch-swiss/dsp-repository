@@ -1,0 +1,14 @@
+// broken-heading-id-duplicate-on-page-raw — the raw arm of
+// broken-heading-id-duplicate-on-page: the site block is deliberately broken
+// (no 'title'), so validate_with_data takes the raw arm, which must still
+// report the duplicate id.
+// Expected: {MissingSiteTitle, DuplicateHeadingIdOnPage { id: "ways", page: "/" }}.
+site {
+    // title intentionally omitted → MissingSiteTitle
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md"
+    narrative file="more.md"
+}

@@ -1,0 +1,10 @@
+// good-compound-viewer — a compound-viewer with a literal source that has
+// compound_parts rows. No EmptyCompoundSource warning should fire.
+site {
+    title "Good Compound Viewer"
+    languages "de" "en"
+}
+
+page id="story" route="/story" {
+    compound-viewer source="ST_001" layout="contents" index="rail"
+}

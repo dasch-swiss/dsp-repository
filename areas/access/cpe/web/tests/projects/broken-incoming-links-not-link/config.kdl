@@ -1,0 +1,19 @@
+// broken-incoming-links-not-link — fires IncomingLinksPropertyNotLink (Error): Page's
+// 'name' is stored as value_type 'text', so it has no target_id to
+// reverse-resolve.
+site {
+    title "Broken Incoming Links not-link"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "name"
+    }
+}

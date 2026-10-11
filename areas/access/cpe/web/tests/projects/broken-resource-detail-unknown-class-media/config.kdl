@@ -1,0 +1,16 @@
+// broken-resource-detail-unknown-class-media — fires UnknownResourceDetailClass (Error)
+// only. The declared class 'Charakter' does not exist (typo for 'Character'), and the
+// media="image" four-check and class→media-property map registration must be skipped
+// entirely — cascading into SparseMediaProperty/UnknownMediaProperty/
+// IncompatibleMediaProperty against a nonexistent class would be a second diagnostic
+// for the same root cause.
+site {
+    title "Broken Resource Detail unknown-class (media)"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Charakter" media="image" {
+        show-properties "name"
+    }
+}

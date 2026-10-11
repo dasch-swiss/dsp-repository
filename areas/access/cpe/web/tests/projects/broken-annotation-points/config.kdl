@@ -1,0 +1,8 @@
+// broken-annotation-points — fires MalformedAnnotation for a polygon with
+// only two vertices.
+site {
+    title "Broken Annotation Points"
+    languages "de" "en"
+}
+
+page id="home" route="/"

@@ -1,0 +1,20 @@
+// good-incoming-links-targets-host — the correct-config counterpart to
+// broken-incoming-links-misses-host/: 'strip-left' targets BorderStrip
+// itself, so IncomingLinksPropertyMissesHost must NOT fire. Validates
+// clean.
+site {
+    title "Good Incoming Links targets-host"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page" "strip-left"
+    }
+}

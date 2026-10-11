@@ -1,0 +1,9 @@
+// broken-missing-required-language — fires MissingRequiredLanguage.
+// languages list has only "en"; missing "de" (exactly one MissingRequiredLanguage).
+// Using a single-missing case avoids HashSet-collapses-duplicates ambiguity in tests.
+site {
+    title "T"
+    languages "en"
+}
+
+page id="home" route="/"

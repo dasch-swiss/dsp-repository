@@ -1,0 +1,15 @@
+// broken-gloss-unknown-unit — fires UnknownGlossUnit (Error): the composed
+// gloss's `unit=` names no declared chrome string.
+site {
+    title "Broken Gloss Unknown Unit"
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        gloss {
+            part property="pub-place"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+}

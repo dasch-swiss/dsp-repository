@@ -1,0 +1,10 @@
+// broken-media-incompatible-type — fires IncompatibleMediaProperty (hard-fail).
+// 'bio' exists on Character but is 'text'-typed, not 'link'.
+site {
+    title "Broken Media Incompatible Type"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="bio"
+}

@@ -1,0 +1,29 @@
+// good-nav-chrome-id-label — the blessed bilingual-nav idiom.
+// Nav item "about-label" uses a chrome-string id as its label, so
+// `labels::nav_label` resolves it to the declared translation; the
+// second nav item "Home" is a plain literal. Both are legal and neither
+// produces any diagnostic.
+//
+// Was `broken-nav-chrome-collision`: it used to assert a
+// `NavLabelChromeIdCollision` Warning on the first item. That warning fired
+// on the intended idiom (14 across the three shipped projects) and could
+// never tell it from an accident — every id it compared against was one the
+// project itself declared — so it was removed and this fixture now pins the
+// silence.
+site {
+    title "T"
+    languages "de" "en"
+    chrome {
+        string "about-label" {
+            en "About"
+            de "Über uns"
+        }
+    }
+    nav {
+        item label="about-label" route="/about"
+        item label="Home" route="/"
+    }
+}
+
+page id="home" route="/"
+page id="about" route="/about"

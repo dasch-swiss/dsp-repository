@@ -1,0 +1,25 @@
+// broken-figure-heading-id — a heading id outside [a-z0-9-] and one used twice.
+// Expected: InvalidHeadingId x2, both in woodcuts.de.md (the EN variant is clean). Loaded as "incunabula".
+site {
+    title "Figure Fixture"
+    languages "de" "en"
+    chrome {
+        string "four-count" {
+            de "4 Fälle"
+            en "4 cases"
+        }
+        string "strips-all" {
+            de "Alle Randleisten"
+            en "All border strips"
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="woodcuts.md"
+    timeline class="Book" date-property="pub-date" lane-property="office" axis-start=1470 axis-end=1506 section="four"
+}
+
+page id="strips" route="/strips" {
+    narrative file="strips.md"
+}

@@ -1,0 +1,28 @@
+// broken-showcase-book-raw — dual failure (no site title) + an edition card names a book not in the data
+// Loaded as "incunabula" (edition-cards and strip-row are registered for it).
+site {
+    languages "de" "en"
+    chrome {
+        string "edition-german" {
+            de "Deutsch"
+            en "German"
+        }
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "{n} pages"
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="narrenschiff.md"
+    edition-cards section="editions" media="image" {
+        book "bk-zz" lang-label="edition-german"
+        book "bk-aug" lang-label="edition-german"
+        imprint {
+            part property="pub-place"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+    strip-row section="editions" class="BorderStrip" media="image" uses-property="page-uses" min-uses=2 limit=12
+}

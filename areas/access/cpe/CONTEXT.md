@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Six of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, and the builder that fills the store, `cpe-store-build` in `store-build/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`. The page assembly and the routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Seven of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, and its page assembly, `cpe-web` in `web/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. The routes are still in `dsp-incubator` (`cpe/bin`); the crates moved in one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -117,7 +117,7 @@ this crate, but it includes `schema.sql` as a file: a change to the schema is a 
 writes, and the builder's tests load their output under it.
 
 The crate does not own the connection either. `open_project_db` returns a `rusqlite::Connection`, its caller
-keeps it in a `Mutex`, and `query::reads::ProjectReads` takes every lock on it: short, never across the
+(`cpe-web`'s `Project`) keeps it in a `Mutex`, and `query::reads::ProjectReads` takes every lock on it: short, never across the
 hydration of a row, never returned. `rusqlite` types are therefore part of the crate's `pub` surface, which
 is for CPE's other crates and not for a host.
 
@@ -150,6 +150,40 @@ _Avoid_: script, plugin (a hook is compiled in and typed), registry entry in the
 The crate depends on `cpe-core` and `cpe-ports`, and not on `cpe-store`: it includes `store/schema.sql` as text. Its tests over Incunabula read the committed
 0803 snapshot through `sync-store`'s adapter, which is a dev-dependency and never a dependency (ADR-0008,
 amendment of 2026-10-11). The rule table of what the builder does to each value is in its `README.md`.
+
+## The page assembly
+
+`cpe-web` in `web/` assembles pages. It holds no routes and names no `axum`: a host calls it and turns what it
+returns into responses.
+
+**Loaded project**:
+`cpe_web::project::Project`: one project's validated configuration, its store, its narrative and the maps
+derived from them at load (class routes, media properties, data ARKs), immutable afterwards.
+`Project::load` takes the KDL source, the store's SQL text and the narrative files as text; it opens the
+store, validates the configuration against it and returns either a project or every diagnostic. It reads no
+file itself. A project that does not validate is not loaded.
+_Avoid_: site (the `site {}` node of the KDL), tenant.
+
+`page` renders from a loaded project's data: a whole page (`render_page`), the compound viewer's fragment
+(`render_compound_fragment`), the browse breadcrumb, and the two not-found pages: the project's
+not-found page (an unknown path under a loaded project, in that project's chrome) and CPE's own not-found
+page (a path under no loaded project, in bare chrome). It composes `cpe-components`' renderers and writes
+the document head and the chrome around them. `share_link` composes the canonical URL of a view, so that two requests for the same view give the
+same link.
+
+The URLs the crate writes are root-absolute (`/_static/…`, `/<project>/…`): it has no base path yet.
+Its markup is pinned by 30 snapshots in `web/src/snapshots/`, and `web/tests/projects/` holds 234 fixture
+projects, one per validation rule or page shape; `tests/validation.rs` loads each through `Project::load`.
+Some fixtures and snapshots carry the names of the incubator's other projects as test data; those projects
+are not in this repository.
+
+## The static files
+
+`public/` holds the files every CPE page refers to and no project owns: the two DaSCH logos and
+`dasch-fingerprint.svg`, which `components/style/shell.css` refers to by a relative URL. `public/vendor/`
+holds the vendored `datastar.js` with a `README.md` that records its checksum, which `just verify-checksums`
+recomputes. No crate embeds or serves these files yet; `cpe-web`'s tests read `datastar.js` and four of the
+stylesheets to hold the markup's attributes, breakpoints and class names against them.
 
 ## The project folders
 

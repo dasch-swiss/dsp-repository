@@ -1,0 +1,17 @@
+// broken-facet-multi — fires multiple facet DiagnosticKinds at once, proving
+// error accumulation across different facets and different error types.
+// Errors present:
+//   - UnknownFacetProperty  (facet "ghost-prop" — absent everywhere)
+//   - IncompatibleFacetKind (facet "role" — text property, not list_value)
+site {
+    title "Broken Facet Multi"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="ghost-prop" kind="list"
+        facet property="role" kind="list"
+    }
+}

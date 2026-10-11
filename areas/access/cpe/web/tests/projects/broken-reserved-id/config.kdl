@@ -1,0 +1,8 @@
+// broken-reserved-id — fires ReservedProjectId.
+// The harness passes project_id = "_static" which is reserved.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/"

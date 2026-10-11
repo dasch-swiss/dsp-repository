@@ -1,0 +1,13 @@
+// broken-narrative-for-unknown-resource — fires UnknownNarrativeForResource
+// (Warning). The `narrative-for` id 'ghost' does not exist in the data.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Narrative For Unknown Resource"
+    languages "de" "en"
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        narrative-for "ghost" file="a.md"
+    }
+}

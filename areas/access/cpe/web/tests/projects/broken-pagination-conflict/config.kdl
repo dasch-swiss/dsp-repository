@@ -1,0 +1,13 @@
+// broken-pagination-conflict — fires PaginationConflict.
+// resource-list has both per-page and limit, which are mutually exclusive.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="browse" route="/browse" {
+    resource-list class="Thing" {
+        per-page 10
+        limit 5
+    }
+}

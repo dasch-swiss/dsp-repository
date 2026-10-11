@@ -1,0 +1,12 @@
+// good-search — clean baseline for FTS5 search-bar boot indexing.
+// A resource-list of class "Thing" with a search-bar over "name" (text) and
+// "description" (richtext).
+site {
+    title "Good Search"
+    languages "de" "en"
+}
+
+page id="things" route="/things" {
+    resource-list id="things" class="Thing"
+    search-bar target="things" searches="name" "description"
+}

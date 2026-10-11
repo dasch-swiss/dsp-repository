@@ -1,0 +1,16 @@
+// broken-timeline-date-wrong-type-raw — exercises check_timeline_data_into_raw. A port of
+// broken-timeline-date-wrong-type/ with the site block deliberately broken
+// (missing 'title') so validate_with_data takes the Err/raw branch; the raw
+// pass must still run the timeline data check on the raw node.
+//
+// Expected diagnostics: MissingSiteTitle (Error) +
+// IncompatibleTimelineProperty (Error).
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="name" lane-property="office" extent-property="extent" axis-start=1470 axis-end=1506
+}

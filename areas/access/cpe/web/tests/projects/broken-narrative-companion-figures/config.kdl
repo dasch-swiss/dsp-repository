@@ -1,0 +1,12 @@
+// broken-narrative-companion-figures — fires InvalidAttributeType.
+// `companion` takes "rail" or "text"; the design's "figures" companion is not
+// built and must be rejected, never read as the default.
+// Expected: exactly {InvalidAttributeType}.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md" companion="figures"
+}

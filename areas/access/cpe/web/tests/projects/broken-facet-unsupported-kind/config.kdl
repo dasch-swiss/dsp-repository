@@ -1,0 +1,14 @@
+// broken-facet-unsupported-kind — fires UnsupportedFacetKind (hard-fail).
+// A facet-panel uses kind="date-decade" which is a valid FacetKind but not
+// yet implemented in this slice (only "list" is supported).
+site {
+    title "Broken Facet Unsupported Kind"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="year" kind="date-decade"
+    }
+}

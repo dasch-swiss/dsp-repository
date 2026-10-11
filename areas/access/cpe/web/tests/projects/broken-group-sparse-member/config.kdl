@@ -1,0 +1,20 @@
+// broken-group-sparse-member — fires SparseProperty (Warning) for a group
+// member absent from the resource's class (step 1's detail_property_names
+// extension to group members).
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Group Sparse Member"
+    languages "de" "en"
+    chrome {
+        string "group-cap" {
+            de "Angaben"
+            en "Details"
+        }
+    }
+}
+
+page id="detail" route="/detail" {
+    resource-detail id="r1" {
+        group label="group-cap" "missing-prop"
+    }
+}

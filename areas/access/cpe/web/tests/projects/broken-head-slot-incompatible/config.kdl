@@ -1,0 +1,25 @@
+// broken-head-slot-incompatible — fires IncompatibleGlossPart (Error) three
+// times on the record header slots: the alt title is the integer `extent`,
+// the author the list_value `office` (both must be text/richtext), and the
+// imprint puts `unit=` on the text part `pub-place` (a unit only wraps a
+// number). The imprint's `extent` part with its unit is fine.
+site {
+    title "Broken Head Slot Incompatible"
+    languages "de" "en"
+    chrome {
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "{n} pages"
+        }
+    }
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book" title-property="name" \
+        alt-title-property="extent" author-property="office" {
+        imprint {
+            part property="pub-place" unit="gloss-extent"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+}

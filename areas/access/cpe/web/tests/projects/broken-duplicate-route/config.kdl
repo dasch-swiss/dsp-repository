@@ -1,0 +1,8 @@
+// broken-duplicate-route — fires DuplicatePageRoute.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/"
+page id="also-home" route="/"

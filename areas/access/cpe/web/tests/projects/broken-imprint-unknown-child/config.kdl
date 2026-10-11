@@ -1,0 +1,16 @@
+// broken-imprint-unknown-child — fires UnknownChildNode { component: "imprint",
+// child: "teaser" } (Error): an imprint takes `part` children only, so the
+// composed gloss's `teaser` is not recognised inside it.
+site {
+    title "Broken Imprint Unknown Child"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book" title-property="name" {
+        imprint {
+            part property="pub-place"
+            teaser property="name"
+        }
+    }
+}

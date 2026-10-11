@@ -1,0 +1,14 @@
+// broken-gloss-no-part — fires InvalidAttributeType (Error): a composed gloss
+// needs at least one `part`; a teaser alone is not a gloss.
+site {
+    title "Broken Gloss No Part"
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        gloss {
+            teaser property="pub-place"
+        }
+    }
+}

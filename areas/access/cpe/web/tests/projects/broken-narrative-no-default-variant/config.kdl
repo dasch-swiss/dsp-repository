@@ -1,0 +1,16 @@
+// broken-narrative-no-default-variant — fires NarrativeFileNotFound (D3).
+// Only a non-default-language variant exists (home.fr.md); neither the
+// base file nor the default-language ("en") variant is present, so the
+// render-time fallback chain has no guaranteed rung to land on.
+// ("de" is included solely to satisfy the required-languages check —
+// MissingRequiredLanguage requires both "de" and "en" in every fixture's
+// languages list; it is otherwise irrelevant to this test.)
+site {
+    title "T"
+    languages "en" "de" "fr"
+    default-language "en"
+}
+
+page id="home" route="/" {
+    narrative file="home.md"
+}

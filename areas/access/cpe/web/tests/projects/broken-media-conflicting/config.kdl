@@ -1,0 +1,15 @@
+// broken-media-conflicting — fires ConflictingMediaProperty (hard-fail).
+// The resource-detail page binds Character's media property to "portrait";
+// the resource-list page (same class) declares a different one, "headshot".
+site {
+    title "Broken Media Conflicting"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="portrait"
+}
+
+page id="characters" route="/characters" {
+    resource-list id="characters" class="Character" media="headshot"
+}

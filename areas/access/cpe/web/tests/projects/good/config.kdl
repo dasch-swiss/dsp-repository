@@ -1,0 +1,9 @@
+// good — a clean baseline that must validate without errors.
+site {
+    title "Good Project"
+    languages "de" "en"
+    default-language "en"
+}
+
+page id="home" route="/"
+page id="about" route="/about"

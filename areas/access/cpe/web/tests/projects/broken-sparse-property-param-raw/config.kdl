@@ -1,0 +1,21 @@
+// broken-sparse-property-param-raw — exercises the raw sibling of the
+// parameterised sparse check (check_resource_detail_data_into_raw's
+// `$param` branch).
+//
+// Strategy: a port of broken-sparse-property-param/ with the site block
+// deliberately broken (missing 'title') so that config-internal lowering
+// fails and validate_with_data takes the Err/raw branch. The raw pass reads
+// `class` and `show-properties` straight off the raw component, so the
+// sparse warning must still surface in the same pass as the hard error.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + SparseProperty (Warning).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="thing" route="/things/:id" {
+    resource-detail id="$id" class="Thing" {
+        show-properties "name" "missing-prop"
+    }
+}

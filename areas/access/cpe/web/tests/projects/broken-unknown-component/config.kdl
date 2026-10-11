@@ -1,0 +1,9 @@
+// broken-unknown-component — fires UnknownComponent.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    widget {}
+}

@@ -1,0 +1,13 @@
+// good-resource-list — clean baseline.
+// A resource-list whose class and all where/sort properties exist on that class.
+site {
+    title "Good Resource List"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class="Thing" {
+        sort property="name"
+        where property="name" equals="foo"
+    }
+}

@@ -1,0 +1,23 @@
+// broken-member-links-not-link-raw — exercises
+// check_compound_viewer_data_into_raw. A port of broken-member-links-not-link/
+// with the site title deliberately omitted so validate_with_data takes the
+// Err/raw branch; the raw pass must still read the member-links row.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + IncompatibleGlossPart (Error).
+site {
+    // title intentionally omitted -> MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+    chrome {
+        string "strips" {
+            de "Randleisten"
+            en "Border strips"
+        }
+    }
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book"
+    compound-viewer source="$id" layout="pages" index="none" media="image" {
+        member-links label="strips" "strip-left" "caption"
+    }
+}

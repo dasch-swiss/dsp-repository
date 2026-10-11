@@ -1,0 +1,29 @@
+// broken-figure-unknown-section-raw — slot 'four' names a heading id the EN variant
+// lacks; slot 'deep' names an id that sits on a ### heading.
+// The site block is deliberately broken (missing 'title') so validate_with_data
+// takes the raw arm; the raw narrative check must still report.
+// Expected: UnknownFigureSection x3 (four in EN; deep in DE and EN) + MissingSiteTitle. Loaded as "incunabula".
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+    chrome {
+        string "four-count" {
+            de "4 Fälle"
+            en "4 cases"
+        }
+        string "strips-all" {
+            de "Alle Randleisten"
+            en "All border strips"
+        }
+    }
+}
+
+page id="home" route="/" {
+    narrative file="woodcuts.md"
+    timeline class="Book" date-property="pub-date" lane-property="office" axis-start=1470 axis-end=1506 section="four"
+    timeline class="Book" date-property="pub-date" lane-property="office" axis-start=1470 axis-end=1506 section="deep"
+}
+
+page id="strips" route="/strips" {
+    narrative file="strips.md"
+}

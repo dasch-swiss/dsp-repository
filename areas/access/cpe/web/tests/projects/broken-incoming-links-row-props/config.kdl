@@ -1,0 +1,22 @@
+// broken-incoming-links-row-props — the HdM Slice 3 row-property data checks
+// (check_single_incoming_links → check_incoming_row_property), success arm:
+//   group-by="category"   text on every linking Work        → clean
+//   row-label="title"     text on w1 only (w2 links too)    → SparseIncomingLinksRowProperty (Warning)
+//   row-aside="count"     stored as integer                 → IncomingLinksRowPropertyWrongType (Error)
+//   sort-property="nope"  absent from the data              → UnknownIncomingLinksRowProperty (Error)
+site {
+    title "Broken Incoming Links row properties"
+    languages "de" "en"
+    chrome {
+        string "works-by" {
+            de "Werke"
+            en "Works"
+        }
+    }
+}
+
+page id="person" route="/people/:id" {
+    resource-detail id="$id" class="Person" {
+        incoming-links label="works-by" class="Work" group-by="category" row-label="title" row-aside="count" sort-property="nope" "composer"
+    }
+}

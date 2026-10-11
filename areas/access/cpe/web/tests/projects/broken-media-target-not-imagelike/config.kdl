@@ -1,0 +1,11 @@
+// broken-media-target-not-imagelike — fires MediaPropertyTargetNotImagelike
+// (hard-fail). 'colleague' is a link property, but its target class
+// (Character) carries no representations rows anywhere.
+site {
+    title "Broken Media Target Not Imagelike"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="colleague"
+}

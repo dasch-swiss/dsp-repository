@@ -1,0 +1,13 @@
+// broken-facet-unknown-property — fires UnknownFacetProperty (hard-fail).
+// A facet-panel declares a property that exists nowhere in the data.
+site {
+    title "Broken Facet Unknown Property"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="no-such-prop" kind="list"
+    }
+}

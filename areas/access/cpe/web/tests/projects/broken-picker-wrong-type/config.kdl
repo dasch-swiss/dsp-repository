@@ -1,0 +1,10 @@
+// broken-picker-wrong-type — a non-string `picker` is InvalidAttributeType
+// alone, never a silent "no picker".
+site {
+    title "Broken Picker Wrong Type"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="pages" index="none" media="image" picker=#true
+}

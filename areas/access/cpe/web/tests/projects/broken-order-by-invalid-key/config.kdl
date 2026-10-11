@@ -1,0 +1,19 @@
+// broken-order-by-invalid-key — fires InvalidOrderKey (Error): `key="Date"` has a character
+// outside [a-z0-9-]. A lowering error (config-internal), no -raw sibling.
+site {
+    title "Broken Order By Invalid Key"
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key="Date" property="pub-date" label="order-book-date"
+    }
+}

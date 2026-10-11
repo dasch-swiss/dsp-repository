@@ -1,0 +1,16 @@
+// broken-label-unknown-class — fires UnknownLabel (warn).
+// A class label naming a class absent from the project's data.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Label Unknown Class"
+    languages "de" "en"
+}
+
+labels {
+    class "UnknownClass" {
+        de "Unbekannte Klasse"
+        en "Unknown Class"
+    }
+}
+
+page id="home" route="/"

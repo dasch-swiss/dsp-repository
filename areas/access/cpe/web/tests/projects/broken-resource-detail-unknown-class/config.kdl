@@ -1,0 +1,14 @@
+// broken-resource-detail-unknown-class — fires UnknownResourceDetailClass (Error): the
+// declared class 'Charakter' does not exist in the data (typo for 'Character').
+// The show-properties sparse check must be skipped entirely — the class is unknown,
+// so no SparseProperty diagnostic may accompany it.
+site {
+    title "Broken Resource Detail unknown-class"
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Charakter" {
+        show-properties "name"
+    }
+}

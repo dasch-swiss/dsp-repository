@@ -1,0 +1,15 @@
+// broken-facet-sparse — fires SparseFacetProperty (warning only, load succeeds).
+// A facet-panel uses property="role" which exists on 'Other' class as list_value
+// but is absent from 'Thing' resources. The property exists somewhere in the
+// data (so UnknownFacetProperty does not fire), but not on the target class.
+site {
+    title "Broken Facet Sparse"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="role" kind="list"
+    }
+}

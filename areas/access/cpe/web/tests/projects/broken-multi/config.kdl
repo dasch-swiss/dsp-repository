@@ -1,0 +1,21 @@
+// broken-multi — fires SEVERAL DiagnosticKinds at once to prove accumulation.
+// Errors present:
+//   - UnexpectedTopLevelNode (unknown-node at top level)
+//   - DuplicatePageId (two pages with id="home")
+//   - UnknownComponent (widget component is not recognised)
+//   - MissingRequiredAttribute (narrative missing "file")
+//   - NarrativeFileNotFound (narrative references "absent.md" not in inventory)
+site {
+    title "Multi-Broken"
+    languages "de" "en"
+}
+
+unknown-node {}
+
+page id="home" route="/" {
+    widget {}
+    narrative {}
+    narrative file="absent.md"
+}
+
+page id="home" route="/duplicate"

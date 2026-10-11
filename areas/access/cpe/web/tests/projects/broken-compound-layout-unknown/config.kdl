@@ -1,0 +1,15 @@
+// broken-compound-layout-unknown — `layout` is a closed vocabulary
+// ("contents" | "pages"); an unrecognized value is InvalidAttributeType
+// alone. A `$id` param source is required: the invalid `layout` forces the
+// raw/into_raw validation branch, whose check_compound_viewer_data_into_raw
+// sibling scans the RAW component tree regardless of `layout` — a literal
+// source with no compound_parts rows would also fire EmptyCompoundSource
+// there.
+site {
+    title "Broken Compound Layout Unknown"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="scroll" index="rail"
+}

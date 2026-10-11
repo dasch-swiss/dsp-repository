@@ -1,0 +1,9 @@
+// broken-unknown-link-target — fires UnknownLinkTarget (warn).
+// A resource has a link property whose target_id does not exist in resources.
+// Validation should SUCCEED overall (warning only, not hard-fail).
+site {
+    title "Broken Unknown Link Target"
+    languages "de" "en"
+}
+
+page id="home" route="/"

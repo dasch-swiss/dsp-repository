@@ -1,0 +1,20 @@
+// broken-order-by-wrong-type — fires InvalidAttributeType (Error): `key=#true` is a bool, not
+// a string. The reporting reader must surface it rather than silently
+// dropping the option (Slice 8 decision 11a).
+site {
+    title "Broken Order By Wrong Type"
+    languages "de" "en"
+    chrome {
+        string "order-book-date" {
+            de "Datum"
+            en "Date"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        sort property="pub-date"
+        order-by key=#true property="pub-date" label="order-book-date"
+    }
+}

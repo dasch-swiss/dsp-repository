@@ -1,0 +1,9 @@
+// broken-data-ark — fires MalformedDataArk once per stored ARK that is not a
+// plain DSP data ARK: two on resources, four on annotations. The well-formed
+// and NULL rows beside them must not fire.
+site {
+    title "Broken Data Ark"
+    languages "de" "en"
+}
+
+page id="home" route="/"

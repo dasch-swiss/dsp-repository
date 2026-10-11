@@ -1,0 +1,13 @@
+// broken-order-default-label-wrong-type — fires InvalidAttributeType (Error):
+// `order-default-label` takes a chrome-string id, and a boolean must be reported
+// rather than silently lowered to "no override".
+site {
+    title "Broken Order Default Label Wrong Type"
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" order-default-label=#true {
+        sort property="pub-date"
+    }
+}

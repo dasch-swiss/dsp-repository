@@ -1,0 +1,20 @@
+// broken-header-row-over-budget — the German site title is far too long for
+// the one-row desk header, the English one fits. Loads, with exactly one
+// `HeaderRowOverBudget` warning, for `de`.
+site {
+    title "site-title"
+    languages "de" "en"
+    chrome {
+        string "site-title" {
+            de "Ein ausserordentlich langer Projekttitel, der in der Desk-Zeile neben den Navigationspunkten und den Bedienelementen keinen Platz mehr findet"
+            en "A short title"
+        }
+    }
+    nav {
+        item label="Home" route="/"
+        item label="About" route="/about"
+    }
+}
+
+page id="home" route="/"
+page id="about" route="/about"

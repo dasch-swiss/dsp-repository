@@ -1,0 +1,26 @@
+// broken-head-slot-incompatible-raw — exercises
+// check_resource_detail_data_into_raw. A port of broken-head-slot-incompatible/
+// with the site title deliberately omitted so validate_with_data takes the
+// Err/raw branch; the raw pass must still read the header slots.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + IncompatibleGlossPart (Error) ×3.
+site {
+    // title intentionally omitted -> MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+    chrome {
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "{n} pages"
+        }
+    }
+}
+
+page id="book" route="/books/:id" {
+    resource-detail id="$id" class="Book" title-property="name" \
+        alt-title-property="extent" author-property="office" {
+        imprint {
+            part property="pub-place" unit="gloss-extent"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+}

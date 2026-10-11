@@ -1,0 +1,8 @@
+// broken-invalid-id — fires InvalidProjectId.
+// The harness passes project_id = "Bad_Id" which is not valid kebab-case.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/"

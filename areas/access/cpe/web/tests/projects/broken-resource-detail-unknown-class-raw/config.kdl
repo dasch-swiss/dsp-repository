@@ -1,0 +1,17 @@
+// broken-resource-detail-unknown-class-raw — exercises check_resource_detail_data_into_raw.
+// A port of broken-resource-detail-unknown-class/ with the site block deliberately
+// broken (missing 'title') so validate_with_data takes the Err/raw branch; the raw
+// pass must still run the resource-detail class-existence check on the raw
+// `resource-detail class="…"` attribute.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownResourceDetailClass (Error).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Charakter" {
+        show-properties "name"
+    }
+}

@@ -1,0 +1,12 @@
+// broken-picker-unknown-mode — `picker` is a closed vocabulary
+// ("numbered" | "signatures"); an unrecognized value is
+// InvalidAttributeType alone. A `$id` source keeps every data-dependent
+// compound-viewer check quiet.
+site {
+    title "Broken Picker Unknown Mode"
+    languages "de" "en"
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="pages" index="none" media="image" picker="gatherings"
+}

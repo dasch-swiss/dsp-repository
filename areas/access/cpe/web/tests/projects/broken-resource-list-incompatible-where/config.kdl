@@ -1,0 +1,16 @@
+// broken-resource-list-incompatible-where — fires IncompatibleWhereValue (warning).
+// A resource-list `where` clause compares an integer value against 'name',
+// which on class 'Thing' is stored only as `value_text`. The filter can never
+// match by type alone (structural mismatch, not a data-content question).
+// IncompatibleWhereValue is a Warning — the page still renders (an always-empty
+// filtered result), so load must succeed.
+site {
+    title "Broken Resource List Incompatible Where"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class="Thing" {
+        where property="name" equals=5
+    }
+}

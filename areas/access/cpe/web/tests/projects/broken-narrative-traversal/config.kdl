@@ -1,0 +1,10 @@
+// broken-narrative-traversal — fires InvalidNarrativePath.
+// narrative file contains ".." which would escape the narrative/ directory.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative file="../secrets.md"
+}

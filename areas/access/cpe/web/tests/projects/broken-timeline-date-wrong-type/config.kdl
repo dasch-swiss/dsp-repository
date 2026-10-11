@@ -1,0 +1,11 @@
+// broken-timeline-date-wrong-type — fires IncompatibleTimelineProperty (Error): date-property "name" is
+// stored as 'text' on Book, but the date role requires 'date'.
+// Loaded as project "incunabula" (Slice 4 step 8 keys the component on it).
+site {
+    title "Timeline Fixture"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    timeline class="Book" date-property="name" lane-property="office" extent-property="extent" axis-start=1470 axis-end=1506
+}

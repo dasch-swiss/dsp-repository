@@ -1,0 +1,10 @@
+// broken-undeclared-param — fires UndeclaredRouteParam.
+// resource-list class references "$category" but route has no :category param.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="browse" route="/browse/:id" {
+    resource-list class="$category"
+}

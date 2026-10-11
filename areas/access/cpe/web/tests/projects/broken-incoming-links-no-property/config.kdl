@@ -1,0 +1,19 @@
+// broken-incoming-links-no-property — fires IncomingLinksWithoutProperty (Error): the
+// child names no link property. A lowering error (config-internal), so it
+// has no -raw sibling.
+site {
+    title "Broken Incoming Links no-property"
+    languages "de" "en"
+    chrome {
+        string "pages-using" {
+            de "Verwendet auf"
+            en "Used on"
+        }
+    }
+}
+
+page id="strip" route="/strips/:id" {
+    resource-detail id="$id" class="BorderStrip" {
+        incoming-links label="pages-using" class="Page"
+    }
+}

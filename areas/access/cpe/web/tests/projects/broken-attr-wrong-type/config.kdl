@@ -1,0 +1,10 @@
+// broken-attr-wrong-type — fires InvalidAttributeType.
+// resource-list "class" must be a string; passing an integer is a type error.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list class=42
+}

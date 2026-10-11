@@ -1,0 +1,16 @@
+// broken-ambiguous-class-route — fires AmbiguousClassRoute.
+// Two pages both declare class="Character" on their resource-detail with a
+// single :id param route. The engine cannot determine which route to use for
+// link construction — this is a boot hard-fail.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="characters" route="/characters/:id" {
+    resource-detail id="$id" class="Character"
+}
+
+page id="chars-alt" route="/characters-alt/:id" {
+    resource-detail id="$id" class="Character"
+}

@@ -1,0 +1,26 @@
+// broken-media-conflicting-raw — exercises the detail→list media map threading
+// through check_resource_detail_media_into_raw / check_resource_list_media_into_raw.
+//
+// Strategy: a port of broken-media-conflicting/ with the site block deliberately
+// broken (missing 'title') so that validate() returns Err and validate_with_data
+// takes the Err/raw branch. The resource-detail binds Character's media property
+// to "portrait"; the resource-list (same class) declares "headshot", so the raw
+// list-media sibling must see the map the raw detail-media sibling built and
+// append ConflictingMediaProperty.
+//
+// This fixture is load-bearing: it is the only test proving the two raw siblings
+// run in the right ORDER. Swapping them compiles and mostly passes — this fails.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + ConflictingMediaProperty (Error).
+site {
+    // title intentionally omitted → MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="character" route="/characters/:id" {
+    resource-detail id="$id" class="Character" media="portrait"
+}
+
+page id="characters" route="/characters" {
+    resource-list id="characters" class="Character" media="headshot"
+}

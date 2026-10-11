@@ -1,0 +1,16 @@
+// broken-order-name-property-unknown-raw — exercises check_resource_list_data_into_raw.
+// A port of broken-order-name-property-unknown/ with the site title deliberately
+// omitted so validate_with_data takes the Err/raw branch; the raw pass must
+// still check the list's own `order-name-property` attribute.
+//
+// Expected diagnostics: MissingSiteTitle (Error) + UnknownResourceListProperty (Error).
+site {
+    // title intentionally omitted -> MissingSiteTitle (config-internal, hard-fail)
+    languages "de" "en"
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" order-name-property="no-such-prop" {
+        sort property="pub-date"
+    }
+}

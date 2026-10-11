@@ -1,0 +1,24 @@
+// broken-gloss-incompatible-part — fires IncompatibleGlossPart (Error) twice:
+// `office` is a list_value part (it would render nothing), and `unit=` sits on
+// the text part `pub-place` (a unit only wraps a number). `extent` with its
+// unit is fine.
+site {
+    title "Broken Gloss Incompatible Part"
+    languages "de" "en"
+    chrome {
+        string "gloss-extent" {
+            de "{n} Seiten"
+            en "{n} pages"
+        }
+    }
+}
+
+page id="books" route="/books" {
+    resource-list class="Book" {
+        gloss {
+            part property="office"
+            part property="pub-place" unit="gloss-extent"
+            part property="extent" unit="gloss-extent"
+        }
+    }
+}

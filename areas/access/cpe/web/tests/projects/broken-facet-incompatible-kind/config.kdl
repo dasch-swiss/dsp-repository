@@ -1,0 +1,14 @@
+// broken-facet-incompatible-kind — fires IncompatibleFacetKind (hard-fail).
+// A facet-panel uses kind="list" on a property whose value_type is 'text',
+// not 'list_value'. The data-dependent check catches this mismatch.
+site {
+    title "Broken Facet Incompatible Kind"
+    languages "de" "en"
+}
+
+page id="list" route="/list" {
+    resource-list id="things" class="Thing"
+    facet-panel target="things" {
+        facet property="role" kind="list"
+    }
+}

@@ -16,6 +16,7 @@ members = [
   "areas/access/cpe/ports",
   "areas/access/cpe/store",
   "areas/access/cpe/store-build",
+  "areas/access/cpe/web",
   "areas/access/sync/store",
   "areas/deposit/editor/core",
   "areas/deposit/editor/web",

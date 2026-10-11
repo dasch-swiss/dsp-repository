@@ -1,0 +1,17 @@
+[package]
+name = "cpe-web"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+cpe-components = { path = "../components" }
+cpe-core = { path = "../core" }
+cpe-image-viewer = { path = "../image-viewer" }
+cpe-store = { path = "../store" }
+maud = { workspace = true }
+rusqlite = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }

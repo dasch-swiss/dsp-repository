@@ -1,0 +1,19 @@
+// broken-member-links-contents-layout — the member-links row sits under the
+// pages reader's pager, so a `member-links` child on layout="contents" could
+// never take effect: PagesLayoutOnly alone (the picker's sibling case).
+site {
+    title "Broken Member Links Contents Layout"
+    languages "de" "en"
+    chrome {
+        string "reader-strips" {
+            de "Randleisten"
+            en "Border strips"
+        }
+    }
+}
+
+page id="book" route="/books/:id" {
+    compound-viewer source="$id" layout="contents" index="rail" {
+        member-links label="reader-strips" "strip-left"
+    }
+}

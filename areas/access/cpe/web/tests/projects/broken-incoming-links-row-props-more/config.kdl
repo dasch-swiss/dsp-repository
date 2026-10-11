@@ -1,0 +1,21 @@
+// broken-incoming-links-row-props-more — row-property tiers not covered by broken-incoming-links-row-props:
+//   group-by="nope-group"  absent from the data     → UnknownIncomingLinksRowProperty
+//   row-label="count"      stored as integer        → IncomingLinksRowPropertyWrongType
+//   sort-property="count"  stored as integer (TEXT_ONLY tier) → IncomingLinksRowPropertyWrongType
+//   row-aside="void"       absent from the data     → UnknownIncomingLinksRowProperty
+site {
+    title "Broken Incoming Links row properties"
+    languages "de" "en"
+    chrome {
+        string "works-by" {
+            de "Werke"
+            en "Works"
+        }
+    }
+}
+
+page id="person" route="/people/:id" {
+    resource-detail id="$id" class="Person" {
+        incoming-links label="works-by" class="Work" group-by="nope-group" row-label="count" row-aside="void" sort-property="count" "composer"
+    }
+}

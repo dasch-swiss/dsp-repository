@@ -1,0 +1,19 @@
+// good-class-route — a clean single class→route binding that must validate without errors.
+// One page with exactly one :id param and a resource-detail declaring class="Character".
+// The class→route map must contain exactly one entry: "Character" → "/characters/:id".
+//
+// A second page ("featured") has a literal route (zero :param segments) with a
+// resource-detail that also carries class="Character". This page must NOT contribute
+// an entry to the class→route map — only parameterised pages do.
+site {
+    title "Good Class Route"
+    languages "de" "en"
+}
+
+page id="home" route="/"
+page id="characters" route="/characters/:id" {
+    resource-detail id="$id" class="Character"
+}
+page id="featured" route="/featured" {
+    resource-detail id="CH_001" class="Character"
+}

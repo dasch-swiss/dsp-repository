@@ -1,0 +1,10 @@
+// broken-missing-attr — fires MissingRequiredAttribute.
+// narrative component is missing the required "file" attribute.
+site {
+    title "T"
+    languages "de" "en"
+}
+
+page id="home" route="/" {
+    narrative {}
+}

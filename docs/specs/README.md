@@ -52,10 +52,14 @@ docs/specs/
 
 ## Plans and PRs
 
-- **One plan is one PR.** A plan's phases are, at most, separate commits inside
-  that PR (tick `allow-many-commits` in the PR body when they are). Never plan
-  one PR per phase. Steps that can only happen after merge (deploy verification)
-  are written as post-merge steps, not as phases needing their own PR.
+- **One plan is one PR, or one stack of PRs.** A plan's phases are, at most,
+  separate commits inside that PR (tick `allow-many-commits` in the PR body when
+  they are). A plan whose parts are stacked PRs
+  ([One PR, several commits, or a stack](../src/git-conventions.md#one-pr-several-commits-or-a-stack))
+  is still one plan, with one group of phases per PR. Never plan one PR per
+  phase: within a PR, the phases stay commits. Steps that can only happen after
+  merge (deploy verification) are written as post-merge steps, not as phases
+  needing their own PR.
 - **Every phase ends with a reviewer pass.** The plan names the set of
   `eng:review` reviewers relevant to the change once, and each phase's checklist
   ends with running `eng:reviewing` on that phase's diff. Findings are amended

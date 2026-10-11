@@ -1,9 +1,9 @@
 //! The crate's one integration test binary.
 //!
-//! The project's mapping, the vendored snapshot, the store built from it and that store's file
-//! are statics: one load per test run, and a failed load poisons the static instead of being
-//! retried by every test that reads it. A test that touches none of them never pays for the
-//! load.
+//! The project's mapping, the snapshot of the committed 0803 data, the store built from it and
+//! that store's file are statics: one load per test run, and a failed load poisons the static
+//! instead of being retried by every test that reads it. A test that touches none of them never
+//! pays for the load.
 
 use std::sync::LazyLock;
 
@@ -51,21 +51,21 @@ fn build(snapshot: &ProjectSnapshot) -> Result<Store, BuildErrors> {
     cpe_store_build::build(snapshot, &MAPPING, resolve(PROJECT))
 }
 
-/// The vendored data directory, which the binary reads by default.
+/// `sync`'s committed data directory, which holds project 0803.
 const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../sync/data");
 
 static SNAPSHOT: LazyLock<ProjectSnapshot> = LazyLock::new(|| {
     LiveArchiveProjection::new(DATA_DIR)
         .snapshot(shortcode())
-        .expect("the vendored 0803 data is served")
+        .expect("the committed 0803 data is served")
 });
 
 static STORE: LazyLock<Store> = LazyLock::new(|| build(&SNAPSHOT).expect("the vendored 0803 snapshot builds"));
 
-/// The header the binary writes the project's store file under.
+/// The header of the project's store file.
 static HEADER: LazyLock<String> = LazyLock::new(|| sql::header(PROJECT, &MAPPING));
 
-/// The whole store file, as the binary writes it.
+/// The project's whole store file.
 static SQL: LazyLock<String> =
     LazyLock::new(|| sql::to_sql(&STORE, &MAPPING, &HEADER).expect("every table of the built store has a row"));
 

@@ -2,8 +2,8 @@
 //!
 //! The builder trims a text as Python's `str.strip()` does: its whitespace is
 //! `char::is_whitespace` plus the separators U+001C to U+001F. `str::trim` keeps those four and
-//! would change texts of the committed store, so every trim goes through this module. The set
-//! is `cpe-core`'s, which holds a mapping's sentinel to it.
+//! would change texts of the store, so every trim goes through this module. The set is
+//! `cpe-core`'s, which holds a mapping's sentinel to it.
 
 use cpe_core::remodel::is_strip_space;
 

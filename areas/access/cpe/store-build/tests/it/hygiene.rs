@@ -1,7 +1,7 @@
 //! The library reads nothing but the snapshot it is given: no adapter, no file, no environment,
-//! no clock. Cargo cannot hold this, because the library and the binary share one dependency
-//! table; a search of the sources for the strings of [`BINARY_ONLY`] does, as far as a search
-//! can.
+//! no clock. Cargo holds only part of this: the adapter's crate is a dev-dependency, which a
+//! test module of the library could still name, and the standard library is always there. A
+//! search of the sources for the strings of [`BINARY_ONLY`] holds it, as far as a search can.
 
 use std::fs;
 use std::path::Path;
@@ -9,10 +9,10 @@ use std::path::Path;
 /// The crate's sources.
 const SRC: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
 
-/// What no file but [`BINARY`] may hold, in code or in a comment: the adapter's crate; two ways
+/// What no source of the library may hold, in code or in a comment: the adapter's crate; two ways
 /// to read a file, and the modules of the standard library that reach outside the process or
-/// read its clock; the path of the folder of the one project that has a hook, which no source
-/// spells: the binary joins a project's folder from its argument.
+/// read its clock; the path of the folder of the one project that has a hook (a caller names a
+/// project by its folder name).
 /// An `include_str!` is not among them: it reads when the crate is compiled.
 const BINARY_ONLY: [&str; 9] = [
     "sync_store",
@@ -155,7 +155,7 @@ fn test_library_sources_hold_nothing_that_only_the_binary_may() {
     assert_eq!(
         held(&library),
         [],
-        "the library reads only its snapshot: read in main.rs and pass the result in"
+        "the library reads only its snapshot: read in the caller and pass the result in"
     );
 }
 
@@ -365,7 +365,7 @@ mod tests { struct Book; }
     );
 }
 
-/// The control of the strings the binary does not hold: each is found in a text that has it.
+/// The control of the search for [`BINARY_ONLY`]: each string is found in a text that has it.
 #[test]
 fn test_held_finds_every_string_of_the_list() {
     let sample = ("sample.rs".to_string(), BINARY_ONLY.join("\n"));

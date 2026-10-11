@@ -6,8 +6,8 @@
 //! `projects` with a row in [`hooks::HOOKS`]; a hook reaches the build only through the seam
 //! of [`hook`].
 //!
-//! The library is pure: it reads nothing but what it is given. Reading a config, reading the
-//! vendored data through the adapter and writing a file are the binary's.
+//! The library is pure: it reads nothing but what it is given. Reading a config, getting the
+//! snapshot from an adapter and writing a file are its caller's.
 
 use cpe_core::remodel::Remodel;
 use cpe_ports::contract::{self, Violation};

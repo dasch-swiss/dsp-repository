@@ -7,10 +7,10 @@ use serde_json::Value;
 
 use crate::store::{Real, RealError};
 
-/// The slack of the box check. The engine's boot check of a store's annotations allows the same
-/// (`ANNOTATION_TOLERANCE` in `areas/access/cpe/core/src/validate.rs`), and a
-/// test here holds the two equal: a box this module passes and the engine refuses stops the server
-/// at boot.
+/// The slack of the box check. `cpe-core`'s check of a store's annotations (`MalformedAnnotation`)
+/// allows the same (`ANNOTATION_TOLERANCE` in `areas/access/cpe/core/src/validate.rs`), and a
+/// test here holds the two equal: a box this module passes and that check refuses is a built
+/// store that does not validate.
 const TOLERANCE: f64 = 1e-9;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

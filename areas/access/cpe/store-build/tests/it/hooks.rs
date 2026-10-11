@@ -1341,8 +1341,8 @@ fn changes(before: &View, after: &View) -> Changes {
 
 /// After the hook, every property holds the mapping's values unless the block lists it under
 /// `overrides`, the kept resources differ only in the classes under `drops`, and the only
-/// properties that came are those under `provides`. On the vendored data the hook makes every
-/// change its block declares.
+/// properties that came are those under `provides`. On the committed 0803 data the hook makes
+/// every change its block declares.
 #[test]
 fn test_incunabula_s_hook_changes_only_what_its_block_declares() {
     let hook = Hook { project: INCUNABULA, remodel: recording };
@@ -1380,7 +1380,7 @@ fn test_incunabula_s_hook_changes_only_what_its_block_declares() {
 /// asks for would be accepted on any resource of its class and reach no row. So each declared
 /// key is taken out of the node in turn, and the hook's read of it must then be refused as one
 /// beyond the declaration. The other direction is the seam's own rule, shown here on the
-/// vendored data: with the node as it is, no read is refused.
+/// committed 0803 data: with the node as it is, no read is refused.
 #[test]
 fn test_incunabula_s_hook_reads_exactly_the_curated_keys_its_block_declares() {
     let hook = resolve(INCUNABULA);

@@ -127,7 +127,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Purpose:** The Access Area's composition root (ADR-0003, ADR-0007): the one binary,
   `access-server`, holding wiring only — CLI, config loading, OTel and Pyroscope init, the OTel
   layers, the untraced routes, and mounting each capability's router. It merges DPE's router and
-  nests CPE's at CPE's base (ADR-0007, amendment of 2026-10-12), constructs `sync`'s adapter of CPE's
+  nests CPE's at CPE's base (ADR-0007, amendment of 2026-10-12, DEV-7438), constructs `sync`'s adapter of CPE's
   port over `SYNC_DATA_DIR` and has CPE activate over it in the background, after the listener is bound.
 - **Key entities:** `app`, `assemble`, `mount_cpe`, `name_span_by_cpe_route`, `activate_in_background`, `serve`,
   `DEFAULT_SYNC_DATA_DIR`, `shutdown_signal`, `init_otel`, `init_pyroscope`,
@@ -150,6 +150,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   axum, tokio, tower, clap, ureq, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
 - **Used by:** — (deployment: `areas/access/server/Dockerfile`, `.github/actions/build-dpe/`)
 - **Boundary rules:**
+  - The image carries each capability's data: what `build-dpe` puts into `staging/`, what the Dockerfile copies
+    and what its `ENV` lines name have to agree (**review**; see `areas/access/server/CLAUDE.md`).
   - Depends on each capability's `server` crate only, never a capability's `core`, `web` or
     `api-*` crate (**static-analysis**: `check-composition-root-deps.sh` in `just check`).
   - Routes declared after the OTel layers are untraced, so the order in `app` is load-bearing
@@ -177,7 +179,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `7b70a16edce0`
+- **Fingerprint:** `c2643c39ebca`
 
 ### areas/deposit/editor
 

@@ -42,10 +42,15 @@ overrides:
   - when: "areas/access/cpe/image-viewer/**"
     reviewers: [eng:review:accessibility-reviewer, eng:review:ivan-reviewer]
   # CPE's component library renders HTML outside a `web/` crate. Its stylesheets, in
-  # `components/style/`, are not reached by the browser check of `areas/*/*/style/*.css` below:
-  # nothing here serves them yet.
+  # `components/style/`, are not matched by the browser check of `areas/*/*/style/*.css` below.
   - when: "areas/access/cpe/components/**"
     reviewers: [eng:review:accessibility-reviewer, eng:review:ivan-reviewer]
+  # CPE's store runs SQL over archive data, and its host crate reads request paths, query strings
+  # and headers, serves files, redirects and sets cookies.
+  - when: "areas/access/cpe/store/**"
+    reviewers: [eng:review:security-reviewer]
+  - when: "areas/access/cpe/server/**"
+    reviewers: [eng:review:security-reviewer]
   - when: "areas/*/*/style/*.css"
     verify:
       - skill: eng:test-browser

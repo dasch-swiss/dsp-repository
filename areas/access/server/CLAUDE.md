@@ -29,7 +29,8 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   that one path has its own route.
 - **No base, no mount.** With `CPE_BASE` unset or refused, `Cpe::base()` is empty: `nest` panics on an
   empty path and CPE at the root would answer DPE's paths, so the binary serves DPE alone and logs why.
-  `just run` and `just dev` set `CPE_BASE=/cpe`; a deployment has to set it too.
+  `just run`, `just dev` and the Docker image set `CPE_BASE=/cpe`. The image also sets `SYNC_DATA_DIR` and
+  `CPE_PROJECTS_DIR` to the copies it carries; `CPE_PUBLIC_ORIGIN` is the deployment's to set.
 - **CPE never stops or delays DPE.** `CpeConfig::load` and `Cpe::new` cannot fail and read nothing.
   `Cpe::activate` runs in `spawn_blocking` after the listener is bound, over `sync-store`'s
   `LiveArchiveProjection` on `SYNC_DATA_DIR` (default `areas/access/sync/data`). Until it finishes,
@@ -41,6 +42,16 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
 - **The span of a CPE request.** The OTel layer sees CPE as one service, so `name_span_by_cpe_route`
   names the span from the `cpe_server::MatchedRoute` CPE puts on its responses:
   `GET /cpe/<project id>/<route template>`. A path that matches no route keeps the method alone.
+
+## The image: three places that have to agree
+
+`.github/actions/build-dpe/action.yml` fills the `staging/` directory, `Dockerfile` copies from it, and the `ENV`
+lines name where each copy is. Data for a capability is added in all three, and in the environment table of
+`docs/src/dpe/operations.md`. Nothing checks that they agree: a path that is in `staging/` but not copied, or an
+`ENV` that names the wrong place, builds, and the container is healthy with CPE answering 503 or its not-found.
+
+A new capability's paths also go into each path filter that should see it (`a11y-dpe.yml`,
+`cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on.
 
 ## Dependency boundary
 

@@ -138,7 +138,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `.github/scripts/check-composition-root-deps.sh`
 - **Depends on:** areas/access/dpe (`dpe-server` only), shared/telemetry; expected, as each
   arrives: areas/access/cpe, areas/access/datei and areas/access/media (each one's `server`
-  crate, plus its `store` / `ports` crates only to construct `Live<Port>` adapters); third-party:
+  crate, plus its `store` / `ports` crates only to construct `Live<Port>` adapters; for CPE,
+  `check-cpe-seam.sh`'s exception list has to name `cpe-server` and `cpe-store` first, DEV-7465);
+  third-party:
   axum, tokio, clap, ureq, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
 - **Used by:** — (deployment: `areas/access/server/Dockerfile`, `.github/actions/build-dpe/`)
 - **Boundary rules:**
@@ -607,15 +609,23 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `dpe/ports` and CPE implements, depending on `dpe/ports` alone. A *concept* both need lives
   in `shared/`; a shape never does
 - **Used by:** areas/access/sync (`sync-store`, the provider, depending on `cpe-ports` to
-  implement `ArchiveProjection` as `LiveArchiveProjection`); `cpe-components` is the consumer of `cpe-core` and of `cpe-image-viewer`, and has no consumer here yet itself: its planned ones are CPE's page assembly and host; areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`)
+  implement `ArchiveProjection` as `LiveArchiveProjection`); `cpe-components` is the consumer of `cpe-core` and of `cpe-image-viewer`, and has no consumer here yet itself: its planned ones are CPE's page assembly and host; areas/access/server (expected: `cpe-server` mounted beside DPE, plus `cpe-store`/`cpe/ports` only where the root constructs a `Live<Port>` adapter; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`, and `check-cpe-seam.sh` forbids every CPE crate but `cpe-ports` until its exception list names `cpe-server` and `cpe-store`, DEV-7465)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
   in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA.
   That `cpe/ports` reaches only `std` and `shared-*` is **review** until Bazel `visibility`
-  (ADR-0003); the rest is **docs-only** until CPE's store and host exist. That `cpe-core` depends on
-  no CPE crate, that no CPE crate depends on a Mosaic crate, and that no crate of this repository outside
-  `areas/access/cpe/` depends on `cpe-core`, `cpe-components` or `cpe-image-viewer`, is **review**
-  (`check-composition-root-deps.sh` covers `areas/access/server` only). `cpe-core` is
+  (ADR-0003). The dependency seam is
+  **static-analysis** (`.github/scripts/check-cpe-seam.sh`, run by `just check`; ADR-0007, amendment of
+  2026-10-11): no crate of this repository outside `areas/access/cpe/` depends on a CPE crate other than
+  `cpe-ports`; no manifest under `areas/access/cpe/` depends on a Mosaic crate; and `cpe-core`, `cpe-ports`
+  and `cpe-image-viewer` depend on no CPE crate. The first two rules cover a new CPE crate by its
+  `[package]` name, without an edit; a new crate that must stay a leaf has to be added to the script's
+  `LEAVES`, and a crate another capability or the composition root may depend on has to be added to its
+  `PORT_EXCEPTIONS` first. What the script does not check is **review**: that no CPE crate depends on DPE's
+  domain, store or web crates or on `sync`'s store (ADR-0008), and `cpe-components`' own dependency list
+  (no `axum`, no `rusqlite`).
+  `cpe-components` splices rendered Markdown and a few constants through `PreEscaped` (**review**; DPE's
+  three-site rule does not apply here). `cpe-core` is
   framework-free: that its manifest and sources name no `maud`, `axum` or `rusqlite` is **review**
   here, and is checked by the incubator's `just cpe crate-deps-check` at each pin move.
   That `cpe-image-viewer` depends on `maud` alone is **review**. Its vendored OpenSeadragon files
@@ -631,7 +641,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
   single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
   target design, the store is not built). `cpe-ports`, `cpe-core`, `cpe-components` and `cpe-image-viewer` hold none.
-- **Fingerprint:** `e0b5847c956f`
+- **Fingerprint:** `3c1e5a731f39`
 
 ### areas/access/datei
 
@@ -729,7 +739,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (ADR-0010, proposed; **static-analysis** for the committed keys as string literals,
   `test_source_outside_tests_names_no_committed_curation_key`, otherwise **review**); readers reach the projection only through the
   ports it implements, never by opening its store; `sync-store` depends on `cpe-ports` and on no
-  other CPE or DPE crate (**review**, then **structure** via Bazel visibility after ADR-0001;
+  other CPE or DPE crate (no other CPE crate: **static-analysis**, `check-cpe-seam.sh` in `just check`;
+  no DPE crate: **review**; both **structure** via Bazel visibility after ADR-0001;
   `check-composition-root-deps.sh` does not scan it). A file that breaks a fact the port serves
   is refused whole, never served in part (**static-analysis**: `sync-store`'s tests), and so is
   one whose mapped snapshot fails `cpe_ports::contract::violations`, run on every call; the
@@ -888,7 +899,7 @@ Not code components; they span the repo and are staleness-exempt here:
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
-  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`),
+  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`),
   release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,

@@ -96,6 +96,17 @@ uses (ADR-0007, amendment of 2026-10-11, DEV-7401). The full viewer, with its ot
 incubator, which chooses the final engine; the result replaces this crate. Until then a viewer fix lands here
 and is applied by hand there. Its README says what was removed.
 
+## The dependency seam
+
+`just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007, amendment
+of 2026-10-11, DEV-7401). No crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`,
+which `sync-store` implements; no manifest under `areas/access/cpe/` depends on a Mosaic crate; and
+`cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate. The first two rules cover a new CPE
+crate without an edit. A new crate that must stay a leaf has to be added to the script's `LEAVES`; one that a
+crate outside the capability may depend on has to be added to its exception list. What the script does not
+check is review: that no CPE crate depends on DPE's domain, store or web crates or on `sync`'s store
+(ADR-0008), and `cpe-components`' own dependency list (no `axum`, no `rusqlite`).
+
 ## What the port serves
 
 An adapter serves current, live facts only, and omits every fact not listed as in: it never errors on one and never substitutes a string form. A link or `part_of` whose target is omitted is itself omitted; a child of an omitted parent keeps its `seqnum`. An annotation target that is not a resource of the file is refused, unlike a link: the snapshot is not served.

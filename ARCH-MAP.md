@@ -598,11 +598,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `data_links`, `breadcrumb`, `values`, `links`, with `context::RenderContext` as what a renderer is given),
   `chrome`'s message catalogue (`chrome::ChromeMsg`, the interface's own strings in every language) and the
   per-project components under `component::project`, found through the `(project, name)` registry
-  `PROJECT_RENDERERS` (private to the crate). In `cpe-store`: `db::open_project_db` (SQL text in, a
-  `rusqlite::Connection` out), `DbError`, `query::LiveProjectFacts` (the store's `ProjectFacts`),
-  `query::reads::ProjectReads` (the composite reads, and the only place a lock on a project's connection is
-  taken), `query::page::page_data` (a request's `PageData`), `query::build_search_indexes`,
-  `query::search_index_name`, `query::data_arks`, `QueryError`. In `cpe-store-build`: `build` (the one
+  `PROJECT_RENDERERS` (private to the crate). In `cpe-store`: `db::ProjectStore` (one project's store and the
+  owner of its connection: `open` takes SQL text, `facts`, `build_search_indexes`, `data_arks` and `reads` are
+  what a caller does with it), `DbError`, `query::LiveProjectFacts` (the store's `ProjectFacts`),
+  `query::reads::ProjectReads` (the composite reads), `query::page::page_data` (a request's `PageData`),
+  `query::search_index_name`, `QueryError`. In `cpe-store-build`: `build` (the one
   entry), `store::Store` and `store::Table` (the built rows), `sql::to_sql` and `sql::header` (the SQL text),
   `SCHEMA_SQL`, `error::BuildErrors` and `error::Rule` (every refusal has a rule), `hook::Hook` and
   `hook::Draft` (the seam a hook works through), `hooks::HOOKS` and `hooks::resolve` (the table of hooks, by
@@ -618,7 +618,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE
   consumes: today `ArchiveProjection`, which `sync` implements. `pub` in `cpe-core` and in `cpe-components` means visible
   to CPE's other crates, not to a host: no crate of this repository outside the capability depends on either. The
-  same holds for `cpe-store`, whose `pub` surface names `rusqlite::Connection` and `rusqlite::Error`, and for
+  same holds for `cpe-store`, whose `pub` surface names no `rusqlite` type, and for
   `cpe-web`, whose `pub` items are what `cpe-server` calls.
 - **Local-context kit:** `areas/access/cpe/CONTEXT.md`, `areas/access/cpe/ports/src/lib.rs`,
   `areas/access/cpe/core/src/lib.rs`, `areas/access/cpe/components/src/lib.rs`,
@@ -638,8 +638,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `cpe-core`, and on `rusqlite`, `thiserror` and `tracing`. `cpe-store-build` depends on `cpe-core` and
   `cpe-ports`, and on `serde_json`, `thiserror` and `unicode-normalization`; it does not depend on `cpe-store`
   and reads `store/schema.sql` with `include_str!`; its tests alone depend on `sync-store` and `rusqlite`.
-  `cpe-web` depends on `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and on `maud`,
-  `rusqlite` and `thiserror`; its tests read `components/style/` and `public/vendor/datastar.js` with
+  `cpe-web` depends on `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and on `maud`
+  and `thiserror`; its tests read `components/style/` and `public/vendor/datastar.js` with
   `include_str!`. `cpe-server` depends on `cpe-core`, `cpe-ports`, `cpe-store-build`, `cpe-web`, `cpe-components`
   and `cpe-image-viewer` (on `cpe-store` through `cpe-web` only; **review**: `check-cpe-seam.sh`'s `CPE_EDGES`
   does not list the crate), and on `axum`, `tower`, `datastar`, `figment`,
@@ -679,9 +679,17 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   domain, store or web crates, which CPE crates a crate outside `LEAVES` and `CPE_EDGES` depends on, `cpe-components`' own dependency list
   (no `axum`, no `rusqlite`), `cpe-store`'s (no `maud`, no `axum`), and `cpe-web`'s (no `axum`: the crate
   holds no routes).
-  Every lock on a project's connection is taken in `cpe-store`'s `query::reads`, short-scoped and never
-  returned (**review**: the caller, `cpe-web`'s `Project`, owns the `Mutex` and nothing stops it from locking).
-  `cpe-web` names `rusqlite` in `project.rs` alone (**review**). The pages it renders are pinned by its 30
+  `cpe-store`'s `ProjectStore` owns a project's connection in a `Mutex`, and no `pub` item hands out the
+  connection or a guard, so every lock is taken inside the crate and none can be held across an `.await`
+  (**structure** for a caller outside the crate: the field and `ProjectStore::lock` are not `pub`; that neither
+  is widened and no `pub` function returns a guard is **review**). Inside the crate a lock is short-scoped
+  and a read never calls a read while it holds one (**review**). Among CPE's `[dependencies]` tables `rusqlite`
+  is named by `cpe-store` alone; `cpe-store-build` names it under `[dev-dependencies]` (**review**), and the
+  driver's error reaches a caller only inside `cpe-store`'s wrapper, which has no source and names no driver
+  type (**static-analysis**: two tests in `store/src/db.rs`, over a failed load and a failed query). Debt: a read runs on the async worker thread that
+  serves the request, as in the prototype, and a project's requests wait on one `Mutex`; moving the reads to
+  `spawn_blocking` or to `deadpool-sqlite`, as the editor does, changes concurrency and is a follow-up. The
+  pages `cpe-web` renders are pinned by its 30
   snapshots, and every validation rule by a fixture project under `web/tests/projects/`
   (**static-analysis**). The URLs it writes are root-absolute, so it cannot be mounted under a prefix yet
   (**review**). `public/vendor/datastar.js` is checked against its README by `just verify-checksums`
@@ -728,7 +736,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   in one host), and nothing is written to disk. `projects/incunabula/` is
   committed configuration, narrative and assets, **single writer** the project's developers (**review**); the process reads it at activation and never writes it. `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `020e7667c175`
+- **Fingerprint:** `1c69bcc24108`
 
 ### areas/access/datei
 

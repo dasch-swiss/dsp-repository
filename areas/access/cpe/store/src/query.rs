@@ -1,19 +1,15 @@
 //! Query layer: domain-shaped functions over the EAV `properties` table.
 //!
-//! All functions take a `&rusqlite::Connection` directly (no Axum, no async).
-//! The composite reads over a project's `Mutex<Connection>`, and every lock,
-//! live in the child module `reads` (`ProjectReads`); `Project` delegates to it.
-//! The child module `page` builds one page request's view data over them.
+//! The query functions take a `&rusqlite::Connection` directly (no Axum, no
+//! async) and are `pub(crate)` or private; their callers lock. The composite
+//! reads over a project's store, and every lock a request takes, live in the
+//! child module `reads` (`ProjectReads`); `cpe-web`'s `Project` delegates to
+//! it. The child module `page` builds one page request's view data over them.
 //!
-//! Three public fns in this file take a `&rusqlite::Connection`
-//! (`LiveProjectFacts::new`, `build_search_indexes` and `data_arks`, all called
-//! by `cpe-web`'s `Project::load`); none returns a `rusqlite` type. `QueryError`
-//! carries `rusqlite::Error` as a `#[source]` variant field — the same
-//! pattern as `DbError` in `db.rs`. That does not hide it: an enum variant's
-//! fields are public, so a caller matching `QueryError::Query(e)` holds the
-//! `rusqlite::Error`. What the pattern does rule out is an implicit
-//! conversion: there is intentionally no `From<rusqlite::Error>` impl; call
-//! sites use `.map_err(QueryError::Query)`.
+//! No `pub` fn in this file takes or returns a `rusqlite` type, and
+//! `QueryError` carries the driver's error wrapped (`error::SqliteError`).
+//! There is intentionally no `From<rusqlite::Error>` impl; call sites use
+//! `.map_err(QueryError::query)`.
 
 pub mod page;
 pub mod reads;
@@ -33,19 +29,22 @@ use cpe_core::validate::facts::{
 };
 use rusqlite::{Connection, OptionalExtension};
 
+use crate::db::ProjectStore;
+use crate::error::SqliteError;
+
 // ── Error type ────────────────────────────────────────────────────────────────
 
 /// Errors that can occur while executing a query against the project's
 /// in-memory SQLite.
 ///
-/// `Query` and `SearchIndexBuild` carry the `rusqlite::Error` as their
-/// source. Variant fields are public, so a caller can match on it; there is
-/// no `From<rusqlite::Error>` impl, so nothing converts to `QueryError`
-/// implicitly. This mirrors the `DbError` pattern in `store/src/db.rs`.
+/// `Query` and `SearchIndexBuild` carry the driver's error, wrapped, as
+/// their source. There is no `From<rusqlite::Error>` impl, so nothing
+/// converts to `QueryError` implicitly. This mirrors the `DbError` pattern in
+/// `store/src/db.rs`.
 #[derive(Debug, thiserror::Error)]
 pub enum QueryError {
     #[error("database query failed: {0}")]
-    Query(#[source] rusqlite::Error),
+    Query(#[source] SqliteError),
     /// A `properties.value_type` string was not one of the schema-declared
     /// values. The schema CHECK constraint makes this unreachable in practice;
     /// the variant exists so the unknown-type arm can return a typed error
@@ -62,7 +61,17 @@ pub enum QueryError {
     /// failure building the search index can be reported with its own
     /// context rather than a generic "database query failed" message.
     #[error("failed to build FTS5 search index: {0}")]
-    SearchIndexBuild(#[source] rusqlite::Error),
+    SearchIndexBuild(#[source] SqliteError),
+}
+
+impl QueryError {
+    pub(crate) fn query(error: rusqlite::Error) -> Self {
+        Self::Query(SqliteError::new(error))
+    }
+
+    pub(crate) fn search_index_build(error: rusqlite::Error) -> Self {
+        Self::SearchIndexBuild(SqliteError::new(error))
+    }
 }
 
 impl From<QueryError> for FactsError {
@@ -75,78 +84,77 @@ impl From<QueryError> for FactsError {
 
 /// The live store's answer to the validator's [`ProjectFacts`]: each method
 /// forwards to the query function of the same name (`showcase_annotation` to
-/// `showcase_annotation_row`). `Project::load` builds it over the freshly
-/// loaded connection.
-pub struct LiveProjectFacts<'conn> {
-    conn: &'conn Connection,
+/// `showcase_annotation_row`), locking the store for that one query.
+/// `ProjectStore::facts` builds it; `Project::load` hands it to the validator.
+pub struct LiveProjectFacts<'store> {
+    store: &'store ProjectStore,
 }
 
-impl<'conn> LiveProjectFacts<'conn> {
-    /// Build the facts over a live connection.
-    pub fn new(conn: &'conn Connection) -> Self {
-        Self { conn }
+impl<'store> LiveProjectFacts<'store> {
+    pub(crate) fn new(store: &'store ProjectStore) -> Self {
+        Self { store }
     }
 }
 
 impl ProjectFacts for LiveProjectFacts<'_> {
     fn resource_exists(&self, id: &str) -> Result<bool, FactsError> {
-        Ok(resource_exists(self.conn, id)?)
+        Ok(resource_exists(&self.store.lock(), id)?)
     }
 
     fn properties_present_on_class_of(&self, id: &str) -> Result<HashSet<String>, FactsError> {
-        Ok(properties_present_on_class_of(self.conn, id)?)
+        Ok(properties_present_on_class_of(&self.store.lock(), id)?)
     }
 
     fn malformed_property_rows(&self) -> Result<Vec<(String, String, String, &'static str)>, FactsError> {
-        Ok(malformed_property_rows(self.conn)?)
+        Ok(malformed_property_rows(&self.store.lock())?)
     }
 
     fn malformed_annotation_rows(&self) -> Result<AnnotationCheckRows, FactsError> {
-        Ok(malformed_annotation_rows(self.conn)?)
+        Ok(malformed_annotation_rows(&self.store.lock())?)
     }
 
     fn malformed_data_ark_rows(&self) -> Result<Vec<DataArkRow>, FactsError> {
-        Ok(malformed_data_ark_rows(self.conn)?)
+        Ok(malformed_data_ark_rows(&self.store.lock())?)
     }
 
     fn dangling_link_targets(&self) -> Result<Vec<(String, String)>, FactsError> {
-        Ok(dangling_link_targets(self.conn)?)
+        Ok(dangling_link_targets(&self.store.lock())?)
     }
 
     fn class_exists(&self, class: &str) -> Result<bool, FactsError> {
-        Ok(class_exists(self.conn, class)?)
+        Ok(class_exists(&self.store.lock(), class)?)
     }
 
     fn compound_has_parts(&self, parent_id: &str) -> Result<bool, FactsError> {
-        Ok(compound_has_parts(self.conn, parent_id)?)
+        Ok(compound_has_parts(&self.store.lock(), parent_id)?)
     }
 
     fn compound_member_classes(&self, parent_id: Option<&str>) -> Result<Vec<String>, FactsError> {
-        Ok(compound_member_classes(self.conn, parent_id)?)
+        Ok(compound_member_classes(&self.store.lock(), parent_id)?)
     }
 
     fn property_exists_anywhere(&self, name: &str) -> Result<bool, FactsError> {
-        Ok(property_exists_anywhere(self.conn, name)?)
+        Ok(property_exists_anywhere(&self.store.lock(), name)?)
     }
 
     fn properties_present_on_class(&self, class: &str) -> Result<HashSet<String>, FactsError> {
-        Ok(properties_present_on_class(self.conn, class)?)
+        Ok(properties_present_on_class(&self.store.lock(), class)?)
     }
 
     fn property_value_types_on_class(&self, class: &str, property: &str) -> Result<HashSet<String>, FactsError> {
-        Ok(property_value_types_on_class(self.conn, class, property)?)
+        Ok(property_value_types_on_class(&self.store.lock(), class, property)?)
     }
 
     fn class_of(&self, id: &str) -> Result<Option<String>, FactsError> {
-        Ok(class_of(self.conn, id)?)
+        Ok(class_of(&self.store.lock(), id)?)
     }
 
     fn link_target_classes_on_class(&self, class: &str, property: &str) -> Result<HashSet<String>, FactsError> {
-        Ok(link_target_classes_on_class(self.conn, class, property)?)
+        Ok(link_target_classes_on_class(&self.store.lock(), class, property)?)
     }
 
     fn class_has_representations(&self, class: &str) -> Result<bool, FactsError> {
-        Ok(class_has_representations(self.conn, class)?)
+        Ok(class_has_representations(&self.store.lock(), class)?)
     }
 
     fn linking_resource_lacks_property(
@@ -155,30 +163,34 @@ impl ProjectFacts for LiveProjectFacts<'_> {
         link_properties: &[String],
         property: &str,
     ) -> Result<bool, FactsError> {
-        Ok(linking_resource_lacks_property(self.conn, class, link_properties, property)?)
+        Ok(linking_resource_lacks_property(
+            &self.store.lock(),
+            class,
+            link_properties,
+            property,
+        )?)
     }
 
     fn showcase_annotation(&self, id: &str, media_property: &str) -> Result<Option<ShowcaseAnnotationRow>, FactsError> {
-        Ok(showcase_annotation_row(self.conn, id, media_property)?)
+        Ok(showcase_annotation_row(&self.store.lock(), id, media_property)?)
     }
 
     fn property_texts(&self, resource_id: &str, name: &str) -> Result<Vec<String>, FactsError> {
-        Ok(property_texts(self.conn, resource_id, name)?)
+        Ok(property_texts(&self.store.lock(), resource_id, name)?)
     }
 
     fn link_targets(&self, link_id: &str) -> Result<Option<Vec<LinkTargetRow>>, FactsError> {
-        Ok(link_targets(self.conn, link_id)?)
+        Ok(link_targets(&self.store.lock(), link_id)?)
     }
 }
 
 // ── Crate-internal functions ──────────────────────────────────────────────────
 //
-// These functions take a `&rusqlite::Connection` directly. Apart from
-// `build_search_indexes` and `data_arks`, the two boot steps `cpe-web`'s
-// `Project::load` runs, they are `pub(crate)` or private, so they are not part of
-// `cpe-store`'s public surface. Reads from outside the crate go through
-// `ProjectReads` (`query::reads`), which locks the connection internally and
-// never returns a guard.
+// These functions take a `&rusqlite::Connection` directly and never lock.
+// They are `pub(crate)` or private, so they are not part of `cpe-store`'s
+// public surface. Their callers hold the lock: `ProjectStore` for the two
+// load steps (`build_search_indexes`, `data_arks`), `LiveProjectFacts` for a
+// fact, `ProjectReads` (`query::reads`) for a read.
 
 /// Fetch a `Resource` by id from the project database.
 ///
@@ -196,7 +208,7 @@ pub(crate) fn get_resource(conn: &Connection, id: &str, lang: &Lang) -> Result<O
     let class: Option<String> = conn
         .query_row("SELECT class FROM resources WHERE id = ?1", [id], |row| row.get(0))
         .optional()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let class = match class {
         None => return Ok(None),
@@ -214,27 +226,27 @@ pub(crate) fn get_resource(conn: &Connection, id: &str, lang: &Lang) -> Result<O
              WHERE resource_id = ?1 \
              ORDER BY name, seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     // Step 3 — build PropertyValue per row, group into Property by name.
     let mut properties: Vec<Property> = Vec::new();
 
-    let mut rows = stmt.query([id]).map_err(QueryError::Query)?;
-    while let Some(row) = rows.next().map_err(QueryError::Query)? {
-        let name: String = row.get(0).map_err(QueryError::Query)?;
-        let _seq: i64 = row.get(1).map_err(QueryError::Query)?; // ORDER BY handles ordering; kept
+    let mut rows = stmt.query([id]).map_err(QueryError::query)?;
+    while let Some(row) = rows.next().map_err(QueryError::query)? {
+        let name: String = row.get(0).map_err(QueryError::query)?;
+        let _seq: i64 = row.get(1).map_err(QueryError::query)?; // ORDER BY handles ordering; kept
                                                                 // for clarity
-        let value_type: String = row.get(2).map_err(QueryError::Query)?;
-        let value_text: Option<String> = row.get(3).map_err(QueryError::Query)?;
-        let value_lang: Option<String> = row.get(4).map_err(QueryError::Query)?;
-        let value_int: Option<i64> = row.get(5).map_err(QueryError::Query)?;
-        let value_real: Option<f64> = row.get(6).map_err(QueryError::Query)?;
-        let date_start: Option<String> = row.get(7).map_err(QueryError::Query)?;
-        let date_end: Option<String> = row.get(8).map_err(QueryError::Query)?;
-        let date_precision: Option<String> = row.get(9).map_err(QueryError::Query)?;
-        let target_id: Option<String> = row.get(10).map_err(QueryError::Query)?;
-        let date_display: Option<String> = row.get(11).map_err(QueryError::Query)?;
-        let date_calendar: Option<String> = row.get(12).map_err(QueryError::Query)?;
+        let value_type: String = row.get(2).map_err(QueryError::query)?;
+        let value_text: Option<String> = row.get(3).map_err(QueryError::query)?;
+        let value_lang: Option<String> = row.get(4).map_err(QueryError::query)?;
+        let value_int: Option<i64> = row.get(5).map_err(QueryError::query)?;
+        let value_real: Option<f64> = row.get(6).map_err(QueryError::query)?;
+        let date_start: Option<String> = row.get(7).map_err(QueryError::query)?;
+        let date_end: Option<String> = row.get(8).map_err(QueryError::query)?;
+        let date_precision: Option<String> = row.get(9).map_err(QueryError::query)?;
+        let target_id: Option<String> = row.get(10).map_err(QueryError::query)?;
+        let date_display: Option<String> = row.get(11).map_err(QueryError::query)?;
+        let date_calendar: Option<String> = row.get(12).map_err(QueryError::query)?;
 
         let value = build_property_value(
             &value_type,
@@ -280,7 +292,7 @@ fn get_representations(conn: &Connection, resource_id: &str) -> Result<Vec<Repre
              WHERE resource_id = ?1 \
              ORDER BY seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let rows = stmt
         .query_map([resource_id], |row| {
@@ -294,9 +306,9 @@ fn get_representations(conn: &Connection, resource_id: &str) -> Result<Vec<Repre
                 row.get::<_, i64>(6)?,
             ))
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let mut representations = Vec::new();
     for (kind_str, uri, width, height, alt, attribution, seq) in rows {
@@ -313,7 +325,7 @@ fn get_representations(conn: &Connection, resource_id: &str) -> Result<Vec<Repre
 pub(crate) fn resource_exists(conn: &Connection, id: &str) -> Result<bool, QueryError> {
     let count: i64 = conn
         .query_row("SELECT COUNT(*) FROM resources WHERE id = ?1", [id], |row| row.get(0))
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(count > 0)
 }
 
@@ -326,7 +338,7 @@ pub(crate) fn resource_exists(conn: &Connection, id: &str) -> Result<bool, Query
 pub(crate) fn class_of(conn: &Connection, id: &str) -> Result<Option<String>, QueryError> {
     conn.query_row("SELECT class FROM resources WHERE id = ?1", [id], |row| row.get(0))
         .optional()
-        .map_err(QueryError::Query)
+        .map_err(QueryError::query)
 }
 
 /// Return the union of distinct property names across all resources that share
@@ -338,7 +350,7 @@ pub(crate) fn properties_present_on_class_of(conn: &Connection, id: &str) -> Res
     let class: Option<String> = conn
         .query_row("SELECT class FROM resources WHERE id = ?1", [id], |row| row.get(0))
         .optional()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let class = match class {
         None => return Ok(HashSet::new()),
@@ -353,13 +365,13 @@ pub(crate) fn properties_present_on_class_of(conn: &Connection, id: &str) -> Res
              JOIN resources r ON r.id = p.resource_id \
              WHERE r.class = ?1",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let names: HashSet<String> = stmt
         .query_map([&class], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<HashSet<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(names)
 }
@@ -376,7 +388,7 @@ pub(crate) fn class_exists(conn: &Connection, class: &str) -> Result<bool, Query
         .query_row("SELECT EXISTS(SELECT 1 FROM resources WHERE class = ?1)", [class], |row| {
             row.get(0)
         })
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(exists)
 }
 
@@ -390,7 +402,7 @@ pub(crate) fn property_exists_anywhere(conn: &Connection, name: &str) -> Result<
         .query_row("SELECT EXISTS(SELECT 1 FROM properties WHERE name = ?1)", [name], |row| {
             row.get(0)
         })
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(exists)
 }
 
@@ -410,13 +422,13 @@ pub(crate) fn properties_present_on_class(conn: &Connection, class: &str) -> Res
              JOIN resources r ON r.id = p.resource_id \
              WHERE r.class = ?1",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let names: HashSet<String> = stmt
         .query_map([class], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<HashSet<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(names)
 }
@@ -450,7 +462,7 @@ pub(crate) fn count_resources(conn: &Connection, class: &str, wheres: &[WhereCla
 
     let count: i64 = conn
         .query_row(&sql, rusqlite::params_from_iter(&all_params), |row| row.get(0))
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     // COUNT(*) is always ≥ 0 and fits in usize on any supported platform.
     Ok(usize::try_from(count).unwrap_or(0))
@@ -658,12 +670,12 @@ pub(crate) fn list_resource_ids(
     all_params.push(rusqlite::types::Value::Integer(i64::from(limit)));
     all_params.push(rusqlite::types::Value::Integer(i64::from(offset)));
 
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let ids: Vec<String> = stmt
         .query_map(rusqlite::params_from_iter(&all_params), |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(ids)
 }
@@ -672,8 +684,8 @@ pub(crate) fn list_resource_ids(
 
 /// Build FTS5 virtual tables for every `search-bar` in `config.pages` and
 /// populate them from the loaded data. Called once at boot
-/// (`Project::load`, after validation, before `conn` is wrapped in a
-/// `Mutex`).
+/// (`ProjectStore::build_search_indexes`, from `Project::load` after
+/// validation).
 ///
 /// Each search-bar's `target` resolves to its sibling `ResourceList` in the
 /// SAME page's body (`id == Some(target)`) to recover the searched `class`.
@@ -695,7 +707,10 @@ pub(crate) fn list_resource_ids(
 /// guarantees a validated `config.pages` never contains a dangling target,
 /// so this is an unreachable-in-practice guard, not a silent-drop of real
 /// config.
-pub fn build_search_indexes(conn: &Connection, config: &cpe_core::ir::ValidatedConfig) -> Result<(), QueryError> {
+pub(crate) fn build_search_indexes(
+    conn: &Connection,
+    config: &cpe_core::ir::ValidatedConfig,
+) -> Result<(), QueryError> {
     use cpe_core::ir::Component;
 
     // Resolve every search-bar to its (table, class, searches), deduped by
@@ -735,24 +750,24 @@ pub fn build_search_indexes(conn: &Connection, config: &cpe_core::ir::ValidatedC
             &format!("CREATE VIRTUAL TABLE {table} USING fts5(resource_id UNINDEXED, content)"),
             [],
         )
-        .map_err(QueryError::SearchIndexBuild)?;
+        .map_err(QueryError::search_index_build)?;
     }
 
     // Content population — every INSERT across every table in ONE
     // transaction (never row-by-row autocommit; see the project's SQLite
     // text-seed learning on O(n²) row-by-row inserts).
-    let tx = conn.unchecked_transaction().map_err(QueryError::SearchIndexBuild)?;
+    let tx = conn.unchecked_transaction().map_err(QueryError::search_index_build)?;
 
     for (table, class, searches) in &indexes {
         let resource_ids: Vec<String> = {
             let mut stmt = tx
                 .prepare("SELECT id FROM resources WHERE class = ?1")
-                .map_err(QueryError::SearchIndexBuild)?;
+                .map_err(QueryError::search_index_build)?;
             let ids = stmt
                 .query_map([class], |row| row.get::<_, String>(0))
-                .map_err(QueryError::SearchIndexBuild)?
+                .map_err(QueryError::search_index_build)?
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(QueryError::SearchIndexBuild)?;
+                .map_err(QueryError::search_index_build)?;
             ids
         };
 
@@ -763,10 +778,10 @@ pub fn build_search_indexes(conn: &Connection, config: &cpe_core::ir::ValidatedC
                 "SELECT value_type, value_text FROM properties \
                  WHERE resource_id = ? AND name IN ({placeholders})"
             ))
-            .map_err(QueryError::SearchIndexBuild)?;
+            .map_err(QueryError::search_index_build)?;
         let mut insert_stmt = tx
             .prepare(&format!("INSERT INTO {table} (resource_id, content) VALUES (?, ?)"))
-            .map_err(QueryError::SearchIndexBuild)?;
+            .map_err(QueryError::search_index_build)?;
 
         for resource_id in &resource_ids {
             let mut query_params: Vec<&str> = vec![resource_id.as_str()];
@@ -775,15 +790,15 @@ pub fn build_search_indexes(conn: &Connection, config: &cpe_core::ir::ValidatedC
             let mut fragments: Vec<String> = Vec::new();
             let mut rows = select_stmt
                 .query(rusqlite::params_from_iter(query_params))
-                .map_err(QueryError::SearchIndexBuild)?;
+                .map_err(QueryError::search_index_build)?;
             // Every row for the resource+searches is collected regardless of
             // `value_lang` — a language-agnostic index, matching how
             // `WhereClause::Search` ignores `value_lang` at query time. A
             // multi-lang property therefore contributes all its language
             // variants' text, concatenated with the rest.
-            while let Some(row) = rows.next().map_err(QueryError::SearchIndexBuild)? {
-                let value_type: String = row.get(0).map_err(QueryError::SearchIndexBuild)?;
-                let value_text: Option<String> = row.get(1).map_err(QueryError::SearchIndexBuild)?;
+            while let Some(row) = rows.next().map_err(QueryError::search_index_build)? {
+                let value_type: String = row.get(0).map_err(QueryError::search_index_build)?;
+                let value_text: Option<String> = row.get(1).map_err(QueryError::search_index_build)?;
                 let Some(text) = value_text else {
                     continue;
                 };
@@ -807,11 +822,11 @@ pub fn build_search_indexes(conn: &Connection, config: &cpe_core::ir::ValidatedC
 
             insert_stmt
                 .execute(rusqlite::params![resource_id, content])
-                .map_err(QueryError::SearchIndexBuild)?;
+                .map_err(QueryError::search_index_build)?;
         }
     }
 
-    tx.commit().map_err(QueryError::SearchIndexBuild)?;
+    tx.commit().map_err(QueryError::search_index_build)?;
 
     Ok(())
 }
@@ -1051,13 +1066,13 @@ pub(crate) fn dangling_link_targets(conn: &Connection) -> Result<Vec<(String, St
                AND r.id IS NULL \
              ORDER BY p.resource_id, p.target_id",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let pairs: Vec<(String, String)> = stmt
         .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(pairs)
 }
@@ -1098,7 +1113,7 @@ pub(crate) fn malformed_property_rows(
                (value_type IN ('link', 'list_value')  AND target_id  IS NULL) \
              ORDER BY resource_id, name, seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let rows: Vec<(String, String, String)> = stmt
         .query_map([], |row| {
@@ -1108,9 +1123,9 @@ pub(crate) fn malformed_property_rows(
                 row.get::<_, String>(3)?, // value_type (col index 3; seq is 2)
             ))
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     // Map value_type → missing column name (&'static str) in Rust.
     let result = rows
@@ -1140,7 +1155,7 @@ pub(crate) fn malformed_property_rows(
 pub(crate) fn malformed_annotation_rows(conn: &Connection) -> Result<AnnotationCheckRows, QueryError> {
     let mut stmt = conn
         .prepare("SELECT id, shape, x, y, w, h, points, color FROM annotations ORDER BY id")
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     let annotations = stmt
         .query_map([], |row| {
             Ok(AnnotationCheckRow {
@@ -1154,9 +1169,9 @@ pub(crate) fn malformed_annotation_rows(conn: &Connection) -> Result<AnnotationC
                 color: row.get(7)?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let mut stmt = conn
         .prepare(
@@ -1164,12 +1179,12 @@ pub(crate) fn malformed_annotation_rows(conn: &Connection) -> Result<AnnotationC
              WHERE NOT EXISTS (SELECT 1 FROM annotation_link_targets t WHERE t.link_id = l.id) \
              ORDER BY l.id",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     let empty_links = stmt
         .query_map([], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(AnnotationCheckRows { annotations, empty_links })
 }
@@ -1186,12 +1201,12 @@ pub(crate) fn malformed_data_ark_rows(conn: &Connection) -> Result<Vec<DataArkRo
             "SELECT id, ark FROM annotations WHERE ark IS NOT NULL ORDER BY id",
         ),
     ] {
-        let mut stmt = conn.prepare(sql).map_err(QueryError::Query)?;
+        let mut stmt = conn.prepare(sql).map_err(QueryError::query)?;
         let found = stmt
             .query_map([], |row| Ok(DataArkRow { table, id: row.get(0)?, ark: row.get(1)? }))
-            .map_err(QueryError::Query)?
+            .map_err(QueryError::query)?
             .collect::<Result<Vec<_>, _>>()
-            .map_err(QueryError::Query)?;
+            .map_err(QueryError::query)?;
         rows.extend(found);
     }
     Ok(rows)
@@ -1201,14 +1216,14 @@ pub(crate) fn malformed_data_ark_rows(conn: &Connection) -> Result<Vec<DataArkRo
 /// two separate maps (the two id namespaces may overlap). Read once at load
 /// into `Project::data_arks`; the values are whatever is stored, so callers
 /// rely on the `MalformedDataArk` boot check for their shape.
-pub fn data_arks(conn: &Connection) -> Result<DataArks, QueryError> {
+pub(crate) fn data_arks(conn: &Connection) -> Result<DataArks, QueryError> {
     let read = |sql: &str| -> Result<HashMap<String, String>, QueryError> {
-        let mut stmt = conn.prepare(sql).map_err(QueryError::Query)?;
+        let mut stmt = conn.prepare(sql).map_err(QueryError::query)?;
         let rows = stmt
             .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-            .map_err(QueryError::Query)?
+            .map_err(QueryError::query)?
             .collect::<Result<HashMap<String, String>, _>>()
-            .map_err(QueryError::Query)?;
+            .map_err(QueryError::query)?;
         Ok(rows)
     };
     Ok(DataArks::from_stored(
@@ -1232,7 +1247,7 @@ pub(crate) fn compound_has_parts(conn: &Connection, parent_id: &str) -> Result<b
             [parent_id],
             |row| row.get(0),
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(exists)
 }
 
@@ -1256,13 +1271,13 @@ pub(crate) fn compound_member_classes(conn: &Connection, parent_id: Option<&str>
              WHERE ?1 IS NULL OR cp.parent_id = ?1 \
              ORDER BY r.class",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let classes = stmt
         .query_map([parent_id], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(classes)
 }
@@ -1305,7 +1320,7 @@ pub(crate) fn compound_part_headers(
              GROUP BY cp.child_id, cp.seq, r.class \
              ORDER BY cp.seq, cp.child_id",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let lang_str = lang.as_str().to_owned();
     let rows: Vec<(String, String, Option<String>)> = stmt
@@ -1315,9 +1330,9 @@ pub(crate) fn compound_part_headers(
             let name: Option<String> = row.get(2)?;
             Ok((id, class, name))
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let headers = rows
         .into_iter()
@@ -1559,7 +1574,7 @@ pub(crate) fn incoming_links(
         }
     }
 
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let mut total: usize = 0;
     let mut links: Vec<IncomingLink> = stmt
         .query_map(rusqlite::params_from_iter(&params), |row| {
@@ -1601,7 +1616,7 @@ pub(crate) fn incoming_links(
                 IncomingLink { id, class, name, via, parent, group, label, aside },
             ))
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .map(|r| {
             r.map(|(row_total, link)| {
                 total = row_total;
@@ -1609,7 +1624,7 @@ pub(crate) fn incoming_links(
             })
         })
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     // Text group keys compare case-insensitively: every case variant takes
     // the first spelling met in row order, so grouping is plain equality.
@@ -1701,12 +1716,12 @@ pub(crate) fn annotations_on(conn: &Connection, resource_id: &str) -> Result<Vec
         "SELECT {ANNOTATION_COLUMNS} FROM {NUMBERED_ANNOTATIONS} \
          WHERE resource_id = ?1 ORDER BY n"
     );
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let rows = stmt
         .query_map([resource_id], annotation_from_row)
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(rows)
 }
 
@@ -1757,7 +1772,7 @@ pub(crate) fn annotation_partners(
          WHERE o.{col} IS NOT ?1 \
          ORDER BY l.id, o.seq"
     );
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let rows = stmt
         .query_map(rusqlite::params![id, lang.as_str()], |row| {
             let resource_id: String = row.get(5)?;
@@ -1786,9 +1801,9 @@ pub(crate) fn annotation_partners(
                 first_member: row.get(12)?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(rows)
 }
 
@@ -1803,7 +1818,7 @@ pub(crate) fn links_targeting(conn: &Connection, resource_id: &str) -> Result<Ve
              WHERE t.resource_id = ?1 \
              ORDER BY l.id",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     let rows = stmt
         .query_map([resource_id], |row| {
             Ok(AnnotationLink {
@@ -1814,9 +1829,9 @@ pub(crate) fn links_targeting(conn: &Connection, resource_id: &str) -> Result<Ve
                 comment_lang: row.get(4)?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(rows)
 }
 
@@ -1831,12 +1846,12 @@ pub(crate) fn annotated_members(conn: &Connection, parent_id: &str) -> Result<BT
                  OR EXISTS (SELECT 1 FROM annotation_link_targets t \
                             WHERE t.resource_id = cp.child_id))",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     let ids = stmt
         .query_map([parent_id], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<BTreeSet<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(ids)
 }
 
@@ -1860,7 +1875,7 @@ pub(crate) fn resource_links(
          WHERE o.resource_id <> ?1 \
          ORDER BY l.id, o.seq"
     );
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let rows = stmt
         .query_map(rusqlite::params![resource_id, lang.as_str()], |row| {
             let id: String = row.get(3)?;
@@ -1874,9 +1889,9 @@ pub(crate) fn resource_links(
                 resource_class: row.get(4)?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(rows)
 }
 
@@ -1940,7 +1955,7 @@ pub(crate) fn annotation_crops(
     for id in ids {
         params.push(id);
     }
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let found: HashMap<String, AnnotationCrop> = stmt
         .query_map(params.as_slice(), |row| {
             let (_, annotation) = annotation_from_row(row)?;
@@ -1965,10 +1980,10 @@ pub(crate) fn annotation_crops(
                 image: image.transpose()?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .map(|crop| crop.map(|c| (c.annotation.id.clone(), c)))
         .collect::<Result<_, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(ids.iter().filter_map(|id| found.get(id).cloned()).collect())
 }
 
@@ -2008,7 +2023,7 @@ pub(crate) fn page_plates(
     for id in ids {
         params.push(id);
     }
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let found: HashMap<String, PagePlate> = stmt
         .query_map(params.as_slice(), |row| {
             let id: String = row.get(0)?;
@@ -2033,10 +2048,10 @@ pub(crate) fn page_plates(
                 image: image.transpose()?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .map(|plate| plate.map(|p| (p.resource_id.clone(), p)))
         .collect::<Result<_, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(ids.iter().filter_map(|id| found.get(id).cloned()).collect())
 }
 
@@ -2051,7 +2066,7 @@ pub(crate) fn annotation_links_by_id(conn: &Connection, ids: &[String]) -> Resul
         "SELECT id, name, name_lang, comment, comment_lang FROM annotation_links \
          WHERE id IN ({placeholders})"
     );
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let found: HashMap<String, AnnotationLink> = stmt
         .query_map(rusqlite::params_from_iter(ids), |row| {
             Ok(AnnotationLink {
@@ -2062,10 +2077,10 @@ pub(crate) fn annotation_links_by_id(conn: &Connection, ids: &[String]) -> Resul
                 comment_lang: row.get(4)?,
             })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .map(|link| link.map(|l| (l.id.clone(), l)))
         .collect::<Result<_, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(ids.iter().filter_map(|id| found.get(id).cloned()).collect())
 }
 
@@ -2092,7 +2107,7 @@ pub(crate) fn showcase_annotation_row(
         })
     })
     .optional()
-    .map_err(QueryError::Query)
+    .map_err(QueryError::query)
 }
 
 /// Every `text`/`richtext` value of `resource_id`'s property `name`, in
@@ -2105,12 +2120,12 @@ pub(crate) fn property_texts(conn: &Connection, resource_id: &str, name: &str) -
                AND value_type IN ('text', 'richtext') AND value_text IS NOT NULL \
              ORDER BY seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     let rows = stmt
         .query_map([resource_id, name], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(rows)
 }
 
@@ -2123,7 +2138,7 @@ pub(crate) fn link_targets(conn: &Connection, link_id: &str) -> Result<Option<Ve
             [link_id],
             |row| row.get(0),
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     if !exists {
         return Ok(None);
     }
@@ -2132,14 +2147,14 @@ pub(crate) fn link_targets(conn: &Connection, link_id: &str) -> Result<Option<Ve
             "SELECT annotation_id, resource_id FROM annotation_link_targets \
              WHERE link_id = ?1 ORDER BY seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     let rows = stmt
         .query_map([link_id], |row| {
             Ok(LinkTargetRow { annotation_id: row.get(0)?, resource_id: row.get(1)? })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(Some(rows))
 }
 
@@ -2162,13 +2177,13 @@ pub(crate) fn media_item_ids(conn: &Connection, resource_id: &str, property: &st
              WHERE resource_id = ?1 AND name = ?2 AND value_type = 'link' \
              ORDER BY seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let ids: Vec<String> = stmt
         .query_map([resource_id, property], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(ids)
 }
@@ -2224,7 +2239,7 @@ pub(crate) fn media_thumb_uris(
            )"
     );
 
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
 
     let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(ids.len() + 1);
     params.push(&class_media_property);
@@ -2236,9 +2251,9 @@ pub(crate) fn media_thumb_uris(
         .query_map(params.as_slice(), |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(rows
         .into_iter()
@@ -2380,13 +2395,13 @@ fn get_resource_label(conn: &Connection, target_id: &str, lang: &Lang) -> Result
              WHERE resource_id = ?1 AND name = 'name' \
              ORDER BY seq",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let rows: Vec<(Option<String>, Option<String>)> = stmt
         .query_map([target_id], |row| Ok((row.get(0)?, row.get(1)?)))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     if rows.is_empty() {
         // Target either doesn't exist or has no `name` property.
@@ -2419,13 +2434,13 @@ fn get_resource_label(conn: &Connection, target_id: &str, lang: &Lang) -> Result
 fn get_list_node_label(conn: &Connection, node_id: &str, lang: &Lang) -> Result<Option<String>, QueryError> {
     let mut stmt = conn
         .prepare("SELECT lang, label FROM list_node_labels WHERE node_id = ?1")
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let rows: Vec<(String, String)> = stmt
         .query_map([node_id], |row| Ok((row.get(0)?, row.get(1)?)))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     if rows.is_empty() {
         return Ok(None);
@@ -2496,7 +2511,7 @@ pub(crate) fn list_facet_values(
     all_params.extend(class_param);
     all_params.extend(where_params);
 
-    let mut stmt = conn.prepare(&sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(&sql).map_err(QueryError::query)?;
     let rows: Vec<(String, Option<String>, usize)> = stmt
         .query_map(rusqlite::params_from_iter(&all_params), |row| {
             let node_id: String = row.get(0)?;
@@ -2504,9 +2519,9 @@ pub(crate) fn list_facet_values(
             let cnt: i64 = row.get(2)?;
             Ok((node_id, label, cnt))
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .into_iter()
         .map(|(node_id, label, cnt)| {
             // COUNT(DISTINCT …) is always ≥ 0 and fits in usize on any supported platform.
@@ -2545,14 +2560,14 @@ pub(crate) fn list_nodes_for_property(
              WHERE r.class = ?2 AND p.name = ?3 AND p.value_type = 'list_value') \
          GROUP BY ln.id, ln.seq \
          ORDER BY ln.seq, ln.id";
-    let mut stmt = conn.prepare(sql).map_err(QueryError::Query)?;
+    let mut stmt = conn.prepare(sql).map_err(QueryError::query)?;
     let rows = stmt
         .query_map(rusqlite::params![lang.as_str(), class, property], |row| {
             Ok(LaneNode { node_id: row.get(0)?, label: row.get(1)? })
         })
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(rows)
 }
 
@@ -2579,13 +2594,13 @@ pub(crate) fn property_value_types_on_class(
              JOIN resources r ON r.id = p.resource_id \
              WHERE r.class = ? AND p.name = ?",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let types: HashSet<String> = stmt
         .query_map([class, property], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<HashSet<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(types)
 }
@@ -2613,13 +2628,13 @@ pub(crate) fn link_target_classes_on_class(
              JOIN resources r2 ON r2.id = p.target_id \
              WHERE r1.class = ?1 AND p.name = ?2 AND p.value_type = 'link'",
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     let classes: HashSet<String> = stmt
         .query_map([class, property], |row| row.get(0))
-        .map_err(QueryError::Query)?
+        .map_err(QueryError::query)?
         .collect::<Result<HashSet<String>, _>>()
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
 
     Ok(classes)
 }
@@ -2657,7 +2672,7 @@ pub(crate) fn linking_resource_lacks_property(
     params.push(property);
     let lacks: bool = conn
         .query_row(&sql, rusqlite::params_from_iter(&params), |row| row.get(0))
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(lacks)
 }
 
@@ -2675,7 +2690,7 @@ pub(crate) fn class_has_representations(conn: &Connection, class: &str) -> Resul
             [class],
             |row| row.get(0),
         )
-        .map_err(QueryError::Query)?;
+        .map_err(QueryError::query)?;
     Ok(exists)
 }
 

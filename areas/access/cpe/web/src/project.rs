@@ -3,7 +3,6 @@
 
 #[cfg(test)]
 use std::collections::BTreeSet;
-use std::sync::Mutex;
 
 use cpe_components::component::context::NarrativeStore;
 use cpe_core::diagnostic::{Diagnostic, ValidationReport};
@@ -18,21 +17,18 @@ use cpe_core::validate::context::ValidationContext;
 use cpe_core::validate::{self, build_class_list_routes, build_class_routes, build_media_properties, ConfigLoadError};
 use cpe_core::view_data::{ComponentData, PageData, PageRequest};
 use cpe_core::ConfigError;
-use cpe_store::db::{self, DbError};
+use cpe_store::db::{DbError, ProjectStore};
 use cpe_store::query::reads::ProjectReads;
-use cpe_store::query::{self, LiveProjectFacts, QueryError};
-use rusqlite::Connection;
+use cpe_store::query::{self, QueryError};
 
 #[derive(Debug)]
 pub struct Project {
     id: String,
     config: ValidatedConfig,
-    // Wrapped in a Mutex so `Arc<Project>` is `Sync` (a bare
-    // rusqlite::Connection is Send but !Sync) and can be shared across
-    // Axum handlers. Every lock is taken in `query::reads`, whose module
-    // doc states the protocol (expect on poisoning, never unwrap; the
-    // guard is never held across hydration or an `.await`).
-    conn: Mutex<Connection>,
+    // The store owns the connection and takes every lock on it, so nothing
+    // here can hold a guard across an `.await`. `ProjectStore` is `Sync`, which
+    // is what lets `Arc<Project>` be shared across handlers.
+    store: ProjectStore,
     narrative: NarrativeStore,
     /// Warning-severity diagnostics produced during `validate_with_data`.
     /// Empty when the project loaded without data-check warnings.
@@ -95,8 +91,8 @@ impl Project {
         data_sql: &str,
         narrative: &[(String, String)],
     ) -> Result<Self, LoadError> {
-        let conn = db::open_project_db(data_sql)?;
-        let facts = LiveProjectFacts::new(&conn);
+        let store = ProjectStore::open(data_sql)?;
+        let facts = store.facts();
         let (config, load_warnings) =
             validate::load_config(config_src, ctx, &facts, narrative).map_err(|e| match e {
                 ConfigLoadError::Parse(e) => LoadError::Config(e),
@@ -111,22 +107,21 @@ impl Project {
         let class_list_routes = build_class_list_routes(&config.pages);
         // Class→media-property map: built the
         // same way as `class_routes` above, but data-dependent (a literal-id
-        // `resource-detail`'s class is looked up via `facts`), so it must
-        // be built before `conn` moves into the `Mutex` below. Safe to build
+        // `resource-detail`'s class is looked up via `facts`). Safe to build
         // unconditionally after validation passed — `check_resource_detail_media`
         // already hard-failed any unresolvable/conflicting binding.
         let media_properties = build_media_properties(&config.pages, &facts);
         // Build every search-bar's FTS5 index after validation (so we can
         // enumerate validated `config.pages` search-bars + their resolved
-        // target classes) and before `conn` is moved into the `Mutex` below.
-        query::build_search_indexes(&conn, &config).map_err(LoadError::Search)?;
-        // Read before `conn` moves into the `Mutex`, so a render never queries
-        // the ARKs; the full page and the `_compound` fragment read one map.
-        let data_arks = query::data_arks(&conn).map_err(LoadError::DataArks)?;
+        // target classes).
+        store.build_search_indexes(&config).map_err(LoadError::Search)?;
+        // Read here, so a render never queries the ARKs; the full page and the
+        // `_compound` fragment read one map.
+        let data_arks = store.data_arks().map_err(LoadError::DataArks)?;
         Ok(Self {
             id: ctx.project_id.to_owned(),
             config,
-            conn: Mutex::new(conn),
+            store,
             narrative: NarrativeStore::from_pairs(narrative),
             load_warnings,
             class_routes,
@@ -138,7 +133,7 @@ impl Project {
 
     /// The store's composite reads over this project's connection.
     fn reads(&self) -> ProjectReads<'_> {
-        ProjectReads::new(&self.conn)
+        self.store.reads()
     }
 
     /// Fetch a `Resource` by id from this project's in-memory database.
@@ -442,11 +437,10 @@ impl Project {
     }
 }
 
-/// What can go wrong loading a project. The foreign-crate sources
-/// (kdl/rusqlite errors) live as `#[source]` variant fields inside
-/// `ConfigError`/`DbError`, with no `From` conversion from them. Variant
-/// fields are public, so a caller matching those variants can still reach
-/// the kdl/rusqlite error.
+/// What can go wrong loading a project. The foreign-crate sources live as
+/// `#[source]` variant fields inside `ConfigError`/`DbError`, with no `From`
+/// conversion from them. A caller matching `ConfigError`'s variants can reach
+/// the kdl error; `DbError` and `QueryError` carry no driver type.
 #[derive(Debug, thiserror::Error)]
 pub enum LoadError {
     #[error(transparent)]
@@ -460,12 +454,12 @@ pub enum LoadError {
     Validation(ValidationReport),
     /// Building a `search-bar`'s FTS5 index failed. A dedicated variant
     /// (not folded into `Db`) per the "errors carry a stable kind" convention
-    /// — this is a distinct boot step (`query::build_search_indexes`), not a
+    /// — this is a distinct boot step (`ProjectStore::build_search_indexes`), not a
     /// generic database-open failure.
     #[error("failed to build search index")]
     Search(#[source] QueryError),
     /// Reading the stored data ARKs into `Project::data_arks` failed. Its own
-    /// variant, like `Search`: a distinct boot step (`query::data_arks`).
+    /// variant, like `Search`: a distinct boot step (`ProjectStore::data_arks`).
     #[error("failed to read the data ARKs")]
     DataArks(#[source] QueryError),
 }
@@ -994,7 +988,7 @@ page id="home" route="/"
     // a `Thing` class with `name` (text) and `description` (richtext)
     // properties, and a page with `resource-list id="things"` + `search-bar
     // target="things" searches="name" "description"`. `Project::load` builds
-    // the FTS5 index at boot (`query::build_search_indexes`); these tests
+    // the FTS5 index at boot (`ProjectStore::build_search_indexes`); these tests
     // exercise it through the public query entry points with an injected
     // `WhereClause::Search`, as a host injects one at request time. This
     // integration test lives here, beside the

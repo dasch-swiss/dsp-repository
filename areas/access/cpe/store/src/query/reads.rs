@@ -1,17 +1,16 @@
-//! The store's composite reads over a project's connection: every
-//! `Mutex<Connection>` lock page assembly takes is taken here.
+//! The store's composite reads over a project's connection: every lock a
+//! page request takes on it is taken here.
 //!
-//! Lock rule: each read locks `conn` with
-//! `.lock().expect("conn mutex is never poisoned — no panic path holds the
-//! guard")`, keeps the guard in the narrowest scope that runs its queries,
-//! and drops it before hydrating ids (`get_resource` re-locks per id) and
-//! before returning. A guard is never held across hydration or an `.await`,
-//! and never returned. The `Mutex` is non-reentrant, so a read never calls
-//! another read while it holds the guard. `Project` owns the `Mutex` and
-//! hands it in through [`ProjectReads::new`].
+//! Lock rule: each read locks with `ProjectStore::lock`, keeps the guard in
+//! the narrowest scope that runs its queries, and drops it before hydrating
+//! ids (`get_resource` re-locks per id) and before returning. A guard is
+//! never held across hydration or an `.await`, and never returned. The
+//! `Mutex` is non-reentrant, so a read never calls another read while it
+//! holds the guard. `ProjectStore` owns the `Mutex`; [`ProjectStore::reads`]
+//! is the way to a `ProjectReads`. The locks taken outside this module are
+//! one per fact (`LiveProjectFacts`) and one per load step (`ProjectStore`).
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::sync::Mutex;
 
 use cpe_core::ir::{
     AnnotationCrop, AnnotationEntry, AnnotationLink, AnnotationPartner, CompoundPage, Facet, FacetGroup, FacetOption,
@@ -19,8 +18,8 @@ use cpe_core::ir::{
     Resource, ResourceLink, ResourceListPage, Sort, WhereClause,
 };
 use cpe_core::lang::Lang;
-use rusqlite::Connection;
 
+use crate::db::ProjectStore;
 use crate::query::{self, QueryError};
 
 /// Resolve a raw `?page=` value to a 0-based position in `headers`.
@@ -69,16 +68,15 @@ pub fn resolve_page_param(headers: &[MemberHeader], raw: &str) -> Option<usize> 
     Some(first_pos)
 }
 
-/// The composite reads over one project's connection. Borrows the `Mutex`
-/// `Project` owns; built per call (`ProjectReads::new`), it holds no state
-/// of its own.
+/// The composite reads over one project's connection. Borrows the store;
+/// built per call (`ProjectStore::reads`), it holds no state of its own.
 pub struct ProjectReads<'a> {
-    conn: &'a Mutex<Connection>,
+    store: &'a ProjectStore,
 }
 
 impl<'a> ProjectReads<'a> {
-    pub fn new(conn: &'a Mutex<Connection>) -> Self {
-        Self { conn }
+    pub(crate) fn new(store: &'a ProjectStore) -> Self {
+        Self { store }
     }
 
     /// Fetch a `Resource` by id from this project's in-memory database.
@@ -88,10 +86,7 @@ impl<'a> ProjectReads<'a> {
     ///
     /// Returns `Ok(None)` for a missing resource (caller maps to 404).
     pub fn get_resource(&self, id: &str, lang: &Lang) -> Result<Option<Resource>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::get_resource(&conn, id, lang)
     }
 
@@ -127,10 +122,7 @@ impl<'a> ProjectReads<'a> {
         match pagination {
             Pagination::Limit(n) => {
                 let ids = {
-                    let conn = self
-                        .conn
-                        .lock()
-                        .expect("conn mutex is never poisoned — no panic path holds the guard");
+                    let conn = self.store.lock();
                     query::list_resource_ids(&conn, class, wheres, sorts, n, 0, lang)?
                 };
 
@@ -140,10 +132,7 @@ impl<'a> ProjectReads<'a> {
             }
             Pagination::PerPage(n) => {
                 let (total, ids) = {
-                    let conn = self
-                        .conn
-                        .lock()
-                        .expect("conn mutex is never poisoned — no panic path holds the guard");
+                    let conn = self.store.lock();
                     let total = query::count_resources(&conn, class, wheres)?;
                     // Compute last page: at least 1 even when the result set is empty.
                     let last_page = last_page_for(total, n);
@@ -189,10 +178,7 @@ impl<'a> ProjectReads<'a> {
     /// only (never the request-time facet `TargetIn` clauses) after
     /// `list_resources` has already run with the full merged `wheres`.
     pub fn count_resources(&self, class: &str, wheres: &[WhereClause]) -> Result<usize, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::count_resources(&conn, class, wheres)
     }
 
@@ -248,10 +234,7 @@ impl<'a> ProjectReads<'a> {
         lang: &Lang,
     ) -> Result<CompoundPage, QueryError> {
         let headers = {
-            let conn = self
-                .conn
-                .lock()
-                .expect("conn mutex is never poisoned — no panic path holds the guard");
+            let conn = self.store.lock();
             query::compound_part_headers(&conn, parent_id, lang)?
             // guard dropped here
         };
@@ -341,10 +324,7 @@ impl<'a> ProjectReads<'a> {
         parent_id: &str,
         lang: &Lang,
     ) -> Result<Vec<MemberHeader>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::compound_part_headers(&conn, parent_id, lang)
     }
 
@@ -364,10 +344,7 @@ impl<'a> ProjectReads<'a> {
         target_id: &str,
         lang: &Lang,
     ) -> Result<IncomingLinks, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::incoming_links(&conn, spec, target_id, lang)
     }
 
@@ -379,10 +356,7 @@ impl<'a> ProjectReads<'a> {
     /// undeduplicated (see [`AnnotationPartner`]). Empty for a resource with
     /// neither.
     pub fn page_annotations(&self, resource_id: &str, lang: &Lang) -> Result<Vec<AnnotationEntry>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         let mut entries = Vec::new();
         for (number, annotation) in query::annotations_on(&conn, resource_id)? {
             let partners = query::annotation_partners(&conn, query::EntryTarget::Annotation(&annotation.id), lang)?;
@@ -408,10 +382,7 @@ impl<'a> ProjectReads<'a> {
     /// (at least one annotation, or a link targeting the member itself) —
     /// the set the reader's signposts mark. One query per compound.
     pub fn annotated_members(&self, parent_id: &str) -> Result<BTreeSet<String>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::annotated_members(&conn, parent_id)
     }
 
@@ -419,10 +390,7 @@ impl<'a> ProjectReads<'a> {
     /// that share an annotation link with it, ordered by link id then target
     /// order (see [`ResourceLink`]).
     pub fn resource_links(&self, resource_id: &str, lang: &Lang) -> Result<Vec<ResourceLink>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::resource_links(&conn, resource_id, lang)
     }
 
@@ -436,10 +404,7 @@ impl<'a> ProjectReads<'a> {
         media_property: &str,
         lang: &Lang,
     ) -> Result<Vec<AnnotationCrop>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::annotation_crops(&conn, ids, media_property, lang)
     }
 
@@ -452,20 +417,14 @@ impl<'a> ProjectReads<'a> {
         media_property: &str,
         lang: &Lang,
     ) -> Result<Vec<PagePlate>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::page_plates(&conn, ids, media_property, lang)
     }
 
     /// The annotation links `ids`, in the order of `ids`; an unknown id is
     /// omitted.
     pub(crate) fn annotation_links_by_id(&self, ids: &[String]) -> Result<Vec<AnnotationLink>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::annotation_links_by_id(&conn, ids)
     }
 
@@ -502,10 +461,7 @@ impl<'a> ProjectReads<'a> {
         lang: &Lang,
     ) -> Result<FacetGroup, QueryError> {
         let rows = {
-            let conn = self
-                .conn
-                .lock()
-                .expect("conn mutex is never poisoned — no panic path holds the guard");
+            let conn = self.store.lock();
             query::list_facet_values(&conn, class, &facet.property, base_wheres, lang)?
             // guard dropped here
         };
@@ -541,10 +497,7 @@ impl<'a> ProjectReads<'a> {
         property: &str,
         lang: &Lang,
     ) -> Result<Vec<LaneNode>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::list_nodes_for_property(&conn, class, property, lang)
     }
 
@@ -579,10 +532,7 @@ impl<'a> ProjectReads<'a> {
     /// (not an error).
     pub fn media_items(&self, resource_id: &str, property: &str, lang: &Lang) -> Result<Vec<Resource>, QueryError> {
         let ids = {
-            let conn = self
-                .conn
-                .lock()
-                .expect("conn mutex is never poisoned — no panic path holds the guard");
+            let conn = self.store.lock();
             query::media_item_ids(&conn, resource_id, property)?
             // guard dropped here
         };
@@ -604,10 +554,7 @@ impl<'a> ProjectReads<'a> {
         class_media_property: &str,
         ids: &[String],
     ) -> Result<HashMap<String, MediaThumb>, QueryError> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn mutex is never poisoned — no panic path holds the guard");
+        let conn = self.store.lock();
         query::media_thumb_uris(&conn, class_media_property, ids)
     }
 }

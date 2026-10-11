@@ -110,17 +110,19 @@ validator reads a project's data, and it assembles a request's `cpe_core::view_d
 (`query::page::page_data`) over the reads of `query::reads`. It depends on `cpe-core` and on no `maud` or
 `axum`.
 
-The crate does not fill the store. `db::open_project_db` takes SQL text and executes it over the schema; what
+The crate does not fill the store. `db::ProjectStore::open` takes SQL text and executes it over the schema; what
 writes that text from a project snapshot is the builder, `cpe-store-build`, called by `cpe-server` at
 **Activation**. A store exists in memory only: none is committed or written to disk, and each start builds it
 again. The builder does not depend on
 this crate, but it includes `schema.sql` as a file: a change to the schema is a change to what the builder
 writes, and the builder's tests load their output under it.
 
-The crate does not own the connection either. `open_project_db` returns a `rusqlite::Connection`, its caller
-(`cpe-web`'s `Project`) keeps it in a `Mutex`, and `query::reads::ProjectReads` takes every lock on it: short, never across the
-hydration of a row, never returned. `rusqlite` types are therefore part of the crate's `pub` surface, which
-is for CPE's other crates and not for a host.
+The crate owns the connection. `ProjectStore` keeps it in a `Mutex` and hands out neither the connection nor
+a guard: the facts, the two load steps (the search indexes, the data ARKs) and `query::reads::ProjectReads`
+lock inside the crate, short, never across the hydration of a row. A caller (`cpe-web`'s `Project`) therefore
+cannot hold a lock across an `.await`. No `rusqlite` type is part of the crate's `pub` surface, the error
+types included, so `cpe-web` does not depend on `rusqlite`. The `pub` surface is for CPE's other crates and
+not for a host. A read runs on the thread that serves the request.
 
 The schema's tables are CPE's presentation shape, not the archive's.
 

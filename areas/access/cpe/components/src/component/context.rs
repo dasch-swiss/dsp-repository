@@ -158,7 +158,7 @@ pub struct RenderContext<'a> {
 /// the full UTF-8 content. `BTreeMap` gives deterministic iteration order,
 /// which keeps test assertions stable.
 ///
-/// Immutable post-boot — do NOT wrap in a `Mutex` for symmetry with `Project`'s `conn`.
+/// Immutable post-boot — do NOT wrap in a `Mutex` for symmetry with the store's connection.
 /// Rendering reads this concurrently from multiple handlers; the shared
 /// `Arc<Project>` is the only lock boundary.
 #[derive(Debug)]

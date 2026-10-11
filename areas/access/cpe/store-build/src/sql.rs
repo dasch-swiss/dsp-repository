@@ -1,8 +1,8 @@
 //! The store file: a header comment, a blank line, then one multi-row `INSERT` per table, each
 //! followed by a blank line.
 //!
-//! One statement per table keeps `cpe_store::db::open_project_db`'s load linear, and the layout is
-//! fixed byte for byte, so that the files of two snapshots differ only where their rows do.
+//! One statement per table keeps `cpe_store::db::ProjectStore::open`'s load linear, and the layout
+//! is fixed byte for byte, so that the files of two snapshots differ only where their rows do.
 
 use cpe_core::remodel::Remodel;
 

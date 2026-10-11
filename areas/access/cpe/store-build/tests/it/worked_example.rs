@@ -1,7 +1,6 @@
 //! The worked example of `docs/src/cpe/config-language.md`'s "`remodel` block" section is
-//! Incunabula's committed block: the two lower to the same mapping. The document and the project
-//! are this repository's and the lowering is the vendored `cpe-core`'s, so the comparison is made
-//! here.
+//! Incunabula's committed block: the two lower to the same mapping. The comparison is made here;
+//! the lowering is `cpe-core`'s.
 
 use cpe_core::validate::load_remodel;
 

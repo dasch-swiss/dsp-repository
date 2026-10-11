@@ -125,8 +125,8 @@ pub fn year_1489() -> DateValue {
 
 /// The store `build` makes of `snapshot`, which must load under the schema with foreign keys on.
 /// A test that reads rows takes its store from here: the schema checks the words of a date row
-/// and the key of every row, and the tests over the vendored data reach only the values that
-/// data has.
+/// and the key of every row, and the tests over the committed 0803 data reach only the values
+/// that data has.
 pub fn built(snapshot: &ProjectSnapshot) -> Store {
     let store = build(snapshot).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
     let filled: Vec<Table> = Table::ALL.into_iter().filter(|&table| store.row_count(table) > 0).collect();

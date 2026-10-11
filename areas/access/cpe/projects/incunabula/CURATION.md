@@ -4,11 +4,12 @@
 (Movement 2, Stage B), on the basis of [`SHAPE.md`](./SHAPE.md). This is the input the
 Stage-C site concept and the Stage-D design briefs depend on: the design decides *how* these things look and behave,
 not *what* is shown. Where a decision strains the engine, the strain is named here and
-tracked in `PROJECT_PLAN.md` under "Engine extensions the real projects will force".
+tracked in `dsp-incubator cpe/docs/PROJECT_PLAN.md` under "Engine extensions the real projects will force".
 
-> **Terminology note.** This document predates owner decision **O2** (see [`DESIGN.md`](./DESIGN.md)
-> §3), which fixed **annotation** as the CPE noun for what DSP's knora-base calls a `Region`
-> — the glossary in [`CONTEXT.md`](../../CONTEXT.md) follows O2. The wording "region" is left
+> **Terminology note.** This document predates owner decision **O2** (see
+> `dsp-incubator cpe/projects/incunabula/DESIGN.md` §3), which fixed **annotation** as the CPE noun for what DSP's knora-base calls a `Region`
+> — the glossary in `dsp-incubator cpe/CONTEXT.md` follows O2; in this repository `areas/access/cpe/CONTEXT.md`
+> governs the vocabulary. The wording "region" is left
 > as written: it is correct where it records the DSP source data or an IIIF `pct:` region URL.
 > Where it names a **CPE** concept, read "annotation". "Reuse" as an **editorial** concept
 > (the woodcut reuse cases, "Alle Wiederverwendungen") is domain vocabulary and is **not**
@@ -106,10 +107,10 @@ Everything, not a slice: 19 Books, 4,024 Pages with their IIIF filenames and dim
 38 Bands, plus the **77 Regions** (page, geometry, colour, remark; 52 rectangles, 24 polygons
 and 1 circle) and the **woodcut link objects** (curated subset of the 40). *(As built in Slice 6:
 dropping the test artefacts keeps 64 annotations on 59 pages and 35 links; which ones are kept is
-the `keep` column of the monorepo's `0803-curation.csv`, see [`PROVENANCE.md`](./PROVENANCE.md).)* How Regions and links map onto CPE's generic schema
+the `keep` column of `areas/access/sync/data/0803-curation.csv`, see [`PROVENANCE.md`](./PROVENANCE.md).)* How Regions and links map onto CPE's generic schema
 is a Stage D/E decision — the likely shape is a `Region` class with a link to its Page and
 the geometry JSON as text, and a `Reuse` class linking 2–4 Regions — and is itself a finding
-about the schema. *(**Superseded by O2** — see [`DESIGN.md`](./DESIGN.md) §3: annotations are a
+about the schema. *(**Superseded by O2** — see `dsp-incubator cpe/projects/incunabula/DESIGN.md` §3: annotations are a
 first-class engine table, `annotations`, with geometry normalised in the schema and a generic
 overlay capability, **not** a per-project class with geometry as plain properties. The sentence
 stands as the record of what Stage B guessed.)* Align it with the canonical treatment in `dsp-repository-design`
@@ -121,9 +122,10 @@ stands as the record of what Stage B guessed.)* Align it with the canonical trea
 and is **never committed**: its admin graph carries user records with password hashes (see
 `SHAPE.md` §9). Only derived artefacts are committed, stripped of
 `attachedToUser` and every other knora-base admin predicate, and checked to contain no
-`rdfh.ch/users/` IRI. *(As built since DEV-7496: this directory holds `data.sql` and no `raw/`. The derived
-artefacts are the monorepo's snapshot `0803.nq` and its hand-edited `0803-curation.csv`, of which
-`vendor/` holds a copy; a curated value is edited in the monorepo, see [`PROVENANCE.md`](./PROVENANCE.md).)* The project's content itself is open (CC BY 4.0, every resource and
+`rdfh.ch/users/` IRI. *(As built since DEV-7496: this directory holds no `raw/`, and in this repository no `data.sql`. The derived
+artefacts are the snapshot `0803.nq` and the hand-edited `0803-curation.csv` in `areas/access/sync/data`, of which
+the incubator's `vendor/` holds a copy; a curated value is edited in this repository, see
+[`PROVENANCE.md`](./PROVENANCE.md).)* The project's content itself is open (CC BY 4.0, every resource and
 file value viewable by unknown users), so committing derived data raises no access question
 for Incunabula; HdM and Solec need the same check before anything of theirs is committed.
 

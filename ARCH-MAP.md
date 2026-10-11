@@ -682,7 +682,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   nothing calls the builder at run time yet, so no store exists at run time). `projects/incunabula/` is
   committed configuration, narrative and assets, **single writer** the project's developers (**review**). `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none.
-- **Fingerprint:** `4756c3f36b00`
+- **Fingerprint:** `2373dcd51d77`
 
 ### areas/access/datei
 

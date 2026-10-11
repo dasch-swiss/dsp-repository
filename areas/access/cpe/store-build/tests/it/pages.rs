@@ -1,5 +1,5 @@
-//! A Page's values, over hand-built snapshots: what the vendored data has no case of, and the
-//! shape of each row.
+//! A Page's values, over hand-built snapshots: what the committed 0803 data has no case of, and
+//! the shape of each row.
 
 use std::collections::BTreeSet;
 

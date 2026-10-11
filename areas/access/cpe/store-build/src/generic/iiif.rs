@@ -2,8 +2,8 @@
 
 /// The full-size image of `asset` on the server at `base`, which ends in `/`.
 ///
-/// The engine derives every other size, and the address of `info.json`, from the `/full/max/`
-/// segment of this form.
+/// `cpe_core::iiif` derives every other size, and the address of `info.json`, from the
+/// `/full/max/` segment of this form.
 pub(crate) fn uri(base: &str, asset: &str) -> String {
     format!("{base}{asset}/full/max/0/default.jpg")
 }

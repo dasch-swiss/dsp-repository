@@ -1,5 +1,5 @@
-//! The census of the store built from the vendored 0803 data: what a reader of the site can
-//! count. The numbers are the data's own; a change means the vendored data changed.
+//! The census of the store built from the committed 0803 data: what a reader of the site can
+//! count. The numbers are the data's own; a change means the committed data changed.
 //!
 //! And the build's determinism over that data: the same file from a second build, and from the
 //! snapshot in another order. And the properties the archive has and the project's block does
@@ -40,8 +40,8 @@ fn suffixed(parts: &[(String, String)]) -> usize {
         .count()
 }
 
-/// [`suffixed`] of the last store file the Python pipeline wrote. Not read from the committed
-/// store file: the builder writes that file.
+/// [`suffixed`] of the store file the Python pipeline wrote, held as a number: counted from the
+/// builder's own output, it would test the builder against itself.
 const SUFFIXED_PAGE_IDS: usize = 408;
 
 #[test]

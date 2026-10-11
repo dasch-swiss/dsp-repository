@@ -2654,7 +2654,7 @@ fn check_malformed_property_rows(data: &dyn ProjectFacts, report: &mut Validatio
 
 /// Slack on every annotation coordinate comparison, so a box that touches an
 /// image edge after a float round-trip still counts as inside. The store builder's
-/// geometry module (`dsp-incubator cpe/store-build/src/generic/geometry.rs`)
+/// geometry module (`areas/access/cpe/store-build/src/generic/geometry.rs`)
 /// checks with the same value, and a test there reads the line below; keep the two
 /// equal.
 const ANNOTATION_TOLERANCE: f64 = 1e-9;

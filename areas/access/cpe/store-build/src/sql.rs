@@ -2,8 +2,7 @@
 //! followed by a blank line.
 //!
 //! One statement per table keeps `cpe_store::db::open_project_db`'s load linear, and the layout is
-//! fixed byte for byte because the file is committed: a regenerated file must differ only where its
-//! rows do.
+//! fixed byte for byte, so that the files of two snapshots differ only where their rows do.
 
 use cpe_core::remodel::Remodel;
 

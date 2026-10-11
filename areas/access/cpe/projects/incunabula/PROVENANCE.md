@@ -1,9 +1,13 @@
-# Incunabula: where `data.sql` comes from
+# Incunabula: where the store comes from
 
-`data.sql` is written by the store builder, [`cpe-store-build`](../../store-build/README.md), from the `cpe-ports`
-snapshot of DSP project 0803. Nothing in this directory is an input to it: there is no `raw/` directory, no CSV and
-no `translate.py` any more. The file's own header says the same, and the builder's freshness test
-(`store-build/tests/it/fresh.rs`) fails when the committed file is not the builder's output, byte for byte.
+Incunabula's store is built by the store builder, [`cpe-store-build`](../../store-build/README.md), from the
+`cpe-ports` snapshot of DSP project 0803, which `sync`'s archive projection serves. Nothing in this directory is an
+input to it: there is no `raw/` directory, no CSV and no `translate.py` any more.
+
+This repository commits no store file. `dsp-incubator`, where this document was written, commits the builder's
+output as `cpe/projects/incunabula/data.sql` and keeps the test that regenerates it and compares the two byte for
+byte (`cpe/store-build/tests/it/fresh.rs`). Where this document names `data.sql`, the binary, `vendor/`, the pin
+or a `just cpe` recipe, it describes that repository; "the monorepo" is this one.
 
 The decisions behind this are recorded in
 `dsp-incubator cpe/docs/adr/0015-incunabulas-store-is-built-from-the-port.md` (the store is built from the port) and
@@ -12,18 +16,18 @@ hook).
 
 ## The port and the pin
 
-The builder reads one thing, a `cpe_ports::ProjectSnapshot`. The binary gets it from `sync-store`'s adapter, which
+The builder reads one thing, a `cpe_ports::ProjectSnapshot`. In `dsp-incubator`, the binary gets it from `sync-store`'s adapter, which
 serves the vendored data directory `vendor/dsp-repository/areas/access/sync/data`:
 
 | File | What it is |
 |---|---|
-| `0803.nq` | the archive's facts: the snapshot of project 0803 that `tools/dao-lift`'s `snapshot` subcommand wrote from a DSP dump |
+| `0803.nq` | the archive's facts: the snapshot of project 0803 that the `snapshot` subcommand of `dsp-incubator cpe/tools/dao-lift` wrote from a DSP dump |
 | `0803-curation.csv` | the project's curation: what the editors authored about single resources (one row per resource) |
 | `0803-arks.txt` | a frozen list of the data ARKs Incunabula's store held when the file was made; `sync-store`'s tests check the served ARKs against it |
 | `PROVENANCE` | the dump, the `dao-lift` commit and the commands behind the three files |
 
 `sync-store`, `cpe-ports` and that directory are copies of the monorepo (`dasch-swiss/dsp-repository`) at the commit
-in `vendor/PIN`, and are never edited here ([`vendor/README.md`](../../vendor/README.md), `dsp-incubator cpe/docs/adr/0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md`). `just cpe
+in `vendor/PIN`, and are never edited there (`dsp-incubator cpe/vendor/README.md`, `dsp-incubator cpe/docs/adr/0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md`). `just cpe
 vendor-diff` prints whether the copy still equals the pin.
 
 Not from the port, and declared in the `remodel {}` block of `projects/incunabula/config.kdl`: the office and side
@@ -38,27 +42,29 @@ with password hashes.
 
 ## Changing the data
 
-`data.sql` is never edited by hand.
+The store is never edited by hand, and neither is the incubator's `data.sql`.
 
 - **A curated value** (a Book's id, office, date display, title override, sort key, cover, teaser or catalogue
   override; a strip's id or name; whether an annotation or a link is kept, its language and its short name) is
-  edited in the monorepo's `areas/access/sync/data/0803-curation.csv`, in a monorepo pull request. No copy of it
-  exists in this repository outside `vendor/`.
-- **The archive's facts** change with a new dump: the monorepo regenerates `0803.nq` with `dao-lift snapshot`, as
-  its `PROVENANCE` file describes.
+  edited in `areas/access/sync/data/0803-curation.csv`. The incubator holds a copy of it under `vendor/` and
+  nowhere else.
+- **The archive's facts** change with a new dump: `0803.nq` in `areas/access/sync/data` is written again with
+  `dao-lift snapshot`, a tool of `dsp-incubator` (`cpe/tools/dao-lift`), as the `PROVENANCE` file beside it
+  describes.
 - **A constant** (an office's or a side's label, the image rights, the IIIF host) is edited in the `remodel {}`
   block of `projects/incunabula/config.kdl`.
 - **A rule** (how a value becomes a row) is changed in `store-build/`: in the block where a node says it, in the
   builder's generic code, or in Incunabula's hook.
 
-After a monorepo change, from the repository root:
+Nothing is regenerated here: the builder reads the snapshot each time it builds. In `dsp-incubator`, after a
+change of this repository's data, from that repository's root:
 
 ```bash
 just cpe vendor <full commit sha on the monorepo's main>   # copies the crates and the data, moves vendor/PIN
 just cpe store-build incunabula --inplace                  # writes projects/incunabula/data.sql
 ```
 
-Commit `data.sql` together with the change that caused it. The builder refuses a snapshot that breaks one of its
+`data.sql` is committed there together with the change that caused it. The builder refuses a snapshot that breaks one of its
 rules and writes nothing; `store-build/README.md`, "Where each rule comes from", lists the rules.
 
 ## Data decisions that still hold
@@ -153,14 +159,14 @@ has exactly the one the override names; with any other address, or none, the Boo
 taken out of the curation file (row "Book `catalogue-uri`"). The rule holds no address and names no Book. The
 block's `hook` node declares it as the two `key` lines and `overrides "catalogue-uri" class="Book"`. The override
 is temporary: it goes once the address is corrected in DSP and the corrected data is vendored (`DATA_ISSUES.md`,
-"The Köln catalogue link"; `docs/INCUNABULA_GO_LIVE.md`, "After go-live").
+"The Köln catalogue link"; `dsp-incubator cpe/docs/INCUNABULA_GO_LIVE.md`, "After go-live").
 
 ### ARKs
 
 `resources.ark` holds the plain data ARK of every Book, Page and border strip (4,079) and is `NULL` for an Image;
 `annotations.ark` holds the ARK of every kept annotation (64). The builder takes each from the port, and
-`sync-store` computes it from the resource's IRI; none is fetched. The engine's boot check `MalformedDataArk`
-admits only a plain data ARK in either column (`docs/SCHEMA.md`).
+`sync-store` computes it from the resource's IRI; none is fetched. `cpe-core`'s check `MalformedDataArk`
+admits only a plain data ARK in either column (`dsp-incubator cpe/docs/SCHEMA.md`).
 
 The ARKs were checked against the resolver once, on 2026-10-06: one `GET` each, following no redirect, for 141 of
 them (all 19 Books, all 38 Bands, the 64 kept Regions and 20 Pages drawn with a fixed seed) answered 302. A 302
@@ -183,7 +189,7 @@ files committed under `raw/`, and a stdlib-only `translate.py` turned them into 
 `just cpe translate-check` had to run in CI, where the dump and the DAO graph never exist. Pages came through it
 from Slice 2 and Books from Slice 8, when the curated columns moved into a hand-authored `raw/curation.csv`.
 
-The hop is retired (DEV-7496, 2026-10-10). The DAO stage is still the pipeline: `dao-lift snapshot` writes
+The hop is retired (DEV-7496, 2026-10-10). The DAO stage is still the pipeline: the incubator's `dao-lift snapshot` writes
 `0803.nq` in the monorepo, `sync-store` serves it through the port, and the store builder writes `data.sql` from
 that. `translate.py` and the CSV files are deleted; the curated layer is the monorepo's `0803-curation.csv`.
-`dao-lift cpe-export` still exists and nothing in `cpe` reads its output ([`tools/dao-lift/README.md`](../../tools/dao-lift/README.md)).
+`dao-lift cpe-export` still exists and nothing in `cpe` reads its output (`dsp-incubator cpe/tools/dao-lift/README.md`).

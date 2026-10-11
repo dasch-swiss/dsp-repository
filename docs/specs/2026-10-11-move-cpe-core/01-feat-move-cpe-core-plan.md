@@ -3,7 +3,7 @@ title: "feat: move CPE's domain crate (cpe-core) into areas/access/cpe"
 type: feat
 date: 2026-10-11
 author: "Balduin Landolt"
-status: reviewed
+status: implemented
 linear: DEV-7464
 linear_project: CPE establish production path
 repositories:
@@ -500,82 +500,82 @@ mechanical check finds.
 
 ### dsp-incubator
 
-- [ ] Confirm the branch is `worktree-DEV-7464`, `git fetch --prune`, and rebase on `origin/main`
-- [ ] Run `git log SRC..origin/main -- cpe/core`. Where it prints a commit, stop and report it: that
+- [x] Confirm the branch is `worktree-DEV-7464`, `git fetch --prune`, and rebase on `origin/main`
+- [x] Run `git log SRC..origin/main -- cpe/core`. Where it prints a commit, stop and report it: that
       change has to land in dsp-repository before `cpe/core` can be deleted here
-- [ ] Set `<pin>` to the full sha of the commit on dsp-repository's `origin/main` whose subject is the
+- [x] Set `<pin>` to the full sha of the commit on dsp-repository's `origin/main` whose subject is the
       Phase 2 commit's; confirm `<pin>:areas/access/cpe/core/Cargo.toml` exists and that the Phase 1
       commit is its ancestor
-- [ ] Save the names of every test in the workspace before any change (from `cpe/`:
+- [x] Save the names of every test in the workspace before any change (from `cpe/`:
       `cargo test --workspace --lib --tests -- --list --format terse | grep ': test$' | LC_ALL=C sort`)
       under `cpe/scratch/`
-- [ ] Add `areas/access/cpe/core` to `cpe/vendor/CRATES`
-- [ ] In `cpe/Cargo.toml`, replace the member `"core"` with
+- [x] Add `areas/access/cpe/core` to `cpe/vendor/CRATES`
+- [x] In `cpe/Cargo.toml`, replace the member `"core"` with
       `"vendor/dsp-repository/areas/access/cpe/core"` and the workspace dependency with
       `cpe-core = { path = "vendor/dsp-repository/areas/access/cpe/core" }`
-- [ ] `git rm -r cpe/core`
-- [ ] Run `just cpe vendor <pin>`; the file `cpe/vendor/PIN` holds `<pin>`
-- [ ] Compare the `kdl`, `percent-encoding`, `pulldown-cmark` and `thiserror` lines of `cpe/Cargo.toml`
+- [x] `git rm -r cpe/core`
+- [x] Run `just cpe vendor <pin>`; the file `cpe/vendor/PIN` holds `<pin>`
+- [x] Compare the `kdl`, `percent-encoding`, `pulldown-cmark` and `thiserror` lines of `cpe/Cargo.toml`
       with dsp-repository's root `Cargo.toml` at `<pin>`; they are byte-equal, features included
-- [ ] Review what else the pin move changed under `cpe/vendor/dsp-repository/`; where `cpe-ports`,
+- [x] Review what else the pin move changed under `cpe/vendor/dsp-repository/`; where `cpe-ports`,
       `sync-store` or `areas/access/sync/data` differ from the old pin, name the dsp-repository commits
       in the PR description
-- [ ] Re-home the two worked-example tests in `cpe/store-build/tests/it/`, calling
+- [x] Re-home the two worked-example tests in `cpe/store-build/tests/it/`, calling
       `cpe_core::validate::load_remodel`, with their `worked_example` helper, the same names and the
       same assertions
-- [ ] Re-home `tokens_match_the_budget_formula` in a new file directly under `cpe/web/tests/`, reading
+- [x] Re-home `tokens_match_the_budget_formula` in a new file directly under `cpe/web/tests/`, reading
       `../../static/cpe/tokens.css` and `cpe_core::markup_contract::HEADER_DESK_BREAKPOINT_PX`, with the
       same name and the same assertions
-- [ ] Correct `cpe/CLAUDE.md` and `cpe/docs/adr/0005-css-baseline.md` where they say in which crate
+- [x] Correct `cpe/CLAUDE.md` and `cpe/docs/adr/0005-css-baseline.md` where they say in which crate
       `tokens_match_the_budget_formula` lives
-- [ ] Repoint `cpe/store-build/src/generic/geometry.rs`'s `include_str!` of `core/src/validate.rs`, its
+- [x] Repoint `cpe/store-build/src/generic/geometry.rs`'s `include_str!` of `core/src/validate.rs`, its
       failure message and its doc comment to the vendored path; the test still finds the
       `ANNOTATION_TOLERANCE` line
-- [ ] Delete `COPY cpe/core ./cpe/core` from `cpe/Dockerfile`
-- [ ] In `cpe/justfile`, repoint `watch`'s two `core` paths and the `core` entry of the `module-graph` and
+- [x] Delete `COPY cpe/core ./cpe/core` from `cpe/Dockerfile`
+- [x] In `cpe/justfile`, repoint `watch`'s two `core` paths and the `core` entry of the `module-graph` and
       `module-graph-check` loops to the vendored path
-- [ ] Change `cpe/tools/crate-deps.py` so that its framework scan of the real workspace reads
+- [x] Change `cpe/tools/crate-deps.py` so that its framework scan of the real workspace reads
       `vendor/dsp-repository/areas/access/cpe/core/src`, while a fixture root keeps its own `core/src`;
       no fixture file changes
-- [ ] Run `just cpe crate-deps-check`; it ends `core-framework-refs=0`
-- [ ] Run `just cpe module-graph-check`; it passes with `MODULES["core"]` unchanged
-- [ ] Run `git grep -n 'cpe/core'` over the whole incubator repository, outside `cpe/vendor/` and
+- [x] Run `just cpe crate-deps-check`; it ends `core-framework-refs=0`
+- [x] Run `just cpe module-graph-check`; it passes with `MODULES["core"]` unchanged
+- [x] Run `git grep -n 'cpe/core'` over the whole incubator repository, outside `cpe/vendor/` and
       `cpe/docs/plans/`; repoint each hit, workflow path filters and root documents included
-- [ ] Search `cpe/` outside `cpe/vendor/`, `cpe/docs/plans/` and `cpe/tools/crate-deps-fixtures/` for
+- [x] Search `cpe/` outside `cpe/vendor/`, `cpe/docs/plans/` and `cpe/tools/crate-deps-fixtures/` for
       `core/src`; repoint each hit to the vendored path (the CSS comments under `cpe/static/cpe/`,
       `cpe/projects/incunabula/DESIGN.md`, `cpe/web/src/page.rs`, `cpe/tools/dao-lift/src/ark.rs`,
       `cpe/CONTEXT.md`, `cpe/CLAUDE.md`)
-- [ ] Search `cpe/` outside `cpe/vendor/` for tests that expect "ADR-0012" in a diagnostic message; change
+- [x] Search `cpe/` outside `cpe/vendor/` for tests that expect "ADR-0012" in a diagnostic message; change
       them to the message the crate at `<pin>` prints
-- [ ] Add `cpe-core` to `cpe/vendor/README.md`: the four dependency keys it inherits, that
+- [x] Add `cpe-core` to `cpe/vendor/README.md`: the four dependency keys it inherits, that
       `tools/module-graph.py`'s `MODULES["core"]` has to follow a module added upstream in the same
       pin-move PR, and that the three re-homed tests are this workspace's guards on a vendored crate
-- [ ] Tick DEV-7464 under "Moving" in `cpe/docs/INCUNABULA_GO_LIVE.md` and note that the crate moved
+- [x] Tick DEV-7464 under "Moving" in `cpe/docs/INCUNABULA_GO_LIVE.md` and note that the crate moved
       before its churn dropped, by the owner's decision of 2026-10-11
-- [ ] Add a dated note to `cpe/docs/adr/0001-crate-layout.md`: `cpe-core` is vendored from dsp-repository,
+- [x] Add a dated note to `cpe/docs/adr/0001-crate-layout.md`: `cpe-core` is vendored from dsp-repository,
       and `just cpe crate-deps-check` scans the vendored source
-- [ ] Add a dated note to
+- [x] Add a dated note to
       `cpe/docs/adr/0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md`: `cpe-core` is
       the third vendored crate, and a change to the config language is a dsp-repository PR followed by a
       pin move that carries the `CONFIG_LANGUAGE.md` edit
-- [ ] Correct `cpe/CLAUDE.md` where it says `cpe-core` is developed in this workspace
-- [ ] Correct `cpe/docs/ARCHITECTURE.md` in the same way
-- [ ] Add to `cpe/docs/CONFIG_LANGUAGE.md` that the language is implemented in dsp-repository's
+- [x] Correct `cpe/CLAUDE.md` where it says `cpe-core` is developed in this workspace
+- [x] Correct `cpe/docs/ARCHITECTURE.md` in the same way
+- [x] Add to `cpe/docs/CONFIG_LANGUAGE.md` that the language is implemented in dsp-repository's
       `areas/access/cpe/core` and that this document changes in the pin-move PR that brings the code
-- [ ] Compare the workspace's test names with the list saved before the change; they are equal apart
+- [x] Compare the workspace's test names with the list saved before the change; they are equal apart
       from the module path of the three re-homed tests
-- [ ] Run `just cpe test`; it passes
-- [ ] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
-- [ ] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<pin>)`
-- [ ] Run `just cpe ci`; it passes
-- [ ] Commit `cpe/vendor/PIN`, the vendored tree, the deletion and every forced change together as
+- [x] Run `just cpe test`; it passes
+- [x] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
+- [x] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<pin>)`
+- [x] Run `just cpe ci`; it passes
+- [x] Commit `cpe/vendor/PIN`, the vendored tree, the deletion and every forced change together as
       `refactor(cpe): build against the vendored cpe-core (DEV-7464)`
-- [ ] Run `git diff --name-only origin/main..HEAD`; outside `cpe/` it lists only files the `cpe/core`
+- [x] Run `git diff --name-only origin/main..HEAD`; outside `cpe/` it lists only files the `cpe/core`
       search repointed, and under `cpe/projects/` only `cpe/projects/incunabula/DESIGN.md`
-- [ ] Open a draft PR with `gh pr create --repo dasch-swiss/dsp-incubator --head worktree-DEV-7464 --base
+- [x] Open a draft PR with `gh pr create --repo dasch-swiss/dsp-incubator --head worktree-DEV-7464 --base
       main --draft --assignee @me`; never enable auto-merge
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 ## Human Actions
 
@@ -590,40 +590,41 @@ mechanical check finds.
 
 ### dsp-repository
 
-- [ ] `areas/access/cpe/core` is a workspace member named `cpe-core`, with the manifest of *Crate manifest
+- [x] `areas/access/cpe/core` is a workspace member named `cpe-core`, with the manifest of *Crate manifest
       and workspace entries*, and `Cargo.lock` holds `kdl`, `miette` and `pulldown-cmark` at the
       incubator's versions
-- [ ] `cpe-core`'s test list equals the incubator's at `SRC` less the three named tests, and all pass
-- [ ] The Phase 1 commit differs from the formatted baseline only by the edits of *Edits Phase 1 makes*
+- [x] `cpe-core`'s test list equals the incubator's at `SRC` less the three named tests, and all pass
+- [x] The Phase 1 commit differs from the formatted baseline only by the edits of *Edits Phase 1 makes*
       and the rustfmt re-wraps around them
-- [ ] Between the Phase 1 and the Phase 2 commit, only comments changed under `areas/access/cpe/core`
-- [ ] No `ADR-` followed by a digit is left in the crate; `just check-adr-refs` passes
-- [ ] `CompoundMediaOwnership` and `MultipleImageViewers` print no ADR number
-- [ ] Every comment in the crate that names a slice, step, plan phase, decision id, backlog item or PR
+- [x] Between the Phase 1 and the Phase 2 commit, only comments changed under `areas/access/cpe/core`
+- [x] No `ADR-` followed by a digit is left in the crate; `just check-adr-refs` passes
+- [x] `CompoundMediaOwnership` and `MultipleImageViewers` print no ADR number
+- [x] Every comment in the crate that names a slice, step, plan phase, decision id, backlog item or PR
       number is one the *Comment rules* keep
-- [ ] `cargo deny check`, with `deny.toml` unchanged, reports no error that `origin/main` does not, apart
+- [x] `cargo deny check`, with `deny.toml` unchanged, reports no error that `origin/main` does not, apart
       from `cpe-core` being unlicensed like every workspace crate
-- [ ] `CONVENTIONS.md`, `docs/src/git-conventions.md`, `docs/src/repo_structure.md`,
+- [x] `CONVENTIONS.md`, `docs/src/git-conventions.md`, `docs/src/repo_structure.md`,
       `areas/access/cpe/CONTEXT.md`, `areas/access/CONTEXT.md`, the root `CONTEXT.md` and `ARCH-MAP.md`
       describe a CPE capability that holds `cpe-ports` and `cpe-core`
-- [ ] ADR-0007 carries the amendment of 2026-10-11
-- [ ] `just check` and `just test` pass on each of the two code commits
-- [ ] The PR has three commits, `allow-many-commits` ticked, and `just commit-lint` passes
+- [x] ADR-0007 carries the amendment of 2026-10-11
+- [x] `just check` and `just test` pass on each of the two code commits
+- [x] The PR has three commits, `allow-many-commits` ticked, and `just commit-lint` passes
 
 ### dsp-incubator
 
-- [ ] `cpe/core` no longer exists; `cpe-core` is a workspace member at
+- [x] `cpe/core` no longer exists; `cpe-core` is a workspace member at
       `vendor/dsp-repository/areas/access/cpe/core`
-- [ ] `just cpe vendor-diff` prints `vendor-diff: empty (<pin>)`, and `<pin>` is a commit on
+- [x] `just cpe vendor-diff` prints `vendor-diff: empty (<pin>)`, and `<pin>` is a commit on
       dsp-repository's `main`
-- [ ] The workspace's test names are the ones before the change, apart from the module path of the three
+- [x] The workspace's test names are the ones before the change, apart from the module path of the three
       re-homed tests, which exist and pass
-- [ ] No `cpe/core` or `core/src` reference is left outside `cpe/vendor/`, `cpe/docs/plans/` and
-      `cpe/tools/crate-deps-fixtures/` that does not name the vendored path
-- [ ] `cpe/vendor/README.md`, `cpe/docs/INCUNABULA_GO_LIVE.md`, `cpe/docs/CONFIG_LANGUAGE.md`,
+- [x] No `cpe/core` or `core/src` reference is left outside `cpe/vendor/`, `cpe/docs/plans/`,
+      `cpe/tools/crate-deps-fixtures/` and `cpe/tools/crate-deps.py`, where `core/src` is relative to the
+      scanned root, that does not name the vendored path
+- [x] `cpe/vendor/README.md`, `cpe/docs/INCUNABULA_GO_LIVE.md`, `cpe/docs/CONFIG_LANGUAGE.md`,
       `cpe/CLAUDE.md`, `cpe/docs/ARCHITECTURE.md` and the two ADR notes say that `cpe-core` is vendored
-- [ ] `just cpe ci` passes
-- [ ] No file under `cpe/projects/` changed except the path citations in `DESIGN.md`
+- [x] `just cpe ci` passes
+- [x] No file under `cpe/projects/` changed except the path citations in `DESIGN.md`
 
 ## Dependencies & Risks
 
@@ -644,8 +645,10 @@ mechanical check finds.
   run in Phase 3. A failure there is fixed in the incubator's tool or test, never by editing the vendored
   tree.
 - **The pin move carries other changes.** `just cpe vendor` copies `cpe-ports`, `sync-store` and
-  `areas/access/sync/data` at `<pin>` too. If #469 merges first, its `PROVENANCE` and `ark.rs` edits come
-  along; no data file changes, so `data.sql` does not.
+  `areas/access/sync/data` at `<pin>` too. #469 merged first, and it did change a data file: it added two
+  curated keys to `0803-curation.csv`, which the incubator's store build refuses until its mapping declares
+  them. dsp-incubator#503 moved the pin to #469's commit and made that change, so Phase 3's pin move
+  carries the three commits of this plan and nothing else.
 - **Phase 2 deletes a comment that carried a contract.** The rules keep any sentence that states one, and
   the phase review reads the diff for this. No mechanical check catches it.
 - **Recorded debt.** 549 test names that do not follow `CONVENTIONS.md`; long comments; a specification

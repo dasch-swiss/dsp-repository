@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Four of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, and its image viewer, `cpe-image-viewer` in `image-viewer/`. Its store, page assembly and routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Five of its crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, and its store, `cpe-store` in `store/`. The builder that fills the store, the page assembly and the routes are still in `dsp-incubator` (`cpe/`) and move in crate by crate, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what that port serves and fed by nothing else (ADR-0008). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -96,6 +96,25 @@ uses (ADR-0007, amendment of 2026-10-11, DEV-7401). The full viewer, with its ot
 incubator, which chooses the final engine; the result replaces this crate. Until then a viewer fix lands here
 and is applied by hand there. Its README says what was removed.
 
+## The store
+
+`cpe-store` in `store/` is CPE's derived read model (ADR-0008): one in-memory SQLite database per project.
+It holds the schema (`schema.sql`), the loader (`db`) and the query layer (`query`). The query layer does two
+things. It implements `cpe_core::validate::facts::ProjectFacts` as `LiveProjectFacts`, which is how the
+validator reads a project's data, and it assembles a request's `cpe_core::view_data::PageData`
+(`query::page::page_data`) over the reads of `query::reads`. It depends on `cpe-core` and on no `maud` or
+`axum`.
+
+The crate does not fill the store. `db::open_project_db` takes SQL text and executes it over the schema; what
+writes that text from a project snapshot is the builder, `cpe-store-build`, which is still in the incubator.
+
+The crate does not own the connection either. `open_project_db` returns a `rusqlite::Connection`, its caller
+keeps it in a `Mutex`, and `query::reads::ProjectReads` takes every lock on it: short, never across the
+hydration of a row, never returned. `rusqlite` types are therefore part of the crate's `pub` surface, which
+is for CPE's other crates and not for a host.
+
+The schema's tables are CPE's presentation shape, not the archive's.
+
 ## The dependency seam
 
 `just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007, amendment
@@ -105,7 +124,8 @@ which `sync-store` implements; no manifest under `areas/access/cpe/` depends on 
 crate without an edit. A new crate that must stay a leaf has to be added to the script's `LEAVES`; one that a
 crate outside the capability may depend on has to be added to its exception list. What the script does not
 check is review: that no CPE crate depends on DPE's domain, store or web crates or on `sync`'s store
-(ADR-0008), and `cpe-components`' own dependency list (no `axum`, no `rusqlite`).
+(ADR-0008), `cpe-components`' own dependency list (no `axum`, no `rusqlite`), and `cpe-store`'s (no `maud`, no
+`axum`).
 
 ## What the port serves
 

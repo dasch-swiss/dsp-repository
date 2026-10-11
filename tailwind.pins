@@ -12,9 +12,9 @@
 #
 # Hash lines are `<sha256>  <release asset name>`, the sha256sum(1) format.
 
-version 4.1.18
+version 4.2.4
 
-7a7702db6c93718a9b6655d455304edda18600f5a4f195242342ed3b5b70ebe8  tailwindcss-linux-arm64
-737becf8d4ad1115ea98df69fa94026d402ca8feb91306a035b5b004167da8dd  tailwindcss-linux-x64
-7f27711dceac1a580b6ad58ddac46e59202c85a6c16f2f08f6fdcdee261008e1  tailwindcss-macos-arm64
-1e8a77fd796a3a4aa3d8727887de926ef9d38477aba113fd7c32c0d31a32a3ab  tailwindcss-macos-x64
+30fa5ad8d26e8f5aaeb7e500da6015543c5bbbfb7d7d775b83fbc3fb9cd5ef7c  tailwindcss-linux-arm64
+cabeef049cdeab61a5fa6b65ea28a3e8e53b8a85e58883947868c730fc48bdec  tailwindcss-linux-x64
+932f7045205283f4b26f9a4c3f027958526bf5bcc8577a7e2f18002e1eb5145e  tailwindcss-macos-arm64
+4fcbbf4e680e462365a41feaaf4414f92c25f5bcc0a7729a62432c05e8173733  tailwindcss-macos-x64

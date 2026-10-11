@@ -3,7 +3,7 @@ title: "feat: move CPE's component library and its image viewer into areas/acces
 type: feat
 date: 2026-10-11
 author: "Balduin Landolt"
-status: reviewed(3)
+status: implemented
 linear: DEV-7401
 linear_project: CPE establish production path
 repositories:
@@ -1096,68 +1096,68 @@ test names and code do not change.
 
 ### dsp-incubator
 
-- [ ] Discard the uncommitted arrangement of Phase 3 (`git restore cpe/Cargo.toml cpe/Cargo.lock`),
+- [x] Discard the uncommitted arrangement of Phase 3 (`git restore cpe/Cargo.toml cpe/Cargo.lock`),
       `git fetch --prune`, and rebase the branch `worktree-DEV-7401` on `origin/main`
-- [ ] Confirm `cpe/vendor/CRATES` lists `areas/access/cpe/core`; where it does not, stop and report (H4)
-- [ ] Run `git diff SRC origin/main -- cpe/components cpe/static/cpe`. The only hunks allowed are
+- [x] Confirm `cpe/vendor/CRATES` lists `areas/access/cpe/core`; where it does not, stop and report (H4)
+- [x] Run `git diff SRC origin/main -- cpe/components cpe/static/cpe`. The only hunks allowed are
       DEV-7464's repoints of `core/src` paths in stylesheet comments. Where it shows anything else,
       stop and report it: that change has to land in dsp-repository first
-- [ ] Run `git log SRC..origin/main -- shared/dasch-image-viewer` and keep the output for the PR
+- [x] Run `git log SRC..origin/main -- shared/dasch-image-viewer` and keep the output for the PR
       description
-- [ ] Set `<pin>` to the full sha of the commit on dsp-repository's `origin/main` that PR B's last
+- [x] Set `<pin>` to the full sha of the commit on dsp-repository's `origin/main` that PR B's last
       commit became (its subject is the Phase 4 commit's unless a reviewer reworded it); confirm
       `<pin>:areas/access/cpe/components/Cargo.toml`, `<pin>:areas/access/cpe/image-viewer/Cargo.toml`
       and `<pin>:.github/scripts/check-cpe-seam.sh` exist
-- [ ] Save the names of every test in the workspace before any change (from `cpe/`, with the test-list
+- [x] Save the names of every test in the workspace before any change (from `cpe/`, with the test-list
       command of *Verification design* and `--workspace` in place of `-p <crate>`) under an absolute
       scratch path outside the repository
-- [ ] Add `areas/access/cpe/image-viewer` and `areas/access/cpe/components` to `cpe/vendor/CRATES`
-- [ ] In `cpe/Cargo.toml`, replace the member `"components"` with the two vendored paths, the workspace
+- [x] Add `areas/access/cpe/image-viewer` and `areas/access/cpe/components` to `cpe/vendor/CRATES`
+- [x] In `cpe/Cargo.toml`, replace the member `"components"` with the two vendored paths, the workspace
       dependency `cpe-components` with its vendored path, and `dasch-image-viewer` with
       `cpe-image-viewer = { path = "vendor/dsp-repository/areas/access/cpe/image-viewer" }`
-- [ ] `git rm -r cpe/components`
-- [ ] `git rm` the seven stylesheets under `cpe/static/cpe/`; the logos and `datastar.js` stay
-- [ ] Run `just cpe vendor <pin>`; the file `cpe/vendor/PIN` holds `<pin>`
-- [ ] Compare every `[workspace.dependencies]` key the two vendored manifests inherit (`maud`,
+- [x] `git rm -r cpe/components`
+- [x] `git rm` the seven stylesheets under `cpe/static/cpe/`; the logos and `datastar.js` stay
+- [x] Run `just cpe vendor <pin>`; the file `cpe/vendor/PIN` holds `<pin>`
+- [x] Compare every `[workspace.dependencies]` key the two vendored manifests inherit (`maud`,
       `pulldown-cmark`, `tracing`, `insta`) with dsp-repository's root `Cargo.toml` at `<pin>`; make
       `cpe/Cargo.toml`'s lines byte-equal, features included (`maud` gains `axum`), and add the `insta`
       entry, which the incubator's workspace does not have. `version` is not copied: the vendored
       crates carry the incubator's, as `cpe-ports` and `sync-store` do
-- [ ] Review what else the pin move changed under `cpe/vendor/dsp-repository/`; name the dsp-repository
+- [x] Review what else the pin move changed under `cpe/vendor/dsp-repository/`; name the dsp-repository
       commits in the PR description
-- [ ] In `cpe/web` and `cpe/bin`, depend on `cpe-image-viewer` and replace `dasch_image_viewer::` with
+- [x] In `cpe/web` and `cpe/bin`, depend on `cpe-image-viewer` and replace `dasch_image_viewer::` with
       `cpe_image_viewer::` (`cpe/web/src/page.rs`, `cpe/bin/src/router.rs`, both manifests)
-- [ ] Make the binary serve the seven stylesheets at their present URLs (`/_static/cpe/<file>.css`) from
+- [x] Make the binary serve the seven stylesheets at their present URLs (`/_static/cpe/<file>.css`) from
       the vendored `areas/access/cpe/components/style` directory, as *Where the stylesheets are served
       from* describes: a module-level `include_dir!` in `cpe/bin/src/router.rs`, asked before the
       `cpe/static` lookup; `router::build`'s signature and `cpe/bin/src/lib.rs` do not change
-- [ ] Add a `cargo:rerun-if-changed` line for the vendored `style` directory to `cpe/bin/build.rs` and
+- [x] Add a `cargo:rerun-if-changed` line for the vendored `style` directory to `cpe/bin/build.rs` and
       name the third embedded directory in its doc comment
-- [ ] Add a router test that `/_static/cpe/tokens.css`, `/_static/cpe/dasch-logo-colour.svg` and
+- [x] Add a router test that `/_static/cpe/tokens.css`, `/_static/cpe/dasch-logo-colour.svg` and
       `/_static/cpe/dasch-fingerprint.svg` are served, and that a dot segment or `..` under
       `/_static/cpe/` is refused; the existing tests of `serve_static` pass unchanged
-- [ ] Repoint the three `include_str!` of stylesheets in `cpe/web/src/page.rs` (`shell.css`,
+- [x] Repoint the three `include_str!` of stylesheets in `cpe/web/src/page.rs` (`shell.css`,
       `editorial.css`, `record.css`) to the vendored directory
-- [ ] Repoint every other reader of `static/cpe/*.css` in `cpe/` (`rg -l 'static/cpe' cpe --glob
+- [x] Repoint every other reader of `static/cpe/*.css` in `cpe/` (`rg -l 'static/cpe' cpe --glob
       '!cpe/vendor/**' --glob '!cpe/docs/plans/**'`), the re-homed `tokens_match_the_budget_formula`
       included
-- [ ] Delete `COPY cpe/components` and `COPY shared/dasch-image-viewer` from `cpe/Dockerfile` and
+- [x] Delete `COPY cpe/components` and `COPY shared/dasch-image-viewer` from `cpe/Dockerfile` and
       reword its header comment: the repository-root build context is no longer needed for a shared
       crate. `cpe/prototype.json` keeps `"build_context": "root"`, which every `COPY cpe/…` relies on
-- [ ] Remove `shared/dasch-image-viewer/**` from both path filters of the incubator's `cpe` workflow
-- [ ] In `cpe/justfile`, repoint `watch`'s `components/src` path and the `components` entry of the
+- [x] Remove `shared/dasch-image-viewer/**` from both path filters of the incubator's `cpe` workflow
+- [x] In `cpe/justfile`, repoint `watch`'s `components/src` path and the `components` entry of the
       `module-graph` and `module-graph-check` loops to the vendored path, in the shape DEV-7464's PR
       gave them for `core`
-- [ ] Change `cpe/tools/crate-deps.py`: `cpe-image-viewer` is now a workspace member, so add it to the
+- [x] Change `cpe/tools/crate-deps.py`: `cpe-image-viewer` is now a workspace member, so add it to the
       allowed edges of `cpe-components` and of `cpe-web` in `ALLOWED` and to the rules in the
       docstring, and leave it ungoverned itself; no fixture file changes
-- [ ] Run `just cpe crate-deps-check` (it runs the tool's self-test first) and
+- [x] Run `just cpe crate-deps-check` (it runs the tool's self-test first) and
       `just cpe module-graph-check`; both pass
-- [ ] Run `git grep -n 'cpe/components\|components/src\|dasch-image-viewer\|dasch_image_viewer'` over
+- [x] Run `git grep -n 'cpe/components\|components/src\|dasch-image-viewer\|dasch_image_viewer'` over
       the incubator outside `cpe/vendor/`, `cpe/docs/plans/`, `cpe/docs/learnings/`,
       `shared/dasch-image-viewer/` and `image-viewer-showcase/`; repoint each hit that states a
       current rule or path about CPE's use of the crate
-- [ ] Add both crates to `cpe/vendor/README.md`: the keys they inherit and that `version` is not one of
+- [x] Add both crates to `cpe/vendor/README.md`: the keys they inherit and that `version` is not one of
       them; that the viewer is a cut-down copy and a fix lands in dsp-repository first; that the
       stylesheets are vendored with the component crate and `shell.css` needs
       `dasch-fingerprint.svg` served beside it; that `tools/module-graph.py` finds the crate by its
@@ -1166,37 +1166,37 @@ test names and code do not change.
       (`header_desk_breakpoint_matches_shell_css`, `text_align_attribute_matches_the_stylesheets`,
       `tokens_match_the_budget_formula`) run here, so a CSS change in dsp-repository is first checked
       at the pin move
-- [ ] Correct `cpe/docs/design/claude-design-workflow.md` where it says the design project mirrors
+- [x] Correct `cpe/docs/design/claude-design-workflow.md` where it says the design project mirrors
       `cpe/static/cpe/*.css`: the source is dsp-repository's `areas/access/cpe/components/style`
-- [ ] In `shared/README.md`, change CPE's row in the consumer table: CPE builds against the vendored
+- [x] In `shared/README.md`, change CPE's row in the consumer table: CPE builds against the vendored
       `cpe-image-viewer`; and add a note to `shared/dasch-image-viewer/README.md` that dsp-repository
       holds a cut-down copy taken at `SRC`, with the list of what a fix here has to be applied to
-- [ ] Tick DEV-7401 under "Moving" in `cpe/docs/INCUNABULA_GO_LIVE.md`
-- [ ] Correct the moving rule in `cpe/docs/INCUNABULA_GO_LIVE.md` ("A crate moves … when it has gone
+- [x] Tick DEV-7401 under "Moving" in `cpe/docs/INCUNABULA_GO_LIVE.md`
+- [x] Correct the moving rule in `cpe/docs/INCUNABULA_GO_LIVE.md` ("A crate moves … when it has gone
       quiet"): dsp-repository's new record replaces it, and a crate moves in dependency order when the
       next piece of work needs it there; cite the record by its file name in dsp-repository
-- [ ] Add dated notes to `cpe/docs/adr/0001-crate-layout.md` (the component crate is vendored),
+- [x] Add dated notes to `cpe/docs/adr/0001-crate-layout.md` (the component crate is vendored),
       `cpe/docs/adr/0005-css-baseline.md` (the stylesheets live in dsp-repository),
       `cpe/docs/adr/0010-openseadragon-integration.md` (CPE builds against the cut-down copy) and
       `cpe/docs/adr/0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md` (the fourth
       and fifth vendored crates; a component or CSS change is a dsp-repository PR and a pin move)
-- [ ] Correct `cpe/CLAUDE.md`, `cpe/CONTEXT.md` and `cpe/docs/ARCHITECTURE.md` where they say the
+- [x] Correct `cpe/CLAUDE.md`, `cpe/CONTEXT.md` and `cpe/docs/ARCHITECTURE.md` where they say the
       component crate, the stylesheets or the viewer dependency are developed in this workspace
-- [ ] Compare the workspace's test names with the list saved before the change; the new list is the
+- [x] Compare the workspace's test names with the list saved before the change; the new list is the
       saved one plus exactly the tests of `cpe-image-viewer`, which was not a workspace member before,
       and the router test this phase adds
-- [ ] Run `just cpe test`; it passes with no `.snap.new` written
-- [ ] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
-- [ ] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<pin>)`
-- [ ] Run `just cpe ci`; it passes
-- [ ] Commit `cpe/vendor/PIN`, the vendored tree, `cpe/Cargo.lock`, the deletions and every forced
+- [x] Run `just cpe test`; it passes with no `.snap.new` written
+- [x] Run `git status --porcelain --ignored cpe/vendor`; it lists no ignored file
+- [x] Run `just cpe vendor-diff`; it prints `vendor-diff: empty (<pin>)`
+- [x] Run `just cpe ci`; it passes
+- [x] Commit `cpe/vendor/PIN`, the vendored tree, `cpe/Cargo.lock`, the deletions and every forced
       change together as
       `refactor(cpe): build against the vendored cpe-components and cpe-image-viewer (DEV-7401)`
-- [ ] Open a draft PR with `gh pr create --repo dasch-swiss/dsp-incubator --head worktree-DEV-7401
+- [x] Open a draft PR with `gh pr create --repo dasch-swiss/dsp-incubator --head worktree-DEV-7401
       --base main --draft --assignee @me`, with "Fixes DEV-7401", the viewer changes since `SRC`, and
       the *Human Actions* that remain; never enable auto-merge
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 ## Human Actions
 

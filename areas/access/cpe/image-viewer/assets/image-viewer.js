@@ -481,7 +481,7 @@ class ImageViewer extends HTMLElement {
         .adjust__invert { display: flex; align-items: center; gap: .3rem; min-height: 24px; }
         .adjust input[type=checkbox] { width: 16px; height: 16px; }
         /* Layers (multispectral) — bottom-RIGHT corner + panel above it, mirroring
-           the Adjust affordance. Used only by a `layers` stack. */
+           the Adjust affordance. Used only by a layers stack. */
         .layers-toggle {
           position: absolute; bottom: .5rem; right: .5rem; z-index: 3;
           font: 12px/1 system-ui, sans-serif; color: #fff;

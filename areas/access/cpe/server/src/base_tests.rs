@@ -322,14 +322,23 @@ async fn crawl(cpe: &Cpe, starts: &[String]) -> Crawl {
     read
 }
 
-/// Every page and fragment that a crawl from the start pages reaches, a few
-/// of each kind, with both not-found pages and the 503. Incunabula has the
+/// Every page and fragment that a crawl from the overview and the start pages
+/// reaches, a few of each kind, with both not-found pages and the 503. Incunabula has the
 /// narrative, the reader and the sort; the fixture projects have the facet
 /// panel and the search bar.
 #[tokio::test]
 async fn no_url_leaves_the_base() {
     let cpe = cpe();
-    let read = crawl(cpe, &[format!("{BASE}/incunabula/"), format!("{BASE}/incunabula")]).await;
+    let read = crawl(
+        cpe,
+        &[
+            BASE.to_owned(),
+            format!("{BASE}/"),
+            format!("{BASE}/incunabula/"),
+            format!("{BASE}/incunabula"),
+        ],
+    )
+    .await;
 
     let fixtures = Cpe::from_sql_folders(&CpeConfig { projects_dir: crate::tests::fixture(), ..config() });
     // The fixture projects have no navigation: their pages are named here.
@@ -354,12 +363,8 @@ async fn no_url_leaves_the_base() {
         read_fixtures.seen.len()
     );
 
-    // CPE has no page of its own at its start: the CPE crumb and the brand
-    // link lead to its not-found page, which offers them again.
-    let cpe_start = ["/cpe/", "/cpe/?appearance=dark", "/cpe/?appearance=light"];
-    for dead in read.dead.iter().chain(&read_fixtures.dead) {
-        assert!(cpe_start.contains(&dead.as_str()), "a link of a page is dead: {dead}");
-    }
+    let dead: Vec<&String> = read.dead.iter().chain(&read_fixtures.dead).collect();
+    assert!(dead.is_empty(), "a link of a page is dead: {dead:?}");
 
     // What the crawls must have read for their silence to mean anything.
     let has = |url: &str| read.urls.contains(url);
@@ -384,6 +389,8 @@ async fn no_url_leaves_the_base() {
         "the viewer's module"
     );
     assert!(has("/cpe/"), "the CPE crumb");
+    assert!(has("/cpe/incunabula/_assets/assets/cover.webp"), "the cover on the overview");
+    assert!(has("https://repository.example/cpe/"), "the overview's share link");
     assert!(
         read.urls
             .iter()
@@ -465,8 +472,68 @@ async fn the_static_files_and_the_assets_are_served_under_the_base() {
     }
 }
 
+/// The overview is the same page with and without the slash, and what it
+/// writes is under the base: the project's link and cover, its own static
+/// files and its share link.
+#[tokio::test]
+async fn the_overview_is_at_the_base_and_links_under_it() {
+    let overview = answer(cpe(), "/cpe/", false).await;
+    assert_eq!(overview.status, StatusCode::OK);
+    assert_eq!(answer(cpe(), "/cpe", false).await.body, overview.body);
+    let body = &overview.body;
+    assert!(
+        body.contains(r#"<a class="teaser" data-accent="ochre" href="/cpe/incunabula/">"#),
+        "{body}"
+    );
+    assert!(
+        body.contains(r#"<img class="teaser__img" src="/cpe/incunabula/_assets/assets/cover.webp" alt="">"#),
+        "{body}"
+    );
+    assert!(body.contains(r#"<span class="teaser__path">/cpe/incunabula/</span>"#), "{body}");
+    assert!(body.contains(r#"href="/cpe/_static/cpe/tokens.css""#), "{body}");
+    assert!(body.contains(r#"src="/cpe/_static/cpe/dasch-logo-colour.svg""#), "{body}");
+    assert!(
+        body.contains(r#"href="https://repository.example/cpe/""#),
+        "the share link: {body}"
+    );
+    assert!(
+        body.contains(r#"href="/cpe/?appearance=dark""#),
+        "the appearance toggle: {body}"
+    );
+    let urls = urls_under_the_base("the overview", &overview);
+    assert!(urls.contains(&"/cpe/incunabula/".to_owned()), "{urls:?}");
+}
+
+/// A teaser's texts are chrome strings of the project, in the reader's
+/// language where the project declares it.
+#[tokio::test]
+async fn the_overviews_teaser_is_in_the_readers_language() {
+    let english = answer(cpe(), "/cpe/", false).await.body;
+    assert!(english.contains("Early Basel prints · 1471–1504"), "{english}");
+    assert!(english.contains("Nineteen illustrated early printed books"), "{english}");
+    assert!(english.contains("Universitätsbibliothek Basel · CC BY 4.0"), "{english}");
+
+    let german = answer(cpe(), "/cpe/?lang=de", false).await.body;
+    assert!(german.contains("Basler Frühdrucke · 1471–1504"), "{german}");
+    assert!(german.contains("Neunzehn illustrierte Basler Frühdrucke"), "{german}");
+
+    // French is built in and not one of Incunabula's languages.
+    let french = answer(cpe(), "/cpe/?lang=fr", false).await.body;
+    assert!(french.contains(r#"<html lang="fr""#), "{french}");
+    assert!(french.contains("Early Basel prints · 1471–1504"), "{french}");
+    for body in [&english, &german, &french] {
+        assert!(!body.contains("site-eyebrow") && !body.contains("site-description"), "{body}");
+    }
+}
+
 #[tokio::test]
 async fn both_redirects_stay_under_the_base() {
+    for toggled in ["/cpe/?appearance=dark", "/cpe?appearance=dark"] {
+        let overview = answer(cpe(), toggled, false).await;
+        assert_eq!(overview.status, StatusCode::SEE_OTHER, "{toggled}");
+        assert_eq!(overview.header(header::LOCATION), Some("/cpe/"), "{toggled}");
+    }
+
     let stripped = answer(cpe(), "/cpe/incunabula/books?appearance=dark&sort=name", false).await;
     assert_eq!(stripped.status, StatusCode::SEE_OTHER);
     assert_eq!(stripped.header(header::LOCATION), Some("/cpe/incunabula/books?sort=name"));
@@ -493,6 +560,11 @@ async fn both_cookies_are_scoped_to_the_base() {
 
     let german = answer(cpe(), "/cpe/incunabula/books?lang=de", false).await;
     assert_eq!(german.status, StatusCode::OK);
+    assert_eq!(german.cookies(), ["lang=de; Path=/cpe; SameSite=Lax"]);
+
+    let dark = answer(cpe(), "/cpe/?appearance=dark", false).await;
+    assert_eq!(dark.cookies(), ["appearance=dark; Path=/cpe; SameSite=Lax"]);
+    let german = answer(cpe(), "/cpe/?lang=de", false).await;
     assert_eq!(german.cookies(), ["lang=de; Path=/cpe; SameSite=Lax"]);
 }
 
@@ -576,6 +648,16 @@ async fn a_base_of_two_segments_is_written_whole() {
         "the share link: {body}"
     );
     assert!(!body.contains("/a/b/a/b"), "{body}");
+
+    let (status, headers, _) = crate::tests::get(&cpe, "/?appearance=dark").await;
+    assert_eq!(status, StatusCode::SEE_OTHER);
+    assert_eq!(headers[header::LOCATION], "/a/b/");
+    let (status, _, overview) = crate::tests::get(&cpe, "/").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(overview.contains(r#"href="/a/b/eta/""#), "{overview}");
+    assert!(overview.contains(r#"src="/a/b/alpha/_assets/assets/cover.webp""#), "{overview}");
+    assert!(overview.contains(r#"href="https://repository.example/a/b/""#), "{overview}");
+    let body = format!("{body}{overview}");
     for path in body.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
         assert!(path.starts_with("/a/b/"), "{path} leaves the base");
     }

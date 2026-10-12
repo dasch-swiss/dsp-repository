@@ -152,6 +152,12 @@ path (F), the wiring and the mount (G).
 13. **The site index leaves the router.** `/cpe/` is CPE's not-found (ADR-0007, DEV-7405). `Cpe` exposes
     a list of its projects (id, title and the project's URL, a type of `cpe-server`), and the incubator's
     host renders its own index from it.
+    *Revised in execution (2026-10-12):* the owner asked for the overview back at `/cpe/` and `/cpe`.
+    `cpe-server` serves it at its router's root and `cpe-web` renders it (`render_site_index`), listing
+    the loaded projects; ADR-0007 is amended (2026-10-12, DEV-7465, on the overview). `Cpe::projects()`
+    stays, and a host no longer needs it for an index. This also replaces what the rest of this plan says
+    of the base: in the request table and wherever "every path is CPE's not-found", `/cpe` and `/cpe/`
+    are the overview, 200, once CPE is activated.
 14. **Configuration.** `CpeConfig` is read with `figment` in `cpe-server`, as `DpeConfig` is, from
     `cpe.toml` and `CPE_*`: `CPE_PROJECTS_DIR` (default `areas/access/cpe/projects`),
     `CPE_PUBLIC_ORIGIN` and, from PR F, `CPE_BASE`. A public origin with a path, and a base that does not
@@ -959,7 +965,8 @@ amended into it.
       dsp-repository's at `<pin>`, features included
 - [ ] `git rm -r cpe/store cpe/store-build cpe/web cpe/engine cpe/projects/incunabula`; remove from
       `cpe/static` the files the vendored tree now holds
-- [ ] Reduce `cpe/bin` to a host over `cpe-server`: the site index from `Cpe::projects()`, the
+- [ ] Reduce `cpe/bin` to a host over `cpe-server`: it mounts the router and gets the site index from
+      `cpe-server`, which serves it at the router's root (decision 13, revised 2026-10-12); the
       prototype's `request_span`, Alice and HdM through the doc-hidden constructor, Incunabula through
       `LiveArchiveProjection` over the vendored data; an empty base; workspace dependencies only; no
       `include_dir`, no `build.rs`

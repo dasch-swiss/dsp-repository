@@ -1,6 +1,7 @@
 //! `cpe-web` — page assembly for the Configurable Presentation Environment.
 //!
-//! - `page` — `render_page`, `render_compound_fragment` and the two full-page not-found renderers.
+//! - `page` — `render_page`, `render_compound_fragment`, the overview of the projects and the two
+//!   full-page not-found renderers.
 //! - `project` — the loaded-project type (`Project`) and its loader.
 //! - `share_link` — the canonical share URL of a view.
 //!

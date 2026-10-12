@@ -592,6 +592,16 @@ remodel {
             assert_eq!(status_of(router.clone(), path).await, StatusCode::NOT_FOUND);
             assert_eq!(span_of(path).name, "GET", "{path}");
         }
+
+        // The overview, with and without the slash, under a base no other test asks for.
+        let folder = projects_folder(&[("things", "0001")]);
+        let cpe = Cpe::new(&cpe_config(folder.path(), "/overview-g7h8"));
+        cpe.activate(&FakeArchiveProjection::default().with_project(things_snapshot()));
+        let router = app(&dpe(), &cpe);
+        for path in ["/overview-g7h8", "/overview-g7h8/"] {
+            assert_eq!(status_of(router.clone(), path).await, StatusCode::OK, "{path}");
+            assert_eq!(span_of(path).name, "GET /overview-g7h8/", "{path}");
+        }
     }
 
     #[tokio::test]
@@ -648,18 +658,70 @@ remodel {
         }
     }
 
+    /// The base is CPE's overview, with and without the slash: `nest` answers the first and the
+    /// mount's own route the second.
     #[tokio::test]
-    async fn the_base_and_a_path_that_names_no_project_are_cpes_not_found() {
+    async fn the_base_is_cpes_overview_of_the_projects_it_serves() {
         let (_folder, cpe) = things_and_offline(BASE);
         let router = app(&dpe(), &cpe);
-        for uri in [
-            "/cpe",
-            "/cpe/",
-            "/cpe/?page=2",
-            "/cpe/nope",
-            "/cpe/nope/deeper",
-            "/cpe/THINGS/",
-        ] {
+
+        let (status, headers, overview) = get(&router, "/cpe/").await;
+        assert_eq!(status, StatusCode::OK, "{overview}");
+        assert!(!headers.contains_key(header::LOCATION), "no redirect to or from the slash");
+        assert!(
+            overview.contains("href=\"/cpe/things/\"") && overview.contains("Things Fixture"),
+            "the served project is listed with its link under the base: {overview}"
+        );
+        assert!(
+            !overview.contains("/cpe/offline"),
+            "a project that answers 503 is not linked: {overview}"
+        );
+        assert!(
+            overview.contains("href=\"/cpe/_static/cpe/tokens.css\""),
+            "the page loads its stylesheet from under the base: {overview}"
+        );
+        for path in overview
+            .split('"')
+            .filter(|text| text.starts_with('/') && !text.starts_with("//"))
+        {
+            assert!(path.starts_with("/cpe/"), "{path} leaves the base");
+        }
+
+        for uri in ["/cpe", "/cpe?page=2", "/cpe/?page=2"] {
+            let (status, headers, body) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert!(!headers.contains_key(header::LOCATION), "{uri} must not redirect");
+            assert_eq!(body, overview, "{uri} is the same page");
+        }
+
+        // The appearance toggle of the overview, from either form of the base.
+        for uri in ["/cpe?appearance=dark", "/cpe/?appearance=dark"] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::SEE_OTHER, "{uri}");
+            assert_eq!(headers[header::LOCATION], "/cpe/", "{uri}");
+            assert_eq!(headers[header::SET_COOKIE], "appearance=dark; Path=/cpe; SameSite=Lax", "{uri}");
+        }
+    }
+
+    /// The one exit of CPE's not-found page.
+    #[tokio::test]
+    async fn the_all_projects_link_of_cpes_not_found_leads_to_the_overview() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+
+        let (status, _, not_found) = get(&router, "/cpe/nope").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(not_found.contains("<a href=\"/cpe/\"><span>All projects</span>"), "{not_found}");
+        let (status, _, overview) = get(&router, "/cpe/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(overview.contains("href=\"/cpe/things/\""), "{overview}");
+    }
+
+    #[tokio::test]
+    async fn a_path_that_names_no_project_is_cpes_not_found() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        for uri in ["/cpe/nope", "/cpe/nope/deeper", "/cpe/THINGS/"] {
             let (status, headers, body) = get(&router, uri).await;
             assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
             assert!(body.contains(CPE_NOT_FOUND), "{uri}: {body}");
@@ -678,19 +740,26 @@ remodel {
 
         for uri in ["/cpe", "/cpe/", "/cpe/?page=2"] {
             let (status, _, body) = get(&router, uri).await;
-            assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
-            assert!(body.contains(CPE_NOT_FOUND), "{uri}: {body}");
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert!(
+                body.contains("href=\"/cpe/cpe/\"") && !body.contains("<title>Things Fixture"),
+                "{uri} is the overview, which links to the project: {body}"
+            );
         }
         let (status, _, body) = get(&router, "/cpe/cpe/").await;
         assert_eq!(status, StatusCode::OK);
-        assert!(body.contains("Things Fixture"), "{body}");
+        assert!(body.contains("<title>Things Fixture"), "{body}");
 
-        let root = router.oneshot(request_with_peer("/cpe/")).await.unwrap();
-        assert_eq!(
-            root.extensions().get::<cpe_server::MatchedRoute>(),
-            None,
-            "no route of CPE's answers its root"
-        );
+        for uri in ["/cpe", "/cpe/"] {
+            let root = router.clone().oneshot(request_with_peer(uri)).await.unwrap();
+            assert_eq!(
+                root.extensions()
+                    .get::<cpe_server::MatchedRoute>()
+                    .map(cpe_server::MatchedRoute::as_str),
+                Some("/cpe/"),
+                "{uri}: the overview's route, reported once and with the base"
+            );
+        }
     }
 
     #[tokio::test]

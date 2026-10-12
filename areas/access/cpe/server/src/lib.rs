@@ -29,7 +29,8 @@ use std::sync::{Arc, PoisonError, RwLock};
 
 pub use config::CpeConfig;
 
-/// One project CPE serves, as a host needs it to link there.
+/// One project CPE serves, as a host needs it to link there. CPE's own list
+/// of them is the page at its base.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectSummary {
     /// The project id: its folder's name and its URL segment.
@@ -98,10 +99,10 @@ impl Cpe {
     /// per project, so an async host calls it inside `spawn_blocking`, after
     /// its listener is bound. It returns nothing and never panics. A project
     /// that does not load is logged with its id and answers 503 on its
-    /// prefix, and the others are served; a path that names no project is
-    /// CPE's not-found. A later call loads everything again and replaces
-    /// what is served; if it panics outside a project's own load, what was
-    /// served before stays.
+    /// prefix, and the others are served and listed at the base; any other
+    /// path that names no project is CPE's not-found. A later call loads
+    /// everything again and replaces what is served; if it panics outside a
+    /// project's own load, what was served before stays.
     ///
     /// "Never panics" rests on unwinding: a binary built with
     /// `panic = "abort"` loses it.
@@ -164,8 +165,9 @@ impl Cpe {
         self.base.as_str()
     }
 
-    /// CPE's routes: the shared static files, each project's assets and
-    /// pages, and CPE's own fallback. It carries no tracing layer, and a
+    /// CPE's routes: the overview of the projects at the root, the shared
+    /// static files, each project's assets and pages, and CPE's own
+    /// fallback. It carries no tracing layer, and a
     /// host's layer sees one service here and no route: the route that
     /// answered is in the response's extensions, as [`MatchedRoute`].
     ///
@@ -194,8 +196,8 @@ impl Cpe {
         })
     }
 
-    /// The projects CPE serves, sorted by id; empty until they are loaded. A
-    /// host that wants a list of them renders it from this.
+    /// The projects CPE serves, sorted by id; empty until they are loaded.
+    /// The page at the base lists the same projects.
     #[must_use]
     pub fn projects(&self) -> Vec<ProjectSummary> {
         self.activated().map(|activated| activated.projects.clone()).unwrap_or_default()
@@ -323,7 +325,6 @@ mod tests {
         let root = mixed_projects();
         let cpe = Cpe::from_sql_folders(&config_for(root.path()));
         for uri in [
-            "/",
             "/nope",
             "/nope/deeper",
             "/BROKEN/",
@@ -340,10 +341,28 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_missing_projects_folder_leaves_every_path_not_found() {
+    async fn the_overview_lists_the_served_projects_and_none_that_failed() {
+        let root = mixed_projects();
+        let cpe = Cpe::from_sql_folders(&config_for(root.path()));
+
+        let (status, headers, body) = get(&cpe, "/").await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(!headers.contains_key(header::LOCATION));
+        assert!(body.contains("href=\"/delta/\"") && body.contains("Delta Fixture"), "{body}");
+        assert!(body.contains("1 project<"), "the count is of the served projects: {body}");
+        for failed in ["broken", "no-data"] {
+            assert!(!body.contains(failed), "{failed} answers 503 and is not listed: {body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_missing_projects_folder_leaves_the_overview_empty_and_every_other_path_not_found() {
         let cpe = Cpe::from_sql_folders(&config_for(&fixture().join("no-such-folder")));
         assert!(cpe.projects().is_empty());
-        for uri in ["/", "/delta/", "/incunabula/books"] {
+        let (status, _, body) = get(&cpe, "/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("No projects are being presented yet."), "{body}");
+        for uri in ["/delta/", "/incunabula/books"] {
             let (status, _, _) = get(&cpe, uri).await;
             assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
         }

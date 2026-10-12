@@ -168,7 +168,8 @@ file itself. A project that does not validate is not loaded.
 _Avoid_: site (the `site {}` node of the KDL), tenant.
 
 `page` renders from a loaded project's data: a whole page (`render_page`), the compound viewer's fragment
-(`render_compound_fragment`), the browse breadcrumb, and the two not-found pages: the project's
+(`render_compound_fragment`), the browse breadcrumb, the **Overview** (`render_site_index`), and the two
+not-found pages: the project's
 not-found page (an unknown path under a loaded project, in that project's chrome) and CPE's own not-found
 page (a path under no loaded project, in bare chrome). It composes `cpe-components`' renderers and writes
 the document head and the chrome around them. `share_link` composes the canonical URL of a view, so that two requests for the same view give the
@@ -186,7 +187,7 @@ are not in this repository.
 `dasch-fingerprint.svg`, which `components/style/shell.css` refers to by a relative URL. `public/vendor/`
 holds the vendored `datastar.js` with a `README.md` that records its checksum, which `just verify-checksums`
 recomputes. `cpe-server` embeds these files and the seven stylesheets and serves them under each project's
-`_static/` and, for CPE's own not-found page, under CPE's own; a
+`_static/` and, for the **Overview** and CPE's own not-found page, under CPE's own; a
 test there fails when a file of the three directories has no row in its table. `cpe-web`'s tests read
 `datastar.js` and four of the stylesheets to hold the markup's attributes, breakpoints and class names
 against them.
@@ -211,9 +212,21 @@ The path CPE is mounted at: empty at the root of the host, else a path with a le
 one (`/cpe`). `Cpe::base()` is its one source: the host mounts `Cpe::router()` there, and `cpe_core::url`
 writes it in front of every link, redirect and cookie path. The router's own routes do not hold it. A
 project's pages are at `<base>/<project id>/…`, the shared static files at `<base>/<project id>/_static/…`
-(and at `<base>/_static/…` for CPE's own not-found page; the 503 page loads no file), a project's own files at
-`<base>/<project id>/_assets/…`. A link in a narrative that starts with one `/` gets the base in front.
+(and at `<base>/_static/…` for the **Overview** and CPE's own not-found page; the 503 page loads no file), a
+project's own files at `<base>/<project id>/_assets/…`. A link in a narrative that starts with one `/` gets
+the base in front.
 _Avoid_: prefix, mount path
+
+**Overview**:
+The page at the **Base**, with and without a trailing slash: one teaser per loaded project (title,
+description, eyebrow, cover image and credit from the project's `site {}` node), each a link to the
+project's start page, in CPE's bare chrome and one of the four built-in languages. It is the route at the
+root of `Cpe::router()`, rendered by `cpe-web`'s `page::render_site_index`. An **Unavailable project** is
+not on it, and with no project loaded it says so and is still answered 200. The code and the config
+language's documentation call it the site index, the prototype's name (`render_site_index`,
+`ChromeMsg::SiteIndex*`).
+_Avoid_: home, landing page (a project's `/` page is its start page), index (DPE's project list). Not the
+`overview` tab of DPE's project page (`areas/access/CONTEXT.md`).
 
 **Activation**:
 `Cpe::activate(&dyn ArchiveProjection)`: the one step that loads the projects. For each project folder it
@@ -231,7 +244,8 @@ A project folder that did not activate: its configuration does not parse or vali
 snapshot for its shortcode or cannot be read, the build refuses the data, or any of these panics. It is
 logged with its id, and every path under its prefix is answered 503 with `Retry-After` and
 `Cache-Control: no-store`; the other projects are served ("a project fails alone", ADR-0007, amendment of
-2026-10-11 on activation). 404 is for a path that names no project folder. A folder is a project when its
+2026-10-11 on activation), and the **Overview** does not list it. 404 is for a path that names no project
+folder. A folder is a project when its
 name passes the **Project id** rule and it holds a `config.kdl`; a folder that fails the rule is logged and
 is not a project.
 ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-7403's.

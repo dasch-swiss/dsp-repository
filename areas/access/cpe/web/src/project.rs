@@ -376,7 +376,7 @@ impl Project {
     /// The project's `site.title`, resolved chrome-id-or-literal for `lang`.
     ///
     /// Mirrors [`Project::description`] (see `labels::site_title`, which
-    /// every chrome surface uses). Used by a host's site-index teaser.
+    /// every chrome surface uses).
     pub fn title(&self, lang: &Lang) -> &str {
         cpe_core::labels::site_title(&self.config.site, lang)
     }
@@ -388,10 +388,6 @@ impl Project {
     /// matches a declared chrome-string id and that id has a translation for
     /// `lang`, the translation is returned; otherwise the literal value is
     /// returned as-is. Returns `None` when `site.description` is unset.
-    ///
-    /// Used by callers outside `cpe-web` (a host's site-index teaser) that
-    /// need the resolved description without calling
-    /// `cpe_core::labels::chrome_lookup` themselves.
     pub fn description(&self, lang: &Lang) -> Option<&str> {
         self.config
             .site
@@ -434,6 +430,28 @@ impl Project {
     /// (non-localized) accessor — a file path is not translatable text.
     pub fn cover_image(&self) -> Option<&str> {
         self.config.site.cover_image.as_deref()
+    }
+
+    /// The project as the overview shows it to a reader of `lang`, which is
+    /// one of the built-in languages and need not be one of the project's.
+    ///
+    /// The texts are resolved for `lang` when the project declares it, else
+    /// for `en`, else for the project's default language. A language the
+    /// project does not declare is never resolved: validation requires a
+    /// chrome string's translations for the declared languages only, so the
+    /// lookup would fall through to the string's id.
+    pub fn teaser(&self, lang: &Lang) -> crate::page::ProjectTeaser<'_> {
+        let site = &self.config.site;
+        let shown = &cpe_core::lang::resolve(&[lang.as_str().to_owned(), "en".to_owned()], site);
+        crate::page::ProjectTeaser {
+            id: &self.id,
+            title: self.title(shown),
+            description: self.description(shown),
+            eyebrow: self.eyebrow(shown),
+            image_credit: self.image_credit(shown),
+            accent: site.theme.accent.as_data_attr(),
+            cover_image: self.cover_image(),
+        }
     }
 }
 

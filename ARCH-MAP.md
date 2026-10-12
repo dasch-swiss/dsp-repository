@@ -179,7 +179,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `c2643c39ebca`
+- **Fingerprint:** `4ca5264600e2`
 
 ### areas/deposit/editor
 
@@ -593,9 +593,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the `remodel {}` block of the project's KDL into the store's rows, with the project's hook where the block
   declares one, and renders them as that SQL text. `cpe-web` is the page assembly: `Project`, a project loaded
   from its KDL, its store's SQL text and its narrative, and the functions that render a page, the compound
-  viewer's fragment and the not-found pages from `cpe-components`' parts; it holds no routes. `public/` holds
+  viewer's fragment, the overview of the projects and the not-found pages from `cpe-components`' parts; it
+  holds no routes. `public/` holds
   the files every CPE page refers to (two logos, the fingerprint, Datastar). `cpe-server` is the host crate, a
-  facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. Activation
+  facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. The router's
+  root, which is the base with and without a trailing slash, is the overview of the loaded projects (ADR-0007,
+  amendment of 2026-10-12 on the overview). Activation
   loads every project folder with a store built from the port's snapshot, and a project that does not
   activate answers 503 on its own prefix while the others are served (ADR-0007, amendment of 2026-10-11 on
   activation); the crate also serves the stylesheets and `public/` from a compiled-in table. A project is a
@@ -634,7 +637,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `hook::Draft` (the seam a hook works through), `hooks::HOOKS` and `hooks::resolve` (the table of hooks, by
   project id, the name of the project's folder). In `cpe-web`: `project::Project` (the loaded project; `Project::load`, `page_data`,
   `get_resource`) and `project::LoadError`, `page::render_page`, `page::render_compound_fragment` and
-  `page::CompoundFragmentOutput`, `page::render_not_found_project`, `page::render_not_found_site`,
+  `page::CompoundFragmentOutput`, `page::render_site_index` and `page::ProjectTeaser` (the overview and one
+  project on it, from `Project::teaser`), `page::render_not_found_project`, `page::render_not_found_site`,
   `page::render_browse_breadcrumb_for_page`, `page::SearchFragmentSurface`, `page::document_head`,
   `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
   `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`), `Cpe` (`new`, `activate`, `router`,
@@ -766,7 +770,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   in one host), and nothing is written to disk. `projects/incunabula/` is
   committed configuration, narrative and assets, **single writer** the project's developers (**review**); the process reads it at activation and never writes it. `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `6b960dabab53`
+- **Fingerprint:** `3481ca0e10d9`
 
 ### areas/access/datei
 

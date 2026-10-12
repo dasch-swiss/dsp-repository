@@ -1,5 +1,6 @@
-//! CPE's router: the shared static files, each project's assets and one
-//! explicit route per configured page, closed by a fallback.
+//! CPE's router: the overview of the projects, the shared static files, each
+//! project's assets and one explicit route per configured page, closed by a
+//! fallback.
 //!
 //! ## Routing design
 //!
@@ -108,10 +109,14 @@ pub(crate) fn build(
     origin_cfg: crate::request::OriginConfig,
     base: &Base,
 ) -> Router {
-    // The shared static files for a page without a project (CPE's own
-    // not-found). The viewer's files sit in a directory of the same table, as
-    // `document_head` asks for them.
-    let mut app = static_routes(Router::new(), &ROOT.static_dir());
+    let served = Arc::new(projects.to_vec());
+    // The shared static files for a page without a project (the overview,
+    // CPE's own not-found). The viewer's files sit in a directory of the same
+    // table, as `document_head` asks for them.
+    let mut app = static_routes(Router::new(), &ROOT.static_dir()).route(
+        &ROOT.home(),
+        get(site_index_handler(Arc::clone(&served), origin_cfg.clone(), base.clone())),
+    );
     for project in projects {
         let routes = ROOT.project(project.id());
         // The same files once more under the project, where its pages load
@@ -373,12 +378,7 @@ pub(crate) fn build(
 
     // A router without a fallback of its own inherits the outer router's when
     // it is nested, which would hand CPE's unknown paths to another capability.
-    app.fallback(fallback_handler(
-        Arc::new(projects.to_vec()),
-        unavailable.into(),
-        origin_cfg,
-        base.clone(),
-    ))
+    app.fallback(fallback_handler(served, unavailable.into(), origin_cfg, base.clone()))
 }
 
 /// Serve the static table, and the viewer's files in its `image-viewer`
@@ -389,6 +389,47 @@ fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
         get(|Path(path): Path<String>| std::future::ready(static_files::serve(&path))),
     )
     .route(&axum_route(&dir.file("image-viewer/*path")), get(serve_viewer_asset))
+}
+
+/// The overview of the projects, at the router's root: one teaser per loaded
+/// project. A project that did not load has none, as its prefix answers 503.
+///
+/// `?appearance=` sets the cookie and redirects to the page without it, as
+/// on a project's page; no other query key is read or removed. The page is
+/// in one of the built-in languages: there is no project to declare any.
+fn site_index_handler(
+    projects: Arc<Vec<Arc<cpe_web::project::Project>>>,
+    origin_cfg: crate::request::OriginConfig,
+    base: Base,
+) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
+    move |req: Request| {
+        let requested = req
+            .extensions()
+            .get::<RequestedLang>()
+            .cloned()
+            .unwrap_or(RequestedLang { prefs: Vec::new(), from_query: false });
+        let requested_appearance = req
+            .extensions()
+            .get::<RequestedAppearance>()
+            .cloned()
+            .unwrap_or(RequestedAppearance { value: None, from_query: false });
+        if let Some(redirect) = redirect_without_keys(req.uri(), &["appearance"], &requested_appearance, &base) {
+            return std::future::ready(redirect);
+        }
+
+        let lang = cpe_core::lang::resolve_builtin(&requested.prefs);
+        let teasers: Vec<_> = projects.iter().map(|project| project.teaser(&lang)).collect();
+        let markup = cpe_web::page::render_site_index(
+            &base,
+            &teasers,
+            &lang,
+            requested_appearance.value.unwrap_or_default(),
+            &origin_cfg.resolve(req.headers()),
+        );
+        let mut resp = (StatusCode::OK, markup).into_response();
+        attach_lang_cookie(&mut resp, &requested, lang.as_str(), &base);
+        std::future::ready(resp)
+    }
 }
 
 /// Router-wide fallback for any path that matched no route registered above.
@@ -865,7 +906,7 @@ const STRIPPED_QUERY_KEYS: &[&str] = &["appearance", "accent", "background", "ty
 /// Returns `None` when no pair matches. The `Location` is the base and
 /// `uri.path()`, so a caller must be a matched route, never the catch-all
 /// fallback (whose path may be `//host/…`, which at a root mount would be
-/// written as it is).
+/// written as it is). The overview's route matches `/` alone.
 fn redirect_without_keys(uri: &Uri, keys: &[&str], appearance: &RequestedAppearance, base: &Base) -> Option<Response> {
     let pairs: Vec<&str> = uri.query().unwrap_or("").split('&').filter(|kv| !kv.is_empty()).collect();
     let kept: Vec<&str> = pairs
@@ -2690,6 +2731,358 @@ mod tests {
         assert_eq!(content_type("cover.webp"), "image/webp");
     }
 
+    // --- The overview of the projects, at `/` ---
+
+    /// The answer to `uri` with `headers`, from the router over `projects` at
+    /// `base`, with the request preferences resolved as `activation` layers
+    /// them.
+    async fn site_index(
+        projects: &[Arc<cpe_web::project::Project>],
+        base: &Base,
+        uri: &str,
+        headers: &[(header::HeaderName, &str)],
+    ) -> (StatusCode, axum::http::HeaderMap, String) {
+        let router = build(
+            projects,
+            &[],
+            &AssetInventory::default(),
+            crate::request::OriginConfig::fixed("http://localhost:8080"),
+            base,
+        )
+        .layer(from_fn(resolve_request_prefs));
+        let mut request = Request::builder().uri(uri);
+        for (name, value) in headers {
+            request = request.header(name, *value);
+        }
+        let response = router
+            .oneshot(request.body(Body::empty()).expect("hand-crafted test request is well-formed"))
+            .await
+            .expect("oneshot against an in-process router never fails");
+        let (parts, body) = response.into_parts();
+        let body = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("response body is small and finite in tests");
+        (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
+    }
+
+    /// The overview's body at a root mount, in English.
+    async fn site_index_body(projects: &[Arc<cpe_web::project::Project>]) -> String {
+        let (status, _, body) = site_index(projects, &ROOT, "/", &[]).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        body
+    }
+
+    fn cpe_base() -> Base {
+        Base::parse("/cpe").expect("/cpe is a base")
+    }
+
+    #[tokio::test]
+    async fn site_index_cookie_appearance_dark_emits_data_appearance() {
+        let (status, _, body) = site_index(&[], &ROOT, "/", &[(header::COOKIE, "appearance=dark")]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("data-appearance=\"dark\""), "{body}");
+        assert!(body.contains("href=\"/?appearance=light\""), "the toggle offers light: {body}");
+        assert!(!site_index_body(&[]).await.contains("data-appearance"), "light is the default");
+    }
+
+    #[tokio::test]
+    async fn site_index_emits_theme_and_direction_attrs() {
+        let body = site_index_body(&[]).await;
+        for attr in [
+            "data-accent=\"ochre\"",
+            "data-bg=\"tint\"",
+            "data-pick=\"newsreader\"",
+            "data-direction=\"edition\"",
+        ] {
+            assert!(body.contains(attr), "{attr}: {body}");
+        }
+    }
+
+    /// The brand mark is a wordmark and no heading, so the page's one `<h1>`
+    /// is the hidden one.
+    #[tokio::test]
+    async fn site_index_has_exactly_one_visually_hidden_h1() {
+        let body = site_index_body(&load_fixture_projects()).await;
+        assert_eq!(body.matches("<h1").count(), 1, "{body}");
+        assert!(body.contains(r#"<h1 class="visually-hidden">"#), "{body}");
+    }
+
+    #[tokio::test]
+    async fn site_index_has_skip_link_targeting_main() {
+        let body = site_index_body(&[]).await;
+        let after_body = body.split_once("<body>").expect("body present").1;
+        assert!(
+            after_body.starts_with(r##"<a class="skip-link" href="#main">"##),
+            "the skip link is the first child of <body>: {body}"
+        );
+        assert!(body.contains(r#"<main class="shell__main" id="main" tabindex="-1">"#), "{body}");
+    }
+
+    /// The toggle's click: the cookie carries the choice, and the redirect
+    /// leaves no `?appearance=` in the address.
+    #[tokio::test]
+    async fn site_index_query_appearance_dark_redirects_clean_and_sets_cookie() {
+        for (base, location, cookie) in [
+            (ROOT.clone(), "/", "appearance=dark; Path=/; SameSite=Lax"),
+            (cpe_base(), "/cpe/", "appearance=dark; Path=/cpe; SameSite=Lax"),
+        ] {
+            let (status, headers, _) = site_index(&[], &base, "/?appearance=dark", &[]).await;
+            assert_eq!(status, StatusCode::SEE_OTHER);
+            assert_eq!(headers[header::LOCATION], location);
+            assert_eq!(headers[header::SET_COOKIE], cookie);
+        }
+    }
+
+    /// Light is the default, so choosing it clears the cookie.
+    #[tokio::test]
+    async fn site_index_query_appearance_light_redirects_clean_and_clears_cookie() {
+        let (status, headers, _) = site_index(&[], &cpe_base(), "/?appearance=light", &[]).await;
+        assert_eq!(status, StatusCode::SEE_OTHER);
+        assert_eq!(headers[header::LOCATION], "/cpe/");
+        assert_eq!(headers[header::SET_COOKIE], "appearance=; Path=/cpe; Max-Age=0; SameSite=Lax");
+    }
+
+    /// Only `appearance` is removed: any other key is kept by the redirect
+    /// and ignored by the page.
+    #[tokio::test]
+    async fn site_index_keeps_every_other_query_key() {
+        let (status, headers, _) = site_index(&[], &cpe_base(), "/?lang=de&appearance=dark&accent=red", &[]).await;
+        assert_eq!(status, StatusCode::SEE_OTHER);
+        assert_eq!(headers[header::LOCATION], "/cpe/?lang=de&accent=red");
+
+        let (status, headers, body) = site_index(&[], &cpe_base(), "/?page=2&accent=red", &[]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(!headers.contains_key(header::LOCATION) && !headers.contains_key(header::SET_COOKIE));
+        assert!(!body.contains("page=2") && !body.contains("accent=red"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn site_index_renders_empty_state() {
+        let body = site_index_body(&[]).await;
+        assert!(body.contains("No projects are being presented yet."), "{body}");
+        assert!(
+            body.contains("resource-list__empty"),
+            "the message has the empty row's treatment: {body}"
+        );
+        // The heading and the count stand above an empty list too.
+        assert!(body.contains("index-list-head") && body.contains("0 projects"), "{body}");
+        assert!(body.contains("class=\"shell\""), "{body}");
+        assert!(!body.contains("project-list") && !body.contains("class=\"teaser\""), "{body}");
+    }
+
+    /// The degenerate crumb line: `CPE`, current and unlinked, with the share
+    /// control, whose link is the origin and the base.
+    #[tokio::test]
+    async fn site_index_has_degenerate_breadcrumb_with_share_control() {
+        let body = site_index_body(&[]).await;
+        assert!(body.contains("class=\"breadcrumb\""), "{body}");
+        assert_eq!(body.matches("breadcrumb__item").count(), 1, "{body}");
+        assert!(body.contains("crumb-share"), "{body}");
+        assert!(body.contains("href=\"http://localhost:8080/\""), "{body}");
+
+        let (_, _, under_base) = site_index(&[], &cpe_base(), "/", &[]).await;
+        assert!(under_base.contains("href=\"http://localhost:8080/cpe/\""), "{under_base}");
+    }
+
+    #[tokio::test]
+    async fn site_index_lists_known_projects() {
+        let projects = load_fixture_projects();
+        let body = site_index_body(&projects).await;
+        for (id, title) in [("alpha", "Alpha Fixture"), ("gamma", "Gamma Fixture")] {
+            assert!(body.contains(&format!("href=\"/{id}/\"")), "{id}: {body}");
+            assert!(body.contains(title), "{title}: {body}");
+        }
+        assert_eq!(body.matches("class=\"teaser\"").count(), projects.len(), "{body}");
+        assert!(body.contains(&format!("{} projects", projects.len())), "{body}");
+        // In the order the projects were given in, which is by id.
+        let at = |id: &str| body.find(&format!("href=\"/{id}/\"")).unwrap_or(usize::MAX);
+        assert!(at("alpha") < at("delta") && at("delta") < at("gamma"), "{body}");
+        assert!(body.contains("tokens.css") && body.contains("shell.css"), "{body}");
+    }
+
+    /// Every URL the page writes has the base in front, once.
+    #[tokio::test]
+    async fn site_index_writes_every_url_under_the_base() {
+        let (status, _, body) = site_index(&load_fixture_projects(), &cpe_base(), "/", &[]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(
+            body.contains(r#"<a class="teaser" data-accent="green" href="/cpe/alpha/">"#),
+            "{body}"
+        );
+        assert!(body.contains(r#"<a class="brand" href="/cpe/""#), "{body}");
+        assert!(body.contains(r#"href="/cpe/?appearance=dark""#), "{body}");
+        assert!(body.contains(r#"href="/cpe/_static/cpe/tokens.css""#), "{body}");
+        assert!(body.contains(r#"src="/cpe/_static/cpe/dasch-logo-colour.svg""#), "{body}");
+        assert!(!body.contains("/cpe/cpe"), "{body}");
+        for path in body.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
+            assert!(path.starts_with("/cpe/"), "{path} leaves the base");
+        }
+    }
+
+    /// `alpha` declares `theme { accent "green" }`: its teaser carries the
+    /// project's accent, and the page its own.
+    #[tokio::test]
+    async fn site_index_teaser_renders_project_accent_data_attr() {
+        let body = site_index_body(&load_fixture_projects()).await;
+        assert!(
+            body.contains(r#"<a class="teaser" data-accent="green" href="/alpha/">"#),
+            "{body}"
+        );
+        assert!(
+            body.contains("<html lang=\"en\" data-direction=\"edition\" data-accent=\"ochre\""),
+            "{body}"
+        );
+    }
+
+    /// `alpha` declares `cover-image "assets/cover.webp"`, one of its own
+    /// files.
+    #[tokio::test]
+    async fn site_index_teaser_with_cover_image_renders_img() {
+        let body = site_index_body(&load_fixture_projects()).await;
+        assert!(
+            body.contains(r#"<img class="teaser__img" src="/alpha/_assets/assets/cover.webp" alt="">"#),
+            "{body}"
+        );
+        assert!(body.contains("Alpha Credit"), "{body}");
+
+        let (_, _, under_base) = site_index(&load_fixture_projects(), &cpe_base(), "/", &[]).await;
+        assert!(
+            under_base.contains(r#"src="/cpe/alpha/_assets/assets/cover.webp""#),
+            "{under_base}"
+        );
+    }
+
+    /// `gamma` declares no cover and no credit. The credit line is there all
+    /// the same, empty, so that titles align across a row.
+    #[tokio::test]
+    async fn site_index_teaser_without_cover_image_renders_ghost() {
+        let projects = load_fixture_projects();
+        let gamma: Vec<_> = projects.into_iter().filter(|project| project.id() == "gamma").collect();
+        let body = site_index_body(&gamma).await;
+        assert!(
+            body.contains(r#"<div class="teaser__ghost" aria-hidden="true"></div>"#),
+            "{body}"
+        );
+        assert!(!body.contains("teaser__img"), "{body}");
+        assert!(body.contains(r#"<p class="teaser__credit"></p>"#), "{body}");
+    }
+
+    #[tokio::test]
+    async fn site_index_teaser_footer_shows_enter_cta_and_path() {
+        let body = site_index_body(&load_fixture_projects()).await;
+        let enter = cpe_components::chrome::ChromeMsg::SiteIndexEnterCta.text(&cpe_core::lang::resolve_builtin(&[]));
+        assert!(
+            body.contains(&format!(
+                r#"<span class="teaser__enter">{enter} <span aria-hidden="true">→</span></span>"#
+            )),
+            "{body}"
+        );
+        assert!(body.contains(r#"<span class="teaser__path">/alpha/</span>"#), "{body}");
+
+        let (_, _, under_base) = site_index(&load_fixture_projects(), &cpe_base(), "/", &[]).await;
+        assert!(
+            under_base.contains(r#"<span class="teaser__path">/cpe/alpha/</span>"#),
+            "the path shown is the link's: {under_base}"
+        );
+    }
+
+    /// `alpha` declares `eyebrow "Test Eyebrow"` and `gamma` none: its
+    /// eyebrow line is there, empty.
+    #[tokio::test]
+    async fn site_index_teaser_eyebrow_renders_when_configured() {
+        let projects = load_fixture_projects();
+        let only = |id: &str| -> Vec<_> { projects.iter().filter(|project| project.id() == id).cloned().collect() };
+        let alpha = site_index_body(&only("alpha")).await;
+        assert!(
+            alpha.contains(r#"<p class="eyebrow teaser__eyebrow">Test Eyebrow</p>"#),
+            "{alpha}"
+        );
+        let gamma = site_index_body(&only("gamma")).await;
+        assert!(gamma.contains(r#"<p class="eyebrow teaser__eyebrow"></p>"#), "{gamma}");
+    }
+
+    /// `delta` declares `image-credit "delta-credit"`, the id of a chrome
+    /// string: the teaser shows its translation and never the id.
+    #[tokio::test]
+    async fn site_index_teaser_shows_localized_credit_via_chrome_id() {
+        let projects = load_fixture_projects();
+        let english = site_index_body(&projects).await;
+        assert!(
+            english.contains("Delta EN Credit") && !english.contains("delta-credit"),
+            "{english}"
+        );
+
+        let (_, _, german) = site_index(&projects, &ROOT, "/?lang=de", &[]).await;
+        assert!(
+            german.contains("Delta DE Credit") && !german.contains("delta-credit"),
+            "{german}"
+        );
+    }
+
+    /// `delta` declares `en` and `de`, and its chrome strings have no other
+    /// translation. French and Italian are built in: the page is in them and
+    /// `delta`'s teaser in English.
+    #[tokio::test]
+    async fn site_index_teaser_never_leaks_chrome_id_for_undeclared_language() {
+        let projects = load_fixture_projects();
+        for lang in ["fr", "it"] {
+            let (status, _, body) = site_index(&projects, &ROOT, &format!("/?lang={lang}"), &[]).await;
+            assert_eq!(status, StatusCode::OK);
+            assert!(body.contains(&format!("<html lang=\"{lang}\"")), "{lang}: {body}");
+            assert!(!body.contains("delta-credit"), "{lang}: {body}");
+            assert!(body.contains("Delta EN Credit"), "{lang}: {body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn site_index_lang_query_de_localizes_and_sets_cookie() {
+        let (status, headers, body) = site_index(&load_fixture_projects(), &cpe_base(), "/?lang=de", &[]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers[header::SET_COOKIE], "lang=de; Path=/cpe; SameSite=Lax");
+        assert!(body.contains("<html lang=\"de\""), "{body}");
+        for german in ["Zum Inhalt springen", "<h2>Projekte</h2>", "Öffnen "] {
+            assert!(body.contains(german), "{german}: {body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn site_index_lang_query_fr_localizes_empty_state() {
+        let (status, _, body) = site_index(&[], &ROOT, "/?lang=fr", &[]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("<html lang=\"fr\""), "{body}");
+        assert!(body.contains("Aucun projet n'est encore présenté."), "{body}");
+        assert!(body.contains("Aller au contenu"), "{body}");
+    }
+
+    /// The cookie holds the language the page is in, never the query's value.
+    #[tokio::test]
+    async fn site_index_lang_query_unknown_falls_back_to_en() {
+        let (status, headers, body) = site_index(&[], &ROOT, "/?lang=zz", &[]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("<html lang=\"en\""), "{body}");
+        assert_eq!(headers[header::SET_COOKIE], "lang=en; Path=/; SameSite=Lax");
+    }
+
+    #[tokio::test]
+    async fn site_index_accept_language_fr_localizes() {
+        let (status, headers, body) = site_index(&[], &ROOT, "/", &[(header::ACCEPT_LANGUAGE, "fr")]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("<html lang=\"fr\""), "{body}");
+        assert!(body.contains("Aucun projet n'est encore présenté."), "{body}");
+        assert!(!headers.contains_key(header::SET_COOKIE), "only `?lang=` sets the cookie");
+    }
+
+    #[tokio::test]
+    async fn site_index_cookie_lang_de_localizes() {
+        let (status, _, body) = site_index(&load_fixture_projects(), &ROOT, "/", &[(header::COOKIE, "lang=de")]).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("<html lang=\"de\""), "{body}");
+        assert!(
+            body.contains("Zum Inhalt springen") && body.contains("<h2>Projekte</h2>"),
+            "{body}"
+        );
+    }
+
     #[tokio::test]
     async fn known_project_root_with_trailing_slash() {
         let projects = load_fixture_projects();
@@ -2844,8 +3237,8 @@ mod tests {
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
         // CPE's own not-found page (`N2` in the messages): mono code + heading,
-        // bare chrome, single "All projects" exit to "/" (which this router
-        // answers with this same page), index footer.
+        // bare chrome, single "All projects" exit to the overview at "/", index
+        // footer.
         assert!(
             body.contains("404 — not found"),
             "N2 must render the mono nf.code mark, got: {body}"
@@ -2859,7 +3252,7 @@ mod tests {
             "N2's one exit must be the all-projects link, got: {body}"
         );
         assert!(
-            body.contains("href=\"/\""),
+            body.contains("<a href=\"/\"><span>All projects</span>"),
             "N2's all-projects link must point at the site index, got: {body}"
         );
         assert!(

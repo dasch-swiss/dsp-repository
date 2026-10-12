@@ -7,13 +7,14 @@ to CPE.
 ## What is served
 
 - **Where**: every path under `/cpe` (`CPE_BASE`). A project is at `/cpe/<project id>/`; today there is one,
-  Incunabula, at `/cpe/incunabula/`. `/cpe` and `/cpe/` are CPE's own not-found page: there is no index of
-  projects.
+  Incunabula, at `/cpe/incunabula/`. `/cpe` and `/cpe/` are CPE's overview: the projects it serves, each
+  with a link to its start page. Any other path that names no project is CPE's own not-found page.
 - **From what**: the project folders in `CPE_PROJECTS_DIR` (configuration, narrative, assets) and `sync`'s
   data in `SYNC_DATA_DIR`. Both are in the image. Each project's store is built in memory from that data at
   every start; nothing is written to disk, and a restart leaves nothing behind.
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
-  `/cpe/<project id>/_static/…`; a project's own files at `/cpe/<project id>/_assets/…`.
+  `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
+  project's own files at `/cpe/<project id>/_assets/…`.
 
 ## Configuration
 
@@ -31,9 +32,9 @@ answer throughout. Nothing of CPE's stops the binary or delays its start.
 | Situation | Under `/cpe` | Logged | DPE |
 |-----------|--------------|--------|-----|
 | Projects are still loading | `503`, every path | `CPE is mounted and activates in the background` (info) | serves |
-| A project is loaded | its pages | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
-| `SYNC_DATA_DIR` or a project's file in it is missing | `503` on that project's paths | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
-| `CPE_PROJECTS_DIR` does not exist | CPE's not-found, `404`, every path | `CPE's projects are loaded` with `served=0` (info) and nothing else | serves |
+| A project is loaded | its pages, and its entry in the overview | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
+| `SYNC_DATA_DIR` or a project's file in it is missing | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
+| `CPE_PROJECTS_DIR` does not exist | the overview with no project, `200`, at `/cpe` and `/cpe/`; CPE's not-found, `404`, on every other path | `CPE's projects are loaded` with `served=0` (info) and nothing else | serves |
 | `CPE_PUBLIC_ORIGIN` is refused (a path, a trailing slash) | `503`, every path | `CPE's configuration is refused …`, with the reason (error) | serves |
 | `CPE_BASE` is unset or empty | not mounted: DPE's `404` | `CPE_BASE is not set: CPE is not mounted …` (warning) | serves alone |
 | `CPE_BASE` is refused (no leading `/`, a trailing one) | not mounted: DPE's `404` | `CPE's configuration is refused …`, with the reason (error) | serves alone |

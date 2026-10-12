@@ -181,6 +181,9 @@ path (F), the wiring and the mount (G).
     built for them. The same table is served at both places; a project's pages use only their own. The
     ADR's reason for the per-project path (a project on its own hostname is self-contained) is untouched,
     since those two pages do not exist on a project's hostname. PR F amends the ADR.
+    *Revised in execution (2026-10-12):* the 503 page loads no file at all. Until activation every path
+    under the base answers 503 (decision 8), its own stylesheets included, so the page carries a small
+    inline style. Only CPE's not-found page loads from `<base>/_static/…`.
 21. **A narrative link that starts with one `/` gets the base in front** (owner, 2026-10-11). The
     Markdown renderer and the invite lists send such a link through the URL builder; content is not
     changed. Chosen over project-relative links (a change to the config language and to all three
@@ -579,346 +582,365 @@ amended into it.
 
 ### dsp-incubator
 
-- [ ] Create the worktree at `origin/main`; record its sha as `SRC`
-- [ ] Export `cpe/store`, `cpe/store-build`, `cpe/web`, `cpe/bin`, `cpe/static`, `cpe/projects/incunabula`
+- [x] Create the worktree at `origin/main`; record its sha as `SRC`
+- [x] Export `cpe/store`, `cpe/store-build`, `cpe/web`, `cpe/bin`, `cpe/static`, `cpe/projects/incunabula`
       and `cpe/docs/CONFIG_LANGUAGE.md` at `SRC` with `git archive` into `.claude/tmp/`
-- [ ] Save the sorted test list of every crate of the `cpe` workspace under an absolute scratch path
+- [x] Save the sorted test list of every crate of the `cpe` workspace under an absolute scratch path
 
 ### dsp-repository
 
-- [ ] `git fetch`; where #478 has merged, rebase this branch onto `origin/main`; where it has not, onto
+- [x] `git fetch`; where #478 has merged, rebase this branch onto `origin/main`; where it has not, onto
       `origin/worktree-DEV-7407`
-- [ ] Commit this plan as `docs(docs): add the plan for moving CPE's store, page assembly and host (DEV-7465)`
-- [ ] Copy `cpe/store` (sources and `schema.sql`) to `areas/access/cpe/store`
-- [ ] Write its manifest in the shape of `cpe/core/Cargo.toml`: `cpe-core` by path, `rusqlite`,
+- [x] Commit this plan as `docs(docs): add the plan for moving CPE's store, page assembly and host (DEV-7465)`
+- [x] Copy `cpe/store` (sources and `schema.sql`) to `areas/access/cpe/store`
+- [x] Write its manifest in the shape of `cpe/core/Cargo.toml`: `cpe-core` by path, `rusqlite`,
       `thiserror` and `tracing` from the workspace
-- [ ] Add the member to the root `Cargo.toml`
-- [ ] Stage the new files and run `just fmt` until a run changes nothing; save the formatted baseline
-- [ ] Change `DbError::Schema`'s message to "failed to apply the store's schema"
-- [ ] Qualify the five bare incubator ADR references of *The source at `d68f214b`*, `schema.sql`'s
+- [x] Add the member to the root `Cargo.toml`
+- [x] Stage the new files and run `just fmt` until a run changes nothing; save the formatted baseline
+- [x] Change `DbError::Schema`'s message to "failed to apply the store's schema"
+- [x] Qualify the five bare incubator ADR references of *The source at `d68f214b`*, `schema.sql`'s
       included; `just check-adr-refs` passes
-- [ ] Run the move's proofs of *Verification design* for `cpe-store`
-- [ ] Add `cpe-store` to the scope tables in `CONVENTIONS.md` and `docs/src/git-conventions.md`
-- [ ] Add the crate to `docs/src/repo_structure.md`
-- [ ] Update `areas/access/cpe/CONTEXT.md` and `ARCH-MAP.md` (with `dune:dune-map`) for the store
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(cpe-store): move CPE's read-side store in from dsp-incubator (DEV-7465)`
+- [x] Run the move's proofs of *Verification design* for `cpe-store`
+- [x] Add `cpe-store` to the scope tables in `CONVENTIONS.md` and `docs/src/git-conventions.md`
+- [x] Add the crate to `docs/src/repo_structure.md`
+- [x] Update `areas/access/cpe/CONTEXT.md` and `ARCH-MAP.md` (with `dune:dune-map`) for the store
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(cpe-store): move CPE's read-side store in from dsp-incubator (DEV-7465)`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 2: the store's comments follow `CONVENTIONS.md`
 
 ### dsp-repository
 
-- [ ] Remove plan, ticket and history references from `cpe-store`'s comments, the stale sentence in
+- [x] Remove plan, ticket and history references from `cpe-store`'s comments, the stale sentence in
       `query/reads.rs` about DEV-7402 included; rewrite incubator ADR numbers as
       `dsp-incubator cpe/docs/adr/<file>`
-- [ ] Prove the commit changes comments only, with the comment-stripping comparison of the earlier plans
-- [ ] Run `just check`; it passes
-- [ ] Commit as `docs(cpe-store): remove history and plan references from the comments (DEV-7465)`
-- [ ] Point `worktree-DEV-7465-store` at `HEAD`
+- [x] Fix the three rustdoc warnings `cargo doc -p cpe-store --no-deps` reports at the move (deferred from
+      Phase 1, which changes no comment beyond its listed edits): the unresolved link to `PageParams`
+      (`query/page.rs` module doc), the link from `LiveProjectFacts`' public doc to the private
+      `showcase_annotation_row` (`query.rs`), and the redundant explicit target on `PageScope`
+      (`query/page.rs` module doc); the command then reports none, as for the other CPE crates
+- [x] Prove the commit changes comments only, with the comment-stripping comparison of the earlier plans
+- [x] Run `just check`; it passes
+- [x] Commit as `docs(cpe-store): remove history and plan references from the comments (DEV-7465)`
+- [x] Point `worktree-DEV-7465-store` at `HEAD`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 3: `cpe-store-build` enters `areas/access/cpe/store-build`
 
 ### dsp-repository
 
-- [ ] Copy `config.kdl`, `narrative/`, `assets/`, `SHAPE.md`, `CURATION.md`, `PROVENANCE.md` and
+- [x] Copy `config.kdl`, `narrative/`, `assets/`, `SHAPE.md`, `CURATION.md`, `PROVENANCE.md` and
       `DATA_ISSUES.md` to `areas/access/cpe/projects/incunabula/` (decision 11); qualify any bare
       incubator ADR reference in them
-- [ ] Move `cpe/docs/CONFIG_LANGUAGE.md` to `docs/src/cpe/config-language.md` under a new `## CPE`
+- [x] Move `cpe/docs/CONFIG_LANGUAGE.md` to `docs/src/cpe/config-language.md` under a new `## CPE`
       section of `docs/src/SUMMARY.md`; the heading `` ## `remodel` block `` keeps its level, which
       `worked_example.rs:19-21` splits on
-- [ ] Repoint every reference to the incubator's `CONFIG_LANGUAGE.md` under `areas/access/cpe/`
+- [x] Repoint every reference to the incubator's `CONFIG_LANGUAGE.md` under `areas/access/cpe/`
       (`rg -l CONFIG_LANGUAGE areas/access/cpe`), `CONTEXT.md` included
-- [ ] Copy `cpe/store-build` without `src/main.rs`, `tests/it/cli.rs`, `tests/it/fresh.rs` and
+- [x] Copy `cpe/store-build` without `src/main.rs`, `tests/it/cli.rs`, `tests/it/fresh.rs` and
       `tests/it/dockerfile.rs`
-- [ ] Write its manifest: `cpe-core` and `cpe-ports` by path; `serde_json`, `thiserror` and
+- [x] Write its manifest: `cpe-core` and `cpe-ports` by path; `serde_json`, `thiserror` and
       `unicode-normalization` from the workspace; `rusqlite` and `sync-store` as dev-dependencies; no
       `pico-args`
-- [ ] Add `unicode-normalization` to `[workspace.dependencies]` and `float_roundtrip` to `serde_json`'s
+- [x] Add `unicode-normalization` to `[workspace.dependencies]` and `float_roundtrip` to `serde_json`'s
       features, with a comment that names the builder's geometry parsing
-- [ ] Add the member to the root `Cargo.toml`
-- [ ] Stage, run `just fmt` until stable, save the formatted baseline
-- [ ] Make the edits of the `cpe-store-build` table in *The source at `d68f214b`*: the three `mod`
+- [x] Add the member to the root `Cargo.toml`
+- [x] Stage, run `just fmt` until stable, save the formatted baseline
+- [x] Make the edits of the `cpe-store-build` table in *The source at `d68f214b`*: the three `mod`
       lines, `DATA_DIR`, `PROJECTS_DIR`, the four `hygiene.rs` sites, `geometry.rs`'s include, and
       `worked_example.rs`'s path
-- [ ] Rewrite `README.md` for the library: no command line, no `data.sql`, incubator ADRs by file name
-- [ ] Confirm the header strings of `sql.rs` are byte-equal to `SRC`'s
-- [ ] Render 0803 with `sql::to_sql` and `sql::header("incunabula", …)` in a scratch test and compare the
+- [x] Rewrite `README.md` for the library: no command line, no `data.sql`, incubator ADRs by file name
+- [x] Confirm the header strings of `sql.rs` are byte-equal to `SRC`'s
+- [x] Render 0803 with `sql::to_sql` and `sql::header("incunabula", …)` in a scratch test and compare the
       text with `cpe/projects/incunabula/data.sql` from the export; it is byte-equal; write the result to
       `.claude/tmp/dev-7465/pr-b.md`; commit neither the test nor the file
-- [ ] Run the move's proofs for `cpe-store-build`; the test list equals `SRC`'s minus the 26 tests of
+- [x] Run the move's proofs for `cpe-store-build`; the test list equals `SRC`'s minus the 26 tests of
       the three files left behind (245 remain)
-- [ ] Add rule 4 to `.github/scripts/check-cpe-seam.sh`: no manifest under `areas/access/cpe/` names
+- [x] Add rule 4 to `.github/scripts/check-cpe-seam.sh`: no manifest under `areas/access/cpe/` names
       `sync-store` outside `[dev-dependencies]`; add its cases to `check-cpe-seam.test.sh`
-- [ ] Amend ADR-0008's "Enforced by" as *Prior decisions this plan changes* describes
-- [ ] Amend ADR-0007: `cpe-store-build` is a crate of the capability beside the roles ADR-0003 lists;
+- [x] Amend ADR-0008's "Enforced by" as *Prior decisions this plan changes* describes
+- [x] Amend ADR-0007: `cpe-store-build` is a crate of the capability beside the roles ADR-0003 lists;
       the config-language specification now lives here; Incunabula's folder and what it holds
-- [ ] Add `cpe-store-build` to both scope tables and to `docs/src/repo_structure.md`
-- [ ] Update `areas/access/cpe/CONTEXT.md` and `ARCH-MAP.md`: the builder, its hook table, and the rule on
+- [x] Add `cpe-store-build` to both scope tables and to `docs/src/repo_structure.md`
+- [x] Update `areas/access/cpe/CONTEXT.md` and `ARCH-MAP.md`: the builder, its hook table, and the rule on
       `sync-store` with its new enforcement level
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(cpe-store-build): move the store builder and the remodelling in from dsp-incubator (DEV-7465)`
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(cpe-store-build): move the store builder and the remodelling in from dsp-incubator (DEV-7465)`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 4: the builder's comments follow `CONVENTIONS.md`
 
 ### dsp-repository
 
-- [ ] Remove plan, ticket and history references from `cpe-store-build`'s comments
-- [ ] Prove the commit changes comments only
-- [ ] Run `just check`; it passes
-- [ ] Commit as `docs(cpe-store-build): remove history and plan references from the comments (DEV-7465)`
-- [ ] Point `worktree-DEV-7465-store-build` at `HEAD`
+- [x] Remove plan, ticket and history references from `cpe-store-build`'s comments
+- [x] Reword the comments the move left pointing at what it removed (deferred from Phase 3): in
+      `tests/it/hygiene.rs` the module doc and the doc of `BINARY_ONLY`, which name the removed `BINARY`
+      constant and "the binary"; in `tests/it/main.rs` the comments on `DATA_DIR`, `HEADER` and `SQL`; in
+      `src/lib.rs` "are the binary's". The assert message "read in main.rs and pass the result in"
+      (`hygiene.rs`) and `.expect("the vendored 0803 …")` (`main.rs`) are strings, not comments: decide
+      whether the comments-only proof excepts them
+- [x] Prove the commit changes comments only
+- [x] Run `just check`; it passes
+- [x] Commit as `docs(cpe-store-build): remove history and plan references from the comments (DEV-7465)`
+- [x] Point `worktree-DEV-7465-store-build` at `HEAD`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 5: `cpe-web` enters `areas/access/cpe/web`
 
 ### dsp-repository
 
-- [ ] Copy the two logos and `dasch-fingerprint.svg` to `areas/access/cpe/public/`
-- [ ] Copy `datastar.js` to `areas/access/cpe/public/vendor/` with a `README.md` row in the form of
+- [x] Copy the two logos and `dasch-fingerprint.svg` to `areas/access/cpe/public/`
+- [x] Copy `datastar.js` to `areas/access/cpe/public/vendor/` with a `README.md` row in the form of
       `areas/access/dpe/public/vendor/README.md`; `just verify-checksums` passes
-- [ ] Copy `cpe/web` with `tests/`, its 234 fixture folders and `src/snapshots/`
-- [ ] Write its manifest: `cpe-core`, `cpe-store`, `cpe-components`, `cpe-image-viewer` by path; `maud`,
+- [x] Copy `cpe/web` with `tests/`, its 234 fixture folders and `src/snapshots/`
+- [x] Write its manifest: `cpe-core`, `cpe-store`, `cpe-components`, `cpe-image-viewer` by path; `maud`,
       `rusqlite`, `thiserror` from the workspace; `insta` as a dev-dependency
-- [ ] Add the member to the root `Cargo.toml`
-- [ ] Stage, run `just fmt` until stable, save the formatted baseline
-- [ ] Bind the two `html!` blocks passed to `blocks.push` (`page.rs:2422`, `:2443`) with `let`; fix any
+- [x] Add the member to the root `Cargo.toml`
+- [x] Stage, run `just fmt` until stable, save the formatted baseline
+- [x] Bind the two `html!` blocks passed to `blocks.push` (`page.rs:2422`, `:2443`) with `let`; fix any
       other `html!` site that `maudfmt` or clippy rejects the same way
-- [ ] Repoint the five `include_str!` of the `cpe-web` table in *The source at `d68f214b`*
-- [ ] Qualify the seven bare incubator ADR references of that table; `just check-adr-refs` passes
-- [ ] Run the move's proofs for `cpe-web`: 497 tests, the snapshot folders equal by `diff -r`, no test
+- [x] Repoint the five `include_str!` of the `cpe-web` table in *The source at `d68f214b`*
+- [x] Qualify the seven bare incubator ADR references of that table; `just check-adr-refs` passes
+- [x] Run the move's proofs for `cpe-web`: 497 tests, the snapshot folders equal by `diff -r`, no test
       ignored
-- [ ] Add `cpe-web` to both scope tables and to `docs/src/repo_structure.md`
-- [ ] Update `areas/access/cpe/CONTEXT.md` and `ARCH-MAP.md` for the page assembly and the static files
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(cpe-web): move CPE's page assembly in from dsp-incubator (DEV-7465)`
+- [x] Add `cpe-web` to both scope tables and to `docs/src/repo_structure.md`
+- [x] Update `areas/access/cpe/CONTEXT.md` and `ARCH-MAP.md` for the page assembly and the static files
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(cpe-web): move CPE's page assembly in from dsp-incubator (DEV-7465)`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 6: the page assembly's comments follow `CONVENTIONS.md`
 
 ### dsp-repository
 
-- [ ] Remove plan, ticket and history references from `cpe-web`'s comments
-- [ ] Prove the commit changes comments only
-- [ ] Run `just check`; it passes
-- [ ] Commit as `docs(cpe-web): remove history and plan references from the comments (DEV-7465)`
-- [ ] Point `worktree-DEV-7465-web` at `HEAD`
+- [x] Remove plan, ticket and history references from `cpe-web`'s comments
+- [x] Fix the two rustdoc warnings `cargo doc -p cpe-web --no-deps` reports at the move (deferred from
+      Phase 5, which changes no comment beyond its listed edits): the two links from the public doc of
+      `render_browse_breadcrumb_for_page` to the private `render_narrative_breadcrumb_for_page`
+      (`src/page.rs`); the command then reports none
+- [x] Prove the commit changes comments only
+- [x] Run `just check`; it passes
+- [x] Commit as `docs(cpe-web): remove history and plan references from the comments (DEV-7465)`
+- [x] Point `worktree-DEV-7465-web` at `HEAD`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 7: `cpe-server` holds CPE's router
 
 ### dsp-repository
 
-- [ ] Assign every test of `cpe/bin/src/router.rs`, `cpe/bin/src/lib.rs` and `cpe/bin/src/discovery.rs`
+- [x] Assign every test of `cpe/bin/src/router.rs`, `cpe/bin/src/lib.rs` and `cpe/bin/src/discovery.rs`
       at `SRC` to "moves", "rewritten here" or "stays in the incubator" by the rules of the test table in
       *The source at `d68f214b`*; the three lists together equal the list at `SRC` (249 at `d68f214b`);
       write them to `.claude/tmp/dev-7465/pr-d.md`
-- [ ] Write again, over a fixture project, the assertions of the five fallback tests that use Alice's id
+- [x] Write again, over a fixture project, the assertions of the five fallback tests that use Alice's id
       only as a project id
-- [ ] Create `areas/access/cpe/server` with `router.rs`, the request preferences, the query readers and
+- [x] Create `areas/access/cpe/server` with `router.rs`, the request preferences, the query readers and
       `OriginConfig` from `cpe/bin`, naming the four crates directly in place of `cpe_engine::`; leave
       `request_span` behind (decision 19)
-- [ ] Serve the seven stylesheets and the four files of `areas/access/cpe/public` from an
+- [x] Serve the seven stylesheets and the four files of `areas/access/cpe/public` from an
       `include_bytes!` table at their present URLs, with `text/css` and `image/svg+xml` among its content
       types; remove the `include_dir` parameters from the router's build function
-- [ ] Add a test that every file of `components/style`, `public` and `public/vendor` has a row
-- [ ] Rewrite discovery to read a directory on disk as *Files from disk* describes; write its tests
+- [x] Add a test that every file of `components/style`, `public` and `public/vendor` has a row
+- [x] Rewrite discovery to read a directory on disk as *Files from disk* describes; write its tests
       first: a symbolic link is not followed, and a folder whose name fails the id rule is not a project
-- [ ] Serve project assets from the inventory; write the tests first: `..`, `%2e%2e`, `%2f`, a backslash,
+- [x] Serve project assets from the inventory; write the tests first: `..`, `%2e%2e`, `%2f`, a backslash,
       a NUL byte and an absolute path in the tail are answered 404, and so is an unknown project segment
-- [ ] Remove the site index route; add `Cpe::projects()` (decision 13)
-- [ ] Give the router an explicit fallback: the project's not-found under a known project, CPE's
+- [x] Remove the site index route; add `Cpe::projects()` (decision 13)
+- [x] Give the router an explicit fallback: the project's not-found under a known project, CPE's
       otherwise; it never redirects and never echoes the path
-- [ ] Add `CpeConfig` (decision 14, without the base) with tests for the refused public origin
-- [ ] Add the `Cpe` facade with `new`, `router` and `projects`, and the doc-hidden constructor that loads
+- [x] Add `CpeConfig` (decision 14, without the base) with tests for the refused public origin
+- [x] Add the `Cpe` facade with `new`, `router` and `projects`, and the doc-hidden constructor that loads
       project folders holding a `data.sql` (decision 2), with a doc comment that names DEV-7498 as its end
-- [ ] Add a test in the form of `dpe-server`'s that no `pub` item names a type of another CPE crate but
+- [x] Add a test in the form of `dpe-server`'s that no `pub` item names a type of another CPE crate but
       `cpe-ports`
-- [ ] Move the tests assigned "moves", with `cpe/bin/tests/fixtures/discovery` and `…/static`; correct
+- [x] Move the tests assigned "moves", with `cpe/bin/tests/fixtures/discovery` and `…/static`; correct
       the comments that name `engine/src/…`, `engine/tests/…` or `cpe_engine::`
-- [ ] Add `futures-util` to `[workspace.dependencies]`; `tower` with `util` is a dev-dependency
-- [ ] Stage, run `just fmt` until stable
-- [ ] Run `cargo clippy -p cpe-server --all-targets -- -D warnings`; it passes
-- [ ] Add `cpe-server` to both scope tables and to `docs/src/repo_structure.md`
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(cpe-server): add CPE's host crate from the prototype's binary (DEV-7465)`
+- [x] Add `futures-util` to `[workspace.dependencies]`; `tower` with `util` is a dev-dependency
+- [x] Stage, run `just fmt` until stable
+- [x] Run `cargo clippy -p cpe-server --all-targets -- -D warnings`; it passes
+- [x] Add `cpe-server` to both scope tables and to `docs/src/repo_structure.md`
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(cpe-server): add CPE's host crate from the prototype's binary (DEV-7465)`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 8: a project's store is built through the port
 
 ### dsp-repository
 
-- [ ] Write the tests first, over a `FakeArchiveProjection`: an activated fixture project serves its
+- [x] Write the tests first, over a `FakeArchiveProjection`: an activated fixture project serves its
       pages; before `activate` every path is answered 503 with `Retry-After` and `Cache-Control:
       no-store`; with an unknown shortcode and with an unavailable projection `activate` returns, that
       project's prefix is answered 503, a second, valid project is served, and a path that names no
       project is 404; with a missing projects directory every path is CPE's not-found; ADR-0008's test of
       *Verification design*
-- [ ] Implement `Cpe::activate` and the forwarding service as *The host crate and activation* describes
-- [ ] Add `sync-store` as a dev-dependency of `cpe-server` and a test that Incunabula activates from
+- [x] Implement `Cpe::activate` and the forwarding service as *The host crate and activation* describes
+- [x] Add `sync-store` as a dev-dependency of `cpe-server` and a test that Incunabula activates from
       `LiveArchiveProjection` over `areas/access/sync/data` and serves its start page, a book page and a
       record page with status 200; the test fails when the data directory is missing
-- [ ] Amend ADR-0007 as *Prior decisions this plan changes* describes: the hook's place and the table;
+- [x] Amend ADR-0007 as *Prior decisions this plan changes* describes: the hook's place and the table;
       "over the port's types"; what of "a project fails alone" is built and what DEV-7403 owns; the store
       is built at activation from SQL text
-- [ ] Update `areas/access/cpe/CONTEXT.md`, `areas/access/CONTEXT.md` and `ARCH-MAP.md`: the host crate,
+- [x] Update `areas/access/cpe/CONTEXT.md`, `areas/access/CONTEXT.md` and `ARCH-MAP.md`: the host crate,
       the project folder, the durable-state entry (the store is built at every start and kept nowhere)
-- [ ] Run the root parity crawl of *Verification design*; no unexpected difference; write the URL count
+- [x] Run the root parity crawl of *Verification design*; no unexpected difference; write the URL count
       and the result to `.claude/tmp/dev-7465/pr-d.md`
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(cpe-server): build a project's store from the archive projection at activation (DEV-7465)`
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(cpe-server): build a project's store from the archive projection at activation (DEV-7465)`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 9: the host crate's comments follow `CONVENTIONS.md`
 
 ### dsp-repository
 
-- [ ] Remove plan, ticket and history references from `cpe-server`'s comments, DEV-7498 in the doc-hidden
+- [x] Remove plan, ticket and history references from `cpe-server`'s comments, DEV-7498 in the doc-hidden
       constructor's comment excepted
-- [ ] Prove the commit changes comments only
-- [ ] Run `just check`; it passes
-- [ ] Commit as `docs(cpe-server): remove history and plan references from the comments (DEV-7465)`
-- [ ] Point `worktree-DEV-7465-server` at `HEAD`
+- [x] Prove the commit changes comments only
+- [x] Run `just check`; it passes
+- [x] Commit as `docs(cpe-server): remove history and plan references from the comments (DEV-7465)`
+- [x] Point `worktree-DEV-7465-server` at `HEAD`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 10: the store owns its connection
 
 ### dsp-repository
 
-- [ ] Write the tests first for the owning type: open from SQL text, facts, search indexes, ARKs, reads
-- [ ] Add the owning type to `cpe-store`; `open_project_db`, `LiveProjectFacts::new`,
+- [x] Write the tests first for the owning type: open from SQL text, facts, search indexes, ARKs, reads
+- [x] Add the owning type to `cpe-store`; `open_project_db`, `LiveProjectFacts::new`,
       `build_search_indexes`, `data_arks` and `ProjectReads::new` stop being `pub`
-- [ ] Remove `rusqlite::Error` from the fields of `DbError` and `QueryError` that a caller outside the
+- [x] Remove `rusqlite::Error` from the fields of `DbError` and `QueryError` that a caller outside the
       crate can reach (decision 17)
-- [ ] `Project` holds the owning type; remove `rusqlite` from `cpe-web`'s manifest
-- [ ] Confirm `rg 'rusqlite' areas/access/cpe --glob '!store/**' --glob '!store-build/**'` finds nothing
+- [x] `Project` holds the owning type; remove `rusqlite` from `cpe-web`'s manifest
+- [x] Confirm `rg 'rusqlite' areas/access/cpe --glob '!store/**' --glob '!store-build/**'` finds nothing
       outside dev-dependencies
-- [ ] Record in `ARCH-MAP.md` that `rusqlite` is named by `cpe-store` alone among CPE's `[dependencies]`
+- [x] Record in `ARCH-MAP.md` that `rusqlite` is named by `cpe-store` alone among CPE's `[dependencies]`
       (review), and the debt of decision 16: reads run on the async worker thread
-- [ ] Run `cargo test -p cpe-web` and `cargo test -p cpe-server`; no snapshot changes
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `refactor(cpe-store): own the connection, so the page assembly names no rusqlite (DEV-7465)`
-- [ ] Point `worktree-DEV-7465-handle` at `HEAD`
+- [x] Run `cargo test -p cpe-web` and `cargo test -p cpe-server`; no snapshot changes
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `refactor(cpe-store): own the connection, so the page assembly names no rusqlite (DEV-7465)`
+- [x] Point `worktree-DEV-7465-handle` at `HEAD`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 11: CPE builds its URLs from a configured base
 
 ### dsp-repository
 
-- [ ] Write the tests first for the URL builder in `cpe-core`: page, fragment, static, asset and share
+- [x] Write the tests first for the URL builder in `cpe-core`: page, fragment, static, asset and share
       URLs for an empty base and for `/cpe`; a project segment; a path with a query
-- [ ] Write the tests first in `cpe-server`, with the base `/cpe`: the "no URL leaves the base" test of
+- [x] Write the tests first in `cpe-server`, with the base `/cpe`: the "no URL leaves the base" test of
       *Verification design*; both redirects' `Location`; both cookies' `Path`; a refused base at load
-- [ ] Add the URL builder; `RenderContext` carries the base
-- [ ] Send every URL of `cpe-components`, `cpe-web` and `cpe-server` through it, row by row of the site
+- [x] Add the URL builder; `RenderContext` carries the base
+- [x] Send every URL of `cpe-components`, `cpe-web` and `cpe-server` through it, row by row of the site
       table in *The base path and the mount*
-- [ ] Set `current_path` to the base plus the request path at the five sites that build a
+- [x] Set `current_path` to the base plus the request path at the five sites that build a
       `RenderContext`, and build both redirects from the same value
-- [ ] Send a narrative link that starts with one `/` through the builder, in the Markdown renderer and
+- [x] Send a narrative link that starts with one `/` through the builder, in the Markdown renderer and
       the invite lists (decision 21); a link that starts with `//`, a scheme or `#` is left as it is;
       write the tests first
-- [ ] Move static files to `<base>/<shortname>/_static/…` and project assets to
+- [x] Move static files to `<base>/<shortname>/_static/…` and project assets to
       `<base>/<shortname>/_assets/…`; serve the static table at `<base>/_static/…` too, and have CPE's
       not-found and the 503 load from there (decision 20)
-- [ ] Pass the viewer's `head_tag` `<base>/<shortname>/_static/image-viewer`
-- [ ] Amend ADR-0007: `<base>/_static/…` for pages without a project; narrative links get the base
-- [ ] Add `CPE_BASE` to `CpeConfig` and `Cpe::base()`; set both cookies' `Path` from it
-- [ ] Confirm `rg -n '"/_static|"/_assets|href="/|src="/|format!\("/|Path=/' areas/access/cpe --glob '*.rs'
+- [x] Pass the viewer's `head_tag` `<base>/<shortname>/_static/image-viewer`
+- [x] Amend ADR-0007: `<base>/_static/…` for pages without a project; narrative links get the base
+- [x] Add `CPE_BASE` to `CpeConfig` and `Cpe::base()`; set both cookies' `Path` from it
+- [x] Confirm `rg -n '"/_static|"/_assets|href="/|src="/|format!\("/|Path=/' areas/access/cpe --glob '*.rs'
       --glob '!**/tests/**' --glob '!**/snapshots/**'` lists test modules only; put the list in
       `.claude/tmp/dev-7465/pr-f.md`
-- [ ] Confirm `rg -n 'url\(/' areas/access/cpe/components/style` finds nothing
-- [ ] Review every changed snapshot with `cargo insta review -p cpe-components` and `-p cpe-web`; each
+- [x] Confirm `rg -n 'url\(/' areas/access/cpe/components/style` finds nothing
+- [x] Review every changed snapshot with `cargo insta review -p cpe-components` and `-p cpe-web`; each
       change is a URL and nothing else (about 91 and 29 files)
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(cpe-core): build CPE's URLs from a configured base (DEV-7438)`
-- [ ] Point `worktree-DEV-7465-base` at `HEAD`
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(cpe-core): build CPE's URLs from a configured base (DEV-7438)`
+- [x] Point `worktree-DEV-7465-base` at `HEAD`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 12: `access-server` constructs and mounts CPE
 
 ### dsp-repository
 
-- [ ] Add `cpe-server` to `PORT_EXCEPTIONS` in `.github/scripts/check-cpe-seam.sh`, correct the script's
+- [x] Add `cpe-server` to `PORT_EXCEPTIONS` in `.github/scripts/check-cpe-seam.sh`, correct the script's
       header, and add a case to `check-cpe-seam.test.sh` (decision 9)
-- [ ] Add `cpe-server`, `cpe-ports` and `sync-store` to `areas/access/server/Cargo.toml`
-- [ ] Write the tests first in `serve.rs`, with a `Cpe` activated over a `FakeArchiveProjection`: every
+- [x] Add `cpe-server`, `cpe-ports` and `sync-store` to `areas/access/server/Cargo.toml`
+- [x] Write the tests first in `serve.rs`, with a `Cpe` activated over a `FakeArchiveProjection`: every
       row of the request table in *The base path and the mount*; DPE's routes unchanged; a CPE route
       carries a `traceparent` and `/healthz` does not; the span of a CPE request is named by its route
       template; a cookie set under `/cpe` has `Path=/cpe`
-- [ ] `app()` takes the `Cpe` and mounts it with `nest(cpe.base(), cpe.router())` before the OTel layers,
+- [x] `app()` takes the `Cpe` and mounts it with `nest(cpe.base(), cpe.router())` before the OTel layers,
       with the explicit route for the base followed by `/`
-- [ ] In `serve()`, build `Cpe` from `CpeConfig`, construct `LiveArchiveProjection` over `SYNC_DATA_DIR`,
+- [x] In `serve()`, build `Cpe` from `CpeConfig`, construct `LiveArchiveProjection` over `SYNC_DATA_DIR`,
       and run `cpe.activate` in `spawn_blocking` after the bind, beside `dpe.warm()`
-- [ ] Add a test that with `SYNC_DATA_DIR` pointing at a directory that does not exist the binary's
+- [x] Add a test that with `SYNC_DATA_DIR` pointing at a directory that does not exist the binary's
       router still answers `/healthz` and `/dpe/projects`, and `/cpe/incunabula/` is answered 503
-- [ ] Port the prototype's open-redirect tests; run them under the mount and at a root mount
-- [ ] Update `areas/access/server/CLAUDE.md`, the "Today it mounts DPE alone" text and the exception-list
+- [x] Port the prototype's open-redirect tests; run them under the mount and at a root mount
+- [x] Update `areas/access/server/CLAUDE.md`, the "Today it mounts DPE alone" text and the exception-list
       sentences in `ARCH-MAP.md`, and `areas/access/sync/CONTEXT.md` ("nothing constructs it")
-- [ ] Amend ADR-0007: the seam exception is `cpe-server` alone
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `feat(access-server): construct CPE over sync's archive projection and mount it under /cpe (DEV-7438)`
+- [x] Amend ADR-0007: the seam exception is `cpe-server` alone
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `feat(access-server): construct CPE over sync's archive projection and mount it under /cpe (DEV-7438)`
 
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 13: the image carries CPE's data, and the done-criterion is checked
 
 ### dsp-repository
 
-- [ ] Add `areas/access/cpe/projects` to `.github/actions/build-dpe/action.yml`'s staging and to
+- [x] Add `areas/access/cpe/projects` to `.github/actions/build-dpe/action.yml`'s staging and to
       `areas/access/server/Dockerfile`, in the shape #478 gave `sync/data`; leave `/app/sync/data` as it is
-- [ ] Set `ENV SYNC_DATA_DIR="/app/sync/data"`, `CPE_PROJECTS_DIR` (absolute) and `CPE_BASE=/cpe` in the
+- [x] Set `ENV SYNC_DATA_DIR="/app/sync/data"`, `CPE_PROJECTS_DIR` (absolute) and `CPE_BASE=/cpe` in the
       Dockerfile
-- [ ] Add `SYNC_DATA_DIR`, `CPE_PROJECTS_DIR`, `CPE_BASE` and `CPE_PUBLIC_ORIGIN` to the environment
+- [x] Add `SYNC_DATA_DIR`, `CPE_PROJECTS_DIR`, `CPE_BASE` and `CPE_PUBLIC_ORIGIN` to the environment
       table of `docs/src/dpe/operations.md`, and correct its "Docker Image" sentence that nothing in the
       binary reads `/app/sync/data`
-- [ ] Add `areas/access/cpe/**` and `areas/access/sync/**` to the path filter of
+- [x] Add `areas/access/cpe/**` and `areas/access/sync/**` to the path filter of
       `.github/workflows/a11y-dpe.yml`
-- [ ] Add an `eng.yaml` override for `areas/access/cpe/store/**` and `areas/access/cpe/server/**` naming
+- [x] Add an `eng.yaml` override for `areas/access/cpe/store/**` and `areas/access/cpe/server/**` naming
       `eng:review:security-reviewer`; validate it with `eng:eng-yaml`
-- [ ] Stage a directory laid out as the image, start the release binary in it with the Dockerfile's
+- [x] Stage a directory laid out as the image, start the release binary in it with the Dockerfile's
       environment, and confirm `/healthz` answers before the log line that reports Incunabula active
-- [ ] Measure the time from process start to that log line and the process's peak memory; write both, and
+- [x] Measure the time from process start to that log line and the process's peak memory; write both, and
       the size of the staged directory before and after, to `.claude/tmp/dev-7465/pr-g.md` and to
       `docs/src/cpe/` as an operations note
-- [ ] Amend ADR-0007: DEV-7400's done-criterion, how it was checked, and the expected differences
-- [ ] Update `docs/src/` where it describes what the area binary serves
-- [ ] Run the `/cpe` parity crawl of *Verification design*; no unexpected difference
-- [ ] Record the crawl's slowest five responses, with their URLs, in the operations note: the baseline
+- [x] Amend ADR-0007: DEV-7400's done-criterion, how it was checked, and the expected differences
+- [x] Update `docs/src/` where it describes what the area binary serves
+- [x] Run the `/cpe` parity crawl of *Verification design*; no unexpected difference
+- [x] Record the crawl's slowest five responses, with their URLs, in the operations note: the baseline
       for the debt of decision 16
-- [ ] Run `eng:test-browser` on Incunabula's start page, a book page and a record page under `/cpe`; no
-      defect reported
-- [ ] Confirm `rg -n 'include_dir|pico-args|anyhow' Cargo.toml areas/access/cpe` finds nothing and
+- [x] Run a browser check on Incunabula's start page, a book page and a record page under `/cpe`
+      (headless Chrome through Playwright; the Chrome extension `eng:test-browser` drives was not connected)
+- [ ] No defect reported: one was. The image viewer's script does not parse on `main` (a backtick in a CSS
+      comment inside a template literal, since DEV-7401), so no viewer element is registered. Fixed in
+      dsp-repository#483, the top PR of this stack; with that fix applied locally the viewer
+      draws under `/cpe` with no console error. Tick once #483 has merged
+- [x] Confirm `rg -n 'include_dir|pico-args|anyhow' Cargo.toml areas/access/cpe` finds nothing and
       `Cargo.lock` holds one `rusqlite`
-- [ ] Run `just check`; it passes
-- [ ] Run `just test`; it passes
-- [ ] Commit as `build(access-server): ship sync's data and CPE's projects in the image (DEV-7465)`
-- [ ] Adopt the seven branches with `gh stack init`, bottom to top, with `--base worktree-DEV-7407`
+- [x] Run `just check`; it passes
+- [x] Run `just test`; it passes
+- [x] Commit as `build(access-server): ship sync's data and CPE's projects in the image (DEV-7465)`
+- [x] Adopt the seven branches with `gh stack init`, bottom to top, with `--base worktree-DEV-7407`
       where #478 is still open, and submit with `gh stack submit --auto`; where `gh stack` cannot use
       that base, build the stack with `gh stack link`
-- [ ] Set each PR's body from the template and its file under `.claude/tmp/dev-7465/`, with *Human
+- [x] Set each PR's body from the template and its file under `.claude/tmp/dev-7465/`, with *Human
       Actions* copied in, and the assignee with `gh pr edit`; every PR is a draft; request no reviewer
-- [ ] Confirm CI is green on each of the seven PRs
+- [x] Confirm CI is green on each of the seven PRs
 
 - [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
@@ -949,6 +971,11 @@ amended into it.
       `cpe/docs/INCUNABULA_GO_LIVE.md` (DEV-7464, DEV-7401, DEV-7465 and DEV-7438 ticked) and
       `cpe/docs/BACKLOG.md` (the items this plan closes); replace `cpe/docs/CONFIG_LANGUAGE.md` with a
       pointer to dsp-repository
+- [ ] In `cpe/docs/INCUNABULA_GO_LIVE.md` (owner, 2026-10-11): tick DEV-7400 only where Phase 13's `/cpe`
+      parity crawl left no open difference, else leave it open and say why; under DEV-7400 replace "Includes
+      the CSP decision" with "CSP deferred to after go-live by the owner on 2026-10-11 (DEV-7499); CPE launches
+      without one, as DPE runs today."; add DEV-7499 under "After go-live"; correct the sentence that lists
+      "`sync`'s data in the image (needs DEV-7465 first), mounting CPE (DEV-7438)" as remaining
 - [ ] Add dated notes to `cpe/docs/adr/0001-crate-layout.md`, `0013`, `0015` and `0016`
 - [ ] Compare the workspace's test names with the list saved in Phase 1; the difference is the tests that
       moved and the tests of the files left behind in Phase 3

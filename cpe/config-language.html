@@ -334,7 +334,8 @@ translation for the request language; any other value renders verbatim
 in every language (Alice, HdM). A literal that happens to equal a
 declared chrome id is translated — the same accepted risk as
 <code>description</code>. The site index resolves it per declared language and
-falls back to <code>en</code> for an undeclared one.</li>
+falls back to <code>en</code>, then to the project's default language, for an
+undeclared one.</li>
 <li><code>languages</code> — list of ISO 639-1 codes. Must include at least <code>de</code>
 and <code>en</code> for v1 (per <code>cpe-poc.md</code> §9.2). A project MAY declare
 additional languages beyond this floor (e.g. Alice declares
@@ -389,7 +390,7 @@ align across a grid row).</li>
 title on the site-index's project card, e.g. <code>"Showcase · EN · DE"</code>.
 Chrome-id-or-literal, same idiom as <code>description</code>/<code>image-credit</code>. No
 existence validation beyond parsing. Absent → the card's reserved eyebrow
-line renders empty (the project's <code>/slug/</code> path in the card's footer row
+line renders empty (the project's <code>&lt;base&gt;/&lt;project-id&gt;/</code> path in the card's footer row
 still identifies it, so no card loses its identity).</li>
 <li><code>default-language</code> — one of <code>languages</code>. Default: first listed.</li>
 <li><code>nav</code> — top navigation items (see below).</li>
@@ -399,15 +400,12 @@ still identifies it, so no card loses its identity).</li>
 "Project copy overrides" below).</li>
 </ul>
 <p><code>cover-image</code>/<code>image-credit</code>/<code>eyebrow</code> are all optional and purely additive —
-they affect <strong>only</strong> the cross-project <code>/</code> site index's project-card
-presentation, never a project's own pages. <code>cpe-server</code> has no site index:
-the index is a page of the incubator's binary, and <code>Cpe::projects()</code> gives a
-host a project's id, title and start URL and none of the three. Here they are
-parsed, checked as said above and kept on the loaded project
-(<code>cpe_web::project::Project</code>), the cover image is served with the project's
-other assets, and no page shows them. Wherever this document says what the
-site index does with a value, it describes that page. Alice's <code>config.kdl</code> is
-the worked example:</p>
+they affect <strong>only</strong> the cross-project site index's project-card
+presentation, never a project's own pages. The site index is CPE's overview
+of its projects, the page at its base (<code>&lt;base&gt;/</code>): <code>cpe-server</code> serves it and
+<code>cpe_web::page::render_site_index</code> renders it, from
+<code>cpe_web::project::Project::teaser</code>. Alice's <code>config.kdl</code> is the worked
+example:</p>
 <pre><code class="language-kdl">site {
     title "Alice in DaSCHland"
     cover-image "assets/cover.webp"
@@ -2273,7 +2271,7 @@ surface shows is engine chrome (<code>ChromeMsg::Anno*</code>, <code>ChromeMsg::
 <li><strong>Built-in chrome messages</strong> — every language-varying piece of <em>engine</em>
 UI chrome (skip-link, nav/lang-switcher aria-labels, not-found
 and empty-state copy, facet/compound/pager strings, the
-bin's site-index chrome) lives in one typed catalog — <code>ChromeMsg</code>/<code>L4</code>
+site index's chrome) lives in one typed catalog — <code>ChromeMsg</code>/<code>L4</code>
 in top-level <code>areas/access/cpe/components/src/chrome.rs</code>, <code>pub</code> and re-exported from the
 engine crate. See "Built-in chrome catalog" below.</li>
 <li><strong>Chrome strings</strong> — declared in <code>site { chrome { ... } }</code>, with
@@ -2379,7 +2377,7 @@ arm for any built-in string — not a regression (this is identical to the
 pre-catalog behaviour), just outside what "completeness" covers here.</li>
 <li><strong><code>pub fn resolve_builtin(prefs: &amp;[String]) -&gt; Lang</code></strong> (in <code>lang.rs</code>) —
 resolves a preference list against <code>BUILTIN_LANGUAGES</code> (default <code>en</code>), with
-<strong>no project <code>SiteConfig</code> involved</strong>. This is what lets the bin's site
+<strong>no project <code>SiteConfig</code> involved</strong>. This is what lets the site
 index (which has no project to resolve a language against) obtain a <code>Lang</code>
 and call the same <code>pub</code> catalog a project page's renderer does — one seam,
 reused, not mirrored. <code>resolve_builtin</code> shares its candidate-matching logic
@@ -2390,7 +2388,7 @@ the two can never drift apart.</li>
 whether it's a <strong>pre-existing draft</strong> (migrated verbatim from an
 already-4-language per-module helper that predated the catalog) or <strong>new</strong>
 (authored to fill a gap — settings.rs, the skip-link/cog-label, previously
-unbranched aria-labels, and the bin's site index). Both kinds are unreviewed
+unbranched aria-labels, and the site index). Both kinds are unreviewed
 fr/it drafts pending native-speaker review; see
 <code>docs/plans/chrome-localization/translations-to-review.md</code> for the full
 review table.</p>

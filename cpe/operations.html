@@ -249,13 +249,14 @@ to CPE.</p>
 <h2 id="what-is-served"><a class="header" href="#what-is-served">What is served</a></h2>
 <ul>
 <li><strong>Where</strong>: every path under <code>/cpe</code> (<code>CPE_BASE</code>). A project is at <code>/cpe/&lt;project id&gt;/</code>; today there is one,
-Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's own not-found page: there is no index of
-projects.</li>
+Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's overview: the projects it serves, each
+with a link to its start page. Any other path that names no project is CPE's own not-found page.</li>
 <li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (configuration, narrative, assets) and <code>sync</code>'s
 data in <code>SYNC_DATA_DIR</code>. Both are in the image. Each project's store is built in memory from that data at
 every start; nothing is written to disk, and a restart leaves nothing behind.</li>
 <li><strong>Static files</strong>: CPE's stylesheets, scripts and logos are compiled into the binary and served at
-<code>/cpe/&lt;project id&gt;/_static/…</code>; a project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
+<code>/cpe/&lt;project id&gt;/_static/…</code>, and at <code>/cpe/_static/…</code> for the overview and CPE's not-found page; a
+project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
 </ul>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <p>The four variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>) are in the
@@ -268,9 +269,9 @@ path under <code>/cpe</code> answers <code>503</code> with <code>Retry-After: 30
 answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 <div class="table-wrapper"><table><thead><tr><th>Situation</th><th>Under <code>/cpe</code></th><th>Logged</th><th>DPE</th></tr></thead><tbody>
 <tr><td>Projects are still loading</td><td><code>503</code>, every path</td><td><code>CPE is mounted and activates in the background</code> (info)</td><td>serves</td></tr>
-<tr><td>A project is loaded</td><td>its pages</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
-<tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
-<tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>CPE's not-found, <code>404</code>, every path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
+<tr><td>A project is loaded</td><td>its pages, and its entry in the overview</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
+<tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
+<tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>the overview with no project, <code>200</code>, at <code>/cpe</code> and <code>/cpe/</code>; CPE's not-found, <code>404</code>, on every other path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code> is refused (a path, a trailing slash)</td><td><code>503</code>, every path</td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_BASE</code> is unset or empty</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE_BASE is not set: CPE is not mounted …</code> (warning)</td><td>serves alone</td></tr>
 <tr><td><code>CPE_BASE</code> is refused (no leading <code>/</code>, a trailing one)</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves alone</td></tr>

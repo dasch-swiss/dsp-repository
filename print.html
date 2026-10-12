@@ -826,8 +826,8 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <tr><td><code>cpe-image-viewer</code></td><td><code>areas/access/cpe/image-viewer</code></td><td>CPE's IIIF deep-zoom viewer (ADR-0007, amendment of 2026-10-11, DEV-7401): the <code>&lt;image-viewer&gt;</code> web component with a vendored OpenSeadragon compiled in, and the <code>Viewer</code> Maud builder; an interim, cut-down copy of dsp-incubator's <code>shared/dasch-image-viewer</code> that the incubator's final viewer replaces; depends on <code>maud</code> alone and on no CPE crate</td></tr>
 <tr><td><code>cpe-store</code></td><td><code>areas/access/cpe/store</code></td><td>CPE's read-side store, a derived read model (ADR-0008): the SQLite schema (<code>schema.sql</code>), the type that opens and owns a project's in-memory database, and the query layer that answers the validator's questions about a project's data and assembles a page's data; depends on <code>cpe-core</code>, <code>rusqlite</code>, <code>thiserror</code> and <code>tracing</code>, and on no <code>maud</code> or <code>axum</code>; <code>cpe-web</code> depends on it</td></tr>
 <tr><td><code>cpe-store-build</code></td><td><code>areas/access/cpe/store-build</code></td><td>The builder of CPE's store, a library (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>build</code> turns the snapshot the port serves and a project's <code>remodel {}</code> block into the store's rows, with the project's hook where the block declares one (<code>hooks::HOOKS</code>), and <code>sql</code> renders them as the SQL text <code>cpe-store</code> opens; depends on <code>cpe-core</code>, <code>cpe-ports</code>, <code>serde_json</code>, <code>thiserror</code> and <code>unicode-normalization</code>, and on <code>sync-store</code> and <code>rusqlite</code> for its tests only; <code>cpe-server</code> is its consumer</td></tr>
-<tr><td><code>cpe-web</code></td><td><code>areas/access/cpe/web</code></td><td>CPE's page assembly (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>project::Project</code>, a project loaded from its KDL, its store's SQL text and its narrative, and validated; <code>page</code>, which renders a page, the compound viewer's fragment and the not-found pages from <code>cpe-components</code>' parts; <code>share_link</code>, the canonical URL of a view; it holds no routes; depends on <code>cpe-core</code>, <code>cpe-store</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>maud</code> and <code>thiserror</code>, and on no <code>axum</code> or <code>rusqlite</code>; <code>cpe-server</code> is its consumer</td></tr>
-<tr><td><code>cpe-server</code></td><td><code>areas/access/cpe/server</code></td><td>CPE's host crate, a facade in the shape of <code>dpe-server</code> (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>CpeConfig</code> (<code>cpe.toml</code>, <code>CPE_*</code>), <code>Cpe</code> with <code>router()</code>, <code>base()</code>, <code>activate()</code> and <code>projects()</code>, <code>MatchedRoute</code>, discovery of the project folders on disk, each project's store built at activation from the snapshot <code>cpe-ports</code>' <code>ArchiveProjection</code> serves (through <code>cpe-store-build</code>, and <code>sync-store</code> for its tests only), the shared static files compiled in, each project's assets served from an inventory, and one route per configured page closed by CPE's own fallback. No <code>pub</code> signature names a type of another CPE crate. It answers 503 until it is activated and for a project that did not activate. <code>access-server</code> mounts it at <code>Cpe::base()</code></td></tr>
+<tr><td><code>cpe-web</code></td><td><code>areas/access/cpe/web</code></td><td>CPE's page assembly (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>project::Project</code>, a project loaded from its KDL, its store's SQL text and its narrative, and validated; <code>page</code>, which renders a page, the compound viewer's fragment, the overview of the projects and the not-found pages from <code>cpe-components</code>' parts; <code>share_link</code>, the canonical URL of a view; it holds no routes; depends on <code>cpe-core</code>, <code>cpe-store</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>maud</code> and <code>thiserror</code>, and on no <code>axum</code> or <code>rusqlite</code>; <code>cpe-server</code> is its consumer</td></tr>
+<tr><td><code>cpe-server</code></td><td><code>areas/access/cpe/server</code></td><td>CPE's host crate, a facade in the shape of <code>dpe-server</code> (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>CpeConfig</code> (<code>cpe.toml</code>, <code>CPE_*</code>), <code>Cpe</code> with <code>router()</code>, <code>base()</code>, <code>activate()</code> and <code>projects()</code>, <code>MatchedRoute</code>, discovery of the project folders on disk, each project's store built at activation from the snapshot <code>cpe-ports</code>' <code>ArchiveProjection</code> serves (through <code>cpe-store-build</code>, and <code>sync-store</code> for its tests only), the shared static files compiled in, each project's assets served from an inventory, the overview of the projects at the router's root, and one route per configured page closed by CPE's own fallback. No <code>pub</code> signature names a type of another CPE crate. It answers 503 until it is activated and for a project that did not activate. <code>access-server</code> mounts it at <code>Cpe::base()</code></td></tr>
 <tr><td><code>sync-store</code></td><td><code>areas/access/sync/store</code></td><td><code>sync</code> at its minimum (ADR-0007): <code>LiveArchiveProjection</code>, CPE's <code>ArchiveProjection</code> served from the committed interim-DAO snapshots and the committed curation files in <code>areas/access/sync/data/</code>; depends on <code>cpe-ports</code> and no other CPE or DPE crate</td></tr>
 <tr><td><code>shared-fair</code></td><td><code>shared/fair</code></td><td>The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — <code>dpe-api-oai</code> is its only consumer today</td></tr>
 <tr><td><code>shared-metadata</code></td><td><code>shared/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
@@ -4938,7 +4938,8 @@ translation for the request language; any other value renders verbatim
 in every language (Alice, HdM). A literal that happens to equal a
 declared chrome id is translated — the same accepted risk as
 <code>description</code>. The site index resolves it per declared language and
-falls back to <code>en</code> for an undeclared one.</li>
+falls back to <code>en</code>, then to the project's default language, for an
+undeclared one.</li>
 <li><code>languages</code> — list of ISO 639-1 codes. Must include at least <code>de</code>
 and <code>en</code> for v1 (per <code>cpe-poc.md</code> §9.2). A project MAY declare
 additional languages beyond this floor (e.g. Alice declares
@@ -4993,7 +4994,7 @@ align across a grid row).</li>
 title on the site-index's project card, e.g. <code>"Showcase · EN · DE"</code>.
 Chrome-id-or-literal, same idiom as <code>description</code>/<code>image-credit</code>. No
 existence validation beyond parsing. Absent → the card's reserved eyebrow
-line renders empty (the project's <code>/slug/</code> path in the card's footer row
+line renders empty (the project's <code>&lt;base&gt;/&lt;project-id&gt;/</code> path in the card's footer row
 still identifies it, so no card loses its identity).</li>
 <li><code>default-language</code> — one of <code>languages</code>. Default: first listed.</li>
 <li><code>nav</code> — top navigation items (see below).</li>
@@ -5003,15 +5004,12 @@ still identifies it, so no card loses its identity).</li>
 "Project copy overrides" below).</li>
 </ul>
 <p><code>cover-image</code>/<code>image-credit</code>/<code>eyebrow</code> are all optional and purely additive —
-they affect <strong>only</strong> the cross-project <code>/</code> site index's project-card
-presentation, never a project's own pages. <code>cpe-server</code> has no site index:
-the index is a page of the incubator's binary, and <code>Cpe::projects()</code> gives a
-host a project's id, title and start URL and none of the three. Here they are
-parsed, checked as said above and kept on the loaded project
-(<code>cpe_web::project::Project</code>), the cover image is served with the project's
-other assets, and no page shows them. Wherever this document says what the
-site index does with a value, it describes that page. Alice's <code>config.kdl</code> is
-the worked example:</p>
+they affect <strong>only</strong> the cross-project site index's project-card
+presentation, never a project's own pages. The site index is CPE's overview
+of its projects, the page at its base (<code>&lt;base&gt;/</code>): <code>cpe-server</code> serves it and
+<code>cpe_web::page::render_site_index</code> renders it, from
+<code>cpe_web::project::Project::teaser</code>. Alice's <code>config.kdl</code> is the worked
+example:</p>
 <pre><code class="language-kdl">site {
     title "Alice in DaSCHland"
     cover-image "assets/cover.webp"
@@ -6877,7 +6875,7 @@ surface shows is engine chrome (<code>ChromeMsg::Anno*</code>, <code>ChromeMsg::
 <li><strong>Built-in chrome messages</strong> — every language-varying piece of <em>engine</em>
 UI chrome (skip-link, nav/lang-switcher aria-labels, not-found
 and empty-state copy, facet/compound/pager strings, the
-bin's site-index chrome) lives in one typed catalog — <code>ChromeMsg</code>/<code>L4</code>
+site index's chrome) lives in one typed catalog — <code>ChromeMsg</code>/<code>L4</code>
 in top-level <code>areas/access/cpe/components/src/chrome.rs</code>, <code>pub</code> and re-exported from the
 engine crate. See "Built-in chrome catalog" below.</li>
 <li><strong>Chrome strings</strong> — declared in <code>site { chrome { ... } }</code>, with
@@ -6983,7 +6981,7 @@ arm for any built-in string — not a regression (this is identical to the
 pre-catalog behaviour), just outside what "completeness" covers here.</li>
 <li><strong><code>pub fn resolve_builtin(prefs: &amp;[String]) -&gt; Lang</code></strong> (in <code>lang.rs</code>) —
 resolves a preference list against <code>BUILTIN_LANGUAGES</code> (default <code>en</code>), with
-<strong>no project <code>SiteConfig</code> involved</strong>. This is what lets the bin's site
+<strong>no project <code>SiteConfig</code> involved</strong>. This is what lets the site
 index (which has no project to resolve a language against) obtain a <code>Lang</code>
 and call the same <code>pub</code> catalog a project page's renderer does — one seam,
 reused, not mirrored. <code>resolve_builtin</code> shares its candidate-matching logic
@@ -6994,7 +6992,7 @@ the two can never drift apart.</li>
 whether it's a <strong>pre-existing draft</strong> (migrated verbatim from an
 already-4-language per-module helper that predated the catalog) or <strong>new</strong>
 (authored to fill a gap — settings.rs, the skip-link/cog-label, previously
-unbranched aria-labels, and the bin's site index). Both kinds are unreviewed
+unbranched aria-labels, and the site index). Both kinds are unreviewed
 fr/it drafts pending native-speaker review; see
 <code>docs/plans/chrome-localization/translations-to-review.md</code> for the full
 review table.</p>
@@ -7548,13 +7546,14 @@ to CPE.</p>
 <h2 id="what-is-served"><a class="header" href="#what-is-served">What is served</a></h2>
 <ul>
 <li><strong>Where</strong>: every path under <code>/cpe</code> (<code>CPE_BASE</code>). A project is at <code>/cpe/&lt;project id&gt;/</code>; today there is one,
-Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's own not-found page: there is no index of
-projects.</li>
+Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's overview: the projects it serves, each
+with a link to its start page. Any other path that names no project is CPE's own not-found page.</li>
 <li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (configuration, narrative, assets) and <code>sync</code>'s
 data in <code>SYNC_DATA_DIR</code>. Both are in the image. Each project's store is built in memory from that data at
 every start; nothing is written to disk, and a restart leaves nothing behind.</li>
 <li><strong>Static files</strong>: CPE's stylesheets, scripts and logos are compiled into the binary and served at
-<code>/cpe/&lt;project id&gt;/_static/…</code>; a project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
+<code>/cpe/&lt;project id&gt;/_static/…</code>, and at <code>/cpe/_static/…</code> for the overview and CPE's not-found page; a
+project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
 </ul>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <p>The four variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>) are in the
@@ -7567,9 +7566,9 @@ path under <code>/cpe</code> answers <code>503</code> with <code>Retry-After: 30
 answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 <div class="table-wrapper"><table><thead><tr><th>Situation</th><th>Under <code>/cpe</code></th><th>Logged</th><th>DPE</th></tr></thead><tbody>
 <tr><td>Projects are still loading</td><td><code>503</code>, every path</td><td><code>CPE is mounted and activates in the background</code> (info)</td><td>serves</td></tr>
-<tr><td>A project is loaded</td><td>its pages</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
-<tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
-<tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>CPE's not-found, <code>404</code>, every path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
+<tr><td>A project is loaded</td><td>its pages, and its entry in the overview</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
+<tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
+<tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>the overview with no project, <code>200</code>, at <code>/cpe</code> and <code>/cpe/</code>; CPE's not-found, <code>404</code>, on every other path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code> is refused (a path, a trailing slash)</td><td><code>503</code>, every path</td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_BASE</code> is unset or empty</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE_BASE is not set: CPE is not mounted …</code> (warning)</td><td>serves alone</td></tr>
 <tr><td><code>CPE_BASE</code> is refused (no leading <code>/</code>, a trailing one)</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves alone</td></tr>

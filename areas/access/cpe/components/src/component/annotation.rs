@@ -138,9 +138,17 @@ pub(crate) fn esc_unpin_expr() -> String {
 /// differ per page, so DataStar re-applies the effect after a swap; a morph
 /// does not re-run an effect whose value is unchanged. The viewer keeps the
 /// last state and applies it on `open`, which comes after the effect.
+///
+/// The signals are read as the argument of an outer call, never inside an
+/// optional call: DataStar may run the effect before `image-viewer.js` has
+/// defined the element, and a short-circuited `?.setOverlayState?.(…)` would
+/// read no signal, leaving the effect subscribed to none, so it would never
+/// run again. The state is handed over once the element is defined.
 pub(crate) fn overlay_effect_expr(viewer_id: &str) -> String {
     format!(
-        "document.getElementById({})?.setOverlayState?.({{visible: $_annoShow, focus: {FOCUS_EXPR}}})",
+        "((s) => customElements.whenDefined('image-viewer').then(() => \
+         document.getElementById({})?.setOverlayState?.(s)))\
+         ({{visible: $_annoShow, focus: {FOCUS_EXPR}}})",
         js_id(viewer_id)
     )
 }
@@ -799,6 +807,23 @@ mod tests {
 
     fn lang(code: &str) -> Lang {
         resolve_builtin(&[code.to_owned()])
+    }
+
+    /// DataStar subscribes an effect to the signals its first run reads. That
+    /// run can come before `<image-viewer>` is defined, so the signals are the
+    /// outer call's argument, read on every run, and the state is handed over
+    /// once the element is defined.
+    #[test]
+    fn overlay_effect_reads_its_signals_before_the_viewer_is_defined() {
+        let expr = overlay_effect_expr("rv-I_P1");
+        let (call, signals) = expr.rsplit_once(")(").expect("an outer call");
+        assert_eq!(signals, format!("{{visible: $_annoShow, focus: {FOCUS_EXPR}}})"));
+        assert!(!call.contains('$'), "a signal read inside the call may be skipped: {expr}");
+        assert!(call.contains("customElements.whenDefined('image-viewer')"), "{expr}");
+        assert!(
+            call.contains("document.getElementById('rv-I_P1')?.setOverlayState?.(s)"),
+            "{expr}"
+        );
     }
 
     /// One Escape closes only the topmost layer, so the unpin skips

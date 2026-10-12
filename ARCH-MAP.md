@@ -766,7 +766,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   in one host), and nothing is written to disk. `projects/incunabula/` is
   committed configuration, narrative and assets, **single writer** the project's developers (**review**); the process reads it at activation and never writes it. `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `383317d58199`
+- **Fingerprint:** `6b960dabab53`
 
 ### areas/access/datei
 

@@ -499,4 +499,22 @@ mod tests {
         names.dedup();
         assert_eq!(names.len(), total, "ASSETS has two rows with the same name");
     }
+
+    #[test]
+    fn no_block_comment_of_the_script_holds_a_backtick() {
+        // The script's stylesheet is a template literal, and its CSS comments are
+        // `/* … */`. A backtick inside one ends the literal, the module no longer
+        // parses, and the browser registers no viewer element. Nothing else in the
+        // build parses the script.
+        let script = std::str::from_utf8(super::asset("image-viewer.js").expect("the script is bundled").bytes)
+            .expect("the script is UTF-8");
+        let mut rest = script;
+        while let Some(start) = rest.find("/*") {
+            let body = &rest[start + 2..];
+            let end = body.find("*/").expect("every block comment is closed");
+            let comment = &body[..end];
+            assert!(!comment.contains('`'), "a block comment holds a backtick: /*{comment}*/");
+            rest = &body[end + 2..];
+        }
+    }
 }

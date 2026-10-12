@@ -1,7 +1,8 @@
 //! Page assembly for the Configurable Presentation Environment.
 //!
 //! `render_page` / `render_compound_fragment` / `document_head` — full document
-//! rendering, plus the two full-page not-found renderers. The component
+//! rendering, plus the overview of the projects and the two full-page
+//! not-found renderers. The component
 //! renderers live in `cpe_components::component`; the private `use` below
 //! brings each child this file calls into scope by name.
 
@@ -36,7 +37,7 @@ use maud::{html, Markup, DOCTYPE};
 /// — the `<image-viewer>` custom-element registration, emitted globally on
 /// every page.
 ///
-/// Every full page calls this (`render_page`, the two not-found renderers)
+/// Every full page calls this (`render_page`, the overview, the two not-found renderers)
 /// so the design-system contract lives in one place — no `<head>` drift. The
 /// host's 503 page is the exception: it loads no file at all.
 ///
@@ -459,7 +460,7 @@ pub fn render_page(
         })
         body {
             // A11y: skip-to-content link, first child of <body> on every
-            // full-page renderer (both not-found pages mirror it).
+            // full-page renderer (`site_page` and the project's not-found page mirror it).
             (skip_link(&ctx.lang))
             div.shell {
                 (shell_header(site, ctx, &page.route))
@@ -490,8 +491,8 @@ pub fn render_page(
 /// a narrative, its layout (`data-narr`, `data-narr-side`), around `inner`
 /// (the head and the body). `render_page` and the project's not-found page
 /// (`render_not_found_project`) both call it, so the two project shells
-/// carry the same attributes. CPE's own not-found page has no project and
-/// writes its own `<html>`.
+/// carry the same attributes. A page without a project writes its own
+/// `<html>` ([`site_page`]).
 ///
 /// No attribute written here may be named like a DataStar plugin
 /// (`data-text`, `data-show`, …): DataStar would evaluate its value.
@@ -575,32 +576,133 @@ pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> M
 /// path segment does not match any loaded project id.
 ///
 /// Same `.notfound` anatomy as the project's (shared
-/// `resource_detail::render_notfound_shell`), dressed
-/// by bare chrome rather than a project's. The header and footer are
-/// written out here: `shell_header` and `shell_footer` need a project's
-/// `SiteConfig`, so a change to their shared markup (the brand mark, the
-/// appearance toggle, the DaSCH logo) is repeated here by hand.
-/// No project nav, no "or browse" line (there is
-/// no project whose pages could be offered), product-default theme knob
-/// (ochre · tint · newsreader). `lang` is one of the built-in languages
+/// `resource_detail::render_notfound_shell`), dressed by bare chrome rather
+/// than a project's ([`site_page`]). No project nav, no "or browse" line
+/// (there is no project whose pages could be offered); its one exit is the
+/// overview ([`render_site_index`]). `lang` is one of the built-in languages
 /// (`cpe_core::lang::resolve_builtin`): there is no project to declare any.
 pub fn render_not_found_site(base: &cpe_core::url::Base, lang: &Lang, appearance: Appearance) -> Markup {
-    let home = base.home();
-    let statics = &base.static_dir();
     use cpe_components::chrome::ChromeMsg;
-    let code = ChromeMsg::NfCode.text(lang);
-    let heading = ChromeMsg::NfSiteTitle.text(lang);
-    let message = ChromeMsg::NfSiteMsg.text(lang);
-    let all_projects_label = ChromeMsg::NfAllProjects.text(lang);
-
+    let home = base.home();
     let body = resource_detail::render_notfound_shell(
         false,
-        code,
-        heading,
-        Some(message),
-        Some((all_projects_label, &home)),
+        ChromeMsg::NfCode.text(lang),
+        ChromeMsg::NfSiteTitle.text(lang),
+        Some(ChromeMsg::NfSiteMsg.text(lang)),
+        Some((ChromeMsg::NfAllProjects.text(lang), &home)),
         None,
     );
+    site_page(base, lang, appearance, body)
+}
+
+/// One project on the overview ([`render_site_index`]), its texts already in
+/// the language they are shown in ([`crate::project::Project::teaser`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectTeaser<'a> {
+    pub id: &'a str,
+    pub title: &'a str,
+    pub description: Option<&'a str>,
+    pub eyebrow: Option<&'a str>,
+    pub image_credit: Option<&'a str>,
+    /// The project's own `theme.accent`, as its `data-accent` value.
+    pub accent: &'static str,
+    /// `site.cover-image`: a path in the project folder.
+    pub cover_image: Option<&'a str>,
+}
+
+/// Render CPE's overview: the page at its base, one teaser per served
+/// project, each linking to the project's start page.
+///
+/// Bare chrome ([`site_page`]) and the degenerate crumb line (`CPE`, current,
+/// unlinked) with the share control, whose link is `public_origin` and the
+/// base. The page has no visible heading of its own (the brand mark is a
+/// wordmark), so its one `<h1>` is visually hidden. A teaser's eyebrow and
+/// credit lines are rendered empty when the project has none: titles align
+/// across a row. `lang` is one of the built-in languages, as for
+/// [`render_not_found_site`].
+pub fn render_site_index(
+    base: &cpe_core::url::Base,
+    projects: &[ProjectTeaser<'_>],
+    lang: &Lang,
+    appearance: Appearance,
+    public_origin: &str,
+) -> Markup {
+    use cpe_components::chrome::{index_count_text, ChromeMsg};
+    let share_href = crate::share_link::compose_absolute_url(public_origin, &base.home(), "");
+    let share = breadcrumb::ShareControl {
+        id: "share-site-index",
+        href: &share_href,
+        accessible_name_suffix: None,
+        reactive_href_attr: None,
+    };
+    let main = html! {
+        h1 class="visually-hidden" { (SITE_TITLE) }
+        (breadcrumb::render_site_index_breadcrumb(lang, &share))
+        div class="index-list-head" {
+            h2 { (ChromeMsg::SiteIndexProjectsHeading.text(lang)) }
+            span class="count" { (index_count_text(projects.len(), lang)) }
+        }
+        @if projects.is_empty() {
+            p class="resource-list__empty" { (ChromeMsg::SiteIndexNoProjects.text(lang)) }
+        } @else {
+            ul class="project-list" {
+                @for project in projects {
+                    @let urls = base.project(project.id);
+                    @let home = urls.home();
+                    li {
+                        a class="teaser" data-accent=(project.accent) href=(home) {
+                            div class="teaser__plate" {
+                                @if let Some(cover) = project.cover_image {
+                                    img class="teaser__img" src=(urls.asset(cover)) alt="";
+                                } @else {
+                                    div class="teaser__ghost" aria-hidden="true" {}
+                                }
+                                p class="teaser__credit" {
+                                    @if let Some(credit) = project.image_credit { (credit) }
+                                }
+                            }
+                            div class="teaser__body" {
+                                p class="eyebrow teaser__eyebrow" {
+                                    @if let Some(eyebrow) = project.eyebrow { (eyebrow) }
+                                }
+                                h3 class="teaser__title" { (project.title) }
+                                @if let Some(description) = project.description {
+                                    p class="teaser__desc" { (description) }
+                                }
+                            }
+                            div class="teaser__foot" {
+                                span class="teaser__enter" {
+                                    (ChromeMsg::SiteIndexEnterCta.text(lang))
+                                    " "
+                                    span aria-hidden="true" { "→" }
+                                }
+                                span class="teaser__path" { (home) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    site_page(base, lang, appearance, main)
+}
+
+/// The `<title>` of a page without a project, and the overview's heading.
+const SITE_TITLE: &str = "CPE — Configurable Presentation Environment";
+
+/// A full page without a project: bare chrome around `main`, with the
+/// product-default theme knob (ochre · tint · newsreader).
+///
+/// The header and footer are written out here: `shell_header` and
+/// `shell_footer` need a project's `SiteConfig`, so a change to their shared
+/// markup (the brand mark, the appearance toggle, the DaSCH logo) is repeated
+/// here by hand. The header is the brand mark and the appearance toggle only.
+/// The toggle links to the overview, which is the page that takes
+/// `?appearance=`.
+fn site_page(base: &cpe_core::url::Base, lang: &Lang, appearance: Appearance, main: Markup) -> Markup {
+    use cpe_components::chrome::ChromeMsg;
+    let home = base.home();
+    let statics = &base.static_dir();
 
     let data_accent = cpe_core::theme::Accent::Ochre.as_data_attr();
     let data_bg = cpe_core::theme::Background::Tint.as_data_attr();
@@ -621,14 +723,7 @@ pub fn render_not_found_site(base: &cpe_core::url::Base, lang: &Lang, appearance
             data-bg=(data_bg)
             data-pick=(data_pick)
         {
-            ({
-                document_head(
-                    "CPE — Configurable Presentation Environment",
-                    false,
-                    None,
-                    statics,
-                )
-            })
+            (document_head(SITE_TITLE, false, None, statics))
             body {
                 a class="skip-link" href="#main" { (ChromeMsg::SkipToContent.text(lang)) }
                 div class="shell" {
@@ -651,7 +746,7 @@ pub fn render_not_found_site(base: &cpe_core::url::Base, lang: &Lang, appearance
                             }
                         }
                     }
-                    main class="shell__main" id="main" tabindex="-1" { (body) }
+                    main class="shell__main" id="main" tabindex="-1" { (main) }
                     footer class="shell__footer shell__footer--index" {
                         div class="footer-index__inner" {
                             div class="footer-index__product" {

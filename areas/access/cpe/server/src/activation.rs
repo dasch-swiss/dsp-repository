@@ -18,8 +18,8 @@ use crate::{assets, request, router, CpeConfig, ProjectSummary};
 /// starts with `_`, and that is what keeps a project off CPE's own `_static` directory.
 const RESERVED_IDS: &[&str] = &["_static"];
 
-/// CPE once its projects are loaded: the router that serves them and the
-/// list a host reads.
+/// CPE once its projects are loaded: the router that serves them and lists
+/// them at its root, and the list a host reads.
 pub(crate) struct Activated {
     pub(crate) router: axum::Router,
     pub(crate) projects: Vec<ProjectSummary>,
@@ -331,6 +331,7 @@ mod tests {
             matched_route(&before, "/things/things/no-such-thing").await.as_deref(),
             Some("/things/things/{id}")
         );
+        assert_eq!(matched_route(&before, "/").await.as_deref(), Some("/"));
         assert_eq!(matched_route(&before, "/things/no-such-page").await, None);
         assert_eq!(matched_route(&before, "/no-such-project/").await, None);
         assert_eq!(
@@ -435,13 +436,21 @@ mod tests {
                 assert_unavailable(status, &headers, &uri);
             }
         }
-        for uri in ["/", "/nope", "/nope/things/lamp", "/UNKNOWN/"] {
+        for uri in ["/nope", "/nope/things/lamp", "/UNKNOWN/"] {
             let (status, headers, body) = get(&cpe, uri).await;
             assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
             assert!(!headers.contains_key(header::RETRY_AFTER), "{uri}");
             assert!(body.contains("This address does not name a project."), "{uri}: {body}");
         }
         assert_eq!(cpe.projects().len(), 1);
+        let (status, _, overview) = get(&cpe, "/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(
+            overview.matches("class=\"teaser\"").count(),
+            1,
+            "the overview lists the one served project: {overview}"
+        );
+        assert!(overview.contains("href=\"/things/\""), "{overview}");
     }
 
     #[tokio::test]
@@ -459,7 +468,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn with_no_projects_folder_every_path_is_cpes_not_found_once_activated() {
+    async fn with_no_projects_folder_the_overview_is_empty_and_every_other_path_is_cpes_not_found_once_activated() {
         let cpe = Cpe::new(&config_for(&fixture().join("no-such-folder")));
         let (status, headers, _) = get(&cpe, "/things/").await;
         assert_unavailable(status, &headers, "before activate");
@@ -467,7 +476,11 @@ mod tests {
         cpe.activate(&FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp")));
 
         assert!(cpe.projects().is_empty());
-        for uri in ["/", "/things/", "/incunabula/books"] {
+        let (status, headers, body) = get(&cpe, "/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(!headers.contains_key(header::RETRY_AFTER));
+        assert!(body.contains("No projects are being presented yet."), "{body}");
+        for uri in ["/things/", "/incunabula/books"] {
             let (status, headers, body) = get(&cpe, uri).await;
             assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
             assert!(!headers.contains_key(header::RETRY_AFTER), "{uri}");
@@ -602,6 +615,12 @@ mod tests {
             let (status, headers, _) = get(&cpe, uri).await;
             assert_unavailable(status, &headers, uri);
         }
+        let (status, _, overview) = get(&cpe, "/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(
+            !overview.contains("class=\"teaser\"") && !overview.contains("incunabula/"),
+            "a project that answers 503 is not linked: {overview}"
+        );
         let (status, _, _) = get(&cpe, "/nope").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
     }

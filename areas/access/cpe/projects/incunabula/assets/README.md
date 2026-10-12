@@ -2,10 +2,9 @@
 
 ## cover.webp
 
-Site-index teaser image for the Incunabula project. `cpe-server` has no site index, so no page served from
-this repository shows the image: `cover-image`, `image-credit` and `eyebrow` in `../config.kdl`, and that
-file's comments on the site index, are for a host that renders one, as the incubator's binary does. The
-file is validated when the project is loaded and is served with the project's other assets.
+Site-index teaser image for the Incunabula project: CPE's overview of its projects, at its base, shows it on
+Incunabula's teaser, with `image-credit` and `eyebrow` of `../config.kdl`. The file is validated when the
+project is loaded and is served with the project's other assets.
 
 445x239, WebP. Matches the
 teaser slot's `width:100%; height:6.5rem; object-fit:cover` and the dimensions of

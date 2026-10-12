@@ -26,7 +26,8 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
 - **Nested, never merged.** CPE's router ends in its own fallback, so every path under the base is
   CPE's (its 404 and its 503 included) and every other path stays DPE's, `ServeDir` fallback included.
   Axum panics on merging two routers that each have a fallback. `nest` does not match `<base>/`, so
-  that one path has its own route.
+  that one path has its own route. `<base>` and `<base>/` are both the root of CPE's router, which is
+  CPE's overview of its projects; neither redirects to the other.
 - **No base, no mount.** With `CPE_BASE` unset or refused, `Cpe::base()` is empty: `nest` panics on an
   empty path and CPE at the root would answer DPE's paths, so the binary serves DPE alone and logs why.
   `just run`, `just dev` and the Docker image set `CPE_BASE=/cpe`. The image also sets `SYNC_DATA_DIR` and
@@ -41,14 +42,16 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   (`/healthz`, `/dpe/projects`) keeps answering, and only a second any-method route for `<base>/` panics.
 - **The span of a CPE request.** The OTel layer sees CPE as one service, so `name_span_by_cpe_route`
   names the span from the `cpe_server::MatchedRoute` CPE puts on its responses:
-  `GET /cpe/<project id>/<route template>`. A path that matches no route keeps the method alone.
+  `GET /cpe/<project id>/<route template>`, and `GET /cpe/` for the overview. A path that matches no
+  route keeps the method alone.
 
 ## The image: three places that have to agree
 
 `.github/actions/build-dpe/action.yml` fills the `staging/` directory, `Dockerfile` copies from it, and the `ENV`
 lines name where each copy is. Data for a capability is added in all three, and in the environment table of
 `docs/src/dpe/operations.md`. Nothing checks that they agree: a path that is in `staging/` but not copied, or an
-`ENV` that names the wrong place, builds, and the container is healthy with CPE answering 503 or its not-found.
+`ENV` that names the wrong place, builds, and the container is healthy with CPE answering 503, or an overview
+with no project and its not-found.
 
 A new capability's paths also go into each path filter that should see it (`a11y-dpe.yml`,
 `cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on.

@@ -192,9 +192,8 @@ pub fn render_narrative_breadcrumb(
 /// Render the site-index crumb-line variant: the degenerate single "CPE"
 /// crumb (current, unlinked).
 ///
-/// Called by `site_index` in `dsp-incubator cpe/bin/src/router.rs`, through the
-/// `dsp-incubator cpe/engine` facade's re-export: the site index is the one
-/// page the host renders itself, hand-mirroring the chrome.
+/// Called by `cpe_web::page::render_site_index`, CPE's overview of its
+/// projects.
 pub fn render_site_index_breadcrumb(lang: &Lang, share: &ShareControl<'_>) -> Markup {
     render_crumb_row(&[], CPE_LABEL, lang, share, None)
 }

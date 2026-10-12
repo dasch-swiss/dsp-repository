@@ -178,6 +178,8 @@ prefix, or how CPE's routes share the origin with DPE's. This amendment narrows 
   otherwise), and a nested router's catch-all wins over DPE's for paths under the prefix (axum 0.8.9,
   checked 2026-09-29). Axum's `nest` does not match `/cpe/` itself, so the composition root routes that one
   path to CPE's not-found explicitly; without it, `/cpe/` gets DPE's 404.
+  Note (2026-10-12, DEV-7465): `/cpe` and `/cpe/` are CPE's overview of its projects and no longer its
+  not-found; see the amendment of 2026-10-12 (DEV-7465) on the overview below.
 - **No record URL form is fixed for ARKs yet.** The ARK clause above already keeps every ARK away from CPE
   until the FAIR adapter exists; when it does, a uniform record route can redirect to each project's own
   record pages.
@@ -443,6 +445,10 @@ the amendment of 2026-10-12 below.
   designed offline page. Both are DEV-7403's. Until then nothing in CI fails on an invalid project
   except `cpe-server`'s test that Incunabula activates from the committed data.
 
+  Note (2026-10-12, DEV-7465): with a missing projects directory the base is the overview with no project
+  on it, and every other path is not found; see the amendment of 2026-10-12 (DEV-7465) on the overview
+  below.
+
 Enforced by: static-analysis for the facade (`cpe-server`'s test `no_pub_item_names_another_cpe_crate`, a
 text check over the crate's two files with `pub` items), for the 503 and 404 behaviour (the tests of
 `cpe-server`'s `activation` module over `FakeArchiveProjection`) and for Incunabula's store text (the same
@@ -470,6 +476,8 @@ records how, and two cases that amendment did not cover:
   and a project's pages use only their own. The reason for the per-project path is untouched: that page does
   not exist on a project's own hostname. The 503 page has no project either and loads no file at all: while
   it is the answer, every path under the base is answered by it, the static files included.
+  Note (2026-10-12, DEV-7465): the overview of the projects is a second page without a project and loads
+  the files from the same place; see the amendment of 2026-10-12 (DEV-7465) on the overview below.
 - **A link in a project's content that starts with one `/` gets the base in front.** Narrative Markdown
   and its invite lists name pages as `/incunabula/books`; the renderer writes `<base>/incunabula/books`.
   A destination that starts with `//`, has a scheme, is a fragment or is relative is written as it is.
@@ -560,6 +568,8 @@ unwraps nothing of CPE's.
 - **The differences that are not among the three.**
   - `/` is the prototype's site index and `/cpe/` is CPE's own not-found page: `cpe-server` has no index
     of projects, and the prototype's other two projects are not here.
+    Note (2026-10-12, DEV-7465): `/cpe/` is the overview since; it lists Incunabula alone, and the crawl
+    recorded here did not compare it. See the amendment of 2026-10-12 (DEV-7465) on the overview below.
   - Every answer of the area binary carries `traceparent` and `tracestate`, which its tracing layer adds.
     The prototype had no such layer.
 - **What the check does not cover.** A browser: nothing ran the pages' scripts, so the viewer, the
@@ -571,3 +581,34 @@ record of the run is the PR that added this amendment. What stays checked on eve
 statement that no URL leaves the base (`cpe-server`'s `base_tests`, amendment of 2026-10-11, DEV-7438).
 That the image carries the data and sets the variables that name it is checked by nothing: no job starts
 the image and asks for a CPE page.
+
+## Amendment (2026-10-12, DEV-7465) — CPE's base is an overview of its projects
+
+The amendment of 2026-09-29 (DEV-7405) routes `/cpe/` to CPE's not-found, and `cpe-server` was built without
+the prototype's site index. The owner asked for the overview back at `/cpe` and `/cpe/` (2026-10-12). This
+amendment supersedes that clause in this one point:
+
+- **The base is a page: the overview of the projects CPE serves.** `cpe-server`'s router has a route for its
+  root. It answers with one teaser per loaded project (title, description, eyebrow, cover image and credit,
+  all from the project's `site {}` node), each a link to `<base>/<project id>/`. It is the prototype's site
+  index: CPE's bare chrome, the crumb line with the share control, one of the four built-in languages. With
+  no project loaded it says so and still answers 200. A project that did not activate is not on it: its
+  prefix answers 503.
+- **`/cpe` and `/cpe/` are the same page.** In `access-server`, `nest` answers the first and the mount's own
+  route for `<base>/` the second, as before, and neither redirects to the other. `access-server`'s code is
+  unchanged.
+- **Everything else under the base is as it was.** A path that names no project is CPE's not-found, whose
+  "All projects" link leads to the overview. Until activation has finished every path answers 503, the
+  base included.
+- **The overview is a page without a project.** It loads the shared files from `<base>/_static/…`, as CPE's
+  not-found does, and every URL on it is built by `cpe_core::url`. Its response carries the route's
+  template, `<base>/`, so the area binary names its span `GET /cpe/` for both forms of the address.
+- **`cpe-web` renders it and `cpe-server` routes it.** The page is `cpe_web::page::render_site_index`, beside
+  the two not-found pages, and has the bare chrome of CPE's own not-found. `Cpe::projects()` and
+  `ProjectSummary` stay, for a host that wants the list itself.
+
+Enforced by: static-analysis (the tests of the route and the page in `cpe-server`'s `router.rs`, `lib.rs` and
+`activation.rs`; its `base_tests`,
+whose crawl starts at the base and fails on a link that is answered 404; `access-server`'s `serve.rs` tests
+for `/cpe`, `/cpe/`, the route they report and the span's name); review for how the page looks, which no test
+opens in a browser.

@@ -109,7 +109,8 @@ Project-level metadata and chrome.
   in every language (Alice, HdM). A literal that happens to equal a
   declared chrome id is translated — the same accepted risk as
   `description`. The site index resolves it per declared language and
-  falls back to `en` for an undeclared one.
+  falls back to `en`, then to the project's default language, for an
+  undeclared one.
 - `languages` — list of ISO 639-1 codes. Must include at least `de`
   and `en` for v1 (per `cpe-poc.md` §9.2). A project MAY declare
   additional languages beyond this floor (e.g. Alice declares
@@ -164,7 +165,7 @@ Project-level metadata and chrome.
   title on the site-index's project card, e.g. `"Showcase · EN · DE"`.
   Chrome-id-or-literal, same idiom as `description`/`image-credit`. No
   existence validation beyond parsing. Absent → the card's reserved eyebrow
-  line renders empty (the project's `/slug/` path in the card's footer row
+  line renders empty (the project's `<base>/<project-id>/` path in the card's footer row
   still identifies it, so no card loses its identity).
 - `default-language` — one of `languages`. Default: first listed.
 - `nav` — top navigation items (see below).
@@ -174,15 +175,12 @@ Project-level metadata and chrome.
   "Project copy overrides" below).
 
 `cover-image`/`image-credit`/`eyebrow` are all optional and purely additive —
-they affect **only** the cross-project `/` site index's project-card
-presentation, never a project's own pages. `cpe-server` has no site index:
-the index is a page of the incubator's binary, and `Cpe::projects()` gives a
-host a project's id, title and start URL and none of the three. Here they are
-parsed, checked as said above and kept on the loaded project
-(`cpe_web::project::Project`), the cover image is served with the project's
-other assets, and no page shows them. Wherever this document says what the
-site index does with a value, it describes that page. Alice's `config.kdl` is
-the worked example:
+they affect **only** the cross-project site index's project-card
+presentation, never a project's own pages. The site index is CPE's overview
+of its projects, the page at its base (`<base>/`): `cpe-server` serves it and
+`cpe_web::page::render_site_index` renders it, from
+`cpe_web::project::Project::teaser`. Alice's `config.kdl` is the worked
+example:
 
 ```kdl
 site {
@@ -2260,7 +2258,7 @@ The engine has **three** translation surfaces:
 - **Built-in chrome messages** — every language-varying piece of *engine*
   UI chrome (skip-link, nav/lang-switcher aria-labels, not-found
   and empty-state copy, facet/compound/pager strings, the
-  bin's site-index chrome) lives in one typed catalog — `ChromeMsg`/`L4`
+  site index's chrome) lives in one typed catalog — `ChromeMsg`/`L4`
   in top-level `areas/access/cpe/components/src/chrome.rs`, `pub` and re-exported from the
   engine crate. See "Built-in chrome catalog" below.
 - **Chrome strings** — declared in `site { chrome { ... } }`, with
@@ -2369,7 +2367,7 @@ one corner while translated everywhere else.
   pre-catalog behaviour), just outside what "completeness" covers here.
 - **`pub fn resolve_builtin(prefs: &[String]) -> Lang`** (in `lang.rs`) —
   resolves a preference list against `BUILTIN_LANGUAGES` (default `en`), with
-  **no project `SiteConfig` involved**. This is what lets the bin's site
+  **no project `SiteConfig` involved**. This is what lets the site
   index (which has no project to resolve a language against) obtain a `Lang`
   and call the same `pub` catalog a project page's renderer does — one seam,
   reused, not mirrored. `resolve_builtin` shares its candidate-matching logic
@@ -2380,7 +2378,7 @@ one corner while translated everywhere else.
 whether it's a **pre-existing draft** (migrated verbatim from an
 already-4-language per-module helper that predated the catalog) or **new**
 (authored to fill a gap — settings.rs, the skip-link/cog-label, previously
-unbranched aria-labels, and the bin's site index). Both kinds are unreviewed
+unbranched aria-labels, and the site index). Both kinds are unreviewed
 fr/it drafts pending native-speaker review; see
 `docs/plans/chrome-localization/translations-to-review.md` for the full
 review table.

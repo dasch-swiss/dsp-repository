@@ -4,9 +4,9 @@
 //!
 //! This is cross-cutting data shared by every renderer (not a per-surface
 //! renderer itself), so it is a top-level module of `cpe-components`, beside
-//! `component`. It is `pub` because the site index of `dsp-incubator cpe/bin` reads it, through the
-//! `dsp-incubator cpe/engine` facade's `chrome` path. It belongs to the components crate, so
-//! `cpe-core` (the domain crate) cannot import it.
+//! `component`. It is `pub` because `cpe-web`'s pages without a project (the overview of the
+//! projects, CPE's not-found) read it. It belongs to the components crate, so `cpe-core` (the
+//! domain crate) cannot import it.
 //!
 //! Two message shapes:
 //!
@@ -72,13 +72,13 @@ impl L4 {
 pub enum ChromeMsg {
     // ── `dsp-incubator cpe/web`'s `page` module — shell chrome ───────────────────
     /// The skip-to-content link's visible/accessible text. Shared verbatim by
-    /// `render_page`, the unknown-path page, and `dsp-incubator cpe/bin`'s `site_index`
+    /// `render_page`, the unknown-path page, and `cpe-web`'s `render_site_index`
     /// (independent full-page renderers — see `dsp-incubator cpe/CLAUDE.md`'s Non-obvious
     /// constraints). Pre-existing draft (EN/DE only; fr/it are new).
     SkipToContent,
     /// Appearance-toggle accessible name when the toggle currently offers
     /// "switch to light" (i.e. the page is in dark mode). Shared verbatim by
-    /// `shell_header` and `dsp-incubator cpe/bin`'s `site_index`. New.
+    /// `shell_header` and `cpe-web`'s `site_page`. New.
     ThemeToggleToLight,
     /// Appearance-toggle accessible name when the toggle offers "switch to
     /// dark". See [`ChromeMsg::ThemeToggleToLight`].
@@ -252,7 +252,7 @@ pub enum ChromeMsg {
     /// `pager_nav_label`).
     PagerNavLabel,
 
-    // ── `dsp-incubator cpe/bin/src/router.rs` — site index ───────────────────────────────────────
+    // ── `cpe-web`'s `page` module — the overview of the projects (site index) ────────────────────
     /// `aria-label` on the site-index brand link ("CPE — site index"). New.
     SiteIndexAriaLabel,
     /// `aria-label`/`alt` for the DaSCH logo lockup in the site-index footer.

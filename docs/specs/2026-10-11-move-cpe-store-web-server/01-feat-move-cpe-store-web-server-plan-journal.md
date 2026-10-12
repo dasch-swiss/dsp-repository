@@ -219,6 +219,17 @@ status: in-progress
 - Phase 13, review (code-simplicity, Warnings not taken): the measurement tables stay in `docs/src/cpe/operations.md` (the plan asks for them there; H6 and H8 read them); the table of what CPE answers quotes log messages no test pins (operators search for them; each row was run); the ADR's two `Note` pointers stay (the file's convention).
 - Phase 13, review lenses left out: observability (the diff changes no instrumentation), rust, maud-datastar, ivan, accessibility.
 - Phase 13, not this plan's: `just build-docker-dpe` runs `docker build` with the repository root as context, where the Dockerfile's `COPY` sources (`access-server`, `public`, `data`, `sync/data`, now `cpe/projects`) do not exist (#479 is the fix). The image of this phase was built by `p13/docker-build.sh`.
+- The overview, review (accessibility and rust, Warnings not taken, for the owner: each changes the ported page):
+  a teaser is one link whose name reads the credit first and the path last (proposed: `aria-labelledby` on the
+  title); the hidden `<h1>` and the `<title>` are English in every language (proposed: a chrome message); the
+  teaser has a fixed height with clamped lines, so long texts are cut at 200% zoom (CSS, as in the prototype).
+- The overview, review (ivan, security, accessibility, Suggestions): no `rel="canonical"` though `/cpe` and
+  `/cpe/` are one page; the overview strips `appearance` only, a project page also the retired keys; no
+  language switcher on a page without a project; the footer's links open a new tab without saying so. The
+  missing `Vary` is the Phase 13 item above.
+- The overview, review (code-simplicity, Warning taken in part): the overview's URLs, redirect and cookies are
+  asserted in `router.rs`, in `base_tests` and in `access-server`'s `serve.rs`. Kept: each is a layer the owner
+  asked a test for (the page, the base, the mount). Removed: one redundant assertion and one test of axum's 405.
 
 ## Deviations
 
@@ -265,6 +276,15 @@ status: in-progress
 - Phase 13, a plan statement that is not literally true of the result, nothing changed for it: the checkbox "Confirm `rg -n 'include_dir|pico-args|anyhow' Cargo.toml areas/access/cpe` finds nothing" finds one line, `areas/access/cpe/image-viewer/README.md:40`, which says that `include_dir` and `build.rs` were removed (on `main` since DEV-7401). No manifest and no source under `areas/access/cpe` names any of the three, the root manifest names none, and `Cargo.lock` holds one `rusqlite`. Ticked.
 - Phase 13 (committed, for the owner): **the done-criterion has two listed differences beyond the three expected ones.** As decided: the normaliser maps the base, the two per-project prefixes and the cookie `Path`, and every other difference is fixed or listed with its cause. Listed, in ADR-0007's amendment of 2026-10-12 (DEV-7465): `/` (the prototype's site index, 200, against `/cpe/`, CPE's own not-found, 404; the index left in Phase 7), and `traceparent` and `tracestate` on every answer of the area binary (its tracing layer; the Phase 12 checkbox asks for it). The crawl ran with one configured public origin on both sides, as *Verification design* says; the image itself sets none.
 - Phase 13 (committed, a reading of "the base"): the normaliser maps `/cpe/` only where it begins a path (after the public origin, or after a byte that cannot belong to a path segment). A plain replace of `/cpe/` also rewrites the `cpe` folder of the shared static files (`/_static/cpe/tokens.css`, the prototype's own path) and comments inside served files, and reported seven false differences.
+- After the ship (committed on `worktree-DEV-7465-index`, by the owner's decision of 2026-10-12): **decision 13
+  is reversed.** Decided: the site index leaves the router and `/cpe/` is CPE's not-found. Committed: the root
+  of `cpe-server`'s router is the overview of the loaded projects, so `/cpe` and `/cpe/` answer 200 with it;
+  the page is the prototype's site index, rendered by `cpe-web`. Not the prototype's in three points: the
+  teaser's footer shows the link's own path (`/cpe/<id>/`, the prototype wrote `/<id>/`); a project that
+  declares neither the reader's language nor `en` is shown in its default language (the prototype showed
+  `site.title` as written and no other text); the cover is at `<base>/<id>/_assets/…`, the layout of
+  decision 20. ADR-0007 has an amendment and four notes. The Phase 14 checkbox for the incubator's host
+  is reworded.
 
 ## Side findings
 
@@ -502,3 +522,7 @@ status: in-progress
   `--cpu-throttling`, so the activation that starts after the port is bound got CPU only while a request was being
   served. The DPE preview is now deployed with `--no-cpu-throttling` (owner, 2026-10-12), in #489's build commit.
 - Phase 14 (dsp-incubator) is gated on H3 and H4 and was not started.
+- The overview is back (owner, 2026-10-12: "bring the overview back at /cpe/ and /cpe"): one more commit on
+  top of the stack, on `worktree-DEV-7465-index`, makes the root of `cpe-server`'s router the list of the
+  loaded projects. `access-server`'s code is unchanged; its tests for `/cpe` and `/cpe/` now expect the
+  overview. Not pushed by the executor. See Deviations.

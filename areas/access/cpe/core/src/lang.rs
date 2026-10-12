@@ -14,7 +14,7 @@ pub const BUILTIN_LANGUAGES: [&str; 4] = ["en", "de", "fr", "it"];
 /// Built by `resolve` (against a specific project's declared
 /// `site.languages`, falling back to `site.default_language`) or by
 /// `resolve_builtin` (against the engine's own [`BUILTIN_LANGUAGES`], no
-/// `SiteConfig` involved — used by the host's site index, which has no
+/// `SiteConfig` involved — used by the site index, which has no
 /// per-project language declaration to resolve against). Callers should not
 /// construct this type directly.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,7 +56,7 @@ pub fn resolve(preferences: &[String], site: &SiteConfig) -> Lang {
 /// languages ([`BUILTIN_LANGUAGES`]), with no project `SiteConfig` involved.
 /// Falls back to `"en"` when no preference matches.
 ///
-/// This is what lets the host's site index (which has no project to resolve
+/// This is what lets the site index (which has no project to resolve
 /// a language against) obtain a [`Lang`] and reuse the `pub` engine chrome catalog
 /// (`chrome` in `cpe-components`) directly, rather than mirroring it
 /// in the host.

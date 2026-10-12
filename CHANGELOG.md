@@ -1,5 +1,86 @@
 # Changelog
 
+## [0.8.8](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.7...v0.8.8) (2026-10-12)
+
+
+### Features
+
+* **access-server:** Construct CPE over sync's archive projection and mount it under /cpe (DEV-7438) ([8dc6599](https://github.com/dasch-swiss/dsp-repository/commit/8dc6599cb4ed344433abfa22a64db0abb4ebecbf))
+* **cpe-components:** Move CPE's component library in from dsp-incubator (DEV-7401) ([0154cbe](https://github.com/dasch-swiss/dsp-repository/commit/0154cbe2b176d8124ee596a7dc6fcae458dcb084))
+* **cpe-core:** Build CPE's URLs from a configured base (DEV-7438) ([a3fa061](https://github.com/dasch-swiss/dsp-repository/commit/a3fa0614b132bdd31949c9a0390fa06c384d5469))
+* **cpe-core:** Move CPE's domain crate in from dsp-incubator (DEV-7464) ([9b431e6](https://github.com/dasch-swiss/dsp-repository/commit/9b431e6da5d00798c16862fe5b1afa70430d313b))
+* **cpe-image-viewer:** Add CPE's image viewer, cut down from dsp-incubator's (DEV-7401) ([1221072](https://github.com/dasch-swiss/dsp-repository/commit/12210721c3295f624d303f7c7875dd7aacff1420))
+* **cpe-ports,sync-store:** Serve data ARKs through the port (DEV-7487) ([f73009e](https://github.com/dasch-swiss/dsp-repository/commit/f73009e207c189a0797e6c958eb873e2f56d92e9))
+* **cpe-ports,sync-store:** Serve project curation through the port (DEV-7495) ([d9839d3](https://github.com/dasch-swiss/dsp-repository/commit/d9839d346cebaa1c6699234a8b6606202a09d3ba))
+* **cpe-ports,sync-store:** Serve Regions and LinkObjs through the port (DEV-7486) ([7118cdb](https://github.com/dasch-swiss/dsp-repository/commit/7118cdbf7b58d3d3d32a019fab16f17196c872ed))
+* **cpe-ports:** Declare CPE's port onto the archive projection ([c8662a2](https://github.com/dasch-swiss/dsp-repository/commit/c8662a2dcef6491812061ebe1adc2e7a8b36b376))
+* **cpe-server:** Add CPE's host crate from the prototype's binary (DEV-7465) ([34c3dae](https://github.com/dasch-swiss/dsp-repository/commit/34c3daee89b155b41717b9e9eaf4774ed8824654))
+* **cpe-server:** Build a project's store from the archive projection at activation (DEV-7465) ([78d1569](https://github.com/dasch-swiss/dsp-repository/commit/78d1569b53af6e5743b68037b97aa0b844d74eb4))
+* **cpe-server:** List CPE's projects at its base (DEV-7465) ([7062bc2](https://github.com/dasch-swiss/dsp-repository/commit/7062bc257e86116b0999c9b76ac508c081b18402))
+* **cpe-store-build:** Move the store builder and the remodelling in from dsp-incubator (DEV-7465) ([b20d49d](https://github.com/dasch-swiss/dsp-repository/commit/b20d49dcfb1fde83bf9f8b9fa1d9d53c549943c0))
+* **cpe-store:** Move CPE's read-side store in from dsp-incubator (DEV-7465) ([cbebed5](https://github.com/dasch-swiss/dsp-repository/commit/cbebed591958b6febc9ec1b628447c9772494103))
+* **cpe-web:** Move CPE's page assembly in from dsp-incubator (DEV-7465) ([84887f0](https://github.com/dasch-swiss/dsp-repository/commit/84887f09a778585a27b68af5747f38ecc57c5361))
+* **sync-store:** Serve Incunabula's catalogue override as curation (DEV-7497) ([14cc0c1](https://github.com/dasch-swiss/dsp-repository/commit/14cc0c12883bf3ec7fa76f067291dca80b90392a))
+* **sync-store:** Serve the committed 0803 projection behind CPE's port ([9e9d3e1](https://github.com/dasch-swiss/dsp-repository/commit/9e9d3e1b7dde1f07b71e30b1bcc3bd145abd6a19))
+
+
+### Bug Fixes
+
+* **cpe-components:** Hand the overlay state to a viewer defined after DataStar's first run ([f52c25d](https://github.com/dasch-swiss/dsp-repository/commit/f52c25d2718538ecab449122fa9983b5c9dae070))
+* **cpe-image-viewer:** Remove the backticks that ended the script's stylesheet literal (DEV-7401) ([70cded7](https://github.com/dasch-swiss/dsp-repository/commit/70cded744f5e06dde82d924a6f7de0eb87756c22))
+* **shared-metadata,dpe-server:** Accept a versioned ARK's timestamp on the record file endpoint (DEV-7467) ([6663ba0](https://github.com/dasch-swiss/dsp-repository/commit/6663ba008418f0795e52dd2aa19b8b25e39131ed))
+
+
+### Code Refactoring
+
+* **cpe-store:** Own the connection, so the page assembly names no rusqlite (DEV-7465) ([575fc54](https://github.com/dasch-swiss/dsp-repository/commit/575fc54fff48d1619ff7966f9a2ee6963fce6f43))
+
+
+### Documentation
+
+* **cpe-components:** Remove history and plan references from the comments (DEV-7401) ([8c36753](https://github.com/dasch-swiss/dsp-repository/commit/8c36753189e84f2ff9bbb9cd68746898cc43f671))
+* **cpe-core:** Remove design and plan references the first pass left (DEV-7401) ([5569c52](https://github.com/dasch-swiss/dsp-repository/commit/5569c52c61c85402210cb51cceed76180b492825))
+* **cpe-core:** Remove history and plan references from the comments (DEV-7464) ([a9f9035](https://github.com/dasch-swiss/dsp-repository/commit/a9f90359525d3e1aff6e5f73d83125fc9fc25039))
+* **cpe-server:** Remove history and plan references from the comments (DEV-7465) ([8d6e160](https://github.com/dasch-swiss/dsp-repository/commit/8d6e160996d4b8ba875b5d6dbd14d8bff340dfeb))
+* **cpe-store-build:** Remove history and plan references from the comments (DEV-7465) ([0cf2abb](https://github.com/dasch-swiss/dsp-repository/commit/0cf2abb4964a1d76c86659cf9c27d4affcc87d6d))
+* **cpe-store:** Remove history and plan references from the comments (DEV-7465) ([1560691](https://github.com/dasch-swiss/dsp-repository/commit/15606919448da6b310a01c0bca390668ac83658e))
+* **cpe-web:** Remove history and plan references from the comments (DEV-7465) ([e83eabb](https://github.com/dasch-swiss/dsp-repository/commit/e83eabbe32f1542e0940a8699bb971993077f35f))
+* **docs:** Add the plan for CPE's archive projection port ([be9d548](https://github.com/dasch-swiss/dsp-repository/commit/be9d548820d7850d61ddea24d31bc3528d6b07f4))
+* **docs:** Add the plan for moving cpe-core into areas/access/cpe (DEV-7464) ([31cd25d](https://github.com/dasch-swiss/dsp-repository/commit/31cd25d232c7ee6044c89cd14c3af8c1bea607e1))
+* **docs:** Add the plan for moving CPE's component library (DEV-7401) ([447a4c6](https://github.com/dasch-swiss/dsp-repository/commit/447a4c6ddaf3629c1549c9acb81147e94106c0f9))
+* **docs:** Add the plan for moving CPE's store, page assembly and host (DEV-7465) ([4c037e8](https://github.com/dasch-swiss/dsp-repository/commit/4c037e8d5bb093bde905e82599bccbc23ed773ae))
+* **docs:** Add the plan for serving annotations through cpe-ports (DEV-7486) ([ab452f2](https://github.com/dasch-swiss/dsp-repository/commit/ab452f2d5a20fd63d84d50d50c9052b686f5dae9))
+* **docs:** Add the plan for serving curation through cpe-ports (DEV-7495) ([5d61192](https://github.com/dasch-swiss/dsp-repository/commit/5d61192d71bd8802f14d9ba5eecaae3857f36dca))
+* **docs:** Add the plan for serving data ARKs through cpe-ports (DEV-7487) ([1eb0ffa](https://github.com/dasch-swiss/dsp-repository/commit/1eb0ffacec22dd98132b44330dd23b086c04fbe8))
+* **docs:** Add the PRD and plan for the minimal sync capability ([ab7840a](https://github.com/dasch-swiss/dsp-repository/commit/ab7840ac742db350f9db7c90dfb8f17b0e99b7ea))
+* **docs:** Allow a DaTEI project several tables of contents ([f660cd4](https://github.com/dasch-swiss/dsp-repository/commit/f660cd41fd49242efdad392d00bb929e54b0cfcb))
+* **docs:** Amend ADR-0007 so CPE arrives crate by crate, shaped in the incubator ([3d25e0a](https://github.com/dasch-swiss/dsp-repository/commit/3d25e0a313bde54fcbdb231b1826969c79a17bf9))
+* **docs:** Amend ADR-0007 to separate data ARKs from presentation ARKs ([960c57c](https://github.com/dasch-swiss/dsp-repository/commit/960c57c54710f3af33e99a9b877a1052076ab226))
+* **docs:** Amend ADR-0007 with CPE's public URL layout ([f784974](https://github.com/dasch-swiss/dsp-repository/commit/f7849740cf90d6c7ec80001e5b82f934f5f520ed))
+* **docs:** Close out the DEV-7486 and DEV-7487 plans after the incubator re-vendors ([8a68063](https://github.com/dasch-swiss/dsp-repository/commit/8a680637816e550a6b65689c8842c44895728e8d))
+* **docs:** Close the plan for moving cpe-core (DEV-7464) ([bb04099](https://github.com/dasch-swiss/dsp-repository/commit/bb04099985f40e88dfe821170c94ecd8cd88a9cf))
+* **docs:** Decide DaTEI joins the Access Area as its third capability ([f0bef14](https://github.com/dasch-swiss/dsp-repository/commit/f0bef14902c06c6dfd0be4e8112ad8d6d3c2af9f))
+* **docs:** Map sync, DaTEI and the Access Area's media capability as planned components ([e86bb84](https://github.com/dasch-swiss/dsp-repository/commit/e86bb84b34b62d07fccbcbfe7264868bcbac2e79))
+* **docs:** Record how the cpe-components plan was carried out (DEV-7401) ([a83d97c](https://github.com/dasch-swiss/dsp-repository/commit/a83d97c08febd63c39ef1432b16305bd324d3045))
+* **docs:** Record how the plan for CPE's store, page assembly and host was carried out (DEV-7465) ([dc6809f](https://github.com/dasch-swiss/dsp-repository/commit/dc6809f34fc5fc2169cfcb92b892f951d7a0cacb))
+* **sync-store:** Record 0803-curation.csv as the only copy of Incunabula's curation (DEV-7496) ([6518252](https://github.com/dasch-swiss/dsp-repository/commit/651825288e372689705b07dcfd4b328c58306c97))
+
+
+### Build System
+
+* **access-server:** Drop the /app/dpe-server image alias ([665aadd](https://github.com/dasch-swiss/dsp-repository/commit/665aaddd80bb2c420cbc70edfbb7084235702311))
+* **access-server:** Make just build-docker-dpe build from a staged context ([b8668da](https://github.com/dasch-swiss/dsp-repository/commit/b8668dab74880f196cfec073a5086bc5800ae483))
+* **access-server:** Ship sync's committed data in the image (DEV-7407) ([fccff04](https://github.com/dasch-swiss/dsp-repository/commit/fccff0451f9695dcf6f28d0479d82d68cb86251a))
+* **access-server:** Ship sync's data and CPE's projects in the image (DEV-7465) ([0018003](https://github.com/dasch-swiss/dsp-repository/commit/00180032516c095f1e0b8c7d1733884d700014ed))
+* **deps:** Bump the Tailwind standalone CLI to 4.2.4 ([516d683](https://github.com/dasch-swiss/dsp-repository/commit/516d6835716f837f09b57f83d4045cee7f02c603))
+
+
+### Miscellaneous Chores
+
+* **ci:** Check CPE's dependency seam in just check (DEV-7401) ([21324e3](https://github.com/dasch-swiss/dsp-repository/commit/21324e34c09e865b91fa52efed356cf175aa620f))
+* **dpe-data:** Point 0112 roud-oeuvres at the migrated server ([db3e8aa](https://github.com/dasch-swiss/dsp-repository/commit/db3e8aae9cb4eda9ae953b625c8dba7659628b4b))
+* **sync-store:** Record the 0803 projection as built from the prod dump (DEV-7444) ([a7e8df1](https://github.com/dasch-swiss/dsp-repository/commit/a7e8df14778845cb9bd578e34ec5c26aa3491f84))
+
 ## [0.8.7](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.6...v0.8.7) (2026-09-29)
 
 

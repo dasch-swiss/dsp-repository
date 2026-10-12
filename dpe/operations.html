@@ -244,14 +244,19 @@
 </style>
 <h1 id="dpe-operations-guide"><a class="header" href="#dpe-operations-guide">DPE Operations Guide</a></h1>
 <p>Operations documentation for the DPE infrastructure team.</p>
+<p>The image and its binary are the Access Area's: beside DPE they serve CPE, under <code>/cpe</code>. What is specific to
+CPE (start-up, what it answers when something is missing, measurements) is in <a href="../cpe/operations.html">CPE Operations</a>;
+the settings of both are in the table below.</p>
 <h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
 <ul>
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
 <li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>access-server</code> (CLI with subcommands).</li>
-<li><strong>Data</strong>: DPE's JSON corpus at <code>/app/server/data</code> (<code>DPE_DATA_DIR</code>), and <code>sync</code>'s committed snapshots and curation files
-(<code>areas/access/sync/data/</code>) at <code>/app/sync/data</code>. Nothing in the binary reads the latter yet; <code>ops-deploy</code> sets <code>SYNC_DATA_DIR</code> to that path.</li>
+<li><strong>Data</strong>: DPE's JSON corpus at <code>/app/server/data</code> (<code>DPE_DATA_DIR</code>); <code>sync</code>'s committed snapshots and curation files
+(<code>areas/access/sync/data/</code>) at <code>/app/sync/data</code> (<code>SYNC_DATA_DIR</code>), which CPE builds each project's store from at start;
+and CPE's project folders (<code>areas/access/cpe/projects/</code>) at <code>/app/cpe/projects</code> (<code>CPE_PROJECTS_DIR</code>). CPE's stylesheets,
+scripts and logos are compiled into the binary.</li>
 </ul>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <p>The <code>access-server</code> binary provides three subcommands:</p>
@@ -307,12 +312,17 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4000</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
 <tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>areas/access/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
+<tr><td><code>SYNC_DATA_DIR</code></td><td>No</td><td><code>areas/access/sync/data</code></td><td>Directory of <code>sync</code>'s committed snapshots and curation files, read once at start to build each CPE project's store. The Docker image sets <code>/app/sync/data</code>, where it carries the data; a deployment that sets the variable too has to name that path. If the directory or a project's file in it is missing, that project answers <code>503</code> and an error is logged; DPE is unaffected.</td></tr>
+<tr><td><code>CPE_BASE</code></td><td>No</td><td><em>(empty)</em></td><td>Path CPE is mounted at. The Docker image sets <code>/cpe</code>. A leading <code>/</code>, no trailing one, unreserved characters only. Unset, empty or refused (logged as a warning and as an error with the reason): CPE is not mounted and DPE is served alone. It must not be a path DPE serves (<code>/dpe</code>, <code>/assets</code>, …): nothing checks that, and under such a base CPE answers every path DPE has no route of its own for, its static files included. A path the binary or DPE has a route for (<code>/healthz</code>, <code>/telemetry/collect</code>, <code>/dpe/projects</code>) keeps its answer under any base. If the router cannot be built with CPE at the base, that is logged as an error naming <code>CPE_BASE</code>, and CPE is not mounted; no value is known to do that.</td></tr>
+<tr><td><code>CPE_PROJECTS_DIR</code></td><td>No</td><td><code>areas/access/cpe/projects</code></td><td>Folder whose subfolders are CPE's projects (configuration, narrative, assets). The Docker image sets <code>/app/cpe/projects</code>.</td></tr>
+<tr><td><code>CPE_PUBLIC_ORIGIN</code></td><td>No</td><td><em>(none)</em></td><td>Origin CPE's absolute URLs (the share links) start with, e.g. <code>https://repository.dasch.swiss</code>. An origin only: scheme <code>http</code> or <code>https</code> and a host, no path (not <code>…/cpe</code>: the base is <code>CPE_BASE</code>), no query, no trailing slash. A value of another shape is refused, and CPE then answers <code>503</code> on every path under its base. Not set in the image. Unset, CPE takes the origin of each request from <code>X-Forwarded-Proto</code> and <code>Host</code> and logs once at start that it does. Both headers are the client's unless a proxy in front overwrites them (Cloud Run does), so set the variable on every deployment that has a cache or a proxy that passes them through.</td></tr>
 </tbody></table>
 </div>
 <blockquote>
 <p><strong>Two base URLs, on purpose.</strong> <code>DPE_PUBLIC_BASE_URL</code> and <code>DPE_OAI_BASE_URL</code> are set independently and neither is derived from the other. The OAI endpoint advertises its own <code>baseURL</code> in every response, and on DEV that endpoint lives on a different host (<code>https://api.dev.dasch.swiss/dpe/oai</code>) from the site (<code>https://repository.dev.dasch.swiss</code>). Set both per environment.</p>
 <p><strong>Assessing a local run from a container.</strong> A FAIR assessor running in Docker resolves the URLs the page emits, so <code>DPE_PUBLIC_BASE_URL</code> must name a host the container can reach — <code>http://host.docker.internal:4000</code>, not <code>http://localhost:4000</code>, which inside the container is the container itself.</p>
 <p><strong>PR previews set all three themselves.</strong> <code>cloud-run-dpe-pull-request.yml</code> runs <code>gcloud run services update</code> right after the deploy, setting <code>DPE_PUBLIC_BASE_URL</code>, <code>DPE_OAI_BASE_URL</code> and <code>DPE_ARK_RESOLVER_BASE_URL</code> to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the <code>303</code> target, the OAI <code>baseURL</code>, and every emitted ARK respectively.</p>
+<p><strong>PR previews set no <code>CPE_*</code> variable and no <code>SYNC_DATA_DIR</code>.</strong> They run with the image's own, so CPE is served under <code>/cpe</code> there and its share links carry the preview's host, taken from each request.</p>
 <p><strong>Why a preview rewrites its ARKs.</strong> A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. <code>DPE_ARK_RESOLVER_BASE_URL</code> makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.</p>
 <p><strong>Applied once, as corpus data enters.</strong> <code>dpe-core</code>'s caches normalise the ARK host on load, so everything downstream — the embedded JSON-LD, the Dublin Core tags, the <code>Link</code> header, the OAI payloads, the sidebar permalink a person clicks and copies, and the <code>pid</code> in <code>/dpe/api/v2/projects</code> — is correct without any of them knowing a resolver exists. Conceptually this is the <code>sync</code> capability's work and moves there when <code>sync</code> lands; <code>dpe_core::ark</code> records that.</p>
 <p>Only the host is rewritten. The ARK path — <code>ark:/72163/1/{shortcode}</code> — is the identifier and passes through untouched, and <strong>recorded text is quoted rather than asserted</strong>: a <code>howToCite</code> citation whose author wrote the ARK into the sentence, and a project's recorded website (083D records its own ARK there), are served as written.</p>
@@ -340,6 +350,8 @@ than a harvester's throughput does.</p>
 <li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
 <li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
 <li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Does not render any page.</li>
+<li><strong>CPE</strong>: the probe answers as soon as the port is bound, before CPE's projects are loaded, and says nothing
+about them.</li>
 </ul>
 <h2 id="data-volume"><a class="header" href="#data-volume">Data Volume</a></h2>
 <ul>
@@ -348,11 +360,12 @@ than a harvester's throughput does.</p>
 <li><strong>Contents</strong>: Project metadata JSON files, organized by type (<code>projects/</code>, <code>persons/</code>, <code>organizations/</code>, <code>clusters/</code>, <code>collections/</code>, <code>records/</code>)</li>
 </ul>
 <h2 id="resource-requirements"><a class="header" href="#resource-requirements">Resource Requirements</a></h2>
-<p>The DPE is lightweight — it serves static data with no database.</p>
+<p>The DPE is lightweight — it serves static data with no database. CPE holds each project's store in memory.</p>
 <ul>
-<li><strong>Memory</strong>: ~50-100 MB typical</li>
+<li><strong>Memory</strong>: about 220 MiB resident at the peak of start-up, less afterwards; CPE holds each project's store in
+memory. The measured figures are in <a href="../cpe/operations.html#measurements">CPE Operations</a>.</li>
 <li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
-<li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
+<li><strong>Disk</strong>: Data files + static assets (~70 MB without the binary)</li>
 </ul>
 <h3 id="landing-page-metadata-points-at-dsp-ingest"><a class="header" href="#landing-page-metadata-points-at-dsp-ingest">Landing-page metadata points at dsp-ingest</a></h3>
 <p>A project landing page advertises its records' files as <code>schema:distribution</code>,

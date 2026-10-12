@@ -3281,7 +3281,8 @@ mod tests {
     fn pages_stage_and_keydown_wire_the_annotation_directives() {
         let out = render_pages_scan(MemberIndex::Off, make_legal_scan_image(), one_rectangle());
         let stage_open = format!(
-            r#"<div class="cv-stage" data-effect="document.getElementById('rv-I_P1')?.setOverlayState?.({{visible: $_annoShow, focus: ($_annoPin || $_annoHover || $_annoArrive)}})" data-on:viewer-overlay-hover="$_annoHover = evt.detail.id ?? ''" data-on:viewer-overlay-click="{}" {}>"#,
+            r#"<div class="cv-stage" data-effect="{}" data-on:viewer-overlay-hover="$_annoHover = evt.detail.id ?? ''" data-on:viewer-overlay-click="{}" {}>"#,
+            html! { (annotation::overlay_effect_expr("rv-I_P1")) }.into_string(),
             annotation::overlay_click_expr(),
             zoom_away_attr()
         );

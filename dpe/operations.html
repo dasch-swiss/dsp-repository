@@ -258,6 +258,11 @@ the settings of both are in the table below.</p>
 and CPE's project folders (<code>areas/access/cpe/projects/</code>) at <code>/app/cpe/projects</code> (<code>CPE_PROJECTS_DIR</code>). CPE's stylesheets,
 scripts and logos are compiled into the binary.</li>
 </ul>
+<p>The Dockerfile packages pre-built artifacts; the Rust build happens in <code>.github/actions/build-dpe</code>.
+<code>just build-docker-dpe</code> reproduces the same staging locally, compiling the binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
+container as <code>just build-docker-editor</code> does (see the <a href="../editor/operations.html">editor's operations guide</a>).
+It defaults to the host architecture; <code>just build-docker-dpe arch=x86_64</code> reproduces the amd64 image CI publishes,
+under emulation. <code>just run-docker-dpe</code> runs the result on port 8080.</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <p>The <code>access-server</code> binary provides three subcommands:</p>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>

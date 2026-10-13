@@ -9,15 +9,16 @@
 //! **Method discipline.** Every route that changes state is `POST`: the
 //! `Sec-Fetch-Site` control exempts `GET` and `HEAD` by necessity, because a
 //! navigation from anywhere is a `GET`, so a `GET` that changes state is a `GET`
-//! nothing protects. Rust cannot check the converse — the route table is not
-//! introspectable — so the assertions live with the handlers, and the one
-//! deliberate exception is the session's idle-timeout touch in
-//! [`crate::auth::session`].
+//! nothing protects. Rust cannot check the converse — a `MethodRouter` cannot
+//! be asked which methods it serves — so the assertions live with the
+//! handlers, and the one deliberate exception is the session's idle-timeout
+//! touch in [`crate::auth::session`].
 
 use std::net::{IpAddr, SocketAddr};
 
 use axum::extract::ConnectInfo;
 use axum::http::Request;
+use axum::routing::MethodRouter;
 use axum::Router;
 use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::GovernorError;
@@ -150,110 +151,104 @@ macro_rules! per_ip_limit {
     }};
 }
 
-/// Assemble the traced app router. Static assets are served from `public_dir`,
-/// falling back to the app's 404.
-///
-/// Everything declared here is wrapped by the OTel layers. Routes that must
-/// stay **untraced** — `/healthz` and the telemetry beacon — are added by
-/// [`build_app`] after this returns.
-fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
+pub(crate) type Route = (&'static str, MethodRouter<AppState>);
+
+/// The traced routes, declared once. [`build_router`] folds them into the
+/// router, and `page_url.rs` builds the `page.url` normalizer from their paths,
+/// so a route declared here is labelled with its own template. The untraced
+/// `/healthz` and `/telemetry/collect` in [`build_app`] are not, and render no
+/// page.
+pub(crate) fn routes() -> Vec<Route> {
     use axum::routing::{get, post};
-    use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
-    use tower_http::services::ServeDir;
 
-    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(state.clone()));
-
-    Router::new()
-        // --- Traced routes (declared BEFORE .layer()) ---
+    vec![
         // The service root: a redirect to `/projects`. The shell's header links
         // here from every page, so without it the 404 page's own header is
         // another 404.
-        .route("/", get(crate::shell::root))
+        ("/", get(crate::shell::root)),
         // The two login endpoints. The rate limit is on the POST alone, merged
         // in rather than layered over the whole route: a limit that counted page
         // loads would spend an office's budget on people reading the form.
-        .route(
+        (
             "/login",
             get(crate::auth::login_form).merge(post(crate::auth::login_submit).layer(per_ip_limit!(
                 ISSUE_REPLENISH_SECS,
                 ISSUE_BURST,
                 "login"
             ))),
-        )
-        .route(
+        ),
+        (
             "/login/code",
             get(crate::auth::code_form).merge(post(crate::auth::code_submit).layer(per_ip_limit!(
                 VERIFY_REPLENISH_SECS,
                 VERIFY_BURST,
                 "code"
             ))),
-        )
+        ),
         // Not rate-limited: signing out costs nothing and refusing it would
         // strand a user in a session they asked to end.
-        .route("/logout", post(crate::auth::logout))
+        ("/logout", post(crate::auth::logout)),
         // Public and unauthenticated on purpose — `crate::collection::list` takes no
         // `Authenticated`/`Rdu` extractor, which is what "public" looks like from a handler
         // signature. Traced, unlike `/telemetry/collect`: this is the one thing a CI poller
         // actually needs a span for.
-        .route(
+        (
             "/api/v1/approved-records",
             get(crate::collection::list).layer(per_ip_limit!(
                 APPROVED_RECORDS_REPLENISH_SECS,
                 APPROVED_RECORDS_BURST,
                 "approved records"
             )),
-        )
+        ),
         // Also public in the sense of taking no `Authenticated`/`Rdu` extractor, but not
         // unauthenticated: `crate::collection::report` checks a bearer token itself, because its
         // caller is a CI job with no session to hold. See `crate::csrf` for the matching
         // same-origin exemption this path needs.
-        .route("/api/v1/collection-report", post(crate::collection::report))
+        ("/api/v1/collection-report", post(crate::collection::report)),
         // --- Authenticated routes ---
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.
         // See [`crate::auth::guard`].
-        .route("/projects", get(crate::projects::list))
-        // A flat route with no variable segment, so `page_url.rs` needs the
-        // matching `KNOWN_ROUTES` entry or its page views collapse into `other`.
-        .route("/states", get(crate::projects::states))
+        ("/projects", get(crate::projects::list)),
+        ("/states", get(crate::projects::states)),
         // A redirect to the first section. Sections are real URLs rather than
         // fragment swaps, so the form is bookmarkable and Back-friendly.
-        .route("/projects/{shortcode}", get(crate::projects::detail))
+        ("/projects/{shortcode}", get(crate::projects::detail)),
         // The form. One URL for the section and the save, so a rejected save
         // re-renders at a path that still answers `GET`.
-        .route(
+        (
             "/projects/{shortcode}/sections/{section}",
             get(crate::sections::show).post(crate::sections::act),
-        )
+        ),
         // Adding and removing a row of a repeatable field. Under the section's
         // own URL, and handled by the same module, so a row action resolves
         // through one `context()` — the audience gate, the lock check and the
         // shortcode fold are the section's rather than a second copy of the rule
         // that decides who may write what.
-        .route(
+        (
             "/projects/{shortcode}/sections/{section}/fields/{field}/add",
             post(crate::sections::add_row),
-        )
-        .route(
+        ),
+        (
             "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove",
             post(crate::sections::remove_row),
-        )
+        ),
         // The entity form: one person or organisation proposal. `{proposal}` is the
         // proposal's `entity_id`, the same value `pages::section` already links to — see
         // `entities.rs`'s module docs for why. One `GET`/`POST` pair, like the section
         // form's.
-        .route(
+        (
             "/projects/{shortcode}/entities/{proposal}",
             get(crate::entities::show).post(crate::entities::act),
-        )
-        .route(
+        ),
+        (
             "/projects/{shortcode}/entities/{proposal}/fields/{field}/add",
             post(crate::entities::add_row),
-        )
-        .route(
+        ),
+        (
             "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove",
             post(crate::entities::remove_row),
-        )
+        ),
         // --- RDU-only routes ---
         // `Rdu` composes `Authenticated`, so these are closed twice over: no
         // session redirects to login, and a depositor's session gets the 403
@@ -263,26 +258,43 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         //
         // The review surfaces carry claim, save and accept-all as an `intent`
         // pair on one `POST` URL per submission, for the same reason.
-        .route("/review", get(crate::review::queue))
-        .route("/review/{shortcode}", get(crate::review::show).post(crate::review::act))
-        .route("/depositors", get(crate::depositors::list).post(crate::depositors::create))
-        .route("/depositors/new", get(crate::depositors::create_form))
-        .route(
+        ("/review", get(crate::review::queue)),
+        ("/review/{shortcode}", get(crate::review::show).post(crate::review::act)),
+        ("/depositors", get(crate::depositors::list).post(crate::depositors::create)),
+        ("/depositors/new", get(crate::depositors::create_form)),
+        (
             "/depositors/{id}/edit",
             get(crate::depositors::edit_form).post(crate::depositors::update),
-        )
-        .route(
+        ),
+        (
             "/depositors/{id}/remove",
             get(crate::depositors::remove_form).post(crate::depositors::remove),
-        )
-        .route("/collection", get(crate::collection::overview))
-        .route(
+        ),
+        ("/collection", get(crate::collection::overview)),
+        (
             "/collection/{id}/discard",
             get(crate::collection::discard_form).post(crate::collection::discard),
-        )
-        // REVIEW: a new full-page route needs a matching entry in `page_url.rs`,
-        // or its page views collapse into `other` — and no test fails, because
-        // that module's tests are a closed list of routes that already exist.
+        ),
+    ]
+}
+
+/// Assemble the traced app router. Static assets are served from `public_dir`,
+/// falling back to the app's 404.
+///
+/// Everything [`routes`] declares is wrapped by the OTel layers. Routes that must
+/// stay **untraced** — `/healthz` and the telemetry beacon — are added by
+/// [`build_app`] after this returns.
+fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
+    use axum::routing::get;
+    use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
+    use tower_http::services::ServeDir;
+
+    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(state.clone()));
+
+    routes()
+        .into_iter()
+        // --- Traced routes (declared BEFORE .layer()) ---
+        .fold(Router::new(), |router, (path, handlers)| router.route(path, handlers))
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
         // --- OTel layers ---

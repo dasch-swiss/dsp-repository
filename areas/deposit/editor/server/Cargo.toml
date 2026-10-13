@@ -20,6 +20,7 @@ shared-telemetry = { path = "../../../../shared/telemetry" }
 maud.workspace = true
 
 axum.workspace = true
+matchit.workspace = true
 figment = { version = "0.10", features = ["env", "toml"] }
 serde.workspace = true
 # The draft payload column: a `ProjectDraft` serialized. `editor-core` keeps it

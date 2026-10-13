@@ -42,8 +42,8 @@ The target, per ADR-0004 with the Phase 1 amendment:
 ```
 areas/deposit/
   server/        deposit-server   composition root, binary `deposit-server`: EditorConfig loading and validation, Secret,
-                                  observability (TELEMETRY_NAME pinned), CSRF and OTel layers, untraced routes, the composed
-                                  page-URL normalizer; opens both stores, constructs the adapters, starts Identity then Editor,
+                                  observability (TELEMETRY_NAME pinned), CSRF and OTel layers, untraced routes, the page-URL
+                                  normalizer built from both route tables; opens both stores, constructs the adapters, starts Identity then Editor,
                                   merges their routers; the tests that need both capabilities
   shell/         deposit-shell    page, header, footer, 403, 404, problem page (fn -> Markup); safe_next, login_url; RDU_ONLY
   identity/
@@ -139,7 +139,7 @@ pub trait AuthoredWork: Send + Sync {
 ### Deviations from the ticket's proposals (to repeat in each PR description)
 
 - **Moves 1 and 2 are not done** (form rules into core; business rules out of handlers into core services). ADR-0004 keeps `editor-core` unchanged in role. Once the handlers live in `editor-web`, no crate imports view-crate form rules across a boundary, which was the coupling move 1 cited. Both go to a follow-up issue (H3).
-- **Move 6 is cut down to the route table pin** (Phase 2). The helpers duplicated across handlers (`storage_error`, `refused`, `render_page`, `region`) are split between `identity-web` and `editor-web` by the move itself, and a dedup is a follow-up item. One exception: the two copies of `is_enhanced`/`DATASTAR_REQUEST` (`review.rs`, `sections.rs`) become one in Phase 8, because both land in the same crate.
+- **Move 6 is cut down to the route table** (Phase 2), from which the page-URL normalizer is built. The helpers duplicated across handlers (`storage_error`, `refused`, `render_page`, `region`) are split between `identity-web` and `editor-web` by the move itself, and a dedup is a follow-up item. One exception: the two copies of `is_enhanced`/`DATASTAR_REQUEST` (`review.rs`, `sections.rs`) become one in Phase 8, because both land in the same crate.
 - **Move 3 ("rename away from ports") is moot.** The repository traits stay in `*-core` as the stores' contracts, and the name "port" goes to the consumer-defined `*-ports` crates.
 - **Startup logic goes to the web facades** (`ensure_rdu`, the mailer and the sweep to `Identity::start`; the loaders and the reconcile to `Editor::start`), because the root may name no `core` crate and hold no logic.
 
@@ -166,7 +166,7 @@ pub trait AuthoredWork: Send + Sync {
 
   Each facade calls `.with_state(..)` and returns `Router<()>`, so the root never sees `IdentityState` or `EditorState`. Values flow between the calls without the root naming a `core` type.
 - **Repository bundles.** `identity-core` declares `IdentityRepositories` (its four traits) and `editor-core` keeps `EditorRepositories` (its five; today's `Repositories` minus identity's). Each store's `Database` implements its bundle, and each facade holds `Arc<dyn …>`, so the fault-injecting fakes keep working.
-- **Route tables.** Axum 0.8.9 cannot list a router's routes (only `has_routes`). So each web crate declares its routes once, as a table of `(path, kind, MethodRouter)` entries that `router()` folds. Folding over `.route()` is equivalent to chaining it. A GET and a POST on one path merge, and each keeps its own `route_layer` (rate limits). The pin test substitutes sample values for each `{placeholder}` and asserts every full-page route has a `normalize_page_url` label. Entries of kind redirect (`/`, `/projects/{shortcode}`) are exempt. Each web crate exports `normalize_page_url(path) -> Option<&'static str>`, and the root composes them (identity, then editor, else `"other"`) for `collect_route("editor", …)`.
+- **Route tables.** Axum 0.8.9 cannot list a router's routes (only `has_routes`). So each web crate declares its routes once, as a table of `(path, MethodRouter)` entries that `router()` folds. Folding over `.route()` is equivalent to chaining it. A GET and a POST on one path merge, and each keeps its own `route_layer` (rate limits). Each web crate exports its table's paths, and the root builds one `matchit` router (the path router axum matches with, pinned to axum's version) from both for `collect_route("editor", …)`: the `page.url` label is the template of the route axum matches, else `"other"`. No hand-written normalizer and no per-crate label list remain.
 - **Web crate layout.** Handlers live in `src/handlers/`, views stay in `pages/`, `form/` and `components/`, and only handler modules use axum. Fragment responses (`region`: `text/html` with 200 on the Datastar-enhanced path, a redirect on the plain path) bypass `deposit-shell::page`. The tests that pin this, such as `the_enhanced_path_answers_with_the_region_rather_than_a_document`, move unchanged.
 - **Shell and response glue.** `deposit-shell` has no axum. It keeps loading `/vendor/datastar.js` on every page (today's bytes), including the identity pages that use plain forms. Its 403 page links `/projects`, recorded in its crate doc as the area's home route. Each web crate keeps a thin `render`/`forbidden`/`not_found`, `traceparent` extraction, `format_instant`, and `storage_error` generic over `impl Display`. The root renders the fallback 404 through `deposit-shell`.
 - **CSRF** stays the outermost layer at the root (`csrf.rs`). The `POST /api/v1/collection-report` carve-out and its list test (`test_every_other_state_changing_path_in_the_app_still_requires_the_header`, a hand-kept list of the other POST paths) become a `deposit-server` test over both routers.
@@ -216,17 +216,17 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - [x] Write the PR description: the amendments, the rows added, and the deviations from the ticket's proposed moves
 - [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
-#### Phase 2: One route table, pinned against the page-URL normalizer
+#### Phase 2: One route table, the page-URL normalizer built from it
 
 ### dsp-repository
-- [ ] Before the first change, run `just test-e2e-editor` on the phase's base and write its summary line into Success Metrics (Phase 1 could not run it)
-- [ ] In `editor-server/src/router.rs`, declare the routes of `build_router` as one table of `(path, kind, MethodRouter)` entries (kind: full page, write, API, redirect) that `build_router` folds, keeping each entry's `route_layer`
-- [ ] Add a test in `page_url.rs` that iterates the table, substitutes sample values for each `{placeholder}`, and asserts every full-page entry has a label other than `"other"`
-- [ ] Remove the "a new full-page route needs a matching entry there … and no test fails" caveat from `areas/deposit/editor/CLAUDE.md` ("Observability")
-- [ ] Change `REVIEW.md`'s `KNOWN_ROUTES` line to say the test enforces it
-- [ ] Run `just check && just test`; it passes
-- [ ] Write the PR description: what the pin closes, and the deviation (move 6 cut to this test)
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Before the first change, run `just test-e2e-editor` on the phase's base and write its summary line into Success Metrics (Phase 1 could not run it)
+- [x] In `editor-server/src/router.rs`, declare the routes of `build_router` as one table of `(path, MethodRouter)` entries that `build_router` folds, keeping each entry's `route_layer`
+- [x] Replace `page_url.rs`'s hand-written matching and `KNOWN_ROUTES` with a `matchit` router built from the table's paths, and test that its labels agree with axum's `MatchedPath`
+- [x] Remove the "a new full-page route needs a matching entry there … and no test fails" caveat from `areas/deposit/editor/CLAUDE.md` ("Observability")
+- [x] Remove `REVIEW.md`'s editor `KNOWN_ROUTES` line
+- [x] Run `just check && just test`; it passes
+- [x] Write the PR description: what deriving the normalizer closes, and the deviation (move 6 cut to the route table)
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 3: Extract identity's domain into `identity-core`
 
@@ -321,8 +321,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - [ ] Give `identity-web` `IdentityState`, `IdentitySettings` and its route table for `/login`, `/login/code`, `/logout`, `/depositors/**`
 - [ ] Give `identity-web` the facade `Identity::start(settings, store, Arc<dyn AuthoredWork>) -> Result<Identity, StartupError>` (`ensure_rdu`, the mailer, the sweep) with `router()` returning `Router<()>`
 - [ ] Give `identity-web` a copy of `RightmostXffKeyExtractor` with its seven tests, for the `/login` and `/login/code` limits
-- [ ] Give `identity-web` its own `normalize_page_url` and route-table pin test
-- [ ] Have `editor-server`'s beacon compose `identity_web::normalize_page_url` before its own, so `/login` and `/depositors` keep their labels
+- [ ] Have `identity-web` export its route table's paths, and `editor-server`'s page-URL normalizer build its `matchit` router from both tables, so `/login` and `/depositors` keep their labels
 - [ ] Give `identity-web` test support: sign-in through its session rules over an in-memory store, `RecordingMailer`, and `FakeAuthoredWork` for the removal tests
 - [ ] Move the `depositors.rs` assertions on editor rows (the remove tests' `updated_by`/`submitted_by` checks) into `editor-server`'s tests, which see both stores
 - [ ] Have `editor-server` call `Identity::start` in today's order and merge its router, keeping the layer order
@@ -343,7 +342,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - [ ] Collapse the two copies of `is_enhanced`/`DATASTAR_REQUEST` (`review.rs`, `sections.rs`) into one module of `editor-web`
 - [ ] Give `editor-web` the facade `Editor::start(settings, store, Arc<dyn Authenticator>, Arc<dyn UserDirectory>) -> Editor` (the loaders and the reconcile) with `router()` returning `Router<()>`
 - [ ] Give `editor-web` a copy of `RightmostXffKeyExtractor` with its tests, for the `/api/v1/approved-records` limit
-- [ ] Give `editor-web` its own `normalize_page_url` and route-table pin test
+- [ ] Have `editor-web` export its route table's paths for the root's page-URL normalizer
 - [ ] Switch the moved handler tests to a fixture that signs in through `FakeAuthenticator` over an in-memory editor store, with assertions unchanged
 - [ ] Check that no module under `editor-web`'s `pages/`, `form/` or `components/` uses axum (`git grep -n 'axum' -- 'areas/deposit/editor/web/src/pages' 'areas/deposit/editor/web/src/form' 'areas/deposit/editor/web/src/components'` is empty)
 - [ ] Leave in `editor-server` only the root's work and the tests that need both capabilities (CSRF path list, layer order, merged rate limits, the account-deletion snapshots, the removal confirmation over real stores)
@@ -359,7 +358,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 
 ### dsp-repository
 - [ ] Create `areas/deposit/server` (`deposit-server`, binary `deposit-server`) by `git mv` of what is left of `editor-server` (`main.rs`, `cli.rs`, `serve.rs`, `config.rs`, `observability.rs`, `assets.rs`, `csrf.rs`, `page_url.rs`, `traceparent.rs`, the cross-capability tests)
-- [ ] Make the root compose the two `normalize_page_url`s for `collect_route("editor", …)`, keeping the scope string `"editor"`
+- [ ] Have the root build the page-URL normalizer from both crates' route paths for `collect_route("editor", …)`, keeping the scope string `"editor"`
 - [ ] Check `deposit-server`'s `Cargo.toml` (dev-dependencies included) names no `core` crate
 - [ ] Delete `areas/deposit/editor/server` and remove it from the workspace
 - [ ] Introduce `const TELEMETRY_NAME: &str = "editor-server"` in `observability.rs` and use it for the OTel tracer name and the Pyroscope application name in place of `env!("CARGO_PKG_NAME")`
@@ -430,9 +429,9 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 ## Success Metrics
 
 - The divergence table goes from 8 rows to none: Phase 1 adds 2, and every one of the 10 is closed by Phase 10.
-- Baseline for "behaviour unchanged", recorded in Phase 1: the test count from `cargo test --tests 2>&1 | grep -E '^test result'` and the `just test-e2e-editor` summary line. No later phase drops a test without moving it.
+- Baseline for "behaviour unchanged", recorded in Phase 1: the test count from `cargo test --tests 2>&1 | grep -E '^test result'` and the `just test-e2e-editor` summary line. No later phase drops a test without moving it, except one the phase's over-testing check finds redundant (it would not fail if the code broke in a meaningful way, or another test already fails for the same break), which the PR body names with the reason.
   - `cargo test --tests` on `origin/main` at `97d51522` (2026-10-13): 84 `test result` lines, 6615 passed, 0 failed, 0 ignored. Re-measure with `cargo test --tests 2>&1 | grep -E '^test result' | awk '{p+=$4} END {print NR, p}'`.
-  - `just test-e2e-editor`: not recorded in Phase 1, because it needs a release build and Playwright outside the sandbox. Phase 2 records it on its base before its first change.
+  - `just test-e2e-editor` on Phase 1's branch at `4a98b0ac` (2026-10-13, release build and `just css-editor-release` of that commit): 79 tests across both projects, 75 passed, 4 skipped, 0 failed.
 
 ## References
 

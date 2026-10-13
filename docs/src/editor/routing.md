@@ -42,11 +42,11 @@ The two row paths are the one exception to the rule below, and deliberately: the
 
 Every write shares a URL with the `GET` that renders its form, so a rejected submission re-renders somewhere that still answers `GET`. A write-only path leaves a reloaded rejection at a bare 405, the same dead end the 403 is rendered as a page to avoid.
 
-`/` is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets. It is therefore absent from `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no beacon can report it.
+`/` is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets.
 
 There is deliberately no resend endpoint: asking again is another `POST /login`, under the same cooldown, which keeps the number of endpoints that can send mail at one. See [Authentication](./authentication.md).
 
-`/projects` lists the published projects a reader may reach — every project for an RDU member, the intersection of assignments and the published set for a depositor. `/projects/{shortcode}` is a **redirect** into the form's first section, so exactly one place decides where a project link lands, and there is no per-project landing page between the list and the form. It is therefore absent from `page_url.rs`'s `KNOWN_ROUTES` for the same reason `/` is: a redirect renders no beacon script, so no beacon can report it. The redirect target is the same section for both audiences — a destination that depended on the role is one more thing to get wrong in a link shared between a depositor and a reviewer.
+`/projects` lists the published projects a reader may reach — every project for an RDU member, the intersection of assignments and the published set for a depositor. `/projects/{shortcode}` is a **redirect** into the form's first section, so exactly one place decides where a project link lands, and there is no per-project landing page between the list and the form. The redirect target is the same section for both audiences — a destination that depended on the role is one more thing to get wrong in a link shared between a depositor and a reviewer.
 
 Two decisions about that scheme:
 

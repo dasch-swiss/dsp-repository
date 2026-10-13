@@ -1128,6 +1128,7 @@ dependencies = [
  "figment",
  "init-tracing-opentelemetry",
  "lettre",
+ "matchit",
  "maud",
  "opentelemetry",
  "opentelemetry-appender-tracing",

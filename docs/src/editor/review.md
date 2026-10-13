@@ -43,7 +43,7 @@ Claiming is a `POST` and not a `GET` because it changes state, and the `Sec-Fetc
 
 ## Ending a review round
 
-Approve, request-changes and reject are three `intent` values on the existing `POST /review/{shortcode}`, and the depositor's own withdrawal is a fourth on `POST /projects/{shortcode}/sections/{section}`. No new routes: a write sharing the `GET` that renders its form is the rule the whole service follows, and `page_url.rs`'s `KNOWN_ROUTES` is therefore untouched.
+Approve, request-changes and reject are three `intent` values on the existing `POST /review/{shortcode}`, and the depositor's own withdrawal is a fourth on `POST /projects/{shortcode}/sections/{section}`. No new routes: a write sharing the `GET` that renders its form is the rule the whole service follows.
 
 All four end the round the same way — the `submissions` row is deleted — so all four go through `ReviewRoundRepository`, whose three writing methods each run in **one** transaction spanning three tables. The delete's own row count is the terminal-state guard, and it has to come before every other statement in the closure; `editor_server::db::review_rounds`' module documentation states the two properties that depend on that and what breaks without them.
 

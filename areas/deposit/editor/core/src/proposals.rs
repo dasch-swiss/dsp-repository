@@ -218,7 +218,7 @@ pub struct EntityProposal {
     /// from there and overwrite whatever they find.
     pub payload: String,
     pub status: ProposalStatus,
-    /// `None` once that account is removed; see
+    /// Kept when that account is removed; see
     /// [`DraftRecord::updated_by`](crate::records::DraftRecord::updated_by).
     pub proposed_by: Option<Uuid>,
     pub created_at: DateTime<Utc>,

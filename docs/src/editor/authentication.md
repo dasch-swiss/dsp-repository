@@ -182,7 +182,7 @@ RDU accounts appear in that list but carry no controls. Configuration is the sou
 Removal is exactly what was asked for — the row and every session belonging to it, through `ON DELETE CASCADE` — but it goes through a confirmation, because two of its consequences are irreversible and neither is visible from the list:
 
 - The **address** is deleted with the row, and it is RDU's only channel to its owner. The confirmation shows it to be copied first.
-- A **submission** the account made stays pending with no author. The schema nulls the author rather than cascading, so the work survives and the review queue's "last editor" reads as unknown rather than dangling — but "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.
+- A **submission** the account made stays pending with no author. The editor's database keeps the author's id, which no account answers for any more, so the work survives and the review queue's "last editor" reads as unknown; but "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.
 
 Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assignment change takes away access and nothing else, RDU still sees the draft, and another assigned depositor can continue it.
 

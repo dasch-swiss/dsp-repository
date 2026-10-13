@@ -4,7 +4,7 @@ Editor-specific guidance; project-wide guidance is in the top-level `CLAUDE.md`,
 
 ## Project Overview
 
-The editor is the surface where a depositing project edits its own metadata and RDU reviews the result. It is server-side rendered with **Maud** (`maud::html!` → `Markup`) and served by **Axum**, exactly like DPE. **Datastar** adds progressive enhancement on top of forms that already work without it — there is no WASM, no hydration and no islands. Persistence is **SQLite** (`editor-server/src/db/`), not the file-backed cache DPE reads.
+The editor is the surface where a depositing project edits its own metadata and RDU reviews the result. It is server-side rendered with **Maud** (`maud::html!` → `Markup`) and served by **Axum**, exactly like DPE. **Datastar** adds progressive enhancement on top of forms that already work without it — there is no WASM, no hydration and no islands. Persistence is **SQLite** (`editor-store`, with identity's own file in `identity-store`), not the file-backed cache DPE reads.
 
 ## Architecture and Structure
 
@@ -22,7 +22,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Four crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-web` (`web/`, view functions), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity's domain — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
+Five crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`), `editor-web` (`web/`, view functions), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity's domain — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`) and `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
 
 ## Code Organization Patterns
 
@@ -48,7 +48,7 @@ Every route that changes state is `POST`. The `Sec-Fetch-Site` CSRF control must
 
 ## Running Tests
 
-- Rust: `cargo test -p identity-core -p editor-core -p editor-web -p editor-server`
+- Rust: `cargo test -p identity-core -p identity-store -p editor-core -p editor-store -p editor-web -p editor-server`
 - E2E, accessibility and the no-JavaScript pass: `just test-e2e-editor` / `just test-a11y-editor` (suite in `areas/deposit/editor/web-e2e-tests/`)
 
 The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptEnabled: false`. Neither pass subsumes the other: the no-JS pass catches a control with no submit button behind it, and the JS pass catches a control that Datastar has made inert.
@@ -75,7 +75,7 @@ The shell header renders `<form method="post" action="/logout">` on every signed
 
 ### A schema change edits `0001` until the first deployment
 
-`server/src/db/migrations/` holds one baseline. Until the first production deployment (DEV-6921), change the schema by editing `0001_initial.sql` in place; from that deployment on, `0001` is frozen and every change is a new `0002_*`, `0003_*`, … migration. Adding a numbered file before then records a history nobody lived through; editing `0001` after then leaves every deployed database on the old shape. See `docs/src/editor/persistence.md#schema`.
+Each store holds one baseline, `areas/deposit/identity/store/src/migrations/` and `areas/deposit/editor/store/src/migrations/`. Until the first production deployment (DEV-6921), change the schema by editing the affected store's `0001_initial.sql` in place; from that deployment on, both `0001` files are frozen and every change is a new `0002_*`, `0003_*`, … migration. Adding a numbered file before then records a history nobody lived through; editing `0001` after then leaves every deployed database on the old shape. See `docs/src/editor/persistence.md#schema`.
 
 ## The architecture docs describe the code as it is
 

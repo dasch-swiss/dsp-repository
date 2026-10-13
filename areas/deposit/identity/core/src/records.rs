@@ -1,7 +1,4 @@
 //! The records identity persists: accounts, sessions and login codes.
-//!
-//! Framework-free: the SQLite column mapping lives in `editor-server`, behind
-//! the ports in [`crate::repository`].
 
 use std::fmt;
 use std::str::FromStr;

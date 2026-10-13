@@ -24,9 +24,6 @@ use identity_core::login::AuthConfig;
 use crate::config::EditorConfig;
 
 impl EditorConfig {
-    /// Not `impl From<&EditorConfig> for AuthConfig`: `AuthConfig` is a public type of
-    /// `identity-core`, so that impl would expose `EditorConfig`, whose `db_source` returns a
-    /// crate-private type, and clippy's `private_interfaces` fails the build.
     pub(crate) fn auth_config(&self) -> AuthConfig {
         AuthConfig {
             cooldown: Duration::from_secs(self.login_cooldown_secs),

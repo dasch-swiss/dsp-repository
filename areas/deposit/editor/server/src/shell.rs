@@ -1,24 +1,15 @@
 //! `AppState`, the page-rendering helpers, and the shell's own routes (`/`, 404).
 
-/// One handle serving both capabilities' repositories, while one database holds both table sets.
-pub(crate) trait Repositories:
-    identity_core::repository::IdentityRepositories + editor_core::repository::EditorRepositories
-{
-}
-
-impl<T> Repositories for T where
-    T: identity_core::repository::IdentityRepositories + editor_core::repository::EditorRepositories
-{
-}
-
 /// Shared state for the handlers. Cheap to clone: everything heavy is behind an `Arc`.
 #[derive(Clone)]
 pub(crate) struct AppState {
     /// Unhashed in dev, content-hashed in release.
     pub(crate) css_href: String,
-    /// Behind the ports rather than [`crate::db::Database`], so a test can make a chosen
-    /// storage call fail; the auth flow's error branches depend on it.
-    pub(crate) db: std::sync::Arc<dyn Repositories>,
+    /// Identity's store, behind its ports rather than [`identity_store::Database`], so a test
+    /// can make a chosen storage call fail; the auth flow's error branches depend on it.
+    pub(crate) identity: std::sync::Arc<dyn identity_core::repository::IdentityRepositories>,
+    /// The editor's store, behind its ports for the same reason.
+    pub(crate) editor: std::sync::Arc<dyn editor_core::repository::EditorRepositories>,
     /// Behind a trait so a test can watch what was sent and make sending fail.
     pub(crate) mailer: std::sync::Arc<dyn identity_core::mail::Mailer>,
     pub(crate) auth: identity_core::login::AuthConfig,

@@ -1,4 +1,4 @@
--- Migration 0001 — the baseline schema.
+-- Migration 0001: the baseline schema of the editor's database, `editor.sqlite`.
 --
 -- Applied inside one BEGIN IMMEDIATE transaction together with the
 -- `user_version` bump, so a crash part-way leaves the database at the previous
@@ -14,98 +14,15 @@
 -- Timestamps are TEXT in rusqlite's chrono format
 -- ("YYYY-MM-DD HH:MM:SS.SSS+00:00"): fixed-width and always UTC, so the
 -- lexicographic ordering SQLite gives TEXT is chronological ordering, and
--- `expires_at > ?` works. Ids are TEXT in hyphenated UUID form rather than
+-- `updated_at > ?` works. Ids are TEXT in hyphenated UUID form rather than
 -- 16-byte blobs, so the database stays legible to an operator reading it by
 -- hand — which is the only way in, the image having no shell.
 --
--- Every foreign key is indexed. Without an index on the child column, SQLite
--- scans the whole child table for each parent row deleted, so `ON DELETE
--- CASCADE` on `users` would degrade with the number of sessions.
-
-CREATE TABLE users (
-    id               TEXT    NOT NULL PRIMARY KEY,
-    -- As entered, plaintext (the app must decrypt to send, so
-    -- a key would sit beside the data).
-    email            TEXT    NOT NULL,
-    -- Lowercased. Carries the uniqueness constraint and every lookup,
-    -- so `A@x.test` cannot shadow `a@x.test`.
-    email_normalized TEXT    NOT NULL UNIQUE,
-    name             TEXT    NOT NULL,
-    role             TEXT    NOT NULL CHECK (role IN ('depositor', 'rdu')),
-    -- Account-level consecutive failures. NIST SP 800-63B-4: a new secret SHALL
-    -- NOT reset the count, so it lives here and not on the code.
-    failed_logins    INTEGER NOT NULL DEFAULT 0 CHECK (failed_logins >= 0),
-    last_code_at     TEXT,
-    created_at       TEXT    NOT NULL,
-    -- When `failed_logins` last went up, so a lockout can expire: the count
-    -- resets only on success (NIST SP 800-63B-4). Cleared with the counter.
-    failed_login_at  TEXT
-) STRICT;
-
--- Project assignments. A child table rather than a JSON
--- column on `users`, so "who holds shortcode X" is answerable — needed when
--- removing a shortcode from someone who has a draft on it.
-CREATE TABLE user_shortcodes (
-    user_id   TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    shortcode TEXT NOT NULL,
-    PRIMARY KEY (user_id, shortcode)
-) STRICT;
-
-CREATE INDEX user_shortcodes_shortcode ON user_shortcodes (shortcode);
-
-CREATE TABLE sessions (
-    -- The opaque token the cookie carries, not a UUID: how it is minted is the
-    -- auth layer's decision.
-    id           TEXT NOT NULL PRIMARY KEY,
-    user_id      TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    created_at   TEXT NOT NULL,
-    -- Advanced on use, for the idle timeout.
-    last_seen_at TEXT NOT NULL,
-    -- Absolute expiry, set at creation and never extended.
-    expires_at   TEXT NOT NULL
-) STRICT;
-
-CREATE INDEX sessions_user_id ON sessions (user_id);
-CREATE INDEX sessions_expires_at ON sessions (expires_at);
-
-CREATE TABLE login_codes (
-    id          TEXT    NOT NULL PRIMARY KEY,
-    user_id     TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    -- Unhashed on purpose: it lives ten minutes, and anyone who can read this
-    -- table already holds `sessions`.
-    code        TEXT    NOT NULL,
-    -- Wrong entries against this code; three invalidates it.
-    attempts    INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
-    created_at  TEXT    NOT NULL,
-    expires_at  TEXT    NOT NULL,
-    -- Set on acceptance. A code authenticates once (NIST §3.1.3.2).
-    consumed_at TEXT,
-    -- The pre-auth binding: only the browser that asked for this code may spend
-    -- it, so a code read out to an attacker is useless. Nullable, not `DEFAULT ''`:
-    -- NULL matches no cookie, an empty string matches an empty one. Unhashed like
-    -- `code`.
-    browser_token TEXT
-) STRICT;
-
-CREATE INDEX login_codes_user_id ON login_codes (user_id);
--- UNIQUE: one token addresses one code. SQLite allows many NULLs in it.
-CREATE UNIQUE INDEX login_codes_browser_token ON login_codes (browser_token);
-
--- One row per message the transport accepted; the daily send caps count these.
--- `login_codes` cannot stand in: signing in deletes codes that were mailed. No
--- primary key, since nothing references a send; the hourly prune removes rows
--- past the caps' window.
-CREATE TABLE mail_sends (
-    -- SET NULL, not CASCADE: deleting an account must not refund the relay
-    -- budget the global cap counts.
-    user_id TEXT REFERENCES users (id) ON DELETE SET NULL,
-    sent_at TEXT NOT NULL
-) STRICT;
-
--- The global cap and the prune.
-CREATE INDEX mail_sends_sent_at ON mail_sends (sent_at);
--- The per-account cap; also the foreign-key index `ON DELETE SET NULL` needs.
-CREATE INDEX mail_sends_user_id_sent_at ON mail_sends (user_id, sent_at);
+-- No foreign keys. The account columns (`updated_by`, `submitted_by`,
+-- `reviewed_by`, `actor`, `approved_by`, `proposed_by`, `decided_by`) hold ids
+-- of accounts that live in identity's database, so they cannot reference them
+-- (areas/deposit/ADR-0004). A removed account leaves its id behind, naming no
+-- account; readers resolve names through identity and render a miss as unknown.
 
 -- One draft per project, not per user: per-user multiple drafts are out of
 -- scope and concurrency is last-write-wins.
@@ -114,9 +31,9 @@ CREATE TABLE drafts (
     -- JSON. The permissive draft representation is Phase 4's; this layer never
     -- interprets the body.
     payload    TEXT NOT NULL,
-    -- SET NULL, not CASCADE: removing an account must not destroy the project's
-    -- work. "Last editor" then reads as unknown rather than dangling.
-    updated_by TEXT REFERENCES users (id) ON DELETE SET NULL,
+    -- The last editor's account id. Removing the account leaves it in place, so
+    -- the project's work survives and "Last editor" reads as unknown.
+    updated_by TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 ) STRICT;
@@ -134,9 +51,9 @@ CREATE TABLE submissions (
     -- row, and Online is derived at startup, at which point the local record is
     -- discarded.
     state         TEXT NOT NULL CHECK (state IN ('submitted', 'in_review', 'approved')),
-    submitted_by  TEXT REFERENCES users (id) ON DELETE SET NULL,
+    submitted_by  TEXT,
     submitted_at  TEXT NOT NULL,
-    reviewed_by   TEXT REFERENCES users (id) ON DELETE SET NULL,
+    reviewed_by   TEXT,
     reviewed_at   TEXT,
     -- Carried back to the depositor when RDU requests changes.
     reviewer_note TEXT,
@@ -201,9 +118,9 @@ CREATE TABLE review_rounds (
     -- `submission_id` is not a foreign key: nothing else can answer which
     -- fields were accepted or what was put in place of the depositor's values.
     review_state  TEXT,
-    -- SET NULL, not CASCADE, for the reason `drafts.updated_by` is: removing an
-    -- account must not destroy the record of what was decided.
-    actor         TEXT REFERENCES users (id) ON DELETE SET NULL,
+    -- An account id, kept when the account is removed, for the reason
+    -- `drafts.updated_by` is: the record of what was decided must survive.
+    actor         TEXT,
     at            TEXT NOT NULL
 ) STRICT;
 
@@ -217,7 +134,7 @@ CREATE TABLE approved_records (
     id           TEXT NOT NULL PRIMARY KEY,
     shortcode    TEXT NOT NULL,
     payload      TEXT NOT NULL,
-    approved_by  TEXT REFERENCES users (id) ON DELETE SET NULL,
+    approved_by  TEXT,
     approved_at  TEXT NOT NULL,
     -- NULL while uncollected. A failed collection leaves it NULL, which is what
     -- makes the next run retry it.
@@ -281,16 +198,16 @@ CREATE TABLE entity_proposals (
     -- Null while undecided. An explicitly-undecided value would be the same
     -- state written twice, which is the argument `review::Decision`'s docs make.
     decision     TEXT CHECK (decision IN ('accept', 'reject')),
-    -- SET NULL, not CASCADE, for the reason `drafts.updated_by` is: removing an
-    -- account must not destroy the project's work.
-    proposed_by  TEXT REFERENCES users (id) ON DELETE SET NULL,
+    -- An account id, kept when the account is removed, for the reason
+    -- `drafts.updated_by` is.
+    proposed_by  TEXT,
     created_at   TEXT NOT NULL,
     updated_at   TEXT NOT NULL,
     -- Who accepted or rejected it, and when. The decision lives here and not in
     -- `submissions.review_state`, which is keyed by project member: a proposal
     -- is not one, and the submission carrying the state is deleted by the
     -- transition that ends the round.
-    decided_by   TEXT REFERENCES users (id) ON DELETE SET NULL,
+    decided_by   TEXT,
     decided_at   TEXT,
     -- Set when the startup reconcile sees the accepted entity published; from
     -- then on the proposal no longer rides along with a new approved record.

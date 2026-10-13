@@ -82,8 +82,6 @@ impl DraftRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
-    use identity_core::records::{Role, User};
-    use identity_core::repository::UserRepository;
     use uuid::Uuid;
 
     use super::super::tests::{count, test_db};
@@ -91,22 +89,6 @@ mod tests {
 
     fn at(hour: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 8, 21, hour, 0, 0).unwrap()
-    }
-
-    async fn a_user(db: &Database) -> Uuid {
-        let user = User {
-            id: Uuid::new_v4(),
-            email: "a@x.test".to_string(),
-            name: "A".to_string(),
-            role: Role::Depositor,
-            shortcodes: vec!["0801".to_string()],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: at(9),
-        };
-        UserRepository::create(db, &user).await.unwrap();
-        user.id
     }
 
     fn draft(shortcode: &str, payload: &str, author: Option<Uuid>, updated: DateTime<Utc>) -> DraftRecord {
@@ -122,7 +104,7 @@ mod tests {
     #[tokio::test]
     async fn test_upsert_then_find_round_trips_every_field() {
         let db = test_db("drafts-round-trip").await;
-        let author = a_user(&db).await;
+        let author = Uuid::new_v4();
         let draft = draft("0801", r#"{"name":"work in progress"}"#, Some(author), at(11));
         db.upsert(&draft).await.unwrap();
 
@@ -133,7 +115,7 @@ mod tests {
     async fn test_upsert_replaces_the_payload_and_keeps_the_original_created_at() {
         // One draft per project, last write wins.
         let db = test_db("drafts-upsert").await;
-        let author = a_user(&db).await;
+        let author = Uuid::new_v4();
         db.upsert(&draft("0801", "first", Some(author), at(11))).await.unwrap();
 
         let mut later = draft("0801", "second", Some(author), at(13));
@@ -187,22 +169,6 @@ mod tests {
 
         assert!(DraftRepository::delete(&db, "0801").await.unwrap());
         assert!(!DraftRepository::delete(&db, "0801").await.unwrap());
-        assert_eq!(count(&db, "drafts").await, 0);
-    }
-
-    #[tokio::test]
-    async fn test_a_draft_by_an_unknown_user_is_refused() {
-        // The foreign key. A draft attributed to a user id that never existed
-        // would show an author the depositor list cannot explain.
-        let db = test_db("drafts-orphan").await;
-        let error = db
-            .upsert(&draft("0801", "a", Some(Uuid::new_v4()), at(11)))
-            .await
-            .expect_err("a draft for an unknown user must be refused");
-        assert!(
-            matches!(error, editor_core::repository::RepositoryError::Backend(_)),
-            "a foreign-key failure must not be reported as a conflict: {error}"
-        );
         assert_eq!(count(&db, "drafts").await, 0);
     }
 }

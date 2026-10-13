@@ -8,7 +8,7 @@ Guidance for the Deposit Area's identity capability; the editor's is in `areas/d
 
 A new account, session, login-code or mail type goes in `identity-core`, never in `editor-core`. When an editor crate needs a fact about an account (a display name, a role), `editor-server` hands it over as a plain value — an id, a `&str`, a small struct of strings, as `editor-web/src/pages/depositors.rs` takes — so the editor crates never name an `identity_core` type.
 
-The login and depositor handlers, the `Authenticated`/`Rdu` extractors, the `Set-Cookie` glue, the SQLite implementation and the mail transports are still in `editor-server`. `docs/src/editor/architecture.md` ("Divergence from the target architecture") lists what is left to move, and `docs/src/editor/authentication.md` describes the flow and the control behind each step.
+`identity-store` (`store/`) is identity's SQLite store, the file `identity.sqlite`, implementing the four repository ports, and holds the mail transports (`SmtpMailer`, `ConsoleMailer`, `mail::mailer`). The login and depositor handlers, the `Authenticated`/`Rdu` extractors and the `Set-Cookie` glue are still in `editor-server`. `docs/src/editor/architecture.md` ("Divergence from the target architecture") lists what is left to move, and `docs/src/editor/authentication.md` describes the flow and the control behind each step.
 
 ## Common Pitfalls
 

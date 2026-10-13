@@ -1,0 +1,27 @@
+[package]
+name = "editor-store"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+# Plain-value seed helpers, row readers and the fault-injecting fake, for the tests of the
+# crates that hold this store.
+test-support = []
+
+[dependencies]
+# The SQLite implementation of `editor-core`'s repository ports, over `editor.sqlite`.
+# `rusqlite` is synchronous and its `Connection` is `!Sync`; `deadpool-sqlite` keeps each
+# connection on a thread of its own so every call goes through `interact()` and none can be
+# held across an `.await`.
+editor-core = { path = "../core" }
+async-trait.workspace = true
+chrono.workspace = true
+deadpool-sqlite.workspace = true
+rusqlite.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -13,9 +13,9 @@
 //! product and the configuration disagreeing with nothing to say so. Startup already warns about
 //! an `rdu` account the configuration does not list; that stays the channel for it.
 //!
-//! **What removal leaves behind.** The schema nulls the author of a draft, a submission and an
-//! approved record rather than cascading, so a depositor's work survives them and the review
-//! queue's "last editor" reads as unknown rather than dangling. Two consequences are not covered
+//! **What removal leaves behind.** The editor's rows live in a database of their own and keep the
+//! author's id, so a depositor's work survives them and the review queue's "last editor", finding
+//! no account behind the id, reads as unknown. Two consequences are not covered
 //! by that and are not reversible, so the confirmation page names both before the fact: the
 //! address is deleted with the row, and it is RDU's only channel to its owner; and a submission
 //! they made stays pending with no author, so returning it to the depositor has no recipient — it
@@ -131,7 +131,7 @@ fn parse_shortcodes(field: &str) -> Result<Vec<String>, String> {
 
 /// `GET /depositors` — every account.
 pub(crate) async fn list(State(state): State<AppState>, Rdu(viewer): Rdu) -> Response {
-    let users = match UserRepository::list(&*state.db).await {
+    let users = match UserRepository::list(&*state.identity).await {
         Ok(users) => users,
         Err(error) => return storage_error(&state, &viewer, "list the accounts", &error),
     };
@@ -208,7 +208,7 @@ pub(crate) async fn create(
         created_at: Utc::now(),
     };
 
-    match UserRepository::create(&*state.db, &user).await {
+    match UserRepository::create(&*state.identity, &user).await {
         Ok(()) => {
             span.record("auth.subject", tracing::field::display(user.id));
             span.record("auth.outcome", "created");
@@ -301,7 +301,7 @@ pub(crate) async fn update(
         ..target
     };
 
-    match UserRepository::update(&*state.db, &updated).await {
+    match UserRepository::update(&*state.identity, &updated).await {
         Ok(()) => {
             span.record("auth.outcome", "updated");
             tracing::info!(shortcodes = updated.shortcodes.len(), "updated a depositor account");
@@ -339,7 +339,7 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
     // A failed read here is not fatal: it would leave the page unable to name
     // what is in flight, and a confirmation that silently claims there is
     // nothing is worse than one that says it could not tell.
-    let drafts = match DraftRepository::list(&*state.db).await {
+    let drafts = match DraftRepository::list(&*state.editor).await {
         Ok(drafts) => drafts
             .into_iter()
             .filter(|draft| draft.updated_by == Some(id))
@@ -347,7 +347,7 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
             .collect::<Vec<_>>(),
         Err(error) => return storage_error(&state, &viewer, "read this account's drafts", &error),
     };
-    let submissions = match SubmissionRepository::list(&*state.db).await {
+    let submissions = match SubmissionRepository::list(&*state.editor).await {
         Ok(submissions) => submissions
             .into_iter()
             // `list` returns every row regardless of state, so the state filter
@@ -403,7 +403,7 @@ pub(crate) async fn remove(State(state): State<AppState>, Rdu(viewer): Rdu, Path
     };
     span.record("auth.subject", tracing::field::display(target.id));
 
-    match UserRepository::delete(&*state.db, target.id).await {
+    match UserRepository::delete(&*state.identity, target.id).await {
         Ok(()) => {
             // Sessions, login codes and shortcode assignments go with it through
             // `ON DELETE CASCADE`, which is the "and every session belonging to it" half.
@@ -437,7 +437,7 @@ async fn manageable(state: &AppState, viewer: &User, id: &str) -> Result<User, R
     let Ok(id) = Uuid::parse_str(id) else {
         return Err(crate::shell::not_found(State(state.clone())).await);
     };
-    match UserRepository::find_by_id(&*state.db, id).await {
+    match UserRepository::find_by_id(&*state.identity, id).await {
         Ok(Some(user)) if user.is_rdu() => Err(crate::shell::forbidden(state, viewer, RDU_IMMUTABLE)),
         Ok(Some(user)) => Ok(user),
         // Not a 403: a reader who reached this page followed a link from the
@@ -587,7 +587,6 @@ mod tests {
 
 #[cfg(test)]
 mod route_tests {
-    use std::sync::Arc;
     use std::time::Duration;
 
     use axum::body::Body;
@@ -600,8 +599,8 @@ mod route_tests {
 
     use super::*;
     use crate::test_support::{
-        a_session, a_user, body_string, capture_logs, count_rows, get, location, open_test_db, post, state_over,
-        test_app, test_state, urlencode, RecordingMailer,
+        a_session, a_user, body_string, capture_logs, get, location, open_test_db, post, state_over, test_app,
+        test_state, urlencode, RecordingMailer,
     };
 
     const DEPOSITOR_EMAIL: &str = "a.depositor@example.test";
@@ -679,10 +678,10 @@ mod route_tests {
         }
 
         assert!(
-            UserRepository::find_by_id(&*state.db, target.id).await.unwrap().is_some(),
+            UserRepository::find_by_id(&*state.identity, target.id).await.unwrap().is_some(),
             "and nothing a refused request asked for may have happened"
         );
-        assert_eq!(UserRepository::list(&*state.db).await.unwrap().len(), 2);
+        assert_eq!(UserRepository::list(&*state.identity).await.unwrap().len(), 2);
         let _ = intruder;
     }
 
@@ -715,7 +714,7 @@ mod route_tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/depositors"));
 
-        let created = UserRepository::find_by_email(&*state.db, DEPOSITOR_EMAIL)
+        let created = UserRepository::find_by_email(&*state.identity, DEPOSITOR_EMAIL)
             .await
             .unwrap()
             .expect("the account should exist");
@@ -752,7 +751,7 @@ mod route_tests {
         assert!(body.contains(r#"value="Someone Else""#), "{body}");
 
         assert_eq!(
-            UserRepository::list(&*state.db).await.unwrap().len(),
+            UserRepository::list(&*state.identity).await.unwrap().len(),
             2,
             "the RDU account and the one depositor, and no second one"
         );
@@ -779,7 +778,11 @@ mod route_tests {
             let rendered = body_string(response).await;
             assert!(rendered.contains(expected), "expected {expected:?} in {rendered}");
         }
-        assert_eq!(UserRepository::list(&*state.db).await.unwrap().len(), 1, "only the RDU account");
+        assert_eq!(
+            UserRepository::list(&*state.identity).await.unwrap().len(),
+            1,
+            "only the RDU account"
+        );
     }
 
     // ---- Update -------------------------------------------------------------
@@ -793,8 +796,10 @@ mod route_tests {
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801", "080C"]).await;
         let issued = Utc::now() - TimeDelta::hours(3);
-        UserRepository::record_code_issued(&*state.db, target.id, issued).await.unwrap();
-        UserRepository::record_failed_login(&*state.db, target.id, Utc::now(), Utc::now() - TimeDelta::hours(1))
+        UserRepository::record_code_issued(&*state.identity, target.id, issued)
+            .await
+            .unwrap();
+        UserRepository::record_failed_login(&*state.identity, target.id, Utc::now(), Utc::now() - TimeDelta::hours(1))
             .await
             .unwrap();
         let app = test_app(&state);
@@ -812,7 +817,7 @@ mod route_tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
-        let updated = UserRepository::find_by_id(&*state.db, target.id).await.unwrap().unwrap();
+        let updated = UserRepository::find_by_id(&*state.identity, target.id).await.unwrap().unwrap();
         assert_eq!(updated.name, "A. Depositor");
         assert_eq!(updated.email, "renamed@example.test");
         assert_eq!(updated.shortcodes, vec!["0812".to_string()]);
@@ -853,10 +858,14 @@ mod route_tests {
         assert!(body.contains("already uses that email address"), "{body}");
 
         // And neither account moved.
-        let unchanged = UserRepository::find_by_id(&*state.db, second.id).await.unwrap().unwrap();
+        let unchanged = UserRepository::find_by_id(&*state.identity, second.id).await.unwrap().unwrap();
         assert_eq!(unchanged.email, "second@example.test");
         assert_eq!(
-            UserRepository::find_by_id(&*state.db, first.id).await.unwrap().unwrap().email,
+            UserRepository::find_by_id(&*state.identity, first.id)
+                .await
+                .unwrap()
+                .unwrap()
+                .email,
             "first@example.test"
         );
     }
@@ -870,7 +879,7 @@ mod route_tests {
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
         DraftRepository::upsert(
-            &*state.db,
+            &*state.editor,
             &DraftRecord {
                 shortcode: "0801".to_string(),
                 payload: "{}".to_string(),
@@ -894,7 +903,7 @@ mod route_tests {
             .await
             .unwrap();
 
-        let draft = DraftRepository::find(&*state.db, "0801")
+        let draft = DraftRepository::find(&*state.editor, "0801")
             .await
             .unwrap()
             .expect("the draft survives");
@@ -907,8 +916,10 @@ mod route_tests {
     async fn test_removal_deletes_the_account_and_every_session_belonging_to_it() {
         // The sessions half is what stops a removed depositor going on using the tab they
         // already had open.
-        let db = Arc::new(open_test_db("dep-remove").await);
-        let state = state_over(db.clone(), RecordingMailer::new(), |auth| auth.cooldown = Duration::ZERO);
+        let db = open_test_db("dep-remove").await;
+        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         let (_, rdu_session) = rdu(&state).await;
         let (target, their_session) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
         let second_session = a_session(&state, target.id).await;
@@ -922,13 +933,13 @@ mod route_tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/depositors"));
 
-        assert!(UserRepository::find_by_id(&*state.db, target.id).await.unwrap().is_none());
+        assert!(UserRepository::find_by_id(&*state.identity, target.id).await.unwrap().is_none());
         for session in [&their_session, &second_session] {
-            assert_eq!(SessionRepository::find(&*state.db, session).await.unwrap(), None);
+            assert_eq!(SessionRepository::find(&*state.identity, session).await.unwrap(), None);
         }
         // And the assignments went with it, so nothing is left pointing at a
         // row that is gone.
-        assert_eq!(count_rows(&db, "user_shortcodes").await, 0);
+        assert_eq!(db.identity.count_rows("user_shortcodes").await, 0);
 
         // The session they were holding no longer opens anything.
         let after = app
@@ -942,14 +953,14 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_removal_keeps_the_work_and_makes_its_author_unknown() {
-        // The schema nulls the author rather than cascading, so the project's
-        // work is not destroyed with the account and the review queue's "last
-        // editor" reads as unknown rather than dangling.
+        // The editor's rows keep the author's id: the account is gone from
+        // identity's store, so the id names nobody and the review queue's "last
+        // editor" reads as unknown, while the project's work survives.
         let (state, _) = test_state("dep-remove-work").await;
         let (_, rdu_session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
         DraftRepository::upsert(
-            &*state.db,
+            &*state.editor,
             &DraftRecord {
                 shortcode: "0801".to_string(),
                 payload: "{}".to_string(),
@@ -961,7 +972,7 @@ mod route_tests {
         .await
         .unwrap();
         SubmissionRepository::create(
-            &*state.db,
+            &*state.editor,
             &Submission {
                 id: Uuid::new_v4(),
                 shortcode: "0812".to_string(),
@@ -984,14 +995,19 @@ mod route_tests {
             .await
             .unwrap();
 
-        let draft = DraftRepository::find(&*state.db, "0801")
+        let draft = DraftRepository::find(&*state.editor, "0801")
             .await
             .unwrap()
             .expect("the draft survives");
-        assert_eq!(draft.updated_by, None);
-        let submissions = SubmissionRepository::list(&*state.db).await.unwrap();
+        assert_eq!(draft.updated_by, Some(target.id));
+        let submissions = SubmissionRepository::list(&*state.editor).await.unwrap();
         assert_eq!(submissions.len(), 1, "the submission survives and stays pending");
-        assert_eq!(submissions[0].submitted_by, None);
+        assert_eq!(submissions[0].submitted_by, Some(target.id));
+        assert_eq!(
+            UserRepository::find_by_id(&*state.identity, target.id).await.unwrap(),
+            None,
+            "the id names no account any more"
+        );
     }
 
     #[tokio::test]
@@ -1003,7 +1019,7 @@ mod route_tests {
         let (_, rdu_session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
         SubmissionRepository::create(
-            &*state.db,
+            &*state.editor,
             &Submission {
                 id: Uuid::new_v4(),
                 shortcode: "0801".to_string(),
@@ -1033,7 +1049,7 @@ mod route_tests {
         assert!(body.contains("no longer be returned"), "{body}");
 
         assert!(
-            UserRepository::find_by_id(&*state.db, target.id).await.unwrap().is_some(),
+            UserRepository::find_by_id(&*state.identity, target.id).await.unwrap().is_some(),
             "the confirmation must change nothing"
         );
     }
@@ -1065,8 +1081,8 @@ mod route_tests {
             }
         }
 
-        assert_eq!(UserRepository::list(&*state.db).await.unwrap().len(), 2);
-        let unchanged = UserRepository::find_by_id(&*state.db, admin.id).await.unwrap().unwrap();
+        assert_eq!(UserRepository::list(&*state.identity).await.unwrap().len(), 2);
+        let unchanged = UserRepository::find_by_id(&*state.identity, admin.id).await.unwrap().unwrap();
         assert_eq!(unchanged.email, "rdu@dasch.swiss");
     }
 
@@ -1100,7 +1116,7 @@ mod route_tests {
         let before = body_string(app.clone().oneshot(as_session(get("/depositors"), &session)).await.unwrap()).await;
         assert!(before.contains("never"), "{before}");
 
-        UserRepository::record_code_issued(&*state.db, target.id, Utc::now())
+        UserRepository::record_code_issued(&*state.identity, target.id, Utc::now())
             .await
             .unwrap();
         let after = body_string(app.clone().oneshot(as_session(get("/depositors"), &session)).await.unwrap()).await;
@@ -1174,7 +1190,7 @@ mod route_tests {
             .unwrap();
         assert_eq!(gone.status(), StatusCode::METHOD_NOT_ALLOWED);
 
-        let after = UserRepository::find_by_id(&*state.db, target.id).await.unwrap().unwrap();
+        let after = UserRepository::find_by_id(&*state.identity, target.id).await.unwrap().unwrap();
         assert_eq!(after.name, "A Depositor", "no GET on this surface may change anything");
         assert_eq!(after.shortcodes, vec!["0801".to_string()]);
     }
@@ -1204,7 +1220,7 @@ mod route_tests {
             ))
             .await
             .unwrap();
-        let created = UserRepository::find_by_email(&*state.db, DEPOSITOR_EMAIL)
+        let created = UserRepository::find_by_email(&*state.identity, DEPOSITOR_EMAIL)
             .await
             .unwrap()
             .unwrap();

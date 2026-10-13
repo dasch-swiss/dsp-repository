@@ -79,7 +79,7 @@ async fn context<'a>(
     }
 
     let key = normalize_shortcode(shortcode);
-    let proposals = match EntityProposalRepository::list_for_shortcode(&*state.db, &key).await {
+    let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(proposals) => proposals,
         Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
     };
@@ -224,7 +224,7 @@ pub(crate) async fn act(
     // One `Utc::now()`, reused as the marker `saved` redirects with: the marker must carry the
     // stamp that landed, and a second call would not match it.
     let now = Utc::now();
-    match EntityProposalRepository::update_payload(&*state.db, context.proposal.id, &payload, now).await {
+    match EntityProposalRepository::update_payload(&*state.editor, context.proposal.id, &payload, now).await {
         Ok(()) => {
             span.record("form.outcome", "saved");
             tracing::info!("saved an entity proposal");
@@ -330,7 +330,7 @@ async fn row_action(
     apply_posted(&mut context.draft, context.proposal.kind, &body);
     let payload = serde_json::to_string(&context.draft).unwrap_or_default();
     if let Err(error) =
-        EntityProposalRepository::update_payload(&*state.db, context.proposal.id, &payload, Utc::now()).await
+        EntityProposalRepository::update_payload(&*state.editor, context.proposal.id, &payload, Utc::now()).await
     {
         tracing::error!(error = %error, "could not save an entity proposal row action");
         return refused(state, user, shortcode, &context, headers, SAVE_REFUSED_STORAGE);
@@ -369,7 +369,7 @@ async fn discard(
         return confirming(state, user, shortcode, context, headers);
     }
 
-    match EntityProposalRepository::withdraw(&*state.db, context.proposal.id, Utc::now()).await {
+    match EntityProposalRepository::withdraw(&*state.editor, context.proposal.id, Utc::now()).await {
         Ok(()) => {
             tracing::info!(proposal.entity_id = %context.proposal.entity_id, "withdrew an entity proposal");
             // Re-resolve so the rendering reflects the withdrawal it just
@@ -685,7 +685,7 @@ mod tests {
     /// Every proposal stored for `shortcode`, for asserting on what a save or discard wrote —
     /// mirrors `sections.rs::tests::proposals_for`.
     async fn proposals_for(state: &AppState, shortcode: &str) -> Vec<EntityProposal> {
-        EntityProposalRepository::list_for_shortcode(&*state.db, shortcode)
+        EntityProposalRepository::list_for_shortcode(&*state.editor, shortcode)
             .await
             .expect("proposals should read")
     }
@@ -822,7 +822,7 @@ mod tests {
 
         let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
         EntityProposalRepository::update_payload(
-            &*state.db,
+            &*state.editor,
             proposal.id,
             r#"{"somethingTheFormDoesNotRender": 42}"#,
             Utc::now(),
@@ -869,7 +869,7 @@ mod tests {
 
         let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
         EntityProposalRepository::update_payload(
-            &*state.db,
+            &*state.editor,
             proposal.id,
             r#"{"name":"Test Org","url":"https://example.org/","address":{"street":"Bahnhofstrasse 1",
                "postalCode":"3000","locality":"Bern","country":"Switzerland"}}"#,
@@ -925,7 +925,7 @@ mod tests {
         // what this test exercises rather than an id this form never had to remove.
         let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
         EntityProposalRepository::update_payload(
-            &*state.db,
+            &*state.editor,
             proposal.id,
             r#"{"id":"person-417","givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#,
             Utc::now(),

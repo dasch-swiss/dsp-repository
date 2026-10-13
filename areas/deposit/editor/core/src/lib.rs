@@ -2,8 +2,8 @@
 //!
 //! Framework-free types shared by `editor-web` and `editor-server`, with no
 //! Axum, Maud or database dependency. The SQLite implementations of the
-//! [`repository`] ports live in `editor-server`, which keeps the
-//! `server → web → core` direction intact and the driver out of the domain.
+//! [`repository`] ports live in `editor-store`, which keeps the driver out of
+//! the domain.
 
 pub mod agents;
 pub mod canonical;

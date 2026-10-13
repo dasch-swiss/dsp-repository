@@ -40,7 +40,7 @@ impl SessionRepository for Database {
             )
         })
         .await
-        .map_err(|e| e.into_identity_error(ENTITY))?;
+        .map_err(|e| e.into_repository_error(ENTITY))?;
         Ok(())
     }
 

@@ -12,6 +12,8 @@ ureq = "3"
 urlencoding = "2.1"
 editor-core = { path = "../core" }
 identity-core = { path = "../../identity/core" }
+identity-store = { path = "../../identity/store" }
+editor-store = { path = "../store" }
 editor-web = { path = "../web" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
@@ -27,27 +29,7 @@ serde.workspace = true
 # an opaque `String` because that layer never interprets it, so the handler that
 # does — the form's save path — is where it is parsed and written.
 serde_json.workspace = true
-# Persistence. `rusqlite` is synchronous and its `Connection` is `!Sync`;
-# `deadpool-sqlite` keeps each connection on a thread of its own so every
-# call goes through `interact()` and none can be held across an `.await`.
-rusqlite.workspace = true
-deadpool-sqlite.workspace = true
 async-trait.workspace = true
-# Mail. `rustls` rather than the default `native-tls`: the release
-# binary is static musl, and `native-tls` would need an OpenSSL to link against.
-# `ring` and `webpki-roots` are chosen explicitly — lettre resolves its own
-# crypto provider from its own features, so it never depends on which provider
-# the rest of the graph happens to have enabled.
-lettre = { version = "0.11.23", default-features = false, features = [
-    "builder",
-    "hostname",
-    "pool",
-    "smtp-transport",
-    "tokio1",
-    "tokio1-rustls",
-    "ring",
-    "webpki-roots",
-] }
 chrono.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
@@ -70,3 +52,7 @@ pyroscope.workspace = true
 figment = { version = "0.10", features = ["env", "toml", "test"] }
 tower = { workspace = true, features = ["util"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+# The stores' seed helpers, row readers and fault-injecting fakes.
+identity-store = { path = "../../identity/store", features = ["test-support"] }
+editor-store = { path = "../store", features = ["test-support"] }
+insta.workspace = true

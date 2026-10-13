@@ -233,30 +233,12 @@ impl EntityProposalRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, Utc};
-    use identity_core::records::{Role, User};
-    use identity_core::repository::UserRepository;
 
     use super::super::tests::test_db;
     use super::*;
 
     fn at(hour: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 9, 10, hour, 0, 0).unwrap()
-    }
-
-    async fn a_user(db: &Database, email: &str) -> Uuid {
-        let user = User {
-            id: Uuid::new_v4(),
-            email: email.to_string(),
-            name: "A".to_string(),
-            role: Role::Depositor,
-            shortcodes: vec![],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: at(9),
-        };
-        UserRepository::create(db, &user).await.unwrap();
-        user.id
     }
 
     fn a_proposal(
@@ -468,8 +450,8 @@ mod tests {
     #[tokio::test]
     async fn test_every_column_round_trips_through_find_decision_present() {
         let db = test_db("entity-proposals-round-trip-decision-some").await;
-        let author = a_user(&db, "a@x.test").await;
-        let reviewer = a_user(&db, "rdu@x.test").await;
+        let author = Uuid::new_v4();
+        let reviewer = Uuid::new_v4();
         let proposal = EntityProposal {
             id: Uuid::new_v4(),
             shortcode: "0801".to_string(),
@@ -592,7 +574,7 @@ mod tests {
     #[tokio::test]
     async fn test_set_decision_records_who_decided_what_and_leaves_status_alone() {
         let db = test_db("entity-proposals-set-decision").await;
-        let reviewer = a_user(&db, "rdu@x.test").await;
+        let reviewer = Uuid::new_v4();
         let proposal = a_proposal("0801", "person-417", ProposalKind::Person, ProposalOperation::New);
         EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
 

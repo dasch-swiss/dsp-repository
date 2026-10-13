@@ -253,30 +253,12 @@ mod tests {
     // `db.list_for_shortcode(..)` call below ambiguous. Its methods are called through the fully
     // qualified `entity_proposals()` helper below instead.
     use editor_core::repository::{ApprovedRecordRepository, DraftRepository, SubmissionRepository};
-    use identity_core::records::{Role, User};
-    use identity_core::repository::UserRepository;
 
     use super::super::tests::{count, test_db};
     use super::*;
 
     fn at(hour: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 9, 8, hour, 0, 0).unwrap()
-    }
-
-    async fn a_user(db: &Database, email: &str, role: Role) -> Uuid {
-        let user = User {
-            id: Uuid::new_v4(),
-            email: email.to_string(),
-            name: "A".to_string(),
-            role,
-            shortcodes: vec![],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: at(9),
-        };
-        UserRepository::create(db, &user).await.unwrap();
-        user.id
     }
 
     /// A pending submission on `0801`, carrying a review state so the snapshot
@@ -373,7 +355,7 @@ mod tests {
         // Three writes in one transaction: the submission goes, the
         // record it becomes appears, and the round says who approved what.
         let db = test_db("rounds-approve").await;
-        let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+        let reviewer = Uuid::new_v4();
         let submission = a_submission(&db, None).await;
         let record = a_record(&submission, Some(reviewer));
         let round = a_round(&submission, ReviewOutcome::Approved, Some(reviewer));
@@ -407,7 +389,7 @@ mod tests {
         ] {
             let label = state.map_or("none", PullRequestState::as_str);
             let db = test_db(&format!("rounds-supersede-{label}")).await;
-            let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+            let reviewer = Uuid::new_v4();
             let submission = a_submission(&db, None).await;
 
             let mut earlier = a_record(&submission, Some(reviewer));
@@ -526,8 +508,8 @@ mod tests {
         // resumes from what they sent rather than from whatever the draft held
         // when they sent it; what RDU decided per field rides on the round.
         let db = test_db("rounds-request-changes").await;
-        let author = a_user(&db, "a@x.test", Role::Depositor).await;
-        let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+        let author = Uuid::new_v4();
+        let reviewer = Uuid::new_v4();
         let submission = a_submission(&db, Some(author)).await;
         let proposal =
             a_submitted_proposal(&db, "0801", "person-501", Some(ProposalDecision::Reject), Some(reviewer)).await;
@@ -581,7 +563,7 @@ mod tests {
     #[tokio::test]
     async fn test_a_mixed_case_shortcode_still_moves_its_proposals() {
         let db = test_db("rounds-mixed-case-shortcode").await;
-        let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+        let reviewer = Uuid::new_v4();
 
         let submission = Submission {
             id: Uuid::new_v4(),
@@ -799,19 +781,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_removing_the_actor_leaves_the_round_with_no_actor() {
-        // ON DELETE SET NULL, as everywhere else: removing an account must not
-        // destroy the record of what was decided.
-        let db = test_db("rounds-actor-removed").await;
-        let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+    async fn test_the_actor_id_is_kept_whether_or_not_the_account_exists() {
+        // No foreign key, as everywhere in this store: the record of what was
+        // decided keeps the id of whoever decided it, removed or not.
+        let db = test_db("rounds-actor-kept").await;
+        let reviewer = Uuid::new_v4();
         let submission = a_submission(&db, None).await;
         let round = a_round(&submission, ReviewOutcome::Rejected, Some(reviewer));
         ReviewRoundRepository::discard(&db, submission.id, &round).await.unwrap();
 
-        UserRepository::delete(&db, reviewer).await.unwrap();
-
         let stored = db.list_for_shortcode("0801").await.unwrap();
-        assert_eq!(stored, vec![ReviewRound { actor: None, ..round }]);
+        assert_eq!(stored, vec![ReviewRound { actor: Some(reviewer), ..round }]);
     }
 
     #[tokio::test]

@@ -1,6 +1,6 @@
 # Identity
 
-The Deposit Area's identity capability: who has an account, how they sign in, and which projects each account may reach. Today one crate, `identity-core` (`core/`): the account, session and login-code records, the login and session rules, and the repository traits their storage implements. The login and depositor pages, their handlers, the SQLite implementation and the mail transports are still in the editor's crates; `docs/src/editor/architecture.md` lists what is left to move. The target shape is `areas/deposit/ADR-0004`.
+The Deposit Area's identity capability: who has an account, how they sign in, and which projects each account may reach. Today two crates: `identity-core` (`core/`), the account, session and login-code records, the login and session rules, and the repository traits their storage implements; and `identity-store` (`store/`), the SQLite implementation in `identity.sqlite` and the mail transports. The login and depositor pages and their handlers are still in the editor's crates; `docs/src/editor/architecture.md` lists what is left to move. The target shape is `areas/deposit/ADR-0004`.
 
 ## Language
 

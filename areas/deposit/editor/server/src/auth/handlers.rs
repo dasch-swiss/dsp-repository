@@ -100,7 +100,7 @@ fn mail_body(code: &str) -> String {
 /// every step it crosses.
 pub(crate) async fn login_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
-    if session::current(&*state.db, &state.auth, &cookie::values(&headers), Utc::now())
+    if session::current(&*state.identity, &state.auth, &cookie::values(&headers), Utc::now())
         .await
         .is_some()
     {
@@ -178,7 +178,7 @@ async fn revealed_code(state: &AppState, token: &str, now: DateTime<Utc>) -> Opt
     if !state.reveal_login_code {
         return None;
     }
-    match LoginCodeRepository::find_by_browser_token(&*state.db, token).await {
+    match LoginCodeRepository::find_by_browser_token(&*state.identity, token).await {
         Ok(Some(code)) if code.consumed_at.is_none() && now < code.expires_at => Some(code.code),
         Ok(_) => None,
         Err(error) => {
@@ -191,7 +191,7 @@ async fn revealed_code(state: &AppState, token: &str, now: DateTime<Utc>) -> Opt
 /// `GET /login/code` — the code form.
 pub(crate) async fn code_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
-    if session::current(&*state.db, &state.auth, &cookie::values(&headers), Utc::now())
+    if session::current(&*state.identity, &state.auth, &cookie::values(&headers), Utc::now())
         .await
         .is_some()
     {
@@ -275,7 +275,7 @@ pub(crate) async fn code_submit(
 )]
 pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Response {
     let span = tracing::Span::current();
-    match session::end(&*state.db, &cookie::values(&headers)).await {
+    match session::end(&*state.identity, &cookie::values(&headers)).await {
         session::Ended::Deleted(user_id) => {
             span.record("auth.subject", tracing::field::display(user_id));
             span.record("auth.outcome", "signed_out");
@@ -332,7 +332,7 @@ async fn issue(state: &AppState, email: &str, presented: Option<&str>, now: Date
     // their address does not strand the code they are holding. `presented` is
     // the authorisation: only a browser that already has the token can move it.
     if let Some(presented) = presented {
-        match LoginCodeRepository::rebind_browser_token(&*state.db, presented, &token).await {
+        match LoginCodeRepository::rebind_browser_token(&*state.identity, presented, &token).await {
             Ok(moved) => {
                 tracing::Span::current().record("auth.rebind", if moved { "moved" } else { "nothing_to_move" });
             }
@@ -361,7 +361,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     let span = tracing::Span::current();
     let outcome = |value: &'static str| span.record("auth.outcome", value);
 
-    let user = match UserRepository::find_by_email(&*state.db, email).await {
+    let user = match UserRepository::find_by_email(&*state.identity, email).await {
         Ok(Some(user)) => user,
         Ok(None) => {
             // The unknown-address branch answers identically: nothing stored,
@@ -396,7 +396,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
 
     let window = now - delta(SEND_WINDOW);
 
-    match MailSendRepository::count_since(&*state.db, window).await {
+    match MailSendRepository::count_since(&*state.identity, window).await {
         Ok(sent) if sent >= state.auth.daily_cap => {
             // Alarmed, not silent. This is either an attack looping resend
             // across the known addresses or a genuine surge, and both need
@@ -424,7 +424,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     // rather than instead of it. The cooldown is per address, so without this one
     // attacker with one known address exhausts the shared budget and nobody can
     // sign in.
-    match MailSendRepository::count_for_user_since(&*state.db, user.id, window).await {
+    match MailSendRepository::count_for_user_since(&*state.identity, user.id, window).await {
         Ok(sent) if sent >= state.auth.account_daily_cap => {
             // `warn`, where the global cap is `error`: this is one account being
             // driven, which is the early warning, not the outage. The account id
@@ -459,7 +459,9 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
         browser_token: Some(token.to_string()),
     };
 
-    match LoginCodeRepository::create_unless_issued_since(&*state.db, &code, now - delta(state.auth.cooldown)).await {
+    match LoginCodeRepository::create_unless_issued_since(&*state.identity, &code, now - delta(state.auth.cooldown))
+        .await
+    {
         Ok(Issued::New) => {}
         Ok(Issued::Cooled) => {
             outcome("cooldown");
@@ -516,7 +518,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
                 // Roll the code back, and the cooldown with it. Leaving it would
                 // make the user wait out a cooldown for a code they never
                 // received, with the cooldown refusing to send another.
-                if let Err(error) = LoginCodeRepository::delete(&*state.db, code.id).await {
+                if let Err(error) = LoginCodeRepository::delete(&*state.identity, code.id).await {
                     tracing::error!(error = %error, "could not roll back a login code whose delivery failed");
                 }
                 outcome("send_failed");
@@ -534,7 +536,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
 /// a user a code they are about to receive. The cost is a cap that under-counts
 /// by one until the window rolls.
 async fn record_send(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
-    if let Err(error) = MailSendRepository::record(&*state.db, user_id, now).await {
+    if let Err(error) = MailSendRepository::record(&*state.identity, user_id, now).await {
         tracing::error!(error = %error, "a login code was sent but could not be recorded against the daily send caps");
     }
 }
@@ -542,7 +544,7 @@ async fn record_send(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
 /// Stamp when this account last had a code issued, so RDU can answer "I never
 /// got a code" without an address reaching a log.
 async fn stamp_issued(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
-    if let Err(error) = UserRepository::record_code_issued(&*state.db, user_id, now).await {
+    if let Err(error) = UserRepository::record_code_issued(&*state.identity, user_id, now).await {
         tracing::warn!(error = %error, "could not stamp when a login code was issued");
     }
 }
@@ -570,7 +572,7 @@ async fn verify(
     let span = tracing::Span::current();
     let outcome = |value: &'static str| span.record("auth.outcome", value);
 
-    let code = match LoginCodeRepository::find_by_browser_token(&*state.db, token).await {
+    let code = match LoginCodeRepository::find_by_browser_token(&*state.identity, token).await {
         Ok(Some(code)) => code,
         Ok(None) => {
             // Either an unknown address (whose browser was handed a token that
@@ -597,7 +599,7 @@ async fn verify(
         tracing::info!("an expired code was submitted");
         return Err(());
     }
-    let user = match UserRepository::find_by_id(&*state.db, code.user_id).await {
+    let user = match UserRepository::find_by_id(&*state.identity, code.user_id).await {
         Ok(Some(user)) => user,
         Ok(None) => {
             outcome("account_gone");
@@ -625,7 +627,7 @@ async fn verify(
     // simultaneous submission past the check at once, so twenty parallel guesses
     // would cost three strikes' worth of budget and get twenty comparisons. A
     // refusal here also covers a code consumed in a parallel request.
-    match LoginCodeRepository::claim_attempt(&*state.db, code.id, secret::MAX_CODE_ATTEMPTS).await {
+    match LoginCodeRepository::claim_attempt(&*state.identity, code.id, secret::MAX_CODE_ATTEMPTS).await {
         Ok(Attempt::Claimed) => {}
         Ok(Attempt::Exhausted) => {
             outcome("code_invalidated");
@@ -657,7 +659,8 @@ async fn verify(
         // account-level counter is the one that survives invalidation and resend,
         // and it decays over the lockout window so a capped account is not
         // re-locked forever by one attempt per window.
-        match UserRepository::record_failed_login(&*state.db, user.id, now, now - delta(state.auth.lockout)).await {
+        match UserRepository::record_failed_login(&*state.identity, user.id, now, now - delta(state.auth.lockout)).await
+        {
             Ok(failed) => {
                 outcome("wrong_code");
                 tracing::warn!(failed_logins = failed, "a wrong code was submitted");
@@ -672,7 +675,7 @@ async fn verify(
 
     // Single use, decided by the store: the `consumed_at IS NULL` in the update
     // is what stops two simultaneous submissions of one code both winning.
-    match LoginCodeRepository::consume(&*state.db, code.id, now).await {
+    match LoginCodeRepository::consume(&*state.identity, code.id, now).await {
         Ok(true) => {}
         Ok(false) => {
             outcome("replayed");
@@ -687,7 +690,7 @@ async fn verify(
     }
 
     // Only a success clears the account counter (NIST SP 800-63B-4).
-    if let Err(error) = UserRepository::clear_failed_logins(&*state.db, user.id).await {
+    if let Err(error) = UserRepository::clear_failed_logins(&*state.identity, user.id).await {
         tracing::warn!(error = %error, "could not clear the account's failure counter after a successful sign-in");
     }
     // The account's *unspent* codes are now noise bound to browsers nobody is
@@ -695,15 +698,15 @@ async fn verify(
     // and deleting it would let a user sign in and immediately be sent another
     // code. The send caps are unaffected either way — they count `mail_sends`, and
     // the siblings deleted here were mailed.
-    if let Err(error) = LoginCodeRepository::delete_unconsumed_for_user(&*state.db, user.id).await {
+    if let Err(error) = LoginCodeRepository::delete_unconsumed_for_user(&*state.identity, user.id).await {
         tracing::warn!(error = %error, "could not clear the account's remaining login codes");
     }
     // Session fixation: whatever session this browser arrived with is deleted
     // rather than reused, so a value planted before authentication cannot
     // survive into it.
-    let _ = session::end(&*state.db, &cookie::values(headers)).await;
+    let _ = session::end(&*state.identity, &cookie::values(headers)).await;
 
-    let session = match session::begin(&*state.db, &state.auth, user.id, now).await {
+    let session = match session::begin(&*state.identity, &state.auth, user.id, now).await {
         Ok(session) => session,
         Err(error) => {
             // The code is already spent and bought nothing. Left that way the
@@ -713,7 +716,7 @@ async fn verify(
             // reopening it is free.
             outcome("session_failed");
             tracing::error!(error = %error, "could not create a session for a correct code");
-            if let Err(error) = LoginCodeRepository::unconsume(&*state.db, code.id).await {
+            if let Err(error) = LoginCodeRepository::unconsume(&*state.identity, code.id).await {
                 tracing::error!(
                     error = %error,
                     "could not reopen the code after a failed sign-in; the user cannot retry until it expires"
@@ -738,12 +741,13 @@ mod tests {
     use axum::Router;
     use identity_core::records::Role;
     use identity_core::repository::SessionRepository;
+    use identity_store::test_support::{Faults, FaultyStore};
     use tower::ServiceExt;
 
     use super::*;
     use crate::test_support::{
-        body_string, capture_logs, cookie_set, count_rows, get, location, open_test_db, post, state_over, state_with,
-        test_app, test_state, urlencode, with_cookie, Faults, FaultyDatabase, RecordingMailer,
+        body_string, capture_logs, cookie_set, get, location, open_test_db, post, state_over, state_with, test_app,
+        test_state, urlencode, with_cookie, RecordingMailer,
     };
 
     const KNOWN: &str = "depositor@example.test";
@@ -905,7 +909,7 @@ mod tests {
             handle.await.expect("the task should not panic");
         }
 
-        let code = LoginCodeRepository::find_by_browser_token(&*state.db, &binding)
+        let code = LoginCodeRepository::find_by_browser_token(&*state.identity, &binding)
             .await
             .expect("the lookup should succeed")
             .expect("the code should still be there");
@@ -924,8 +928,8 @@ mod tests {
         // return `SQLITE_LOCKED`, which `busy_timeout` does not retry; one of
         // the three writes then loses. Production uses WAL on a file database,
         // where readers never block writers, so the mechanism does not exist
-        // there — see `db::Source`.
-        let user = UserRepository::find_by_id(&*state.db, user_id).await.unwrap().unwrap();
+        // there; see `identity_store::Source`.
+        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
         assert!(
             (1..=secret::MAX_CODE_ATTEMPTS).contains(&user.failed_logins),
             "the account counter recorded {} failures from one code",
@@ -935,16 +939,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_unknown_address_stores_nothing_and_sends_nothing() {
-        let db = Arc::new(open_test_db("unknown").await);
+        let db = open_test_db("unknown").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         let app = test_app(&state);
 
         request_code(&app, UNKNOWN, None).await;
 
         assert!(mailer.sent().is_empty(), "an unknown address may send nothing");
-        assert_eq!(count_rows(&db, "login_codes").await, 0);
-        assert_eq!(count_rows(&db, "users").await, 0);
+        assert_eq!(db.identity.count_rows("login_codes").await, 0);
+        assert_eq!(db.identity.count_rows("users").await, 0);
     }
 
     #[tokio::test]
@@ -1261,14 +1267,19 @@ mod tests {
         // NIST SP 800-63B-4: only a success may reset it.
         let (state, mailer) = test_state("clear-counter").await;
         let user_id = a_user(&state, KNOWN).await;
-        UserRepository::record_failed_login(&*state.db, user_id, Utc::now(), Utc::now() - chrono::TimeDelta::hours(1))
-            .await
-            .unwrap();
+        UserRepository::record_failed_login(
+            &*state.identity,
+            user_id,
+            Utc::now(),
+            Utc::now() - chrono::TimeDelta::hours(1),
+        )
+        .await
+        .unwrap();
         let app = test_app(&state);
 
         sign_in(&app, &mailer, KNOWN).await;
 
-        let user = UserRepository::find_by_id(&*state.db, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
         assert_eq!(user.failed_logins, 0);
         assert_eq!(user.failed_login_at, None);
     }
@@ -1284,7 +1295,7 @@ mod tests {
 
         request_code(&app, KNOWN, None).await;
 
-        let user = UserRepository::find_by_id(&*state.db, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
         assert!(user.last_code_at.is_some());
     }
 
@@ -1305,10 +1316,10 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert!(body_string(response).await.contains("not valid"));
 
-        let user = UserRepository::find_by_id(&*state.db, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
         assert_eq!(user.failed_logins, 1, "the account counter must move");
         assert!(user.failed_login_at.is_some(), "and carry the instant a lockout measures from");
-        let code = LoginCodeRepository::find_active_for_user(&*state.db, user_id, Utc::now())
+        let code = LoginCodeRepository::find_active_for_user(&*state.identity, user_id, Utc::now())
             .await
             .unwrap()
             .unwrap();
@@ -1594,9 +1605,9 @@ mod tests {
         // correctly, they are live secrets nobody is using — but those codes were
         // mailed, and a cap counting `login_codes` rows would hand that budget
         // back, so real send volume could exceed it.
-        let db = Arc::new(open_test_db("cap-counts-sends").await);
+        let db = open_test_db("cap-counts-sends").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 3;
         });
@@ -1609,7 +1620,7 @@ mod tests {
         sign_in(&app, &mailer, KNOWN).await;
         assert_eq!(mailer.sent().len(), 2, "two codes were mailed");
         assert_eq!(
-            count_rows(&db, "login_codes").await,
+            db.identity.count_rows("login_codes").await,
             1,
             "and only the spent one is still a row, which is why counting rows under-counted"
         );
@@ -1626,9 +1637,9 @@ mod tests {
         // failed sent nothing, so it must not consume anyone's budget. The user
         // gets their code once the relay is back, rather than being refused for a
         // failure that was never theirs.
-        let db = Arc::new(open_test_db("cap-ignores-failures").await);
+        let db = open_test_db("cap-ignores-failures").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 1;
         });
@@ -1638,7 +1649,7 @@ mod tests {
         request_code(&app, KNOWN, None).await;
         assert_eq!(mailer.sent().len(), 1, "the transport was asked");
         assert_eq!(
-            count_rows(&db, "mail_sends").await,
+            db.identity.count_rows("mail_sends").await,
             0,
             "but nothing was delivered, so nothing is counted"
         );
@@ -1653,9 +1664,9 @@ mod tests {
         // and reaches its recipient by another route. Leaving it uncounted would
         // take both caps off at exactly the moment the relay is broken and every
         // live credential is being written to the logs.
-        let db = Arc::new(open_test_db("cap-break-glass").await);
+        let db = open_test_db("cap-break-glass").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 1;
             auth.break_glass = true;
@@ -1664,7 +1675,7 @@ mod tests {
         let app = test_app(&state);
 
         request_code(&app, KNOWN, None).await;
-        assert_eq!(count_rows(&db, "mail_sends").await, 1);
+        assert_eq!(db.identity.count_rows("mail_sends").await, 1);
 
         request_code(&app, KNOWN, None).await;
         assert_eq!(mailer.sent().len(), 1, "the cap holds while the relay is broken");
@@ -1682,12 +1693,22 @@ mod tests {
         })
         .await;
         let user_id = a_user(&state, KNOWN).await;
-        UserRepository::record_failed_login(&*state.db, user_id, Utc::now(), Utc::now() - chrono::TimeDelta::hours(1))
-            .await
-            .unwrap();
-        UserRepository::record_failed_login(&*state.db, user_id, Utc::now(), Utc::now() - chrono::TimeDelta::hours(1))
-            .await
-            .unwrap();
+        UserRepository::record_failed_login(
+            &*state.identity,
+            user_id,
+            Utc::now(),
+            Utc::now() - chrono::TimeDelta::hours(1),
+        )
+        .await
+        .unwrap();
+        UserRepository::record_failed_login(
+            &*state.identity,
+            user_id,
+            Utc::now(),
+            Utc::now() - chrono::TimeDelta::hours(1),
+        )
+        .await
+        .unwrap();
         let app = test_app(&state);
 
         let response = request_code(&app, KNOWN, None).await;
@@ -1703,9 +1724,9 @@ mod tests {
     async fn test_a_failed_send_rolls_the_code_and_its_cooldown_back() {
         // Otherwise the user waits out a cooldown for a code they never got, and
         // the cooldown refuses to send them another.
-        let db = Arc::new(open_test_db("send-fails").await);
+        let db = open_test_db("send-fails").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::from_secs(600);
         });
         a_user(&state, KNOWN).await;
@@ -1713,7 +1734,7 @@ mod tests {
 
         let response = request_code(&app, KNOWN, None).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER, "the user is told nothing different");
-        assert_eq!(count_rows(&db, "login_codes").await, 0, "no code may be left behind");
+        assert_eq!(db.identity.count_rows("login_codes").await, 0, "no code may be left behind");
 
         // And the cooldown went with it, so the next attempt is allowed through.
         request_code(&app, KNOWN, None).await;
@@ -1724,9 +1745,9 @@ mod tests {
     async fn test_break_glass_keeps_the_code_alive_and_writes_it_to_the_log() {
         // A relay broken for hours otherwise locks out every user including RDU.
         // Off by default, because it puts a live credential in the log pipeline.
-        let db = Arc::new(open_test_db("break-glass").await);
+        let db = open_test_db("break-glass").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.break_glass = true;
         });
@@ -1737,7 +1758,7 @@ mod tests {
         let response = request_code(&app, KNOWN, None).await;
         let binding = cookie_set(&response, LOGIN).expect("the browser stays bound to the logged code");
 
-        assert_eq!(count_rows(&db, "login_codes").await, 1, "the code must survive");
+        assert_eq!(db.identity.count_rows("login_codes").await, 1, "the code must survive");
         assert_eq!(mailer.sent().len(), 1, "the relay was still tried first");
 
         let logged = logs
@@ -1761,9 +1782,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_sign_out_deletes_the_session_and_clears_the_cookie() {
-        let db = Arc::new(open_test_db("sign-out").await);
+        let db = open_test_db("sign-out").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         a_user(&state, KNOWN).await;
         let app = test_app(&state);
         let session = sign_in(&app, &mailer, KNOWN).await;
@@ -1777,7 +1800,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/login"));
         assert_eq!(cookie_set(&response, SESSION).as_deref(), Some(""));
-        assert_eq!(count_rows(&db, "sessions").await, 0, "the session row goes too");
+        assert_eq!(db.identity.count_rows("sessions").await, 0, "the session row goes too");
     }
 
     #[tokio::test]
@@ -1794,26 +1817,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_session_past_its_absolute_expiry_is_refused_and_deleted() {
-        let db = Arc::new(open_test_db("absolute-expiry").await);
+        let db = open_test_db("absolute-expiry").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         a_user(&state, KNOWN).await;
         let app = test_app(&state);
         let session = sign_in(&app, &mailer, KNOWN).await;
 
         // Age it past its absolute expiry, which is never extended.
         let expired = Utc::now() - chrono::TimeDelta::minutes(1);
-        db.write({
-            let id = session.clone();
-            move |tx| {
-                tx.execute(
-                    "UPDATE sessions SET expires_at = ?2 WHERE id = ?1",
-                    rusqlite::params![id, expired],
-                )
-            }
-        })
-        .await
-        .unwrap();
+        db.identity.set_session_expiry(&session, expired).await;
 
         let refused = app
             .clone()
@@ -1827,7 +1842,7 @@ mod tests {
         );
         assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
         assert_eq!(
-            SessionRepository::find(&*state.db, &session).await.unwrap(),
+            SessionRepository::find(&*state.identity, &session).await.unwrap(),
             None,
             "and must not linger"
         );
@@ -1835,9 +1850,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_idle_session_is_refused_even_before_its_absolute_expiry() {
-        let db = Arc::new(open_test_db("idle-expiry").await);
+        let db = open_test_db("idle-expiry").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.session_idle = Duration::from_secs(60);
         });
@@ -1846,17 +1861,7 @@ mod tests {
         let session = sign_in(&app, &mailer, KNOWN).await;
 
         let stale = Utc::now() - chrono::TimeDelta::minutes(5);
-        db.write({
-            let id = session.clone();
-            move |tx| {
-                tx.execute(
-                    "UPDATE sessions SET last_seen_at = ?2 WHERE id = ?1",
-                    rusqlite::params![id, stale],
-                )
-            }
-        })
-        .await
-        .unwrap();
+        SessionRepository::touch(&*db.identity, &session, stale).await.unwrap();
 
         let refused = app
             .clone()
@@ -1865,7 +1870,7 @@ mod tests {
             .unwrap();
         assert_eq!(refused.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
-        assert_eq!(SessionRepository::find(&*state.db, &session).await.unwrap(), None);
+        assert_eq!(SessionRepository::find(&*state.identity, &session).await.unwrap(), None);
     }
 
     #[tokio::test]
@@ -1902,7 +1907,7 @@ mod tests {
         let second = cookie_set(&response, SESSION).expect("a new session");
         assert_ne!(second, first, "the session id must be a fresh one");
         assert_eq!(
-            SessionRepository::find(&*state.db, &first).await.unwrap(),
+            SessionRepository::find(&*state.identity, &first).await.unwrap(),
             None,
             "and the one it arrived with must be gone, not merely unused"
         );
@@ -1914,8 +1919,10 @@ mod tests {
     async fn test_every_state_changing_route_refuses_get() {
         // The `Sec-Fetch-Site` control exempts GET by necessity, so a
         // state-changing GET is a state-changing request nothing protects.
-        let db = Arc::new(open_test_db("methods").await);
-        let state = state_over(db.clone(), RecordingMailer::new(), |auth| auth.cooldown = Duration::ZERO);
+        let db = open_test_db("methods").await;
+        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         let app = test_app(&state);
 
         assert_eq!(
@@ -1924,16 +1931,18 @@ mod tests {
         );
         // `/login` and `/login/code` answer GET with their forms, so the check
         // there is that the GET does not issue or spend anything.
-        let login_db = Arc::new(open_test_db("methods-login").await);
+        let login_db = open_test_db("methods-login").await;
         let mailer = RecordingMailer::new();
-        let login_state = state_over(login_db.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
+        let login_state = state_over(login_db.identity.clone(), login_db.editor.clone(), mailer.clone(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         a_user(&login_state, KNOWN).await;
         let login_app = test_app(&login_state);
         login_app.clone().oneshot(get("/login")).await.unwrap();
         login_app.clone().oneshot(get("/login/code")).await.unwrap();
         assert!(mailer.sent().is_empty(), "a GET must not send a code");
-        assert_eq!(count_rows(&login_db, "login_codes").await, 0);
-        assert_eq!(count_rows(&login_db, "sessions").await, 0);
+        assert_eq!(login_db.identity.count_rows("login_codes").await, 0);
+        assert_eq!(login_db.identity.count_rows("sessions").await, 0);
     }
 
     #[tokio::test]
@@ -2009,9 +2018,10 @@ mod tests {
     // Four calls in this module log a storage error and carry on, and each one
     // decides something: whether a guess is counted, whether a browser keeps a
     // spendable code, whether a throttle advances, whether a send is billed. A
-    // concrete `Database` in `AppState` would make all four unreachable from a
-    // test — hence `Arc<dyn Repositories>` and `FaultyDatabase`, which delegates
-    // to a real store and fails only the call the test names.
+    // concrete store in `AppState` would make all four unreachable from a
+    // test, hence `Arc<dyn IdentityRepositories>` and identity-store's
+    // `FaultyStore`, which delegates to a real store and fails only the call
+    // the test names.
 
     #[tokio::test]
     async fn test_a_failed_attempt_claim_refuses_a_code_it_never_compared() {
@@ -2019,17 +2029,20 @@ mod tests {
         // claim that fails has to refuse. Letting the comparison happen anyway
         // would leave the three-attempt budget unenforced for as long as the
         // store is unwell, which is unlimited guesses against a live code.
-        let db = Arc::new(open_test_db("claim-fails").await);
+        let db = open_test_db("claim-fails").await;
         let mailer = RecordingMailer::new();
         // Two states over one store: the sound one issues the code and the
         // faulty one receives the guess. Injecting from the start would fail the
         // fixture instead of the branch under test.
-        let sound = state_over(db.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
+        let sound = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         let faulty = state_over(
-            Arc::new(FaultyDatabase::new(
-                db.clone(),
+            Arc::new(FaultyStore::new(
+                db.identity.clone(),
                 Faults { claim_attempt: true, ..Faults::default() },
             )),
+            db.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2052,13 +2065,16 @@ mod tests {
         );
         assert!(cookie_set(&response, SESSION).is_none(), "and nobody is signed in");
 
-        let stored = LoginCodeRepository::find_by_browser_token(&*db, &binding)
+        let stored = LoginCodeRepository::find_by_browser_token(&*db.identity, &binding)
             .await
             .unwrap()
             .expect("the code is still bound to the browser");
         assert_eq!(stored.attempts, 0, "the guess was not counted against the code");
         assert!(stored.consumed_at.is_none(), "and the code was not spent");
-        let user = UserRepository::find_by_id(&*db, user_id).await.unwrap().expect("the account");
+        let user = UserRepository::find_by_id(&*db.identity, user_id)
+            .await
+            .unwrap()
+            .expect("the account");
         assert_eq!(user.failed_logins, 0, "nor against the account");
 
         let lines = logs.lines();
@@ -2081,14 +2097,15 @@ mod tests {
         // the old token — so every code the user entered would be refused until
         // the cooldown ran out. And the response has to keep its shape:
         // a token of the same length comes back either way.
-        let db = Arc::new(open_test_db("rebind-fails").await);
+        let db = open_test_db("rebind-fails").await;
         let mailer = RecordingMailer::new();
-        let sound = state_over(db.clone(), mailer.clone(), cooled);
+        let sound = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), cooled);
         let faulty = state_over(
-            Arc::new(FaultyDatabase::new(
-                db.clone(),
+            Arc::new(FaultyStore::new(
+                db.identity.clone(),
                 Faults { rebind_browser_token: true, ..Faults::default() },
             )),
+            db.editor.clone(),
             mailer.clone(),
             cooled,
         );
@@ -2115,7 +2132,7 @@ mod tests {
         assert_eq!(mailer.sent().len(), 1, "the cooldown means no second code");
 
         assert!(
-            LoginCodeRepository::find_by_browser_token(&*db, &binding)
+            LoginCodeRepository::find_by_browser_token(&*db.identity, &binding)
                 .await
                 .unwrap()
                 .is_some(),
@@ -2144,14 +2161,17 @@ mod tests {
         // resend, so a write that fails means the lockout does not advance. The
         // wrong entry is still refused, and refused identically — a response that
         // differed here would make the storage failure an oracle.
-        let db = Arc::new(open_test_db("count-fails").await);
+        let db = open_test_db("count-fails").await;
         let mailer = RecordingMailer::new();
-        let sound = state_over(db.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
+        let sound = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+            auth.cooldown = Duration::ZERO
+        });
         let faulty = state_over(
-            Arc::new(FaultyDatabase::new(
-                db.clone(),
+            Arc::new(FaultyStore::new(
+                db.identity.clone(),
                 Faults { record_failed_login: true, ..Faults::default() },
             )),
+            db.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2169,13 +2189,16 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK, "the same refusal as any wrong code");
         assert!(cookie_set(&response, SESSION).is_none());
 
-        let user = UserRepository::find_by_id(&*db, user_id).await.unwrap().expect("the account");
+        let user = UserRepository::find_by_id(&*db.identity, user_id)
+            .await
+            .unwrap()
+            .expect("the account");
         assert_eq!(user.failed_logins, 0, "the throttle did not advance");
         assert!(user.failed_login_at.is_none(), "and no lockout window was opened");
         // The per-code strike is a different write and it went through, so the
         // per-code attempt limit still bounds this code even while the account
         // counter is stuck.
-        let stored = LoginCodeRepository::find_by_browser_token(&*db, &binding)
+        let stored = LoginCodeRepository::find_by_browser_token(&*db.identity, &binding)
             .await
             .unwrap()
             .expect("the code survives a wrong entry");
@@ -2200,13 +2223,14 @@ mod tests {
         // refusing now would deny a user a code they are about to receive. The
         // cost is a cap that under-counts by one until the window rolls, which is
         // the documented trade — so assert it rather than leave it to a comment.
-        let db = Arc::new(open_test_db("send-record-fails").await);
+        let db = open_test_db("send-record-fails").await;
         let mailer = RecordingMailer::new();
         let faulty = state_over(
-            Arc::new(FaultyDatabase::new(
-                db.clone(),
+            Arc::new(FaultyStore::new(
+                db.identity.clone(),
                 Faults { record_mail_send: true, ..Faults::default() },
             )),
+            db.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2222,12 +2246,14 @@ mod tests {
 
         let window = Utc::now() - delta(SEND_WINDOW);
         assert_eq!(
-            MailSendRepository::count_since(&*db, window).await.unwrap(),
+            MailSendRepository::count_since(&*db.identity, window).await.unwrap(),
             0,
             "but the global cap cannot see it"
         );
         assert_eq!(
-            MailSendRepository::count_for_user_since(&*db, user_id, window).await.unwrap(),
+            MailSendRepository::count_for_user_since(&*db.identity, user_id, window)
+                .await
+                .unwrap(),
             0,
             "and neither can the per-account one"
         );
@@ -2302,34 +2328,36 @@ mod tests {
         request_code(&failing_app, KNOWN, None).await;
 
         // And the four branches that log a swallowed storage error, driven here
-        // through `FaultyDatabase`: they are the paths where the logged value is
+        // through `FaultyStore`: they are the paths where the logged value is
         // a message from the driver, so they are the ones most likely to carry
         // something the rest of the flow never sees.
-        let store = Arc::new(open_test_db("no-address-in-logs-faulty").await);
+        let store = open_test_db("no-address-in-logs-faulty").await;
         let mailer = RecordingMailer::new();
         // Two, because `claim_attempt` failing short-circuits before the digits
         // are compared, so it cannot share a request with `record_failed_login`.
         let claiming = state_over(
-            Arc::new(FaultyDatabase::new(
-                store.clone(),
+            Arc::new(FaultyStore::new(
+                store.identity.clone(),
                 Faults {
                     claim_attempt: true,
                     record_mail_send: true,
                     ..Faults::default()
                 },
             )),
+            store.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
         let counting = state_over(
-            Arc::new(FaultyDatabase::new(
-                store.clone(),
+            Arc::new(FaultyStore::new(
+                store.identity.clone(),
                 Faults {
                     rebind_browser_token: true,
                     record_failed_login: true,
                     ..Faults::default()
                 },
             )),
+            store.editor.clone(),
             mailer.clone(),
             cooled,
         );

@@ -255,26 +255,31 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 4: Two store crates over two database files
 
 ### dsp-repository
-- [ ] Before any schema change, add insta snapshot tests that delete an account holding a draft, a claimed submission, a review round and an entity proposal, then render the project list, the section page, the review queue and the review page; accept them on the unchanged code
-- [ ] Create `areas/deposit/editor/store` (`editor-store`) from `editor-server/src/db/{drafts,submissions,review_rounds,approved_records,entity_proposals,mapping}.rs`, with its own pool and migration module and a `migrations/0001_initial.sql` holding the five editor tables
-- [ ] Create `areas/deposit/identity/store` (`identity-store`) from `db/{users,sessions,login_codes,mail_sends}.rs`, with its own pool and migration module and a `migrations/0001_initial.sql` holding the five identity tables and their four internal foreign keys
-- [ ] Drop the seven `REFERENCES users` clauses (and their `ON DELETE SET NULL`) from the editor baseline, keeping the account columns as `TEXT` and their indexes
-- [ ] Open `identity.sqlite` and `editor.sqlite` under `EDITOR_DB_DIR`, and two named in-memory databases (`identity`, `editor`) when it is unset; each store keeps its own `preflight`, single writer and `query_only` readers
-- [ ] Move `SmtpMailer`, `ConsoleMailer` and the mailer selection from `serve.rs` into `identity-store` as one constructor taking plain values
-- [ ] Replace `AppState.db` with two handles, `Arc<dyn IdentityRepositories>` and `Arc<dyn EditorRepositories>`
+- [x] Before any schema change, add insta snapshot tests that delete an account holding a draft, a claimed submission, a review round and an entity proposal, then render the project list, the section page, the review queue and the review page; accept them on the unchanged code
+- [x] Create `areas/deposit/editor/store` (`editor-store`) from `editor-server/src/db/{drafts,submissions,review_rounds,approved_records,entity_proposals,mapping}.rs`, with its own pool and migration module and a `migrations/0001_initial.sql` holding the five editor tables
+  - Its copy of the pool omits `read_tx` and `PRAGMA foreign_keys` (no editor caller, no foreign key), with the pool tests that exercised them; the tests of the rest are copied, so each copy is tested.
+- [x] Create `areas/deposit/identity/store` (`identity-store`) from `db/{users,sessions,login_codes,mail_sends}.rs`, with its own pool and migration module and a `migrations/0001_initial.sql` holding the five identity tables and their four internal foreign keys
+- [x] Drop the seven `REFERENCES users` clauses (and their `ON DELETE SET NULL`) from the editor baseline, keeping the account columns as `TEXT` and their indexes
+- [x] Open `identity.sqlite` and `editor.sqlite` under `EDITOR_DB_DIR`, and two named in-memory databases (`identity`, `editor`) when it is unset; each store keeps its own `preflight`, single writer and `query_only` readers
+- [x] Move `SmtpMailer`, `ConsoleMailer` and the mailer selection from `serve.rs` into `identity-store` as one constructor taking plain values
+  - `test_the_console_transport_logs_the_body_and_not_the_recipient` stays in `editor-server` (`serve.rs`): it needs that crate's log capture.
+- [x] Replace `AppState.db` with two handles, `Arc<dyn IdentityRepositories>` and `Arc<dyn EditorRepositories>`
 - [x] Give `storage_error` an `impl Display` parameter so it takes either error type (done in Phase 3)
-- [ ] Move the fault-injecting fake into each store crate behind a `test-support` feature, one per store, with today's fault seams
-- [ ] Add plain-value seed helpers (user, session, draft, submission, review round, entity proposal) and row readers to the stores' `test-support` features
-- [ ] Make `count_rows` take the store it counts in
-- [ ] List every read of `updated_by`, `submitted_by`, `reviewed_by`, `actor`, `approved_by`, `proposed_by`, `decided_by` outside the store crates (`git grep -n -E '\b(updated_by|submitted_by|reviewed_by|approved_by|proposed_by|decided_by)\b|\.actor\b' -- 'areas/deposit'`), and make each one that branched on `None` render identically for an id the user table no longer holds
-- [ ] Run the snapshot tests of the first bullet; no snapshot changes
-- [ ] Replace the assertions of the old `SET NULL` behaviour with ones asserting the editor rows keep the id: `db/users.rs` `test_delete_leaves_drafts_and_submissions_with_a_null_author`, `db/review_rounds.rs` `test_removing_the_actor_leaves_the_round_with_no_actor`, and the `depositors.rs` remove tests asserting `updated_by == None` and `submitted_by == None`
-- [ ] Update `docs/src/editor/persistence.md` (two files, two baselines) and the backup note in `docs/src/editor/operations.md` (both files)
-- [ ] Remove divergence rows "The SQLite implementations live in the server crate" and "One database file holds identity's and the editor's tables"; rewrite row "Identity lives inside the editor's crates" (no ports or web crate yet)
-- [ ] Run `just check && just test`; it passes
-- [ ] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects
-- [ ] Write the PR description: rows closed, the replaced assertions by name, deviations
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Move the fault-injecting fake into each store crate behind a `test-support` feature, one per store, with today's fault seams
+- [x] Add plain-value seed helpers (user, session, draft, submission, review round, entity proposal) and row readers to the stores' `test-support` features
+  - They wrap each store's own repository writes, so a seeded row is the row production writes; `delete_user`, `set_session_expiry` (a session's expiry has no repository setter) and the row reader `account_column` join them. The account-deletion snapshot fixture seeds through them.
+- [x] Make `count_rows` take the store it counts in (a method on each store's `Database`)
+- [x] List every read of `updated_by`, `submitted_by`, `reviewed_by`, `actor`, `approved_by`, `proposed_by`, `decided_by` outside the store crates (`git grep -n -E '\b(updated_by|submitted_by|reviewed_by|approved_by|proposed_by|decided_by)\b|\.actor\b' -- 'areas/deposit'`), and make each one that branched on `None` render identically for an id the user table no longer holds
+  - No handler branch changes: the review queue's and review page's names go through a map that misses on a dangling id exactly as on `None`, the section page's last-editor lookup finds no account, and the collection API never emits `approved_by`. Only doc comments that said `None once removed` change.
+- [x] Run the snapshot tests of the first bullet; no snapshot changes
+- [x] Replace the assertions of the old `SET NULL` behaviour with ones asserting the editor rows keep the id: `db/users.rs` `test_delete_leaves_drafts_and_submissions_with_a_null_author`, `db/review_rounds.rs` `test_removing_the_actor_leaves_the_round_with_no_actor`, and the `depositors.rs` remove tests asserting `updated_by == None` and `submitted_by == None`
+  - Three more tests rested on the dropped foreign keys and are replaced the same way: `drafts.rs` `test_a_draft_by_an_unknown_user_is_refused`, `submissions.rs` `test_removing_the_submitter_leaves_the_submission_with_no_author` and `approved_records.rs` `test_removing_the_approver_leaves_the_record_collectable`. The `users.rs` test needs both stores and becomes `removed_account.rs` `deleting_an_account_leaves_its_id_on_the_editor_rows` in `editor-server`.
+- [x] Update `docs/src/editor/persistence.md` (two files, two baselines) and the backup note in `docs/src/editor/operations.md` (both files)
+- [x] Remove divergence rows "The SQLite implementations live in the server crate" and "One database file holds identity's and the editor's tables"; rewrite row "Identity lives inside the editor's crates" (no ports or web crate yet)
+- [x] Run `just check && just test`; it passes (`just test` left to CI, `test.yml`)
+- [x] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects (left to CI, `a11y-editor.yml`)
+- [x] Write the PR description: rows closed, the replaced assertions by name, deviations
+- [x ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 5: The ports, their live adapters, and the editor on `Principal`
 

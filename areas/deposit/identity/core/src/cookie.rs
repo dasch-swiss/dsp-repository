@@ -4,7 +4,6 @@
 //! The scan is pure over header values, so it needs no HTTP types; the
 //! attributes the cookies are written with belong to the layer that writes them.
 
-/// The session cookie.
 pub const SESSION: &str = "__Host-editor_session";
 
 /// The pre-auth binding: which browser asked for the outstanding code, and

@@ -1,0 +1,42 @@
+[package]
+name = "identity-store"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+# Plain-value seed helpers, row readers and the fault-injecting fake, for the tests of the
+# crates that hold this store.
+test-support = []
+
+[dependencies]
+# The SQLite implementation of `identity-core`'s repository ports, over `identity.sqlite`.
+# `rusqlite` is synchronous and its `Connection` is `!Sync`; `deadpool-sqlite` keeps each
+# connection on a thread of its own so every call goes through `interact()` and none can be
+# held across an `.await`.
+identity-core = { path = "../core" }
+async-trait.workspace = true
+chrono.workspace = true
+deadpool-sqlite.workspace = true
+rusqlite.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+# Mail. `rustls` rather than the default `native-tls`: the release
+# binary is static musl, and `native-tls` would need an OpenSSL to link against.
+# `ring` and `webpki-roots` are chosen explicitly — lettre resolves its own
+# crypto provider from its own features, so it never depends on which provider
+# the rest of the graph happens to have enabled.
+lettre = { version = "0.11.23", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tokio1-rustls",
+    "ring",
+    "webpki-roots",
+] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

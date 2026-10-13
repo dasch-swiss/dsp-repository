@@ -1,11 +1,13 @@
-//! SQLite persistence: the connection pools, the PRAGMAs, the schema, and the
-//! two entry points every query goes through.
+//! Identity's SQLite store, `identity.sqlite`: the connection pools, the PRAGMAs, the schema,
+//! and the two entry points every query goes through. It implements `identity-core`'s
+//! repository ports, and [`mail`] holds the transports behind its `Mailer`. The editor's tables
+//! are in `editor-store`, in a database file of their own.
 //!
 //! [`Database`] holds a **writer** pool of exactly one connection and a **reader** pool of
 //! several, which makes the two rules this layer must not get wrong structural rather than
 //! conventional: reader connections are opened with `query_only=ON` in the per-connection init
-//! hook, so a write physically cannot go through [`Database::read`], and the only path that can
-//! write is [`Database::write`], which always opens `BEGIN IMMEDIATE`. One writer connection is
+//! hook, so a write physically cannot go through `Database::read`, and the only path that can
+//! write is `Database::write`, which always opens `BEGIN IMMEDIATE`. One writer connection is
 //! deliberate rather than a limitation — SQLite allows one writer at a time regardless, so a
 //! second would only move the queue from the pool into SQLite.
 //!
@@ -25,30 +27,28 @@
 //! closure that runs to completion on a blocking thread, and no read transaction can be left open
 //! across an `.await` to starve WAL checkpointing and let `-wal` grow without bound.
 
-mod approved_records;
-mod drafts;
-mod entity_proposals;
 mod login_codes;
+pub mod mail;
 mod mail_sends;
 mod mapping;
-mod review_rounds;
 mod schema;
 mod sessions;
-mod submissions;
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_support;
 mod users;
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use deadpool_sqlite::{Config as PoolSource, Hook, HookError, Pool, PoolConfig, Runtime};
-use editor_core::repository::RepositoryError;
+use identity_core::repository::RepositoryError;
 use rusqlite::{Connection, Transaction, TransactionBehavior};
 
 /// The database file inside the mounted directory. Fixed rather than
 /// configurable, because config names the **directory**: SQLite needs to create
 /// `-wal` and `-shm` siblings next to the file, which it cannot do if the file
 /// itself is the mount point.
-const DATABASE_FILE_NAME: &str = "editor.sqlite3";
+const DATABASE_FILE_NAME: &str = "identity.sqlite";
 
 /// How long `pool.get()` waits for a connection before giving up.
 ///
@@ -72,7 +72,7 @@ const MIN_READER_CONNECTIONS: usize = 1;
 
 /// Where the database lives.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Source {
+pub enum Source {
     /// A file in this directory. Production: a mount provided by Infra.
     Directory(PathBuf),
     /// A named, shared-cache, in-memory database.
@@ -98,12 +98,12 @@ impl Source {
     /// The name has to differ per test: shared-cache in-memory databases are
     /// scoped to the process, so two tests using one name would share a database
     /// across parallel `cargo test` threads.
-    #[cfg(test)]
-    pub(crate) fn memory_for_test(label: &str) -> Self {
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn memory_for_test(label: &str) -> Self {
         use std::sync::atomic::{AtomicU64, Ordering};
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-        Self::Memory(format!("editor-test-{label}-{}-{n}", std::process::id()))
+        Self::Memory(format!("identity-test-{label}-{}-{n}", std::process::id()))
     }
 
     /// What is handed to `rusqlite::Connection::open`. For the in-memory
@@ -138,7 +138,7 @@ impl Source {
 /// mount path and sends the reader hunting for a typo in a path that is
 /// perfectly correct.
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum DbError {
+pub enum DbError {
     #[error(
         "the database directory {path} does not exist. Docker Swarm does not create a missing bind-mount host \
          directory the way `docker run -v` does, so it must exist, and be owned by uid 65532, before the stack starts"
@@ -187,8 +187,7 @@ impl DbError {
     ///
     /// Which unique index it was is not recoverable from the error, so the entity
     /// name comes from the call site: each table that maps this to
-    /// [`RepositoryError::Conflict`] has exactly one — a duplicate address, or a second
-    /// pending submission for one project.
+    /// [`RepositoryError::Conflict`] has exactly one, such as a duplicate address.
     fn is_unique_violation(&self) -> bool {
         matches!(
             self,
@@ -207,15 +206,6 @@ impl DbError {
             RepositoryError::backend(self)
         }
     }
-
-    /// [`Self::into_repository_error`] for identity's error type.
-    fn into_identity_error(self, entity: &'static str) -> identity_core::repository::RepositoryError {
-        if self.is_unique_violation() {
-            identity_core::repository::RepositoryError::Conflict { entity }
-        } else {
-            identity_core::repository::RepositoryError::backend(self)
-        }
-    }
 }
 
 impl From<DbError> for RepositoryError {
@@ -224,17 +214,11 @@ impl From<DbError> for RepositoryError {
     }
 }
 
-impl From<DbError> for identity_core::repository::RepositoryError {
-    fn from(error: DbError) -> Self {
-        Self::backend(error)
-    }
-}
-
-/// The persistence layer: two pools over one SQLite database.
+/// Identity's store: two pools over one SQLite database.
 ///
 /// Cheap to clone — both pools are handles.
 #[derive(Clone)]
-pub(crate) struct Database {
+pub struct Database {
     /// Exactly one connection, no `query_only`. See the module docs.
     writer: Pool,
     /// Several connections, all `query_only=ON`.
@@ -250,7 +234,7 @@ impl Database {
     /// connection open in that pool from here on, which the in-memory variant
     /// depends on — a shared-cache in-memory database exists only while at least
     /// one connection to it is open.
-    pub(crate) async fn open(source: Source, reader_count: usize, busy_timeout: Duration) -> Result<Self, DbError> {
+    pub async fn open(source: Source, reader_count: usize, busy_timeout: Duration) -> Result<Self, DbError> {
         if let Source::Directory(dir) = &source {
             preflight(dir)?;
         }
@@ -364,8 +348,8 @@ fn preflight(dir: &Path) -> Result<(), DbError> {
 
     // Named by process id so two processes sharing a directory cannot delete
     // each other's probe.
-    let probe = dir.join(format!(".editor-write-probe-{}", std::process::id()));
-    std::fs::write(&probe, b"editor write probe")
+    let probe = dir.join(format!(".identity-write-probe-{}", std::process::id()));
+    std::fs::write(&probe, b"identity write probe")
         .map_err(|source| DbError::DirectoryNotWritable { path: dir.to_path_buf(), source })?;
     // Removal is checked too: a directory with the sticky bit set, or one on a
     // filesystem mounted append-only, allows the create and refuses the unlink —
@@ -439,8 +423,8 @@ fn init_connection(
         // NORMAL rather than the FULL default: with WAL, a commit no longer
         // fsyncs, so a power loss or OS crash can lose the last transactions —
         // never corrupt the database, and never on an application crash. That
-        // trade is right here because git holds everything irreplaceable, and
-        // drafts and in-flight submissions are re-creatable.
+        // trade is right here because accounts, sessions and login codes are
+        // re-creatable: a lost session signs its holder in again.
         conn.pragma_update(None, "synchronous", "NORMAL")?;
     }
 
@@ -492,7 +476,7 @@ mod tests {
             .read(|conn| conn.query_row("SELECT nonexistent FROM nothing", [], |row| row.get::<_, i64>(0)))
             .await
             .expect_err("the query should fail");
-        let repository: editor_core::repository::RepositoryError = error.into();
+        let repository: RepositoryError = error.into();
         let rendered = repository.to_string();
         assert!(rendered.contains("storage backend failed"), "{rendered}");
         assert!(
@@ -504,7 +488,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_in_memory_source_is_a_named_shared_cache_uri_not_bare_memory() {
-        let target = Source::Memory("editor".into()).open_target();
+        let target = Source::Memory("identity".into()).open_target();
         let target = target.to_string_lossy();
         assert!(target.starts_with("file:"), "{target}");
         assert!(target.contains("mode=memory"), "{target}");
@@ -581,7 +565,7 @@ mod tests {
         for _ in 0..8 {
             let db = db.clone();
             handles.push(tokio::spawn(async move {
-                db.read(|conn| conn.query_row("SELECT count(*) FROM submissions", [], |row| row.get::<_, i64>(0)))
+                db.read(|conn| conn.query_row("SELECT count(*) FROM sessions", [], |row| row.get::<_, i64>(0)))
                     .await
             }));
         }
@@ -773,7 +757,7 @@ mod tests {
 
     #[test]
     fn test_preflight_reports_a_missing_directory_as_missing() {
-        let missing = std::env::temp_dir().join(format!("editor-db-missing-{}", std::process::id()));
+        let missing = std::env::temp_dir().join(format!("identity-store-missing-{}", std::process::id()));
         let error = preflight(&missing).expect_err("a missing directory must fail the pre-flight");
         assert!(matches!(error, DbError::DirectoryMissing { .. }), "{error}");
         // The message has to name the cause, because SQLite's own wording for
@@ -787,7 +771,7 @@ mod tests {
         // works right up to the first WAL write and then fails, so catching it
         // at startup is the difference between a clear message and a corrupted
         // deployment.
-        let file = std::env::temp_dir().join(format!("editor-db-file-{}.sqlite3", std::process::id()));
+        let file = std::env::temp_dir().join(format!("identity-store-file-{}.sqlite3", std::process::id()));
         std::fs::write(&file, b"not a directory").unwrap();
         let error = preflight(&file).expect_err("a file must fail the pre-flight");
         assert!(matches!(error, DbError::DirectoryNotADirectory { .. }), "{error}");
@@ -797,7 +781,7 @@ mod tests {
 
     #[test]
     fn test_preflight_accepts_a_writable_directory_and_leaves_nothing_behind() {
-        let dir = std::env::temp_dir().join(format!("editor-db-ok-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("identity-store-ok-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         preflight(&dir).expect("a writable directory must pass");
         let leftovers: Vec<_> = std::fs::read_dir(&dir).unwrap().flatten().map(|e| e.file_name()).collect();
@@ -811,7 +795,7 @@ mod tests {
         // The uid-65532 case: the directory exists and is readable, and only the
         // write fails.
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("editor-db-ro-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("identity-store-ro-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
@@ -832,7 +816,7 @@ mod tests {
     async fn test_file_database_uses_wal_and_creates_its_siblings_in_the_directory() {
         // WAL is why the *directory* has to be writable rather than just the
         // file: `-wal` and `-shm` are created next to the database.
-        let dir = std::env::temp_dir().join(format!("editor-db-wal-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("identity-store-wal-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
 
         let db = Database::open(Source::Directory(dir.clone()), 2, Duration::from_secs(5))

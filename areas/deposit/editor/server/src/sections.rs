@@ -327,17 +327,17 @@ async fn context<'a>(
     };
 
     let key = normalize_shortcode(shortcode);
-    let record = match DraftRepository::find(&*state.db, &key).await {
+    let record = match DraftRepository::find(&*state.editor, &key).await {
         Ok(record) => record,
         Err(error) => return Err(storage_error(state, user, "read this project's draft", &error)),
     };
     // Only when somebody else saved it: two members of one project team is the
     // normal case, and this is what turns a silent overwrite into a named one.
     // A draft this reader saved themselves needs no name, which also keeps this
-    // lookup off every ordinary render. An account since removed leaves the row
-    // with a null author, and reads as unknown rather than dangling.
+    // lookup off every ordinary render. An account since removed leaves its id
+    // on the row; the lookup finds nobody, and it reads as unknown.
     let last_editor = match record.as_ref().map(|record| record.updated_by) {
-        Some(Some(editor)) if editor != user.id => match UserRepository::find_by_id(&*state.db, editor).await {
+        Some(Some(editor)) if editor != user.id => match UserRepository::find_by_id(&*state.identity, editor).await {
             Ok(found) => found.map(|found| found.name),
             // Not worth refusing the whole page over: the name is a courtesy
             // beside the timestamp, and the timestamp is what says the draft
@@ -354,7 +354,7 @@ async fn context<'a>(
     // waiting to be collected into a pull request and is no longer the
     // depositor's to wait on, so editing again starts the next cycle rather
     // than disturbing a review in progress.
-    let submission = match SubmissionRepository::find_by_shortcode(&*state.db, &key).await {
+    let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
         Ok(submission) => submission,
         Err(error) => return Err(storage_error(state, user, "read this project's submission", &error)),
     };
@@ -377,7 +377,7 @@ async fn context<'a>(
     // Newest first, so the head is the round that decides what the form says.
     // Read even while a submission is pending: the note describes the round the
     // depositor is answering, and the form is read-only rather than blank.
-    let latest_round = match ReviewRoundRepository::list_for_shortcode(&*state.db, &key).await {
+    let latest_round = match ReviewRoundRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(mut rounds) => rounds.drain(..).next(),
         Err(error) => return Err(storage_error(state, user, "read this project's review history", &error)),
     };
@@ -430,7 +430,7 @@ async fn context<'a>(
     // Every status, not only the live ones: `AgentScope::with_proposals` also resolves an
     // `Accepted` proposal, which the referential-integrity gate needs, and the submit gate
     // below needs `is_live` per row to decide which to check.
-    let proposals = match EntityProposalRepository::list_for_shortcode(&*state.db, &key).await {
+    let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(proposals) => proposals,
         Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
     };
@@ -803,7 +803,7 @@ async fn apply_and_store(
         updated_at: now,
     };
 
-    if let Err(error) = DraftRepository::upsert(&*state.db, &record).await {
+    if let Err(error) = DraftRepository::upsert(&*state.editor, &record).await {
         span.record("form.outcome", "store_failed");
         tracing::error!(error = %error, "could not save a project draft");
         return Err(refused(state, user, shortcode, context, headers.clone(), SAVE_REFUSED_STORAGE));
@@ -1197,7 +1197,7 @@ async fn submit(
         review_state: None,
     };
 
-    match SubmissionRepository::create(&*state.db, &submission).await {
+    match SubmissionRepository::create(&*state.editor, &submission).await {
         Ok(()) => {
             span.record("form.outcome", "submitted");
             tracing::info!(
@@ -1278,7 +1278,7 @@ async fn propose(
                 retired_at: None,
             };
             let published_floor = state.agents.highest_id_number(kind);
-            EntityProposalRepository::create_new(&*state.db, &proposal, published_floor)
+            EntityProposalRepository::create_new(&*state.editor, &proposal, published_floor)
                 .await
                 .map(|created| (created.entity_id, kind, ProposalOperation::New))
         }
@@ -1337,7 +1337,7 @@ async fn propose(
                 decided_at: None,
                 retired_at: None,
             };
-            EntityProposalRepository::create_change(&*state.db, &proposal)
+            EntityProposalRepository::create_change(&*state.editor, &proposal)
                 .await
                 .map(|()| (proposal.entity_id, kind, ProposalOperation::Change))
         }
@@ -1468,7 +1468,7 @@ async fn discard(
         return confirming(state, user, shortcode, context, headers, page::Confirmation::Discard);
     }
 
-    match DraftRepository::delete(&*state.db, &normalize_shortcode(shortcode)).await {
+    match DraftRepository::delete(&*state.editor, &normalize_shortcode(shortcode)).await {
         // `false` means it went between the read above and this write, which is
         // the outcome the depositor asked for either way.
         Ok(_) => {
@@ -1539,7 +1539,7 @@ async fn withdraw(
         at: Utc::now(),
     };
 
-    match ReviewRoundRepository::discard(&*state.db, submission.id, &round).await {
+    match ReviewRoundRepository::discard(&*state.editor, submission.id, &round).await {
         Ok(Transition::Applied) => {
             span.record("form.outcome", "withdrawn");
             tracing::info!(submission.id = %submission.id, "withdrew a pending submission");
@@ -1932,6 +1932,7 @@ mod tests {
     use editor_core::canonical::{write_draft, write_project};
     use editor_core::published::PublishedProjects;
     use editor_core::repository::ApprovedRecordRepository;
+    use editor_store::test_support::{Faults, FaultyStore};
     use identity_core::records::Role;
     use serde_json::{json, Value};
     use shared_metadata::project::ProjectRaw;
@@ -1939,8 +1940,8 @@ mod tests {
 
     use super::*;
     use crate::test_support::{
-        a_session, a_user, body_string, count_rows, get, location, open_test_db, post, state_over, test_app,
-        test_state, title_of, with_cookie, Faults, FaultyDatabase, RecordingMailer,
+        a_session, a_user, body_string, get, location, open_test_db, post, state_over, test_app, test_state, title_of,
+        with_cookie, RecordingMailer,
     };
 
     /// Percent-encode a form value.
@@ -2063,7 +2064,10 @@ mod tests {
         assert_eq!(saved.status(), StatusCode::SEE_OTHER);
         let target = location(&saved).expect("a redirect location");
 
-        let stored = DraftRepository::find(&*state.db, "0801d").await.expect("read").expect("row");
+        let stored = DraftRepository::find(&*state.editor, "0801d")
+            .await
+            .expect("read")
+            .expect("row");
         let (path, query) = target.split_once('?').expect("a query string");
         assert_eq!(path, OVERVIEW);
         let encoded = query.strip_prefix("saved=").expect("a saved marker with a value");
@@ -2152,8 +2156,14 @@ mod tests {
         as_session(&app, post(OVERVIEW, "name=Same+Title"), &session).await;
         as_session(&app, enhanced("/projects/0801a/sections/overview", "name=Same+Title"), &session).await;
 
-        let plain = DraftRepository::find(&*state.db, "0801d").await.expect("read").expect("row");
-        let enhanced_row = DraftRepository::find(&*state.db, "0801a").await.expect("read").expect("row");
+        let plain = DraftRepository::find(&*state.editor, "0801d")
+            .await
+            .expect("read")
+            .expect("row");
+        let enhanced_row = DraftRepository::find(&*state.editor, "0801a")
+            .await
+            .expect("read")
+            .expect("row");
         let name_of = |payload: &str| {
             serde_json::from_str::<ProjectDraft>(payload)
                 .expect("a stored payload parses")
@@ -2172,8 +2182,8 @@ mod tests {
         // as typed would give `/080c` and `/080C` a row each — and two people
         // editing one project would each keep half the edits with nothing to say
         // so.
-        let db = std::sync::Arc::new(open_test_db("section-case").await);
-        let state = state_over(db.clone(), RecordingMailer::new(), |auth| {
+        let db = open_test_db("section-case").await;
+        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
             auth.cooldown = std::time::Duration::ZERO;
         });
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["080C"]).await;
@@ -2183,8 +2193,8 @@ mod tests {
         as_session(&app, post("/projects/080C/sections/overview", "name=Upper"), &session).await;
         as_session(&app, post("/projects/080c/sections/overview", "name=Lower"), &session).await;
 
-        assert_eq!(count_rows(&db, "drafts").await, 1);
-        let row = DraftRepository::find(&*state.db, "080c").await.expect("read").expect("row");
+        assert_eq!(db.editor.count_rows("drafts").await, 1);
+        let row = DraftRepository::find(&*state.editor, "080c").await.expect("read").expect("row");
         assert_eq!(row.shortcode, "080c");
         // Last write wins, which is the documented concurrency model — the point
         // is that both writes reached the same row.
@@ -2207,7 +2217,10 @@ mod tests {
         // to a section that does not own it.
         as_session(&app, post(OVERVIEW, "name=A+New+Title&provenance=Injected"), &session).await;
 
-        let row = DraftRepository::find(&*state.db, "0801d").await.expect("read").expect("row");
+        let row = DraftRepository::find(&*state.editor, "0801d")
+            .await
+            .expect("read")
+            .expect("row");
         let draft: ProjectDraft = serde_json::from_str(&row.payload).expect("parses");
         assert_eq!(draft.get("name").and_then(|v| v.as_str()), Some("A New Title"));
         assert!(draft.get("provenance").is_none(), "{}", row.payload);
@@ -2226,7 +2239,10 @@ mod tests {
         let before = state.published.get("0801d").expect("0801d").url.clone();
         as_session(&app, post(OVERVIEW, "name=Fine&url=https%3A%2F%2Fevil.example"), &session).await;
 
-        let row = DraftRepository::find(&*state.db, "0801d").await.expect("read").expect("row");
+        let row = DraftRepository::find(&*state.editor, "0801d")
+            .await
+            .expect("read")
+            .expect("row");
         let draft: ProjectDraft = serde_json::from_str(&row.payload).expect("parses");
         assert_eq!(draft.get("name").and_then(|v| v.as_str()), Some("Fine"));
         // Unchanged, and specifically still the published value rather than the
@@ -2260,7 +2276,7 @@ mod tests {
             reviewer_note: None,
             review_state: review_state.map(str::to_string),
         };
-        SubmissionRepository::create(&*state.db, &submission).await.unwrap();
+        SubmissionRepository::create(&*state.editor, &submission).await.unwrap();
         let round = ReviewRound {
             id: Uuid::new_v4(),
             shortcode: submission.shortcode.clone(),
@@ -2271,7 +2287,9 @@ mod tests {
             actor: Some(actor),
             at: Utc::now(),
         };
-        let applied = ReviewRoundRepository::discard(&*state.db, submission.id, &round).await.unwrap();
+        let applied = ReviewRoundRepository::discard(&*state.editor, submission.id, &round)
+            .await
+            .unwrap();
         assert_eq!(applied, Transition::Applied, "the fixture's round should be recorded");
     }
 
@@ -2321,7 +2339,7 @@ mod tests {
 
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
         assert!(body.contains("Please add a German description."), "{body}");
-        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().unwrap();
+        let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap().unwrap();
         assert!(stored.payload.contains("A name"), "the save landed: {}", stored.payload);
     }
 
@@ -2458,7 +2476,7 @@ mod tests {
     async fn a_changed_draft(state: &AppState, app: &axum::Router, session: &str) {
         let saved = as_session(app, post(OVERVIEW, "name=A+New+Title"), session).await;
         assert_eq!(saved.status(), StatusCode::SEE_OTHER, "the fixture's save should be accepted");
-        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap();
+        let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap();
         assert!(stored.is_some(), "the fixture should leave a draft");
     }
 
@@ -2476,7 +2494,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some(&format!("{OVERVIEW}?done=submitted")[..]));
 
-        let submission = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("a pending submission");
@@ -2524,7 +2542,7 @@ mod tests {
 
         as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
 
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -2542,7 +2560,7 @@ mod tests {
 
         as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
 
-        let draft = DraftRepository::find(&*state.db, "0801d")
+        let draft = DraftRepository::find(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("the draft survives the submission");
@@ -2578,12 +2596,12 @@ mod tests {
             "the refusal promises named fields: {body}"
         );
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was submitted"
         );
         // A refusal costs the submission, never the editing.
-        let draft = DraftRepository::find(&*state.db, "0801d")
+        let draft = DraftRepository::find(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("the draft survives a refused submission");
@@ -2614,7 +2632,7 @@ mod tests {
             &session,
         )
         .await;
-        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(
             !stored.payload.contains("\"keywords\""),
             "the member is absent: {}",
@@ -2663,7 +2681,7 @@ mod tests {
     /// A depositor with the dataset section open.
     /// The stored draft for `shortcode`, as the repository holds it.
     async fn stored_draft(state: &AppState, shortcode: &str) -> ProjectDraft {
-        let row = DraftRepository::find(&*state.db, shortcode)
+        let row = DraftRepository::find(&*state.editor, shortcode)
             .await
             .expect("read")
             .expect("a stored draft");
@@ -2709,7 +2727,7 @@ mod tests {
         assert!(body.contains(r#"name="keywords.r1.en""#), "the new row renders: {body}");
 
         // Only the filled row reached storage. The blank one is a rendering.
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
         assert_eq!(
             stored.get("keywords"),
@@ -2743,7 +2761,7 @@ mod tests {
         .await;
         assert_eq!(response.status(), StatusCode::OK);
 
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
         assert_eq!(
             stored.get("keywords").and_then(|k| k.as_array()).map(Vec::len),
@@ -2772,7 +2790,7 @@ mod tests {
         .await;
         assert_eq!(response.status(), StatusCode::OK);
 
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
         assert!(
             stored.get("keywords").is_none(),
@@ -2804,7 +2822,7 @@ mod tests {
         assert!(body.contains("https://first.example/"), "the filled row survives: {body}");
         assert!(body.contains(r#"name="additionalMaterial.r1""#), "a blank row is added: {body}");
 
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
         assert_eq!(
             stored.get("additionalMaterial"),
@@ -2823,7 +2841,7 @@ mod tests {
         )
         .await;
         assert_eq!(removed.status(), StatusCode::OK);
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
         assert!(
             stored.get("additionalMaterial").is_none(),
@@ -2849,7 +2867,7 @@ mod tests {
         .await;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
         assert_eq!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was written"
         );
@@ -2984,7 +3002,7 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("in review"), "{body}");
         assert_eq!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was written"
         );
@@ -3022,7 +3040,7 @@ mod tests {
             title_of(&body)
         );
         assert_eq!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was written, including the name that was fine"
         );
@@ -3043,7 +3061,7 @@ mod tests {
         }
         let response = as_session(&app, post(OVERVIEW, &form), &session).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER, "a save at the cap is accepted");
-        assert!(DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some());
+        assert!(DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some());
     }
 
     #[tokio::test]
@@ -3069,7 +3087,7 @@ mod tests {
         assert!(body.contains("person-99999"), "the offending id is named: {body}");
         assert!(body.contains("not a person or organisation the repository knows"), "{body}");
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was submitted"
         );
@@ -3095,7 +3113,7 @@ mod tests {
         )
         .await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER, "the submission is recorded");
-        let submission = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("a pending submission");
@@ -3120,13 +3138,13 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("reserved here for a value that is not filled in"), "{body}");
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was submitted"
         );
         // The draft keeps it, so the depositor sees what they typed and can fix
         // it — a refusal costs the submission, never the editing.
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(draft.payload.contains("MISSING"), "{}", draft.payload);
     }
 
@@ -3145,7 +3163,7 @@ mod tests {
         let body = body_string(response).await;
         assert!(!body.contains("reserved here for a value"), "{body}");
         assert!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .is_some(),
@@ -3169,7 +3187,7 @@ mod tests {
         let mut draft = ProjectDraft::from_raw(state.published.get("0801d").expect("0801d"));
         draft.set("temporalCoverage", json!([{ "en": "A period nobody has enriched" }]));
         DraftRepository::upsert(
-            &*state.db,
+            &*state.editor,
             &DraftRecord {
                 shortcode: "0801d".to_string(),
                 payload: serde_json::to_string(&draft).unwrap(),
@@ -3203,11 +3221,11 @@ mod tests {
         );
 
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was submitted"
         );
-        let draft = DraftRepository::find(&*state.db, "0801d")
+        let draft = DraftRepository::find(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("the draft survives");
@@ -3239,7 +3257,7 @@ mod tests {
             "the reason is stated"
         );
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None
         );
     }
@@ -3261,7 +3279,7 @@ mod tests {
         assert!(body_string(response).await.contains("in review"), "the reason is stated");
         // Still the one that was already there, not a second one and not a
         // replacement.
-        let submission = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("the pending submission");
@@ -3274,8 +3292,8 @@ mod tests {
         // submission per project". Reaching it means a submission arrived
         // between the read that rendered the form and this write, which is a
         // refusal to report — not a 500, and not a silent replacement.
-        let db = Arc::new(open_test_db("section-submit-raced").await);
-        let state = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let db = open_test_db("section-submit-raced").await;
+        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
@@ -3296,7 +3314,7 @@ mod tests {
             reviewer_note: None,
             review_state: None,
         };
-        SubmissionRepository::create(&*db, &racing).await.unwrap();
+        SubmissionRepository::create(&*db.editor, &racing).await.unwrap();
 
         let response = as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
 
@@ -3305,7 +3323,10 @@ mod tests {
             body_string(response).await.contains("already has a submission"),
             "the reason is stated"
         );
-        let stored = SubmissionRepository::find_by_shortcode(&*db, "0801d").await.unwrap().unwrap();
+        let stored = SubmissionRepository::find_by_shortcode(&*db.editor, "0801d")
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(stored.id, racing.id, "the first submission is untouched");
     }
 
@@ -3314,13 +3335,14 @@ mod tests {
         // The draft is written before the submission and by a different call,
         // so a storage failure on the submission must not cost the depositor
         // their editing as well as their submission.
-        let db = Arc::new(open_test_db("section-submit-storage").await);
-        let sound = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let db = open_test_db("section-submit-storage").await;
+        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
         let user = a_user(&sound, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&sound, user.id).await;
         let faulty = state_over(
-            Arc::new(FaultyDatabase::new(
-                db.clone(),
+            db.identity.clone(),
+            Arc::new(FaultyStore::new(
+                db.editor.clone(),
                 Faults { submission_create: true, ..Faults::default() },
             )),
             RecordingMailer::new(),
@@ -3335,12 +3357,15 @@ mod tests {
             body_string(response).await.contains("could not be recorded"),
             "the reason is stated"
         );
-        let draft = DraftRepository::find(&*db, "0801d")
+        let draft = DraftRepository::find(&*db.editor, "0801d")
             .await
             .unwrap()
             .expect("the draft was still written");
         assert!(draft.payload.contains("A New Title"), "{}", draft.payload);
-        assert_eq!(SubmissionRepository::find_by_shortcode(&*db, "0801d").await.unwrap(), None);
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*db.editor, "0801d").await.unwrap(),
+            None
+        );
     }
 
     #[tokio::test]
@@ -3357,7 +3382,7 @@ mod tests {
         let response = as_session(&app, post(OVERVIEW, "name=Edited+by+RDU&intent=submit"), &session).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
-        let submission = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("an RDU submission is a pending submission");
@@ -3382,14 +3407,16 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None
         );
-        let rounds = ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d").await.unwrap();
+        let rounds = ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
+            .await
+            .unwrap();
         assert_eq!(rounds.len(), 1);
         assert_eq!(rounds[0].outcome, ReviewOutcome::Withdrawn);
         assert_eq!(rounds[0].actor, Some(user.id));
-        assert!(DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some());
+        assert!(DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some());
     }
 
     #[tokio::test]
@@ -3454,7 +3481,7 @@ mod tests {
 
     /// The baseline the form currently renders, as a body would post it.
     async fn baseline_of(state: &AppState, shortcode: &str) -> String {
-        let record = DraftRepository::find(&*state.db, shortcode)
+        let record = DraftRepository::find(&*state.editor, shortcode)
             .await
             .unwrap()
             .expect("a draft to take a baseline from");
@@ -3503,10 +3530,10 @@ mod tests {
         let response = as_session(&app, enhanced(OVERVIEW, "name=Typed+then+left+the+field"), &session).await;
         assert_eq!(response.status(), StatusCode::OK, "the enhanced path patches the region");
 
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(draft.payload.contains("Typed then left the field"), "{}", draft.payload);
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "an autosave must never submit"
         );
@@ -3544,7 +3571,7 @@ mod tests {
         // What was typed comes back, so nothing has to be retyped.
         assert!(body.contains("Bo was here"), "the typed value survives: {body}");
 
-        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(
             stored.payload.contains("Ada again"),
             "nothing was overwritten: {}",
@@ -3583,7 +3610,7 @@ mod tests {
         )
         .await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER, "the second save is accepted");
-        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(stored.payload.contains("Bo was here"), "{}", stored.payload);
     }
 
@@ -3637,7 +3664,7 @@ mod tests {
         a_changed_draft(&state, &app, &session).await;
         let opened = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
         assert!(opened.contains(r#"name="baseline""#), "{opened}");
-        let record = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let record = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(
             opened.contains(&record.updated_at.to_rfc3339()),
             "the stored revision, not a formatted time: {opened}"
@@ -3663,7 +3690,7 @@ mod tests {
         // that would fall through to `save`.
         assert!(body.contains("Keep the draft"), "{body}");
         assert!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some(),
             "asking must not delete"
         );
     }
@@ -3682,7 +3709,7 @@ mod tests {
         let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER, "the plain path redirects to the GET");
         assert_eq!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap(),
             None,
             "the draft is gone"
         );
@@ -3745,7 +3772,7 @@ mod tests {
         assert!(body.contains("Draft discarded"), "{body}");
         assert!(!body.contains("Discard draft"), "the control is gone with the draft: {body}");
         assert!(body.contains("Nothing saved yet"), "{body}");
-        assert_eq!(DraftRepository::find(&*state.db, "0801d").await.unwrap(), None);
+        assert_eq!(DraftRepository::find(&*state.editor, "0801d").await.unwrap(), None);
     }
 
     #[tokio::test]
@@ -3784,7 +3811,7 @@ mod tests {
         assert!(body.contains("cannot be discarded"), "{body}");
         assert!(body.contains("Take the submission back first"), "the way out is named: {body}");
         assert!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some(),
             "the draft survives"
         );
     }
@@ -3804,7 +3831,7 @@ mod tests {
         let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
         assert!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some(),
             "the draft survives"
         );
     }
@@ -3823,11 +3850,14 @@ mod tests {
         assert!(body.contains("Yes, take it back"), "{body}");
 
         assert_eq!(
-            SubmissionRepository::find(&*state.db, submission).await.unwrap().map(|s| s.id),
+            SubmissionRepository::find(&*state.editor, submission)
+                .await
+                .unwrap()
+                .map(|s| s.id),
             Some(submission),
             "asking must not withdraw"
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -3860,7 +3890,7 @@ mod tests {
         assert!(as_a_button.contains("Nothing was saved"), "{as_a_button}");
 
         assert!(
-            SubmissionRepository::find(&*state.db, submission).await.unwrap().is_some(),
+            SubmissionRepository::find(&*state.editor, submission).await.unwrap().is_some(),
             "the submission is untouched throughout"
         );
     }
@@ -3881,7 +3911,7 @@ mod tests {
             body_string(response).await.contains("no submission to take back"),
             "the reason is stated"
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -3909,10 +3939,10 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert!(body_string(response).await.contains("no submission to take back"));
         assert!(
-            SubmissionRepository::find(&*state.db, submission).await.unwrap().is_some(),
+            SubmissionRepository::find(&*state.editor, submission).await.unwrap().is_some(),
             "the approved record survives"
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -3924,8 +3954,8 @@ mod tests {
         // of the service scopes access: one draft per project, and a
         // project-mate can already overwrite the draft the submission was made
         // from. Scoped to the submitter, a submission would be unwithdrawable
-        // whenever that account is away — or removed, which nulls
-        // `submitted_by`.
+        // whenever that account is away, or removed, which leaves
+        // `submitted_by` naming nobody.
         let (state, _) = test_state("section-withdraw-mate").await;
         let author = a_user(&state, "a@example.test", "First Depositor", Role::Depositor, &["0801d"]).await;
         let mate = a_user(&state, "b@example.test", "Second Depositor", Role::Depositor, &["0801d"]).await;
@@ -3936,7 +3966,9 @@ mod tests {
         let response = as_session(&app, post(OVERVIEW, "intent=withdraw"), &session).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
-        let rounds = ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d").await.unwrap();
+        let rounds = ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
+            .await
+            .unwrap();
         assert_eq!(
             rounds[0].actor,
             Some(mate.id),
@@ -3959,7 +3991,7 @@ mod tests {
         as_session(&app, post(OVERVIEW, "intent=withdraw"), &session).await;
 
         assert!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .is_some(),
@@ -3982,7 +4014,7 @@ mod tests {
             reviewer_note: None,
             review_state: Some(format!(r#"{{"{field}":{{"decision":"accept"}}}}"#)),
         };
-        SubmissionRepository::create(&*state.db, &submission).await.unwrap();
+        SubmissionRepository::create(&*state.editor, &submission).await.unwrap();
         let round = ReviewRound {
             id: Uuid::new_v4(),
             shortcode: submission.shortcode.clone(),
@@ -3994,7 +4026,7 @@ mod tests {
             at: Utc::now(),
         };
         let applied = ReviewRoundRepository::request_changes(
-            &*state.db,
+            &*state.editor,
             submission.id,
             &DraftRecord {
                 shortcode: submission.shortcode.clone(),
@@ -4035,7 +4067,7 @@ mod tests {
         .await;
 
         let draft: ProjectDraft = serde_json::from_str(
-            &DraftRepository::find(&*state.db, "0801d")
+            &DraftRepository::find(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .expect("a draft")
@@ -4077,7 +4109,7 @@ mod tests {
         .await;
 
         let draft: ProjectDraft = serde_json::from_str(
-            &DraftRepository::find(&*state.db, "0801d")
+            &DraftRepository::find(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .expect("a draft")
@@ -4123,7 +4155,7 @@ mod tests {
         // A later round that discards, on top of the one that returned.
         let submission = a_submission(&state, "0801d", user.id, SubmissionState::InReview).await;
         ReviewRoundRepository::discard(
-            &*state.db,
+            &*state.editor,
             submission,
             &ReviewRound {
                 id: Uuid::new_v4(),
@@ -4146,7 +4178,7 @@ mod tests {
         as_session(&app, post(OVERVIEW, "name=Editable+again"), &session).await;
 
         let draft: ProjectDraft = serde_json::from_str(
-            &DraftRepository::find(&*state.db, "0801d")
+            &DraftRepository::find(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .expect("a draft")
@@ -4170,11 +4202,11 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was submitted"
         );
-        let draft = DraftRepository::find(&*state.db, "0801d")
+        let draft = DraftRepository::find(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("the draft was saved");
@@ -4195,7 +4227,7 @@ mod tests {
             reviewer_note: None,
             review_state: None,
         };
-        SubmissionRepository::create(&*state.db, &submission)
+        SubmissionRepository::create(&*state.editor, &submission)
             .await
             .expect("the submission should store");
         submission.id
@@ -4205,8 +4237,8 @@ mod tests {
     async fn a_project_in_review_is_read_only_and_a_save_against_it_is_refused() {
         for submission_state in [SubmissionState::Submitted, SubmissionState::InReview] {
             let label = format!("section-locked-{submission_state}");
-            let db = std::sync::Arc::new(open_test_db(&label).await);
-            let state = state_over(db.clone(), RecordingMailer::new(), |auth| {
+            let db = open_test_db(&label).await;
+            let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
                 auth.cooldown = std::time::Duration::ZERO;
             });
             let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -4225,7 +4257,11 @@ mod tests {
             assert_eq!(refused.status(), StatusCode::OK, "{submission_state}");
             let body = body_string(refused).await;
             assert!(body.contains("cannot be changed"), "{submission_state}: {body}");
-            assert_eq!(count_rows(&db, "drafts").await, 0, "{submission_state}: nothing may be written");
+            assert_eq!(
+                db.editor.count_rows("drafts").await,
+                0,
+                "{submission_state}: nothing may be written"
+            );
         }
     }
 
@@ -4290,7 +4326,7 @@ mod tests {
 
     /// Every proposal stored for `shortcode`, for asserting on what a propose intent wrote.
     async fn proposals_for(state: &AppState, shortcode: &str) -> Vec<EntityProposal> {
-        EntityProposalRepository::list_for_shortcode(&*state.db, shortcode)
+        EntityProposalRepository::list_for_shortcode(&*state.editor, shortcode)
             .await
             .expect("proposals should read")
     }
@@ -4359,7 +4395,7 @@ mod tests {
 
         as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=propose-person"), &session).await;
 
-        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(draft.payload.contains("A New Title"), "{}", draft.payload);
     }
 
@@ -4545,7 +4581,7 @@ mod tests {
         assert!(body.contains("has not been finished"), "{body}");
         assert!(body.contains("person-417"), "names the proposal: {body}");
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
             None,
             "nothing was submitted"
         );
@@ -4564,7 +4600,7 @@ mod tests {
         as_session(&app, post(OVERVIEW, "name=Updated+Title&intent=propose-person"), &session).await;
         let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("the proposal");
         EntityProposalRepository::update_payload(
-            &*state.db,
+            &*state.editor,
             proposal.id,
             r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#,
             Utc::now(),
@@ -4582,7 +4618,7 @@ mod tests {
             "a refusal would re-render at 200 instead"
         );
         assert_eq!(
-            SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .map(|submission| submission.state),
@@ -4605,7 +4641,7 @@ mod tests {
         as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
         let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("the proposal");
         EntityProposalRepository::update_payload(
-            &*state.db,
+            &*state.editor,
             proposal.id,
             r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#,
             Utc::now(),
@@ -4737,7 +4773,7 @@ mod tests {
             assert_eq!(response.status(), StatusCode::SEE_OTHER, "{label} {}", section.id);
         }
 
-        let row = DraftRepository::find(&*state.db, &normalize_shortcode(shortcode))
+        let row = DraftRepository::find(&*state.editor, &normalize_shortcode(shortcode))
             .await
             .expect("read")
             .unwrap_or_else(|| panic!("{label} should have a draft row"));
@@ -5152,7 +5188,7 @@ mod tests {
         let mut approved = ProjectDraft::from_raw(published);
         approved.set("name", serde_json::json!("What RDU Approved"));
         ApprovedRecordRepository::create(
-            &*state.db,
+            &*state.editor,
             &editor_core::records::ApprovedRecord {
                 id: uuid::Uuid::new_v4(),
                 shortcode: "0801d".to_string(),
@@ -5194,7 +5230,7 @@ mod tests {
 
         let published = state.published.get("0801d").expect("a published fixture");
         ApprovedRecordRepository::create(
-            &*state.db,
+            &*state.editor,
             &editor_core::records::ApprovedRecord {
                 id: uuid::Uuid::new_v4(),
                 shortcode: "0801d".to_string(),

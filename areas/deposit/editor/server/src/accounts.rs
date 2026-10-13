@@ -86,17 +86,13 @@ async fn report_unlisted(db: &dyn UserRepository, addresses: &[String]) -> Resul
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
-
     use chrono::TimeZone;
+    use identity_store::Database;
 
     use super::*;
-    use crate::db::{Database, Source};
 
     async fn test_db(label: &str) -> Database {
-        Database::open(Source::memory_for_test(label), 2, Duration::from_secs(5))
-            .await
-            .expect("the test database should open")
+        identity_store::test_support::open_for_test(label).await
     }
 
     fn at(hour: u32) -> DateTime<Utc> {

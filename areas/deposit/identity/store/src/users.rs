@@ -76,7 +76,7 @@ impl UserRepository for Database {
         .await
         // `email_normalized` is the only unique index on this table, so a
         // constraint violation here is a duplicate address.
-        .map_err(|e| e.into_identity_error(ENTITY))
+        .map_err(|e| e.into_repository_error(ENTITY))
     }
 
     async fn update(&self, user: &User) -> Result<()> {
@@ -100,7 +100,7 @@ impl UserRepository for Database {
                 Ok(updated)
             })
             .await
-            .map_err(|e| e.into_identity_error(ENTITY))?;
+            .map_err(|e| e.into_repository_error(ENTITY))?;
 
         // Deliberately not silent. An update that matched nothing means the
         // account was removed underneath the form, and reporting success would
@@ -366,35 +366,6 @@ mod tests {
         assert_eq!(count(&db, "sessions").await, 0, "sessions must cascade");
         assert_eq!(count(&db, "login_codes").await, 0, "codes must cascade");
         assert_eq!(count(&db, "user_shortcodes").await, 0, "assignments must cascade");
-    }
-
-    #[tokio::test]
-    async fn test_delete_leaves_drafts_and_submissions_with_a_null_author() {
-        // ON DELETE SET NULL, not CASCADE: removing an account must not destroy
-        // the project's work, and "last editor" then reads as unknown rather
-        // than pointing at a row that is gone.
-        let db = test_db("users-delete-set-null").await;
-        let user = depositor("a@x.test", &[]);
-        db.create(&user).await.unwrap();
-        let user_id = user.id.to_string();
-        db.write(move |tx| {
-            tx.execute(
-                "INSERT INTO drafts (shortcode, payload, updated_by, created_at, updated_at) \
-                 VALUES ('0801', '{}', ?1, ?2, ?2)",
-                params![user_id, at(10)],
-            )
-        })
-        .await
-        .unwrap();
-
-        db.delete(user.id).await.unwrap();
-
-        let author: Option<String> = db
-            .read(|conn| conn.query_row("SELECT updated_by FROM drafts WHERE shortcode = '0801'", [], |row| row.get(0)))
-            .await
-            .unwrap();
-        assert_eq!(author, None);
-        assert_eq!(count(&db, "drafts").await, 1, "the draft itself must survive");
     }
 
     #[tokio::test]

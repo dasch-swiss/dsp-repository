@@ -5,9 +5,9 @@
 //! never a `rusqlite` type. Every method is `async` and boxed via `async_trait`
 //! rather than a bare `async fn` in a trait: the futures have to be `Send` to be
 //! awaited inside an Axum handler, and the traits have to stay dyn-compatible
-//! for the `Arc<dyn Repositories>` that `editor-server`'s `AppState` holds (this
-//! crate's [`IdentityRepositories`] plus the editor's), which is how a test puts
-//! a fake behind it and makes a chosen call fail.
+//! for the `Arc<dyn IdentityRepositories>` that `editor-server`'s `AppState`
+//! holds, which is how a test puts a fake behind it and makes a chosen call
+//! fail.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -68,8 +68,8 @@ pub trait UserRepository: Send + Sync {
     async fn update(&self, user: &User) -> Result<()>;
 
     /// Delete a user. `ON DELETE CASCADE` takes its sessions, codes and
-    /// shortcode assignments with it; its drafts and submissions
-    /// survive with a null author.
+    /// shortcode assignments with it. Editor rows it authored are not
+    /// identity's, and keep its id.
     async fn delete(&self, id: Uuid) -> Result<()>;
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<User>>;

@@ -154,30 +154,12 @@ mod tests {
     use chrono::{DateTime, TimeZone, Utc};
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
     use editor_core::repository::EntityProposalRepository;
-    use identity_core::records::{Role, User};
-    use identity_core::repository::UserRepository;
 
     use super::super::tests::{count, test_db};
     use super::*;
 
     fn at(hour: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 8, 21, hour, 0, 0).unwrap()
-    }
-
-    async fn a_user(db: &Database, email: &str, role: Role) -> Uuid {
-        let user = User {
-            id: Uuid::new_v4(),
-            email: email.to_string(),
-            name: "A".to_string(),
-            role,
-            shortcodes: vec![],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: at(9),
-        };
-        UserRepository::create(db, &user).await.unwrap();
-        user.id
     }
 
     fn submission(shortcode: &str, author: Option<Uuid>, submitted: DateTime<Utc>) -> Submission {
@@ -281,7 +263,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_then_find_round_trips_every_field() {
         let db = test_db("submissions-round-trip").await;
-        let author = a_user(&db, "a@x.test", Role::Depositor).await;
+        let author = Uuid::new_v4();
         let mut submission = submission("0801", Some(author), at(11));
         // Set rather than left `None`, or `review_state` round-trips vacuously: a `None` compares
         // equal whether the column is read, written, or missing.
@@ -301,7 +283,7 @@ mod tests {
         // unique index rather than by handlers remembering to check, so a race
         // between two submits cannot produce two rows.
         let db = test_db("submissions-conflict").await;
-        let author = a_user(&db, "a@x.test", Role::Depositor).await;
+        let author = Uuid::new_v4();
         SubmissionRepository::create(&db, &submission("0801", Some(author), at(11)))
             .await
             .unwrap();
@@ -318,8 +300,8 @@ mod tests {
         // `submitted_at` orders the review queue; a review that reset it would
         // send the submission to the back.
         let db = test_db("submissions-update").await;
-        let author = a_user(&db, "a@x.test", Role::Depositor).await;
-        let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+        let author = Uuid::new_v4();
+        let reviewer = Uuid::new_v4();
         let mut submission = submission("0801", Some(author), at(11));
         SubmissionRepository::create(&db, &submission).await.unwrap();
 
@@ -387,18 +369,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_removing_the_submitter_leaves_the_submission_with_no_author() {
-        // ON DELETE SET NULL. The review queue's "last editor" reads as unknown;
-        // the submission itself is not destroyed by an account removal.
-        let db = test_db("submissions-author-removed").await;
-        let author = a_user(&db, "a@x.test", Role::Depositor).await;
+    async fn test_the_submitter_id_is_kept_whether_or_not_the_account_exists() {
+        // No foreign key: accounts live in identity's store, so this one keeps
+        // the id it was given, and a removed account leaves it in place.
+        let db = test_db("submissions-author-kept").await;
+        let author = Uuid::new_v4();
         let submission = submission("0801", Some(author), at(11));
         SubmissionRepository::create(&db, &submission).await.unwrap();
 
-        UserRepository::delete(&db, author).await.unwrap();
-
         let found = SubmissionRepository::find(&db, submission.id).await.unwrap().unwrap();
-        assert_eq!(found.submitted_by, None);
+        assert_eq!(found.submitted_by, Some(author));
         assert_eq!(found.payload, submission.payload);
     }
 

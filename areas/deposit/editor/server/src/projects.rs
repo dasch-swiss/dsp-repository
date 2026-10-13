@@ -146,10 +146,10 @@ async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState
     // and report those projects Online no matter what their depositor had
     // pending.
     let key = normalize_shortcode(shortcode);
-    let submission = SubmissionRepository::find_by_shortcode(&*state.db, &key)
+    let submission = SubmissionRepository::find_by_shortcode(&*state.editor, &key)
         .await?
         .map(|s| s.state);
-    let has_draft = DraftRepository::find(&*state.db, &key).await?.is_some();
+    let has_draft = DraftRepository::find(&*state.editor, &key).await?.is_some();
     let (approved, comparison) = approved_comparison(state, &key).await?;
 
     Ok(depositor_state(submission, approved, has_draft, &comparison))
@@ -169,7 +169,7 @@ async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState
 /// other project down with it. The startup pass is where an unreadable payload
 /// is reported.
 pub(crate) async fn approved_comparison(state: &AppState, key: &str) -> Result<(bool, Comparison), RepositoryError> {
-    let approved = ApprovedRecordRepository::find_by_shortcode(&*state.db, key).await?;
+    let approved = ApprovedRecordRepository::find_by_shortcode(&*state.editor, key).await?;
     let local = approved
         .last()
         .and_then(|record| serde_json::from_str::<ProjectDraft>(&record.payload).ok());
@@ -449,7 +449,7 @@ mod tests {
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["080C"]).await;
         let session = a_session(&state, user.id).await;
         DraftRepository::upsert(
-            &*state.db,
+            &*state.editor,
             &DraftRecord {
                 shortcode: normalize_shortcode("080C"),
                 payload: r#"{"name":"Work in progress"}"#.to_string(),

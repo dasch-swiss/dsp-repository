@@ -124,19 +124,35 @@ pub(crate) async fn serve() -> std::process::ExitCode {
 
     // Opened before the listener binds, so a bad mount stops the process with a message naming
     // the cause. Held for the life of the process: a shared-cache in-memory database exists
-    // only while a connection to it is open.
-    let db = match crate::db::Database::open(config.db_source(), config.db_readers, config.db_busy_timeout()).await {
-        // Behind an `Arc`: `AppState` holds the ports, and the cleanup task needs a handle.
+    // only while a connection to it is open. Identity's first, then the editor's.
+    let identity_db =
+        match identity_store::Database::open(config.identity_db_source(), config.db_readers, config.db_busy_timeout())
+            .await
+        {
+            // Behind an `Arc`: `AppState` holds the ports, and the cleanup task needs a handle.
+            Ok(db) => std::sync::Arc::new(db),
+            Err(e) => {
+                tracing::error!(error = %e, "failed to open identity's database");
+                return ExitCode::FAILURE;
+            }
+        };
+    let editor_db = match editor_store::Database::open(
+        config.editor_db_source(),
+        config.db_readers,
+        config.db_busy_timeout(),
+    )
+    .await
+    {
         Ok(db) => std::sync::Arc::new(db),
         Err(e) => {
-            tracing::error!(error = %e, "failed to open the database");
+            tracing::error!(error = %e, "failed to open the editor's database");
             return ExitCode::FAILURE;
         }
     };
 
     // RDU members are created or promoted on every start. Fatal on failure: with no
     // administrator nobody can administer the service.
-    match crate::accounts::ensure_rdu(&*db, &config.rdu_addresses(), chrono::Utc::now()).await {
+    match crate::accounts::ensure_rdu(&*identity_db, &config.rdu_addresses(), chrono::Utc::now()).await {
         Ok(changed) => tracing::info!(
             rdu.configured = config.rdu_addresses().len(),
             rdu.changed = changed,
@@ -149,19 +165,17 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     }
 
     // A misconfigured relay stops the process here rather than at the first login.
-    let mailer: std::sync::Arc<dyn identity_core::mail::Mailer> = match &config.smtp_host {
-        Some(host) => {
-            match crate::mail::SmtpMailer::new(host, config.smtp_port, config.smtp_credentials(), &config.smtp_from) {
-                Ok(mailer) => std::sync::Arc::new(mailer),
-                Err(e) => {
-                    tracing::error!(error = %e, "failed to configure the SMTP relay");
-                    return ExitCode::FAILURE;
-                }
-            }
+    let mailer = match identity_store::mail::mailer(
+        config.smtp_host.as_deref(),
+        config.smtp_port,
+        config.smtp_credentials(),
+        &config.smtp_from,
+    ) {
+        Ok(mailer) => mailer,
+        Err(e) => {
+            tracing::error!(error = %e, "failed to configure the SMTP relay");
+            return ExitCode::FAILURE;
         }
-        // The PR preview's default: with no relay the service stays
-        // usable and codes go to the log.
-        None => std::sync::Arc::new(crate::mail::ConsoleMailer),
     };
     tracing::info!(mail.transport = %mailer.describe(), "mail transport ready");
 
@@ -169,7 +183,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     // Detached rather than drained on shutdown: the next start sweeps what is left.
     {
         const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
-        let db = std::sync::Arc::clone(&db);
+        let db = std::sync::Arc::clone(&identity_db);
         tokio::spawn(async move {
             use identity_core::repository::{LoginCodeRepository, MailSendRepository, SessionRepository};
 
@@ -229,7 +243,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
 
     // Once per process: the moment a deployment starts is the moment its approved changes are
     // Online. Not fatal, see `reconcile`'s module docs.
-    match crate::reconcile::reconcile_published(&*db, &*db, &published, &agents).await {
+    match crate::reconcile::reconcile_published(&*editor_db, &*editor_db, &published, &agents).await {
         // Two spelled-out arms rather than one parameterised call: `tracing`
         // resolves the level at compile time, so it cannot be a variable.
         Ok(summary) if summary.needs_attention() => tracing::warn!(
@@ -263,7 +277,8 @@ pub(crate) async fn serve() -> std::process::ExitCode {
 
     let state = crate::shell::AppState {
         css_href: crate::assets::resolve_css_href(&config.public_dir),
-        db,
+        identity: identity_db,
+        editor: editor_db,
         mailer,
         auth: config.auth_config(),
         reveal_login_code: config.reveals_login_code(),
@@ -327,4 +342,40 @@ async fn shutdown_signal() {
     }
 
     tracing::info!("shutdown signal received, flushing telemetry");
+}
+
+#[cfg(test)]
+mod tests {
+    use identity_core::mail::Mail;
+
+    #[tokio::test]
+    async fn test_the_console_transport_logs_the_body_and_not_the_recipient() {
+        // The message is logged so the service stays usable without a relay, and
+        // the recipient is not part of it. The log is actually captured, so
+        // adding `mail.to = %mail.to` to the event below fails here rather than
+        // passing on the transport the PR preview runs.
+        let mail = Mail {
+            to: "someone@example.org".to_string(),
+            subject: "Your sign-in code".to_string(),
+            body: "Your code is 123456".to_string(),
+        };
+
+        // No relay host selects the console transport.
+        let console =
+            identity_store::mail::mailer(None, 587, None, "noreply@dasch.swiss").expect("the console transport");
+        let (logs, guard) = crate::test_support::capture_logs();
+        assert_eq!(console.send(&mail).await, Ok(()));
+        drop(guard);
+
+        let lines = logs.lines();
+        assert!(
+            lines.iter().any(|line| line.contains("123456")),
+            "the code must reach the log, or the fallback delivers nothing: {lines:?}"
+        );
+        for line in &lines {
+            assert!(!line.contains("someone@example.org"), "the recipient must not: {line}");
+            assert!(!line.contains('@'), "and nothing address-shaped either: {line}");
+        }
+        assert!(console.describe().contains("EDITOR_SMTP_HOST"));
+    }
 }

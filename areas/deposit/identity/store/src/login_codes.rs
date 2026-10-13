@@ -54,7 +54,7 @@ impl LoginCodeRepository for Database {
         let code = code.clone();
         self.write(move |tx| insert(tx, &code))
             .await
-            .map_err(|e| e.into_identity_error(ENTITY))?;
+            .map_err(|e| e.into_repository_error(ENTITY))?;
         Ok(())
     }
 
@@ -80,7 +80,7 @@ impl LoginCodeRepository for Database {
                 Ok(Issued::New)
             })
             .await
-            .map_err(|e| e.into_identity_error(ENTITY))?;
+            .map_err(|e| e.into_repository_error(ENTITY))?;
         Ok(outcome)
     }
 

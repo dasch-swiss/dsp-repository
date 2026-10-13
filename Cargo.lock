@@ -1121,20 +1121,20 @@ dependencies = [
  "axum-tracing-opentelemetry",
  "chrono",
  "clap",
- "deadpool-sqlite",
  "editor-core",
+ "editor-store",
  "editor-web",
  "figment",
  "identity-core",
+ "identity-store",
  "init-tracing-opentelemetry",
- "lettre",
+ "insta",
  "maud",
  "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "pyroscope",
- "rusqlite",
  "serde",
  "serde_json",
  "shared-metadata",
@@ -1149,6 +1149,21 @@ dependencies = [
  "tracing-subscriber",
  "ureq",
  "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "editor-store"
+version = "0.8.8"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "deadpool-sqlite",
+ "editor-core",
+ "rusqlite",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -2190,6 +2205,22 @@ dependencies = [
  "rand 0.9.4",
  "subtle",
  "thiserror 2.0.18",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "identity-store"
+version = "0.8.8"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "deadpool-sqlite",
+ "identity-core",
+ "lettre",
+ "rusqlite",
+ "thiserror 2.0.18",
+ "tokio",
  "tracing",
  "uuid",
 ]

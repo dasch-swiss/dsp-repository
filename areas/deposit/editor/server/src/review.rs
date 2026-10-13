@@ -93,11 +93,11 @@ const APPROVE_REFUSED_UNPUBLISHABLE: &str = "This project, as decided, cannot be
 
 /// `GET /review` — the queue and the drafts.
 pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
-    let submissions = match SubmissionRepository::list(&*state.db).await {
+    let submissions = match SubmissionRepository::list(&*state.editor).await {
         Ok(submissions) => submissions,
         Err(error) => return storage_error(&state, &user, "read the review queue", &error),
     };
-    let drafts = match DraftRepository::list(&*state.db).await {
+    let drafts = match DraftRepository::list(&*state.editor).await {
         Ok(drafts) => drafts,
         Err(error) => return storage_error(&state, &user, "read the drafts", &error),
     };
@@ -323,7 +323,7 @@ pub(crate) async fn act(
     submission.reviewed_by = Some(user.id);
     submission.reviewed_at = Some(now);
 
-    match SubmissionRepository::update(&*state.db, &submission).await {
+    match SubmissionRepository::update(&*state.editor, &submission).await {
         Ok(()) => {
             span.record("review.outcome", "saved");
             tracing::info!(
@@ -414,8 +414,8 @@ async fn finish(
         }
 
         // The same argument, applied to a proposed entity: approving one nobody decided commits an
-        // entity nobody looked at. `db::review_rounds`'s module docs name this gate as the reason
-        // an undecided proposal's own `approve()` mapping is safe to leave `submitted`
+        // entity nobody looked at. `editor_store::review_rounds`'s module docs name this gate as
+        // the reason an undecided proposal's own `approve()` mapping is safe to leave `submitted`
         // rather than guessed at — this is the other half of that coupling.
         let undecided_proposals = context
             .entity_proposals
@@ -475,7 +475,7 @@ async fn finish(
         // record on its own once its pull request is no longer live; this is the case it
         // cannot resolve by itself, so it is refused ahead of the write instead.
         let existing =
-            match ApprovedRecordRepository::find_by_shortcode(&*state.db, &context.submission.shortcode).await {
+            match ApprovedRecordRepository::find_by_shortcode(&*state.editor, &context.submission.shortcode).await {
                 Ok(existing) => existing,
                 Err(error) => {
                     span.record("review.outcome", "store_failed");
@@ -533,20 +533,20 @@ async fn finish(
                 span.record("review.outcome", "serialize_failed");
                 return refused(state, user, context, filter, headers, FINISH_REFUSED_UNWRITABLE);
             };
-            ReviewRoundRepository::approve(&*state.db, context.submission.id, &record, &round).await
+            ReviewRoundRepository::approve(&*state.editor, context.submission.id, &record, &round).await
         }
         ReviewOutcome::ChangesRequested => {
             let Some(draft) = returned_draft(context, user, round.at) else {
                 span.record("review.outcome", "serialize_failed");
                 return refused(state, user, context, filter, headers, FINISH_REFUSED_UNWRITABLE);
             };
-            ReviewRoundRepository::request_changes(&*state.db, context.submission.id, &draft, &round).await
+            ReviewRoundRepository::request_changes(&*state.editor, context.submission.id, &draft, &round).await
         }
         // Reject leaves both the draft and the published metadata alone: the
         // note is what the depositor gets, and their work is still theirs to
         // resubmit.
         ReviewOutcome::Rejected | ReviewOutcome::Withdrawn => {
-            ReviewRoundRepository::discard(&*state.db, context.submission.id, &round).await
+            ReviewRoundRepository::discard(&*state.editor, context.submission.id, &round).await
         }
     };
 
@@ -780,7 +780,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
     let key = normalize_shortcode(shortcode);
-    let submission = match SubmissionRepository::find_by_shortcode(&*state.db, &key).await {
+    let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
         Ok(Some(submission)) => submission,
         Ok(None) => return Err(no_submission(state, user)),
         Err(error) => return Err(storage_error(state, user, "read this project's submission", &error)),
@@ -826,7 +826,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
     // proposals. `Draft` and the two terminal statuses are excluded: a `Draft` belongs to a
     // submission cycle that has not happened yet, and a terminal one is already decided.
     let entity_proposals: Vec<EntityProposal> =
-        match EntityProposalRepository::list_for_shortcode(&*state.db, &key).await {
+        match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
             Ok(proposals) => proposals
                 .into_iter()
                 .filter(|proposal| proposal.status == ProposalStatus::Submitted)
@@ -836,7 +836,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
 
     let mut entity_cross_project: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
     for proposal in &entity_proposals {
-        let live = match EntityProposalRepository::list_live_for_entity(&*state.db, &proposal.entity_id).await {
+        let live = match EntityProposalRepository::list_live_for_entity(&*state.editor, &proposal.entity_id).await {
             Ok(live) => live,
             Err(error) => return Err(storage_error(state, user, "read this entity's other proposals", &error)),
         };
@@ -929,7 +929,7 @@ async fn apply_entity_decisions(
         let posted = body.get(&format!("{}.{}", page::ENTITY_DECISION_PREFIX, proposal.entity_id));
         let decision = posted.and_then(|value| value.parse().ok());
         if decision != proposal.decision {
-            EntityProposalRepository::set_decision(&*state.db, proposal.id, decision, Some(by), at).await?;
+            EntityProposalRepository::set_decision(&*state.editor, proposal.id, decision, Some(by), at).await?;
             proposal.decision = decision;
         }
     }
@@ -1121,7 +1121,7 @@ fn view<'a>(
 /// One query rather than one per row: the queue reads two tables and would
 /// otherwise issue a lookup per submission and per draft.
 async fn account_names(state: &AppState) -> Result<HashMap<Uuid, String>, identity_core::repository::RepositoryError> {
-    Ok(UserRepository::list(&*state.db)
+    Ok(UserRepository::list(&*state.identity)
         .await?
         .into_iter()
         .map(|user| (user.id, user.name))
@@ -1188,6 +1188,7 @@ fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fm
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
+    use editor_store::test_support::{Faults, FaultyStore};
     use identity_core::records::Role;
     use serde_json::json;
     use tower::ServiceExt;
@@ -1195,7 +1196,7 @@ mod tests {
     use super::*;
     use crate::test_support::{
         a_session, a_user, body_string, get, location, open_test_db, post, state_over, test_app, test_state,
-        with_cookie, Faults, FaultyDatabase, RecordingMailer,
+        with_cookie, RecordingMailer,
     };
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
@@ -1236,16 +1237,17 @@ mod tests {
 
     /// The one approved record for a project.
     async fn the_record(state: &AppState, shortcode: &str) -> editor_core::records::ApprovedRecord {
-        let mut records = editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, shortcode)
-            .await
-            .expect("read");
+        let mut records =
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, shortcode)
+                .await
+                .expect("read");
         assert_eq!(records.len(), 1, "exactly one approved record: {records:?}");
         records.remove(0)
     }
 
     /// The one round recorded for a project.
     async fn the_round(state: &AppState, shortcode: &str) -> editor_core::records::ReviewRound {
-        let mut rounds = ReviewRoundRepository::list_for_shortcode(&*state.db, shortcode)
+        let mut rounds = ReviewRoundRepository::list_for_shortcode(&*state.editor, shortcode)
             .await
             .expect("read");
         assert_eq!(rounds.len(), 1, "exactly one round: {rounds:?}");
@@ -1272,7 +1274,7 @@ mod tests {
         .await;
         assert!(body.contains("Approved"), "{body}");
 
-        assert_eq!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap(), None);
+        assert_eq!(SubmissionRepository::find(&*state.editor, submission.id).await.unwrap(), None);
         let record = the_record(&state, "0801d").await;
         assert!(record.payload.contains("A New Title"), "{}", record.payload);
         assert_eq!(record.collected_at, None, "uncollected, so the endpoint will serve it");
@@ -1387,10 +1389,13 @@ mod tests {
             "the reason is stated"
         );
         assert!(
-            SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+            SubmissionRepository::find(&*state.editor, submission.id)
+                .await
+                .unwrap()
+                .is_some(),
             "the submission is still in the queue"
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -1442,8 +1447,8 @@ mod tests {
         .await;
         assert!(body.contains("Returned to the depositor"), "{body}");
 
-        assert_eq!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap(), None);
-        let draft = DraftRepository::find(&*state.db, "0801d")
+        assert_eq!(SubmissionRepository::find(&*state.editor, submission.id).await.unwrap(), None);
+        let draft = DraftRepository::find(&*state.editor, "0801d")
             .await
             .unwrap()
             .expect("the submission became a draft");
@@ -1468,7 +1473,7 @@ mod tests {
         let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
         let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
         DraftRepository::upsert(
-            &*state.db,
+            &*state.editor,
             &DraftRecord {
                 shortcode: "0801d".to_string(),
                 payload: submission.payload.clone(),
@@ -1495,13 +1500,13 @@ mod tests {
         .await;
         assert!(body.contains("Rejected"), "{body}");
 
-        assert_eq!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap(), None);
+        assert_eq!(SubmissionRepository::find(&*state.editor, submission.id).await.unwrap(), None);
         assert!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some(),
             "the draft survives"
         );
         assert!(
-            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .is_empty(),
@@ -1528,11 +1533,14 @@ mod tests {
             let rendered = body_string(response).await;
             assert!(rendered.contains("only thing the depositor will see"), "{rendered}");
             assert!(
-                SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+                SubmissionRepository::find(&*state.editor, submission.id)
+                    .await
+                    .unwrap()
+                    .is_some(),
                 "nothing was discarded for note {note:?}"
             );
         }
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -1551,9 +1559,12 @@ mod tests {
         let body = format!("intent={}&{}=1", page::REQUEST_CHANGES, page::CONFIRMED);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
-        assert!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some());
+        assert!(SubmissionRepository::find(&*state.editor, submission.id)
+            .await
+            .unwrap()
+            .is_some());
         assert_eq!(
-            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            DraftRepository::find(&*state.editor, "0801d").await.unwrap(),
             None,
             "no draft was written"
         );
@@ -1597,7 +1608,10 @@ mod tests {
         let declined = format!("{}=Out+of+scope", page::NOTE);
         as_session(&app, post("/review/0801d", &declined), &session).await;
 
-        let stored = SubmissionRepository::find(&*state.db, submission.id).await.unwrap().unwrap();
+        let stored = SubmissionRepository::find(&*state.editor, submission.id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(stored.reviewer_note.as_deref(), Some("Out of scope"));
 
         // Re-opening the prompt shows it back.
@@ -1624,7 +1638,10 @@ mod tests {
         let body = format!("intent={}&{}.name=accept", page::SAVE, page::DECISION_PREFIX);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
-        let stored = SubmissionRepository::find(&*state.db, submission.id).await.unwrap().unwrap();
+        let stored = SubmissionRepository::find(&*state.editor, submission.id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(stored.reviewer_note.as_deref(), Some("Out of scope"));
     }
 
@@ -1667,11 +1684,14 @@ mod tests {
                 body_string(as_session(&app, post("/review/0801d", &format!("intent={intent}")), &session).await).await;
             assert!(body.contains(expected), "{intent}: {body}");
             assert!(
-                SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+                SubmissionRepository::find(&*state.editor, submission.id)
+                    .await
+                    .unwrap()
+                    .is_some(),
                 "{intent} wrote something on the first post"
             );
         }
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -1710,18 +1730,20 @@ mod tests {
             // inventing a second round.
             assert_eq!(response.status(), StatusCode::NOT_FOUND, "{intent}");
             assert!(body_string(response).await.contains("Nothing to review"), "{intent}");
-            let rounds = ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d").await.unwrap();
+            let rounds = ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
+                .await
+                .unwrap();
             assert_eq!(rounds.len(), 1, "{intent}: exactly the first round");
             assert_eq!(rounds[0].outcome, ReviewOutcome::Approved, "{intent}");
             assert_eq!(
-                editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+                editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
                     .await
                     .unwrap()
                     .len(),
                 1,
                 "{intent}: no second record"
             );
-            assert_eq!(DraftRepository::find(&*state.db, "0801d").await.unwrap(), None, "{intent}");
+            assert_eq!(DraftRepository::find(&*state.editor, "0801d").await.unwrap(), None, "{intent}");
         }
     }
 
@@ -1729,13 +1751,14 @@ mod tests {
     async fn a_terminating_action_refused_by_storage_leaves_the_submission_in_the_queue() {
         // Nothing partial: the three writes are one transaction, so a failure
         // leaves the submission exactly where it was and says so.
-        let db = std::sync::Arc::new(open_test_db("review-finish-storage").await);
-        let sound = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let db = open_test_db("review-finish-storage").await;
+        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
         let (_, session) = a_reviewer(&sound, "rdu@x.test", "An RDU Member").await;
         let submission = a_submission(&sound, "0801d", None, json!({ "name": "A New Title" })).await;
         let faulty = state_over(
-            std::sync::Arc::new(FaultyDatabase::new(
-                db.clone(),
+            db.identity.clone(),
+            std::sync::Arc::new(FaultyStore::new(
+                db.editor.clone(),
                 Faults { review_transition: true, ..Faults::default() },
             )),
             RecordingMailer::new(),
@@ -1754,14 +1777,14 @@ mod tests {
             body_string(response).await.contains("still in the queue"),
             "the reason is stated"
         );
-        assert!(SubmissionRepository::find(&*db, submission.id).await.unwrap().is_some());
+        assert!(SubmissionRepository::find(&*db.editor, submission.id).await.unwrap().is_some());
         assert!(
-            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*db, "0801d")
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*db.editor, "0801d")
                 .await
                 .unwrap()
                 .is_empty()
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*db.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -1811,8 +1834,11 @@ mod tests {
         .await;
 
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
-        assert!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some());
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(SubmissionRepository::find(&*state.editor, submission.id)
+            .await
+            .unwrap()
+            .is_some());
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -1831,7 +1857,7 @@ mod tests {
         let body = format!("intent=publish&{}=1&{}.name=accept", page::CONFIRMED, page::DECISION_PREFIX);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
-        let stored = SubmissionRepository::find(&*state.db, submission.id)
+        let stored = SubmissionRepository::find(&*state.editor, submission.id)
             .await
             .unwrap()
             .expect("the submission is still in the queue");
@@ -1840,7 +1866,7 @@ mod tests {
             SubmissionState::InReview,
             "it was claimed and saved, not finished"
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -1865,14 +1891,14 @@ mod tests {
             reviewer_note: None,
             review_state: None,
         };
-        SubmissionRepository::create(&*state.db, &submission)
+        SubmissionRepository::create(&*state.editor, &submission)
             .await
             .expect("the submission should store");
         submission
     }
 
     async fn stored_review_state(state: &AppState, shortcode: &str) -> ReviewState {
-        let submission = SubmissionRepository::find_by_shortcode(&*state.db, &normalize_shortcode(shortcode))
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, &normalize_shortcode(shortcode))
             .await
             .expect("the lookup should succeed")
             .expect("the submission should still be there");
@@ -1904,7 +1930,7 @@ mod tests {
             decided_at: None,
             retired_at: None,
         };
-        EntityProposalRepository::create_new(&*state.db, &proposal, published_floor)
+        EntityProposalRepository::create_new(&*state.editor, &proposal, published_floor)
             .await
             .expect("a proposal should store")
     }
@@ -1937,7 +1963,7 @@ mod tests {
         // Push the first one into the past, so the order is not the insert
         // order by accident.
         first.submitted_at = Utc::now() - chrono::Duration::hours(3);
-        SubmissionRepository::update(&*state.db, &first).await.unwrap();
+        SubmissionRepository::update(&*state.editor, &first).await.unwrap();
         let _ = second;
         let app = test_app(&state);
 
@@ -1971,7 +1997,7 @@ mod tests {
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         let author = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         DraftRepository::upsert(
-            &*state.db,
+            &*state.editor,
             &DraftRecord {
                 shortcode: "0801d".to_string(),
                 payload: "{}".to_string(),
@@ -1997,7 +2023,7 @@ mod tests {
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         let mut submission = a_submission(&state, "0801d", None, json!({ "name": "New" })).await;
         submission.state = SubmissionState::Approved;
-        SubmissionRepository::update(&*state.db, &submission).await.unwrap();
+        SubmissionRepository::update(&*state.editor, &submission).await.unwrap();
         let app = test_app(&state);
 
         let body = body_string(as_session(&app, get("/review"), &session).await).await;
@@ -2083,7 +2109,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/review/0801d"));
 
-        let stored = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let stored = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .unwrap();
@@ -2105,7 +2131,7 @@ mod tests {
         assert!(body.contains("Take over the review"), "{body}");
 
         as_session(&app, post("/review/0801d", "intent=claim"), &second).await;
-        let stored = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let stored = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .unwrap();
@@ -2119,11 +2145,12 @@ mod tests {
         // the reviewer would also suppress the take-over banner, telling them
         // the opposite of what the database says at exactly the moment it
         // matters.
-        let db = std::sync::Arc::new(open_test_db("review-claim-fails").await);
-        let sound = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let db = open_test_db("review-claim-fails").await;
+        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
         let faulty = state_over(
-            std::sync::Arc::new(FaultyDatabase::new(
-                db.clone(),
+            db.identity.clone(),
+            std::sync::Arc::new(FaultyStore::new(
+                db.editor.clone(),
                 Faults { submission_update: true, ..Faults::default() },
             )),
             RecordingMailer::new(),
@@ -2143,7 +2170,7 @@ mod tests {
         );
         assert!(body.contains("Take over the review"), "{body}");
 
-        let after = SubmissionRepository::find_by_shortcode(&*sound.db, "0801d")
+        let after = SubmissionRepository::find_by_shortcode(&*sound.editor, "0801d")
             .await
             .unwrap()
             .unwrap();
@@ -2279,7 +2306,7 @@ mod tests {
         let stored = stored_review_state(&state, "0801d").await;
         assert_eq!(stored.substitute("name"), Some(&json!("A reviewer's wording")));
 
-        let after = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let after = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .unwrap();
@@ -2434,7 +2461,7 @@ mod tests {
         let response = as_session(&app, get("/review/0801d"), &session).await;
         assert_eq!(response.status(), StatusCode::OK);
 
-        let after = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+        let after = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .unwrap();
@@ -2482,7 +2509,7 @@ mod tests {
         let body = format!("intent=save&{}.{}=accept", page::ENTITY_DECISION_PREFIX, proposal.entity_id);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
-        let stored = EntityProposalRepository::find(&*state.db, proposal.id)
+        let stored = EntityProposalRepository::find(&*state.editor, proposal.id)
             .await
             .unwrap()
             .expect("the proposal survives");
@@ -2502,7 +2529,7 @@ mod tests {
         let body = format!("intent=save&{}.{}=maybe", page::ENTITY_DECISION_PREFIX, proposal.entity_id);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
-        let stored = EntityProposalRepository::find(&*state.db, proposal.id)
+        let stored = EntityProposalRepository::find(&*state.editor, proposal.id)
             .await
             .unwrap()
             .expect("the proposal survives");
@@ -2522,7 +2549,7 @@ mod tests {
         let body = format!("intent=save&{}.{}=accept", page::ENTITY_DECISION_PREFIX, elsewhere.entity_id);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
-        let stored = EntityProposalRepository::find(&*state.db, elsewhere.id)
+        let stored = EntityProposalRepository::find(&*state.editor, elsewhere.id)
             .await
             .unwrap()
             .expect("the proposal survives");
@@ -2549,7 +2576,7 @@ mod tests {
 
         let body = body_string(response).await;
         assert!(body.contains("proposed person or organisation"), "{body}");
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
@@ -2616,7 +2643,7 @@ mod tests {
         // transaction, which never runs because the gate refuses first. A scope built from every
         // `Submitted` proposal regardless of `decision` would resolve this reference anyway
         // (`EntityProposal::is_referenceable` is status-based) and this gate would never fire.
-        let stored = EntityProposalRepository::find(&*state.db, proposal.id)
+        let stored = EntityProposalRepository::find(&*state.editor, proposal.id)
             .await
             .unwrap()
             .expect("the proposal survives");
@@ -2625,12 +2652,12 @@ mod tests {
 
         let body = body_string(response).await;
         assert!(body.contains("Contributors"), "the referencing field is named: {body}");
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());
         assert!(
-            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .is_empty()
@@ -2647,7 +2674,7 @@ mod tests {
         as_session(&app, post("/review/0801d", &accept_body), &session).await;
 
         assert_eq!(the_round(&state, "0801d").await.outcome, ReviewOutcome::Approved);
-        let accepted = EntityProposalRepository::find(&*state.db, proposal.id)
+        let accepted = EntityProposalRepository::find(&*state.editor, proposal.id)
             .await
             .unwrap()
             .expect("the proposal survives");
@@ -2705,7 +2732,7 @@ mod tests {
                 pull_request_state: Some(live),
                 last_failure: None,
             };
-            ApprovedRecordRepository::create(&*state.db, &earlier).await.unwrap();
+            ApprovedRecordRepository::create(&*state.editor, &earlier).await.unwrap();
             let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
             let app = test_app(&state);
 
@@ -2725,11 +2752,16 @@ mod tests {
                 "{live}: distinguishable from a storage failure: {body}"
             );
             assert!(
-                SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+                SubmissionRepository::find(&*state.editor, submission.id)
+                    .await
+                    .unwrap()
+                    .is_some(),
                 "{live}"
             );
             assert_eq!(
-                ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+                ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
+                    .await
+                    .unwrap(),
                 vec![earlier],
                 "{live}: the earlier record is untouched"
             );
@@ -2741,13 +2773,14 @@ mod tests {
         // The point of the design: a permanent business-rule refusal must not be reported as a
         // transient storage failure, and a storage failure must not be reported as the
         // business-rule refusal — RDU acts on the two very differently.
-        let db = std::sync::Arc::new(open_test_db("review-approve-collecting-storage").await);
-        let sound = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let db = open_test_db("review-approve-collecting-storage").await;
+        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
         let (_, session) = a_reviewer(&sound, "rdu@x.test", "An RDU Member").await;
         let submission = a_submission(&sound, "0801d", None, json!({ "name": "A New Title" })).await;
         let faulty = state_over(
-            std::sync::Arc::new(FaultyDatabase::new(
-                db.clone(),
+            db.identity.clone(),
+            std::sync::Arc::new(FaultyStore::new(
+                db.editor.clone(),
                 Faults {
                     approved_records_find_by_shortcode: true,
                     ..Faults::default()
@@ -2773,7 +2806,7 @@ mod tests {
             !body.contains(APPROVE_REFUSED_COLLECTING),
             "distinguishable from the business-rule refusal: {body}"
         );
-        assert!(SubmissionRepository::find(&*db, submission.id).await.unwrap().is_some());
+        assert!(SubmissionRepository::find(&*db.editor, submission.id).await.unwrap().is_some());
     }
 
     #[tokio::test]
@@ -2798,13 +2831,13 @@ mod tests {
 
         assert!(body.contains(APPROVE_REFUSED_UNPUBLISHABLE), "{body}");
         assert!(
-            ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+            ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
                 .await
                 .unwrap()
                 .is_empty(),
             "no approved record was created"
         );
-        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.editor, "0801d")
             .await
             .unwrap()
             .is_empty());

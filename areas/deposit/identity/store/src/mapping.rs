@@ -16,27 +16,6 @@ pub(super) fn uuid_column(row: &Row<'_>, index: usize) -> rusqlite::Result<Uuid>
     Uuid::parse_str(&raw).map_err(|e| rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(e)))
 }
 
-pub(super) fn optional_uuid_column(row: &Row<'_>, index: usize) -> rusqlite::Result<Option<Uuid>> {
-    let raw: Option<String> = row.get(index)?;
-    raw.map(|raw| {
-        Uuid::parse_str(&raw).map_err(|e| rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(e)))
-    })
-    .transpose()
-}
-
-pub(super) fn optional_parsed_column<T>(row: &Row<'_>, index: usize) -> rusqlite::Result<Option<T>>
-where
-    T: FromStr,
-    T::Err: std::error::Error + Send + Sync + 'static,
-{
-    let raw: Option<String> = row.get(index)?;
-    raw.map(|raw| {
-        raw.parse()
-            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(e)))
-    })
-    .transpose()
-}
-
 pub(super) fn parsed_column<T>(row: &Row<'_>, index: usize) -> rusqlite::Result<T>
 where
     T: FromStr,

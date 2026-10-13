@@ -14,14 +14,14 @@ mod cli;
 mod collection;
 mod config;
 mod csrf;
-mod db;
 mod depositors;
 mod entities;
-mod mail;
 mod observability;
 mod page_url;
 mod projects;
 mod reconcile;
+#[cfg(test)]
+mod removed_account;
 mod review;
 mod router;
 mod sections;

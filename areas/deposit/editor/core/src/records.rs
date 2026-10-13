@@ -49,10 +49,10 @@ pub struct DraftRecord {
     pub shortcode: String,
     /// A serialized [`ProjectDraft`](crate::draft::ProjectDraft); see the module docs.
     pub payload: String,
-    /// The last editor, `None` once that user is removed — the row survives so
-    /// the depositor's work is not destroyed by an account deletion, and the
-    /// review queue's "last editor" column reads as unknown rather than
-    /// dangling.
+    /// The last editor's account id. Accounts live in identity's store, so the
+    /// id is kept when its account is removed: the row survives, the depositor's
+    /// work with it, and the review queue's "last editor" column reads an id
+    /// that names no account as unknown.
     pub updated_by: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -110,7 +110,7 @@ pub struct Submission {
     /// A serialized [`ProjectDraft`](crate::draft::ProjectDraft); see the module docs.
     pub payload: String,
     pub state: SubmissionState,
-    /// `None` once the submitter is removed; see [`DraftRecord::updated_by`].
+    /// Kept when the submitter's account is removed; see [`DraftRecord::updated_by`].
     pub submitted_by: Option<Uuid>,
     pub submitted_at: DateTime<Utc>,
     pub reviewed_by: Option<Uuid>,
@@ -191,7 +191,7 @@ pub struct ApprovedRecord {
     pub shortcode: String,
     /// A serialized [`ProjectDraft`](crate::draft::ProjectDraft); see the module docs.
     pub payload: String,
-    /// `None` once the approver is removed; see [`DraftRecord::updated_by`].
+    /// Kept when the approver's account is removed; see [`DraftRecord::updated_by`].
     pub approved_by: Option<Uuid>,
     pub approved_at: DateTime<Utc>,
     /// `None` while uncollected. A failed collection leaves it `None` so the
@@ -295,7 +295,7 @@ pub struct ReviewRound {
     /// when the round ended, or `None` where nothing was decided. A snapshot:
     /// the submission is deleted by the same transaction.
     pub review_state: Option<String>,
-    /// Who ended the round, `None` once that account is removed; see
+    /// Who ended the round, kept when that account is removed; see
     /// [`DraftRecord::updated_by`]. For a withdrawal this is the depositor.
     pub actor: Option<Uuid>,
     pub at: DateTime<Utc>,

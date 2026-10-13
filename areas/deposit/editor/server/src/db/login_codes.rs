@@ -2,8 +2,8 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use editor_core::records::LoginCode;
-use editor_core::repository::{Attempt, Issued, LoginCodeRepository, Result};
+use identity_core::records::LoginCode;
+use identity_core::repository::{Attempt, Issued, LoginCodeRepository, Result};
 use rusqlite::{params, Row};
 use uuid::Uuid;
 
@@ -54,7 +54,7 @@ impl LoginCodeRepository for Database {
         let code = code.clone();
         self.write(move |tx| insert(tx, &code))
             .await
-            .map_err(|e| e.into_repository_error(ENTITY))?;
+            .map_err(|e| e.into_identity_error(ENTITY))?;
         Ok(())
     }
 
@@ -80,7 +80,7 @@ impl LoginCodeRepository for Database {
                 Ok(Issued::New)
             })
             .await
-            .map_err(|e| e.into_repository_error(ENTITY))?;
+            .map_err(|e| e.into_identity_error(ENTITY))?;
         Ok(outcome)
     }
 
@@ -232,8 +232,8 @@ impl LoginCodeRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use editor_core::records::{Role, User};
-    use editor_core::repository::{RepositoryError, UserRepository};
+    use identity_core::records::{Role, User};
+    use identity_core::repository::{RepositoryError, UserRepository};
 
     use super::super::tests::{count, test_db};
     use super::*;

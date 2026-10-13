@@ -247,12 +247,14 @@ impl ReviewRoundRepository for Database {
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
-    use editor_core::records::{PullRequestState, Role, Submission, SubmissionState, User};
+    use editor_core::records::{PullRequestState, Submission, SubmissionState};
     // `EntityProposalRepository` is not `use`d here: it and `ReviewRoundRepository` both declare
     // `list_for_shortcode`, and bringing the former into scope makes every bare
     // `db.list_for_shortcode(..)` call below ambiguous. Its methods are called through the fully
     // qualified `entity_proposals()` helper below instead.
-    use editor_core::repository::{ApprovedRecordRepository, DraftRepository, SubmissionRepository, UserRepository};
+    use editor_core::repository::{ApprovedRecordRepository, DraftRepository, SubmissionRepository};
+    use identity_core::records::{Role, User};
+    use identity_core::repository::UserRepository;
 
     use super::super::tests::{count, test_db};
     use super::*;

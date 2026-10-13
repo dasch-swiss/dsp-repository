@@ -140,8 +140,8 @@ impl ApprovedRecordRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use editor_core::records::{Role, User};
-    use editor_core::repository::UserRepository;
+    use identity_core::records::{Role, User};
+    use identity_core::repository::UserRepository;
 
     use super::super::tests::{count, test_db};
     use super::*;

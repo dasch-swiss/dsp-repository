@@ -1,8 +1,8 @@
 # Editor Persistence
 
-How the editor stores its working state: one SQLite database behind the repository ports `editor-core` declares. The decision that nothing in it is irreplaceable is `areas/deposit/ADR-0001`; the target of one database file per capability is `areas/deposit/ADR-0004`.
+How the editor stores its working state: one SQLite database behind the repository ports `identity-core` and `editor-core` declare. The decision that nothing in it is irreplaceable is `areas/deposit/ADR-0001`; the target of one database file per capability is `areas/deposit/ADR-0004`.
 
-One SQLite database, `rusqlite` with the `bundled` feature — the amalgamation is compiled by `cc` into the binary, which is what keeps the static musl image self-contained. `editor-core` owns the records and one repository trait per aggregate; `editor-server/src/db/` implements all nine against SQLite, so handlers depend on the ports and not on the driver.
+One SQLite database, `rusqlite` with the `bundled` feature — the amalgamation is compiled by `cc` into the binary, which is what keeps the static musl image self-contained. `identity-core` and `editor-core` own the records and one repository trait per aggregate; `editor-server/src/db/` implements all nine against SQLite, so handlers depend on the ports and not on the driver.
 
 `rusqlite` is pinned to **0.38, not 0.40**, because `deadpool-sqlite` 0.13 (the latest) requires `rusqlite ^0.38` and the two cannot coexist: `libsqlite3-sys` 0.36 and 0.38 both declare `links = "sqlite3"`, so cargo refuses to link both. Bump the pair together once `deadpool-sqlite` tracks 0.40.
 

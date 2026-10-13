@@ -7,17 +7,17 @@ on:
   push:
     branches: [main]
     paths:
-      # Any editor crate (core/web/server), styles, assets, or the e2e suite.
+      # Any Deposit Area crate (the editor's and identity's), styles, assets, or the e2e suite.
       # `shared/**` covers the shared crates the editor renders
       # through; `modules/mosaic/**` covers the tiles, which own accessibility
       # here — a missing semantic method on a tile is the usual cause of an
       # editor a11y failure, so a mosaic change must trigger this job.
-      - "areas/deposit/editor/**"
+      - "areas/deposit/**"
       - "shared/**"
       - "modules/mosaic/**"
   pull_request:
     paths:
-      - "areas/deposit/editor/**"
+      - "areas/deposit/**"
       - "shared/**"
       - "modules/mosaic/**"
 

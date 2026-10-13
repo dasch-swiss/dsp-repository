@@ -194,11 +194,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Depositors edit their projects section by section; RDU reviews field by field; approve
   writes an approved record, which the collector publishes as a pull request. The Deposit
   Area's target is two capabilities, `identity` and `editor`, under `areas/deposit/server`
-  (`areas/deposit/ADR-0004`); the code has one, and `docs/src/editor/architecture.md` lists
-  the divergence. The entry below describes the code as it is.
+  (`areas/deposit/ADR-0004`); the code has the editor and identity's domain crate
+  (`areas/deposit/identity`, below), and `docs/src/editor/architecture.md` lists the
+  divergence. The entry below describes the code as it is.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
-  `Repositories`, `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
+  `EditorRepositories`, `Repositories` (`editor-server`'s bundle over both capabilities'
+  repositories, behind `AppState.db`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Authenticated`, `Rdu`,
   `routes`, `normalize_page_url`, `EditorConfig`, `Forge`, `CollectionReport`
@@ -216,10 +218,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/editor/core/src/status.rs`, `docs/src/editor/collection.md`,
   `docs/src/editor/architecture.md`
 - **Depends on:** shared/metadata (all three crates), shared/telemetry
-  (`editor-server`), modules/mosaic (`editor-web`); areas/access/dpe's corpus as data (see above),
+  (`editor-server`), modules/mosaic (`editor-web`), areas/deposit/identity (`editor-server`
+  only); areas/access/dpe's corpus as data (see above),
   never its code — `editor-collector` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
-  (`bundled`) + deadpool-sqlite, figment, lettre, clap, ureq, rand + subtle, tower_governor,
+  (`bundled`) + deadpool-sqlite, figment, lettre, clap, ureq, tower_governor,
   reqwest (`editor-collector`), the OpenTelemetry stack, pyroscope, insta
 - **Used by:** — (top of the dependency graph; a separate deployable)
 - **Boundary rules:**
@@ -247,8 +250,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `login_codes`, `mail_sends`) beside the editor's, with seven foreign keys into `users`;
     falls short of ADR-0003's data sovereignty and `areas/deposit/ADR-0004`'s one file per
     capability (**review**; **structure** once the files split).
-  - `Authenticated` / `Rdu` and the user-name reads in `review.rs` and `sections.rs` call the
-    session and user repositories directly; `areas/deposit/ADR-0004` puts them behind
+  - `Authenticated` / `Rdu` call `identity-core`'s session rules over the session and user
+    repositories, and the user-name reads in `review.rs` and `sections.rs` call the user
+    repository directly; `areas/deposit/ADR-0004` puts them behind
     `editor-ports`, which does not exist yet (**review**).
   - Handlers, routes and the SQLite implementations live in `editor-server`; ADR-0003's anatomy
     puts them in the capability's web crate and an `editor-store` crate, and the composition
@@ -258,13 +262,47 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `mail_sends`, `drafts`, `submissions`, `review_rounds`, `approved_records`, `entity_proposals`,
   all `STRICT`, one baseline migration `0001` under `server/src/db/migrations/` (edited in place
   until the first deployment, then forward-only) guarded by `PRAGMA user_version`. **Single writer:**
-  `editor-server/src/db/` through `editor-core`'s repository ports; several handlers call the
+  `editor-server/src/db/` through `identity-core`'s and `editor-core`'s repository ports; several handlers call the
   same port, serialized by the one writer connection, and every multi-table transition is one
   repository method. `review_rounds` is append-only. `approved_records` is written only by
   approve, and deleted by two paths: the startup reconcile that derives Online, and approve's
   own transaction, which supersedes an earlier record for the same project when no pull request
   of its own is live.
-- **Fingerprint:** `f08304805fae`
+- **Fingerprint:** `d3c13c3b477f`
+
+### areas/deposit/identity
+
+- **Paths:** `:(glob)areas/deposit/identity/**`
+- **Purpose:** Identity's domain, the first crate of the Deposit Area's `identity` capability
+  (`areas/deposit/ADR-0004`): one crate, `identity-core` — accounts, sessions, login codes and
+  mail sends as records and repository ports, the login rules, the session rules, the cookie
+  names and `Cookie`-header scan, code and token generation, and the `Mailer` trait. Its
+  storage, mail transports, extractors and handlers are still in `editor-server`
+  (`docs/src/editor/architecture.md`, divergence row 2).
+- **Key entities:** `User`, `Role`, `Session`, `LoginCode`, `UserRepository`,
+  `SessionRepository`, `LoginCodeRepository`, `MailSendRepository`, `Attempt`, `Issued`,
+  `IdentityRepositories`, `RepositoryError`, `AuthConfig`, `locked_out`,
+  `is_plausible_address`, `delta`, `CODE_TTL`, `SEND_WINDOW`, `MAX_CODE_ATTEMPTS`, `begin`,
+  `current`, `end`, `Viewer`, `Ended`, `TOUCH_INTERVAL`, `SESSION`, `LOGIN`, `Mailer`, `Mail`,
+  `MailError`
+- **Public interface:** the `identity_core` library (`records`, `repository`, `login`,
+  `session`, `cookie`, `secret`, `mail`); no routes, no binary.
+- **Local-context kit:** `areas/deposit/identity/CLAUDE.md`,
+  `areas/deposit/identity/CONTEXT.md`, `areas/deposit/identity/core/src/session.rs`,
+  `areas/deposit/identity/core/src/repository.rs`, `docs/src/editor/authentication.md`
+- **Depends on:** nothing in this repository; third-party: async-trait, base64, chrono,
+  rand + subtle, thiserror, tracing, uuid
+- **Used by:** areas/deposit/editor (`editor-server` only)
+- **Boundary rules:**
+  - No Axum, Maud or database dependency (**review**).
+  - Depends on no `editor-*` crate, and neither `editor-core` nor `editor-web` depends on it:
+    capabilities share no core (ADR-0003) (**review**; no crate-graph gate exists yet).
+  - One copy of the session rules: every caller authenticates through `session::current`
+    (**review**).
+- **Durable state:** none of its own. Its tables (`users`, `user_shortcodes`, `sessions`,
+  `login_codes`, `mail_sends`) live in the editor's SQLite file, written by
+  `editor-server/src/db/` through this crate's repository ports.
+- **Fingerprint:** `e4451c0e7c91`
 
 ### modules/mosaic
 

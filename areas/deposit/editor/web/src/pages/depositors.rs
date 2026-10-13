@@ -5,7 +5,7 @@
 //! email address: RDU has to know which address an account signs in with. The
 //! address-disclosure rule is about logs and traces.
 //!
-//! The page functions take small `&str` structs, not `editor_core::records::User`:
+//! The page functions take small `&str` structs, not `identity_core::records::User`:
 //! a `User` carries authentication internals a template could render by
 //! accident, and whether a row may be edited is a rule (RDU accounts come from
 //! configuration) the caller states once. Named fields rather than positional

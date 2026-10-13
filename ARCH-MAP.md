@@ -201,7 +201,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Repositories`, `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Authenticated`, `Rdu`,
-  `KNOWN_ROUTES`, `EditorConfig`, `Forge`, `CollectionReport`
+  `routes`, `normalize_page_url`, `EditorConfig`, `Forge`, `CollectionReport`
 - **Public interface:** the HTTP routes of `editor-server`, root-mounted on its own hostname
   (`/login`, `/login/code`, `/logout`, `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
@@ -231,6 +231,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Separate origin from DPE; every state-changing route is `POST` and passes the
     `Sec-Fetch-Site` same-origin check; a write URL also answers `GET` (**review**; the
     traced/untraced split in `router.rs` is pinned by tests — **static-analysis**).
+  - The `page.url` label is built from `router.rs`'s `routes()`, so a traced route cannot go
+    unlabelled (**structure**); that `matchit`'s match is axum's is pinned by
+    `every_label_is_the_route_axum_matches` (**static-analysis**).
   - `Authenticated` / `Rdu` are extractors, not middleware: a public handler is public in its
     signature (**structure**).
   - Reader connections are `query_only=ON`; the only write path is `Database::write`, one
@@ -261,7 +264,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   approve, and deleted by two paths: the startup reconcile that derives Online, and approve's
   own transaction, which supersedes an earlier record for the same project when no pull request
   of its own is live.
-- **Fingerprint:** `f1d6a05a9015`
+- **Fingerprint:** `f08304805fae`
 
 ### modules/mosaic
 

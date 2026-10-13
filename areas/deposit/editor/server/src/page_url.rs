@@ -7,255 +7,46 @@
 //! shared crate cannot know one service's route table
 //! (`docs/src/repo_structure.md` → Shared Crates).
 //!
-//! The editor is root-mounted, unlike DPE's `/dpe/…` prefix, since it runs on
-//! its own hostname. `/` and `/projects/{shortcode}` are deliberately absent:
-//! both are redirects, so neither renders the beacon script and no beacon can
-//! report them. The normalizer still answers sanely if one somehow did.
+//! The label is the template of the route axum would match, built from
+//! `router.rs`'s `routes()` with `matchit`, the path router axum itself matches
+//! with. A route is labelled as soon as it is declared, so there is no second
+//! list to keep in step, and a variable segment (a shortcode, an account or
+//! entity id: unbounded sets) never reaches the attribute verbatim. A path no
+//! route matches is `other`. The redirects `/` and `/projects/{shortcode}` get
+//! labels too, though neither renders the beacon script.
 //!
 //! A query string is stripped before matching, so the normalizer survives the
 //! beacon one day sending `location.href` rather than today's
 //! `location.pathname`.
-//!
-//! REVIEW: new full-page routes in `router.rs` need a matching entry here —
-//! see `REVIEW.md`.
-const KNOWN_ROUTES: &[&str] = &[
-    "/login",
-    "/login/code",
-    "/projects",
-    "/states",
-    "/review",
-    "/collection",
-    "/depositors",
-    "/depositors/new",
-];
+use std::collections::BTreeSet;
+use std::sync::LazyLock;
 
-/// Normalize a page URL to a known editor route pattern.
+/// Every traced route's template, keyed by itself.
+static ROUTES: LazyLock<matchit::Router<&'static str>> = LazyLock::new(|| {
+    // Deduplicated first: two entries may share a path with different methods,
+    // which axum merges and `matchit` would refuse as a conflict.
+    let paths: BTreeSet<&'static str> = crate::router::routes().into_iter().map(|(path, _)| path).collect();
+    let mut router = matchit::Router::new();
+    for path in paths {
+        // A real conflict also panics axum when it builds the router, so a
+        // binary that started cannot reach this.
+        router.insert(path, path).expect("axum accepted the same route table");
+    }
+    router
+});
+
+/// Normalize a page URL to the template of the editor route it matches.
 /// Returns "other" for unrecognized paths to prevent metric cardinality explosion.
 pub fn normalize_page_url(url: &str) -> &'static str {
-    // Everything below matches on a whole path, so a query or a fragment has to
-    // come off first or it turns every page view into `other`.
+    // A query or a fragment has to come off first or it turns every page view
+    // into `other`.
     let url = url.split(['?', '#']).next().unwrap_or(url);
-    for &route in KNOWN_ROUTES {
-        if route == url {
-            return route;
-        }
-    }
-    // Pattern matches for the routes with a variable segment, without
-    // allocating. A shortcode and an account id are both unbounded sets, so
-    // letting either through verbatim is the cardinality explosion this module
-    // exists to prevent.
-    if let Some(rest) = url.strip_prefix("/projects/") {
-        // Both segments collapse. A section id is a closed set and would be safe
-        // to keep, but a shortcode is not, and the pair is one attribute value:
-        // `/projects/0801/sections/overview` and `/projects/080C/sections/overview`
-        // have to arrive as the same one.
-        if let Some((shortcode, tail)) = rest.split_once('/') {
-            if !shortcode.is_empty() {
-                // The entity form for one proposal, and its row actions. The segment is an
-                // `entity_id`, allocated without bound, so it collapses.
-                if let Some(proposal) = tail.strip_prefix("entities/") {
-                    if proposal.is_empty() {
-                        return "other";
-                    }
-                    if !proposal.contains('/') {
-                        return "/projects/{shortcode}/entities/{proposal}";
-                    }
-                    if let Some(rest) = proposal.split_once('/').map(|(_, rest)| rest) {
-                        if let Some(rest) = rest.strip_prefix("fields/") {
-                            if rest.ends_with("/add") {
-                                return "/projects/{shortcode}/entities/{proposal}/fields/{field}/add";
-                            }
-                            if rest.ends_with("/remove") {
-                                return "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove";
-                            }
-                        }
-                    }
-                    return "other";
-                }
-                if let Some(section) = tail.strip_prefix("sections/") {
-                    if !section.is_empty() && !section.contains('/') {
-                        return "/projects/{shortcode}/sections/{section}";
-                    }
-                    // The row actions render the full page shell on the
-                    // no-JavaScript path, so they emit a beacon of their own and
-                    // need their own entries.
-                    if let Some(rest) = section.split_once('/').map(|(_, rest)| rest) {
-                        if let Some(rest) = rest.strip_prefix("fields/") {
-                            if rest.ends_with("/add") {
-                                return "/projects/{shortcode}/sections/{section}/fields/{field}/add";
-                            }
-                            if rest.ends_with("/remove") {
-                                return "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove";
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if let Some(rest) = url.strip_prefix("/review/") {
-        if !rest.is_empty() && !rest.contains('/') {
-            return "/review/{shortcode}";
-        }
-        return "other";
-    }
-    if let Some(rest) = url.strip_prefix("/depositors/") {
-        return match rest.split_once('/') {
-            Some((id, "edit")) if !id.is_empty() => "/depositors/{id}/edit",
-            Some((id, "remove")) if !id.is_empty() => "/depositors/{id}/remove",
-            _ => "other",
-        };
-    }
-    // An approved record's id, an unbounded set.
-    if let Some(rest) = url.strip_prefix("/collection/") {
-        return match rest.split_once('/') {
-            Some((id, "discard")) if !id.is_empty() => "/collection/{id}/discard",
-            _ => "other",
-        };
-    }
-    "other"
+    ROUTES.at(url).map_or("other", |matched| *matched.value)
 }
 
 #[cfg(test)]
 mod tests {
-
-    /// The row actions emit their own beacon, so without an entry they land in
-    /// `"other"` beside genuinely unknown paths.
-    #[test]
-    fn the_row_action_routes_are_attributed_rather_than_bucketed_as_other() {
-        assert_eq!(
-            normalize_page_url("/projects/0801d/sections/dataset/fields/keywords/add"),
-            "/projects/{shortcode}/sections/{section}/fields/{field}/add"
-        );
-        assert_eq!(
-            normalize_page_url("/projects/080C/sections/dataset/fields/keywords/r0/remove"),
-            "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove"
-        );
-        // Neither the field id nor the row key may reach the attribute verbatim.
-        for url in [
-            "/projects/0801d/sections/dataset/fields/keywords/add",
-            "/projects/0801d/sections/dataset/fields/attributions/r7/remove",
-        ] {
-            let normalized = normalize_page_url(url);
-            assert!(!normalized.contains("keywords"), "{normalized}");
-            assert!(!normalized.contains("attributions"), "{normalized}");
-            assert!(!normalized.contains("r7"), "{normalized}");
-        }
-        // Still "other" for a shape that is not one of the two.
-        assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/fields/keywords"), "other");
-        assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/nonsense/x/add"), "other");
-    }
-    /// The entity form and its row actions each emit a beacon, and the proposal
-    /// segment is an unbounded `entity_id`.
-    #[test]
-    fn the_entity_form_routes_are_attributed_and_their_segments_collapse() {
-        assert_eq!(
-            normalize_page_url("/projects/0801d/entities/person-417"),
-            "/projects/{shortcode}/entities/{proposal}"
-        );
-        assert_eq!(
-            normalize_page_url("/projects/0801d/entities/person-417/fields/givenNames/add"),
-            "/projects/{shortcode}/entities/{proposal}/fields/{field}/add"
-        );
-        assert_eq!(
-            normalize_page_url("/projects/080C/entities/organization-143/fields/sameAs/r2/remove"),
-            "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove"
-        );
-        // The shortcode, the entity id, the field id and the row key are all
-        // unbounded, so none of them may reach the attribute verbatim.
-        for url in [
-            "/projects/080C/entities/person-417",
-            "/projects/080C/entities/person-417/fields/givenNames/add",
-            "/projects/080C/entities/organization-143/fields/sameAs/r2/remove",
-        ] {
-            let normalized = normalize_page_url(url);
-            for leaked in ["080C", "person-417", "organization-143", "givenNames", "sameAs", "r2"] {
-                assert!(!normalized.contains(leaked), "{url} leaked {leaked} as {normalized}");
-            }
-        }
-        // A shape that is none of the three stays "other".
-        assert_eq!(normalize_page_url("/projects/0801d/entities"), "other");
-        assert_eq!(normalize_page_url("/projects/0801d/entities/"), "other");
-        assert_eq!(normalize_page_url("/projects/0801d/entities/person-417/nonsense"), "other");
-        assert_eq!(normalize_page_url("/projects/0801d/entities/person-417/fields/x"), "other");
-    }
-
     use super::*;
-
-    #[test]
-    fn known_routes() {
-        assert_eq!(normalize_page_url("/login"), "/login");
-        assert_eq!(normalize_page_url("/login/code"), "/login/code");
-        assert_eq!(normalize_page_url("/projects"), "/projects");
-        assert_eq!(normalize_page_url("/states"), "/states");
-        assert_eq!(normalize_page_url("/review"), "/review");
-        assert_eq!(normalize_page_url("/collection"), "/collection");
-        assert_eq!(normalize_page_url("/depositors"), "/depositors");
-        assert_eq!(normalize_page_url("/depositors/new"), "/depositors/new");
-    }
-
-    #[test]
-    fn variable_segments_collapse_to_their_pattern() {
-        assert_eq!(
-            normalize_page_url("/projects/0801/sections/overview"),
-            "/projects/{shortcode}/sections/{section}"
-        );
-        assert_eq!(
-            normalize_page_url("/projects/080C/sections/dataset"),
-            "/projects/{shortcode}/sections/{section}"
-        );
-        assert_eq!(normalize_page_url("/review/0801d"), "/review/{shortcode}");
-        assert_eq!(normalize_page_url("/review/080C"), "/review/{shortcode}");
-        let id = "0c1cd9ff-9a9f-4b0e-9b0a-3f2f8f0b7a11";
-        assert_eq!(normalize_page_url(&format!("/depositors/{id}/edit")), "/depositors/{id}/edit");
-        assert_eq!(
-            normalize_page_url(&format!("/depositors/{id}/remove")),
-            "/depositors/{id}/remove"
-        );
-        assert_eq!(
-            normalize_page_url(&format!("/collection/{id}/discard")),
-            "/collection/{id}/discard"
-        );
-    }
-
-    #[test]
-    fn the_root_is_a_redirect_and_so_not_a_page() {
-        // It renders no beacon script, so no beacon can report it.
-        assert_eq!(normalize_page_url("/"), "other");
-    }
-
-    #[test]
-    fn unrelated_paths_return_other() {
-        assert_eq!(normalize_page_url("/healthz"), "other");
-        assert_eq!(normalize_page_url("/admin/secret"), "other");
-        // Near misses stay bounded: a trailing segment does not mint a new
-        // attribute value.
-        assert_eq!(normalize_page_url("/login/code/extra"), "other");
-        // Not a page: the edit form posts to `/depositors/{id}/edit`, so nothing
-        // renders here.
-        assert_eq!(normalize_page_url("/depositors/0c1cd9ff-9a9f-4b0e"), "other");
-        assert_eq!(normalize_page_url("/projects/"), "other");
-        // A redirect into the first section, so nothing renders and no beacon
-        // can report it.
-        assert_eq!(normalize_page_url("/projects/0801"), "other");
-        assert_eq!(normalize_page_url("/projects/0801a"), "other");
-        // Near misses stay bounded rather than minting a pattern with a blank or
-        // an extra segment.
-        assert_eq!(normalize_page_url("/projects//sections/overview"), "other");
-        assert_eq!(normalize_page_url("/projects/0801/sections/"), "other");
-        assert_eq!(normalize_page_url("/projects/0801/sections/a/b"), "other");
-        assert_eq!(normalize_page_url("/projects/0801/settings"), "other");
-        assert_eq!(normalize_page_url("/review/"), "other");
-        assert_eq!(normalize_page_url("/review/0801d/fields"), "other");
-        assert_eq!(normalize_page_url("/depositors/abc/delete"), "other");
-        assert_eq!(normalize_page_url("/depositors//edit"), "other");
-        // An empty id is not an id: the guards keep `/depositors//…` out of
-        // every pattern rather than minting one with a blank segment.
-        assert_eq!(normalize_page_url("/depositors/"), "other");
-        assert_eq!(normalize_page_url("/collection/abc/delete"), "other");
-        assert_eq!(normalize_page_url("/collection//discard"), "other");
-        assert_eq!(normalize_page_url("/collection/"), "other");
-    }
 
     #[test]
     fn a_query_is_stripped_rather_than_collapsing_the_page_into_other() {
@@ -264,11 +55,50 @@ mod tests {
         // query today; stripping is what survives it one day sending
         // `location.href`.
         assert_eq!(normalize_page_url("/login?next=/projects"), "/login");
-        assert_eq!(
-            normalize_page_url("/projects/0801/sections/overview?x=1"),
-            "/projects/{shortcode}/sections/{section}"
-        );
         assert_eq!(normalize_page_url("/projects#section"), "/projects");
         assert_eq!(normalize_page_url("/nope?x=1"), "other");
+    }
+
+    /// The label is only as good as `matchit` agreeing with axum. Should axum
+    /// move to another `matchit` than the workspace pins, this fails rather than
+    /// the labels drifting from the routes that serve the pages.
+    #[tokio::test]
+    async fn every_label_is_the_route_axum_matches() {
+        use axum::body::Body;
+        use axum::extract::MatchedPath;
+        use axum::http::Request;
+        use tower::ServiceExt;
+
+        let app = crate::router::routes()
+            .into_iter()
+            .fold(axum::Router::new(), |router, (path, _)| {
+                router.route(
+                    path,
+                    axum::routing::any(|matched: MatchedPath| async move { matched.as_str().to_owned() }),
+                )
+            })
+            .fallback(|| async { "other" });
+        for url in [
+            "/",
+            "/login",
+            "/depositors/new",
+            "/projects/080C",
+            "/projects/080C/sections/overview",
+            "/projects//sections/overview",
+            "/projects/080C/sections/dataset/fields/keywords/r0/remove",
+            "/projects/080C/entities/person-417/fields/givenNames/add",
+            "/depositors//edit",
+            "/projects/x/sections/y/fields/a/b/c/add",
+            "/projects/",
+            "/nope",
+        ] {
+            let response = app
+                .clone()
+                .oneshot(Request::builder().uri(url).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+            assert_eq!(normalize_page_url(url), std::str::from_utf8(&body).unwrap(), "{url}");
+        }
     }
 }

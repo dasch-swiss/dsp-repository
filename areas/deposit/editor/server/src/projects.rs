@@ -71,9 +71,7 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): 
 ///
 /// A redirect rather than a page, so exactly one place decides where a project
 /// link lands, and the scheme in `docs/src/editor/routing.md` keeps the
-/// form's own URLs section-scoped and bookmarkable. It is therefore absent from
-/// `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no
-/// beacon can report it.
+/// form's own URLs section-scoped and bookmarkable.
 ///
 /// The redirect target is deliberately the *same* section for both audiences — a
 /// destination that depended on the role is one more thing to get wrong in a link

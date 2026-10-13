@@ -14,19 +14,23 @@ use axum::http::{Request, Response};
 use chrono::{DateTime, Utc};
 use editor_core::proposals::{EntityProposal, ProposalDecision};
 use editor_core::published::PublishedProjects;
-use editor_core::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Session, Submission, User};
+use editor_core::records::{ApprovedRecord, DraftRecord, ReviewRound, Submission};
 use editor_core::repository::{
-    ApprovedRecordRepository, Attempt, DraftRepository, EntityProposalRepository, Issued, LoginCodeRepository,
-    MailSendRepository, Repositories, RepositoryError, Result, ReviewRoundRepository, SessionRepository,
-    SubmissionRepository, Transition, UserRepository,
+    ApprovedRecordRepository, DraftRepository, EntityProposalRepository, RepositoryError, Result,
+    ReviewRoundRepository, SubmissionRepository, Transition,
+};
+use identity_core::login::AuthConfig;
+use identity_core::mail::{Mail, MailError, Mailer};
+use identity_core::records::{LoginCode, Session, User};
+use identity_core::repository::{
+    Attempt, Issued, LoginCodeRepository, MailSendRepository, Result as IdentityResult, SessionRepository,
+    UserRepository,
 };
 use uuid::Uuid;
 
-use crate::auth::AuthConfig;
 use crate::config::EditorConfig;
 use crate::db::{Database, Source};
-use crate::mail::{Mail, MailError, Mailer};
-use crate::shell::{AppState, TemporalTables};
+use crate::shell::{AppState, Repositories, TemporalTables};
 
 /// One message a [`RecordingMailer`] was asked to send.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -142,7 +146,7 @@ pub(crate) fn state_over(
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
 ) -> AppState {
-    let mut auth = AuthConfig::from(&EditorConfig::default());
+    let mut auth = EditorConfig::default().auth_config();
     adjust(&mut auth);
     AppState {
         css_href: "/assets/app.css".to_string(),
@@ -249,12 +253,12 @@ pub(crate) async fn a_user(
     state: &AppState,
     email: &str,
     name: &str,
-    role: editor_core::records::Role,
+    role: identity_core::records::Role,
     shortcodes: &[&str],
-) -> editor_core::records::User {
-    use editor_core::repository::UserRepository;
+) -> identity_core::records::User {
+    use identity_core::repository::UserRepository;
 
-    let user = editor_core::records::User {
+    let user = identity_core::records::User {
         id: uuid::Uuid::new_v4(),
         email: email.to_string(),
         name: name.to_string(),
@@ -277,7 +281,7 @@ pub(crate) async fn a_user(
 /// reach a page should fail when authorization breaks, not when the mail
 /// transport does.
 pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
-    crate::auth::session::begin(&*state.db, &state.auth, user_id, chrono::Utc::now())
+    identity_core::session::begin(&*state.db, &state.auth, user_id, chrono::Utc::now())
         .await
         .expect("the fixture session should insert")
         .id
@@ -606,142 +610,152 @@ fn injected(call: &'static str) -> RepositoryError {
     RepositoryError::Backend(format!("injected failure in {call} (test)").into())
 }
 
+/// [`injected`] for identity's error type.
+fn identity_injected(call: &'static str) -> identity_core::repository::RepositoryError {
+    identity_core::repository::RepositoryError::Backend(format!("injected failure in {call} (test)").into())
+}
+
 #[async_trait]
 impl UserRepository for FaultyDatabase {
-    async fn create(&self, user: &User) -> Result<()> {
+    async fn create(&self, user: &User) -> IdentityResult<()> {
         UserRepository::create(&*self.inner, user).await
     }
 
-    async fn update(&self, user: &User) -> Result<()> {
+    async fn update(&self, user: &User) -> IdentityResult<()> {
         UserRepository::update(&*self.inner, user).await
     }
 
-    async fn delete(&self, id: Uuid) -> Result<()> {
+    async fn delete(&self, id: Uuid) -> IdentityResult<()> {
         UserRepository::delete(&*self.inner, id).await
     }
 
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>> {
+    async fn find_by_id(&self, id: Uuid) -> IdentityResult<Option<User>> {
         UserRepository::find_by_id(&*self.inner, id).await
     }
 
-    async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
+    async fn find_by_email(&self, email: &str) -> IdentityResult<Option<User>> {
         UserRepository::find_by_email(&*self.inner, email).await
     }
 
-    async fn list(&self) -> Result<Vec<User>> {
+    async fn list(&self) -> IdentityResult<Vec<User>> {
         UserRepository::list(&*self.inner).await
     }
 
-    async fn record_failed_login(&self, id: Uuid, at: DateTime<Utc>, decay_before: DateTime<Utc>) -> Result<u32> {
+    async fn record_failed_login(
+        &self,
+        id: Uuid,
+        at: DateTime<Utc>,
+        decay_before: DateTime<Utc>,
+    ) -> IdentityResult<u32> {
         if self.faults.record_failed_login {
-            return Err(injected("UserRepository::record_failed_login"));
+            return Err(identity_injected("UserRepository::record_failed_login"));
         }
         UserRepository::record_failed_login(&*self.inner, id, at, decay_before).await
     }
 
-    async fn clear_failed_logins(&self, id: Uuid) -> Result<()> {
+    async fn clear_failed_logins(&self, id: Uuid) -> IdentityResult<()> {
         UserRepository::clear_failed_logins(&*self.inner, id).await
     }
 
-    async fn record_code_issued(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
+    async fn record_code_issued(&self, id: Uuid, at: DateTime<Utc>) -> IdentityResult<()> {
         UserRepository::record_code_issued(&*self.inner, id, at).await
     }
 }
 
 #[async_trait]
 impl SessionRepository for FaultyDatabase {
-    async fn create(&self, session: &Session) -> Result<()> {
+    async fn create(&self, session: &Session) -> IdentityResult<()> {
         SessionRepository::create(&*self.inner, session).await
     }
 
-    async fn find(&self, id: &str) -> Result<Option<Session>> {
+    async fn find(&self, id: &str) -> IdentityResult<Option<Session>> {
         SessionRepository::find(&*self.inner, id).await
     }
 
-    async fn touch(&self, id: &str, at: DateTime<Utc>) -> Result<()> {
+    async fn touch(&self, id: &str, at: DateTime<Utc>) -> IdentityResult<()> {
         SessionRepository::touch(&*self.inner, id, at).await
     }
 
-    async fn delete(&self, id: &str) -> Result<bool> {
+    async fn delete(&self, id: &str) -> IdentityResult<bool> {
         SessionRepository::delete(&*self.inner, id).await
     }
 
-    async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64> {
+    async fn delete_expired(&self, now: DateTime<Utc>) -> IdentityResult<u64> {
         SessionRepository::delete_expired(&*self.inner, now).await
     }
 }
 
 #[async_trait]
 impl LoginCodeRepository for FaultyDatabase {
-    async fn create(&self, code: &LoginCode) -> Result<()> {
+    async fn create(&self, code: &LoginCode) -> IdentityResult<()> {
         LoginCodeRepository::create(&*self.inner, code).await
     }
 
-    async fn create_unless_issued_since(&self, code: &LoginCode, not_before: DateTime<Utc>) -> Result<Issued> {
+    async fn create_unless_issued_since(&self, code: &LoginCode, not_before: DateTime<Utc>) -> IdentityResult<Issued> {
         LoginCodeRepository::create_unless_issued_since(&*self.inner, code, not_before).await
     }
 
-    async fn find_by_browser_token(&self, token: &str) -> Result<Option<LoginCode>> {
+    async fn find_by_browser_token(&self, token: &str) -> IdentityResult<Option<LoginCode>> {
         LoginCodeRepository::find_by_browser_token(&*self.inner, token).await
     }
 
-    async fn delete(&self, id: Uuid) -> Result<bool> {
+    async fn delete(&self, id: Uuid) -> IdentityResult<bool> {
         LoginCodeRepository::delete(&*self.inner, id).await
     }
 
-    async fn find_active_for_user(&self, user_id: Uuid, now: DateTime<Utc>) -> Result<Option<LoginCode>> {
+    async fn find_active_for_user(&self, user_id: Uuid, now: DateTime<Utc>) -> IdentityResult<Option<LoginCode>> {
         LoginCodeRepository::find_active_for_user(&*self.inner, user_id, now).await
     }
 
-    async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> Result<Attempt> {
+    async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> IdentityResult<Attempt> {
         if self.faults.claim_attempt {
-            return Err(injected("LoginCodeRepository::claim_attempt"));
+            return Err(identity_injected("LoginCodeRepository::claim_attempt"));
         }
         LoginCodeRepository::claim_attempt(&*self.inner, id, max_attempts).await
     }
 
-    async fn rebind_browser_token(&self, presented: &str, replacement: &str) -> Result<bool> {
+    async fn rebind_browser_token(&self, presented: &str, replacement: &str) -> IdentityResult<bool> {
         if self.faults.rebind_browser_token {
-            return Err(injected("LoginCodeRepository::rebind_browser_token"));
+            return Err(identity_injected("LoginCodeRepository::rebind_browser_token"));
         }
         LoginCodeRepository::rebind_browser_token(&*self.inner, presented, replacement).await
     }
 
-    async fn consume(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {
+    async fn consume(&self, id: Uuid, at: DateTime<Utc>) -> IdentityResult<bool> {
         LoginCodeRepository::consume(&*self.inner, id, at).await
     }
 
-    async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64> {
+    async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> IdentityResult<u64> {
         LoginCodeRepository::delete_unconsumed_for_user(&*self.inner, user_id).await
     }
 
-    async fn unconsume(&self, id: Uuid) -> Result<bool> {
+    async fn unconsume(&self, id: Uuid) -> IdentityResult<bool> {
         LoginCodeRepository::unconsume(&*self.inner, id).await
     }
 
-    async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64> {
+    async fn delete_expired(&self, now: DateTime<Utc>) -> IdentityResult<u64> {
         LoginCodeRepository::delete_expired(&*self.inner, now).await
     }
 }
 
 #[async_trait]
 impl MailSendRepository for FaultyDatabase {
-    async fn record(&self, user_id: Uuid, sent_at: DateTime<Utc>) -> Result<()> {
+    async fn record(&self, user_id: Uuid, sent_at: DateTime<Utc>) -> IdentityResult<()> {
         if self.faults.record_mail_send {
-            return Err(injected("MailSendRepository::record"));
+            return Err(identity_injected("MailSendRepository::record"));
         }
         MailSendRepository::record(&*self.inner, user_id, sent_at).await
     }
 
-    async fn count_since(&self, since: DateTime<Utc>) -> Result<u64> {
+    async fn count_since(&self, since: DateTime<Utc>) -> IdentityResult<u64> {
         MailSendRepository::count_since(&*self.inner, since).await
     }
 
-    async fn count_for_user_since(&self, user_id: Uuid, since: DateTime<Utc>) -> Result<u64> {
+    async fn count_for_user_since(&self, user_id: Uuid, since: DateTime<Utc>) -> IdentityResult<u64> {
         MailSendRepository::count_for_user_since(&*self.inner, user_id, since).await
     }
 
-    async fn delete_before(&self, cutoff: DateTime<Utc>) -> Result<u64> {
+    async fn delete_before(&self, cutoff: DateTime<Utc>) -> IdentityResult<u64> {
         MailSendRepository::delete_before(&*self.inner, cutoff).await
     }
 }

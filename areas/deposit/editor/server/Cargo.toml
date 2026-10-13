@@ -11,6 +11,7 @@ ureq = "3"
 # unencoded query value would corrupt.
 urlencoding = "2.1"
 editor-core = { path = "../core" }
+identity-core = { path = "../../identity/core" }
 editor-web = { path = "../web" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
@@ -47,11 +48,6 @@ lettre = { version = "0.11.23", default-features = false, features = [
     "ring",
     "webpki-roots",
 ] }
-# CSPRNG for the login code and the opaque tokens.
-rand = "0.9"
-# Constant-time comparison of the submitted code against the stored one.
-subtle = "2.6"
-base64.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 uuid.workspace = true

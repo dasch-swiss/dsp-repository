@@ -149,7 +149,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     }
 
     // A misconfigured relay stops the process here rather than at the first login.
-    let mailer: std::sync::Arc<dyn crate::mail::Mailer> = match &config.smtp_host {
+    let mailer: std::sync::Arc<dyn identity_core::mail::Mailer> = match &config.smtp_host {
         Some(host) => {
             match crate::mail::SmtpMailer::new(host, config.smtp_port, config.smtp_credentials(), &config.smtp_from) {
                 Ok(mailer) => std::sync::Arc::new(mailer),
@@ -171,7 +171,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
         const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
         let db = std::sync::Arc::clone(&db);
         tokio::spawn(async move {
-            use editor_core::repository::{LoginCodeRepository, MailSendRepository, SessionRepository};
+            use identity_core::repository::{LoginCodeRepository, MailSendRepository, SessionRepository};
 
             let mut ticker = tokio::time::interval(CLEANUP_INTERVAL);
             // The first tick completes immediately; the sweep is for what has
@@ -181,7 +181,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
                 ticker.tick().await;
                 let now = chrono::Utc::now();
                 // Pruned at the caps' own window: a shorter one would hand back spent budget.
-                let window_start = now - crate::auth::delta(crate::config::SEND_WINDOW);
+                let window_start = now - identity_core::login::delta(identity_core::login::SEND_WINDOW);
                 match (
                     LoginCodeRepository::delete_expired(&*db, now).await,
                     SessionRepository::delete_expired(&*db, now).await,
@@ -265,7 +265,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
         css_href: crate::assets::resolve_css_href(&config.public_dir),
         db,
         mailer,
-        auth: crate::auth::AuthConfig::from(&config),
+        auth: config.auth_config(),
         reveal_login_code: config.reveals_login_code(),
         collection_token: config.collection_token.clone(),
         published,

@@ -1,5 +1,16 @@
 //! `AppState`, the page-rendering helpers, and the shell's own routes (`/`, 404).
 
+/// One handle serving both capabilities' repositories, while one database holds both table sets.
+pub(crate) trait Repositories:
+    identity_core::repository::IdentityRepositories + editor_core::repository::EditorRepositories
+{
+}
+
+impl<T> Repositories for T where
+    T: identity_core::repository::IdentityRepositories + editor_core::repository::EditorRepositories
+{
+}
+
 /// Shared state for the handlers. Cheap to clone: everything heavy is behind an `Arc`.
 #[derive(Clone)]
 pub(crate) struct AppState {
@@ -7,10 +18,10 @@ pub(crate) struct AppState {
     pub(crate) css_href: String,
     /// Behind the ports rather than [`crate::db::Database`], so a test can make a chosen
     /// storage call fail; the auth flow's error branches depend on it.
-    pub(crate) db: std::sync::Arc<dyn editor_core::repository::Repositories>,
+    pub(crate) db: std::sync::Arc<dyn Repositories>,
     /// Behind a trait so a test can watch what was sent and make sending fail.
-    pub(crate) mailer: std::sync::Arc<dyn crate::mail::Mailer>,
-    pub(crate) auth: crate::auth::AuthConfig,
+    pub(crate) mailer: std::sync::Arc<dyn identity_core::mail::Mailer>,
+    pub(crate) auth: identity_core::login::AuthConfig,
     /// Whether the code-entry screen may show the login code. Resolved once at startup from
     /// [`crate::config::EditorConfig::reveals_login_code`], never re-derived.
     pub(crate) reveal_login_code: bool,
@@ -45,7 +56,7 @@ pub(crate) fn render(
     state: &AppState,
     title: &str,
     status: axum::http::StatusCode,
-    viewer: Option<&editor_core::records::User>,
+    viewer: Option<&identity_core::records::User>,
     content: maud::Markup,
 ) -> axum::response::Response {
     use axum::response::IntoResponse;
@@ -60,7 +71,7 @@ pub(crate) fn render(
 /// so the header renders signed in.
 pub(crate) fn forbidden(
     state: &AppState,
-    user: &editor_core::records::User,
+    user: &identity_core::records::User,
     message: &str,
 ) -> axum::response::Response {
     render(
@@ -136,11 +147,11 @@ mod tests {
     async fn forbidden_renders_the_page_shell_with_a_403_and_a_way_out() {
         // The reader is signed in, so the header renders their name and a way out.
         let (state, _) = test_support::test_state("forbidden").await;
-        let user = editor_core::records::User {
+        let user = identity_core::records::User {
             id: uuid::Uuid::new_v4(),
             email: "a.depositor@example.test".to_string(),
             name: "A Depositor".to_string(),
-            role: editor_core::records::Role::Depositor,
+            role: identity_core::records::Role::Depositor,
             shortcodes: vec!["0801".to_string()],
             failed_logins: 0,
             failed_login_at: None,

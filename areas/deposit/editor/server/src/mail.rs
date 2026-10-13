@@ -1,58 +1,16 @@
-//! Sending the one-time code, and what happens when there is no relay
-//! or the relay refuses.
+//! Sending the one-time code over a real relay or the log, and what happens
+//! when there is no relay or the relay refuses.
 //!
-//! An account holder's address must never reach a log or a trace, and an SMTP
-//! failure is the one place such an address arrives from outside our own code: a
-//! relay's reply routinely echoes the recipient, `550 5.1.1
-//! <someone@example.org> User unknown` being the canonical shape. So
-//! [`MailError`] carries a **classification and the three-digit status code**,
-//! and never the reply text.
+//! The transports report failure as an [`identity_core::mail::MailError`], which
+//! carries a classification and never the relay's reply text: a reply routinely
+//! echoes the recipient. [`classify`] is where an SMTP error is reduced to one.
 //!
 //! The configured sender is a different matter and is logged on purpose: see
 //! [`SmtpMailer::describe`]. The argument is in
 //! `docs/src/editor/authentication.md`.
 
 use async_trait::async_trait;
-
-/// One message, ready to hand to a transport.
-pub(crate) struct Mail {
-    /// The recipient. Never logged, never rendered.
-    pub to: String,
-    pub subject: String,
-    pub body: String,
-}
-
-/// Why a message was not delivered.
-///
-/// Deliberately coarse. See the module docs: the relay's own words are the leak.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-pub(crate) enum MailError {
-    /// The relay answered and refused. `permanent` separates "this address will
-    /// never work" from "try again later", which is the distinction that decides
-    /// whether an operator investigates now.
-    #[error("the relay refused the message (permanent: {permanent}, status: {})", .status.as_deref().unwrap_or("none"))]
-    Refused { permanent: bool, status: Option<String> },
-
-    /// The relay could not be reached, or the exchange failed before a reply —
-    /// DNS, connection, TLS, timeout.
-    #[error("the relay could not be reached")]
-    Unreachable,
-
-    /// The message could not be built: a stored address that is not a valid
-    /// mailbox, which is a data problem rather than a transport one.
-    #[error("the message could not be built")]
-    Malformed,
-}
-
-/// A transport for [`Mail`].
-#[async_trait]
-pub(crate) trait Mailer: Send + Sync {
-    async fn send(&self, mail: &Mail) -> Result<(), MailError>;
-
-    /// How this transport is reported at startup, so an operator can see from
-    /// the first log line whether mail actually leaves the process.
-    fn describe(&self) -> String;
-}
+use identity_core::mail::{Mail, MailError, Mailer};
 
 /// No relay configured, so the message goes to the log and the service stays usable.
 ///
@@ -115,8 +73,8 @@ impl SmtpMailer {
         // speaks; `starttls_relay` still requires the upgrade to succeed, so this
         // is not an opportunistic downgrade path.
         //
-        // `format!("{e}")` on an SMTP error is the operation this module's docs
-        // forbid: `Display` on `lettre::transport::smtp::Error` appends its
+        // `format!("{e}")` on an SMTP error is the operation the `identity_core::mail`
+        // module docs forbid: `Display` on `lettre::transport::smtp::Error` appends its
         // source, and for a *connected* transport that source is the relay's
         // reply — which quotes the recipient. It is safe only here, because
         // `starttls_relay`'s one fallible step is `TlsParameters::new(host)`: no
@@ -145,7 +103,7 @@ impl SmtpMailer {
 
 /// Reduce a transport error to what may be logged.
 ///
-/// See the module docs: `error.to_string()` on an SMTP error can contain the
+/// See the `identity_core::mail` module docs: `error.to_string()` on an SMTP error can contain the
 /// relay's reply, and a relay's reply routinely contains the recipient.
 fn classify(error: &lettre::transport::smtp::Error) -> MailError {
     if error.is_response() {
@@ -185,30 +143,6 @@ impl Mailer for SmtpMailer {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_a_refusal_reports_the_status_and_nothing_the_relay_said() {
-        // The property the module exists for: an SMTP reply is
-        // `550 5.1.1 <someone@example.org> User unknown`, and the address in it
-        // must not survive into a log line.
-        let error = MailError::Refused { permanent: true, status: Some("550".to_string()) };
-        let rendered = error.to_string();
-        assert!(rendered.contains("550"), "{rendered}");
-        assert!(rendered.contains("permanent: true"), "{rendered}");
-        assert!(!rendered.contains('@'), "no address may appear in a mail error: {rendered}");
-    }
-
-    #[test]
-    fn test_every_mail_error_is_free_of_an_address() {
-        for error in [
-            MailError::Refused { permanent: false, status: Some("451".to_string()) },
-            MailError::Refused { permanent: true, status: None },
-            MailError::Unreachable,
-            MailError::Malformed,
-        ] {
-            assert!(!error.to_string().contains('@'), "{error}");
-        }
-    }
 
     #[test]
     fn test_an_invalid_from_address_stops_startup() {

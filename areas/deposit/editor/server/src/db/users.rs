@@ -2,8 +2,8 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use editor_core::records::{Role, User};
-use editor_core::repository::{Result, UserRepository};
+use identity_core::records::{Role, User};
+use identity_core::repository::{Result, UserRepository};
 use rusqlite::{params, Row, Transaction};
 use uuid::Uuid;
 
@@ -76,7 +76,7 @@ impl UserRepository for Database {
         .await
         // `email_normalized` is the only unique index on this table, so a
         // constraint violation here is a duplicate address.
-        .map_err(|e| e.into_repository_error(ENTITY))
+        .map_err(|e| e.into_identity_error(ENTITY))
     }
 
     async fn update(&self, user: &User) -> Result<()> {
@@ -100,13 +100,13 @@ impl UserRepository for Database {
                 Ok(updated)
             })
             .await
-            .map_err(|e| e.into_repository_error(ENTITY))?;
+            .map_err(|e| e.into_identity_error(ENTITY))?;
 
         // Deliberately not silent. An update that matched nothing means the
         // account was removed underneath the form, and reporting success would
         // tell RDU the change landed.
         if updated == 0 {
-            return Err(editor_core::repository::RepositoryError::NotFound { entity: ENTITY });
+            return Err(identity_core::repository::RepositoryError::NotFound { entity: ENTITY });
         }
         Ok(())
     }
@@ -119,7 +119,7 @@ impl UserRepository for Database {
             .write(move |tx| tx.execute("DELETE FROM users WHERE id = ?1", params![id.to_string()]))
             .await?;
         if deleted == 0 {
-            return Err(editor_core::repository::RepositoryError::NotFound { entity: ENTITY });
+            return Err(identity_core::repository::RepositoryError::NotFound { entity: ENTITY });
         }
         Ok(())
     }
@@ -215,7 +215,7 @@ impl UserRepository for Database {
                 Ok(Some(counter(count)))
             })
             .await?;
-        failed.ok_or(editor_core::repository::RepositoryError::NotFound { entity: ENTITY })
+        failed.ok_or(identity_core::repository::RepositoryError::NotFound { entity: ENTITY })
     }
 
     async fn clear_failed_logins(&self, id: Uuid) -> Result<()> {
@@ -228,7 +228,7 @@ impl UserRepository for Database {
             })
             .await?;
         if cleared == 0 {
-            return Err(editor_core::repository::RepositoryError::NotFound { entity: ENTITY });
+            return Err(identity_core::repository::RepositoryError::NotFound { entity: ENTITY });
         }
         Ok(())
     }
@@ -240,7 +240,7 @@ impl UserRepository for Database {
             })
             .await?;
         if updated == 0 {
-            return Err(editor_core::repository::RepositoryError::NotFound { entity: ENTITY });
+            return Err(identity_core::repository::RepositoryError::NotFound { entity: ENTITY });
         }
         Ok(())
     }
@@ -249,7 +249,7 @@ impl UserRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use editor_core::repository::RepositoryError;
+    use identity_core::repository::RepositoryError;
 
     use super::super::tests::{count, test_db};
     use super::*;

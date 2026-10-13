@@ -25,12 +25,9 @@ use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
-use editor_core::records::{
-    normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState, User,
-};
+use editor_core::records::{normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState};
 use editor_core::repository::{
-    DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository,
-    Transition, UserRepository,
+    DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition,
 };
 use editor_core::review::{diff, FieldDiff, ReviewState};
 use editor_core::submission::unresolved_temporal_coverage;
@@ -39,6 +36,8 @@ use editor_web::form::registry::{self, Audience, Section};
 use editor_web::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use editor_web::form::INTENT;
 use editor_web::pages::section as page;
+use identity_core::records::User;
+use identity_core::repository::UserRepository;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
@@ -1910,7 +1909,7 @@ fn view<'a>(
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
+fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the project form could not reach storage");
     crate::shell::render(
         state,
@@ -1932,8 +1931,8 @@ mod tests {
     use axum::http::Request;
     use editor_core::canonical::{write_draft, write_project};
     use editor_core::published::PublishedProjects;
-    use editor_core::records::Role;
     use editor_core::repository::ApprovedRecordRepository;
+    use identity_core::records::Role;
     use serde_json::{json, Value};
     use shared_metadata::project::ProjectRaw;
     use tower::ServiceExt;
@@ -1958,7 +1957,7 @@ mod tests {
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(request, crate::auth::cookie::SESSION, session))
+            .oneshot(with_cookie(request, identity_core::cookie::SESSION, session))
             .await
             .expect("the request should complete")
     }
@@ -4281,7 +4280,9 @@ mod tests {
             .expect("the request should build");
         request.headers_mut().append(
             axum::http::header::COOKIE,
-            format!("{}={session}", crate::auth::cookie::SESSION).parse().expect("a cookie"),
+            format!("{}={session}", identity_core::cookie::SESSION)
+                .parse()
+                .expect("a cookie"),
         );
         let response = app.clone().oneshot(request).await.expect("completes");
         assert_eq!(response.status(), StatusCode::FORBIDDEN);

@@ -26,9 +26,11 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::Utc;
-use editor_core::records::{Role, SubmissionState, User};
-use editor_core::repository::{DraftRepository, RepositoryError, SubmissionRepository, UserRepository};
+use editor_core::records::SubmissionState;
+use editor_core::repository::{DraftRepository, SubmissionRepository};
 use editor_web::pages::depositors as page;
+use identity_core::records::{Role, User};
+use identity_core::repository::{RepositoryError, UserRepository};
 use serde::Deserialize;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
@@ -91,7 +93,7 @@ impl DepositorForm {
             return Err(format!("The name is too long — keep it to {MAX_NAME_LEN} characters or fewer."));
         }
         let email = self.email.trim();
-        if !crate::auth::is_plausible_address(email) {
+        if !identity_core::login::is_plausible_address(email) {
             return Err("Enter a valid email address.".to_string());
         }
         let shortcodes = parse_shortcodes(&self.shortcodes)?;
@@ -480,7 +482,7 @@ fn rejected_edit(state: &AppState, viewer: &User, id: Uuid, form: &DepositorForm
 /// opposite things, and routing a 500 through the 403 tells an RDU member they
 /// do not have access to a page they administer — which sends whoever reads it
 /// hunting for a misconfigured account instead of a database that is down.
-fn storage_error(state: &AppState, viewer: &User, what: &str, error: &RepositoryError) -> Response {
+fn storage_error(state: &AppState, viewer: &User, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "an account screen could not reach storage");
     crate::shell::render(
         state,
@@ -592,11 +594,11 @@ mod route_tests {
     use axum::http::Request;
     use chrono::TimeDelta;
     use editor_core::records::{DraftRecord, Submission, SubmissionState};
-    use editor_core::repository::SessionRepository;
+    use identity_core::cookie;
+    use identity_core::repository::SessionRepository;
     use tower::ServiceExt;
 
     use super::*;
-    use crate::auth::cookie;
     use crate::test_support::{
         a_session, a_user, body_string, capture_logs, count_rows, get, location, open_test_db, post, state_over,
         test_app, test_state, urlencode, RecordingMailer,

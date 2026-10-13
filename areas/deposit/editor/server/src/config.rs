@@ -8,29 +8,11 @@
 
 use std::fmt;
 use std::path::PathBuf;
-use std::time::Duration;
 
 use figment::providers::{Env, Format, Serialized, Toml};
 use figment::Figment;
+use identity_core::login::CODE_TTL;
 use serde::{Deserialize, Serialize};
-
-/// How long a login code lives.
-///
-/// A constant, not a setting. NIST SP 800-63B-4 §3.1.3.2 ("the authentication
-/// SHALL be considered invalid unless completed within 10 minutes") and OWASP
-/// ASVS 6.5.5 both cap an out-of-band code at ten minutes, so the only thing a
-/// knob here could express is a violation of both.
-pub const CODE_TTL: Duration = Duration::from_secs(600);
-
-/// The window both daily send caps measure over, and the retention of the
-/// `mail_sends` rows they count.
-///
-/// One constant rather than two, because the two have to be the same span: a
-/// retention shorter than the window silently hands budget back, and a longer
-/// one keeps rows nothing reads. "Daily" is a rolling 24 hours, not a calendar
-/// day — a midnight reset would give an attacker a fresh budget at a time they
-/// choose.
-pub const SEND_WINDOW: Duration = Duration::from_secs(24 * 60 * 60);
 
 /// A configured value that must never reach a log.
 ///
@@ -502,7 +484,7 @@ impl EditorConfig {
         // the log pipeline — and an address in a log is exactly what must not happen. The operator
         // holds the configuration, so an index is just as actionable.
         for (index, address) in self.rdu_addresses().iter().enumerate() {
-            if !crate::auth::is_plausible_address(address) {
+            if !identity_core::login::is_plausible_address(address) {
                 return invalid(format!(
                     "EDITOR_RDU_EMAILS entry {} cannot be an email address. Every entry becomes an account that \
                      administers the service, so a typo here is an administrator who can never sign in (the value is \

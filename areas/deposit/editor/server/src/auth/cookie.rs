@@ -1,4 +1,5 @@
-//! The two cookies the login flow uses, read and written by hand.
+//! The two cookies the login flow uses, written by hand and read through
+//! `identity_core::cookie`.
 //!
 //! - `__Host-` prefix — a browser refuses to store the cookie unless it is `Secure`, `Path=/` and
 //!   carries no `Domain`. Without that last part, any `*.dasch.swiss` host can set a
@@ -18,28 +19,19 @@ use std::time::Duration;
 
 use axum::http::header::{HeaderMap, HeaderValue, COOKIE};
 
-pub(crate) const SESSION: &str = "__Host-editor_session";
-
-/// The pre-auth binding: which browser asked for the outstanding code, and
-/// therefore the only browser that may spend it.
-pub(crate) const LOGIN: &str = "__Host-editor_login";
-
 /// Attributes shared by both cookies. `Path=/` and `Secure` are not style — the
 /// `__Host-` prefix makes a browser reject the cookie without them.
 const ATTRIBUTES: &str = "Path=/; Secure; HttpOnly; SameSite=Lax";
 
-/// Read one cookie by name, walking every `Cookie` header rather than the first:
-/// HTTP/2 clients are free to split them.
+/// Every `Cookie` header value on the request, walking all of them rather than
+/// the first: HTTP/2 clients are free to split them.
+pub(crate) fn values(headers: &HeaderMap) -> Vec<&str> {
+    headers.get_all(COOKIE).iter().filter_map(|value| value.to_str().ok()).collect()
+}
+
+/// Read one cookie by name from the request's `Cookie` headers.
 pub(crate) fn read(headers: &HeaderMap, name: &str) -> Option<String> {
-    headers
-        .get_all(COOKIE)
-        .iter()
-        .filter_map(|value| value.to_str().ok())
-        .flat_map(|value| value.split(';'))
-        .filter_map(|pair| pair.split_once('='))
-        .find(|(key, _)| key.trim() == name)
-        .map(|(_, value)| value.trim().to_string())
-        .filter(|value| !value.is_empty())
+    identity_core::cookie::read(&values(headers), name)
 }
 
 /// A `Set-Cookie` value storing `value` for `max_age`, which is bounded by the
@@ -62,6 +54,8 @@ pub(crate) fn clear(name: &str) -> HeaderValue {
 
 #[cfg(test)]
 mod tests {
+    use identity_core::cookie::SESSION;
+
     use super::*;
 
     fn headers(cookies: &[&str]) -> HeaderMap {
@@ -73,56 +67,9 @@ mod tests {
     }
 
     #[test]
-    fn test_reads_a_single_cookie() {
-        assert_eq!(read(&headers(&["__Host-editor_session=abc"]), SESSION), Some("abc".to_string()));
-    }
-
-    #[test]
-    fn test_reads_one_cookie_out_of_several_on_one_header() {
-        let headers = headers(&["other=1; __Host-editor_login=token-x; another=2"]);
-        assert_eq!(read(&headers, LOGIN), Some("token-x".to_string()));
-        assert_eq!(read(&headers, SESSION), None);
-    }
-
-    #[test]
     fn test_reads_across_several_cookie_headers() {
         let headers = headers(&["other=1", "__Host-editor_session=abc"]);
         assert_eq!(read(&headers, SESSION), Some("abc".to_string()));
-    }
-
-    #[test]
-    fn test_tolerates_the_whitespace_browsers_actually_send() {
-        let headers = headers(&["  other=1 ;  __Host-editor_session=abc  "]);
-        assert_eq!(read(&headers, SESSION), Some("abc".to_string()));
-    }
-
-    #[test]
-    fn test_an_empty_value_is_no_cookie() {
-        // What `clear` leaves behind until the browser drops it. Treating it as
-        // present would look up the empty token on every request.
-        assert_eq!(read(&headers(&["__Host-editor_session="]), SESSION), None);
-    }
-
-    #[test]
-    fn test_a_prefix_of_the_name_does_not_match() {
-        // `editor_session` is not `__Host-editor_session`, and matching loosely
-        // would let a cookie without the prefix stand in for one with it.
-        let headers = headers(&["editor_session=abc; x__Host-editor_session=def"]);
-        assert_eq!(read(&headers, SESSION), None);
-    }
-
-    #[test]
-    fn test_a_value_containing_an_equals_sign_survives_intact() {
-        // base64 padding is `=`, and splitting on every `=` would truncate it.
-        assert_eq!(
-            read(&headers(&["__Host-editor_session=ab=cd=="]), SESSION),
-            Some("ab=cd==".to_string())
-        );
-    }
-
-    #[test]
-    fn test_no_cookie_header_at_all() {
-        assert_eq!(read(&HeaderMap::new(), SESSION), None);
     }
 
     #[test]

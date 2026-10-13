@@ -1119,13 +1119,13 @@ dependencies = [
  "async-trait",
  "axum",
  "axum-tracing-opentelemetry",
- "base64 0.22.1",
  "chrono",
  "clap",
  "deadpool-sqlite",
  "editor-core",
  "editor-web",
  "figment",
+ "identity-core",
  "init-tracing-opentelemetry",
  "lettre",
  "maud",
@@ -1134,13 +1134,11 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "pyroscope",
- "rand 0.9.4",
  "rusqlite",
  "serde",
  "serde_json",
  "shared-metadata",
  "shared-telemetry",
- "subtle",
  "thiserror 2.0.18",
  "tokio",
  "tower",
@@ -2181,6 +2179,20 @@ name = "id-arena"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
+
+[[package]]
+name = "identity-core"
+version = "0.8.8"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "chrono",
+ "rand 0.9.4",
+ "subtle",
+ "thiserror 2.0.18",
+ "tracing",
+ "uuid",
+]
 
 [[package]]
 name = "idna"

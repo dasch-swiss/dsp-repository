@@ -207,9 +207,24 @@ impl DbError {
             RepositoryError::backend(self)
         }
     }
+
+    /// [`Self::into_repository_error`] for identity's error type.
+    fn into_identity_error(self, entity: &'static str) -> identity_core::repository::RepositoryError {
+        if self.is_unique_violation() {
+            identity_core::repository::RepositoryError::Conflict { entity }
+        } else {
+            identity_core::repository::RepositoryError::backend(self)
+        }
+    }
 }
 
 impl From<DbError> for RepositoryError {
+    fn from(error: DbError) -> Self {
+        Self::backend(error)
+    }
+}
+
+impl From<DbError> for identity_core::repository::RepositoryError {
     fn from(error: DbError) -> Self {
         Self::backend(error)
     }

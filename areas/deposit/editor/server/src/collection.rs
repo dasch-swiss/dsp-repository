@@ -33,15 +33,16 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Json;
 use chrono::Utc;
 use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, CollectionReport};
-use editor_core::records::{normalize_shortcode, ApprovedRecord, User};
+use editor_core::records::{normalize_shortcode, ApprovedRecord};
 use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
 use editor_core::status::{classify_record, RecordClassification};
 use editor_web::pages::collection as page;
+use identity_core::records::User;
+use identity_core::secret::code_matches;
 use maud::html;
 use uuid::Uuid;
 
 use crate::auth::guard::Rdu;
-use crate::auth::secret::code_matches;
 use crate::shell::AppState;
 
 /// Every pull request this endpoint accepts must live under this prefix, so a forged report
@@ -321,7 +322,7 @@ fn no_such_record(state: &AppState, user: &User) -> Response {
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
+fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the collection surface could not reach storage");
     crate::shell::render(
         state,
@@ -343,16 +344,17 @@ mod tests {
     use editor_core::draft::ProjectDraft;
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
     use editor_core::records::{
-        ApprovedRecord, PullRequestState, ReviewOutcome, ReviewRound, Role, Submission, SubmissionState, User,
+        ApprovedRecord, PullRequestState, ReviewOutcome, ReviewRound, Submission, SubmissionState,
     };
     use editor_core::repository::{
         ApprovedRecordRepository, EntityProposalRepository, ReviewRoundRepository, SubmissionRepository, Transition,
     };
+    use identity_core::cookie;
+    use identity_core::records::{Role, User};
     use serde_json::{json, Value};
     use tower::ServiceExt;
     use uuid::Uuid;
 
-    use crate::auth::cookie;
     use crate::shell::AppState;
     use crate::test_support::{
         a_session, a_user, body_string, get, location, post, published_corpus, state_with_collection_token, test_app,

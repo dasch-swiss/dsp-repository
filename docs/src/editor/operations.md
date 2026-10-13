@@ -53,9 +53,9 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
 | `EDITOR_COLLECTION_TOKEN` | Yes in `PROD` | *(none)* | Verifier for the bearer token the collecting workflow presents to `POST /api/v1/collection-report`. Unset, the endpoint refuses every report; `EDITOR_ENV=PROD` refuses to start without it, and every environment refuses a blank value. The editor never presents a token to GitHub — see [Collection](./collection.md). |
 | `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`; **`PROD` requires `EDITOR_SMTP_HOST`** or startup is refused, because a relay-less production writes every login code to the log. The PR preview and `just run-docker-editor` override it to `DEV`. |
-| `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the SQLite database. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never the database file. |
-| `EDITOR_DB_READERS` | No | `4` | Size of the reader connection pool. The writer pool is always one connection. |
-| `EDITOR_DB_BUSY_TIMEOUT_MS` | No | `5000` | SQLite `busy_timeout`, applied per connection. |
+| `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the two SQLite databases, `identity.sqlite` and `editor.sqlite`. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never a database file. |
+| `EDITOR_DB_READERS` | No | `4` | Size of each database's reader connection pool. Each writer pool is always one connection. |
+| `EDITOR_DB_BUSY_TIMEOUT_MS` | No | `5000` | SQLite `busy_timeout`, applied per connection, to both databases. |
 | `EDITOR_RDU_EMAILS` | No | *(none)* | Comma-separated addresses that always have an RDU account. Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address **does not revoke** the account — see [Login and mail](#login-and-mail). |
 | `EDITOR_SMTP_HOST` | No | *(none — console)* | SMTP relay host. **Unset means codes are written to the log** and the service stays usable. That is the development and PR-preview default. |
 | `EDITOR_SMTP_PORT` | No | `587` | Submission with STARTTLS, which is what `smtp-relay.gmail.com` speaks. |
@@ -207,20 +207,20 @@ Everything in a preview dies with it: the database is in-memory, no mail can lea
 
 ## Database
 
-One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See [Architecture](./persistence.md) for the pool and PRAGMA design.
+Two SQLite databases: `identity.sqlite` holds users, sessions, one-time codes and the mail send log; `editor.sqlite` holds drafts, submissions, review rounds, approved records and entity proposals. Startup opens identity's, then the editor's, and either failing is fatal. See [Architecture](./persistence.md) for the pool and PRAGMA design.
 
 ### In-memory is the default, deliberately
 
-`EDITOR_DB_DIR` has **no default**, and unset means in-memory rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs `--max-instances=1`, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means `just dev-editor` and `cargo test` need no volume.
+`EDITOR_DB_DIR` has **no default**, and unset means two named in-memory databases, `identity` and `editor`, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs `--max-instances=1`, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means `just dev-editor` and `cargo test` need no volume.
 
 The Docker image deliberately does **not** set `EDITOR_DB_DIR`, for the same reason — the previews run that image. Production sets it through the deployment.
 
 ### Data volume
 
-- Mount the **directory**, not the database file, so SQLite can create its `-wal` and `-shm` siblings next to it. `EDITOR_DB_DIR` names the directory and the filename is fixed at `editor.sqlite3`, so pointing it at a file fails at startup with a message saying so rather than at the first WAL write.
+- Mount the **directory**, not the database files, so SQLite can create their `-wal` and `-shm` siblings next to them. `EDITOR_DB_DIR` names the directory and the filenames are fixed at `identity.sqlite` and `editor.sqlite`, so pointing it at a file fails at startup with a message saying so rather than at the first WAL write.
 - It must be **writable by uid 65532**. Chowning to 65534 produces `unable to open database file`, which reads like a wrong mount path and sends the reader hunting for a typo in a path that is perfectly correct.
 - Docker Swarm does **not** create missing bind-mount host directories the way `docker run -v` does, so Ansible must create *and* chown the directory before the stack starts.
-- Keep `replicas: 1` with `order: stop-first`, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.
+- Keep `replicas: 1` with `order: stop-first`, so a rolling update never briefly runs two processes against the same database files. Node pinning is unnecessary — there is no multi-node Swarm.
 
 ### Expired rows
 
@@ -228,7 +228,7 @@ An hourly background sweep deletes expired login codes and sessions, and prunes 
 
 ### Startup pre-flight
 
-Before opening the database, startup writes and removes a probe file in `EDITOR_DB_DIR` and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's `unable to open database file`, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.
+Before opening either database, startup writes and removes a probe file in `EDITOR_DB_DIR` and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's `unable to open database file`, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.
 
 ### Storage type
 
@@ -238,13 +238,13 @@ If virtiofs `mmap` ever misbehaves, the escape hatch is `locking_mode=EXCLUSIVE`
 
 ### Backups
 
-Optional. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.
+Optional. Git holds everything irreplaceable. Back up both files, `identity.sqlite` and `editor.sqlite`, each with its `-wal` and `-shm` siblings. The two have no foreign key between them, so they need not be copied at the same instant, though a restore of only one can leave editor rows naming an account identity no longer has (pages render those as unknown). A total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt a database, and never on an application crash.
 
 ## Resource Requirements
 
 - **Memory**: ~50–100 MB typical
 - **CPU**: Minimal (server-side rendering; the published data set is cached in memory)
-- **Disk**: Data files + static assets, plus the SQLite database and its `-wal`/`-shm` siblings when `EDITOR_DB_DIR` is set
+- **Disk**: Data files + static assets, plus the two SQLite databases and their `-wal`/`-shm` siblings when `EDITOR_DB_DIR` is set
 
 ## Logging
 

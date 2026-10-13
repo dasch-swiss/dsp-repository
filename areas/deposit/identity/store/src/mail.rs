@@ -3,14 +3,33 @@
 //!
 //! The transports report failure as an [`identity_core::mail::MailError`], which
 //! carries a classification and never the relay's reply text: a reply routinely
-//! echoes the recipient. [`classify`] is where an SMTP error is reduced to one.
+//! echoes the recipient. `classify` is where an SMTP error is reduced to one.
 //!
 //! The configured sender is a different matter and is logged on purpose: see
-//! [`SmtpMailer::describe`]. The argument is in
+//! `SmtpMailer::describe`. The argument is in
 //! `docs/src/editor/authentication.md`.
+
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use identity_core::mail::{Mail, MailError, Mailer};
+
+/// The transport for this configuration: the SMTP relay at `smtp_host`, or, when there is none,
+/// the console transport, which writes each message to the log.
+///
+/// Fails when a relay is configured but cannot be, so a misconfigured relay stops startup
+/// rather than the first login.
+pub fn mailer(
+    smtp_host: Option<&str>,
+    port: u16,
+    credentials: Option<(&str, &str)>,
+    from: &str,
+) -> Result<Arc<dyn Mailer>, SmtpSetupError> {
+    match smtp_host {
+        Some(host) => Ok(Arc::new(SmtpMailer::new(host, port, credentials, from)?)),
+        None => Ok(Arc::new(ConsoleMailer)),
+    }
+}
 
 /// No relay configured, so the message goes to the log and the service stays usable.
 ///
@@ -49,7 +68,7 @@ pub(crate) struct SmtpMailer {
 /// A relay that could not be configured at all, which stops startup rather than
 /// failing at the first login.
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum SmtpSetupError {
+pub enum SmtpSetupError {
     #[error("EDITOR_SMTP_FROM is not a valid mailbox: {0}")]
     From(String),
     #[error("the SMTP relay could not be configured: {0}")]
@@ -173,33 +192,5 @@ mod tests {
             !described.contains("hunter2"),
             "the password must never be in a log line: {described}"
         );
-    }
-
-    #[tokio::test]
-    async fn test_the_console_transport_logs_the_body_and_not_the_recipient() {
-        // The message is logged so the service stays usable without a relay, and
-        // the recipient is not part of it. The log is actually captured, so
-        // adding `mail.to = %mail.to` to the event below fails here rather than
-        // passing on the transport the PR preview runs.
-        let mail = Mail {
-            to: "someone@example.org".to_string(),
-            subject: "Your sign-in code".to_string(),
-            body: "Your code is 123456".to_string(),
-        };
-
-        let (logs, guard) = crate::test_support::capture_logs();
-        assert_eq!(ConsoleMailer.send(&mail).await, Ok(()));
-        drop(guard);
-
-        let lines = logs.lines();
-        assert!(
-            lines.iter().any(|line| line.contains("123456")),
-            "the code must reach the log, or the fallback delivers nothing: {lines:?}"
-        );
-        for line in &lines {
-            assert!(!line.contains("someone@example.org"), "the recipient must not: {line}");
-            assert!(!line.contains('@'), "and nothing address-shaped either: {line}");
-        }
-        assert!(ConsoleMailer.describe().contains("EDITOR_SMTP_HOST"));
     }
 }

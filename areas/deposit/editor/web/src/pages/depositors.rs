@@ -206,7 +206,7 @@ pub struct RemovalImpact<'a> {
 /// the row and is RDU's only channel to this person, so it is shown to be
 /// copied; a submission they made stays pending with no author, so it can be
 /// approved or rejected but never returned. Drafts and submissions survive,
-/// since the schema nulls the author rather than cascading.
+/// since the editor's database keeps the author's id rather than the row.
 pub fn confirm_removal(id: &str, impact: &RemovalImpact<'_>) -> Markup {
     html! {
         div class="max-w-lg py-8" {

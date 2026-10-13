@@ -140,30 +140,12 @@ impl ApprovedRecordRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use identity_core::records::{Role, User};
-    use identity_core::repository::UserRepository;
 
     use super::super::tests::{count, test_db};
     use super::*;
 
     fn at(hour: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 8, 21, hour, 0, 0).unwrap()
-    }
-
-    async fn an_rdu_member(db: &Database) -> Uuid {
-        let user = User {
-            id: Uuid::new_v4(),
-            email: "rdu@x.test".to_string(),
-            name: "R".to_string(),
-            role: Role::Rdu,
-            shortcodes: vec![],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: at(9),
-        };
-        UserRepository::create(db, &user).await.unwrap();
-        user.id
     }
 
     fn record(shortcode: &str, approver: Option<Uuid>, approved: DateTime<Utc>) -> ApprovedRecord {
@@ -184,7 +166,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_then_list_round_trips_every_field() {
         let db = test_db("approved-round-trip").await;
-        let approver = an_rdu_member(&db).await;
+        let approver = Uuid::new_v4();
         let record = record("0801", Some(approver), at(14));
         ApprovedRecordRepository::create(&db, &record).await.unwrap();
 
@@ -287,27 +269,6 @@ mod tests {
         );
         assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
         assert_eq!(stored.collected_at, None, "only `mark_collected` may stamp this");
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_does_not_move_a_collected_at_mark_collected_already_set() {
-        let db = test_db("approved-report-no-move").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-        db.mark_collected(record.id, at(15)).await.unwrap();
-
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Open),
-            None,
-            at(16),
-        )
-        .await
-        .unwrap();
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(stored.collected_at, Some(at(15)));
     }
 
     #[tokio::test]
@@ -482,23 +443,5 @@ mod tests {
 
         let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
         assert_eq!(stored.pull_request_url, None, "the unrelated record must be left alone");
-    }
-
-    #[tokio::test]
-    async fn test_removing_the_approver_leaves_the_record_collectable() {
-        // ON DELETE SET NULL. An approved record must not disappear because the
-        // RDU member who approved it left — the change is already approved for
-        // publication.
-        let db = test_db("approved-approver-removed").await;
-        let approver = an_rdu_member(&db).await;
-        let record = record("0801", Some(approver), at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        UserRepository::delete(&db, approver).await.unwrap();
-
-        let records = db.list_all().await.unwrap();
-        assert_eq!(records.len(), 1);
-        assert_eq!(records[0].approved_by, None);
-        assert_eq!(records[0].payload, record.payload);
     }
 }

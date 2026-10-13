@@ -569,16 +569,25 @@ impl EditorConfig {
         self.env == "DEV"
     }
 
-    /// Where the database lives: the configured directory, or a named in-memory
-    /// database when `EDITOR_DB_DIR` is unset.
+    /// Where identity's database lives: `identity.sqlite` in the configured directory, or a
+    /// named in-memory database when `EDITOR_DB_DIR` is unset.
     ///
     /// The in-memory name is fixed rather than random, because a shared-cache
     /// in-memory database is scoped to the process and there is one per process.
-    /// It is never bare `:memory:` — see `db::Source::Memory`.
-    pub fn db_source(&self) -> crate::db::Source {
+    /// It is never bare `:memory:`; see `identity_store::Source::Memory`.
+    pub fn identity_db_source(&self) -> identity_store::Source {
         match &self.db_dir {
-            Some(dir) => crate::db::Source::Directory(dir.clone()),
-            None => crate::db::Source::Memory("editor".to_string()),
+            Some(dir) => identity_store::Source::Directory(dir.clone()),
+            None => identity_store::Source::Memory("identity".to_string()),
+        }
+    }
+
+    /// Where the editor's database lives: `editor.sqlite` beside identity's, or a second named
+    /// in-memory database. The names differ, so the two never share one.
+    pub fn editor_db_source(&self) -> editor_store::Source {
+        match &self.db_dir {
+            Some(dir) => editor_store::Source::Directory(dir.clone()),
+            None => editor_store::Source::Memory("editor".to_string()),
         }
     }
 
@@ -612,7 +621,8 @@ mod tests {
         // the revision lived.
         figment::Jail::expect_with(|_| {
             let config = EditorConfig::load().expect("config should load");
-            assert!(matches!(config.db_source(), crate::db::Source::Memory(_)));
+            assert!(matches!(config.identity_db_source(), identity_store::Source::Memory(_)));
+            assert!(matches!(config.editor_db_source(), editor_store::Source::Memory(_)));
             Ok(())
         });
     }
@@ -623,7 +633,14 @@ mod tests {
             jail.set_env("EDITOR_DB_DIR", "/data/editor");
             let config = EditorConfig::load().expect("config should load");
             assert_eq!(config.db_dir, Some(PathBuf::from("/data/editor")));
-            assert_eq!(config.db_source(), crate::db::Source::Directory(PathBuf::from("/data/editor")));
+            assert_eq!(
+                config.identity_db_source(),
+                identity_store::Source::Directory(PathBuf::from("/data/editor"))
+            );
+            assert_eq!(
+                config.editor_db_source(),
+                editor_store::Source::Directory(PathBuf::from("/data/editor"))
+            );
             Ok(())
         });
     }

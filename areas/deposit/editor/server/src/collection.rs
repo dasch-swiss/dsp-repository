@@ -52,7 +52,7 @@ const PULL_REQUEST_PREFIX: &str = "https://github.com/dasch-swiss/dsp-repository
 /// `GET /api/v1/approved-records`.
 #[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "approved records list"))]
 pub(crate) async fn list(State(state): State<AppState>) -> Response {
-    let records = match ApprovedRecordRepository::list_all(&*state.db).await {
+    let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
         Err(error) => {
             tracing::error!(error = %error, "could not list approved records");
@@ -67,7 +67,7 @@ pub(crate) async fn list(State(state): State<AppState>) -> Response {
         // so the call is correct against the trait rather than against the one implementation that
         // happens to normalize its own input.
         let shortcode = normalize_shortcode(&record.shortcode);
-        let proposals = match EntityProposalRepository::list_for_shortcode(&*state.db, &shortcode).await {
+        let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &shortcode).await {
             Ok(proposals) => proposals,
             Err(error) => {
                 tracing::error!(error = %error, project.shortcode = %shortcode, "could not list entity proposals");
@@ -119,7 +119,7 @@ pub(crate) async fn report(
     // call is its contract, not an error: it means either an unknown record or one already
     // collected, and `report_collection` below tells the two apart, so nothing is decided here.
     if body.pull_request.is_some() {
-        match ApprovedRecordRepository::mark_collected(&*state.db, body.record, Utc::now()).await {
+        match ApprovedRecordRepository::mark_collected(&*state.editor, body.record, Utc::now()).await {
             Ok(()) | Err(RepositoryError::NotFound { .. }) => {}
             Err(error) => {
                 tracing::error!(error = %error, "could not mark a record collected");
@@ -129,7 +129,7 @@ pub(crate) async fn report(
     }
 
     let updated = match ApprovedRecordRepository::report_collection(
-        &*state.db,
+        &*state.editor,
         body.record,
         body.pull_request.as_deref(),
         body.state,
@@ -202,7 +202,7 @@ struct RowStrings {
 
 /// `GET /collection` — every approved record and where its collection stands, for RDU.
 pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
-    let records = match ApprovedRecordRepository::list_all(&*state.db).await {
+    let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
         Err(error) => return storage_error(&state, &user, "read the approved records", &error),
     };
@@ -250,7 +250,7 @@ async fn find_record(state: &AppState, id: &str) -> Result<Option<ApprovedRecord
     let Ok(id) = Uuid::parse_str(id) else {
         return Ok(None);
     };
-    let records = ApprovedRecordRepository::list_all(&*state.db).await?;
+    let records = ApprovedRecordRepository::list_all(&*state.editor).await?;
     Ok(records.into_iter().find(|record| record.id == id))
 }
 
@@ -294,7 +294,7 @@ pub(crate) async fn discard(State(state): State<AppState>, Rdu(user): Rdu, Path(
     let Ok(record_id) = Uuid::parse_str(&id) else {
         return no_such_record(&state, &user);
     };
-    match ApprovedRecordRepository::delete(&*state.db, record_id).await {
+    match ApprovedRecordRepository::delete(&*state.editor, record_id).await {
         Ok(_) => Redirect::to("/collection").into_response(),
         Err(error) => {
             tracing::error!(error = %error, "could not discard an approved record");
@@ -456,7 +456,7 @@ mod tests {
         record.collected_at = Some(Utc::now());
         record.pull_request_url = Some("https://github.com/dasch-swiss/dsp-repository/pull/1".to_string());
         record.pull_request_state = Some(PullRequestState::Open);
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a collected record");
 
@@ -481,7 +481,7 @@ mod tests {
         // route is public, not an oversight to fix later.
         let (state, _) = test_state("collection-public").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
@@ -500,7 +500,7 @@ mod tests {
         // payload carries no generation timestamp precisely so this holds.
         let (state, _) = test_state("collection-idempotent").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
@@ -517,25 +517,25 @@ mod tests {
         // does not prove anything about ordering or isolation.
         let (state, _) = test_state("collection-no-write").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let shortcode = editor_core::records::normalize_shortcode(&record.shortcode);
         let proposal = accepted_proposal(&shortcode, "person-1", json!({}));
-        EntityProposalRepository::create_change(&*state.db, &proposal)
+        EntityProposalRepository::create_change(&*state.editor, &proposal)
             .await
             .expect("seed a proposal");
 
-        let before_records = ApprovedRecordRepository::list_all(&*state.db).await.expect("list before");
-        let before_proposals = EntityProposalRepository::list_for_shortcode(&*state.db, &shortcode)
+        let before_records = ApprovedRecordRepository::list_all(&*state.editor).await.expect("list before");
+        let before_proposals = EntityProposalRepository::list_for_shortcode(&*state.editor, &shortcode)
             .await
             .expect("list proposals before");
 
         let response = test_app(&state).oneshot(get_request()).await.unwrap();
         assert_eq!(response.status(), axum::http::StatusCode::OK);
 
-        let after_records = ApprovedRecordRepository::list_all(&*state.db).await.expect("list after");
-        let after_proposals = EntityProposalRepository::list_for_shortcode(&*state.db, &shortcode)
+        let after_records = ApprovedRecordRepository::list_all(&*state.editor).await.expect("list after");
+        let after_proposals = EntityProposalRepository::list_for_shortcode(&*state.editor, &shortcode)
             .await
             .expect("list proposals after");
 
@@ -550,10 +550,10 @@ mod tests {
         let (state, _) = test_state("collection-broken-payload").await;
         let good = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
         let broken = approved_record("0999", "{}");
-        ApprovedRecordRepository::create(&*state.db, &good)
+        ApprovedRecordRepository::create(&*state.editor, &good)
             .await
             .expect("seed the good record");
-        ApprovedRecordRepository::create(&*state.db, &broken)
+        ApprovedRecordRepository::create(&*state.editor, &broken)
             .await
             .expect("seed the broken record");
 
@@ -578,7 +578,7 @@ mod tests {
         // handler stops normalizing before the join.
         let (state, _) = test_state("collection-entity-join").await;
         let record = approved_record("0801D", &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let proposal = accepted_proposal(
@@ -586,7 +586,7 @@ mod tests {
             "person-417",
             json!({"givenNames": ["Ada"], "familyNames": ["Lovelace"], "jobTitles": [], "email": null}),
         );
-        EntityProposalRepository::create_change(&*state.db, &proposal)
+        EntityProposalRepository::create_change(&*state.editor, &proposal)
             .await
             .expect("seed a proposal");
 
@@ -617,7 +617,7 @@ mod tests {
     }
 
     async fn snapshot(state: &crate::shell::AppState) -> Vec<ApprovedRecord> {
-        ApprovedRecordRepository::list_all(&*state.db)
+        ApprovedRecordRepository::list_all(&*state.editor)
             .await
             .expect("list should succeed")
     }
@@ -637,7 +637,7 @@ mod tests {
             reviewer_note: None,
             review_state: None,
         };
-        SubmissionRepository::create(&*state.db, &submission)
+        SubmissionRepository::create(&*state.editor, &submission)
             .await
             .expect("seed a submission");
         submission
@@ -647,7 +647,7 @@ mod tests {
     async fn a_valid_first_report_stamps_collected_at_and_stores_the_pull_request() {
         let (state, _) = state_with_collection_token("collection-report-first", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
@@ -673,7 +673,7 @@ mod tests {
     async fn a_repeated_report_refreshes_state_without_moving_collected_at() {
         let (state, _) = state_with_collection_token("collection-report-repeat", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
@@ -704,7 +704,7 @@ mod tests {
     async fn a_report_naming_an_unknown_record_is_rejected_whole() {
         let (state, _) = state_with_collection_token("collection-report-unknown", TOKEN).await;
         let untouched = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &untouched)
+        ApprovedRecordRepository::create(&*state.editor, &untouched)
             .await
             .expect("seed a record");
         let before = snapshot(&state).await;
@@ -724,7 +724,7 @@ mod tests {
     async fn a_report_carrying_both_a_pull_request_and_a_failure_is_rejected() {
         let (state, _) = state_with_collection_token("collection-report-both", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let before = snapshot(&state).await;
@@ -744,7 +744,7 @@ mod tests {
     async fn a_report_carrying_neither_a_pull_request_nor_a_failure_is_rejected() {
         let (state, _) = state_with_collection_token("collection-report-neither", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let before = snapshot(&state).await;
@@ -759,7 +759,7 @@ mod tests {
     async fn a_pull_request_without_a_state_is_rejected() {
         let (state, _) = state_with_collection_token("collection-report-no-state", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let before = snapshot(&state).await;
@@ -779,7 +779,7 @@ mod tests {
     async fn a_pull_request_on_another_host_is_rejected() {
         let (state, _) = state_with_collection_token("collection-report-other-host", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let before = snapshot(&state).await;
@@ -799,7 +799,7 @@ mod tests {
     async fn a_pull_request_on_another_github_repository_is_rejected() {
         let (state, _) = state_with_collection_token("collection-report-other-repo", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let before = snapshot(&state).await;
@@ -819,7 +819,7 @@ mod tests {
     async fn an_absent_token_and_a_wrong_token_produce_the_same_refusal() {
         let (state, _) = state_with_collection_token("collection-report-token", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let body = json!({
@@ -856,7 +856,7 @@ mod tests {
         // default: a service with no verifier must not accept an empty presented one.
         let (state, _) = test_state("collection-report-no-token-configured").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
@@ -874,7 +874,7 @@ mod tests {
     async fn a_record_reported_closed_keeps_collected_at_and_stops_blocking_a_new_approval() {
         let (state, _) = state_with_collection_token("collection-report-closed", TOKEN).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
@@ -887,7 +887,7 @@ mod tests {
         let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
         assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
 
-        let after_report = ApprovedRecordRepository::find_by_shortcode(&*state.db, PUBLISHED_SHORTCODE)
+        let after_report = ApprovedRecordRepository::find_by_shortcode(&*state.editor, PUBLISHED_SHORTCODE)
             .await
             .expect("read the record back");
         assert_eq!(after_report.len(), 1);
@@ -907,12 +907,12 @@ mod tests {
             actor: None,
             at: Utc::now(),
         };
-        let transition = ReviewRoundRepository::approve(&*state.db, submission.id, &new_record, &round)
+        let transition = ReviewRoundRepository::approve(&*state.editor, submission.id, &new_record, &round)
             .await
             .expect("approval should succeed");
         assert_eq!(transition, Transition::Applied);
 
-        let after_approve = ApprovedRecordRepository::find_by_shortcode(&*state.db, PUBLISHED_SHORTCODE)
+        let after_approve = ApprovedRecordRepository::find_by_shortcode(&*state.editor, PUBLISHED_SHORTCODE)
             .await
             .expect("read the record back");
         assert_eq!(after_approve.len(), 1);
@@ -925,7 +925,7 @@ mod tests {
     async fn a_depositor_session_is_refused_every_collection_route() {
         let (state, _) = test_state("collection-depositor-refused").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let depositor = a_user(&state, "depositor@example.test", "A Depositor", Role::Depositor, &[]).await;
@@ -951,7 +951,7 @@ mod tests {
         let (_, session) = an_rdu_session(&state).await;
         let mut record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
         record.pull_request_state = Some(PullRequestState::Merged);
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let app = test_app(&state);
@@ -960,7 +960,7 @@ mod tests {
         assert!(stranded.contains("Merged, still differs"), "{stranded}");
 
         ApprovedRecordRepository::report_collection(
-            &*state.db,
+            &*state.editor,
             record.id,
             Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
             Some(PullRequestState::Open),
@@ -980,7 +980,7 @@ mod tests {
         let (state, _) = test_state("collection-discard").await;
         let (_, session) = an_rdu_session(&state).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let app = test_app(&state);
@@ -989,7 +989,7 @@ mod tests {
         let first = app.clone().oneshot(as_session(post(&uri, ""), &session)).await.unwrap();
         assert_eq!(first.status(), axum::http::StatusCode::SEE_OTHER);
         assert_eq!(location(&first).as_deref(), Some("/collection"));
-        assert!(ApprovedRecordRepository::find_by_shortcode(&*state.db, PUBLISHED_SHORTCODE)
+        assert!(ApprovedRecordRepository::find_by_shortcode(&*state.editor, PUBLISHED_SHORTCODE)
             .await
             .unwrap()
             .is_empty());
@@ -1003,7 +1003,7 @@ mod tests {
         let (state, _) = test_state("collection-never-reported").await;
         let (_, session) = an_rdu_session(&state).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
-        ApprovedRecordRepository::create(&*state.db, &record)
+        ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let app = test_app(&state);

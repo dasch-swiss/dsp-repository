@@ -240,7 +240,7 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
-    use crate::test_support::{agents_corpus, open_test_db, published_corpus};
+    use crate::test_support::{agents_corpus, published_corpus};
 
     /// A project the committed published set really holds.
     const PUBLISHED_SHORTCODE: &str = "0801d";
@@ -269,7 +269,7 @@ mod tests {
     async fn a_record_matching_published_data_goes_online_and_is_discarded() {
         // A deployment carrying an approved change reports the project Online
         // and has discarded the local record.
-        let db = open_test_db("reconcile-online").await;
+        let db = editor_store::test_support::open_for_test("reconcile-online").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
         let record = record(PUBLISHED_SHORTCODE, &payload, None);
@@ -293,7 +293,7 @@ mod tests {
     #[tokio::test]
     async fn a_record_that_differs_is_left_waiting_for_its_release() {
         // The record stays: it has not shipped.
-        let db = open_test_db("reconcile-waiting").await;
+        let db = editor_store::test_support::open_for_test("reconcile-waiting").await;
         let published = published_corpus();
         let mut draft: ProjectDraft =
             serde_json::from_str(&published_payload(&published, PUBLISHED_SHORTCODE)).expect("parses");
@@ -334,7 +334,7 @@ mod tests {
         ];
 
         for (state, expect_stranded) in cases {
-            let db = open_test_db(&format!("reconcile-differs-{state:?}")).await;
+            let db = editor_store::test_support::open_for_test(&format!("reconcile-differs-{state:?}")).await;
             let published = published_corpus();
             let mut draft: ProjectDraft =
                 serde_json::from_str(&published_payload(&published, PUBLISHED_SHORTCODE)).expect("parses");
@@ -365,7 +365,7 @@ mod tests {
     #[tokio::test]
     async fn a_record_for_a_project_dropped_upstream_is_kept_and_reported() {
         // The fourth branch. The record may be the only copy of this work.
-        let db = open_test_db("reconcile-removed").await;
+        let db = editor_store::test_support::open_for_test("reconcile-removed").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
         ApprovedRecordRepository::create(&db, &record("9999", &payload, None))
@@ -391,7 +391,7 @@ mod tests {
     #[tokio::test]
     async fn an_unreadable_payload_is_counted_and_stepped_over() {
         // One bad row must not strand the rest.
-        let db = open_test_db("reconcile-unreadable").await;
+        let db = editor_store::test_support::open_for_test("reconcile-unreadable").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
         ApprovedRecordRepository::create(&db, &record("9998", "{ not json", None))
@@ -415,7 +415,7 @@ mod tests {
         // as "nothing is published" would be right; treating it as "everything
         // was removed upstream" must not delete anything, and this pins that
         // the pass has no path that deletes on absence.
-        let db = open_test_db("reconcile-empty-set").await;
+        let db = editor_store::test_support::open_for_test("reconcile-empty-set").await;
         let published = PublishedProjects::default();
         let payload = published_payload(&published_corpus(), PUBLISHED_SHORTCODE);
         ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, None))
@@ -446,16 +446,16 @@ mod tests {
         // deleted, the error reaches the caller, and `serve()` logs it and carries
         // on rather than refusing to start — so the cost of an unreadable
         // database is a stale label, never an editor nobody can reach.
-        use crate::test_support::{Faults, FaultyDatabase};
+        use editor_store::test_support::{Faults, FaultyStore};
 
-        let db = std::sync::Arc::new(open_test_db("reconcile-list-fails").await);
+        let db = std::sync::Arc::new(editor_store::test_support::open_for_test("reconcile-list-fails").await);
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
         ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 
-        let faulty = FaultyDatabase::new(
+        let faulty = FaultyStore::new(
             std::sync::Arc::clone(&db),
             Faults { approved_records_list_all: true, ..Faults::default() },
         );
@@ -482,16 +482,16 @@ mod tests {
         // instances sharing one database file reach on a rolling restart.
         // Counting it as a discard would make a genuine deletion bug log exactly
         // like a success.
-        use crate::test_support::{Faults, FaultyDatabase};
+        use editor_store::test_support::{Faults, FaultyStore};
 
-        let db = std::sync::Arc::new(open_test_db("reconcile-already-gone").await);
+        let db = std::sync::Arc::new(editor_store::test_support::open_for_test("reconcile-already-gone").await);
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
         ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
 
-        let faulty = FaultyDatabase::new(
+        let faulty = FaultyStore::new(
             std::sync::Arc::clone(&db),
             Faults { approved_records_delete_missing: true, ..Faults::default() },
         );
@@ -542,7 +542,7 @@ mod tests {
         // allocated id is one the corpus already carries, above it the entity
         // does not exist yet. That is the real difference between a proposal
         // whose entity has shipped and one whose has not.
-        let db = open_test_db("reconcile-retire-accepted").await;
+        let db = editor_store::test_support::open_for_test("reconcile-retire-accepted").await;
         let published = published_corpus();
         let agents = agents_corpus();
         let floor = agents.highest_id_number(ProposalKind::Person);
@@ -576,7 +576,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_retired_proposal_is_not_retired_again_on_the_next_pass() {
-        let db = open_test_db("reconcile-retire-idempotent").await;
+        let db = editor_store::test_support::open_for_test("reconcile-retire-idempotent").await;
         let published = published_corpus();
         let agents = agents_corpus();
         EntityProposalRepository::create_new(&db, &new_proposal("0801", ProposalStatus::Accepted), 0)
@@ -597,7 +597,7 @@ mod tests {
     async fn an_accepted_change_proposal_is_never_retired_by_this_pass() {
         // Regression: retiring here loses the edit permanently, and every
         // other test in this module still passes when it does.
-        let db = open_test_db("reconcile-retire-change").await;
+        let db = editor_store::test_support::open_for_test("reconcile-retire-change").await;
         let published = published_corpus();
         let agents = agents_corpus();
         let proposal = entity_proposal("0801", "person-001", ProposalStatus::Accepted);
@@ -622,15 +622,16 @@ mod tests {
         // The record half has already run. Propagating here would trade a stale
         // label for a summary the caller never sees, which is the opposite of
         // this module's stance on a non-fatal failure.
-        use crate::test_support::{Faults, FaultyDatabase};
+        use editor_store::test_support::{Faults, FaultyStore};
 
-        let db = std::sync::Arc::new(open_test_db("reconcile-retire-enumerate-fails").await);
+        let db =
+            std::sync::Arc::new(editor_store::test_support::open_for_test("reconcile-retire-enumerate-fails").await);
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
         ApprovedRecordRepository::create(&*db, &record(PUBLISHED_SHORTCODE, &payload, None))
             .await
             .expect("create");
-        let faulty = FaultyDatabase::new(
+        let faulty = FaultyStore::new(
             std::sync::Arc::clone(&db),
             Faults {
                 entity_proposals_list_accepted_unretired: true,
@@ -649,14 +650,14 @@ mod tests {
 
     #[tokio::test]
     async fn a_proposal_that_cannot_be_retired_is_counted_for_the_next_start() {
-        use crate::test_support::{Faults, FaultyDatabase};
+        use editor_store::test_support::{Faults, FaultyStore};
 
-        let db = std::sync::Arc::new(open_test_db("reconcile-retire-write-fails").await);
+        let db = std::sync::Arc::new(editor_store::test_support::open_for_test("reconcile-retire-write-fails").await);
         let published = published_corpus();
         EntityProposalRepository::create_new(&*db, &new_proposal("0801", ProposalStatus::Accepted), 0)
             .await
             .expect("create");
-        let faulty = FaultyDatabase::new(
+        let faulty = FaultyStore::new(
             std::sync::Arc::clone(&db),
             Faults { entity_proposals_retire: true, ..Faults::default() },
         );
@@ -672,7 +673,7 @@ mod tests {
 
     #[tokio::test]
     async fn only_an_accepted_proposal_is_retired() {
-        let db = open_test_db("reconcile-retire-status-scope").await;
+        let db = editor_store::test_support::open_for_test("reconcile-retire-status-scope").await;
         let published = published_corpus();
         let agents = agents_corpus();
         for (shortcode, status) in [

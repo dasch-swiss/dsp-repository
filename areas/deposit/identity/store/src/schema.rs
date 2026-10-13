@@ -50,8 +50,8 @@ fn apply_outstanding(tx: &rusqlite::Transaction<'_>, migrations: &[&str]) -> rus
         return Err(rusqlite::Error::SqliteFailure(
             rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_MISUSE),
             Some(format!(
-                "the database is at schema version {current}, but this build only knows {known} — it was written by a \
-                 newer release of editor-server"
+                "the identity database is at schema version {current}, but this build only knows {known}: it was \
+                 written by a newer release"
             )),
         ));
     }
@@ -73,24 +73,13 @@ mod tests {
 
     use super::super::tests::test_db;
     use super::*;
-    use crate::db::Source;
+    use crate::Source;
 
     /// The version a fully migrated database reports.
     const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
 
     /// Every table the persistence layer is responsible for.
-    const EXPECTED_TABLES: &[&str] = &[
-        "approved_records",
-        "drafts",
-        "entity_proposals",
-        "login_codes",
-        "mail_sends",
-        "review_rounds",
-        "sessions",
-        "submissions",
-        "user_shortcodes",
-        "users",
-    ];
+    const EXPECTED_TABLES: &[&str] = &["login_codes", "mail_sends", "sessions", "user_shortcodes", "users"];
 
     #[tokio::test]
     async fn test_migrations_apply_to_an_empty_database() {
@@ -134,7 +123,7 @@ mod tests {
     async fn test_reopening_a_file_database_keeps_its_data_and_does_not_re_migrate() {
         // The restart path. Reopening must find the schema current and leave the
         // rows alone — a migration that re-ran would drop or duplicate them.
-        let dir = std::env::temp_dir().join(format!("editor-db-reopen-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("identity-store-reopen-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
 
         let first = Database::open(Source::Directory(dir.clone()), 2, Duration::from_secs(5))

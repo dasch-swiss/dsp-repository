@@ -11,26 +11,14 @@ use async_trait::async_trait;
 use axum::body::Body;
 use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
-use chrono::{DateTime, Utc};
-use editor_core::proposals::{EntityProposal, ProposalDecision};
 use editor_core::published::PublishedProjects;
-use editor_core::records::{ApprovedRecord, DraftRecord, ReviewRound, Submission};
-use editor_core::repository::{
-    ApprovedRecordRepository, DraftRepository, EntityProposalRepository, RepositoryError, Result,
-    ReviewRoundRepository, SubmissionRepository, Transition,
-};
+use editor_core::repository::EditorRepositories;
 use identity_core::login::AuthConfig;
 use identity_core::mail::{Mail, MailError, Mailer};
-use identity_core::records::{LoginCode, Session, User};
-use identity_core::repository::{
-    Attempt, Issued, LoginCodeRepository, MailSendRepository, Result as IdentityResult, SessionRepository,
-    UserRepository,
-};
-use uuid::Uuid;
+use identity_core::repository::IdentityRepositories;
 
 use crate::config::EditorConfig;
-use crate::db::{Database, Source};
-use crate::shell::{AppState, Repositories, TemporalTables};
+use crate::shell::{AppState, TemporalTables};
 
 /// One message a [`RecordingMailer`] was asked to send.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,9 +65,7 @@ impl RecordingMailer {
 
 #[async_trait]
 impl Mailer for RecordingMailer {
-    // `std::result::Result` spelled out: this file imports `editor_core`'s
-    // one-parameter `Result` alias for the port methods below.
-    async fn send(&self, mail: &Mail) -> std::result::Result<(), MailError> {
+    async fn send(&self, mail: &Mail) -> Result<(), MailError> {
         // Recorded even when the send fails, so a test can assert what would
         // have gone out and to whom.
         self.sent
@@ -101,7 +87,7 @@ impl Mailer for RecordingMailer {
     }
 }
 
-/// App state over a fresh in-memory database and a recording mailer.
+/// App state over fresh in-memory stores and a recording mailer.
 ///
 /// The cooldown is zero because most tests are about something else and a real
 /// one would make them sleep; the tests that are about the cooldown set it.
@@ -115,11 +101,11 @@ pub(crate) async fn state_with(
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
 ) -> (AppState, RecordingMailer) {
-    let db = Arc::new(open_test_db(label).await);
-    (state_over(db, mailer.clone(), adjust), mailer)
+    let stores = open_test_db(label).await;
+    (state_over(stores.identity, stores.editor, mailer.clone(), adjust), mailer)
 }
 
-/// App state over a fresh in-memory database, configured with `token` as the collection-report
+/// App state over fresh in-memory stores, configured with `token` as the collection-report
 /// bearer token. [`test_state`] configures none, so a test needing one asks for it here.
 pub(crate) async fn state_with_collection_token(label: &str, token: &str) -> (AppState, RecordingMailer) {
     let (mut state, mailer) = test_state(label).await;
@@ -127,22 +113,30 @@ pub(crate) async fn state_with_collection_token(label: &str, token: &str) -> (Ap
     (state, mailer)
 }
 
-/// A fresh in-memory database for one test.
-pub(crate) async fn open_test_db(label: &str) -> Database {
-    Database::open(Source::memory_for_test(label), 4, Duration::from_secs(5))
-        .await
-        .expect("the test database should open")
+/// Both stores of one test, each a fresh in-memory database.
+#[derive(Clone)]
+pub(crate) struct Stores {
+    pub(crate) identity: Arc<identity_store::Database>,
+    pub(crate) editor: Arc<editor_store::Database>,
 }
 
-/// App state over a store the caller built.
+/// Fresh in-memory stores for one test.
+pub(crate) async fn open_test_db(label: &str) -> Stores {
+    Stores {
+        identity: Arc::new(identity_store::test_support::open_for_test(label).await),
+        editor: Arc::new(editor_store::test_support::open_for_test(label).await),
+    }
+}
+
+/// App state over stores the caller built.
 ///
-/// [`state_with`] covers every test that just needs a working database. This is
-/// for the two kinds that need the handle as well: one that reads a table
-/// directly (see [`count_rows`] — `AppState` has erased the concrete
-/// [`Database`] behind the ports), and one that puts a [`FaultyDatabase`] in
-/// front of it while keeping the real store to seed and to assert against.
+/// [`state_with`] covers every test that just needs working stores. This is for the two kinds
+/// that need the handles as well: one that reads a table directly (`count_rows` on either store:
+/// `AppState` has erased the concrete stores behind the ports), and one that puts a store's
+/// `FaultyStore` in front of it while keeping the real store to seed and to assert against.
 pub(crate) fn state_over(
-    db: Arc<dyn Repositories>,
+    identity: Arc<dyn IdentityRepositories>,
+    editor: Arc<dyn EditorRepositories>,
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
 ) -> AppState {
@@ -150,7 +144,8 @@ pub(crate) fn state_over(
     adjust(&mut auth);
     AppState {
         css_href: "/assets/app.css".to_string(),
-        db,
+        identity,
+        editor,
         mailer: Arc::new(mailer),
         auth,
         // Off by default: the reveal is the exception, so a test that wants it
@@ -269,7 +264,7 @@ pub(crate) async fn a_user(
         last_code_at: None,
         created_at: chrono::Utc::now(),
     };
-    UserRepository::create(&*state.db, &user)
+    UserRepository::create(&*state.identity, &user)
         .await
         .expect("the fixture user should insert");
     user
@@ -281,18 +276,10 @@ pub(crate) async fn a_user(
 /// reach a page should fail when authorization breaks, not when the mail
 /// transport does.
 pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
-    identity_core::session::begin(&*state.db, &state.auth, user_id, chrono::Utc::now())
+    identity_core::session::begin(&*state.identity, &state.auth, user_id, chrono::Utc::now())
         .await
         .expect("the fixture session should insert")
         .id
-}
-
-/// Rows in one table, so a test can assert on state no repository method
-/// returns — what a rollback left behind, and what a cascade took.
-pub(crate) async fn count_rows(db: &Database, table: &'static str) -> i64 {
-    db.read(move |conn| conn.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row.get(0)))
-        .await
-        .expect("counting rows should succeed")
 }
 
 /// Enough percent-encoding for the values these tests put in a form body.
@@ -526,422 +513,4 @@ pub(crate) fn capture_logs() -> (LogCapture, CaptureGuard) {
     let capture = LogCapture::default();
     SINK.with(|sink| *sink.borrow_mut() = Some(capture.clone()));
     (capture, CaptureGuard)
-}
-
-/// Which storage calls a [`FaultyDatabase`] must fail.
-///
-/// One field per injectable call, named after the port method, so the compiler
-/// checks the name and a new branch adds a field rather than a string. All false
-/// by default: a test sets exactly the one branch it is driving.
-#[derive(Default)]
-pub(crate) struct Faults {
-    pub claim_attempt: bool,
-    pub rebind_browser_token: bool,
-    pub record_failed_login: bool,
-    /// `MailSendRepository::record` — named for the port, since `record` alone
-    /// would not say which one.
-    pub record_mail_send: bool,
-    /// `SubmissionRepository::update` — the review surface's only write, and
-    /// the branch where a page must not report a claim that did not happen.
-    pub submission_update: bool,
-    /// `SubmissionRepository::create` — the submit path's write, and the branch
-    /// where a refused submit must leave the draft editable rather than report
-    /// a submission nobody holds.
-    pub submission_create: bool,
-    /// Every writing transition on [`ReviewRoundRepository`] at once.
-    ///
-    /// One flag for three methods, because a handler reaches exactly one of
-    /// them per request and they share the branch a test is driving: a
-    /// terminating action that could not be written must leave the submission
-    /// where it was and say so.
-    pub review_transition: bool,
-    /// `ReviewRoundRepository::list_for_shortcode` — the read the depositor's
-    /// form makes to find out what RDU said.
-    pub review_rounds_list: bool,
-    /// `ApprovedRecordRepository::list_all` — the startup comparison's
-    /// enumeration, and the branch where a database that cannot be read must
-    /// leave every record alone rather than reconcile a set it never saw.
-    pub approved_records_list_all: bool,
-    /// `ApprovedRecordRepository::find_by_shortcode` — the approval gate's read of a project's
-    /// existing records, and the branch where it must be reported as a storage failure rather
-    /// than as the live-pull-request refusal.
-    pub approved_records_find_by_shortcode: bool,
-    /// `ApprovedRecordRepository::delete` answers `Ok(false)` — the row was
-    /// already gone. Reachable for real only as a race between two instances
-    /// sharing one database file, which is why it needs a seam: the startup
-    /// pass must not report a discard it did not make.
-    pub approved_records_delete_missing: bool,
-    /// `EntityProposalRepository::list_accepted_unretired` — the retirement
-    /// pass's enumeration. Its failure must not discard the record pass's
-    /// summary, which is the one thing that branch exists to hold.
-    pub entity_proposals_list_accepted_unretired: bool,
-    /// `EntityProposalRepository::retire` — the retirement write, and the
-    /// branch where a proposal that could not be retired is counted so the next
-    /// start retries it rather than passing silently.
-    pub entity_proposals_retire: bool,
-}
-
-/// A store that delegates every call to a real [`Database`] and fails the ones
-/// [`Faults`] names.
-///
-/// Delegation rather than a store built from scratch, because the branches this
-/// exists for are deep in a flow: reaching the failing `claim_attempt` means an
-/// account, a live code and a browser binding all had to be found first. A fake
-/// answering everything from nothing would have to reimplement the store to get
-/// there, and would then be proving things about the reimplementation.
-pub(crate) struct FaultyDatabase {
-    inner: Arc<Database>,
-    faults: Faults,
-}
-
-impl FaultyDatabase {
-    pub(crate) fn new(inner: Arc<Database>, faults: Faults) -> Self {
-        Self { inner, faults }
-    }
-}
-
-/// The error an injected failure reports.
-///
-/// [`RepositoryError::Backend`] specifically: it is the variant a driver failure
-/// arrives as, so the handler takes the same branch it would in production. The
-/// message says it was injected, so a capture of a test that fails for another
-/// reason does not read like a real storage fault.
-fn injected(call: &'static str) -> RepositoryError {
-    RepositoryError::Backend(format!("injected failure in {call} (test)").into())
-}
-
-/// [`injected`] for identity's error type.
-fn identity_injected(call: &'static str) -> identity_core::repository::RepositoryError {
-    identity_core::repository::RepositoryError::Backend(format!("injected failure in {call} (test)").into())
-}
-
-#[async_trait]
-impl UserRepository for FaultyDatabase {
-    async fn create(&self, user: &User) -> IdentityResult<()> {
-        UserRepository::create(&*self.inner, user).await
-    }
-
-    async fn update(&self, user: &User) -> IdentityResult<()> {
-        UserRepository::update(&*self.inner, user).await
-    }
-
-    async fn delete(&self, id: Uuid) -> IdentityResult<()> {
-        UserRepository::delete(&*self.inner, id).await
-    }
-
-    async fn find_by_id(&self, id: Uuid) -> IdentityResult<Option<User>> {
-        UserRepository::find_by_id(&*self.inner, id).await
-    }
-
-    async fn find_by_email(&self, email: &str) -> IdentityResult<Option<User>> {
-        UserRepository::find_by_email(&*self.inner, email).await
-    }
-
-    async fn list(&self) -> IdentityResult<Vec<User>> {
-        UserRepository::list(&*self.inner).await
-    }
-
-    async fn record_failed_login(
-        &self,
-        id: Uuid,
-        at: DateTime<Utc>,
-        decay_before: DateTime<Utc>,
-    ) -> IdentityResult<u32> {
-        if self.faults.record_failed_login {
-            return Err(identity_injected("UserRepository::record_failed_login"));
-        }
-        UserRepository::record_failed_login(&*self.inner, id, at, decay_before).await
-    }
-
-    async fn clear_failed_logins(&self, id: Uuid) -> IdentityResult<()> {
-        UserRepository::clear_failed_logins(&*self.inner, id).await
-    }
-
-    async fn record_code_issued(&self, id: Uuid, at: DateTime<Utc>) -> IdentityResult<()> {
-        UserRepository::record_code_issued(&*self.inner, id, at).await
-    }
-}
-
-#[async_trait]
-impl SessionRepository for FaultyDatabase {
-    async fn create(&self, session: &Session) -> IdentityResult<()> {
-        SessionRepository::create(&*self.inner, session).await
-    }
-
-    async fn find(&self, id: &str) -> IdentityResult<Option<Session>> {
-        SessionRepository::find(&*self.inner, id).await
-    }
-
-    async fn touch(&self, id: &str, at: DateTime<Utc>) -> IdentityResult<()> {
-        SessionRepository::touch(&*self.inner, id, at).await
-    }
-
-    async fn delete(&self, id: &str) -> IdentityResult<bool> {
-        SessionRepository::delete(&*self.inner, id).await
-    }
-
-    async fn delete_expired(&self, now: DateTime<Utc>) -> IdentityResult<u64> {
-        SessionRepository::delete_expired(&*self.inner, now).await
-    }
-}
-
-#[async_trait]
-impl LoginCodeRepository for FaultyDatabase {
-    async fn create(&self, code: &LoginCode) -> IdentityResult<()> {
-        LoginCodeRepository::create(&*self.inner, code).await
-    }
-
-    async fn create_unless_issued_since(&self, code: &LoginCode, not_before: DateTime<Utc>) -> IdentityResult<Issued> {
-        LoginCodeRepository::create_unless_issued_since(&*self.inner, code, not_before).await
-    }
-
-    async fn find_by_browser_token(&self, token: &str) -> IdentityResult<Option<LoginCode>> {
-        LoginCodeRepository::find_by_browser_token(&*self.inner, token).await
-    }
-
-    async fn delete(&self, id: Uuid) -> IdentityResult<bool> {
-        LoginCodeRepository::delete(&*self.inner, id).await
-    }
-
-    async fn find_active_for_user(&self, user_id: Uuid, now: DateTime<Utc>) -> IdentityResult<Option<LoginCode>> {
-        LoginCodeRepository::find_active_for_user(&*self.inner, user_id, now).await
-    }
-
-    async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> IdentityResult<Attempt> {
-        if self.faults.claim_attempt {
-            return Err(identity_injected("LoginCodeRepository::claim_attempt"));
-        }
-        LoginCodeRepository::claim_attempt(&*self.inner, id, max_attempts).await
-    }
-
-    async fn rebind_browser_token(&self, presented: &str, replacement: &str) -> IdentityResult<bool> {
-        if self.faults.rebind_browser_token {
-            return Err(identity_injected("LoginCodeRepository::rebind_browser_token"));
-        }
-        LoginCodeRepository::rebind_browser_token(&*self.inner, presented, replacement).await
-    }
-
-    async fn consume(&self, id: Uuid, at: DateTime<Utc>) -> IdentityResult<bool> {
-        LoginCodeRepository::consume(&*self.inner, id, at).await
-    }
-
-    async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> IdentityResult<u64> {
-        LoginCodeRepository::delete_unconsumed_for_user(&*self.inner, user_id).await
-    }
-
-    async fn unconsume(&self, id: Uuid) -> IdentityResult<bool> {
-        LoginCodeRepository::unconsume(&*self.inner, id).await
-    }
-
-    async fn delete_expired(&self, now: DateTime<Utc>) -> IdentityResult<u64> {
-        LoginCodeRepository::delete_expired(&*self.inner, now).await
-    }
-}
-
-#[async_trait]
-impl MailSendRepository for FaultyDatabase {
-    async fn record(&self, user_id: Uuid, sent_at: DateTime<Utc>) -> IdentityResult<()> {
-        if self.faults.record_mail_send {
-            return Err(identity_injected("MailSendRepository::record"));
-        }
-        MailSendRepository::record(&*self.inner, user_id, sent_at).await
-    }
-
-    async fn count_since(&self, since: DateTime<Utc>) -> IdentityResult<u64> {
-        MailSendRepository::count_since(&*self.inner, since).await
-    }
-
-    async fn count_for_user_since(&self, user_id: Uuid, since: DateTime<Utc>) -> IdentityResult<u64> {
-        MailSendRepository::count_for_user_since(&*self.inner, user_id, since).await
-    }
-
-    async fn delete_before(&self, cutoff: DateTime<Utc>) -> IdentityResult<u64> {
-        MailSendRepository::delete_before(&*self.inner, cutoff).await
-    }
-}
-
-#[async_trait]
-impl DraftRepository for FaultyDatabase {
-    async fn upsert(&self, draft: &DraftRecord) -> Result<()> {
-        DraftRepository::upsert(&*self.inner, draft).await
-    }
-
-    async fn find(&self, shortcode: &str) -> Result<Option<DraftRecord>> {
-        DraftRepository::find(&*self.inner, shortcode).await
-    }
-
-    async fn list(&self) -> Result<Vec<DraftRecord>> {
-        DraftRepository::list(&*self.inner).await
-    }
-
-    async fn delete(&self, shortcode: &str) -> Result<bool> {
-        DraftRepository::delete(&*self.inner, shortcode).await
-    }
-}
-
-#[async_trait]
-impl SubmissionRepository for FaultyDatabase {
-    async fn create(&self, submission: &Submission) -> Result<()> {
-        if self.faults.submission_create {
-            return Err(injected("SubmissionRepository::create"));
-        }
-        SubmissionRepository::create(&*self.inner, submission).await
-    }
-
-    async fn update(&self, submission: &Submission) -> Result<()> {
-        if self.faults.submission_update {
-            return Err(injected("SubmissionRepository::update"));
-        }
-        SubmissionRepository::update(&*self.inner, submission).await
-    }
-
-    async fn find(&self, id: Uuid) -> Result<Option<Submission>> {
-        SubmissionRepository::find(&*self.inner, id).await
-    }
-
-    async fn find_by_shortcode(&self, shortcode: &str) -> Result<Option<Submission>> {
-        SubmissionRepository::find_by_shortcode(&*self.inner, shortcode).await
-    }
-
-    async fn list(&self) -> Result<Vec<Submission>> {
-        SubmissionRepository::list(&*self.inner).await
-    }
-
-    async fn delete(&self, id: Uuid) -> Result<bool> {
-        SubmissionRepository::delete(&*self.inner, id).await
-    }
-}
-
-#[async_trait]
-impl ReviewRoundRepository for FaultyDatabase {
-    async fn approve(&self, submission_id: Uuid, record: &ApprovedRecord, round: &ReviewRound) -> Result<Transition> {
-        if self.faults.review_transition {
-            return Err(injected("ReviewRoundRepository::approve"));
-        }
-        ReviewRoundRepository::approve(&*self.inner, submission_id, record, round).await
-    }
-
-    async fn request_changes(
-        &self,
-        submission_id: Uuid,
-        draft: &DraftRecord,
-        round: &ReviewRound,
-    ) -> Result<Transition> {
-        if self.faults.review_transition {
-            return Err(injected("ReviewRoundRepository::request_changes"));
-        }
-        ReviewRoundRepository::request_changes(&*self.inner, submission_id, draft, round).await
-    }
-
-    async fn discard(&self, submission_id: Uuid, round: &ReviewRound) -> Result<Transition> {
-        if self.faults.review_transition {
-            return Err(injected("ReviewRoundRepository::discard"));
-        }
-        ReviewRoundRepository::discard(&*self.inner, submission_id, round).await
-    }
-
-    async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<ReviewRound>> {
-        if self.faults.review_rounds_list {
-            return Err(injected("ReviewRoundRepository::list_for_shortcode"));
-        }
-        ReviewRoundRepository::list_for_shortcode(&*self.inner, shortcode).await
-    }
-}
-
-#[async_trait]
-impl ApprovedRecordRepository for FaultyDatabase {
-    async fn create(&self, record: &ApprovedRecord) -> Result<()> {
-        ApprovedRecordRepository::create(&*self.inner, record).await
-    }
-
-    async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>> {
-        if self.faults.approved_records_find_by_shortcode {
-            return Err(injected("ApprovedRecordRepository::find_by_shortcode"));
-        }
-        ApprovedRecordRepository::find_by_shortcode(&*self.inner, shortcode).await
-    }
-
-    async fn list_all(&self) -> Result<Vec<ApprovedRecord>> {
-        if self.faults.approved_records_list_all {
-            return Err(injected("ApprovedRecordRepository::list_all"));
-        }
-        ApprovedRecordRepository::list_all(&*self.inner).await
-    }
-
-    async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
-        ApprovedRecordRepository::mark_collected(&*self.inner, id, at).await
-    }
-
-    async fn report_collection(
-        &self,
-        id: Uuid,
-        pull_request_url: Option<&str>,
-        state: Option<editor_core::records::PullRequestState>,
-        failure: Option<&str>,
-        at: DateTime<Utc>,
-    ) -> Result<bool> {
-        ApprovedRecordRepository::report_collection(&*self.inner, id, pull_request_url, state, failure, at).await
-    }
-
-    async fn delete(&self, id: Uuid) -> Result<bool> {
-        if self.faults.approved_records_delete_missing {
-            return Ok(false);
-        }
-        ApprovedRecordRepository::delete(&*self.inner, id).await
-    }
-}
-
-#[async_trait]
-impl EntityProposalRepository for FaultyDatabase {
-    async fn create_new(&self, proposal: &EntityProposal, published_floor: u32) -> Result<EntityProposal> {
-        EntityProposalRepository::create_new(&*self.inner, proposal, published_floor).await
-    }
-
-    async fn create_change(&self, proposal: &EntityProposal) -> Result<()> {
-        EntityProposalRepository::create_change(&*self.inner, proposal).await
-    }
-
-    async fn update_payload(&self, id: Uuid, payload: &str, at: DateTime<Utc>) -> Result<()> {
-        EntityProposalRepository::update_payload(&*self.inner, id, payload, at).await
-    }
-
-    async fn set_decision(
-        &self,
-        id: Uuid,
-        decision: Option<ProposalDecision>,
-        by: Option<Uuid>,
-        at: DateTime<Utc>,
-    ) -> Result<()> {
-        EntityProposalRepository::set_decision(&*self.inner, id, decision, by, at).await
-    }
-
-    async fn find(&self, id: Uuid) -> Result<Option<EntityProposal>> {
-        EntityProposalRepository::find(&*self.inner, id).await
-    }
-
-    async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<EntityProposal>> {
-        EntityProposalRepository::list_for_shortcode(&*self.inner, shortcode).await
-    }
-
-    async fn list_live_for_entity(&self, entity_id: &str) -> Result<Vec<EntityProposal>> {
-        EntityProposalRepository::list_live_for_entity(&*self.inner, entity_id).await
-    }
-
-    async fn list_accepted_unretired(&self) -> Result<Vec<EntityProposal>> {
-        if self.faults.entity_proposals_list_accepted_unretired {
-            return Err(injected("EntityProposalRepository::list_accepted_unretired"));
-        }
-        EntityProposalRepository::list_accepted_unretired(&*self.inner).await
-    }
-
-    async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
-        EntityProposalRepository::withdraw(&*self.inner, id, at).await
-    }
-
-    async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {
-        if self.faults.entity_proposals_retire {
-            return Err(injected("EntityProposalRepository::retire"));
-        }
-        EntityProposalRepository::retire(&*self.inner, id, at).await
-    }
 }

@@ -13,10 +13,11 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use editor_core::draft::ProjectDraft;
-use editor_core::records::{normalize_shortcode, User};
+use editor_core::records::normalize_shortcode;
 use editor_core::repository::{ApprovedRecordRepository, DraftRepository, RepositoryError, SubmissionRepository};
 use editor_core::status::{depositor_state, Comparison, ProjectState};
 use editor_web::pages::projects::AssignedProject;
+use identity_core::records::User;
 use shared_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
@@ -177,7 +178,7 @@ pub(crate) async fn approved_comparison(state: &AppState, key: &str) -> Result<(
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, viewer: &User, what: &str, error: &RepositoryError) -> Response {
+fn storage_error(state: &AppState, viewer: &User, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the project list could not reach storage");
     crate::shell::render(
         state,
@@ -194,8 +195,9 @@ fn storage_error(state: &AppState, viewer: &User, what: &str, error: &Repository
 #[cfg(test)]
 mod tests {
     use axum::http::StatusCode;
-    use editor_core::records::{normalize_shortcode, DraftRecord, Role};
+    use editor_core::records::{normalize_shortcode, DraftRecord};
     use editor_core::repository::DraftRepository;
+    use identity_core::records::Role;
     use tower::ServiceExt;
 
     use crate::test_support::{
@@ -204,7 +206,7 @@ mod tests {
 
     async fn as_session(app: &axum::Router, uri: &str, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(get(uri), crate::auth::cookie::SESSION, session))
+            .oneshot(with_cookie(get(uri), identity_core::cookie::SESSION, session))
             .await
             .expect("the request should complete")
     }

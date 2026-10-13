@@ -3,13 +3,13 @@
 
 use std::time::Duration;
 
-use axum::http::HeaderMap;
 use chrono::{DateTime, Utc};
-use editor_core::records::{Session, User};
-use editor_core::repository::{Repositories, RepositoryError, SessionRepository, UserRepository};
 use uuid::Uuid;
 
-use super::{cookie, delta, secret, AuthConfig};
+use crate::login::{delta, AuthConfig};
+use crate::records::{Session, User};
+use crate::repository::{IdentityRepositories, RepositoryError, SessionRepository, UserRepository};
+use crate::{cookie, secret};
 
 /// How stale `last_seen_at` may get before a request writes it forward.
 ///
@@ -27,7 +27,7 @@ const TOUCH_INTERVAL: Duration = Duration::from_secs(60);
 /// The id is a fresh 256-bit token every time, so nothing the browser held before
 /// authentication can become the authenticated session id and a fixated pre-auth
 /// value has nowhere to go.
-pub(crate) async fn begin(
+pub async fn begin(
     db: &dyn SessionRepository,
     auth: &AuthConfig,
     user_id: Uuid,
@@ -49,15 +49,17 @@ pub(crate) async fn begin(
 
 /// The signed-in user, if the request carries a live session.
 ///
+/// `cookie_headers` is every `Cookie` header value on the request.
+///
 /// Fails closed on every error: a database that cannot answer produces `None`
 /// rather than a guess.
-pub(crate) async fn current(
-    db: &dyn Repositories,
+pub async fn current(
+    db: &dyn IdentityRepositories,
     auth: &AuthConfig,
-    headers: &HeaderMap,
+    cookie_headers: &[&str],
     now: DateTime<Utc>,
 ) -> Option<Viewer> {
-    let id = cookie::read(headers, cookie::SESSION)?;
+    let id = cookie::read(cookie_headers, cookie::SESSION)?;
 
     let session = match SessionRepository::find(db, &id).await {
         Ok(Some(session)) => session,
@@ -108,10 +110,10 @@ pub(crate) async fn current(
 
 /// Who is signed in, and when that stops being true.
 #[derive(Debug, Clone)]
-pub(crate) struct Viewer {
-    pub(crate) user: User,
+pub struct Viewer {
+    pub user: User,
     /// The earlier of the absolute expiry and the idle timeout.
-    pub(crate) signed_out_at: DateTime<Utc>,
+    pub signed_out_at: DateTime<Utc>,
 }
 
 /// What [`end`] did.
@@ -120,7 +122,7 @@ pub(crate) struct Viewer {
 /// failed" are opposite facts, and collapsing them makes the sign-out log assert
 /// the session was already gone while the row is still there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Ended {
+pub enum Ended {
     /// The row is gone. Carries the account it belonged to, so sign-out is
     /// traceable by the same opaque id as the rest of the flow.
     Deleted(Uuid),
@@ -130,8 +132,8 @@ pub(crate) enum Ended {
     Failed,
 }
 
-pub(crate) async fn end(db: &dyn SessionRepository, headers: &HeaderMap) -> Ended {
-    let Some(id) = cookie::read(headers, cookie::SESSION) else {
+pub async fn end(db: &dyn SessionRepository, cookie_headers: &[&str]) -> Ended {
+    let Some(id) = cookie::read(cookie_headers, cookie::SESSION) else {
         return Ended::NoSession;
     };
     // Read before delete so the account can be named in the log.

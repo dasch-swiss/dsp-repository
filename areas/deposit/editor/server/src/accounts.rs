@@ -12,8 +12,8 @@
 //! else happens.
 
 use chrono::{DateTime, Utc};
-use editor_core::records::{Role, User};
-use editor_core::repository::{RepositoryError, UserRepository};
+use identity_core::records::{Role, User};
+use identity_core::repository::{RepositoryError, UserRepository};
 use uuid::Uuid;
 
 /// Create or promote an account for every configured RDU address, and report

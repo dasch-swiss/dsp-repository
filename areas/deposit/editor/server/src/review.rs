@@ -35,17 +35,19 @@ use editor_core::form::{apply, FormBody};
 use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalOperation, ProposalStatus};
 use editor_core::records::{
     normalize_shortcode, ApprovedRecord, DraftRecord, PullRequestState, ReviewOutcome, ReviewRound, Submission,
-    SubmissionState, User,
+    SubmissionState,
 };
 use editor_core::repository::{
     ApprovedRecordRepository, DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository,
-    SubmissionRepository, Transition, UserRepository,
+    SubmissionRepository, Transition,
 };
 use editor_core::review::{diff, Decision, FieldDiff, FieldReview, ReviewState};
 use editor_web::form::registry::Audience;
 use editor_web::form::submit::unresolved_agents;
 use editor_web::form::{registry, INTENT};
 use editor_web::pages::review as page;
+use identity_core::records::User;
+use identity_core::repository::UserRepository;
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
@@ -1118,7 +1120,7 @@ fn view<'a>(
 ///
 /// One query rather than one per row: the queue reads two tables and would
 /// otherwise issue a lookup per submission and per draft.
-async fn account_names(state: &AppState) -> Result<HashMap<Uuid, String>, RepositoryError> {
+async fn account_names(state: &AppState) -> Result<HashMap<Uuid, String>, identity_core::repository::RepositoryError> {
     Ok(UserRepository::list(&*state.db)
         .await?
         .into_iter()
@@ -1168,7 +1170,7 @@ fn unreadable_submission(state: &AppState, user: &User) -> Response {
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
+fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the review surface could not reach storage");
     crate::shell::render(
         state,
@@ -1186,7 +1188,7 @@ fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryEr
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
-    use editor_core::records::Role;
+    use identity_core::records::Role;
     use serde_json::json;
     use tower::ServiceExt;
 
@@ -1198,7 +1200,7 @@ mod tests {
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(request, crate::auth::cookie::SESSION, session))
+            .oneshot(with_cookie(request, identity_core::cookie::SESSION, session))
             .await
             .expect("the request should complete")
     }

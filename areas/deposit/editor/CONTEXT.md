@@ -1,29 +1,12 @@
 # Deposit Area
 
-The producer side of the Trusted Repository: where a depositing project team edits its project metadata, RDU reviews it field by field, and an approved record is handed on for publication. Today one capability, the metadata editor (`editor-core`, `editor-web`, `editor-server`); planned beside it in the same modulith: `media` (uploaded Originals and their previews, using the Vitrinli library), the data-model creator, data creation (the working graphs in Chischtli, of which it is the single writer), and the DaTEI configurator (the authoring surface for a digital edition's configuration; tentative, see `areas/access/datei/CONTEXT.md`) — see the root `CONTEXT.md`, `vitrinli/CONTEXT.md` and `chischtli/CONTEXT.md`. Contract terms — Project, Shortcode, Person, Organization, Multilingual, Placeholder, Temporal coverage — are defined once in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared` and only used here.
+The producer side of the Trusted Repository: where a depositing project team edits its project metadata, RDU reviews it field by field, and an approved record is handed on for publication. Today the metadata editor (`editor-core`, `editor-web`, `editor-server`), with identity's domain beside it in `identity-core` (see [`areas/deposit/identity/CONTEXT.md`](../identity/CONTEXT.md)); planned beside it in the same modulith: `media` (uploaded Originals and their previews, using the Vitrinli library), the data-model creator, data creation (the working graphs in Chischtli, of which it is the single writer), and the DaTEI configurator (the authoring surface for a digital edition's configuration; tentative, see `areas/access/datei/CONTEXT.md`) — see the root `CONTEXT.md`, `vitrinli/CONTEXT.md` and `chischtli/CONTEXT.md`. Contract terms — Project, Shortcode, Person, Organization, Multilingual, Placeholder, Temporal coverage — are defined once in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared` and only used here.
 
 ## Language
 
 ### People and access
 
-**Depositor**:
-A `users` row with `Role::Depositor`, created by RDU, who may edit the projects assigned to them.
-_Avoid_: user (too broad — RDU members are users too), researcher, project team (the people; the depositor is the account).
-
-**RDU**:
-The reviewer role: the Research Data Unit member who reviews submissions and administers depositors; `Role::Rdu` when stored, the `Rdu` extractor when authorizing, `Audience::RduOnly` when deciding field visibility.
-_Avoid_: admin, reviewer as a role name (a reviewer is what RDU does on a given round).
-
-**Assignment**:
-A `user_shortcodes` row: one project a depositor may reach, matched on the case-folded Shortcode (`User::may_reach`).
-_Avoid_: permission, membership.
-
-**Login code**:
-A one-time code mailed to a depositor and bound to a browser token, exchanged for a Session.
-_Avoid_: OTP, magic link (it is typed, not clicked), password (the editor has none).
-
-**Session**:
-The cookie-backed result of a redeemed Login code; carries the user id only.
+Depositor, RDU, Assignment, Login code and Session are identity's terms, defined in [`areas/deposit/identity/CONTEXT.md`](../identity/CONTEXT.md).
 
 ### The record and its journey
 

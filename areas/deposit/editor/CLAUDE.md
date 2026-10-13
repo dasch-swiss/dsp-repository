@@ -22,7 +22,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Four crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-web` (`web/`, view functions), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`).
+Four crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-web` (`web/`, view functions), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity's domain — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
 
 ## Code Organization Patterns
 
@@ -48,7 +48,7 @@ Every route that changes state is `POST`. The `Sec-Fetch-Site` CSRF control must
 
 ## Running Tests
 
-- Rust: `cargo test -p editor-core -p editor-web -p editor-server`
+- Rust: `cargo test -p identity-core -p editor-core -p editor-web -p editor-server`
 - E2E, accessibility and the no-JavaScript pass: `just test-e2e-editor` / `just test-a11y-editor` (suite in `areas/deposit/editor/web-e2e-tests/`)
 
 The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptEnabled: false`. Neither pass subsumes the other: the no-JS pass catches a control with no submit button behind it, and the JS pass catches a control that Datastar has made inert.
@@ -72,12 +72,6 @@ The shell header renders `<form method="post" action="/logout">` on every signed
 ### Styling not applying
 
 `areas/deposit/editor/public/assets/app.css` is **gitignored and built**: `just css-editor` (dev, unhashed) or `just css-editor-release` (content-hashed, discovered by scanning the asset dir at startup). A stale local build makes a Tailwind-dependent assertion fail for a reason that has nothing to do with the code under test — `position: sticky` with every offset `auto` is inert, and that is what an absent `top-0` produces.
-
-### Configuration refuses unsafe combinations at startup
-
-`EditorConfig::validate` stops the process rather than starting in a state that locks users out or leaks. Two that bite in test setups: `EDITOR_ENV=PROD` requires `EDITOR_SMTP_HOST` (a console mailer in production is a standing credential leak), and `EDITOR_LOGIN_COOLDOWN_SECS` must be **at least 1** — it cannot be set to zero.
-
-With `EDITOR_SMTP_HOST` unset the console transport writes login codes to the log, which is how development, the PR preview and the E2E suite sign in.
 
 ### A schema change edits `0001` until the first deployment
 

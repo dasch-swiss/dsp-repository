@@ -2,8 +2,8 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use editor_core::records::Session;
-use editor_core::repository::{RepositoryError, Result, SessionRepository};
+use identity_core::records::Session;
+use identity_core::repository::{RepositoryError, Result, SessionRepository};
 use rusqlite::{params, Row};
 
 use super::mapping::{uuid_column, OptionalRow};
@@ -40,7 +40,7 @@ impl SessionRepository for Database {
             )
         })
         .await
-        .map_err(|e| e.into_repository_error(ENTITY))?;
+        .map_err(|e| e.into_identity_error(ENTITY))?;
         Ok(())
     }
 
@@ -84,8 +84,8 @@ impl SessionRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use editor_core::records::{Role, User};
-    use editor_core::repository::UserRepository;
+    use identity_core::records::{Role, User};
+    use identity_core::repository::UserRepository;
     use uuid::Uuid;
 
     use super::super::tests::{count, test_db};

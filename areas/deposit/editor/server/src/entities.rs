@@ -22,10 +22,11 @@ use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape, WhenCleared};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalStatus};
-use editor_core::records::{normalize_shortcode, User};
-use editor_core::repository::{EntityProposalRepository, RepositoryError};
+use editor_core::records::normalize_shortcode;
+use editor_core::repository::EntityProposalRepository;
 use editor_web::entity as page;
 use editor_web::form::INTENT;
+use identity_core::records::User;
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 
@@ -647,7 +648,7 @@ fn view<'a>(
     }
 }
 
-fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryError) -> Response {
+fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the entity form could not reach storage");
     crate::shell::render(
         state,
@@ -665,7 +666,7 @@ fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryEr
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
-    use editor_core::records::Role;
+    use identity_core::records::Role;
     use serde_json::{json, Value};
     use tower::ServiceExt;
 
@@ -676,7 +677,7 @@ mod tests {
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(request, crate::auth::cookie::SESSION, session))
+            .oneshot(with_cookie(request, identity_core::cookie::SESSION, session))
             .await
             .expect("the request should complete")
     }

@@ -3,7 +3,7 @@ name: Scout / editor
 on:
   pull_request:
     paths:
-      - "areas/deposit/editor/**"
+      - "areas/deposit/**"
       # `shared-*` crates compile into the editor binary; a source-only change
       # there touches no Cargo.lock, so without this the image is never scanned.
       - "shared/**"

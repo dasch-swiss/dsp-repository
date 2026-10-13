@@ -231,23 +231,26 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 3: Extract identity's domain into `identity-core`
 
 ### dsp-repository
-- [ ] Create `areas/deposit/identity/core` (`identity-core`) and register it in the workspace `Cargo.toml`
-- [ ] Move `Role`, `User`, `Session`, `LoginCode` from `editor-core/src/records.rs` into `identity-core`, with identity's own `UnknownVariant`
-- [ ] Move `UserRepository`, `SessionRepository`, `LoginCodeRepository`, `MailSendRepository`, `Attempt` and `Issued` from `editor-core/src/repository.rs` into `identity-core`, with identity's own `RepositoryError`
-- [ ] Declare `IdentityRepositories` in `identity-core` and rename what remains of `editor_core::repository::Repositories` to `EditorRepositories` (its five traits); `AppState` holds both for now
-- [ ] Move `AuthConfig`, `delta`, `is_plausible_address` and `locked_out` (`auth/mod.rs`), `auth/secret.rs`, and `CODE_TTL` and `SEND_WINDOW` (`config.rs`) into `identity-core`; `From<&EditorConfig> for AuthConfig` stays in the server
-- [ ] Move the `Mailer` trait with `Mail` and `MailError` (`mail.rs`) into `identity-core`; `SmtpMailer` and `ConsoleMailer` stay in the server until Phase 4
-- [ ] Move the session rules of `auth/session.rs` (`begin`, `current`, `end`, `TOUCH_INTERVAL`) into `identity-core`, taking the `Cookie` header values as `&[&str]`
-- [ ] Move `SESSION`, `LOGIN` and the `Cookie`-header scan from `auth/cookie.rs` into `identity-core` as a pure function; `set`, `clear` and the `HeaderMap` reading stay in the server
-- [ ] Fix the intra-doc link to `User::may_reach` in `editor-core/src/published.rs`
-- [ ] Create `areas/deposit/identity/CONTEXT.md` from the five terms under "People and access" in `areas/deposit/editor/CONTEXT.md`, and index it from the root `CONTEXT.md` (ADR-0004, Consequences)
-- [ ] Create `areas/deposit/identity/CLAUDE.md` with the identity pitfalls moved out of `areas/deposit/editor/CLAUDE.md`
-- [ ] Bind `areas/deposit/identity/**` in `eng.yaml` to that `CLAUDE.md` and to `eng:review:security-reviewer`
-- [ ] Widen the path filters of `a11y-editor.yml`, `cloud-run-editor-pull-request.yml` and `scout-editor.yml` from `areas/deposit/editor/**` to `areas/deposit/**`
-- [ ] Rewrite divergence row "Identity lives inside the editor's crates" to what remains
-- [ ] Run `just check && just test`; it passes
-- [ ] Write the PR description: rows changed, deviations
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Create `areas/deposit/identity/core` (`identity-core`) and register it in the workspace `Cargo.toml`
+- [x] Move `Role`, `User`, `Session`, `LoginCode` from `editor-core/src/records.rs` into `identity-core`, with identity's own `UnknownVariant`
+- [x] Move `UserRepository`, `SessionRepository`, `LoginCodeRepository`, `MailSendRepository`, `Attempt` and `Issued` from `editor-core/src/repository.rs` into `identity-core`, with identity's own `RepositoryError`
+- [x] Declare `IdentityRepositories` in `identity-core` and rename what remains of `editor_core::repository::Repositories` to `EditorRepositories` (its five traits); `AppState` holds both for now
+- [x] Move `AuthConfig`, `delta`, `is_plausible_address` and `locked_out` (`auth/mod.rs`), `auth/secret.rs`, and `CODE_TTL` and `SEND_WINDOW` (`config.rs`) into `identity-core`; `From<&EditorConfig> for AuthConfig` stays in the server
+- [x] Move the `Mailer` trait with `Mail` and `MailError` (`mail.rs`) into `identity-core`; `SmtpMailer` and `ConsoleMailer` stay in the server until Phase 4
+- [x] Move the session rules of `auth/session.rs` (`begin`, `current`, `end`, `TOUCH_INTERVAL`) into `identity-core`, taking the `Cookie` header values as `&[&str]`
+- [x] Move `SESSION`, `LOGIN` and the `Cookie`-header scan from `auth/cookie.rs` into `identity-core` as a pure function; `set`, `clear` and the `HeaderMap` reading stay in the server
+- [x] Fix the intra-doc links to `User::may_reach` in `editor-core/src/published.rs` and `editor-core/src/records.rs` (`normalize_shortcode`)
+- [x] Move `the_assignment_comparison_agrees_with_the_storage_key` (`records.rs`) unchanged into `editor-server`, the only crate that sees both `User::may_reach` and `normalize_shortcode`
+- [x] Give `storage_error` an `impl Display` parameter so it takes either error type (moved from Phase 4: `depositors.rs` meets both error types as soon as identity has its own `RepositoryError`)
+- [x] Add `areas/deposit/identity` to `bacon.toml`'s `serve-editor` watch list
+- [x] Create `areas/deposit/identity/CONTEXT.md` from the five terms under "People and access" in `areas/deposit/editor/CONTEXT.md`, and index it from the root `CONTEXT.md` (ADR-0004, Consequences)
+- [x] Create `areas/deposit/identity/CLAUDE.md` with the identity pitfalls moved out of `areas/deposit/editor/CLAUDE.md`
+- [x] Bind `areas/deposit/identity/**` in `eng.yaml` to that `CLAUDE.md` and to `eng:review:security-reviewer`
+- [x] Widen the path filters of `a11y-editor.yml`, `cloud-run-editor-pull-request.yml` and `scout-editor.yml` from `areas/deposit/editor/**` to `areas/deposit/**`
+- [x] Rewrite divergence row "Identity lives inside the editor's crates" to what remains
+- [x] Run `just check && just test`; it passes
+- [x] Write the PR description: rows changed, deviations
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 4: Two store crates over two database files
 
@@ -259,7 +262,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - [ ] Open `identity.sqlite` and `editor.sqlite` under `EDITOR_DB_DIR`, and two named in-memory databases (`identity`, `editor`) when it is unset; each store keeps its own `preflight`, single writer and `query_only` readers
 - [ ] Move `SmtpMailer`, `ConsoleMailer` and the mailer selection from `serve.rs` into `identity-store` as one constructor taking plain values
 - [ ] Replace `AppState.db` with two handles, `Arc<dyn IdentityRepositories>` and `Arc<dyn EditorRepositories>`
-- [ ] Give `storage_error` an `impl Display` parameter so it takes either error type
+- [x] Give `storage_error` an `impl Display` parameter so it takes either error type (done in Phase 3)
 - [ ] Move the fault-injecting fake into each store crate behind a `test-support` feature, one per store, with today's fault seams
 - [ ] Add plain-value seed helpers (user, session, draft, submission, review round, entity proposal) and row readers to the stores' `test-support` features
 - [ ] Make `count_rows` take the store it counts in

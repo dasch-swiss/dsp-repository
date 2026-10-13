@@ -21,6 +21,9 @@ overrides:
   - when: "areas/deposit/editor/**"
     conventions: [areas/deposit/editor/CLAUDE.md]
     reviewers: [eng:review:security-reviewer]
+  - when: "areas/deposit/identity/**"
+    conventions: [areas/deposit/identity/CLAUDE.md]
+    reviewers: [eng:review:security-reviewer]
   - when: "modules/mosaic/**"
     conventions: [modules/mosaic/CLAUDE.md]
     verify:

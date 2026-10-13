@@ -1,0 +1,336 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>The Review Surface - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="the-review-surface"><a class="header" href="#the-review-surface">The Review Surface</a></h1>
+<p>The queue, the field-by-field diff, and how a review round ends. The comparison it renders from is also the one that derives Online at startup (see <a href="./status.html">Project State</a>).</p>
+<p><code>GET /review</code> is the queue and <code>GET /review/{shortcode}</code> the field-by-field diff. Both take the <code>Rdu</code> extractor, which puts the access rule in one place — access is role-based, so there is no assignment to check and no per-project 403 to render, and an RDU account's assignment set is empty by design. The queue carries a second table of every draft, because those are visible to RDU too; a draft is not reviewable, so it is a separate table rather than a row with no controls.</p>
+<h2 id="the-diff-is-one-form-not-one-request-per-field"><a class="header" href="#the-diff-is-one-form-not-one-request-per-field">The diff is one form, not one request per field</a></h2>
+<p>The surface offers accept, revert and edit-in-place <em>per field</em>. That does not mean a request per field, and what settles it is what batching is for: a reviewer who accepts eight fields and loses the ninth to a dropped connection has a submission half-decided with nothing saying which half. One <code>&lt;form&gt;</code> posting one body is that batching natively — every decision and every substituted value arrives together and is written in one transaction — and it keeps the surface working without JavaScript, which every other authenticated surface here does.</p>
+<p>Three things hold it together, each of which fails quietly if changed:</p>
+<ul>
+<li><strong>A decision posts under <code>decision.{field}</code>; a substituted value posts under the field's own name</strong> — <code>{field}</code> for a scalar, <code>{field}.{tag}</code> for one language of a map. That is exactly what the section form posts, and therefore exactly what <code>editor_core::form</code>'s appliers read. No registry id begins with <code>decision.</code>, so the two namespaces cannot collide.</li>
+<li><strong>A substitution is computed by running the field's own applier over a clone of the submitted draft</strong>, then comparing. That is the only way a reviewer's edit obeys the rules a depositor's does — trimming, newline normalisation, a stored <code>MISSING</code> surviving an empty submit — rules whose whole purpose is that an untouched value writes no bytes. A second comparison here would agree with them only by inspection.</li>
+<li><strong>The in-place editor <em>is</em> the depositor's control</strong>, <code>editor_web::form::widgets::control</code> over a one-member draft holding what would be committed. A second dispatch diverged as soon as it existed: keyed off whether the value happened to hold a newline, <code>startDate</code> rendered as free text where the form gives a date picker, and <code>shortDescription</code> lost the 200-character cap its own hint promises — neither caught server-side, because the cap is an HTML attribute.</li>
+<li><strong>The intent rides on the submit button</strong>, as <code>name="intent"</code> — one definition, in <code>editor_web::form</code>, since both write surfaces post the same pair. A native submit posts the activated button's name and value, and Datastar 1.0.2's form mode appends them too, from <code>SubmitEvent.submitter</code>, so every control on this surface is a named submit on one form: "Save review decisions", "Accept all remaining" and the three that finish the round. <code>formaction</code> would not do — the bundle posts to the URL in <code>@post</code>, so a second destination is silently ignored on the enhanced path and honoured on the plain one. It also means the terminating controls live <strong>inside</strong> the diff form: the note and every recorded decision have to arrive with the action, or approving would commit the decisions as they were last <em>saved</em> rather than as they stand on screen, a difference nothing on the page would explain.</li>
+</ul>
+<p><code>POST /review/{shortcode}</code> answers the same two ways as the form's save, for the same two reasons: a 303 on the plain path so a <code>POST</code> left in the history does not re-post, and the region as <code>text/html</code> on the enhanced one, always 200 because Datastar processes a body only on a 200.</p>
+<h2 id="the-submitted-payload-is-never-rewritten"><a class="header" href="#the-submitted-payload-is-never-rewritten">The submitted payload is never rewritten</a></h2>
+<p>A reviewer's substitution goes to <code>submissions.review_state</code>, never over <code>payload</code>. A depositor's submission needs no second approver, so a value RDU put in place of the depositor's is seen by nobody unless the submitted one survives beside it — and an overwritten payload cannot answer what was submitted. <code>Some(Value::Null)</code> in a field's stored review is a reviewer <em>clearing</em> a field, which is a real substitution and not the absence of one.</p>
+<p>Only fields the submission actually changes are read back, and a revert is refused on a project with no published counterpart. Both are the same rule: an unchanged field renders no decision control and an unpublished project never offers revert, so a decision naming either came from a hand-built body — and storing one records a decision the surface can never show and therefore never undo. A stored revert on an unpublished project renders "Reverted — keeps published" beside a "Not published yet" column, in a radio group with no matching option, so it reads as undecided and cannot be cleared.</p>
+<h2 id="the-comparison-is-over-top-level-members-not-registry-fields"><a class="header" href="#the-comparison-is-over-top-level-members-not-registry-fields">The comparison is over top-level members, not registry fields</a></h2>
+<p><code>editor_core::review::diff</code> compares the union of both sides' JSON members. Enumerating the registry instead would show a reviewer only the fields the <em>form</em> knows, so a change arriving through any other path — a member no applier touches, a field added to the contract without an editor change — would be approved without ever being displayed. A member the registry does not know keeps its own name as its label, and a member the submission <em>dropped</em> is still a row: a removal is a change somebody has to see.</p>
+<p>Equality is on the stored <code>Value</code>, which is stricter than the comparison <code>editor_core::form</code> applies to a submitted value. It has to be: those forgiving rules exist so that <em>saving</em> an untouched form writes no bytes, and by the time a submission exists they have already run. What survives them is a real difference in what would be committed.</p>
+<h2 id="a-project-with-no-published-counterpart"><a class="header" href="#a-project-with-no-published-counterpart">A project with no published counterpart</a></h2>
+<p>A project can exist only locally while the comparison assumes a published value per field, so for the first project created through the editor it degenerates. The surface says so once, in a banner rather than per field — it is a fact about the record, not about any one field, and a paragraph rendered beside a control is not part of that control's accessible description, so a reader tabbing straight to the input would never hear it. Per row it renders the published column as "Not published yet" rather than "Not set", since a reader told the latter looks for the field rather than for the record. And it <strong>offers no revert</strong>. Revert means keeping the published value, and there is none; offering it would silently unset a field the contract requires. Accept and edit-in-place still apply, which is the whole of what a reviewer can do to a record that is new.</p>
+<h2 id="concurrent-review-is-visible-not-locked"><a class="header" href="#concurrent-review-is-visible-not-locked">Concurrent review is visible, not locked</a></h2>
+<p>Two RDU members can open one submission, and no claim was defined. Opening one from the queue is a <code>POST</code> that claims it — <code>Submitted</code> to <code>InReview</code>, <code>reviewed_by</code> set — which is also the first producer of <code>SubmissionState::InReview</code>, a state the project form already reads as a reason to lock the depositor out. A second reviewer is told who has it and offered a take-over; nothing is blocked and the last save wins, as it does for a draft. The reader is only shown as the holder once the write has actually succeeded — naming them on a refusal would also suppress the take-over banner, telling them the opposite of what the row says at exactly the moment it matters. The take-over carries the current filter, for the same reason the diff form does.</p>
+<p>A lock was the alternative and costs more than it buys: it needs a release path and a stale-lock timeout, and strands a submission whenever somebody closes a tab. What must not happen <em>silently</em> is one reviewer overwriting another, and the banner plus the queue's "With …" column is what stops that.</p>
+<p>Claiming is a <code>POST</code> and not a <code>GET</code> because it changes state, and the <code>Sec-Fetch-Site</code> control exempts <code>GET</code> by necessity — a navigation from anywhere is a <code>GET</code>. It shares the review URL rather than taking one of its own, so a refused claim re-renders somewhere that still answers <code>GET</code>.</p>
+<h2 id="ending-a-review-round"><a class="header" href="#ending-a-review-round">Ending a review round</a></h2>
+<p>Approve, request-changes and reject are three <code>intent</code> values on the existing <code>POST /review/{shortcode}</code>, and the depositor's own withdrawal is a fourth on <code>POST /projects/{shortcode}/sections/{section}</code>. No new routes: a write sharing the <code>GET</code> that renders its form is the rule the whole service follows, and <code>page_url.rs</code>'s <code>KNOWN_ROUTES</code> is therefore untouched.</p>
+<p>All four end the round the same way — the <code>submissions</code> row is deleted — so all four go through <code>ReviewRoundRepository</code>, whose three writing methods each run in <strong>one</strong> transaction spanning three tables. The delete's own row count is the terminal-state guard, and it has to come before every other statement in the closure; <code>editor_server::db::review_rounds</code>' module documentation states the two properties that depend on that and what breaks without them.</p>
+<p><strong>Approve is always an explicit click, for an RDU member's own submission too.</strong> What was removed is the second <em>approver</em>, not the approve step, and it is also asked that RDU direct editing produce a pending submission identical in shape to a depositor's — which auto-approval would make never pending. So nothing distinguishes an RDU member's own submission from anyone else's: there is no second-approver step to waive and no self-approval check to add.</p>
+<p><strong>Approve is refused while any changed field is undecided.</strong> Committing an undecided row ships bytes nobody looked at, which is the one thing a field-by-field surface exists to prevent, and "Accept all remaining" makes clearing it a single click — so the refusal is never a dead end. What an approval commits is the submitted draft with every decision applied: an accepted field takes the reviewer's substitute where there is one, and a reverted field goes back to the published value, or is removed where the published side has no such member. <code>submissions.payload</code> stays the depositor's own until the row is deleted.</p>
+<p><strong>Request-changes and reject both require a note; approve does not.</strong> For reject the note is the entire signal: the submission is discarded, notifications are out of scope, and the depositor-facing state list has no Rejected — so without a note the work vanishes with nothing saying why. For request-changes it is the only thing telling the depositor what to change. An approval needs none, because the depositor is <em>shown</em> what changed rather than told about it.</p>
+<p><strong>Reject and withdraw both leave the draft.</strong> Reject must not destroy work RDU merely declined, and a withdrawal reads as "take it back so I can keep editing" — request-changes already establishes submission-becomes-draft as the direction. The abandoned-draft problem belongs to <a href="./project-form.html#discarding-a-draft">discarding a draft</a>, not to these.</p>
+<p>Each of the four asks once before writing, on the same URL, discriminated by a hidden <code>confirmed</code> pair the prompt carries. The intent names <em>what</em> is being done and stays the same across both posts, so the two-step shape does not double the verb list — and a body naming an intent without <code>confirmed</code> gets the prompt, never the write. An unknown intent falls back to a plain save on both surfaces: every terminating action is irreversible and a save is not.</p>
+<h2 id="what-a-finished-round-leaves-and-where-the-depositor-reads-it"><a class="header" href="#what-a-finished-round-leaves-and-where-the-depositor-reads-it">What a finished round leaves, and where the depositor reads it</a></h2>
+<p><code>review_rounds</code> is append-only: one row per finished round, written by the transition that ended it and never updated, so the rows for one project are its review history. One table rather than four columns, because four separate things read it — a rejection being visible at all, a returned draft being distinguishable from one never submitted without adding a sixth state, the per-field accepted state surviving the return, and the depositor seeing what RDU substituted for their values. The last two read the round's <code>review_state</code> snapshot, which is a snapshot and not a reference because the submission carrying it is deleted by the same transaction.</p>
+<p>The depositor reads all of it on the project form, inside the region a save replaces, and <strong>every outcome is shown</strong> with its own wording — one banner reading "RDU asked for changes" whatever happened would tell somebody whose work was rejected to answer a closed round. It shows until the next submission, which starts the next cycle. <code>drafts</code> carries no note column: the note has to be read beside the outcome it belongs to, and only the round has both. A save cannot disturb it, which the column needed a rule to guarantee.</p>
+<p><strong>Fields RDU accepted are fixed while the round is being answered.</strong> The per-field state is retained across the return, and nothing stopped the depositor altering an accepted field, which then re-entered review still flagged accepted. The gate is that <code>sections::act</code> skips those fields' appliers: not rendering the control stops an ordinary browser, and only the skip stops a hand-built body. It applies <strong>only</strong> while the latest round asked for changes — a reject's or a withdrawal's decisions are moot, since the submission they were recorded against is gone. A reverted field is deliberately not locked: its submitted value was discarded, so the depositor has nothing to preserve and every reason to try again.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../editor/entity-proposals.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../editor/status.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../editor/entity-proposals.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../editor/status.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

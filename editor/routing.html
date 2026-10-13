@@ -1,0 +1,375 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Routing and Request Handling - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="routing-and-request-handling"><a class="header" href="#routing-and-request-handling">Routing and Request Handling</a></h1>
+<p>The URL scheme, the method discipline, how a write answers with and without JavaScript, and the two layers that wrap the app.</p>
+<h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
+<p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
+<p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason (<a href="./architecture.html#relationship-to-dpe">Architecture</a>).</p>
+<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Access</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td>GET</td><td>public</td><td>303 to <code>/projects</code>.</td></tr>
+<tr><td><code>/login</code></td><td>GET, POST</td><td>public</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/login/code</code></td><td>GET, POST</td><td>public</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/logout</code></td><td>POST</td><td>public</td><td>Delete the session and clear the cookie.</td></tr>
+<tr><td><code>/projects</code></td><td>GET</td><td>signed in</td><td>The projects this account may edit, named from the published set.</td></tr>
+<tr><td><code>/projects/{shortcode}</code></td><td>GET</td><td>signed in + assigned</td><td>303 to the first form section. 403 otherwise.</td></tr>
+<tr><td><code>/states</code></td><td>GET</td><td>signed in</td><td>What each depositor-facing state means and the expected wait before Online (REQ-2.6).</td></tr>
+<tr><td><code>/projects/{shortcode}/sections/{section}</code></td><td>GET, POST</td><td>signed in + assigned</td><td>One form section, and the save, autosave, submit, withdrawal or discard it makes. 200 even when the project is unpublished.</td></tr>
+<tr><td><code>…/sections/{section}/fields/{field}/add</code></td><td>POST</td><td>signed in + assigned</td><td>One more row of a repeatable field. Under the section's URL so it resolves through the same <code>context()</code>.</td></tr>
+<tr><td><code>…/sections/{section}/fields/{field}/{key}/remove</code></td><td>POST</td><td>signed in + assigned</td><td>Drop one row. The key is in the path, not a button's name and value, because a programmatic submit omits the submitter's.</td></tr>
+<tr><td><code>/projects/{shortcode}/entities/{proposal}</code></td><td>GET, POST</td><td>signed in + assigned</td><td>One entity proposal's form, and the save or discard it makes. <code>{proposal}</code> is the proposal's <code>entity_id</code>.</td></tr>
+<tr><td><code>…/entities/{proposal}/fields/{field}/add</code></td><td>POST</td><td>signed in + assigned</td><td>One more row of a repeatable field on the entity form.</td></tr>
+<tr><td><code>…/entities/{proposal}/fields/{field}/{key}/remove</code></td><td>POST</td><td>signed in + assigned</td><td>Drop one row, for the reason the section's own row path gives.</td></tr>
+<tr><td><code>/review</code></td><td>GET</td><td>RDU</td><td>The review queue: every pending submission oldest first, and every draft.</td></tr>
+<tr><td><code>/review/{shortcode}</code></td><td>GET, POST</td><td>RDU</td><td>The field-by-field diff, and the claim, decision save, approve, request-changes or reject it makes.</td></tr>
+<tr><td><code>/depositors</code></td><td>GET, POST</td><td>RDU</td><td>The account list, and creating a depositor.</td></tr>
+<tr><td><code>/depositors/new</code></td><td>GET</td><td>RDU</td><td>The create form.</td></tr>
+<tr><td><code>/depositors/{id}/edit</code></td><td>GET, POST</td><td>RDU</td><td>The edit form, and the change it makes.</td></tr>
+<tr><td><code>/depositors/{id}/remove</code></td><td>GET, POST</td><td>RDU</td><td>The removal confirmation, and the removal.</td></tr>
+<tr><td><code>/collection</code></td><td>GET</td><td>RDU</td><td>Every approved record and where its collection stands.</td></tr>
+<tr><td><code>/collection/{id}/discard</code></td><td>GET, POST</td><td>RDU</td><td>The discard confirmation, and force-discarding a stranded record.</td></tr>
+<tr><td><code>/healthz</code></td><td>GET</td><td>public</td><td>Liveness probe. Untraced.</td></tr>
+<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>public</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
+<tr><td><code>/api/v1/approved-records</code></td><td>GET</td><td>public</td><td>Every approved record and its accepted entity proposals, as JSON, for the collecting workflow. Rate-limited per IP.</td></tr>
+<tr><td><code>/api/v1/collection-report</code></td><td>POST</td><td>bearer token</td><td>Report the outcome of one collection attempt — a pull request and its state, or a failure.</td></tr>
+</tbody></table>
+</div>
+<p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>The two row paths are the one exception to the rule below, and deliberately: they are <code>POST</code>-only because both change the form and a <code>GET</code> that did would be a state change on a <code>GET</code>. They never strand a refusal, because they re-render the section rather than redirecting, and a reload of one lands on the section's own <code>GET</code>.</p>
+<p>Every write shares a URL with the <code>GET</code> that renders its form, so a rejected submission re-renders somewhere that still answers <code>GET</code>. A write-only path leaves a reloaded rejection at a bare 405, the same dead end the 403 is rendered as a page to avoid.</p>
+<p><code>/</code> is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets. It is therefore absent from <code>page_url.rs</code>'s <code>KNOWN_ROUTES</code>: a redirect renders no beacon script, so no beacon can report it.</p>
+<p>There is deliberately no resend endpoint: asking again is another <code>POST /login</code>, under the same cooldown, which keeps the number of endpoints that can send mail at one. See <a href="./authentication.html">Authentication</a>.</p>
+<p><code>/projects</code> lists the published projects a reader may reach — every project for an RDU member, the intersection of assignments and the published set for a depositor. <code>/projects/{shortcode}</code> is a <strong>redirect</strong> into the form's first section, so exactly one place decides where a project link lands, and there is no per-project landing page between the list and the form. It is therefore absent from <code>page_url.rs</code>'s <code>KNOWN_ROUTES</code> for the same reason <code>/</code> is: a redirect renders no beacon script, so no beacon can report it. The redirect target is the same section for both audiences — a destination that depended on the role is one more thing to get wrong in a link shared between a depositor and a reviewer.</p>
+<p>Two decisions about that scheme:</p>
+<ul>
+<li><strong>Form sections are real URLs</strong>, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.</li>
+<li><strong>Review deep-links by shortcode</strong>, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.</li>
+</ul>
+<h2 id="the-forms-two-renderings"><a class="header" href="#the-forms-two-renderings">The form's two renderings</a></h2>
+<p><code>POST /projects/{shortcode}/sections/{section}</code> is one handler answering two ways, discriminated on the <code>Datastar-Request</code> header the vendored bundle sets on every fetch it makes:</p>
+<div class="table-wrapper"><table><thead><tr><th>path</th><th>outcome</th><th>answer</th></tr></thead><tbody>
+<tr><td>no script</td><td>saved</td><td><code>303</code> to this section's marked <code>GET</code></td></tr>
+<tr><td>no script</td><td>refused</td><td><code>200</code>, the whole page re-rendered at the same URL</td></tr>
+<tr><td>Datastar</td><td>saved</td><td><code>200</code>, the section region as <code>text/html</code></td></tr>
+<tr><td>Datastar</td><td>refused</td><td><code>200</code>, the same</td></tr>
+</tbody></table>
+</div>
+<p>The plain path redirects because a <code>POST</code> left in the history re-posts on refresh. The enhanced path does not need to and must not: it never navigated, so a refresh re-issues the last <code>GET</code> — and a 303 followed by a full document would hand Datastar an <code>&lt;html&gt;</code> to patch. A refusal re-renders on both paths, because a redirect would throw away what the depositor typed.</p>
+<p>That "marked" <code>GET</code> carries a query-string marker the redirect appends: <code>?saved=&lt;the stored draft's updated_at, RFC 3339, URL-encoded&gt;</code> for a save, or <code>?done=submitted|withdrawn|discarded</code> for a submit, a withdrawal or a discard. The <code>GET</code> renders the matching notice only while the marker still holds: the stamp still matches the stored row for <code>saved</code>, and for <code>done</code> the project is still in the phase named (locked for <code>submitted</code>, unlocked with the latest round <code>Withdrawn</code> for <code>withdrawn</code>, unlocked with no stored draft for <code>discarded</code>). A stale or bookmarked URL therefore confirms nothing. Because a status region filled at the first load is not reliably announced (<code>editor-web/src/pages/section.rs</code>'s module doc argues why), that same <code>GET</code> also prefixes the document <code>&lt;title&gt;</code> with the notice's short form (<code>Draft saved — …</code>, <code>Sent to RDU — …</code>, <code>Submission withdrawn — …</code>, <code>Draft discarded — …</code>), since a navigation does announce a title change where a live region filled at load does not. The entity form (see <a href="./entity-proposals.html#the-entity-form">Entity Proposals</a>) mirrors both halves for its own save (<code>?saved=&lt;the proposal's own stamp&gt;</code>) and discard (<code>?done=discarded</code>), with <code>Saved — …</code> and <code>Discarded — …</code> as its short forms.</p>
+<p>Three things about the enhanced path fail quietly if changed:</p>
+<ul>
+<li><strong>A <code>text/html</code> response <em>is</em> an implicit <code>datastar-patch-elements</code>.</strong> With no selector it matches by <code>id</code> in <code>outer</code> mode, so what comes back is the region under one id, not a document.</li>
+<li><strong>The region is bigger than the form.</strong> It is the rail, the status and the form together — everything a save can change. Returning only the <code>&lt;form&gt;</code> leaves the rail showing the obligation counts from <em>before</em> the save, so the depositor fills in the last required field, the field goes quiet, and the rail still says something is missing.</li>
+<li><strong>A refusal must still answer 200.</strong> Datastar processes a response body only on a 200; any other status aborts the fetch and the message the response was carrying never reaches the page. The outcome goes on the span instead, which is where alerting reads it from — the same reasoning as the account forms' redisplayed 200.</li>
+</ul>
+<p><code>data-on:submit</code> carries no <code>__prevent</code>: the bundle calls <code>preventDefault</code> unconditionally for a <code>submit</code> event on a form element, so one would be noise. The form is <em>not</em> <code>novalidate</code> and no field is <code>required</code>, which looks contradictory and is not — see <code>editor-web/src/pages/section.rs</code>, where the <code>type="date"</code> reason is argued.</p>
+<h2 id="request-middleware"><a class="header" href="#request-middleware">Request middleware</a></h2>
+<p>Two layers wrap the app, in this order from the outside in:</p>
+<ol>
+<li><strong>CSRF</strong> — <code>Sec-Fetch-Site: same-origin</code> is required on every non-<code>GET</code>/<code>HEAD</code> request, failing closed on everything else including an absent header. It is applied <strong>last</strong> in <code>build_app</code>, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside <code>build_router</code> it would have missed <code>/telemetry/collect</code>, the only pre-auth POST in the app, with no test failing. See <a href="./authentication.html#csrf">Authentication</a> for why <code>SameSite</code> and <code>__Host-</code> do not close this.</li>
+<li><strong>OTel</strong> — the traced/untraced split below.</li>
+</ol>
+<p>Access control is <strong>not</strong> a third layer. It is two extractors, <code>Authenticated</code> and <code>Rdu</code>, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See <a href="./authentication.html#authorization">Authentication</a>.</p>
+<h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
+<p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
+<ul>
+<li><code>build_router</code> — everything wrapped by <code>OtelInResponseLayer</code> then <code>OtelAxumLayer</code>. <code>OtelInResponseLayer</code> is declared first so it runs <em>inner</em> and injects the <code>traceparent</code> response header; <code>OtelAxumLayer</code> is declared second so it runs <em>outer</em> and creates the server span.</li>
+<li><code>build_app</code> — adds <code>/healthz</code> and <code>/telemetry/collect</code> <strong>after</strong> those layers, so neither is traced. A liveness probe every 30 seconds and a telemetry upload on every page view would otherwise mint a span each and bury the real traffic.</li>
+</ul>
+<p>That split is positional, so it is invisible in the route table and reversible by moving one line. A test asserts <code>/healthz</code> and the beacon are absent from <code>build_router</code>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../editor/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../editor/rendering.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../editor/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../editor/rendering.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Entity Proposals - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="entity-proposals"><a class="header" href="#entity-proposals">Entity Proposals</a></h1>
+<p>How a depositor proposes a new person or organisation, or a change to one, and how the proposal survives the submission it rides in.</p>
+<p>A depositor can propose a new person or organisation, or a change to one their project references. Proposals live in <code>entity_proposals</code>, <strong>not</strong> in the draft payload: <code>ProjectDraft</code> is <code>#[serde(transparent)]</code> over the project's members and <code>to_raw</code> deserializes it into <code>ProjectRaw</code>, so a non-contract member would be dropped on the way to a file with nothing saying so.</p>
+<p>The table is keyed by shortcode rather than being a child of <code>submissions</code>, although a proposal rides inside the project's pending submission. Every review outcome deletes the submission row while the proposal outlives it — an accepted one is on its way into a <code>persons/</code> or <code>organizations/</code> file, and a returned one is still the depositor's to finish. <code>review_rounds</code> is keyed the same way for the same reason.</p>
+<p><strong><code>status</code> and <code>decision</code> are separate columns.</strong> <code>status</code> is the lifecycle (<code>draft</code>, <code>submitted</code>, <code>accepted</code>, <code>rejected</code>, <code>withdrawn</code>); <code>decision</code> is what RDU recorded in the round now running (<code>accept</code>, <code>reject</code>, or null while undecided). The split is the one <code>submissions.review_state</code> makes for a project field: a decision is taken during a review and only becomes a status when the round ends, which is what lets request-changes hand the proposal back as a draft while retaining what was decided — which is exactly what is required for fields, and a proposal reviewed on the same surface must not lose it.</p>
+<p>Two predicates read those, and confusing them is the mistake to avoid. <code>EntityProposal::is_live</code> (<code>draft</code> or <code>submitted</code>) is "still in play — the depositor may edit it and a reviewer may still decide it". <code>is_referenceable</code> adds <code>accepted</code>: an accepted entity is not a file yet, so a project field naming it must still resolve, while a rejected one must fail resolution — that failure is what makes the referential-integrity gate possible. <strong>Neither says anything about the allocated id</strong>, which every row holds permanently.</p>
+<h2 id="id-allocation-is-collision-free-within-the-editor-and-never-reuses"><a class="header" href="#id-allocation-is-collision-free-within-the-editor-and-never-reuses">Id allocation is collision-free within the editor, and never reuses</a></h2>
+<p>An id — <code>person-NNN</code> / <code>organization-NNN</code> — is allocated at proposal time, and renumbering happens only on collision <em>with the repository</em>, so nothing in the requirements stops two proposals inside the editor taking the same next id. Two things close that:</p>
+<ul>
+<li><strong>The allocation is one transaction.</strong> <code>EntityProposalRepository::create_new</code> selects the ids already taken and inserts the new row inside a single <code>write</code> closure, which is <code>BEGIN IMMEDIATE</code> on the pool's single writer connection. The second of two concurrent proposals always sees the first one's insert.</li>
+<li><strong>A partial unique index makes it structural.</strong> <code>entity_proposals_allocated_id</code> is <code>UNIQUE (entity_id) WHERE operation = 'new'</code>. It is partial because a <code>change</code> names an id somebody else allocated, and several projects may propose changes to one entity.</li>
+</ul>
+<p>The allocator is <code>proposals::next_entity_id</code>: one past the highest number it has seen, over the union of the published store and every id the editor has ever allocated — <strong>terminal rows included</strong>. Gaps are therefore deliberate. Nothing depends on the sequence being dense, while reuse would hand an id to a second entity after a sibling collection pull request may already carry it. <code>Agents::highest_id_number</code> supplies the published half, which the persistence layer cannot see.</p>
+<p>A second partial index, <code>entity_proposals_live_per_entity</code> on <code>(shortcode, entity_id) WHERE status IN ('draft', 'submitted')</code>, allows two projects to hold change proposals for one entity but not one project to hold two live ones for it. Two competing rows would show a reviewer separate decisions over one file, and whichever applied last would silently win.</p>
+<h2 id="a-change-proposal-is-seeded-with-the-whole-published-entity"><a class="header" href="#a-change-proposal-is-seeded-with-the-whole-published-entity">A change proposal is seeded with the whole published entity</a></h2>
+<p>Accepting a change proposal writes its payload as the entity file, so a payload holding only the members a form happens to render would silently drop <code>affiliations</code>, <code>sameAs</code>, <code>email</code>, <code>alternativeName</code>, <code>canton</code> and <code>additional</code>. This is the property <code>ProjectDraft</code> gives a project — carry every member the editor does not manage unchanged, survive a member added to the contract without an editor change — and an entity needs it for the same reason, so <code>Agents</code> keeps each entity's file body and <code>Agents::seed_payload</code> hands it over with <code>id</code> removed. A save merges into the stored payload rather than rebuilding it.</p>
+<p><strong>The payload never carries <code>id</code>.</strong> It lives in <code>entity_id</code>, the column the allocator and the uniqueness index work on; a second copy would be free to drift. Every reader fills it in from <code>entity_id</code> and overwrites whatever it finds, so a payload that does carry one cannot make an entity resolve under an id nothing claimed.</p>
+<h2 id="the-entity-form"><a class="header" href="#the-entity-form">The entity form</a></h2>
+<p><code>GET | POST /projects/{shortcode}/entities/{proposal}</code>, plus the two row-action paths the repeatable fields need. A write shares the <code>GET</code> that renders it, like every other write here, and that <code>GET</code> is marked the same way the section form's is (see <a href="./routing.html#the-forms-two-renderings">the form's two renderings</a>).</p>
+<p><code>{proposal}</code> is a proposal's <strong><code>entity_id</code></strong> (<code>person-417</code>), not its row <code>id</code>. That is the value the propose controls post back and the summary links carry, and it makes a readable URL. A project may hold several rows for one <code>entity_id</code> over time — a withdrawn proposal, then a fresh one — but never more than one <em>live</em> one, because <code>entity_proposals_live_per_entity</code> says so; the resolver prefers the live row and otherwise the most recently touched, so a stale link still shows something coherent. A proposal under the wrong shortcode is a 404 rather than a 403, for the reason an unknown section id is: the reader invented the pairing.</p>
+<p><strong>A save merges into the stored payload and never rebuilds it.</strong> That is the seeding property above, enforced at the write: only the members this form posts are applied, so anything else in the payload survives untouched.</p>
+<p><code>jobTitles</code> is the one field whose applier needs help. <code>Shape::StringRows</code> removes a member when no row survives, which is right for every field of that shape except this one: <code>check_person</code> reads an <em>absent</em> <code>jobTitles</code> as unanswered and an <em>empty</em> one as a person with no job title, which 59 of the 416 committed persons already are. So an emptied <code>jobTitles</code> is kept as <code>[]</code> rather than dropped.</p>
+<p>The start controls live on the agent rows themselves, where the picker already says an id resolves to nobody — the form is where it can be fixed, the same argument that comment makes about saying it at the row as well as at submit. Both a person and an organisation are offered, because the picker cannot know which was meant. A row whose id <em>does</em> resolve offers propose-changes instead. All three are named submits on the section's own form, so they need no route of their own.</p>
+<h2 id="an-incomplete-address-inherited-from-the-published-entity-is-passed-through"><a class="header" href="#an-incomplete-address-inherited-from-the-published-entity-is-passed-through">An incomplete address inherited from the published entity is passed through</a></h2>
+<p>A proposed organisation is asked for all four of <code>street</code>, <code>postalCode</code>, <code>locality</code> and <code>country</code>, or no <code>address</code> at all. Six of the 142 committed organizations satisfy neither — <code>organization-009</code>, <code>-033</code>, <code>-065</code>, <code>-089</code>, <code>-090</code> and <code>-137</code> are missing <code>street</code>, <code>postalCode</code> or both, and three of them sit outside Switzerland where a postal code may not apply. Applied literally, the rule would leave a depositor proposing any other change to one of those six a choice between inventing a street and deleting a locality and country that <em>are</em> recorded.</p>
+<p>So <code>check_organization</code> judges what the depositor wrote, not what they inherited: an <code>address</code> byte-equal to the published one passes, and any other incomplete one is refused. This is the carve-out <code>form::submit::typed_sentinels</code> already makes for a reference's <code>url</code> — <code>0110_h-steiner</code> holds <code>{"url": "MISSING"}</code> — and for the same stated reason: a live record must not become unsubmittable over data it did not write. <code>proposals::tests::six_committed_organizations_carry_an_incomplete_address</code> enumerates the six and fails if the corpus stops needing the carve-out.</p>
+<h2 id="the-review-surface-gives-a-proposal-its-own-rows"><a class="header" href="#the-review-surface-gives-a-proposal-its-own-rows">The review surface gives a proposal its own rows</a></h2>
+<p>The review surface compares changed project <em>fields</em>, and a proposed person is not one, so entity proposals would otherwise reach an approval without ever being displayed — and the referential-integrity question could not even arise, there being no per-entity action to invoke. Proposed entities therefore get their own rows below the field diff, each with an accept/reject control posting under <code>entity.{entity_id}</code>. That namespace cannot collide with the field surface's <code>decision.{field}</code> or with a member name.</p>
+<p>Approve gains two refusals beside the undecided-fields one:</p>
+<ul>
+<li><strong>while any proposal is undecided</strong>, for the reason the field gate exists: approving an undecided row commits bytes nobody looked at. <code>review_rounds</code>' <code>approve</code> leaves an undecided proposal <code>submitted</code> and names this gate as what prevents that, so the two halves are one coupling.</li>
+<li><strong>while the payload still references a rejected entity.</strong> The approval is blocked and the referencing fields are named, so RDU substitutes them in place or requests changes; nothing is stripped silently.</li>
+</ul>
+<p>The second gate has a trap worth stating, because getting it wrong disables it without any test failing. At approve time every proposal's <code>status</code> is still <code>submitted</code> — the statuses change inside <code>approve</code>'s own transaction — so <code>is_referenceable</code>, which is status-based, answers <strong>true</strong> for a proposal RDU has just rejected. The scope the check runs against is therefore built from only the proposals that will <em>survive</em> the approval, filtered on <code>decision</code>, and the check runs over the <strong>decided</strong> payload rather than the submitted one, since a revert can remove a reference and a substitution can add one. It reuses <code>form::submit::unresolved_agents</code> rather than walking references a second way.</p>
+<h2 id="what-the-two-projects-case-does"><a class="header" href="#what-the-two-projects-case-does">What the two projects case does</a></h2>
+<p>Two projects may propose changes to one entity, and the last collected wins. The review surface says so rather than blocking: blocking would strand one project on another project's review, while a silent overwrite would let RDU approve a change that is about to be replaced with nothing saying so.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../editor/project-form.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../editor/review.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../editor/project-form.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../editor/review.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

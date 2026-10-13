@@ -85,3 +85,11 @@ Added to Considered Options:
 - **A `server` host crate per Deposit capability, the root depending on the hosts only, as in the Access Area**: rejected (decided 2026-10-13, DEV-7375). It keeps the gate as it is and leaves the handlers where they are today, but adds two crates, in a role the crate anatomy does not list, to hold routes the anatomy places in the web crate.
 
 Enforced by: `check-composition-root-deps.sh`, which learns the `server`-or-`web` distinction in DEV-7375, and `check-capability-deps.sh` for the areas it lists (**static-analysis**); the facade by **review**.
+
+## Amendment (2026-10-13, ADR-0012) — one consumer per channel
+
+The Chischtli clause above says `sync` "consumes the archive's data products", and the amendment of
+2026-09-28 restates it as "the single consumer of the data products". The archive publishes on two channels:
+the projection stream, which `sync` alone consumes, and the Access bucket of Service Files, which the Access
+Area's `media` alone consumes, as the Vitrinli clause above already has it. "Single consumer" reads per
+channel; no capability consumes both, and no third one consumes either. Decided in ADR-0012.

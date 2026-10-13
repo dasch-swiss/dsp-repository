@@ -915,13 +915,14 @@ mod tests {
         // comparisons ever happen — but not asserted exactly, and the reason is
         // worth writing down. Under `Source::Memory` SQLite uses shared-cache
         // *table* locks, so a reader transaction can make a concurrent write
-        // return `SQLITE_LOCKED`, which `busy_timeout` does not retry; one of
-        // the three writes then loses. Production uses WAL on a file database,
-        // where readers never block writers, so the mechanism does not exist
-        // there — see `db::Source`.
+        // return `SQLITE_LOCKED`, which `busy_timeout` does not retry; any of
+        // the three writes can lose, all three included. Production uses WAL on
+        // a file database, where readers never block writers, so the mechanism
+        // does not exist there — see `db::Source`. That a wrong guess counts
+        // at all is `test_a_wrong_code_counts_against_both_the_code_and_the_account`.
         let user = UserRepository::find_by_id(&*state.db, user_id).await.unwrap().unwrap();
         assert!(
-            (1..=secret::MAX_CODE_ATTEMPTS).contains(&user.failed_logins),
+            user.failed_logins <= secret::MAX_CODE_ATTEMPTS,
             "the account counter recorded {} failures from one code",
             user.failed_logins
         );

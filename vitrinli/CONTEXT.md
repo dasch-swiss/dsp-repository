@@ -29,13 +29,13 @@ The trait through which Vitrinli asks whether a request may see a file; implemen
 The trait through which Vitrinli hands a derived Service File back; implemented by the Deposit Area's `media`, which stores it and records it as servable.
 
 **Access bucket**:
-The object-storage location the archive publishes Service Files to; the Access Area's `media` reads from it and from nowhere else.
+The object-storage location the archive publishes Service Files to; the Access Area's `media` reads from it and from nowhere else, and is its only consumer, as `sync` is the projection stream's (ADR-0012). Until the archive exists, a hand-fed directory laid out as the bucket will be stands in for it (DEV-7512).
 
 ## Relationships
 
 - One **Vitrinli** library, two dependants: the Deposit Area's and the Access Area's **Media capability**; each implements the **Byte source**, **Authorisation check** and, in the Deposit Area, the **Derivation sink**.
 - The Deposit Area's **Media capability** holds **Originals**, has Vitrinli derive zero or one **Service File** from each, and serves either, whole or rendered.
-- The Access Area's **Media capability** serves archive-made **Service Files** from the **Access bucket** only, whole or rendered.
+- The Access Area's **Media capability** serves archive-made **Service Files** from the **Access bucket** only, whole or rendered, and implements the bytes ports through which a sibling capability (CPE, DaTEI) reads deposited files at build time, each with its rights attached (ADR-0012); every file it serves at request time is checked with ADR-0013's decision.
 - Neither path ever reads a **Preservation File**.
 - Vitrinli depends on nothing in any area; the arrow is `media → vitrinli`.
 

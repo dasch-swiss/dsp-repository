@@ -70,7 +70,7 @@ _Avoid_: upload session, transaction.
 The Submission Information Package — the wire format crossing from a producer into the archive; not a stored entity (the Deposition is).
 
 **Data product**:
-What the archive publishes outward for the Access Area: immutable snapshots and deltas in object storage, announced by pointer messages on a message bus, written before they are announced. Every read-side service is a disposable projection over them, rebuildable from snapshot plus replay.
+What the archive publishes outward for the Access Area, on two channels. The projection stream: immutable snapshots and deltas in object storage, announced by pointer messages on a message bus, written before they are announced; the Access Area's `sync` is its only consumer. The Access bucket: the Service Files the archive derives, one per Representation, and the deposited files whose delivery form is themselves (a project's configuration, its curation, an edition's TEI); the Access Area's `media` is its only consumer. Every read-side service is a disposable projection over them, rebuildable from snapshot plus replay (ADR-0012).
 _Avoid_: event stream (no fat events cross the boundary), export.
 
 ## Relationships
@@ -80,7 +80,7 @@ _Avoid_: event stream (no fat events cross the boundary), export.
 - A **Deposition** belongs to exactly one **Project** and at least one depositing agent; it produces one or more Resource and Representation events.
 - A **PreservationAction** spans zero or one **Project** and is initiated by the archive itself.
 - An **ARK** binds to one persistent-identity **Internal IRI**; the binding may change across migrations, the ARK string never does.
-- The archive derives a **Service File** from one or more **Preservation Files** under a derivation rule and publishes it as a data product; the Access Area's `media` capability serves it through Vitrinli, whole or rendered. (The Deposit Area derives its own Service Files from Originals before archiving; those never enter the archive.)
+- The archive derives a **Service File** from one or more **Preservation Files** under a derivation rule and publishes it to the Access bucket as a data product; the Access Area's `media` capability serves it through Vitrinli, whole or rendered, or hands it to a sibling capability's rebuild through that capability's port (ADR-0012). (The Deposit Area derives its own Service Files from Originals before archiving; those never enter the archive.)
 
 ## Boundary commitments
 

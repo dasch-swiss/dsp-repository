@@ -15,9 +15,6 @@
 //! A query string is stripped before matching, so the normalizer survives the
 //! beacon one day sending `location.href` rather than today's
 //! `location.pathname`.
-//!
-//! REVIEW: new full-page routes in `router.rs` need a matching entry here —
-//! see `REVIEW.md`.
 const KNOWN_ROUTES: &[&str] = &[
     "/login",
     "/login/code",
@@ -216,6 +213,46 @@ mod tests {
             normalize_page_url(&format!("/collection/{id}/discard")),
             "/collection/{id}/discard"
         );
+    }
+
+    /// Panics on an unknown placeholder rather than guessing a value the normalizer accepts.
+    fn sample(placeholder: &str) -> &'static str {
+        match placeholder {
+            "shortcode" => "080C",
+            "section" => "overview",
+            "field" => "keywords",
+            "key" => "r0",
+            "proposal" => "person-417",
+            "id" => "0c1cd9ff-9a9f-4b0e-9b0a-3f2f8f0b7a11",
+            other => panic!("no sample value for `{{{other}}}`: add one to `sample`"),
+        }
+    }
+
+    fn with_samples(template: &str) -> String {
+        template
+            .split('/')
+            .map(|segment| match segment.strip_prefix('{').and_then(|s| s.strip_suffix('}')) {
+                Some(placeholder) => sample(placeholder),
+                None => segment,
+            })
+            .collect::<Vec<_>>()
+            .join("/")
+    }
+
+    #[test]
+    fn every_full_page_route_is_labelled_with_its_own_template() {
+        use crate::router::{routes, RouteKind};
+
+        let pages: Vec<&str> = routes()
+            .into_iter()
+            .filter(|(_, kind, _)| *kind == RouteKind::Page)
+            .map(|(path, _, _)| path)
+            .collect();
+        assert!(!pages.is_empty(), "the route table lists no full-page route");
+        for template in pages {
+            let url = with_samples(template);
+            assert_eq!(normalize_page_url(&url), template, "{url}");
+        }
     }
 
     #[test]

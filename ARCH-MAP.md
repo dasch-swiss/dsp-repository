@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-12
+date: 2026-10-13
 ---
 
 # Architecture Map
@@ -201,7 +201,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Repositories`, `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Authenticated`, `Rdu`,
-  `KNOWN_ROUTES`, `EditorConfig`, `Forge`, `CollectionReport`
+  `routes`, `RouteKind`, `KNOWN_ROUTES`, `EditorConfig`, `Forge`, `CollectionReport`
 - **Public interface:** the HTTP routes of `editor-server`, root-mounted on its own hostname
   (`/login`, `/login/code`, `/logout`, `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
@@ -231,6 +231,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Separate origin from DPE; every state-changing route is `POST` and passes the
     `Sec-Fetch-Site` same-origin check; a write URL also answers `GET` (**review**; the
     traced/untraced split in `router.rs` is pinned by tests — **static-analysis**).
+  - Every `RouteKind::Page` entry of `router.rs`'s `routes()` normalizes to its own path template
+    in `page_url.rs` (**static-analysis** — `every_full_page_route_is_labelled_with_its_own_template`);
+    the kind a route is given is not checked by any test (**review**).
   - `Authenticated` / `Rdu` are extractors, not middleware: a public handler is public in its
     signature (**structure**).
   - Reader connections are `query_only=ON`; the only write path is `Database::write`, one
@@ -261,7 +264,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   approve, and deleted by two paths: the startup reconcile that derives Online, and approve's
   own transaction, which supersedes an earlier record for the same project when no pull request
   of its own is live.
-- **Fingerprint:** `f1d6a05a9015`
+- **Fingerprint:** `d979951edd99`
 
 ### modules/mosaic
 

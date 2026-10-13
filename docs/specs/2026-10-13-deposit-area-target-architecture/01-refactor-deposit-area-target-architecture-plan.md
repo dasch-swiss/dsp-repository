@@ -219,14 +219,14 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 2: One route table, pinned against the page-URL normalizer
 
 ### dsp-repository
-- [ ] Before the first change, run `just test-e2e-editor` on the phase's base and write its summary line into Success Metrics (Phase 1 could not run it)
-- [ ] In `editor-server/src/router.rs`, declare the routes of `build_router` as one table of `(path, kind, MethodRouter)` entries (kind: full page, write, API, redirect) that `build_router` folds, keeping each entry's `route_layer`
-- [ ] Add a test in `page_url.rs` that iterates the table, substitutes sample values for each `{placeholder}`, and asserts every full-page entry has a label other than `"other"`
-- [ ] Remove the "a new full-page route needs a matching entry there … and no test fails" caveat from `areas/deposit/editor/CLAUDE.md` ("Observability")
-- [ ] Change `REVIEW.md`'s `KNOWN_ROUTES` line to say the test enforces it
-- [ ] Run `just check && just test`; it passes
-- [ ] Write the PR description: what the pin closes, and the deviation (move 6 cut to this test)
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Before the first change, run `just test-e2e-editor` on the phase's base and write its summary line into Success Metrics (Phase 1 could not run it)
+- [x] In `editor-server/src/router.rs`, declare the routes of `build_router` as one table of `(path, kind, MethodRouter)` entries (kind: full page, write, API, redirect) that `build_router` folds, keeping each entry's `route_layer`
+- [x] Add a test in `page_url.rs` that iterates the table, substitutes sample values for each `{placeholder}`, and asserts every full-page entry has a label other than `"other"`
+- [x] Remove the "a new full-page route needs a matching entry there … and no test fails" caveat from `areas/deposit/editor/CLAUDE.md` ("Observability")
+- [x] Change `REVIEW.md`'s `KNOWN_ROUTES` line to say the test enforces it
+- [x] Run `just check && just test`; it passes
+- [x] Write the PR description: what the pin closes, and the deviation (move 6 cut to this test)
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 3: Extract identity's domain into `identity-core`
 
@@ -432,7 +432,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - The divergence table goes from 8 rows to none: Phase 1 adds 2, and every one of the 10 is closed by Phase 10.
 - Baseline for "behaviour unchanged", recorded in Phase 1: the test count from `cargo test --tests 2>&1 | grep -E '^test result'` and the `just test-e2e-editor` summary line. No later phase drops a test without moving it.
   - `cargo test --tests` on `origin/main` at `97d51522` (2026-10-13): 84 `test result` lines, 6615 passed, 0 failed, 0 ignored. Re-measure with `cargo test --tests 2>&1 | grep -E '^test result' | awk '{p+=$4} END {print NR, p}'`.
-  - `just test-e2e-editor`: not recorded in Phase 1, because it needs a release build and Playwright outside the sandbox. Phase 2 records it on its base before its first change.
+  - `just test-e2e-editor` on Phase 1's branch at `4a98b0ac` (2026-10-13, release build and `just css-editor-release` of that commit): 79 tests across both projects, 75 passed, 4 skipped, 0 failed.
 
 ## References
 

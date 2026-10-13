@@ -1,9 +1,14 @@
 ---
-status: proposed
+status: superseded by ADR-0012
 date: 2026-10-09
 ---
 
 # The port also serves per-resource curation
+
+Superseded (2026-10-13) by ADR-0012 before it was accepted: curation is a deposited file that reaches CPE as
+bytes through a port against `media`, and the port against `sync` keeps to archive-shaped facts. The code
+that followed this record is retired under DEV-7511 and is provisional until then. The text below is kept as
+written.
 
 ADR-0008 lets a reading capability keep a read model that is fed by its port against `sync` and by nothing
 else, and ADR-0007 makes CPE's store its first instance. Both say that the port carries archive-shaped facts
@@ -13,8 +18,8 @@ in the prototype they sit in files beside the project that the port does not ser
 records therefore pull against each other. A file CPE reads beside the port is a second feed, which ADR-0008
 rules out; a port that serves the values carries something that is not a fact of the archive. DEV-7488 decided,
 as an interim, to keep "the only feed" and to loosen "archive-shaped facts only". This record states that
-decision so that it can be accepted or rejected. It is **proposed**: Ivan accepts or rejects it under DEV-7488,
-and the code that follows it is provisional until then. The decision, phrased so a violation is describable in
+decision so that it can be accepted or rejected. It is **proposed** under DEV-7488, and the code that follows it is provisional until it is accepted or
+rejected. The decision, phrased so a violation is describable in
 code:
 
 - **The port also serves a project's per-resource curation, as an interim.** Curation is what a project's
@@ -40,7 +45,7 @@ code:
   port. Everything project-wide is configuration and stays in the project's folder, in its KDL (ADR-0007, "a
   project is a folder"): vocabularies with their labels and order, rights constants, the mapping from archive
   shape to presentation model. DEV-7488 speaks of "configuration and curation"; this record reads it narrowly,
-  as curation only, and asks Ivan to confirm that reading.
+  as curation only; that reading is part of what is accepted.
 - **What stays true.** The reader is the read model's only writer and its port the only feed. The read model
   is derived state, rebuilt from empty against the port. `sync` stays the Access Area's single consumer of the
   archive's data products.
@@ -78,7 +83,7 @@ code:
   this record. Neither record is edited before that.
 - ADR-0007 and ADR-0008 stay `accepted`; neither takes `status: superseded by`. That departs from ADR-0006,
   which gives the status to a record whose decision changes: here one sentence of each changes and every other
-  clause stands. Whether that form is right is part of what Ivan accepts.
+  clause stands. Whether that form is right is part of what is accepted.
 - `main` carries a proposed record that the code already follows. That is chosen over code that contradicts
   two accepted records without saying so.
 - The acceptance criterion of the port's first plan, "No DTO names a CPE presentation concept", no longer

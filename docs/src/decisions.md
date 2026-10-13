@@ -35,8 +35,9 @@ for the full decision.
 | [ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md) | CPE joins the Access Area as its second capability |
 | [ADR-0008](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md) | A reading capability may keep a derived read model |
 | [ADR-0009](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md) | DaTEI joins the Access Area as its third capability |
-| [ADR-0010](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md) | The port also serves per-resource curation (proposed) |
+| [ADR-0010](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md) | The port also serves per-resource curation (superseded by ADR-0012) |
 | [ADR-0011](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0011-cpe-crates-move-in-dependency-order.md) | CPE's crates move in dependency order |
+| [ADR-0012](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0012-build-time-inputs-come-through-two-channels-and-a-presentation-holds-public-data-only.md) | Build-time inputs come through two channels, and a presentation holds public data only |
 
 ## Component series
 

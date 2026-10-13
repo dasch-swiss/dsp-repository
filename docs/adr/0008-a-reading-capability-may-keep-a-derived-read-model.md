@@ -27,6 +27,9 @@ describable in code:
   not from Chischtli opened directly, not from another capability's store. `sync` therefore stays the
   Access Area's single consumer of the archive's data products, and a read model adds no consumer,
   which is what ADR-0003's right-sizing rule protects.
+
+  Note (2026-10-13, ADR-0012): "single consumer" reads per channel, and a capability may hold a second port,
+  for bytes, against `media`; see the amendment of 2026-10-13 below.
 - **The port speaks archive-shaped facts; the remodelling lives with the reader.** The port serves
   the projection as the archive records it (classes, typed values, links, files, ordered membership),
   never the consumer's model. The transformation from those facts into the read model is the reading
@@ -95,7 +98,7 @@ amendment of 2026-10-11 (DEV-7465) below.
 
 "Enforced by" says that a reading capability's crates see their own `ports` crate "and never `sync`'s store
 crates or Chischtli". Its reason is the second clause of the decision: "The only feed is the capability's
-own port against `sync`". This amendment narrows that sentence (as decided by the owner, 2026-10-11):
+own port against `sync`". This amendment narrows that sentence:
 
 - **A crate of a reading capability may name `sync`'s store crate as a dev-dependency, and only as one.**
   `cpe-store-build` is the first: its tests build Incunabula's store from the committed 0803 snapshot, and
@@ -117,3 +120,26 @@ names: any crate of `areas/access/sync/`, not the store crate alone, as a dev-de
 It reads manifests and no source, so what a test does with the adapter is review: a `use` of it in a
 `#[cfg(test)]` module of a library passes as one in a file under `tests/` does, and neither is checked to
 read through the port. Review for any other reading capability.
+
+## Amendment (2026-10-13, ADR-0012) — two channels, a second port against `media`, anonymous reads
+
+ADR-0012 narrows two clauses of this record and adds to a third:
+
+- **"`sync` therefore stays the Access Area's single consumer of the archive's data products"** reads per
+  channel: `sync` is the single consumer of the projection stream, and `media` the single consumer of the
+  Access bucket. A read model still adds no consumer of either.
+- **"The only feed is the capability's own port against `sync`"** admits a second port of the same
+  capability, for bytes, against `media`: a deposited file (a configuration, a curation file, a narrative,
+  an edition's TEI) reaches a reader that way and never from a file beside the code. "From nothing else"
+  stands: not from the archive's channels, not from Chischtli, not from another capability's store, and not
+  from the capability's own directory.
+- **A rebuild reads as the anonymous consumer**, from both ports, and the read model it builds holds what an
+  anonymous consumer may see. For CPE and DaTEI that is all they hold: a presentation holds public data only
+  and authorises nothing, revisitable by a new record.
+- **Change reaches a reader only through its port**: no operator endpoint re-runs a rebuild. Until a port
+  carries change, a restart is the rebuild, as the Consequences above already say.
+
+"The port speaks archive-shaped facts" stands as written; ADR-0010, which loosened it for curation, is
+superseded by ADR-0012.
+
+Enforced by: as ADR-0012.

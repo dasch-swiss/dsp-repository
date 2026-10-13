@@ -36,7 +36,7 @@ Routes are assembled in `server/src/router.rs`, deliberately separate from `serv
 
 - **The editor is root-mounted.** It runs on its own hostname, so there is no `/editor` prefix. A shared origin would defeat the `Sec-Fetch-Site` CSRF control.
 - **The traced/untraced split is positional.** `/healthz` and `/telemetry/collect` are declared in `build_app` *after* `build_router`'s `.layer()` calls. Moving one line silently mints a span per liveness probe; tests pin it.
-- **Machine-facing routes live under `/api/v1/`.** Everything else is a browser route serving the page shell. An `/api/v1` route returns JSON or a bare status with a plain-text body, never HTML, because its callers are CI jobs and scripts; it is declared inside `build_router` so it is traced, and it authenticates by bearer token or not at all, never by session cookie.
+- **Machine-facing routes live under `/api/v1/`.** Everything else is a browser route serving the page shell. An `/api/v1` route returns JSON or a bare status with a plain-text body, never HTML, because its callers are CI jobs and scripts; it is declared in `routes()`, which `build_router` wraps in the OTel layers, so it is traced, and it authenticates by bearer token or not at all, never by session cookie.
 
 ### Authorization
 
@@ -105,7 +105,7 @@ RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism name
 
 ## Observability
 
-Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute; a new full-page route needs a matching entry there or its page views collapse into `other`, and no test fails.
+Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute. A new full-page route is a `RouteKind::Page` entry in `router.rs`'s `routes()` and needs a matching entry in `page_url.rs`; a test there fails until it has one.
 
 ## Best Practices for AI Agents
 

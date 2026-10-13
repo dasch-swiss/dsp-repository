@@ -32,7 +32,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] New OTel metric attributes are bounded — no free-form strings, no per-request unique values
 - [ ] Vendored JS changes reflected in `areas/access/dpe/public/vendor/README.md`
 - [ ] New DPE full-page routes added to `KNOWN_ROUTES` in `areas/access/dpe/server/src/page_url.rs` for page_url normalization
-- [ ] New editor full-page routes added to `KNOWN_ROUTES` in `editor-server/src/page_url.rs` for page_url normalization
+- [ ] New editor routes in `editor-server/src/router.rs` carry the right `RouteKind`: any route that renders the page shell on success, `POST`-only row actions included, is `Page`. No test checks the kind; a test checks that every `Page` entry is labelled in `editor-server/src/page_url.rs`
 
 ## Style
 

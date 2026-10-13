@@ -9,16 +9,16 @@ use subtle::ConstantTimeEq;
 /// How many wrong entries one code tolerates before it is dead.
 ///
 /// Per **code**. The counter that survives a resend is on the account — see
-/// [`super::AuthConfig::max_failed`] — because three strikes per code on their own hand out a
-/// fresh budget every time a new code is issued.
-pub(crate) const MAX_CODE_ATTEMPTS: u32 = 3;
+/// [`crate::login::AuthConfig::max_failed`] — because three strikes per code on their own hand out
+/// a fresh budget every time a new code is issued.
+pub const MAX_CODE_ATTEMPTS: u32 = 3;
 
 /// A six-digit code, uniform over `000000..=999999`.
 ///
 /// Sampled by rejection, not `rng % 1_000_000`, which would bias the low values.
 /// Six digits is ≈19.93 bits, marginally under OWASP ASVS 6.5.4's 20-bit floor,
 /// and accepted: see `docs/src/editor/authentication.md`.
-pub(crate) fn code() -> String {
+pub fn code() -> String {
     let value: u32 = rand::rng().random_range(0..1_000_000);
     // Padded, so a value below 100000 is still six digits — dropping the leading
     // zeros would shrink the space by a tenth for a tenth of the codes.
@@ -28,7 +28,7 @@ pub(crate) fn code() -> String {
 /// An opaque 256-bit token: the session id, and the pre-auth browser binding.
 ///
 /// URL-safe base64 without padding, so it needs no escaping in a cookie value.
-pub(crate) fn token() -> String {
+pub fn token() -> String {
     let mut bytes = [0u8; 32];
     rand::rng().fill_bytes(&mut bytes);
     URL_SAFE_NO_PAD.encode(bytes)
@@ -39,7 +39,7 @@ pub(crate) fn token() -> String {
 /// A `==` on strings returns at the first differing byte, so the time it takes
 /// reveals how long a shared prefix is. `ConstantTimeEq` on slices compares every
 /// byte, and reports unequal lengths as a mismatch without comparing.
-pub(crate) fn code_matches(submitted: &str, stored: &str) -> bool {
+pub fn code_matches(submitted: &str, stored: &str) -> bool {
     submitted.as_bytes().ct_eq(stored.as_bytes()).into()
 }
 

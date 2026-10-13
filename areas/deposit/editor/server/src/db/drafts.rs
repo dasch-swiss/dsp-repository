@@ -82,8 +82,8 @@ impl DraftRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
-    use editor_core::records::{Role, User};
-    use editor_core::repository::UserRepository;
+    use identity_core::records::{Role, User};
+    use identity_core::repository::UserRepository;
     use uuid::Uuid;
 
     use super::super::tests::{count, test_db};

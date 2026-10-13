@@ -153,8 +153,9 @@ impl SubmissionRepository for Database {
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
-    use editor_core::records::{Role, User};
-    use editor_core::repository::{EntityProposalRepository, UserRepository};
+    use editor_core::repository::EntityProposalRepository;
+    use identity_core::records::{Role, User};
+    use identity_core::repository::UserRepository;
 
     use super::super::tests::{count, test_db};
     use super::*;

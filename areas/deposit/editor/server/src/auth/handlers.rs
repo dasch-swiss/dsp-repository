@@ -11,16 +11,18 @@ use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
-use editor_core::records::{LoginCode, Session};
-use editor_core::repository::{Attempt, Issued, LoginCodeRepository, MailSendRepository, UserRepository};
+use identity_core::cookie::{LOGIN, SESSION};
+use identity_core::login::{delta, is_plausible_address, locked_out, CODE_TTL, SEND_WINDOW};
+use identity_core::mail::Mail;
+use identity_core::records::{LoginCode, Session};
+use identity_core::repository::{Attempt, Issued, LoginCodeRepository, MailSendRepository, UserRepository};
+use identity_core::{secret, session};
 use maud::Markup;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use super::cookie;
 use super::guard::{destination_or_root, login_url, next_from, NEXT};
-use super::{cookie, delta, is_plausible_address, locked_out, secret, session};
-use crate::config::{CODE_TTL, SEND_WINDOW};
-use crate::mail::Mail;
 use crate::shell::AppState;
 
 /// The one message every code-entry failure produces.
@@ -98,7 +100,10 @@ fn mail_body(code: &str) -> String {
 /// every step it crosses.
 pub(crate) async fn login_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
-    if session::current(&*state.db, &state.auth, &headers, Utc::now()).await.is_some() {
+    if session::current(&*state.db, &state.auth, &cookie::values(&headers), Utc::now())
+        .await
+        .is_some()
+    {
         // Already signed in: honour the destination rather than dropping them on
         // the root, so a link followed in a browser that still has a session
         // behaves the same as one followed in a browser that does not.
@@ -137,7 +142,7 @@ pub(crate) async fn login_submit(
         );
     }
 
-    let presented = cookie::read(&headers, cookie::LOGIN);
+    let presented = cookie::read(&headers, LOGIN);
     let token = issue(&state, email, presented.as_deref(), Utc::now()).await;
 
     // Unconditional. Whether a cookie comes back must not depend on anything the
@@ -145,7 +150,7 @@ pub(crate) async fn login_submit(
     // taken from the request, never from the outcome, so it cannot vary either.
     with_cookie(
         Redirect::to(&code_url(next)).into_response(),
-        cookie::set(cookie::LOGIN, &token, CODE_TTL),
+        cookie::set(LOGIN, &token, CODE_TTL),
     )
 }
 
@@ -186,10 +191,13 @@ async fn revealed_code(state: &AppState, token: &str, now: DateTime<Utc>) -> Opt
 /// `GET /login/code` — the code form.
 pub(crate) async fn code_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
-    if session::current(&*state.db, &state.auth, &headers, Utc::now()).await.is_some() {
+    if session::current(&*state.db, &state.auth, &cookie::values(&headers), Utc::now())
+        .await
+        .is_some()
+    {
         return Redirect::to(destination_or_root(next)).into_response();
     }
-    let Some(token) = cookie::read(&headers, cookie::LOGIN) else {
+    let Some(token) = cookie::read(&headers, LOGIN) else {
         // Nothing has been asked for in this browser, so there is nothing to
         // enter. Sending the user to the form they skipped reveals nothing: the
         // cookie is set for every address, known or not.
@@ -212,7 +220,7 @@ pub(crate) async fn code_submit(
     Form(form): Form<CodeForm>,
 ) -> Response {
     let next = next_from(&uri);
-    let Some(token) = cookie::read(&headers, cookie::LOGIN) else {
+    let Some(token) = cookie::read(&headers, LOGIN) else {
         // Silent until now, and this is exactly the symptom of the `__Host-`
         // cookie being refused — a proxy stripping `Set-Cookie`, a browser
         // blocking it, or the page served over plain HTTP. The user submits a
@@ -230,11 +238,10 @@ pub(crate) async fn code_submit(
             // query it crossed: this is the one redirect a signed-in browser
             // follows, so it is the one worth checking twice.
             let response = Redirect::to(destination_or_root(next)).into_response();
-            let response =
-                with_cookie(response, cookie::set(cookie::SESSION, &session.id, state.auth.session_absolute));
+            let response = with_cookie(response, cookie::set(SESSION, &session.id, state.auth.session_absolute));
             // The binding has done its job, and a login cookie left behind would
             // outlive the code it addresses.
-            with_cookie(response, cookie::clear(cookie::LOGIN))
+            with_cookie(response, cookie::clear(LOGIN))
         }
         // 200 rather than 401: this is a form being redisplayed, and a 401
         // without `WWW-Authenticate` is not a conformant response. The outcome
@@ -268,7 +275,7 @@ pub(crate) async fn code_submit(
 )]
 pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Response {
     let span = tracing::Span::current();
-    match session::end(&*state.db, &headers).await {
+    match session::end(&*state.db, &cookie::values(&headers)).await {
         session::Ended::Deleted(user_id) => {
             span.record("auth.subject", tracing::field::display(user_id));
             span.record("auth.outcome", "signed_out");
@@ -287,7 +294,7 @@ pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) ->
             tracing::error!("sign-out could not delete the session; it stays live until it expires");
         }
     }
-    with_cookie(Redirect::to("/login").into_response(), cookie::clear(cookie::SESSION))
+    with_cookie(Redirect::to("/login").into_response(), cookie::clear(SESSION))
 }
 
 /// Issue a code for `email` and return the token the browser's login cookie must
@@ -694,7 +701,7 @@ async fn verify(
     // Session fixation: whatever session this browser arrived with is deleted
     // rather than reused, so a value planted before authentication cannot
     // survive into it.
-    let _ = session::end(&*state.db, headers).await;
+    let _ = session::end(&*state.db, &cookie::values(headers)).await;
 
     let session = match session::begin(&*state.db, &state.auth, user.id, now).await {
         Ok(session) => session,
@@ -729,12 +736,11 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use axum::Router;
-    use editor_core::records::Role;
-    use editor_core::repository::SessionRepository;
+    use identity_core::records::Role;
+    use identity_core::repository::SessionRepository;
     use tower::ServiceExt;
 
     use super::*;
-    use crate::auth::cookie;
     use crate::test_support::{
         body_string, capture_logs, cookie_set, count_rows, get, location, open_test_db, post, state_over, state_with,
         test_app, test_state, urlencode, with_cookie, Faults, FaultyDatabase, RecordingMailer,
@@ -754,25 +760,25 @@ mod tests {
         let form = format!("email={}", urlencode(email));
         let mut request = post("/login", &form);
         if let Some(binding) = binding {
-            request = with_cookie(request, cookie::LOGIN, binding);
+            request = with_cookie(request, LOGIN, binding);
         }
         app.clone().oneshot(request).await.expect("the request should complete")
     }
 
     /// `POST /login/code` with `code`, bound by `binding`.
     async fn submit_code(app: &Router, code: &str, binding: &str) -> Response {
-        let request = with_cookie(post("/login/code", &format!("code={code}")), cookie::LOGIN, binding);
+        let request = with_cookie(post("/login/code", &format!("code={code}")), LOGIN, binding);
         app.clone().oneshot(request).await.expect("the request should complete")
     }
 
     /// Drive a full sign-in and return the session cookie.
     async fn sign_in(app: &Router, mailer: &RecordingMailer, email: &str) -> String {
         let issued = request_code(app, email, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding must be handed out");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding must be handed out");
         let code = mailer.last_code().expect("a code must have been sent");
         let response = submit_code(app, &code, &binding).await;
         assert_eq!(response.status(), StatusCode::SEE_OTHER, "sign-in should redirect");
-        cookie_set(&response, cookie::SESSION).expect("a session cookie must be set")
+        cookie_set(&response, SESSION).expect("a session cookie must be set")
     }
 
     // ---- Anti-enumeration: the response tells an attacker nothing ------------
@@ -794,8 +800,8 @@ mod tests {
         assert_eq!(location(&known).as_deref(), Some("/login/code"));
         // Both hand out a binding, and the two are different tokens of the same
         // shape — one addresses a code, the other addresses nothing.
-        let known_binding = cookie_set(&known, cookie::LOGIN).expect("known address gets a binding");
-        let unknown_binding = cookie_set(&unknown, cookie::LOGIN).expect("unknown address gets one too");
+        let known_binding = cookie_set(&known, LOGIN).expect("known address gets a binding");
+        let unknown_binding = cookie_set(&unknown, LOGIN).expect("unknown address gets one too");
         assert_eq!(known_binding.len(), unknown_binding.len());
         assert_ne!(known_binding, unknown_binding);
 
@@ -817,9 +823,9 @@ mod tests {
         let app = test_app(&state);
 
         let known_first = request_code(&app, KNOWN, None).await;
-        let known_binding = cookie_set(&known_first, cookie::LOGIN).unwrap();
+        let known_binding = cookie_set(&known_first, LOGIN).unwrap();
         let unknown_first = request_code(&app, UNKNOWN, None).await;
-        let unknown_binding = cookie_set(&unknown_first, cookie::LOGIN).unwrap();
+        let unknown_binding = cookie_set(&unknown_first, LOGIN).unwrap();
 
         let known_again = request_code(&app, KNOWN, Some(&known_binding)).await;
         let unknown_again = request_code(&app, UNKNOWN, Some(&unknown_binding)).await;
@@ -831,8 +837,8 @@ mod tests {
         // or only when the browser presented none, would make "was a cookie set?"
         // a one-request answer to "does this address have an account?" — see
         // `issue`.
-        let known_cookie = cookie_set(&known_again, cookie::LOGIN).expect("a binding either way");
-        let unknown_cookie = cookie_set(&unknown_again, cookie::LOGIN).expect("a binding either way");
+        let known_cookie = cookie_set(&known_again, LOGIN).expect("a binding either way");
+        let unknown_cookie = cookie_set(&unknown_again, LOGIN).expect("a binding either way");
         assert_eq!(known_cookie.len(), unknown_cookie.len());
         assert_ne!(known_cookie, unknown_cookie);
         assert_ne!(known_cookie, known_binding, "and it is a fresh token, not the one presented");
@@ -855,13 +861,13 @@ mod tests {
         assert_eq!(known.status(), unknown.status());
         assert_eq!(location(&known), location(&unknown));
         assert_eq!(
-            cookie_set(&known, cookie::LOGIN).is_some(),
-            cookie_set(&unknown, cookie::LOGIN).is_some(),
+            cookie_set(&known, LOGIN).is_some(),
+            cookie_set(&unknown, LOGIN).is_some(),
             "whether a binding comes back must not depend on whether the address has an account"
         );
         assert_eq!(
-            cookie_set(&known, cookie::LOGIN).map(|c| c.len()),
-            cookie_set(&unknown, cookie::LOGIN).map(|c| c.len()),
+            cookie_set(&known, LOGIN).map(|c| c.len()),
+            cookie_set(&unknown, LOGIN).map(|c| c.len()),
             "and neither must its shape"
         );
     }
@@ -881,7 +887,7 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let correct = mailer.last_code().expect("a code");
         let wrong = if correct == "000000" { "111111" } else { "000000" };
 
@@ -891,7 +897,7 @@ mod tests {
             let binding = binding.clone();
             let wrong = wrong.to_string();
             handles.push(tokio::spawn(async move {
-                let request = with_cookie(post("/login/code", &format!("code={wrong}")), cookie::LOGIN, &binding);
+                let request = with_cookie(post("/login/code", &format!("code={wrong}")), LOGIN, &binding);
                 app.oneshot(request).await.expect("the request should complete").status()
             }));
         }
@@ -947,7 +953,7 @@ mod tests {
         let app = test_app(&state);
 
         let response = request_code(&app, UNKNOWN, None).await;
-        let binding = cookie_set(&response, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&response, LOGIN).unwrap();
 
         // Every code is wrong, because there is no code.
         let attempt = submit_code(&app, "000000", &binding).await;
@@ -964,17 +970,17 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&issued, LOGIN).unwrap();
         let code = mailer.last_code().expect("a six-digit code should have been sent");
         assert_eq!(code.len(), 6);
 
         let signed_in = submit_code(&app, &code, &binding).await;
         assert_eq!(signed_in.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&signed_in).as_deref(), Some("/"));
-        let session = cookie_set(&signed_in, cookie::SESSION).expect("a session cookie");
+        let session = cookie_set(&signed_in, SESSION).expect("a session cookie");
         assert!(!session.is_empty());
         assert_eq!(
-            cookie_set(&signed_in, cookie::LOGIN).as_deref(),
+            cookie_set(&signed_in, LOGIN).as_deref(),
             Some(""),
             "the binding has done its job and must not outlive the code it addressed"
         );
@@ -983,7 +989,7 @@ mod tests {
         // reaching it at all is the proof, and the header names the account.
         let projects = app
             .clone()
-            .oneshot(with_cookie(get("/projects"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects"), SESSION, &session))
             .await
             .unwrap();
         assert_eq!(projects.status(), StatusCode::OK);
@@ -1014,7 +1020,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(location(&issued).as_deref(), Some("/login/code?next=/projects/0801"));
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         // And spending the code lands on it.
@@ -1022,13 +1028,13 @@ mod tests {
             .clone()
             .oneshot(with_cookie(
                 post("/login/code?next=/projects/0801", &format!("code={code}")),
-                cookie::LOGIN,
+                LOGIN,
                 &binding,
             ))
             .await
             .unwrap();
         assert_eq!(location(&signed_in).as_deref(), Some("/projects/0801"));
-        let session = cookie_set(&signed_in, cookie::SESSION).expect("a session");
+        let session = cookie_set(&signed_in, SESSION).expect("a session");
 
         // `/projects/{shortcode}` is a redirect into the form's first section, so
         // arriving is a 303 followed by a page — the point being that the
@@ -1036,7 +1042,7 @@ mod tests {
         // itself a page.
         let arrived = app
             .clone()
-            .oneshot(with_cookie(get("/projects/0801"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects/0801"), SESSION, &session))
             .await
             .unwrap();
         assert_eq!(arrived.status(), StatusCode::SEE_OTHER);
@@ -1045,7 +1051,7 @@ mod tests {
 
         let form = app
             .clone()
-            .oneshot(with_cookie(get(&section), cookie::SESSION, &session))
+            .oneshot(with_cookie(get(&section), SESSION, &session))
             .await
             .unwrap();
         assert_eq!(form.status(), StatusCode::OK);
@@ -1070,14 +1076,14 @@ mod tests {
             Some("/login/code"),
             "a destination outside the service must not be carried"
         );
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         let signed_in = app
             .clone()
             .oneshot(with_cookie(
                 post("/login/code?next=https://evil.example", &format!("code={code}")),
-                cookie::LOGIN,
+                LOGIN,
                 &binding,
             ))
             .await
@@ -1099,11 +1105,7 @@ mod tests {
         let session = sign_in(&app, &mailer, KNOWN).await;
 
         for uri in ["/login?next=/projects/0801", "/login/code?next=/projects/0801"] {
-            let response = app
-                .clone()
-                .oneshot(with_cookie(get(uri), cookie::SESSION, &session))
-                .await
-                .unwrap();
+            let response = app.clone().oneshot(with_cookie(get(uri), SESSION, &session)).await.unwrap();
             assert_eq!(response.status(), StatusCode::SEE_OTHER, "{uri}");
             assert_eq!(location(&response).as_deref(), Some("/projects/0801"), "{uri}");
         }
@@ -1127,12 +1129,12 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         let page = app
             .clone()
-            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
             .await
             .unwrap();
         let body = body_string(page).await;
@@ -1142,7 +1144,7 @@ mod tests {
         // And it is the real code, not a fixed one — it still signs the user in.
         let signed_in = submit_code(&app, &code, &binding).await;
         assert_eq!(signed_in.status(), StatusCode::SEE_OTHER);
-        assert!(cookie_set(&signed_in, cookie::SESSION).is_some());
+        assert!(cookie_set(&signed_in, SESSION).is_some());
     }
 
     #[tokio::test]
@@ -1154,12 +1156,12 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         let page = app
             .clone()
-            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
             .await
             .unwrap();
         let body = body_string(page).await;
@@ -1176,13 +1178,13 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         // A second browser inventing a token sees nothing.
         let other = app
             .clone()
-            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, "a-token-that-binds-to-nothing"))
+            .oneshot(with_cookie(get("/login/code"), LOGIN, "a-token-that-binds-to-nothing"))
             .await
             .unwrap();
         let body = body_string(other).await;
@@ -1198,13 +1200,13 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
         submit_code(&app, &code, &binding).await;
 
         let page = app
             .clone()
-            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
             .await
             .unwrap();
         assert!(!body_string(page).await.contains(&code));
@@ -1219,7 +1221,7 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         let wrong = submit_code(&app, "000000", &binding).await;
@@ -1239,10 +1241,10 @@ mod tests {
 
         let (logs, guard) = capture_logs();
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let page = app
             .clone()
-            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
             .await
             .unwrap();
         let body = body_string(page).await;
@@ -1295,7 +1297,7 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&issued, LOGIN).unwrap();
         let correct = mailer.last_code().unwrap();
         let wrong = if correct == "000000" { "111111" } else { "000000" };
 
@@ -1322,7 +1324,7 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&issued, LOGIN).unwrap();
         let correct = mailer.last_code().unwrap();
         let wrong = if correct == "000000" { "111111" } else { "000000" };
 
@@ -1335,7 +1337,7 @@ mod tests {
             StatusCode::OK,
             "not a redirect — it must not sign in"
         );
-        assert_eq!(cookie_set(&with_the_right_code, cookie::SESSION), None);
+        assert_eq!(cookie_set(&with_the_right_code, SESSION), None);
     }
 
     #[tokio::test]
@@ -1346,13 +1348,13 @@ mod tests {
         let app = test_app(&state);
 
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&issued, LOGIN).unwrap();
         let code = mailer.last_code().unwrap();
 
         assert_eq!(submit_code(&app, &code, &binding).await.status(), StatusCode::SEE_OTHER);
         let replayed = submit_code(&app, &code, &binding).await;
         assert_eq!(replayed.status(), StatusCode::OK);
-        assert_eq!(cookie_set(&replayed, cookie::SESSION), None);
+        assert_eq!(cookie_set(&replayed, SESSION), None);
     }
 
     #[tokio::test]
@@ -1369,11 +1371,11 @@ mod tests {
         // Another browser: it has been through `POST /login` for some address, so
         // it holds a well-formed binding — just not this one.
         let other = request_code(&app, UNKNOWN, None).await;
-        let other_binding = cookie_set(&other, cookie::LOGIN).unwrap();
+        let other_binding = cookie_set(&other, LOGIN).unwrap();
 
         let stolen = submit_code(&app, &code, &other_binding).await;
         assert_eq!(stolen.status(), StatusCode::OK);
-        assert_eq!(cookie_set(&stolen, cookie::SESSION), None);
+        assert_eq!(cookie_set(&stolen, SESSION), None);
 
         // With no binding at all it does not even reach the comparison.
         let bare = app.clone().oneshot(post("/login/code", &format!("code={code}"))).await.unwrap();
@@ -1395,7 +1397,7 @@ mod tests {
         let app = test_app(&state);
 
         let first = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&first, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&first, LOGIN).unwrap();
         let code = mailer.last_code().unwrap();
 
         let second = request_code(&app, KNOWN, Some(&binding)).await;
@@ -1405,7 +1407,7 @@ mod tests {
         // same as it would for an address with no account — and the code it
         // already owns follows it there, so the user is not stranded holding a
         // code they can no longer spend.
-        let rotated = cookie_set(&second, cookie::LOGIN).expect("a binding comes back either way");
+        let rotated = cookie_set(&second, LOGIN).expect("a binding comes back either way");
         assert_ne!(rotated, binding);
         assert_eq!(
             submit_code(&app, &code, &rotated).await.status(),
@@ -1428,13 +1430,13 @@ mod tests {
         let app = test_app(&state);
 
         let victim = request_code(&app, KNOWN, None).await;
-        let victim_binding = cookie_set(&victim, cookie::LOGIN).expect("a binding");
+        let victim_binding = cookie_set(&victim, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         // The attacker posts the same address inside the cooldown, presenting a
         // token they made up.
         let attacker = request_code(&app, KNOWN, Some("a-token-the-attacker-invented")).await;
-        let attacker_binding = cookie_set(&attacker, cookie::LOGIN).expect("a binding either way");
+        let attacker_binding = cookie_set(&attacker, LOGIN).expect("a binding either way");
 
         assert_eq!(
             submit_code(&app, &code, &attacker_binding).await.status(),
@@ -1581,8 +1583,8 @@ mod tests {
         assert_eq!(capped.status(), unknown.status());
         assert_eq!(location(&capped), location(&unknown));
         assert_eq!(
-            cookie_set(&capped, cookie::LOGIN).map(|value| value.len()),
-            cookie_set(&unknown, cookie::LOGIN).map(|value| value.len()),
+            cookie_set(&capped, LOGIN).map(|value| value.len()),
+            cookie_set(&unknown, LOGIN).map(|value| value.len()),
         );
     }
 
@@ -1733,7 +1735,7 @@ mod tests {
 
         let (logs, _guard) = capture_logs();
         let response = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&response, cookie::LOGIN).expect("the browser stays bound to the logged code");
+        let binding = cookie_set(&response, LOGIN).expect("the browser stays bound to the logged code");
 
         assert_eq!(count_rows(&db, "login_codes").await, 1, "the code must survive");
         assert_eq!(mailer.sent().len(), 1, "the relay was still tried first");
@@ -1768,13 +1770,13 @@ mod tests {
 
         let response = app
             .clone()
-            .oneshot(with_cookie(post("/logout", ""), cookie::SESSION, &session))
+            .oneshot(with_cookie(post("/logout", ""), SESSION, &session))
             .await
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/login"));
-        assert_eq!(cookie_set(&response, cookie::SESSION).as_deref(), Some(""));
+        assert_eq!(cookie_set(&response, SESSION).as_deref(), Some(""));
         assert_eq!(count_rows(&db, "sessions").await, 0, "the session row goes too");
     }
 
@@ -1787,7 +1789,7 @@ mod tests {
         let response = app.clone().oneshot(post("/logout", "")).await.unwrap();
 
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
-        assert_eq!(cookie_set(&response, cookie::SESSION).as_deref(), Some(""));
+        assert_eq!(cookie_set(&response, SESSION).as_deref(), Some(""));
     }
 
     #[tokio::test]
@@ -1815,7 +1817,7 @@ mod tests {
 
         let refused = app
             .clone()
-            .oneshot(with_cookie(get("/projects"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects"), SESSION, &session))
             .await
             .unwrap();
         assert_eq!(
@@ -1858,7 +1860,7 @@ mod tests {
 
         let refused = app
             .clone()
-            .oneshot(with_cookie(get("/projects"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects"), SESSION, &session))
             .await
             .unwrap();
         assert_eq!(refused.status(), StatusCode::SEE_OTHER);
@@ -1880,24 +1882,24 @@ mod tests {
             .clone()
             .oneshot(with_cookie(
                 post("/login", &format!("email={}", urlencode(KNOWN))),
-                cookie::SESSION,
+                SESSION,
                 &first,
             ))
             .await
             .unwrap();
-        let binding = cookie_set(&issued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&issued, LOGIN).unwrap();
         let code = mailer.last_code().unwrap();
         let response = app
             .clone()
             .oneshot(with_cookie(
-                with_cookie(post("/login/code", &format!("code={code}")), cookie::LOGIN, &binding),
-                cookie::SESSION,
+                with_cookie(post("/login/code", &format!("code={code}")), LOGIN, &binding),
+                SESSION,
                 &first,
             ))
             .await
             .unwrap();
 
-        let second = cookie_set(&response, cookie::SESSION).expect("a new session");
+        let second = cookie_set(&response, SESSION).expect("a new session");
         assert_ne!(second, first, "the session id must be a fresh one");
         assert_eq!(
             SessionRepository::find(&*state.db, &first).await.unwrap(),
@@ -1996,11 +1998,7 @@ mod tests {
         let session = sign_in(&app, &mailer, KNOWN).await;
 
         for uri in ["/login", "/login/code"] {
-            let response = app
-                .clone()
-                .oneshot(with_cookie(get(uri), cookie::SESSION, &session))
-                .await
-                .unwrap();
+            let response = app.clone().oneshot(with_cookie(get(uri), SESSION, &session)).await.unwrap();
             assert_eq!(response.status(), StatusCode::SEE_OTHER, "{uri}");
             assert_eq!(location(&response).as_deref(), Some("/"), "{uri}");
         }
@@ -2038,7 +2036,7 @@ mod tests {
         let user_id = a_user(&sound, KNOWN).await;
 
         let issued = request_code(&test_app(&sound), KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         let (logs, guard) = capture_logs();
@@ -2052,7 +2050,7 @@ mod tests {
             StatusCode::OK,
             "the form comes back, as on any rejected entry"
         );
-        assert!(cookie_set(&response, cookie::SESSION).is_none(), "and nobody is signed in");
+        assert!(cookie_set(&response, SESSION).is_none(), "and nobody is signed in");
 
         let stored = LoginCodeRepository::find_by_browser_token(&*db, &binding)
             .await
@@ -2072,7 +2070,7 @@ mod tests {
 
     /// A cooldown long enough that a second request issues nothing, which is what
     /// takes [`issue`] past [`issue_to_account`] and into the rebind.
-    fn cooled(auth: &mut crate::auth::AuthConfig) {
+    fn cooled(auth: &mut identity_core::login::AuthConfig) {
         auth.cooldown = Duration::from_secs(600);
     }
 
@@ -2097,7 +2095,7 @@ mod tests {
         a_user(&sound, KNOWN).await;
 
         let issued = request_code(&test_app(&sound), KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
         let (logs, guard) = capture_logs();
@@ -2112,7 +2110,7 @@ mod tests {
             "the same answer as every other POST /login"
         );
         assert_eq!(location(&again).as_deref(), Some("/login/code"));
-        let handed_back = cookie_set(&again, cookie::LOGIN).expect("a token comes back on every path");
+        let handed_back = cookie_set(&again, LOGIN).expect("a token comes back on every path");
         assert_eq!(handed_back, binding, "and it is the binding the browser already holds");
         assert_eq!(mailer.sent().len(), 1, "the cooldown means no second code");
 
@@ -2127,7 +2125,7 @@ mod tests {
         // still signs them in.
         let signed_in = submit_code(&test_app(&sound), &code, &handed_back).await;
         assert_eq!(signed_in.status(), StatusCode::SEE_OTHER);
-        assert!(cookie_set(&signed_in, cookie::SESSION).is_some(), "the code stayed spendable");
+        assert!(cookie_set(&signed_in, SESSION).is_some(), "the code stayed spendable");
 
         let lines = logs.lines();
         assert!(
@@ -2160,7 +2158,7 @@ mod tests {
         let user_id = a_user(&sound, KNOWN).await;
 
         let issued = request_code(&test_app(&sound), KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
         let wrong = if code == "000000" { "111111" } else { "000000" };
 
@@ -2169,7 +2167,7 @@ mod tests {
         drop(guard);
 
         assert_eq!(response.status(), StatusCode::OK, "the same refusal as any wrong code");
-        assert!(cookie_set(&response, cookie::SESSION).is_none());
+        assert!(cookie_set(&response, SESSION).is_none());
 
         let user = UserRepository::find_by_id(&*db, user_id).await.unwrap().expect("the account");
         assert_eq!(user.failed_logins, 0, "the throttle did not advance");
@@ -2219,10 +2217,7 @@ mod tests {
         drop(guard);
 
         assert_eq!(issued.status(), StatusCode::SEE_OTHER, "the user is told nothing different");
-        assert!(
-            cookie_set(&issued, cookie::LOGIN).is_some(),
-            "and is bound to the code as usual"
-        );
+        assert!(cookie_set(&issued, LOGIN).is_some(), "and is bound to the code as usual");
         assert_eq!(mailer.sent().len(), 1, "the code was mailed");
 
         let window = Utc::now() - delta(SEND_WINDOW);
@@ -2275,18 +2270,18 @@ mod tests {
         // Signed in first, because success is what clears the failure counter —
         // driving the lockout before it would make this path unreachable.
         let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&issued, LOGIN).unwrap();
         let code = mailer.last_code().unwrap();
         let session = submit_code(&app, &code, &binding).await;
-        let session = cookie_set(&session, cookie::SESSION).expect("signed in");
+        let session = cookie_set(&session, SESSION).expect("signed in");
         app.clone()
-            .oneshot(with_cookie(post("/logout", ""), cookie::SESSION, &session))
+            .oneshot(with_cookie(post("/logout", ""), SESSION, &session))
             .await
             .unwrap();
 
         // A wrong code, which with `max_failed = 1` throttles the account …
         let reissued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&reissued, cookie::LOGIN).unwrap();
+        let binding = cookie_set(&reissued, LOGIN).unwrap();
         let code = mailer.last_code().unwrap();
         let wrong = if code == "000000" { "111111" } else { "000000" };
         submit_code(&app, wrong, &binding).await;
@@ -2342,7 +2337,7 @@ mod tests {
 
         // A send that is not recorded, then a correct code whose claim fails.
         let issued = request_code(&test_app(&claiming), KNOWN, None).await;
-        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
         submit_code(&test_app(&claiming), &code, &binding).await;
         // A wrong code whose account-level count fails, then a rebind that fails

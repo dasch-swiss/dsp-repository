@@ -56,6 +56,8 @@ Three rules the Deposit Area's split into two capabilities (`areas/deposit/ADR-0
 - **An area may hold one shell crate, `areas/<area>/shell`.** A view library (`fn -> Markup`: the document, header, footer, error pages) that depends on `mosaic-tiles` and `shared-*` only, never on a capability crate; every capability's web crate and the composition root depend on it. The routes it links are string literals, a coupling recorded, not compiled.
 - **Until Bazel visibility (ADR-0001) exists, the crate graph inside an area is checked by `.github/scripts/check-capability-deps.sh`** over `cargo metadata`, run by `just check`. Between two capabilities the only permitted edge is a provider's store crate on a consumer's `ports` crate; a `ports` crate depends on nothing in the workspace but `shared-*`; the shell crate depends on no capability crate; the composition root may depend on anything in its area. Every other edge fails the check.
 
+  Note (2026-10-13, DEV-7375): the composition root may not depend on anything in its area; the amendment of 2026-10-13 below narrows it.
+
 Added to Considered Options:
 
 - **One `auth` crate per area holding one extractor for every web crate** — rejected: it needs the session lookup, so it depends on the session-owning capability's store crate and every consumer inherits that edge; behind a port it is the rule above with one crate more.
@@ -66,3 +68,17 @@ Enforced by: the crate-graph script (**static-analysis**) once it lands with the
 ## Amendment (2026-09-28) — a derived read model is not a copy of the projection
 
 The rejected option "each reading capability embedding its own Chischtli" rejects a *copy* of the archive projection per reader: the same graphs held three times, with three consumers of the archive's data products. It does not reject a reader keeping its own **read model** — a store of its own shape and engine, holding only what it needs, derived from what its port against `sync` serves, written by the reader alone and rebuilt from empty rather than repaired. The two were not distinguished when this record was written and the distinction is what ADR-0007's CPE store rests on; ADR-0008 records it as a general rule. The clause on Chischtli above is unchanged: `sync` stays the single writer of the projection and the single consumer of the data products, and every reader reaches the projection only through its own port.
+
+## Amendment (2026-10-13): what a composition root depends on, and where the crate-graph gate starts
+
+The amendment of 2026-09-25 lets the composition root "depend on anything in its area". `check-composition-root-deps.sh`, added with the Access Area's root (`docs/specs/2026-09-28-access-area-composition-root/`, DEV-7397), holds a root to each capability's `server` crate and never its `core`, `web` or `api-*` crate, so that the root stays wiring and names no capability's type. The two disagree, and the Deposit Area's target (`areas/deposit/ADR-0004`) fits neither: its capabilities have no `server` crate, and their routes live in the web crate, where this record's crate anatomy puts them ("a web crate of views and routes"). Decided 2026-10-13 (DEV-7375):
+
+- **A composition root depends on each capability's entry crate, and on its `store` and `ports` crates only to construct and inject adapters; never on a `core` or `api-*` crate.** The entry crate is the capability's `server` crate where it has one (DPE, CPE), and its `web` crate where it has none (the Deposit Area). A capability that has a `server` crate keeps its `web` crate out of the root's reach. Dev-dependencies are held to the same rule.
+- **The entry crate exposes one facade that owns the capability's configuration, startup and router** (`Dpe`, `Cpe`; the Deposit Area's `Identity` and `Editor`), so the root names no domain type and holds no logic. That plan's reasons for the rule (the root "holds wiring only" and "never names `Corpus`") hold under the narrowed one.
+- **`check-capability-deps.sh` checks the areas it lists, the Deposit Area first.** The Access Area joins once the script knows its crate roles beyond this record's anatomy (`components`, `image-viewer`, `store-build`, `api-*` and the capability `server` crate) and ADR-0008's exception for a dev-dependency on `sync-store` (amendment of 2026-10-11); `check-cpe-seam.sh` holds CPE's edges until then. The root's own edges stay with `check-composition-root-deps.sh`, so each rule has one enforcer.
+
+Added to Considered Options:
+
+- **A `server` host crate per Deposit capability, the root depending on the hosts only, as in the Access Area**: rejected (decided 2026-10-13, DEV-7375). It keeps the gate as it is and leaves the handlers where they are today, but adds two crates, in a role the crate anatomy does not list, to hold routes the anatomy places in the web crate.
+
+Enforced by: `check-composition-root-deps.sh`, which learns the `server`-or-`web` distinction in DEV-7375, and `check-capability-deps.sh` for the areas it lists (**static-analysis**); the facade by **review**.

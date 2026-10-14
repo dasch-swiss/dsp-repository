@@ -8,7 +8,7 @@ Operations documentation for the metadata editor.
 - **Base**: `gcr.io/distroless/static-debian12:nonroot`
 - **User**: uid **65532** — distroless `NONROOT`. Not 65534, which is `nobody`; verified in [`common/variables.bzl`](https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl).
 - **Shell**: None (distroless — no SSH possible)
-- **Binary**: Static musl-linked `editor-server`
+- **Binary**: Static musl-linked `deposit-server`
 
 The Dockerfile packages pre-built artifacts; the Rust build happens in
 `.github/actions/build-editor`. `just build-docker-editor` reproduces the same
@@ -30,8 +30,8 @@ Moving the directory under `shared/` was considered and rejected: the shared-cra
 
 | Command | Description |
 |---------|-------------|
-| `editor-server serve` | Start the web server |
-| `editor-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
+| `deposit-server serve` | Start the web server |
+| `deposit-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
 
 `healthcheck` only accepts loopback URLs (`http://localhost`, `http://127.0.0.1`, `http://[::1]`). The URL arrives as a CLI flag from the Docker `HEALTHCHECK`, and restricting it stops a mistyped or tampered value turning the container into an SSRF probe.
 
@@ -47,7 +47,7 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `RUST_LOG` | No | `info` | Log level filter (e.g. `editor_server=info,editor_web=info,identity_web=info,identity_core=info,tower_http=debug`) |
+| `RUST_LOG` | No | `info` | Log level filter (e.g. `deposit_server=info,editor_web=info,identity_web=info,identity_core=info,tower_http=debug`) |
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `EDITOR_PUBLIC_DIR` | No | `areas/deposit/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
@@ -87,7 +87,7 @@ Configuration is layered: code defaults → optional `editor.toml` → `EDITOR_*
 
 > **`/healthz` returns 404 on the Cloud Run PR previews.** Something in front of the container answers that exact path with Google's own error page — the response carries no `server: Google Frontend` header and no `traceparent`, unlike every response the app produces, and neighbouring paths (`/healthz2`, `/health`, `/healthz/`) all reach the app normally. DPE's preview behaves identically and has had the same route for far longer, so this is not editor-specific and not new. The precise mechanism is unconfirmed; treat it as "previews cannot be used to test the health endpoint".
 >
-> It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where `/healthz` answers 200, and the image's own `HEALTHCHECK` calls `editor-server healthcheck` against loopback *inside* the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (`just build-docker-editor && just run-docker-editor`) rather than probing a preview URL.
+> It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where `/healthz` answers 200, and the image's own `HEALTHCHECK` calls `deposit-server healthcheck` against loopback *inside* the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (`just build-docker-editor && just run-docker-editor`) rather than probing a preview URL.
 
 ## Deployment
 
@@ -180,7 +180,7 @@ Setting `EDITOR_DB_DIR` to keep accounts across restarts **turns the on-screen c
 ```bash
 EDITOR_RDU_EMAILS=you@dasch.swiss \
 EDITOR_DATA_DIR=areas/access/dpe/server/data \
-cargo run --bin editor-server -- serve > editor.log 2>&1 &
+cargo run --bin deposit-server -- serve > editor.log 2>&1 &
 
 # after submitting the address at /login:
 grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'

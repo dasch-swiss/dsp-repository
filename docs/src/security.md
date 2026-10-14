@@ -25,7 +25,7 @@ dependencies — and matches them against vulnerability databases.
 |-------|----------|---------|
 | DPE (`daschswiss/dpe`) | `scout-dpe.yml` | PRs touching `areas/access/dpe/**`, `shared/**` or `Cargo.lock` |
 | Mosaic Playground (`daschswiss/mosaic-playground`) | `scout-mosaic-playground.yml` | PRs touching `modules/mosaic/**` or `Cargo.lock` |
-| Editor (`daschswiss/metadata-editor`) | `scout-editor.yml` | PRs touching `areas/deposit/editor/**`, `shared/**` or `Cargo.lock` |
+| Editor (`daschswiss/metadata-editor`) | `scout-editor.yml` | PRs touching `areas/deposit/**`, `shared/**` or `Cargo.lock` |
 
 ### How It Works
 

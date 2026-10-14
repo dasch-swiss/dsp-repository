@@ -4,8 +4,8 @@
  * `source(none)` disables Tailwind's auto-detection; classes are collected ONLY from the explicit
  * `@source` globs below, which must cover EVERY crate that emits Tailwind classes — editor-web
  * (pages, the form and markup rendered in handlers), identity-web (the login and depositor pages), deposit-shell (the document
- * shell, header, footer and error pages), editor-server (no markup of its own; its glob goes
- * with the crate) and mosaic-tiles.
+ * shell, header, footer and error pages) and mosaic-tiles. deposit-server renders no markup of
+ * its own and is not scanned.
  * A missing glob silently drops classes: no build error, just markup whose classes resolve to
  * nothing. Tailwind scans `.rs` files as plain text.
  *
@@ -22,7 +22,6 @@
 @import '../../../../modules/mosaic/tiles/src/components/components.css';
 
 @source '../web/**/*.rs';
-@source '../server/**/*.rs';
 @source '../../shell/**/*.rs';
 @source '../../identity/web/**/*.rs';
 @source '../../../../modules/mosaic/tiles/src/**/*.rs';

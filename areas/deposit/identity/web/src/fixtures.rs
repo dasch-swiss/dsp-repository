@@ -76,7 +76,7 @@ pub(crate) fn state_over(
     IdentityState {
         css_href: "/assets/app.css".to_string(),
         store: identity,
-        // The open-work list over real rows is `editor-server`'s `cross_capability.rs`.
+        // The open-work list over real rows is `deposit-server`'s `cross_capability.rs`.
         authored_work: Arc::new(identity_ports::FakeAuthoredWork::new()),
         mailer: Arc::new(mailer),
         auth,

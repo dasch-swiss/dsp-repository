@@ -28,7 +28,7 @@ members = [
   "areas/deposit/editor/ports",
   "areas/deposit/editor/store",
   "areas/deposit/editor/web",
-  "areas/deposit/editor/server",
+  "areas/deposit/server",
   "areas/deposit/editor/collector",
   "dsp-cli",
 ]
@@ -49,7 +49,7 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 [workspace.dependencies]
 axum = { version = "0.8.9", features = ["macros", "ws"] }
 # The path router axum 0.8.9 matches with, pinned to axum's own version so a service's
-# `page.url` label is the route axum itself would match (`editor-server`'s `page_url.rs`).
+# `page.url` label is the route axum itself would match (`deposit-server`'s `page_url.rs`).
 matchit = "=0.8.4"
 insta = { version = "1.47", features = ["yaml", "filters"] }
 datastar = { version = "0.3", features = ["axum"] }

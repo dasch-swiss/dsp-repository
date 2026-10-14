@@ -54,7 +54,7 @@ Dependencies: `shared-metadata`, and `serde_json` at runtime — the JSON-LD wri
 
 ## `shared-telemetry` (telemetry/)
 
-The browser telemetry contract and the endpoint that consumes it. A library crate so fuzz targets can test the real code, and so the beacon has one implementation across `dpe-server` and `editor-server` rather than a fork per service. Contains:
+The browser telemetry contract and the endpoint that consumes it. A library crate so fuzz targets can test the real code, and so the beacon has one implementation across `dpe-server` and `deposit-server` rather than a fork per service. Contains:
 
 - **Beacon types**: `BeaconPayload`, `Signal`, `WebVitalSignal`, `ErrorSignal`, etc. (serde deserialization for browser beacons)
 - **Origin validation**: `is_allowed_origin()` — validates dasch.swiss subdomains
@@ -63,4 +63,4 @@ The browser telemetry contract and the endpoint that consumes it. A library crat
 
 The contract modules depend on `serde` only; `collector` additionally pulls in `axum`, `opentelemetry`, `tracing` and `url`.
 
-Page-URL normalization is **not** in this crate: a shared crate depends on no service crate, and a route table is exactly one service's data. `dpe-server` and `editor-server` each own a `page_url.rs` and pass its `normalize_page_url` fn into `collect_route`; `editor-server`'s asks `identity-web`'s first.
+Page-URL normalization is **not** in this crate: a shared crate depends on no service crate, and a route table is exactly one service's data. `dpe-server` and `deposit-server` each own a `page_url.rs` and pass its `normalize_page_url` fn into `collect_route`; `deposit-server`'s asks `identity-web`'s first.

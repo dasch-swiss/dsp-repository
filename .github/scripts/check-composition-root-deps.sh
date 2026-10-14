@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 #
-# areas/<area>/server/Cargo.toml must not depend on a capability's core, web or
-# api-* crate (ADR-0007; the rule and why store/ports stay allowed: ARCH-MAP.md
-# "Composition root"). A grep until Bazel `visibility` lands.
+# areas/<area>/server/Cargo.toml must not depend on a capability's core or
+# api-* crate, nor on its web crate when the capability has a server crate
+# (ADR-0007; the rule and why store/ports stay allowed: ARCH-MAP.md
+# "Composition root"). A capability without a server crate has no host crate to
+# depend on instead, so the Deposit Area mounts it through its web crate's
+# facade (ADR-0004). A grep until Bazel `visibility` lands.
 #
 # Forbidden names are the [package] names of every
-# areas/<area>/<capability>/{core,web,api-*}/Cargo.toml, so a new capability is
-# covered without editing this script. A new forbidden role goes in the
-# pathspecs of forbidden_crates.
+# areas/<area>/<capability>/{core,web,api-*}/Cargo.toml (web only beside a
+# server/Cargo.toml), so a new capability is covered without editing this
+# script. A new forbidden role goes in the pathspecs of forbidden_crates.
 #
 # Safe to `source`. Dependencies: bash, git, awk, grep.
 
@@ -17,7 +20,8 @@ crate_name() {
 }
 
 # Forbidden crate names for one area: the [package] name of every
-# areas/<area>/<capability>/{core,web,api-*}/Cargo.toml under it. A git
+# areas/<area>/<capability>/{core,api-*}/Cargo.toml under it, plus every
+# .../web/Cargo.toml whose capability has a sibling server/Cargo.toml. A git
 # pathspec's `*` crosses `/` (unlike bash's), so `areas/$area/*/core/Cargo.toml`
 # alone would also match a deeper accidental core/ — the NF==5 filter pins the
 # match to exactly areas/<area>/<capability>/core/Cargo.toml.
@@ -25,7 +29,14 @@ forbidden_crates() {
   local area="$1" f
   git ls-files -- "areas/$area/*/core/Cargo.toml" "areas/$area/*/web/Cargo.toml" "areas/$area/*/api-*/Cargo.toml" \
     | awk -F/ 'NF == 5' \
-    | while IFS= read -r f; do crate_name "$f"; done
+    | while IFS= read -r f; do
+        case "$f" in
+          */web/Cargo.toml)
+            git ls-files --error-unmatch -- "${f%/web/Cargo.toml}/server/Cargo.toml" >/dev/null 2>&1 || continue
+            ;;
+        esac
+        crate_name "$f"
+      done
 }
 
 # True if Cargo.toml $1 names dependency $2: a `name = ...` line, a
@@ -59,18 +70,18 @@ main() {
     while IFS= read -r name; do
       [ -n "$name" ] || continue
       if depends_on "$file" "$name"; then
-        violations="${violations}${violations:+$'\n'}$file depends on $name, a $area capability's core/web/api-* crate"
+        violations="${violations}${violations:+$'\n'}$file depends on $name, a $area capability's core/web/api-* crate (web only where the capability has a server crate)"
       fi
     done <<<"$forbidden"
   done <<<"$server_files"
 
   if [ -n "$violations" ]; then
     printf '%s\n\n' "$violations" >&2
-    echo "✗ a composition root depends directly on a capability's core, web or api-* crate." >&2
+    echo "✗ a composition root depends directly on a capability's core or api-* crate, or on a web crate whose capability has a server crate." >&2
     echo "  Depend on the capability's server crate instead; see ADR-0007." >&2
     return 1
   fi
-  echo "✓ composition roots: no direct core/web/api-* dependency ($count areas/*/server/Cargo.toml checked)"
+  echo "✓ composition roots: no core or api-* dependency, no web one where a server crate exists ($count areas/*/server/Cargo.toml checked)"
 }
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then

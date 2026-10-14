@@ -33,8 +33,8 @@ pub struct UnknownVariant {
 /// submission. ASCII rather than Unicode folding because `is_valid_shortcode`
 /// admits only ASCII.
 ///
-/// `the_assignment_comparison_agrees_with_the_storage_key`, in `editor-server`'s
-/// `identity` tests, pins `Principal::may_reach`'s comparison against this key.
+/// `the_assignment_comparison_agrees_with_the_storage_key`, in `editor-web`'s
+/// `handlers/auth.rs` tests, pins `Principal::may_reach`'s comparison against this key.
 #[must_use]
 pub fn normalize_shortcode(shortcode: &str) -> String {
     shortcode.trim().to_ascii_lowercase()

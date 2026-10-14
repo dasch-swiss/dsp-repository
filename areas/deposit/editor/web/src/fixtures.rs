@@ -165,7 +165,7 @@ pub(crate) async fn a_session(state: &TestState, user_id: Uuid) -> String {
 /// Enough percent-encoding for the values these tests put in a form body.
 ///
 /// Deliberately not a general encoder: it covers exactly the characters the
-/// fixtures use. `editor-server`'s and `identity-web`'s fixtures hold copies; two escaping
+/// fixtures use. `deposit-server`'s and `identity-web`'s fixtures hold copies; two escaping
 /// different sets shows up only as one suite passing on input the other would mangle, so a
 /// character added here is added there too.
 pub(crate) fn urlencode(value: &str) -> String {

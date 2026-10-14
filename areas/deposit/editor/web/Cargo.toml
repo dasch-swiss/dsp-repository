@@ -18,9 +18,8 @@ serde_json.workspace = true
 # which is the rule the whole untouched-save guarantee rests on. The shared
 # crate's own predicate rather than a second copy of the two sentinel strings.
 shared-metadata = { path = "../../../../shared/metadata" }
-# The login screens are the first surface to render a tile (the submit buttons),
-# which is what earns the dependency. The Tailwind entry already scanned the
-# crate before this, so its component CSS shipped regardless.
+# The form, the entity form and the review pages render tiles (buttons, alerts,
+# text fields, tables).
 mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
 
 [dev-dependencies]

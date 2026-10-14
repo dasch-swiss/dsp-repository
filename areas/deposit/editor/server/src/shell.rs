@@ -6,24 +6,13 @@
 pub(crate) struct AppState {
     /// Unhashed in dev, content-hashed in release.
     pub(crate) css_href: String,
-    /// Identity's store, behind its ports rather than [`identity_store::Database`], so a test
-    /// can make a chosen storage call fail; the auth flow's error branches depend on it.
-    pub(crate) identity: std::sync::Arc<dyn identity_core::repository::IdentityRepositories>,
-    /// The editor's store, behind its ports for the same reason.
+    /// The editor's store, behind its ports, so a test can make a chosen storage call fail.
     pub(crate) editor: std::sync::Arc<dyn editor_core::repository::EditorRepositories>,
     /// Who a request's session belongs to, for the editor's extractors (`editor_auth`). The
     /// editor reads no identity table: this port and [`Self::directory`] are what it asks.
     pub(crate) authenticator: std::sync::Arc<dyn editor_ports::Authenticator>,
     /// The names behind the account ids the editor's records hold.
     pub(crate) directory: std::sync::Arc<dyn editor_ports::UserDirectory>,
-    /// The editor work an account still has open, for the depositor-removal confirmation.
-    pub(crate) authored_work: std::sync::Arc<dyn identity_ports::AuthoredWork>,
-    /// Behind a trait so a test can watch what was sent and make sending fail.
-    pub(crate) mailer: std::sync::Arc<dyn identity_core::mail::Mailer>,
-    pub(crate) auth: identity_core::login::AuthConfig,
-    /// Whether the code-entry screen may show the login code. Resolved once at startup from
-    /// [`crate::config::EditorConfig::reveals_login_code`], never re-derived.
-    pub(crate) reveal_login_code: bool,
     /// The bearer token `POST /api/v1/collection-report` checks against. `None` refuses every
     /// call, so an unconfigured service never accepts an empty token.
     pub(crate) collection_token: Option<crate::config::Secret>,
@@ -37,6 +26,9 @@ pub(crate) struct AppState {
     /// The persons and organizations a project may refer to by id, read once at startup from
     /// `EDITOR_DATA_DIR`. Empty makes every agent reference unresolvable.
     pub(crate) agents: std::sync::Arc<editor_core::agents::Agents>,
+    /// What the tests assemble and seed identity from. No handler reads it.
+    #[cfg(test)]
+    pub(crate) identity: crate::test_support::IdentityFixture,
 }
 
 /// The two tables `unresolved_temporal_coverage` reads, kept together because two adjacent

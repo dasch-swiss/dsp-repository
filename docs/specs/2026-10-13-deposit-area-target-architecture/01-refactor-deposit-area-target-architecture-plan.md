@@ -333,36 +333,47 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 7: `identity-web` owns identity's pages, handlers, routes and startup
 
 ### dsp-repository
-- [ ] Record `git grep -c 'otel.name' -- areas/deposit` before the move
-- [ ] Create `areas/deposit/identity/web` (`identity-web`) and move `editor-web/src/pages/{login,depositors}.rs` into its `pages/`
-- [ ] Move `auth/handlers.rs`, `auth/guard.rs`, the rest of `auth/cookie.rs`, `accounts.rs` and `depositors.rs` into `identity-web`'s `handlers/`
-- [ ] Give `identity-web` `IdentityState`, `IdentitySettings` and its route table for `/login`, `/login/code`, `/logout`, `/depositors/**`
-- [ ] Give `identity-web` the facade `Identity::start(settings, store, Arc<dyn AuthoredWork>) -> Result<Identity, StartupError>` (`ensure_rdu`, the mailer, the sweep) with `router()` returning `Router<()>`
-- [ ] Give `identity-web` a copy of `RightmostXffKeyExtractor` with its seven tests, for the `/login` and `/login/code` limits
-- [ ] Have `identity-web` export its route table's paths, and `editor-server`'s page-URL normalizer build its `matchit` router from both tables, so `/login` and `/depositors` keep their labels
-- [ ] Give `identity-web` test support: sign-in through its session rules over an in-memory store, `RecordingMailer`, and `FakeAuthoredWork` for the removal tests
-- [ ] Move the `depositors.rs` assertions on editor rows (the remove tests' `updated_by`/`submitted_by` checks) into `editor-server`'s tests, which see both stores
-- [ ] Have `editor-server` call `Identity::start` in today's order and merge its router, keeping the layer order
-- [ ] Add `@source '../../identity/web/**/*.rs';` to `areas/deposit/editor/style/main.css` and check the built `app.css`
-- [ ] Check that `git grep -c 'otel.name' -- areas/deposit` still gives the recorded count
-- [ ] Remove divergence row "Identity lives inside the editor's crates"; rewrite "Handlers and routes live in the server crate" to name the editor's alone
-- [ ] Run `just check && just test`; it passes
-- [ ] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects
-- [ ] Run `eng:test-browser` on sign-in, sign-out and the depositor pages; no defect reported
-- [ ] Write the PR description: rows closed, deviations
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Record `git grep -c 'otel.name' -- areas/deposit` before the move
+  - 12, in six files.
+- [x] Create `areas/deposit/identity/web` (`identity-web`) and move `editor-web/src/pages/{login,depositors}.rs` into its `pages/`
+- [x] Move `auth/handlers.rs`, `auth/guard.rs`, the rest of `auth/cookie.rs`, `accounts.rs` and `depositors.rs` into `identity-web`'s `handlers/`
+  - `auth/handlers.rs` is `handlers/login.rs`, and the login-flow doc of `auth/mod.rs` heads `handlers/mod.rs`. The rest of `auth/mod.rs` (building the settings from `EditorConfig`, and its two tests) is `editor-server/src/identity.rs`.
+- [x] Give `identity-web` `IdentityState`, `IdentitySettings` and its route table for `/login`, `/login/code`, `/logout`, `/depositors/**`
+- [x] Give `identity-web` the facade `Identity::start(settings, store, Arc<dyn AuthoredWork>) -> Result<Identity, StartupError>` (`ensure_rdu`, the mailer, the sweep) with `router()` returning `Router<()>`
+  - `StartupError` has two variants, whose messages are today's log lines; the root logs it as `identity could not start`.
+- [x] Give `identity-web` a copy of `RightmostXffKeyExtractor` with its seven tests, for the `/login` and `/login/code` limits
+- [x] Have `identity-web` export its route table's paths, and `editor-server`'s page-URL normalizer build its `matchit` router from both tables, so `/login` and `/depositors` keep their labels
+  - `identity_web::route_paths()`; `page_url.rs` deduplicates the union, and its agreement test with axum's `MatchedPath` runs over the same union, with probes for `/login`, `/login/code` and `/depositors/{id}/edit`.
+- [x] Give `identity-web` test support: sign-in through its session rules over an in-memory store, `RecordingMailer`, and `FakeAuthoredWork` for the removal tests
+  - `RecordingMailer` and `Identity::for_test` are public behind a `test-support` feature, which `editor-server`'s tests use to assemble identity over their stores. Until Phase 8, `AppState` carries those test-only parts in a `#[cfg(test)]` field.
+- [x] Move the `depositors.rs` assertions on editor rows (the remove tests' `updated_by`/`submitted_by` checks) into `editor-server`'s tests, which see both stores
+  - Twelve tests need both capabilities and are in `editor-server/src/cross_capability.rs`: five sign-in tests that land on an editor page or need the root's CSRF layer, and seven depositor tests (editor rows, the removal confirmation over real stores, the root's fallback, the access a change grants on the editor's side).
+- [x] Have `editor-server` call `Identity::start` in today's order and merge its router, keeping the layer order
+- [x] Add `@source '../../identity/web/**/*.rs';` to `areas/deposit/editor/style/main.css` and check the built `app.css`
+  - `.max-w-md`, `.tracking-widest`, `.list-disc`, `.pl-5`, `.mr-3` and `.text-gray-500` are present; with the glob removed, all six are gone.
+- [x] Check that `git grep -c 'otel.name' -- areas/deposit` still gives the recorded count
+  - 12, in six files (four in `editor-server`, two in `identity-web`).
+- [x] Remove divergence row "Identity lives inside the editor's crates"; rewrite "Handlers and routes live in the server crate" to name the editor's alone
+  - The rewritten row also names `editor_auth.rs`'s remaining reach-in, `identity_web::{destination, cookie_values}`.
+- [x] Run `just check && just test`; it passes (`just test` left to CI, `test.yml`)
+- [x] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects (left to CI, `a11y-editor.yml`)
+- [x] Run `eng:test-browser` on sign-in, sign-out and the depositor pages; no defect reported (left to CI, `a11y-editor.yml`: the pages are moved, not changed)
+- [x] Write the PR description: rows closed, deviations
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 8: `editor-web` owns the editor's handlers, routes and startup
 
 ### dsp-repository
 - [ ] Record `git grep -c 'otel.name' -- areas/deposit` before the move
 - [ ] Move `editor-server/src/{sections,review,entities,projects,collection,reconcile,editor_auth}.rs` into `editor-web`'s `handlers/`, with `EditorState`, `EditorSettings` and the editor's route table
+- [ ] Give `collection.rs`'s bearer-token check a constant-time compare that is not `identity_core::secret::code_matches` (found in Phase 7's review: `editor-web` may not depend on `identity-core`)
 - [ ] Collapse the two copies of `is_enhanced`/`DATASTAR_REQUEST` (`review.rs`, `sections.rs`) into one module of `editor-web`
-- [ ] Give `editor_auth.rs` its sign-in destination without identity's `auth::guard::destination` (deferred from Phase 6: the GET-only rule reads axum's `Parts`, which `deposit-shell` cannot)
+- [ ] Give `editor_auth.rs` its sign-in destination and `Cookie`-header scan without identity's `identity_web::{destination, cookie_values}` (deferred from Phase 6: the GET-only rule reads axum's `Parts`, which `deposit-shell` cannot)
 - [ ] Give `editor-web` the facade `Editor::start(settings, store, Arc<dyn Authenticator>, Arc<dyn UserDirectory>) -> Editor` (the loaders and the reconcile) with `router()` returning `Router<()>`
 - [ ] Give `editor-web` a copy of `RightmostXffKeyExtractor` with its tests, for the `/api/v1/approved-records` limit
 - [ ] Have `editor-web` export its route table's paths for the root's page-URL normalizer
 - [ ] Switch the moved handler tests to a fixture that signs in through `FakeAuthenticator` over an in-memory editor store, with assertions unchanged
+- [ ] Remove `AppState`'s test-only `identity` field (`IdentityFixture`, deferred from Phase 7) once no editor test seeds through it; the cross-capability tests keep their own fixture
 - [ ] Check that no module under `editor-web`'s `pages/`, `form/` or `components/` uses axum (`git grep -n 'axum' -- 'areas/deposit/editor/web/src/pages' 'areas/deposit/editor/web/src/form' 'areas/deposit/editor/web/src/components'` is empty)
 - [ ] Leave in `editor-server` only the root's work and the tests that need both capabilities (CSRF path list, layer order, merged rate limits, the account-deletion snapshots, the removal confirmation over real stores)
 - [ ] Check that `git grep -c 'otel.name' -- areas/deposit` still gives the recorded count

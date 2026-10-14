@@ -34,7 +34,7 @@ pub struct UnknownVariant {
 /// admits only ASCII.
 ///
 /// `the_assignment_comparison_agrees_with_the_storage_key`, in `editor-server`'s
-/// `auth` tests, pins `Principal::may_reach`'s comparison against this key.
+/// `identity` tests, pins `Principal::may_reach`'s comparison against this key.
 #[must_use]
 pub fn normalize_shortcode(shortcode: &str) -> String {
     shortcode.trim().to_ascii_lowercase()

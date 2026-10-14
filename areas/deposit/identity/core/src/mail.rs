@@ -8,7 +8,7 @@
 //! and never the reply text.
 //!
 //! The configured sender is a different matter and is logged on purpose: see
-//! `SmtpMailer::describe` in `editor-server`. The argument is in
+//! `SmtpMailer::describe` in `identity-store`. The argument is in
 //! `docs/src/editor/authentication.md`.
 
 use async_trait::async_trait;

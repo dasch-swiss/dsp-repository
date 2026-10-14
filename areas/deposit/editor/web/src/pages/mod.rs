@@ -2,8 +2,6 @@
 //! `deposit_shell::view::page`.
 
 pub mod collection;
-pub mod depositors;
-pub mod login;
 pub mod projects;
 pub mod review;
 pub mod section;

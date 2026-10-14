@@ -1,39 +1,31 @@
-//! Email one-time-code login: issuing a code, verifying it, and the
-//! session it produces.
-//!
-//! **A documented deviation, not a compliant design.** NIST SP 800-63B-4
-//! §3.1.3.1 and OWASP ASVS 5.0 V6.6 both prohibit email as an authentication
-//! mechanism outright, and their carve-out for address verification and recovery
-//! codes does not cover using one as the login. ASVS 6.1.1 and 6.3.3 require the
-//! deviation and its rationale to be written down: they are in
-//! `docs/src/editor/authentication.md`.
-//!
-//! The flow defends enumeration, interception, guessing, replay, quota
-//! exhaustion and fixation. Which control answers which, and the numbers behind
-//! the caps and the throttle, are in the same page.
-
-pub(crate) mod cookie;
-pub(crate) mod guard;
-mod handlers;
+//! Identity's settings from [`EditorConfig`].
 
 use std::time::Duration;
 
-pub(crate) use handlers::{code_form, code_submit, login_form, login_submit, logout};
-use identity_core::login::AuthConfig;
+use identity_web::{IdentitySettings, SmtpPassword};
 
 use crate::config::EditorConfig;
 
 impl EditorConfig {
-    pub(crate) fn auth_config(&self) -> AuthConfig {
-        AuthConfig {
-            cooldown: Duration::from_secs(self.login_cooldown_secs),
-            max_failed: self.login_max_failed,
-            lockout: Duration::from_secs(self.login_lockout_secs),
-            daily_cap: self.mail_daily_cap,
-            account_daily_cap: self.mail_account_daily_cap,
+    pub(crate) fn identity_settings(&self, css_href: String) -> IdentitySettings {
+        IdentitySettings {
+            css_href,
+            login_cooldown: Duration::from_secs(self.login_cooldown_secs),
+            login_max_failed: self.login_max_failed,
+            login_lockout: Duration::from_secs(self.login_lockout_secs),
+            mail_daily_cap: self.mail_daily_cap,
+            mail_account_daily_cap: self.mail_account_daily_cap,
             session_absolute: Duration::from_secs(self.session_absolute_secs),
             session_idle: Duration::from_secs(self.session_idle_secs),
-            break_glass: self.smtp_break_glass,
+            smtp_break_glass: self.smtp_break_glass,
+            smtp_host: self.smtp_host.clone(),
+            smtp_port: self.smtp_port,
+            smtp_credentials: self
+                .smtp_credentials()
+                .map(|(username, password)| (username.to_string(), SmtpPassword::new(password.to_string()))),
+            smtp_from: self.smtp_from.clone(),
+            rdu_addresses: self.rdu_addresses(),
+            reveal_login_code: self.reveals_login_code(),
         }
     }
 }
@@ -48,7 +40,7 @@ mod tests {
     #[test]
     fn test_auth_config_reads_every_knob_from_the_editor_config() {
         let config = EditorConfig::default();
-        let auth = config.auth_config();
+        let auth = config.identity_settings(String::new()).auth();
         assert_eq!(auth.cooldown, Duration::from_secs(config.login_cooldown_secs));
         assert_eq!(auth.max_failed, config.login_max_failed);
         assert_eq!(auth.lockout, Duration::from_secs(config.login_lockout_secs));

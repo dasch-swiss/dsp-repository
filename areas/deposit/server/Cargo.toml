@@ -1,5 +1,5 @@
 [package]
-name = "editor-server"
+name = "deposit-server"
 version.workspace = true
 edition = "2021"
 publish = false
@@ -7,16 +7,15 @@ publish = false
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
-identity-core = { path = "../../identity/core" }
-identity-store = { path = "../../identity/store" }
-identity-web = { path = "../../identity/web" }
-editor-store = { path = "../store" }
-editor-web = { path = "../web" }
-deposit-shell = { path = "../../shell" }
+identity-store = { path = "../identity/store" }
+identity-web = { path = "../identity/web" }
+editor-store = { path = "../editor/store" }
+editor-web = { path = "../editor/web" }
+deposit-shell = { path = "../shell" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
 # contract modules are serde-only; `collector` adds axum/opentelemetry/url.
-shared-telemetry = { path = "../../../../shared/telemetry" }
+shared-telemetry = { path = "../../../shared/telemetry" }
 
 axum.workspace = true
 matchit.workspace = true
@@ -43,11 +42,9 @@ figment = { version = "0.10", features = ["env", "toml", "test"] }
 tower = { workspace = true, features = ["util"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 # The stores' seed helpers, row readers and fault-injecting fakes.
-identity-store = { path = "../../identity/store", features = ["test-support"] }
-identity-web = { path = "../../identity/web", features = ["test-support"] }
-editor-ports = { path = "../ports", features = ["test-support"] }
-editor-store = { path = "../store", features = ["test-support"] }
-editor-web = { path = "../web", features = ["test-support"] }
-editor-core = { path = "../core" }
+identity-store = { path = "../identity/store", features = ["test-support"] }
+identity-web = { path = "../identity/web", features = ["test-support"] }
+editor-ports = { path = "../editor/ports", features = ["test-support"] }
+editor-store = { path = "../editor/store", features = ["test-support"] }
+editor-web = { path = "../editor/web", features = ["test-support"] }
 chrono.workspace = true
-uuid.workspace = true

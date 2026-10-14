@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 const workspaceRoot = path.resolve(__dirname, "../../../..");
 const serverBinary = path.resolve(
   workspaceRoot,
-  "target/release/editor-server",
+  "target/release/deposit-server",
 );
 
 /** DPE's published data set, relative to `workspaceRoot`. */
@@ -14,7 +14,7 @@ const DPE_DATA_DIR = "areas/access/dpe/server/data";
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
     `Server binary not found at ${serverBinary}\n` +
-      `Run 'cargo build -p editor-server --release' (and 'just css-editor-release') before running E2E tests.`,
+      `Run 'cargo build -p deposit-server --release' (and 'just css-editor-release') before running E2E tests.`,
   );
 }
 

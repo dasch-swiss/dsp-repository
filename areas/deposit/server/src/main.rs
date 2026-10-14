@@ -1,4 +1,4 @@
-//! `editor-server`, the metadata editor's composition root.
+//! `deposit-server`, the metadata editor's composition root.
 //!
 //! A separate service from `dpe-server` on purpose: authenticated and writing, where DPE is
 //! public and read-only. They share crates, never a process, an image or an origin.

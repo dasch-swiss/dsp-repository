@@ -77,7 +77,7 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 | Action | Purpose |
 |--------|---------|
 | `build-dpe` | Compile the Access Area's binary (static musl `access-server` + content-hashed Tailwind `app.css` via `just css-release`) and stage it with DPE's public files and data, `sync`'s data and CPE's project folders |
-| `build-editor` | Compile the metadata editor (static musl `editor-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
+| `build-editor` | Compile the metadata editor (static musl `deposit-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
 | `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
 | `commit-lint` | Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap |
@@ -137,7 +137,7 @@ When a GitHub Release is published (tag starting with `v`), builds and pushes a 
 
 Defined in `cloud-run-editor-pull-request.yml`.
 
-When a pull request modifies files under `areas/deposit/editor/` or `shared/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `areas/deposit/` or `shared/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 
@@ -145,7 +145,7 @@ Defined in `editor-docker-publish.yml`.
 
 On every push to `main`:
 1. Builds the content-hashed Tailwind stylesheet (`just css-editor-release`)
-2. Builds a static musl-linked `editor-server` binary
+2. Builds a static musl-linked `deposit-server` binary
 3. Pushes the Docker image to Docker Hub (`daschswiss/metadata-editor:{tag}`)
 4. Attempts a Jenkins webhook for DEV deployment
 

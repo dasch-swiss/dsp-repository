@@ -25,6 +25,8 @@ The area's composition root (ADR-0003) is `areas/<area>/server`. While an area h
 
 **Amended 2026-09-28.** The Access Area's composition root has moved up to `areas/access/server` ahead of the second capability, for the reasons ADR-0007 records in its own dated amendment.
 
+**Amended 2026-10-14.** The Deposit Area's composition root has moved to `areas/deposit/server`, crate and binary `deposit-server`; `editor-server` and `areas/deposit/editor/server`, which the example above names, no longer exist (`areas/deposit/ADR-0004`).
+
 Between areas, the rules are:
 
 - **No crate under one area depends on a crate under another area.** Areas integrate over the wire, never by Rust import — today the editor reads DPE's published project files from a directory handed to it as `EDITOR_DATA_DIR`, and approved records are meant to return as a pull request against this repository (documented in `docs/src/editor/architecture.md`; the collection step is not built yet, records wait in `approved_records`); in the target design, the Deposit Area submits packages to Spycherli over an intent protocol (register an intent with a declared manifest, upload to a quarantine bucket, complete, validate), and Spycherli feeds every Access-Area service with pointer messages on a message bus plus immutable objects in object storage.

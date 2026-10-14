@@ -98,7 +98,7 @@ async fn deleting_an_account_leaves_its_id_on_the_editor_rows() {
 
 async fn page(fixture: &Fixture, uri: &str, session: &str) -> String {
     let response = test_app(&fixture.state)
-        .oneshot(with_cookie(get(uri), identity_core::cookie::SESSION, session))
+        .oneshot(with_cookie(get(uri), identity_web::test_support::SESSION, session))
         .await
         .expect("the app should answer");
     assert_eq!(response.status(), StatusCode::OK);

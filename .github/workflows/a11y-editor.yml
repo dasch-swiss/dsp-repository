@@ -51,14 +51,14 @@ jobs:
       - name: Install Playwright browsers
         run: cd areas/deposit/editor/web-e2e-tests && npx playwright install chromium --with-deps
 
-      - name: Build editor-server and stylesheet
-        # `cargo build -p editor-server --release` yields target/release/editor-server
+      - name: Build deposit-server and stylesheet
+        # `cargo build -p deposit-server --release` yields target/release/deposit-server
         # directly (the [[bin]] name), which the Playwright webServer launches.
         # `just css-editor-release` builds the content-hashed app.css the release
         # server discovers from areas/deposit/editor/public/assets at startup — without
         # it every Tailwind-dependent assertion fails for an unrelated reason.
         run: |
-          cargo build -p editor-server --release
+          cargo build -p deposit-server --release
           just css-editor-release
 
       - name: Run E2E, accessibility and no-JavaScript tests

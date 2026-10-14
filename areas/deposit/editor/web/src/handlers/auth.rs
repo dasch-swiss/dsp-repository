@@ -106,6 +106,7 @@ mod tests {
     use std::sync::Arc;
 
     use axum::http::{Request, StatusCode};
+    use editor_core::records::normalize_shortcode;
     use editor_ports::{FakeAuthenticator, Role};
 
     use super::*;
@@ -216,5 +217,44 @@ mod tests {
         assert!(Rdu::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
             .is_ok());
+    }
+
+    fn depositor(shortcodes: &[&str]) -> Principal {
+        Principal {
+            account_id: uuid::Uuid::nil().to_string(),
+            display_name: "A".to_string(),
+            role: Role::Depositor,
+            shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
+            signed_out_at: std::time::SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    #[test]
+    fn the_assignment_comparison_agrees_with_the_storage_key() {
+        // Two expressions of one rule: `may_reach` compares, `normalize_shortcode`
+        // keys. If they ever disagreed, a depositor could reach a project whose
+        // draft they cannot load — or load someone else's. Checked over the
+        // shapes the published set actually contains, mixed case included.
+        for (assigned, requested) in [
+            ("0801", "0801"),
+            ("080C", "080c"),
+            ("080c", "080C"),
+            ("0801a", "0801A"),
+            ("085F", "085f"),
+        ] {
+            assert!(
+                depositor(&[assigned]).may_reach(requested),
+                "{assigned} should reach {requested}"
+            );
+            assert_eq!(
+                normalize_shortcode(assigned),
+                normalize_shortcode(requested),
+                "{assigned} and {requested} must key the same"
+            );
+        }
+        for (assigned, requested) in [("0801", "0803"), ("080C", "080E")] {
+            assert!(!depositor(&[assigned]).may_reach(requested));
+            assert_ne!(normalize_shortcode(assigned), normalize_shortcode(requested));
+        }
     }
 }

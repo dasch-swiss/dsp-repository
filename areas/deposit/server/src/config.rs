@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 use figment::providers::{Env, Format, Serialized, Toml};
 use figment::Figment;
-use identity_core::login::CODE_TTL;
+use identity_web::CODE_TTL;
 use serde::{Deserialize, Serialize};
 
 /// A configured value that must never reach a log.
@@ -495,7 +495,7 @@ impl EditorConfig {
         // the log pipeline — and an address in a log is exactly what must not happen. The operator
         // holds the configuration, so an index is just as actionable.
         for (index, address) in self.rdu_addresses().iter().enumerate() {
-            if !identity_core::login::is_plausible_address(address) {
+            if !identity_web::is_plausible_address(address) {
                 return invalid(format!(
                     "EDITOR_RDU_EMAILS entry {} cannot be an email address. Every entry becomes an account that \
                      administers the service, so a typo here is an administrator who can never sign in (the value is \

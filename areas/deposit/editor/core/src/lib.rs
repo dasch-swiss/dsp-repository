@@ -1,6 +1,6 @@
 //! `editor-core`: pure domain types for the metadata editor.
 //!
-//! Framework-free types shared by `editor-web` and `editor-server`, with no
+//! Framework-free types shared by `editor-web` and `deposit-server`, with no
 //! Axum, Maud or database dependency. The SQLite implementations of the
 //! [`repository`] ports live in `editor-store`, which keeps the driver out of
 //! the domain.

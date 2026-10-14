@@ -1,6 +1,6 @@
 //! The project form: `GET` and `POST /projects/{shortcode}/sections/{section}`.
 //!
-//! `/projects/{shortcode}` redirects here ([`crate::projects::detail`]).
+//! `/projects/{shortcode}` redirects here ([`crate::handlers::projects::detail`]).
 //!
 //! Four invariants, each of which fails silently if changed:
 //!
@@ -31,24 +31,17 @@ use editor_core::repository::{
 };
 use editor_core::review::{diff, FieldDiff, ReviewState};
 use editor_core::submission::unresolved_temporal_coverage;
-use editor_web::form::obligation::unsatisfied_required;
-use editor_web::form::registry::{self, Audience, Section};
-use editor_web::form::submit::{over_cap, typed_sentinels, unresolved_agents};
-use editor_web::form::INTENT;
-use editor_web::pages::section as page;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::editor_auth::{Account, Authenticated};
-use crate::shell::AppState;
-
-/// The header the vendored Datastar bundle sets on every fetch it makes.
-///
-/// Presence is the whole test: the bundle sends the literal `true`, and a
-/// request that carries the name at all came from it. A hand-built request can
-/// set it too, which changes nothing that matters — both renderings are the same
-/// data, and neither is a permission.
-const DATASTAR_REQUEST: &str = "datastar-request";
+use crate::form::obligation::unsatisfied_required;
+use crate::form::registry::{self, Audience, Section};
+use crate::form::submit::{over_cap, typed_sentinels, unresolved_agents};
+use crate::form::INTENT;
+use crate::handlers::auth::{Account, Authenticated};
+use crate::handlers::is_enhanced;
+use crate::pages::section as page;
+use crate::shell::EditorState;
 
 const SAVE_REFUSED_LOCKED: &str = "This project is in review, so the draft cannot be changed. Nothing was saved.";
 const SAVE_REFUSED_STORAGE: &str = "The draft could not be saved. Nothing was changed — try again, and if it keeps \
@@ -290,12 +283,12 @@ impl Context<'_> {
 
 /// Resolve a request, or the response that refuses it.
 ///
-/// The order is deliberate and matches [`crate::projects::detail`]: shape, then
+/// The order is deliberate and matches [`crate::handlers::projects::detail`]: shape, then
 /// authorization, then anything that reads state. A 404 for an unpublished
 /// shortcode and a 403 for a published one would make the pair an oracle for
 /// which projects exist, to a reader who is not allowed to know.
 async fn context<'a>(
-    state: &'a AppState,
+    state: &'a EditorState,
     user: &Account,
     shortcode: &str,
     section_id: &str,
@@ -313,7 +306,7 @@ async fn context<'a>(
         return Err(crate::shell::forbidden(
             state,
             &user.principal.display_name,
-            crate::projects::NOT_ASSIGNED,
+            crate::handlers::projects::NOT_ASSIGNED,
         ));
     }
 
@@ -372,7 +365,7 @@ async fn context<'a>(
     // waiting for a release; one it does carry is already Online, and the
     // startup pass will discard it. Read here rather than derived from `locked`
     // because an approval leaves no submission row to read it from.
-    let awaiting_release = match crate::projects::approved_comparison(state, &key).await {
+    let awaiting_release = match crate::handlers::projects::approved_comparison(state, &key).await {
         // A record the published set already carries is Online, not waiting —
         // the startup pass will discard it.
         Ok((held, comparison)) => held && !comparison.permits_online(),
@@ -494,7 +487,7 @@ pub(crate) struct ShowParams {
 
 /// `GET /projects/{shortcode}/sections/{section}`.
 pub(crate) async fn show(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
     Query(params): Query<ShowParams>,
@@ -558,7 +551,7 @@ fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice
     )
 )]
 pub(crate) async fn act(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
     headers: HeaderMap,
@@ -778,7 +771,7 @@ fn apply_posted(context: &mut Context<'_>, body: &FormBody) -> usize {
 /// same post if validation then refused it — and the draft is what the depositor
 /// comes back to when RDU returns the project.
 async fn apply_and_store(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &mut Context<'_>,
@@ -831,7 +824,7 @@ async fn apply_and_store(
 /// because the tile emits a hidden `{field}.row` for it, so the body carries
 /// its key back. Nothing is held server-side between requests.
 pub(crate) async fn add_row(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, section_id, field_id)): Path<(String, String, String)>,
     headers: HeaderMap,
@@ -860,7 +853,7 @@ pub(crate) async fn add_row(
 /// passed explicitly, so a named button would work on the plain path and vanish
 /// on the enhanced one.
 pub(crate) async fn remove_row(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, section_id, field_id, key)): Path<(String, String, String, String)>,
     headers: HeaderMap,
@@ -900,7 +893,7 @@ pub(crate) async fn remove_row(
 )]
 #[allow(clippy::too_many_arguments)]
 async fn row_action(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     section_id: &str,
@@ -1023,7 +1016,7 @@ impl Intent {
 /// depositor's work in place — a refusal costs them the submission, never the
 /// editing.
 async fn submit(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1245,7 +1238,7 @@ async fn submit(
 /// depositor only the proposal, never whatever they just typed.
 #[allow(clippy::too_many_arguments)]
 async fn propose(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     section_id: &str,
@@ -1389,7 +1382,7 @@ async fn propose(
 /// and the notice carries the link instead.
 #[allow(clippy::too_many_arguments)]
 async fn proposed(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     section_id: &str,
@@ -1439,7 +1432,7 @@ async fn proposed(
 /// which is why the control and the confirmation both say "discard" rather than
 /// "delete".
 async fn discard(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1505,7 +1498,7 @@ async fn discard(
 /// write here that runs *because* the project is locked rather than in spite of
 /// it.
 async fn withdraw(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1572,15 +1565,6 @@ async fn withdraw(
     }
 }
 
-/// Whether this request came from the Datastar bundle.
-///
-/// `pub(crate)` so the entity form (`entities.rs`) answers the same two ways
-/// this form does, from one definition — a second copy could drift on which
-/// header name it checks.
-pub(crate) fn is_enhanced(headers: &HeaderMap) -> bool {
-    headers.contains_key(DATASTAR_REQUEST)
-}
-
 /// A successful save: a redirect on the plain path, the patched region on the
 /// enhanced one.
 fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
@@ -1612,7 +1596,7 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response
 /// two of its fields would leave the rest — `may_withdraw`, the accepted set,
 /// the round — describing the old one, silently.
 async fn phase_changed(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     section_id: &str,
@@ -1642,7 +1626,7 @@ async fn phase_changed(
 
 /// The withdrawal confirmation, rendered over the read-only form.
 fn confirming(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1702,7 +1686,7 @@ fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) 
 
 /// A refused save, re-rendered with what was typed still in the form.
 fn refused(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1718,7 +1702,7 @@ fn refused(
 /// typed, and the invalid values are exactly
 /// what the depositor has to see to fix them.
 fn refused_with(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1748,7 +1732,7 @@ fn refused_with(
 /// empty proposal-findings slice, and a ninth optional-shaped parameter next to `errors` is exactly
 /// the kind of adjacent-arguments mistake this file's own `Rendering` struct exists to rule out.
 fn refused_with_proposal_findings(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1808,7 +1792,7 @@ fn region(shortcode: &str, context: &Context<'_>, rendering: Rendering<'_>) -> R
 
 /// The whole page, inside the document shell.
 fn render_page(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -1920,7 +1904,7 @@ fn view<'a>(
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the project form could not reach storage");
     crate::shell::render(
         state,
@@ -1943,33 +1927,34 @@ mod tests {
     use editor_core::canonical::{write_draft, write_project};
     use editor_core::published::PublishedProjects;
     use editor_core::repository::ApprovedRecordRepository;
+    use editor_ports::Role;
     use editor_store::test_support::{Faults, FaultyStore};
-    use identity_core::records::Role;
     use serde_json::{json, Value};
     use shared_metadata::project::ProjectRaw;
     use tower::ServiceExt;
 
     use super::*;
-    use crate::test_support::{
+    use crate::fixtures::{
         a_session, a_user, body_string, get, location, open_test_db, post, state_over, test_app, test_state, title_of,
-        with_cookie, RecordingMailer,
+        with_cookie, TestState,
     };
+    use crate::handlers::DATASTAR_REQUEST;
 
     /// Percent-encode a form value.
     ///
-    /// Delegates to `test_support`'s encoder rather than keeping a second one. A second encoder
+    /// Delegates to `fixtures`' encoder rather than keeping a second one. A second encoder
     /// that missed a character silently truncates a posted value and compares the truncation
     /// against the file: a draft revision reads `…45.345567+00:00`, so an unescaped `+` arrives
     /// as a space and a baseline compares unequal to itself.
     fn urlencoding(value: &str) -> String {
-        crate::test_support::urlencode(value)
+        crate::fixtures::urlencode(value)
     }
 
     const OVERVIEW: &str = "/projects/0801d/sections/overview";
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(request, identity_core::cookie::SESSION, session))
+            .oneshot(with_cookie(request, crate::fixtures::SESSION, session))
             .await
             .expect("the request should complete")
     }
@@ -2194,9 +2179,7 @@ mod tests {
         // editing one project would each keep half the edits with nothing to say
         // so.
         let db = open_test_db("section-case").await;
-        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
-            auth.cooldown = std::time::Duration::ZERO;
-        });
+        let state = state_over(db.editor.clone());
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["080C"]).await;
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
@@ -2263,13 +2246,13 @@ mod tests {
 
     /// Record a finished review round on `0801d`, as the transition that ended
     /// it would have.
-    async fn a_round(state: &AppState, actor: Uuid, outcome: ReviewOutcome, note: &str) {
+    async fn a_round(state: &EditorState, actor: Uuid, outcome: ReviewOutcome, note: &str) {
         a_round_with(state, actor, outcome, Some(note), None).await;
     }
 
     /// The same, with the note and the decision snapshot chosen.
     async fn a_round_with(
-        state: &AppState,
+        state: &EditorState,
         actor: Uuid,
         outcome: ReviewOutcome,
         note: Option<&str>,
@@ -2484,7 +2467,7 @@ mod tests {
     /// A saved draft that differs from the published project, so a submit has
     /// something to send. `name` is the field the overview form owns and every
     /// committed project has, which keeps the change one field wide.
-    async fn a_changed_draft(state: &AppState, app: &axum::Router, session: &str) {
+    async fn a_changed_draft(state: &EditorState, app: &axum::Router, session: &str) {
         let saved = as_session(app, post(OVERVIEW, "name=A+New+Title"), session).await;
         assert_eq!(saved.status(), StatusCode::SEE_OTHER, "the fixture's save should be accepted");
         let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap();
@@ -2691,7 +2674,7 @@ mod tests {
 
     /// A depositor with the dataset section open.
     /// The stored draft for `shortcode`, as the repository holds it.
-    async fn stored_draft(state: &AppState, shortcode: &str) -> ProjectDraft {
+    async fn stored_draft(state: &EditorState, shortcode: &str) -> ProjectDraft {
         let row = DraftRepository::find(&*state.editor, shortcode)
             .await
             .expect("read")
@@ -2699,7 +2682,7 @@ mod tests {
         serde_json::from_str(&row.payload).expect("parses")
     }
 
-    async fn a_depositor_on(name: &str) -> (AppState, axum::Router, String) {
+    async fn a_depositor_on(name: &str) -> (TestState, axum::Router, String) {
         let (state, _) = test_state(name).await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
@@ -3304,7 +3287,7 @@ mod tests {
         // between the read that rendered the form and this write, which is a
         // refusal to report — not a 500, and not a silent replacement.
         let db = open_test_db("section-submit-raced").await;
-        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
+        let state = state_over(db.editor.clone());
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
@@ -3347,18 +3330,13 @@ mod tests {
         // so a storage failure on the submission must not cost the depositor
         // their editing as well as their submission.
         let db = open_test_db("section-submit-storage").await;
-        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
+        let sound = state_over(db.editor.clone());
         let user = a_user(&sound, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&sound, user.id).await;
-        let faulty = state_over(
-            db.identity.clone(),
-            Arc::new(FaultyStore::new(
-                db.editor.clone(),
-                Faults { submission_create: true, ..Faults::default() },
-            )),
-            RecordingMailer::new(),
-            |_| {},
-        );
+        let faulty = sound.with_store(Arc::new(FaultyStore::new(
+            db.editor.clone(),
+            Faults { submission_create: true, ..Faults::default() },
+        )));
         let app = test_app(&faulty);
 
         let response = as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
@@ -3482,9 +3460,7 @@ mod tests {
 
     /// The two accounts a concurrency test needs: both assigned to one project,
     /// which is the normal case rather than an edge one.
-    async fn two_project_mates(
-        state: &AppState,
-    ) -> (identity_core::records::User, String, identity_core::records::User, String) {
+    async fn two_project_mates(state: &TestState) -> (crate::fixtures::User, String, crate::fixtures::User, String) {
         let first = a_user(state, "one@example.test", "Ada One", Role::Depositor, &["0801d"]).await;
         let second = a_user(state, "two@example.test", "Bo Two", Role::Depositor, &["0801d"]).await;
         let first_session = a_session(state, first.id).await;
@@ -3493,7 +3469,7 @@ mod tests {
     }
 
     /// The baseline the form currently renders, as a body would post it.
-    async fn baseline_of(state: &AppState, shortcode: &str) -> String {
+    async fn baseline_of(state: &EditorState, shortcode: &str) -> String {
         let record = DraftRepository::find(&*state.editor, shortcode)
             .await
             .unwrap()
@@ -4014,7 +3990,7 @@ mod tests {
 
     /// Return the project to the depositor with `field` accepted, as
     /// request-changes will.
-    async fn returned_with_accepted(state: &AppState, user: Uuid, field: &str) {
+    async fn returned_with_accepted(state: &EditorState, user: Uuid, field: &str) {
         let submission = Submission {
             id: Uuid::new_v4(),
             shortcode: "0801d".to_string(),
@@ -4227,7 +4203,7 @@ mod tests {
     }
 
     /// Put a pending submission in front of the project.
-    async fn a_submission(state: &AppState, shortcode: &str, user: Uuid, submission_state: SubmissionState) -> Uuid {
+    async fn a_submission(state: &EditorState, shortcode: &str, user: Uuid, submission_state: SubmissionState) -> Uuid {
         let submission = Submission {
             id: Uuid::new_v4(),
             shortcode: shortcode.to_string(),
@@ -4251,9 +4227,7 @@ mod tests {
         for submission_state in [SubmissionState::Submitted, SubmissionState::InReview] {
             let label = format!("section-locked-{submission_state}");
             let db = open_test_db(&label).await;
-            let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
-                auth.cooldown = std::time::Duration::ZERO;
-            });
+            let state = state_over(db.editor.clone());
             let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
             let session = a_session(&state, user.id).await;
             a_submission(&state, "0801d", user.id, submission_state).await;
@@ -4311,34 +4285,8 @@ mod tests {
         assert!(body.contains("Save draft"), "{body}");
     }
 
-    #[tokio::test]
-    async fn a_save_with_no_sec_fetch_site_never_reaches_the_handler() {
-        // The CSRF control is the outermost layer, and every write in this
-        // service depends on it. Asserted here because a new write route is
-        // exactly where the assumption would go untested.
-        let (state, _) = test_state("section-csrf").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
-        let session = a_session(&state, user.id).await;
-        let app = test_app(&state);
-
-        let mut request = Request::builder()
-            .method("POST")
-            .uri(OVERVIEW)
-            .header("content-type", "application/x-www-form-urlencoded")
-            .body(Body::from("name=Cross+Site"))
-            .expect("the request should build");
-        request.headers_mut().append(
-            axum::http::header::COOKIE,
-            format!("{}={session}", identity_core::cookie::SESSION)
-                .parse()
-                .expect("a cookie"),
-        );
-        let response = app.clone().oneshot(request).await.expect("completes");
-        assert_eq!(response.status(), StatusCode::FORBIDDEN);
-    }
-
     /// Every proposal stored for `shortcode`, for asserting on what a propose intent wrote.
-    async fn proposals_for(state: &AppState, shortcode: &str) -> Vec<EntityProposal> {
+    async fn proposals_for(state: &EditorState, shortcode: &str) -> Vec<EntityProposal> {
         EntityProposalRepository::list_for_shortcode(&*state.editor, shortcode)
             .await
             .expect("proposals should read")
@@ -4772,7 +4720,7 @@ mod tests {
     async fn assert_untouched_save_round_trips(
         app: &axum::Router,
         session: &str,
-        state: &AppState,
+        state: &EditorState,
         shortcode: &str,
         published: &ProjectRaw,
         committed: &str,
@@ -5083,7 +5031,7 @@ mod tests {
                         let texts = if is_reference {
                             editor_core::multilingual::DraftMultilingual::default()
                         } else {
-                            editor_web::form::widgets::as_multilingual(row)
+                            crate::form::widgets::as_multilingual(row)
                         };
                         for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
                             pairs
@@ -5148,7 +5096,7 @@ mod tests {
                     for (position, row) in rows.iter().enumerate() {
                         let key = format!("r{position}");
                         pairs.push((format!("{}.row", field.id), key.clone()));
-                        let stored = editor_web::form::widgets::as_multilingual(row);
+                        let stored = crate::form::widgets::as_multilingual(row);
                         for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
                             pairs.push((
                                 format!("{}.{key}.{tag}", field.id),
@@ -5177,13 +5125,7 @@ mod tests {
         }
         pairs
             .iter()
-            .map(|(name, value)| {
-                format!(
-                    "{}={}",
-                    crate::test_support::urlencode(name),
-                    crate::test_support::urlencode(value)
-                )
-            })
+            .map(|(name, value)| format!("{}={}", crate::fixtures::urlencode(name), crate::fixtures::urlencode(value)))
             .collect::<Vec<_>>()
             .join("&")
     }

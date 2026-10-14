@@ -103,8 +103,8 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveAuthoredWork` behind `identity-ports` |
-| `editor-web` | `areas/deposit/editor/web` | Editor view layer: pages and the project form |
-| `editor-server` | `areas/deposit/editor/server` | Editor binary: the editor's handlers, identity's router merged in, both stores |
+| `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: pages, the project form, handlers and routes, behind the `Editor` facade |
+| `editor-server` | `areas/deposit/editor/server` | Editor binary and composition root: both stores, identity's and the editor's routers merged |
 | `editor-collector` | `areas/deposit/editor/collector` | CI binary — collects approved records into pull requests |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |
@@ -117,7 +117,7 @@ The directory is the ownership signal, and four things read it:
 
 - **CI path filters.** The path-filtered workflows key on a module glob — `areas/access/dpe/**` and `areas/access/server/**` for DPE's preview, Scout and a11y jobs (the a11y job also `areas/access/cpe/**` and `areas/access/sync/**`), `areas/deposit/**` for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (`check`, `test` and `gate` carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)
 - **Dev-loop watch lists.** `bacon.toml`'s `serve` and `serve-editor` jobs each watch their own module directory (the editor's also watches `areas/deposit/identity` and `areas/deposit/shell`). A shared crate outside `shared/` stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.
-- **Directory-scoped agent instructions.** `areas/access/dpe/CLAUDE.md` governs everything under `areas/access/dpe/`, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — `REVIEW.md` carries two, one pointing into `dpe-server`'s `page_url.rs` and one into `editor-server`'s — and those need to name the real location.
+- **Directory-scoped agent instructions.** `areas/access/dpe/CLAUDE.md` governs everything under `areas/access/dpe/`, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — `REVIEW.md` carries two, both pointing into `areas/access/dpe` (its vendored JS and `dpe-server`'s `page_url.rs`) — and those need to name the real location.
 - **The dependency direction.** `shared-*` crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`).
 
 `mosaic-*` predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.

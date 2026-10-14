@@ -4,7 +4,7 @@ The five depositor-facing states, which of them are stored, and how Online is de
 
 A depositor sees exactly five states (REQ-2.1): Draft, Submitted, In review, Approved and Online. Only three of them are stored. `submissions.state` carries Submitted, In review and Approved; Draft is the presence of a `drafts` row; and Online is derived, because nothing in the editor learns that a change has shipped except by looking at the data the deployment carries.
 
-`editor_core::status` owns the vocabulary and the derivation, and `editor-server`'s `reconcile` module runs the comparison once at startup. Once is enough: the published set is baked into the image and cannot change while the process runs, so the moment a deployment carrying an approved change starts is the moment that change is Online.
+`editor_core::status` owns the vocabulary and the derivation, and `editor-web`'s `reconcile` module runs the comparison once at startup, inside `Editor::start`. Once is enough: the published set is baked into the image and cannot change while the process runs, so the moment a deployment carrying an approved change starts is the moment that change is Online.
 
 ## The comparison is `review::diff`
 

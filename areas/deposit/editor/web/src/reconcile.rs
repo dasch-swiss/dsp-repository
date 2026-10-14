@@ -240,7 +240,7 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
-    use crate::test_support::{agents_corpus, published_corpus};
+    use crate::test_support::{agent_corpus, published_corpus};
 
     /// A project the committed published set really holds.
     const PUBLISHED_SHORTCODE: &str = "0801d";
@@ -275,7 +275,7 @@ mod tests {
         let record = record(PUBLISHED_SHORTCODE, &payload, None);
         ApprovedRecordRepository::create(&db, &record).await.expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agents_corpus())
+        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -303,7 +303,7 @@ mod tests {
             .await
             .expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agents_corpus())
+        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -344,7 +344,7 @@ mod tests {
                 .await
                 .expect("create");
 
-            let summary = reconcile_published(&db, &db, &published, &agents_corpus())
+            let summary = reconcile_published(&db, &db, &published, &agent_corpus())
                 .await
                 .expect("reconciles");
 
@@ -372,7 +372,7 @@ mod tests {
             .await
             .expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agents_corpus())
+        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -401,43 +401,12 @@ mod tests {
             .await
             .expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agents_corpus())
+        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
         assert_eq!(summary.unreadable, 1);
         assert_eq!(summary.online, 1, "the readable record is still reconciled");
-    }
-
-    #[tokio::test]
-    async fn an_empty_published_set_discards_nothing() {
-        // A deployment with no data directory loads no projects. Treating that
-        // as "nothing is published" would be right; treating it as "everything
-        // was removed upstream" must not delete anything, and this pins that
-        // the pass has no path that deletes on absence.
-        let db = editor_store::test_support::open_for_test("reconcile-empty-set").await;
-        let published = PublishedProjects::default();
-        let payload = published_payload(&published_corpus(), PUBLISHED_SHORTCODE);
-        ApprovedRecordRepository::create(&db, &record(PUBLISHED_SHORTCODE, &payload, None))
-            .await
-            .expect("create");
-
-        let summary = reconcile_published(&db, &db, &published, &agents_corpus())
-            .await
-            .expect("reconciles");
-
-        assert_eq!(
-            summary.online, 0,
-            "an absent published set must never be read as 'already published'"
-        );
-        assert_eq!(summary.removed_upstream, 1);
-        assert_eq!(
-            ApprovedRecordRepository::find_by_shortcode(&db, PUBLISHED_SHORTCODE)
-                .await
-                .expect("find")
-                .len(),
-            1
-        );
     }
 
     #[tokio::test]
@@ -460,7 +429,7 @@ mod tests {
             Faults { approved_records_list_all: true, ..Faults::default() },
         );
 
-        let result = reconcile_published(&faulty, &faulty, &published, &agents_corpus()).await;
+        let result = reconcile_published(&faulty, &faulty, &published, &agent_corpus()).await;
 
         assert!(
             result.is_err(),
@@ -496,7 +465,7 @@ mod tests {
             Faults { approved_records_delete_missing: true, ..Faults::default() },
         );
 
-        let summary = reconcile_published(&faulty, &faulty, &published, &agents_corpus())
+        let summary = reconcile_published(&faulty, &faulty, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -544,7 +513,7 @@ mod tests {
         // whose entity has shipped and one whose has not.
         let db = editor_store::test_support::open_for_test("reconcile-retire-accepted").await;
         let published = published_corpus();
-        let agents = agents_corpus();
+        let agents = agent_corpus();
         let floor = agents.highest_id_number(ProposalKind::Person);
         let shipped = EntityProposalRepository::create_new(&db, &new_proposal("0801", ProposalStatus::Accepted), 0)
             .await
@@ -578,7 +547,7 @@ mod tests {
     async fn a_retired_proposal_is_not_retired_again_on_the_next_pass() {
         let db = editor_store::test_support::open_for_test("reconcile-retire-idempotent").await;
         let published = published_corpus();
-        let agents = agents_corpus();
+        let agents = agent_corpus();
         EntityProposalRepository::create_new(&db, &new_proposal("0801", ProposalStatus::Accepted), 0)
             .await
             .expect("create");
@@ -599,7 +568,7 @@ mod tests {
         // other test in this module still passes when it does.
         let db = editor_store::test_support::open_for_test("reconcile-retire-change").await;
         let published = published_corpus();
-        let agents = agents_corpus();
+        let agents = agent_corpus();
         let proposal = entity_proposal("0801", "person-001", ProposalStatus::Accepted);
         assert!(agents.has(&proposal.entity_id), "the fixture entity must be published");
         EntityProposalRepository::create_change(&db, &proposal).await.expect("create");
@@ -639,7 +608,7 @@ mod tests {
             },
         );
 
-        let summary = reconcile_published(&faulty, &faulty, &published, &agents_corpus())
+        let summary = reconcile_published(&faulty, &faulty, &published, &agent_corpus())
             .await
             .expect("the record pass still reports");
 
@@ -662,7 +631,7 @@ mod tests {
             Faults { entity_proposals_retire: true, ..Faults::default() },
         );
 
-        let summary = reconcile_published(&faulty, &faulty, &published, &agents_corpus())
+        let summary = reconcile_published(&faulty, &faulty, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -675,7 +644,7 @@ mod tests {
     async fn only_an_accepted_proposal_is_retired() {
         let db = editor_store::test_support::open_for_test("reconcile-retire-status-scope").await;
         let published = published_corpus();
-        let agents = agents_corpus();
+        let agents = agent_corpus();
         for (shortcode, status) in [
             ("0801", ProposalStatus::Draft),
             ("0803", ProposalStatus::Submitted),

@@ -36,13 +36,12 @@ use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, Colle
 use editor_core::records::{normalize_shortcode, ApprovedRecord};
 use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
 use editor_core::status::{classify_record, RecordClassification};
-use editor_web::pages::collection as page;
-use identity_core::secret::code_matches;
 use maud::html;
 use uuid::Uuid;
 
-use crate::editor_auth::{Account, Rdu};
-use crate::shell::AppState;
+use crate::handlers::auth::{Account, Rdu};
+use crate::pages::collection as page;
+use crate::shell::EditorState;
 
 /// Every pull request this endpoint accepts must live under this prefix, so a forged report
 /// cannot point RDU's advisory display at another site.
@@ -50,7 +49,7 @@ const PULL_REQUEST_PREFIX: &str = "https://github.com/dasch-swiss/dsp-repository
 
 /// `GET /api/v1/approved-records`.
 #[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "approved records list"))]
-pub(crate) async fn list(State(state): State<AppState>) -> Response {
+pub(crate) async fn list(State(state): State<EditorState>) -> Response {
     let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
         Err(error) => {
@@ -84,10 +83,10 @@ pub(crate) async fn list(State(state): State<AppState>) -> Response {
 /// `POST /api/v1/collection-report`.
 ///
 /// Bodies are plain text, not the HTML page shell — the caller is a CI job, matching how
-/// `crate::csrf` answers the same beacon-shaped caller.
+/// the root's `csrf.rs` answers the same beacon-shaped caller.
 #[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "collection report"))]
 pub(crate) async fn report(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     headers: HeaderMap,
     Json(body): Json<CollectionReport>,
 ) -> Response {
@@ -95,12 +94,9 @@ pub(crate) async fn report(
     // is absent, so an absent token and a wrong one take the same branch and answer identically —
     // there is no early return for "absent" ahead of it. A `None` configured token still refuses
     // every call: a service with no verifier must not accept an empty presented one, which is why
-    // this reads the option rather than defaulting it to an empty `Secret`.
+    // this reads the option rather than defaulting it to an empty `CollectionToken`.
     let presented = bearer_token(&headers).unwrap_or_default();
-    let authorized = state
-        .collection_token
-        .as_ref()
-        .is_some_and(|token| code_matches(presented, token.expose()));
+    let authorized = state.collection_token.as_ref().is_some_and(|token| token.matches(presented));
     if !authorized {
         tracing::warn!("refused a collection report: missing or invalid bearer token");
         return (
@@ -200,7 +196,7 @@ struct RowStrings {
 }
 
 /// `GET /collection` — every approved record and where its collection stands, for RDU.
-pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
+pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
         Err(error) => return storage_error(&state, &user, "read the approved records", &error),
@@ -245,7 +241,7 @@ pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> R
 /// There is no narrower read on the port for this: [`ApprovedRecordRepository`] carries
 /// `find_by_shortcode`, not `find_by_id`. `Ok(None)` covers both an id that is not a UUID at all
 /// and one that names no row, so a hand-typed path segment gets the same 404 as a discarded one.
-async fn find_record(state: &AppState, id: &str) -> Result<Option<ApprovedRecord>, RepositoryError> {
+async fn find_record(state: &EditorState, id: &str) -> Result<Option<ApprovedRecord>, RepositoryError> {
     let Ok(id) = Uuid::parse_str(id) else {
         return Ok(None);
     };
@@ -254,7 +250,7 @@ async fn find_record(state: &AppState, id: &str) -> Result<Option<ApprovedRecord
 }
 
 /// `GET /collection/{id}/discard` — the confirmation, naming what would be destroyed.
-pub(crate) async fn discard_form(State(state): State<AppState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
+pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
     let record = match find_record(&state, &id).await {
         Ok(Some(record)) => record,
         Ok(None) => return no_such_record(&state, &user),
@@ -289,7 +285,7 @@ pub(crate) async fn discard_form(State(state): State<AppState>, Rdu(user): Rdu, 
 /// confirmation of whatever id was posted, the same way [`discard_form`] renders whatever id was
 /// asked for. `delete` answering `false` (already gone) is not an error — a second submission of
 /// the same confirmation must not 500.
-pub(crate) async fn discard(State(state): State<AppState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
+pub(crate) async fn discard(State(state): State<EditorState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
     let Ok(record_id) = Uuid::parse_str(&id) else {
         return no_such_record(&state, &user);
     };
@@ -303,7 +299,7 @@ pub(crate) async fn discard(State(state): State<AppState>, Rdu(user): Rdu, Path(
 }
 
 /// No record with this id.
-fn no_such_record(state: &AppState, user: &Account) -> Response {
+fn no_such_record(state: &EditorState, user: &Account) -> Response {
     let content = html! {
         h1 class="font-display text-2xl mb-2" { "Nothing to discard" }
         p class="mb-4" { (NO_SUCH_RECORD) }
@@ -321,7 +317,7 @@ fn no_such_record(state: &AppState, user: &Account) -> Response {
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the collection surface could not reach storage");
     crate::shell::render(
         state,
@@ -348,17 +344,16 @@ mod tests {
     use editor_core::repository::{
         ApprovedRecordRepository, EntityProposalRepository, ReviewRoundRepository, SubmissionRepository, Transition,
     };
-    use identity_core::cookie;
-    use identity_core::records::{Role, User};
+    use editor_ports::Role;
     use serde_json::{json, Value};
     use tower::ServiceExt;
     use uuid::Uuid;
 
-    use crate::shell::AppState;
-    use crate::test_support::{
-        a_session, a_user, body_string, get, location, post, published_corpus, state_with_collection_token, test_app,
-        test_state, with_cookie,
+    use crate::fixtures::{
+        a_session, a_user, body_string, get, location, post, state_with_collection_token, test_app, test_state,
+        with_cookie, TestState, User,
     };
+    use crate::test_support::published_corpus;
 
     /// The bearer token these tests configure the endpoint with.
     const TOKEN: &str = "a-collection-token";
@@ -384,11 +379,11 @@ mod tests {
     }
 
     fn as_session(request: Request<Body>, session: &str) -> Request<Body> {
-        with_cookie(request, cookie::SESSION, session)
+        with_cookie(request, crate::fixtures::SESSION, session)
     }
 
     /// An RDU account with a live session.
-    async fn an_rdu_session(state: &AppState) -> (User, String) {
+    async fn an_rdu_session(state: &TestState) -> (User, String) {
         let user = a_user(state, "rdu@example.test", "An RDU Member", Role::Rdu, &[]).await;
         let session = a_session(state, user.id).await;
         (user, session)
@@ -603,7 +598,7 @@ mod tests {
 
     /// Deliberately carries no `sec-fetch-site` header, matching a GitHub Actions runner: every
     /// test below reaching a response other than 403 is itself evidence the CSRF exemption
-    /// (`crate::csrf::COLLECTION_REPORT_PATH`) is in effect for this path.
+    /// (`COLLECTION_REPORT_PATH` in the root's `csrf.rs`) is in effect for this path.
     fn report_request(token: Option<&str>, body: &Value) -> Request<Body> {
         let mut builder = Request::builder()
             .method("POST")
@@ -615,7 +610,7 @@ mod tests {
         builder.body(Body::from(body.to_string())).unwrap()
     }
 
-    async fn snapshot(state: &crate::shell::AppState) -> Vec<ApprovedRecord> {
+    async fn snapshot(state: &crate::shell::EditorState) -> Vec<ApprovedRecord> {
         ApprovedRecordRepository::list_all(&*state.editor)
             .await
             .expect("list should succeed")
@@ -623,7 +618,7 @@ mod tests {
 
     /// A pending submission on `shortcode`, so `ReviewRoundRepository::approve` has something to
     /// claim.
-    async fn a_pending_submission(state: &crate::shell::AppState, shortcode: &str) -> Submission {
+    async fn a_pending_submission(state: &crate::shell::EditorState, shortcode: &str) -> Submission {
         let submission = Submission {
             id: Uuid::new_v4(),
             shortcode: shortcode.to_string(),

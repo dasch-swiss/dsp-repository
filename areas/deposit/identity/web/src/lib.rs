@@ -20,8 +20,6 @@ use identity_core::login::AuthConfig;
 use identity_core::repository::IdentityRepositories;
 use identity_ports::AuthoredWork;
 
-pub use crate::handlers::cookie::values as cookie_values;
-pub use crate::handlers::guard::destination;
 pub use crate::routes::route_paths;
 #[cfg(any(test, feature = "test-support"))]
 pub use crate::routes::ISSUE_BURST;

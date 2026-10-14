@@ -20,7 +20,7 @@ const FAILURE_REASON = "GitHub API returned 500 while opening the pull request";
 
 // The approved record's id, read back from the unauthenticated listing and
 // cached. `GET /api/v1/approved-records` carries a tight per-IP burst
-// (`router.rs`, `APPROVED_RECORDS_BURST`) sized for an occasional CI poller, so
+// (`editor-web`'s `routes.rs`, `APPROVED_RECORDS_BURST`) sized for an occasional CI poller, so
 // fetching it once per test trips that limit before the arc finishes.
 let cachedRecordId: string | undefined;
 

@@ -179,8 +179,8 @@ const ADDRESS_HINT: &str =
 /// group renders at most once per form, so it cannot duplicate.
 const ADDRESS_HINT_ID: &str = "address-hint";
 
-/// This kind's fields, in display order. `pub` because `editor-server`'s row
-/// actions check that a posted field id is one this kind renders.
+/// This kind's fields, in display order. The entity form's row actions (`handlers/entities.rs`)
+/// check that a posted field id is one this kind renders.
 #[must_use]
 pub fn fields_for(kind: ProposalKind) -> &'static [Field] {
     match kind {

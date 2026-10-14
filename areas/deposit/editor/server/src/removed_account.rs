@@ -8,8 +8,9 @@ use editor_store::test_support::{seed_draft, seed_entity_proposal, seed_review_r
 use identity_store::test_support::{delete_user, seed_session, seed_user};
 use tower::ServiceExt;
 
-use crate::shell::AppState;
-use crate::test_support::{body_string, get, open_test_db, state_over, test_app, with_cookie, RecordingMailer};
+use crate::test_support::{
+    body_string, get, open_test_db, state_over, test_app, with_cookie, RecordingMailer, TestState,
+};
 
 const PROJECT_A: &str = "0801d";
 const PROJECT_B: &str = "0803";
@@ -27,7 +28,7 @@ fn main_of(body: &str) -> &str {
 /// Two projects whose editor rows were authored by accounts that are now deleted, the ids of
 /// those accounts, and the sessions of the depositor D2 and the reviewer R1 who remain.
 struct Fixture {
-    state: AppState,
+    state: TestState,
     deleted: [String; 2],
     depositor_session: String,
     reviewer_session: String,

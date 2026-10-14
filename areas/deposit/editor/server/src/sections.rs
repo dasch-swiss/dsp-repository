@@ -36,12 +36,10 @@ use editor_web::form::registry::{self, Audience, Section};
 use editor_web::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use editor_web::form::INTENT;
 use editor_web::pages::section as page;
-use identity_core::records::User;
-use identity_core::repository::UserRepository;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::auth::guard::Authenticated;
+use crate::editor_auth::{Account, Authenticated};
 use crate::shell::AppState;
 
 /// The header the vendored Datastar bundle sets on every fetch it makes.
@@ -179,8 +177,8 @@ fn unresolved_message(name: &str) -> String {
 }
 
 /// Which fields and sections this reader sees.
-fn audience_of(user: &User) -> Audience {
-    if user.is_rdu() {
+fn audience_of(user: &Account) -> Audience {
+    if user.principal.is_rdu() {
         Audience::RduOnly
     } else {
         Audience::Everyone
@@ -298,7 +296,7 @@ impl Context<'_> {
 /// which projects exist, to a reader who is not allowed to know.
 async fn context<'a>(
     state: &'a AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     section_id: &str,
     signed_out_at: DateTime<Utc>,
@@ -306,13 +304,17 @@ async fn context<'a>(
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
-    if !user.may_reach(shortcode) {
+    if !user.principal.may_reach(shortcode) {
         tracing::info!(
             auth.subject = %user.id,
             project.shortcode = %shortcode,
             "refused a project that is not assigned to this account"
         );
-        return Err(crate::shell::forbidden(state, user, crate::projects::NOT_ASSIGNED));
+        return Err(crate::shell::forbidden(
+            state,
+            &user.principal.display_name,
+            crate::projects::NOT_ASSIGNED,
+        ));
     }
 
     let audience = audience_of(user);
@@ -337,8 +339,11 @@ async fn context<'a>(
     // lookup off every ordinary render. An account since removed leaves its id
     // on the row; the lookup finds nobody, and it reads as unknown.
     let last_editor = match record.as_ref().map(|record| record.updated_by) {
-        Some(Some(editor)) if editor != user.id => match UserRepository::find_by_id(&*state.identity, editor).await {
-            Ok(found) => found.map(|found| found.name),
+        Some(Some(editor)) if editor != user.id => match state.directory.display_names(&[editor.to_string()]).await {
+            Ok(found) => found
+                .into_iter()
+                .find(|(id, _)| *id == editor.to_string())
+                .map(|(_, name)| name),
             // Not worth refusing the whole page over: the name is a courtesy
             // beside the timestamp, and the timestamp is what says the draft
             // moved.
@@ -490,11 +495,11 @@ pub(crate) struct ShowParams {
 /// `GET /projects/{shortcode}/sections/{section}`.
 pub(crate) async fn show(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
     Query(params): Query<ShowParams>,
 ) -> Response {
-    let context = match context(&state, &user, &shortcode, &section_id, signed_out_at).await {
+    let context = match context(&state, &user, &shortcode, &section_id, user.signed_out_at()).await {
         Ok(context) => context,
         Err(response) => return response,
     };
@@ -554,7 +559,7 @@ fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice
 )]
 pub(crate) async fn act(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
     headers: HeaderMap,
     // Last, because it consumes the body. `Vec<(String, String)>` rather than a
@@ -572,7 +577,7 @@ pub(crate) async fn act(
     // without the body being threaded through each refusal.
     let body = FormBody::from_pairs(pairs);
 
-    let mut context = match context(&state, &user, &shortcode, &section_id, signed_out_at).await {
+    let mut context = match context(&state, &user, &shortcode, &section_id, user.signed_out_at()).await {
         Ok(context) => context,
         Err(response) => {
             span.record("form.outcome", "refused");
@@ -774,7 +779,7 @@ fn apply_posted(context: &mut Context<'_>, body: &FormBody) -> usize {
 /// comes back to when RDU returns the project.
 async fn apply_and_store(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &mut Context<'_>,
     headers: &HeaderMap,
@@ -827,7 +832,7 @@ async fn apply_and_store(
 /// its key back. Nothing is held server-side between requests.
 pub(crate) async fn add_row(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, section_id, field_id)): Path<(String, String, String)>,
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
@@ -841,7 +846,7 @@ pub(crate) async fn add_row(
         headers,
         pairs,
         None,
-        signed_out_at,
+        user.signed_out_at(),
     )
     .await
 }
@@ -856,7 +861,7 @@ pub(crate) async fn add_row(
 /// on the enhanced one.
 pub(crate) async fn remove_row(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, section_id, field_id, key)): Path<(String, String, String, String)>,
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
@@ -870,7 +875,7 @@ pub(crate) async fn remove_row(
         headers,
         pairs,
         Some(&key),
-        signed_out_at,
+        user.signed_out_at(),
     )
     .await
 }
@@ -896,7 +901,7 @@ pub(crate) async fn remove_row(
 #[allow(clippy::too_many_arguments)]
 async fn row_action(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     section_id: &str,
     field_id: &str,
@@ -1019,7 +1024,7 @@ impl Intent {
 /// editing.
 async fn submit(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1202,7 +1207,7 @@ async fn submit(
             span.record("form.outcome", "submitted");
             tracing::info!(
                 submission.id = %submission.id,
-                auth.role = %user.role,
+                auth.role = %user.principal.role,
                 "recorded a pending submission"
             );
             phase_changed(
@@ -1241,7 +1246,7 @@ async fn submit(
 #[allow(clippy::too_many_arguments)]
 async fn propose(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     section_id: &str,
     context: &Context<'_>,
@@ -1385,7 +1390,7 @@ async fn propose(
 #[allow(clippy::too_many_arguments)]
 async fn proposed(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     section_id: &str,
     context: &Context<'_>,
@@ -1435,7 +1440,7 @@ async fn proposed(
 /// "delete".
 async fn discard(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1473,7 +1478,7 @@ async fn discard(
         // the outcome the depositor asked for either way.
         Ok(_) => {
             span.record("form.outcome", "discarded");
-            tracing::info!(auth.role = %user.role, "discarded a project draft");
+            tracing::info!(auth.role = %user.principal.role, "discarded a project draft");
             phase_changed(
                 state,
                 user,
@@ -1501,7 +1506,7 @@ async fn discard(
 /// it.
 async fn withdraw(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1608,7 +1613,7 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response
 /// the round — describing the old one, silently.
 async fn phase_changed(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     section_id: &str,
     context: &Context<'_>,
@@ -1638,7 +1643,7 @@ async fn phase_changed(
 /// The withdrawal confirmation, rendered over the read-only form.
 fn confirming(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1698,7 +1703,7 @@ fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) 
 /// A refused save, re-rendered with what was typed still in the form.
 fn refused(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1714,7 +1719,7 @@ fn refused(
 /// what the depositor has to see to fix them.
 fn refused_with(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1744,7 +1749,7 @@ fn refused_with(
 /// the kind of adjacent-arguments mistake this file's own `Rendering` struct exists to rule out.
 fn refused_with_proposal_findings(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -1804,7 +1809,7 @@ fn region(shortcode: &str, context: &Context<'_>, rendering: Rendering<'_>) -> R
 /// The whole page, inside the document shell.
 fn render_page(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     rendering: Rendering<'_>,
@@ -1825,7 +1830,13 @@ fn render_page(
         Some(prefix) => format!("{prefix} — {title}"),
         None => title,
     };
-    crate::shell::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
+    crate::shell::render(
+        state,
+        &title,
+        StatusCode::OK,
+        Some(&user.principal.display_name),
+        page::page(&view),
+    )
 }
 
 /// What the stored draft row contributes to a rendering: when it was last
@@ -1909,13 +1920,13 @@ fn view<'a>(
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the project form could not reach storage");
     crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(user),
+        Some(&user.principal.display_name),
         editor_web::pages::problem::unavailable(
             "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",
@@ -3471,7 +3482,9 @@ mod tests {
 
     /// The two accounts a concurrency test needs: both assigned to one project,
     /// which is the normal case rather than an edge one.
-    async fn two_project_mates(state: &AppState) -> (User, String, User, String) {
+    async fn two_project_mates(
+        state: &AppState,
+    ) -> (identity_core::records::User, String, identity_core::records::User, String) {
         let first = a_user(state, "one@example.test", "Ada One", Role::Depositor, &["0801d"]).await;
         let second = a_user(state, "two@example.test", "Bo Two", Role::Depositor, &["0801d"]).await;
         let first_session = a_session(state, first.id).await;

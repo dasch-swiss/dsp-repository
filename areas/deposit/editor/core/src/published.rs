@@ -11,7 +11,7 @@
 //! `0801e`. Keying on the stem would file all five under a shortcode no project
 //! has.
 //!
-//! Lookup folds case, matching `identity_core::records::User::may_reach`:
+//! Lookup folds case, matching `editor_ports::Principal::may_reach`:
 //! the committed shortcodes mix `080C` with `0801a`. Two files that collide when
 //! folded are a [`LoadError::DuplicateShortcode`], never a silent replace.
 

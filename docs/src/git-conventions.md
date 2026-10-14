@@ -84,7 +84,7 @@ Corollary: if you discover a genuine pre-existing `main` bug while doing unrelat
 
 The scope names the **concern the change serves** — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:
 
-- **Crate scopes:** `access-server`, `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `cpe-ports`, `cpe-core`, `cpe-components`, `cpe-image-viewer`, `cpe-store`, `cpe-store-build`, `cpe-web`, `cpe-server`, `sync-store`, `shared-fair`, `shared-metadata`, `shared-telemetry`, `editor-core`, `editor-store`, `editor-web`, `editor-server`, `editor-collector`, `identity-core`, `identity-store`, `mosaic-tiles`, `mosaic-playground`, `dsp-cli`
+- **Crate scopes:** `access-server`, `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `cpe-ports`, `cpe-core`, `cpe-components`, `cpe-image-viewer`, `cpe-store`, `cpe-store-build`, `cpe-web`, `cpe-server`, `sync-store`, `shared-fair`, `shared-metadata`, `shared-telemetry`, `editor-core`, `editor-ports`, `editor-store`, `editor-web`, `editor-server`, `editor-collector`, `identity-core`, `identity-ports`, `identity-store`, `mosaic-tiles`, `mosaic-playground`, `dsp-cli`
 - **Cross-cutting scopes** (changes not tied to one crate):
   - `dpe-data` — project metadata files under `areas/access/dpe/server/data/`
   - `ci` — workflows, the justfile, CI scripts

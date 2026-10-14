@@ -11,7 +11,9 @@ ureq = "3"
 # unencoded query value would corrupt.
 urlencoding = "2.1"
 editor-core = { path = "../core" }
+editor-ports = { path = "../ports" }
 identity-core = { path = "../../identity/core" }
+identity-ports = { path = "../../identity/ports" }
 identity-store = { path = "../../identity/store" }
 editor-store = { path = "../store" }
 editor-web = { path = "../web" }
@@ -55,4 +57,5 @@ tower = { workspace = true, features = ["util"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 # The stores' seed helpers, row readers and fault-injecting fakes.
 identity-store = { path = "../../identity/store", features = ["test-support"] }
+editor-ports = { path = "../ports", features = ["test-support"] }
 editor-store = { path = "../store", features = ["test-support"] }

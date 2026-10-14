@@ -15,6 +15,9 @@ test-support = []
 # connection on a thread of its own so every call goes through `interact()` and none can be
 # held across an `.await`.
 identity-core = { path = "../core" }
+# The ports this store answers for the editor (`LiveAuthenticator`, `LiveUserDirectory`): a
+# provider's store may depend on its consumer's ports crate.
+editor-ports = { path = "../../editor/ports" }
 async-trait.workspace = true
 chrono.workspace = true
 deadpool-sqlite.workspace = true

@@ -10,6 +10,13 @@ pub(crate) struct AppState {
     pub(crate) identity: std::sync::Arc<dyn identity_core::repository::IdentityRepositories>,
     /// The editor's store, behind its ports for the same reason.
     pub(crate) editor: std::sync::Arc<dyn editor_core::repository::EditorRepositories>,
+    /// Who a request's session belongs to, for the editor's extractors (`editor_auth`). The
+    /// editor reads no identity table: this port and [`Self::directory`] are what it asks.
+    pub(crate) authenticator: std::sync::Arc<dyn editor_ports::Authenticator>,
+    /// The names behind the account ids the editor's records hold.
+    pub(crate) directory: std::sync::Arc<dyn editor_ports::UserDirectory>,
+    /// The editor work an account still has open, for the depositor-removal confirmation.
+    pub(crate) authored_work: std::sync::Arc<dyn identity_ports::AuthoredWork>,
     /// Behind a trait so a test can watch what was sent and make sending fail.
     pub(crate) mailer: std::sync::Arc<dyn identity_core::mail::Mailer>,
     pub(crate) auth: identity_core::login::AuthConfig,
@@ -41,35 +48,31 @@ pub(crate) struct TemporalTables {
 
 /// Render a page inside the document shell: the one place a `Markup` becomes a `Response`.
 ///
-/// `viewer` is a `&User` so the header's choice is made here, once: the name, never the
-/// address. The header is on every page and in every screenshot of one.
+/// `viewer` is the signed-in account's display name, never its address: the header is on every
+/// page and in every screenshot of one.
 pub(crate) fn render(
     state: &AppState,
     title: &str,
     status: axum::http::StatusCode,
-    viewer: Option<&identity_core::records::User>,
+    viewer: Option<&str>,
     content: maud::Markup,
 ) -> axum::response::Response {
     use axum::response::IntoResponse;
 
     let traceparent = crate::traceparent::extract_traceparent();
-    let viewer = viewer.map(|user| editor_web::view::Viewer { name: &user.name });
+    let viewer = viewer.map(|name| editor_web::view::Viewer { name });
     let body = editor_web::view::page(title, traceparent.as_deref(), &state.css_href, viewer, content);
     (status, axum::response::Html(body.into_string())).into_response()
 }
 
 /// A 403 rendered as a page, so it is not a dead end. Only authenticated requests reach it,
 /// so the header renders signed in.
-pub(crate) fn forbidden(
-    state: &AppState,
-    user: &identity_core::records::User,
-    message: &str,
-) -> axum::response::Response {
+pub(crate) fn forbidden(state: &AppState, viewer: &str, message: &str) -> axum::response::Response {
     render(
         state,
         "No access — DaSCH Metadata Editor",
         axum::http::StatusCode::FORBIDDEN,
-        Some(user),
+        Some(viewer),
         editor_web::pages::forbidden::forbidden(message),
     )
 }
@@ -138,28 +141,13 @@ mod tests {
     async fn forbidden_renders_the_page_shell_with_a_403_and_a_way_out() {
         // The reader is signed in, so the header renders their name and a way out.
         let (state, _) = test_support::test_state("forbidden").await;
-        let user = identity_core::records::User {
-            id: uuid::Uuid::new_v4(),
-            email: "a.depositor@example.test".to_string(),
-            name: "A Depositor".to_string(),
-            role: identity_core::records::Role::Depositor,
-            shortcodes: vec!["0801".to_string()],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: chrono::Utc::now(),
-        };
-
-        let response = forbidden(&state, &user, "This project is not assigned to your account.");
+        let response = forbidden(&state, "A Depositor", "This project is not assigned to your account.");
         assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
         let body = test_support::body_string(response).await;
         assert!(body.starts_with("<!DOCTYPE html>"), "{body}");
         assert!(body.contains("This project is not assigned to your account."), "{body}");
         assert!(body.contains(r#"<a href="/projects""#), "{body}");
         assert!(body.contains("A Depositor"), "{body}");
-        // The header shows the name, never the address — it is on every page and
-        // in every screenshot of one.
-        assert!(!body.contains("a.depositor@example.test"), "{body}");
     }
 
     #[tokio::test]

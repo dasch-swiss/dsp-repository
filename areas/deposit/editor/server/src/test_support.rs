@@ -144,6 +144,11 @@ pub(crate) fn state_over(
     adjust(&mut auth);
     AppState {
         css_href: "/assets/app.css".to_string(),
+        // The live adapters over the same stores, so a test signs in through identity's own
+        // session rules and a fault put in front of a store reaches the editor's reads too.
+        authenticator: Arc::new(identity_store::LiveAuthenticator::new(identity.clone(), auth)),
+        directory: Arc::new(identity_store::LiveUserDirectory::new(identity.clone())),
+        authored_work: Arc::new(editor_store::LiveAuthoredWork::new(editor.clone())),
         identity,
         editor,
         mailer: Arc::new(mailer),

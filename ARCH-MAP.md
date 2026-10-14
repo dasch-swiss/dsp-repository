@@ -189,16 +189,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   persistence ports), `editor-ports` (what the editor asks of identity: `Principal`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveAuthoredWork` behind
-  `identity-ports`), `editor-web` (the document shell, pages, the form's field registry and
-  widgets), `editor-server` (the binary: config, auth, routing, the startup reconcile, the
+  `identity-ports`), `editor-web` (pages, the form's field registry and widgets; the document
+  shell around them is the area's `deposit-shell`, below), `editor-server` (the binary: config, auth, routing, the startup reconcile, the
   composition of the two stores), `editor-collector` (the CI binary that turns an approved record into a pull
   request against this repository — outside the service's request path, and the only crate here
   that writes anything under `areas/access/dpe/`).
   Depositors edit their projects section by section; RDU reviews field by field; approve
   writes an approved record, which the collector publishes as a pull request. The Deposit
   Area's target is two capabilities, `identity` and `editor`, under `areas/deposit/server`
-  (`areas/deposit/ADR-0004`); the code has the editor and identity's three crates
-  (`areas/deposit/identity`, below), and `docs/src/editor/architecture.md` lists the
+  (`areas/deposit/ADR-0004`); the code has the editor, identity's three crates
+  (`areas/deposit/identity`, below) and the area shell `deposit-shell` (`areas/deposit/shell`), and `docs/src/editor/architecture.md` lists the
   divergence. The entry below describes the code as it is.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
@@ -224,7 +224,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `docs/src/editor/collection.md`, `docs/src/editor/architecture.md`
 - **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-server`,
   `editor-collector`), shared/telemetry
-  (`editor-server`), modules/mosaic (`editor-web`), areas/deposit/identity (`editor-server`;
+  (`editor-server`), modules/mosaic (`editor-web`), areas/deposit/shell (`editor-server`),
+  areas/deposit/identity (`editor-server`;
   `editor-store` on `identity-ports` alone, the port it answers; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
   never its code — `editor-collector` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
@@ -263,9 +264,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     the area's composition root and host of identity's pages until `identity-web` exists:
     identity's pages and extractors (`auth/`, `depositors.rs`), the RDU bootstrap
     (`accounts.rs`), configuration (`config.rs`), startup and the hourly sweep (`serve.rs`) and
-    `AppState` (`shell.rs`); and the editor's own `collection.rs` uses `secret::code_matches`; `editor_auth.rs` still borrows identity's sign-in
-    redirect (`auth::guard::{destination, login_url}`, `auth::cookie`) and `depositors::RDU_ONLY`
-    until `deposit-shell` exists (**review**).
+    `AppState` (`shell.rs`); and the editor's own `collection.rs` uses `secret::code_matches`; `editor_auth.rs` still borrows identity's
+    `auth::guard::destination` (the GET-only rule over axum's `Parts`) and `auth::cookie`; the
+    sign-in link (`login_url`) and `RDU_ONLY` come from `deposit-shell` (**review**).
   - `editor-ports` depends on `std` alone (**review**; no crate-graph gate exists yet).
   - Handlers and routes live in `editor-server`; ADR-0003's anatomy puts them in the
     capability's web crate, and the composition root at `areas/deposit/server` (**review**; no crate-graph gate exists yet — ADR-0003,
@@ -281,7 +282,47 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `report_collection`), and deleted by three paths: the startup reconcile that derives Online,
   approve's own transaction, which supersedes an earlier record for the same project when no pull
   request of its own is live, and RDU's discard (`POST /collection/{id}/discard`).
-- **Fingerprint:** `1f98f568937d`
+- **Fingerprint:** `6cd96862072f`
+
+### areas/deposit/shell
+
+- **Paths:** `:(glob)areas/deposit/shell/**`
+- **Purpose:** `deposit-shell`, the Deposit Area's document shell (`areas/deposit/ADR-0004`):
+  the document (`view::page`), the header and footer, the 403, 404 and problem pages, the
+  area's sign-in link with its one open-redirect check (`sign_in::safe_next`, `login_url`,
+  `NEXT`), and the RDU-only text. A `fn -> Markup` library that both capabilities' pages are
+  wrapped in; it turns nothing into a response.
+- **Key entities:** `page`, `Viewer`, `header`, `footer`, `forbidden`, `not_found`,
+  `unavailable`, `safe_next`, `login_url`, `NEXT`, `MAX_NEXT_LEN`, `RDU_ONLY`
+- **Public interface:** the `deposit_shell` library: `view::{page, Viewer}`,
+  `pages::{forbidden::forbidden, not_found::not_found, problem::unavailable}`,
+  `sign_in::{safe_next, login_url, NEXT}`, `RDU_ONLY`; the header and footer are private to
+  `view::page`. No routes, no binary.
+- **Local-context kit:** `areas/deposit/shell/src/lib.rs`, `areas/deposit/shell/src/view.rs`,
+  `areas/deposit/shell/src/sign_in.rs`, `areas/deposit/shell/src/components/global/header.rs`,
+  `areas/deposit/editor/server/src/shell.rs`, `areas/deposit/editor/server/src/auth/guard.rs`,
+  `areas/deposit/editor/style/main.css`
+- **Depends on:** modules/mosaic (`mosaic-tiles`, the header's sign-out button); third-party:
+  maud
+- **Used by:** areas/deposit/editor (`editor-server`: `shell.rs` turns its pages into
+  responses, `auth/guard.rs`, `auth/handlers.rs` and `editor_auth.rs` build the sign-in
+  redirect, every handler module renders the problem page)
+- **Boundary rules:**
+  - Depends on no capability crate, and has no Axum: each caller turns its `Markup` into a
+    response (ADR-0003, amendment of 2026-09-25) (**review**; no crate-graph gate exists yet).
+  - The routes it links are string literals: `/` and `POST /logout` (header), `/projects`
+    (403), `/login` (`login_url`, and the two login screens `safe_next` refuses), plus the
+    assets `/logo.svg`, `/vendor/datastar.js` and `/telemetry.js`, which `editor-server`
+    serves. No compiler checks them against the route tables (**docs-only**, recorded in the
+    crate doc).
+  - One copy of the open-redirect allowlist: every request-derived redirect target goes through
+    `safe_next`, and `login_url` interpolates without encoding only because `safe_next` admits
+    unreserved characters alone (**static-analysis** — the nine `sign_in.rs` tests pin both
+    together; **review** for new callers, `REVIEW.md`).
+  - Its Tailwind classes ship only through `@source '../../shell/**/*.rs'` in the editor's
+    `style/main.css`; moving the crate drops them silently (**review**).
+- **Durable state:** none.
+- **Fingerprint:** `e24b77ad3aa6`
 
 ### areas/deposit/identity
 
@@ -357,7 +398,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `modules/mosaic/tiles/src/components/components.css`, `modules/mosaic/playground/src/app.rs`
 - **Depends on:** nothing in the workspace; third-party: maud, icondata (tiles); axum, tokio,
   tower-http, optional tower-livereload + notify behind `dev` (playground)
-- **Used by:** areas/access/dpe (`dpe-web`, `dpe-server`), areas/deposit/editor (`editor-web`); all three
+- **Used by:** areas/access/dpe (`dpe-web`, `dpe-server`), areas/deposit/editor (`editor-web`),
+  areas/deposit/shell (`deposit-shell`); all three
   Tailwind entries (`areas/access/dpe/style/main.css`, `areas/deposit/editor/style/main.css`,
   `modules/mosaic/playground/style/main.css`)
 - **Boundary rules:**
@@ -1031,8 +1073,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   capabilities that own their tables, collaborate only through consumer-defined `ports` crates
   with `Live<Port>` adapters in the provider's store, reference each other by opaque id, and
   never span a transaction. The Access Area's root is `areas/access/server` (moved up ahead of
-  CPE, ADR-0007 amendment); the Deposit Area has one capability, so `editor-server` is still the
-  seed of its root. *Enforcement:* **review**, becoming **structure** (Bazel
+  CPE, ADR-0007 amendment); the Deposit Area's root is still `editor-server`, inside the editor
+  capability. *Enforcement:* **review**, becoming **structure** (Bazel
   visibility: `ports` public within the area; domain / store / web visible to the capability
   and the composition root only) with ADR-0001.
 - **Shared code lives under `shared/` as `shared-{role}`** the moment a second

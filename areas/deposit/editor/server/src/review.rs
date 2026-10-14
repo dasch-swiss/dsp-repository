@@ -1184,7 +1184,7 @@ fn unreadable_submission(state: &AppState, user: &Account) -> Response {
         "Submission unreadable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
         Some(&user.principal.display_name),
-        editor_web::pages::problem::unavailable(
+        deposit_shell::pages::problem::unavailable(
             "This submission's stored record could not be read, so there is nothing to compare against what is \
              published. Nothing has been changed. The service needs attention before this project can be reviewed.",
         ),
@@ -1199,7 +1199,7 @@ fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std:
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
         Some(&user.principal.display_name),
-        editor_web::pages::problem::unavailable(
+        deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",
         ),

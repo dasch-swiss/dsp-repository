@@ -17,6 +17,7 @@ identity-ports = { path = "../../identity/ports" }
 identity-store = { path = "../../identity/store" }
 editor-store = { path = "../store" }
 editor-web = { path = "../web" }
+deposit-shell = { path = "../../shell" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
 # contract modules are serde-only; `collector` adds axum/opentelemetry/url.

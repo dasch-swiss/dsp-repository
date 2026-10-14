@@ -16,7 +16,7 @@
 //! needs an RDU decision, and a record for a project dropped upstream may be
 //! the only surviving copy of that work.
 //!
-//! **A failure here is not fatal**, unlike [`crate::accounts::ensure_rdu`]. The
+//! **A failure here is not fatal**, unlike identity's `ensure_rdu` (`identity-web`). The
 //! cost is a stale status label; refusing to start costs the whole service.
 use chrono::Utc;
 use editor_core::agents::Agents;

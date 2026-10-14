@@ -63,4 +63,4 @@ The browser telemetry contract and the endpoint that consumes it. A library crat
 
 The contract modules depend on `serde` only; `collector` additionally pulls in `axum`, `opentelemetry`, `tracing` and `url`.
 
-Page-URL normalization is **not** in this crate: a shared crate depends on no service crate, and a route table is exactly one service's data. `dpe-server` and `editor-server` each own a `page_url.rs` and pass its `normalize_page_url` fn into `collect_route`.
+Page-URL normalization is **not** in this crate: a shared crate depends on no service crate, and a route table is exactly one service's data. `dpe-server` and `editor-server` each own a `page_url.rs` and pass its `normalize_page_url` fn into `collect_route`; `editor-server`'s asks `identity-web`'s first.

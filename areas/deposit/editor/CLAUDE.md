@@ -22,7 +22,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Six crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveAuthoredWork` behind `identity-ports`), `editor-web` (`web/`, view functions; the document shell around them is the area's `deposit-shell`, `areas/deposit/shell`), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity's domain — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`) and `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
+Six crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveAuthoredWork` behind `identity-ports`), `editor-web` (`web/`, view functions; the document shell around them is the area's `deposit-shell`, `areas/deposit/shell`), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`), `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports) and `identity-web` (`areas/deposit/identity/web`, the login and depositor pages, their handlers and routes, and the `Identity` facade `editor-server` starts and mounts), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
 
 ## Code Organization Patterns
 
@@ -32,15 +32,16 @@ A plain library crate of `fn(...) -> maud::Markup`. Pages in `web/src/pages/`, t
 
 ### Routing (`editor-server`)
 
-Routes are assembled in `server/src/router.rs`, deliberately separate from `serve()` so the routing is unit-testable. Two invariants that module owns:
+Routes are assembled in `server/src/router.rs`, deliberately separate from `serve()` so the routing is unit-testable. The invariants that module owns:
 
 - **The editor is root-mounted.** It runs on its own hostname, so there is no `/editor` prefix. A shared origin would defeat the `Sec-Fetch-Site` CSRF control.
+- **Identity's routes are merged in, not declared here.** `build_router` merges `identity_web::Identity::router()` before the OTel layers, so identity's pages are traced and under the CSRF layer like the editor's; their table is `identity-web`'s `routes.rs`.
 - **The traced/untraced split is positional.** `/healthz` and `/telemetry/collect` are declared in `build_app` *after* `build_router`'s `.layer()` calls. Moving one line silently mints a span per liveness probe; tests pin it.
 - **Machine-facing routes live under `/api/v1/`.** Everything else is a browser route serving the page shell. An `/api/v1` route returns JSON or a bare status with a plain-text body, never HTML, because its callers are CI jobs and scripts; it is declared in `routes()`, which `build_router` wraps in the OTel layers, so it is traced, and it authenticates by bearer token or not at all, never by session cookie.
 
 ### Authorization
 
-`Authenticated` and `Rdu` are **extractors, not middleware**. A handler that omits them is public, visibly, in its signature. `Rdu` composes `Authenticated`, so RDU routes are closed twice over. An editor handler takes the pair in `server/src/editor_auth.rs`, which sees identity only through the `Authenticator` port and yields an `Account` (the `Principal`, its id parsed); names behind account ids come from `UserDirectory`, never from identity's repositories. The pair in `server/src/auth/guard.rs` is identity's, for its own pages.
+`Authenticated` and `Rdu` are **extractors, not middleware**. A handler that omits them is public, visibly, in its signature. `Rdu` composes `Authenticated`, so RDU routes are closed twice over. An editor handler takes the pair in `server/src/editor_auth.rs`, which sees identity only through the `Authenticator` port and yields an `Account` (the `Principal`, its id parsed); names behind account ids come from `UserDirectory`, never from identity's repositories. The pair in `identity-web`'s `handlers/guard.rs` is identity's, for its own pages.
 
 ### Method discipline
 
@@ -48,7 +49,7 @@ Every route that changes state is `POST`. The `Sec-Fetch-Site` CSRF control must
 
 ## Running Tests
 
-- Rust: `cargo test -p deposit-shell -p identity-core -p identity-ports -p identity-store -p editor-core -p editor-ports -p editor-store -p editor-web -p editor-server`
+- Rust: `cargo test -p deposit-shell -p identity-core -p identity-ports -p identity-store -p identity-web -p editor-core -p editor-ports -p editor-store -p editor-web -p editor-server`
 - E2E, accessibility and the no-JavaScript pass: `just test-e2e-editor` / `just test-a11y-editor` (suite in `areas/deposit/editor/web-e2e-tests/`)
 
 The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptEnabled: false`. Neither pass subsumes the other: the no-JS pass catches a control with no submit button behind it, and the JS pass catches a control that Datastar has made inert.
@@ -99,7 +100,7 @@ RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism name
 
 ## Observability
 
-Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute to the template of the route axum matches, built from `router.rs`'s `routes()`, so a route declared there is labelled without further edits. A route added with `.route()` outside `routes()` is not.
+Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute to the template of the route axum matches, built from `router.rs`'s `routes()` and `identity_web::route_paths()`, so a route declared in either table is labelled without further edits. A route added with `.route()` outside those tables is not.
 
 ## Best Practices for AI Agents
 

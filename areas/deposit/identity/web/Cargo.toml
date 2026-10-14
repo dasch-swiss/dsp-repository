@@ -1,0 +1,43 @@
+[package]
+name = "identity-web"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+# `RecordingMailer` and `Identity::for_test`, for the tests of the composition root, which
+# assembles identity over its own stores.
+test-support = []
+
+[dependencies]
+identity-core = { path = "../core" }
+identity-ports = { path = "../ports" }
+identity-store = { path = "../store" }
+deposit-shell = { path = "../../shell" }
+mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
+# `is_valid_shortcode`, for the depositor form's assignments.
+shared-metadata = { path = "../../../../shared/metadata" }
+# `is_valid_traceparent`, for the `<meta name="traceparent">` every page carries.
+shared-telemetry = { path = "../../../../shared/telemetry" }
+maud.workspace = true
+
+async-trait.workspace = true
+axum.workspace = true
+chrono.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower_governor.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+opentelemetry.workspace = true
+tracing-opentelemetry.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower = { workspace = true, features = ["util"] }
+tracing-subscriber.workspace = true
+# The seed helpers, row readers and the fault-injecting fake.
+identity-store = { path = "../store", features = ["test-support"] }
+# `FakeAuthoredWork`, for the depositor-removal confirmation.
+identity-ports = { path = "../ports", features = ["test-support"] }

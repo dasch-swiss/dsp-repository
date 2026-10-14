@@ -8,10 +8,11 @@
 //! (`docs/src/repo_structure.md` → Shared Crates).
 //!
 //! The label is the template of the route axum would match, built from
-//! `router.rs`'s `routes()` with `matchit`, the path router axum itself matches
-//! with. A route is labelled as soon as it is declared, so there is no second
-//! list to keep in step, and a variable segment (a shortcode, an account or
-//! entity id: unbounded sets) never reaches the attribute verbatim. A path no
+//! `router.rs`'s `routes()` and identity's [`identity_web::route_paths`] with
+//! `matchit`, the path router axum itself matches with. A route is labelled as
+//! soon as it is declared, so there is no second list to keep in step, and a
+//! variable segment (a shortcode, an account or entity id: unbounded sets)
+//! never reaches the attribute verbatim. A path no
 //! route matches is `other`. The redirects `/` and `/projects/{shortcode}` get
 //! labels too, though neither renders the beacon script.
 //!
@@ -21,13 +22,22 @@
 use std::collections::BTreeSet;
 use std::sync::LazyLock;
 
+/// The paths of every traced route, the editor's and identity's.
+///
+/// Deduplicated: two entries may share a path with different methods, which
+/// axum merges and `matchit` would refuse as a conflict.
+fn route_paths() -> BTreeSet<&'static str> {
+    crate::router::routes()
+        .into_iter()
+        .map(|(path, _)| path)
+        .chain(identity_web::route_paths())
+        .collect()
+}
+
 /// Every traced route's template, keyed by itself.
 static ROUTES: LazyLock<matchit::Router<&'static str>> = LazyLock::new(|| {
-    // Deduplicated first: two entries may share a path with different methods,
-    // which axum merges and `matchit` would refuse as a conflict.
-    let paths: BTreeSet<&'static str> = crate::router::routes().into_iter().map(|(path, _)| path).collect();
     let mut router = matchit::Router::new();
-    for path in paths {
+    for path in route_paths() {
         // A real conflict also panics axum when it builds the router, so a
         // binary that started cannot reach this.
         router.insert(path, path).expect("axum accepted the same route table");
@@ -35,7 +45,7 @@ static ROUTES: LazyLock<matchit::Router<&'static str>> = LazyLock::new(|| {
     router
 });
 
-/// Normalize a page URL to the template of the editor route it matches.
+/// Normalize a page URL to the template of the editor or identity route it matches.
 /// Returns "other" for unrecognized paths to prevent metric cardinality explosion.
 pub fn normalize_page_url(url: &str) -> &'static str {
     // A query or a fragment has to come off first or it turns every page view
@@ -69,9 +79,9 @@ mod tests {
         use axum::http::Request;
         use tower::ServiceExt;
 
-        let app = crate::router::routes()
+        let app = route_paths()
             .into_iter()
-            .fold(axum::Router::new(), |router, (path, _)| {
+            .fold(axum::Router::new(), |router, path| {
                 router.route(
                     path,
                     axum::routing::any(|matched: MatchedPath| async move { matched.as_str().to_owned() }),
@@ -81,7 +91,9 @@ mod tests {
         for url in [
             "/",
             "/login",
+            "/login/code",
             "/depositors/new",
+            "/depositors/0c1cd9ff-9a9f-4b0e-9b0a-3f2f8f0b7a11/edit",
             "/projects/080C",
             "/projects/080C/sections/overview",
             "/projects//sections/overview",

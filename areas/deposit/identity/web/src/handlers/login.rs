@@ -24,7 +24,7 @@ use uuid::Uuid;
 
 use super::cookie;
 use super::guard::{destination_or_root, next_from};
-use crate::shell::AppState;
+use crate::shell::IdentityState;
 
 /// The one message every code-entry failure produces.
 ///
@@ -59,7 +59,7 @@ pub(crate) struct CodeForm {
 /// Render a login screen. Always anonymous: the shell's signed-in header has no
 /// business on a page reached without a session, which is what the `None`
 /// viewer says.
-fn render(state: &AppState, title: &str, status: StatusCode, content: Markup) -> Response {
+fn render(state: &IdentityState, title: &str, status: StatusCode, content: Markup) -> Response {
     crate::shell::render(state, title, status, None, content)
 }
 
@@ -99,9 +99,9 @@ fn mail_body(code: &str) -> String {
 /// `next` is where the reader was going when the guard sent them here. It is
 /// carried on the form's action rather than in a field, and re-validated at
 /// every step it crosses.
-pub(crate) async fn login_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
+pub(crate) async fn login_form(State(state): State<IdentityState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
-    if session::current(&*state.identity, &state.auth, &cookie::values(&headers), Utc::now())
+    if session::current(&*state.store, &state.auth, &cookie::values(&headers), Utc::now())
         .await
         .is_some()
     {
@@ -114,13 +114,13 @@ pub(crate) async fn login_form(State(state): State<AppState>, uri: Uri, headers:
         &state,
         SIGN_IN_TITLE,
         StatusCode::OK,
-        editor_web::pages::login::request_code(next, None),
+        crate::pages::login::request_code(next, None),
     )
 }
 
 /// `POST /login` — issue a code, or convincingly appear to.
 pub(crate) async fn login_submit(
-    State(state): State<AppState>,
+    State(state): State<IdentityState>,
     uri: Uri,
     headers: HeaderMap,
     Form(form): Form<EmailForm>,
@@ -139,7 +139,7 @@ pub(crate) async fn login_submit(
             &state,
             SIGN_IN_TITLE,
             StatusCode::BAD_REQUEST,
-            editor_web::pages::login::request_code(next, Some(EMAIL_REJECTED)),
+            crate::pages::login::request_code(next, Some(EMAIL_REJECTED)),
         );
     }
 
@@ -157,10 +157,10 @@ pub(crate) async fn login_submit(
 
 /// The code this browser's binding owns, when this deployment may show it.
 ///
-/// Returns `None` unless [`AppState::reveal_login_code`] is set — resolved once
+/// Returns `None` unless [`IdentityState::reveal_login_code`] is set — resolved once
 /// at startup from three conditions, all of which have to hold: no mail relay,
 /// no database that outlives the process, and not `PROD`. See
-/// [`crate::config::EditorConfig::reveals_login_code`].
+/// `EditorConfig::reveals_login_code` in the composition root.
 ///
 /// Only ever the code bound to the token the request carries, so a browser sees
 /// what it asked for and nothing else. That is still a real disclosure — an
@@ -175,11 +175,11 @@ pub(crate) async fn login_submit(
 ///
 /// A storage failure yields `None`: a screen that cannot show the code is a
 /// nuisance on a preview, and guessing is not an option for a credential.
-async fn revealed_code(state: &AppState, token: &str, now: DateTime<Utc>) -> Option<String> {
+async fn revealed_code(state: &IdentityState, token: &str, now: DateTime<Utc>) -> Option<String> {
     if !state.reveal_login_code {
         return None;
     }
-    match LoginCodeRepository::find_by_browser_token(&*state.identity, token).await {
+    match LoginCodeRepository::find_by_browser_token(&*state.store, token).await {
         Ok(Some(code)) if code.consumed_at.is_none() && now < code.expires_at => Some(code.code),
         Ok(_) => None,
         Err(error) => {
@@ -190,9 +190,9 @@ async fn revealed_code(state: &AppState, token: &str, now: DateTime<Utc>) -> Opt
 }
 
 /// `GET /login/code` — the code form.
-pub(crate) async fn code_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
+pub(crate) async fn code_form(State(state): State<IdentityState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
-    if session::current(&*state.identity, &state.auth, &cookie::values(&headers), Utc::now())
+    if session::current(&*state.store, &state.auth, &cookie::values(&headers), Utc::now())
         .await
         .is_some()
     {
@@ -209,13 +209,13 @@ pub(crate) async fn code_form(State(state): State<AppState>, uri: Uri, headers: 
         &state,
         ENTER_CODE_TITLE,
         StatusCode::OK,
-        editor_web::pages::login::enter_code(next, None, revealed.as_deref()),
+        crate::pages::login::enter_code(next, None, revealed.as_deref()),
     )
 }
 
 /// `POST /login/code` — spend the code.
 pub(crate) async fn code_submit(
-    State(state): State<AppState>,
+    State(state): State<IdentityState>,
     uri: Uri,
     headers: HeaderMap,
     Form(form): Form<CodeForm>,
@@ -255,7 +255,7 @@ pub(crate) async fn code_submit(
                 &state,
                 ENTER_CODE_TITLE,
                 StatusCode::OK,
-                editor_web::pages::login::enter_code(next, Some(CODE_REJECTED), revealed.as_deref()),
+                crate::pages::login::enter_code(next, Some(CODE_REJECTED), revealed.as_deref()),
             )
         }
     }
@@ -274,9 +274,9 @@ pub(crate) async fn code_submit(
         auth.outcome = tracing::field::Empty,
     )
 )]
-pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Response {
+pub(crate) async fn logout(State(state): State<IdentityState>, headers: HeaderMap) -> Response {
     let span = tracing::Span::current();
-    match session::end(&*state.identity, &cookie::values(&headers)).await {
+    match session::end(&*state.store, &cookie::values(&headers)).await {
         session::Ended::Deleted(user_id) => {
             span.record("auth.subject", tracing::field::display(user_id));
             span.record("auth.outcome", "signed_out");
@@ -322,7 +322,7 @@ pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) ->
         auth.rebind = tracing::field::Empty,
     )
 )]
-async fn issue(state: &AppState, email: &str, presented: Option<&str>, now: DateTime<Utc>) -> String {
+async fn issue(state: &IdentityState, email: &str, presented: Option<&str>, now: DateTime<Utc>) -> String {
     let token = secret::token();
     if issue_to_account(state, email, &token, now).await {
         return token;
@@ -333,7 +333,7 @@ async fn issue(state: &AppState, email: &str, presented: Option<&str>, now: Date
     // their address does not strand the code they are holding. `presented` is
     // the authorisation: only a browser that already has the token can move it.
     if let Some(presented) = presented {
-        match LoginCodeRepository::rebind_browser_token(&*state.identity, presented, &token).await {
+        match LoginCodeRepository::rebind_browser_token(&*state.store, presented, &token).await {
             Ok(moved) => {
                 tracing::Span::current().record("auth.rebind", if moved { "moved" } else { "nothing_to_move" });
             }
@@ -358,11 +358,11 @@ async fn issue(state: &AppState, email: &str, presented: Option<&str>, now: Date
 
 /// The half of [`issue`] that may actually send something. `true` means a code
 /// was issued carrying `token`.
-async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateTime<Utc>) -> bool {
+async fn issue_to_account(state: &IdentityState, email: &str, token: &str, now: DateTime<Utc>) -> bool {
     let span = tracing::Span::current();
     let outcome = |value: &'static str| span.record("auth.outcome", value);
 
-    let user = match UserRepository::find_by_email(&*state.identity, email).await {
+    let user = match UserRepository::find_by_email(&*state.store, email).await {
         Ok(Some(user)) => user,
         Ok(None) => {
             // The unknown-address branch answers identically: nothing stored,
@@ -397,7 +397,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
 
     let window = now - delta(SEND_WINDOW);
 
-    match MailSendRepository::count_since(&*state.identity, window).await {
+    match MailSendRepository::count_since(&*state.store, window).await {
         Ok(sent) if sent >= state.auth.daily_cap => {
             // Alarmed, not silent. This is either an attack looping resend
             // across the known addresses or a genuine surge, and both need
@@ -425,7 +425,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     // rather than instead of it. The cooldown is per address, so without this one
     // attacker with one known address exhausts the shared budget and nobody can
     // sign in.
-    match MailSendRepository::count_for_user_since(&*state.identity, user.id, window).await {
+    match MailSendRepository::count_for_user_since(&*state.store, user.id, window).await {
         Ok(sent) if sent >= state.auth.account_daily_cap => {
             // `warn`, where the global cap is `error`: this is one account being
             // driven, which is the early warning, not the outage. The account id
@@ -460,8 +460,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
         browser_token: Some(token.to_string()),
     };
 
-    match LoginCodeRepository::create_unless_issued_since(&*state.identity, &code, now - delta(state.auth.cooldown))
-        .await
+    match LoginCodeRepository::create_unless_issued_since(&*state.store, &code, now - delta(state.auth.cooldown)).await
     {
         Ok(Issued::New) => {}
         Ok(Issued::Cooled) => {
@@ -519,7 +518,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
                 // Roll the code back, and the cooldown with it. Leaving it would
                 // make the user wait out a cooldown for a code they never
                 // received, with the cooldown refusing to send another.
-                if let Err(error) = LoginCodeRepository::delete(&*state.identity, code.id).await {
+                if let Err(error) = LoginCodeRepository::delete(&*state.store, code.id).await {
                     tracing::error!(error = %error, "could not roll back a login code whose delivery failed");
                 }
                 outcome("send_failed");
@@ -536,16 +535,16 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
 /// gone: there is nothing to roll back, and refusing the request now would deny
 /// a user a code they are about to receive. The cost is a cap that under-counts
 /// by one until the window rolls.
-async fn record_send(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
-    if let Err(error) = MailSendRepository::record(&*state.identity, user_id, now).await {
+async fn record_send(state: &IdentityState, user_id: Uuid, now: DateTime<Utc>) {
+    if let Err(error) = MailSendRepository::record(&*state.store, user_id, now).await {
         tracing::error!(error = %error, "a login code was sent but could not be recorded against the daily send caps");
     }
 }
 
 /// Stamp when this account last had a code issued, so RDU can answer "I never
 /// got a code" without an address reaching a log.
-async fn stamp_issued(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
-    if let Err(error) = UserRepository::record_code_issued(&*state.identity, user_id, now).await {
+async fn stamp_issued(state: &IdentityState, user_id: Uuid, now: DateTime<Utc>) {
+    if let Err(error) = UserRepository::record_code_issued(&*state.store, user_id, now).await {
         tracing::warn!(error = %error, "could not stamp when a login code was issued");
     }
 }
@@ -564,7 +563,7 @@ async fn stamp_issued(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
     )
 )]
 async fn verify(
-    state: &AppState,
+    state: &IdentityState,
     headers: &HeaderMap,
     token: &str,
     submitted: &str,
@@ -573,7 +572,7 @@ async fn verify(
     let span = tracing::Span::current();
     let outcome = |value: &'static str| span.record("auth.outcome", value);
 
-    let code = match LoginCodeRepository::find_by_browser_token(&*state.identity, token).await {
+    let code = match LoginCodeRepository::find_by_browser_token(&*state.store, token).await {
         Ok(Some(code)) => code,
         Ok(None) => {
             // Either an unknown address (whose browser was handed a token that
@@ -600,7 +599,7 @@ async fn verify(
         tracing::info!("an expired code was submitted");
         return Err(());
     }
-    let user = match UserRepository::find_by_id(&*state.identity, code.user_id).await {
+    let user = match UserRepository::find_by_id(&*state.store, code.user_id).await {
         Ok(Some(user)) => user,
         Ok(None) => {
             outcome("account_gone");
@@ -628,7 +627,7 @@ async fn verify(
     // simultaneous submission past the check at once, so twenty parallel guesses
     // would cost three strikes' worth of budget and get twenty comparisons. A
     // refusal here also covers a code consumed in a parallel request.
-    match LoginCodeRepository::claim_attempt(&*state.identity, code.id, secret::MAX_CODE_ATTEMPTS).await {
+    match LoginCodeRepository::claim_attempt(&*state.store, code.id, secret::MAX_CODE_ATTEMPTS).await {
         Ok(Attempt::Claimed) => {}
         Ok(Attempt::Exhausted) => {
             outcome("code_invalidated");
@@ -660,8 +659,7 @@ async fn verify(
         // account-level counter is the one that survives invalidation and resend,
         // and it decays over the lockout window so a capped account is not
         // re-locked forever by one attempt per window.
-        match UserRepository::record_failed_login(&*state.identity, user.id, now, now - delta(state.auth.lockout)).await
-        {
+        match UserRepository::record_failed_login(&*state.store, user.id, now, now - delta(state.auth.lockout)).await {
             Ok(failed) => {
                 outcome("wrong_code");
                 tracing::warn!(failed_logins = failed, "a wrong code was submitted");
@@ -676,7 +674,7 @@ async fn verify(
 
     // Single use, decided by the store: the `consumed_at IS NULL` in the update
     // is what stops two simultaneous submissions of one code both winning.
-    match LoginCodeRepository::consume(&*state.identity, code.id, now).await {
+    match LoginCodeRepository::consume(&*state.store, code.id, now).await {
         Ok(true) => {}
         Ok(false) => {
             outcome("replayed");
@@ -691,7 +689,7 @@ async fn verify(
     }
 
     // Only a success clears the account counter (NIST SP 800-63B-4).
-    if let Err(error) = UserRepository::clear_failed_logins(&*state.identity, user.id).await {
+    if let Err(error) = UserRepository::clear_failed_logins(&*state.store, user.id).await {
         tracing::warn!(error = %error, "could not clear the account's failure counter after a successful sign-in");
     }
     // The account's *unspent* codes are now noise bound to browsers nobody is
@@ -699,15 +697,15 @@ async fn verify(
     // and deleting it would let a user sign in and immediately be sent another
     // code. The send caps are unaffected either way — they count `mail_sends`, and
     // the siblings deleted here were mailed.
-    if let Err(error) = LoginCodeRepository::delete_unconsumed_for_user(&*state.identity, user.id).await {
+    if let Err(error) = LoginCodeRepository::delete_unconsumed_for_user(&*state.store, user.id).await {
         tracing::warn!(error = %error, "could not clear the account's remaining login codes");
     }
     // Session fixation: whatever session this browser arrived with is deleted
     // rather than reused, so a value planted before authentication cannot
     // survive into it.
-    let _ = session::end(&*state.identity, &cookie::values(headers)).await;
+    let _ = session::end(&*state.store, &cookie::values(headers)).await;
 
-    let session = match session::begin(&*state.identity, &state.auth, user.id, now).await {
+    let session = match session::begin(&*state.store, &state.auth, user.id, now).await {
         Ok(session) => session,
         Err(error) => {
             // The code is already spent and bought nothing. Left that way the
@@ -717,7 +715,7 @@ async fn verify(
             // reopening it is free.
             outcome("session_failed");
             tracing::error!(error = %error, "could not create a session for a correct code");
-            if let Err(error) = LoginCodeRepository::unconsume(&*state.identity, code.id).await {
+            if let Err(error) = LoginCodeRepository::unconsume(&*state.store, code.id).await {
                 tracing::error!(
                     error = %error,
                     "could not reopen the code after a failed sign-in; the user cannot retry until it expires"
@@ -737,8 +735,6 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use axum::body::Body;
-    use axum::http::Request;
     use axum::Router;
     use identity_core::records::Role;
     use identity_core::repository::SessionRepository;
@@ -746,7 +742,7 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::test_support::{
+    use crate::fixtures::{
         body_string, capture_logs, cookie_set, get, location, open_test_db, post, state_over, state_with, test_app,
         test_state, urlencode, with_cookie, RecordingMailer,
     };
@@ -754,8 +750,8 @@ mod tests {
     const KNOWN: &str = "depositor@example.test";
     const UNKNOWN: &str = "nobody@example.test";
 
-    async fn a_user(state: &AppState, email: &str) -> Uuid {
-        crate::test_support::a_user(state, email, "A Depositor", Role::Depositor, &[])
+    async fn a_user(state: &IdentityState, email: &str) -> Uuid {
+        crate::fixtures::a_user(state, email, "A Depositor", Role::Depositor, &[])
             .await
             .id
     }
@@ -910,7 +906,7 @@ mod tests {
             handle.await.expect("the task should not panic");
         }
 
-        let code = LoginCodeRepository::find_by_browser_token(&*state.identity, &binding)
+        let code = LoginCodeRepository::find_by_browser_token(&*state.store, &binding)
             .await
             .expect("the lookup should succeed")
             .expect("the code should still be there");
@@ -931,7 +927,7 @@ mod tests {
         // a file database, where readers never block writers, so the mechanism
         // does not exist there — see `identity_store::Source`. That a wrong guess counts
         // at all is `test_a_wrong_code_counts_against_both_the_code_and_the_account`.
-        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.store, user_id).await.unwrap().unwrap();
         assert!(
             user.failed_logins <= secret::MAX_CODE_ATTEMPTS,
             "the account counter recorded {} failures from one code",
@@ -943,9 +939,7 @@ mod tests {
     async fn test_an_unknown_address_stores_nothing_and_sends_nothing() {
         let db = open_test_db("unknown").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
-        });
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
         let app = test_app(&state);
 
         request_code(&app, UNKNOWN, None).await;
@@ -970,100 +964,6 @@ mod tests {
     }
 
     // ---- The happy path -----------------------------------------------------
-
-    #[tokio::test]
-    async fn test_a_code_signs_the_user_in_and_rotates_the_cookies() {
-        let (state, mailer) = test_state("sign-in").await;
-        a_user(&state, KNOWN).await;
-        let app = test_app(&state);
-
-        let issued = request_code(&app, KNOWN, None).await;
-        let binding = cookie_set(&issued, LOGIN).unwrap();
-        let code = mailer.last_code().expect("a six-digit code should have been sent");
-        assert_eq!(code.len(), 6);
-
-        let signed_in = submit_code(&app, &code, &binding).await;
-        assert_eq!(signed_in.status(), StatusCode::SEE_OTHER);
-        assert_eq!(location(&signed_in).as_deref(), Some("/"));
-        let session = cookie_set(&signed_in, SESSION).expect("a session cookie");
-        assert!(!session.is_empty());
-        assert_eq!(
-            cookie_set(&signed_in, LOGIN).as_deref(),
-            Some(""),
-            "the binding has done its job and must not outlive the code it addressed"
-        );
-
-        // And the session actually works: `/projects` is behind the guard, so
-        // reaching it at all is the proof, and the header names the account.
-        let projects = app
-            .clone()
-            .oneshot(with_cookie(get("/projects"), SESSION, &session))
-            .await
-            .unwrap();
-        assert_eq!(projects.status(), StatusCode::OK);
-        assert!(body_string(projects).await.contains("A Depositor"));
-    }
-
-    #[tokio::test]
-    async fn test_the_destination_survives_the_whole_sign_in_and_is_where_the_user_lands() {
-        // The point of `next`: someone who follows a link into a project and is
-        // sent to sign in ends up on the project, not on the root wondering
-        // where they were going.
-        let (state, mailer) = test_state("sign-in-next").await;
-        let _ = crate::test_support::a_user(&state, KNOWN, "A Depositor", Role::Depositor, &["0801"]).await;
-        let app = test_app(&state);
-
-        // The guard names the destination.
-        let guarded = app.clone().oneshot(get("/projects/0801")).await.unwrap();
-        assert_eq!(location(&guarded).as_deref(), Some("/login?next=/projects/0801"));
-
-        // The address form carries it on its action.
-        let form = app.clone().oneshot(get("/login?next=/projects/0801")).await.unwrap();
-        assert!(body_string(form).await.contains(r#"action="/login?next=/projects/0801""#));
-
-        // Issuing carries it on to the code screen.
-        let issued = app
-            .clone()
-            .oneshot(post("/login?next=/projects/0801", &format!("email={}", urlencode(KNOWN))))
-            .await
-            .unwrap();
-        assert_eq!(location(&issued).as_deref(), Some("/login/code?next=/projects/0801"));
-        let binding = cookie_set(&issued, LOGIN).expect("a binding");
-        let code = mailer.last_code().expect("a code");
-
-        // And spending the code lands on it.
-        let signed_in = app
-            .clone()
-            .oneshot(with_cookie(
-                post("/login/code?next=/projects/0801", &format!("code={code}")),
-                LOGIN,
-                &binding,
-            ))
-            .await
-            .unwrap();
-        assert_eq!(location(&signed_in).as_deref(), Some("/projects/0801"));
-        let session = cookie_set(&signed_in, SESSION).expect("a session");
-
-        // `/projects/{shortcode}` is a redirect into the form's first section, so
-        // arriving is a 303 followed by a page — the point being that the
-        // destination is reachable with the session just minted, not that it is
-        // itself a page.
-        let arrived = app
-            .clone()
-            .oneshot(with_cookie(get("/projects/0801"), SESSION, &session))
-            .await
-            .unwrap();
-        assert_eq!(arrived.status(), StatusCode::SEE_OTHER);
-        let section = location(&arrived).expect("the project redirects into its form");
-        assert_eq!(section, "/projects/0801/sections/overview");
-
-        let form = app
-            .clone()
-            .oneshot(with_cookie(get(&section), SESSION, &session))
-            .await
-            .unwrap();
-        assert_eq!(form.status(), StatusCode::OK);
-    }
 
     #[tokio::test]
     async fn test_a_destination_pointing_off_site_is_dropped_rather_than_followed() {
@@ -1122,7 +1022,7 @@ mod tests {
     // ---- The development code reveal ---------------------------------------
 
     /// App state shaped like the PR preview: no relay, no volume, reveal on.
-    async fn revealing_state(label: &str) -> (AppState, RecordingMailer) {
+    async fn revealing_state(label: &str) -> (IdentityState, RecordingMailer) {
         let (mut state, mailer) = test_state(label).await;
         state.reveal_login_code = true;
         (state, mailer)
@@ -1280,7 +1180,7 @@ mod tests {
         let (state, mailer) = test_state("clear-counter").await;
         let user_id = a_user(&state, KNOWN).await;
         UserRepository::record_failed_login(
-            &*state.identity,
+            &*state.store,
             user_id,
             Utc::now(),
             Utc::now() - chrono::TimeDelta::hours(1),
@@ -1291,7 +1191,7 @@ mod tests {
 
         sign_in(&app, &mailer, KNOWN).await;
 
-        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.store, user_id).await.unwrap().unwrap();
         assert_eq!(user.failed_logins, 0);
         assert_eq!(user.failed_login_at, None);
     }
@@ -1307,7 +1207,7 @@ mod tests {
 
         request_code(&app, KNOWN, None).await;
 
-        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.store, user_id).await.unwrap().unwrap();
         assert!(user.last_code_at.is_some());
     }
 
@@ -1328,10 +1228,10 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert!(body_string(response).await.contains("not valid"));
 
-        let user = UserRepository::find_by_id(&*state.identity, user_id).await.unwrap().unwrap();
+        let user = UserRepository::find_by_id(&*state.store, user_id).await.unwrap().unwrap();
         assert_eq!(user.failed_logins, 1, "the account counter must move");
         assert!(user.failed_login_at.is_some(), "and carry the instant a lockout measures from");
-        let code = LoginCodeRepository::find_active_for_user(&*state.identity, user_id, Utc::now())
+        let code = LoginCodeRepository::find_active_for_user(&*state.store, user_id, Utc::now())
             .await
             .unwrap()
             .unwrap();
@@ -1619,7 +1519,7 @@ mod tests {
         // back, so real send volume could exceed it.
         let db = open_test_db("cap-counts-sends").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 3;
         });
@@ -1651,7 +1551,7 @@ mod tests {
         // failure that was never theirs.
         let db = open_test_db("cap-ignores-failures").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 1;
         });
@@ -1678,7 +1578,7 @@ mod tests {
         // live credential is being written to the logs.
         let db = open_test_db("cap-break-glass").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 1;
             auth.break_glass = true;
@@ -1706,7 +1606,7 @@ mod tests {
         .await;
         let user_id = a_user(&state, KNOWN).await;
         UserRepository::record_failed_login(
-            &*state.identity,
+            &*state.store,
             user_id,
             Utc::now(),
             Utc::now() - chrono::TimeDelta::hours(1),
@@ -1714,7 +1614,7 @@ mod tests {
         .await
         .unwrap();
         UserRepository::record_failed_login(
-            &*state.identity,
+            &*state.store,
             user_id,
             Utc::now(),
             Utc::now() - chrono::TimeDelta::hours(1),
@@ -1738,7 +1638,7 @@ mod tests {
         // the cooldown refuses to send them another.
         let db = open_test_db("send-fails").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::from_secs(600);
         });
         a_user(&state, KNOWN).await;
@@ -1759,7 +1659,7 @@ mod tests {
         // Off by default, because it puts a live credential in the log pipeline.
         let db = open_test_db("break-glass").await;
         let mailer = RecordingMailer::failing();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.break_glass = true;
         });
@@ -1796,9 +1696,7 @@ mod tests {
     async fn test_sign_out_deletes_the_session_and_clears_the_cookie() {
         let db = open_test_db("sign-out").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
-        });
+        let state = state_over(db.identity.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
         a_user(&state, KNOWN).await;
         let app = test_app(&state);
         let session = sign_in(&app, &mailer, KNOWN).await;
@@ -1825,64 +1723,6 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(cookie_set(&response, SESSION).as_deref(), Some(""));
-    }
-
-    #[tokio::test]
-    async fn test_a_session_past_its_absolute_expiry_is_refused_and_deleted() {
-        let db = open_test_db("absolute-expiry").await;
-        let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
-        });
-        a_user(&state, KNOWN).await;
-        let app = test_app(&state);
-        let session = sign_in(&app, &mailer, KNOWN).await;
-
-        // Age it past its absolute expiry, which is never extended.
-        let expired = Utc::now() - chrono::TimeDelta::minutes(1);
-        db.identity.set_session_expiry(&session, expired).await;
-
-        let refused = app
-            .clone()
-            .oneshot(with_cookie(get("/projects"), SESSION, &session))
-            .await
-            .unwrap();
-        assert_eq!(
-            refused.status(),
-            StatusCode::SEE_OTHER,
-            "an expired session must not reach a guarded page"
-        );
-        assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
-        assert_eq!(
-            SessionRepository::find(&*state.identity, &session).await.unwrap(),
-            None,
-            "and must not linger"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_an_idle_session_is_refused_even_before_its_absolute_expiry() {
-        let db = open_test_db("idle-expiry").await;
-        let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO;
-            auth.session_idle = Duration::from_secs(60);
-        });
-        a_user(&state, KNOWN).await;
-        let app = test_app(&state);
-        let session = sign_in(&app, &mailer, KNOWN).await;
-
-        let stale = Utc::now() - chrono::TimeDelta::minutes(5);
-        SessionRepository::touch(&*db.identity, &session, stale).await.unwrap();
-
-        let refused = app
-            .clone()
-            .oneshot(with_cookie(get("/projects"), SESSION, &session))
-            .await
-            .unwrap();
-        assert_eq!(refused.status(), StatusCode::SEE_OTHER);
-        assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
-        assert_eq!(SessionRepository::find(&*state.identity, &session).await.unwrap(), None);
     }
 
     #[tokio::test]
@@ -1919,7 +1759,7 @@ mod tests {
         let second = cookie_set(&response, SESSION).expect("a new session");
         assert_ne!(second, first, "the session id must be a fresh one");
         assert_eq!(
-            SessionRepository::find(&*state.identity, &first).await.unwrap(),
+            SessionRepository::find(&*state.store, &first).await.unwrap(),
             None,
             "and the one it arrived with must be gone, not merely unused"
         );
@@ -1932,7 +1772,7 @@ mod tests {
         // The `Sec-Fetch-Site` control exempts GET by necessity, so a
         // state-changing GET is a state-changing request nothing protects.
         let db = open_test_db("methods").await;
-        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
+        let state = state_over(db.identity.clone(), RecordingMailer::new(), |auth| {
             auth.cooldown = Duration::ZERO
         });
         let app = test_app(&state);
@@ -1945,9 +1785,7 @@ mod tests {
         // there is that the GET does not issue or spend anything.
         let login_db = open_test_db("methods-login").await;
         let mailer = RecordingMailer::new();
-        let login_state = state_over(login_db.identity.clone(), login_db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
-        });
+        let login_state = state_over(login_db.identity.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
         a_user(&login_state, KNOWN).await;
         let login_app = test_app(&login_state);
         login_app.clone().oneshot(get("/login")).await.unwrap();
@@ -1955,33 +1793,6 @@ mod tests {
         assert!(mailer.sent().is_empty(), "a GET must not send a code");
         assert_eq!(login_db.identity.count_rows("login_codes").await, 0);
         assert_eq!(login_db.identity.count_rows("sessions").await, 0);
-    }
-
-    #[tokio::test]
-    async fn test_the_login_posts_are_refused_without_sec_fetch_site() {
-        let (state, mailer) = test_state("csrf").await;
-        a_user(&state, KNOWN).await;
-        let app = test_app(&state);
-
-        for (uri, form) in [
-            ("/login", format!("email={}", urlencode(KNOWN))),
-            ("/login/code", "code=123456".to_string()),
-            ("/logout", String::new()),
-        ] {
-            let request = Request::builder()
-                .method("POST")
-                .uri(uri)
-                .header("x-forwarded-for", "203.0.113.7")
-                .header("content-type", "application/x-www-form-urlencoded")
-                .body(Body::from(form))
-                .unwrap();
-            assert_eq!(
-                app.clone().oneshot(request).await.unwrap().status(),
-                StatusCode::FORBIDDEN,
-                "{uri} must be refused without the header"
-            );
-        }
-        assert!(mailer.sent().is_empty());
     }
 
     // ---- Forms and navigation ----------------------------------------------
@@ -2030,7 +1841,7 @@ mod tests {
     // Four calls in this module log a storage error and carry on, and each one
     // decides something: whether a guess is counted, whether a browser keeps a
     // spendable code, whether a throttle advances, whether a send is billed. A
-    // concrete store in `AppState` would make all four unreachable from a
+    // concrete store in `IdentityState` would make all four unreachable from a
     // test, hence `Arc<dyn IdentityRepositories>` and identity-store's
     // `FaultyStore`, which delegates to a real store and fails only the call
     // the test names.
@@ -2046,15 +1857,12 @@ mod tests {
         // Two states over one store: the sound one issues the code and the
         // faulty one receives the guess. Injecting from the start would fail the
         // fixture instead of the branch under test.
-        let sound = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
-        });
+        let sound = state_over(db.identity.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
         let faulty = state_over(
             Arc::new(FaultyStore::new(
                 db.identity.clone(),
                 Faults { claim_attempt: true, ..Faults::default() },
             )),
-            db.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2111,13 +1919,12 @@ mod tests {
         // a token of the same length comes back either way.
         let db = open_test_db("rebind-fails").await;
         let mailer = RecordingMailer::new();
-        let sound = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), cooled);
+        let sound = state_over(db.identity.clone(), mailer.clone(), cooled);
         let faulty = state_over(
             Arc::new(FaultyStore::new(
                 db.identity.clone(),
                 Faults { rebind_browser_token: true, ..Faults::default() },
             )),
-            db.editor.clone(),
             mailer.clone(),
             cooled,
         );
@@ -2175,15 +1982,12 @@ mod tests {
         // differed here would make the storage failure an oracle.
         let db = open_test_db("count-fails").await;
         let mailer = RecordingMailer::new();
-        let sound = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
-        });
+        let sound = state_over(db.identity.clone(), mailer.clone(), |auth| auth.cooldown = Duration::ZERO);
         let faulty = state_over(
             Arc::new(FaultyStore::new(
                 db.identity.clone(),
                 Faults { record_failed_login: true, ..Faults::default() },
             )),
-            db.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2242,7 +2046,6 @@ mod tests {
                 db.identity.clone(),
                 Faults { record_mail_send: true, ..Faults::default() },
             )),
-            db.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2356,7 +2159,6 @@ mod tests {
                     ..Faults::default()
                 },
             )),
-            store.editor.clone(),
             mailer.clone(),
             |auth| auth.cooldown = Duration::ZERO,
         );
@@ -2369,7 +2171,6 @@ mod tests {
                     ..Faults::default()
                 },
             )),
-            store.editor.clone(),
             mailer.clone(),
             cooled,
         );

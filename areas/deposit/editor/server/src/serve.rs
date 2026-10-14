@@ -129,7 +129,6 @@ pub(crate) async fn serve() -> std::process::ExitCode {
         match identity_store::Database::open(config.identity_db_source(), config.db_readers, config.db_busy_timeout())
             .await
         {
-            // Behind an `Arc`: `AppState` holds the ports, and the cleanup task needs a handle.
             Ok(db) => std::sync::Arc::new(db),
             Err(e) => {
                 tracing::error!(error = %e, "failed to open identity's database");
@@ -150,78 +149,23 @@ pub(crate) async fn serve() -> std::process::ExitCode {
         }
     };
 
-    // RDU members are created or promoted on every start. Fatal on failure: with no
-    // administrator nobody can administer the service.
-    match crate::accounts::ensure_rdu(&*identity_db, &config.rdu_addresses(), chrono::Utc::now()).await {
-        Ok(changed) => tracing::info!(
-            rdu.configured = config.rdu_addresses().len(),
-            rdu.changed = changed,
-            "RDU accounts reconciled with configuration"
-        ),
+    // Today's order: identity after both stores, before the editor.
+    let css_href = crate::assets::resolve_css_href(&config.public_dir);
+    let identity_settings = config.identity_settings(css_href.clone());
+    let auth = identity_settings.auth();
+    let identity = match identity_web::Identity::start(
+        identity_settings,
+        identity_db.clone(),
+        std::sync::Arc::new(editor_store::LiveAuthoredWork::new(editor_db.clone())),
+    )
+    .await
+    {
+        Ok(identity) => identity,
         Err(e) => {
-            tracing::error!(error = %e, "failed to create the configured RDU accounts");
-            return ExitCode::FAILURE;
-        }
-    }
-
-    // A misconfigured relay stops the process here rather than at the first login.
-    let mailer = match identity_store::mail::mailer(
-        config.smtp_host.as_deref(),
-        config.smtp_port,
-        config.smtp_credentials(),
-        &config.smtp_from,
-    ) {
-        Ok(mailer) => mailer,
-        Err(e) => {
-            tracing::error!(error = %e, "failed to configure the SMTP relay");
+            tracing::error!(error = %e, "identity could not start");
             return ExitCode::FAILURE;
         }
     };
-    tracing::info!(mail.transport = %mailer.describe(), "mail transport ready");
-
-    // The only thing that bounds unused login codes, sessions and the append-only send log.
-    // Detached rather than drained on shutdown: the next start sweeps what is left.
-    {
-        const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
-        let db = std::sync::Arc::clone(&identity_db);
-        tokio::spawn(async move {
-            use identity_core::repository::{LoginCodeRepository, MailSendRepository, SessionRepository};
-
-            let mut ticker = tokio::time::interval(CLEANUP_INTERVAL);
-            // The first tick completes immediately; the sweep is for what has
-            // aged out, so start one interval in.
-            ticker.tick().await;
-            loop {
-                ticker.tick().await;
-                let now = chrono::Utc::now();
-                // Pruned at the caps' own window: a shorter one would hand back spent budget.
-                let window_start = now - identity_core::login::delta(identity_core::login::SEND_WINDOW);
-                match (
-                    LoginCodeRepository::delete_expired(&*db, now).await,
-                    SessionRepository::delete_expired(&*db, now).await,
-                    MailSendRepository::delete_before(&*db, window_start).await,
-                ) {
-                    (Ok(codes), Ok(sessions), Ok(sends)) if codes > 0 || sessions > 0 || sends > 0 => {
-                        tracing::info!(codes, sessions, sends, "swept expired login codes, sessions and send records");
-                    }
-                    (Ok(_), Ok(_), Ok(_)) => {}
-                    (codes, sessions, sends) => {
-                        // Not fatal — nothing depends on the sweep succeeding,
-                        // and it runs again in an hour.
-                        if let Err(error) = codes {
-                            tracing::warn!(error = %error, "could not sweep expired login codes");
-                        }
-                        if let Err(error) = sessions {
-                            tracing::warn!(error = %error, "could not sweep expired sessions");
-                        }
-                        if let Err(error) = sends {
-                            tracing::warn!(error = %error, "could not prune the mail send log");
-                        }
-                    }
-                }
-            }
-        });
-    }
 
     let addr: std::net::SocketAddr = config
         .site_addr
@@ -276,24 +220,19 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     }
 
     let state = crate::shell::AppState {
-        css_href: crate::assets::resolve_css_href(&config.public_dir),
-        authenticator: std::sync::Arc::new(identity_store::LiveAuthenticator::new(
-            identity_db.clone(),
-            config.auth_config(),
-        )),
+        css_href,
+        authenticator: std::sync::Arc::new(identity_store::LiveAuthenticator::new(identity_db.clone(), auth)),
         directory: std::sync::Arc::new(identity_store::LiveUserDirectory::new(identity_db.clone())),
-        authored_work: std::sync::Arc::new(editor_store::LiveAuthoredWork::new(editor_db.clone())),
-        identity: identity_db,
         editor: editor_db,
-        mailer,
-        auth: config.auth_config(),
-        reveal_login_code: config.reveals_login_code(),
         collection_token: config.collection_token.clone(),
         published,
         temporal,
         agents,
+        // Compiled into a test build only, where `serve()` never runs.
+        #[cfg(test)]
+        identity: crate::test_support::IdentityFixture::new(identity_db, auth),
     };
-    let app = crate::router::build_app(state, &config.public_dir);
+    let app = crate::router::build_app(state, identity.router(), &config.public_dir);
 
     tracing::info!("listening on http://{}", &addr);
     let listener = tokio::net::TcpListener::bind(&addr)

@@ -36,11 +36,11 @@ use crate::shell::AppState;
 /// [`crate::csrf::require_same_origin`] is applied **last, and therefore
 /// outermost**, so it covers every route here including any added later. Putting
 /// it inside `build_router` would leave `/telemetry/collect` unprotected.
-pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router {
+pub(crate) fn build_app(state: AppState, identity: Router, public_dir: &std::path::Path) -> Router {
     use axum::http::StatusCode;
     use axum::routing::get;
 
-    build_router(state, public_dir)
+    build_router(state, identity, public_dir)
         // --- Untraced routes (declared AFTER build_router's .layer() calls) ---
         // A liveness probe every 30s would otherwise mint one span per probe
         // and bury the real traffic.
@@ -83,8 +83,8 @@ pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router
 ///
 /// A deliberate copy of `dpe-server`'s extractor rather than a shared
 /// dependency: it is stateless and both services sit behind the same ingress.
-/// Both copies carry the same tests, and `grep RightmostXffKeyExtractor` finds
-/// both.
+/// Every copy (`dpe-server`, `identity-web`, this one) carries the same tests,
+/// and `grep RightmostXffKeyExtractor` finds them all.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct RightmostXffKeyExtractor;
 
@@ -101,22 +101,6 @@ impl KeyExtractor for RightmostXffKeyExtractor {
             .ok_or(GovernorError::UnableToExtractKey)
     }
 }
-
-/// Per-IP budget for `POST /login`, the endpoint that sends mail.
-///
-/// Deliberately generous: DaSCH staff and a depositing project team can share
-/// one NAT address, so a tight bucket denies sign-in to a whole office. This is
-/// not the control that protects the relay quota (the global daily cap is) or
-/// bounds guessing (the per-account counter is); what it stops is one host
-/// driving the endpoint flat out.
-const ISSUE_BURST: u32 = 20;
-const ISSUE_REPLENISH_SECS: u64 = 30;
-
-/// Per-IP budget for `POST /login/code`. Higher than the issue budget: entering
-/// a code is a thing a legitimate user does repeatedly and a thing that sends no
-/// mail.
-const VERIFY_BURST: u32 = 30;
-const VERIFY_REPLENISH_SECS: u64 = 5;
 
 /// Per-IP budget for `GET /api/v1/approved-records`.
 ///
@@ -160,8 +144,6 @@ pub(crate) enum RouteKind {
     /// Renders the page shell for some request, so the page's beacon reports this
     /// path and `page_url.rs` must label it; that module's tests fail otherwise.
     Page,
-    /// Changes state and answers only with a redirect, never the shell.
-    Write,
     /// Machine-facing, under `/api/v1/`: JSON or a bare status, never the shell.
     Api,
     /// A `GET` that redirects. Only its 404 and 403 render the shell, and a
@@ -171,43 +153,20 @@ pub(crate) enum RouteKind {
 
 pub(crate) type Route = (&'static str, RouteKind, MethodRouter<AppState>);
 
-/// The traced routes, declared once. [`build_router`] folds them into the
+/// The editor's traced routes, declared once. [`build_router`] folds them into the
 /// router, and `page_url.rs`'s tests read their kinds. A route added outside
-/// this table escapes that test; the only ones are the untraced `/healthz` and
-/// `/telemetry/collect` in [`build_app`], which render no page.
+/// this table escapes that test; the only ones are identity's, pinned by
+/// `identity-web`'s own table, and the untraced `/healthz` and `/telemetry/collect`
+/// in [`build_app`], which render no page.
 pub(crate) fn routes() -> Vec<Route> {
     use axum::routing::{get, post};
-    use RouteKind::{Api, Page, Redirect, Write};
+    use RouteKind::{Api, Page, Redirect};
 
     vec![
         // The service root: a redirect to `/projects`. The shell's header links
         // here from every page, so without it the 404 page's own header is
         // another 404.
         ("/", Redirect, get(crate::shell::root)),
-        // The two login endpoints. The rate limit is on the POST alone, merged
-        // in rather than layered over the whole route: a limit that counted page
-        // loads would spend an office's budget on people reading the form.
-        (
-            "/login",
-            Page,
-            get(crate::auth::login_form).merge(post(crate::auth::login_submit).layer(per_ip_limit!(
-                ISSUE_REPLENISH_SECS,
-                ISSUE_BURST,
-                "login"
-            ))),
-        ),
-        (
-            "/login/code",
-            Page,
-            get(crate::auth::code_form).merge(post(crate::auth::code_submit).layer(per_ip_limit!(
-                VERIFY_REPLENISH_SECS,
-                VERIFY_BURST,
-                "code"
-            ))),
-        ),
-        // Not rate-limited: signing out costs nothing and refusing it would
-        // strand a user in a session they asked to end.
-        ("/logout", Write, post(crate::auth::logout)),
         // Public and unauthenticated on purpose — `crate::collection::list` takes no
         // `Authenticated`/`Rdu` extractor, which is what "public" looks like from a handler
         // signature. Traced, unlike `/telemetry/collect`: this is the one thing a CI poller
@@ -229,8 +188,7 @@ pub(crate) fn routes() -> Vec<Route> {
         // --- Authenticated routes ---
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.
-        // The editor's pages take [`crate::editor_auth`]'s pair, the depositor pages identity's
-        // [`crate::auth::guard`].
+        // They take [`crate::editor_auth`]'s pair.
         ("/projects", Page, get(crate::projects::list)),
         ("/states", Page, get(crate::projects::states)),
         // A redirect to the first section. Sections are real URLs rather than
@@ -288,22 +246,6 @@ pub(crate) fn routes() -> Vec<Route> {
         // pair on one `POST` URL per submission, for the same reason.
         ("/review", Page, get(crate::review::queue)),
         ("/review/{shortcode}", Page, get(crate::review::show).post(crate::review::act)),
-        (
-            "/depositors",
-            Page,
-            get(crate::depositors::list).post(crate::depositors::create),
-        ),
-        ("/depositors/new", Page, get(crate::depositors::create_form)),
-        (
-            "/depositors/{id}/edit",
-            Page,
-            get(crate::depositors::edit_form).post(crate::depositors::update),
-        ),
-        (
-            "/depositors/{id}/remove",
-            Page,
-            get(crate::depositors::remove_form).post(crate::depositors::remove),
-        ),
         ("/collection", Page, get(crate::collection::overview)),
         (
             "/collection/{id}/discard",
@@ -313,13 +255,13 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-/// Assemble the traced app router. Static assets are served from `public_dir`,
-/// falling back to the app's 404.
+/// Assemble the traced app router: the editor's routes merged with identity's. Static assets are
+/// served from `public_dir`, falling back to the app's 404.
 ///
-/// Everything [`routes`] declares is wrapped by the OTel layers. Routes that must
-/// stay **untraced** — `/healthz` and the telemetry beacon — are added by
+/// Everything [`routes`] declares, and every identity route, is wrapped by the OTel layers.
+/// Routes that must stay **untraced** — `/healthz` and the telemetry beacon — are added by
 /// [`build_app`] after this returns.
-fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
+fn build_router(state: AppState, identity: Router, public_dir: &std::path::Path) -> Router {
     use axum::routing::get;
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
@@ -330,6 +272,8 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         .into_iter()
         // --- Traced routes (declared BEFORE .layer()) ---
         .fold(Router::new(), |router, (path, _, handlers)| router.route(path, handlers))
+        .with_state(state)
+        .merge(identity)
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
         // --- OTel layers ---
@@ -338,7 +282,6 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
         .layer(OtelInResponseLayer)
         .layer(OtelAxumLayer::default())
-        .with_state(state)
 }
 
 #[cfg(test)]
@@ -346,14 +289,26 @@ mod tests {
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::StatusCode;
+    use identity_web::ISSUE_BURST;
     use tower::ServiceExt;
 
-    use super::{build_app, build_router, ISSUE_BURST};
-    use crate::test_support::test_state;
+    use super::{build_app, build_router};
+    use crate::shell::AppState;
+    use crate::test_support::{identity_router, test_state};
 
     // Static assets come from a nonexistent dir: these tests target the
     // fallback and /healthz, never a real static file.
     const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
+
+    fn app(state: AppState) -> axum::Router {
+        let identity = identity_router(&state);
+        build_app(state, identity, NO_PUBLIC_DIR.as_ref())
+    }
+
+    fn traced(state: AppState) -> axum::Router {
+        let identity = identity_router(&state);
+        build_router(state, identity, NO_PUBLIC_DIR.as_ref())
+    }
 
     async fn status_of(app: axum::Router, uri: &str) -> StatusCode {
         let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
@@ -363,7 +318,7 @@ mod tests {
     #[tokio::test]
     async fn unknown_path_falls_back_to_not_found() {
         assert_eq!(
-            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/no-such-page").await,
+            status_of(app(test_state("router").await.0), "/no-such-page").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -374,7 +329,7 @@ mod tests {
         // own header is another 404. A redirect rather than a page, so the
         // project list is the single place that decides what a signed-out
         // visitor gets.
-        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let app = app(test_state("router").await.0);
         let response = app
             .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
             .await
@@ -393,7 +348,7 @@ mod tests {
     async fn the_project_routes_are_closed_to_a_request_with_no_session() {
         // The guard is an extractor, so this is what "closed by default" looks
         // like from outside: no session, no page, and the destination is kept.
-        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let app = app(test_state("router").await.0);
         for (uri, expected) in [
             ("/projects", "/login?next=/projects"),
             ("/projects/0801", "/login?next=/projects/0801"),
@@ -417,10 +372,7 @@ mod tests {
 
     #[tokio::test]
     async fn healthz_is_ok() {
-        assert_eq!(
-            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/healthz").await,
-            StatusCode::OK
-        );
+        assert_eq!(status_of(app(test_state("router").await.0), "/healthz").await, StatusCode::OK);
     }
 
     #[tokio::test]
@@ -434,7 +386,7 @@ mod tests {
         // which only appears once the OTel subscriber is installed — `serve()`'s
         // job, not a unit test's.
         assert_eq!(
-            status_of(build_router(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/healthz").await,
+            status_of(traced(test_state("router").await.0), "/healthz").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -463,7 +415,7 @@ mod tests {
     async fn telemetry_beacon_is_wired_and_untraced() {
         // Same positional invariant as /healthz: the beacon must sit after the
         // OTel layers, or every page's telemetry upload mints a server span.
-        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let app = app(test_state("router").await.0);
         let status = app.oneshot(beacon_request("POST")).await.unwrap().status();
         assert_eq!(status, StatusCode::NO_CONTENT);
 
@@ -471,7 +423,7 @@ mod tests {
         // `.layer()` calls. An unmatched POST lands on the `ServeDir` fallback's
         // not-found service, which is GET-only and so answers 405 rather than
         // 404 — the point is that it is not the beacon's 204.
-        let traced = build_router(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let traced = traced(test_state("router").await.0);
         let status = traced.oneshot(beacon_request("POST")).await.unwrap().status();
         assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
         assert_ne!(status, StatusCode::NO_CONTENT);
@@ -481,7 +433,7 @@ mod tests {
     async fn telemetry_beacon_rejects_get() {
         // The beacon mutates nothing, but method discipline is the invariant the
         // no-state-change-on-GET rule rests on; a GET must not reach it.
-        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let app = app(test_state("router").await.0);
         let status = app.oneshot(beacon_request("GET")).await.unwrap().status();
         assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
     }
@@ -491,7 +443,7 @@ mod tests {
         // Burst is 10 at 1/s; the 11th back-to-back request from one IP must be
         // throttled. Without this the beacon is the one endpoint an anonymous
         // client can drive without limit.
-        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let app = app(test_state("router").await.0);
         let mut statuses = Vec::new();
         for _ in 0..12 {
             statuses.push(app.clone().oneshot(beacon_request("POST")).await.unwrap().status());
@@ -523,7 +475,7 @@ mod tests {
         // merge with a `.layer()` on the whole route, spending an office's shared
         // NAT budget on people reading the form.
         let (state, _) = test_state("rate-limit").await;
-        let app = build_app(state, NO_PUBLIC_DIR.as_ref());
+        let app = app(state);
 
         let mut form_loads = Vec::new();
         for _ in 0..(ISSUE_BURST + 10) {
@@ -576,7 +528,7 @@ mod tests {
         // is declared *after* the OTel layers, so a CSRF layer added inside
         // `build_router` would have left it — the only pre-auth POST in the app
         // — unprotected, with no test failing.
-        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let app = app(test_state("router").await.0);
         let unprotected = Request::builder()
             .method("POST")
             .uri("/telemetry/collect")
@@ -596,10 +548,7 @@ mod tests {
         // The liveness probe is a GET from Traefik, which sends no
         // `Sec-Fetch-*`. A CSRF check that applied to GET would fail every
         // probe and take the service out of rotation.
-        assert_eq!(
-            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/healthz").await,
-            StatusCode::OK
-        );
+        assert_eq!(status_of(app(test_state("router").await.0), "/healthz").await, StatusCode::OK);
     }
 
     /// The rate-limit key extractor: keys on the rightmost (Traefik-appended)

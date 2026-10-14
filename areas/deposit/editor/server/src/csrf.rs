@@ -171,7 +171,7 @@ mod tests {
             "/collection/00000000-0000-0000-0000-000000000000/discard",
         ];
 
-        let app = crate::router::build_app(test_state("csrf-exemption-scope").await.0, "nonexistent-test-dir".as_ref());
+        let app = crate::test_support::test_app(&test_state("csrf-exemption-scope").await.0);
         for path in other_post_paths {
             let request = Request::builder().method("POST").uri(path).body(Body::empty()).unwrap();
             let status = app.clone().oneshot(request).await.unwrap().status();

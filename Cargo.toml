@@ -23,6 +23,7 @@ members = [
   "areas/deposit/identity/core",
   "areas/deposit/identity/ports",
   "areas/deposit/identity/store",
+  "areas/deposit/identity/web",
   "areas/deposit/editor/core",
   "areas/deposit/editor/ports",
   "areas/deposit/editor/store",

@@ -1128,7 +1128,6 @@ version = "0.8.8"
 name = "editor-server"
 version = "0.8.8"
 dependencies = [
- "async-trait",
  "axum",
  "axum-tracing-opentelemetry",
  "chrono",
@@ -1140,8 +1139,8 @@ dependencies = [
  "editor-web",
  "figment",
  "identity-core",
- "identity-ports",
  "identity-store",
+ "identity-web",
  "init-tracing-opentelemetry",
  "insta",
  "maud",
@@ -2243,6 +2242,33 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "identity-web"
+version = "0.8.8"
+dependencies = [
+ "async-trait",
+ "axum",
+ "chrono",
+ "deposit-shell",
+ "identity-core",
+ "identity-ports",
+ "identity-store",
+ "maud",
+ "mosaic-tiles",
+ "opentelemetry",
+ "serde",
+ "shared-metadata",
+ "shared-telemetry",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tower_governor",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
  "uuid",
 ]
 

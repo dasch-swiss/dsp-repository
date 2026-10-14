@@ -7,16 +7,16 @@ use std::process::ExitCode;
 
 use clap::Parser;
 
-mod accounts;
 mod assets;
-mod auth;
 mod cli;
 mod collection;
 mod config;
+#[cfg(test)]
+mod cross_capability;
 mod csrf;
-mod depositors;
 mod editor_auth;
 mod entities;
+mod identity;
 mod observability;
 mod page_url;
 mod projects;

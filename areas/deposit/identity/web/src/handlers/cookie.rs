@@ -25,7 +25,7 @@ const ATTRIBUTES: &str = "Path=/; Secure; HttpOnly; SameSite=Lax";
 
 /// Every `Cookie` header value on the request, walking all of them rather than
 /// the first: HTTP/2 clients are free to split them.
-pub(crate) fn values(headers: &HeaderMap) -> Vec<&str> {
+pub fn values(headers: &HeaderMap) -> Vec<&str> {
     headers.get_all(COOKIE).iter().filter_map(|value| value.to_str().ok()).collect()
 }
 

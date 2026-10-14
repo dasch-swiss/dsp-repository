@@ -49,7 +49,8 @@ areas/
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
     │   ├── ports/             # What identity asks of the editor: AuthoredWork (crate: identity-ports)
-    │   └── store/             # Identity's SQLite store, mail transports, editor-ports adapters (crate: identity-store)
+    │   ├── store/             # Identity's SQLite store, mail transports, editor-ports adapters (crate: identity-store)
+    │   └── web/               # Identity's pages, handlers, routes and the Identity facade (crate: identity-web)
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
         ├── core/              # Pure domain types (crate: editor-core)
         ├── ports/             # What the editor asks of identity: Principal, Authenticator, UserDirectory (crate: editor-ports)
@@ -98,11 +99,12 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `AuthoredWork`; `std` only |
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |
+| `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade the editor binary starts and mounts |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveAuthoredWork` behind `identity-ports` |
 | `editor-web` | `areas/deposit/editor/web` | Editor view layer: pages and the project form |
-| `editor-server` | `areas/deposit/editor/server` | Editor binary: composes all routes and both stores |
+| `editor-server` | `areas/deposit/editor/server` | Editor binary: the editor's handlers, identity's router merged in, both stores |
 | `editor-collector` | `areas/deposit/editor/collector` | CI binary — collects approved records into pull requests |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |

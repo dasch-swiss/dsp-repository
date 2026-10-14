@@ -10,10 +10,9 @@ use axum::response::{IntoResponse, Redirect, Response};
 use chrono::{DateTime, Utc};
 use deposit_shell::sign_in::login_url;
 use editor_ports::Principal;
+use identity_web::{cookie_values, destination};
 use uuid::Uuid;
 
-use crate::auth::cookie;
-use crate::auth::guard::destination;
 use crate::shell::AppState;
 
 /// The signed-in account, as the editor's handlers use it.
@@ -41,7 +40,7 @@ impl FromRequestParts<AppState> for Authenticated {
         let sign_in = || Redirect::to(&login_url(destination(parts))).into_response();
         let Some(principal) = state
             .authenticator
-            .authenticate(&cookie::values(&parts.headers), SystemTime::now())
+            .authenticate(&cookie_values(&parts.headers), SystemTime::now())
             .await
         else {
             return Err(sign_in());
@@ -71,7 +70,7 @@ impl FromRequestParts<AppState> for Rdu {
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         let Authenticated(account) = Authenticated::from_request_parts(parts, state).await?;
         if !account.principal.is_rdu() {
-            // No `http.route` field: the enclosing server span carries it (see `auth::guard`).
+            // No `http.route` field: the enclosing server span carries it (see identity's `guard`).
             tracing::info!("refused an RDU-only page to an account that is not RDU");
             return Err(crate::shell::forbidden(
                 state,

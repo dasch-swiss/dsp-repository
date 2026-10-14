@@ -85,27 +85,6 @@ pub struct User {
 }
 
 impl User {
-    /// Whether this user may reach the project identified by `shortcode`.
-    ///
-    /// RDU is unconditional: access is role-based, which is why an RDU account's
-    /// `shortcodes` is empty. A depositor is scoped to their assignments.
-    ///
-    /// The comparison ignores ASCII case: the published set mixes `080C` with
-    /// `0801a`, and no two published shortcodes differ only in case. This is
-    /// `editor_core::records::normalize_shortcode`'s rule, compared rather than
-    /// keyed. It does not trim: the argument has passed `is_valid_shortcode`,
-    /// which admits no whitespace, and an authorization check must not be more
-    /// permissive than the validator.
-    /// `the_assignment_comparison_agrees_with_the_storage_key`, in
-    /// `editor-server`'s `auth` tests, pins the two against each other.
-    #[must_use]
-    pub fn may_reach(&self, shortcode: &str) -> bool {
-        match self.role {
-            Role::Rdu => true,
-            Role::Depositor => self.shortcodes.iter().any(|assigned| assigned.eq_ignore_ascii_case(shortcode)),
-        }
-    }
-
     /// Whether this account administers the service.
     #[must_use]
     pub fn is_rdu(&self) -> bool {
@@ -209,27 +188,8 @@ mod tests {
     }
 
     #[test]
-    fn test_a_depositor_reaches_only_the_projects_assigned_to_them() {
-        let depositor = user(Role::Depositor, &["0801", "0812"]);
-        assert!(depositor.may_reach("0801"));
-        assert!(depositor.may_reach("0812"));
-        assert!(!depositor.may_reach("0803"));
-    }
-
-    #[test]
-    fn test_an_assignment_matches_however_it_is_capitalised() {
-        let depositor = user(Role::Depositor, &["080c"]);
-        assert!(depositor.may_reach("080C"));
-        assert!(depositor.may_reach("080c"));
-        assert!(!depositor.may_reach("080E"));
-    }
-
-    #[test]
-    fn test_rdu_reaches_every_project_without_an_assignment() {
-        let rdu = user(Role::Rdu, &[]);
-        assert!(rdu.may_reach("0801"));
-        assert!(rdu.may_reach("anything"));
-        assert!(rdu.is_rdu());
+    fn test_only_an_rdu_account_administers_the_service() {
+        assert!(user(Role::Rdu, &[]).is_rdu());
         assert!(!user(Role::Depositor, &[]).is_rdu());
     }
 }

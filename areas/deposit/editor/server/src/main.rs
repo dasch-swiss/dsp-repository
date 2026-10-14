@@ -15,6 +15,7 @@ mod collection;
 mod config;
 mod csrf;
 mod depositors;
+mod editor_auth;
 mod entities;
 mod observability;
 mod page_url;

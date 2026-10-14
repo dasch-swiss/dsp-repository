@@ -26,11 +26,10 @@ use editor_core::records::normalize_shortcode;
 use editor_core::repository::EntityProposalRepository;
 use editor_web::entity as page;
 use editor_web::form::INTENT;
-use identity_core::records::User;
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 
-use crate::auth::guard::Authenticated;
+use crate::editor_auth::{Account, Authenticated};
 use crate::sections::is_enhanced;
 use crate::shell::AppState;
 
@@ -61,7 +60,7 @@ struct Context<'a> {
 /// Resolve a request, or the response that refuses it. See the module docs for the ordering.
 async fn context<'a>(
     state: &'a AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     entity_id: &str,
     signed_out_at: DateTime<Utc>,
@@ -69,13 +68,17 @@ async fn context<'a>(
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
-    if !user.may_reach(shortcode) {
+    if !user.principal.may_reach(shortcode) {
         tracing::info!(
             auth.subject = %user.id,
             project.shortcode = %shortcode,
             "refused an entity form for a project that is not assigned to this account"
         );
-        return Err(crate::shell::forbidden(state, user, crate::projects::NOT_ASSIGNED));
+        return Err(crate::shell::forbidden(
+            state,
+            &user.principal.display_name,
+            crate::projects::NOT_ASSIGNED,
+        ));
     }
 
     let key = normalize_shortcode(shortcode);
@@ -127,11 +130,11 @@ pub(crate) struct ShowParams {
 /// `GET /projects/{shortcode}/entities/{proposal}`.
 pub(crate) async fn show(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, entity_id)): Path<(String, String)>,
     Query(params): Query<ShowParams>,
 ) -> Response {
-    let context = match context(&state, &user, &shortcode, &entity_id, signed_out_at).await {
+    let context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
         Ok(context) => context,
         Err(response) => return response,
     };
@@ -175,7 +178,7 @@ fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice
 )]
 pub(crate) async fn act(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, entity_id)): Path<(String, String)>,
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
@@ -186,7 +189,7 @@ pub(crate) async fn act(
     span.record("form.entity", tracing::field::display(&entity_id));
 
     let body = FormBody::from_pairs(pairs);
-    let mut context = match context(&state, &user, &shortcode, &entity_id, signed_out_at).await {
+    let mut context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
         Ok(context) => context,
         Err(response) => {
             span.record("form.outcome", "refused");
@@ -242,7 +245,7 @@ pub(crate) async fn act(
 /// `POST /projects/{shortcode}/entities/{proposal}/fields/{field}/add` — one more blank row.
 pub(crate) async fn add_row(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, entity_id, field_id)): Path<(String, String, String)>,
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
@@ -256,7 +259,7 @@ pub(crate) async fn add_row(
         headers,
         pairs,
         None,
-        signed_out_at,
+        user.signed_out_at(),
     )
     .await
 }
@@ -264,7 +267,7 @@ pub(crate) async fn add_row(
 /// `POST /projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove` — drop one row.
 pub(crate) async fn remove_row(
     State(state): State<AppState>,
-    Authenticated(user, signed_out_at): Authenticated,
+    Authenticated(user): Authenticated,
     Path((shortcode, entity_id, field_id, key)): Path<(String, String, String, String)>,
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
@@ -278,7 +281,7 @@ pub(crate) async fn remove_row(
         headers,
         pairs,
         Some(&key),
-        signed_out_at,
+        user.signed_out_at(),
     )
     .await
 }
@@ -289,7 +292,7 @@ pub(crate) async fn remove_row(
 #[allow(clippy::too_many_arguments)]
 async fn row_action(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     entity_id: &str,
     field_id: &str,
@@ -351,7 +354,7 @@ async fn row_action(
 /// Discard the proposal, or show the confirmation that posts it.
 async fn discard(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -526,7 +529,13 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response
     )
 }
 
-fn confirming(state: &AppState, user: &User, shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
+fn confirming(
+    state: &AppState,
+    user: &Account,
+    shortcode: &str,
+    context: &Context<'_>,
+    headers: HeaderMap,
+) -> Response {
     let rendering = Rendering {
         confirming: Some(page::Confirmation::Discard),
         ..Rendering::default()
@@ -565,7 +574,7 @@ fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) 
 
 fn refused(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     headers: HeaderMap,
@@ -609,7 +618,7 @@ fn region(shortcode: &str, context: &Context<'_>, rendering: Rendering<'_>) -> R
 
 fn render_page(
     state: &AppState,
-    user: &User,
+    user: &Account,
     shortcode: &str,
     context: &Context<'_>,
     rendering: Rendering<'_>,
@@ -626,7 +635,13 @@ fn render_page(
         None => title,
     };
     let view = view(shortcode, context, rendering);
-    crate::shell::render(state, &title, StatusCode::OK, Some(user), editor_web::entity::page(&view))
+    crate::shell::render(
+        state,
+        &title,
+        StatusCode::OK,
+        Some(&user.principal.display_name),
+        editor_web::entity::page(&view),
+    )
 }
 
 fn view<'a>(
@@ -648,13 +663,13 @@ fn view<'a>(
     }
 }
 
-fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the entity form could not reach storage");
     crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(user),
+        Some(&user.principal.display_name),
         editor_web::pages::problem::unavailable(
             "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

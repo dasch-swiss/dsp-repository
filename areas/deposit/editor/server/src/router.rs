@@ -208,7 +208,8 @@ pub(crate) fn routes() -> Vec<Route> {
         // --- Authenticated routes ---
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.
-        // See [`crate::auth::guard`].
+        // The editor's pages take [`crate::editor_auth`]'s pair, the depositor pages identity's
+        // [`crate::auth::guard`].
         ("/projects", get(crate::projects::list)),
         ("/states", get(crate::projects::states)),
         // A redirect to the first section. Sections are real URLs rather than

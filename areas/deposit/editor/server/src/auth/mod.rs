@@ -40,9 +40,8 @@ impl EditorConfig {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Utc};
     use editor_core::records::normalize_shortcode;
-    use identity_core::records::{Role, User};
+    use editor_ports::{Principal, Role};
 
     use super::*;
 
@@ -60,17 +59,13 @@ mod tests {
         assert!(!auth.break_glass, "the break-glass log fallback must be off unless asked for");
     }
 
-    fn user(role: Role, shortcodes: &[&str]) -> User {
-        User {
-            id: uuid::Uuid::nil(),
-            email: "a@x.test".to_string(),
-            name: "A".to_string(),
-            role,
+    fn depositor(shortcodes: &[&str]) -> Principal {
+        Principal {
+            account_id: uuid::Uuid::nil().to_string(),
+            display_name: "A".to_string(),
+            role: Role::Depositor,
             shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: DateTime::<Utc>::MIN_UTC,
+            signed_out_at: std::time::SystemTime::UNIX_EPOCH,
         }
     }
 
@@ -88,7 +83,7 @@ mod tests {
             ("085F", "085f"),
         ] {
             assert!(
-                user(Role::Depositor, &[assigned]).may_reach(requested),
+                depositor(&[assigned]).may_reach(requested),
                 "{assigned} should reach {requested}"
             );
             assert_eq!(
@@ -98,7 +93,7 @@ mod tests {
             );
         }
         for (assigned, requested) in [("0801", "0803"), ("080C", "080E")] {
-            assert!(!user(Role::Depositor, &[assigned]).may_reach(requested));
+            assert!(!depositor(&[assigned]).may_reach(requested));
             assert_ne!(normalize_shortcode(assigned), normalize_shortcode(requested));
         }
     }

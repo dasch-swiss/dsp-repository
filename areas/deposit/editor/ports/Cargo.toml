@@ -1,0 +1,10 @@
+[package]
+name = "editor-ports"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+# The fakes, for the tests of the crates that consume or implement this port. Off in a
+# production build, so a fake cannot be wired in by mistake.
+test-support = []

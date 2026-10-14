@@ -1,7 +1,8 @@
 //! Identity's SQLite store, `identity.sqlite`: the connection pools, the PRAGMAs, the schema,
 //! and the two entry points every query goes through. It implements `identity-core`'s
-//! repository ports, and [`mail`] holds the transports behind its `Mailer`. The editor's tables
-//! are in `editor-store`, in a database file of their own.
+//! repository ports, [`mail`] holds the transports behind its `Mailer`, and
+//! [`LiveAuthenticator`] and [`LiveUserDirectory`] answer the editor's ports from them. The
+//! editor's tables are in `editor-store`, in a database file of their own.
 //!
 //! [`Database`] holds a **writer** pool of exactly one connection and a **reader** pool of
 //! several, which makes the two rules this layer must not get wrong structural rather than
@@ -27,6 +28,7 @@
 //! closure that runs to completion on a blocking thread, and no read transaction can be left open
 //! across an `.await` to starve WAL checkpointing and let `-wal` grow without bound.
 
+mod live;
 mod login_codes;
 pub mod mail;
 mod mail_sends;
@@ -42,6 +44,7 @@ use std::time::Duration;
 
 use deadpool_sqlite::{Config as PoolSource, Hook, HookError, Pool, PoolConfig, Runtime};
 use identity_core::repository::RepositoryError;
+pub use live::{LiveAuthenticator, LiveUserDirectory};
 use rusqlite::{Connection, Transaction, TransactionBehavior};
 
 /// The database file inside the mounted directory. Fixed rather than

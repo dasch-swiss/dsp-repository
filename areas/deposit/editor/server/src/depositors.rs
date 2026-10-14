@@ -26,8 +26,6 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::Utc;
-use editor_core::records::SubmissionState;
-use editor_core::repository::{DraftRepository, SubmissionRepository};
 use editor_web::pages::depositors as page;
 use identity_core::records::{Role, User};
 use identity_core::repository::{RepositoryError, UserRepository};
@@ -158,13 +156,19 @@ pub(crate) async fn list(State(state): State<AppState>, Rdu(viewer): Rdu) -> Res
         })
         .collect();
 
-    crate::shell::render(&state, LIST_TITLE, StatusCode::OK, Some(&viewer), page::list(&rows))
+    crate::shell::render(&state, LIST_TITLE, StatusCode::OK, Some(&viewer.name), page::list(&rows))
 }
 
 /// `GET /depositors/new` — the empty create form.
 pub(crate) async fn create_form(State(state): State<AppState>, Rdu(viewer): Rdu) -> Response {
     let fields = page::DepositorFields { name: "", email: "", shortcodes: "" };
-    crate::shell::render(&state, CREATE_TITLE, StatusCode::OK, Some(&viewer), page::create(&fields, None))
+    crate::shell::render(
+        &state,
+        CREATE_TITLE,
+        StatusCode::OK,
+        Some(&viewer.name),
+        page::create(&fields, None),
+    )
 }
 
 /// `POST /depositors` — create a depositor.
@@ -246,7 +250,7 @@ pub(crate) async fn edit_form(State(state): State<AppState>, Rdu(viewer): Rdu, P
         &state,
         EDIT_TITLE,
         StatusCode::OK,
-        Some(&viewer),
+        Some(&viewer.name),
         page::edit(&target.id.to_string(), &fields, None),
     )
 }
@@ -339,26 +343,13 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
     // A failed read here is not fatal: it would leave the page unable to name
     // what is in flight, and a confirmation that silently claims there is
     // nothing is worse than one that says it could not tell.
-    let drafts = match DraftRepository::list(&*state.editor).await {
-        Ok(drafts) => drafts
-            .into_iter()
-            .filter(|draft| draft.updated_by == Some(id))
-            .map(|draft| draft.shortcode)
-            .collect::<Vec<_>>(),
+    let account_id = id.to_string();
+    let drafts = match state.authored_work.open_drafts(&account_id).await {
+        Ok(drafts) => drafts,
         Err(error) => return storage_error(&state, &viewer, "read this account's drafts", &error),
     };
-    let submissions = match SubmissionRepository::list(&*state.editor).await {
-        Ok(submissions) => submissions
-            .into_iter()
-            // `list` returns every row regardless of state, so the state filter
-            // is this handler's to apply. Everything short of `Approved`
-            // qualifies: the warning is about work that can no longer be
-            // *returned* to its depositor, and an `InReview`
-            // submission is as unreturnable as a `Submitted` one — filtering to
-            // `Submitted` alone would hide the case where the loss matters most.
-            .filter(|submission| submission.submitted_by == Some(id) && submission.state != SubmissionState::Approved)
-            .map(|submission| submission.shortcode)
-            .collect::<Vec<_>>(),
+    let submissions = match state.authored_work.open_submissions(&account_id).await {
+        Ok(submissions) => submissions,
         Err(error) => return storage_error(&state, &viewer, "read this account's submissions", &error),
     };
 
@@ -372,7 +363,7 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
         &state,
         REMOVE_TITLE,
         StatusCode::OK,
-        Some(&viewer),
+        Some(&viewer.name),
         page::confirm_removal(&target.id.to_string(), &impact),
     )
 }
@@ -438,7 +429,7 @@ async fn manageable(state: &AppState, viewer: &User, id: &str) -> Result<User, R
         return Err(crate::shell::not_found(State(state.clone())).await);
     };
     match UserRepository::find_by_id(&*state.identity, id).await {
-        Ok(Some(user)) if user.is_rdu() => Err(crate::shell::forbidden(state, viewer, RDU_IMMUTABLE)),
+        Ok(Some(user)) if user.is_rdu() => Err(crate::shell::forbidden(state, &viewer.name, RDU_IMMUTABLE)),
         Ok(Some(user)) => Ok(user),
         // Not a 403: a reader who reached this page followed a link from the
         // list, and an account that is not there is gone rather than closed.
@@ -456,7 +447,7 @@ fn rejected_create(state: &AppState, viewer: &User, form: &DepositorForm, messag
         state,
         CREATE_TITLE,
         StatusCode::OK,
-        Some(viewer),
+        Some(&viewer.name),
         page::create(&form.as_fields(), Some(message)),
     )
 }
@@ -467,7 +458,7 @@ fn rejected_edit(state: &AppState, viewer: &User, id: Uuid, form: &DepositorForm
         state,
         EDIT_TITLE,
         StatusCode::OK,
-        Some(viewer),
+        Some(&viewer.name),
         page::edit(&id.to_string(), &form.as_fields(), Some(message)),
     )
 }
@@ -488,7 +479,7 @@ fn storage_error(state: &AppState, viewer: &User, what: &str, error: &impl std::
         state,
         UNAVAILABLE_TITLE,
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(viewer),
+        Some(&viewer.name),
         editor_web::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",
@@ -593,6 +584,7 @@ mod route_tests {
     use axum::http::Request;
     use chrono::TimeDelta;
     use editor_core::records::{DraftRecord, Submission, SubmissionState};
+    use editor_core::repository::{DraftRepository, SubmissionRepository};
     use identity_core::cookie;
     use identity_core::repository::SessionRepository;
     use tower::ServiceExt;
@@ -621,6 +613,16 @@ mod route_tests {
         let user = a_user(state, email, "A Depositor", Role::Depositor, shortcodes).await;
         let session = a_session(state, user.id).await;
         (user, session)
+    }
+
+    /// What the editor is told about `user` once they sign in: the access an assignment grants.
+    async fn access_of(state: &AppState, user: &User) -> editor_ports::Principal {
+        let session = a_session(state, user.id).await;
+        state
+            .authenticator
+            .authenticate(&[&format!("{}={session}", cookie::SESSION)], std::time::SystemTime::now())
+            .await
+            .expect("a fresh session should authenticate")
     }
 
     fn form_body(name: &str, email: &str, shortcodes: &str) -> String {
@@ -723,8 +725,9 @@ mod route_tests {
         // The role is never taken from the form: RDU membership is
         // configuration's to decide.
         assert_eq!(created.role, Role::Depositor);
-        assert!(created.may_reach("0801"));
-        assert!(!created.may_reach("0803"));
+        let access = access_of(&state, &created).await;
+        assert!(access.may_reach("0801"));
+        assert!(!access.may_reach("0803"));
     }
 
     #[tokio::test]
@@ -827,8 +830,9 @@ mod route_tests {
         assert_eq!(updated.created_at, target.created_at);
 
         // And the assignment change is what access now follows.
-        assert!(!updated.may_reach("0801"));
-        assert!(updated.may_reach("0812"));
+        let access = access_of(&state, &updated).await;
+        assert!(!access.may_reach("0801"));
+        assert!(access.may_reach("0812"));
     }
 
     #[tokio::test]

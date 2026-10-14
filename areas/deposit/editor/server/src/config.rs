@@ -488,6 +488,17 @@ impl EditorConfig {
                     .to_string(),
             );
         }
+        if self
+            .collection_token
+            .as_ref()
+            .is_some_and(|token| token.expose().trim().is_empty())
+        {
+            return invalid(
+                "EDITOR_COLLECTION_TOKEN is set but blank, which would let any caller report on a record. Set a \
+                 token, or unset the variable to refuse every report"
+                    .to_string(),
+            );
+        }
         if self.env == "PROD" && self.collection_token.is_none() {
             return invalid(
                 "EDITOR_ENV=PROD requires EDITOR_COLLECTION_TOKEN. Without it the collection report endpoint \
@@ -888,6 +899,18 @@ mod tests {
             assert!(error.to_string().contains("EDITOR_COLLECTION_TOKEN"), "{error}");
             Ok(())
         });
+    }
+
+    #[test]
+    fn a_blank_collection_token_is_refused() {
+        for value in ["", "   "] {
+            figment::Jail::expect_with(|jail| {
+                jail.set_env("EDITOR_COLLECTION_TOKEN", value);
+                let error = EditorConfig::load().expect_err("a blank collection token must be refused");
+                assert!(error.to_string().contains("EDITOR_COLLECTION_TOKEN"), "{error}");
+                Ok(())
+            });
+        }
     }
 
     #[test]

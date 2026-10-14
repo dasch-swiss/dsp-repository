@@ -9,11 +9,9 @@ mod sign_in {
     use axum::response::Response;
     use axum::Router;
     use chrono::Utc;
-    use identity_core::cookie::{LOGIN, SESSION};
-    use identity_core::records::Role;
-    use identity_core::repository::SessionRepository;
+    use identity_store::test_support::{session_exists, touch_session};
+    use identity_web::test_support::{LOGIN, SESSION};
     use tower::ServiceExt;
-    use uuid::Uuid;
 
     use crate::test_support::{
         body_string, cookie_set, get, location, open_test_db, post, state_over, test_app, test_state, urlencode,
@@ -22,10 +20,8 @@ mod sign_in {
 
     const KNOWN: &str = "depositor@example.test";
 
-    async fn a_user(state: &TestState, email: &str) -> Uuid {
-        crate::test_support::a_user(state, email, "A Depositor", Role::Depositor, &[])
-            .await
-            .id
+    async fn a_user(state: &TestState, email: &str) -> String {
+        crate::test_support::a_user(state, email, "A Depositor", "depositor", &[]).await
     }
 
     /// `POST /login` for `email`, carrying `binding` as the login cookie if given.
@@ -93,7 +89,7 @@ mod sign_in {
         // sent to sign in ends up on the project, not on the root wondering
         // where they were going.
         let (state, mailer) = test_state("sign-in-next").await;
-        let _ = crate::test_support::a_user(&state, KNOWN, "A Depositor", Role::Depositor, &["0801"]).await;
+        let _ = crate::test_support::a_user(&state, KNOWN, "A Depositor", "depositor", &["0801"]).await;
         let app = test_app(&state);
 
         // The guard names the destination.
@@ -152,8 +148,8 @@ mod sign_in {
     async fn test_a_session_past_its_absolute_expiry_is_refused_and_deleted() {
         let db = open_test_db("absolute-expiry").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |settings| {
+            settings.login_cooldown = Duration::ZERO
         });
         a_user(&state, KNOWN).await;
         let app = test_app(&state);
@@ -174,27 +170,23 @@ mod sign_in {
             "an expired session must not reach a guarded page"
         );
         assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
-        assert_eq!(
-            SessionRepository::find(&*state.identity.store, &session).await.unwrap(),
-            None,
-            "and must not linger"
-        );
+        assert!(!session_exists(&state.identity.store, &session).await, "and must not linger");
     }
 
     #[tokio::test]
     async fn test_an_idle_session_is_refused_even_before_its_absolute_expiry() {
         let db = open_test_db("idle-expiry").await;
         let mailer = RecordingMailer::new();
-        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |auth| {
-            auth.cooldown = Duration::ZERO;
-            auth.session_idle = Duration::from_secs(60);
+        let state = state_over(db.identity.clone(), db.editor.clone(), mailer.clone(), |settings| {
+            settings.login_cooldown = Duration::ZERO;
+            settings.session_idle = Duration::from_secs(60);
         });
         a_user(&state, KNOWN).await;
         let app = test_app(&state);
         let session = sign_in(&app, &mailer, KNOWN).await;
 
         let stale = Utc::now() - chrono::TimeDelta::minutes(5);
-        SessionRepository::touch(&*db.identity, &session, stale).await.unwrap();
+        touch_session(&db.identity, &session, stale).await;
 
         let refused = app
             .clone()
@@ -203,7 +195,7 @@ mod sign_in {
             .unwrap();
         assert_eq!(refused.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
-        assert_eq!(SessionRepository::find(&*state.identity.store, &session).await.unwrap(), None);
+        assert!(!session_exists(&state.identity.store, &session).await);
     }
 
     #[tokio::test]
@@ -240,13 +232,12 @@ mod depositors {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use chrono::{TimeDelta, Utc};
-    use editor_core::records::{DraftRecord, Submission, SubmissionState};
-    use editor_core::repository::{DraftRepository, SubmissionRepository};
-    use identity_core::cookie;
-    use identity_core::records::{Role, User};
-    use identity_core::repository::{SessionRepository, UserRepository};
+    use editor_store::test_support::{seed_draft, seed_submission};
+    use identity_store::test_support::{
+        find_user, find_user_by_email, record_code_issued, record_failed_login, session_exists,
+    };
+    use identity_web::test_support::SESSION;
     use tower::ServiceExt;
-    use uuid::Uuid;
 
     use crate::test_support::{
         a_session, a_user, body_string, get, location, open_test_db, post, state_over, test_app, test_state, urlencode,
@@ -256,29 +247,30 @@ mod depositors {
     const DEPOSITOR_EMAIL: &str = "a.depositor@example.test";
 
     fn as_session(request: Request<Body>, session: &str) -> Request<Body> {
-        crate::test_support::with_cookie(request, cookie::SESSION, session)
+        crate::test_support::with_cookie(request, SESSION, session)
     }
 
-    /// An RDU account with a live session.
-    async fn rdu(state: &TestState) -> (User, String) {
-        let user = a_user(state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
-        let session = a_session(state, user.id).await;
+    /// An RDU account, by id, with a live session.
+    async fn rdu(state: &TestState) -> (String, String) {
+        let user = a_user(state, "rdu@dasch.swiss", "An Admin", "rdu", &[]).await;
+        let session = a_session(state, &user).await;
         (user, session)
     }
 
-    /// A depositor account with a live session.
-    async fn depositor(state: &TestState, email: &str, shortcodes: &[&str]) -> (User, String) {
-        let user = a_user(state, email, "A Depositor", Role::Depositor, shortcodes).await;
-        let session = a_session(state, user.id).await;
+    /// A depositor account, by id, with a live session.
+    async fn depositor(state: &TestState, email: &str, shortcodes: &[&str]) -> (String, String) {
+        let user = a_user(state, email, "A Depositor", "depositor", shortcodes).await;
+        let session = a_session(state, &user).await;
         (user, session)
     }
 
-    /// What the editor is told about `user` once they sign in: the access an assignment grants.
-    async fn access_of(state: &TestState, user: &User) -> editor_ports::Principal {
-        let session = a_session(state, user.id).await;
+    /// What the editor is told about the account `user` once they sign in: the access an
+    /// assignment grants.
+    async fn access_of(state: &TestState, user: &str) -> editor_ports::Principal {
+        let session = a_session(state, user).await;
         state
             .authenticator
-            .authenticate(&[&format!("{}={session}", cookie::SESSION)], std::time::SystemTime::now())
+            .authenticate(&[&format!("{SESSION}={session}")], std::time::SystemTime::now())
             .await
             .expect("a fresh session should authenticate")
     }
@@ -309,16 +301,15 @@ mod depositors {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/depositors"));
 
-        let created = UserRepository::find_by_email(&*state.identity.store, DEPOSITOR_EMAIL)
+        let created = find_user_by_email(&state.identity.store, DEPOSITOR_EMAIL)
             .await
-            .unwrap()
             .expect("the account should exist");
         assert_eq!(created.name, "A Depositor");
         assert_eq!(created.shortcodes, vec!["0801".to_string(), "080C".to_string()]);
         // The role is never taken from the form: RDU membership is
         // configuration's to decide.
-        assert_eq!(created.role, Role::Depositor);
-        let access = access_of(&state, &created).await;
+        assert_eq!(created.role, "depositor");
+        let access = access_of(&state, &created.id).await;
         assert!(access.may_reach("0801"));
         assert!(!access.may_reach("0803"));
     }
@@ -331,25 +322,17 @@ mod depositors {
         let (state, _) = test_state("dep-update").await;
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801", "080C"]).await;
+        let created_at = find_user(&state.identity.store, &target).await.unwrap().created_at;
         let issued = Utc::now() - TimeDelta::hours(3);
-        UserRepository::record_code_issued(&*state.identity.store, target.id, issued)
-            .await
-            .unwrap();
-        UserRepository::record_failed_login(
-            &*state.identity.store,
-            target.id,
-            Utc::now(),
-            Utc::now() - TimeDelta::hours(1),
-        )
-        .await
-        .unwrap();
+        record_code_issued(&state.identity.store, &target, issued).await;
+        record_failed_login(&state.identity.store, &target, Utc::now(), Utc::now() - TimeDelta::hours(1)).await;
         let app = test_app(&state);
 
         let response = app
             .clone()
             .oneshot(as_session(
                 post(
-                    &format!("/depositors/{}/edit", target.id),
+                    &format!("/depositors/{target}/edit"),
                     &form_body("A. Depositor", "renamed@example.test", "0812"),
                 ),
                 &session,
@@ -358,20 +341,17 @@ mod depositors {
             .unwrap();
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
 
-        let updated = UserRepository::find_by_id(&*state.identity.store, target.id)
-            .await
-            .unwrap()
-            .unwrap();
+        let updated = find_user(&state.identity.store, &target).await.unwrap();
         assert_eq!(updated.name, "A. Depositor");
         assert_eq!(updated.email, "renamed@example.test");
         assert_eq!(updated.shortcodes, vec!["0812".to_string()]);
-        assert_eq!(updated.role, Role::Depositor);
+        assert_eq!(updated.role, "depositor");
         assert_eq!(updated.failed_logins, 1, "the failure counter is not the form's to reset");
         assert!(updated.last_code_at.is_some(), "nor is the last-code stamp");
-        assert_eq!(updated.created_at, target.created_at);
+        assert_eq!(updated.created_at, created_at);
 
         // And the assignment change is what access now follows.
-        let access = access_of(&state, &updated).await;
+        let access = access_of(&state, &updated.id).await;
         assert!(!access.may_reach("0801"));
         assert!(access.may_reach("0812"));
     }
@@ -384,24 +364,13 @@ mod depositors {
         let (state, _) = test_state("dep-update-draft").await;
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
-        DraftRepository::upsert(
-            &*state.editor,
-            &DraftRecord {
-                shortcode: "0801".to_string(),
-                payload: "{}".to_string(),
-                updated_by: Some(target.id),
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-            },
-        )
-        .await
-        .unwrap();
+        seed_draft(&state.editor, "0801", "{}", Some(&target), Utc::now(), Utc::now()).await;
         let app = test_app(&state);
 
         app.clone()
             .oneshot(as_session(
                 post(
-                    &format!("/depositors/{}/edit", target.id),
+                    &format!("/depositors/{target}/edit"),
                     &form_body("A Depositor", DEPOSITOR_EMAIL, ""),
                 ),
                 &session,
@@ -409,11 +378,9 @@ mod depositors {
             .await
             .unwrap();
 
-        let draft = DraftRepository::find(&*state.editor, "0801")
-            .await
-            .unwrap()
-            .expect("the draft survives");
-        assert_eq!(draft.updated_by, Some(target.id), "and still names its last editor");
+        let updated_by = state.editor.account_column("drafts", "updated_by").await;
+        assert_eq!(updated_by.len(), 1, "the draft survives");
+        assert_eq!(updated_by[0], Some(target.clone()), "and still names its last editor");
     }
 
     #[tokio::test]
@@ -421,28 +388,25 @@ mod depositors {
         // The sessions half is what stops a removed depositor going on using the tab they
         // already had open.
         let db = open_test_db("dep-remove").await;
-        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |auth| {
-            auth.cooldown = Duration::ZERO
+        let state = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |settings| {
+            settings.login_cooldown = Duration::ZERO
         });
         let (_, rdu_session) = rdu(&state).await;
         let (target, their_session) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
-        let second_session = a_session(&state, target.id).await;
+        let second_session = a_session(&state, &target).await;
         let app = test_app(&state);
 
         let response = app
             .clone()
-            .oneshot(as_session(post(&format!("/depositors/{}/remove", target.id), ""), &rdu_session))
+            .oneshot(as_session(post(&format!("/depositors/{target}/remove"), ""), &rdu_session))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/depositors"));
 
-        assert!(UserRepository::find_by_id(&*state.identity.store, target.id)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(find_user(&state.identity.store, &target).await.is_none());
         for session in [&their_session, &second_session] {
-            assert_eq!(SessionRepository::find(&*state.identity.store, session).await.unwrap(), None);
+            assert!(!session_exists(&state.identity.store, session).await);
         }
         // And the assignments went with it, so nothing is left pointing at a
         // row that is gone.
@@ -466,52 +430,23 @@ mod depositors {
         let (state, _) = test_state("dep-remove-work").await;
         let (_, rdu_session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
-        DraftRepository::upsert(
-            &*state.editor,
-            &DraftRecord {
-                shortcode: "0801".to_string(),
-                payload: "{}".to_string(),
-                updated_by: Some(target.id),
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
-            },
-        )
-        .await
-        .unwrap();
-        SubmissionRepository::create(
-            &*state.editor,
-            &Submission {
-                id: Uuid::new_v4(),
-                shortcode: "0812".to_string(),
-                payload: "{}".to_string(),
-                state: SubmissionState::Submitted,
-                submitted_by: Some(target.id),
-                submitted_at: Utc::now(),
-                reviewed_by: None,
-                reviewed_at: None,
-                reviewer_note: None,
-                review_state: None,
-            },
-        )
-        .await
-        .unwrap();
+        seed_draft(&state.editor, "0801", "{}", Some(&target), Utc::now(), Utc::now()).await;
+        seed_submission(&state.editor, "0812", "{}", "submitted", Some(&target), Utc::now(), None, None).await;
         let app = test_app(&state);
 
         app.clone()
-            .oneshot(as_session(post(&format!("/depositors/{}/remove", target.id), ""), &rdu_session))
+            .oneshot(as_session(post(&format!("/depositors/{target}/remove"), ""), &rdu_session))
             .await
             .unwrap();
 
-        let draft = DraftRepository::find(&*state.editor, "0801")
-            .await
-            .unwrap()
-            .expect("the draft survives");
-        assert_eq!(draft.updated_by, Some(target.id));
-        let submissions = SubmissionRepository::list(&*state.editor).await.unwrap();
-        assert_eq!(submissions.len(), 1, "the submission survives and stays pending");
-        assert_eq!(submissions[0].submitted_by, Some(target.id));
+        let updated_by = state.editor.account_column("drafts", "updated_by").await;
+        assert_eq!(updated_by.len(), 1, "the draft survives");
+        assert_eq!(updated_by[0], Some(target.clone()));
+        let submitted_by = state.editor.account_column("submissions", "submitted_by").await;
+        assert_eq!(submitted_by.len(), 1, "the submission survives and stays pending");
+        assert_eq!(submitted_by[0], Some(target.clone()));
         assert_eq!(
-            UserRepository::find_by_id(&*state.identity.store, target.id).await.unwrap(),
+            find_user(&state.identity.store, &target).await,
             None,
             "the id names no account any more"
         );
@@ -525,28 +460,12 @@ mod depositors {
         let (state, _) = test_state("dep-remove-confirm").await;
         let (_, rdu_session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
-        SubmissionRepository::create(
-            &*state.editor,
-            &Submission {
-                id: Uuid::new_v4(),
-                shortcode: "0801".to_string(),
-                payload: "{}".to_string(),
-                state: SubmissionState::Submitted,
-                submitted_by: Some(target.id),
-                submitted_at: Utc::now(),
-                reviewed_by: None,
-                reviewed_at: None,
-                reviewer_note: None,
-                review_state: None,
-            },
-        )
-        .await
-        .unwrap();
+        seed_submission(&state.editor, "0801", "{}", "submitted", Some(&target), Utc::now(), None, None).await;
         let app = test_app(&state);
 
         let response = app
             .clone()
-            .oneshot(as_session(get(&format!("/depositors/{}/remove", target.id)), &rdu_session))
+            .oneshot(as_session(get(&format!("/depositors/{target}/remove")), &rdu_session))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -556,10 +475,7 @@ mod depositors {
         assert!(body.contains("no longer be returned"), "{body}");
 
         assert!(
-            UserRepository::find_by_id(&*state.identity.store, target.id)
-                .await
-                .unwrap()
-                .is_some(),
+            find_user(&state.identity.store, &target).await.is_some(),
             "the confirmation must change nothing"
         );
     }
@@ -583,8 +499,8 @@ mod depositors {
 
         for uri in [
             "/depositors".to_string(),
-            format!("/depositors/{}/edit", target.id),
-            format!("/depositors/{}/remove", target.id),
+            format!("/depositors/{target}/edit"),
+            format!("/depositors/{target}/remove"),
         ] {
             let response = app.clone().oneshot(as_session(get(&uri), &session)).await.unwrap();
             assert_eq!(response.status(), StatusCode::OK, "every write URL must answer GET: {uri}");
@@ -598,21 +514,18 @@ mod depositors {
         // update handler, which is the point.
         let gone = app
             .clone()
-            .oneshot(as_session(get(&format!("/depositors/{}", target.id)), &session))
+            .oneshot(as_session(get(&format!("/depositors/{target}")), &session))
             .await
             .unwrap();
         assert_eq!(gone.status(), StatusCode::NOT_FOUND);
         let gone = app
             .clone()
-            .oneshot(as_session(post(&format!("/depositors/{}", target.id), ""), &session))
+            .oneshot(as_session(post(&format!("/depositors/{target}"), ""), &session))
             .await
             .unwrap();
         assert_eq!(gone.status(), StatusCode::METHOD_NOT_ALLOWED);
 
-        let after = UserRepository::find_by_id(&*state.identity.store, target.id)
-            .await
-            .unwrap()
-            .unwrap();
+        let after = find_user(&state.identity.store, &target).await.unwrap();
         assert_eq!(after.name, "A Depositor", "no GET on this surface may change anything");
         assert_eq!(after.shortcodes, vec!["0801".to_string()]);
     }
@@ -622,7 +535,7 @@ mod sections {
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::StatusCode;
-    use identity_core::records::Role;
+    use identity_web::test_support::SESSION;
     use tower::ServiceExt;
 
     use crate::test_support::{a_session, a_user, test_app, test_state};
@@ -635,8 +548,8 @@ mod sections {
         // service depends on it. Asserted here because a new write route is
         // exactly where the assumption would go untested.
         let (state, _) = test_state("section-csrf").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
-        let session = a_session(&state, user.id).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", "depositor", &["0801d"]).await;
+        let session = a_session(&state, &user).await;
         let app = test_app(&state);
 
         let mut request = Request::builder()
@@ -647,9 +560,7 @@ mod sections {
             .expect("the request should build");
         request.headers_mut().append(
             axum::http::header::COOKIE,
-            format!("{}={session}", identity_core::cookie::SESSION)
-                .parse()
-                .expect("a cookie"),
+            format!("{SESSION}={session}").parse().expect("a cookie"),
         );
         let response = app.clone().oneshot(request).await.expect("completes");
         assert_eq!(response.status(), StatusCode::FORBIDDEN);

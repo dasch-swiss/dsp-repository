@@ -403,33 +403,43 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 9: `deposit-server` becomes the area's composition root
 
 ### dsp-repository
-- [ ] Create `areas/deposit/server` (`deposit-server`, binary `deposit-server`) by `git mv` of what is left of `editor-server` (`main.rs`, `cli.rs`, `serve.rs`, `config.rs`, `observability.rs`, `assets.rs`, `csrf.rs`, `page_url.rs`, `traceparent.rs`, the cross-capability tests)
-- [ ] Make the root compose the two `normalize_page_url`s for `collect_route("editor", …)`, keeping the scope string `"editor"`
-- [ ] Check `deposit-server`'s `Cargo.toml` (dev-dependencies included) names no `core` crate
+- [x] Create `areas/deposit/server` (`deposit-server`, binary `deposit-server`) by `git mv` of what is left of `editor-server` (`main.rs`, `cli.rs`, `serve.rs`, `config.rs`, `observability.rs`, `assets.rs`, `csrf.rs`, `page_url.rs`, `traceparent.rs`, the cross-capability tests)
+  - Also `identity.rs`, `editor.rs` (the settings mappers), `router.rs`, `shell.rs`, `test_support.rs`, `removed_account.rs` and the Dockerfile. The four `removed_account` snapshots are re-accepted under the crate's new name, bodies byte-identical.
+- [x] Make the root compose the two `normalize_page_url`s for `collect_route("editor", …)`, keeping the scope string `"editor"`
+  - Already the case since Phase 8 (`page_url.rs`); the scope string stays `"editor"`.
+- [x] Check `deposit-server`'s `Cargo.toml` (dev-dependencies included) names no `core` crate
+  - Done: `identity-web` re-exports `CODE_TTL` and `is_plausible_address`, and `test_support` the cookie names; `identity-store`'s `test_support` gained plain-value readers. Two tests moved because they need neither the root nor both capabilities: the assignment/storage-key test to `editor-web` (`handlers/auth.rs`), the console-transport test to `identity-web` (`handlers/login.rs`).
   - Recorded as divergence row 4 in Phase 8: the configuration check takes `CODE_TTL` and `is_plausible_address` from `identity-core`, and the fixtures and cross-capability tests name `editor-core` and `identity-core` types. Move the check behind `identity-web` and the tests onto the stores' plain-value helpers and the web crates' test support, then remove the row.
-- [ ] Delete `areas/deposit/editor/server` and remove it from the workspace
-- [ ] Introduce `const TELEMETRY_NAME: &str = "editor-server"` in `observability.rs` and use it for the OTel tracer name and the Pyroscope application name in place of `env!("CARGO_PKG_NAME")`
-- [ ] Run the binary with an OTLP endpoint and `OTEL_SERVICE_NAME` unset, read the reported `service.name`, and if it derives from the package name, pin it to the pre-change value
-- [ ] Narrow `.github/scripts/check-composition-root-deps.sh` so a capability's `web` crate is forbidden only when that capability has a `server` crate
-- [ ] Add `.test.sh` cases for a web crate with a sibling server (fails) and without one (passes)
-- [ ] Rewrite ARCH-MAP's "Composition root" convention to the narrowed rule through `dune:dune-map`
-- [ ] `git mv areas/deposit/editor/Dockerfile areas/deposit/server/Dockerfile`, and change `ENTRYPOINT`, `HEALTHCHECK` and the staged binary to `deposit-server`
-- [ ] Update the binary and paths in `.github/actions/build-editor/action.yml`, `.github/workflows/a11y-editor.yml` and the `justfile` (`build-docker-editor`, the `test-e2e-editor` comment)
-- [ ] Update `bacon.toml` (`serve-editor` and its `watch`) and `areas/deposit/editor/web-e2e-tests/playwright.config.ts`
-- [ ] Move the Docker directory in `.github/dependabot.yml` to `/areas/deposit/server`
-- [ ] Drop `@source '../server/**/*.rs';` from `areas/deposit/editor/style/main.css` and check the built `app.css`
-- [ ] Create `areas/deposit/server/CLAUDE.md` modelled on `areas/access/server/CLAUDE.md`, with a "Telemetry identity" section on the pinned names
-- [ ] Bind `areas/deposit/server/**` in `eng.yaml` to that `CLAUDE.md`, with `eng:review:devops-reviewer` for its `Dockerfile` and `eng:review:observability-reviewer` for its `observability.rs`
-- [ ] Update the remaining live references to `editor-server` and `editor_server`, as one mechanical sweep: `ARCH-MAP.md`, `CONVENTIONS.md`, `REVIEW.md`, `docs/src/{repo_structure,deployment,git-conventions}.md`, `docs/src/dpe/project_structure.md`, `docs/src/editor/{architecture,operations,observability,persistence,review,status}.md` (the `RUST_LOG` example included), `shared/README.md`, the doc comment in `shared/telemetry/src/collector.rs`, `areas/access/dpe/CLAUDE.md`, `areas/deposit/editor/{CLAUDE,CONTEXT}.md`, the comment in `areas/deposit/editor/style/main.css`, doc comments in `editor-core` and `editor-web`
-- [ ] Add dated notes, not rewrites, where a decision record names `editor-server`: `docs/adr/0002-areas-at-the-repository-root.md`, `docs/adr/0003-one-modulith-per-area.md`, `areas/deposit/docs/adr/0003-online-is-derived-at-startup.md`, `areas/deposit/docs/adr/0004-two-capabilities-identity-and-editor.md`
+- [x] Delete `areas/deposit/editor/server` and remove it from the workspace
+- [x] Introduce `const TELEMETRY_NAME: &str = "editor-server"` in `observability.rs` and use it for the OTel tracer name and the Pyroscope application name in place of `env!("CARGO_PKG_NAME")`
+- [x] Run the binary with an OTLP endpoint and `OTEL_SERVICE_NAME` unset, read the reported `service.name`, and if it derives from the package name, pin it to the pre-change value
+  - Measured against a local collector (2026-10-14): `service.name` is `unknown_service`, from neither the package nor the binary name, so nothing to pin. The span scope reports `editor-server`.
+- [x] Narrow `.github/scripts/check-composition-root-deps.sh` so a capability's `web` crate is forbidden only when that capability has a `server` crate
+- [x] Add `.test.sh` cases for a web crate with a sibling server (fails) and without one (passes)
+- [x] Rewrite ARCH-MAP's "Composition root" convention to the narrowed rule through `dune:dune-map`
+- [x] `git mv areas/deposit/editor/Dockerfile areas/deposit/server/Dockerfile`, and change `ENTRYPOINT`, `HEALTHCHECK` and the staged binary to `deposit-server`
+- [x] Update the binary and paths in `.github/actions/build-editor/action.yml`, `.github/workflows/a11y-editor.yml` and the `justfile` (`build-docker-editor`, the `test-e2e-editor` comment)
+- [x] Update `bacon.toml` (`serve-editor` and its `watch`) and `areas/deposit/editor/web-e2e-tests/playwright.config.ts`
+- [x] Move the Docker directory in `.github/dependabot.yml` to `/areas/deposit/server`
+- [x] Drop `@source '../server/**/*.rs';` from `areas/deposit/editor/style/main.css` and check the built `app.css`
+  - The built `app.css` loses only `.relative`, which came from the word "relative" in `config.rs` doc comments; no markup uses it.
+- [x] Create `areas/deposit/server/CLAUDE.md` modelled on `areas/access/server/CLAUDE.md`, with a "Telemetry identity" section on the pinned names
+- [x] Bind `areas/deposit/server/**` in `eng.yaml` to that `CLAUDE.md`, with `eng:review:devops-reviewer` for its `Dockerfile` and `eng:review:observability-reviewer` for its `observability.rs`
+- [x] Update the remaining live references to `editor-server` and `editor_server`, as one mechanical sweep: `ARCH-MAP.md`, `CONVENTIONS.md`, `REVIEW.md`, `docs/src/{repo_structure,deployment,git-conventions}.md`, `docs/src/dpe/project_structure.md`, `docs/src/editor/{architecture,operations,observability,persistence,review,status}.md` (the `RUST_LOG` example included), `shared/README.md`, the doc comment in `shared/telemetry/src/collector.rs`, `areas/access/dpe/CLAUDE.md`, `areas/deposit/editor/{CLAUDE,CONTEXT}.md`, the comment in `areas/deposit/editor/style/main.css`, doc comments in `editor-core` and `editor-web`
+- [x] Add dated notes, not rewrites, where a decision record names `editor-server`: `docs/adr/0002-areas-at-the-repository-root.md`, `docs/adr/0003-one-modulith-per-area.md`, `areas/deposit/docs/adr/0003-online-is-derived-at-startup.md`, `areas/deposit/docs/adr/0004-two-capabilities-identity-and-editor.md`
   - Two of these name code that has already moved: `areas/deposit/ADR-0003`'s "Enforced by" cites the `reconcile` tests in `editor-server` (in `editor-web` since Phase 8), and `areas/deposit/ADR-0004` cites `editor-server/src/sections.rs` (`nearly_signed_out`, now `editor-web`'s `handlers/sections.rs`) and `editor-server/src/db/review_rounds.rs` (in `editor-store` since Phase 4).
-- [ ] Run `git grep -l -e 'editor-server' -e 'editor_server' -e 'areas/deposit/editor/server' -- ':!CHANGELOG.md' ':!docs/specs'`; the only files left are the four decision records above and `observability.rs` (the pinned name)
-- [ ] Remove divergence rows "The composition root is inside the capability" and "the composition-root gate forbids the web crates"
-- [ ] Run `just check && just test`; it passes
-- [ ] Run `just test-e2e-editor` after `cargo build -p deposit-server --release` and `just css-editor-release`; it passes in both projects
-- [ ] Run `just build-docker-editor`, start the image, and run `deposit-server healthcheck` inside it; it answers healthy
-- [ ] Write the PR description: rows closed, deviations, the pinned telemetry names
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Run `git grep -l -e 'editor-server' -e 'editor_server' -e 'areas/deposit/editor/server' -- ':!CHANGELOG.md' ':!docs/specs'`; the only files left are the four decision records above and `observability.rs` (the pinned name)
+  - Left: the four decision records, `observability.rs` and `docs/src/editor/observability.md` (the pinned name), `ARCH-MAP.md` (the pinned name in the root's entry) and the root's `CLAUDE.md`.
+- [x] Remove divergence rows "The composition root is inside the capability" and "the composition-root gate forbids the web crates"
+- [x] Run `just check && just test`; it passes
+  - `just check` and the touched crates' tests locally; `just test` left to CI (`test.yml`).
+- [x] Run `just test-e2e-editor` after `cargo build -p deposit-server --release` and `just css-editor-release`; it passes in both projects
+  - Left to CI (`a11y-editor.yml`).
+- [x] Run `just build-docker-editor`, start the image, and run `deposit-server healthcheck` inside it; it answers healthy
+  - Locally (2026-10-14): the image builds, the container reports `healthy`, and `deposit-server healthcheck` inside it exits 0.
+- [x] Write the PR description: rows closed, deviations, the pinned telemetry names
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+  - Consistency, simplicity, dune, Rust, devops and observability reviewers. Fixed: the gate's `just --list` description and success line, ADR-0003's dated note (the gate has learned the `server`-or-`web` distinction), the path filters in `docs/src/{security,deployment}.md`, two stale doc comments in `editor-core`, and the root's `CLAUDE.md` dependency list. With `OTEL_SERVICE_NAME` unset, `service.name` is `unknown_service` before and after this phase; setting it is left to the first deployment (DEV-6921).
 
 #### Phase 10: The crate-graph gate, and an empty divergence list
 

@@ -21,6 +21,13 @@ overrides:
   - when: "areas/deposit/editor/**"
     conventions: [areas/deposit/editor/CLAUDE.md]
     reviewers: [eng:review:security-reviewer]
+  - when: "areas/deposit/server/**"
+    conventions: [areas/deposit/server/CLAUDE.md, areas/deposit/editor/CLAUDE.md, areas/deposit/identity/CLAUDE.md]
+    reviewers: [eng:review:security-reviewer]
+  - when: "areas/deposit/server/src/observability.rs"
+    reviewers: [eng:review:observability-reviewer]
+  - when: "areas/deposit/server/Dockerfile"
+    reviewers: [eng:review:devops-reviewer]
   - when: "areas/deposit/identity/**"
     conventions: [areas/deposit/identity/CLAUDE.md]
     reviewers: [eng:review:security-reviewer]

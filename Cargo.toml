@@ -28,7 +28,7 @@ members = [
   "areas/deposit/editor/ports",
   "areas/deposit/editor/store",
   "areas/deposit/editor/web",
-  "areas/deposit/editor/server",
+  "areas/deposit/server",
   "areas/deposit/editor/collector",
   "dsp-cli",
 ]

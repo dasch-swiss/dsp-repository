@@ -4810,7 +4810,7 @@ mod tests {
     /// `PublishedProjects::load_from` — the only public way to build one — since
     /// its backing map is private outside `editor-core`.
     fn published_set_of(project: &ProjectRaw) -> PublishedProjects {
-        let dir = std::env::temp_dir().join(format!("editor-server-synthetic-{}", Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("editor-web-synthetic-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&dir).expect("a temp dir should be creatable");
         let bytes = write_project(project).expect("the synthetic project should serialize");
         std::fs::write(dir.join("synthetic.json"), bytes).expect("the temp file should be writable");

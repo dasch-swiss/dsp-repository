@@ -32,7 +32,7 @@ shared-metadata         ← the wire contract, shared with the editor;
               ↑
               access-server     ← Access Area's composition root; areas/access/server
               shared-telemetry  ← beacon contract + collector endpoint, shared
-                                  with editor-server; lives in `shared/`
+                                  with deposit-server; lives in `shared/`
 ```
 
 `dpe-api-oai`, `dpe-web` and `dpe-server` depend on `shared-metadata` directly
@@ -105,7 +105,7 @@ Imports `shared-metadata` and `dpe-core` types directly; depends on `maud` and `
 
 ### Browser telemetry
 
-`access-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `areas/access/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold, so `access-server` passes `dpe_server::normalize_page_url` into `shared_telemetry::collector::collect_route`.
+`access-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `deposit-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `areas/access/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold, so `access-server` passes `dpe_server::normalize_page_url` into `shared_telemetry::collector::collect_route`.
 
 ### `dpe-server` (server/)
 

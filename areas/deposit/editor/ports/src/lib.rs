@@ -80,8 +80,8 @@ impl Principal {
     /// `editor_core::records::normalize_shortcode`'s rule, compared rather than keyed. It does
     /// not trim: the argument has passed `is_valid_shortcode`, which admits no whitespace, and
     /// an authorization check must not be more permissive than the validator.
-    /// `the_assignment_comparison_agrees_with_the_storage_key`, in `editor-server`'s `identity`
-    /// tests, pins the two against each other.
+    /// `the_assignment_comparison_agrees_with_the_storage_key`, in `editor-web`'s
+    /// `handlers/auth.rs` tests, pins the two against each other.
     #[must_use]
     pub fn may_reach(&self, shortcode: &str) -> bool {
         match self.role {

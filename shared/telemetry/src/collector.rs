@@ -67,7 +67,7 @@ fn normalize_page_url(url: &str) -> &'static str {
 ///
 /// `normalize_page_url` is a plain `fn`, not a closure, because each service's
 /// route table is a `const` slice plus a pattern match, not captured state —
-/// see `dpe-server::page_url` and `editor-server::page_url`. Passing it in here
+/// see `dpe-server::page_url` and `deposit-server::page_url`. Passing it in here
 /// keeps this crate free of any one service's routes, per the Shared Crates
 /// rule.
 ///

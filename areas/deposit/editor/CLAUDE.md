@@ -22,7 +22,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Six crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveAuthoredWork` behind `identity-ports`), `editor-web` (`web/`, the views, the editor's handlers and routes, and the `Editor` facade `editor-server` starts and mounts; the document shell around the views is the area's `deposit-shell`, `areas/deposit/shell`), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`), `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports) and `identity-web` (`areas/deposit/identity/web`, the login and depositor pages, their handlers and routes, and the `Identity` facade `editor-server` starts and mounts), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on an identity crate: an account fact the editor needs (a display name, a role, the session's deadline) reaches it through `editor-ports` (`Principal`, `UserDirectory`), and only `editor-server` names both capabilities' crates.
+Five crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveAuthoredWork` behind `identity-ports`), `editor-web` (`web/`, the views, the editor's handlers and routes, and the `Editor` facade `deposit-server` starts and mounts; the document shell around the views is the area's `deposit-shell`, `areas/deposit/shell`) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`), `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports) and `identity-web` (`areas/deposit/identity/web`, the login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on an identity crate: an account fact the editor needs (a display name, a role, the session's deadline) reaches it through `editor-ports` (`Principal`, `UserDirectory`), and only the Deposit Area's composition root, `deposit-server` (`areas/deposit/server`, with its own guide in `areas/deposit/server/CLAUDE.md`), names both capabilities' crates.
 
 ## Code Organization Patterns
 
@@ -30,9 +30,9 @@ Six crates: `editor-core` (`core/`, the draft model, validation and canonical wr
 
 Views are `fn(...) -> maud::Markup`: pages in `web/src/pages/`, the form's field registry and widgets in `web/src/form/`. They use no Axum; the handlers that call them are in `web/src/handlers/`. The document they are wrapped in (header, footer, the 403, 404 and problem pages) and the sign-in link are the area's, in `deposit-shell` (`areas/deposit/shell`), which depends on no capability crate. Accessibility is the **tile's** responsibility, not the caller's — an a11y failure here usually means a missing semantic method on a `mosaic-tiles` tile rather than a missing attribute at the call site.
 
-### Routing (`editor-web`, `editor-server`)
+### Routing (`editor-web`, `deposit-server`)
 
-The editor's routes are one table in `web/src/routes.rs`, which `Editor::router` folds; identity's are `identity-web`'s `routes.rs`. `server/src/router.rs` merges the two routers and adds the layers, deliberately separate from `serve()` so the assembly is unit-testable. The invariants:
+The editor's routes are one table in `web/src/routes.rs`, which `Editor::router` folds; identity's are `identity-web`'s `routes.rs`. `areas/deposit/server/src/router.rs` merges the two routers and adds the layers, deliberately separate from `serve()` so the assembly is unit-testable. The invariants:
 
 - **The editor is root-mounted.** It runs on its own hostname, so there is no `/editor` prefix. A shared origin would defeat the `Sec-Fetch-Site` CSRF control.
 - **The root declares no capability route.** `build_router` merges `Editor::router()` and `Identity::router()` before the OTel layers, so every page is traced and under the CSRF layer.
@@ -49,7 +49,7 @@ Every route that changes state is `POST`. The `Sec-Fetch-Site` CSRF control must
 
 ## Running Tests
 
-- Rust: `cargo test -p deposit-shell -p identity-core -p identity-ports -p identity-store -p identity-web -p editor-core -p editor-ports -p editor-store -p editor-web -p editor-server`
+- Rust: `cargo test -p deposit-shell -p identity-core -p identity-ports -p identity-store -p identity-web -p editor-core -p editor-ports -p editor-store -p editor-web -p deposit-server`
 - E2E, accessibility and the no-JavaScript pass: `just test-e2e-editor` / `just test-a11y-editor` (suite in `areas/deposit/editor/web-e2e-tests/`)
 
 The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptEnabled: false`. Neither pass subsumes the other: the no-JS pass catches a control with no submit button behind it, and the JS pass catches a control that Datastar has made inert.
@@ -100,7 +100,7 @@ RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism name
 
 ## Observability
 
-Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute, asking `identity_web::normalize_page_url` and then `editor_web::normalize_page_url` (`web/src/page_url.rs`). A new full-page route is a `RouteKind::Page` entry in `web/src/routes.rs` (identity's: `identity-web`'s `routes.rs`) and needs a matching entry in that crate's `page_url.rs`; a test there fails until it has one.
+Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `areas/deposit/server/src/page_url.rs` normalizes the `page.url` attribute, asking `identity_web::normalize_page_url` and then `editor_web::normalize_page_url` (`web/src/page_url.rs`). A new full-page route is a `RouteKind::Page` entry in `web/src/routes.rs` (identity's: `identity-web`'s `routes.rs`) and needs a matching entry in that crate's `page_url.rs`; a test there fails until it has one.
 
 ## Best Practices for AI Agents
 

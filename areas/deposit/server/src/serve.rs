@@ -17,7 +17,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     let config = match crate::config::EditorConfig::load() {
         Ok(config) => config,
         Err(e) => {
-            eprintln!("editor-server: failed to load configuration: {e}");
+            eprintln!("deposit-server: failed to load configuration: {e}");
             eprintln!("  checked: code defaults, ./editor.toml, then EDITOR_* environment variables");
             return ExitCode::FAILURE;
         }
@@ -169,40 +169,4 @@ async fn shutdown_signal() {
     }
 
     tracing::info!("shutdown signal received, flushing telemetry");
-}
-
-#[cfg(test)]
-mod tests {
-    use identity_core::mail::Mail;
-
-    #[tokio::test]
-    async fn test_the_console_transport_logs_the_body_and_not_the_recipient() {
-        // The message is logged so the service stays usable without a relay, and
-        // the recipient is not part of it. The log is actually captured, so
-        // adding `mail.to = %mail.to` to the event below fails here rather than
-        // passing on the transport the PR preview runs.
-        let mail = Mail {
-            to: "someone@example.org".to_string(),
-            subject: "Your sign-in code".to_string(),
-            body: "Your code is 123456".to_string(),
-        };
-
-        // No relay host selects the console transport.
-        let console =
-            identity_store::mail::mailer(None, 587, None, "noreply@dasch.swiss").expect("the console transport");
-        let (logs, guard) = crate::test_support::capture_logs();
-        assert_eq!(console.send(&mail).await, Ok(()));
-        drop(guard);
-
-        let lines = logs.lines();
-        assert!(
-            lines.iter().any(|line| line.contains("123456")),
-            "the code must reach the log, or the fallback delivers nothing: {lines:?}"
-        );
-        for line in &lines {
-            assert!(!line.contains("someone@example.org"), "the recipient must not: {line}");
-            assert!(!line.contains('@'), "and nothing address-shaped either: {line}");
-        }
-        assert!(console.describe().contains("EDITOR_SMTP_HOST"));
-    }
 }

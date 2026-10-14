@@ -3,6 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
+pub use identity_core::cookie::{LOGIN, SESSION};
 use identity_core::mail::{Mail, MailError, Mailer};
 
 /// One message a [`RecordingMailer`] was asked to send.

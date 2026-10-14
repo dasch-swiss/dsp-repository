@@ -866,6 +866,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "deposit-server"
+version = "0.8.8"
+dependencies = [
+ "axum",
+ "axum-tracing-opentelemetry",
+ "chrono",
+ "clap",
+ "deposit-shell",
+ "editor-ports",
+ "editor-store",
+ "editor-web",
+ "figment",
+ "identity-store",
+ "identity-web",
+ "init-tracing-opentelemetry",
+ "insta",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "pyroscope",
+ "serde",
+ "shared-telemetry",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tower_governor",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "ureq",
+]
+
+[[package]]
 name = "deposit-shell"
 version = "0.8.8"
 dependencies = [
@@ -1123,44 +1158,6 @@ dependencies = [
 [[package]]
 name = "editor-ports"
 version = "0.8.8"
-
-[[package]]
-name = "editor-server"
-version = "0.8.8"
-dependencies = [
- "axum",
- "axum-tracing-opentelemetry",
- "chrono",
- "clap",
- "deposit-shell",
- "editor-core",
- "editor-ports",
- "editor-store",
- "editor-web",
- "figment",
- "identity-core",
- "identity-store",
- "identity-web",
- "init-tracing-opentelemetry",
- "insta",
- "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-otlp",
- "opentelemetry_sdk",
- "pyroscope",
- "serde",
- "shared-telemetry",
- "thiserror 2.0.18",
- "tokio",
- "tower",
- "tower-http",
- "tower_governor",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "ureq",
- "uuid",
-]
 
 [[package]]
 name = "editor-store"

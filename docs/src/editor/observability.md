@@ -26,7 +26,7 @@ The beacon endpoint is not editor code. `shared-telemetry` owns the wire contrac
 
 The `namespace` argument sets the OTel instrumentation scope — `editor.browser` here, `dpe.browser` in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as `otel_scope_name`, and a missed init would silently rename it.
 
-`page_url::normalize_page_url` is not shared code either: a shared crate cannot hold one service's route table, so the root composes one (`server/src/page_url.rs`) and passes the fn in. It asks identity first (`identity_web::normalize_page_url`, which answers for `/login` and the depositor pages and `None` for anything else), then the editor (`editor_web::normalize_page_url`), and labels anything else `other`. Each web crate declares its traced routes as one table, `editor-web`'s and `identity-web`'s `routes.rs`, each entry marked with its kind, and a test beside each normalizer checks that every full-page entry normalizes to its own path template, so a new route declared as a page cannot report its views as `other`. Whether a route is declared as a page is checked in review, not by the test.
+`page_url::normalize_page_url` is not shared code either: a shared crate cannot hold one service's route table, so the root composes one (`areas/deposit/server/src/page_url.rs`) and passes the fn in. It asks identity first (`identity_web::normalize_page_url`, which answers for `/login` and the depositor pages and `None` for anything else), then the editor (`editor_web::normalize_page_url`), and labels anything else `other`. Each web crate declares its traced routes as one table, `editor-web`'s and `identity-web`'s `routes.rs`, each entry marked with its kind, and a test beside each normalizer checks that every full-page entry normalizes to its own path template, so a new route declared as a page cannot report its views as `other`. Whether a route is declared as a page is checked in review, not by the test.
 
 So a Grafana query distinguishes the two services by `otel_scope_name` (`editor.browser` vs `dpe.browser`) or by the resource attribute `service.namespace` (`editor` vs `dpe`). Metric *names* (`browser.web_vital`, `browser.error`, …) are identical across both.
 
@@ -48,7 +48,7 @@ curl http://localhost:4100/no-such-page
 
 `dev-editor-otel` sets `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` and `PYROSCOPE_ENDPOINT` for you.
 
-In Grafana at <http://localhost:3000>: traces for page routes in Tempo and **none for `/healthz`**, log records in Loki, browser metrics under `editor.browser` in Mimir, and CPU flame graphs for `editor-server` in Pyroscope.
+In Grafana at <http://localhost:3000>: traces for page routes in Tempo and **none for `/healthz`**, log records in Loki, browser metrics under `editor.browser` in Mimir, and CPU flame graphs under the `editor-server` application in Pyroscope (the name is pinned, not the crate name).
 
 ## Adding instrumentation
 

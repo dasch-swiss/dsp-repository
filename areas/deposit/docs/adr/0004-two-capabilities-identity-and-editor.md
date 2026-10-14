@@ -57,6 +57,7 @@ A file per capability rather than one file, because what separates the two is ow
 ## Consequences
 
 - `editor-server` disappears: `serve`, `main`, `cli`, `config` and `observability` move to `deposit-server`; `db/` to `editor-store` and `identity-store`; the handlers to `editor-web` and `identity-web`; `auth/` to `identity-core` and `identity-web`; `shell.rs` to `deposit-shell`. Configuration is loaded once at the root, and each capability receives the part it declares.
+  Note (2026-10-14): done. `deposit-server` is at `areas/deposit/server`, `nearly_signed_out` (cited above as `editor-server/src/sections.rs`) is in `editor-web`'s `handlers/sections.rs`, and `db/review_rounds.rs` is `areas/deposit/editor/store/src/review_rounds.rs` in `editor-store`.
 - `docs/src/editor/architecture.md`, `ARCH-MAP.md` and the `CONTEXT.md` files describe the code as it is; this record is the only place the target lives. The page's "Divergence from the target architecture" section lists, per entry, what differs, the clause here it violates and where in the code; each DEV-7375 step removes the entries it closes.
 - `identity` gets its own `CONTEXT.md` (the five terms under "People and access" in `areas/deposit/editor/CONTEXT.md`) in the refactor step that creates `identity-core`, registered in the root index then (ADR-0003, Consequences).
 - `EDITOR_DB_DIR` holds two files and the backup note in `docs/src/editor/operations.md` names both. The collector and the `/api/v1` routes are editor's and authenticate by bearer token as today, never by session.

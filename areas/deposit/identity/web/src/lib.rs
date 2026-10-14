@@ -18,6 +18,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use identity_core::login::AuthConfig;
+/// What the root's configuration check reads: the login code's lifetime and the address shape.
+pub use identity_core::login::{is_plausible_address, CODE_TTL};
 use identity_core::repository::IdentityRepositories;
 use identity_ports::AuthoredWork;
 

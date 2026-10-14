@@ -22,13 +22,13 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Six crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveAuthoredWork` behind `identity-ports`), `editor-web` (`web/`, view functions), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity's domain — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`) and `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
+Six crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveAuthoredWork` behind `identity-ports`), `editor-web` (`web/`, view functions; the document shell around them is the area's `deposit-shell`, `areas/deposit/shell`), `editor-server` (`server/`, the composition root) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity's domain — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`) and `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on `identity-core`: an account fact they need (a display name, a role) reaches them from `editor-server` as a plain value — an id, a `&str` — and only `editor-server` names both crates.
 
 ## Code Organization Patterns
 
 ### Views (`editor-web`)
 
-A plain library crate of `fn(...) -> maud::Markup`. Pages in `web/src/pages/`, components in `web/src/components/`, the form's field registry and widgets in `web/src/form/`. Accessibility is the **tile's** responsibility, not the caller's — an a11y failure here usually means a missing semantic method on a `mosaic-tiles` tile rather than a missing attribute at the call site.
+A plain library crate of `fn(...) -> maud::Markup`. Pages in `web/src/pages/`, the form's field registry and widgets in `web/src/form/`. The document they are wrapped in (header, footer, the 403, 404 and problem pages) and the sign-in link are the area's, in `deposit-shell` (`areas/deposit/shell`), which depends on no capability crate. Accessibility is the **tile's** responsibility, not the caller's — an a11y failure here usually means a missing semantic method on a `mosaic-tiles` tile rather than a missing attribute at the call site.
 
 ### Routing (`editor-server`)
 
@@ -48,7 +48,7 @@ Every route that changes state is `POST`. The `Sec-Fetch-Site` CSRF control must
 
 ## Running Tests
 
-- Rust: `cargo test -p identity-core -p identity-ports -p identity-store -p editor-core -p editor-ports -p editor-store -p editor-web -p editor-server`
+- Rust: `cargo test -p deposit-shell -p identity-core -p identity-ports -p identity-store -p editor-core -p editor-ports -p editor-store -p editor-web -p editor-server`
 - E2E, accessibility and the no-JavaScript pass: `just test-e2e-editor` / `just test-a11y-editor` (suite in `areas/deposit/editor/web-e2e-tests/`)
 
 The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptEnabled: false`. Neither pass subsumes the other: the no-JS pass catches a control with no submit button behind it, and the JS pass catches a control that Datastar has made inert.

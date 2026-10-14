@@ -21,7 +21,7 @@ use mosaic_tiles::text_field::{text_field, InputType};
 
 /// `path`, carrying `next` as a query parameter when there is one. Interpolated
 /// rather than encoded: the caller restricts it to unreserved characters (see
-/// `safe_next` in `editor-server`), and Maud escapes it into the attribute.
+/// `safe_next` in `deposit-shell`), and Maud escapes it into the attribute.
 fn with_next(path: &str, next: Option<&str>) -> String {
     match next {
         Some(next) => format!("{path}?next={next}"),

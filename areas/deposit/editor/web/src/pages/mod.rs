@@ -1,11 +1,9 @@
 //! Whole-page bodies. Each returns the `<main>` content; the server wraps it in
-//! [`crate::view::page`].
+//! `deposit_shell::view::page`.
 
 pub mod collection;
 pub mod depositors;
-pub mod forbidden;
 pub mod login;
-pub mod problem;
 pub mod projects;
 pub mod review;
 pub mod section;

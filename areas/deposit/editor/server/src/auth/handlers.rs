@@ -11,6 +11,7 @@ use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
+use deposit_shell::sign_in::{login_url, NEXT};
 use identity_core::cookie::{LOGIN, SESSION};
 use identity_core::login::{delta, is_plausible_address, locked_out, CODE_TTL, SEND_WINDOW};
 use identity_core::mail::Mail;
@@ -22,7 +23,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use super::cookie;
-use super::guard::{destination_or_root, login_url, next_from, NEXT};
+use super::guard::{destination_or_root, next_from};
 use crate::shell::AppState;
 
 /// The one message every code-entry failure produces.
@@ -64,7 +65,7 @@ fn render(state: &AppState, title: &str, status: StatusCode, content: Markup) ->
 
 /// `/login/code`, carrying the destination on to the second screen.
 ///
-/// Built here rather than in [`super::guard`] beside [`login_url`] because it is
+/// Built here rather than in `deposit_shell::sign_in` beside [`login_url`] because it is
 /// a step inside this flow rather than a way into it. The same no-encoding
 /// argument applies: `safe_next` admits only unreserved characters.
 fn code_url(next: Option<&str>) -> String {

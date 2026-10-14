@@ -19,6 +19,7 @@ members = [
   "areas/access/cpe/store-build",
   "areas/access/cpe/web",
   "areas/access/sync/store",
+  "areas/deposit/shell",
   "areas/deposit/identity/core",
   "areas/deposit/identity/ports",
   "areas/deposit/identity/store",

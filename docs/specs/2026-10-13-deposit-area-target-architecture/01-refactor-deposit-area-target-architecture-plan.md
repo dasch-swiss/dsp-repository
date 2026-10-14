@@ -311,19 +311,24 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 6: The area shell `deposit-shell`
 
 ### dsp-repository
-- [ ] Create `areas/deposit/shell` (`deposit-shell`) from `editor-web/src/view.rs`, `components/global/`, `pages/forbidden.rs`, `pages/problem.rs` and the 404 markup of `editor-server/src/shell.rs`; it depends on `maud`, `mosaic-tiles` and `shared-*` only
-- [ ] Move `safe_next`, `login_url`, `NEXT`, `MAX_NEXT_LEN` and their negative tests from `auth/guard.rs` into `deposit-shell`; `next_from` and `destination_or_root` stay with identity's login code and call the shell's `safe_next`
-- [ ] Move `RDU_ONLY` from `depositors.rs` into `deposit-shell`
-- [ ] Record in `deposit-shell`'s crate doc that its 403 page links `/projects` and its navigation links `/logout`, as string literals (ADR-0003, amendment of 2026-09-25)
-- [ ] Update the doc comment in `editor-web/src/pages/login.rs` that names `safe_next` in `editor-server`
-- [ ] Point `editor-web` and `editor-server` at `deposit-shell`; `editor-server/src/shell.rs` keeps only the response glue
-- [ ] Add `@source '../../shell/**/*.rs';` to `areas/deposit/editor/style/main.css`, then check that the built `app.css` holds the header, footer and button class families
-- [ ] Remove divergence row "The document shell is the editor's"
-- [ ] Run `just check && just test`; it passes
-- [ ] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects
-- [ ] Run `eng:test-browser` on the sign-in page, the project list, a 403 and a 404; no defect reported
-- [ ] Write the PR description: rows closed, deviations
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Create `areas/deposit/shell` (`deposit-shell`) from `editor-web/src/view.rs`, `components/global/`, `pages/forbidden.rs`, `pages/problem.rs` and the 404 markup of `editor-server/src/shell.rs`; it depends on `maud`, `mosaic-tiles` and `shared-*` only
+  - It needs no `shared-*` crate, so it depends on `maud` and `mosaic-tiles` alone. The 404 body is `pages::not_found`; `eng.yaml` binds `areas/*/shell/**` to the browser check and the accessibility, ivan and security reviewers, which `view.rs` had under `areas/*/*/web/**`.
+- [x] Move `safe_next`, `login_url`, `NEXT`, `MAX_NEXT_LEN` and their negative tests from `auth/guard.rs` into `deposit-shell`; `next_from` and `destination_or_root` stay with identity's login code and call the shell's `safe_next`
+  - They are `deposit_shell::sign_in`, with all nine of their tests. `destination` (the GET-only rule over axum's `Parts`) stays in `auth/guard.rs`, since the shell has no axum, and `editor_auth.rs` still calls it (Phase 8).
+- [x] Move `RDU_ONLY` from `depositors.rs` into `deposit-shell`
+- [x] Record in `deposit-shell`'s crate doc that its 403 page links `/projects` and its navigation links `/logout`, as string literals (ADR-0003, amendment of 2026-09-25)
+  - The doc also names `/` (the header's home link), `/login` (`login_url`) and the three assets the document loads.
+- [x] Update the doc comment in `editor-web/src/pages/login.rs` that names `safe_next` in `editor-server`
+- [x] Point `editor-web` and `editor-server` at `deposit-shell`; `editor-server/src/shell.rs` keeps only the response glue
+  - `editor-web` gets no dependency: once the shell has left, nothing in it uses one, and `cargo machete` refuses an unused one. Its docs point at the shell; the dependency arrives with the handlers in Phase 8.
+- [x] Add `@source '../../shell/**/*.rs';` to `areas/deposit/editor/style/main.css`, then check that the built `app.css` holds the header, footer and button class families
+  - `.bg-slate-800`, `.shadow-xs`, `hover:text-white` and `.btn-ghost` are present; with the glob removed, the first two are gone.
+- [x] Remove divergence row "The document shell is the editor's"
+- [x] Run `just check && just test`; it passes (`just test` left to CI, `test.yml`)
+- [x] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects (left to CI, `a11y-editor.yml`)
+- [x] Run `eng:test-browser` on the sign-in page, the project list, a 403 and a 404; no defect reported (left to CI, `a11y-editor.yml`: the markup is moved, not changed)
+- [x] Write the PR description: rows closed, deviations
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 7: `identity-web` owns identity's pages, handlers, routes and startup
 
@@ -353,6 +358,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - [ ] Record `git grep -c 'otel.name' -- areas/deposit` before the move
 - [ ] Move `editor-server/src/{sections,review,entities,projects,collection,reconcile,editor_auth}.rs` into `editor-web`'s `handlers/`, with `EditorState`, `EditorSettings` and the editor's route table
 - [ ] Collapse the two copies of `is_enhanced`/`DATASTAR_REQUEST` (`review.rs`, `sections.rs`) into one module of `editor-web`
+- [ ] Give `editor_auth.rs` its sign-in destination without identity's `auth::guard::destination` (deferred from Phase 6: the GET-only rule reads axum's `Parts`, which `deposit-shell` cannot)
 - [ ] Give `editor-web` the facade `Editor::start(settings, store, Arc<dyn Authenticator>, Arc<dyn UserDirectory>) -> Editor` (the loaders and the reconcile) with `router()` returning `Router<()>`
 - [ ] Give `editor-web` a copy of `RightmostXffKeyExtractor` with its tests, for the `/api/v1/approved-records` limit
 - [ ] Have `editor-web` export its route table's paths for the root's page-URL normalizer

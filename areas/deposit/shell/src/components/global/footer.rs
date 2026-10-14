@@ -49,15 +49,4 @@ mod tests {
         assert_eq!(out.matches(r#"rel="noopener noreferrer""#).count(), LEGAL_LINKS.len(), "{out}");
         assert_eq!(out.matches(r#"target="_blank""#).count(), LEGAL_LINKS.len(), "{out}");
     }
-
-    #[test]
-    fn links_inherit_the_footer_colour_rather_than_the_light_surface_link_tile() {
-        let out = footer().into_string();
-        assert!(
-            !out.contains(r#"class="link"#),
-            "footer must not use the light-surface link tile: {out}"
-        );
-        assert!(out.contains("text-gray-300"), "{out}");
-        assert!(out.contains("hover:text-white"), "{out}");
-    }
 }

@@ -45,6 +45,7 @@ areas/
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     ├── docs/adr/              # The area's decision records, cited areas/deposit/ADR-NNNN (ADR-0006)
+    ├── shell/                 # The area's document shell, sign-in link and error pages (crate: deposit-shell)
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
     │   ├── ports/             # What identity asks of the editor: AuthoredWork (crate: identity-ports)
@@ -53,7 +54,7 @@ areas/
         ├── core/              # Pure domain types (crate: editor-core)
         ├── ports/             # What the editor asks of identity: Principal, Authenticator, UserDirectory (crate: editor-ports)
         ├── store/             # SQLite store for the editor's tables, the identity-ports adapter (crate: editor-store)
-        ├── web/               # View layer: document shell, Maud pages and components (crate: editor-web)
+        ├── web/               # View layer: Maud pages and the project form (crate: editor-web)
         ├── server/            # Server binary: config, observability, route composition (crate: editor-server)
         ├── collector/         # CI binary: turns approved records into pull requests (crate: editor-collector)
         ├── web-e2e-tests/     # Playwright E2E tests
@@ -93,13 +94,14 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
+| `deposit-shell` | `areas/deposit/shell` | The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; `maud` and `mosaic-tiles` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `AuthoredWork`; `std` only |
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveAuthoredWork` behind `identity-ports` |
-| `editor-web` | `areas/deposit/editor/web` | Editor view layer, including the HTML document shell |
+| `editor-web` | `areas/deposit/editor/web` | Editor view layer: pages and the project form |
 | `editor-server` | `areas/deposit/editor/server` | Editor binary: composes all routes and both stores |
 | `editor-collector` | `areas/deposit/editor/collector` | CI binary — collects approved records into pull requests |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
@@ -112,7 +114,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 The directory is the ownership signal, and four things read it:
 
 - **CI path filters.** The path-filtered workflows key on a module glob — `areas/access/dpe/**` and `areas/access/server/**` for DPE's preview, Scout and a11y jobs (the a11y job also `areas/access/cpe/**` and `areas/access/sync/**`), `areas/deposit/**` for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (`check`, `test` and `gate` carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)
-- **Dev-loop watch lists.** `bacon.toml`'s `serve` and `serve-editor` jobs each watch their own module directory (the editor's also watches `areas/deposit/identity`). A shared crate outside `shared/` stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.
+- **Dev-loop watch lists.** `bacon.toml`'s `serve` and `serve-editor` jobs each watch their own module directory (the editor's also watches `areas/deposit/identity` and `areas/deposit/shell`). A shared crate outside `shared/` stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.
 - **Directory-scoped agent instructions.** `areas/access/dpe/CLAUDE.md` governs everything under `areas/access/dpe/`, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — `REVIEW.md` carries two, one pointing into `dpe-server`'s `page_url.rs` and one into `editor-server`'s — and those need to name the real location.
 - **The dependency direction.** `shared-*` crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`).
 

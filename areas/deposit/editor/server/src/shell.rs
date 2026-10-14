@@ -1,4 +1,5 @@
-//! `AppState`, the page-rendering helpers, and the shell's own routes (`/`, 404).
+//! `AppState`, the response glue around `deposit-shell`'s pages, and the root's own routes (`/`,
+//! 404).
 
 /// Shared state for the handlers. Cheap to clone: everything heavy is behind an `Arc`.
 #[derive(Clone)]
@@ -60,8 +61,8 @@ pub(crate) fn render(
     use axum::response::IntoResponse;
 
     let traceparent = crate::traceparent::extract_traceparent();
-    let viewer = viewer.map(|name| editor_web::view::Viewer { name });
-    let body = editor_web::view::page(title, traceparent.as_deref(), &state.css_href, viewer, content);
+    let viewer = viewer.map(|name| deposit_shell::view::Viewer { name });
+    let body = deposit_shell::view::page(title, traceparent.as_deref(), &state.css_href, viewer, content);
     (status, axum::response::Html(body.into_string())).into_response()
 }
 
@@ -73,7 +74,7 @@ pub(crate) fn forbidden(state: &AppState, viewer: &str, message: &str) -> axum::
         "No access — DaSCH Metadata Editor",
         axum::http::StatusCode::FORBIDDEN,
         Some(viewer),
-        editor_web::pages::forbidden::forbidden(message),
+        deposit_shell::pages::forbidden::forbidden(message),
     )
 }
 
@@ -105,16 +106,12 @@ pub(crate) fn project_name<'a>(state: &'a AppState, shortcode: &str) -> Option<&
 /// 404 fallback for `ServeDir` misses and for project or account ids that name nothing.
 /// Always renders signed out: `ServeDir`'s not-found service has no session in hand.
 pub(crate) async fn not_found(axum::extract::State(state): axum::extract::State<AppState>) -> axum::response::Response {
-    let content = maud::html! {
-        h1 class="font-display text-2xl mb-2" { "Page not found" }
-        p { "The page you asked for does not exist." }
-    };
     render(
         &state,
         "Page not found — DaSCH Metadata Editor",
         axum::http::StatusCode::NOT_FOUND,
         None,
-        content,
+        deposit_shell::pages::not_found::not_found(),
     )
 }
 

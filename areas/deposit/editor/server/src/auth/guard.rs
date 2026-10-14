@@ -8,7 +8,8 @@
 //!
 //! Deliberately public: `/` (a redirect), the two login screens, `/logout`,
 //! `/healthz`, the telemetry beacon and the static assets. Everything else takes
-//! [`Authenticated`].
+//! an `Authenticated`: this module's for identity's own pages (the depositor
+//! list), `crate::editor_auth`'s, over the `Authenticator` port, for the editor's.
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -37,14 +38,14 @@ const MAX_NEXT_LEN: usize = 256;
 /// useful. Signing in and landing back on the page that was asked for is the
 /// behaviour, which is what `next` carries.
 #[derive(Debug, Clone)]
-pub(crate) struct Authenticated(pub(crate) User, pub(crate) chrono::DateTime<chrono::Utc>);
+pub(crate) struct Authenticated(pub(crate) User);
 
 impl FromRequestParts<AppState> for Authenticated {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         match session::current(&*state.identity, &state.auth, &cookie::values(&parts.headers), Utc::now()).await {
-            Some(viewer) => Ok(Self(viewer.user, viewer.signed_out_at)),
+            Some(viewer) => Ok(Self(viewer.user)),
             None => Err(Redirect::to(&login_url(destination(parts))).into_response()),
         }
     }
@@ -67,7 +68,7 @@ impl FromRequestParts<AppState> for Rdu {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
-        let Authenticated(user, _) = Authenticated::from_request_parts(parts, state).await?;
+        let Authenticated(user) = Authenticated::from_request_parts(parts, state).await?;
         if !user.is_rdu() {
             // Worth a line: a depositor reaching an administration URL is
             // either a stale bookmark or someone trying doors. No `http.route`
@@ -75,7 +76,7 @@ impl FromRequestParts<AppState> for Rdu {
             // it from `MatchedPath`, and semconv defines it as the matched
             // template rather than the concrete path.
             tracing::info!("refused an RDU-only page to an account that is not RDU");
-            return Err(crate::shell::forbidden(state, &user, crate::depositors::RDU_ONLY));
+            return Err(crate::shell::forbidden(state, &user.name, crate::depositors::RDU_ONLY));
         }
         Ok(Self(user))
     }
@@ -86,7 +87,7 @@ impl FromRequestParts<AppState> for Rdu {
 /// `GET` only: a `POST`'s destination is a side effect rather than a page, and
 /// sending the browser to a `GET` of the same path after sign-in would look like
 /// the write happened.
-fn destination(parts: &Parts) -> Option<&str> {
+pub(crate) fn destination(parts: &Parts) -> Option<&str> {
     if parts.method != Method::GET {
         return None;
     }

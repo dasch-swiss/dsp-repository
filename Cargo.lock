@@ -1113,6 +1113,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "editor-ports"
+version = "0.8.8"
+
+[[package]]
 name = "editor-server"
 version = "0.8.8"
 dependencies = [
@@ -1122,10 +1126,12 @@ dependencies = [
  "chrono",
  "clap",
  "editor-core",
+ "editor-ports",
  "editor-store",
  "editor-web",
  "figment",
  "identity-core",
+ "identity-ports",
  "identity-store",
  "init-tracing-opentelemetry",
  "insta",
@@ -1160,6 +1166,7 @@ dependencies = [
  "chrono",
  "deadpool-sqlite",
  "editor-core",
+ "identity-ports",
  "rusqlite",
  "thiserror 2.0.18",
  "tokio",
@@ -2210,12 +2217,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "identity-ports"
+version = "0.8.8"
+
+[[package]]
 name = "identity-store"
 version = "0.8.8"
 dependencies = [
  "async-trait",
  "chrono",
  "deadpool-sqlite",
+ "editor-ports",
  "identity-core",
  "lettre",
  "rusqlite",

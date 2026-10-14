@@ -182,4 +182,4 @@ Two further checks run on **every** write rather than only on a submit, and ther
 
 A refusal re-renders rather than redirecting, so nothing typed is lost, and per-field errors render beside the control they name. Submit validation is whole-project while the form is sectioned, so an error routinely names a field the depositor is not looking at — those are listed separately with a link to the section that holds them, otherwise the refusal says "the fields below say what needs changing" and nothing below says anything.
 
-RDU submits through the same path: `User::may_reach` is already true for every project for an RDU account, so the direct-editing half was already there and this is the half that makes the result reviewable.
+RDU submits through the same path: `Principal::may_reach` is already true for every project for an RDU account, so the direct-editing half was already there and this is the half that makes the result reviewable.

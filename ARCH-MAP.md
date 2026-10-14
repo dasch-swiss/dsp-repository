@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-12
+date: 2026-10-14
 ---
 
 # Architecture Map
@@ -377,14 +377,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `ProjectRaw`, `Multilingual`, `is_placeholder`, `multilingual_value`,
   `is_valid_shortcode`, `AuthorityFileReference`, `Person`, `Organization`, `Record`,
   `RecordPid`, `Finding`, `ContributorRef`, `ContributorLookup`, `is_organization_id`,
-  `check_project`, `contributor_refs`,
+  `check_project`, `contributor_refs`, `strip_ark_timestamp` (a record id without its ARK version
+  timestamp, for readers whose output is the same at every version),
   `completeness_gap`, `resolve_in`, `chronontology::load_from`, `temporal_enrichment::load_from`
 - **Public interface:** the root re-exports in `src/lib.rs` plus the module-path items
   `temporal_coverage::*`, `w3cdtf::*`, `chronontology::*`, `temporal_enrichment::*`,
   `utils::parse_url_value` (the `url` reading rule, not re-exported at the root),
   `project::{CONTRIBUTOR_ROLES, ROLES_NOT_OFFERED, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES}`;
-  the two fixtures under `testdata/` (`0803-records.json`, `0862-records.json`), read by
-  `dpe-api-oai`'s tests by relative path — the single copy of each sample.
+  the fixture `testdata/0803-records.json`, read by `dpe-api-oai`'s tests by relative path — the
+  single copy of the sample (`testdata/0862-records.json` is read by the crate's own tests only).
 - **Local-context kit:** `shared/metadata/src/project.rs`,
   `shared/metadata/src/lib.rs`, `shared/README.md`,
   `areas/deposit/editor/web/src/form/registry.rs`, `areas/deposit/editor/core/src/draft.rs`,
@@ -392,20 +393,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (a contract member moves with all four consumer files in one commit)
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json (`preserve_order`,
   which the editor's canonical writer requires), tracing
-- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (all three crates), shared/fair,
-  the DPE fuzz crate
+- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (all four crates:
+  `editor-core`, `editor-web`, `editor-server`, `editor-collector`), shared/fair, the DPE fuzz crate
 - **Boundary rules:**
   - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
     module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).
   - Reads no environment: both lookup tables load from a caller-supplied `data_dir`; the caches
-    live in `dpe-core`, and `editor-server` loads its own (**review**).
+    live in `dpe-core`, and `dpe-server`'s validation, `editor-server` and `editor-collector` load
+    their own (**review**).
   - Member order in `ProjectRaw` **is** the on-disk order of every committed project file
     (**static-analysis** — `every_committed_project_file_round_trips_byte_identically`).
   - Tests that read committed data live in the consumer that owns the data, not here
     (**review**).
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
-- **Fingerprint:** `969101398529`
+- **Fingerprint:** `c9c7113614f0`
 
 ### shared/telemetry
 
@@ -456,15 +458,18 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   covering the VRE only; the Deposit, Archive and Access moduliths are future targets, all
   reached over the wire. A root peer of the areas (ADR-0002), not a member of one: no area
   depends on it, and it is a client of every area.
-- **Key entities:** `DspClient`, `HttpDspClient`, `Renderer`, `Diagnostic`, `Config`
+- **Key entities:** `DspClient`, `HttpDspClient`, `Renderer`, `Diagnostic`, `Config`, `AuthCache`,
+  `UpdateCheckCache`
 - **Public interface:** the `dsp` command surface (`auth`; `vre project | data-model |
   resource-type | resource | vocabulary | sparql`; `docs`); the `dsp-cli` crate published on
-  crates.io.
+  crates.io. Its lib target `dsp_cli` exists for the crate's own tests, not for other crates.
+  Besides DSP-API, the binary calls one other endpoint: the crates.io sparse index, for the update
+  check (dsp-cli/ADR-0015).
 - **Local-context kit:** `dsp-cli/CLAUDE.md`, `dsp-cli/CONTEXT.md`, `dsp-cli/src/cli/mod.rs`,
   `dsp-cli/src/client/mod.rs`, `dsp-cli/src/render/mod.rs`, `dsp-cli/src/diagnostic.rs`,
   `dsp-cli/docs/adr/0008-internal-architecture.md`
-- **Depends on:** nothing in the workspace; third-party: clap, reqwest, serde, url, insta,
-  wiremock
+- **Depends on:** nothing in the workspace; third-party: clap, reqwest (blocking, rustls), serde,
+  serde_json, toml, tracing, jsonwebtoken, semver; in tests insta, wiremock, assert_cmd, tempfile
 - **Used by:** — (top of the dependency graph; a published binary)
 - **Boundary rules:**
   - No dependency on an area crate (**static-analysis**, `cargo publish -p dsp-cli --dry-run`
@@ -474,8 +479,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**review**).
   - Live tests never run in the default suite (**static-analysis**,
     `check-live-tests-ignored.sh`).
-- **Durable state:** `~/.config/dsp-cli/auth.toml` — single writer, dsp-cli.
-- **Fingerprint:** `2b72a643c52f`
+- **Durable state:** `~/.config/dsp-cli/auth.toml` — single writer, dsp-cli's `AuthCache`;
+  `~/.config/dsp-cli/update_check.toml` — single writer, the `update` module. Both are written
+  atomically (a temporary file, then a rename).
+- **Fingerprint:** `b823e41dccc2`
 
 ### areas/archive (Spycherli)
 
@@ -776,6 +783,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `contract::violations` on every snapshot it serves, so a new contract invariant can take a
   project offline. No `cpe-ports` code gives a curation key a meaning: a key's rules belong to
   the project's KDL and hook (ADR-0010, proposed; **review**).
+  Some tests read committed files past a crate's interface by relative path: `cpe-store-build`'s
+  `test_tolerance_is_the_one_the_engine_checks_a_store_with` reads `cpe-core`'s `validate.rs` source to
+  hold its `TOLERANCE` to `ANNOTATION_TOLERANCE`, its integration tests read
+  `projects/incunabula/config.kdl` and `docs/src/cpe/config-language.md`, and `cpe-server`'s `activation`
+  and `base_tests` read sync's committed `areas/access/sync/data/`. A move of any of these files breaks
+  those tests, not a build (**static-analysis**, by the failing test).
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`),
   single writer CPE, rebuilt from empty from the project snapshots the port serves (ADR-0008;
   the schema and the queries are in `cpe-store` and what builds a store from a snapshot in `cpe-store-build`).
@@ -784,7 +797,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   in one host), and nothing is written to disk. `projects/incunabula/` is
   committed configuration, narrative and assets, **single writer** the project's developers (**review**); the process reads it at activation and never writes it. `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `3481ca0e10d9`
+- **Fingerprint:** `d2d8f5ef9132`
 
 ### areas/access/datei
 

@@ -13,8 +13,8 @@ urlencoding = "2.1"
 editor-core = { path = "../core" }
 editor-ports = { path = "../ports" }
 identity-core = { path = "../../identity/core" }
-identity-ports = { path = "../../identity/ports" }
 identity-store = { path = "../../identity/store" }
+identity-web = { path = "../../identity/web" }
 editor-store = { path = "../store" }
 editor-web = { path = "../web" }
 deposit-shell = { path = "../../shell" }
@@ -32,7 +32,6 @@ serde.workspace = true
 # an opaque `String` because that layer never interprets it, so the handler that
 # does — the form's save path — is where it is parsed and written.
 serde_json.workspace = true
-async-trait.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
@@ -57,6 +56,7 @@ tower = { workspace = true, features = ["util"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 # The stores' seed helpers, row readers and fault-injecting fakes.
 identity-store = { path = "../../identity/store", features = ["test-support"] }
+identity-web = { path = "../../identity/web", features = ["test-support"] }
 editor-ports = { path = "../ports", features = ["test-support"] }
 editor-store = { path = "../store", features = ["test-support"] }
 insta.workspace = true

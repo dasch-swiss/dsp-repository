@@ -1,4 +1,4 @@
-//! Test-only helpers shared by the router, auth and account tests.
+//! Test-only helpers shared by the router, handler and cross-capability tests.
 //!
 //! Kept out of the modules under test so that a fake mailer or a log capture is
 //! written once rather than per test module, and so the fakes are as visible as
@@ -7,83 +7,29 @@
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
-use async_trait::async_trait;
 use axum::body::Body;
 use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
 use editor_core::published::PublishedProjects;
 use editor_core::repository::EditorRepositories;
 use identity_core::login::AuthConfig;
-use identity_core::mail::{Mail, MailError, Mailer};
 use identity_core::repository::IdentityRepositories;
+pub(crate) use identity_web::test_support::RecordingMailer;
 
 use crate::config::EditorConfig;
 use crate::shell::{AppState, TemporalTables};
 
-/// One message a [`RecordingMailer`] was asked to send.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct SentMail {
-    pub to: String,
-    pub subject: String,
-    pub body: String,
+/// What [`test_app`] assembles identity from.
+#[derive(Clone)]
+pub(crate) struct IdentityFixture {
+    pub(crate) store: Arc<dyn IdentityRepositories>,
+    pub(crate) auth: AuthConfig,
+    mailer: RecordingMailer,
 }
 
-/// A mailer that remembers what it was given, and optionally refuses.
-#[derive(Clone, Default)]
-pub(crate) struct RecordingMailer {
-    sent: Arc<Mutex<Vec<SentMail>>>,
-    failure: Option<MailError>,
-}
-
-impl RecordingMailer {
-    pub(crate) fn new() -> Self {
-        Self::default()
-    }
-
-    /// A relay that always refuses — the path where the code rollback and the
-    /// break-glass decision live.
-    pub(crate) fn failing() -> Self {
-        Self {
-            sent: Arc::new(Mutex::new(Vec::new())),
-            failure: Some(MailError::Refused { permanent: false, status: Some("451".to_string()) }),
-        }
-    }
-
-    pub(crate) fn sent(&self) -> Vec<SentMail> {
-        self.sent.lock().expect("the mailer lock should not be poisoned").clone()
-    }
-
-    /// The six digits out of the most recent message.
-    pub(crate) fn last_code(&self) -> Option<String> {
-        let sent = self.sent();
-        let body = &sent.last()?.body;
-        body.split_whitespace()
-            .find(|word| word.len() == 6 && word.chars().all(|c| c.is_ascii_digit()))
-            .map(str::to_string)
-    }
-}
-
-#[async_trait]
-impl Mailer for RecordingMailer {
-    async fn send(&self, mail: &Mail) -> Result<(), MailError> {
-        // Recorded even when the send fails, so a test can assert what would
-        // have gone out and to whom.
-        self.sent
-            .lock()
-            .expect("the mailer lock should not be poisoned")
-            .push(SentMail {
-                to: mail.to.clone(),
-                subject: mail.subject.clone(),
-                body: mail.body.clone(),
-            });
-        match &self.failure {
-            Some(error) => Err(error.clone()),
-            None => Ok(()),
-        }
-    }
-
-    fn describe(&self) -> String {
-        "recording (test)".to_string()
+impl IdentityFixture {
+    pub(crate) fn new(store: Arc<dyn IdentityRepositories>, auth: AuthConfig) -> Self {
+        Self { store, auth, mailer: RecordingMailer::new() }
     }
 }
 
@@ -140,7 +86,7 @@ pub(crate) fn state_over(
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
 ) -> AppState {
-    let mut auth = EditorConfig::default().auth_config();
+    let mut auth = EditorConfig::default().identity_settings(String::new()).auth();
     adjust(&mut auth);
     AppState {
         css_href: "/assets/app.css".to_string(),
@@ -148,14 +94,8 @@ pub(crate) fn state_over(
         // session rules and a fault put in front of a store reaches the editor's reads too.
         authenticator: Arc::new(identity_store::LiveAuthenticator::new(identity.clone(), auth)),
         directory: Arc::new(identity_store::LiveUserDirectory::new(identity.clone())),
-        authored_work: Arc::new(editor_store::LiveAuthoredWork::new(editor.clone())),
-        identity,
+        identity: IdentityFixture { store: identity, auth, mailer },
         editor,
-        mailer: Arc::new(mailer),
-        auth,
-        // Off by default: the reveal is the exception, so a test that wants it
-        // has to say so, and every other test proves the ordinary path.
-        reveal_login_code: false,
         // No token configured by default, matching production's fail-closed default; a test of
         // `POST /api/v1/collection-report` uses `state_with_collection_token` instead.
         collection_token: None,
@@ -245,7 +185,17 @@ pub(crate) fn agents_corpus() -> Arc<editor_core::agents::Agents> {
 /// Static assets come from a directory that does not exist: these tests are
 /// about handlers and the route table, never about a file on disk.
 pub(crate) fn test_app(state: &AppState) -> axum::Router {
-    crate::router::build_app(state.clone(), "nonexistent-test-dir".as_ref())
+    crate::router::build_app(state.clone(), identity_router(state), "nonexistent-test-dir".as_ref())
+}
+
+pub(crate) fn identity_router(state: &AppState) -> axum::Router {
+    identity_web::Identity::for_test(
+        state.identity.store.clone(),
+        Arc::new(editor_store::LiveAuthoredWork::new(state.editor.clone())),
+        Arc::new(state.identity.mailer.clone()),
+        state.identity.auth,
+    )
+    .router()
 }
 
 /// Insert an account and return it.
@@ -269,7 +219,7 @@ pub(crate) async fn a_user(
         last_code_at: None,
         created_at: chrono::Utc::now(),
     };
-    UserRepository::create(&*state.identity, &user)
+    UserRepository::create(&*state.identity.store, &user)
         .await
         .expect("the fixture user should insert");
     user
@@ -281,7 +231,7 @@ pub(crate) async fn a_user(
 /// reach a page should fail when authorization breaks, not when the mail
 /// transport does.
 pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
-    identity_core::session::begin(&*state.identity, &state.auth, user_id, chrono::Utc::now())
+    identity_core::session::begin(&*state.identity.store, &state.identity.auth, user_id, chrono::Utc::now())
         .await
         .expect("the fixture session should insert")
         .id

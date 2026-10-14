@@ -1,7 +1,7 @@
-//! The editor's page-URL normalizer, passed into
-//! `shared_telemetry::collector::collect_route`.
+//! The page-URL normalizer passed into `shared_telemetry::collector::collect_route`:
+//! identity's ([`identity_web::normalize_page_url`]) first, then the editor's own.
 //!
-//! Bounds the `page.url` metric attribute to the editor's own routes so browser
+//! Bounds the `page.url` metric attribute to the service's own routes so browser
 //! metrics stay breakable down by page without exploding cardinality on
 //! arbitrary paths. Lives here rather than in `shared-telemetry` because a
 //! shared crate cannot know one service's route table
@@ -15,20 +15,15 @@
 //! A query string is stripped before matching, so the normalizer survives the
 //! beacon one day sending `location.href` rather than today's
 //! `location.pathname`.
-const KNOWN_ROUTES: &[&str] = &[
-    "/login",
-    "/login/code",
-    "/projects",
-    "/states",
-    "/review",
-    "/collection",
-    "/depositors",
-    "/depositors/new",
-];
+const KNOWN_ROUTES: &[&str] = &["/projects", "/states", "/review", "/collection"];
 
-/// Normalize a page URL to a known editor route pattern.
+/// Normalize a page URL to a known route pattern, identity's or the editor's.
 /// Returns "other" for unrecognized paths to prevent metric cardinality explosion.
 pub fn normalize_page_url(url: &str) -> &'static str {
+    identity_web::normalize_page_url(url).unwrap_or_else(|| editor_page(url))
+}
+
+fn editor_page(url: &str) -> &'static str {
     // Everything below matches on a whole path, so a query or a fragment has to
     // come off first or it turns every page view into `other`.
     let url = url.split(['?', '#']).next().unwrap_or(url);
@@ -95,13 +90,6 @@ pub fn normalize_page_url(url: &str) -> &'static str {
             return "/review/{shortcode}";
         }
         return "other";
-    }
-    if let Some(rest) = url.strip_prefix("/depositors/") {
-        return match rest.split_once('/') {
-            Some((id, "edit")) if !id.is_empty() => "/depositors/{id}/edit",
-            Some((id, "remove")) if !id.is_empty() => "/depositors/{id}/remove",
-            _ => "other",
-        };
     }
     // An approved record's id, an unbounded set.
     if let Some(rest) = url.strip_prefix("/collection/") {

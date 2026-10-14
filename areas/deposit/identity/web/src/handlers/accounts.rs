@@ -170,7 +170,7 @@ mod tests {
         let db = test_db("rdu-unlisted").await;
         ensure_rdu(&db, &addresses(&["rdu@dasch.swiss"]), at(10)).await.unwrap();
 
-        let (logs, guard) = crate::test_support::capture_logs();
+        let (logs, guard) = crate::fixtures::capture_logs();
         assert_eq!(ensure_rdu(&db, &addresses(&[]), at(11)).await.unwrap(), 0);
         drop(guard);
 

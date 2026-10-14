@@ -47,7 +47,7 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `RUST_LOG` | No | `info` | Log level filter (e.g. `editor_server=info,identity_core=info,tower_http=debug`) |
+| `RUST_LOG` | No | `info` | Log level filter (e.g. `editor_server=info,identity_web=info,identity_core=info,tower_http=debug`) |
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `EDITOR_PUBLIC_DIR` | No | `areas/deposit/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |

@@ -37,12 +37,11 @@ use editor_core::records::{normalize_shortcode, ApprovedRecord};
 use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
 use editor_core::status::{classify_record, RecordClassification};
 use editor_web::pages::collection as page;
-use identity_core::records::User;
 use identity_core::secret::code_matches;
 use maud::html;
 use uuid::Uuid;
 
-use crate::auth::guard::Rdu;
+use crate::editor_auth::{Account, Rdu};
 use crate::shell::AppState;
 
 /// Every pull request this endpoint accepts must live under this prefix, so a forged report
@@ -236,7 +235,7 @@ pub(crate) async fn overview(State(state): State<AppState>, Rdu(user): Rdu) -> R
         &state,
         "Collection — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user),
+        Some(&user.principal.display_name),
         page::list(&view_rows),
     )
 }
@@ -278,7 +277,7 @@ pub(crate) async fn discard_form(State(state): State<AppState>, Rdu(user): Rdu, 
         &state,
         "Discard record — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user),
+        Some(&user.principal.display_name),
         page::confirm_discard(&id, &impact),
     )
 }
@@ -304,7 +303,7 @@ pub(crate) async fn discard(State(state): State<AppState>, Rdu(user): Rdu, Path(
 }
 
 /// No record with this id.
-fn no_such_record(state: &AppState, user: &User) -> Response {
+fn no_such_record(state: &AppState, user: &Account) -> Response {
     let content = html! {
         h1 class="font-display text-2xl mb-2" { "Nothing to discard" }
         p class="mb-4" { (NO_SUCH_RECORD) }
@@ -316,19 +315,19 @@ fn no_such_record(state: &AppState, user: &User) -> Response {
         state,
         "Nothing to discard — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
-        Some(user),
+        Some(&user.principal.display_name),
         content,
     )
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the collection surface could not reach storage");
     crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(user),
+        Some(&user.principal.display_name),
         editor_web::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

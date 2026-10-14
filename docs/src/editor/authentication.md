@@ -139,6 +139,8 @@ Authentication says who is asking. Authorization says what they may reach, and i
 
 `Authenticated` yields the signed-in account or refuses; `Rdu` composes it and additionally requires the `rdu` role. Both are Axum extractors, so a handler that names one **cannot** run without the check — the argument is what performs it — and a handler that names neither is public, visibly, in its signature.
 
+There are two pairs, one per capability, over one copy of the session rules. Identity's (`editor-server/src/auth/guard.rs`), for the depositor pages, calls `session::current` and yields the account. The editor's (`editor-server/src/editor_auth.rs`) asks `editor-ports`' `Authenticator`, which `identity-store`'s `LiveAuthenticator` answers by calling the same `session::current`, and yields the `Principal` with its account id parsed into the `Uuid` the editor's records hold. An id that does not parse is treated as no session.
+
 A middleware layered over a group of routes was the alternative and was rejected. The router already carries one positional invariant of that shape: the traced/untraced split wraps only routes declared before the `.layer()` calls, which is invisible in the route table and reversible by moving one line. That one costs a missing span when it goes wrong. A second one would cost an unauthenticated route.
 
 ### What each refusal is
@@ -154,7 +156,7 @@ The requirement asks for a status and nothing else. It is rendered inside the pa
 
 ### Per-project scope
 
-`User::may_reach` is the whole rule. RDU is unconditional, because RDU access is role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments.
+`Principal::may_reach` is the whole rule. RDU is unconditional, because RDU access is role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments.
 
 The comparison **ignores ASCII case**. The published set mixes `080C` with `0801a`, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.
 

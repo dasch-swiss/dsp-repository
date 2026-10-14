@@ -46,13 +46,11 @@ use editor_web::form::registry::Audience;
 use editor_web::form::submit::unresolved_agents;
 use editor_web::form::{registry, INTENT};
 use editor_web::pages::review as page;
-use identity_core::records::User;
-use identity_core::repository::UserRepository;
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::auth::guard::Rdu;
+use crate::editor_auth::{Account, Rdu};
 use crate::shell::AppState;
 
 /// The header the vendored Datastar bundle sets on every fetch it makes; see
@@ -101,7 +99,11 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
         Ok(drafts) => drafts,
         Err(error) => return storage_error(&state, &user, "read the drafts", &error),
     };
-    let names = match account_names(&state).await {
+    let ids = submissions
+        .iter()
+        .flat_map(|submission| [submission.submitted_by, submission.reviewed_by])
+        .chain(drafts.iter().map(|draft| draft.updated_by));
+    let names = match account_names(&state, ids).await {
         Ok(names) => names,
         Err(error) => return storage_error(&state, &user, "read the accounts", &error),
     };
@@ -158,7 +160,7 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
         &state,
         "Review queue — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user),
+        Some(&user.principal.display_name),
         page::queue(&pending_view, &drafts_view),
     )
 }
@@ -336,7 +338,7 @@ pub(crate) async fn act(
             // and name them as the reviewer while the row still says somebody
             // else has it.
             context.submission = submission;
-            context.reviewer_name = Some(user.name.clone());
+            context.reviewer_name = Some(user.principal.display_name.clone());
             context.held_by_viewer = true;
             saved(&context, filter, headers, notice)
         }
@@ -365,7 +367,7 @@ pub(crate) async fn act(
 /// attribute the control carries.
 async fn finish(
     state: &AppState,
-    user: &User,
+    user: &Account,
     context: &Context<'_>,
     body: &FormBody,
     filter: page::Filter,
@@ -640,7 +642,7 @@ fn decided_draft(context: &Context<'_>) -> ProjectDraft {
 ///
 /// `None` only if the result will not serialize, which cannot happen for a
 /// draft that already did.
-fn approved_record(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Option<ApprovedRecord> {
+fn approved_record(context: &Context<'_>, user: &Account, at: DateTime<Utc>) -> Option<ApprovedRecord> {
     Some(ApprovedRecord {
         id: Uuid::new_v4(),
         shortcode: context.submission.shortcode.clone(),
@@ -661,7 +663,7 @@ fn approved_record(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Opt
 /// from what they sent, which is what the note and the per-field decisions are
 /// about. What RDU decided rides on the round, so nothing about the review is
 /// written into the draft itself.
-fn returned_draft(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Option<DraftRecord> {
+fn returned_draft(context: &Context<'_>, user: &Account, at: DateTime<Utc>) -> Option<DraftRecord> {
     Some(DraftRecord {
         shortcode: context.submission.shortcode.clone(),
         payload: serde_json::to_string(&context.submitted).ok()?,
@@ -689,7 +691,7 @@ struct Prompt<'a> {
 /// The confirmation step for a terminating action.
 fn asking(
     state: &AppState,
-    user: &User,
+    user: &Account,
     context: &Context<'_>,
     filter: page::Filter,
     headers: HeaderMap,
@@ -704,11 +706,17 @@ fn asking(
         return (StatusCode::OK, axum::response::Html(page::region(&view).into_string())).into_response();
     }
     let title = page_title(context);
-    crate::shell::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
+    crate::shell::render(
+        state,
+        &title,
+        StatusCode::OK,
+        Some(&user.principal.display_name),
+        page::page(&view),
+    )
 }
 
 /// The round is over, so there is no submission left to diff.
-fn finished(state: &AppState, user: &User, context: &Context<'_>, outcome: ReviewOutcome) -> Response {
+fn finished(state: &AppState, user: &Account, context: &Context<'_>, outcome: ReviewOutcome) -> Response {
     let finished = match outcome {
         ReviewOutcome::Approved => page::Finished::Approved,
         ReviewOutcome::ChangesRequested => page::Finished::ChangesRequested,
@@ -722,7 +730,7 @@ fn finished(state: &AppState, user: &User, context: &Context<'_>, outcome: Revie
         state,
         &page_title(context),
         StatusCode::OK,
-        Some(user),
+        Some(&user.principal.display_name),
         page::finished(context.project_name, context.shortcode, finished),
     )
 }
@@ -775,7 +783,7 @@ impl Context<'_> {
 /// Shape, then the record — the same order as everywhere else in this service.
 /// There is no authorization step between them here: [`Rdu`] already decided,
 /// and role-based access leaves nothing per-project to check.
-async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Result<Context<'a>, Response> {
+async fn context<'a>(state: &'a AppState, user: &Account, shortcode: &'a str) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
@@ -816,7 +824,7 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
     let published = published_raw.map(ProjectDraft::from_raw);
     let rows = diff(published.as_ref(), &submitted);
 
-    let names = match account_names(state).await {
+    let names = match account_names(state, [submission.submitted_by, submission.reviewed_by]).await {
         Ok(names) => names,
         Err(error) => return Err(storage_error(state, user, "read the accounts", &error)),
     };
@@ -981,7 +989,7 @@ fn saved(context: &Context<'_>, filter: page::Filter, headers: HeaderMap, notice
 /// A refused write, re-rendered with what was typed still in place.
 fn refused(
     state: &AppState,
-    user: &User,
+    user: &Account,
     context: &Context<'_>,
     filter: page::Filter,
     headers: HeaderMap,
@@ -1008,7 +1016,7 @@ fn region(context: &Context<'_>, filter: page::Filter, notice: Option<page::Noti
 
 fn render_page(
     state: &AppState,
-    user: &User,
+    user: &Account,
     context: &Context<'_>,
     filter: page::Filter,
     notice: Option<page::Notice<'_>>,
@@ -1016,7 +1024,13 @@ fn render_page(
     let rows = review_rows(context);
     let entity_rows = entity_rows(context);
     let view = view(context, &rows, &entity_rows, filter, notice);
-    crate::shell::render(state, &page_title(context), StatusCode::OK, Some(user), page::page(&view))
+    crate::shell::render(
+        state,
+        &page_title(context),
+        StatusCode::OK,
+        Some(&user.principal.display_name),
+        page::page(&view),
+    )
 }
 
 /// What a review page is called. One decision, shared by the diff, the
@@ -1116,15 +1130,23 @@ fn view<'a>(
     }
 }
 
-/// Every account's name by id, for the "last editor" and "who has it" columns.
+/// The names behind `ids`, for the "last editor" and "who has it" columns.
 ///
-/// One query rather than one per row: the queue reads two tables and would
+/// One directory call rather than one per row: the queue reads two tables and would
 /// otherwise issue a lookup per submission and per draft.
-async fn account_names(state: &AppState) -> Result<HashMap<Uuid, String>, identity_core::repository::RepositoryError> {
-    Ok(UserRepository::list(&*state.identity)
+async fn account_names(
+    state: &AppState,
+    ids: impl IntoIterator<Item = Option<Uuid>>,
+) -> Result<HashMap<Uuid, String>, editor_ports::Unavailable> {
+    let mut ids: Vec<String> = ids.into_iter().flatten().map(|id| id.to_string()).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    Ok(state
+        .directory
+        .display_names(&ids)
         .await?
         .into_iter()
-        .map(|user| (user.id, user.name))
+        .filter_map(|(id, name)| Some((Uuid::parse_str(&id).ok()?, name)))
         .collect())
 }
 
@@ -1138,7 +1160,7 @@ fn name_of(names: &HashMap<Uuid, String>, id: Option<Uuid>) -> Option<&str> {
 /// A 404 with a page rather than the bare shell: a reviewer arriving from a
 /// queue somebody else has already cleared has done nothing wrong, and the
 /// status is still the honest one.
-fn no_submission(state: &AppState, user: &User) -> Response {
+fn no_submission(state: &AppState, user: &Account) -> Response {
     let content = maud::html! {
         h1 class="font-display text-2xl mb-2" { "Nothing to review" }
         p class="mb-4" { (NO_SUBMISSION) }
@@ -1150,18 +1172,18 @@ fn no_submission(state: &AppState, user: &User) -> Response {
         state,
         "Nothing to review — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
-        Some(user),
+        Some(&user.principal.display_name),
         content,
     )
 }
 
 /// A submission whose stored payload this build cannot parse.
-fn unreadable_submission(state: &AppState, user: &User) -> Response {
+fn unreadable_submission(state: &AppState, user: &Account) -> Response {
     crate::shell::render(
         state,
         "Submission unreadable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(user),
+        Some(&user.principal.display_name),
         editor_web::pages::problem::unavailable(
             "This submission's stored record could not be read, so there is nothing to compare against what is \
              published. Nothing has been changed. The service needs attention before this project can be reviewed.",
@@ -1170,13 +1192,13 @@ fn unreadable_submission(state: &AppState, user: &User) -> Response {
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &User, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the review surface could not reach storage");
     crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(user),
+        Some(&user.principal.display_name),
         editor_web::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",
@@ -1189,7 +1211,7 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use editor_store::test_support::{Faults, FaultyStore};
-    use identity_core::records::Role;
+    use identity_core::records::{Role, User};
     use serde_json::json;
     use tower::ServiceExt;
 

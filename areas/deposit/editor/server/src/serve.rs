@@ -277,6 +277,12 @@ pub(crate) async fn serve() -> std::process::ExitCode {
 
     let state = crate::shell::AppState {
         css_href: crate::assets::resolve_css_href(&config.public_dir),
+        authenticator: std::sync::Arc::new(identity_store::LiveAuthenticator::new(
+            identity_db.clone(),
+            config.auth_config(),
+        )),
+        directory: std::sync::Arc::new(identity_store::LiveUserDirectory::new(identity_db.clone())),
+        authored_work: std::sync::Arc::new(editor_store::LiveAuthoredWork::new(editor_db.clone())),
         identity: identity_db,
         editor: editor_db,
         mailer,

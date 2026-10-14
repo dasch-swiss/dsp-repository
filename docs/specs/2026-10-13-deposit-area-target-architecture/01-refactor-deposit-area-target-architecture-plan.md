@@ -279,29 +279,33 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 - [x] Run `just check && just test`; it passes (`just test` left to CI, `test.yml`)
 - [x] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects (left to CI, `a11y-editor.yml`)
 - [x] Write the PR description: rows closed, the replaced assertions by name, deviations
-- [x ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 5: The ports, their live adapters, and the editor on `Principal`
 
 ### dsp-repository
-- [ ] Create `areas/deposit/editor/ports` (`editor-ports`) as sketched, with `FakeAuthenticator` and `FakeUserDirectory`; it depends on `std` only
-- [ ] Create `areas/deposit/identity/ports` (`identity-ports`): `AuthoredWork` with `open_drafts` and `open_submissions`, and `FakeAuthoredWork`; it depends on `std` only
-- [ ] Implement `LiveAuthenticator::new(store, AuthConfig)` in `identity-store` by calling identity-core's `current`, with no second copy of the session rules
-- [ ] Implement `LiveUserDirectory::new(store)` in `identity-store`
-- [ ] Implement `LiveAuthoredWork::new(store)` in `editor-store` with today's filters (drafts by `updated_by`; submissions by `submitted_by` and state short of `Approved`)
-- [ ] Split `auth/guard.rs`: identity's `Authenticated(User)`/`Rdu` stay in `auth/guard.rs` for the login and depositor handlers; the editor's `Authenticated(Principal)`/`Rdu(Principal)` over `Arc<dyn Authenticator>` go into a new `editor_auth.rs`, treating an unparseable account id as no session
-- [ ] Retype the editor handlers (`sections`, `review`, `entities`, `projects`, `collection`) on `Principal`
-- [ ] Retype the helpers they pass a `User` to (`render`, `forbidden`, `storage_error`, `audience_of`) on `Principal`
-- [ ] Switch the review queue's names (`review.rs` `account_names`) to `UserDirectory`
-- [ ] Switch the concurrent-save notice (`sections.rs`, the `find_by_id` for the last editor) to `UserDirectory`
-- [ ] Switch `depositors.rs` `remove_form` to `AuthoredWork`, keeping its two error messages
-- [ ] Copy the session cases of `auth/guard.rs` and `auth/session.rs` into `identity-store`'s tests, run against `LiveAuthenticator`; the originals stay with identity's extractors
-- [ ] Add tests in `editor-store` that run the removal-impact cases against `LiveAuthoredWork`
-- [ ] Remove divergence rows "`Authenticated` and `Rdu` read the session and user repositories directly" and "the removal confirmation reads editor tables directly"; rewrite row "Identity lives inside the editor's crates" (no web crate yet)
-- [ ] Run `just check && just test`; it passes
-- [ ] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects
-- [ ] Write the PR description: rows closed, deviations
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Create `areas/deposit/editor/ports` (`editor-ports`) as sketched, with `FakeAuthenticator` and `FakeUserDirectory`; it depends on `std` only
+  - Three corrections to the sketch: `Principal::may_reach` keeps today's RDU branch (RDU reaches every project; the sketch's body would have refused RDU everywhere), `Role` gains `as_str`/`Display` so the `auth.role` log field keeps its values, and `Unavailable` wraps its source so the storage error's text still reaches the log. `User::may_reach` is removed from `identity-core`, its tests moving to `editor-ports`, so the rule has one copy.
+- [x] Create `areas/deposit/identity/ports` (`identity-ports`): `AuthoredWork` with `open_drafts` and `open_submissions`, and `FakeAuthoredWork`; it depends on `std` only
+- [x] Implement `LiveAuthenticator::new(store, AuthConfig)` in `identity-store` by calling identity-core's `current`, with no second copy of the session rules
+- [x] Implement `LiveUserDirectory::new(store)` in `identity-store`
+- [x] Implement `LiveAuthoredWork::new(store)` in `editor-store` with today's filters (drafts by `updated_by`; submissions by `submitted_by` and state short of `Approved`)
+- [x] Split `auth/guard.rs`: identity's `Authenticated(User)`/`Rdu` stay in `auth/guard.rs` for the login and depositor handlers; the editor's `Authenticated(Principal)`/`Rdu(Principal)` over `Arc<dyn Authenticator>` go into a new `editor_auth.rs`, treating an unparseable account id as no session
+  - The editor's pair carries `Account { id: Uuid, principal: Principal }`, the id parsed once in the extractor, so no handler re-parses it. Identity's `Authenticated` drops its unused deadline field. The live adapters take the stores' repository bundles (`Arc<dyn IdentityRepositories>`, `Arc<dyn EditorRepositories>`), so a fault-injecting store reaches them.
+- [x] Retype the editor handlers (`sections`, `review`, `entities`, `projects`, `collection`) on `Principal`
+- [x] Retype the helpers they pass a `User` to (`render`, `forbidden`, `storage_error`, `audience_of`) on `Principal`
+  - `shell::render` and `shell::forbidden` take the viewer's display name (`&str`) rather than a `Principal`: identity's depositor pages still call them with a `User` until Phase 7.
+- [x] Switch the review queue's names (`review.rs` `account_names`) to `UserDirectory`
+- [x] Switch the concurrent-save notice (`sections.rs`, the `find_by_id` for the last editor) to `UserDirectory`
+- [x] Switch `depositors.rs` `remove_form` to `AuthoredWork`, keeping its two error messages
+- [x] Copy the session cases of `auth/guard.rs` and `auth/session.rs` into `identity-store`'s tests, run against `LiveAuthenticator`; the originals stay with identity's extractors
+  - The session cases had moved to `auth/handlers.rs`'s tests in Phase 3; `identity-store/src/live.rs` covers them (live, absolute and idle expiry, touch, split headers, removed account, role).
+- [x] Add tests in `editor-store` that run the removal-impact cases against `LiveAuthoredWork`
+- [x] Remove divergence rows "`Authenticated` and `Rdu` read the session and user repositories directly" and "the removal confirmation reads editor tables directly"; rewrite row "Identity lives inside the editor's crates" (no web crate yet)
+- [x] Run `just check && just test`; it passes (`just test` left to CI, `test.yml`)
+- [x] Run `just test-e2e-editor` after `cargo build -p editor-server --release` and `just css-editor-release`; it passes in both projects (left to CI, `a11y-editor.yml`)
+- [x] Write the PR description: rows closed, deviations
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
 
 #### Phase 6: The area shell `deposit-shell`
 

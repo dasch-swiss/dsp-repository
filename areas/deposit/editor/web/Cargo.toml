@@ -4,12 +4,19 @@ version.workspace = true
 edition = "2021"
 publish = false
 
+[features]
+# `Editor::for_test` and the committed-corpus loaders, for the tests of the composition root,
+# which assembles the editor over its own stores.
+test-support = []
+
 [dependencies]
 # The project representation the views render: the published set's summaries and
 # the draft a form is built from. `server -> web -> core` is the dependency
 # direction the architecture doc states, so a view naming a domain type is the
 # intended shape rather than a shortcut.
 editor-core = { path = "../core" }
+editor-ports = { path = "../ports" }
+deposit-shell = { path = "../../shell" }
 maud.workspace = true
 # A draft is the project's JSON members (`editor_core::draft`), so a view over
 # one names `serde_json::Value` — the draft API cannot be used without it.
@@ -21,6 +28,22 @@ shared-metadata = { path = "../../../../shared/metadata" }
 # The form, the entity form and the review pages render tiles (buttons, alerts,
 # text fields, tables).
 mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
+# `is_valid_traceparent`, for the `<meta name="traceparent">` every page carries.
+shared-telemetry = { path = "../../../../shared/telemetry" }
+# The `?saved=<stamp>` redirect marker: RFC 3339 carries `+` and `:`, which an
+# unencoded query value would corrupt.
+urlencoding = "2.1"
+# The collection-report bearer token is compared in constant time.
+subtle = "2.6"
+
+axum.workspace = true
+chrono.workspace = true
+serde.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+tower_governor.workspace = true
+opentelemetry.workspace = true
+tracing-opentelemetry.workspace = true
 
 [dev-dependencies]
 # `serde_json` and `shared-metadata` are not repeated here: both are real
@@ -31,3 +54,10 @@ mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
 # value, a posted name changing, or an `aria-*` attribute going missing, and each
 # of those is invisible in a summary written from the same code.
 insta.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower = { workspace = true, features = ["util"] }
+tracing-subscriber.workspace = true
+# The seed helpers, row readers and fault-injecting fakes.
+editor-store = { path = "../store", features = ["test-support"] }
+# `FakeAuthenticator` and `FakeUserDirectory`, which the handler tests sign in through.
+editor-ports = { path = "../ports", features = ["test-support"] }

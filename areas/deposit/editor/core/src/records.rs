@@ -1,6 +1,6 @@
 //! The records the editor persists.
 //!
-//! Framework-free: the SQLite column mapping lives in `editor-server`, behind
+//! Framework-free: the SQLite column mapping lives in `editor-store`, behind
 //! the ports in [`crate::repository`]. A `payload: String` is a serialized
 //! [`ProjectDraft`](crate::draft::ProjectDraft), which is `#[serde(transparent)]`
 //! over the project's members; it stays opaque here because this layer never

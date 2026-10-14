@@ -42,20 +42,17 @@ use editor_core::repository::{
     SubmissionRepository, Transition,
 };
 use editor_core::review::{diff, Decision, FieldDiff, FieldReview, ReviewState};
-use editor_web::form::registry::Audience;
-use editor_web::form::submit::unresolved_agents;
-use editor_web::form::{registry, INTENT};
-use editor_web::pages::review as page;
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::editor_auth::{Account, Rdu};
-use crate::shell::AppState;
-
-/// The header the vendored Datastar bundle sets on every fetch it makes; see
-/// [`crate::sections`], which reads it for the same reason.
-const DATASTAR_REQUEST: &str = "datastar-request";
+use crate::form::registry::Audience;
+use crate::form::submit::unresolved_agents;
+use crate::form::{registry, INTENT};
+use crate::handlers::auth::{Account, Rdu};
+use crate::handlers::is_enhanced;
+use crate::pages::review as page;
+use crate::shell::EditorState;
 
 const NO_SUBMISSION: &str = "There is no submission waiting for review on this project. It may have just been \
                              withdrawn by the depositor, or reviewed by another RDU member.";
@@ -90,7 +87,7 @@ const APPROVE_REFUSED_UNPUBLISHABLE: &str = "This project, as decided, cannot be
                                              it cannot be approved:";
 
 /// `GET /review` — the queue and the drafts.
-pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
+pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let submissions = match SubmissionRepository::list(&*state.editor).await {
         Ok(submissions) => submissions,
         Err(error) => return storage_error(&state, &user, "read the review queue", &error),
@@ -194,7 +191,7 @@ pub(crate) struct ShowParams {
 
 /// `GET /review/{shortcode}` — the field-by-field diff.
 pub(crate) async fn show(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Rdu(user): Rdu,
     Path(shortcode): Path<String>,
     Query(params): Query<ShowParams>,
@@ -224,7 +221,7 @@ pub(crate) async fn show(
     )
 )]
 pub(crate) async fn act(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Rdu(user): Rdu,
     Path(shortcode): Path<String>,
     headers: HeaderMap,
@@ -366,7 +363,7 @@ pub(crate) async fn act(
 /// has to be told about, and enforced here and not only by the `required`
 /// attribute the control carries.
 async fn finish(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     context: &Context<'_>,
     body: &FormBody,
@@ -690,7 +687,7 @@ struct Prompt<'a> {
 
 /// The confirmation step for a terminating action.
 fn asking(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     context: &Context<'_>,
     filter: page::Filter,
@@ -716,7 +713,7 @@ fn asking(
 }
 
 /// The round is over, so there is no submission left to diff.
-fn finished(state: &AppState, user: &Account, context: &Context<'_>, outcome: ReviewOutcome) -> Response {
+fn finished(state: &EditorState, user: &Account, context: &Context<'_>, outcome: ReviewOutcome) -> Response {
     let finished = match outcome {
         ReviewOutcome::Approved => page::Finished::Approved,
         ReviewOutcome::ChangesRequested => page::Finished::ChangesRequested,
@@ -783,7 +780,7 @@ impl Context<'_> {
 /// Shape, then the record — the same order as everywhere else in this service.
 /// There is no authorization step between them here: [`Rdu`] already decided,
 /// and role-based access leaves nothing per-project to check.
-async fn context<'a>(state: &'a AppState, user: &Account, shortcode: &'a str) -> Result<Context<'a>, Response> {
+async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
@@ -927,7 +924,7 @@ fn decisions_from(
 /// build does not know leaves the proposal undecided rather than picking one, the same argument
 /// [`ProposalDecision`]'s own `FromStr` makes for [`Decision::parse`]'s.
 async fn apply_entity_decisions(
-    state: &AppState,
+    state: &EditorState,
     proposals: &mut [EntityProposal],
     body: &FormBody,
     by: Uuid,
@@ -969,11 +966,6 @@ fn substitute(body: &FormBody, submitted: &ProjectDraft, field: &str) -> Option<
     Some(after.cloned().unwrap_or(Value::Null))
 }
 
-/// Whether this request came from the Datastar bundle.
-fn is_enhanced(headers: &HeaderMap) -> bool {
-    headers.contains_key(DATASTAR_REQUEST)
-}
-
 /// A stored decision: a redirect on the plain path, the patched region on the
 /// enhanced one.
 fn saved(context: &Context<'_>, filter: page::Filter, headers: HeaderMap, notice: page::Notice<'_>) -> Response {
@@ -988,7 +980,7 @@ fn saved(context: &Context<'_>, filter: page::Filter, headers: HeaderMap, notice
 
 /// A refused write, re-rendered with what was typed still in place.
 fn refused(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     context: &Context<'_>,
     filter: page::Filter,
@@ -1015,7 +1007,7 @@ fn region(context: &Context<'_>, filter: page::Filter, notice: Option<page::Noti
 }
 
 fn render_page(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     context: &Context<'_>,
     filter: page::Filter,
@@ -1135,7 +1127,7 @@ fn view<'a>(
 /// One directory call rather than one per row: the queue reads two tables and would
 /// otherwise issue a lookup per submission and per draft.
 async fn account_names(
-    state: &AppState,
+    state: &EditorState,
     ids: impl IntoIterator<Item = Option<Uuid>>,
 ) -> Result<HashMap<Uuid, String>, editor_ports::Unavailable> {
     let mut ids: Vec<String> = ids.into_iter().flatten().map(|id| id.to_string()).collect();
@@ -1160,7 +1152,7 @@ fn name_of(names: &HashMap<Uuid, String>, id: Option<Uuid>) -> Option<&str> {
 /// A 404 with a page rather than the bare shell: a reviewer arriving from a
 /// queue somebody else has already cleared has done nothing wrong, and the
 /// status is still the honest one.
-fn no_submission(state: &AppState, user: &Account) -> Response {
+fn no_submission(state: &EditorState, user: &Account) -> Response {
     let content = maud::html! {
         h1 class="font-display text-2xl mb-2" { "Nothing to review" }
         p class="mb-4" { (NO_SUBMISSION) }
@@ -1178,7 +1170,7 @@ fn no_submission(state: &AppState, user: &Account) -> Response {
 }
 
 /// A submission whose stored payload this build cannot parse.
-fn unreadable_submission(state: &AppState, user: &Account) -> Response {
+fn unreadable_submission(state: &EditorState, user: &Account) -> Response {
     crate::shell::render(
         state,
         "Submission unreadable — DaSCH Metadata Editor",
@@ -1192,7 +1184,7 @@ fn unreadable_submission(state: &AppState, user: &Account) -> Response {
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the review surface could not reach storage");
     crate::shell::render(
         state,
@@ -1210,20 +1202,21 @@ fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std:
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
+    use editor_ports::Role;
     use editor_store::test_support::{Faults, FaultyStore};
-    use identity_core::records::{Role, User};
     use serde_json::json;
     use tower::ServiceExt;
 
     use super::*;
-    use crate::test_support::{
+    use crate::fixtures::{
         a_session, a_user, body_string, get, location, open_test_db, post, state_over, test_app, test_state,
-        with_cookie, RecordingMailer,
+        with_cookie, TestState, User,
     };
+    use crate::handlers::DATASTAR_REQUEST;
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(request, identity_core::cookie::SESSION, session))
+            .oneshot(with_cookie(request, crate::fixtures::SESSION, session))
             .await
             .expect("the request should complete")
     }
@@ -1238,7 +1231,7 @@ mod tests {
     }
 
     /// An RDU account with a live session.
-    async fn a_reviewer(state: &AppState, email: &str, name: &str) -> (User, String) {
+    async fn a_reviewer(state: &TestState, email: &str, name: &str) -> (User, String) {
         let user = a_user(state, email, name, Role::Rdu, &[]).await;
         let session = a_session(state, user.id).await;
         (user, session)
@@ -1258,7 +1251,7 @@ mod tests {
     }
 
     /// The one approved record for a project.
-    async fn the_record(state: &AppState, shortcode: &str) -> editor_core::records::ApprovedRecord {
+    async fn the_record(state: &EditorState, shortcode: &str) -> editor_core::records::ApprovedRecord {
         let mut records =
             editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, shortcode)
                 .await
@@ -1268,7 +1261,7 @@ mod tests {
     }
 
     /// The one round recorded for a project.
-    async fn the_round(state: &AppState, shortcode: &str) -> editor_core::records::ReviewRound {
+    async fn the_round(state: &EditorState, shortcode: &str) -> editor_core::records::ReviewRound {
         let mut rounds = ReviewRoundRepository::list_for_shortcode(&*state.editor, shortcode)
             .await
             .expect("read");
@@ -1774,18 +1767,13 @@ mod tests {
         // Nothing partial: the three writes are one transaction, so a failure
         // leaves the submission exactly where it was and says so.
         let db = open_test_db("review-finish-storage").await;
-        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
+        let sound = state_over(db.editor.clone());
         let (_, session) = a_reviewer(&sound, "rdu@x.test", "An RDU Member").await;
         let submission = a_submission(&sound, "0801d", None, json!({ "name": "A New Title" })).await;
-        let faulty = state_over(
-            db.identity.clone(),
-            std::sync::Arc::new(FaultyStore::new(
-                db.editor.clone(),
-                Faults { review_transition: true, ..Faults::default() },
-            )),
-            RecordingMailer::new(),
-            |_| {},
-        );
+        let faulty = sound.with_store(std::sync::Arc::new(FaultyStore::new(
+            db.editor.clone(),
+            Faults { review_transition: true, ..Faults::default() },
+        )));
         let app = test_app(&faulty);
 
         let response = as_session(
@@ -1896,7 +1884,7 @@ mod tests {
 
     /// A pending submission whose payload is the published project with
     /// `changes` applied on top, so the diff is exactly `changes`.
-    async fn a_submission(state: &AppState, shortcode: &str, author: Option<Uuid>, changes: Value) -> Submission {
+    async fn a_submission(state: &EditorState, shortcode: &str, author: Option<Uuid>, changes: Value) -> Submission {
         let mut draft = state.published.get(shortcode).map(ProjectDraft::from_raw).unwrap_or_default();
         for (field, value) in changes.as_object().expect("an object of changes") {
             draft.set(field, value.clone());
@@ -1919,7 +1907,7 @@ mod tests {
         submission
     }
 
-    async fn stored_review_state(state: &AppState, shortcode: &str) -> ReviewState {
+    async fn stored_review_state(state: &EditorState, shortcode: &str) -> ReviewState {
         let submission = SubmissionRepository::find_by_shortcode(&*state.editor, &normalize_shortcode(shortcode))
             .await
             .expect("the lookup should succeed")
@@ -1931,7 +1919,7 @@ mod tests {
     /// corpus's own highest id — never a published id, which matters here: `AgentScope` resolves
     /// the *published* entry first for an id both sides hold, so a colliding allocation would
     /// make the referential-integrity gate see an unrelated published person and never fire.
-    async fn a_person_proposal(state: &AppState, shortcode: &str) -> EntityProposal {
+    async fn a_person_proposal(state: &EditorState, shortcode: &str) -> EntityProposal {
         let published_floor = state.agents.highest_id_number(editor_core::proposals::ProposalKind::Person);
         let proposal = EntityProposal {
             id: Uuid::new_v4(),
@@ -2168,16 +2156,11 @@ mod tests {
         // the opposite of what the database says at exactly the moment it
         // matters.
         let db = open_test_db("review-claim-fails").await;
-        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
-        let faulty = state_over(
-            db.identity.clone(),
-            std::sync::Arc::new(FaultyStore::new(
-                db.editor.clone(),
-                Faults { submission_update: true, ..Faults::default() },
-            )),
-            RecordingMailer::new(),
-            |_| {},
-        );
+        let sound = state_over(db.editor.clone());
+        let faulty = sound.with_store(std::sync::Arc::new(FaultyStore::new(
+            db.editor.clone(),
+            Faults { submission_update: true, ..Faults::default() },
+        )));
         let (holder, holder_session) = a_reviewer(&sound, "one@dasch.swiss", "First Reviewer").await;
         let (_, session) = a_reviewer(&sound, "two@dasch.swiss", "Second Reviewer").await;
         a_submission(&sound, "0801d", None, json!({ "name": "A new name" })).await;
@@ -2796,21 +2779,16 @@ mod tests {
         // transient storage failure, and a storage failure must not be reported as the
         // business-rule refusal — RDU acts on the two very differently.
         let db = open_test_db("review-approve-collecting-storage").await;
-        let sound = state_over(db.identity.clone(), db.editor.clone(), RecordingMailer::new(), |_| {});
+        let sound = state_over(db.editor.clone());
         let (_, session) = a_reviewer(&sound, "rdu@x.test", "An RDU Member").await;
         let submission = a_submission(&sound, "0801d", None, json!({ "name": "A New Title" })).await;
-        let faulty = state_over(
-            db.identity.clone(),
-            std::sync::Arc::new(FaultyStore::new(
-                db.editor.clone(),
-                Faults {
-                    approved_records_find_by_shortcode: true,
-                    ..Faults::default()
-                },
-            )),
-            RecordingMailer::new(),
-            |_| {},
-        );
+        let faulty = sound.with_store(std::sync::Arc::new(FaultyStore::new(
+            db.editor.clone(),
+            Faults {
+                approved_records_find_by_shortcode: true,
+                ..Faults::default()
+            },
+        )));
         let app = test_app(&faulty);
 
         let body = body_string(

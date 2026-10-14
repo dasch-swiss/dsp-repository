@@ -1143,15 +1143,12 @@ dependencies = [
  "identity-web",
  "init-tracing-opentelemetry",
  "insta",
- "maud",
  "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "pyroscope",
  "serde",
- "serde_json",
- "shared-metadata",
  "shared-telemetry",
  "thiserror 2.0.18",
  "tokio",
@@ -1162,7 +1159,6 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "ureq",
- "urlencoding",
  "uuid",
 ]
 
@@ -1186,12 +1182,29 @@ dependencies = [
 name = "editor-web"
 version = "0.8.8"
 dependencies = [
+ "axum",
+ "chrono",
+ "deposit-shell",
  "editor-core",
+ "editor-ports",
+ "editor-store",
  "insta",
  "maud",
  "mosaic-tiles",
+ "opentelemetry",
+ "serde",
  "serde_json",
  "shared-metadata",
+ "shared-telemetry",
+ "subtle",
+ "tokio",
+ "tower",
+ "tower_governor",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "urlencoding",
+ "uuid",
 ]
 
 [[package]]

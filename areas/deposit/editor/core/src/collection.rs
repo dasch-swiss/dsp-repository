@@ -153,7 +153,7 @@ impl CollectionStateView {
 ///
 /// A wire type only — the exactly-one-of-`pull_request`-or-`failure` rule and the pull request's
 /// origin are HTTP contract validation, not a domain invariant this crate enforces elsewhere, so
-/// they live in `editor-server` next to the handler that rejects a report failing them.
+/// they live in `editor-web` next to the handler that rejects a report failing them.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionReport {

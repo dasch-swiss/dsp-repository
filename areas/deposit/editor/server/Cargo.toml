@@ -7,11 +7,6 @@ publish = false
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
-# The `?saved=<stamp>` redirect marker: RFC 3339 carries `+` and `:`, which an
-# unencoded query value would corrupt.
-urlencoding = "2.1"
-editor-core = { path = "../core" }
-editor-ports = { path = "../ports" }
 identity-core = { path = "../../identity/core" }
 identity-store = { path = "../../identity/store" }
 identity-web = { path = "../../identity/web" }
@@ -21,20 +16,12 @@ deposit-shell = { path = "../../shell" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
 # contract modules are serde-only; `collector` adds axum/opentelemetry/url.
-shared-metadata = { path = "../../../../shared/metadata" }
 shared-telemetry = { path = "../../../../shared/telemetry" }
-maud.workspace = true
 
 axum.workspace = true
 figment = { version = "0.10", features = ["env", "toml"] }
 serde.workspace = true
-# The draft payload column: a `ProjectDraft` serialized. `editor-core` keeps it
-# an opaque `String` because that layer never interprets it, so the handler that
-# does — the form's save path — is where it is parsed and written.
-serde_json.workspace = true
-chrono.workspace = true
 thiserror.workspace = true
-uuid.workspace = true
 tokio.workspace = true
 tower-http.workspace = true
 tower_governor.workspace = true
@@ -59,4 +46,8 @@ identity-store = { path = "../../identity/store", features = ["test-support"] }
 identity-web = { path = "../../identity/web", features = ["test-support"] }
 editor-ports = { path = "../ports", features = ["test-support"] }
 editor-store = { path = "../store", features = ["test-support"] }
+editor-web = { path = "../web", features = ["test-support"] }
+editor-core = { path = "../core" }
+chrono.workspace = true
+uuid.workspace = true
 insta.workspace = true

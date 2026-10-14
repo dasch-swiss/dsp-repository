@@ -9,7 +9,7 @@
 //! Deliberately public: `/` (a redirect), the two login screens, `/logout`,
 //! `/healthz`, the telemetry beacon and the static assets. Everything else takes
 //! an `Authenticated`: this module's for identity's own pages (the depositor
-//! list), `editor_auth`'s in `editor-server`, over the `Authenticator` port, for the editor's.
+//! list), `editor-web`'s `handlers/auth.rs`, over the `Authenticator` port, for the editor's.
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;

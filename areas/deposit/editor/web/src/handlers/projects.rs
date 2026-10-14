@@ -16,11 +16,11 @@ use editor_core::draft::ProjectDraft;
 use editor_core::records::normalize_shortcode;
 use editor_core::repository::{ApprovedRecordRepository, DraftRepository, RepositoryError, SubmissionRepository};
 use editor_core::status::{depositor_state, Comparison, ProjectState};
-use editor_web::pages::projects::AssignedProject;
 use shared_metadata::is_valid_shortcode;
 
-use crate::editor_auth::{Account, Authenticated};
-use crate::shell::AppState;
+use crate::handlers::auth::{Account, Authenticated};
+use crate::pages::projects::AssignedProject;
+use crate::shell::EditorState;
 
 /// What a depositor is told about a project that is not theirs.
 ///
@@ -32,13 +32,13 @@ pub(crate) const NOT_ASSIGNED: &str =
                             them if you should have access to it.";
 
 /// `GET /projects` — what this account may edit.
-pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Authenticated) -> Response {
+pub(crate) async fn list(State(state): State<EditorState>, Authenticated(user): Authenticated) -> Response {
     // Not one page with a branch inside it: an RDU account's `shortcodes` is
     // empty by design, so rendering it through the depositor's list
     // would tell an administrator they have no projects.
     let content = if user.principal.is_rdu() {
         let rows: Vec<_> = state.published.summaries().collect();
-        editor_web::pages::projects::rdu_overview(&rows)
+        crate::pages::projects::rdu_overview(&rows)
     } else {
         // The rows are the intersection of the assignments and the published
         // set; the count is the assignments themselves. Both are passed because
@@ -56,7 +56,7 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Aut
                 Err(error) => return storage_error(&state, &user, "read this project's state", &error),
             }
         }
-        editor_web::pages::projects::assigned(&rows, user.principal.shortcodes.len())
+        crate::pages::projects::assigned(&rows, user.principal.shortcodes.len())
     };
     crate::shell::render(
         &state,
@@ -79,7 +79,7 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Aut
 /// destination that depended on the role is one more thing to get wrong in a link
 /// shared between a depositor and a reviewer.
 pub(crate) async fn detail(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path(shortcode): Path<String>,
 ) -> Response {
@@ -109,11 +109,11 @@ pub(crate) async fn detail(
         return crate::shell::forbidden(&state, &user.principal.display_name, NOT_ASSIGNED);
     }
     let audience = if user.principal.is_rdu() {
-        editor_web::form::registry::Audience::RduOnly
+        crate::form::registry::Audience::RduOnly
     } else {
-        editor_web::form::registry::Audience::Everyone
+        crate::form::registry::Audience::Everyone
     };
-    let section = editor_web::form::registry::first_section(audience);
+    let section = crate::form::registry::first_section(audience);
     axum::response::Redirect::to(&format!("/projects/{shortcode}/sections/{}", section.id)).into_response()
 }
 
@@ -121,13 +121,13 @@ pub(crate) async fn detail(
 ///
 /// Behind [`Authenticated`] like the rest: it explains a depositor's own
 /// projects, and the editor has no public pages besides the login flow.
-pub(crate) async fn states(State(state): State<AppState>, Authenticated(user): Authenticated) -> Response {
+pub(crate) async fn states(State(state): State<EditorState>, Authenticated(user): Authenticated) -> Response {
     crate::shell::render(
         &state,
         "What the states mean — DaSCH Metadata Editor",
         StatusCode::OK,
         Some(&user.principal.display_name),
-        editor_web::pages::states::explanation(),
+        crate::pages::states::explanation(),
     )
 }
 
@@ -138,7 +138,7 @@ pub(crate) async fn states(State(state): State<AppState>, Authenticated(user): A
 /// whose publication is in question: a draft differing from published data is
 /// just an edit in progress, and comparing it would make every unsaved change
 /// look like a pending release.
-async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState, RepositoryError> {
+async fn project_state(state: &EditorState, shortcode: &str) -> Result<ProjectState, RepositoryError> {
     // The three record tables key on the *normalized* shortcode, while the
     // summary carries the published set's own spelling. Querying `080C` against
     // rows stored as `080c` finds nothing, which would read as "no local record"
@@ -157,7 +157,7 @@ async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState
 /// How a project's newest approved record compares against the published set,
 /// and whether it holds one at all.
 ///
-/// Shared with the form (`crate::sections`), which needs the same answer for the
+/// Shared with the form (`crate::handlers::sections`), which needs the same answer for the
 /// waiting-for-release notice. **The newest record is the one whose publication
 /// is in question** — `find_by_shortcode` orders oldest first, and a project
 /// holds more than one whenever collection has lagged.
@@ -167,7 +167,7 @@ async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState
 /// state, and refusing the whole list over one unreadable row would take every
 /// other project down with it. The startup pass is where an unreadable payload
 /// is reported.
-pub(crate) async fn approved_comparison(state: &AppState, key: &str) -> Result<(bool, Comparison), RepositoryError> {
+pub(crate) async fn approved_comparison(state: &EditorState, key: &str) -> Result<(bool, Comparison), RepositoryError> {
     let approved = ApprovedRecordRepository::find_by_shortcode(&*state.editor, key).await?;
     let local = approved
         .last()
@@ -179,7 +179,7 @@ pub(crate) async fn approved_comparison(state: &AppState, key: &str) -> Result<(
 }
 
 /// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &AppState, viewer: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &EditorState, viewer: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the project list could not reach storage");
     crate::shell::render(
         state,
@@ -198,16 +198,16 @@ mod tests {
     use axum::http::StatusCode;
     use editor_core::records::{normalize_shortcode, DraftRecord};
     use editor_core::repository::DraftRepository;
-    use identity_core::records::Role;
+    use editor_ports::Role;
     use tower::ServiceExt;
 
-    use crate::test_support::{
+    use crate::fixtures::{
         a_session, a_user, body_string, capture_logs, get, location, test_app, test_state, with_cookie,
     };
 
     async fn as_session(app: &axum::Router, uri: &str, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(get(uri), identity_core::cookie::SESSION, session))
+            .oneshot(with_cookie(get(uri), crate::fixtures::SESSION, session))
             .await
             .expect("the request should complete")
     }

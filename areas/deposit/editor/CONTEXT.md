@@ -12,8 +12,8 @@ Depositor, RDU, Assignment, Login code and Session are identity's terms, defined
 Who is asking, as the editor receives a live Session from identity: the account id, its display name, its role, its Assignments and when the Session ends (`editor-ports`). The editor's own word for the signed-in account; it never sees a `users` row.
 _Avoid_: user, viewer (the page header's name for the same person).
 
-**Account** (in `editor-server`):
-A Principal with its account id parsed once into the `Uuid` the editor's records hold; what the editor's `Authenticated` and `Rdu` extractors yield. The Principal crosses the port; the Account never leaves `editor-server`.
+**Account** (in `editor-web`):
+A Principal with its account id parsed once into the `Uuid` the editor's records hold; what the editor's `Authenticated` and `Rdu` extractors yield. The Principal crosses the port; the Account never leaves `editor-web`.
 
 ### The record and its journey
 
@@ -112,7 +112,7 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 - **"Draft"** is three things: the `drafts` row, the `ProjectDraft` value, and `ProjectState::Draft` (which also covers an unpublished project with nothing pending). Resolution: unqualified "Draft" is the row; say "draft value" or "Draft state" otherwise.
 - **"Approved"** is three things: `SubmissionState::Approved` (the window between the decision and the record write), `ProjectState::Approved` (a record exists, not yet Online) and `ReviewOutcome::Approved`. Resolution: qualify by type in code; in depositor-facing prose only the Project state exists.
 - **"State"** names three types plus a page (`/states`). Resolution: never say "state" alone; say Project state, Submission state or Review state.
-- **"Section"** is a form grouping, a handler module (`server/src/sections.rs`), a view module and a path segment. Resolution: the domain term is the grouping; the others are named after it.
+- **"Section"** is a form grouping, a handler module (`web/src/handlers/sections.rs`), a view module and a path segment. Resolution: the domain term is the grouping; the others are named after it.
 - **"Collect"** is the telemetry endpoint (`/telemetry/collect`) and the carrying of an approved record into a pull request. Resolution: "collect a beacon" vs "collect an approved record"; never bare.
 - **"Collection"** in the editor is that second sense as a noun — the RDU surface at `/collection` showing where each approved record stands. _Avoid_ for the metadata-model **Collection** (`ProjectRaw.collections`), which `areas/access/CONTEXT.md` defines and the root `CONTEXT.md` already separates from Cluster. Nothing in the editor reads or writes that one. DEV-7357 proposes replacing this whole vocabulary; until it lands, qualify as "the collection surface".
 - **"Retire"** is the system stamping `entity_proposals.retired_at` once an accepted `new`-entity proposal's entity appears in the published set, so it stops riding along with later approved records. _Avoid_ for **Withdrawal**, which is the depositor abandoning their own proposal before a decision. Retirement is never a person's action and never applies to a `change`.

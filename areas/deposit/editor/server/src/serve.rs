@@ -1,82 +1,8 @@
-//! `serve()`, its startup loaders and `shutdown_signal`.
+//! `serve()` and `shutdown_signal`.
 
 use std::sync::atomic::Ordering;
 
 use crate::observability::SUBSCRIBER_READY;
-
-/// The temporal-resolution tables, or empty ones without a data directory. Empty refuses
-/// every free-text period at submit, the fail-safe direction.
-fn load_temporal(data_dir: Option<&std::path::Path>) -> crate::shell::TemporalTables {
-    let Some(data_dir) = data_dir else {
-        tracing::warn!(
-            "no EDITOR_DATA_DIR: the temporal-resolution tables are empty, so every free-text temporalCoverage \
-             entry reads as unresolvable and no submission carrying one can be made"
-        );
-        return crate::shell::TemporalTables::default();
-    };
-    let tables = crate::shell::TemporalTables {
-        periods: shared_metadata::chronontology::load_from(data_dir),
-        enrichment: shared_metadata::temporal_enrichment::load_from(data_dir),
-    };
-    tracing::info!(
-        periods = tables.periods.len(),
-        enrichment = tables.enrichment.len(),
-        "temporal-resolution tables loaded"
-    );
-    tables
-}
-
-/// Read the published project set, reporting what did not load. Never fatal: an unset
-/// `EDITOR_DATA_DIR` is a configured state, and a malformed file should not take down routes
-/// that never read the projects.
-fn load_published(data_dir: Option<&std::path::Path>) -> editor_core::published::PublishedProjects {
-    use editor_core::published::PublishedProjects;
-
-    let Some(data_dir) = data_dir else {
-        tracing::warn!(
-            "no EDITOR_DATA_DIR: the published project set is empty, so the project list shows nothing and no \
-             form can be pre-filled"
-        );
-        return PublishedProjects::default();
-    };
-    let (published, errors) = PublishedProjects::load_from(&data_dir.join("projects"));
-    // One line per failure, so a bad file is findable by name rather than by
-    // subtracting counts.
-    for error in &errors {
-        tracing::warn!(error = %error, "a published project could not be read");
-    }
-    if errors.is_empty() {
-        tracing::info!(projects = published.len(), "published project set loaded");
-    } else {
-        tracing::warn!(
-            projects = published.len(),
-            failed = errors.len(),
-            "published project set loaded with failures"
-        );
-    }
-    published
-}
-
-/// The agent set, or an empty one without a data directory.
-fn load_agents(data_dir: Option<&std::path::Path>) -> editor_core::agents::Agents {
-    let Some(data_dir) = data_dir else {
-        tracing::warn!(
-            "no EDITOR_DATA_DIR: the agent set is empty, so every contributor and contact reference renders as a bare id and no submission naming one can be accepted"
-        );
-        return editor_core::agents::Agents::default();
-    };
-    let (agents, errors) =
-        editor_core::agents::Agents::load_from(&data_dir.join("persons"), &data_dir.join("organizations"));
-    for error in &errors {
-        tracing::warn!(error = %error, "an agent could not be read");
-    }
-    if errors.is_empty() {
-        tracing::info!(agents = agents.len(), "agent set loaded");
-    } else {
-        tracing::warn!(agents = agents.len(), failed = errors.len(), "agent set loaded with failures");
-    }
-    agents
-}
 
 #[tokio::main]
 pub(crate) async fn serve() -> std::process::ExitCode {
@@ -181,58 +107,14 @@ pub(crate) async fn serve() -> std::process::ExitCode {
         );
     }
 
-    let published = std::sync::Arc::new(load_published(config.data_dir.as_deref()));
-    let temporal = std::sync::Arc::new(load_temporal(config.data_dir.as_deref()));
-    let agents = std::sync::Arc::new(load_agents(config.data_dir.as_deref()));
-
-    // Once per process: the moment a deployment starts is the moment its approved changes are
-    // Online. Not fatal, see `reconcile`'s module docs.
-    match crate::reconcile::reconcile_published(&*editor_db, &*editor_db, &published, &agents).await {
-        // Two spelled-out arms rather than one parameterised call: `tracing`
-        // resolves the level at compile time, so it cannot be a variable.
-        Ok(summary) if summary.needs_attention() => tracing::warn!(
-            projects.online = summary.online,
-            projects.waiting = summary.waiting,
-            projects.stranded = summary.stranded,
-            projects.removed_upstream = summary.removed_upstream,
-            records.unreadable = summary.unreadable,
-            records.retry_failed = summary.retry_failed,
-            proposals.retired = summary.proposals_retired,
-            proposals.retire_failed = summary.proposals_retire_failed,
-            "compared the published set against local records; some records need an RDU decision"
-        ),
-        Ok(summary) => tracing::info!(
-            projects.online = summary.online,
-            projects.waiting = summary.waiting,
-            projects.stranded = summary.stranded,
-            projects.removed_upstream = summary.removed_upstream,
-            records.unreadable = summary.unreadable,
-            records.retry_failed = summary.retry_failed,
-            proposals.retired = summary.proposals_retired,
-            proposals.retire_failed = summary.proposals_retire_failed,
-            "compared the published set against local records"
-        ),
-        Err(e) => tracing::error!(
-            error = %e,
-            "could not compare the published set against local records; every project keeps its stored state and \
-             the comparison is retried on the next start"
-        ),
-    }
-
-    let state = crate::shell::AppState {
-        css_href,
-        authenticator: std::sync::Arc::new(identity_store::LiveAuthenticator::new(identity_db.clone(), auth)),
-        directory: std::sync::Arc::new(identity_store::LiveUserDirectory::new(identity_db.clone())),
-        editor: editor_db,
-        collection_token: config.collection_token.clone(),
-        published,
-        temporal,
-        agents,
-        // Compiled into a test build only, where `serve()` never runs.
-        #[cfg(test)]
-        identity: crate::test_support::IdentityFixture::new(identity_db, auth),
-    };
-    let app = crate::router::build_app(state, identity.router(), &config.public_dir);
+    let editor = editor_web::Editor::start(
+        config.editor_settings(css_href.clone()),
+        editor_db,
+        std::sync::Arc::new(identity_store::LiveAuthenticator::new(identity_db.clone(), auth)),
+        std::sync::Arc::new(identity_store::LiveUserDirectory::new(identity_db)),
+    )
+    .await;
+    let app = crate::router::build_app(identity.router(), editor.router(), css_href, &config.public_dir);
 
     tracing::info!("listening on http://{}", &addr);
     let listener = tokio::net::TcpListener::bind(&addr)

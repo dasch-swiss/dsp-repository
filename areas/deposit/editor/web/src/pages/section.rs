@@ -332,7 +332,7 @@ pub struct SectionView<'a> {
     pub posted: Option<&'a FormBody>,
     /// The field one more blank row was just asked for.
     pub adding_row: Option<&'a str>,
-    /// The agents an id field may refer to, borrowed from `AppState`'s snapshot.
+    /// The agents an id field may refer to, borrowed from `EditorState`'s snapshot.
     pub agents: Option<&'a AgentScope<'a>>,
     /// Base URL a repeatable field's add and remove controls submit to: `/fields`
     /// under the section's own URL, built by the caller because the route shape

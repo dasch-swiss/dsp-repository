@@ -1,4 +1,4 @@
-//! A copy of `editor-server`'s: a web crate renders its own pages.
+//! A copy of `editor-web`'s and `editor-server`'s: a web crate renders its own pages.
 
 use opentelemetry::trace::TraceContextExt;
 use shared_telemetry::traceparent::is_valid_traceparent;

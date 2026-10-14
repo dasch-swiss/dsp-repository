@@ -2,7 +2,7 @@
 //!
 //! `contactPoint`, `attributions[].contributor` and `funding[].funders` hold
 //! ids, so a form has to resolve one to a name and a submission naming one has
-//! to be checked against what exists. Read-only. Loaded per `AppState` rather
+//! to be checked against what exists. Read-only. Loaded per `EditorState` rather
 //! than through `dpe-core`'s process-wide `OnceLock` caches, under which two
 //! tests with different fixtures see each other's entities.
 
@@ -147,7 +147,7 @@ impl Agents {
 /// own entity proposals.
 ///
 /// A proposal is per-request database state and cannot live in [`Agents`]'s
-/// snapshot. The snapshot is borrowed, not cloned: `AppState` is cloned per
+/// snapshot. The snapshot is borrowed, not cloned: `EditorState` is cloned per
 /// request, which is why [`Agents`] sits behind an `Arc`.
 #[derive(Debug)]
 pub struct AgentScope<'a> {

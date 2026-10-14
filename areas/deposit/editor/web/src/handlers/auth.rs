@@ -5,15 +5,34 @@
 use std::time::SystemTime;
 
 use axum::extract::FromRequestParts;
+use axum::http::header::COOKIE;
 use axum::http::request::Parts;
+use axum::http::Method;
 use axum::response::{IntoResponse, Redirect, Response};
 use chrono::{DateTime, Utc};
 use deposit_shell::sign_in::login_url;
 use editor_ports::Principal;
-use identity_web::{cookie_values, destination};
 use uuid::Uuid;
 
-use crate::shell::AppState;
+use crate::shell::EditorState;
+
+/// Every `Cookie` header value on the request, walking all of them rather than the first:
+/// HTTP/2 clients are free to split them.
+fn cookie_values(headers: &axum::http::HeaderMap) -> Vec<&str> {
+    headers.get_all(COOKIE).iter().filter_map(|value| value.to_str().ok()).collect()
+}
+
+/// Where to send this request back to once its owner has signed in.
+///
+/// `GET` only: a `POST`'s destination is a side effect rather than a page, and
+/// sending the browser to a `GET` of the same path after sign-in would look like
+/// the write happened.
+fn destination(parts: &Parts) -> Option<&str> {
+    if parts.method != Method::GET {
+        return None;
+    }
+    deposit_shell::sign_in::safe_next(parts.uri.path())
+}
 
 /// The signed-in account, as the editor's handlers use it.
 #[derive(Debug, Clone)]
@@ -33,10 +52,10 @@ impl Account {
 #[derive(Debug, Clone)]
 pub(crate) struct Authenticated(pub(crate) Account);
 
-impl FromRequestParts<AppState> for Authenticated {
+impl FromRequestParts<EditorState> for Authenticated {
     type Rejection = Response;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &EditorState) -> Result<Self, Self::Rejection> {
         let sign_in = || Redirect::to(&login_url(destination(parts))).into_response();
         let Some(principal) = state
             .authenticator
@@ -64,10 +83,10 @@ impl FromRequestParts<AppState> for Authenticated {
 #[derive(Debug, Clone)]
 pub(crate) struct Rdu(pub(crate) Account);
 
-impl FromRequestParts<AppState> for Rdu {
+impl FromRequestParts<EditorState> for Rdu {
     type Rejection = Response;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &EditorState) -> Result<Self, Self::Rejection> {
         let Authenticated(account) = Authenticated::from_request_parts(parts, state).await?;
         if !account.principal.is_rdu() {
             // No `http.route` field: the enclosing server span carries it (see identity's `guard`).
@@ -90,7 +109,34 @@ mod tests {
     use editor_ports::{FakeAuthenticator, Role};
 
     use super::*;
-    use crate::test_support::{body_string, location, test_state};
+    use crate::fixtures::{body_string, location, test_state, TestState};
+
+    fn parts(method: &str, uri: &str) -> Parts {
+        Request::builder()
+            .method(method)
+            .uri(uri)
+            .body(())
+            .expect("the request should build")
+            .into_parts()
+            .0
+    }
+
+    #[test]
+    fn test_a_get_is_sent_back_to_where_it_was_going() {
+        assert_eq!(destination(&parts("GET", "/projects/0801")), Some("/projects/0801"));
+    }
+
+    #[test]
+    fn test_a_get_with_a_query_keeps_only_its_path() {
+        assert_eq!(destination(&parts("GET", "/projects/0801?x=1")), Some("/projects/0801"));
+    }
+
+    #[test]
+    fn test_a_write_is_not_sent_back_to_itself() {
+        // A POST's destination is a side effect, not a page.
+        assert_eq!(destination(&parts("POST", "/projects/0801/sections/overview")), None);
+        assert_eq!(destination(&parts("DELETE", "/collection/x/discard")), None);
+    }
 
     fn principal(account_id: &str, role: Role) -> Principal {
         Principal {
@@ -102,13 +148,13 @@ mod tests {
         }
     }
 
-    async fn state_signed_in_as(principal: Principal) -> AppState {
+    async fn state_signed_in_as(principal: Principal) -> TestState {
         let (mut state, _) = test_state("editor-auth").await;
         state.authenticator = Arc::new(FakeAuthenticator::new().with_session("token", principal));
         state
     }
 
-    fn parts(cookie: Option<&str>) -> Parts {
+    fn session_parts(cookie: Option<&str>) -> Parts {
         let mut request = Request::builder().method("GET").uri("/projects/0801");
         if let Some(cookie) = cookie {
             request = request.header("cookie", cookie);
@@ -121,7 +167,7 @@ mod tests {
         let id = Uuid::new_v4();
         let state = state_signed_in_as(principal(&id.to_string(), Role::Depositor)).await;
 
-        let Authenticated(account) = Authenticated::from_request_parts(&mut parts(Some("s=token")), &state)
+        let Authenticated(account) = Authenticated::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
             .expect("a live session");
         assert_eq!(account.id, id);
@@ -132,7 +178,7 @@ mod tests {
     async fn test_no_session_is_sent_to_sign_in_and_back() {
         let state = state_signed_in_as(principal(&Uuid::new_v4().to_string(), Role::Depositor)).await;
 
-        let refused = Authenticated::from_request_parts(&mut parts(None), &state)
+        let refused = Authenticated::from_request_parts(&mut session_parts(None), &state)
             .await
             .expect_err("no session");
         assert_eq!(refused.status(), StatusCode::SEE_OTHER);
@@ -143,7 +189,7 @@ mod tests {
     async fn test_an_account_id_that_is_not_a_uuid_is_no_session() {
         let state = state_signed_in_as(principal("not-a-uuid", Role::Rdu)).await;
 
-        let refused = Authenticated::from_request_parts(&mut parts(Some("s=token")), &state)
+        let refused = Authenticated::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
             .expect_err("an id the records cannot hold");
         assert_eq!(refused.status(), StatusCode::SEE_OTHER);
@@ -154,7 +200,7 @@ mod tests {
     async fn test_a_depositor_gets_the_rdu_only_page_rather_than_sign_in() {
         let state = state_signed_in_as(principal(&Uuid::new_v4().to_string(), Role::Depositor)).await;
 
-        let refused = Rdu::from_request_parts(&mut parts(Some("s=token")), &state)
+        let refused = Rdu::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
             .expect_err("not RDU");
         assert_eq!(refused.status(), StatusCode::FORBIDDEN);
@@ -167,6 +213,8 @@ mod tests {
     async fn test_an_rdu_session_passes() {
         let state = state_signed_in_as(principal(&Uuid::new_v4().to_string(), Role::Rdu)).await;
 
-        assert!(Rdu::from_request_parts(&mut parts(Some("s=token")), &state).await.is_ok());
+        assert!(Rdu::from_request_parts(&mut session_parts(Some("s=token")), &state)
+            .await
+            .is_ok());
     }
 }

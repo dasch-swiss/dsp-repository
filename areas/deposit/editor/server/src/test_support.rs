@@ -1,25 +1,27 @@
-//! Test-only helpers shared by the router, handler and cross-capability tests.
+//! Test-only helpers shared by the router, csrf and cross-capability tests.
 //!
 //! Kept out of the modules under test so that a fake mailer or a log capture is
 //! written once rather than per test module, and so the fakes are as visible as
-//! the code they stand in for.
+//! the code they stand in for. The state here is the one place both capabilities'
+//! real stores meet: identity's session rules and the editor's store, assembled
+//! the way `serve()` assembles them. Handler tests that need neither live with
+//! the handlers, in `editor-web` and `identity-web`.
 
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use axum::body::Body;
 use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
-use editor_core::published::PublishedProjects;
 use editor_core::repository::EditorRepositories;
 use identity_core::login::AuthConfig;
 use identity_core::repository::IdentityRepositories;
 pub(crate) use identity_web::test_support::RecordingMailer;
 
 use crate::config::EditorConfig;
-use crate::shell::{AppState, TemporalTables};
 
-/// What [`test_app`] assembles identity from.
+pub(crate) const CSS_HREF: &str = "/assets/app.css";
+
 #[derive(Clone)]
 pub(crate) struct IdentityFixture {
     pub(crate) store: Arc<dyn IdentityRepositories>,
@@ -27,36 +29,35 @@ pub(crate) struct IdentityFixture {
     mailer: RecordingMailer,
 }
 
-impl IdentityFixture {
-    pub(crate) fn new(store: Arc<dyn IdentityRepositories>, auth: AuthConfig) -> Self {
-        Self { store, auth, mailer: RecordingMailer::new() }
-    }
+/// Both capabilities' stores of one test, behind their ports, and what identity is assembled
+/// from. [`test_app`] builds the whole app over it.
+#[derive(Clone)]
+pub(crate) struct TestState {
+    pub(crate) identity: IdentityFixture,
+    /// The editor's store, behind its ports, so a test can make a chosen storage call fail.
+    pub(crate) editor: Arc<dyn EditorRepositories>,
+    /// The live adapters over the same identity store, so a test signs in through identity's own
+    /// session rules and a fault put in front of a store reaches the editor's reads too.
+    pub(crate) authenticator: Arc<dyn editor_ports::Authenticator>,
+    pub(crate) directory: Arc<dyn editor_ports::UserDirectory>,
 }
 
-/// App state over fresh in-memory stores and a recording mailer.
+/// State over fresh in-memory stores and a recording mailer.
 ///
 /// The cooldown is zero because most tests are about something else and a real
 /// one would make them sleep; the tests that are about the cooldown set it.
-pub(crate) async fn test_state(label: &str) -> (AppState, RecordingMailer) {
+pub(crate) async fn test_state(label: &str) -> (TestState, RecordingMailer) {
     state_with(label, RecordingMailer::new(), |auth| auth.cooldown = Duration::ZERO).await
 }
 
-/// App state with a chosen mailer and adjusted auth settings.
+/// State with a chosen mailer and adjusted auth settings.
 pub(crate) async fn state_with(
     label: &str,
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
-) -> (AppState, RecordingMailer) {
+) -> (TestState, RecordingMailer) {
     let stores = open_test_db(label).await;
     (state_over(stores.identity, stores.editor, mailer.clone(), adjust), mailer)
-}
-
-/// App state over fresh in-memory stores, configured with `token` as the collection-report
-/// bearer token. [`test_state`] configures none, so a test needing one asks for it here.
-pub(crate) async fn state_with_collection_token(label: &str, token: &str) -> (AppState, RecordingMailer) {
-    let (mut state, mailer) = test_state(label).await;
-    state.collection_token = Some(crate::config::Secret::for_test(token));
-    (state, mailer)
 }
 
 /// Both stores of one test, each a fresh in-memory database.
@@ -74,121 +75,42 @@ pub(crate) async fn open_test_db(label: &str) -> Stores {
     }
 }
 
-/// App state over stores the caller built.
+/// State over stores the caller built.
 ///
 /// [`state_with`] covers every test that just needs working stores. This is for the two kinds
 /// that need the handles as well: one that reads a table directly (`count_rows` on either store:
-/// `AppState` has erased the concrete stores behind the ports), and one that puts a store's
+/// `TestState` has erased the concrete stores behind the ports), and one that puts a store's
 /// `FaultyStore` in front of it while keeping the real store to seed and to assert against.
 pub(crate) fn state_over(
     identity: Arc<dyn IdentityRepositories>,
     editor: Arc<dyn EditorRepositories>,
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
-) -> AppState {
+) -> TestState {
     let mut auth = EditorConfig::default().identity_settings(String::new()).auth();
     adjust(&mut auth);
-    AppState {
-        css_href: "/assets/app.css".to_string(),
-        // The live adapters over the same stores, so a test signs in through identity's own
-        // session rules and a fault put in front of a store reaches the editor's reads too.
+    TestState {
         authenticator: Arc::new(identity_store::LiveAuthenticator::new(identity.clone(), auth)),
         directory: Arc::new(identity_store::LiveUserDirectory::new(identity.clone())),
         identity: IdentityFixture { store: identity, auth, mailer },
         editor,
-        // No token configured by default, matching production's fail-closed default; a test of
-        // `POST /api/v1/collection-report` uses `state_with_collection_token` instead.
-        collection_token: None,
-        // The real committed corpus, not a fixture. Every project page renders
-        // from it, and a fixture of invented projects would let a change that
-        // only works for invented data pass — the real set carries the
-        // mixed-case shortcodes, the `MISSING` placeholders and the filenames
-        // that disagree with their shortcode.
-        published: published_corpus(),
-        temporal: temporal_tables(),
-        agents: agent_corpus(),
     }
-}
-
-/// The committed agent set, loaded once for the whole test binary.
-///
-/// The real set rather than a fixture, for the reason [`published_corpus`] gives: every committed
-/// contributor and contact reference resolves through it, so invented agents would let a change
-/// that only works for invented ids pass.
-pub(crate) fn agent_corpus() -> Arc<editor_core::agents::Agents> {
-    static AGENTS: OnceLock<Arc<editor_core::agents::Agents>> = OnceLock::new();
-    AGENTS
-        .get_or_init(|| {
-            let dir = editor_core::checkout_dpe_data_dir();
-            let (agents, errors) =
-                editor_core::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
-            assert!(errors.is_empty(), "the committed agent set should load: {errors:?}");
-            Arc::new(agents)
-        })
-        .clone()
-}
-
-/// The committed temporal-resolution tables, loaded once for the whole test
-/// binary.
-///
-/// The real ones, for the reason [`published_corpus`] gives about projects: a
-/// fixture of invented periods would let submit validation pass while
-/// disagreeing with what `access-server validate` decides about the committed
-/// projects, which is the whole point of sharing the tables.
-pub(crate) fn temporal_tables() -> Arc<TemporalTables> {
-    static TABLES: OnceLock<Arc<TemporalTables>> = OnceLock::new();
-    TABLES
-        .get_or_init(|| {
-            let dir = editor_core::checkout_dpe_data_dir();
-            Arc::new(TemporalTables {
-                periods: shared_metadata::chronontology::load_from(&dir),
-                enrichment: shared_metadata::temporal_enrichment::load_from(&dir),
-            })
-        })
-        .clone()
-}
-
-/// The committed project corpus, loaded once for the whole test binary.
-///
-/// Parsing 85 files per `test_state()` call would be paid by every handler test,
-/// and most never look at a project. Behind a `OnceLock` and shared by `Arc`,
-/// which the set's immutability makes safe.
-pub(crate) fn published_corpus() -> Arc<PublishedProjects> {
-    static CORPUS: OnceLock<Arc<PublishedProjects>> = OnceLock::new();
-    CORPUS
-        .get_or_init(|| {
-            let dir = editor_core::checkout_dpe_data_dir().join("projects");
-            let (published, errors) = PublishedProjects::load_from(&dir);
-            assert!(errors.is_empty(), "the committed corpus should load cleanly: {errors:?}");
-            Arc::new(published)
-        })
-        .clone()
-}
-
-/// The committed agent set, loaded once for the whole test binary. See
-/// [`published_corpus`] for why this is cached rather than reloaded per test.
-pub(crate) fn agents_corpus() -> Arc<editor_core::agents::Agents> {
-    static AGENTS: OnceLock<Arc<editor_core::agents::Agents>> = OnceLock::new();
-    AGENTS
-        .get_or_init(|| {
-            let dir = editor_core::checkout_dpe_data_dir();
-            let (agents, errors) =
-                editor_core::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
-            assert!(errors.is_empty(), "the committed agent set should load cleanly: {errors:?}");
-            Arc::new(agents)
-        })
-        .clone()
 }
 
 /// The whole app over `state`, as `serve()` assembles it.
 ///
 /// Static assets come from a directory that does not exist: these tests are
 /// about handlers and the route table, never about a file on disk.
-pub(crate) fn test_app(state: &AppState) -> axum::Router {
-    crate::router::build_app(state.clone(), identity_router(state), "nonexistent-test-dir".as_ref())
+pub(crate) fn test_app(state: &TestState) -> axum::Router {
+    crate::router::build_app(
+        identity_router(state),
+        editor_router(state),
+        CSS_HREF.to_string(),
+        "nonexistent-test-dir".as_ref(),
+    )
 }
 
-pub(crate) fn identity_router(state: &AppState) -> axum::Router {
+pub(crate) fn identity_router(state: &TestState) -> axum::Router {
     identity_web::Identity::for_test(
         state.identity.store.clone(),
         Arc::new(editor_store::LiveAuthoredWork::new(state.editor.clone())),
@@ -198,9 +120,13 @@ pub(crate) fn identity_router(state: &AppState) -> axum::Router {
     .router()
 }
 
+pub(crate) fn editor_router(state: &TestState) -> axum::Router {
+    editor_web::Editor::for_test(state.editor.clone(), state.authenticator.clone(), state.directory.clone()).router()
+}
+
 /// Insert an account and return it.
 pub(crate) async fn a_user(
-    state: &AppState,
+    state: &TestState,
     email: &str,
     name: &str,
     role: identity_core::records::Role,
@@ -230,7 +156,7 @@ pub(crate) async fn a_user(
 /// Minted directly rather than by driving the login flow: a test about who may
 /// reach a page should fail when authorization breaks, not when the mail
 /// transport does.
-pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
+pub(crate) async fn a_session(state: &TestState, user_id: uuid::Uuid) -> String {
     identity_core::session::begin(&*state.identity.store, &state.identity.auth, user_id, chrono::Utc::now())
         .await
         .expect("the fixture session should insert")
@@ -240,9 +166,9 @@ pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
 /// Enough percent-encoding for the values these tests put in a form body.
 ///
 /// Deliberately not a general encoder: it covers exactly the characters the
-/// fixtures use. One copy rather than one per suite, since two escaping
-/// different sets shows up only as one suite passing on input the other would
-/// mangle.
+/// fixtures use. `editor-web`'s and `identity-web`'s fixtures hold copies; two escaping
+/// different sets shows up only as one suite passing on input the other would mangle, so a
+/// character added here is added there too.
 pub(crate) fn urlencode(value: &str) -> String {
     value
         // `%` first, or the escapes below would be escaped again.
@@ -322,14 +248,6 @@ pub(crate) async fn body_string(response: Response<Body>) -> String {
         .await
         .expect("the body should read");
     String::from_utf8_lossy(&bytes).into_owned()
-}
-
-/// The document `<title>`'s text, for a full page's body. Panics if there is
-/// no `<title>` — every full page renders one.
-pub(crate) fn title_of(body: &str) -> &str {
-    let open = body.find("<title>").expect("a <title> tag") + "<title>".len();
-    let close = body[open..].find("</title>").expect("a matching </title>");
-    &body[open..open + close]
 }
 
 /// Every `tracing` event and span field emitted on this thread, as text.

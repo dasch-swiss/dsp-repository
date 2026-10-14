@@ -1,0 +1,9 @@
+[package]
+name = "deposit-shell"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+maud.workspace = true
+mosaic-tiles = { path = "../../../modules/mosaic/tiles" }

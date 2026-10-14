@@ -36,13 +36,6 @@ use uuid::Uuid;
 use crate::auth::guard::Rdu;
 use crate::shell::{format_instant, AppState};
 
-/// What a depositor is told if they find their way to one of these pages.
-///
-/// Deliberately says nothing about what the page holds. Unlike the project 403,
-/// where the reader supplied the shortcode themselves, there is nothing here the
-/// reader already knows.
-pub(crate) const RDU_ONLY: &str = "This page is available to RDU members only.";
-
 /// The longest name the form accepts.
 ///
 /// Not a rule about names — it is a bound on a free-text field that becomes a
@@ -480,7 +473,7 @@ fn storage_error(state: &AppState, viewer: &User, what: &str, error: &impl std::
         UNAVAILABLE_TITLE,
         StatusCode::INTERNAL_SERVER_ERROR,
         Some(&viewer.name),
-        editor_web::pages::problem::unavailable(
+        deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",
         ),

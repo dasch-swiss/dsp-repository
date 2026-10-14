@@ -8,11 +8,12 @@ use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::response::{IntoResponse, Redirect, Response};
 use chrono::{DateTime, Utc};
+use deposit_shell::sign_in::login_url;
 use editor_ports::Principal;
 use uuid::Uuid;
 
 use crate::auth::cookie;
-use crate::auth::guard::{destination, login_url};
+use crate::auth::guard::destination;
 use crate::shell::AppState;
 
 /// The signed-in account, as the editor's handlers use it.
@@ -75,7 +76,7 @@ impl FromRequestParts<AppState> for Rdu {
             return Err(crate::shell::forbidden(
                 state,
                 &account.principal.display_name,
-                crate::depositors::RDU_ONLY,
+                deposit_shell::RDU_ONLY,
             ));
         }
         Ok(Self(account))
@@ -159,7 +160,7 @@ mod tests {
             .expect_err("not RDU");
         assert_eq!(refused.status(), StatusCode::FORBIDDEN);
         let body = body_string(refused).await;
-        assert!(body.contains(crate::depositors::RDU_ONLY), "{body}");
+        assert!(body.contains(deposit_shell::RDU_ONLY), "{body}");
         assert!(body.contains("A Depositor"), "{body}");
     }
 

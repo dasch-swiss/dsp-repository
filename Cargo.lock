@@ -866,6 +866,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "deposit-shell"
+version = "0.8.10"
+dependencies = [
+ "maud",
+ "mosaic-tiles",
+]
+
+[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1125,6 +1133,7 @@ dependencies = [
  "axum-tracing-opentelemetry",
  "chrono",
  "clap",
+ "deposit-shell",
  "editor-core",
  "editor-ports",
  "editor-store",

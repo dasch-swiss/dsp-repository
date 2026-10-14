@@ -1,6 +1,7 @@
 //! App router assembly, kept separate from `serve()` (which does I/O + global
 //! setup) so the routing is unit-testable. What this module owns is the layer
-//! order and the traced/untraced split.
+//! order and the traced/untraced split: the editor's and identity's routers
+//! arrive built, and their route tables live with them.
 //!
 //! The editor runs on its own hostname, so paths are root-mounted — there is no
 //! `/editor` prefix. A shared origin would defeat the `Sec-Fetch-Site` CSRF
@@ -14,16 +15,7 @@
 //! handlers, and the one deliberate exception is the session's idle-timeout
 //! touch in [`identity_core::session`].
 
-use std::net::{IpAddr, SocketAddr};
-
-use axum::extract::ConnectInfo;
-use axum::http::Request;
-use axum::routing::MethodRouter;
 use axum::Router;
-use tower_governor::key_extractor::KeyExtractor;
-use tower_governor::GovernorError;
-
-use crate::shell::AppState;
 
 /// The whole app: the traced router plus the routes that must stay untraced,
 /// with the CSRF middleware wrapped around all of them.
@@ -36,11 +28,11 @@ use crate::shell::AppState;
 /// [`crate::csrf::require_same_origin`] is applied **last, and therefore
 /// outermost**, so it covers every route here including any added later. Putting
 /// it inside `build_router` would leave `/telemetry/collect` unprotected.
-pub(crate) fn build_app(state: AppState, identity: Router, public_dir: &std::path::Path) -> Router {
+pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, public_dir: &std::path::Path) -> Router {
     use axum::http::StatusCode;
     use axum::routing::get;
 
-    build_router(state, identity, public_dir)
+    build_router(identity, editor, css_href, public_dir)
         // --- Untraced routes (declared AFTER build_router's .layer() calls) ---
         // A liveness probe every 30s would otherwise mint one span per probe
         // and bury the real traffic.
@@ -59,7 +51,7 @@ pub(crate) fn build_app(state: AppState, identity: Router, public_dir: &std::pat
                 let config = GovernorConfigBuilder::default()
                     .per_second(1)
                     .burst_size(10)
-                    .key_extractor(RightmostXffKeyExtractor)
+                    .key_extractor(editor_web::RightmostXffKeyExtractor)
                     .finish()
                     .expect("beacon GovernorConfig should build with valid defaults");
                 GovernorLayer { config: std::sync::Arc::new(config) }
@@ -69,185 +61,21 @@ pub(crate) fn build_app(state: AppState, identity: Router, public_dir: &std::pat
         .layer(axum::middleware::from_fn(crate::csrf::require_same_origin))
 }
 
-/// Rate-limit key extractor that keys on the **rightmost** `X-Forwarded-For`
-/// entry — the address our reverse proxy (Traefik) itself appended — falling
-/// back to the connection peer IP.
-///
-/// SECURITY: `tower_governor`'s stock `SmartIpKeyExtractor` reads the *leftmost*
-/// XFF entry, which is client-forgeable. Traefik appends the real client IP
-/// after any value the client supplied, so the leftmost entry stays
-/// attacker-controlled; a single client can rotate it to mint unlimited
-/// rate-limit buckets and defeat the per-IP limit. The rightmost entry is the
-/// one Traefik wrote and cannot be spoofed, given Traefik is the only hop in
-/// front of the editor.
-///
-/// A deliberate copy of `dpe-server`'s extractor rather than a shared
-/// dependency: it is stateless and both services sit behind the same ingress.
-/// Every copy (`dpe-server`, `identity-web`, this one) carries the same tests,
-/// and `grep RightmostXffKeyExtractor` finds them all.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct RightmostXffKeyExtractor;
-
-impl KeyExtractor for RightmostXffKeyExtractor {
-    type Key = IpAddr;
-
-    fn extract<T>(&self, req: &Request<T>) -> Result<Self::Key, GovernorError> {
-        req.headers()
-            .get("x-forwarded-for")
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.rsplit(',').next())
-            .and_then(|s| s.trim().parse::<IpAddr>().ok())
-            .or_else(|| req.extensions().get::<ConnectInfo<SocketAddr>>().map(|ci| ci.0.ip()))
-            .ok_or(GovernorError::UnableToExtractKey)
-    }
-}
-
-/// Per-IP budget for `GET /api/v1/approved-records`.
-///
-/// Sized for a CI poller checking in every few minutes, not a browser beacon
-/// firing on every page: a low sustained rate with a small burst to absorb a
-/// poller's retry without opening the door to a scrape of the whole table on
-/// a tight loop.
-const APPROVED_RECORDS_BURST: u32 = 5;
-const APPROVED_RECORDS_REPLENISH_SECS: u64 = 30;
-
-/// A per-IP rate limit keyed by [`RightmostXffKeyExtractor`].
-///
-/// A macro rather than a function because the layer's type parameters come from
-/// the `governor` crate, which `tower_governor` re-exports only in part — naming
-/// the return type would mean a direct dependency on `governor` for a
-/// signature.
-///
-/// `replenish_secs` is the interval at which one unit of the burst comes back,
-/// so the sustained rate is `1 / replenish_secs` per second per IP.
-macro_rules! per_ip_limit {
-    ($replenish_secs:expr, $burst:expr, $what:literal) => {{
-        use tower_governor::governor::GovernorConfigBuilder;
-        use tower_governor::GovernorLayer;
-
-        let config = GovernorConfigBuilder::default()
-            .per_second($replenish_secs)
-            .burst_size($burst)
-            .key_extractor(RightmostXffKeyExtractor)
-            .finish()
-            .expect(concat!($what, " GovernorConfig should build from its constants"));
-        GovernorLayer { config: std::sync::Arc::new(config) }
-    }};
-}
-
-pub(crate) type Route = (&'static str, MethodRouter<AppState>);
-
-/// The editor's traced routes, declared once. [`build_router`] folds them into
-/// the router, and `page_url.rs` builds the `page.url` normalizer from their
-/// paths and identity's ([`identity_web::route_paths`]), so a route declared in
-/// either table is labelled with its own template. The untraced `/healthz` and
-/// `/telemetry/collect` in [`build_app`] are not, and render no page.
-pub(crate) fn routes() -> Vec<Route> {
-    use axum::routing::{get, post};
-
-    vec![
-        // The service root: a redirect to `/projects`. The shell's header links
-        // here from every page, so without it the 404 page's own header is
-        // another 404.
-        ("/", get(crate::shell::root)),
-        // Public and unauthenticated on purpose — `crate::collection::list` takes no
-        // `Authenticated`/`Rdu` extractor, which is what "public" looks like from a handler
-        // signature. Traced, unlike `/telemetry/collect`: this is the one thing a CI poller
-        // actually needs a span for.
-        (
-            "/api/v1/approved-records",
-            get(crate::collection::list).layer(per_ip_limit!(
-                APPROVED_RECORDS_REPLENISH_SECS,
-                APPROVED_RECORDS_BURST,
-                "approved records"
-            )),
-        ),
-        // Also public in the sense of taking no `Authenticated`/`Rdu` extractor, but not
-        // unauthenticated: `crate::collection::report` checks a bearer token itself, because its
-        // caller is a CI job with no session to hold. See `crate::csrf` for the matching
-        // same-origin exemption this path needs.
-        ("/api/v1/collection-report", post(crate::collection::report)),
-        // --- Authenticated routes ---
-        // Every handler below takes `Authenticated`, which is what performs the
-        // check: a handler that omits it is public, visibly, in its signature.
-        // They take [`crate::editor_auth`]'s pair.
-        ("/projects", get(crate::projects::list)),
-        ("/states", get(crate::projects::states)),
-        // A redirect to the first section. Sections are real URLs rather than
-        // fragment swaps, so the form is bookmarkable and Back-friendly.
-        ("/projects/{shortcode}", get(crate::projects::detail)),
-        // The form. One URL for the section and the save, so a rejected save
-        // re-renders at a path that still answers `GET`.
-        (
-            "/projects/{shortcode}/sections/{section}",
-            get(crate::sections::show).post(crate::sections::act),
-        ),
-        // Adding and removing a row of a repeatable field. Under the section's
-        // own URL, and handled by the same module, so a row action resolves
-        // through one `context()` — the audience gate, the lock check and the
-        // shortcode fold are the section's rather than a second copy of the rule
-        // that decides who may write what.
-        (
-            "/projects/{shortcode}/sections/{section}/fields/{field}/add",
-            post(crate::sections::add_row),
-        ),
-        (
-            "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove",
-            post(crate::sections::remove_row),
-        ),
-        // The entity form: one person or organisation proposal. `{proposal}` is the
-        // proposal's `entity_id`, the same value `pages::section` already links to — see
-        // `entities.rs`'s module docs for why. One `GET`/`POST` pair, like the section
-        // form's.
-        (
-            "/projects/{shortcode}/entities/{proposal}",
-            get(crate::entities::show).post(crate::entities::act),
-        ),
-        (
-            "/projects/{shortcode}/entities/{proposal}/fields/{field}/add",
-            post(crate::entities::add_row),
-        ),
-        (
-            "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove",
-            post(crate::entities::remove_row),
-        ),
-        // --- RDU-only routes ---
-        // `Rdu` composes `Authenticated`, so these are closed twice over: no
-        // session redirects to login, and a depositor's session gets the 403
-        // page. Each write shares a URL with the `GET` that renders its form, so
-        // a rejected submission re-renders somewhere bookmarkable rather than on
-        // a bare 405.
-        //
-        // The review surfaces carry claim, save and accept-all as an `intent`
-        // pair on one `POST` URL per submission, for the same reason.
-        ("/review", get(crate::review::queue)),
-        ("/review/{shortcode}", get(crate::review::show).post(crate::review::act)),
-        ("/collection", get(crate::collection::overview)),
-        (
-            "/collection/{id}/discard",
-            get(crate::collection::discard_form).post(crate::collection::discard),
-        ),
-    ]
-}
-
 /// Assemble the traced app router: the editor's routes merged with identity's. Static assets are
 /// served from `public_dir`, falling back to the app's 404.
 ///
-/// Everything [`routes`] declares, and every identity route, is wrapped by the OTel layers.
-/// Routes that must stay **untraced** — `/healthz` and the telemetry beacon — are added by
-/// [`build_app`] after this returns.
-fn build_router(state: AppState, identity: Router, public_dir: &std::path::Path) -> Router {
+/// Every route in `editor` and `identity` is wrapped by the OTel layers. Routes that must stay
+/// **untraced** — `/healthz` and the telemetry beacon — are added by [`build_app`] after this
+/// returns.
+fn build_router(identity: Router, editor: Router, css_href: String, public_dir: &std::path::Path) -> Router {
     use axum::routing::get;
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
 
-    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(state.clone()));
+    let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(css_href));
 
-    routes()
-        .into_iter()
-        // --- Traced routes (declared BEFORE .layer()) ---
-        .fold(Router::new(), |router, (path, handlers)| router.route(path, handlers))
-        .with_state(state)
+    // --- Traced routes (declared BEFORE .layer()) ---
+    editor
         .merge(identity)
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
@@ -268,21 +96,28 @@ mod tests {
     use tower::ServiceExt;
 
     use super::{build_app, build_router};
-    use crate::shell::AppState;
-    use crate::test_support::{identity_router, test_state};
+    use crate::test_support::{editor_router, identity_router, test_state, TestState, CSS_HREF};
 
     // Static assets come from a nonexistent dir: these tests target the
     // fallback and /healthz, never a real static file.
     const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
 
-    fn app(state: AppState) -> axum::Router {
-        let identity = identity_router(&state);
-        build_app(state, identity, NO_PUBLIC_DIR.as_ref())
+    fn app(state: TestState) -> axum::Router {
+        build_app(
+            identity_router(&state),
+            editor_router(&state),
+            CSS_HREF.to_string(),
+            NO_PUBLIC_DIR.as_ref(),
+        )
     }
 
-    fn traced(state: AppState) -> axum::Router {
-        let identity = identity_router(&state);
-        build_router(state, identity, NO_PUBLIC_DIR.as_ref())
+    fn traced(state: TestState) -> axum::Router {
+        build_router(
+            identity_router(&state),
+            editor_router(&state),
+            CSS_HREF.to_string(),
+            NO_PUBLIC_DIR.as_ref(),
+        )
     }
 
     async fn status_of(app: axum::Router, uri: &str) -> StatusCode {
@@ -524,75 +359,5 @@ mod tests {
         // `Sec-Fetch-*`. A CSRF check that applied to GET would fail every
         // probe and take the service out of rotation.
         assert_eq!(status_of(app(test_state("router").await.0), "/healthz").await, StatusCode::OK);
-    }
-
-    /// The rate-limit key extractor: keys on the rightmost (Traefik-appended)
-    /// `X-Forwarded-For` entry, never the client-forgeable leftmost one.
-    ///
-    /// Copied alongside the extractor itself from `dpe-server`, so the editor's
-    /// copy is pinned independently rather than trusting DPE's tests to cover it.
-    mod key_extractor {
-        use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-        use axum::extract::ConnectInfo;
-        use axum::http::Request;
-        use tower_governor::key_extractor::KeyExtractor;
-
-        use crate::router::RightmostXffKeyExtractor;
-
-        fn extract(xff: Option<&str>, peer: Option<SocketAddr>) -> Result<IpAddr, ()> {
-            let mut b = Request::builder();
-            if let Some(v) = xff {
-                b = b.header("x-forwarded-for", v);
-            }
-            let mut req = b.body(()).unwrap();
-            if let Some(addr) = peer {
-                req.extensions_mut().insert(ConnectInfo(addr));
-            }
-            RightmostXffKeyExtractor.extract(&req).map_err(|_| ())
-        }
-
-        fn ip(a: u8, b: u8, c: u8, d: u8) -> IpAddr {
-            IpAddr::V4(Ipv4Addr::new(a, b, c, d))
-        }
-
-        #[test]
-        fn takes_rightmost_xff() {
-            assert_eq!(extract(Some("1.1.1.1, 2.2.2.2, 3.3.3.3"), None), Ok(ip(3, 3, 3, 3)));
-        }
-
-        #[test]
-        fn single_xff() {
-            assert_eq!(extract(Some("4.4.4.4"), None), Ok(ip(4, 4, 4, 4)));
-        }
-
-        #[test]
-        fn trims_whitespace() {
-            assert_eq!(extract(Some("1.1.1.1,  5.5.5.5 "), None), Ok(ip(5, 5, 5, 5)));
-        }
-
-        #[test]
-        fn ignores_client_forged_leftmost() {
-            // A client that prepends a fake IP cannot change the key: Traefik
-            // appends the real client last, and we read the last entry.
-            assert_eq!(extract(Some("9.9.9.9, 6.6.6.6"), None), Ok(ip(6, 6, 6, 6)));
-        }
-
-        #[test]
-        fn falls_back_to_peer_when_no_xff() {
-            let peer = SocketAddr::new(ip(7, 7, 7, 7), 40000);
-            assert_eq!(extract(None, Some(peer)), Ok(ip(7, 7, 7, 7)));
-        }
-
-        #[test]
-        fn falls_back_to_peer_when_rightmost_unparseable() {
-            let peer = SocketAddr::new(ip(8, 8, 8, 8), 40000);
-            assert_eq!(extract(Some("garbage"), Some(peer)), Ok(ip(8, 8, 8, 8)));
-        }
-
-        #[test]
-        fn errors_when_no_xff_and_no_peer() {
-            assert_eq!(extract(None, None), Err(()));
-        }
     }
 }

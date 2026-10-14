@@ -11,18 +11,17 @@ use axum::extract::Request;
 use axum::http::{Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
+// The one path exempted from the `Sec-Fetch-Site` check.
+//
+// A GitHub Actions runner posts here and sends no `Sec-Fetch-*` header at all, so the ordinary
+// rule would refuse every call. Safe specifically because `editor-web`'s collection-report handler
+// authenticates by bearer token instead of a session, which is the control this exemption trades
+// away. Keyed on the exact path, checked by equality rather than a prefix, so a second endpoint
+// cannot slip under it by sharing a leading segment.
+use editor_web::COLLECTION_REPORT_PATH;
 
 /// The only value that may accompany a state-changing request.
 const SAME_ORIGIN: &str = "same-origin";
-
-/// The one path exempted from the `Sec-Fetch-Site` check.
-///
-/// A GitHub Actions runner posts here and sends no `Sec-Fetch-*` header at all, so the ordinary
-/// rule would refuse every call. Safe specifically because `crate::collection::report`
-/// authenticates by bearer token instead of a session, which is the control this exemption trades
-/// away. Keyed on the exact path, checked by equality rather than a prefix, so a second endpoint
-/// cannot slip under it by sharing a leading segment.
-const COLLECTION_REPORT_PATH: &str = "/api/v1/collection-report";
 
 /// `GET` and `HEAD` are exempt, which is only sound while no `GET` handler
 /// mutates state — an invariant carried by the method-discipline tests in

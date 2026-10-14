@@ -9,23 +9,17 @@ use clap::Parser;
 
 mod assets;
 mod cli;
-mod collection;
 mod config;
 #[cfg(test)]
 mod cross_capability;
 mod csrf;
-mod editor_auth;
-mod entities;
+mod editor;
 mod identity;
 mod observability;
 mod page_url;
-mod projects;
-mod reconcile;
 #[cfg(test)]
 mod removed_account;
-mod review;
 mod router;
-mod sections;
 mod serve;
 mod shell;
 #[cfg(test)]

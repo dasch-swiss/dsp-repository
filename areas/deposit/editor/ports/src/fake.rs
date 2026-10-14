@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Mutex;
 use std::time::SystemTime;
 
 use crate::{Authenticator, PortFuture, Principal, Unavailable, UserDirectory};
@@ -8,9 +9,9 @@ use crate::{Authenticator, PortFuture, Principal, Unavailable, UserDirectory};
 ///
 /// Ignores `now` and expires nothing: session lifetimes are identity's rules, tested against
 /// `identity-store`'s `LiveAuthenticator`.
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Default)]
 pub struct FakeAuthenticator {
-    sessions: HashMap<String, Principal>,
+    sessions: Mutex<HashMap<String, Principal>>,
 }
 
 impl FakeAuthenticator {
@@ -21,9 +22,17 @@ impl FakeAuthenticator {
 
     /// A request carrying a cookie whose value is `token` authenticates as `principal`.
     #[must_use]
-    pub fn with_session(mut self, token: &str, principal: Principal) -> Self {
-        self.sessions.insert(token.to_string(), principal);
+    pub fn with_session(self, token: &str, principal: Principal) -> Self {
+        self.insert_session(token, principal);
         self
+    }
+
+    /// [`Self::with_session`] for a fake already shared behind an `Arc`.
+    pub fn insert_session(&self, token: &str, principal: Principal) {
+        self.sessions
+            .lock()
+            .expect("the session map lock should not be poisoned")
+            .insert(token.to_string(), principal);
     }
 }
 
@@ -33,19 +42,20 @@ impl Authenticator for FakeAuthenticator {
         cookie_headers: &'a [&'a str],
         _now: SystemTime,
     ) -> PortFuture<'a, Option<Principal>> {
+        let sessions = self.sessions.lock().expect("the session map lock should not be poisoned");
         let found = cookie_headers
             .iter()
             .flat_map(|header| header.split(';'))
             .filter_map(|pair| pair.trim().split_once('='))
-            .find_map(|(_, value)| self.sessions.get(value))
+            .find_map(|(_, value)| sessions.get(value))
             .cloned();
         Box::pin(async move { found })
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Default)]
 pub struct FakeUserDirectory {
-    names: HashMap<String, String>,
+    names: Mutex<HashMap<String, String>>,
     failing: bool,
 }
 
@@ -56,14 +66,22 @@ impl FakeUserDirectory {
     }
 
     #[must_use]
-    pub fn with_account(mut self, account_id: &str, display_name: &str) -> Self {
-        self.names.insert(account_id.to_string(), display_name.to_string());
+    pub fn with_account(self, account_id: &str, display_name: &str) -> Self {
+        self.insert_account(account_id, display_name);
         self
+    }
+
+    /// [`Self::with_account`] for a fake already shared behind an `Arc`.
+    pub fn insert_account(&self, account_id: &str, display_name: &str) {
+        self.names
+            .lock()
+            .expect("the name map lock should not be poisoned")
+            .insert(account_id.to_string(), display_name.to_string());
     }
 
     #[must_use]
     pub fn failing() -> Self {
-        Self { names: HashMap::new(), failing: true }
+        Self { names: Mutex::new(HashMap::new()), failing: true }
     }
 }
 
@@ -86,9 +104,10 @@ impl UserDirectory for FakeUserDirectory {
         let answer = if self.failing {
             Err(Unavailable::new(FakeFailure))
         } else {
+            let names = self.names.lock().expect("the name map lock should not be poisoned");
             Ok(account_ids
                 .iter()
-                .filter_map(|id| self.names.get(id).map(|name| (id.clone(), name.clone())))
+                .filter_map(|id| names.get(id).map(|name| (id.clone(), name.clone())))
                 .collect())
         };
         Box::pin(async move { answer })

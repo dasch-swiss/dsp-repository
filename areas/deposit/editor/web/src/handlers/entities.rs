@@ -24,14 +24,14 @@ use editor_core::form::{apply, FormBody, Shape, WhenCleared};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalStatus};
 use editor_core::records::normalize_shortcode;
 use editor_core::repository::EntityProposalRepository;
-use editor_web::entity as page;
-use editor_web::form::INTENT;
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 
-use crate::editor_auth::{Account, Authenticated};
-use crate::sections::is_enhanced;
-use crate::shell::AppState;
+use crate::entity as page;
+use crate::form::INTENT;
+use crate::handlers::auth::{Account, Authenticated};
+use crate::handlers::is_enhanced;
+use crate::shell::EditorState;
 
 const SAVE_REFUSED_NOT_LIVE: &str = "This proposal is no longer open, so it cannot be changed.";
 const SAVE_REFUSED_STORAGE: &str = "Could not be saved. Nothing was changed — try again, and if it keeps happening \
@@ -48,7 +48,7 @@ struct Context<'a> {
     /// [`ProjectDraft`] is reused here as a plain JSON-object accessor rather than a second type:
     /// despite its name, `get`/`set`/`remove`/`multilingual` touch nothing project-specific.
     /// Reusing it is what lets this form reuse `editor_core::form::apply`'s appliers and
-    /// `editor_web::form::widgets`'s row and multilingual composers verbatim, instead of a second
+    /// `crate::form::widgets`'s row and multilingual composers verbatim, instead of a second
     /// implementation of row-key bookkeeping and empty/unchanged handling built for entities
     /// alone.
     draft: ProjectDraft,
@@ -59,7 +59,7 @@ struct Context<'a> {
 
 /// Resolve a request, or the response that refuses it. See the module docs for the ordering.
 async fn context<'a>(
-    state: &'a AppState,
+    state: &'a EditorState,
     user: &Account,
     shortcode: &str,
     entity_id: &str,
@@ -77,7 +77,7 @@ async fn context<'a>(
         return Err(crate::shell::forbidden(
             state,
             &user.principal.display_name,
-            crate::projects::NOT_ASSIGNED,
+            crate::handlers::projects::NOT_ASSIGNED,
         ));
     }
 
@@ -129,7 +129,7 @@ pub(crate) struct ShowParams {
 
 /// `GET /projects/{shortcode}/entities/{proposal}`.
 pub(crate) async fn show(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, entity_id)): Path<(String, String)>,
     Query(params): Query<ShowParams>,
@@ -177,7 +177,7 @@ fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice
     )
 )]
 pub(crate) async fn act(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, entity_id)): Path<(String, String)>,
     headers: HeaderMap,
@@ -244,7 +244,7 @@ pub(crate) async fn act(
 
 /// `POST /projects/{shortcode}/entities/{proposal}/fields/{field}/add` — one more blank row.
 pub(crate) async fn add_row(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, entity_id, field_id)): Path<(String, String, String)>,
     headers: HeaderMap,
@@ -266,7 +266,7 @@ pub(crate) async fn add_row(
 
 /// `POST /projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove` — drop one row.
 pub(crate) async fn remove_row(
-    State(state): State<AppState>,
+    State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, entity_id, field_id, key)): Path<(String, String, String, String)>,
     headers: HeaderMap,
@@ -291,7 +291,7 @@ pub(crate) async fn remove_row(
 /// anything is applied, so the save that follows simply does not see it.
 #[allow(clippy::too_many_arguments)]
 async fn row_action(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     entity_id: &str,
@@ -316,7 +316,7 @@ async fn row_action(
     // against the same list the render side reads — an id naming another
     // field, or one this kind does not have, is a way to write outside the
     // contract this form declares.
-    let Some(field) = editor_web::entity::fields_for(context.proposal.kind).iter().find(|field| {
+    let Some(field) = crate::entity::fields_for(context.proposal.kind).iter().find(|field| {
         field.id == field_id
             && matches!(
                 field.shape,
@@ -353,7 +353,7 @@ async fn row_action(
 
 /// Discard the proposal, or show the confirmation that posts it.
 async fn discard(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -530,7 +530,7 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response
 }
 
 fn confirming(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -573,7 +573,7 @@ fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) 
 }
 
 fn refused(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -609,15 +609,11 @@ struct Rendering<'a> {
 
 fn region(shortcode: &str, context: &Context<'_>, rendering: Rendering<'_>) -> Response {
     let view = view(shortcode, context, rendering);
-    (
-        StatusCode::OK,
-        axum::response::Html(editor_web::entity::region(&view).into_string()),
-    )
-        .into_response()
+    (StatusCode::OK, axum::response::Html(crate::entity::region(&view).into_string())).into_response()
 }
 
 fn render_page(
-    state: &AppState,
+    state: &EditorState,
     user: &Account,
     shortcode: &str,
     context: &Context<'_>,
@@ -640,16 +636,12 @@ fn render_page(
         &title,
         StatusCode::OK,
         Some(&user.principal.display_name),
-        editor_web::entity::page(&view),
+        crate::entity::page(&view),
     )
 }
 
-fn view<'a>(
-    shortcode: &'a str,
-    context: &'a Context<'a>,
-    rendering: Rendering<'a>,
-) -> editor_web::entity::EntityView<'a> {
-    editor_web::entity::EntityView {
+fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'a>) -> crate::entity::EntityView<'a> {
+    crate::entity::EntityView {
         shortcode,
         proposal: &context.proposal,
         over: over_of(context.proposal.status),
@@ -663,7 +655,7 @@ fn view<'a>(
     }
 }
 
-fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "the entity form could not reach storage");
     crate::shell::render(
         state,
@@ -681,25 +673,25 @@ fn storage_error(state: &AppState, user: &Account, what: &str, error: &impl std:
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
-    use identity_core::records::Role;
+    use editor_ports::Role;
     use serde_json::{json, Value};
     use tower::ServiceExt;
 
     use super::*;
-    use crate::test_support::{
+    use crate::fixtures::{
         a_session, a_user, body_string, get, location, post, test_app, test_state, title_of, with_cookie,
     };
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
-            .oneshot(with_cookie(request, identity_core::cookie::SESSION, session))
+            .oneshot(with_cookie(request, crate::fixtures::SESSION, session))
             .await
             .expect("the request should complete")
     }
 
     /// Every proposal stored for `shortcode`, for asserting on what a save or discard wrote —
     /// mirrors `sections.rs::tests::proposals_for`.
-    async fn proposals_for(state: &AppState, shortcode: &str) -> Vec<EntityProposal> {
+    async fn proposals_for(state: &EditorState, shortcode: &str) -> Vec<EntityProposal> {
         EntityProposalRepository::list_for_shortcode(&*state.editor, shortcode)
             .await
             .expect("proposals should read")
@@ -708,7 +700,13 @@ mod tests {
     /// Start a proposal the way a depositor would — through the section form's own propose
     /// control — and return its entity id. This route never creates one; that is `sections.rs`'s
     /// job, so every test here needs a proposal already in hand before it can open this form.
-    async fn a_proposal(app: &axum::Router, state: &AppState, session: &str, shortcode: &str, intent: &str) -> String {
+    async fn a_proposal(
+        app: &axum::Router,
+        state: &EditorState,
+        session: &str,
+        shortcode: &str,
+        intent: &str,
+    ) -> String {
         let uri = format!("/projects/{shortcode}/sections/overview");
         as_session(app, post(&uri, &format!("intent={intent}")), session).await;
         proposals_for(state, shortcode)
@@ -719,15 +717,20 @@ mod tests {
             .entity_id
     }
 
-    async fn a_person_proposal(app: &axum::Router, state: &AppState, session: &str, shortcode: &str) -> String {
+    async fn a_person_proposal(app: &axum::Router, state: &EditorState, session: &str, shortcode: &str) -> String {
         a_proposal(app, state, session, shortcode, "propose-person").await
     }
 
-    async fn an_organization_proposal(app: &axum::Router, state: &AppState, session: &str, shortcode: &str) -> String {
+    async fn an_organization_proposal(
+        app: &axum::Router,
+        state: &EditorState,
+        session: &str,
+        shortcode: &str,
+    ) -> String {
         a_proposal(app, state, session, shortcode, "propose-organization").await
     }
 
-    async fn stored_payload(state: &AppState, shortcode: &str) -> Value {
+    async fn stored_payload(state: &EditorState, shortcode: &str) -> Value {
         let proposal = proposals_for(state, shortcode).await.into_iter().next().expect("a proposal");
         serde_json::from_str(&proposal.payload).expect("the stored payload is JSON")
     }

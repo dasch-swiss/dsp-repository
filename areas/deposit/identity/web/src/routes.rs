@@ -23,7 +23,7 @@ use crate::shell::IdentityState;
 /// one Traefik wrote and cannot be spoofed, given Traefik is the only hop in
 /// front of the editor.
 ///
-/// A deliberate copy of `editor-server`'s and `dpe-server`'s extractor rather than a shared
+/// A deliberate copy of `editor-web`'s and `dpe-server`'s extractor rather than a shared
 /// dependency: it is stateless and the services sit behind the same ingress. Every copy carries
 /// the same tests, and `grep RightmostXffKeyExtractor` finds them all.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

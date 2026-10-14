@@ -1,4 +1,4 @@
-//! The editor's page-URL normalizer, passed into
+//! The service's page-URL normalizer, passed into
 //! `shared_telemetry::collector::collect_route`.
 //!
 //! Bounds the `page.url` metric attribute to the editor's own routes so browser
@@ -7,9 +7,10 @@
 //! shared crate cannot know one service's route table
 //! (`docs/src/repo_structure.md` → Shared Crates).
 //!
-//! The label is the template of the route axum would match, built from
-//! `router.rs`'s `routes()` and identity's [`identity_web::route_paths`] with
-//! `matchit`, the path router axum itself matches with. A route is labelled as
+//! The label is the template of the route axum would match, built from the
+//! editor's ([`editor_web::route_paths`]) and identity's
+//! ([`identity_web::route_paths`]) route tables with `matchit`, the path router
+//! axum itself matches with. A route is labelled as
 //! soon as it is declared, so there is no second list to keep in step, and a
 //! variable segment (a shortcode, an account or entity id: unbounded sets)
 //! never reaches the attribute verbatim. A path no
@@ -27,11 +28,7 @@ use std::sync::LazyLock;
 /// Deduplicated: two entries may share a path with different methods, which
 /// axum merges and `matchit` would refuse as a conflict.
 fn route_paths() -> BTreeSet<&'static str> {
-    crate::router::routes()
-        .into_iter()
-        .map(|(path, _)| path)
-        .chain(identity_web::route_paths())
-        .collect()
+    editor_web::route_paths().chain(identity_web::route_paths()).collect()
 }
 
 /// Every traced route's template, keyed by itself.

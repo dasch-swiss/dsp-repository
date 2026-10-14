@@ -4,7 +4,7 @@
 //! a `rusqlite` type. Every method is `async` and boxed via `async_trait`
 //! rather than a bare `async fn` in a trait: the futures have to be `Send` to be
 //! awaited inside an Axum handler, and the traits have to stay dyn-compatible
-//! for the `Arc<dyn EditorRepositories>` that `editor-server`'s `AppState`
+//! for the `Arc<dyn EditorRepositories>` that `editor-web`'s `EditorState`
 //! holds, which is how a test puts a fake behind it and makes a chosen call
 //! fail.
 

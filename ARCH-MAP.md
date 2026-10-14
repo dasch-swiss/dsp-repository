@@ -189,11 +189,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   persistence ports), `editor-ports` (what the editor asks of identity: `Principal`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveAuthoredWork` behind
-  `identity-ports`), `editor-web` (pages, the form's field registry and widgets; the document
-  shell around them is the area's `deposit-shell`, below), `editor-server` (the binary: config, routing, the editor's handlers, the startup reconcile,
-  the composition of the two stores and of identity), `editor-collector` (the CI binary that turns an approved record into a pull
-  request against this repository — outside the service's request path, and the only crate here
-  that writes anything under `areas/access/dpe/`).
+  `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's field registry
+  and widgets, the handlers and route table, the extractors, the startup loaders and reconcile,
+  behind the `Editor` facade; the document shell around the pages is the area's
+  `deposit-shell`, below), `editor-server` (the binary and composition root: config,
+  observability, the CSRF and OTel layers, the untraced routes, the composed page-URL
+  normalizer, the fallback 404; it opens both stores, starts identity and then the editor, and
+  merges their routers), `editor-collector` (the CI binary that turns an approved record into a
+  pull request against this repository — outside the service's request path, and the only crate
+  here that writes anything under `areas/access/dpe/`).
   Depositors edit their projects section by section; RDU reviews field by field; approve
   writes an approved record, which the collector publishes as a pull request. The Deposit
   Area's target is two capabilities, `identity` and `editor`, under `areas/deposit/server`
@@ -202,37 +206,43 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   divergence. The entry below describes the code as it is.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
-  `EditorRepositories` (behind `AppState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
+  `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Principal`, `Authenticator`,
-  `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveAuthoredWork`,
-  `routes`, `normalize_page_url`, `EditorConfig`, `identity_settings`, `Forge`,
-  `CollectionReport`
-- **Public interface:** the HTTP routes of `editor-server`, root-mounted on its own hostname
-  (`/` (a redirect), `/projects`, `/projects/{shortcode}`,
+  `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveAuthoredWork`, `Editor`,
+  `EditorSettings`, `EditorState`, `CollectionToken`, `COLLECTION_REPORT_PATH`, `is_enhanced`,
+  `routes`, `route_paths`, `normalize_page_url`, `reconcile_published`,
+  `EditorConfig`, `identity_settings`, `editor_settings`, `build_app`, `Forge`, `CollectionReport`
+- **Public interface:** the HTTP routes of `editor-web`'s route table, root-mounted on the
+  editor's own hostname (`/` (a redirect), `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
   `/projects/{shortcode}/entities/{proposal}` and its row-action `POST`s, `/review`, `/review/{shortcode}`,
-  `/collection`, `/collection/{id}/discard`, `/states`, `/healthz`, `POST /telemetry/collect`,
-  `GET /api/v1/approved-records`, `POST /api/v1/collection-report`), with identity's
-  (`/login`, `/login/code`, `/logout`, `/depositors…`) merged in from `identity-web`; the
-  `editor-server serve | healthcheck` CLI; the `editor-collector collect | refresh` CLI, invoked
-  only by `.github/workflows/collect-editor-records.yml`. The `editor_ports` library, which
-  `identity-store` implements. No other crate outside this component depends on an `editor-*`
-  crate; `editor-server` exports nothing.
-- **Local-context kit:** `areas/deposit/editor/CLAUDE.md`, `areas/deposit/editor/server/src/router.rs`,
-  `areas/deposit/editor/web/src/form/registry.rs`, `areas/deposit/editor/core/src/form.rs`,
-  `areas/deposit/editor/core/src/status.rs`, `areas/deposit/editor/store/src/lib.rs`,
-  `areas/deposit/editor/ports/src/lib.rs`, `areas/deposit/editor/server/src/editor_auth.rs`,
-  `docs/src/editor/collection.md`, `docs/src/editor/architecture.md`
-- **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-server`,
-  `editor-collector`), shared/telemetry
-  (`editor-server`), modules/mosaic (`editor-web`), areas/deposit/shell (`editor-server`),
+  `/collection`, `/collection/{id}/discard`, `/states`,
+  `GET /api/v1/approved-records`, `POST /api/v1/collection-report`), merged by `editor-server`
+  with identity's (`/login`, `/login/code`, `/logout`, `/depositors…`) and its own `/healthz`
+  and `POST /telemetry/collect`; the `editor-server serve | healthcheck` CLI; the
+  `editor-collector collect | refresh` CLI, invoked only by
+  `.github/workflows/collect-editor-records.yml`. The `editor_web` library for the root
+  (`Editor::{start, router}`, `EditorSettings`, `CollectionToken`, `route_paths`,
+  `RightmostXffKeyExtractor`, `COLLECTION_REPORT_PATH`; `Editor::for_test` behind
+  `test-support`). The `editor_ports` library, which `identity-store` implements. No other
+  crate outside this component depends on an `editor-*` crate; `editor-server` exports nothing.
+- **Local-context kit:** `areas/deposit/editor/CLAUDE.md`, `areas/deposit/editor/web/src/lib.rs`,
+  `areas/deposit/editor/web/src/routes.rs`, `areas/deposit/editor/web/src/handlers/auth.rs`,
+  `areas/deposit/editor/server/src/router.rs`, `areas/deposit/editor/core/src/form.rs`,
+  `areas/deposit/editor/store/src/lib.rs`. The kit is at its seven-file budget; the next reads
+  are `web/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
+  `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{collection,architecture}.md`.
+- **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-collector`),
+  shared/telemetry (`editor-server`: the beacon; `editor-web`: `is_valid_traceparent`),
+  modules/mosaic (`editor-web`), areas/deposit/shell (`editor-web`, `editor-server`),
   areas/deposit/identity (`editor-server`: the `identity-web` facade, `identity-store`'s
-  stores and adapters, `identity-core` in config validation and `collection.rs`;
-  `editor-store` on `identity-ports` alone, the port it answers; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
+  stores and adapters, and `identity-core` in config validation and in its tests;
+  `editor-store` on `identity-ports` alone, the port it answers; `editor-web` and
+  `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
   never its code — `editor-collector` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
-  (`bundled`) + deadpool-sqlite, figment, clap, ureq, tower_governor,
+  (`bundled`) + deadpool-sqlite, figment, clap, ureq, tower_governor, subtle,
   reqwest (`editor-collector`), the OpenTelemetry stack, pyroscope, insta
 - **Used by:** areas/deposit/identity (`identity-store` on `editor-ports`, the ports it answers);
   otherwise the top of the dependency graph, a separate deployable
@@ -244,14 +254,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     nothing refuses to start (**review**).
   - Separate origin from DPE; every state-changing route is `POST` and passes the
     `Sec-Fetch-Site` same-origin check; a write URL also answers `GET` (**review**; the
-    traced/untraced split in `router.rs` is pinned by tests — **static-analysis**).
-  - The `page.url` label is built from `router.rs`'s `routes()` and `identity_web::route_paths()`,
-    so a traced route cannot go unlabelled (**structure**); that `matchit`'s match is axum's is
-    pinned by `every_label_is_the_route_axum_matches` (**static-analysis**).
-  - Identity's routes come in through `Identity::router()`, merged in `build_router` before the
-    OTel layers and inside the CSRF layer; the facade returns them bare (**review**; the login
-    `POST`s are pinned in `cross_capability.rs` and the depositor `POST`s in `csrf.rs`:
-    **static-analysis**).
+    traced/untraced split in `server/src/router.rs` is pinned by tests — **static-analysis**).
+    The one exemption, `POST /api/v1/collection-report`, is `editor-web`'s
+    `COLLECTION_REPORT_PATH`, which the route table and the root's `csrf.rs` both read
+    (**structure**); its handler checks a bearer token in constant time (`CollectionToken`).
+  - The `page.url` label is built in the root's `page_url.rs` from `editor_web::route_paths()`
+    and `identity_web::route_paths()`, so a traced route cannot go unlabelled (**structure**);
+    that `matchit`'s match is axum's is pinned by `every_label_is_the_route_axum_matches`
+    (**static-analysis**).
+  - Both capabilities' routes come in through their facades, `Editor::router()` and
+    `Identity::router()`, merged in `build_router` before the OTel layers and inside the CSRF
+    layer; the facades return them bare and the root declares no capability route (**review**;
+    the login `POST`s and a section save are pinned in `cross_capability.rs` and every other
+    `POST` in `csrf.rs`: **static-analysis**).
+  - Only `editor-web`'s `handlers/` use axum; `pages/`, `form/` and `entity/` are
+    `fn -> Markup` (**review**).
   - `Authenticated` / `Rdu` are extractors, not middleware: a public handler is public in its
     signature (**structure**).
   - Reader connections are `query_only=ON`; the only write path is `Database::write`, one
@@ -265,35 +282,37 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     deleted account leaves its id behind, which pages render as unknown (**structure**;
     `editor-server/src/removed_account.rs` pins the pages: **static-analysis**). Its only
     identity dependency is `identity-ports` (**review**; no crate-graph gate exists yet).
-  - The editor's handlers see identity only through `editor-ports`: `Authenticated` / `Rdu`
-    (`editor_auth.rs`) over `Authenticator`, the name reads in `review.rs` and `sections.rs`
-    over `UserDirectory`. As the area's composition root, `editor-server` names identity's
-    crates: `identity_web::{Identity, IdentitySettings}` (`serve.rs`, `identity.rs`,
-    `router.rs`), `identity_store::{Database, Source, LiveAuthenticator, LiveUserDirectory}`
-    (`serve.rs`, `config.rs`) and `identity_core::login::{CODE_TTL, is_plausible_address}` in
-    config validation. Two editor reach-ins remain (`docs/src/editor/architecture.md`,
-    divergence row 2): `editor_auth.rs` borrows `identity_web::{destination, cookie_values}`
-    (the GET-only rule over axum's `Parts`, the `Cookie`-header scan), and `collection.rs` uses
-    `identity_core::secret::code_matches`. The sign-in link (`login_url`) and `RDU_ONLY` come
-    from `deposit-shell` (**review**).
-  - `AppState`'s `#[cfg(test)]` `identity` field (`IdentityFixture`) carries the tests' identity
-    store, login rules and mailer; no handler reads it (**review**).
+  - `editor-web` sees identity only through `editor-ports`: `Authenticated` / `Rdu`
+    (`handlers/auth.rs`, with its own GET-only sign-in destination over `deposit-shell`'s
+    `safe_next` and its own `Cookie`-header scan) over `Authenticator`, the name reads in
+    `review.rs` and `sections.rs` over `UserDirectory`; it depends on no identity crate
+    (**review**; no crate-graph gate exists yet). Its handler tests sign in through
+    `FakeAuthenticator` (`web/src/fixtures.rs`); tests that need both capabilities are the
+    root's (`server/src/test_support.rs`, `cross_capability.rs`, `removed_account.rs`).
+  - As the area's composition root, `editor-server` names identity's crates:
+    `identity_web::{Identity, IdentitySettings}` (`serve.rs`, `identity.rs`, `router.rs`),
+    `identity_store::{Database, Source, LiveAuthenticator, LiveUserDirectory}` (`serve.rs`,
+    `config.rs`), and `identity_core::login::{CODE_TTL, is_plausible_address}` in config
+    validation; its tests also name `identity-core` and `editor-core` types. ADR-0004 lets the
+    root depend on no `core` crate (`docs/src/editor/architecture.md`, divergence row 4)
+    (**review**; the composition-root gate does not see `areas/deposit/editor/server`).
   - `editor-ports` depends on `std` alone (**review**; no crate-graph gate exists yet).
-  - The editor's handlers and routes live in `editor-server`; ADR-0003's anatomy puts them in the
-    capability's web crate, and the composition root at `areas/deposit/server` (**review**; no crate-graph gate exists yet — ADR-0003,
-    amendment of 2026-09-25).
+  - The composition root is `editor-server`, inside the editor capability; ADR-0004 puts it at
+    `areas/deposit/server` (divergence row 1) (**review**).
 - **Durable state:** the SQLite file `editor.sqlite` — `drafts`, `submissions`, `review_rounds`,
   `approved_records`, `entity_proposals`, all `STRICT`, one baseline migration `0001` under
   `editor/store/src/migrations/` (edited in place until the first deployment, then forward-only)
   guarded by its own `PRAGMA user_version`; identity's tables are in `identity.sqlite`
-  (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several handlers call the
-  same port, serialized by the one writer connection, and every multi-table transition is one
-  repository method. `review_rounds` is append-only. `approved_records` is created only by
-  approve, updated only by `POST /api/v1/collection-report` (`mark_collected`,
-  `report_collection`), and deleted by three paths: the startup reconcile that derives Online,
-  approve's own transaction, which supersedes an earlier record for the same project when no pull
-  request of its own is live, and RDU's discard (`POST /collection/{id}/discard`).
-- **Fingerprint:** `f97e201b5164`
+  (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several of
+  `editor-web`'s handlers call the same port, serialized by the one writer connection, and every
+  multi-table transition is one repository method. `review_rounds` is append-only.
+  `approved_records` is created only by approve, updated only by
+  `POST /api/v1/collection-report` (`mark_collected`, `report_collection`), and deleted by three
+  paths: the startup reconcile that derives Online (`editor-web`'s `startup.rs`, inside
+  `Editor::start`), approve's own transaction, which supersedes an earlier record for the same
+  project when no pull request of its own is live, and RDU's discard
+  (`POST /collection/{id}/discard`).
+- **Fingerprint:** `69c9e227fb0f`
 
 ### areas/deposit/shell
 
@@ -311,13 +330,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `view::page`. No routes, no binary.
 - **Local-context kit:** `areas/deposit/shell/src/lib.rs`, `areas/deposit/shell/src/view.rs`,
   `areas/deposit/shell/src/sign_in.rs`, `areas/deposit/shell/src/components/global/header.rs`,
-  `areas/deposit/editor/server/src/shell.rs`, `areas/deposit/identity/web/src/handlers/guard.rs`,
+  `areas/deposit/editor/web/src/shell.rs`, `areas/deposit/identity/web/src/handlers/guard.rs`,
   `areas/deposit/editor/style/main.css`
 - **Depends on:** modules/mosaic (`mosaic-tiles`, the header's sign-out button); third-party:
   maud
-- **Used by:** areas/deposit/editor (`editor-server`: `shell.rs` turns its pages into
-  responses, `editor_auth.rs` builds the sign-in redirect, every handler module renders the
-  problem page), areas/deposit/identity (`identity-web`: `shell.rs` turns its pages into
+- **Used by:** areas/deposit/editor (`editor-web`: `shell.rs` turns its pages into
+  responses, `handlers/auth.rs` builds the sign-in redirect, every handler module renders the
+  problem page; `editor-server`: `shell.rs` renders the fallback 404), areas/deposit/identity (`identity-web`: `shell.rs` turns its pages into
   responses, `handlers/guard.rs` and `handlers/login.rs` build the sign-in redirect,
   `handlers/depositors.rs` renders the problem page)
 - **Boundary rules:**
@@ -364,8 +383,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `test-support`) and the `identity_store` library (`Database`, `Source`, `DbError`,
   `mail::mailer`, `SmtpSetupError`, `LiveAuthenticator`, `LiveUserDirectory`; `test_support`
   behind `test-support`) and the `identity_web` library (`Identity::{start, router}`,
-  `IdentitySettings`, `SmtpPassword`, `StartupError`, `route_paths`, and `destination`
-  and `cookie_values` for the editor's extractors; `Identity::for_test`, `ISSUE_BURST` and
+  `IdentitySettings`, `SmtpPassword`, `StartupError`, `route_paths`; `Identity::for_test`, `ISSUE_BURST` and
   `test_support::RecordingMailer` behind `test-support`). Its HTTP routes (`/login`,
   `/login/code`, `/logout`, `/depositors…`) are served only through `Identity::router`. No
   binary.
@@ -380,7 +398,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   lettre (`identity-store`); axum, maud, tower_governor, tokio, the OpenTelemetry API
   (`identity-web`)
 - **Used by:** areas/deposit/editor (`editor-server`: `identity-web`'s facade, `identity-store`,
-  `identity-core`; `editor-store` on `identity-ports`)
+  `identity-core` in config validation and in tests; `editor-store` on `identity-ports`;
+  `editor-web` on no identity crate)
 - **Boundary rules:**
   - `identity-core` has no Axum, Maud or database dependency (**review**).
   - Depends on no `editor-*` crate but `editor-ports` (from `identity-store`), and neither
@@ -406,7 +425,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `54e4e8b7f4a9`
+- **Fingerprint:** `4eeb20828d0e`
 
 ### modules/mosaic
 
@@ -539,15 +558,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (a contract member moves with all four consumer files in one commit)
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json (`preserve_order`,
   which the editor's canonical writer requires), tracing
-- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (all four crates:
-  `editor-core`, `editor-web`, `editor-server`, `editor-collector`), areas/deposit/identity
-  (`identity-web`), shared/fair, the DPE fuzz crate
+- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (`editor-core`, `editor-web`, `editor-collector`),
+  areas/deposit/identity (`identity-web`), shared/fair,
+  the DPE fuzz crate
 - **Boundary rules:**
   - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
     module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).
   - Reads no environment: both lookup tables load from a caller-supplied `data_dir`; the caches
-    live in `dpe-core`, and `dpe-server`'s validation, `editor-server` and `editor-collector` load
-    their own (**review**).
+    live in `dpe-core`, and `dpe-server`'s validation, `editor-web` (`startup.rs`) and
+    `editor-collector` load their own (**review**).
   - Member order in `ProjectRaw` **is** the on-disk order of every committed project file
     (**static-analysis** — `every_committed_project_file_round_trips_byte_identically`).
   - Tests that read committed data live in the consumer that owns the data, not here
@@ -576,7 +595,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json; axum, opentelemetry,
   tracing, url (collector only). No `tower_governor` — the rate limiter is each server's own.
 - **Used by:** areas/access/server (`collect_route("dpe", dpe_server::normalize_page_url)`), areas/access/dpe (`dpe-server`'s `traceparent.rs`),
-  areas/deposit/editor (`editor-server`: `collect_route("editor", …)`), both servers' `traceparent.rs`,
+  areas/deposit/editor (`editor-server`: `collect_route("editor", …)`; `editor-web`'s copy of `traceparent.rs`), both servers' `traceparent.rs`,
   areas/deposit/identity (`identity-web`'s copy of `traceparent.rs`),
   the DPE fuzz crate
 - **Boundary rules:**

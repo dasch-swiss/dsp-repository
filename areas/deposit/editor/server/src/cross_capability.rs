@@ -15,15 +15,14 @@ mod sign_in {
     use tower::ServiceExt;
     use uuid::Uuid;
 
-    use crate::shell::AppState;
     use crate::test_support::{
         body_string, cookie_set, get, location, open_test_db, post, state_over, test_app, test_state, urlencode,
-        with_cookie, RecordingMailer,
+        with_cookie, RecordingMailer, TestState,
     };
 
     const KNOWN: &str = "depositor@example.test";
 
-    async fn a_user(state: &AppState, email: &str) -> Uuid {
+    async fn a_user(state: &TestState, email: &str) -> Uuid {
         crate::test_support::a_user(state, email, "A Depositor", Role::Depositor, &[])
             .await
             .id
@@ -249,10 +248,9 @@ mod depositors {
     use tower::ServiceExt;
     use uuid::Uuid;
 
-    use crate::shell::AppState;
     use crate::test_support::{
         a_session, a_user, body_string, get, location, open_test_db, post, state_over, test_app, test_state, urlencode,
-        RecordingMailer,
+        RecordingMailer, TestState,
     };
 
     const DEPOSITOR_EMAIL: &str = "a.depositor@example.test";
@@ -262,21 +260,21 @@ mod depositors {
     }
 
     /// An RDU account with a live session.
-    async fn rdu(state: &AppState) -> (User, String) {
+    async fn rdu(state: &TestState) -> (User, String) {
         let user = a_user(state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
         let session = a_session(state, user.id).await;
         (user, session)
     }
 
     /// A depositor account with a live session.
-    async fn depositor(state: &AppState, email: &str, shortcodes: &[&str]) -> (User, String) {
+    async fn depositor(state: &TestState, email: &str, shortcodes: &[&str]) -> (User, String) {
         let user = a_user(state, email, "A Depositor", Role::Depositor, shortcodes).await;
         let session = a_session(state, user.id).await;
         (user, session)
     }
 
     /// What the editor is told about `user` once they sign in: the access an assignment grants.
-    async fn access_of(state: &AppState, user: &User) -> editor_ports::Principal {
+    async fn access_of(state: &TestState, user: &User) -> editor_ports::Principal {
         let session = a_session(state, user.id).await;
         state
             .authenticator
@@ -617,5 +615,43 @@ mod depositors {
             .unwrap();
         assert_eq!(after.name, "A Depositor", "no GET on this surface may change anything");
         assert_eq!(after.shortcodes, vec!["0801".to_string()]);
+    }
+}
+
+mod sections {
+    use axum::body::Body;
+    use axum::extract::Request;
+    use axum::http::StatusCode;
+    use identity_core::records::Role;
+    use tower::ServiceExt;
+
+    use crate::test_support::{a_session, a_user, test_app, test_state};
+
+    const OVERVIEW: &str = "/projects/0801d/sections/overview";
+
+    #[tokio::test]
+    async fn a_save_with_no_sec_fetch_site_never_reaches_the_handler() {
+        // The CSRF control is the outermost layer, and every write in this
+        // service depends on it. Asserted here because a new write route is
+        // exactly where the assumption would go untested.
+        let (state, _) = test_state("section-csrf").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let mut request = Request::builder()
+            .method("POST")
+            .uri(OVERVIEW)
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from("name=Cross+Site"))
+            .expect("the request should build");
+        request.headers_mut().append(
+            axum::http::header::COOKIE,
+            format!("{}={session}", identity_core::cookie::SESSION)
+                .parse()
+                .expect("a cookie"),
+        );
+        let response = app.clone().oneshot(request).await.expect("completes");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 }

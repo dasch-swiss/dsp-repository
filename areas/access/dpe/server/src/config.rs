@@ -254,8 +254,13 @@ mod tests {
 
     #[test]
     fn load_with_defaults() {
-        let config = DpeConfig::load().expect("default config should load");
-        assert!(config.fathom_site_id.is_none());
+        // In a Jail like its neighbours: one of them sets DPE_FATHOM_SITE_ID, and
+        // only the Jail lock keeps that out of this test's environment.
+        figment::Jail::expect_with(|_jail| {
+            let config = DpeConfig::load().expect("default config should load");
+            assert!(config.fathom_site_id.is_none());
+            Ok(())
+        });
     }
 
     #[test]

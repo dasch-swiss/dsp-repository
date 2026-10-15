@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.9](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.8...v0.8.9) (2026-10-15)
+
+
+### Documentation
+
+* **docs:** Admit an area as a component with its own ADR series ([930fb4f](https://github.com/dasch-swiss/dsp-repository/commit/930fb4f63fc060a7e0fac8f400c6761d0aff1871))
+* **docs:** Let ARCH-MAP's editor rules name the ADRs they fall short of ([b3ad4ef](https://github.com/dasch-swiss/dsp-repository/commit/b3ad4ef1c0f1b8363a6f245cd2dff64fe1c13272))
+* **docs:** Record the Deposit Area's target shape in areas/deposit/ADR-0004 ([72bfb10](https://github.com/dasch-swiss/dsp-repository/commit/72bfb10d6cee5366fc207a6493df2c2503182904))
+* **docs:** Record the editor's three retroactive decisions as areas/deposit/ADR-0001 to 0003 ([a4d7652](https://github.com/dasch-swiss/dsp-repository/commit/a4d7652194d8c2ce00cb9ccf14775c26a3683e7a))
+* **docs:** Refresh ARCH-MAP entries for shared/metadata, dsp-cli and areas/access/cpe ([78d8c5b](https://github.com/dasch-swiss/dsp-repository/commit/78d8c5bda3ac7b51c58c70162175f3cd2505d520))
+* **docs:** State ADR-0004's enforcement as it is today before the target ([97d5152](https://github.com/dasch-swiss/dsp-repository/commit/97d51522eff855465537541cf3d078710717a735))
+* **editor-core,editor-web,editor-server,editor-collector:** Rewrite the architecture page as a high-level view and move its detail to topic pages ([30469f0](https://github.com/dasch-swiss/dsp-repository/commit/30469f02b2f4c07eed0b3e7e40b800dabaefac60))
+
+
+### Tests
+
+* **editor-server:** Stop the three-strike race test failing when every account write loses ([2bd3c75](https://github.com/dasch-swiss/dsp-repository/commit/2bd3c75b9f99c144c9f0ad3a60e08eb7503fd584))
+
+
+### Miscellaneous Chores
+
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([742ede2](https://github.com/dasch-swiss/dsp-repository/commit/742ede2fed7a3dea9a29548752d3fca2aaf851c3))
+
 ## [0.8.8](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.7...v0.8.8) (2026-10-12)
 
 

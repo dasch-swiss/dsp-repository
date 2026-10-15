@@ -8,7 +8,7 @@ The editor is the surface where a depositing project edits its own metadata and 
 
 ## Architecture and Structure
 
-- **Architecture (the flow, the crates, deployment and trust boundaries, the divergence from the target)**: See `docs/src/editor/architecture.md`
+- **Architecture (the flow, the crates, deployment and trust boundaries)**: See `docs/src/editor/architecture.md`
 - **URL scheme, method discipline, the two renderings of a write**: See `docs/src/editor/routing.md`
 - **Datastar, styling and the accessibility decisions**: See `docs/src/editor/rendering.md`
 - **Persistence (pools, PRAGMAs, schema)**: See `docs/src/editor/persistence.md`
@@ -80,7 +80,7 @@ Each store holds one baseline, `areas/deposit/identity/store/src/migrations/` an
 
 ## The architecture docs describe the code as it is
 
-`docs/src/editor/architecture.md`, `ARCH-MAP.md` and the `CONTEXT.md` files always describe the code as implemented, even where that disagrees with the target. The target lives only in the decision records, `areas/deposit/docs/adr/` (`areas/deposit/ADR-0004` is the shape). The architecture page ends with a **"Divergence from the target architecture"** section: one entry per gap, naming what differs, which ADR clause it violates and where in the code. Every refactor step (DEV-7375) updates the page to the new as-built state and removes the entries it closes, until the list is empty. A reviewer then sees, per PR, both what changed and how far the code still is from the target. Never describe the target on the page as though it were built, and never leave a closed gap in the list.
+`docs/src/editor/architecture.md`, `ARCH-MAP.md` and the `CONTEXT.md` files always describe the code as implemented, even where that disagrees with the target. The target lives only in the decision records, `areas/deposit/docs/adr/` (`areas/deposit/ADR-0004` is the shape). Whenever the two disagree, the architecture page ends with a **"Divergence from the target architecture"** section: one entry per gap, naming what differs, which ADR clause it violates and where in the code. Every refactor step updates the page to the new as-built state and removes the entries it closes, and the section goes with its last entry. A reviewer then sees, per PR, both what changed and how far the code still is from the target. Never describe the target on the page as though it were built, and never leave a closed gap in the list.
 
 ## Depositor-facing vocabulary is normative
 

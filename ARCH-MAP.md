@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-14
+date: 2026-10-15
 ---
 
 # Architecture Map
@@ -81,7 +81,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (see **Durable state** above), still never through a `dpe-*` import
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
-    (**review** today; **structure** via Bazel visibility after ADR-0001).
+    (**review** for this side; **static-analysis** for the editor's, `check-capability-deps.sh`;
+    **structure** via Bazel visibility after ADR-0001).
   - `dpe-api-oai` depends on `dpe-core`, `shared-metadata` and `shared-fair` only — never on
     `dpe-web` or another API crate (**review**; a `Cargo.toml` check in the style of
     `check-shared-paths.sh` would make it **static-analysis** today — tracked with the
@@ -199,8 +200,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   writes an approved record, which the collector publishes as a pull request. The Deposit
   Area is two capabilities, `identity` and `editor`, under the composition root `deposit-server`
   (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
-  `areas/deposit/identity` and the area shell in `areas/deposit/shell`;
-  `docs/src/editor/architecture.md` lists what still diverges. The entry below describes the code as it is.
+  `areas/deposit/identity` and the area shell in `areas/deposit/shell`.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -243,7 +243,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Used by:** areas/deposit/server (`editor-web`'s facade and `editor-store`; `editor-ports`
   in its tests), areas/deposit/identity (`identity-store` on `editor-ports`, the ports it answers)
 - **Boundary rules:**
-  - Never depends on a `dpe-*` crate (**review** today; **structure** after ADR-0001).
+  - Never depends on a `dpe-*` crate (**static-analysis** — `check-capability-deps.sh` fails an edge to another
+    area's crate; **structure** after ADR-0001).
     `core/src/agents.rs` states why it avoids `dpe-core`'s process-wide caches.
   - `EDITOR_DATA_DIR` has no default on purpose: the only plausible one would be a relative path
     into DPE's tree; unset is a configured state (the PR preview runs without a snapshot), so
@@ -260,7 +261,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     the kind a route is given is not checked by any test (**review**).
   - `Editor::router` returns its routes without CSRF or tracing; `deposit-server` supplies
     both (**review**).
-  - Only `editor-web`'s `handlers/` use axum; `pages/`, `form/` and `entity/` are
+  - Only `editor-web`'s `handlers/`, route table, `shell.rs` and `lib.rs` use axum; `pages/`, `form/` and `entity/` are
     `fn -> Markup` (**review**).
   - `Authenticated` / `Rdu` are extractors, not middleware: a public handler is public in its
     signature (**structure**).
@@ -274,15 +275,17 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - `editor-store` has no foreign keys: the seven account columns are plain `TEXT`, and a
     deleted account leaves its id behind, which pages render as unknown (**structure**;
     `deposit-server`'s `removed_account.rs` pins the pages: **static-analysis**). Its only
-    identity dependency is `identity-ports` (**review**; no crate-graph gate exists yet).
+    identity dependency is `identity-ports` (**static-analysis** — `check-capability-deps.sh`: a `store`
+    crate may depend on another capability's `ports` crate alone).
   - `editor-web` sees identity only through `editor-ports`: `Authenticated` / `Rdu`
     (`handlers/auth.rs`, with its own GET-only sign-in destination over `deposit-shell`'s
     `safe_next` and its own `Cookie`-header scan) over `Authenticator`, the name reads in
     `review.rs` and `sections.rs` over `UserDirectory`; it depends on no identity crate
-    (**review**; no crate-graph gate exists yet). Its handler tests sign in through
+    (**static-analysis** — `check-capability-deps.sh`). Its handler tests sign in through
     `FakeAuthenticator` (`web/src/fixtures.rs`); tests that need both capabilities are
     `deposit-server`'s.
-  - `editor-ports` depends on `std` alone (**review**; no crate-graph gate exists yet).
+  - `editor-ports` depends on `std` alone: on no workspace crate but `shared-*`
+    (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
 - **Durable state:** the SQLite file `editor.sqlite` — `drafts`, `submissions`, `review_rounds`,
   `approved_records`, `entity_proposals`, all `STRICT`, one baseline migration `0001` under
   `editor/store/src/migrations/` (edited in place until the first deployment, then forward-only)
@@ -296,7 +299,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes an earlier record for the same
   project when no pull request of its own is live, and RDU's discard
   (`POST /collection/{id}/discard`).
-- **Fingerprint:** `499c037ec532`
+- **Fingerprint:** `407d95f66ff4`
 
 ### areas/deposit/shell
 
@@ -324,8 +327,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   responses, `handlers/guard.rs` and `handlers/login.rs` build the sign-in redirect,
   `handlers/depositors.rs` renders the problem page)
 - **Boundary rules:**
-  - Depends on no capability crate, and has no Axum: each caller turns its `Markup` into a
-    response (ADR-0003, amendment of 2026-09-25) (**review**; no crate-graph gate exists yet).
+  - Depends on no capability crate, nor any workspace crate but `mosaic-tiles` and `shared-*`
+    (ADR-0003, amendment of 2026-09-25) (**static-analysis** — `check-capability-deps.sh`). Has no Axum:
+    each caller turns its `Markup` into a response (**static-analysis** — the same script's
+    web-framework list).
   - The routes it links are string literals: `/` and `POST /logout` (header), `/projects`
     (403), `/login` (`login_url`, and the two login screens `safe_next` refuses), plus the
     assets `/logo.svg`, `/vendor/datastar.js` and `/telemetry.js`, which `deposit-server`
@@ -387,18 +392,19 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   stores and adapters; never `identity-core`), areas/deposit/editor (`editor-store` on
   `identity-ports`; `editor-web` on no identity crate)
 - **Boundary rules:**
-  - `identity-core` has no Axum, Maud or database dependency (**review**).
+  - `identity-core` has no Axum, Maud or database dependency (**static-analysis** — `check-capability-deps.sh`).
   - Depends on no `editor-*` crate but `editor-ports` (from `identity-store`), and neither
     `editor-core` nor `editor-web` depends on it: capabilities share no core (ADR-0003)
-    (**review**; no crate-graph gate exists yet).
+    (**static-analysis** — `check-capability-deps.sh`).
   - One copy of the session rules: every caller authenticates through `session::current`,
     identity's extractor and login screens directly (`identity-web`'s `handlers/guard.rs`,
     `handlers/login.rs`) and the editor through `LiveAuthenticator`, its only caller on the
     editor's side (**review**).
-  - `identity-ports` depends on `std` alone (**review**; no crate-graph gate exists yet).
+  - `identity-ports` depends on `std` alone: on no workspace crate but `shared-*`
+    (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
   - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work comes
-    through `identity-ports` (**review**; no crate-graph gate exists yet). Only its
-    `handlers/` use axum; `pages/` are `fn -> Markup` (**review**).
+    through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
+    route table, `shell.rs` and `lib.rs` use axum; `pages/` are `fn -> Markup` (**review**).
   - Every `RouteKind::Page` entry of `routes.rs` normalizes to its own template in its
     `page_url.rs` (**static-analysis** — `every_full_page_route_is_labelled_with_its_own_template`).
   - `Identity::router` returns its routes without CSRF or tracing; whoever mounts it supplies
@@ -411,7 +417,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `d8bb1df61f3c`
+- **Fingerprint:** `53e192a457a1`
 
 ### areas/deposit/server
 
@@ -447,7 +453,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Boundary rules:**
   - Never depends on a capability's `core` or `api-*` crate, dev-dependencies included; it
     mounts `identity` and `editor` through their `web` crates' facades because neither has a
-    `server` crate (**static-analysis** — `check-composition-root-deps.sh`). Its tests seed and
+    `server` crate (**static-analysis** — `check-composition-root-deps.sh`, the root's one
+    enforcer: `check-capability-deps.sh` skips `areas/<area>/server`). Its tests seed and
     read through the stores' plain-value `test-support` helpers instead of `core` types.
   - The root declares no capability route: `build_router` merges `Editor::router()` and
     `Identity::router()` before the OTel layers, and `build_app` declares `/healthz` and
@@ -1156,7 +1163,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   imports another service. *Enforcement:*
   **structure** for the shared half (a service dependency in a shared crate is a Cargo
   cycle) + **static-analysis** for hardcoded paths (`check-shared-paths.sh`); **review** for
-  service→service today, **structure** via Bazel visibility after ADR-0001.
+  service→service today (**static-analysis** from a Deposit Area capability or its shell,
+  `check-capability-deps.sh`; not from its root),
+  **structure** via Bazel visibility after ADR-0001.
 - **Areas are bounded contexts (ADR-0002):** the Deposit, Archive and Access Areas integrate
   over the wire, never by Rust import; each service is the sole reader and writer of its
   durable state; cross-area references are opaque identifiers (shortcode, ARK); share
@@ -1167,7 +1176,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   with `Live<Port>` adapters in the provider's store, reference each other by opaque id, and
   never span a transaction. The Access Area's root is `areas/access/server` (moved up ahead of
   CPE, ADR-0007 amendment); the Deposit Area's is `areas/deposit/server` (`areas/deposit/ADR-0004`).
-  *Enforcement:* **review**, becoming **structure** (Bazel
+  *Enforcement:* **static-analysis** for the crate edges inside the Deposit Area (`check-capability-deps.sh`,
+  `just check`: a capability's crates on its own and `shared-*`, a `store` crate also on another
+  capability's `ports`, a `web` crate also on the shell and `mosaic-tiles`, a `ports` crate on
+  `shared-*` alone, the shell on `mosaic-tiles` and `shared-*`, `collector` as `core`; among
+  third-party crates, a `ports` crate on none, a `core` crate on no web framework, Maud or database
+  crate, the shell on no web framework; the root's edges are `check-composition-root-deps.sh`'s). The Access Area is not covered yet
+  (`check-cpe-seam.sh` holds CPE's edges; ADR-0003, amendment of 2026-10-13). **review** for the
+  rest, becoming **structure** (Bazel
   visibility: `ports` public within the area; domain / store / web visible to the capability
   and the composition root only) with ADR-0001.
 - **Shared code lives under `shared/` as `shared-{role}`** the moment a second
@@ -1185,7 +1201,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor` through their web facades, `areas/deposit/ADR-0004`; DPE and CPE keep theirs); views are
   `fn(...) -> Markup` in the `web` crate; the domain / contract crate has no framework
   dependency. *Enforcement:* **static-analysis** for the root's dependencies
-  (`check-composition-root-deps.sh`), **review** for the rest (DPE's views read the corpus
+  (`check-composition-root-deps.sh`) and for a Deposit `core` crate's ({G}), **review** for the rest (DPE's views read the corpus
   handed to them through `RenderContext` rather than taking every value as an argument — a
   recorded exception).
 - **Hypermedia, server-authoritative (ADR-0004):** server-rendered HTML with Datastar SSE
@@ -1231,8 +1247,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 | Locally-attractive pattern | Why it couples globally | Supported alternative | Enforcement |
 |---|---|---|---|
-| A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | review → structure (ADR-0001) |
-| A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | review → static-analysis (`check-capability-deps.sh`, ADR-0003 amendment of 2026-09-25, once it lands) → structure (ADR-0001) |
+| A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | static-analysis for an `editor-*` crate (`check-capability-deps.sh`), review for the reverse → structure (ADR-0001) |
+| A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | static-analysis in the Deposit Area (`check-capability-deps.sh`, ADR-0003 amendment of 2026-09-25), review in the Access Area → structure (ADR-0001) |
 | Opening the area's Chischtli instance to read or write a graph another capability owns | A graph with two writers is a table with two writers; readers past the owner's ports freeze the owner's internal graph layout | Query through the owning capability's ports (`sync` for the archive projection); a new graph gets a new owner, not a second writer (ADR-0003) | review → structure (store handle visible to owners only) |
 | A relative path from a `shared-*` crate into `modules/<service>/`, in a source file or a test fixture | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`); the repo-root `justfile` is what may name a module path | static-analysis (`shared/*/src/*.rs` and `shared/*/testdata/**`) |
 | Reading `dpe_core::Project` in the editor | The view model is lossy on `url` and `clusters`; the editor must preserve both | `ProjectRaw` → draft → `ProjectRaw` | review |
@@ -1254,7 +1270,7 @@ Not code components; they span the repo and are staleness-exempt here:
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
-  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`),
+  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`),
   release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,

@@ -77,6 +77,14 @@ check-shared-paths:
 check-composition-root-deps:
     bash .github/scripts/check-composition-root-deps.sh
 
+# A capability crate can name a sibling capability's core, store or web crate
+# and the workspace still compiles, so only a check of the crate graph catches
+# the boundary break.
+
+# Verify every Deposit Area crate depends only on the workspace crates its role allows. Run by `just check`. (DEV-7375, ADR-0003)
+check-capability-deps:
+    bash .github/scripts/check-capability-deps.sh
+
 # A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
 # the workspace still compiles, so only a grep catches the boundary break.
 
@@ -106,7 +114,7 @@ check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-composition-root-deps check-cpe-seam check-datastar-delimiters check-adr-refs check-live-tests-ignored
+check: verify-checksums check-shared-paths check-composition-root-deps check-capability-deps check-cpe-seam check-datastar-delimiters check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -179,6 +187,7 @@ test:
     bash .github/scripts/verify-checksums.test.sh
     bash .github/scripts/check-shared-paths.test.sh
     bash .github/scripts/check-composition-root-deps.test.sh
+    bash .github/scripts/check-capability-deps.test.sh
     bash .github/scripts/check-cpe-seam.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
     bash .github/scripts/check-adr-refs.test.sh

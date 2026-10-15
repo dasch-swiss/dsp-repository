@@ -59,12 +59,14 @@ Three rules the Deposit Area's split into two capabilities (`areas/deposit/ADR-0
 
   Note (2026-10-13, DEV-7375): the composition root may not depend on anything in its area; the amendment of 2026-10-13 below narrows it.
 
+  Note (2026-10-15, DEV-7375): the script has landed and checks the Deposit Area. It also lets a `web` crate depend on its area's shell and `mosaic-tiles`, and knows `collector` as a role beside this record's anatomy, held to its own capability and `shared-*`.
+
 Added to Considered Options:
 
 - **One `auth` crate per area holding one extractor for every web crate** — rejected: it needs the session lookup, so it depends on the session-owning capability's store crate and every consumer inherits that edge; behind a port it is the rule above with one crate more.
 - **The shell in the composition root** — rejected: the handlers that need it live in the capabilities' web crates, so the root would either implement a shell port per consumer, which is view code at the composition root, or rewrite responses in a layer.
 
-Enforced by: the crate-graph script (**static-analysis**) once it lands with the first two-capability area, Bazel `visibility` afterwards (**structure**); the no-middleware rule by **review** (a middleware is one `.layer()` line).
+Enforced by: the crate-graph script, `check-capability-deps.sh`, for the areas it lists (**static-analysis**), Bazel `visibility` afterwards (**structure**); the no-middleware rule by **review** (a middleware is one `.layer()` line).
 
 ## Amendment (2026-09-28) — a derived read model is not a copy of the projection
 

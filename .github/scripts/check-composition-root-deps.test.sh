@@ -128,6 +128,27 @@ check "a renamed table-form dependency on a web crate fails" 1 \
 package = \"dpe-web\"
 path = \"../dpe/web\"")"
 
+# 8b. A capability without a server crate (the Deposit Area's shape) may be
+#     mounted by its web crate; core stays forbidden for it.
+gate_rc_noserver() {
+  local repo rc
+  repo="$(make_repo "$1")"
+  ( cd "$repo" && crate areas/access/solo/core solo-core && crate areas/access/solo/web solo-web \
+      && git add -A && git commit -qm solo && main >/dev/null 2>&1 )
+  rc=$?
+  rm -rf "$repo"
+  echo "$rc"
+}
+check "a web crate of a capability that has a server crate fails" 1 \
+  "$(gate_rc "$DEPS_HEADER
+dpe-web = { path = \"../dpe/web\" }")"
+check "a web crate of a capability without a server crate passes" 0 \
+  "$(gate_rc_noserver "$DEPS_HEADER
+solo-web = { path = \"../solo/web\" }")"
+check "a core crate of a capability without a server crate fails" 1 \
+  "$(gate_rc_noserver "$DEPS_HEADER
+solo-core = { path = \"../solo/core\" }")"
+
 # 9. Absence of any areas/*/server/Cargo.toml is an error, not zero work.
 repo="$(make_repo "$DEPS_HEADER
 dpe-server = { path = \"../dpe/server\" }")"

@@ -29,12 +29,12 @@ watch = [
 env = { CPE_BASE = "/cpe" }
 
 [jobs.serve-editor]
-command = ["cargo", "run", "--bin", "editor-server", "--", "serve"]
+command = ["cargo", "run", "--bin", "deposit-server", "--", "serve"]
 need_stdout = true
 background = false
 on_change_strategy = "kill_then_restart"
 # Graceful SIGINT so the server releases its port before restart.
 kill = ["kill", "-s", "INT"]
-# Also watch identity's crates, the area shell, the tiles crate and the `shared-*`
-# crates, so changes in any of them rebuild — none lives under `areas/deposit/editor`.
-watch = ["areas/deposit/editor", "areas/deposit/identity", "areas/deposit/shell", "shared", "modules/mosaic/tiles/src"]
+# Also watch the composition root, identity's crates, the area shell, the tiles crate and
+# the `shared-*` crates, so changes in any of them rebuild — none lives under `areas/deposit/editor`.
+watch = ["areas/deposit/editor", "areas/deposit/server", "areas/deposit/identity", "areas/deposit/shell", "shared", "modules/mosaic/tiles/src"]

@@ -69,10 +69,11 @@ verify-checksums:
 check-shared-paths:
     bash .github/scripts/check-shared-paths.sh
 
-# A composition root's Cargo.toml can name a capability's core/web/api-* crate
-# directly and still compile fine, so only a grep catches the boundary break.
+# A composition root's Cargo.toml can name a capability's core/api-* crate, or
+# the web crate of a capability that has a server crate, and still compile fine,
+# so only a grep catches the boundary break.
 
-# Verify each areas/<area>/server/Cargo.toml depends only on capability server crates. Run by `just check`. (DEV-7397, ADR-0007)
+# Verify no areas/<area>/server/Cargo.toml depends on a capability's core/api-* crate, or on its web crate where it has a server crate. Run by `just check`. (DEV-7397, ADR-0007)
 check-composition-root-deps:
     bash .github/scripts/check-composition-root-deps.sh
 
@@ -620,7 +621,7 @@ css-editor-release:
     rm -f "$out/app.css"
     echo "built $out/app.$h.css"
 
-# Start the editor with hot reload: Tailwind --watch + bacon (kill_then_restart) serving editor-server. Binds 127.0.0.1:4100, so `just dev` can run alongside it.
+# Start the editor with hot reload: Tailwind --watch + bacon (kill_then_restart) serving deposit-server. Binds 127.0.0.1:4100, so `just dev` can run alongside it.
 [group('editor')]
 dev-editor:
     #!/usr/bin/env bash
@@ -651,7 +652,7 @@ dev-editor-otel:
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
     bacon serve-editor
 
-# Needs `cargo build -p editor-server --release` and `just css-editor-release`
+# Needs `cargo build -p deposit-server --release` and `just css-editor-release`
 # first; Playwright starts the binary itself.
 
 # Run the editor E2E suite: the JavaScript-enabled and the javaScriptEnabled=false pass.
@@ -705,17 +706,17 @@ build-docker-editor arch="": css-editor-release
             apt-get update -qq
             apt-get install -y -qq --no-install-recommends musl-tools clang >/dev/null
             rustup target add $target
-            cargo build -p editor-server --release --target $target
+            cargo build -p deposit-server --release --target $target
         "
     rm -rf "$stage"
     mkdir -p "$stage"
-    cp "target/container/$target/release/editor-server" "$stage/"
+    cp "target/container/$target/release/deposit-server" "$stage/"
     cp -r areas/deposit/editor/public "$stage/"
     # DPE's published set, copied in deliberately: git stays the source of truth
     # and the editor reads an image-baked snapshot via EDITOR_DATA_DIR, so a data
     # change reaches the editor by rebuilding the image, not at runtime.
     cp -r {{ DPE_DATA_DIR }} "$stage/"
-    cp areas/deposit/editor/Dockerfile "$stage/"
+    cp areas/deposit/server/Dockerfile "$stage/"
     docker build --platform "$platform" -f "$stage/Dockerfile" -t metadata-editor "$stage"
 
 # Run the editor Docker container on port 8080

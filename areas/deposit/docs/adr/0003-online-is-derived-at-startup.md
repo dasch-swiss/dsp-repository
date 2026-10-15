@@ -24,3 +24,5 @@ Stated so a violation is describable: no column stores Online; nothing polls the
 - The published set stays the editor's, loaded once at the composition root and injected, not behind a port (`docs/src/editor/project-representation.md`, "The published set"; `areas/deposit/ADR-0004`).
 
 Enforced by: the `reconcile` tests in `editor-server` pin the discard, the stranded case, the dropped-upstream case and the retirement (**static-analysis**); the single-comparison rule by **review**.
+
+Note (2026-10-14): `editor-server` is now `deposit-server` (`areas/deposit/server`), and the `reconcile` module and its tests are in `editor-web` (`areas/deposit/editor/web/src/reconcile.rs`).

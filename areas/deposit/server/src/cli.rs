@@ -1,9 +1,9 @@
-//! The `editor-server` CLI: argument parsing and the `healthcheck` subcommand.
+//! The `deposit-server` CLI: argument parsing and the `healthcheck` subcommand.
 
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "editor-server", about = "DaSCH project metadata editor")]
+#[command(name = "deposit-server", about = "DaSCH project metadata editor")]
 pub(crate) struct Cli {
     #[command(subcommand)]
     pub(crate) command: Option<Commands>,
@@ -68,10 +68,10 @@ mod tests {
         Cli::command().debug_assert();
 
         assert!(matches!(
-            Cli::parse_from(["editor-server", "serve"]).command,
+            Cli::parse_from(["deposit-server", "serve"]).command,
             Some(Commands::Serve)
         ));
-        let Some(Commands::Healthcheck { url }) = Cli::parse_from(["editor-server", "healthcheck"]).command else {
+        let Some(Commands::Healthcheck { url }) = Cli::parse_from(["deposit-server", "healthcheck"]).command else {
             panic!("expected healthcheck");
         };
         assert_eq!(url, "http://localhost:8080/healthz");

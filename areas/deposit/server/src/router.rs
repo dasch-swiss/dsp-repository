@@ -13,7 +13,7 @@
 //! nothing protects. Rust cannot check the converse — a `MethodRouter` cannot
 //! be asked which methods it serves — so the assertions live with the
 //! handlers, and the one deliberate exception is the session's idle-timeout
-//! touch in [`identity_core::session`].
+//! touch in `identity-core`'s session rules.
 
 use axum::Router;
 

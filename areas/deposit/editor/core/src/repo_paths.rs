@@ -12,7 +12,7 @@ pub const DPE_DATA_DIR: &str = "areas/access/dpe/server/data";
 ///
 /// Resolves via the build machine's `CARGO_MANIFEST_DIR`, so it is meaningless
 /// in a deployed image; `EditorConfig` deliberately carries no default for
-/// `EDITOR_DATA_DIR` (see `server/src/config.rs`).
+/// `EDITOR_DATA_DIR` (see `deposit-server`'s `config.rs`).
 pub fn checkout_dpe_data_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..").join(DPE_DATA_DIR)
 }

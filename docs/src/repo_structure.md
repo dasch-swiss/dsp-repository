@@ -45,6 +45,7 @@ areas/
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     ├── docs/adr/              # The area's decision records, cited areas/deposit/ADR-NNNN (ADR-0006)
+    ├── server/                # Composition root: CLI, configuration, observability, route mounting, and the production Dockerfile (crate: deposit-server)
     ├── shell/                 # The area's document shell, sign-in link and error pages (crate: deposit-shell)
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
@@ -56,12 +57,10 @@ areas/
         ├── ports/             # What the editor asks of identity: Principal, Authenticator, UserDirectory (crate: editor-ports)
         ├── store/             # SQLite store for the editor's tables, the identity-ports adapter (crate: editor-store)
         ├── web/               # View layer: Maud pages and the project form (crate: editor-web)
-        ├── server/            # Server binary: config, observability, route composition (crate: editor-server)
         ├── collector/         # CI binary: turns approved records into pull requests (crate: editor-collector)
         ├── web-e2e-tests/     # Playwright E2E tests
         ├── public/            # Static assets (incl. vendored JS)
-        ├── style/             # CSS / Tailwind
-        └── Dockerfile         # Production container image
+        └── style/             # CSS / Tailwind
 
 shared/                        # Crates shared by more than one service
 ├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
@@ -99,12 +98,12 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `AuthoredWork`; `std` only |
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |
-| `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade the editor binary starts and mounts |
+| `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveAuthoredWork` behind `identity-ports` |
 | `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: pages, the project form, handlers and routes, behind the `Editor` facade |
-| `editor-server` | `areas/deposit/editor/server` | Editor binary and composition root: both stores, identity's and the editor's routers merged |
+| `deposit-server` | `areas/deposit/server` | The Deposit Area's composition root and binary: both stores, identity's and the editor's routers merged |
 | `editor-collector` | `areas/deposit/editor/collector` | CI binary — collects approved records into pull requests |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |

@@ -82,6 +82,82 @@ pub async fn seed_session(db: &Database, user_id: &str, now: DateTime<Utc>, expi
     session.id
 }
 
+/// An account as a test reads it back: the stored fields a handler can change or must leave alone.
+/// `role` is `"depositor"` or `"rdu"`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UserRow {
+    pub id: String,
+    pub email: String,
+    pub name: String,
+    pub role: &'static str,
+    pub shortcodes: Vec<String>,
+    pub failed_logins: u32,
+    pub last_code_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+impl From<User> for UserRow {
+    fn from(user: User) -> Self {
+        Self {
+            id: user.id.to_string(),
+            email: user.email,
+            name: user.name,
+            role: user.role.as_str(),
+            shortcodes: user.shortcodes,
+            failed_logins: user.failed_logins,
+            last_code_at: user.last_code_at,
+            created_at: user.created_at,
+        }
+    }
+}
+
+pub async fn find_user(db: &Database, user_id: &str) -> Option<UserRow> {
+    UserRepository::find_by_id(db, Uuid::parse_str(user_id).expect("the user id should be a uuid"))
+        .await
+        .expect("the user lookup should succeed")
+        .map(UserRow::from)
+}
+
+pub async fn find_user_by_email(db: &Database, email: &str) -> Option<UserRow> {
+    UserRepository::find_by_email(db, email)
+        .await
+        .expect("the user lookup should succeed")
+        .map(UserRow::from)
+}
+
+/// Whether a session with this token is stored. Reading it does not extend it.
+pub async fn session_exists(db: &Database, token: &str) -> bool {
+    SessionRepository::find(db, token)
+        .await
+        .expect("the session lookup should succeed")
+        .is_some()
+}
+
+pub async fn touch_session(db: &Database, token: &str, at: DateTime<Utc>) {
+    SessionRepository::touch(db, token, at)
+        .await
+        .expect("touching the session should succeed");
+}
+
+pub async fn record_code_issued(db: &Database, user_id: &str, at: DateTime<Utc>) {
+    UserRepository::record_code_issued(db, Uuid::parse_str(user_id).expect("the user id should be a uuid"), at)
+        .await
+        .expect("recording the code should succeed");
+}
+
+/// Count one failed login at `at` against the account. Failures before `decay_before` no longer
+/// count.
+pub async fn record_failed_login(db: &Database, user_id: &str, at: DateTime<Utc>, decay_before: DateTime<Utc>) {
+    UserRepository::record_failed_login(
+        db,
+        Uuid::parse_str(user_id).expect("the user id should be a uuid"),
+        at,
+        decay_before,
+    )
+    .await
+    .expect("recording the failed login should succeed");
+}
+
 /// Delete an account, as removing a depositor does.
 pub async fn delete_user(db: &Database, user_id: &str) {
     UserRepository::delete(db, Uuid::parse_str(user_id).expect("the user id should be a uuid"))

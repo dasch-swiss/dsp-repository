@@ -7,6 +7,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use opentelemetry_sdk::logs::SdkLoggerProvider;
 
+/// The editor's telemetry identity in Grafana: the OTel tracer name and the Pyroscope application
+/// name that dashboards group traces and profiles under. A literal, not `env!("CARGO_PKG_NAME")`:
+/// this crate is `deposit-server`, and renaming the identity is a dashboard decision, not a side
+/// effect of a crate rename.
+const TELEMETRY_NAME: &str = "editor-server";
+
 /// Whether a `tracing` subscriber is installed. Before that, `tracing::error!` is a silent
 /// no-op, so the panic hook writes to stderr instead.
 pub(crate) static SUBSCRIBER_READY: AtomicBool = AtomicBool::new(false);
@@ -88,7 +94,7 @@ pub(crate) fn init_otel(
         };
 
     let otel_guard = TracingConfig::production()
-        .with_otel_tracer_name(env!("CARGO_PKG_NAME"))
+        .with_otel_tracer_name(TELEMETRY_NAME)
         .init_subscriber_ext(|registry| {
             use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
             let otel_logs_layer: Option<OpenTelemetryTracingBridge<SdkLoggerProvider, SdkLogger>> =
@@ -114,7 +120,7 @@ pub(crate) fn init_pyroscope(
 
     let agent = pyroscope::pyroscope::PyroscopeAgentBuilder::new(
         &endpoint,
-        env!("CARGO_PKG_NAME"),
+        TELEMETRY_NAME,
         PROFILING_SAMPLE_RATE,
         "pyroscope-rs", // matches pyroscope crate's PPROFRS_SPY_NAME
         "2.0.0",        // pyroscope crate version (PPROFRS_SPY_VERSION is private)

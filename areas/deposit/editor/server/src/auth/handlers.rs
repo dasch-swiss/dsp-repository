@@ -1180,6 +1180,16 @@ mod tests {
         let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
         let code = mailer.last_code().expect("a code");
 
+        // Its own browser sees the code, so the empty page below is the binding
+        // at work, not a page that shows no code at all.
+        let own = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .await
+            .unwrap();
+        let body = body_string(own).await;
+        assert!(body.contains(&code), "its own browser must see the code: {body}");
+
         // A second browser inventing a token sees nothing.
         let other = app
             .clone()

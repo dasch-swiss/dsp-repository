@@ -3,7 +3,7 @@ title: "refactor: Bring the Deposit Area to its documented target architecture"
 type: refactor
 date: 2026-10-13
 author: "Marcin Procyk"
-status: reviewed
+status: implemented
 repository: dasch-swiss/dsp-repository
 linear: DEV-7375
 linear_project: Metadata Editor for RDU + depositing projects
@@ -141,6 +141,7 @@ pub trait AuthoredWork: Send + Sync {
 - **Moves 1 and 2 are not done** (form rules into core; business rules out of handlers into core services). ADR-0004 keeps `editor-core` unchanged in role. Once the handlers live in `editor-web`, no crate imports view-crate form rules across a boundary, which was the coupling move 1 cited. Both go to a follow-up issue (H3).
 - **Move 6 is cut down to the route table pin** (Phase 2). The helpers duplicated across handlers (`storage_error`, `refused`, `render_page`, `region`) are split between `identity-web` and `editor-web` by the move itself, and a dedup is a follow-up item. One exception: the two copies of `is_enhanced`/`DATASTAR_REQUEST` (`review.rs`, `sections.rs`) become one in Phase 8, because both land in the same crate.
 - **Move 3 ("rename away from ports") is moot.** The repository traits stay in `*-core` as the stores' contracts, and the name "port" goes to the consumer-defined `*-ports` crates.
+- **`collector` is a fifth capability role** (Phase 10). `check-capability-deps.sh` fails on a role it does not know, and the edge list above names no `editor-collector` (`areas/deposit/editor/collector`, on `editor-core` and `shared-metadata`). The gate knows `collector` and holds it to what `core` may use: its own capability's crates and `shared-*`.
 - **Startup logic goes to the web facades** (`ensure_rdu`, the mailer and the sweep to `Identity::start`; the loaders and the reconcile to `Editor::start`), because the root may name no `core` crate and hold no logic.
 
 ## Alternative Approaches Considered
@@ -444,16 +445,23 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 #### Phase 10: The crate-graph gate, and an empty divergence list
 
 ### dsp-repository
-- [ ] Add `.github/scripts/check-capability-deps.sh` over `cargo metadata --no-deps --format-version 1` and `jq`. It keys on each dependency's `.name` (the real package, so a renamed dependency is caught) across every `.kind`. It checks the areas listed in one variable (`deposit` today) and derives capabilities from `areas/<area>/<capability>/<role>/Cargo.toml`. It enforces the area-internal edges listed under Proposed Solution, except the root's. It fails on a role it does not know, and when it finds no capability
-- [ ] Add `.github/scripts/check-capability-deps.test.sh` in the style of `check-composition-root-deps.test.sh`, with one case per rule, a renamed dependency, a dev-dependency edge and an unknown role
-- [ ] Wire it into `just check`
-- [ ] Add it to the `.test.sh` list of `just test`
-- [ ] Update ARCH-MAP's boundary rules for both capabilities, the shell and the root through `dune:dune-map`, each with its enforcement level, so none that a script checks is left at **review**; state that the Access Area is not yet covered
-- [ ] Remove the last divergence row ("No crate-graph gate exists") and then the section itself; keep the rule in `areas/deposit/editor/CLAUDE.md` ("The architecture docs describe the code as it is") so the next gap gets a section again
-- [ ] Change ADR-0004's "Enforced by" note on today's state to what is enforced now
-- [ ] Run `just check && just test`; it passes
-- [ ] Write the PR description: rows closed, deviations, and the follow-up items for H3
-- [ ] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+- [x] Add `.github/scripts/check-capability-deps.sh` over `cargo metadata --no-deps --format-version 1` and `jq`. It keys on each dependency's `.name` (the real package, so a renamed dependency is caught) across every `.kind`. It checks the areas listed in one variable (`deposit` today) and derives capabilities from `areas/<area>/<capability>/<role>/Cargo.toml`. It enforces the area-internal edges listed under Proposed Solution, except the root's. It fails on a role it does not know, and when it finds no capability
+  - Deviation: `collector` is a known role, held to its own capability and `shared-*` (Deviations above). Read literally, the list also fixes three edges it leaves implicit, and the gate enforces them: every role may use `shared-*`, an edge to another area's crate fails, and `mosaic-tiles` is allowed only to `web` crates and the shell. It also holds third-party crates per role, so the rules on them leave **review** too: none in a `ports` crate, no web framework, Maud or database crate in a `core` crate, no web framework in the shell. Run on the tree at Phase 9's tip, it found no violation.
+- [x] Add `.github/scripts/check-capability-deps.test.sh` in the style of `check-composition-root-deps.test.sh`, with one case per rule, a renamed dependency, a dev-dependency edge and an unknown role
+  - 19 cases over throwaway Cargo workspaces (cargo, not hand-written JSON, reports the renamed and the dev-only edge), plus another area's crate, an area with no capability, and the third-party rules (one under a renamed key, one dev-only).
+- [x] Wire it into `just check`
+- [x] Add it to the `.test.sh` list of `just test`
+  - No CI job runs that list: `test.yml` runs `cargo nextest`, not `just test`. The `.test.sh` scripts run locally only, this one included.
+- [x] Update ARCH-MAP's boundary rules for both capabilities, the shell and the root through `dune:dune-map`, each with its enforcement level, so none that a script checks is left at **review**; state that the Access Area is not yet covered
+  - The re-verification also corrected "only `handlers/` use axum" (the route table, `shell.rs` and `lib.rs` do too), in ARCH-MAP and `areas/deposit/identity/CLAUDE.md`.
+- [x] Remove the last divergence row ("No crate-graph gate exists") and then the section itself; keep the rule in `areas/deposit/editor/CLAUDE.md` ("The architecture docs describe the code as it is") so the next gap gets a section again
+- [x] Change ADR-0004's "Enforced by" note on today's state to what is enforced now
+  - Both "Enforced by" lines, plus dated notes where ADR-0004 points at the divergence section and where ADR-0003 says the script lands later.
+- [x] Run `just check && just test`; it passes
+  - `just check` and the new `.test.sh` locally; no crate changed. `just test`'s cargo half left to CI (`test.yml`, `cargo nextest`); its `.test.sh` list runs in no CI job, and this phase changes none of the others.
+- [x] Write the PR description: rows closed, deviations, and the follow-up items for H3
+- [x] Phase review: adversarial review of this phase's commits; verified findings fixed before the next phase starts
+  - Consistency, simplicity, dune and devops reviewers. Fixed: each failing `.test.sh` case asserts its message, not only the exit status (a broken fixture failed every case vacuously before); a registry dependency named like a workspace crate is not an edge; an empty `CHECKED_AREAS` fails; the DPE entry's and the "one-way direction" convention's labels for the editor side; `architecture.md`'s claim of what the gate holds (inside a capability it allows any edge); ADR-0003's "Enforced by". Added after the review, from DEV-7375's "none that could be static-analysis is left at review": the per-role third-party deny list. Not taken: checking the root's cross-area edges, which the plan leaves to `check-composition-root-deps.sh`.
 
 ## Human Actions
 
@@ -465,14 +473,21 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 
 ## Acceptance Criteria
 
-- [ ] The crates and directories match `areas/deposit/ADR-0004` as amended in Phase 1, and `editor-server` no longer exists
-- [ ] `docs/src/editor/architecture.md` has no "Divergence from the target architecture" section, and every PR in the stack left the page, ARCH-MAP and the `CONTEXT.md` files true for the code it merged
-- [ ] Every Deposit boundary rule in ARCH-MAP carries its enforcement level, and none that `check-capability-deps.sh` or `check-composition-root-deps.sh` can check is at **review**
-- [ ] `just check` and `just test` pass, and `just test-e2e-editor` passes with JavaScript on and off
-- [ ] No test assertion changed except the `SET NULL` assertions replaced in Phase 4 (named there); tests that moved crates or changed only their sign-in fixture keep their assertions
-- [ ] The account-deletion snapshots taken before Phase 4 still pass at Phase 10
-- [ ] The image builds, starts and passes its healthcheck as `deposit-server`; env var, cookie, image, span, tracer, Pyroscope and beacon names are unchanged
-- [ ] Each PR description lists the divergence rows it closed and where it deviated from the ticket's proposed moves
+- [x] The crates and directories match `areas/deposit/ADR-0004` as amended in Phase 1, and `editor-server` no longer exists
+  - Phase 10 (2026-10-15): `areas/deposit/{server,shell}` plus `identity/{core,store,ports,web}` and `editor/{core,store,ports,web,collector}`, eleven crates; no `Cargo.toml` names `editor-server`.
+- [x] `docs/src/editor/architecture.md` has no "Divergence from the target architecture" section, and every PR in the stack left the page, ARCH-MAP and the `CONTEXT.md` files true for the code it merged
+  - Removed in Phase 10; each phase's review checked its own PR's docs.
+- [x] Every Deposit boundary rule in ARCH-MAP carries its enforcement level, and none that `check-capability-deps.sh` or `check-composition-root-deps.sh` can check is at **review**
+  - Phase 10, through `dune:dune-map`.
+- [x] `just check` and `just test` pass, and `just test-e2e-editor` passes with JavaScript on and off
+  - CI: `check.yml`, `test.yml` (`just test`'s cargo half) and `a11y-editor.yml` (both projects, JavaScript on and off), which this PR triggers through `areas/deposit/**`; `just check` and the new `.test.sh` locally.
+- [x] No test assertion changed except the `SET NULL` assertions replaced in Phase 4 (named there); tests that moved crates or changed only their sign-in fixture keep their assertions
+  - Checked by each phase's review; Phase 10 changes no test.
+- [x] The account-deletion snapshots taken before Phase 4 still pass at Phase 10
+  - `cargo test -p deposit-server removed_account` (2026-10-15): 5 passed, the four snapshots included.
+- [x] The image builds, starts and passes its healthcheck as `deposit-server`; env var, cookie, image, span, tracer, Pyroscope and beacon names are unchanged
+  - Phase 9 (local image, 2026-10-14) and CI's "Build editor"; the names are pinned in `areas/deposit/server/CLAUDE.md`. Phase 10 changes no code.
+- [x] Each PR description lists the divergence rows it closed and where it deviated from the ticket's proposed moves
 
 ## Dependencies & Risks
 
@@ -493,7 +508,7 @@ Phases that touch rendering, routing or authentication also pass `just test-e2e-
 
 ## References
 
-- Spec: `areas/deposit/docs/adr/0004-two-capabilities-identity-and-editor.md`; `docs/adr/0003-one-modulith-per-area.md` (amendment of 2026-09-25); `docs/src/editor/architecture.md` ("Divergence from the target architecture")
+- Spec: `areas/deposit/docs/adr/0004-two-capabilities-identity-and-editor.md`; `docs/adr/0003-one-modulith-per-area.md` (amendment of 2026-09-25); `docs/src/editor/architecture.md` ("Divergence from the target architecture", removed in Phase 10)
 - Prior decision narrowed: `docs/specs/2026-09-28-access-area-composition-root/01-refactor-access-area-composition-root-plan.md` (DEV-7397, the composition-root gate); `ARCH-MAP.md` "Composition root"
 - Precedent: the DEV-7397 plan and journal (`git mv` for history, the reference-sweep checklist, the bypass by a renamed dependency); `areas/access/dpe/server/src/lib.rs` (`Dpe` facade); `areas/access/server/src/{serve,observability}.rs` (router assembly, traced/untraced order, `TELEMETRY_NAME`); `areas/access/cpe/ports/src/lib.rs` (std-only port, `Fake<Port>`); `areas/access/sync/store/src/lib.rs` (`Live<Port>` in the provider's store)
 - Gates: `.github/scripts/check-composition-root-deps.sh` and `.test.sh`; `.github/scripts/check-cpe-seam.sh` (manifest sanity checks)

@@ -4,7 +4,8 @@
 //!
 //! The curation expectations are facts of the incubator's files at the commits `PROVENANCE`
 //! names for `0803-curation.csv`. That file is edited by hand, so such an expectation changes only
-//! together with it. These tests know Incunabula's keys; `sync-store` itself names none (ADR-0010).
+//! together with it. These tests know Incunabula's keys; `sync-store` itself names none (ADR-0010,
+//! superseded by ADR-0012, which keeps the rule).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;

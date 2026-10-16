@@ -81,7 +81,9 @@ pub struct ProjectSnapshot {
     /// does not record. Never an archive fact. Order unspecified; resource, key and language
     /// together are unique, and every resource is one of `resources`.
     ///
-    /// Provisional: `sync` serves curation by an interim decision (ADR-0010, proposed; DEV-7488).
+    /// Provisional: `sync` serves curation under a superseded record (ADR-0010, superseded by
+    /// ADR-0012); DEV-7511 moves curation to CPE's bytes port against `media` and removes this
+    /// field.
     pub curation: Vec<CuratedValue>,
 }
 

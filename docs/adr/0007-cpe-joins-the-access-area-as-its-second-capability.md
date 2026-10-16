@@ -57,6 +57,9 @@ and the behaviour a visitor sees, and KDL as the authoring language (rationale a
 
   Note (2026-10-11, DEV-7465): a project with a hook also adds a module and a table row to the store
   builder; see the amendment of 2026-10-11 (DEV-7465) below.
+
+  Note (2026-10-13, ADR-0012): the folder holds code; the KDL, the narrative and the curation are deposited
+  files read through a bytes port against `media`; see the amendment of 2026-10-13 below.
 - **CPE has its own component library, inside the capability.** A `cpe-{role}` crate holds CPE's design
   language (the token CSS and the components), because its editorial register is not Mosaic's and is not
   meant to be. Mosaic stays a root peer because the Deposit and Access Areas both use it. The seam is
@@ -252,8 +255,7 @@ its dependency pins are "reconciled on entry", and the vendored copy replaces th
 once the monorepo serves Incunabula. A single move of that size cannot be reviewed: it would relocate the
 engine, split it into the capability's crates, reconcile its dependencies, build the store from the port
 and wire it into `areas/access/server` in one change, with the prototype no longer beside it as the
-reference. So the move is split (as decided by the owner, 2026-10-02; the plan is phase 1b of
-`dsp-incubator/cpe/docs/INCUNABULA_GO_LIVE.md`):
+reference. So the move is split (the plan is phase 1b of `dsp-incubator/cpe/docs/INCUNABULA_GO_LIVE.md`):
 
 - **The engine takes this capability's crate shape in the incubator first.** Its module cycles are broken,
   page assembly receives view data instead of querying the store, the engine is split into the crates
@@ -292,8 +294,7 @@ order". Its reason is in the incubator's go-live plan (`dsp-incubator/cpe/docs/I
 "Moving"): "moving a still-busy crate turns every prototype change into a cross-repo change". This
 amendment makes one exception to that sentence and leaves it standing:
 
-- **`cpe-core`, CPE's domain crate, moved to `areas/access/cpe/core` while it was still changing** (as
-  decided by the owner, 2026-10-11). Its churn had not dropped: 23 commits in 30 days on its paths in the
+- **`cpe-core`, CPE's domain crate, moved to `areas/access/cpe/core` while it was still changing.** Its churn had not dropped: 23 commits in 30 days on its paths in the
   incubator (`cpe/core` and, before the crate split of 2026-10-10, `cpe/engine/src`), measured 2026-10-11,
   12 of them in October; the latest, dsp-incubator#502 of that day, added about 5,400 lines. That showed no
   quiet period to wait for, and waiting kept the component library (DEV-7401) and the store, page assembly
@@ -383,12 +384,11 @@ seam; review for the rest.
   turns the snapshot the port serves, and a project's `remodel {}` block, into the rows of CPE's store. It
   is a library with no binary. It depends on `cpe-core` and `cpe-ports` and not on `cpe-store`, whose
   schema it includes as a file. Folding it into `cpe-store` was weighed and not chosen: it would merge two
-  crates during a move (as decided by the owner, 2026-10-11).
+  crates during a move.
 - **A project's hook is a module of the builder, not a file of the project's folder.** The remodelling
   clause puts the hook "in the project's own folder", and "A project is a folder" says that adding a
   project "touches no shared registry". The builder moved as it is in the incubator: a hook is a module
-  under `store-build/src/projects/` and one row of the const table `hooks::HOOKS` (as decided by the owner,
-  2026-10-11). The reasons that hold here: a function the builder calls has to be linked into the builder,
+  under `store-build/src/projects/` and one row of the const table `hooks::HOOKS`. The reasons that hold here: a function the builder calls has to be linked into the builder,
   which needs one place that names it, and Rust under `projects/` would need its own rules for the
   workspace, formatting, linting and unused dependencies. The cost is that a project with a hook adds a
   module and one table row to `cpe-store-build`; a project without one is still a folder alone.
@@ -612,3 +612,23 @@ Enforced by: static-analysis (the tests of the route and the page in `cpe-server
 whose crawl starts at the base and fails on a link that is answered 404; `access-server`'s `serve.rs` tests
 for `/cpe`, `/cpe/`, the route they report and the span's name); review for how the page looks, which no test
 opens in a browser.
+
+## Amendment (2026-10-13, ADR-0012) — a project folder holds code; configuration and curation through a bytes port
+
+ADR-0012 narrows the clause **A project is a folder** and keeps the port clause as written:
+
+- **A project folder holds code.** "Its KDL, its narrative, its assets, and its hook if it has one" narrows
+  to the hook, the project's components and the documents that describe its data. The KDL, the narrative and
+  the project's curation are deposited files; CPE reads them at activation through a second port, for bytes,
+  against `media`, as DaTEI reads its files (ADR-0009). A project is still discovered by its folder, and
+  adding one still touches no shared registry. Built under DEV-7511, with `media`'s minimum under DEV-7512;
+  until then Incunabula's folder holds its KDL and narrative, and `sync` serves its curation, under a record
+  that is superseded (ADR-0010).
+- **The port against `sync` speaks archive-shaped facts**, as the second clause says; the one-sentence change
+  ADR-0010 proposed does not happen.
+- **Per-project remodelling** is unchanged: the mapping is declared in the project's KDL, wherever the KDL
+  comes from, and the hook is code in the project's folder.
+- **An image is an IIIF URL** that `media` serves at request time, as the store already builds it; no asset
+  is consumed at activation.
+
+Enforced by: as ADR-0012.

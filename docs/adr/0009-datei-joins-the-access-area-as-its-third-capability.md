@@ -28,6 +28,8 @@ vocabulary is in `areas/access/datei/CONTEXT.md`. The decision, phrased so a vio
   bytes are what `media` serves; `sync` stays the writer of the archive projection and serves DaTEI nothing.
   Whether `media` may consume the Access bucket beside `sync`'s consumption of the projection stream is
   DEV-7442; this record proceeds on the reading that it may, and is amended if the call goes the other way.
+
+  Note (2026-10-13, ADR-0012): it may; see the amendment of 2026-10-13 below.
 - **`media` starts at its minimum, as `sync` does (ADR-0007):** the committed files of one shortcode read from
   disk under `areas/access/media/`, behind the same port the Access bucket will later stand behind; a
   `Fake<Port>` in DaTEI's tests is the second adapter. The files are plain git, revisited if one project
@@ -39,6 +41,8 @@ amendment fixes CPE's; DaTEI's is open), and whether DaTEI keeps its own CSS and
 or adopts Mosaic. Two further questions stay open in `areas/access/datei/CONTEXT.md`: which files go through the
 archive and which are authored beside the code, and how the configuration reaches DaTEI once the configurator
 lives on the Deposit side.
+
+Note (2026-10-13, ADR-0012): both are closed; see the amendment of 2026-10-13 below.
 
 ## Considered Options
 
@@ -68,3 +72,22 @@ lives on the Deposit side.
 Enforced by: review until the crates exist; then Bazel `visibility` per ADR-0001 for the capability and port
 seams (structure), and one test per read model that rebuilds it from empty against a `Fake<Port>` and asserts
 what the presenter serves is unchanged (static-analysis).
+
+## Amendment (2026-10-13, ADR-0012) — the open questions close
+
+- **`media` consumes the Access bucket.** DEV-7442 is decided as this record assumed: one consumer per
+  channel, `sync` for the projection stream and `media` for the bucket (ADR-0012). Nothing here changes.
+- **Every input of an edition is deposited and comes through the port.** The two questions left to
+  `areas/access/datei/CONTEXT.md` close: the Configuration the Configurator writes, the Driving files and the
+  Tables of contents are deposited like the Edition files, whoever authored them, and arrive through DaTEI's
+  port against `media`. DaTEI's project folder, when it has one, holds code. "Which files go through the
+  archive and which are authored beside the code" has the answer: all of them through the archive.
+- **A Rebuild reads as the anonymous consumer, and DaTEI holds public data only.** Its read model holds what
+  an anonymous consumer may see and the Presenter authorises nothing (ADR-0012, revisitable by a new record).
+  The Edition files are build-time inputs that the Rebuild parses, not assets fetched at request time; the
+  public-only clause is what makes that consistent.
+- **`media`'s committed files are a stand-in for the Access bucket.** "The committed files of one shortcode
+  read from disk under `areas/access/media/`" is the hand-fed stand-in ADR-0012 describes, laid out as the
+  bucket will be, and CPE's configuration and curation join it (DEV-7512).
+
+Enforced by: as ADR-0012.

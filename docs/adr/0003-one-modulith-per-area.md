@@ -66,3 +66,11 @@ Enforced by: the crate-graph script (**static-analysis**) once it lands with the
 ## Amendment (2026-09-28) — a derived read model is not a copy of the projection
 
 The rejected option "each reading capability embedding its own Chischtli" rejects a *copy* of the archive projection per reader: the same graphs held three times, with three consumers of the archive's data products. It does not reject a reader keeping its own **read model** — a store of its own shape and engine, holding only what it needs, derived from what its port against `sync` serves, written by the reader alone and rebuilt from empty rather than repaired. The two were not distinguished when this record was written and the distinction is what ADR-0007's CPE store rests on; ADR-0008 records it as a general rule. The clause on Chischtli above is unchanged: `sync` stays the single writer of the projection and the single consumer of the data products, and every reader reaches the projection only through its own port.
+
+## Amendment (2026-10-13, ADR-0012) — one consumer per channel
+
+The Chischtli clause above says `sync` "consumes the archive's data products", and the amendment of
+2026-09-28 restates it as "the single consumer of the data products". The archive publishes on two channels:
+the projection stream, which `sync` alone consumes, and the Access bucket of Service Files, which the Access
+Area's `media` alone consumes, as the Vitrinli clause above already has it. "Single consumer" reads per
+channel; no capability consumes both, and no third one consumes either. Decided in ADR-0012.

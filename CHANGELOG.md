@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.10](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.9...v0.8.10) (2026-10-16)
+
+
+### Miscellaneous Chores
+
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([5068543](https://github.com/dasch-swiss/dsp-repository/commit/50685431b10e832a05dcac82ea42b09caaba0b8a))
+
 ## [0.8.9](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.8...v0.8.9) (2026-10-15)
 
 

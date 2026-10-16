@@ -579,7 +579,7 @@ mod tests {
         let db = open_test_db("reconcile-retire-idempotent").await;
         let published = published_corpus();
         let agents = agents_corpus();
-        let proposal = EntityProposalRepository::create_new(&db, &new_proposal("0801", ProposalStatus::Accepted), 0)
+        EntityProposalRepository::create_new(&db, &new_proposal("0801", ProposalStatus::Accepted), 0)
             .await
             .expect("create");
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.10](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.9...v0.8.10) (2026-10-19)
+
+
+### Bug Fixes
+
+* **editor-server:** Refuse a blank EDITOR_COLLECTION_TOKEN ([0294d48](https://github.com/dasch-swiss/dsp-repository/commit/0294d482693d75a97641082b95719730acac3481))
+
+
+### Tests
+
+* **dpe-server:** Run load_with_defaults inside a Jail like its neighbours ([2e02f51](https://github.com/dasch-swiss/dsp-repository/commit/2e02f5167f3b9b8fef973dc7b84a8d665a4ddf97))
+* **editor-server:** Use or drop the two test bindings clippy --all-targets flags ([8f4f59a](https://github.com/dasch-swiss/dsp-repository/commit/8f4f59a2888b749c53f4fae2d4cd5ff3fbbb50f3))
+
+
+### Miscellaneous Chores
+
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([5068543](https://github.com/dasch-swiss/dsp-repository/commit/50685431b10e832a05dcac82ea42b09caaba0b8a))
+
 ## [0.8.9](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.8...v0.8.9) (2026-10-15)
 
 

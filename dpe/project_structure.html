@@ -269,7 +269,7 @@ Area's composition root (ADR-0003), which mounts <code>dpe-server</code>'s route
               ↑
               access-server     ← Access Area's composition root; areas/access/server
               shared-telemetry  ← beacon contract + collector endpoint, shared
-                                  with editor-server; lives in `shared/`
+                                  with deposit-server; lives in `shared/`
 </code></pre>
 <p><code>dpe-api-oai</code>, <code>dpe-web</code> and <code>dpe-server</code> depend on <code>shared-metadata</code> directly
 as well as through <code>dpe-core</code> — the contract types are theirs to import, not
@@ -325,7 +325,7 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 </ul>
 <p>Imports <code>shared-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
-<p><code>access-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>areas/access/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold, so <code>access-server</code> passes <code>dpe_server::normalize_page_url</code> into <code>shared_telemetry::collector::collect_route</code>.</p>
+<p><code>access-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>shared-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>deposit-server</code> and lives in <code>shared/telemetry</code>. See <code>shared/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>areas/access/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold, so <code>access-server</code> passes <code>dpe_server::normalize_page_url</code> into <code>shared_telemetry::collector::collect_route</code>.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>A library, DPE's router and configuration; no binary. Contains:</p>
 <ul>

@@ -250,7 +250,7 @@
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
 <li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
-<li><strong>Binary</strong>: Static musl-linked <code>editor-server</code></li>
+<li><strong>Binary</strong>: Static musl-linked <code>deposit-server</code></li>
 </ul>
 <p>The Dockerfile packages pre-built artifacts; the Rust build happens in
 <code>.github/actions/build-editor</code>. <code>just build-docker-editor</code> reproduces the same
@@ -265,8 +265,8 @@ image CI publishes, under emulation.</p>
 <p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>editor-server serve</code></td><td>Start the web server</td></tr>
-<tr><td><code>editor-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+<tr><td><code>deposit-server serve</code></td><td>Start the web server</td></tr>
+<tr><td><code>deposit-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
 </tbody></table>
 </div>
 <p><code>healthcheck</code> only accepts loopback URLs (<code>http://localhost</code>, <code>http://127.0.0.1</code>, <code>http://[::1]</code>). The URL arrives as a CLI flag from the Docker <code>HEALTHCHECK</code>, and restricting it stops a mistyped or tampered value turning the container into an SSRF probe.</p>
@@ -278,7 +278,7 @@ image CI publishes, under emulation.</p>
 <p>Locally the default is <code>127.0.0.1:4100</code>, deliberately not DPE's 4000, so <code>just dev</code> and <code>just dev-editor</code> can run at the same time.</p>
 <h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g. <code>editor_server=info,identity_core=info,tower_http=debug</code>)</td></tr>
+<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g. <code>deposit_server=info,editor_web=info,identity_web=info,identity_core=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>EDITOR_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4100</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
 <tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>areas/deposit/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>EDITOR_DATA_DIR</code></td><td>Yes, to read records</td><td><em>(none)</em></td><td>Directory holding the published project/person/organization set baked into the image. No default — see <a href="#data-directory-a-deliberate-build-input">Data directory</a>. Reported at startup, as <code>&lt;unset&gt;</code> when absent.</td></tr>
@@ -319,7 +319,7 @@ image CI publishes, under emulation.</p>
 </ul>
 <blockquote>
 <p><strong><code>/healthz</code> returns 404 on the Cloud Run PR previews.</strong> Something in front of the container answers that exact path with Google's own error page — the response carries no <code>server: Google Frontend</code> header and no <code>traceparent</code>, unlike every response the app produces, and neighbouring paths (<code>/healthz2</code>, <code>/health</code>, <code>/healthz/</code>) all reach the app normally. DPE's preview behaves identically and has had the same route for far longer, so this is not editor-specific and not new. The precise mechanism is unconfirmed; treat it as "previews cannot be used to test the health endpoint".</p>
-<p>It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where <code>/healthz</code> answers 200, and the image's own <code>HEALTHCHECK</code> calls <code>editor-server healthcheck</code> against loopback <em>inside</em> the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (<code>just build-docker-editor &amp;&amp; just run-docker-editor</code>) rather than probing a preview URL.</p>
+<p>It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where <code>/healthz</code> answers 200, and the image's own <code>HEALTHCHECK</code> calls <code>deposit-server healthcheck</code> against loopback <em>inside</em> the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (<code>just build-docker-editor &amp;&amp; just run-docker-editor</code>) rather than probing a preview URL.</p>
 </blockquote>
 <h2 id="deployment"><a class="header" href="#deployment">Deployment</a></h2>
 <p>The editor deploys as its <strong>own Swarm stack on the same VMs as DPE</strong>, with its own inventory host entry and its own playbook — not as a second stack inside the <code>repository</code> inventory group. Co-habiting VMs with separate inventory hosts is how the platform already runs multiple stacks (<code>ark</code> and <code>mosaic</code> share a host that way). The <code>repository</code> group and <code>repository.yml</code> playbook are a holdover that should really be called <code>dpe</code>; splitting them is separate work.</p>
@@ -382,7 +382,7 @@ image CI publishes, under emulation.</p>
 <p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
 EDITOR_DATA_DIR=areas/access/dpe/server/data \
-cargo run --bin editor-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
+cargo run --bin deposit-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
 
 # after submitting the address at /login:
 grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'

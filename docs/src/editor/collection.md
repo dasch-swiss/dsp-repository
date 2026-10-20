@@ -50,7 +50,7 @@ The payload carries no file paths. Path resolution belongs with the data, in thi
 
 ## Deriving collection state from GitHub, keyed on the project
 
-**Collection state is keyed on the project's shortcode, never on the record id.** The branch is `editor-collect/<shortcode>`.
+**Collection state is keyed on the project's shortcode, never on the record id.** The branch is `editor-collect/<shortcode>`. The record id only tells which merged pull request landed which record (below).
 
 This is the load-bearing choice on this page, so here is why. A record id identifies a row the editor may legitimately replace: approving a project again supersedes its earlier record, giving the project a new record with a new id. The *conflict* being avoided, though, is per project file — two pull requests rewriting `0803`'s file. Keying idempotency on the record id would make a superseded record's pull request invisible to the next run, which would then open a second pull request against the same file and orphan the first, with no record referencing it and nothing displaying it. Keying on the shortcode makes that state unreachable: there is at most one collection branch per project, and at most one pull request open from it.
 
@@ -60,13 +60,15 @@ Because the branch no longer encodes the record, a report identifies its record 
 
 | What GitHub shows | What the collector does |
 |---|---|
-| A **merged** pull request | Skip. The change has landed; reconciliation discards the record when a release carries it. |
-| An **open** pull request | Force-push the newest approved record onto the branch. The open pull request then carries the newest approved state instead of a stale one. Do not open a second. |
-| No pull request, or only **closed-unmerged** ones | Force-push the branch and open a **new** pull request. |
+| A **merged** pull request naming this record | Skip. The change has landed; reconciliation discards the record when a release carries it. |
+| An **open** pull request | Force-push the newest approved record onto the branch and rewrite the pull request's body to name it. The open pull request then carries the newest approved state instead of a stale one. Do not open a second. |
+| No pull request, or only **closed-unmerged** ones, or only merged ones naming other records | Force-push the branch and open a **new** pull request. |
 
 Reopening a closed pull request is never correct: somebody deliberately ended that review.
 
-**Branch lifecycle, one rule covering every case.** The collector owns every `editor-collect/<shortcode>` branch and force-pushes over it whenever no *merged* pull request references it. Stating it as "no pull request references the branch" would leave both the closed-pull-request retry and the stale-open-pull-request update unauthorised, and a branch left behind by a run that died before `gh pr create` is invisible to a rule phrased in terms of pull requests.
+**A pull request names its record.** The body ends with an `Approved-record: <id>` line. The collector writes the whole body when it opens the pull request and overwrites it after every force-push onto it, so an open pull request names the record its branch carries and a merged one names the record it landed. A failed rewrite is reported as a failure and repeated by the next run. A merged pull request therefore skips only the record it names. A project approved again after its release has a newer record, which a pull request merged for the old one says nothing about: it gets a new pull request from the same branch. `refresh` applies the same rule and never reports a merged pull request for a record it does not name. A merged pull request whose body names no record skips nothing, so a reviewer editing the body keeps that line: without it, the next run collects the landed record a second time.
+
+**Branch lifecycle, one rule covering every case.** The collector owns every `editor-collect/<shortcode>` branch and force-pushes over it whenever no *merged* pull request names the record being collected. Stating it as "no pull request references the branch" would leave both the closed-pull-request retry and the stale-open-pull-request update unauthorised, and a branch left behind by a run that died before `gh pr create` is invisible to a rule phrased in terms of pull requests.
 
 **One runtime guard, not merely a documented convention.** The collector refuses to force-push when the branch tip is not a commit it made, and reports that as a failure. Reviewer edits are an expected part of this flow, so a reviewer who pushes fixups to the branch must not have them silently overwritten by the next trigger.
 

@@ -20,6 +20,10 @@ pub const BRANCH_PREFIX: &str = "editor-collect/";
 /// since the bot identity is not exclusive to this collector.
 pub const COLLECTED_BY_TRAILER: &str = "Collected-by: editor-collector";
 
+/// The prefix of the pull request body line naming the approved record the
+/// branch carries.
+const RECORD_MARKER: &str = "Approved-record: ";
+
 /// How many collection pull requests one listing may return.
 ///
 /// A truncated listing would hide an open pull request and let a second one
@@ -32,6 +36,24 @@ const PULL_REQUEST_LIMIT: usize = 200;
 #[must_use]
 pub fn branch_for(shortcode: &str) -> String {
     format!("{BRANCH_PREFIX}{shortcode}")
+}
+
+/// The body line naming `record`, which [`record_in`] reads back. It must stay
+/// a line of its own.
+#[must_use]
+pub fn record_line(record: &str) -> String {
+    format!("{RECORD_MARKER}{record}")
+}
+
+/// The record id a pull request body names. The last such line wins, since
+/// the collector writes its own at the end.
+#[must_use]
+pub fn record_in(body: &str) -> Option<String> {
+    body.lines()
+        .rev()
+        .find_map(|line| line.strip_prefix(RECORD_MARKER))
+        .map(|id| id.trim().to_string())
+        .filter(|id| !id.is_empty())
 }
 
 /// One pull request opened from a collection branch.
@@ -47,6 +69,7 @@ pub struct CollectionPullRequest {
     /// collision check reads entity ids out of these, so a sibling pull request
     /// that has not merged still holds its ids.
     pub files: Vec<String>,
+    pub record: Option<String>,
 }
 
 /// Everything the run loop needs from git and GitHub.
@@ -77,6 +100,8 @@ pub trait Forge {
 
     /// Opens a pull request and returns its URL.
     fn open_pull_request(&self, branch: &str, title: &str, body: &str) -> Result<String, String>;
+
+    fn edit_pull_request_body(&self, url: &str, body: &str) -> Result<(), String>;
 }
 
 /// The real thing: `gh` and `git` against the checkout the workflow made.
@@ -124,6 +149,8 @@ struct GhPullRequest {
     state: String,
     #[serde(default)]
     files: Vec<GhFile>,
+    #[serde(default)]
+    body: String,
 }
 
 #[derive(serde::Deserialize)]
@@ -148,7 +175,7 @@ impl Forge for CommandForge {
                 "--limit",
                 &PULL_REQUEST_LIMIT.to_string(),
                 "--json",
-                "number,url,headRefName,state,files",
+                "number,url,headRefName,state,files,body",
             ],
         )?;
 
@@ -178,6 +205,7 @@ impl Forge for CommandForge {
                     _ => PullRequestState::Open,
                 },
                 files: pull_request.files.into_iter().map(|file| file.path).collect(),
+                record: record_in(&pull_request.body),
             })
             .collect())
     }
@@ -244,6 +272,11 @@ impl Forge for CommandForge {
             ],
         )?;
         Ok(url.trim().to_string())
+    }
+
+    fn edit_pull_request_body(&self, url: &str, body: &str) -> Result<(), String> {
+        self.run("gh", &["pr", "edit", url, "--repo", &self.repository, "--body", body])?;
+        Ok(())
     }
 }
 

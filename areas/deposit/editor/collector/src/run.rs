@@ -5,6 +5,9 @@
 //! may legitimately replace, while the conflict being avoided is per project
 //! file, so keying on the record would let a superseded record's pull request
 //! go unseen and a second one open against the same file.
+//!
+//! The one exception: a merged pull request speaks only for the record its
+//! body names (`pull_requests_for`).
 
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -20,7 +23,7 @@ use shared_metadata::project::{is_valid_shortcode, ProjectRaw};
 use crate::config::Config;
 use crate::editor::Editor;
 use crate::enrichment::{self, ENRICHMENT_FILE};
-use crate::forge::{branch_for, CollectionPullRequest, Forge, COLLECTED_BY_TRAILER};
+use crate::forge::{branch_for, record_line, CollectionPullRequest, Forge, COLLECTED_BY_TRAILER};
 use crate::manifest::{self, MANIFEST_FILE};
 use crate::{layout, renumber};
 
@@ -52,7 +55,8 @@ enum Outcome {
     Failed {
         reason: String,
     },
-    /// Nothing to say: no pull request has ever been opened for this project.
+    /// Nothing to say: no pull request on this project's branch speaks for
+    /// this record.
     Silent,
 }
 
@@ -86,8 +90,7 @@ pub fn refresh(editor: &Editor, forge: &dyn Forge) -> Result<Summary, String> {
     let mut summary = Summary::default();
 
     for record in &records {
-        let branch = branch_for(&record.shortcode);
-        let outcome = match newest_on(&pull_requests, &branch) {
+        let outcome = match newest_for(&pull_requests, record) {
             Some(pull_request) => Outcome::Inspected { url: pull_request.url.clone(), state: pull_request.state },
             None => Outcome::Silent,
         };
@@ -111,13 +114,11 @@ fn collect_one(
     }
 
     let branch = branch_for(&record.shortcode);
-    let on_branch: Vec<&CollectionPullRequest> = pull_requests
-        .iter()
-        .filter(|pull_request| pull_request.head_ref == branch)
-        .collect();
+    let on_branch = pull_requests_for(pull_requests, record);
 
-    // Merged: the change has landed, and reconciliation discards the record
-    // when a release carries it. Its state is still reported.
+    // Merged for this record: the change has landed, and reconciliation
+    // discards the record when a release carries it. Its state is still
+    // reported.
     if let Some(merged) = on_branch
         .iter()
         .find(|pull_request| pull_request.state == PullRequestState::Merged)
@@ -196,18 +197,24 @@ fn collect_one(
 
     forge.commit(&written, &commit_message(record, &mapping, &rows))?;
     forge.force_push(&branch)?;
+    let body = pull_request_body(record, &mapping, &rows);
 
     // An open pull request now carries the newest approved state. Opening a
-    // second would orphan the first, with no record referencing it.
+    // second would orphan the first, with no record referencing it. Its body
+    // is renamed after the push, never before: a body naming a record the
+    // branch does not carry would, once merged, skip that record uncollected.
     if let Some(open) = on_branch
         .iter()
         .find(|pull_request| pull_request.state == PullRequestState::Open)
     {
+        forge.edit_pull_request_body(&open.url, &body).map_err(|error| {
+            format!("pushed onto {}, but its body still names the earlier record: {error}", open.url)
+        })?;
         return Ok(Outcome::Published { url: open.url.clone() });
     }
 
     let title = subject(record);
-    let url = forge.open_pull_request(&branch, &title, &pull_request_body(record, &mapping, &rows))?;
+    let url = forge.open_pull_request(&branch, &title, &body)?;
     Ok(Outcome::Published { url })
 }
 
@@ -274,13 +281,31 @@ fn entity_id_at(path: &str) -> Option<String> {
     Some(file.strip_suffix(".json")?.to_string())
 }
 
-/// The pull request whose state is worth reporting for one branch: a merged one
-/// first, then an open one, then the newest closed one.
-fn newest_on<'a>(pull_requests: &'a [CollectionPullRequest], branch: &str) -> Option<&'a CollectionPullRequest> {
-    let on_branch: Vec<&CollectionPullRequest> = pull_requests
+/// The pull requests on this record's branch that speak for it: all except a
+/// merged one naming another record. The skip rule and `refresh` both start
+/// here.
+fn pull_requests_for<'a>(
+    pull_requests: &'a [CollectionPullRequest],
+    record: &ApprovedRecordView,
+) -> Vec<&'a CollectionPullRequest> {
+    let branch = branch_for(&record.shortcode);
+    let id = record.id.to_string();
+    pull_requests
         .iter()
         .filter(|pull_request| pull_request.head_ref == branch)
-        .collect();
+        .filter(|pull_request| {
+            pull_request.state != PullRequestState::Merged || pull_request.record.as_deref() == Some(id.as_str())
+        })
+        .collect()
+}
+
+/// The pull request whose state is worth reporting for one record: a merged one
+/// first, then an open one, then the newest closed one.
+fn newest_for<'a>(
+    pull_requests: &'a [CollectionPullRequest],
+    record: &ApprovedRecordView,
+) -> Option<&'a CollectionPullRequest> {
+    let on_branch = pull_requests_for(pull_requests, record);
 
     on_branch
         .iter()
@@ -371,9 +396,10 @@ fn pull_request_body(
     rows: &[String],
 ) -> String {
     format!(
-        "Approved in the metadata editor on {}.\n\n{}\n",
+        "Approved in the metadata editor on {}.\n\n{}\n\n{}\n",
         record.approved_at.format("%Y-%m-%d"),
-        notes(mapping, rows)
+        notes(mapping, rows),
+        record_line(&record.id.to_string())
     )
 }
 
@@ -432,6 +458,7 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
+    use crate::forge::record_in;
 
     const CREATED_URL: &str = "https://github.com/dasch-swiss/dsp-repository/pull/999";
     const EXISTING_URL: &str = "https://github.com/dasch-swiss/dsp-repository/pull/412";
@@ -443,6 +470,7 @@ mod tests {
         pull_requests: Vec<CollectionPullRequest>,
         tip_message: Option<String>,
         calls: RefCell<Vec<String>>,
+        bodies: RefCell<Vec<String>>,
     }
 
     impl FakeForge {
@@ -475,9 +503,16 @@ mod tests {
             Ok(())
         }
 
-        fn open_pull_request(&self, _branch: &str, _title: &str, _body: &str) -> Result<String, String> {
+        fn open_pull_request(&self, _branch: &str, _title: &str, body: &str) -> Result<String, String> {
             self.calls.borrow_mut().push("create".to_string());
+            self.bodies.borrow_mut().push(body.to_string());
             Ok(CREATED_URL.to_string())
+        }
+
+        fn edit_pull_request_body(&self, _url: &str, body: &str) -> Result<(), String> {
+            self.calls.borrow_mut().push("edit".to_string());
+            self.bodies.borrow_mut().push(body.to_string());
+            Ok(())
         }
     }
 
@@ -488,7 +523,13 @@ mod tests {
             head_ref: branch.to_string(),
             state,
             files: Vec::new(),
+            record: None,
         }
+    }
+
+    fn naming(mut pull_request: CollectionPullRequest, record: &ApprovedRecordView) -> CollectionPullRequest {
+        pull_request.record = Some(record.id.to_string());
+        pull_request
     }
 
     /// A data directory holding one real committed project, so the publish path
@@ -535,22 +576,17 @@ mod tests {
     #[test]
     fn a_merged_pull_request_is_reported_and_nothing_is_written() {
         let config = fixture("merged");
+        let record = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
-            pull_requests: vec![pull_request(
-                "editor-collect/0803",
-                PullRequestState::Merged,
-                EXISTING_URL,
+            pull_requests: vec![naming(
+                pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+                &record,
             )],
             ..FakeForge::default()
         };
 
-        let outcome = collect_one(
-            &config,
-            &forge,
-            &record("0803", Some(committed_project()), None),
-            &forge.pull_requests,
-        )
-        .expect("the skip rule decides without failing");
+        let outcome =
+            collect_one(&config, &forge, &record, &forge.pull_requests).expect("the skip rule decides without failing");
 
         assert_eq!(
             outcome,
@@ -563,31 +599,54 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// The contract's load-bearing difference from the issue body: an open pull
-    /// request is force-pushed onto, never joined by a second one.
+    /// A project approved again after its first collection was merged and
+    /// released.
     #[test]
-    fn an_open_pull_request_is_force_pushed_onto_and_no_second_one_is_opened() {
-        let config = fixture("open");
+    fn a_merged_pull_request_naming_an_earlier_record_does_not_skip_a_newer_one() {
+        let config = fixture("merged-earlier");
+        let earlier = record("0803", Some(committed_project()), None);
+        let newer = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
-            pull_requests: vec![pull_request(
-                "editor-collect/0803",
-                PullRequestState::Open,
-                EXISTING_URL,
+            pull_requests: vec![naming(
+                pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+                &earlier,
             )],
             ..FakeForge::default()
         };
 
-        let outcome = collect_one(
-            &config,
-            &forge,
-            &record("0803", Some(committed_project()), None),
-            &forge.pull_requests,
-        )
-        .expect("an open pull request is updated");
+        let outcome =
+            collect_one(&config, &forge, &newer, &forge.pull_requests).expect("the newer record is collected");
+
+        assert_eq!(outcome, Outcome::Published { url: CREATED_URL.to_string() });
+        assert!(forge.did("push") && forge.did("create"));
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    /// The contract's load-bearing difference from the issue body: an open pull
+    /// request is force-pushed onto, never joined by a second one, and renamed
+    /// to the record now on its branch.
+    #[test]
+    fn an_open_pull_request_is_force_pushed_onto_and_renamed_and_no_second_one_is_opened() {
+        let config = fixture("open");
+        let earlier = record("0803", Some(committed_project()), None);
+        let newer = record("0803", Some(committed_project()), None);
+        let forge = FakeForge {
+            pull_requests: vec![naming(
+                pull_request("editor-collect/0803", PullRequestState::Open, EXISTING_URL),
+                &earlier,
+            )],
+            ..FakeForge::default()
+        };
+
+        let outcome =
+            collect_one(&config, &forge, &newer, &forge.pull_requests).expect("an open pull request is updated");
 
         assert_eq!(outcome, Outcome::Published { url: EXISTING_URL.to_string() });
         assert!(forge.did("push"), "the branch is force-pushed");
         assert!(!forge.did("create"), "a second pull request must not be opened");
+        let bodies = forge.bodies.borrow();
+        assert_eq!(bodies.len(), 1, "the open pull request's body is edited once");
+        assert_eq!(record_in(&bodies[0]), Some(newer.id.to_string()));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
@@ -596,11 +655,13 @@ mod tests {
         let config = fixture("none");
         let forge = FakeForge::default();
 
-        let outcome = collect_one(&config, &forge, &record("0803", Some(committed_project()), None), &[])
-            .expect("a new pull request is opened");
+        let record = record("0803", Some(committed_project()), None);
+
+        let outcome = collect_one(&config, &forge, &record, &[]).expect("a new pull request is opened");
 
         assert_eq!(outcome, Outcome::Published { url: CREATED_URL.to_string() });
         assert!(forge.did("push") && forge.did("create"));
+        assert_eq!(record_in(&forge.bodies.borrow()[0]), Some(record.id.to_string()));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
@@ -705,19 +766,35 @@ mod tests {
     /// failure report would record a failure that did not happen.
     #[test]
     fn refresh_says_nothing_about_a_project_that_was_never_collected() {
-        assert!(newest_on(&[], "editor-collect/0803").is_none());
+        assert!(newest_for(&[], &record("0803", None, None)).is_none());
     }
 
     #[test]
     fn refresh_prefers_a_merged_pull_request_over_an_open_one_on_the_same_branch() {
         let branch = "editor-collect/0803";
+        let record = record("0803", None, None);
         let pull_requests = vec![
             pull_request(branch, PullRequestState::Open, EXISTING_URL),
-            pull_request(branch, PullRequestState::Merged, CREATED_URL),
+            naming(pull_request(branch, PullRequestState::Merged, CREATED_URL), &record),
         ];
         assert_eq!(
-            newest_on(&pull_requests, branch).map(|p| p.state),
+            newest_for(&pull_requests, &record).map(|p| p.state),
             Some(PullRequestState::Merged)
+        );
+    }
+
+    #[test]
+    fn refresh_reports_the_open_pull_request_over_one_merged_for_an_earlier_record() {
+        let branch = "editor-collect/0803";
+        let earlier = record("0803", None, None);
+        let newer = record("0803", None, None);
+        let pull_requests = vec![
+            naming(pull_request(branch, PullRequestState::Merged, CREATED_URL), &earlier),
+            naming(pull_request(branch, PullRequestState::Open, EXISTING_URL), &newer),
+        ];
+        assert_eq!(
+            newest_for(&pull_requests, &newer).map(|p| p.state),
+            Some(PullRequestState::Open)
         );
     }
 
@@ -733,6 +810,7 @@ mod tests {
                 format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR),
                 format!("{}/projects/0804_x.json", editor_core::DPE_DATA_DIR),
             ],
+            record: None,
         }];
 
         let taken = taken_ids(&config.data_dir, &pull_requests, "editor-collect/0803").expect("the fixture loads");
@@ -753,6 +831,7 @@ mod tests {
             head_ref: "editor-collect/0803".to_string(),
             state: PullRequestState::Open,
             files: vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)],
+            record: None,
         }];
 
         let taken = taken_ids(&config.data_dir, &pull_requests, "editor-collect/0803").expect("the fixture loads");

@@ -252,6 +252,62 @@ pub fn load_remodel(config_src: &str) -> Result<crate::remodel::Remodel, ConfigL
     }
 }
 
+/// The narrative files a config names and the languages its site declares, read from the raw
+/// parse, so a config that fails to lower still names them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NamedNarratives {
+    /// The `file=` of every page-body `narrative` and every `resource-detail`'s `narrative-for`,
+    /// each once, in the order the config names them. Unchecked: validation refuses a name with
+    /// a path separator.
+    pub files: Vec<String>,
+    /// The site's declared languages, each once.
+    pub languages: Vec<String>,
+}
+
+impl NamedNarratives {
+    /// Every name a narrative of [`Self::files`] may be served from: the file, then its variant
+    /// per declared language, as [`crate::util::variant_filename`] forms it.
+    #[must_use]
+    pub fn candidates(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        for file in &self.files {
+            names.push(file.clone());
+            names.extend(
+                self.languages
+                    .iter()
+                    .filter_map(|language| crate::util::variant_filename(file, language)),
+            );
+        }
+        names
+    }
+}
+
+/// Parse `config_src` and list the narrative files it names; see [`NamedNarratives`]. A host
+/// without a `narrative/` listing fetches these and validates with a complete inventory.
+pub fn named_narratives(config_src: &str) -> Result<NamedNarratives, ConfigError> {
+    let raw = crate::config::parse(config_src)?;
+    let mut files: Vec<String> = Vec::new();
+    for raw_comp in raw.pages.iter().flat_map(|page| &page.body) {
+        let named = match raw_comp.name.as_str() {
+            "narrative" => get_string_attr(raw_comp, "file").into_iter().collect(),
+            "resource-detail" => raw_comp
+                .children
+                .iter()
+                .filter(|child| child.name == "narrative-for")
+                .filter_map(|child| get_string_attr(child, "file"))
+                .collect(),
+            _ => Vec::new(),
+        };
+        for file in named {
+            if !files.contains(&file) {
+                files.push(file);
+            }
+        }
+    }
+    let languages = declared_languages(&raw).into_iter().map(str::to_owned).collect();
+    Ok(NamedNarratives { files, languages })
+}
+
 /// Run the full config-internal validation **plus** data-dependent checks.
 ///
 /// `load_config` calls this as its second step, after the parse, once
@@ -3933,9 +3989,9 @@ fn check_and_lower_site(
             // declared `cover-image` is missing and must hard-fail.
             //
             // This DELIBERATELY diverges from the `narrative_files`
-            // empty-slice guard below: that inventory is genuinely
-            // optional ("caller found no narrative/ dir ⇒ don't
-            // constrain"), whereas failing open here would let a project
+            // empty-slice guard below: that inventory may be incomplete
+            // (`narrative_files_complete`), and an incomplete empty one
+            // does not constrain, whereas failing open here would let a project
             // declaring `site.cover-image` with no `assets/` directory
             // boot green and serve a broken <img> on the site index.
             // Don't "restore consistency" by reintroducing an
@@ -4776,7 +4832,7 @@ fn check_narrative_layout_first(pages: &[Page], report: &mut ValidationReport) {
 /// child, so one mistake is one kind: `InvalidNarrativePath` (path separator /
 /// `..`) and `NarrativeFileNotFound` (neither the base file nor the
 /// default-language variant is in the inventory; skipped when the inventory is
-/// empty — "unknown, not checked").
+/// empty and not complete — "unknown, not checked").
 ///
 /// Returns `true` when the file passed both checks; on `false` exactly one
 /// Error was pushed.
@@ -4805,10 +4861,10 @@ fn check_narrative_file(
         return false;
     }
 
-    // NarrativeFileNotFound — must be in the inventory.
-    // An empty slice means the caller found no narrative/ dir, so existence
-    // is not checked (the host supplies the inventory; no dir → no constraint).
-    if !ctx.narrative_files.is_empty() {
+    // NarrativeFileNotFound — must be in the inventory. An empty inventory
+    // the host does not call complete is "unknown", and existence is not
+    // checked.
+    if ctx.narrative_files_complete || !ctx.narrative_files.is_empty() {
         let base_exists = ctx.narrative_files.iter().any(|f| f == file);
         if !base_exists {
             // The narrative file must resolve to the base file (checked above)
@@ -4837,7 +4893,7 @@ fn check_narrative_file(
             if !default_variant_exists {
                 report.push(Diagnostic::error(
                     DiagnosticKind::NarrativeFileNotFound,
-                    format!("narrative file '{file}' not found in the narrative/ directory"),
+                    format!("narrative file '{file}' not found among the project's narrative files"),
                     span,
                 ));
                 return false;
@@ -6951,6 +7007,7 @@ page id="home" route="/"
             project_id: "my-project",
             reserved_ids: &["_static"],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         let result = run(GOOD_CONFIG, &ctx);
@@ -6963,6 +7020,7 @@ page id="home" route="/"
             project_id: "_static",
             reserved_ids: &["_static"],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         let err = run(GOOD_CONFIG, &ctx).expect_err("reserved id should fail");
@@ -6979,6 +7037,7 @@ page id="home" route="/"
             project_id: "MyProject",
             reserved_ids: &[],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         let err = run(GOOD_CONFIG, &ctx).expect_err("uppercase id should fail");
@@ -6995,6 +7054,7 @@ page id="home" route="/"
             project_id: "-bad",
             reserved_ids: &[],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         let err = run(GOOD_CONFIG, &ctx).expect_err("leading-hyphen id should fail");
@@ -7011,6 +7071,7 @@ page id="home" route="/"
             project_id: "",
             reserved_ids: &[],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         let err = run(GOOD_CONFIG, &ctx).expect_err("empty id should fail");
@@ -8433,6 +8494,7 @@ page id="home" route="/"
             project_id: "BAD_ID",
             reserved_ids: &[],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         let err = run(src, &ctx).expect_err("multiple errors should fail");
@@ -8537,6 +8599,7 @@ site {
             project_id: "my-project",
             reserved_ids: &[],
             narrative_files,
+            narrative_files_complete: false,
             asset_files: &[],
         }
     }
@@ -9883,6 +9946,18 @@ page id="home" route="/" {{
     }
 
     #[test]
+    fn a_complete_empty_inventory_reports_a_named_narrative_as_not_found() {
+        let src = format!("{GOOD_SITE}\npage id=\"home\" route=\"/\" {{\n    narrative file=\"home.md\"\n}}\n");
+        assert!(
+            run(&src, &good_ctx(&[])).is_ok(),
+            "an empty inventory that is not complete checks nothing"
+        );
+        let ctx = ValidationContext { narrative_files_complete: true, ..good_ctx(&[]) };
+        let err = run(&src, &ctx).expect_err("a complete inventory holds no home.md");
+        assert_eq!(kinds(&err), vec![DiagnosticKind::NarrativeFileNotFound]);
+    }
+
+    #[test]
     fn narrative_file_found_passes() {
         let narrative_files: Vec<String> = vec!["home.md".into(), "home.de.md".into(), "home.en.md".into()];
         let ctx = good_ctx(&narrative_files);
@@ -9994,6 +10069,7 @@ page id="home" route="/" {{
             project_id: "my-project",
             reserved_ids: &[],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files,
         }
     }
@@ -12026,6 +12102,41 @@ page id="home" route="/" {{
             &vec![
                 NarrativeFor { resource_id: "b".to_owned(), file: "book-b.md".to_owned() },
                 NarrativeFor { resource_id: "a".to_owned(), file: "book-a.md".to_owned() },
+            ]
+        );
+    }
+
+    #[test]
+    fn named_narratives_lists_the_page_and_detail_narratives_even_when_lowering_fails() {
+        let detail = narrative_for_src(
+            r#"        narrative-for "b" file="book-b.md"
+        narrative-for "a" file="home.md"
+        narrative-for "c" file="../up.md""#,
+        );
+        let pages = "page id=\"home\" route=\"/\" {\n    narrative file=\"home.md\"\n    no-such-component\n}\n";
+        let src = format!("{detail}{pages}");
+        assert!(
+            run(&src, &ValidationContext::for_tests("my-project")).is_err(),
+            "the config does not lower"
+        );
+
+        let named = named_narratives(&src).expect("the config parses");
+        assert_eq!(
+            named,
+            NamedNarratives {
+                files: vec!["book-b.md".into(), "home.md".into(), "../up.md".into()],
+                languages: vec!["de".into(), "en".into()],
+            }
+        );
+        assert_eq!(
+            named.candidates()[..6],
+            [
+                "book-b.md",
+                "book-b.de.md",
+                "book-b.en.md",
+                "home.md",
+                "home.de.md",
+                "home.en.md"
             ]
         );
     }

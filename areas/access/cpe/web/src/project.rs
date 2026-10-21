@@ -82,8 +82,8 @@ impl Project {
     ///
     /// The project id is available through `ctx.project_id`.
     ///
-    /// `narrative` is a slice of `(filename, content)` pairs sourced from
-    /// the project's `narrative/` directory. Pass `&[]` when the
+    /// `narrative` is a slice of `(filename, content)` pairs, the
+    /// project's narrative files. Pass `&[]` when the
     /// project has no narrative content (e.g. in tests).
     pub fn load(
         ctx: &ValidationContext<'_>,

@@ -1,14 +1,17 @@
 # cpe-store-build
 
-Builds a project's CPE store from the `cpe-ports` snapshot of the project's DSP project and from the project's
-`remodel {}` block, with the project's hook where the block declares one. It is a library: it has no binary and
+Builds a project's CPE store from the `cpe-ports` snapshot of the project's DSP project, from the project's curated
+values and from its `remodel {}` block, with the project's hook where the block declares one. It is a library: it has no binary and
 writes no file. Incunabula (project 0803) is the one project that has a block.
 
-`build(&ProjectSnapshot, &Remodel, Option<&Hook>) -> Result<Store, BuildErrors>` is pure, and so are the SQL writers
-of `sql`: the library reads no file, no clock and no environment. Its caller reads the project's `config.kdl`, lowers
-its `remodel` block through `cpe_core::validate::load_remodel`, asks the port for the snapshot of the block's
-shortcode, resolves the hook by the project's folder name with `hooks::resolve`, calls `build`, and renders the store
-as SQL text with `sql::to_sql` under the header `sql::header` gives. `cpe-store` opens that text over its schema
+`build(&ProjectSnapshot, &CuratedValues, &Remodel, Option<&Hook>) -> Result<Store, BuildErrors>` is pure, and so are
+the SQL writers of `sql` and the curation file's reader, `CuratedValues::parse`: the library reads no file, no clock
+and no environment. Its caller, `cpe-server`'s activation, asks the bytes port for the project's `config.kdl`, lowers
+its `remodel` block through `cpe_core::validate::load_remodel`, asks the bytes port for `curation.csv` and the
+archive projection port for the snapshot of the block's shortcode, reads the curation against the snapshot with
+`CuratedValues::parse` (`CuratedValues::none` when the project deposited none and its block reads no curated key),
+resolves the hook by the project's folder name with `hooks::resolve`, calls `build`, and renders the store as SQL
+text with `sql::to_sql` under the header `sql::header` gives. `cpe-store` opens that text over its schema
 (`../store/schema.sql`, which this crate includes as `SCHEMA_SQL`). What the store holds that the port does not serve
 is declared in the project's block (the shortcode, the sentinel, the list vocabularies, the image rights and the IIIF
 base, the curated keys, the classes annotations may touch) or is a rule of its hook.
@@ -22,11 +25,13 @@ The writer refuses an empty table where the project's block is present and write
 block is absent: a project with no `list` has no list tables, one with no `member-of` no `compound_parts`.
 `resources` and `properties` are never empty.
 
-The rendered text for Incunabula is, byte for byte, the `data.sql` the prototype in `dsp-incubator` embeds. That
-file is not in this repository; `cpe-server`'s test `incunabulas_store_text_is_the_one_the_prototype_embeds` holds
-the text to that file's length and SHA-256. The text includes the header comment, so `sql::header` still writes the
-prototype's regenerate command (`just cpe store-build <project> --inplace`), which does not exist here. Changing
-the header or the layout changes the text, and then that test's two constants.
+Below its header, the rendered text for Incunabula is, byte for byte, the `data.sql` the prototype in
+`dsp-incubator` embeds. That file is not in this repository; `cpe-server`'s test
+`incunabulas_store_text_below_its_header_is_the_prototypes` holds the text after the first blank line to that file's
+length and SHA-256, and `incunabulas_whole_store_text_is_pinned` holds the whole text, header included (ADR-0007,
+amendment of 2026-10-21). The header names both ports, and `sql::header` still writes the prototype's regenerate
+command (`just cpe store-build <project> --inplace`), which does not exist here. Changing the header changes the
+whole text's two constants; changing the layout changes all four.
 
 ## How a build runs
 
@@ -76,9 +81,10 @@ ADR-0007's amendment of 2026-10-11 (DEV-7465) why the hook is in this crate and 
 `cargo test -p cpe-store-build`. The unit tests use hand-built stores. `tests/it/` is one integration test binary:
 
 - the tests over the committed 0803 data (`committed_0803.rs`: its census, and the build's independence of the
-  snapshot's order; and the statics of `main.rs`). They read `areas/access/sync/data` through `sync-store`'s
-  `LiveArchiveProjection`, which is why `sync-store` is a dev-dependency of this crate and never a dependency
-  (ADR-0008; `check-cpe-seam.sh`, rule 4);
+  snapshot's order; `curation_0803.rs`, the census of the curation file; and the statics of `main.rs`). They read
+  `areas/access/sync/data` through `sync-store`'s `LiveArchiveProjection`, which is why `sync-store` is a
+  dev-dependency of this crate and never a dependency (ADR-0008; `check-cpe-seam.sh`, rule 4), and Incunabula's
+  `config.kdl` and `curation.csv` from `areas/access/media/data/0803/` with `include_str!` and `include_bytes!`;
 - the refusal cases (`refusals.rs`) and the row shapes over hand-built snapshots (`books.rs`, `pages.rs`,
   `strips.rs`, `annotations.rs`);
 - a build of a snapshot the fake port serves (`rebuild.rs`);
@@ -92,12 +98,14 @@ ADR-0007's amendment of 2026-10-11 (DEV-7465) why the hook is in this crate and 
 
 ## Adding a project
 
-The port must serve the project: `areas/access/sync/data` holds `<shortcode>.nq` and `<shortcode>-curation.csv`
-(`areas/access/sync/CONTEXT.md`).
+Both ports must serve the project: `areas/access/sync/data` holds `<shortcode>.nq` (`areas/access/sync/CONTEXT.md`),
+and `areas/access/media/data/<shortcode>/` holds its `config.kdl`, its narrative and, when its block reads a curated
+key, its `curation.csv` (`areas/access/media/CONTEXT.md`). Its folder, `areas/access/cpe/projects/<project>/`, holds
+a `SHORTCODE` file with the shortcode.
 
 **A project without a hook** is configuration.
 
-1. Write `areas/access/cpe/projects/<project>/config.kdl` with a `site` block that declares at least one language
+1. Write `areas/access/media/data/<shortcode>/config.kdl` with a `site` block that declares at least one language
    and a `remodel {}` block: the shortcode, the classes with their `id`, the properties, and whatever else the
    project needs ([`docs/src/cpe/config-language.md`](../../../../docs/src/cpe/config-language.md), "`remodel`
    block"). `tests/fixtures/plain/config.kdl` uses every node a project without a hook can write;
@@ -207,7 +215,7 @@ generic code (the file where one is worth naming), `H` is a hook rule and names 
 | Every Book text | `G` value steps 6 and 7 | written as served; one that is empty after a strip gives no row (`T:1521-1531`). Two departures from the old pipeline: it refused an empty value among several of `alt-title`, `creator` or `publisher` (`T:612-622`), and it cut a trailing U+001E with the whitespace around it from every Book text (`X:1189-1207`) and failed on one elsewhere in a text (`X:1655-1688`). Here the cut is made only where a title is compared with the label, and a U+001E is written as served | `T:1521-1531` |
 | Book `pub-place` | `M` `max=1 sentinel="absent"` | `inc:hasPubloc`, at most one (`X:1202`); exactly `[missing]` after a strip gives no row. The old validation compared the unstripped value (`T:701-712`) and so refused a padded sentinel; none exists | `T:1579-1583` |
 | Book `shelfmark`, `physical` | `M` `max=1` | `inc:hasLocation`, `inc:hasPhysicalDesc`, at most one of each (`X:1204`, `X:1206`), as served (N2 on `physical`) | `T:1551-1553` |
-| Book `catalogue-uri` | `H` `catalogue.rs`; `M` the `property` node, `hook › overrides` | `inc:hasUri` as text, at most one (`X:1205`). An override is two curated values of the Book, in `areas/access/sync/data/0803-curation.csv`: `catalogue_uri`, the address to write, and `catalogue_uri_replaces`, the address it replaces. Both are read as served, since each is an address. The override wins while the archive has exactly the address it replaces; with any other address, or none, the Book is refused until the editors take both values out (`stale-catalogue-override`). One of the two without the other is refused (`unpaired-catalogue-override`, NEW), and so is more than one value under either (`curated-count`). `tests/it/committed_0803.rs` holds that the three overridden Books are written with the replacement | `T:550-599` |
+| Book `catalogue-uri` | `H` `catalogue.rs`; `M` the `property` node, `hook › overrides` | `inc:hasUri` as text, at most one (`X:1205`). An override is two curated values of the Book, in `areas/access/media/data/0803/curation.csv`: `catalogue_uri`, the address to write, and `catalogue_uri_replaces`, the address it replaces. Both are read as served, since each is an address. The override wins while the archive has exactly the address it replaces; with any other address, or none, the Book is refused until the editors take both values out (`stale-catalogue-override`). One of the two without the other is refused (`unpaired-catalogue-override`, NEW), and so is more than one value under either (`curated-count`). `tests/it/committed_0803.rs` holds that the three overridden Books are written with the replacement | `T:550-599` |
 | Every Book value read, every curated value | `M` `sentinel`, `no-addresses`; `G` curated texts (`generic/curation.rs`) | none contains `[missing]` (apart from `pub-place`) and none contains `http` (apart from `catalogue-uri` and the curated `cover_page`, `catalogue_uri` and `catalogue_uri_replaces`) | `T:691-717` |
 | Book `sort-key` | `H` `sort_key.rs`; `M` `hook › key`, `provides` | the curated `sort_key`, else the display title; its first character after a strip is ASCII; one for every Book. A padded curated `sort_key` is refused, also one that is whitespace alone | `T:607-609`, `T:727-739` |
 | Book `teaser` | `M` `curated type="per-language"` | `teaser@de` at `seq` 0 and `teaser@en` at `seq` 1; both or neither, and in no other language | `T:741-746`, `T:1596-1600` |

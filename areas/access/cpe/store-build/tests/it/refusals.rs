@@ -10,14 +10,14 @@
 
 use std::collections::BTreeSet;
 
-use cpe_ports::{DatePrecision, DateValue, File, Motivation, ProjectSnapshot, Resource, ResourceIri, ValueKind};
+use cpe_ports::{DatePrecision, DateValue, File, Motivation, Resource, ResourceIri, ValueKind};
 use cpe_store_build::error::Rule;
 
 use crate::build;
 use crate::support::{
     self, annotation, band, changed, link_obj, minimal, page, recurated, region, resource, with_annotation, with_band,
     with_curation, with_curation_in, with_label, with_link, with_list_node, with_page, with_resource, with_strip,
-    with_text, with_value, ADDED, BOOK, BOOK_CLASS, HAS_BAND_TYPE_L, HAS_BAND_TYPE_R, HAS_COLOR, HAS_COMMENT,
+    with_text, with_value, Fixture, ADDED, BOOK, BOOK_CLASS, HAS_BAND_TYPE_L, HAS_BAND_TYPE_R, HAS_COLOR, HAS_COMMENT,
     HAS_CREATOR, HAS_DESCRIPTION, HAS_GEOMETRY, HAS_LINK_TO, HAS_LOCATION, HAS_PAGENUM, HAS_PHYSICAL_DESC, HAS_PUBDATE,
     HAS_PUBLOC, HAS_TITLE, HAS_URI, IS_REGION_OF, KB_HAS_COMMENT, OTHER, PAGE, PAGE_ASSET, RECTANGLE, REGION_CLASS,
     STRIP_ASSET,
@@ -27,12 +27,12 @@ use crate::support::{
 const ABSENT: &str = "http://rdfh.ch/0803/absent";
 
 /// `snapshot` with a second Book, [`OTHER`], that has `slug` and no cover.
-fn with_book(snapshot: ProjectSnapshot, slug: &str) -> ProjectSnapshot {
+fn with_book(snapshot: Fixture, slug: &str) -> Fixture {
     support::with_book(snapshot, OTHER, slug, "Zweites Buch")
 }
 
 /// `snapshot` with [`ADDED`] left without a value.
-fn without_title(snapshot: ProjectSnapshot) -> ProjectSnapshot {
+fn without_title(snapshot: Fixture) -> Fixture {
     changed(snapshot, ADDED, |band| band.values.clear())
 }
 
@@ -45,14 +45,14 @@ const COLOGNE_RECORD: &str =
     "https://search.ub.uni-koeln.de/portal/inkunabeln/databases/id/inkunabeln/titles/id/cdm_inkunabeln_1878.html?l=de";
 
 /// `snapshot` with a curated catalogue override on `book`: `replacement` in place of `dead`.
-pub fn with_override(snapshot: ProjectSnapshot, book: &str, dead: &str, replacement: &str) -> ProjectSnapshot {
+pub fn with_override(snapshot: Fixture, book: &str, dead: &str, replacement: &str) -> Fixture {
     let snapshot = with_curation(snapshot, book, "catalogue_uri", replacement);
     with_curation(snapshot, book, "catalogue_uri_replaces", dead)
 }
 
 /// The minimal snapshot with [`COLOGNE_BOOK`], its cover [`ADDED`], its curated catalogue
 /// override, and `uri` as its catalogue address.
-pub fn with_cologne_book(uri: Option<&str>) -> ProjectSnapshot {
+pub fn with_cologne_book(uri: Option<&str>) -> Fixture {
     let snapshot = support::with_book(minimal(), COLOGNE_BOOK, "lob-der-glieder", "Lob der Glieder Mariens");
     let cover = page(ADDED, COLOGNE_BOOK, 1, "a1r", "ScanOfTheCologneBook.jp2");
     let snapshot = with_curation(with_resource(snapshot, cover), COLOGNE_BOOK, "cover_page", ADDED);
@@ -64,7 +64,7 @@ pub fn with_cologne_book(uri: Option<&str>) -> ProjectSnapshot {
 }
 
 /// The minimal snapshot with its Book's publication date changed by `change`.
-fn with_pub_date(change: fn(&mut DateValue)) -> ProjectSnapshot {
+fn with_pub_date(change: fn(&mut DateValue)) -> Fixture {
     changed(minimal(), BOOK, |book| {
         for value in &mut book.values {
             if let ValueKind::Date(date) = &mut value.kind {
@@ -76,14 +76,14 @@ fn with_pub_date(change: fn(&mut DateValue)) -> ProjectSnapshot {
 
 /// The minimal snapshot with a Region on its Page, [`ADDED`], changed by `change`. The editors
 /// do not keep it: a check that refuses it runs before their answer is asked for.
-fn with_unkept_region(change: impl FnOnce(&mut Resource)) -> ProjectSnapshot {
+fn with_unkept_region(change: impl FnOnce(&mut Resource)) -> Fixture {
     let mut region = region(ADDED, PAGE);
     change(&mut region);
     with_annotation(minimal(), region, "no")
 }
 
 /// [`with_unkept_region`] with `geometry` as the Region's geometry.
-fn with_geometry(geometry: &str) -> ProjectSnapshot {
+fn with_geometry(geometry: &str) -> Fixture {
     with_unkept_region(|region| {
         for value in &mut region.values {
             if value.property.as_str() == HAS_GEOMETRY {
@@ -94,7 +94,7 @@ fn with_geometry(geometry: &str) -> ProjectSnapshot {
 }
 
 /// [`with_unkept_region`] with the Region's values under `property` taken away.
-fn without_value(property: &str) -> ProjectSnapshot {
+fn without_value(property: &str) -> Fixture {
     with_unkept_region(|region| {
         region.values.retain(|value| value.property.as_str() != property);
     })
@@ -108,7 +108,7 @@ const LINK_WITH_THE_REGIONS_ID: &str = "http://rdfh.ch/0803/links/added";
 
 pub(crate) struct Case {
     pub(crate) rule: Rule,
-    pub(crate) snapshot: fn() -> ProjectSnapshot,
+    pub(crate) snapshot: fn() -> Fixture,
     /// What the one error names.
     pub(crate) subject: &'static str,
 }
@@ -116,8 +116,8 @@ pub(crate) struct Case {
 pub(crate) const CASES: &[Case] = &[
     Case {
         rule: Rule::ContractViolation,
-        snapshot: || with_curation(minimal(), ABSENT, "slug", "absent"),
-        subject: ABSENT,
+        snapshot: || with_link(minimal(), PAGE, HAS_BAND_TYPE_L, ABSENT),
+        subject: PAGE,
     },
     // On a label no rule reads: a Book's label with a NUL is also none of its titles.
     Case {
@@ -1047,7 +1047,7 @@ pub(crate) const CASES: &[Case] = &[
 ];
 
 /// (rule, subject) of every error `build` returns for `snapshot`, in the order returned.
-fn refused(snapshot: &ProjectSnapshot) -> Vec<(Rule, String)> {
+fn refused(snapshot: &Fixture) -> Vec<(Rule, String)> {
     match build(snapshot) {
         Ok(_) => Vec::new(),
         Err(errors) => errors

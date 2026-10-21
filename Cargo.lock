@@ -13,6 +13,7 @@ dependencies = [
  "cpe-server",
  "dpe-server",
  "init-tracing-opentelemetry",
+ "media-store",
  "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
@@ -640,6 +641,7 @@ dependencies = [
  "figment",
  "futures-util",
  "maud",
+ "media-store",
  "percent-encoding",
  "serde",
  "sha2",
@@ -2729,6 +2731,15 @@ dependencies = [
  "proc-macro2-diagnostics",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "media-store"
+version = "0.8.10"
+dependencies = [
+ "cpe-ports",
+ "tempfile",
+ "tracing",
 ]
 
 [[package]]

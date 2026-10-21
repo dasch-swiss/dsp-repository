@@ -23,7 +23,7 @@ dependencies — and matches them against vulnerability databases.
 
 | Image | Workflow | Trigger |
 |-------|----------|---------|
-| DPE (`daschswiss/dpe`) | `scout-dpe.yml` | PRs touching `areas/access/dpe/**`, `shared/**` or `Cargo.lock` |
+| DPE (`daschswiss/dpe`) | `scout-dpe.yml` | PRs touching `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**`, `areas/access/media/**`, `shared/**` or `Cargo.lock` |
 | Mosaic Playground (`daschswiss/mosaic-playground`) | `scout-mosaic-playground.yml` | PRs touching `modules/mosaic/**` or `Cargo.lock` |
 | Editor (`daschswiss/metadata-editor`) | `scout-editor.yml` | PRs touching `areas/deposit/**`, `shared/**` or `Cargo.lock` |
 

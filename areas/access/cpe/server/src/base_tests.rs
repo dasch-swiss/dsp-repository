@@ -14,6 +14,7 @@ use std::sync::OnceLock;
 
 use axum::body::Body;
 use axum::http::{header, HeaderMap, Request, StatusCode};
+use media_store::LiveDepositedFiles;
 use sync_store::LiveArchiveProjection;
 use tower::ServiceExt;
 
@@ -35,12 +36,21 @@ fn sync_data() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sync/data")
 }
 
+fn media_data() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../media/data")
+}
+
+/// Incunabula's two ports over the committed data.
+fn activate(cpe: &Cpe) {
+    cpe.activate(&LiveArchiveProjection::new(sync_data()), &LiveDepositedFiles::new(media_data()));
+}
+
 /// Incunabula under `/cpe`, activated once for every test of this module.
 fn cpe() -> &'static Cpe {
     static CPE: OnceLock<Cpe> = OnceLock::new();
     CPE.get_or_init(|| {
         let cpe = Cpe::new(&config());
-        cpe.activate(&LiveArchiveProjection::new(sync_data()));
+        activate(&cpe);
         assert_eq!(cpe.projects().len(), 1, "Incunabula activates from the committed data");
         cpe
     })
@@ -465,11 +475,17 @@ async fn the_static_files_and_the_assets_are_served_under_the_base() {
         "/cpe/_assets/incunabula/assets/cover.webp",
         "/cpe/_assets/assets/cover.webp",
         "/cpe/incunabula/_static/cpe/nope.css",
-        "/cpe/incunabula/_assets/config.kdl",
+        "/cpe/incunabula/_assets/SHORTCODE",
+        "/cpe/incunabula/_assets/PROVENANCE.md",
         "/cpe/no-such-project/_static/cpe/tokens.css",
     ] {
         assert_eq!(answer(cpe(), url, false).await.status, StatusCode::NOT_FOUND, "{url}");
     }
+    // The two files beside `assets/` are in the folder: their 404 is the route's refusal.
+    let folder = config().projects_dir.join("incunabula");
+    let shortcode = std::fs::read_to_string(folder.join("SHORTCODE")).expect("Incunabula's SHORTCODE is committed");
+    assert_eq!(shortcode.trim(), "0803");
+    assert!(folder.join("PROVENANCE.md").is_file());
 }
 
 /// The overview is the same page with and without the slash, and what it
@@ -599,7 +615,7 @@ async fn the_base_has_one_source() {
 async fn a_refused_base_is_answered_503_and_never_written() {
     let refused = CpeConfig { base: "cpe/".to_owned(), ..config() };
     let cpe = Cpe::new(&refused);
-    cpe.activate(&LiveArchiveProjection::new(sync_data()));
+    activate(&cpe);
     assert_eq!(cpe.base(), "");
     assert!(cpe.projects().is_empty());
     for uri in ["/", "/incunabula/", "/_static/cpe/tokens.css"] {

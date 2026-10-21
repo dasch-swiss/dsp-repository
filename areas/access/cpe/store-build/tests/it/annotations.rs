@@ -1,12 +1,12 @@
 //! The annotation tables, over hand-built snapshots: the shape of each row, and what follows
 //! from an annotation the editors do not keep.
 
-use cpe_ports::{ProjectSnapshot, ValueKind};
+use cpe_ports::ValueKind;
 use cpe_store_build::store::{AnnotationLinkRow, AnnotationRow, Store};
 
 use crate::build;
 use crate::support::{
-    self, built, link_obj, minimal, region, with_annotation, with_curation, with_page, with_text, ADDED, BOOK,
+    self, built, link_obj, minimal, region, with_annotation, with_curation, with_page, with_text, Fixture, ADDED, BOOK,
     HAS_COLOR, HAS_LINK_TO, KB_HAS_COMMENT, OTHER, PAGE,
 };
 
@@ -20,7 +20,7 @@ const LINK: &str = "http://rdfh.ch/0803/link";
 
 /// The minimal snapshot with a Region on its Page, [`ADDED`], that the editors keep, with
 /// `remark` and the curated language `lang` where one is given.
-fn with_region(remark: Option<&str>, lang: Option<&str>) -> ProjectSnapshot {
+fn with_region(remark: Option<&str>, lang: Option<&str>) -> Fixture {
     let snapshot = with_annotation(minimal(), region(ADDED, PAGE), "yes");
     let snapshot = match remark {
         Some(remark) => with_text(snapshot, ADDED, KB_HAS_COMMENT, remark),
@@ -123,7 +123,7 @@ fn test_build_colour_is_written_in_lower_case() {
 
 /// The minimal snapshot with a kept Region `region-b`, a Region `region-a` the editors answer
 /// `keep_a` about, and the kept LinkObj [`LINK`] to `targets`, named "identischer Holzschnitt".
-fn with_link(keep_a: &str, targets: &[&str]) -> ProjectSnapshot {
+fn with_link(keep_a: &str, targets: &[&str]) -> Fixture {
     let snapshot = with_annotation(minimal(), region(REGION_B, PAGE), "yes");
     let snapshot = with_annotation(snapshot, region(REGION_A, PAGE), keep_a);
     let snapshot = with_annotation(snapshot, link_obj(LINK, targets), "yes");

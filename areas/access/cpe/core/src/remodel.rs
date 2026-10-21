@@ -134,6 +134,15 @@ impl Remodel {
     pub fn list(&self, index: ListIndex) -> &RemodelList {
         &self.lists[index.0]
     }
+
+    /// Whether the mapping reads the curation table: a key of a class
+    /// ([`RemodelClass::curated_keys`]), a key of the hook, or annotations, each of which needs
+    /// its `keep`. A mapping that reads none builds without a curation table.
+    pub fn reads_curation(&self) -> bool {
+        self.annotations.is_some()
+            || self.hook.as_ref().is_some_and(|hook| !hook.keys.is_empty())
+            || self.classes.iter().any(|class| !class.curated_keys().is_empty())
+    }
 }
 
 /// One `list`: a name and its nodes.
@@ -573,6 +582,36 @@ mod tests {
             .collect();
 
         assert_eq!(ours, PY_SPACE);
+    }
+
+    /// The mapping of a one-class config, with `block` in the `remodel` block and `class` in the
+    /// class.
+    fn remodel_with(block: &str, class: &str) -> Remodel {
+        let src = format!(
+            "site {{\n    title \"T\"\n    languages \"en\"\n}}\nremodel {{\n    shortcode \"0001\"\n{block}\n    \
+             class \"Thing\" iri=\"http://e/o#Thing\" {{\n        id from=\"iri\"\n{class}\n    }}\n}}\n"
+        );
+        crate::validate::load_remodel(&src).unwrap_or_else(|error| panic!("{src} does not lower: {error:?}"))
+    }
+
+    #[test]
+    fn a_mapping_reads_curation_through_a_class_key_a_hook_key_or_annotations() {
+        for (block, class) in [
+            ("", r#"        curated "note" key="note" type="text""#),
+            ("", r#"        property "name" from="label" curated-key="name""#),
+            (r#"    hook { key "sort" class="Thing"; }"#, ""),
+            (r#"    annotations { on "Thing"; }"#, ""),
+        ] {
+            assert!(remodel_with(block, class).reads_curation(), "{block}{class}");
+        }
+        assert!(!remodel_with("", "").reads_curation());
+    }
+
+    #[test]
+    fn the_things_fixture_reads_no_curation() {
+        let things = include_str!("../../server/tests/fixtures/activation/things/config.kdl");
+        let remodel = crate::validate::load_remodel(things).expect("the fixture lowers");
+        assert!(!remodel.reads_curation());
     }
 
     #[test]

@@ -41,5 +41,6 @@ Dockerfile*
 !modules/mosaic/playground/Dockerfile
 !areas/access/server/Dockerfile
 
-# sync's committed snapshot (about 20 MB) and curation; no image built from this context reads it
+# sync's committed snapshot (about 20 MB) and media's deposited files; no image built from this context reads them
 areas/access/sync/data/
+areas/access/media/data/

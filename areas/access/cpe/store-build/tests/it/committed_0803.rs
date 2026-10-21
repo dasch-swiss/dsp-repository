@@ -7,11 +7,11 @@
 
 use std::collections::BTreeSet;
 
-use cpe_ports::{File, Motivation, ProjectSnapshot, Resource, ValueKind};
+use cpe_ports::{File, Motivation, Resource, ValueKind};
 use cpe_store_build::{is_url_safe, sql};
 
-use crate::support::{BOOK_CLASS, HAS_COMMENT, HAS_DESCRIPTION, HAS_PAGENUM, IS_REGION_OF, PAGE_CLASS};
-use crate::{build, HEADER, MAPPING, SNAPSHOT, SQL, STORE};
+use crate::support::{Fixture, BOOK_CLASS, HAS_COMMENT, HAS_DESCRIPTION, HAS_PAGENUM, IS_REGION_OF, PAGE_CLASS};
+use crate::{build, COMMITTED, CURATION, HEADER, MAPPING, SNAPSHOT, SQL, STORE};
 
 /// The store's classes, in the order the counts below are written.
 const CLASSES: [&str; 4] = ["Book", "Page", "BorderStrip", "Image"];
@@ -186,8 +186,8 @@ fn test_store_every_resource_annotation_and_link_id_is_url_safe() {
 #[test]
 fn test_store_each_cover_is_the_image_of_a_page() {
     let images: BTreeSet<&str> = ids_of("Image").into_iter().collect();
-    let covers: BTreeSet<&str> = SNAPSHOT
-        .curation
+    let covers: BTreeSet<&str> = CURATION
+        .as_slice()
         .iter()
         .filter(|value| value.key == "cover_page")
         .map(|value| {
@@ -451,10 +451,10 @@ const IGNORED: [(&str, &str); 6] = [
     (PAGE_CLASS, "http://www.knora.org/ontology/0803/incunabula#hasOrigname"),
 ];
 
-/// `snapshot` without the values that resources of `class` have under `property`.
-fn without(class: &str, property: &str) -> ProjectSnapshot {
-    let mut snapshot = SNAPSHOT.clone();
-    for resource in &mut snapshot.resources {
+/// The committed data without the values that resources of `class` have under `property`.
+fn without(class: &str, property: &str) -> Fixture {
+    let mut snapshot = COMMITTED.clone();
+    for resource in &mut snapshot.facts.resources {
         if resource.class.as_str() == class {
             resource.values.retain(|value| value.property.as_str() != property);
         }
@@ -515,6 +515,10 @@ fn test_build_reads_every_declared_property() {
     let served = served_on_declared_classes();
     let declared: Vec<(&str, &str)> = mapped_pairs().intersection(&served).copied().collect();
     assert!(declared.len() > 10, "{declared:?}");
+    assert!(
+        build(&COMMITTED).is_ok_and(|store| store == *STORE),
+        "the data the cases change builds the store"
+    );
 
     let unread: Vec<(&str, &str)> = declared
         .into_iter()
@@ -542,6 +546,10 @@ fn test_build_reads_every_property_of_an_annotation() {
         .filter(|pair| !declared.contains(pair))
         .collect();
     assert!(on_annotations.len() > 3, "{on_annotations:?}");
+    assert!(
+        build(&COMMITTED).is_ok_and(|store| store == *STORE),
+        "the data the cases change builds the store"
+    );
 
     let unread: Vec<(&str, &str)> = on_annotations
         .into_iter()
@@ -552,7 +560,7 @@ fn test_build_reads_every_property_of_an_annotation() {
 }
 
 /// The store file `build` makes of `snapshot`.
-fn file_of(snapshot: &ProjectSnapshot) -> String {
+fn file_of(snapshot: &Fixture) -> String {
     let store = build(snapshot).expect("the snapshot builds");
     sql::to_sql(&store, &MAPPING, &HEADER).expect("every table of the built store has a row")
 }
@@ -567,7 +575,7 @@ fn assert_is_the_store_file(file: &str) {
 
 #[test]
 fn test_build_second_build_writes_the_same_file_byte_for_byte() {
-    assert_is_the_store_file(&file_of(&SNAPSHOT));
+    assert_is_the_store_file(&file_of(&COMMITTED));
 }
 
 /// Every order the port leaves open that this data can show is another one: the snapshot's
@@ -580,24 +588,24 @@ fn test_build_reordered_snapshot_writes_the_same_file_byte_for_byte() {
         items.reverse();
         items.rotate_left(items.len() / 3);
     }
-    let mut snapshot = SNAPSHOT.clone();
-    reorder(&mut snapshot.resources);
-    reorder(&mut snapshot.list_nodes);
+    let mut snapshot = COMMITTED.clone();
+    reorder(&mut snapshot.facts.resources);
+    reorder(&mut snapshot.facts.list_nodes);
     reorder(&mut snapshot.curation);
-    for resource in &mut snapshot.resources {
+    for resource in &mut snapshot.facts.resources {
         assert!(resource.part_of.len() < 2, "parents to reorder as well");
         // Stable: the properties change places, the values of each do not.
         resource.values.sort_by(|a, b| b.property.cmp(&a.property));
     }
-    assert_ne!(snapshot.resources[0], SNAPSHOT.resources[0]);
-    assert_ne!(snapshot.list_nodes[0], SNAPSHOT.list_nodes[0]);
-    assert_ne!(snapshot.curation[0], SNAPSHOT.curation[0]);
+    assert_ne!(snapshot.facts.resources[0], SNAPSHOT.resources[0]);
+    assert_ne!(snapshot.facts.list_nodes[0], SNAPSHOT.list_nodes[0]);
+    assert_ne!(snapshot.curation[0], COMMITTED.curation[0]);
     let by_iri = |resources: &[Resource]| {
         let mut sorted = resources.to_vec();
         sorted.sort_by(|a, b| a.iri.cmp(&b.iri));
         sorted
     };
-    let moved_within = by_iri(&snapshot.resources)
+    let moved_within = by_iri(&snapshot.facts.resources)
         .iter()
         .zip(&by_iri(&SNAPSHOT.resources))
         .filter(|(reordered, served)| reordered.values != served.values)

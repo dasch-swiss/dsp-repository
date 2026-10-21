@@ -10,6 +10,16 @@ use dpe_server::Dpe;
 /// committed one, relative to the repository root, where a local run starts.
 const DEFAULT_SYNC_DATA_DIR: &str = "areas/access/sync/data";
 
+/// The directory of `media`'s data when `MEDIA_DATA_DIR` is not set: the
+/// committed one, relative to the repository root, where a local run starts.
+const DEFAULT_MEDIA_DATA_DIR: &str = "areas/access/media/data";
+
+/// The directory a data variable names, `default` when it is unset or empty: a deployment that
+/// passes an empty value (a compose file's `${VAR}` of an unset variable) means "not set".
+fn data_dir(value: Option<String>, default: &str) -> String {
+    value.filter(|value| !value.is_empty()).unwrap_or_else(|| default.to_owned())
+}
+
 /// The app the composition root serves over DPE's router, and whether CPE is
 /// in it.
 ///
@@ -156,13 +166,14 @@ async fn name_span_by_cpe_route(
 }
 
 /// Starts CPE's activation on the blocking pool and returns at once: reading
-/// the projection takes seconds, and CPE answers 503 until it is done.
+/// the ports takes seconds, and CPE answers 503 until it is done.
 fn activate_in_background(
     cpe: &Cpe,
     projection: impl cpe_ports::ArchiveProjection + 'static,
+    files: impl cpe_ports::DepositedFiles + 'static,
 ) -> tokio::task::JoinHandle<()> {
     let cpe = cpe.clone();
-    tokio::task::spawn_blocking(move || cpe.activate(&projection))
+    tokio::task::spawn_blocking(move || cpe.activate(&projection, &files))
 }
 
 #[tokio::main]
@@ -206,7 +217,8 @@ pub(crate) async fn serve() -> ExitCode {
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
         .parse()
         .expect("invalid site address (DPE_SITE_ADDR)");
-    let sync_data_dir = std::env::var("SYNC_DATA_DIR").unwrap_or_else(|_| DEFAULT_SYNC_DATA_DIR.to_string());
+    let sync_data_dir = data_dir(std::env::var("SYNC_DATA_DIR").ok(), DEFAULT_SYNC_DATA_DIR);
+    let media_data_dir = data_dir(std::env::var("MEDIA_DATA_DIR").ok(), DEFAULT_MEDIA_DATA_DIR);
 
     let (app, cpe_is_mounted) = app(dpe.router(), &cpe);
 
@@ -229,13 +241,24 @@ pub(crate) async fn serve() -> ExitCode {
                 "SYNC_DATA_DIR names no directory: every project of CPE's will fail to load and answer 503"
             );
         }
+        if !std::path::Path::new(&media_data_dir).is_dir() {
+            tracing::warn!(
+                media_data_dir = media_data_dir.as_str(),
+                "MEDIA_DATA_DIR names no directory: every project of CPE's will fail to load and answer 503"
+            );
+        }
         tracing::info!(
             cpe_base = cpe.base(),
             projects_dir = %cpe_config.projects_dir.display(),
             sync_data_dir = sync_data_dir.as_str(),
+            media_data_dir = media_data_dir.as_str(),
             "CPE is mounted and activates in the background"
         );
-        activate_in_background(&cpe, sync_store::LiveArchiveProjection::new(sync_data_dir));
+        activate_in_background(
+            &cpe,
+            sync_store::LiveArchiveProjection::new(sync_data_dir),
+            media_store::LiveDepositedFiles::new(media_data_dir),
+        );
     }
 
     axum::serve(listener, app.into_make_service_with_connect_info::<std::net::SocketAddr>())
@@ -299,14 +322,15 @@ mod tests {
     use axum::extract::Request;
     use axum::http::{header, HeaderMap, StatusCode};
     use cpe_ports::{
-        ArchiveProjection, ClassIri, DataArk, FakeArchiveProjection, ProjectSnapshot, ProjectionError, PropertyIri,
-        Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
+        ArchiveProjection, ClassIri, DataArk, FakeArchiveProjection, FakeDepositedFiles, ProjectSnapshot,
+        ProjectionError, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
     };
     use cpe_server::{Cpe, CpeConfig};
+    use media_store::LiveDepositedFiles;
     use sync_store::LiveArchiveProjection;
     use tower::ServiceExt;
 
-    use super::{activate_in_background, DEFAULT_SYNC_DATA_DIR};
+    use super::{activate_in_background, data_dir, DEFAULT_MEDIA_DATA_DIR, DEFAULT_SYNC_DATA_DIR};
 
     const BASE: &str = "/cpe";
 
@@ -383,20 +407,29 @@ remodel {
                 annotation: None,
             }],
             list_nodes: Vec::new(),
-            curation: Vec::new(),
         }
     }
 
-    /// A projects folder with one Things project per `(id, shortcode)`.
+    /// A projects folder with one Things project per `(id, shortcode)`, each a folder holding
+    /// its `SHORTCODE`.
     fn projects_folder(projects: &[(&str, &str)]) -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("a temporary directory");
         for (id, shortcode) in projects {
             let dir = root.path().join(id);
             std::fs::create_dir(&dir).expect("the project folder is created");
-            let config = THINGS.replace("shortcode \"0001\"", &format!("shortcode \"{shortcode}\""));
-            std::fs::write(dir.join("config.kdl"), config).expect("config.kdl is written");
+            std::fs::write(dir.join("SHORTCODE"), shortcode).expect("SHORTCODE is written");
         }
         root
+    }
+
+    /// The deposited files of the Things projects `0001` and `0002`: each one's config.
+    fn things_files() -> FakeDepositedFiles {
+        ["0001", "0002"]
+            .into_iter()
+            .fold(FakeDepositedFiles::default(), |files, shortcode| {
+                let config = THINGS.replace("shortcode \"0001\"", &format!("shortcode \"{shortcode}\""));
+                files.with_file(shortcode, "config.kdl", config)
+            })
     }
 
     /// CPE at `base` with `things` served and `offline` failed. The folder
@@ -408,6 +441,7 @@ remodel {
             &FakeArchiveProjection::default()
                 .with_project(things_snapshot())
                 .with_unavailable("0002"),
+            &things_files(),
         );
         (root, cpe)
     }
@@ -418,7 +452,10 @@ remodel {
         CPE.get_or_init(|| {
             let root = repository_root();
             let cpe = Cpe::new(&cpe_config(&root.join("areas/access/cpe/projects"), BASE));
-            cpe.activate(&LiveArchiveProjection::new(root.join(DEFAULT_SYNC_DATA_DIR)));
+            cpe.activate(
+                &LiveArchiveProjection::new(root.join(DEFAULT_SYNC_DATA_DIR)),
+                &LiveDepositedFiles::new(root.join(DEFAULT_MEDIA_DATA_DIR)),
+            );
             cpe
         })
     }
@@ -596,7 +633,10 @@ remodel {
         // The overview, with and without the slash, under a base no other test asks for.
         let folder = projects_folder(&[("things", "0001")]);
         let cpe = Cpe::new(&cpe_config(folder.path(), "/overview-g7h8"));
-        cpe.activate(&FakeArchiveProjection::default().with_project(things_snapshot()));
+        cpe.activate(
+            &FakeArchiveProjection::default().with_project(things_snapshot()),
+            &things_files(),
+        );
         let router = app(&dpe(), &cpe);
         for path in ["/overview-g7h8", "/overview-g7h8/"] {
             assert_eq!(status_of(router.clone(), path).await, StatusCode::OK, "{path}");
@@ -735,7 +775,10 @@ remodel {
     async fn the_base_with_a_slash_is_cpes_root_even_beside_a_project_named_like_the_base() {
         let folder = projects_folder(&[("cpe", "0001")]);
         let cpe = Cpe::new(&cpe_config(folder.path(), BASE));
-        cpe.activate(&FakeArchiveProjection::default().with_project(things_snapshot()));
+        cpe.activate(
+            &FakeArchiveProjection::default().with_project(things_snapshot()),
+            &things_files(),
+        );
         let router = app(&dpe(), &cpe);
 
         for uri in ["/cpe", "/cpe/", "/cpe/?page=2"] {
@@ -795,24 +838,27 @@ remodel {
         }
     }
 
-    /// A project's `config.kdl` is beside its assets on disk.
+    /// A project's `SHORTCODE` is beside its assets on disk.
     #[tokio::test]
     async fn a_path_that_climbs_out_of_its_folder_is_not_found() {
-        let (_folder, cpe) = things_and_offline(BASE);
+        let (folder, cpe) = things_and_offline(BASE);
+        let marker = "0001";
+        let shortcode = std::fs::read_to_string(folder.path().join("things/SHORTCODE")).expect("SHORTCODE is there");
+        assert_eq!(shortcode, marker, "the file the paths below climb to is there");
         let router = app(&dpe(), &cpe);
         for uri in [
             "/cpe/%2e%2e/x",
             "/cpe/../x",
-            "/cpe/things/_assets/..%2fconfig.kdl",
-            "/cpe/things/_assets/../config.kdl",
-            "/cpe/things/_assets/%2e%2e/config.kdl",
-            "/cpe/things/_assets/config.kdl",
-            "/cpe/things/_static/..%2f..%2fconfig.kdl",
+            "/cpe/things/_assets/..%2fSHORTCODE",
+            "/cpe/things/_assets/../SHORTCODE",
+            "/cpe/things/_assets/%2e%2e/SHORTCODE",
+            "/cpe/things/_assets/SHORTCODE",
+            "/cpe/things/_static/..%2f..%2fSHORTCODE",
         ] {
             let (status, headers, body) = get(&router, uri).await;
             assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
             assert!(!headers.contains_key(header::LOCATION), "{uri} must not redirect");
-            assert!(!body.contains("shortcode"), "{uri} must not serve the config: {body}");
+            assert!(!body.contains(marker), "{uri} must not serve SHORTCODE: {body}");
         }
     }
 
@@ -956,8 +1002,11 @@ remodel {
         let (asked, was_asked) = mpsc::channel();
         let (release, released) = mpsc::channel();
 
-        let activation =
-            activate_in_background(&cpe, HeldProjection { asked: Mutex::new(asked), release: Mutex::new(released) });
+        let activation = activate_in_background(
+            &cpe,
+            HeldProjection { asked: Mutex::new(asked), release: Mutex::new(released) },
+            things_files(),
+        );
         tokio::task::spawn_blocking(move || was_asked.recv_timeout(Duration::from_secs(30)))
             .await
             .unwrap()
@@ -988,6 +1037,7 @@ remodel {
         activate_in_background(
             &cpe,
             LiveArchiveProjection::new(root.join("areas/access/sync/no-such-directory")),
+            LiveDepositedFiles::new(root.join(DEFAULT_MEDIA_DATA_DIR)),
         )
         .await
         .expect("activation does not panic");
@@ -1033,9 +1083,13 @@ remodel {
         let (status, _, body) = get(&router, "/cpe/incunabula/no-such-page").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert!(!body.contains(CPE_NOT_FOUND), "the project's not-found page");
-        assert_eq!(
-            status_of(router, "/cpe/incunabula/_assets/..%2fconfig.kdl").await,
-            StatusCode::NOT_FOUND
+        let folder = repository_root().join("areas/access/cpe/projects/incunabula");
+        assert!(folder.join("PROVENANCE.md").is_file(), "the file the path climbs to is there");
+        let (status, _, body) = get(&router, "/cpe/incunabula/_assets/..%2fPROVENANCE.md").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(
+            !body.contains("where the store comes from"),
+            "PROVENANCE.md is not served: {body}"
         );
     }
 
@@ -1082,7 +1136,10 @@ remodel {
             "/dpe/oai",
         ] {
             let cpe = Cpe::new(&cpe_config(folder.path(), base));
-            cpe.activate(&FakeArchiveProjection::default().with_project(things_snapshot()));
+            cpe.activate(
+                &FakeArchiveProjection::default().with_project(things_snapshot()),
+                &things_files(),
+            );
             let (router, cpe_is_mounted) = super::app(dpe().router(), &cpe);
             assert!(cpe_is_mounted, "{base}");
 
@@ -1141,10 +1198,23 @@ remodel {
         }
     }
 
+    #[test]
+    fn a_data_directory_that_is_unset_or_empty_is_the_default() {
+        assert_eq!(data_dir(None, "default"), "default");
+        assert_eq!(data_dir(Some(String::new()), "default"), "default");
+        assert_eq!(data_dir(Some("/data".to_owned()), "default"), "/data");
+    }
+
     /// Or a run from the checkout serves no project.
     #[test]
     fn the_default_sync_data_directory_is_the_committed_one() {
         assert!(repository_root().join(DEFAULT_SYNC_DATA_DIR).join("0803.nq").is_file());
+    }
+
+    /// A run from the checkout finds the committed media data, or it serves no project.
+    #[test]
+    fn the_default_media_data_directory_is_the_committed_one() {
+        assert!(repository_root().join(DEFAULT_MEDIA_DATA_DIR).join("0803/config.kdl").is_file());
     }
 
     /// Nothing of CPE's answers at the root either.

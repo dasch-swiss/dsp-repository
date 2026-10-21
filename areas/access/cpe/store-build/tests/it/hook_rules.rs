@@ -5,18 +5,18 @@
 //! Every expectation is the rule and the subject of each refusal. The detail is compared only
 //! where it names the curated key at fault.
 
-use cpe_ports::{ProjectSnapshot, ValueKind};
+use cpe_ports::ValueKind;
 use cpe_store_build::error::Rule;
 
 use crate::build;
 use crate::refusals::{with_cologne_book, with_override, COLOGNE_BOOK, DEAD_COLOGNE_RECORD};
 use crate::support::{
     band, built, changed, minimal, texts, with_curation, with_curation_in, with_label, with_link, with_page,
-    with_resource, with_text, with_value, ADDED, BOOK, HAS_BAND_TYPE_L, HAS_DESCRIPTION, HAS_URI, OTHER,
+    with_resource, with_text, with_value, Fixture, ADDED, BOOK, HAS_BAND_TYPE_L, HAS_DESCRIPTION, HAS_URI, OTHER,
 };
 
 /// (rule, subject) of every refusal of `snapshot`, sorted.
-fn refused(snapshot: &ProjectSnapshot) -> Vec<(Rule, String)> {
+fn refused(snapshot: &Fixture) -> Vec<(Rule, String)> {
     let mut refused: Vec<(Rule, String)> = match build(snapshot) {
         Ok(_) => Vec::new(),
         Err(errors) => {
@@ -29,7 +29,7 @@ fn refused(snapshot: &ProjectSnapshot) -> Vec<(Rule, String)> {
 }
 
 /// (rule, subject, detail) of every refusal of `snapshot`, sorted.
-fn refused_with_detail(snapshot: &ProjectSnapshot) -> Vec<(Rule, String, Option<String>)> {
+fn refused_with_detail(snapshot: &Fixture) -> Vec<(Rule, String, Option<String>)> {
     let mut refused: Vec<_> = match build(snapshot) {
         Ok(_) => Vec::new(),
         Err(errors) => {
@@ -44,7 +44,7 @@ fn refused_with_detail(snapshot: &ProjectSnapshot) -> Vec<(Rule, String, Option<
 }
 
 /// The minimal snapshot with `title` as its Book's label and as the Book's one title.
-fn titled(title: &str) -> ProjectSnapshot {
+fn titled(title: &str) -> Fixture {
     changed(minimal(), BOOK, |book| {
         book.label = title.to_string();
         for value in &mut book.values {

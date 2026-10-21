@@ -9,12 +9,14 @@
 //! this file and `config.rs` importing no CPE crate with `use`.
 //!
 //! CPE never stops its host. Nothing here fails or panics on what it finds: a
-//! configuration that is refused, a projects folder that is missing, a
-//! projection that cannot be read and a project that does not load are logged
-//! and answered over HTTP (see `unavailable`).
+//! configuration that is refused, a projects folder that is missing, a port
+//! that cannot be read and a project that does not load are logged and
+//! answered over HTTP (see `unavailable`).
 //!
-//! A project's store comes from the port and from nowhere else (ADR-0008): `activation` is where
-//! it is built, and [`Cpe::activate`] is the one way in that a host is meant to use.
+//! A project's store comes from the two ports and from nowhere else (ADR-0008, ADR-0012): the
+//! archive projection's snapshot, and the config, narrative and curation the project deposited,
+//! read through the bytes port. `activation` is where it is built, and [`Cpe::activate`] is the
+//! one way in that a host is meant to use.
 
 mod activation;
 mod assets;
@@ -92,12 +94,14 @@ impl Cpe {
         }
     }
 
-    /// Load every project folder, each with a store built from
-    /// `projection`'s snapshot of its shortcode, and serve them from then on.
+    /// Load every project folder that holds a `SHORTCODE`, each from what
+    /// the two ports serve for that shortcode: its config, narrative and
+    /// curation from `files`, and a store built from `projection`'s snapshot.
+    /// Serve them from then on.
     ///
-    /// Blocking: it reads the projects folder and asks the projection once
-    /// per project, so an async host calls it inside `spawn_blocking`, after
-    /// its listener is bound. It returns nothing and never panics. A project
+    /// Blocking: it reads the projects folder and asks each port for each
+    /// project, so an async host calls it inside `spawn_blocking`, after its
+    /// listener is bound. It returns nothing and never panics. A project
     /// that does not load is logged with its id and answers 503 on its
     /// prefix, and the others are served and listed at the base; any other
     /// path that names no project is CPE's not-found. A later call loads
@@ -106,13 +110,14 @@ impl Cpe {
     ///
     /// "Never panics" rests on unwinding: a binary built with
     /// `panic = "abort"` loses it.
-    pub fn activate(&self, projection: &dyn cpe_ports::ArchiveProjection) {
+    pub fn activate(&self, projection: &dyn cpe_ports::ArchiveProjection, files: &dyn cpe_ports::DepositedFiles) {
         if self.config.refusal().is_some() {
             return;
         }
         let config = &self.config;
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| activation::from_projection(config, projection)))
-        {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            activation::from_ports(config, projection, files)
+        })) {
             Ok(activated) => self.store(activated),
             Err(payload) => tracing::error!(
                 panic = activation::panic_message(payload.as_ref()),
@@ -121,8 +126,9 @@ impl Cpe {
         }
     }
 
-    /// CPE over the project folders that hold a `data.sql`, each opened from
-    /// that SQL text. Blocking: it reads the projects folder.
+    /// CPE over the project folders that hold a `config.kdl` and a
+    /// `data.sql`, each opened from that SQL text, its config and narrative
+    /// read from the folder. Blocking: it reads the projects folder.
     ///
     /// For the incubator's host and for tests only. Removable once no project
     /// ships a `data.sql` (DEV-7498).
@@ -318,6 +324,17 @@ mod tests {
         let (status, headers, _) = get(&cpe, "/delta/no-such-page").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert!(!headers.contains_key(header::LOCATION));
+    }
+
+    /// The folders hold a `config.kdl` and no `SHORTCODE`: the legacy path keeps reading them.
+    #[tokio::test]
+    async fn from_sql_folders_serves_its_folders_without_a_shortcode_while_activation_finds_none() {
+        let root = mixed_projects();
+        assert!(crate::discovery::discover_for_activation(root.path()).projects.is_empty());
+        let cpe = Cpe::from_sql_folders(&config_for(root.path()));
+        let (status, _, body) = get(&cpe, "/delta/").await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body.contains("Delta Fixture"), "{body}");
     }
 
     #[tokio::test]

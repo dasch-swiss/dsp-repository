@@ -25,6 +25,7 @@ tracing = { workspace = true }
 [dev-dependencies]
 # `test` feature enables figment::Jail for isolated env-var config tests.
 figment = { version = "0.10", features = ["env", "toml", "test"] }
+media-store = { path = "../../media/store" }
 sha2 = "0.10"
 sync-store = { path = "../../sync/store" }
 tempfile = "3"

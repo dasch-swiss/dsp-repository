@@ -632,3 +632,44 @@ ADR-0012 narrows the clause **A project is a folder** and keeps the port clause 
   is consumed at activation.
 
 Enforced by: as ADR-0012.
+
+## Amendment (2026-10-21, DEV-7511, DEV-7512) — the bytes port as built; the store's header names both ports
+
+The amendment of 2026-10-11 (DEV-7465) on activation says that the SQL text CPE renders for Incunabula "is byte
+for byte the file the prototype embeds, which a test holds". Since the configuration comes through the bytes
+port (amendment of 2026-10-13), the header that text starts with was false: it said "Not from the port: the
+remodel block of projects/incunabula/config.kdl". A pinned falsehood is worse than a re-pin, so this amendment
+narrows that clause to the text below the header:
+
+- **The header names both ports.** `cpe-store-build`'s `sql::header` writes that the facts are the archive
+  projection's snapshot of the shortcode, that the remodel block comes from the bytes port as
+  `<shortcode>/config.kdl` (and the curation as `<shortcode>/curation.csv` when the block reads a curated
+  key), and, for a project with a hook, that the hook comes from no port. The header ends at the first blank
+  line.
+- **The text below the header is byte for byte the prototype's.** `cpe-server`'s test
+  `incunabulas_store_text_below_its_header_is_the_prototypes` holds its length and SHA-256 to the values taken
+  before the header changed; `incunabulas_whole_store_text_is_pinned` holds the whole text, header included,
+  to new values.
+- **The incubator's `data.sql` follows on its next re-vendor, not by itself.** Its freshness test
+  (`dsp-incubator cpe/store-build/tests/it/fresh.rs`) fails when the committed `data.sql` is not the builder's
+  output byte for byte. Once the incubator vendors this builder, that test fails until `data.sql` is
+  regenerated with `just cpe store-build incunabula --inplace`, the step its re-vendor procedure already has
+  (`dsp-incubator cpe/projects/incunabula/PROVENANCE.md`); the regenerated file has the new header and the
+  same text below it.
+- **The interim of the amendment of 2026-10-13 has ended.** Incunabula's KDL, narrative and curation are
+  deposited files in `media`'s stand-in directory, `areas/access/media/data/0803/`, and `sync` serves no
+  curation. A project folder declares its shortcode in a one-line `SHORTCODE` file: activation discovers a
+  project by it and refuses a project whose KDL declares another shortcode, or whose shortcode another folder
+  declares too. The folder's `assets/` stay, read at activation and served from memory, until `media` serves
+  assets at request time; that is the one exception to "no asset is consumed at activation" left.
+- **The bytes port is built at the minimum ADR-0012 allows.** It serves every file the stand-in holds and
+  refuses none for want of a right; the stand-in holds public files only, and CPE serves every request as the
+  anonymous consumer. Activation runs once per start, so a file edited under `MEDIA_DATA_DIR` reaches CPE only
+  when the Access binary restarts. Not yet in code: each file's rights attached, with CPE deciding at request
+  time (ADR-0012, ADR-0013; not scheduled); the ports announce change, `media` and `sync` owning the trigger,
+  and CPE rebuilds the one project named (ADR-0012, DEV-7622).
+
+Enforced by: static-analysis (the two pins in `cpe-server`'s `activation` module, and the header tests in
+`cpe-store-build`'s `sql.rs`; the tests of `cpe-server`'s `activation` and `discovery` modules for the
+`SHORTCODE` rules); review for the incubator's regeneration, which is another repository's, and for the
+`assets/` exception.

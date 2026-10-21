@@ -14,7 +14,7 @@ background = false
 on_change_strategy = "kill_then_restart"
 # Graceful SIGINT so the server releases its port before restart.
 kill = ["kill", "-s", "INT"]
-# Also watch the composition root, CPE, `sync`, the tiles crate and the
+# Also watch the composition root, CPE, `sync`, `media`, the tiles crate and the
 # `shared-*` crates, so changes in any of them rebuild — none lives under
 # `areas/access/dpe`.
 watch = [
@@ -22,6 +22,7 @@ watch = [
   "areas/access/server",
   "areas/access/cpe",
   "areas/access/sync",
+  "areas/access/media",
   "shared",
   "modules/mosaic/tiles/src",
 ]

@@ -1,5 +1,5 @@
 //! The curated overlay: what a project's editors authored about single resources, read from the
-//! snapshot's flat list of keyed texts.
+//! project's flat list of keyed texts.
 //!
 //! A key is read where the mapping declares it, for a node of a class or for the project's
 //! hook, and the builder reads three of its own on annotations. A value under a key that is
@@ -8,8 +8,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use cpe_core::remodel::Remodel;
-use cpe_ports::{CuratedValue, ProjectSnapshot};
 
+use crate::curation_file::{CuratedValue, CuratedValues};
 use crate::draft::{Draft, EntryClass};
 use crate::error::{BuildError, Rule};
 use crate::generic::text::{self, py_strip, Limits, Sentinel};
@@ -26,8 +26,8 @@ const ANNOTATION_LINK_KEYS: [&str; 3] = [KEEP, LANG, NAME];
 /// A text and its language, where the editors named one.
 pub(crate) type Text<'a> = (&'a str, Option<&'a str>);
 
-/// The snapshot's curated values by resource IRI, each resource's in the order of
-/// [`CuratedValue`]'s `Ord`: the snapshot's own order is unspecified.
+/// The project's curated values by resource IRI, each resource's in the order of
+/// [`CuratedValue`]'s `Ord`, whatever order they were given in.
 pub(crate) struct Curation<'a> {
     by_resource: BTreeMap<&'a str, Vec<&'a CuratedValue>>,
     /// The mapping's sentinel, which no curated text may hold.
@@ -35,9 +35,9 @@ pub(crate) struct Curation<'a> {
 }
 
 impl<'a> Curation<'a> {
-    pub(crate) fn read(snapshot: &'a ProjectSnapshot, sentinel: Option<&'a str>) -> Self {
+    pub(crate) fn read(curated: &'a CuratedValues, sentinel: Option<&'a str>) -> Self {
         let mut by_resource: BTreeMap<&str, Vec<&CuratedValue>> = BTreeMap::new();
-        for value in &snapshot.curation {
+        for value in curated.as_slice() {
             by_resource.entry(value.resource.as_str()).or_default().push(value);
         }
         for values in by_resource.values_mut() {
@@ -179,20 +179,15 @@ mod tests {
     const RESOURCE: &str = "http://rdfh.ch/0123/a";
     const SENTINEL: &str = "[unbekannt]";
 
-    /// A snapshot of nothing but `curation`, each (key, language, text) on [`RESOURCE`].
-    fn snapshot(curation: &[(&str, Option<&str>, &str)]) -> ProjectSnapshot {
+    /// The curated values `curation`, each (key, language, text) on [`RESOURCE`].
+    fn curated(curation: &[(&str, Option<&str>, &str)]) -> CuratedValues {
         let curated = |&(key, lang, text): &(&str, Option<&str>, &str)| CuratedValue {
             resource: ResourceIri(RESOURCE.to_string()),
             key: key.to_string(),
             lang: lang.map(str::to_string),
             text: text.to_string(),
         };
-        ProjectSnapshot {
-            shortcode: "0123".to_string(),
-            resources: Vec::new(),
-            list_nodes: Vec::new(),
-            curation: curation.iter().map(curated).collect(),
-        }
+        CuratedValues::from_unchecked(curation.iter().map(curated).collect())
     }
 
     fn rules(errors: &[BuildError]) -> Vec<(Rule, &str, Option<&str>)> {
@@ -205,13 +200,13 @@ mod tests {
     // U+001F is whitespace to Python and not to `str::trim`.
     #[test]
     fn test_said_strips_each_text_drops_the_empty_ones_and_orders_by_language() {
-        let snapshot = snapshot(&[
+        let curated = curated(&[
             ("blurb", Some("en"), " Sermons\u{1f}"),
             ("blurb", Some("de"), "Predigten "),
             ("blurb", Some("fr"), " \u{1f}"),
             ("credit", None, "Sammlung"),
         ]);
-        let curation = Curation::read(&snapshot, Some(SENTINEL));
+        let curation = Curation::read(&curated, Some(SENTINEL));
         let mut errors = Vec::new();
 
         let said = curation.said(RESOURCE, "blurb", &mut errors);
@@ -224,11 +219,11 @@ mod tests {
     /// an address. The key is refused once, by the first value's rule.
     #[test]
     fn test_said_refuses_the_key_once_by_the_first_offending_value_in_the_ports_order() {
-        let snapshot = snapshot(&[
+        let curated = curated(&[
             ("blurb", Some("en"), "see http://a.example"),
             ("blurb", Some("de"), "[unbekannt] Predigten"),
         ]);
-        let curation = Curation::read(&snapshot, Some(SENTINEL));
+        let curation = Curation::read(&curated, Some(SENTINEL));
         let mut errors = Vec::new();
 
         let said = curation.said(RESOURCE, "blurb", &mut errors);
@@ -239,8 +234,8 @@ mod tests {
 
     #[test]
     fn test_said_without_a_sentinel_takes_any_text_but_an_address() {
-        let snapshot = snapshot(&[("credit", None, "[unbekannt]"), ("homepage", None, "http://a.example")]);
-        let curation = Curation::read(&snapshot, None);
+        let curated = curated(&[("credit", None, "[unbekannt]"), ("homepage", None, "http://a.example")]);
+        let curation = Curation::read(&curated, None);
         let mut errors = Vec::new();
 
         let credit = curation.said(RESOURCE, "credit", &mut errors);
@@ -253,13 +248,13 @@ mod tests {
 
     #[test]
     fn test_at_most_one_counts_the_texts_left_once_stripped() {
-        let snapshot = snapshot(&[
+        let curated = curated(&[
             ("credit", None, " Sammlung "),
             ("credit", Some("de"), " "),
             ("blurb", Some("de"), "Predigten"),
             ("blurb", Some("en"), "Sermons"),
         ]);
-        let curation = Curation::read(&snapshot, Some(SENTINEL));
+        let curation = Curation::read(&curated, Some(SENTINEL));
         let mut errors = Vec::new();
 
         let credit = curation.at_most_one(RESOURCE, "credit", &mut errors);

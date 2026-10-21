@@ -54,6 +54,8 @@ pub(crate) fn check_digit(id: &str) -> Result<char, ArkError> {
 pub(crate) fn data_ark(iri: &str) -> Result<DataArk, ArkError> {
     let rest = iri.strip_prefix(RESOURCE_IRI_PREFIX).ok_or(ArkError::NotResourceIri)?;
     let (shortcode, id) = rest.split_once('/').ok_or(ArkError::NotResourceIri)?;
+    // Either case is accepted because the ARK upper-cases it; the result must satisfy the
+    // canonical rule, `cpe_ports::is_shortcode`.
     if shortcode.len() != 4 || !shortcode.chars().all(|c| c.is_ascii_hexdigit()) || id.contains('/') {
         return Err(ArkError::NotResourceIri);
     }

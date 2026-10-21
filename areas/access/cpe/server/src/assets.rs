@@ -65,11 +65,11 @@ mod tests {
     use std::path::Path;
 
     use super::*;
-    use crate::discovery::discover;
+    use crate::discovery::discover_sql_folders;
     use crate::tests::{config_for, fixture};
 
     fn fixture_assets() -> AssetInventory {
-        AssetInventory::of(&discover(
+        AssetInventory::of(&discover_sql_folders(
             &Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/discovery"),
         ))
     }

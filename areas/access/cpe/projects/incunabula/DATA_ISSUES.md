@@ -246,7 +246,7 @@ it consciously (`../../docs/INCUNABULA_GO_LIVE.md`).
 build refuses the Book as soon as the archive no longer has the dead address. The check is a rule of the project's
 hook, `store-build/src/projects/incunabula/catalogue.rs`. Since DEV-7497 (2026-10-11) the two
 addresses are curated values of the three Books, `catalogue_uri` and `catalogue_uri_replaces` in the monorepo's
-`0803-curation.csv`; the hook rule reads them and keeps the check.)*
+curation file, `areas/access/media/data/0803/curation.csv`; the hook rule reads them and keeps the check.)*
 
 Observed and consistent: `dsp_id` joins 19 of 19 Books to 19 of 19 `curation.csv` rows (asserted by `cpe-export`); the
 old `books.csv` titles of the 15 other books equal the DAO labels exactly; `page_count` equals the DAO's Page count for

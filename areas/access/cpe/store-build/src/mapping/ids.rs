@@ -7,8 +7,9 @@
 use std::collections::BTreeMap;
 
 use cpe_core::remodel::{ClassIndex, IdPolicy, IdSource, Remodel, RemodelClass, RemodelProperty};
-use cpe_ports::{CuratedValue, Resource};
+use cpe_ports::Resource;
 
+use crate::curation_file::CuratedValue;
 use crate::draft::{names, Draft, Entry, EntryClass, Value};
 use crate::error::{refuse_shared_keys, BuildError, Rule};
 use crate::generic::curation::Curation;

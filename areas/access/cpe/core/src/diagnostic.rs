@@ -96,8 +96,8 @@ pub enum DiagnosticKind {
     /// A `chrome` block is missing translations for one or more declared
     /// languages.
     IncompleteChromeTranslation,
-    /// A narrative component references a file that is not present in the
-    /// bundle's `narrative/` directory.
+    /// A narrative component references a file that is not among the
+    /// project's narrative files.
     NarrativeFileNotFound,
     /// A narrative path contains `..` or a path separator, which would escape
     /// the `narrative/` directory.

@@ -17,14 +17,14 @@ use cpe_ports::{
 };
 use cpe_store_build::error::Rule;
 use cpe_store_build::store::{Store, Table};
-use cpe_store_build::{build, sql, SCHEMA_SQL};
+use cpe_store_build::{sql, SCHEMA_SQL};
 use rusqlite::Connection;
 
 use crate::support::{
-    changed, curated, fixture_member, fixture_resource, link, link_to, lowered, minimal_snapshot, properties,
-    recurated, region_on, resources, shown, still_image, text, values, with_annotation, with_curation,
-    with_curation_in, with_label, with_link, with_resource, with_text, with_value, year_1489, HAS_COLOR, HAS_GEOMETRY,
-    HAS_LINK_TO, IS_REGION_OF, KB_HAS_COMMENT, LINK_OBJ_CLASS, MINIMAL, RECTANGLE, REGION_CLASS, THING,
+    build_with, changed, curated, fixture_member, fixture_resource, link, link_to, lowered, minimal_snapshot,
+    properties, recurated, region_on, resources, shown, still_image, text, values, with_annotation, with_curation,
+    with_curation_in, with_label, with_link, with_resource, with_text, with_value, year_1489, Fixture, HAS_COLOR,
+    HAS_GEOMETRY, HAS_LINK_TO, IS_REGION_OF, KB_HAS_COMMENT, LINK_OBJ_CLASS, MINIMAL, RECTANGLE, REGION_CLASS, THING,
 };
 
 /// The mapping of the fixture project `plain`.
@@ -83,7 +83,7 @@ const HOMEPAGE: &str = "https://example.org/predigten";
 /// The Work's texts are as an archive serves them: the title that repeats the label ends in a
 /// record separator, one note ends in a space and one is whitespace alone, and its place is
 /// the sentinel.
-fn snapshot() -> ProjectSnapshot {
+fn snapshot() -> Fixture {
     let work = Resource {
         values: values(vec![
             (HAS_NOTE, text("Zweite Notiz ")),
@@ -130,7 +130,7 @@ fn snapshot() -> ProjectSnapshot {
         }),
         ..fixture_resource(LINK, LINK_OBJ_CLASS, "")
     };
-    let snapshot = ProjectSnapshot {
+    let facts = ProjectSnapshot {
         shortcode: SHORTCODE.to_string(),
         resources: vec![
             leaf(LEAF_C, 1, "1v", Vec::new()),
@@ -149,35 +149,37 @@ fn snapshot() -> ProjectSnapshot {
             fixture_resource(PERSON, PERSON_CLASS, "Anna Muster"),
         ],
         list_nodes: Vec::new(),
-        curation: vec![
-            curated(REGION, "lang", None, "de"),
-            curated(WORK, "slug", None, "predigten"),
-            curated(WORK, "blurb", Some("en"), "Sermons for every Sunday."),
-            curated(LINK, "name", None, "Verweis auf das Werk"),
-            curated(WORK, "date_display", Some("de"), "1489"),
-            curated(ORNAMENT, "technique", None, "woodcut"),
-            curated(WORK, "cover", None, LEAF_B),
-            curated(REGION, "keep", None, "yes"),
-            curated(WORK, "blurb", Some("de"), "Predigten für jeden Sonntag."),
-            curated(WORK, "genre", None, "sermon"),
-            curated(LINK, "keep", None, "yes"),
-            curated(WORK, "credit", None, " Sammlung Muster\u{1f}"),
-        ],
     };
-    assert_eq!(violations(SHORTCODE, &snapshot), []);
-    snapshot
+    let curation = vec![
+        curated(REGION, "lang", None, "de"),
+        curated(WORK, "slug", None, "predigten"),
+        curated(WORK, "blurb", Some("en"), "Sermons for every Sunday."),
+        curated(LINK, "name", None, "Verweis auf das Werk"),
+        curated(WORK, "date_display", Some("de"), "1489"),
+        curated(ORNAMENT, "technique", None, "woodcut"),
+        curated(WORK, "cover", None, LEAF_B),
+        curated(REGION, "keep", None, "yes"),
+        curated(WORK, "blurb", Some("de"), "Predigten für jeden Sonntag."),
+        curated(WORK, "genre", None, "sermon"),
+        curated(LINK, "keep", None, "yes"),
+        curated(WORK, "credit", None, " Sammlung Muster\u{1f}"),
+    ];
+    assert_eq!(violations(SHORTCODE, &facts), []);
+    Fixture { facts, curation }
 }
 
 /// [`snapshot`] as a port serves it.
-fn served() -> ProjectSnapshot {
-    let port = FakeArchiveProjection::default().with_project(snapshot());
-    port.snapshot(SHORTCODE).expect("the fake port serves the fixture's project")
+fn served() -> Fixture {
+    let Fixture { facts, curation } = snapshot();
+    let port = FakeArchiveProjection::default().with_project(facts);
+    let facts = port.snapshot(SHORTCODE).expect("the fake port serves the fixture's project");
+    Fixture { facts, curation }
 }
 
 /// (rule, subject) of every error `build` returns for `snapshot` under `mapping`, in the
 /// order returned.
-fn refused_under(snapshot: &ProjectSnapshot, mapping: &Remodel) -> Vec<(Rule, String)> {
-    match build(snapshot, mapping, None) {
+fn refused_under(snapshot: &Fixture, mapping: &Remodel) -> Vec<(Rule, String)> {
+    match build_with(snapshot, mapping, None) {
         Ok(_) => Vec::new(),
         Err(errors) => errors
             .as_slice()
@@ -188,7 +190,7 @@ fn refused_under(snapshot: &ProjectSnapshot, mapping: &Remodel) -> Vec<(Rule, St
 }
 
 /// [`refused_under`] the mapping of `plain`.
-fn refused(snapshot: &ProjectSnapshot) -> Vec<(Rule, String)> {
+fn refused(snapshot: &Fixture) -> Vec<(Rule, String)> {
     refused_under(snapshot, &PLAIN)
 }
 
@@ -207,7 +209,7 @@ pub struct Case {
     /// The feature of the mapping that refuses: a node or an attribute of the grammar.
     pub feature: &'static str,
     pub rule: Rule,
-    pub snapshot: fn() -> ProjectSnapshot,
+    pub snapshot: fn() -> Fixture,
     /// What the one error names.
     pub subject: &'static str,
 }
@@ -549,7 +551,7 @@ const LEAF_D: &str = "http://rdfh.ch/0123/leaf-d";
 
 /// `snapshot` with a second Work, [`ADDED`], that has every value a Work must have and `cover`
 /// as its cover.
-fn with_second_work(snapshot: ProjectSnapshot, cover: &str) -> ProjectSnapshot {
+fn with_second_work(snapshot: Fixture, cover: &str) -> Fixture {
     let work = Resource {
         values: values(vec![
             (HAS_TITLE, text("Zweites Werk")),
@@ -573,12 +575,12 @@ fn leaf_of(work: &str, iri: &str, seqnum: i64, number: &str) -> Resource {
 }
 
 /// [`snapshot`] with `file` as the file of `resource`.
-fn refiled(resource: &str, file: Option<File>) -> ProjectSnapshot {
+fn refiled(resource: &str, file: Option<File>) -> Fixture {
     changed(snapshot(), resource, |found| found.file = file)
 }
 
 /// `snapshot` with `new` as the text of every value `resource` has under `property`.
-fn retexted(snapshot: ProjectSnapshot, resource: &str, property: &str, new: &str) -> ProjectSnapshot {
+fn retexted(snapshot: Fixture, resource: &str, property: &str, new: &str) -> Fixture {
     changed(snapshot, resource, |found| {
         for value in &mut found.values {
             if value.property.as_str() == property {
@@ -589,7 +591,7 @@ fn retexted(snapshot: ProjectSnapshot, resource: &str, property: &str, new: &str
 }
 
 /// [`snapshot`] with the Work's date changed by `change`.
-fn with_date(change: fn(&mut DateValue)) -> ProjectSnapshot {
+fn with_date(change: fn(&mut DateValue)) -> Fixture {
     changed(snapshot(), WORK, |work| {
         for value in &mut work.values {
             if let ValueKind::Date(date) = &mut value.kind {
@@ -842,7 +844,7 @@ fn test_plain_fixture_declares_an_id_from_a_curated_key_a_property_a_label_and_a
 #[test]
 fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq() {
     let store =
-        build(&served(), &PLAIN, None).unwrap_or_else(|errors| panic!("the fixture's snapshot builds: {errors}"));
+        build_with(&served(), &PLAIN, None).unwrap_or_else(|errors| panic!("the fixture's snapshot builds: {errors}"));
 
     let lists: Vec<(&str, &str)> = store.lists.iter().map(|list| (list.id.as_str(), list.name.as_str())).collect();
     assert_eq!(lists, [("list-genre", "genre"), ("list-technique", "technique")]);
@@ -887,7 +889,7 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
 fn test_build_mapping_without_a_list_gives_empty_list_tables() {
     let snapshot = minimal_snapshot(Vec::new(), Vec::new());
 
-    let store = build(&snapshot, &MINIMAL, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    let store = build_with(&snapshot, &MINIMAL, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
 
     assert!(store.lists.is_empty());
     assert!(store.list_nodes.is_empty());
@@ -900,7 +902,7 @@ fn test_build_mapping_without_a_list_gives_empty_list_tables() {
 fn test_build_snapshot_of_another_shortcode_is_refused_by_the_contract_alone() {
     let mut other = with_resource(snapshot(), fixture_resource("http://rdfh.ch/0123/nul", PERSON_CLASS, "a\0b"));
     assert_eq!(refused(&other), [(Rule::InteriorNul, "http://rdfh.ch/0123/nul".to_string())]);
-    other.shortcode = "0124".to_string();
+    other.facts.shortcode = "0124".to_string();
 
     assert_eq!(refused(&other), [(Rule::ContractViolation, "0124".to_string())]);
 }
@@ -908,8 +910,8 @@ fn test_build_snapshot_of_another_shortcode_is_refused_by_the_contract_alone() {
 /// The store `build` makes of `snapshot` under the mapping of `plain`, which must load
 /// under the schema with foreign keys on: the schema checks the words of a date row and the
 /// key of every row.
-fn built(snapshot: &ProjectSnapshot) -> Store {
-    let store = build(snapshot, &PLAIN, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+fn built(snapshot: &Fixture) -> Store {
+    let store = build_with(snapshot, &PLAIN, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
     let filled: Vec<Table> = Table::ALL.into_iter().filter(|&table| store.row_count(table) > 0).collect();
     let sql = sql::to_sql_tables(&store, &PLAIN, &sql::header("plain", &PLAIN), &filled)
         .expect("every table written has a row");
@@ -1062,7 +1064,7 @@ fn test_build_resource_linked_under_two_via_properties_is_counted_twice() {
     let with_unused = with_resource(both.clone(), unused);
     let three = with_link(with_unused.clone(), LEAF_B, HAS_ORNAMENT_VERSO, ORNAMENT);
 
-    let uses = |snapshot: &ProjectSnapshot| -> Vec<(String, String)> {
+    let uses = |snapshot: &Fixture| -> Vec<(String, String)> {
         let store = built(snapshot);
         let counts = store.properties.iter().filter(|row| row.name == "uses");
         counts.map(|row| (row.resource_id.clone(), shown(row))).collect()
@@ -1195,15 +1197,15 @@ fn test_build_annotation_on_a_refused_resource_is_not_reported() {
 }
 
 /// The store file of `snapshot` under the mapping of `plain`, with the header generated for it.
-fn plain_file(snapshot: &ProjectSnapshot) -> String {
-    let store = build(snapshot, &PLAIN, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+fn plain_file(snapshot: &Fixture) -> String {
+    let store = build_with(snapshot, &PLAIN, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
     sql::to_sql(&store, &PLAIN, &sql::header("plain", &PLAIN)).expect("every table the mapping fills has a row")
 }
 
 /// The store file of [`snapshot`]: the generated header and all ten tables.
 const PLAIN_FILE: &str = r"-- plain data (Work + Leaf + Ornament + Person + Keyword + annotations), generated by cpe-store-build.
--- Source: the cpe-ports snapshot of project 0123.
--- Not from the port: the remodel block of projects/plain/config.kdl.
+-- Source: the archive projection's snapshot of project 0123.
+-- From the bytes port: the remodel block of 0123/config.kdl and 0123/curation.csv.
 -- IIIF: https://iiif.example.org/0123/
 -- DO NOT hand-edit; regenerate with: just cpe store-build plain --inplace
 
@@ -1325,14 +1327,14 @@ fn test_build_plain_snapshot_gives_the_whole_store_file() {
 #[test]
 fn test_build_reversed_snapshot_writes_the_same_file_byte_for_byte() {
     let mut reversed = snapshot();
-    reversed.resources.reverse();
+    reversed.facts.resources.reverse();
     reversed.curation.reverse();
-    for resource in &mut reversed.resources {
+    for resource in &mut reversed.facts.resources {
         assert!(resource.part_of.len() < 2, "parents to reverse as well");
         // Stable: the properties change places, the values of each do not.
         resource.values.sort_by(|a, b| b.property.cmp(&a.property));
     }
-    assert_ne!(reversed.resources[0], snapshot().resources[0]);
+    assert_ne!(reversed.facts.resources[0], snapshot().facts.resources[0]);
     assert_ne!(reversed.curation[0], snapshot().curation[0]);
 
     assert_eq!(plain_file(&reversed), PLAIN_FILE);
@@ -1346,14 +1348,14 @@ fn test_build_minimal_project_writes_resources_and_properties_only() {
     let named = changed(minimal_snapshot(Vec::new(), Vec::new()), THING, |thing| {
         thing.values = values(vec![(HAS_NAME, text("A thing"))]);
     });
-    let store = build(&named, &MINIMAL, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    let store = build_with(&named, &MINIMAL, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
 
     let file = sql::to_sql(&store, &MINIMAL, &sql::header("minimal", &MINIMAL));
 
     let expected = "\
 -- minimal data (Thing), generated by cpe-store-build.
--- Source: the cpe-ports snapshot of project 0001.
--- Not from the port: the remodel block of projects/minimal/config.kdl.
+-- Source: the archive projection's snapshot of project 0001.
+-- From the bytes port: the remodel block of 0001/config.kdl.
 -- DO NOT hand-edit; regenerate with: just cpe store-build minimal --inplace
 
 INSERT INTO resources (id, class, ark) VALUES
@@ -1461,7 +1463,7 @@ fn test_build_plain_snapshot_numbers_a_parents_members_from_1_in_positional_orde
 fn test_build_mapping_without_membership_gives_resources_and_no_compound_part() {
     let snapshot = minimal_snapshot(Vec::new(), Vec::new());
 
-    let store = build(&snapshot, &MINIMAL, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    let store = build_with(&snapshot, &MINIMAL, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
 
     assert_eq!(resources(&store), [("thing", "Thing")]);
     assert!(store.properties.is_empty());
@@ -1650,8 +1652,8 @@ remodel {
     let mapping = lowered(CONFIG);
     let labelled = |label: &str| {
         let mut snapshot = minimal_snapshot(Vec::new(), Vec::new());
-        snapshot.resources[0].label = label.to_string();
-        snapshot.resources[0].values = values(vec![(HAS_NAME, text("Another name"))]);
+        snapshot.facts.resources[0].label = label.to_string();
+        snapshot.facts.resources[0].values = values(vec![(HAS_NAME, text("Another name"))]);
         snapshot
     };
 
@@ -1721,15 +1723,17 @@ fn test_build_nul_in_a_text_of_the_mapping_is_refused_naming_its_place() {
         ),
         ("a name a hook provides", with_nul_in(HOOKED_CONFIG, "rank"), &["provides"]),
     ];
-    let empty = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: Vec::new(),
-        list_nodes: Vec::new(),
+    let empty = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: Vec::new(),
+            list_nodes: Vec::new(),
+        },
         curation: Vec::new(),
     };
 
     for (what, mapping, places) in cases {
-        let errors = build(&empty, &mapping, None).expect_err("a NUL is refused");
+        let errors = build_with(&empty, &mapping, None).expect_err("a NUL is refused");
         let nuls = errors.as_slice().iter().filter(|error| error.rule == Rule::InteriorNul);
         let refused: Vec<(&str, &str)> = nuls
             .map(|error| {
@@ -1761,18 +1765,20 @@ remodel {
     }
 }
 "#;
-    let snapshot = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: vec![Resource {
-            values: values(vec![(HAS_NOTE, text("see http://x"))]),
-            ..fixture_resource(WORK, WORK_CLASS, "Predigten, http://a.example")
-        }],
-        list_nodes: Vec::new(),
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![Resource {
+                values: values(vec![(HAS_NOTE, text("see http://x"))]),
+                ..fixture_resource(WORK, WORK_CLASS, "Predigten, http://a.example")
+            }],
+            list_nodes: Vec::new(),
+        },
         curation: Vec::new(),
     };
 
     let store =
-        build(&snapshot, &lowered(CONFIG), None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+        build_with(&snapshot, &lowered(CONFIG), None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
 
     assert_eq!(
         properties(&store),
@@ -1814,21 +1820,23 @@ remodel {
         values: values(vec![(HAS_ORNAMENT, link(ORNAMENT))]),
         ..fixture_resource(iri, class, "")
     };
-    let snapshot = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: vec![
-            fixture_resource(ORNAMENT, ORNAMENT_CLASS, ""),
-            linking(LEAF_A, LEAF_CLASS),
-            linking("http://rdfh.ch/0123/scrap-a", SCRAP_CLASS),
-            linking("http://rdfh.ch/0123/scrap-b", SCRAP_CLASS),
-        ],
-        list_nodes: Vec::new(),
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                fixture_resource(ORNAMENT, ORNAMENT_CLASS, ""),
+                linking(LEAF_A, LEAF_CLASS),
+                linking("http://rdfh.ch/0123/scrap-a", SCRAP_CLASS),
+                linking("http://rdfh.ch/0123/scrap-b", SCRAP_CLASS),
+            ],
+            list_nodes: Vec::new(),
+        },
         curation: Vec::new(),
     };
-    assert_eq!(violations(SHORTCODE, &snapshot), []);
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
 
     let store =
-        build(&snapshot, &lowered(CONFIG), None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+        build_with(&snapshot, &lowered(CONFIG), None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
 
     assert_eq!(under(&store, "uses"), [("ornament-ranke", "int 1".to_string())]);
 }
@@ -1856,18 +1864,21 @@ remodel {
     let work = |dated: bool, shown: bool| {
         let date = dated.then(|| (HAS_DATE, ValueKind::Date(year_1489())));
         let display = shown.then(|| curated(WORK, "date_display", Some("de"), "im Jahr 1489"));
-        ProjectSnapshot {
-            shortcode: SHORTCODE.to_string(),
-            resources: vec![Resource {
-                values: values(date.into_iter().collect()),
-                ..fixture_resource(WORK, WORK_CLASS, "")
-            }],
-            list_nodes: Vec::new(),
+        Fixture {
+            facts: ProjectSnapshot {
+                shortcode: SHORTCODE.to_string(),
+                resources: vec![Resource {
+                    values: values(date.into_iter().collect()),
+                    ..fixture_resource(WORK, WORK_CLASS, "")
+                }],
+                list_nodes: Vec::new(),
+            },
             curation: display.into_iter().collect(),
         }
     };
-    let made = |snapshot: &ProjectSnapshot| -> Vec<String> {
-        let store = build(snapshot, &mapping, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    let made = |snapshot: &Fixture| -> Vec<String> {
+        let store =
+            build_with(snapshot, &mapping, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
         store.properties.iter().map(shown).collect()
     };
 
@@ -1920,21 +1931,23 @@ fn shelves() -> Store {
         seqnum: Some(seqnum),
         ..fixture_resource(&iri(local), class, "")
     };
-    let snapshot = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: vec![
-            fixture_resource(&iri("shelf-a"), SHELF, ""),
-            fixture_resource(&iri("shelf-b"), SHELF, ""),
-            fixture_resource(&iri("shelf-c"), SHELF, ""),
-            member("volume-a", VOLUME, "shelf-a", 1),
-            member("box-a", BOX, "shelf-a", 2),
-            member("volume-b", VOLUME, "shelf-b", 1),
-        ],
-        list_nodes: Vec::new(),
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                fixture_resource(&iri("shelf-a"), SHELF, ""),
+                fixture_resource(&iri("shelf-b"), SHELF, ""),
+                fixture_resource(&iri("shelf-c"), SHELF, ""),
+                member("volume-a", VOLUME, "shelf-a", 1),
+                member("box-a", BOX, "shelf-a", 2),
+                member("volume-b", VOLUME, "shelf-b", 1),
+            ],
+            list_nodes: Vec::new(),
+        },
         curation: Vec::new(),
     };
-    assert_eq!(violations(SHORTCODE, &snapshot), []);
-    build(&snapshot, &lowered(SHELVES), None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"))
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
+    build_with(&snapshot, &lowered(SHELVES), None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"))
 }
 
 /// (resource, [`shown`]) of the store's values under `name`, in the store's order.

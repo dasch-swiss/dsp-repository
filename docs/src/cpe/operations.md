@@ -9,17 +9,22 @@ to CPE.
 - **Where**: every path under `/cpe` (`CPE_BASE`). A project is at `/cpe/<project id>/`; today there is one,
   Incunabula, at `/cpe/incunabula/`. `/cpe` and `/cpe/` are CPE's overview: the projects it serves, each
   with a link to its start page. Any other path that names no project is CPE's own not-found page.
-- **From what**: the project folders in `CPE_PROJECTS_DIR` (configuration, narrative, assets) and `sync`'s
-  data in `SYNC_DATA_DIR`. Both are in the image. Each project's store is built in memory from that data at
-  every start; nothing is written to disk, and a restart leaves nothing behind.
+- **From what**: the project folders in `CPE_PROJECTS_DIR` (`SHORTCODE`, assets), `sync`'s snapshots in
+  `SYNC_DATA_DIR` and `media`'s deposited files in `MEDIA_DATA_DIR` (configuration, curation, narrative). All
+  three are in the image. Each project's store is built in memory from that data at every start; nothing is
+  written to disk, and a restart leaves nothing behind.
+- **Refresh**: for now, a restart. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE only
+  when `access-server` restarts, since activation runs once. Not yet in code: the ports announce change, `sync`
+  and `media` each with an operator lever that makes its adapter announce, and CPE rebuilds the one project
+  named, with no endpoint of its own (ADR-0012, DEV-7622).
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
   `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
   project's own files at `/cpe/<project id>/_assets/…`.
 
 ## Configuration
 
-The four variables (`CPE_BASE`, `CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `SYNC_DATA_DIR`) are in the
-[environment table](../dpe/operations.md#environment-variables) of DPE Operations. The image sets all but
+The five variables (`CPE_BASE`, `CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `SYNC_DATA_DIR`, `MEDIA_DATA_DIR`) are
+in the [environment table](../dpe/operations.md#environment-variables) of DPE Operations. The image sets all but
 `CPE_PUBLIC_ORIGIN`. The three `CPE_*` values can also come from a `cpe.toml` in the working directory; the
 environment wins.
 
@@ -34,6 +39,10 @@ answer throughout. Nothing of CPE's stops the binary or delays its start.
 | Projects are still loading | `503`, every path | `CPE is mounted and activates in the background` (info) | serves |
 | A project is loaded | its pages, and its entry in the overview | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
 | `SYNC_DATA_DIR` or a project's file in it is missing | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
+| `MEDIA_DATA_DIR`, a project's directory in it, or a file the project needs from it is missing, unreadable or not UTF-8 | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `MEDIA_DATA_DIR names no directory …` at start (warning) | serves |
+| A project folder has no `SHORTCODE` | the folder is no project: CPE's not-found, `404`, on its paths | nothing | serves |
+| A project folder's `SHORTCODE` is malformed or a symlink | the project is not served: CPE's not-found, `404`, on its paths | `a project folder is not served`, with the folder and the reason (warning) | serves |
+| Two project folders declare the same `SHORTCODE` | `503` on both projects' paths | `project does not load; its prefix answers 503`, naming the other folder (error) | serves |
 | `CPE_PROJECTS_DIR` does not exist | the overview with no project, `200`, at `/cpe` and `/cpe/`; CPE's not-found, `404`, on every other path | `CPE's projects are loaded` with `served=0` (info) and nothing else | serves |
 | `CPE_PUBLIC_ORIGIN` is refused (a path, a trailing slash) | `503`, every path | `CPE's configuration is refused …`, with the reason (error) | serves |
 | `CPE_BASE` is unset or empty | not mounted: DPE's `404` | `CPE_BASE is not set: CPE is not mounted …` (warning) | serves alone |
@@ -50,7 +59,8 @@ route (`GET /cpe/incunabula/books/{id}`).
 ## Measurements
 
 Measured on 2026-10-12. Two set-ups, both with the image's environment and the committed data (Incunabula: 4,198 resources,
-20.3 MB in `SYNC_DATA_DIR`):
+20.3 MB of snapshot and curation files, on that date both in `SYNC_DATA_DIR`; the curation file has since moved
+to `MEDIA_DATA_DIR`):
 
 - **The image**, built from a staged context as CI builds it, but for `linux/arm64` (CI builds `linux/amd64`):
   a static musl binary, run with `docker run --cpus=1 --memory=512m`, the limits of a PR preview, under Docker
@@ -78,9 +88,8 @@ A PR preview on Cloud Run is deployed with `--no-cpu-throttling`. With throttlin
 while it handles a request, and `/cpe/incunabula/` answered `503` after a cold start until the sixth request.
 The load time on Cloud Run without throttling is not measured.
 
-The image's data grew by 195,708 bytes (23 files, `cpe/projects`): the staged
-directory without the binary was 69,819,957 bytes before and is 70,015,665 bytes with it. `sync/data`
-(20,281,022 bytes) was already staged.
+CPE's data in the image, counted on 2026-10-21 as the sum of the files' sizes: `sync/data` 20,264,543 bytes
+(3 files), `media/data` 90,734 bytes (19 files) and `cpe/projects` 122,868 bytes (7 files).
 
 ## Response times: the baseline for store reads on the request path
 

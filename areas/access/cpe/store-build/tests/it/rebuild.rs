@@ -1,12 +1,13 @@
-//! The store is rebuilt from nothing but what a port serves: `build` over a snapshot that
-//! `FakeArchiveProjection` serves gives every row of the store, with no adapter and no file.
+//! The store is rebuilt from nothing but what the ports serve: `build` over a snapshot that
+//! `FakeArchiveProjection` serves, and the curated values the bytes port would hand beside it,
+//! gives every row of the store, with no adapter and no file.
 
-use cpe_ports::{ArchiveProjection, FakeArchiveProjection, ProjectSnapshot};
+use cpe_ports::{ArchiveProjection, FakeArchiveProjection};
 use cpe_store_build::sql;
 use cpe_store_build::store::Table;
 
 use crate::support::{
-    band, built, link_obj, minimal, region, with_annotation, with_curation, with_link, with_resource, BOOK,
+    band, built, link_obj, minimal, region, with_annotation, with_curation, with_link, with_resource, Fixture, BOOK,
     HAS_BAND_TYPE_L, PAGE, STRIP_ASSET,
 };
 use crate::{shortcode, HEADER, MAPPING};
@@ -17,7 +18,7 @@ const LINK: &str = "http://rdfh.ch/0803/link";
 
 /// The minimal Book and Page, a border strip left of the Page, a Region on the Page and a link
 /// from the Book to the Region, both of which the editors keep: a row in every table.
-fn snapshot() -> ProjectSnapshot {
+fn snapshot() -> Fixture {
     let snapshot = with_resource(minimal(), band(STRIP, "l_1", STRIP_ASSET));
     let snapshot = with_link(snapshot, PAGE, HAS_BAND_TYPE_L, STRIP);
     let snapshot = with_annotation(snapshot, region(REGION, PAGE), "yes");
@@ -78,10 +79,11 @@ INSERT INTO annotation_link_targets (link_id, seq, annotation_id, resource_id) V
 
 #[test]
 fn test_build_snapshot_served_by_the_fake_port_gives_every_row_of_the_store() {
-    let port = FakeArchiveProjection::default().with_project(snapshot());
-    let served = port.snapshot(shortcode()).expect("the fake port serves 0803");
+    let Fixture { facts, curation } = snapshot();
+    let port = FakeArchiveProjection::default().with_project(facts);
+    let facts = port.snapshot(shortcode()).expect("the fake port serves 0803");
 
-    let store = built(&served);
+    let store = built(&Fixture { facts, curation });
 
     let lists = [Table::Lists, Table::ListNodes, Table::ListNodeLabels];
     assert_eq!(lists.map(|table| store.row_count(table)), [2, 7, 14]);

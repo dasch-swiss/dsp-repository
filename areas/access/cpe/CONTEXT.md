@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its port onto the archive projection, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. A project's KDL, narrative and curation are deposited files that CPE reads at activation through a second port, for bytes, against `media` (ADR-0012); until DEV-7511 and DEV-7512 land, the KDL and the narrative are in the project folder and `sync` serves the curation. `access-server` mounts the host crate's router at the base; the crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what its two ports serve and fed by nothing else (ADR-0008); in the target both ports serve it with rights attached, it stores each row's rights and CPE filters every request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its two ports, onto the archive projection and for bytes, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. A project's KDL, narrative and curation are deposited files that CPE reads at activation through a second port, for bytes, against `media` (ADR-0012); Incunabula's are in `media`'s stand-in directory, `areas/access/media/data/0803/` ([`../media/CONTEXT.md`](../media/CONTEXT.md)). `access-server` mounts the host crate's router at the base; the crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what its two ports serve and fed by nothing else (ADR-0008); in the target both ports serve it with rights attached, it stores each row's rights and CPE filters every request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -13,7 +13,7 @@ The project property a value was recorded under, e.g. `incunabula:hasTitle` (`da
 _Avoid_: canonical predicate, data predicate (DAO's `dcterms:title` or project-term IRI in the data, which can merge two properties into one).
 
 **Project snapshot**:
-`cpe_ports::ProjectSnapshot`, one project's current facts, whole, as one call to the port returns them: its resources and its list nodes, and beside them its **Curation**. It carries no revision and announces no change, so every rebuild starts from empty.
+`cpe_ports::ProjectSnapshot`, one project's current facts, whole, as one call to the port returns them: its resources and its list nodes. Its **Curation** is not in it. It carries no revision and announces no change, so every rebuild starts from empty.
 _Avoid_: dump (the archive's export format), delta, page (a snapshot is never partial).
 
 **Archive-shaped fact**:
@@ -30,27 +30,38 @@ _Avoid_: presentation ARK (ADR-0007's open kind), version ARK, Pid.
 
 **Curation**:
 What a project's editors authored about one resource and the archive does not record: a resource, a key, an
-optional language and a text, one row per resource in the project's curation file. It is a deposited file
-and reaches CPE through the **Bytes port**, where CPE's reader parses it and validates it against the store
-at activation (ADR-0012). A key means nothing to the port, to `sync` or to `media`: the project's KDL and
-hook give it its meaning. Until DEV-7511: `cpe_ports::CuratedValue`, served by `sync` in
-`ProjectSnapshot.curation` beside the **Archive-shaped facts**, under a record that is superseded (ADR-0010).
+optional language and a text, one row per resource in the project's curation file, `curation.csv`. It is a
+deposited file and reaches CPE through the **Bytes port** (ADR-0012). At **Activation**
+`cpe_store_build::CuratedValues::parse` reads it against the project's **Project snapshot**, and refuses a row
+whose resource the snapshot does not hold, a repeated row and a malformed one; the builder then takes the
+parsed values. A project that deposited no curation file has none, unless its **Mapping** reads a curated
+key (`Remodel::reads_curation`); then it is an **Unavailable project**. A key means nothing to the port, to
+`sync` or to `media`: the project's KDL and hook give it its meaning.
 _Avoid_: configuration (project-wide, declared in the project's KDL), archive fact.
 
 **Bytes port**:
-CPE's second port, planned (DEV-7511): the deposited files of one project by shortcode and name, whole or
-refused, with their bytes and their rights: its KDL, its curation file, its narrative. CPE declares it and `media` implements
-it beside its data (ADR-0012), as `media` implements DaTEI's; a `Fake<Port>` serves CPE's tests. It carries no
-fact and gives no file a meaning; an asset (an image, a download) never comes through it, since assets are
-fetched at request time by URL.
+`cpe_ports::DepositedFiles`, CPE's second port: the deposited files of one project by shortcode and name,
+whole or refused, with their bytes: its KDL (`config.kdl`), its curation file (`curation.csv`), its narrative
+(`narrative/<name>`). In the target each file comes with its rights attached and CPE decides at request time
+(ADR-0013); not yet in code, the port carries no rights. CPE declares it and `media` implements it beside its data as `LiveDepositedFiles`
+(ADR-0012); CPE's tests use `FakeDepositedFiles`. It lists nothing: CPE asks for the narrative files its KDL
+names. A project it does not hold is `UnknownProject`, a file it does not hold `UnknownFile`, and any other
+failure `Unavailable`. It carries no fact and gives no file a meaning; an asset (an image, a download) never
+comes through it, since assets are fetched at request time by URL.
+Its name rule, `cpe_ports::is_file_name`, is stricter than `cpe-core`'s for a narrative file: segments of
+`[A-Za-z0-9._-]` separated by `/`, none empty or starting with `.`. A name the KDL may write and the port
+refuses is answered `UnknownFile`, so validation reports it as `NarrativeFileNotFound`, naming the file.
+Its shortcode rule, `cpe_ports::is_shortcode`, is four upper-case hex digits; it refuses `0801a`–`0801e` on
+purpose, a metadata-only split of BEOL (one DSP project, `0801`) with no Access-bucket prefix of its own.
 _Avoid_: the media port (`media` implements it; it does not own it), asset port, file API.
 
 **Project id**:
 The name of a project's folder under `projects/`, `incunabula` for Incunabula. It is also the project's URL
 segment and the key its **Hook** is looked up by. `cpe-core` has its rule: kebab-case, and none of the
 reserved ids (`DiagnosticKind::InvalidProjectId`, `ReservedProjectId`). It is not the **Shortcode** of the
-root `CONTEXT.md`, which is the archive's key for the project (`0803`); that file avoids "project id" for the
-Shortcode, and in CPE the term means the folder's name only.
+root `CONTEXT.md`, which is the archive's key for the project (`0803`) and which the folder declares in its
+one-line `SHORTCODE` file; that file avoids "project id" for the Shortcode, and in CPE the term means the
+folder's name only.
 _Avoid_: shortcode, slug, project name.
 
 ## The domain crate
@@ -137,10 +148,11 @@ The schema's tables are CPE's presentation shape, not the archive's.
 
 ## The store builder
 
-`cpe-store-build` in `store-build/` is the remodelling of ADR-0007: it turns a **Project snapshot** and a
-project's mapping into the rows of the store. It is a library with one entry,
-`build(&ProjectSnapshot, &Remodel, Option<&Hook>) -> Result<Store, BuildErrors>`, and it is pure: it reads no
-file, no clock and no environment. `sql::to_sql` renders the built `Store` as the SQL text `cpe-store` opens.
+`cpe-store-build` in `store-build/` is the remodelling of ADR-0007: it turns a **Project snapshot**, the
+project's **Curation** and its mapping into the rows of the store. It is a library with one entry,
+`build(&ProjectSnapshot, &CuratedValues, &Remodel, Option<&Hook>) -> Result<Store, BuildErrors>`, and it is
+pure: it reads no file, no clock and no environment; `CuratedValues::parse` reads the curation file's bytes,
+which its caller fetched. `sql::to_sql` renders the built `Store` as the SQL text `cpe-store` opens.
 
 **Mapping**:
 The `remodel {}` block of a project's `config.kdl`, lowered by `cpe-core` to `cpe_core::remodel::Remodel`: which
@@ -156,12 +168,14 @@ declaration, a declaration without a hook, and any read or change beyond it. A h
 `hook::Draft` of the mapped resources and never sees the snapshot. Incunabula has the only one. A project
 with a hook therefore adds a module and a table row to this crate, and its names to two hand-kept lists of
 the crate's `tests/it/hygiene.rs`; the crate's `README.md`, "Adding a project", has every step. A project
-without one is a folder alone (ADR-0007, amendment of 2026-10-11, DEV-7465).
+without one adds no code: a folder with its `SHORTCODE`, and its deposited files (ADR-0007, amendment of
+2026-10-11, DEV-7465; ADR-0012).
 _Avoid_: script, plugin (a hook is compiled in and typed), registry entry in the project's folder.
 
 The crate depends on `cpe-core` and `cpe-ports`, and not on `cpe-store`: it includes `store/schema.sql` as text. Its tests over Incunabula read the committed
 0803 snapshot through `sync-store`'s adapter, which is a dev-dependency and never a dependency (ADR-0008,
-amendment of 2026-10-11). The rule table of what the builder does to each value is in its `README.md`.
+amendment of 2026-10-11), and Incunabula's `config.kdl` and `curation.csv` from `media`'s stand-in directory
+as files. The rule table of what the builder does to each value is in its `README.md`.
 
 ## The page assembly
 
@@ -210,10 +224,12 @@ files and the inventory of the projects' assets. No type of another CPE crate is
 host does. A host's tracing layer sees the router as one service, so every response of a route carries
 the route's template in its extensions (`MatchedRoute`, the base in front), and the host names its request
 span by it. `access-server` is that host: it nests the router at the base and activates CPE over
-`sync-store`'s adapter.
+`sync-store`'s and `media-store`'s adapters.
 
 `CpeConfig` is read from `cpe.toml` and `CPE_*`: the projects directory (`CPE_PROJECTS_DIR`), the public
-origin (`CPE_PUBLIC_ORIGIN`) and the base (`CPE_BASE`). Reading it cannot fail. A value that cannot be used
+origin (`CPE_PUBLIC_ORIGIN`) and the base (`CPE_BASE`). It names no data directory: the deposited files and the
+snapshots come through the two ports, whose adapters the host constructs over its own directories
+(`MEDIA_DATA_DIR`, `SYNC_DATA_DIR`). Reading it cannot fail. A value that cannot be used
 is kept as a refusal, and `Cpe`'s router then answers 503 on every path.
 
 **Base**:
@@ -238,11 +254,13 @@ _Avoid_: home, landing page (a project's `/` page is its start page), index (DPE
 `overview` tab of DPE's project page (`areas/access/CONTEXT.md`).
 
 **Activation**:
-`Cpe::activate(&dyn ArchiveProjection)`: the one step that loads the projects. For each project folder it
-reads the configuration, the narrative and the assets from disk (after DEV-7511: the configuration and the
-narrative through the **Bytes port**), asks the port once for the **Project
-snapshot** of the shortcode the **Mapping** declares, builds the store with `cpe-store-build` and the
-project's **Hook**, and loads the project (`cpe-web`'s `Project::load`), which validates the configuration
+`Cpe::activate(&dyn ArchiveProjection, &dyn DepositedFiles)`: the one step that loads the projects. For each
+project folder it reads the shortcode of its `SHORTCODE` and asks the **Bytes port** for that project's
+`config.kdl`; refuses the project when the **Mapping** declares another
+shortcode; asks for each narrative file the KDL names, the base name and its variant in each site language,
+and takes an `UnknownFile` as absent; asks for `curation.csv`; asks the archive projection port once for the
+**Project snapshot**; reads the **Curation** against it; builds the store with `cpe-store-build` and the
+project's **Hook**; reads the assets from the folder; and loads the project (`cpe-web`'s `Project::load`), which validates the configuration
 against the store. It is blocking, returns nothing and does not panic; a host calls it once, off the async
 runtime, after its listener is bound. `Cpe::router` may be taken and mounted before: it answers 503 until
 activation has finished and the projects' routes from then on.
@@ -250,14 +268,18 @@ _Avoid_: boot, start-up (the process is already serving), warm (DPE's verb, whic
 builds what is served). One project's step inside it is its load.
 
 **Unavailable project**:
-A project folder that did not activate: its configuration does not parse or validate, the port has no
-snapshot for its shortcode or cannot be read, the build refuses the data, or any of these panics. It is
+A project folder that did not activate: another folder declares its shortcode, a port does not hold the
+project or cannot be read, a deposited file is not UTF-8 or a required one is not there (its `config.kdl`; its
+`curation.csv` when the **Mapping** reads a curated key), its configuration does not parse or validate (a
+narrative file it names and the port does not hold included), the KDL declares another shortcode than
+`SHORTCODE`, the curation file or the build refuses the data, or any of these panics. It is
 logged with its id, and every path under its prefix is answered 503 with `Retry-After` and
 `Cache-Control: no-store`; the other projects are served ("a project fails alone", ADR-0007, amendment of
 2026-10-11 on activation), and the **Overview** does not list it. 404 is for a path that names no project
 folder. A folder is a project when its
-name passes the **Project id** rule and it holds a `config.kdl`; a folder that fails the rule is logged and
-is not a project.
+name passes the **Project id** rule and it holds a regular `SHORTCODE` file whose trimmed text passes
+`cpe_ports::is_shortcode`. A folder that fails either is not a project, so its paths are 404; it is logged,
+unless it holds no `SHORTCODE` at all.
 ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-7403's.
 _Avoid_: missing project (that is the 404).
 
@@ -265,35 +287,40 @@ Nothing in a request reaches the file system. Discovery lists the projects direc
 symbolic link, the assets are read into memory at activation, and a request's project segment and path are
 looked up as strings.
 
-`Cpe::from_sql_folders` is hidden from the documentation and loads project folders that hold a committed
-`data.sql`. It is for the incubator's host and for tests, and ends with DEV-7498.
+`Cpe::from_sql_folders` is legacy, hidden from the documentation: it loads project folders that hold a
+`config.kdl` and a committed `data.sql`, and reads the configuration and the flat `narrative/` from the folder,
+not through a port. It is for the incubator's host and for tests (`server/tests/fixtures/`), and ends with
+DEV-7498.
 
 ## The project folders
 
 A project is a folder under `projects/`, named by its **Project id**, and it holds code: the project's hook
 and components, and the documents about its data (ADR-0012). Its KDL, narrative and curation are deposited
-files read through the **Bytes port**. Until DEV-7511, `projects/incunabula/` holds
-`config.kdl`, the Markdown files under `narrative/`, the files
-under `assets/` (`cpe-server` reads them at **Activation**, from `CPE_PROJECTS_DIR`), and four documents about
-the project's data (`SHAPE.md`, `CURATION.md`, `PROVENANCE.md`,
-`DATA_ISSUES.md`). Those four were written in the incubator and still describe its pipeline in places: its
+files read through the **Bytes port**, which `media` serves from `areas/access/media/data/<shortcode>/`.
+`projects/incunabula/` holds `SHORTCODE` (`0803`), the files under `assets/`, and four documents about the
+project's data (`SHAPE.md`, `CURATION.md`, `PROVENANCE.md`, `DATA_ISSUES.md`); its hook is a module of the
+builder. Those four were written in the incubator and still describe its pipeline in places: its
 committed `data.sql`, its `vendor/` directory, its `just cpe` recipes and other files of the incubator (its
 design documents, its mockup, its scripts, `dao-lift`) are not in this repository. A citation that starts
 with `dsp-incubator`, as `dsp-incubator cpe/docs/…` does in these documents, in
 `docs/src/cpe/config-language.md` and in `store-build/README.md`, names a file of that repository and not of
 this one.
 
+The `assets/` are an interim. `cpe-server` reads them from `CPE_PROJECTS_DIR` at **Activation** and serves them
+under `_assets/` until `media` serves assets at request time; then they leave the folder (ADR-0012).
+
 ## The dependency seam
 
 `just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007, amendment
 of 2026-10-11, DEV-7401). No crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`,
-which `sync-store` implements, and `cpe-server`, which `access-server` mounts (amendment of 2026-10-12); no manifest under `areas/access/cpe/` depends on a Mosaic crate;
+which `sync-store` and `media-store` implement, and `cpe-server`, which `access-server` mounts (amendment of
+2026-10-12); no manifest under `areas/access/cpe/` depends on a Mosaic crate;
 `cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate; no manifest under
-`areas/access/cpe/` names a crate of `areas/access/sync/` outside a dev-dependencies table (ADR-0008,
-amendment of 2026-10-11); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
+`areas/access/cpe/` names a crate of `areas/access/sync/` or `areas/access/media/` outside a
+dev-dependencies table (ADR-0008, amendment of 2026-10-11; ADR-0012); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
 but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but `cpe-store` (the script's `CPE_EDGES`;
 ADR-0007, amendments of 2026-10-11, DEV-7465, and of 2026-10-12). A
-rename (`package = "…"`) of a CPE, Mosaic or `sync` crate in the workspace root is reported where it is
+rename (`package = "…"`) of a CPE, Mosaic, `sync` or `media` crate in the workspace root is reported where it is
 declared, whichever crate inherits it. The
 first, second and fourth rules cover a new crate without an edit. A new crate that must stay a leaf has to be
 added to the script's `LEAVES`, and one whose CPE dependencies are to be held to its `CPE_EDGES`; one that a
@@ -306,8 +333,8 @@ dependency list (no `axum`, no `rusqlite`), and `cpe-store`'s (no `maud`, no
 ## What the port serves
 
 An adapter serves current, live facts only, and omits every fact not listed as in: it never errors on one and never substitutes a string form. A link or `part_of` whose target is omitted is itself omitted; a child of an omitted parent keeps its `seqnum`. An annotation target that is not a resource of the file is refused, unlike a link: the snapshot is not served.
-**Curation** is the one thing served that is not a fact of the archive, until DEV-7511 moves it to the
-**Bytes port** (ADR-0012).
+This is the **Archive projection port**; the **Bytes port** serves the deposited files, **Curation** among
+them (ADR-0012).
 
 | In | Out, deliberately | Why out |
 |---|---|---|
@@ -320,7 +347,7 @@ An adapter serves current, live facts only, and omits every fact not listed as i
 | Links, subject to object, `isRegionOf`, `hasLinkTo` and `isAnnotationOf` included; Regions and LinkObjs as resources with their `oa:motivatedBy` and `oa:hasTarget` | LinkValue reifications | DAO strips them (`FORMAT.md` §6) |
 | Ordered membership (`isPartOf` parents and `seqnum`) | `isSequenceOf` | No project uses it yet; added when one needs it |
 | One file per resource: still image (asset and dimensions), audio, moving image, document | Other file kinds (archive, text, external and vector still images), file bytes, original filename, MIME types, checksums | CPE builds IIIF URLs from the asset name; the rest is not presented |
-| Per-resource curation: a key, an optional language and a text (until DEV-7511) | Project-wide configuration (vocabularies with their labels and order, rights constants) and any meaning of a key | Configuration and curation are deposited files that come through the **Bytes port** against `media` (ADR-0012); `sync` serves curation only until DEV-7511 lands, under the superseded ADR-0010 |
+| — | Per-resource curation, project-wide configuration (vocabularies with their labels and order, rights constants) | Configuration and curation are deposited files that come through the **Bytes port** against `media` (ADR-0012) |
 | — | Rights and legal information (license, copyright holder, authorship) | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
 | — | Permissions, creation and deletion metadata | Not presented yet; in the target the port serves every resource with its rights attached (ADR-0012, ADR-0013) |
 | — | Deleted resources and values, superseded value versions | Not current facts |

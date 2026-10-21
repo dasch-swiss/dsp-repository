@@ -156,11 +156,11 @@ The requirement asks for a status and nothing else. It is rendered inside the pa
 
 ### Per-project scope
 
-`Principal::may_reach` is the whole rule. RDU is unconditional, because RDU access is role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments.
+`Principal::may_reach` is the whole rule. RDU is unconditional, because RDU access is role-based rather than per-project — which is also why an RDU account's assigned-project set is empty. A depositor is confined to their assigned projects.
 
-The comparison **ignores ASCII case**. The published set mixes `080C` with `0801a`, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.
+The comparison **ignores ASCII case**. The published set mixes `080C` with `0801a`, so which half of a shortcode is capitalised is not something an RDU member typing an assigned project can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.
 
-A shortcode is validated for shape before the assignment is consulted by `shared_metadata::is_valid_shortcode`, the single copy DPE and the editor share. The rule is **ASCII alphanumeric with a 16-character bound**, not DSP-API's four hex digits (`KnoraProject.scala`): `0801a` through `0801e` are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.
+A shortcode is validated for shape before the assigned project is consulted by `shared_metadata::is_valid_shortcode`, the single copy DPE and the editor share. The rule is **ASCII alphanumeric with a 16-character bound**, not DSP-API's four hex digits (`KnoraProject.scala`): `0801a` through `0801e` are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.
 
 ### Landing where you were going
 
@@ -186,9 +186,9 @@ Removal is exactly what was asked for — the row and every session belonging to
 - The **address** is deleted with the row, and it is RDU's only channel to its owner. The confirmation shows it to be copied first.
 - A **submission** the account made stays pending with no author. The editor's database keeps the author's id, which no account answers for any more, so the work survives and the review queue's "last editor" reads as unknown; but "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.
 
-Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assignment change takes away access and nothing else, RDU still sees the draft, and another assigned depositor can continue it.
+Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assigned-project change takes away access and nothing else, RDU still sees the draft, and another assigned depositor can continue it.
 
-**Update is not a requirement.** Create and remove are the whole of what was asked for. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assignments and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.
+**Update is not a requirement.** Create and remove are the whole of what was asked for. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assigned projects and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.
 
 ### Addresses on screen, and keeping them out of logs
 

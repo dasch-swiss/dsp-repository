@@ -5,7 +5,7 @@
 //! [`crate::pages::section`], which `/projects/{shortcode}` redirects into, so
 //! exactly one place decides where a project link lands.
 //!
-//! An assignment naming no published project is skipped rather than rendered as
+//! An assigned shortcode matching no published project is skipped rather than rendered as
 //! a nameless row: a project assigned before it is published, or one that
 //! exists only locally, is a real state. The two empty states say different
 //! things, because they send the reader to different people.
@@ -24,11 +24,11 @@ pub struct AssignedProject<'a> {
     pub state: ProjectState,
 }
 
-/// `GET /projects` for a depositor. `assignments` is how many shortcodes the
+/// `GET /projects` for a depositor. `assigned_count` is how many shortcodes the
 /// account holds, not `rows.len()`: a shortcode with no published project is not
 /// a row, and the difference separates "nobody assigned you anything" from "your
 /// projects are not published yet".
-pub fn assigned(rows: &[AssignedProject<'_>], assignments: usize) -> Markup {
+pub fn assigned(rows: &[AssignedProject<'_>], assigned_count: usize) -> Markup {
     html! {
         div class="max-w-4xl py-8" {
             h1 class="font-display text-2xl mb-2" { "Your projects" }
@@ -38,16 +38,16 @@ pub fn assigned(rows: &[AssignedProject<'_>], assignments: usize) -> Markup {
                 p class="text-gray-600 mt-4" {
                     a href="/states" class="underline" { "What do these states mean?" }
                 }
-            } @else if assignments == 0 {
+            } @else if assigned_count == 0 {
                 p class="text-gray-600" {
                     "No projects are assigned to your account yet. RDU assigns them; ask them to add yours."
                 }
             } @else {
                 p class="text-gray-600" {
                     "Your account is assigned "
-                    (assignment_count(assignments))
-                    ", but none of them is in the published set this deployment carries. Ask RDU to check the \
-                     assignment."
+                    (assigned_project_count(assigned_count))
+                    ", but none of them is in the published set this deployment carries. Ask RDU to check which \
+                     projects are assigned to you."
                 }
             }
         }
@@ -55,7 +55,7 @@ pub fn assigned(rows: &[AssignedProject<'_>], assignments: usize) -> Markup {
 }
 
 /// `GET /projects` for an RDU member: the whole published set, since RDU access
-/// is role-based and the account's `shortcodes` is empty by design.
+/// is role-based and the account's `assigned_shortcodes` is empty by design.
 pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
     html! {
         div class="max-w-4xl py-8" {
@@ -153,7 +153,7 @@ fn status_label(status: &str) -> &str {
 }
 
 /// "1 project" / "3 projects" — enough grammar to avoid "1 projects".
-fn assignment_count(count: usize) -> String {
+fn assigned_project_count(count: usize) -> String {
     if count == 1 {
         "1 project".to_string()
     } else {
@@ -197,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    fn test_no_assignments_says_who_fixes_it() {
+    fn test_no_assigned_projects_says_who_fixes_it() {
         // A new account has none, so it must not read as an error page.
         let out = assigned(&[], 0).into_string();
         assert!(out.contains("RDU assigns them"), "{out}");
@@ -205,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn test_assignments_that_are_all_unpublished_is_a_different_message() {
+    fn test_assigned_projects_that_are_all_unpublished_is_a_different_message() {
         // Told "nobody has assigned you anything", a depositor whose projects
         // are merely unpublished goes to the wrong person for help.
         let out = assigned(&[], 2).into_string();
@@ -215,7 +215,7 @@ mod tests {
     }
 
     #[test]
-    fn test_one_unpublished_assignment_is_counted_in_the_singular() {
+    fn test_one_unpublished_assigned_project_is_counted_in_the_singular() {
         let out = assigned(&[], 1).into_string();
         assert!(out.contains("1 project,"), "{out}");
         assert!(!out.contains("1 projects"), "{out}");
@@ -255,7 +255,7 @@ mod tests {
     #[test]
     fn test_a_shortcode_and_a_name_are_escaped_wherever_they_are_rendered() {
         // Both arrive from data: the shortcode from a path segment or a stored
-        // assignment, the name from a project file.
+        // assigned project, the name from a project file.
         let hostile = "<script>alert(1)</script>";
         let summaries = [summary(hostile, hostile, hostile)];
         let assigned_rows = [row(hostile, hostile, hostile)];

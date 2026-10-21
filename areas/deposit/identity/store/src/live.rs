@@ -40,7 +40,7 @@ impl Authenticator for LiveAuthenticator {
                     Role::Depositor => editor_ports::Role::Depositor,
                     Role::Rdu => editor_ports::Role::Rdu,
                 },
-                shortcodes: user.shortcodes,
+                assigned_shortcodes: user.shortcodes,
                 signed_out_at: viewer.signed_out_at.into(),
             })
         })
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(principal.account_id, id);
         assert_eq!(principal.display_name, "A Depositor");
         assert_eq!(principal.role, editor_ports::Role::Depositor);
-        assert_eq!(principal.shortcodes, vec!["0801".to_string()]);
+        assert_eq!(principal.assigned_shortcodes, vec!["0801".to_string()]);
         // The idle deadline comes first on a fresh session: it is the one the page warns about.
         assert_eq!(
             DateTime::<Utc>::from(principal.signed_out_at),

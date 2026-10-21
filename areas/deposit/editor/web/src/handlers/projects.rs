@@ -33,30 +33,30 @@ pub(crate) const NOT_ASSIGNED: &str =
 
 /// `GET /projects` — what this account may edit.
 pub(crate) async fn list(State(state): State<EditorState>, Authenticated(user): Authenticated) -> Response {
-    // Not one page with a branch inside it: an RDU account's `shortcodes` is
+    // Not one page with a branch inside it: an RDU account's `assigned_shortcodes` is
     // empty by design, so rendering it through the depositor's list
     // would tell an administrator they have no projects.
     let content = if user.principal.is_rdu() {
         let rows: Vec<_> = state.published.summaries().collect();
         crate::pages::projects::rdu_overview(&rows)
     } else {
-        // The rows are the intersection of the assignments and the published
-        // set; the count is the assignments themselves. Both are passed because
+        // The rows are the intersection of the assigned shortcodes and the published
+        // set; the count is the assigned shortcodes themselves. Both are passed because
         // the difference is a distinct state with a distinct message — a
         // depositor whose projects are merely unpublished must not be told
         // nobody assigned them anything.
-        let summaries: Vec<_> = state.published.summaries_for(&user.principal.shortcodes).collect();
+        let summaries: Vec<_> = state.published.summaries_for(&user.principal.assigned_shortcodes).collect();
         let mut rows = Vec::with_capacity(summaries.len());
         for summary in summaries {
             // One read set per row rather than one for the page: a depositor
-            // holds a handful of assignments, and the bulk query this would
+            // holds a handful of assigned projects, and the bulk query this would
             // otherwise need is three new ports for a list that is never long.
             match project_state(&state, summary.shortcode).await {
                 Ok(project) => rows.push(AssignedProject { summary, state: project }),
                 Err(error) => return storage_error(&state, &user, "read this project's state", &error),
             }
         }
-        crate::pages::projects::assigned(&rows, user.principal.shortcodes.len())
+        crate::pages::projects::assigned(&rows, user.principal.assigned_shortcodes.len())
     };
     crate::shell::render(
         &state,
@@ -259,9 +259,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_the_assignment_check_ignores_case_so_a_typed_shortcode_still_works() {
+    async fn test_the_assigned_project_check_ignores_case_so_a_typed_shortcode_still_works() {
         // The published set mixes `080C` with `0801a`; an RDU member typing an
-        // assignment cannot be expected to get the case right, and getting it
+        // assigned shortcode cannot be expected to get the case right, and getting it
         // wrong would deny a depositor their own project with no visible cause.
         let (state, _) = test_state("project-case").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["080c"]).await;
@@ -283,9 +283,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_rdu_opens_any_project_without_an_assignment() {
+    async fn test_rdu_opens_any_project_without_an_assigned_project() {
         // RDU access is role-based, not per-project, which is why an
-        // RDU account's assignment set is empty.
+        // RDU account's assigned-project set is empty.
         let (state, _) = test_state("project-rdu").await;
         let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
         let session = a_session(&state, user.id).await;
@@ -317,7 +317,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_the_list_shows_a_depositor_their_assignments_and_nothing_else() {
+    async fn test_the_list_shows_a_depositor_their_assigned_projects_and_nothing_else() {
         // `0801d` and `080C` are real published shortcodes, so both are rows.
         let (state, _) = test_state("list-depositor").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d", "080C"]).await;
@@ -350,10 +350,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_an_assignment_with_no_published_project_is_not_a_blank_row() {
+    async fn test_an_assigned_shortcode_with_no_published_project_is_not_a_blank_row() {
         // A project assigned before it is published, and a project that exists only locally,
         // are both this state. It has to be distinguishable from
-        // having no assignments at all, or the depositor asks the wrong person.
+        // having no assigned projects at all, or the depositor asks the wrong person.
         let (state, _) = test_state("list-unpublished").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
         let session = a_session(&state, user.id).await;
@@ -384,7 +384,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_list_does_not_tell_an_rdu_member_they_have_no_projects() {
-        // An RDU account's assignment set is empty by design, so rendering it
+        // An RDU account's assigned-project set is empty by design, so rendering it
         // through the depositor's list would read as "you have none".
         let (state, _) = test_state("list-rdu").await;
         let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
@@ -436,7 +436,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_mixed_case_assignment_still_finds_its_local_records() {
+    async fn a_mixed_case_assigned_project_still_finds_its_local_records() {
         // `drafts` keys on the normalized shortcode while the published set
         // spells `080C` with a capital. Querying the stored spelling finds no
         // draft, so the project reports Online while its depositor has unsaved

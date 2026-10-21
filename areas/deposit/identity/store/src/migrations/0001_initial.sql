@@ -42,7 +42,7 @@ CREATE TABLE users (
     failed_login_at  TEXT
 ) STRICT;
 
--- Project assignments. A child table rather than a JSON
+-- Assigned projects. A child table rather than a JSON
 -- column on `users`, so "who holds shortcode X" is answerable — needed when
 -- removing a shortcode from someone who has a draft on it.
 CREATE TABLE user_shortcodes (

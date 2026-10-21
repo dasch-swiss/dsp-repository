@@ -2,7 +2,7 @@
 
 The queue, the field-by-field diff, and how a review round ends. The comparison it renders from is also the one that derives Online at startup (see [Project State](./status.md)).
 
-`GET /review` is the queue and `GET /review/{shortcode}` the field-by-field diff. Both take the `Rdu` extractor, which puts the access rule in one place — access is role-based, so there is no assignment to check and no per-project 403 to render, and an RDU account's assignment set is empty by design. The queue carries a second table of every draft, because those are visible to RDU too; a draft is not reviewable, so it is a separate table rather than a row with no controls.
+`GET /review` is the queue and `GET /review/{shortcode}` the field-by-field diff. Both take the `Rdu` extractor, which puts the access rule in one place — access is role-based, so there is no assigned project to check and no per-project 403 to render, and an RDU account's assigned-project set is empty by design. The queue carries a second table of every draft, because those are visible to RDU too; a draft is not reviewable, so it is a separate table rather than a row with no controls.
 
 ## The diff is one form, not one request per field
 

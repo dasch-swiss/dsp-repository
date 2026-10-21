@@ -312,7 +312,7 @@ async fn context<'a>(
 
     let audience = audience_of(user);
     // A section this reader does not see is a 404 rather than a 403: unlike the
-    // project above, the reader invented the segment, and there is no assignment
+    // project above, the reader invented the segment, and there is no assigned project
     // question a 403 would be answering. `legal` is RDU-only, and a depositor's
     // rail does not link to it at all.
     let Some(section) = registry::section(section_id)
@@ -1987,7 +1987,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_section_this_reader_does_not_see_is_a_404_rather_than_a_403() {
-        // The reader invented the segment, so there is no assignment question a
+        // The reader invented the segment, so there is no assigned-project question a
         // 403 would be answering — and `legal` is absent from a depositor's rail
         // entirely, so nothing linked them there.
         let (state, _) = test_state("section-audience").await;
@@ -2174,7 +2174,7 @@ mod tests {
     #[tokio::test]
     async fn one_project_has_one_draft_however_its_shortcode_is_capitalised() {
         // `drafts.shortcode` is exact-match while the published lookup and the
-        // assignment check both fold ASCII case, so keying on the path segment
+        // assigned-project check both fold ASCII case, so keying on the path segment
         // as typed would give `/080c` and `/080C` a row each — and two people
         // editing one project would each keep half the edits with nothing to say
         // so.

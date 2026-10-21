@@ -4,7 +4,7 @@
 //! An account is created from a name, an address and a set of shortcodes; a duplicate address is
 //! refused; removal takes the account and every session belonging to it. Update is here because
 //! without it correcting a misspelled name means deleting the account, which destroys its
-//! sessions, its assignments and the authorship of everything it touched, to fix a typo.
+//! sessions, its assigned projects and the authorship of everything it touched, to fix a typo.
 //!
 //! **RDU accounts are read-only here.** The list shows every account, because RDU needs to see who
 //! administers the service, but the controls act on depositors only. Configuration is the source
@@ -92,7 +92,7 @@ impl DepositorForm {
     }
 }
 
-/// Split the shortcode field into assignments, or say which entry is wrong.
+/// Split the shortcode field into assigned projects, or say which entry is wrong.
 ///
 /// Commas and whitespace both separate, because a list typed by hand arrives
 /// either way and refusing one of them teaches nothing.
@@ -106,18 +106,18 @@ impl DepositorForm {
 /// data, and naming it is the difference between a fixable error and a puzzle —
 /// this is a page, not a log, so the address-disclosure rule does not bear on it.
 fn parse_shortcodes(field: &str) -> Result<Vec<String>, String> {
-    let mut assignments: Vec<String> = Vec::new();
+    let mut assigned_shortcodes: Vec<String> = Vec::new();
     for entry in field.split([',', ' ', '\t', '\n', '\r']).filter(|e| !e.is_empty()) {
         if !is_valid_shortcode(entry) {
             return Err(format!(
                 "{entry:?} is not a project shortcode. Shortcodes are letters and digits only, for example 0801."
             ));
         }
-        if !assignments.iter().any(|held| held.eq_ignore_ascii_case(entry)) {
-            assignments.push(entry.to_string());
+        if !assigned_shortcodes.iter().any(|held| held.eq_ignore_ascii_case(entry)) {
+            assigned_shortcodes.push(entry.to_string());
         }
     }
-    Ok(assignments)
+    Ok(assigned_shortcodes)
 }
 
 /// `GET /depositors` — every account.
@@ -252,7 +252,7 @@ pub(crate) async fn edit_form(
     )
 }
 
-/// `POST /depositors/{id}` — change name, address and assignments.
+/// `POST /depositors/{id}` — change name, address and assigned projects.
 ///
 /// See the module docs for why update exists.
 #[tracing::instrument(
@@ -397,7 +397,7 @@ pub(crate) async fn remove(State(state): State<IdentityState>, Rdu(viewer): Rdu,
 
     match UserRepository::delete(&*state.store, target.id).await {
         Ok(()) => {
-            // Sessions, login codes and shortcode assignments go with it through
+            // Sessions, login codes and assigned projects go with it through
             // `ON DELETE CASCADE`, which is the "and every session belonging to it" half.
             span.record("auth.outcome", "removed");
             tracing::info!("removed a depositor account and its sessions");
@@ -504,7 +504,7 @@ mod tests {
     #[test]
     fn test_an_empty_field_assigns_nothing() {
         // A depositor with no projects is a real state — an account created a
-        // moment before the assignments are known.
+        // moment before the assigned projects are known.
         assert_eq!(parse_shortcodes("").unwrap(), Vec::<String>::new());
         assert_eq!(parse_shortcodes("  ,, ").unwrap(), Vec::<String>::new());
     }
@@ -528,8 +528,8 @@ mod tests {
     }
 
     #[test]
-    fn test_a_path_separator_in_the_field_cannot_become_an_assignment() {
-        // An assignment is compared against a path segment, so a value with a
+    fn test_a_path_separator_in_the_field_cannot_become_an_assigned_project() {
+        // An assigned project is compared against a path segment, so a value with a
         // slash in it could never match one and has no business being stored.
         for field in ["../etc", "0801/0802", "08%2f01"] {
             assert!(parse_shortcodes(field).is_err(), "{field}");

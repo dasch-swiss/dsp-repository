@@ -15,7 +15,7 @@ identity-ports = { path = "../ports" }
 identity-store = { path = "../store" }
 deposit-shell = { path = "../../shell" }
 mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
-# `is_valid_shortcode`, for the depositor form's assignments.
+# `is_valid_shortcode`, for the depositor form's assigned projects.
 shared-metadata = { path = "../../../../shared/metadata" }
 # `is_valid_traceparent`, for the `<meta name="traceparent">` every page carries.
 shared-telemetry = { path = "../../../../shared/telemetry" }

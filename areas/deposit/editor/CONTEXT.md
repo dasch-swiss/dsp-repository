@@ -6,10 +6,10 @@ The producer side of the Trusted Repository: where a depositing project team edi
 
 ### People and access
 
-Depositor, RDU, Assignment, Login code and Session are identity's terms, defined in [`areas/deposit/identity/CONTEXT.md`](../identity/CONTEXT.md).
+Depositor, RDU, Assigned project, Login code and Session are identity's terms, defined in [`areas/deposit/identity/CONTEXT.md`](../identity/CONTEXT.md).
 
 **Principal**:
-Who is asking, as the editor receives a live Session from identity: the account id, its display name, its role, its Assignments and when the Session ends (`editor-ports`). The editor's own word for the signed-in account; it never sees a `users` row.
+Who is asking, as the editor receives a live Session from identity: the account id, its display name, its role, its Assigned projects and when the Session ends (`editor-ports`). The editor's own word for the signed-in account; it never sees a `users` row.
 _Avoid_: user, viewer (the page header's name for the same person).
 
 **Account** (in `editor-web`):
@@ -92,7 +92,7 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 
 ## Relationships
 
-- A **Depositor** has zero or more **Assignments**; an **Assignment** names exactly one **Project** by Shortcode.
+- A **Depositor** has zero or more **Assigned projects**; an **Assigned project** names exactly one **Project** by Shortcode.
 - A **Project** has at most one **Draft** and at most one **Submission** at a time, and zero or more **Review rounds**.
 - A **Submission** carries one **Review state**, which holds one **Decision** and at most one **Substitution** per changed **Field**.
 - A **Review round** ends exactly one **Submission** and snapshots its **Review state**.

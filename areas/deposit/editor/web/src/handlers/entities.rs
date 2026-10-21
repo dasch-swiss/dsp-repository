@@ -11,7 +11,7 @@
 //! Same shape as `sections.rs`: [`context`] resolves a request in the order that module's own
 //! docs argue for — shape, then authorization, then anything that reads state — and a proposal
 //! under the wrong shortcode is a 404 for the same reason an unknown section id is: the reader
-//! invented the pairing, not an assignment question a 403 would answer.
+//! invented the pairing, not an assigned-project question a 403 would answer.
 
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};

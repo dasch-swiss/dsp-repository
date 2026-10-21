@@ -51,7 +51,7 @@ impl fmt::Display for Role {
 
 /// Who is asking. Built by identity, consumed by the editor's extractors.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Principal {
+pub struct Actor {
     /// The account's id. The editor parses it into the `Uuid` its records hold.
     pub account_id: String,
     /// The name, never the address: it is what the page header shows.
@@ -64,7 +64,7 @@ pub struct Principal {
     pub signed_out_at: SystemTime,
 }
 
-impl Principal {
+impl Actor {
     #[must_use]
     pub fn is_rdu(&self) -> bool {
         self.role == Role::Rdu
@@ -127,7 +127,7 @@ pub trait Authenticator: Send + Sync {
     /// `cookie_headers` is every `Cookie` header value: HTTP/2 clients may split them. Touches the
     /// session's idle timer, which is identity's write on identity's table. Fails closed: a store
     /// that cannot answer is `None`, never a guess.
-    fn authenticate<'a>(&'a self, cookie_headers: &'a [&'a str], now: SystemTime) -> PortFuture<'a, Option<Principal>>;
+    fn authenticate<'a>(&'a self, cookie_headers: &'a [&'a str], now: SystemTime) -> PortFuture<'a, Option<Actor>>;
 }
 
 /// The names behind account ids.
@@ -144,8 +144,8 @@ pub trait UserDirectory: Send + Sync {
 mod tests {
     use super::*;
 
-    fn principal(role: Role, assigned_shortcodes: &[&str]) -> Principal {
-        Principal {
+    fn actor(role: Role, assigned_shortcodes: &[&str]) -> Actor {
+        Actor {
             account_id: "00000000-0000-0000-0000-000000000000".to_string(),
             display_name: "A".to_string(),
             role,
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_a_depositor_reaches_only_the_projects_assigned_to_them() {
-        let depositor = principal(Role::Depositor, &["0801", "0812"]);
+        let depositor = actor(Role::Depositor, &["0801", "0812"]);
         assert!(depositor.may_reach("0801"));
         assert!(depositor.may_reach("0812"));
         assert!(!depositor.may_reach("0803"));
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_an_assigned_shortcode_matches_however_it_is_capitalised() {
-        let depositor = principal(Role::Depositor, &["080c"]);
+        let depositor = actor(Role::Depositor, &["080c"]);
         assert!(depositor.may_reach("080C"));
         assert!(depositor.may_reach("080c"));
         assert!(!depositor.may_reach("080E"));
@@ -172,10 +172,10 @@ mod tests {
 
     #[test]
     fn test_rdu_reaches_every_project_without_an_assigned_project() {
-        let rdu = principal(Role::Rdu, &[]);
+        let rdu = actor(Role::Rdu, &[]);
         assert!(rdu.may_reach("0801"));
         assert!(rdu.may_reach("anything"));
         assert!(rdu.is_rdu());
-        assert!(!principal(Role::Depositor, &[]).is_rdu());
+        assert!(!actor(Role::Depositor, &[]).is_rdu());
     }
 }

@@ -3,15 +3,15 @@ use std::fmt;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
-use crate::{Authenticator, PortFuture, Principal, Unavailable, UserDirectory};
+use crate::{Actor, Authenticator, PortFuture, Unavailable, UserDirectory};
 
-/// Answers with the [`Principal`] registered for a cookie's value, whatever the cookie is called.
+/// Answers with the [`Actor`] registered for a cookie's value, whatever the cookie is called.
 ///
 /// Ignores `now` and expires nothing: session lifetimes are identity's rules, tested against
 /// `identity-store`'s `LiveAuthenticator`.
 #[derive(Debug, Default)]
 pub struct FakeAuthenticator {
-    sessions: Mutex<HashMap<String, Principal>>,
+    sessions: Mutex<HashMap<String, Actor>>,
 }
 
 impl FakeAuthenticator {
@@ -20,28 +20,24 @@ impl FakeAuthenticator {
         Self::default()
     }
 
-    /// A request carrying a cookie whose value is `token` authenticates as `principal`.
+    /// A request carrying a cookie whose value is `token` authenticates as `actor`.
     #[must_use]
-    pub fn with_session(self, token: &str, principal: Principal) -> Self {
-        self.insert_session(token, principal);
+    pub fn with_session(self, token: &str, actor: Actor) -> Self {
+        self.insert_session(token, actor);
         self
     }
 
     /// [`Self::with_session`] for a fake already shared behind an `Arc`.
-    pub fn insert_session(&self, token: &str, principal: Principal) {
+    pub fn insert_session(&self, token: &str, actor: Actor) {
         self.sessions
             .lock()
             .expect("the session map lock should not be poisoned")
-            .insert(token.to_string(), principal);
+            .insert(token.to_string(), actor);
     }
 }
 
 impl Authenticator for FakeAuthenticator {
-    fn authenticate<'a>(
-        &'a self,
-        cookie_headers: &'a [&'a str],
-        _now: SystemTime,
-    ) -> PortFuture<'a, Option<Principal>> {
+    fn authenticate<'a>(&'a self, cookie_headers: &'a [&'a str], _now: SystemTime) -> PortFuture<'a, Option<Actor>> {
         let sessions = self.sessions.lock().expect("the session map lock should not be poisoned");
         let found = cookie_headers
             .iter()

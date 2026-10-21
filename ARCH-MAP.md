@@ -187,7 +187,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
   `editor-core` (the draft model, validation, the canonical project and entity writers, the
-  persistence ports), `editor-ports` (what the editor asks of identity: `Principal`,
+  persistence ports), `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveAuthoredWork` behind
   `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's field registry
@@ -205,7 +205,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
-  `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Principal`, `Authenticator`,
+  `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Actor`, `Authenticator`,
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveAuthoredWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,
   `routes`, `route_paths`, `reconcile_published`,

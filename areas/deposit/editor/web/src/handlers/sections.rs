@@ -171,7 +171,7 @@ fn unresolved_message(name: &str) -> String {
 
 /// Which fields and sections this reader sees.
 fn audience_of(user: &Account) -> Audience {
-    if user.principal.is_rdu() {
+    if user.actor.is_rdu() {
         Audience::RduOnly
     } else {
         Audience::Everyone
@@ -297,7 +297,7 @@ async fn context<'a>(
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
-    if !user.principal.may_reach(shortcode) {
+    if !user.actor.may_reach(shortcode) {
         tracing::info!(
             auth.subject = %user.id,
             project.shortcode = %shortcode,
@@ -305,7 +305,7 @@ async fn context<'a>(
         );
         return Err(crate::shell::forbidden(
             state,
-            &user.principal.display_name,
+            &user.actor.display_name,
             crate::handlers::projects::NOT_ASSIGNED,
         ));
     }
@@ -1200,7 +1200,7 @@ async fn submit(
             span.record("form.outcome", "submitted");
             tracing::info!(
                 submission.id = %submission.id,
-                auth.role = %user.principal.role,
+                auth.role = %user.actor.role,
                 "recorded a pending submission"
             );
             phase_changed(
@@ -1471,7 +1471,7 @@ async fn discard(
         // the outcome the depositor asked for either way.
         Ok(_) => {
             span.record("form.outcome", "discarded");
-            tracing::info!(auth.role = %user.principal.role, "discarded a project draft");
+            tracing::info!(auth.role = %user.actor.role, "discarded a project draft");
             phase_changed(
                 state,
                 user,
@@ -1814,13 +1814,7 @@ fn render_page(
         Some(prefix) => format!("{prefix} — {title}"),
         None => title,
     };
-    crate::shell::render(
-        state,
-        &title,
-        StatusCode::OK,
-        Some(&user.principal.display_name),
-        page::page(&view),
-    )
+    crate::shell::render(state, &title, StatusCode::OK, Some(&user.actor.display_name), page::page(&view))
 }
 
 /// What the stored draft row contributes to a rendering: when it was last
@@ -1910,7 +1904,7 @@ fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl s
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

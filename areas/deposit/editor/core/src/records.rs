@@ -26,14 +26,14 @@ pub struct UnknownVariant {
 /// One definition, because `drafts`, `submissions` and `approved_records` key on
 /// it as an exact-match column while
 /// [`PublishedProjects::get`](crate::published::PublishedProjects::get) and
-/// `editor_ports::Principal::may_reach` fold. Keying a write on the
+/// `editor_ports::Actor::may_reach` fold. Keying a write on the
 /// shortcode as typed would give `/projects/080c` and `/projects/080C` a row
 /// each, and the unique `submissions.shortcode` check would miss a pending
 /// submission. ASCII rather than Unicode folding because `is_valid_shortcode`
 /// admits only ASCII.
 ///
 /// `the_assigned_project_comparison_agrees_with_the_storage_key`, in `editor-web`'s
-/// `handlers/auth.rs` tests, pins `Principal::may_reach`'s comparison against this key.
+/// `handlers/auth.rs` tests, pins `Actor::may_reach`'s comparison against this key.
 #[must_use]
 pub fn normalize_shortcode(shortcode: &str) -> String {
     shortcode.trim().to_ascii_lowercase()

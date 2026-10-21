@@ -266,7 +266,7 @@ mod depositors {
 
     /// What the editor is told about the account `user` once they sign in: the access an
     /// assigned project grants.
-    async fn access_of(state: &TestState, user: &str) -> editor_ports::Principal {
+    async fn access_of(state: &TestState, user: &str) -> editor_ports::Actor {
         let session = a_session(state, user).await;
         state
             .authenticator

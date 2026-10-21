@@ -151,7 +151,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         &state,
         "Review queue — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         page::queue(&pending_view, &drafts_view),
     )
 }
@@ -329,7 +329,7 @@ pub(crate) async fn act(
             // and name them as the reviewer while the row still says somebody
             // else has it.
             context.submission = submission;
-            context.reviewer_name = Some(user.principal.display_name.clone());
+            context.reviewer_name = Some(user.actor.display_name.clone());
             context.held_by_viewer = true;
             saved(&context, filter, headers, notice)
         }
@@ -670,13 +670,7 @@ fn asking(
         return (StatusCode::OK, axum::response::Html(page::region(&view).into_string())).into_response();
     }
     let title = page_title(context);
-    crate::shell::render(
-        state,
-        &title,
-        StatusCode::OK,
-        Some(&user.principal.display_name),
-        page::page(&view),
-    )
+    crate::shell::render(state, &title, StatusCode::OK, Some(&user.actor.display_name), page::page(&view))
 }
 
 /// The round is over, so there is no submission left to diff.
@@ -694,7 +688,7 @@ fn finished(state: &EditorState, user: &Account, context: &Context<'_>, outcome:
         state,
         &page_title(context),
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         page::finished(context.project_name, context.shortcode, finished),
     )
 }
@@ -987,7 +981,7 @@ fn render_page(
         state,
         &page_title(context),
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         page::page(&view),
     )
 }
@@ -1131,7 +1125,7 @@ fn no_submission(state: &EditorState, user: &Account) -> Response {
         state,
         "Nothing to review — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         content,
     )
 }
@@ -1142,7 +1136,7 @@ fn unreadable_submission(state: &EditorState, user: &Account) -> Response {
         state,
         "Submission unreadable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         deposit_shell::pages::problem::unavailable(
             "This submission's stored record could not be read, so there is nothing to compare against what is \
              published. Nothing has been changed. The service needs attention before this project can be reviewed.",
@@ -1157,7 +1151,7 @@ fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl s
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

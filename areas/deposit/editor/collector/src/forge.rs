@@ -8,10 +8,15 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use editor_core::records::PullRequestState;
+use editor_core::collection::BRANCH_PREFIX;
 
-/// The prefix every branch this collector owns carries.
-pub const BRANCH_PREFIX: &str = "editor-collect/";
+/// Where a pull request sits on the forge.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PullRequestState {
+    Open,
+    Merged,
+    Closed,
+}
 
 /// The trailer marking a commit as this collector's.
 ///
@@ -102,7 +107,7 @@ pub struct CollectionPullRequest {
 
 /// Everything the run loop needs from git and GitHub.
 pub trait Forge {
-    /// Every pull request opened from an `editor-collect/*` branch, in any
+    /// Every pull request opened from a [`BRANCH_PREFIX`] branch, in any
     /// state.
     ///
     /// One call serves both the skip rule and the sibling-pull-request id

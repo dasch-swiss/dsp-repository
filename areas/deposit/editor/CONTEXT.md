@@ -56,6 +56,10 @@ _Avoid_: sync, export, deploy, publish (publication is the merge plus a release,
 `editor-collect/<shortcode>` — the one branch a project's collection lives on, keyed on the Shortcode so at most one pull request is ever open against a project's file. Owned by the Collection run, which refuses to force-push over a tip it did not write.
 _Avoid_: record branch (it is keyed on the project, not the record).
 
+**Waiting for release**:
+The RDU-facing classification of an Approved record whose data the published set does not carry yet, shown as a badge on `/collection`. Distinct from the depositor-facing waiting-for-release notice, which `areas/deposit/editor/CLAUDE.md` names.
+_Avoid_: pending, uncollected (the record may already have a pull request).
+
 **Project state**:
 One of exactly five depositor-facing values, `ProjectState`: Draft, Submitted, In review, Approved, Online — normative per REQ-2.1, where Online is derived from the published set, never stored.
 _Avoid_: status (the contract's `ProjectStatus` is the research project's own lifecycle, a different thing), any sixth word ("rejected" is shown as the outcome of a round, not as a state).
@@ -114,7 +118,7 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 - **"State"** names three types plus a page (`/states`). Resolution: never say "state" alone; say Project state, Submission state or Review state.
 - **"Section"** is a form grouping, a handler module (`web/src/handlers/sections.rs`), a view module and a path segment. Resolution: the domain term is the grouping; the others are named after it.
 - **"Collect"** is the telemetry endpoint (`/telemetry/collect`) and the carrying of an approved record into a pull request. Resolution: "collect a beacon" vs "collect an approved record"; never bare.
-- **"Collection"** in the editor is that second sense as a noun — the RDU surface at `/collection` showing where each approved record stands. _Avoid_ for the metadata-model **Collection** (`ProjectRaw.collections`), which `areas/access/CONTEXT.md` defines and the root `CONTEXT.md` already separates from Cluster. Nothing in the editor reads or writes that one. DEV-7357 proposes replacing this whole vocabulary; until it lands, qualify as "the collection surface".
+- **"Collection"** in the editor is that second sense as a noun — the RDU surface listing each approved record against the published set, with a link to its pull requests on GitHub. _Avoid_ for the metadata-model **Collection** (`ProjectRaw.collections`), which `areas/access/CONTEXT.md` defines and the root `CONTEXT.md` already separates from Cluster. Nothing in the editor reads or writes that one. DEV-7357 proposes replacing this whole vocabulary; until it lands, qualify as "the collection surface".
 - **"Retire"** is the system stamping `entity_proposals.retired_at` once an accepted `new`-entity proposal's entity appears in the published set, so it stops riding along with later approved records. _Avoid_ for **Withdrawal**, which is the depositor abandoning their own proposal before a decision. Retirement is never a person's action and never applies to a `change`.
 - **"Submission" vs "SIP"**: see the root `CONTEXT.md`. Nothing in the editor produces a SIP today.
 - **Depositor-facing vocabulary is normative (REQ-2.2)**: "export", "JSON", "transfer", "commit" and "pull request" may not appear where a depositor reads; `depositor_vocabulary.rs` and the E2E suite assert it against rendered markup. RDU-facing strings are exempt.

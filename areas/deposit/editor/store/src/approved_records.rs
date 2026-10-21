@@ -1,19 +1,17 @@
 //! [`ApprovedRecordRepository`] against SQLite.
 
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use editor_core::records::{ApprovedRecord, PullRequestState};
-use editor_core::repository::{ApprovedRecordRepository, RepositoryError, Result};
+use editor_core::records::ApprovedRecord;
+use editor_core::repository::{ApprovedRecordRepository, Result};
 use rusqlite::{params, Row};
 use uuid::Uuid;
 
-use super::mapping::{optional_parsed_column, optional_uuid_column, uuid_column};
+use super::mapping::{optional_uuid_column, uuid_column};
 use super::Database;
 
 const ENTITY: &str = "approved record";
 
-const SELECT: &str = "SELECT id, shortcode, payload, approved_by, approved_at, collected_at, reported_at, \
-                       pull_request_url, pull_request_state, last_failure FROM approved_records";
+const SELECT: &str = "SELECT id, shortcode, payload, approved_by, approved_at FROM approved_records";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<ApprovedRecord> {
     Ok(ApprovedRecord {
@@ -22,11 +20,6 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<ApprovedRecord> {
         payload: row.get(2)?,
         approved_by: optional_uuid_column(row, 3)?,
         approved_at: row.get(4)?,
-        collected_at: row.get(5)?,
-        reported_at: row.get(6)?,
-        pull_request_url: row.get(7)?,
-        pull_request_state: optional_parsed_column::<PullRequestState>(row, 8)?,
-        last_failure: row.get(9)?,
     })
 }
 
@@ -36,20 +29,14 @@ impl ApprovedRecordRepository for Database {
         let record = record.clone();
         self.write(move |tx| {
             tx.execute(
-                "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at, \
-                 reported_at, pull_request_url, pull_request_state, last_failure) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at) \
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
                 params![
                     record.id.to_string(),
                     record.shortcode,
                     record.payload,
                     record.approved_by.map(|id| id.to_string()),
                     record.approved_at,
-                    record.collected_at,
-                    record.reported_at,
-                    record.pull_request_url,
-                    record.pull_request_state.map(PullRequestState::as_str),
-                    record.last_failure,
                 ],
             )
         })
@@ -80,55 +67,6 @@ impl ApprovedRecordRepository for Database {
             .await?)
     }
 
-    async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
-        // `collected_at IS NULL` in the WHERE clause, so a re-run of a partly
-        // successful collection cannot overwrite the time a record was first
-        // collected.
-        let marked = self
-            .write(move |tx| {
-                tx.execute(
-                    "UPDATE approved_records SET collected_at = ?2 WHERE id = ?1 AND collected_at IS NULL",
-                    params![id.to_string(), at],
-                )
-            })
-            .await?;
-        if marked == 0 {
-            return Err(RepositoryError::NotFound { entity: ENTITY });
-        }
-        Ok(())
-    }
-
-    async fn report_collection(
-        &self,
-        id: Uuid,
-        pull_request_url: Option<&str>,
-        state: Option<PullRequestState>,
-        failure: Option<&str>,
-        at: DateTime<Utc>,
-    ) -> Result<bool> {
-        let id = id.to_string();
-        let pull_request_url = pull_request_url.map(str::to_string);
-        let failure = failure.map(str::to_string);
-        let updated = self
-            .write(move |tx| match failure {
-                // A failure says nothing about the pull request, so it must not erase a
-                // reference an earlier report established — the record would then read as
-                // uncollected while its pull request is still open on GitHub, and the
-                // merged-with-edits classification could never fire for it again.
-                Some(failure) => tx.execute(
-                    "UPDATE approved_records SET last_failure = ?2, reported_at = ?3 WHERE id = ?1",
-                    params![id, failure, at],
-                ),
-                None => tx.execute(
-                    "UPDATE approved_records SET pull_request_url = ?2, pull_request_state = ?3, \
-                     last_failure = NULL, reported_at = ?4 WHERE id = ?1",
-                    params![id, pull_request_url, state.map(PullRequestState::as_str), at],
-                ),
-            })
-            .await?;
-        Ok(updated > 0)
-    }
-
     async fn delete(&self, id: Uuid) -> Result<bool> {
         let deleted = self
             .write(move |tx| tx.execute("DELETE FROM approved_records WHERE id = ?1", params![id.to_string()]))
@@ -139,7 +77,7 @@ impl ApprovedRecordRepository for Database {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
+    use chrono::{DateTime, TimeZone, Utc};
 
     use super::super::tests::{count, test_db};
     use super::*;
@@ -155,11 +93,6 @@ mod tests {
             payload: r#"{"name":"approved"}"#.to_string(),
             approved_by: approver,
             approved_at: approved,
-            collected_at: None,
-            reported_at: None,
-            pull_request_url: None,
-            pull_request_state: None,
-            last_failure: None,
         }
     }
 
@@ -191,42 +124,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_mark_collected_is_not_repeatable() {
-        // A second run must not overwrite when the record was first collected —
-        // that time is the only record of when the pull request went out.
-        let db = test_db("approved-mark-once").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        db.mark_collected(record.id, at(15)).await.unwrap();
-        let error = db
-            .mark_collected(record.id, at(16))
-            .await
-            .expect_err("a second mark must be refused");
-        assert!(
-            matches!(error, RepositoryError::NotFound { entity: "approved record" }),
-            "{error}"
-        );
-
-        let collected = db.find_by_shortcode("0801").await.unwrap()[0].collected_at;
-        assert_eq!(collected, Some(at(15)));
-    }
-
-    #[tokio::test]
     async fn test_find_by_shortcode_returns_every_record_for_that_project() {
-        // The startup comparison needs all of a project's records, not
-        // just the uncollected ones, to find the one that matches the published
-        // data.
+        // The startup comparison needs all of a project's records to find the
+        // one that matches the published data.
         let db = test_db("approved-by-shortcode").await;
-        let collected = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &collected).await.unwrap();
+        ApprovedRecordRepository::create(&db, &record("0801", None, at(12)))
+            .await
+            .unwrap();
         ApprovedRecordRepository::create(&db, &record("0801", None, at(13)))
             .await
             .unwrap();
         ApprovedRecordRepository::create(&db, &record("0803", None, at(14)))
             .await
             .unwrap();
-        db.mark_collected(collected.id, at(15)).await.unwrap();
 
         assert_eq!(db.find_by_shortcode("0801").await.unwrap().len(), 2);
         assert_eq!(db.find_by_shortcode("0803").await.unwrap().len(), 1);
@@ -242,206 +152,5 @@ mod tests {
         assert!(ApprovedRecordRepository::delete(&db, record.id).await.unwrap());
         assert!(!ApprovedRecordRepository::delete(&db, record.id).await.unwrap());
         assert_eq!(count(&db, "approved_records").await, 0);
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_stores_the_url_and_state_without_stamping_collected_at() {
-        let db = test_db("approved-report-first").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        let updated = db
-            .report_collection(
-                record.id,
-                Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-                Some(PullRequestState::Open),
-                None,
-                at(15),
-            )
-            .await
-            .unwrap();
-        assert!(updated);
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(
-            stored.pull_request_url.as_deref(),
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1")
-        );
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
-        assert_eq!(stored.collected_at, None, "only `mark_collected` may stamp this");
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_can_run_repeatedly_and_the_latest_report_wins() {
-        let db = test_db("approved-report-repeat").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Open),
-            None,
-            at(13),
-        )
-        .await
-        .unwrap();
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Merged),
-            None,
-            at(14),
-        )
-        .await
-        .unwrap();
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Merged));
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_moves_reported_at_but_never_collected_at() {
-        // What this test pins beyond the trait doc: a *later* report moves the timestamp again.
-        let db = test_db("approved-report-moves-reported-at").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-        db.mark_collected(record.id, at(13)).await.unwrap();
-
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Open),
-            None,
-            at(14),
-        )
-        .await
-        .unwrap();
-        let first = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(first.reported_at, Some(at(14)));
-        assert_eq!(first.collected_at, Some(at(13)));
-
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Merged),
-            None,
-            at(15),
-        )
-        .await
-        .unwrap();
-        let second = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(second.reported_at, Some(at(15)), "a later report must move it");
-        assert_eq!(second.collected_at, Some(at(13)), "a report must never touch this");
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_failure_also_stamps_reported_at_without_touching_the_pull_request() {
-        // A run that reports a failure has still reported: a surface reading the failure as
-        // silence would be wrong about the one case it most needs to be right about. The failure
-        // arm's added `reported_at` SET must not widen it into touching the pull request fields.
-        let db = test_db("approved-report-failure-stamps-reported-at").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Open),
-            None,
-            at(13),
-        )
-        .await
-        .unwrap();
-
-        db.report_collection(record.id, None, None, Some("the branch tip is not ours"), at(14))
-            .await
-            .unwrap();
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(stored.reported_at, Some(at(14)));
-        assert_eq!(
-            stored.pull_request_url.as_deref(),
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1")
-        );
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_failure_keeps_a_known_pull_request() {
-        // The pull request is still open on GitHub; a failed run says nothing about it. Erasing
-        // the reference would leave the record reading as uncollected with its pull request
-        // live, and out of reach of the merged-with-edits classification.
-        let db = test_db("approved-report-failure-keeps-pr").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Open),
-            None,
-            at(13),
-        )
-        .await
-        .unwrap();
-        db.report_collection(record.id, None, None, Some("the branch tip is not ours"), at(14))
-            .await
-            .unwrap();
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(
-            stored.pull_request_url.as_deref(),
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1")
-        );
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
-        assert_eq!(stored.last_failure.as_deref(), Some("the branch tip is not ours"));
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_pull_request_clears_an_earlier_failure() {
-        // The failure is the last one *seen*, so a later success has to retire it — otherwise a
-        // record that collected cleanly on retry still shows the reason it failed before.
-        let db = test_db("approved-report-pr-clears-failure").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        db.report_collection(record.id, None, None, Some("renumbering failed"), at(13))
-            .await
-            .unwrap();
-        db.report_collection(
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/2"),
-            Some(PullRequestState::Open),
-            None,
-            at(14),
-        )
-        .await
-        .unwrap();
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(stored.last_failure, None);
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
-    }
-
-    #[tokio::test]
-    async fn test_report_collection_on_an_unknown_id_reports_false_and_writes_nothing() {
-        let db = test_db("approved-report-unknown").await;
-        let record = record("0801", None, at(12));
-        ApprovedRecordRepository::create(&db, &record).await.unwrap();
-
-        let updated = db
-            .report_collection(
-                Uuid::new_v4(),
-                Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-                Some(PullRequestState::Open),
-                None,
-                at(13),
-            )
-            .await
-            .unwrap();
-        assert!(!updated);
-
-        let stored = &db.find_by_shortcode("0801").await.unwrap()[0];
-        assert_eq!(stored.pull_request_url, None, "the unrelated record must be left alone");
     }
 }

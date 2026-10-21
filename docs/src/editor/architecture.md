@@ -14,7 +14,6 @@ flowchart LR
   Round -->|approve, one transaction| AR[Approved record]
   AR -->|GET /api/v1/approved-records| C[editor-collector<br/>in GitHub Actions]
   C -->|one pull request per project| PR[Pull request on<br/>this repository]
-  C -->|POST /api/v1/collection-report| AR
   PR -->|CI checks, human merge, release| Corpus[Published project files]
   Corpus -->|baked into the image| DPE
   Corpus -->|baked into the image| E[editor, next deployment]
@@ -24,7 +23,7 @@ flowchart LR
 - A **Draft** is the depositor's working copy: the project's JSON members verbatim, one per project, last write wins ([The Project Representation](./project-representation.md), `areas/deposit/ADR-0002`).
 - A **Submission** is the draft as submitted, at most one per project. RDU claims it, decides each changed field, substitutes values beside the payload rather than over it, and ends the round with approve, request changes or reject; the depositor can withdraw ([The Review Surface](./review.md)).
 - Approve writes the **Approved record**, the submitted draft with every decision applied, deletes the submission and appends the **Review round**, all in one transaction. The record waits to be collected.
-- The **collector** runs in GitHub Actions, never in the service. It reads every approved record over the editor's API, writes each project's onto an `editor-collect/<shortcode>` branch, opens or updates one pull request per project, and reports the outcome back ([Collection](./collection.md)). The pull request, its CI checks and a human merge are the gate between the editor and anything served.
+- The **collector** runs in GitHub Actions, never in the service. It reads every approved record over the editor's API, writes each project's onto an `editor-collect/<shortcode>` branch, and opens or updates one pull request per project ([Collection](./collection.md)). Nothing is reported back. The pull request, its CI checks and a human merge are the gate between the editor and anything served.
 - **Online** is never stored. The merged file is baked into the next editor image, and the editor compares its records with that published set once at startup: a record whose data is published is discarded, and the project reads Online ([Project State and Online Detection](./status.md), `areas/deposit/ADR-0003`).
 
 ## Components and crates
@@ -71,7 +70,7 @@ flowchart TB
   SMTP[SMTP relay]
   B -->|session cookie, every write a POST with Sec-Fetch-Site same-origin| T
   S -->|login codes, outbound only| SMTP
-  Act -->|bearer EDITOR_COLLECTION_TOKEN| T
+  Act -->|GET /api/v1/approved-records, public| T
   Act -->|pull request per project, secrets.GH_TOKEN| Repo
   Repo -->|release: the image build bakes the corpus| S
   Repo -->|release| DPE
@@ -81,7 +80,7 @@ Five boundaries, and what holds each:
 
 - **Browser to editor.** A session comes from a one-time login code sent by mail; there are no passwords. Every state-changing route is `POST` and passes the `Sec-Fetch-Site: same-origin` check, applied as the outermost layer so no route escapes it. Access is two extractors, `Authenticated` and `Rdu`, not a middleware: a handler that names neither is public in its signature ([Authentication](./authentication.md), [Routing](./routing.md)).
 - **Editor to DPE.** Separate deployables on separate origins; see [Relationship to DPE](#relationship-to-dpe).
-- **CI to editor.** The collector authenticates to the editor with a bearer token the editor verifies (`EDITOR_COLLECTION_TOKEN`). The editor holds no GitHub credential in either direction and makes no outbound GitHub call ([Collection](./collection.md)).
+- **CI to editor.** The collector only reads the editor: `GET /api/v1/approved-records` is public and rate-limited, and nothing is written back. The editor holds no credential at all and makes no outbound GitHub call ([Collection](./collection.md)).
 - **Editor to repository.** Only through the pull request the collector opens. The collector writes a disposable checkout on its own `editor-collect/<shortcode>` branch, never in place, and refuses to force-push over a tip it did not write. The pull request is opened with `secrets.GH_TOKEN` so the repository's checks run on it.
 - **Editor to the relay.** Outbound only, and no address ever reaches a log ([Authentication](./authentication.md#mail)).
 

@@ -51,10 +51,6 @@ impl KeyExtractor for RightmostXffKeyExtractor {
     }
 }
 
-/// The route the root exempts from its `Sec-Fetch-Site` check (its `csrf.rs` says why). The root
-/// reads this constant, so renaming the route moves the exemption with it.
-pub const COLLECTION_REPORT_PATH: &str = "/api/v1/collection-report";
-
 /// Per-IP budget for `GET /api/v1/approved-records`.
 ///
 /// Sized for a CI poller checking in every few minutes, not a browser beacon
@@ -114,11 +110,6 @@ pub(crate) fn routes() -> Vec<Route> {
                 "approved records"
             )),
         ),
-        // Also public in the sense of taking no `Authenticated`/`Rdu` extractor, but not
-        // unauthenticated: `crate::handlers::collection::report` checks a bearer token itself, because its
-        // caller is a CI job with no session to hold. The root's `csrf.rs` holds the matching
-        // same-origin exemption this path needs.
-        (COLLECTION_REPORT_PATH, post(crate::handlers::collection::report)),
         // --- Authenticated routes ---
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.

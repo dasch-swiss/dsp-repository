@@ -135,20 +135,7 @@ CREATE TABLE approved_records (
     shortcode    TEXT NOT NULL,
     payload      TEXT NOT NULL,
     approved_by  TEXT,
-    approved_at  TEXT NOT NULL,
-    -- NULL while uncollected. A failed collection leaves it NULL, which is what
-    -- makes the next run retry it.
-    collected_at TEXT,
-    -- Advisory, reported back by collection runs; NULL until a report names
-    -- this record.
-    pull_request_url TEXT,
-    pull_request_state TEXT
-        CHECK (pull_request_state IN ('open', 'merged', 'closed')),
-    -- NULL when the last report carried no failure, or none has named it yet.
-    last_failure TEXT,
-    -- Moved by every report, so it dates the state beside it, not the first
-    -- dispatch.
-    reported_at TEXT
+    approved_at  TEXT NOT NULL
 ) STRICT;
 
 CREATE INDEX approved_records_shortcode ON approved_records (shortcode);

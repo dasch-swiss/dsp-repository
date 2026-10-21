@@ -17,14 +17,15 @@ use editor_core::agents::Agents;
 use editor_core::canonical::{write_entity, write_project};
 use editor_core::collection::{ApprovedRecordView, ProposedEntityView};
 use editor_core::proposals::{entity_id_number, ProposalKind, ProposalOperation};
-use editor_core::records::PullRequestState;
 use serde_json::Value;
 use shared_metadata::project::{is_valid_shortcode, ProjectRaw};
 
 use crate::config::Config;
 use crate::editor::Editor;
 use crate::enrichment::{self, ENRICHMENT_FILE};
-use crate::forge::{branch_for, record_line, renumbered_line, CollectionPullRequest, Forge, COLLECTED_BY_TRAILER};
+use crate::forge::{
+    branch_for, record_line, renumbered_line, CollectionPullRequest, Forge, PullRequestState, COLLECTED_BY_TRAILER,
+};
 use crate::manifest::{self, MANIFEST_FILE};
 use crate::{layout, renumber};
 
@@ -248,10 +249,9 @@ fn collect_one(
     forge.force_push(&branch)?;
     let body = pull_request_body(record, &mapping, &rows);
 
-    // An open pull request now carries the newest approved state. Opening a
-    // second would orphan the first, with no record referencing it. Its body
-    // is renamed after the push, never before: a body naming a record the
-    // branch does not carry would, once merged, skip that record uncollected.
+    // An open pull request is updated, not joined by a second that no record would reference.
+    // Its body is edited after the push, never before: a body naming a record the branch does
+    // not carry would, once merged, skip that record uncollected.
     if let Some(open) = open {
         forge.edit_pull_request_body(&open.url, &body).map_err(|error| {
             format!("pushed onto {}, but its body still names the earlier record: {error}", open.url)
@@ -539,7 +539,6 @@ mod tests {
     use std::path::PathBuf;
 
     use chrono::Utc;
-    use editor_core::collection::CollectionStateView;
     use uuid::Uuid;
 
     use super::*;
@@ -650,17 +649,9 @@ mod tests {
             project,
             entities: Vec::new(),
             problem,
-            collection: CollectionStateView {
-                collected_at: None,
-                pull_request: None,
-                state: None,
-                last_failure: None,
-            },
         }
     }
 
-    /// The change has landed; reconciliation discards the record when a release
-    /// carries it. Nothing may be written.
     #[test]
     fn a_merged_pull_request_skips_the_record_and_nothing_is_written() {
         let config = fixture("merged");
@@ -721,8 +712,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// A project approved again after its first collection was merged and
-    /// released.
     #[test]
     fn a_merged_pull_request_naming_an_earlier_record_does_not_skip_a_newer_one() {
         let config = fixture("merged-earlier");
@@ -744,9 +733,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// The contract's load-bearing difference from the issue body: an open pull
-    /// request is force-pushed onto, never joined by a second one, and renamed
-    /// to the record now on its branch.
     #[test]
     fn an_open_pull_request_is_force_pushed_onto_and_renamed_and_no_second_one_is_opened() {
         let config = fixture("open");
@@ -814,9 +800,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// Reviewer edits are an expected part of this flow, so a tip this
-    /// collector did not make stops the run for that record rather than being
-    /// overwritten.
     #[test]
     fn a_branch_tip_the_collector_did_not_make_is_refused_before_anything_is_written() {
         let config = fixture("guard");
@@ -851,9 +834,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// A record whose draft could not be converted is still served by the
-    /// editor, carrying its error; it becomes a failure, not a panic and not a
-    /// silent skip.
+    /// The editor still serves a record whose draft could not be converted, carrying its error.
     #[test]
     fn a_record_with_no_publishable_project_fails() {
         let config = fixture("problem");
@@ -866,8 +847,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// The guard reads this back off the branch tip, so a commit without it
-    /// would make the collector refuse to update its own branch.
     #[test]
     fn every_commit_carries_the_trailer_the_guard_reads() {
         let message = commit_message(&record("0803", None, None), &BTreeMap::new(), &[]);
@@ -1017,8 +996,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// Its own branch is about to be force-pushed over, so the ids that branch
-    /// holds are this record's to reuse rather than collide with.
     #[test]
     fn the_records_own_branch_does_not_make_its_ids_taken() {
         let config = fixture("own-ids");
@@ -1038,9 +1015,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// An entity's `kind` and `id` both become a path under the data directory.
-    /// Unchecked, either escapes it, and this collector runs in CI holding a
-    /// token with write access to the repository.
     #[test]
     fn an_entity_kind_or_id_that_would_escape_the_data_directory_is_refused() {
         let config = fixture("traversal");
@@ -1073,11 +1047,8 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// A record is all-or-nothing on disk. The second entity here is an
-    /// ordinary malformed proposal — `ProposedEntityView::from_proposal` gives
-    /// an unparseable payload a null body — and writing the first before
-    /// noticing it would leave an untracked file that `git checkout -B` does
-    /// not remove and the next record's manifest would count.
+    /// The second entity is an ordinary malformed proposal: `ProposedEntityView::from_proposal`
+    /// gives an unparseable payload a null body.
     #[test]
     fn a_record_that_fails_on_a_later_entity_writes_none_of_them() {
         let config = fixture("all-or-nothing");
@@ -1110,9 +1081,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// The shortcode becomes `editor-collect/<shortcode>` and a path under the
-    /// data directory, so a value carrying a slash or a leading dash would
-    /// reach `git` and the filesystem as something other than a name.
     #[test]
     fn a_shortcode_that_is_not_a_shortcode_is_refused_before_a_ref_is_built() {
         let config = fixture("bad-shortcode");
@@ -1127,8 +1095,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
-    /// A committed entity file that will not load leaves its id looking free,
-    /// which would let an allocation overwrite it. The record fails instead.
     #[test]
     fn an_unloadable_published_entity_set_stops_the_record_rather_than_risking_an_overwrite() {
         let config = fixture("bad-corpus");

@@ -1,38 +1,19 @@
 //! Two audiences share this module, per `areas/deposit/editor/CLAUDE.md`'s "machine-facing routes
-//! live under /api/v1/" rule: [`list`] and [`report`] below are `/api/v1` — JSON or a bare status,
-//! never HTML — and [`overview`], [`discard_form`] and [`discard`] are the RDU browser surface,
-//! `GET /collection` and `GET`/`POST /collection/{id}/discard`.
+//! live under /api/v1/" rule: [`list`] is `/api/v1`, JSON never HTML, and [`overview`],
+//! [`discard_form`] and [`discard`] are the RDU browser surface.
 //!
-//! `GET /api/v1/approved-records` — the public read of every approved record
-//! and its accepted entity proposals — and `POST /api/v1/collection-report`,
-//! the token-authenticated write the collecting workflow uses to report back.
-//!
-//! `list` is unauthenticated: a CI poller reads this, not a signed-in user, so
-//! the handler takes no `Authenticated`/`Rdu` extractor. Enumerates with
-//! [`ApprovedRecordRepository::list_all`], unfiltered: there is no
-//! state-dependent selection here for a stale advisory flag to hide, and the
-//! served set is already bounded by startup reconciliation, which deletes a
-//! record once the published set matches it.
-//!
-//! `report` is not unauthenticated, but it takes no `Authenticated`/`Rdu`
-//! extractor either: its caller is a CI job with no session to hold, so it
-//! authenticates by bearer token instead. It writes **advisory display state
-//! only** — [`editor_core::collection::CollectionStateView`] — and must never
-//! change what `list` serves. A record leaves that set only by being deleted:
-//! by the startup reconcile once the published set carries it, or by approval
-//! superseding an earlier record for the same project.
+//! `list` is unauthenticated: a CI poller reads it, so the handler takes no `Authenticated`/`Rdu`
+//! extractor. It applies no filter: see "Collection holds two invariants" in that file.
 //!
 //! [`overview`] classifies every record live, per request, with
-//! [`editor_core::status::classify_record`] — the same call `reconcile`'s startup pass makes —
-//! rather than reading `reconcile::Reconciliation`, which is aggregate counters computed once at
-//! startup with no per-record identity.
+//! [`editor_core::status::classify_record`], the same call `reconcile`'s startup pass makes,
+//! because `reconcile::Reconciliation` holds aggregate counters with no per-record identity.
 
 use axum::extract::{Path, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Json;
-use chrono::Utc;
-use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, CollectionReport};
+use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, BRANCH_PREFIX};
 use editor_core::records::{normalize_shortcode, ApprovedRecord};
 use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
 use editor_core::status::{classify_record, RecordClassification};
@@ -43,9 +24,9 @@ use crate::handlers::auth::{Account, Rdu};
 use crate::pages::collection as page;
 use crate::shell::EditorState;
 
-/// Every pull request this endpoint accepts must live under this prefix, so a forged report
-/// cannot point RDU's advisory display at another site.
-const PULL_REQUEST_PREFIX: &str = "https://github.com/dasch-swiss/dsp-repository/pull/";
+/// Coupled to the collect workflow's `COLLECTOR_REPOSITORY`, which nothing here checks: change
+/// either and the link built from this finds nothing.
+const COLLECTOR_REPOSITORY: &str = "dasch-swiss/dsp-repository";
 
 /// `GET /api/v1/approved-records`.
 #[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "approved records list"))]
@@ -80,122 +61,20 @@ pub(crate) async fn list(State(state): State<EditorState>) -> Response {
     Json(ApprovedRecordsResponse { records: views }).into_response()
 }
 
-/// `POST /api/v1/collection-report`.
-///
-/// Bodies are plain text, not the HTML page shell — the caller is a CI job, matching how
-/// the root's `csrf.rs` answers the same beacon-shaped caller.
-#[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "collection report"))]
-pub(crate) async fn report(
-    State(state): State<EditorState>,
-    headers: HeaderMap,
-    Json(body): Json<CollectionReport>,
-) -> Response {
-    // The comparison always runs, on a presented value that is the empty string when the header
-    // is absent, so an absent token and a wrong one take the same branch and answer identically —
-    // there is no early return for "absent" ahead of it. A `None` configured token still refuses
-    // every call: a service with no verifier must not accept an empty presented one, which is why
-    // this reads the option rather than defaulting it to an empty `CollectionToken`.
-    let presented = bearer_token(&headers).unwrap_or_default();
-    let authorized = state.collection_token.as_ref().is_some_and(|token| token.matches(presented));
-    if !authorized {
-        tracing::warn!("refused a collection report: missing or invalid bearer token");
-        return (
-            StatusCode::UNAUTHORIZED,
-            "This request was refused: the bearer token is missing or invalid.\n",
-        )
-            .into_response();
-    }
-
-    if let Err(message) = validate(&body) {
-        return (StatusCode::BAD_REQUEST, message).into_response();
-    }
-
-    // Only the first dispatch stamps `collected_at`. `mark_collected`'s `NotFound` on a second
-    // call is its contract, not an error: it means either an unknown record or one already
-    // collected, and `report_collection` below tells the two apart, so nothing is decided here.
-    if body.pull_request.is_some() {
-        match ApprovedRecordRepository::mark_collected(&*state.editor, body.record, Utc::now()).await {
-            Ok(()) | Err(RepositoryError::NotFound { .. }) => {}
-            Err(error) => {
-                tracing::error!(error = %error, "could not mark a record collected");
-                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-            }
-        }
-    }
-
-    let updated = match ApprovedRecordRepository::report_collection(
-        &*state.editor,
-        body.record,
-        body.pull_request.as_deref(),
-        body.state,
-        body.failure.as_deref(),
-        Utc::now(),
-    )
-    .await
-    {
-        Ok(updated) => updated,
-        Err(error) => {
-            tracing::error!(error = %error, "could not record a collection report");
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-    };
-
-    if !updated {
-        return (
-            StatusCode::NOT_FOUND,
-            "No such approved record, or it has already been discarded.\n",
-        )
-            .into_response();
-    }
-
-    StatusCode::NO_CONTENT.into_response()
-}
-
-/// The token from `Authorization: Bearer <token>`, or `None` for any other shape — a missing
-/// header, a different scheme, or a value that is not valid UTF-8.
-fn bearer_token(headers: &HeaderMap) -> Option<&str> {
-    headers
-        .get(axum::http::header::AUTHORIZATION)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.strip_prefix("Bearer "))
-}
-
-/// Rejects a report that is malformed or ambiguous, before any write. Every branch here must
-/// leave the caller applying nothing: a report failing later would otherwise commit half of a
-/// report the whole submission was supposed to stand or fall on together.
-fn validate(report: &CollectionReport) -> Result<(), &'static str> {
-    match (&report.pull_request, &report.failure) {
-        (Some(_), Some(_)) => Err("a report may not carry both a pull request and a failure"),
-        (None, None) => Err("a report must carry either a pull request or a failure"),
-        (Some(url), None) => {
-            if report.state.is_none() {
-                return Err("a pull request report must also carry a state");
-            }
-            if !url.starts_with(PULL_REQUEST_PREFIX) {
-                return Err("pull_request must be a dsp-repository pull request URL");
-            }
-            Ok(())
-        }
-        (None, Some(_)) => Ok(()),
-    }
-}
-
 const NO_SUCH_RECORD: &str =
     "There is no approved record with that id. It may already have been discarded by another RDU member.";
 
-/// One row's owned strings, so the view can borrow them — a row carries its formatted timestamps
-/// and its live classification, and neither can be produced inside the `map` that builds it.
+/// One row's owned strings, so the view can borrow them.
 struct RowStrings {
     id: String,
     shortcode: String,
     project_name: Option<String>,
     approved_at: String,
-    reported_at: Option<String>,
-    pull_request: Option<String>,
+    pull_requests_url: String,
     classification: RecordClassification,
 }
 
-/// `GET /collection` — every approved record and where its collection stands, for RDU.
+/// `GET /collection`: every approved record and how it compares with the published set, for RDU.
 pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
@@ -209,8 +88,7 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
             shortcode: crate::shell::shortcode_as_published(&state, &record.shortcode),
             project_name: crate::shell::project_name(&state, &record.shortcode).map(str::to_string),
             approved_at: crate::shell::format_instant(record.approved_at),
-            reported_at: record.reported_at.map(crate::shell::format_instant),
-            pull_request: record.pull_request_url.clone(),
+            pull_requests_url: pull_requests_url(&record.shortcode),
             classification: classify_record(record, state.published.get(&record.shortcode)),
         })
         .collect();
@@ -221,8 +99,7 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
             shortcode: &row.shortcode,
             project_name: row.project_name.as_deref(),
             approved_at: &row.approved_at,
-            reported_at: row.reported_at.as_deref(),
-            pull_request: row.pull_request.as_deref(),
+            pull_requests_url: &row.pull_requests_url,
             state: &row.classification,
         })
         .collect();
@@ -234,6 +111,15 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
         Some(&user.principal.display_name),
         page::list(&view_rows),
     )
+}
+
+/// GitHub's pull-request search for the branch the collector pushes `shortcode`'s record to.
+///
+/// Takes the stored shortcode, never the published spelling: the collector's branch name uses the
+/// stored one. It needs no percent-encoding, since a stored shortcode passes `is_valid_shortcode`.
+pub(crate) fn pull_requests_url(shortcode: &str) -> String {
+    let head = BRANCH_PREFIX.replace('/', "%2F");
+    format!("https://github.com/{COLLECTOR_REPOSITORY}/pulls?q=is%3Apr+head%3A{head}{shortcode}")
 }
 
 /// The record `id` names, read from the same full enumeration [`overview`] reads.
@@ -249,7 +135,7 @@ async fn find_record(state: &EditorState, id: &str) -> Result<Option<ApprovedRec
     Ok(records.into_iter().find(|record| record.id == id))
 }
 
-/// `GET /collection/{id}/discard` — the confirmation, naming what would be destroyed.
+/// `GET /collection/{id}/discard`: the confirmation, naming what would be destroyed.
 pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
     let record = match find_record(&state, &id).await {
         Ok(Some(record)) => record,
@@ -258,6 +144,7 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
     };
     let shortcode = crate::shell::shortcode_as_published(&state, &record.shortcode);
     let approved_at = crate::shell::format_instant(record.approved_at);
+    let pull_requests_url = pull_requests_url(&record.shortcode);
     // Classified here too, so a reader who reached this URL directly sees the
     // same state the list would have shown rather than a page that reads alike
     // whatever it is about to destroy.
@@ -266,7 +153,7 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
         shortcode: &shortcode,
         project_name: crate::shell::project_name(&state, &record.shortcode),
         approved_at: &approved_at,
-        pull_request: record.pull_request_url.as_deref(),
+        pull_requests_url: &pull_requests_url,
         state: &classification,
     };
     crate::shell::render(
@@ -280,10 +167,8 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
 
 /// `POST /collection/{id}/discard` — delete the record.
 ///
-/// Not gated on the record's classification: the confirmation link only appears on a
-/// [`RecordClassification::Stranded`] row as guidance, but this acts on RDU's explicit
-/// confirmation of whatever id was posted, the same way [`discard_form`] renders whatever id was
-/// asked for. `delete` answering `false` (already gone) is not an error — a second submission of
+/// Not gated on the record's classification: every row offers Discard. The record's pull request is
+/// not touched. `delete` answering `false` (already gone) is not an error: a second submission of
 /// the same confirmation must not 500.
 pub(crate) async fn discard(State(state): State<EditorState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
     let Ok(record_id) = Uuid::parse_str(&id) else {
@@ -338,7 +223,7 @@ mod tests {
     use chrono::Utc;
     use editor_core::draft::ProjectDraft;
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
-    use editor_core::records::{ApprovedRecord, PullRequestState};
+    use editor_core::records::ApprovedRecord;
     use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository};
     use editor_ports::Role;
     use serde_json::{json, Value};
@@ -346,13 +231,9 @@ mod tests {
     use uuid::Uuid;
 
     use crate::fixtures::{
-        a_session, a_user, body_string, get, location, post, state_with_collection_token, test_app, test_state,
-        with_cookie, TestState, User,
+        a_session, a_user, body_string, get, location, post, test_app, test_state, with_cookie, TestState, User,
     };
     use crate::test_support::published_corpus;
-
-    /// The bearer token these tests configure the endpoint with.
-    const TOKEN: &str = "a-collection-token";
 
     /// A project the committed published set really holds, so the payload
     /// converts to a project file without a fixture project of our own.
@@ -392,11 +273,6 @@ mod tests {
             payload: payload.to_string(),
             approved_by: None,
             approved_at: Utc::now(),
-            collected_at: None,
-            reported_at: None,
-            pull_request_url: None,
-            pull_request_state: None,
-            last_failure: None,
         }
     }
 
@@ -437,51 +313,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_collected_record_with_a_live_pull_request_is_still_served() {
-        // The invariant the design rests on: reported collection state drives what RDU is
-        // shown and never what is served. `list_all` is what holds it — an enumeration
-        // filtering on `collected_at` or `pull_request_state` would hide a row instead.
-        let (state, _) = test_state("collection-serves-collected").await;
-        let mut record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        record.collected_at = Some(Utc::now());
-        record.pull_request_url = Some("https://github.com/dasch-swiss/dsp-repository/pull/1".to_string());
-        record.pull_request_state = Some(PullRequestState::Open);
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a collected record");
-
-        let body = body_bytes(test_app(&state).oneshot(get_request()).await.unwrap()).await;
-        let value: Value = serde_json::from_slice(&body).expect("a JSON body");
-        let records = value.get("records").and_then(Value::as_array).expect("a records array");
-        assert_eq!(records.len(), 1, "a collected record is still served: {value}");
-        assert_eq!(
-            records[0].get("id").and_then(Value::as_str),
-            Some(record.id.to_string().as_str())
-        );
-        assert_eq!(
-            records[0].pointer("/collection/state").and_then(Value::as_str),
-            Some("open"),
-            "the advisory state rides along without filtering anything"
-        );
-    }
-
-    #[tokio::test]
-    async fn unauthenticated_access_serves_the_expected_records() {
-        // No session cookie anywhere in this request: the contract is that this
-        // route is public, not an oversight to fix later.
-        let (state, _) = test_state("collection-public").await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
+    async fn every_record_is_served_to_an_unauthenticated_caller_whatever_the_editor_holds_about_it() {
+        // No session cookie anywhere in this request: the route is public by contract.
+        let (state, _) = test_state("collection-serves-every-record").await;
+        let waiting = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
+        let unreadable = approved_record("0999", "{ not json");
+        for record in [&waiting, &unreadable] {
+            ApprovedRecordRepository::create(&*state.editor, record)
+                .await
+                .expect("seed a record");
+        }
 
         let response = test_app(&state).oneshot(get_request()).await.unwrap();
         assert_eq!(response.status(), axum::http::StatusCode::OK);
-
-        let body: Value = serde_json::from_slice(&body_bytes(response).await).expect("valid JSON");
-        let records = body["records"].as_array().expect("a records array");
-        assert_eq!(records.len(), 1);
-        assert_eq!(records[0]["id"], record.id.to_string());
+        let value: Value = serde_json::from_slice(&body_bytes(response).await).expect("a JSON body");
+        let records = value.get("records").and_then(Value::as_array).expect("a records array");
+        let mut ids: Vec<&str> = records.iter().map(|r| r["id"].as_str().unwrap()).collect();
+        ids.sort_unstable();
+        let mut expected = vec![waiting.id.to_string(), unreadable.id.to_string()];
+        expected.sort_unstable();
+        assert_eq!(ids, expected, "every record is served: {value}");
     }
 
     #[tokio::test]
@@ -592,253 +443,6 @@ mod tests {
         assert_eq!(entities[0]["id"], "person-417");
     }
 
-    /// Deliberately carries no `sec-fetch-site` header, matching a GitHub Actions runner: every
-    /// test below reaching a response other than 403 is itself evidence the CSRF exemption
-    /// (`COLLECTION_REPORT_PATH` in the root's `csrf.rs`) is in effect for this path.
-    fn report_request(token: Option<&str>, body: &Value) -> Request<Body> {
-        let mut builder = Request::builder()
-            .method("POST")
-            .uri("/api/v1/collection-report")
-            .header("content-type", "application/json");
-        if let Some(token) = token {
-            builder = builder.header("authorization", format!("Bearer {token}"));
-        }
-        builder.body(Body::from(body.to_string())).unwrap()
-    }
-
-    async fn snapshot(state: &crate::shell::EditorState) -> Vec<ApprovedRecord> {
-        ApprovedRecordRepository::list_all(&*state.editor)
-            .await
-            .expect("list should succeed")
-    }
-
-    #[tokio::test]
-    async fn a_valid_first_report_stamps_collected_at_and_stores_the_pull_request() {
-        let (state, _) = state_with_collection_token("collection-report-first", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/42",
-            "state": "open",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
-
-        let stored = &snapshot(&state).await[0];
-        assert!(stored.collected_at.is_some(), "the first dispatch must stamp it");
-        assert_eq!(
-            stored.pull_request_url.as_deref(),
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/42")
-        );
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Open));
-    }
-
-    #[tokio::test]
-    async fn a_repeated_report_refreshes_state_without_moving_collected_at() {
-        let (state, _) = state_with_collection_token("collection-report-repeat", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-
-        let opened = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/42",
-            "state": "open",
-            "failure": null,
-        });
-        test_app(&state).oneshot(report_request(Some(TOKEN), &opened)).await.unwrap();
-        let after_first = snapshot(&state).await[0].collected_at;
-
-        let merged = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/42",
-            "state": "merged",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &merged)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
-
-        let stored = &snapshot(&state).await[0];
-        assert_eq!(stored.pull_request_state, Some(PullRequestState::Merged));
-        assert_eq!(stored.collected_at, after_first, "a repeated report must not move it");
-    }
-
-    #[tokio::test]
-    async fn a_report_naming_an_unknown_record_is_rejected_whole() {
-        let (state, _) = state_with_collection_token("collection-report-unknown", TOKEN).await;
-        let untouched = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &untouched)
-            .await
-            .expect("seed a record");
-        let before = snapshot(&state).await;
-
-        let body = json!({
-            "record": Uuid::new_v4(),
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
-            "state": "open",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
-        assert_eq!(snapshot(&state).await, before, "nothing must be written for an unknown record");
-    }
-
-    #[tokio::test]
-    async fn a_report_carrying_both_a_pull_request_and_a_failure_is_rejected() {
-        let (state, _) = state_with_collection_token("collection-report-both", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let before = snapshot(&state).await;
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
-            "state": "open",
-            "failure": "boom",
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
-        assert_eq!(snapshot(&state).await, before);
-    }
-
-    #[tokio::test]
-    async fn a_report_carrying_neither_a_pull_request_nor_a_failure_is_rejected() {
-        let (state, _) = state_with_collection_token("collection-report-neither", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let before = snapshot(&state).await;
-
-        let body = json!({ "record": record.id, "pullRequest": null, "state": null, "failure": null });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
-        assert_eq!(snapshot(&state).await, before);
-    }
-
-    #[tokio::test]
-    async fn a_pull_request_without_a_state_is_rejected() {
-        let (state, _) = state_with_collection_token("collection-report-no-state", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let before = snapshot(&state).await;
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
-            "state": null,
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
-        assert_eq!(snapshot(&state).await, before);
-    }
-
-    #[tokio::test]
-    async fn a_pull_request_on_another_host_is_rejected() {
-        let (state, _) = state_with_collection_token("collection-report-other-host", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let before = snapshot(&state).await;
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://evil.test/dasch-swiss/dsp-repository/pull/1",
-            "state": "open",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
-        assert_eq!(snapshot(&state).await, before);
-    }
-
-    #[tokio::test]
-    async fn a_pull_request_on_another_github_repository_is_rejected() {
-        let (state, _) = state_with_collection_token("collection-report-other-repo", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let before = snapshot(&state).await;
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dasch-specs/pull/1",
-            "state": "open",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
-        assert_eq!(snapshot(&state).await, before);
-    }
-
-    #[tokio::test]
-    async fn an_absent_token_and_a_wrong_token_produce_the_same_refusal() {
-        let (state, _) = state_with_collection_token("collection-report-token", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
-            "state": "open",
-            "failure": null,
-        });
-
-        let absent = test_app(&state).oneshot(report_request(None, &body)).await.unwrap();
-        let absent_status = absent.status();
-        let absent_body = body_bytes(absent).await;
-
-        let wrong = test_app(&state)
-            .oneshot(report_request(Some("not-the-token"), &body))
-            .await
-            .unwrap();
-        let wrong_status = wrong.status();
-        let wrong_body = body_bytes(wrong).await;
-
-        assert_eq!(absent_status, axum::http::StatusCode::UNAUTHORIZED);
-        assert_eq!(absent_status, wrong_status);
-        assert_eq!(absent_body, wrong_body);
-        assert_eq!(
-            snapshot(&state).await,
-            vec![record],
-            "an unauthorized report must write nothing"
-        );
-    }
-
-    #[tokio::test]
-    async fn a_report_is_refused_when_no_token_is_configured() {
-        // `test_state` configures no collection token, matching production's fail-closed
-        // default: a service with no verifier must not accept an empty presented one.
-        let (state, _) = test_state("collection-report-no-token-configured").await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/1",
-            "state": "open",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some("anything"), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
-    }
-
     // ---- The RDU browser surface --------------------------------------------
 
     #[tokio::test]
@@ -863,36 +467,25 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_stranded_record_renders_as_stranded_and_the_same_record_open_renders_as_waiting() {
-        // The live-classification requirement: the page has to read the record fresh on every
-        // request, not a startup summary with no per-record identity — so this fails if the
-        // handler is ever changed to read `reconcile::Reconciliation` instead.
-        let (state, _) = test_state("collection-live-classification").await;
+    async fn a_differing_record_renders_waiting_for_release_with_a_link_built_from_the_stored_shortcode() {
+        // The link uses the stored, lowercase spelling, which the collector's branch name carries;
+        // the published spelling (`0801D`) would search for a branch that does not exist.
+        let (state, _) = test_state("collection-waiting-for-release").await;
         let (_, session) = an_rdu_session(&state).await;
-        let mut record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
-        record.pull_request_state = Some(PullRequestState::Merged);
+        let record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
-        let app = test_app(&state);
 
-        let stranded = body_string(app.clone().oneshot(as_session(get("/collection"), &session)).await.unwrap()).await;
-        assert!(stranded.contains("Merged, still differs"), "{stranded}");
-
-        ApprovedRecordRepository::report_collection(
-            &*state.editor,
-            record.id,
-            Some("https://github.com/dasch-swiss/dsp-repository/pull/1"),
-            Some(PullRequestState::Open),
-            None,
-            Utc::now(),
+        let body = body_string(
+            test_app(&state)
+                .oneshot(as_session(get("/collection"), &session))
+                .await
+                .unwrap(),
         )
-        .await
-        .expect("the report should be recorded");
-
-        let waiting = body_string(app.oneshot(as_session(get("/collection"), &session)).await.unwrap()).await;
-        assert!(waiting.contains("Pull request open"), "{waiting}");
-        assert!(!waiting.contains("Merged, still differs"), "{waiting}");
+        .await;
+        assert!(body.contains("Waiting for release"), "{body}");
+        assert!(body.contains("pulls?q=is%3Apr+head%3Aeditor-collect%2F0801d\""), "{body}");
     }
 
     #[tokio::test]
@@ -916,19 +509,5 @@ mod tests {
 
         let second = app.oneshot(as_session(post(&uri, ""), &session)).await.unwrap();
         assert_ne!(second.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
-    }
-
-    #[tokio::test]
-    async fn a_record_never_reported_on_says_so_rather_than_rendering_blank() {
-        let (state, _) = test_state("collection-never-reported").await;
-        let (_, session) = an_rdu_session(&state).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-        let app = test_app(&state);
-
-        let body = body_string(app.oneshot(as_session(get("/collection"), &session)).await.unwrap()).await;
-        assert!(body.contains("Never reported on"), "{body}");
     }
 }

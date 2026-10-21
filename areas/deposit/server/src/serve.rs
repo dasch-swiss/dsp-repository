@@ -81,7 +81,7 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     let identity = match identity_web::Identity::start(
         identity_settings,
         identity_db.clone(),
-        std::sync::Arc::new(editor_store::LiveAuthoredWork::new(editor_db.clone())),
+        std::sync::Arc::new(editor_store::LiveOpenWork::new(editor_db.clone())),
     )
     .await
     {

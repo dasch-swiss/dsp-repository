@@ -1,7 +1,7 @@
 //! What identity needs from the editor (`areas/deposit/ADR-0004`, amendment of 2026-10-13): the
 //! work an account still has open, which the depositor-removal confirmation lists. `editor-store`
-//! implements [`AuthoredWork`] beside the editor's data; identity's tests use
-//! `FakeAuthoredWork` (feature `test-support`).
+//! implements [`OpenWork`] beside the editor's data; identity's tests use
+//! `FakeOpenWork` (feature `test-support`).
 //!
 //! The crate depends on `std` alone: a consumer's `ports` crate may reach only `std` and
 //! `shared-*` (ADR-0003). Account ids cross as opaque strings, so neither side names the other's
@@ -16,7 +16,7 @@ use std::pin::Pin;
 mod fake;
 
 #[cfg(any(test, feature = "test-support"))]
-pub use fake::FakeAuthoredWork;
+pub use fake::FakeOpenWork;
 
 /// What every port method returns. `editor-ports` declares its own twin of this and of
 /// [`Unavailable`]: a ports crate may depend on no other.
@@ -51,14 +51,14 @@ impl Error for Unavailable {
     }
 }
 
-/// The editor work an account authored and that is still open.
+/// The editor work still open under an account.
 ///
 /// Two reads rather than one, because the removal page names which one failed.
-pub trait AuthoredWork: Send + Sync {
+pub trait OpenWork: Send + Sync {
     /// Shortcodes of the drafts this account saved last.
-    fn open_drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
+    fn drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
 
     /// Shortcodes of this account's submissions short of `Approved`: work that can no longer be
     /// returned to its depositor once the account is gone.
-    fn open_submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
+    fn submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
 }

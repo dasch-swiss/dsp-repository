@@ -189,7 +189,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor-core` (the draft model, validation, the canonical project and entity writers, the
   persistence ports), `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
-  of the persistence ports, the file `editor.sqlite`, and `LiveAuthoredWork` behind
+  of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
   `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's field registry
   and widgets, the handlers and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
@@ -206,7 +206,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Actor`, `Authenticator`,
-  `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveAuthoredWork`, `Editor`,
+  `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,
   `routes`, `route_paths`, `reconcile_published`,
   `Forge`, `CollectionPullRequest`
@@ -222,7 +222,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`Editor::{start, router}`, `EditorSettings`, `route_paths`,
   `RightmostXffKeyExtractor`; `Editor::for_test` and `test_support`
   behind `test-support`). The `editor_store` library for the root (`Database`, `Source`,
-  `LiveAuthoredWork`; `test_support`'s plain-value seed helpers and row readers behind
+  `LiveOpenWork`; `test_support`'s plain-value seed helpers and row readers behind
   `test-support`). The `editor_ports` library, which `identity-store` implements. Outside this
   component only `deposit-server` and `identity-store` (on `editor-ports`) depend on an `editor-*` crate.
 - **Local-context kit:** `areas/deposit/editor/CLAUDE.md`, `areas/deposit/editor/web/src/lib.rs`,
@@ -347,7 +347,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`areas/deposit/ADR-0004`). `identity-core`: accounts, sessions, login codes and mail sends
   as records and repository ports, the login rules, the session rules, the cookie names and
   `Cookie`-header scan, code and token generation, and the `Mailer` trait. `identity-ports`:
-  `AuthoredWork`, what identity asks of the editor. `identity-store`: the SQLite file
+  `OpenWork`, what identity asks of the editor. `identity-store`: the SQLite file
   `identity.sqlite` behind the four ports, the mail transports, and `LiveAuthenticator` and
   `LiveUserDirectory` behind `editor-ports`. `identity-web`: the login and depositor pages,
   their handlers and route table, identity's own `Authenticated`/`Rdu` extractors, the
@@ -357,13 +357,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `IdentityRepositories`, `RepositoryError`, `AuthConfig`, `locked_out`,
   `is_plausible_address`, `delta`, `CODE_TTL`, `SEND_WINDOW`, `MAX_CODE_ATTEMPTS`, `begin`,
   `current`, `end`, `Viewer`, `Ended`, `TOUCH_INTERVAL`, `SESSION`, `LOGIN`, `Mailer`, `Mail`,
-  `MailError`, `SmtpMailer`, `ConsoleMailer`, `AuthoredWork`, `LiveAuthenticator`,
+  `MailError`, `SmtpMailer`, `ConsoleMailer`, `OpenWork`, `LiveAuthenticator`,
   `LiveUserDirectory`, `Identity`, `IdentitySettings`, `SmtpPassword`, `StartupError`,
   `IdentityState`, `Authenticated`, `Rdu`, `ensure_rdu`, `spawn_sweep`, `routes`, `route_paths`,
   `RecordingMailer`
 - **Public interface:** the `identity_core` library (`records`, `repository`, `login`,
-  `session`, `cookie`, `secret`, `mail`), the `identity_ports` library (`AuthoredWork`, which
-  `editor-store` implements, `PortFuture`, `Unavailable`; `FakeAuthoredWork` behind
+  `session`, `cookie`, `secret`, `mail`), the `identity_ports` library (`OpenWork`, which
+  `editor-store` implements, `PortFuture`, `Unavailable`; `FakeOpenWork` behind
   `test-support`) and the `identity_store` library (`Database`, `Source`, `DbError`,
   `mail::mailer`, `SmtpSetupError`, `LiveAuthenticator`, `LiveUserDirectory`; behind
   `test-support`, `test_support`'s plain-value seed helpers and readers (`seed_user`,
@@ -441,7 +441,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Database`, `Source`, `LiveAuthenticator`, `LiveUserDirectory`), areas/deposit/editor
   (`editor-web`: `Editor`, `EditorSettings`,
   `RightmostXffKeyExtractor`, `route_paths`; `editor-store`: `Database`, `Source`,
-  `LiveAuthoredWork`; `editor-ports` in tests only), areas/deposit/shell (the fallback 404),
+  `LiveOpenWork`; `editor-ports` in tests only), areas/deposit/shell (the fallback 404),
   shared/telemetry (`collect_route`, `is_valid_traceparent`); third-party: axum, clap, figment,
   ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, pyroscope, matchit
 - **Used by:** nothing in the workspace; the top of the Deposit Area's dependency graph, a

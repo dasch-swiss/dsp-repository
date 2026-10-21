@@ -111,7 +111,7 @@ pub(crate) fn test_app(state: &TestState) -> axum::Router {
 pub(crate) fn identity_router(state: &TestState) -> axum::Router {
     identity_web::Identity::for_test(
         state.identity.store.clone(),
-        Arc::new(editor_store::LiveAuthoredWork::new(state.editor.clone())),
+        Arc::new(editor_store::LiveOpenWork::new(state.editor.clone())),
         Arc::new(state.identity.mailer.clone()),
         state.identity.settings.auth(),
     )

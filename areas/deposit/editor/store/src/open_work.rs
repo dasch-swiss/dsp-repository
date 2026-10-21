@@ -1,34 +1,34 @@
-//! [`LiveAuthoredWork`]: identity's [`AuthoredWork`] port, answered from the editor's tables.
+//! [`LiveOpenWork`]: identity's [`OpenWork`] port, answered from the editor's tables.
 
 use std::sync::Arc;
 
 use editor_core::records::SubmissionState;
 use editor_core::repository::{DraftRepository, EditorRepositories, SubmissionRepository};
-use identity_ports::{AuthoredWork, PortFuture, Unavailable};
+use identity_ports::{OpenWork, PortFuture, Unavailable};
 use uuid::Uuid;
 
-/// The editor work an account authored and that is still open, for the depositor-removal
+/// The editor work still open under an account, for the depositor-removal
 /// confirmation.
 ///
 /// Over the editor's repository bundle rather than [`crate::Database`], so a test can put a
 /// fault-injecting store in front of it.
-pub struct LiveAuthoredWork {
+pub struct LiveOpenWork {
     store: Arc<dyn EditorRepositories>,
 }
 
-impl LiveAuthoredWork {
+impl LiveOpenWork {
     pub fn new(store: Arc<dyn EditorRepositories>) -> Self {
         Self { store }
     }
 }
 
-/// `None` for an id that is not a `Uuid`: no editor row can hold it, so it authored nothing.
+/// `None` for an id that is not a `Uuid`: no editor row can hold it, so nothing is open under it.
 fn account(account_id: &str) -> Option<Uuid> {
     Uuid::parse_str(account_id).ok()
 }
 
-impl AuthoredWork for LiveAuthoredWork {
-    fn open_drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
+impl OpenWork for LiveOpenWork {
+    fn drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
         Box::pin(async move {
             let Some(id) = account(account_id) else {
                 return Ok(Vec::new());
@@ -42,7 +42,7 @@ impl AuthoredWork for LiveAuthoredWork {
         })
     }
 
-    fn open_submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
+    fn submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
         Box::pin(async move {
             let Some(id) = account(account_id) else {
                 return Ok(Vec::new());
@@ -74,43 +74,43 @@ mod tests {
     const AUTHOR: &str = "6f1c1d1e-0000-4000-8000-000000000001";
     const SOMEONE_ELSE: &str = "6f1c1d1e-0000-4000-8000-000000000002";
 
-    async fn work(label: &str) -> (Arc<crate::Database>, LiveAuthoredWork) {
+    async fn work(label: &str) -> (Arc<crate::Database>, LiveOpenWork) {
         let db = Arc::new(open_for_test(label).await);
-        (db.clone(), LiveAuthoredWork::new(db))
+        (db.clone(), LiveOpenWork::new(db))
     }
 
     #[tokio::test]
     async fn test_the_drafts_are_the_ones_the_account_saved_last() {
-        let (db, work) = work("authored-drafts").await;
+        let (db, work) = work("open-drafts").await;
         let now = Utc::now();
         seed_draft(&db, "0801", "{}", Some(AUTHOR), now, now).await;
         seed_draft(&db, "0803", "{}", Some(SOMEONE_ELSE), now, now).await;
         seed_draft(&db, "0804", "{}", None, now, now).await;
 
-        assert_eq!(work.open_drafts(AUTHOR).await.unwrap(), vec!["0801".to_string()]);
+        assert_eq!(work.drafts(AUTHOR).await.unwrap(), vec!["0801".to_string()]);
     }
 
     #[tokio::test]
     async fn test_every_submission_short_of_approved_is_open() {
-        let (db, work) = work("authored-submissions").await;
+        let (db, work) = work("open-submissions").await;
         let now = Utc::now();
         seed_submission(&db, "0801", "{}", "submitted", Some(AUTHOR), now, None, None).await;
         seed_submission(&db, "0803", "{}", "in_review", Some(AUTHOR), now, Some(SOMEONE_ELSE), Some(now)).await;
         seed_submission(&db, "0804", "{}", "approved", Some(AUTHOR), now, Some(SOMEONE_ELSE), Some(now)).await;
         seed_submission(&db, "0805", "{}", "submitted", Some(SOMEONE_ELSE), now, None, None).await;
 
-        let mut open = work.open_submissions(AUTHOR).await.unwrap();
+        let mut open = work.submissions(AUTHOR).await.unwrap();
         open.sort();
         assert_eq!(open, vec!["0801".to_string(), "0803".to_string()]);
     }
 
     #[tokio::test]
-    async fn test_an_id_that_is_not_a_uuid_authored_nothing() {
-        let (db, work) = work("authored-not-a-uuid").await;
+    async fn test_an_id_that_is_not_a_uuid_has_no_open_work() {
+        let (db, work) = work("open-not-a-uuid").await;
         let now = Utc::now();
         seed_draft(&db, "0801", "{}", Some(AUTHOR), now, now).await;
 
-        assert!(work.open_drafts("not-a-uuid").await.unwrap().is_empty());
-        assert!(work.open_submissions("not-a-uuid").await.unwrap().is_empty());
+        assert!(work.drafts("not-a-uuid").await.unwrap().is_empty());
+        assert!(work.submissions("not-a-uuid").await.unwrap().is_empty());
     }
 }

@@ -20,7 +20,7 @@ use identity_core::login::AuthConfig;
 /// What the root's configuration check reads: the login code's lifetime and the address shape.
 pub use identity_core::login::{is_plausible_address, CODE_TTL};
 use identity_core::repository::IdentityRepositories;
-use identity_ports::AuthoredWork;
+use identity_ports::OpenWork;
 
 pub use crate::routes::route_paths;
 #[cfg(any(test, feature = "test-support"))]
@@ -101,7 +101,7 @@ impl Identity {
     pub async fn start(
         settings: IdentitySettings,
         store: Arc<dyn IdentityRepositories>,
-        authored_work: Arc<dyn AuthoredWork>,
+        open_work: Arc<dyn OpenWork>,
     ) -> Result<Self, StartupError> {
         let changed = handlers::accounts::ensure_rdu(&*store, &settings.rdu_addresses, chrono::Utc::now())
             .await
@@ -132,7 +132,7 @@ impl Identity {
                 css_href: settings.css_href,
                 reveal_login_code: settings.reveal_login_code,
                 store,
-                authored_work,
+                open_work,
                 mailer,
             },
         })
@@ -153,7 +153,7 @@ impl Identity {
     #[must_use]
     pub fn for_test(
         store: Arc<dyn IdentityRepositories>,
-        authored_work: Arc<dyn AuthoredWork>,
+        open_work: Arc<dyn OpenWork>,
         mailer: Arc<dyn identity_core::mail::Mailer>,
         auth: AuthConfig,
     ) -> Self {
@@ -161,7 +161,7 @@ impl Identity {
             state: IdentityState {
                 css_href: "/assets/app.css".to_string(),
                 store,
-                authored_work,
+                open_work,
                 mailer,
                 auth,
                 reveal_login_code: false,

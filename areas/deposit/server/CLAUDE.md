@@ -4,7 +4,7 @@ The Deposit Area's composition root (`areas/deposit/ADR-0004`), binary `deposit-
 
 ## What this crate is
 
-`main`, CLI dispatch (`serve`, `healthcheck`), configuration loading and validation (`EditorConfig`, `Secret`), OTel and Pyroscope init, the CSRF and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and the fallback 404. `serve.rs` opens both stores, constructs the adapters (`LiveAuthenticator`, `LiveUserDirectory`, `LiveAuthoredWork`), starts `Identity` and then `Editor`, and merges their routers. It holds no business logic: each capability receives the part of the configuration it declares (`identity_settings`, `editor_settings`). The tests here are the ones that need both capabilities (`cross_capability`, `identity`, `removed_account`) or the assembled app (`router`).
+`main`, CLI dispatch (`serve`, `healthcheck`), configuration loading and validation (`EditorConfig`, `Secret`), OTel and Pyroscope init, the CSRF and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and the fallback 404. `serve.rs` opens both stores, constructs the adapters (`LiveAuthenticator`, `LiveUserDirectory`, `LiveOpenWork`), starts `Identity` and then `Editor`, and merges their routers. It holds no business logic: each capability receives the part of the configuration it declares (`identity_settings`, `editor_settings`). The tests here are the ones that need both capabilities (`cross_capability`, `identity`, `removed_account`) or the assembled app (`router`).
 
 ## Router assembly: the traced/untraced order matters
 

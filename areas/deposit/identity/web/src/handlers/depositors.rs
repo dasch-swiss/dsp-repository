@@ -345,11 +345,11 @@ pub(crate) async fn remove_form(
     // what is in flight, and a confirmation that silently claims there is
     // nothing is worse than one that says it could not tell.
     let account_id = id.to_string();
-    let drafts = match state.authored_work.open_drafts(&account_id).await {
+    let drafts = match state.open_work.drafts(&account_id).await {
         Ok(drafts) => drafts,
         Err(error) => return storage_error(&state, &viewer, "read this account's drafts", &error),
     };
-    let submissions = match state.authored_work.open_submissions(&account_id).await {
+    let submissions = match state.open_work.submissions(&account_id).await {
         Ok(submissions) => submissions,
         Err(error) => return storage_error(&state, &viewer, "read this account's submissions", &error),
     };

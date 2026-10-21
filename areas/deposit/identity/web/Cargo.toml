@@ -39,5 +39,5 @@ tower = { workspace = true, features = ["util"] }
 tracing-subscriber.workspace = true
 # The seed helpers, row readers and the fault-injecting fake.
 identity-store = { path = "../store", features = ["test-support"] }
-# `FakeAuthoredWork`, for the depositor-removal confirmation.
+# `FakeOpenWork`, for the depositor-removal confirmation.
 identity-ports = { path = "../ports", features = ["test-support"] }

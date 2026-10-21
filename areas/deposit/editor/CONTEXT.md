@@ -49,7 +49,7 @@ An `approved_records` row: the submitted draft with every Decision applied, writ
 _Avoid_: published record (Online is the state after collection, not this), export.
 
 **Collection run**:
-One invocation of `.github/workflows/collect-editor-records.yml`: it reads every Approved record, writes each project's into a Collection branch, opens or updates one pull request per project, and reports the outcome back. Manual, in two modes — `collect` publishes and reports, `refresh` only re-reports pull request states. [`docs/src/editor/collection.md`](../../../docs/src/editor/collection.md) is its contract.
+One invocation of `.github/workflows/collect-editor-records.yml`: it reads every Approved record, writes each project's into a Collection branch, opens or updates one pull request per project, and writes one row per record to the run's job summary. Manual, dispatched after approving. [`docs/src/editor/collection.md`](../../../docs/src/editor/collection.md) is its contract.
 _Avoid_: sync, export, deploy, publish (publication is the merge plus a release, not the run).
 
 **Collection branch**:

@@ -18,7 +18,7 @@ mod run;
 
 use std::process::ExitCode;
 
-use config::{Config, Mode};
+use config::Config;
 
 /// The branch a collection pull request targets.
 const BASE_BRANCH: &str = "main";
@@ -34,27 +34,21 @@ fn main() -> ExitCode {
 }
 
 fn execute() -> Result<ExitCode, String> {
-    let arguments: Vec<String> = std::env::args().skip(1).collect();
-    let mode = Mode::parse(&arguments)?;
     let config = Config::from_env()?;
 
-    let editor = editor::Editor::new(&config.editor_base_url, &config.collection_token)?;
+    let editor = editor::Editor::new(&config.editor_base_url)?;
     let forge = forge::CommandForge::new(&config.repository, BASE_BRANCH, std::path::Path::new("."));
 
-    let summary = match mode {
-        Mode::Collect => run::collect(&config, &editor, &forge)?,
-        Mode::Refresh => run::refresh(&editor, &forge)?,
-    };
+    let summary = run::collect(&config, &editor, &forge)?;
 
     println!(
-        "{} records considered: {} published, {} inspected, {} failed, {} unreported",
-        summary.considered, summary.published, summary.skipped, summary.failed, summary.unreported
+        "{} records considered: {} opened, {} updated, {} skipped, {} failed",
+        summary.considered, summary.opened, summary.updated, summary.skipped, summary.failed
     );
 
-    // A record that failed, or one whose outcome never reached the editor,
-    // fails the job: both leave the editor's picture wrong, and a green run is
-    // what would stop anyone looking.
-    if summary.failed > 0 || summary.unreported > 0 {
+    // A failed record fails the job: a green run is what would stop anyone
+    // reading the job summary.
+    if summary.failed > 0 {
         return Ok(ExitCode::FAILURE);
     }
     Ok(ExitCode::SUCCESS)

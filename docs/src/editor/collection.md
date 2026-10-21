@@ -66,7 +66,7 @@ Because the branch no longer encodes the record, a report identifies its record 
 
 Reopening a closed pull request is never correct: somebody deliberately ended that review.
 
-**A pull request names its record.** The body ends with an `Approved-record: <id>` line. The collector writes the whole body when it opens the pull request and overwrites it after every force-push onto it, so an open pull request names the record its branch carries and a merged one names the record it landed. A failed rewrite is reported as a failure and repeated by the next run. A merged pull request therefore skips only the record it names. A project approved again after its release has a newer record, which a pull request merged for the old one says nothing about: it gets a new pull request from the same branch. `refresh` applies the same rule and never reports a merged pull request for a record it does not name. A merged pull request whose body names no record skips nothing, so a reviewer editing the body keeps that line: without it, the next run collects the landed record a second time.
+**A pull request names its record.** The body ends with an `Approved-record: <id>` line. The collector writes the whole body when it opens the pull request and overwrites it after every force-push onto it, so an open pull request names the record its branch carries and a merged one names the record it landed. A failed rewrite is reported as a failure and repeated by the next run. A merged pull request therefore skips only the record it names. A project approved again after its release has a newer record, which a pull request merged for the old one says nothing about: it gets a new pull request from the same branch. A merged pull request whose body names no record skips nothing, so a reviewer editing the body keeps that line: without it, the next run collects the landed record a second time.
 
 **Branch lifecycle, one rule covering every case.** The collector owns every `editor-collect/<shortcode>` branch and force-pushes over it whenever no *merged* pull request names the record being collected. Stating it as "no pull request references the branch" would leave both the closed-pull-request retry and the stale-open-pull-request update unauthorised, and a branch left behind by a run that died before `gh pr create` is invisible to a rule phrased in terms of pull requests.
 
@@ -118,22 +118,13 @@ The collection pull request must satisfy `commit-hygiene.yml` like any other: `t
 
 ## Running it
 
-`workflow_dispatch` only, in two modes. `collect` fetches, publishes and reports; `refresh` re-reports pull request states and writes nothing.
+`workflow_dispatch` only. Dispatch it after approving: until a run force-pushes the newer record, an open pull request still carries the older one.
 
 | Name | Kind | Why |
 |---|---|---|
 | `EDITOR_BASE_URL` | repository variable | The editor's origin. A variable, not a secret: it is not one, and the hostname is still open with Infra (DEV-6921), so settling it needs no code change. |
-| `EDITOR_COLLECTION_TOKEN` | secret | Presented to the editor's report endpoint and to nothing else. |
-| `GH_TOKEN` | secret | Used against GitHub. Not `github.token` — see below. |
+| `GH_TOKEN` | secret | Used against GitHub. Not `github.token`, see above. |
 
-The workflow refuses to start when the variable or the secret is empty, before checkout: GitHub substitutes an empty string for an unset secret rather than failing the run, so without that guard the collector would open pull requests and then take 401 on every report, leaving records reading as never collected while their pull requests are open.
+The workflow refuses to start when the variable is empty, before checkout: GitHub substitutes an empty string for an unset variable rather than failing the run.
 
-The collector fails the job when any record failed or any outcome could not be reported. A green run means every record the editor served was both handled and reported.
-
-## The staleness limitation
-
-A reported state is only as fresh as the last run, and the collection trigger is manual with no schedule. A pull request merged with reviewer edits *after* the last run leaves its record reading `open`, with nobody prompted to re-run, so it never reaches the merged-with-edits classification above.
-
-The surface therefore shows the last reported state **with the time it was reported**, and links to the pull request, so a reader can see the state is old and check it for themselves.
-
-Closing this properly needs a **refresh-only trigger** that re-reports pull request states without collecting anything. That belongs to the collecting workflow and is named here rather than assumed: it is distinct from the collection trigger, which REQ-5.3 keeps manual.
+Each record the run handles gets one row in the run's job summary, written as soon as that record is handled: project, record, outcome (`opened`, `updated`, `skipped` or `failed`), pull request and, for a skipped or failed record, the reason. A run that aborts keeps the rows it already wrote, so a record with no row was not reached. The collector fails the job when any record failed.

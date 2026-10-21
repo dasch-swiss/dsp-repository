@@ -59,8 +59,7 @@ pub fn record_in(body: &str) -> Option<String> {
 /// One pull request opened from a collection branch.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CollectionPullRequest {
-    /// Higher is newer, which is how the newest of several closed pull
-    /// requests on one branch is chosen.
+    /// Higher is newer.
     pub number: u64,
     pub url: String,
     pub head_ref: String,

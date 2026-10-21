@@ -217,7 +217,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `/collection`, `/collection/{id}/discard`, `/states`,
   `GET /api/v1/approved-records`, `POST /api/v1/collection-report`), served only through
   `Editor::router`, which `deposit-server` merges with identity's; the
-  `editor-collector collect | refresh` CLI, invoked only by
+  `editor-collector` CLI (no arguments), invoked only by
   `.github/workflows/collect-editor-records.yml`. The `editor_web` library for the root
   (`Editor::{start, router}`, `EditorSettings`, `CollectionToken`, `route_paths`,
   `RightmostXffKeyExtractor`, `COLLECTION_REPORT_PATH`; `Editor::for_test` and `test_support`

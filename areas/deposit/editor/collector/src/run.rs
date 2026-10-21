@@ -1,4 +1,4 @@
-//! The per-record loop: the skip rule, the force-push guard, and the report.
+//! The per-record loop: the skip rule, the force-push guard, and the job summary.
 //!
 //! Collection state is derived from GitHub and keyed on the project's
 //! shortcode, never on the record id. A record id identifies a row the editor
@@ -10,11 +10,12 @@
 //! body names (`pull_requests_for`).
 
 use std::collections::BTreeSet;
+use std::io::Write;
 use std::path::Path;
 
 use editor_core::agents::Agents;
 use editor_core::canonical::{write_entity, write_project};
-use editor_core::collection::{ApprovedRecordView, CollectionReport, ProposedEntityView};
+use editor_core::collection::{ApprovedRecordView, ProposedEntityView};
 use editor_core::proposals::{entity_id_number, ProposalKind};
 use editor_core::records::PullRequestState;
 use serde_json::Value;
@@ -31,72 +32,85 @@ use crate::{layout, renumber};
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Summary {
     pub considered: usize,
-    pub published: usize,
+    pub opened: usize,
+    pub updated: usize,
     pub skipped: usize,
     pub failed: usize,
-    /// Records whose outcome could not be reported back. The work landed; the
-    /// editor's picture of it did not, so a run with any of these exits
-    /// non-zero even when every record published.
-    pub unreported: usize,
 }
 
 /// What happened to one record.
 #[derive(Debug, PartialEq, Eq)]
 enum Outcome {
-    /// Published, or force-pushed onto a pull request that was already open.
-    Published {
+    /// A new pull request.
+    Opened {
         url: String,
     },
-    /// Not acted on, but its pull request's state is worth re-reporting.
-    Inspected {
+    /// Force-pushed onto a pull request that was already open.
+    Updated {
         url: String,
-        state: PullRequestState,
+    },
+    /// Not acted on: a merged pull request already speaks for this record.
+    Skipped {
+        url: String,
     },
     Failed {
         reason: String,
     },
-    /// Nothing to say: no pull request on this project's branch speaks for
-    /// this record.
-    Silent,
 }
 
-/// Fetch, publish and report.
+/// The job summary's title and table header. A table needs the blank line
+/// before it, or the title and the header row fuse into one paragraph.
+const SUMMARY_HEADER: &str =
+    "## Editor collection\n\n| Project | Record | Outcome | Pull request | Reason |\n| --- | --- | --- | --- | --- |\n";
+
+/// Written in place of the table when the editor holds no approved record.
+const SUMMARY_NO_RECORDS: &str = "## Editor collection\n\nThe editor holds no approved records.\n";
+
+/// Fetch and publish.
 pub fn collect(config: &Config, editor: &Editor, forge: &dyn Forge) -> Result<Summary, String> {
     let records = editor.approved_records()?;
+    collect_records(config, &records, forge)
+}
+
+/// Each record's row is appended to the job summary as soon as that record is
+/// handled, so a run that aborts on a later listing error keeps the rows it
+/// already wrote. A summary that cannot be written never stops the loop: the
+/// first write failure is returned only after every record has been handled.
+fn collect_records(config: &Config, records: &[ApprovedRecordView], forge: &dyn Forge) -> Result<Summary, String> {
     let mut summary = Summary::default();
+    let summary_path = config.step_summary.as_deref();
+    let mut write_failure: Option<String> = None;
+    let mut write = |text: &str| {
+        if let Some(path) = summary_path {
+            if let Err(error) = append_to_summary(path, text) {
+                eprintln!("{error}");
+                write_failure.get_or_insert(error);
+            }
+        }
+    };
+
+    write(if records.is_empty() {
+        SUMMARY_NO_RECORDS
+    } else {
+        SUMMARY_HEADER
+    });
     let mut pull_requests = forge.collection_pull_requests()?;
 
-    for record in &records {
+    for record in records {
         let outcome =
             collect_one(config, forge, record, &pull_requests).unwrap_or_else(|reason| Outcome::Failed { reason });
-        finish(editor, record, &outcome, &mut summary);
+        finish(record, &outcome, &mut summary);
+        write(&summary_row(record, &outcome));
 
         // Re-derived after each record, not read once per run: the pull request
         // this record just opened claims entity ids the next record must not
         // allocate again, and another run may have opened one meanwhile.
         pull_requests = forge.collection_pull_requests()?;
     }
-    Ok(summary)
-}
-
-/// Re-report pull request states, writing nothing.
-///
-/// A pull request merged with reviewer edits after the last collect leaves its
-/// record reading `open`, with nobody prompted to re-run; this is what
-/// eventually classifies it.
-pub fn refresh(editor: &Editor, forge: &dyn Forge) -> Result<Summary, String> {
-    let records = editor.approved_records()?;
-    let pull_requests = forge.collection_pull_requests()?;
-    let mut summary = Summary::default();
-
-    for record in &records {
-        let outcome = match newest_for(&pull_requests, record) {
-            Some(pull_request) => Outcome::Inspected { url: pull_request.url.clone(), state: pull_request.state },
-            None => Outcome::Silent,
-        };
-        finish(editor, record, &outcome, &mut summary);
+    match write_failure {
+        Some(error) => Err(error),
+        None => Ok(summary),
     }
-    Ok(summary)
 }
 
 fn collect_one(
@@ -117,13 +131,12 @@ fn collect_one(
     let on_branch = pull_requests_for(pull_requests, record);
 
     // Merged for this record: the change has landed, and reconciliation
-    // discards the record when a release carries it. Its state is still
-    // reported.
+    // discards the record when a release carries it.
     if let Some(merged) = on_branch
         .iter()
         .find(|pull_request| pull_request.state == PullRequestState::Merged)
     {
-        return Ok(Outcome::Inspected { url: merged.url.clone(), state: PullRequestState::Merged });
+        return Ok(Outcome::Skipped { url: merged.url.clone() });
     }
 
     let Some(project) = record.project.as_ref() else {
@@ -141,7 +154,8 @@ fn collect_one(
         if !message.contains(COLLECTED_BY_TRAILER) {
             return Ok(Outcome::Failed {
                 reason: format!(
-                    "{branch} has a tip commit this collector did not make; refusing to force-push over it"
+                    "{branch} has a tip commit this collector did not make; refusing to force-push over it. \
+                     Merge its pull request, or close it and delete the branch, then run again."
                 ),
             });
         }
@@ -210,12 +224,12 @@ fn collect_one(
         forge.edit_pull_request_body(&open.url, &body).map_err(|error| {
             format!("pushed onto {}, but its body still names the earlier record: {error}", open.url)
         })?;
-        return Ok(Outcome::Published { url: open.url.clone() });
+        return Ok(Outcome::Updated { url: open.url.clone() });
     }
 
     let title = subject(record);
     let url = forge.open_pull_request(&branch, &title, &body)?;
-    Ok(Outcome::Published { url })
+    Ok(Outcome::Opened { url })
 }
 
 /// Whether every entity in a record can be written, checked in one pass.
@@ -282,8 +296,7 @@ fn entity_id_at(path: &str) -> Option<String> {
 }
 
 /// The pull requests on this record's branch that speak for it: all except a
-/// merged one naming another record. The skip rule and `refresh` both start
-/// here.
+/// merged one naming another record. The skip rule starts here.
 fn pull_requests_for<'a>(
     pull_requests: &'a [CollectionPullRequest],
     record: &ApprovedRecordView,
@@ -299,80 +312,59 @@ fn pull_requests_for<'a>(
         .collect()
 }
 
-/// The pull request whose state is worth reporting for one record: a merged one
-/// first, then an open one, then the newest closed one.
-fn newest_for<'a>(
-    pull_requests: &'a [CollectionPullRequest],
-    record: &ApprovedRecordView,
-) -> Option<&'a CollectionPullRequest> {
-    let on_branch = pull_requests_for(pull_requests, record);
-
-    on_branch
-        .iter()
-        .find(|pull_request| pull_request.state == PullRequestState::Merged)
-        .or_else(|| {
-            on_branch
-                .iter()
-                .find(|pull_request| pull_request.state == PullRequestState::Open)
-        })
-        .or_else(|| on_branch.iter().max_by_key(|pull_request| pull_request.number))
-        .copied()
-}
-
-/// Sends the report and counts the outcome.
+/// Counts the outcome, and names a failure in the job log.
 ///
-/// A failing report never stops the run: the remaining records still deserve
-/// their own attempt, and one that already published must not be published
-/// twice.
-fn finish(editor: &Editor, record: &ApprovedRecordView, outcome: &Outcome, summary: &mut Summary) {
+/// Never stops the run: the remaining records still deserve their own attempt.
+fn finish(record: &ApprovedRecordView, outcome: &Outcome, summary: &mut Summary) {
     summary.considered += 1;
     match outcome {
-        Outcome::Published { .. } => summary.published += 1,
-        Outcome::Inspected { .. } => summary.skipped += 1,
+        Outcome::Opened { .. } => summary.opened += 1,
+        Outcome::Updated { .. } => summary.updated += 1,
+        Outcome::Skipped { .. } => summary.skipped += 1,
         Outcome::Failed { reason } => {
             summary.failed += 1;
             eprintln!("{}: {reason}", record.shortcode);
         }
-        Outcome::Silent => summary.skipped += 1,
-    }
-
-    let Some(report) = report_for(record, outcome) else {
-        return;
-    };
-    if let Err(error) = editor.report(&report) {
-        summary.unreported += 1;
-        eprintln!("{}: could not report: {error}", record.shortcode);
     }
 }
 
-/// The report one outcome produces, or `None` when there is nothing to say.
-///
-/// A failure report records `last_failure` and leaves the URL and state alone:
-/// it says nothing about that pull request, and erasing a reference an earlier
-/// report established would leave the record reading as uncollected while its
-/// pull request is still open.
-fn report_for(record: &ApprovedRecordView, outcome: &Outcome) -> Option<CollectionReport> {
-    match outcome {
-        Outcome::Published { url } => Some(CollectionReport {
-            record: record.id,
-            pull_request: Some(url.clone()),
-            state: Some(PullRequestState::Open),
-            failure: None,
-        }),
-        Outcome::Inspected { url, state } => Some(CollectionReport {
-            record: record.id,
-            pull_request: Some(url.clone()),
-            state: Some(*state),
-            failure: None,
-        }),
-        Outcome::Failed { reason } => Some(CollectionReport {
-            record: record.id,
-            pull_request: None,
-            state: None,
-            failure: Some(reason.clone()),
-        }),
-        Outcome::Silent => None,
+/// One job-summary table row. The shortcode and the reason are free text and go through [`cell`];
+/// the pull request URL stays plain so GitHub links it.
+fn summary_row(record: &ApprovedRecordView, outcome: &Outcome) -> String {
+    let (word, url, reason) = match outcome {
+        Outcome::Opened { url } => ("opened", url.as_str(), ""),
+        Outcome::Updated { url } => ("updated", url.as_str(), ""),
+        Outcome::Skipped { url } => ("skipped", url.as_str(), "a pull request for this record is already merged"),
+        Outcome::Failed { reason } => ("failed", "", reason.as_str()),
+    };
+    format!(
+        "| {} | {} | {word} | {} | {} |\n",
+        cell(&record.shortcode),
+        record.id,
+        url,
+        cell(reason)
+    )
+}
+
+/// Free text made safe to sit in one table cell. GitHub renders the job summary
+/// as Markdown with HTML, so a link or tag in the text would render live; inside
+/// a code span it is shown as text. A pipe is escaped as `\|` because a table
+/// row splits on it even inside a code span. Empty text stays an empty cell.
+fn cell(value: &str) -> String {
+    let text = one_line(value);
+    if text.is_empty() {
+        return text;
     }
+    format!("`{}`", text.replace('|', "\\|"))
+}
+
+fn append_to_summary(path: &Path, text: &str) -> Result<(), String> {
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .and_then(|mut file| file.write_all(text.as_bytes()))
+        .map_err(|error| format!("could not write the job summary {}: {error}", path.display()))
 }
 
 fn subject(record: &ApprovedRecordView) -> String {
@@ -422,10 +414,11 @@ fn notes(mapping: &std::collections::BTreeMap<String, String>, rows: &[String]) 
     lines.join("\n")
 }
 
-/// A depositor's free text, made safe to sit in a commit message and a pull
-/// request body. It is interpolated inside a code span, so a backtick would
-/// break out of it and a newline would end the line — and GitHub links an
-/// `@name` or a `#123` that escapes one.
+/// A depositor's free text, made safe to sit in a commit message, a pull
+/// request body and a job-summary table cell. It is interpolated inside a code
+/// span, so a backtick would break out of it and a newline would end the line
+/// (or the table row) — and GitHub links an `@name` or a `#123` that escapes
+/// one.
 fn one_line(value: &str) -> String {
     value
         .chars()
@@ -542,8 +535,8 @@ mod tests {
         }
         Config {
             editor_base_url: "https://editor.example".to_string(),
-            collection_token: "token".to_string(),
             repository: "dasch-swiss/dsp-repository".to_string(),
+            step_summary: None,
             data_dir: dir,
         }
     }
@@ -572,9 +565,9 @@ mod tests {
     }
 
     /// The change has landed; reconciliation discards the record when a release
-    /// carries it. Nothing may be written, and the state is still reported.
+    /// carries it. Nothing may be written.
     #[test]
-    fn a_merged_pull_request_is_reported_and_nothing_is_written() {
+    fn a_merged_pull_request_skips_the_record_and_nothing_is_written() {
         let config = fixture("merged");
         let record = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
@@ -588,13 +581,7 @@ mod tests {
         let outcome =
             collect_one(&config, &forge, &record, &forge.pull_requests).expect("the skip rule decides without failing");
 
-        assert_eq!(
-            outcome,
-            Outcome::Inspected {
-                url: EXISTING_URL.to_string(),
-                state: PullRequestState::Merged
-            }
-        );
+        assert_eq!(outcome, Outcome::Skipped { url: EXISTING_URL.to_string() });
         assert!(!forge.did("start") && !forge.did("commit") && !forge.did("push"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
@@ -617,7 +604,7 @@ mod tests {
         let outcome =
             collect_one(&config, &forge, &newer, &forge.pull_requests).expect("the newer record is collected");
 
-        assert_eq!(outcome, Outcome::Published { url: CREATED_URL.to_string() });
+        assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
         assert!(forge.did("push") && forge.did("create"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
@@ -641,7 +628,7 @@ mod tests {
         let outcome =
             collect_one(&config, &forge, &newer, &forge.pull_requests).expect("an open pull request is updated");
 
-        assert_eq!(outcome, Outcome::Published { url: EXISTING_URL.to_string() });
+        assert_eq!(outcome, Outcome::Updated { url: EXISTING_URL.to_string() });
         assert!(forge.did("push"), "the branch is force-pushed");
         assert!(!forge.did("create"), "a second pull request must not be opened");
         let bodies = forge.bodies.borrow();
@@ -659,7 +646,7 @@ mod tests {
 
         let outcome = collect_one(&config, &forge, &record, &[]).expect("a new pull request is opened");
 
-        assert_eq!(outcome, Outcome::Published { url: CREATED_URL.to_string() });
+        assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
         assert!(forge.did("push") && forge.did("create"));
         assert_eq!(record_in(&forge.bodies.borrow()[0]), Some(record.id.to_string()));
         let _ = std::fs::remove_dir_all(&config.data_dir);
@@ -687,7 +674,7 @@ mod tests {
         )
         .expect("a closed pull request is retried");
 
-        assert_eq!(outcome, Outcome::Published { url: CREATED_URL.to_string() });
+        assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
         assert!(forge.did("create"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
@@ -730,23 +717,17 @@ mod tests {
     }
 
     /// A record whose draft could not be converted is still served by the
-    /// editor, carrying its error; it becomes a failure report, not a panic and
-    /// not a silent skip.
+    /// editor, carrying its error; it becomes a failure, not a panic and not a
+    /// silent skip.
     #[test]
-    fn a_record_with_no_publishable_project_becomes_a_failure_report() {
+    fn a_record_with_no_publishable_project_fails() {
         let config = fixture("problem");
         let forge = FakeForge::default();
         let record = record("0803", None, Some("shortDescription is required".to_string()));
 
-        let outcome = collect_one(&config, &forge, &record, &[]).expect("a problem is reported, not raised");
+        let outcome = collect_one(&config, &forge, &record, &[]).expect("a problem is returned as a failure");
 
         assert_eq!(outcome, Outcome::Failed { reason: "shortDescription is required".to_string() });
-        let report = report_for(&record, &outcome).expect("a failure is reported");
-        // A failure report says nothing about the pull request: erasing a
-        // reference an earlier report established would leave the record
-        // reading as uncollected while its pull request is still open.
-        assert!(report.pull_request.is_none() && report.state.is_none());
-        assert_eq!(report.failure.as_deref(), Some("shortDescription is required"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
@@ -762,40 +743,111 @@ mod tests {
         );
     }
 
-    /// A shortcode with no pull request has no state to re-report, and a
-    /// failure report would record a failure that did not happen.
     #[test]
-    fn refresh_says_nothing_about_a_project_that_was_never_collected() {
-        assert!(newest_for(&[], &record("0803", None, None)).is_none());
-    }
-
-    #[test]
-    fn refresh_prefers_a_merged_pull_request_over_an_open_one_on_the_same_branch() {
-        let branch = "editor-collect/0803";
+    fn each_outcome_renders_its_word_url_and_reason() {
         let record = record("0803", None, None);
-        let pull_requests = vec![
-            pull_request(branch, PullRequestState::Open, EXISTING_URL),
-            naming(pull_request(branch, PullRequestState::Merged, CREATED_URL), &record),
-        ];
+        let id = record.id;
+
+        let opened = summary_row(&record, &Outcome::Opened { url: CREATED_URL.to_string() });
+        assert_eq!(opened, format!("| `0803` | {id} | opened | {CREATED_URL} |  |\n"));
+
+        let updated = summary_row(&record, &Outcome::Updated { url: EXISTING_URL.to_string() });
+        assert_eq!(updated, format!("| `0803` | {id} | updated | {EXISTING_URL} |  |\n"));
+
+        let skipped = summary_row(&record, &Outcome::Skipped { url: EXISTING_URL.to_string() });
         assert_eq!(
-            newest_for(&pull_requests, &record).map(|p| p.state),
-            Some(PullRequestState::Merged)
+            skipped,
+            format!(
+                "| `0803` | {id} | skipped | {EXISTING_URL} | `a pull request for this record is already merged` |\n"
+            )
         );
+
+        let failed = summary_row(&record, &Outcome::Failed { reason: "no usable project".to_string() });
+        assert_eq!(failed, format!("| `0803` | {id} | failed |  | `no usable project` |\n"));
     }
 
     #[test]
-    fn refresh_reports_the_open_pull_request_over_one_merged_for_an_earlier_record() {
-        let branch = "editor-collect/0803";
-        let earlier = record("0803", None, None);
-        let newer = record("0803", None, None);
-        let pull_requests = vec![
-            naming(pull_request(branch, PullRequestState::Merged, CREATED_URL), &earlier),
-            naming(pull_request(branch, PullRequestState::Open, EXISTING_URL), &newer),
-        ];
+    fn a_depositors_text_cannot_reshape_the_row_or_render_live() {
+        let piped = record("08|3\n", None, None);
+        let id = piped.id;
+        let row = summary_row(&piped, &Outcome::Failed { reason: "bad `a|b`\nsecond line".to_string() });
+        assert_eq!(row, format!("| `08\\|3` | {id} | failed |  | `bad  a\\|b  second line` |\n"));
+        assert_eq!(row.matches('\n').count(), 1, "one row is one line: {row:?}");
+
+        let linked = record("[x](https://evil.example)", None, None);
+        let id = linked.id;
+        let row = summary_row(&linked, &Outcome::Failed { reason: "<img src=x>|".to_string() });
         assert_eq!(
-            newest_for(&pull_requests, &newer).map(|p| p.state),
-            Some(PullRequestState::Open)
+            row,
+            format!("| `[x](https://evil.example)` | {id} | failed |  | `<img src=x>\\|` |\n")
         );
+    }
+
+    fn config_writing_summary_to(name: &str, path: &Path) -> Config {
+        Config { step_summary: Some(path.to_path_buf()), ..fixture(name) }
+    }
+
+    #[test]
+    fn the_summary_holds_the_header_then_one_row_per_record_in_order() {
+        let path = std::env::temp_dir().join(format!("editor-collector-summary-rows-{}.md", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let config = config_writing_summary_to("summary-rows", &path);
+        let forge = FakeForge::default();
+        let records = [
+            record("0803", Some(committed_project()), None),
+            record("0804", None, Some("shortDescription is required".to_string())),
+        ];
+
+        let summary = collect_records(&config, &records, &forge).expect("both records are handled");
+
+        assert_eq!((summary.opened, summary.failed), (1, 1));
+        let written = std::fs::read_to_string(&path).expect("the summary file exists");
+        let rows = written.strip_prefix(SUMMARY_HEADER).expect("the header comes first");
+        let rows: Vec<&str> = rows.lines().collect();
+        assert_eq!(rows.len(), 2, "{written}");
+        assert!(rows[0].contains("`0803`") && rows[0].contains("| opened |") && rows[0].contains(CREATED_URL));
+        assert!(
+            rows[1].contains("`0804`")
+                && rows[1].contains("| failed |")
+                && rows[1].contains("`shortDescription is required`")
+        );
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn no_records_writes_the_no_records_line_and_no_table() {
+        let path = std::env::temp_dir().join(format!("editor-collector-summary-empty-{}.md", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let config = config_writing_summary_to("summary-empty", &path);
+
+        collect_records(&config, &[], &FakeForge::default()).expect("nothing to handle");
+
+        let written = std::fs::read_to_string(&path).expect("the summary file exists");
+        assert_eq!(written, SUMMARY_NO_RECORDS);
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn an_unwritable_summary_does_not_stop_the_records_but_fails_the_run() {
+        let path = std::env::temp_dir()
+            .join(format!("editor-collector-no-such-dir-{}", std::process::id()))
+            .join("summary.md");
+        let config = config_writing_summary_to("summary-unwritable", &path);
+        let forge = FakeForge::default();
+        let records = [
+            record("0803", Some(committed_project()), None),
+            record("0803", Some(committed_project()), None),
+        ];
+
+        let result = collect_records(&config, &records, &forge);
+
+        let error = result.expect_err("a summary that cannot be written fails the run");
+        assert!(error.contains("job summary"), "{error}");
+        let created = forge.calls.borrow().iter().filter(|call| *call == "create").count();
+        assert_eq!(created, 2, "every record is still attempted");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
     #[test]
@@ -864,7 +916,7 @@ mod tests {
                 body: serde_json::json!({ "givenNames": ["Ada"] }),
             }];
 
-            let outcome = collect_one(&config, &forge, &record, &[]).expect("a bad entity is reported, not raised");
+            let outcome = collect_one(&config, &forge, &record, &[]).expect("a bad entity is returned as a failure");
 
             assert!(
                 matches!(outcome, Outcome::Failed { .. }),
@@ -901,7 +953,7 @@ mod tests {
             },
         ];
 
-        let outcome = collect_one(&config, &forge, &record, &[]).expect("a bad body is reported, not raised");
+        let outcome = collect_one(&config, &forge, &record, &[]).expect("a bad body is returned as a failure");
 
         assert!(matches!(outcome, Outcome::Failed { .. }), "{outcome:?}");
         assert!(
@@ -922,7 +974,7 @@ mod tests {
 
         for candidate in ["../../etc", "0803/../0804", "", "has space"] {
             let outcome = collect_one(&config, &forge, &record(candidate, Some(committed_project()), None), &[])
-                .expect("a bad shortcode is reported, not raised");
+                .expect("a bad shortcode is returned as a failure");
             assert!(matches!(outcome, Outcome::Failed { .. }), "{candidate:?} produced {outcome:?}");
         }
         assert!(!forge.did("start") && !forge.did("push"));

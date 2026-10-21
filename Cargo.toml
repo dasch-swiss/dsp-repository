@@ -29,7 +29,7 @@ members = [
   "areas/deposit/editor/store",
   "areas/deposit/editor/web",
   "areas/deposit/server",
-  "areas/deposit/editor/collector",
+  "areas/deposit/editor/pull-requests",
   "dsp-cli",
 ]
 resolver = "3"

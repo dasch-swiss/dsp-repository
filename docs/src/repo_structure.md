@@ -57,7 +57,7 @@ areas/
         ├── ports/             # What the editor asks of identity: Actor, Authenticator, UserDirectory (crate: editor-ports)
         ├── store/             # SQLite store for the editor's tables, the identity-ports adapter (crate: editor-store)
         ├── web/               # View layer: Maud pages and the project form (crate: editor-web)
-        ├── collector/         # CI binary: turns approved records into pull requests (crate: editor-collector)
+        ├── pull-requests/     # CI binary: turns approved records into pull requests (crate: editor-pull-requests)
         ├── web-e2e-tests/     # Playwright E2E tests
         ├── public/            # Static assets (incl. vendored JS)
         └── style/             # CSS / Tailwind
@@ -104,7 +104,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveOpenWork` behind `identity-ports` |
 | `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: pages, the project form, handlers and routes, behind the `Editor` facade |
 | `deposit-server` | `areas/deposit/server` | The Deposit Area's composition root and binary: both stores, identity's and the editor's routers merged |
-| `editor-collector` | `areas/deposit/editor/collector` | CI binary — collects approved records into pull requests |
+| `editor-pull-requests` | `areas/deposit/editor/pull-requests` | CI binary: opens pull requests for approved records |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |
 

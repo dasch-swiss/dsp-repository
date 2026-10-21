@@ -9,9 +9,9 @@
 //! [`check_organization`] decide whether it is complete enough to submit.
 //!
 //! [`next_entity_id`] never reuses a number, so the sequence has gaps by design:
-//! reuse would let two entities carry one id at different times, and anything
-//! collected while the first was live would resolve to the second. The editor
-//! architecture documentation carries the rest.
+//! reuse would let two entities carry one id at different times, and any
+//! pull request opened while the first was live would resolve to the second. The
+//! editor architecture documentation carries the rest.
 
 use std::fmt;
 use std::str::FromStr;

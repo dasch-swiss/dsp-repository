@@ -1,4 +1,4 @@
-//! The public payload for approved records published to the collection endpoint.
+//! The public payload for approved records served at `GET /api/v1/approved-records`.
 //!
 //! This is a public, allow-listed view: every member is chosen deliberately, and
 //! a field added to [`ApprovedRecord`] must never reach it implicitly. The two
@@ -18,9 +18,9 @@ use crate::draft::ProjectDraft;
 use crate::proposals::{EntityProposal, ProposalStatus};
 use crate::records::ApprovedRecord;
 
-/// The branch prefix the collector pushes a project's record to (`<prefix><shortcode>`), and the
-/// head the editor's GitHub link searches for.
-pub const BRANCH_PREFIX: &str = "editor-collect/";
+/// The branch prefix the pull-request run pushes a project's record to (`<prefix><shortcode>`), and
+/// the head the editor's GitHub link searches for.
+pub const BRANCH_PREFIX: &str = "editor/";
 
 /// The response body for the approved-records endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,7 +73,7 @@ impl ApprovedRecordView {
     /// [`Self::project`] is `None` and [`Self::problem`] carries the error, but
     /// the record still appears in the response. Dropping it would hide a row
     /// silently; failing the whole response would let one bad record block
-    /// every other project's collection.
+    /// every other project's pull request.
     #[must_use]
     pub fn from_record(record: &ApprovedRecord, proposals: &[EntityProposal]) -> Self {
         let (project, problem) = match parse_project(&record.payload) {

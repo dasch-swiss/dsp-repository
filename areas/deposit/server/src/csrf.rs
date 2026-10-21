@@ -158,7 +158,7 @@ mod tests {
             "/depositors",
             "/depositors/x/edit",
             "/depositors/x/remove",
-            "/collection/00000000-0000-0000-0000-000000000000/discard",
+            "/approved/00000000-0000-0000-0000-000000000000/discard",
         ];
 
         let app = crate::test_support::test_app(&test_state("csrf-every-path").await.0);

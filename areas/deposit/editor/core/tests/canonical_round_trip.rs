@@ -146,7 +146,7 @@ fn json_files_in(dir: &Path) -> usize {
         .count()
 }
 
-/// The same claim for entity files, which `write_entity` produces: collecting
+/// The same claim for entity files, which `write_entity` produces: adding
 /// one entity must not reformat its neighbours.
 ///
 /// Unlike the project side there is no draft detour — `write_entity` takes the

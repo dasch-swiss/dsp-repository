@@ -104,7 +104,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
     let pending: Vec<PendingRow> = submissions
         .iter()
         // The queue lists *pending* submissions. An approved record is waiting to
-        // be collected into a pull request, not for a reviewer, so a row for it
+        // be carried into a pull request, not for a reviewer, so a row for it
         // here would be a queue entry nobody can clear.
         .filter(|submission| submission.state != SubmissionState::Approved)
         .map(|submission| PendingRow {
@@ -1656,7 +1656,7 @@ mod tests {
     async fn a_terminating_action_on_an_already_finished_submission_is_reported() {
         // The terminal-state guard, at the surface it is reached through. Two
         // reviewers hold the page open: the second must not destroy a record
-        // the collection endpoint has already served into a pull request, nor
+        // the approved-records endpoint has already served into a pull request, nor
         // resurrect one as a draft.
         for intent in [page::APPROVE, page::REQUEST_CHANGES, page::REJECT] {
             let (state, _) = test_state(&format!("review-race-{intent}")).await;
@@ -1967,7 +1967,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_approved_record_is_not_a_queue_entry() {
-        // It is waiting to be collected into a pull request, not for a
+        // It is waiting for release, not for a
         // reviewer, so a row here would be an entry nobody can clear.
         let (state, _) = test_state("review-queue-approved").await;
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;

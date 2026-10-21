@@ -17,7 +17,7 @@ An id — `person-NNN` / `organization-NNN` — is allocated at proposal time, a
 - **The allocation is one transaction.** `EntityProposalRepository::create_new` selects the ids already taken and inserts the new row inside a single `write` closure, which is `BEGIN IMMEDIATE` on the pool's single writer connection. The second of two concurrent proposals always sees the first one's insert.
 - **A partial unique index makes it structural.** `entity_proposals_allocated_id` is `UNIQUE (entity_id) WHERE operation = 'new'`. It is partial because a `change` names an id somebody else allocated, and several projects may propose changes to one entity.
 
-The allocator is `proposals::next_entity_id`: one past the highest number it has seen, over the union of the published store and every id the editor has ever allocated — **terminal rows included**. Gaps are therefore deliberate. Nothing depends on the sequence being dense, while reuse would hand an id to a second entity after a sibling collection pull request may already carry it. `Agents::highest_id_number` supplies the published half, which the persistence layer cannot see.
+The allocator is `proposals::next_entity_id`: one past the highest number it has seen, over the union of the published store and every id the editor has ever allocated — **terminal rows included**. Gaps are therefore deliberate. Nothing depends on the sequence being dense, while reuse would hand an id to a second entity after a sibling pull request may already carry it. `Agents::highest_id_number` supplies the published half, which the persistence layer cannot see.
 
 A second partial index, `entity_proposals_live_per_entity` on `(shortcode, entity_id) WHERE status IN ('draft', 'submitted')`, allows two projects to hold change proposals for one entity but not one project to hold two live ones for it. Two competing rows would show a reviewer separate decisions over one file, and whichever applied last would silently win.
 
@@ -58,4 +58,4 @@ The second gate has a trap worth stating, because getting it wrong disables it w
 
 ## What the two projects case does
 
-Two projects may propose changes to one entity, and the last collected wins. The review surface says so rather than blocking: blocking would strand one project on another project's review, while a silent overwrite would let RDU approve a change that is about to be replaced with nothing saying so.
+Two projects may propose changes to one entity, and the last one carried into a pull request wins. The review surface says so rather than blocking: blocking would strand one project on another project's review, while a silent overwrite would let RDU approve a change that is about to be replaced with nothing saying so.

@@ -184,7 +184,7 @@ pub enum RecordClassification {
 /// Classify one approved record against the published set.
 ///
 /// Parses `record.payload` itself, so every caller, the startup pass and the
-/// collection overview alike, reaches this from the same input rather than a
+/// approved-records page alike, reaches this from the same input rather than a
 /// second parse of its own.
 #[must_use]
 pub fn classify_record(record: &ApprovedRecord, published: Option<&ProjectRaw>) -> RecordClassification {

@@ -3,7 +3,7 @@
 //! [`discard_form`] and [`discard`] are the RDU browser surface.
 //!
 //! `list` is unauthenticated: a CI poller reads it, so the handler takes no `Authenticated`/`Rdu`
-//! extractor. It applies no filter: see "Collection holds two invariants" in that file.
+//! extractor. It applies no filter: see "Publishing holds two invariants" in that file.
 //!
 //! [`overview`] classifies every record live, per request, with
 //! [`editor_core::status::classify_record`], the same call `reconcile`'s startup pass makes,
@@ -13,7 +13,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Json;
-use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse, BRANCH_PREFIX};
+use editor_core::approved_records_api::{ApprovedRecordView, ApprovedRecordsResponse, BRANCH_PREFIX};
 use editor_core::records::{normalize_shortcode, ApprovedRecord};
 use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
 use editor_core::status::{classify_record, RecordClassification};
@@ -21,12 +21,12 @@ use maud::html;
 use uuid::Uuid;
 
 use crate::handlers::auth::{Account, Rdu};
-use crate::pages::collection as page;
+use crate::pages::approved as page;
 use crate::shell::EditorState;
 
-/// Coupled to the collect workflow's `COLLECTOR_REPOSITORY`, which nothing here checks: change
-/// either and the link built from this finds nothing.
-const COLLECTOR_REPOSITORY: &str = "dasch-swiss/dsp-repository";
+/// Coupled to the pull-request workflow's `PULL_REQUESTS_REPOSITORY`, which nothing here checks:
+/// change either and the link built from this finds nothing.
+const PULL_REQUESTS_REPOSITORY: &str = "dasch-swiss/dsp-repository";
 
 /// `GET /api/v1/approved-records`.
 #[tracing::instrument(skip_all, fields(otel.kind = "internal", otel.name = "approved records list"))]
@@ -74,7 +74,7 @@ struct RowStrings {
     classification: RecordClassification,
 }
 
-/// `GET /collection`: every approved record and how it compares with the published set, for RDU.
+/// `GET /approved`: every approved record and how it compares with the published set, for RDU.
 pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
@@ -92,9 +92,9 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
             classification: classify_record(record, state.published.get(&record.shortcode)),
         })
         .collect();
-    let view_rows: Vec<page::CollectionRow<'_>> = rows
+    let view_rows: Vec<page::ApprovedRow<'_>> = rows
         .iter()
-        .map(|row| page::CollectionRow {
+        .map(|row| page::ApprovedRow {
             id: &row.id,
             shortcode: &row.shortcode,
             project_name: row.project_name.as_deref(),
@@ -106,20 +106,21 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
 
     crate::shell::render(
         &state,
-        "Collection — DaSCH Metadata Editor",
+        "Approved records — DaSCH Metadata Editor",
         StatusCode::OK,
         Some(&user.actor.display_name),
         page::list(&view_rows),
     )
 }
 
-/// GitHub's pull-request search for the branch the collector pushes `shortcode`'s record to.
+/// GitHub's pull-request search for the branch the pull-request run pushes `shortcode`'s record to.
 ///
-/// Takes the stored shortcode, never the published spelling: the collector's branch name uses the
-/// stored one. It needs no percent-encoding, since a stored shortcode passes `is_valid_shortcode`.
+/// Takes the stored shortcode, never the published spelling: the pull-request run's branch name
+/// uses the stored one. It needs no percent-encoding, since a stored shortcode passes
+/// `is_valid_shortcode`.
 pub(crate) fn pull_requests_url(shortcode: &str) -> String {
     let head = BRANCH_PREFIX.replace('/', "%2F");
-    format!("https://github.com/{COLLECTOR_REPOSITORY}/pulls?q=is%3Apr+head%3A{head}{shortcode}")
+    format!("https://github.com/{PULL_REQUESTS_REPOSITORY}/pulls?q=is%3Apr+head%3A{head}{shortcode}")
 }
 
 /// The record `id` names, read from the same full enumeration [`overview`] reads.
@@ -135,7 +136,7 @@ async fn find_record(state: &EditorState, id: &str) -> Result<Option<ApprovedRec
     Ok(records.into_iter().find(|record| record.id == id))
 }
 
-/// `GET /collection/{id}/discard`: the confirmation, naming what would be destroyed.
+/// `GET /approved/{id}/discard`: the confirmation, naming what would be destroyed.
 pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rdu, Path(id): Path<String>) -> Response {
     let record = match find_record(&state, &id).await {
         Ok(Some(record)) => record,
@@ -165,7 +166,7 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
     )
 }
 
-/// `POST /collection/{id}/discard` — delete the record.
+/// `POST /approved/{id}/discard` — delete the record.
 ///
 /// Not gated on the record's classification: every row offers Discard. The record's pull request is
 /// not touched. `delete` answering `false` (already gone) is not an error: a second submission of
@@ -175,7 +176,7 @@ pub(crate) async fn discard(State(state): State<EditorState>, Rdu(user): Rdu, Pa
         return no_such_record(&state, &user);
     };
     match ApprovedRecordRepository::delete(&*state.editor, record_id).await {
-        Ok(_) => Redirect::to("/collection").into_response(),
+        Ok(_) => Redirect::to("/approved").into_response(),
         Err(error) => {
             tracing::error!(error = %error, "could not discard an approved record");
             storage_error(&state, &user, "discard the record", &error)
@@ -189,7 +190,7 @@ fn no_such_record(state: &EditorState, user: &Account) -> Response {
         h1 class="font-display text-2xl mb-2" { "Nothing to discard" }
         p class="mb-4" { (NO_SUCH_RECORD) }
         p {
-            a href="/collection" class="underline" { "Back to collection" }
+            a href="/approved" class="underline" { "Back to approved records" }
         }
     };
     crate::shell::render(
@@ -203,7 +204,7 @@ fn no_such_record(state: &EditorState, user: &Account) -> Response {
 
 /// Storage would not answer, so the page cannot show what it should.
 fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the collection surface could not reach storage");
+    tracing::error!(error = %error, operation = what, "the approved-records page could not reach storage");
     crate::shell::render(
         state,
         "Page unavailable — DaSCH Metadata Editor",
@@ -315,7 +316,7 @@ mod tests {
     #[tokio::test]
     async fn every_record_is_served_to_an_unauthenticated_caller_whatever_the_editor_holds_about_it() {
         // No session cookie anywhere in this request: the route is public by contract.
-        let (state, _) = test_state("collection-serves-every-record").await;
+        let (state, _) = test_state("approved-serves-every-record").await;
         let waiting = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
         let unreadable = approved_record("0999", "{ not json");
         for record in [&waiting, &unreadable] {
@@ -339,7 +340,7 @@ mod tests {
     async fn two_reads_with_no_intervening_write_are_byte_identical() {
         // The cheapest available proof that this endpoint is a pure read: the
         // payload carries no generation timestamp precisely so this holds.
-        let (state, _) = test_state("collection-idempotent").await;
+        let (state, _) = test_state("approved-idempotent").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
@@ -356,7 +357,7 @@ mod tests {
         // everything the handler can reach, taken before and after the request,
         // must agree. This proves the handler leaves stored state untouched; it
         // does not prove anything about ordering or isolation.
-        let (state, _) = test_state("collection-no-write").await;
+        let (state, _) = test_state("approved-no-write").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
@@ -388,7 +389,7 @@ mod tests {
     async fn a_record_with_an_unconvertible_payload_is_still_served_alongside_a_good_one() {
         // Dropping the broken record would hide a row; the endpoint exists so
         // that never happens.
-        let (state, _) = test_state("collection-broken-payload").await;
+        let (state, _) = test_state("approved-broken-payload").await;
         let good = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
         let broken = approved_record("0999", "{}");
         ApprovedRecordRepository::create(&*state.editor, &good)
@@ -417,7 +418,7 @@ mod tests {
         // Seeds the record's shortcode in a form that differs from the
         // normalized one `entity_proposals` stores, so this fails if the
         // handler stops normalizing before the join.
-        let (state, _) = test_state("collection-entity-join").await;
+        let (state, _) = test_state("approved-entity-join").await;
         let record = approved_record("0801D", &valid_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
@@ -446,8 +447,8 @@ mod tests {
     // ---- The RDU browser surface --------------------------------------------
 
     #[tokio::test]
-    async fn a_depositor_session_is_refused_every_collection_route() {
-        let (state, _) = test_state("collection-depositor-refused").await;
+    async fn a_depositor_session_is_refused_every_approved_records_route() {
+        let (state, _) = test_state("approved-depositor-refused").await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
@@ -457,9 +458,9 @@ mod tests {
         let app = test_app(&state);
 
         for request in [
-            get("/collection"),
-            get(&format!("/collection/{}/discard", record.id)),
-            post(&format!("/collection/{}/discard", record.id), ""),
+            get("/approved"),
+            get(&format!("/approved/{}/discard", record.id)),
+            post(&format!("/approved/{}/discard", record.id), ""),
         ] {
             let response = app.clone().oneshot(as_session(request, &session)).await.unwrap();
             assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
@@ -468,40 +469,35 @@ mod tests {
 
     #[tokio::test]
     async fn a_differing_record_renders_waiting_for_release_with_a_link_built_from_the_stored_shortcode() {
-        // The link uses the stored, lowercase spelling, which the collector's branch name carries;
-        // the published spelling (`0801D`) would search for a branch that does not exist.
-        let (state, _) = test_state("collection-waiting-for-release").await;
+        // The link uses the stored, lowercase spelling, which the pull-request run's branch name
+        // carries; the published spelling (`0801D`) would search for a branch that does not
+        // exist.
+        let (state, _) = test_state("approved-waiting-for-release").await;
         let (_, session) = an_rdu_session(&state).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &differing_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
 
-        let body = body_string(
-            test_app(&state)
-                .oneshot(as_session(get("/collection"), &session))
-                .await
-                .unwrap(),
-        )
-        .await;
+        let body = body_string(test_app(&state).oneshot(as_session(get("/approved"), &session)).await.unwrap()).await;
         assert!(body.contains("Waiting for release"), "{body}");
-        assert!(body.contains("pulls?q=is%3Apr+head%3Aeditor-collect%2F0801d\""), "{body}");
+        assert!(body.contains("pulls?q=is%3Apr+head%3Aeditor%2F0801d\""), "{body}");
     }
 
     #[tokio::test]
     async fn discarding_deletes_the_record_and_a_repeated_discard_does_not_500() {
-        let (state, _) = test_state("collection-discard").await;
+        let (state, _) = test_state("approved-discard").await;
         let (_, session) = an_rdu_session(&state).await;
         let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
         ApprovedRecordRepository::create(&*state.editor, &record)
             .await
             .expect("seed a record");
         let app = test_app(&state);
-        let uri = format!("/collection/{}/discard", record.id);
+        let uri = format!("/approved/{}/discard", record.id);
 
         let first = app.clone().oneshot(as_session(post(&uri, ""), &session)).await.unwrap();
         assert_eq!(first.status(), axum::http::StatusCode::SEE_OTHER);
-        assert_eq!(location(&first).as_deref(), Some("/collection"));
+        assert_eq!(location(&first).as_deref(), Some("/approved"));
         assert!(ApprovedRecordRepository::find_by_shortcode(&*state.editor, PUBLISHED_SHORTCODE)
             .await
             .unwrap()

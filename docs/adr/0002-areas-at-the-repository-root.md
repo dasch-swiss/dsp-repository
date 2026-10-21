@@ -91,7 +91,7 @@ The metadata editor lives at `areas/deposit/editor/`, crate names unchanged (DEV
 
 The 2026-09-19 amendment calls DEV-7268 "the `modules/` → `areas/` move". It is not: DEV-7268 is the FAIR-metadata ticket, and only its first phase, the shared root, belongs to this migration. No single ticket tracks the area moves; DEV-7373 is the editor's.
 
-The editor still reaches into DPE's tree for the published data set: its tests, its development recipes, the image build, and the collector, which writes that set. Each toolchain names the directory once (`editor_core::DPE_DATA_DIR` for Rust, `DPE_DATA_DIR` in the `justfile`, one constant in the editor's Playwright config, one line in `.github/actions/build-editor`), so DPE's move changes one line per toolchain.
+The editor still reaches into DPE's tree for the published data set: its tests, its development recipes, the image build, and the pull-request run, which writes that set. Each toolchain names the directory once (`editor_core::DPE_DATA_DIR` for Rust, `DPE_DATA_DIR` in the `justfile`, one constant in the editor's Playwright config, one line in `.github/actions/build-editor`), so DPE's move changes one line per toolchain.
 
 Added to Consequences:
 

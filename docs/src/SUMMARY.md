@@ -47,7 +47,7 @@
 - [The Review Surface](./editor/review.md)
 - [Project State and Online Detection](./editor/status.md)
 - [Authentication](./editor/authentication.md)
-- [Collection](./editor/collection.md)
+- [Publishing to Git](./editor/publishing-to-git.md)
 - [Observability](./editor/observability.md)
 - [Operations](./editor/operations.md)
 

@@ -67,7 +67,7 @@ new_ws() {
     crate "areas/deposit/$cap/ports" "$cap-ports"
     crate "areas/deposit/$cap/web" "$cap-web"
   done
-  crate areas/deposit/alpha/collector alpha-collector
+  crate areas/deposit/alpha/pull-requests alpha-pull-requests
   crate areas/deposit/shell deposit-shell
   crate areas/deposit/server deposit-server
   crate shared/metadata shared-metadata
@@ -81,8 +81,8 @@ new_ws() {
   dep areas/deposit/alpha/web 'alpha-store = { path = "@/areas/deposit/alpha/store" }'
   dep areas/deposit/alpha/web 'deposit-shell = { path = "@/areas/deposit/shell" }'
   dep areas/deposit/alpha/web 'mosaic-tiles = { path = "@/modules/mosaic/tiles" }'
-  dep areas/deposit/alpha/collector 'alpha-core = { path = "@/areas/deposit/alpha/core" }'
-  dep areas/deposit/alpha/collector 'shared-metadata = { path = "@/shared/metadata" }'
+  dep areas/deposit/alpha/pull-requests 'alpha-core = { path = "@/areas/deposit/alpha/core" }'
+  dep areas/deposit/alpha/pull-requests 'shared-metadata = { path = "@/shared/metadata" }'
   dep areas/deposit/shell 'mosaic-tiles = { path = "@/modules/mosaic/tiles" }'
   dep areas/deposit/shell 'shared-metadata = { path = "@/shared/metadata" }'
   # The root's edges are check-composition-root-deps.sh's.
@@ -135,8 +135,8 @@ dep areas/deposit/alpha/ports 'alpha-core = { path = "@/areas/deposit/alpha/core
 fails_with "a ports crate on its own capability's core fails" "areas/deposit/alpha/ports depends on alpha-core (areas/deposit/alpha/core, normal), an edge its role does not allow"
 
 new_ws
-dep areas/deposit/alpha/collector 'beta-ports = { path = "@/areas/deposit/beta/ports" }'
-fails_with "a collector crate on another capability's ports fails" "areas/deposit/alpha/collector depends on beta-ports (areas/deposit/beta/ports, normal), an edge its role does not allow"
+dep areas/deposit/alpha/pull-requests 'beta-ports = { path = "@/areas/deposit/beta/ports" }'
+fails_with "a pull-requests crate on another capability's ports fails" "areas/deposit/alpha/pull-requests depends on beta-ports (areas/deposit/beta/ports, normal), an edge its role does not allow"
 
 new_ws
 dep areas/deposit/shell 'alpha-web = { path = "@/areas/deposit/alpha/web" }'
@@ -158,7 +158,7 @@ fails_with "a dev-dependency on another capability's store fails" "areas/deposit
 
 new_ws
 crate areas/deposit/alpha/cli alpha-cli
-fails_with "a crate in an unknown role fails" "alpha-cli (areas/deposit/alpha/cli) is in no role this gate knows: core, store, ports, web or collector under a capability, or the area's shell or server"
+fails_with "a crate in an unknown role fails" "alpha-cli (areas/deposit/alpha/cli) is in no role this gate knows: core, store, ports, web or pull-requests under a capability, or the area's shell or server"
 
 new_ws
 dep areas/deposit/alpha/ports 'serde = "1"'

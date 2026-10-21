@@ -91,7 +91,6 @@ pub trait SubmissionRepository: Send + Sync {
     async fn delete(&self, id: Uuid) -> Result<bool>;
 }
 
-/// Approved records awaiting collection.
 #[async_trait]
 pub trait ApprovedRecordRepository: Send + Sync {
     async fn create(&self, record: &ApprovedRecord) -> Result<()>;

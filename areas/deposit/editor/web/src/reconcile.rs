@@ -512,7 +512,7 @@ mod tests {
             .expect("row");
         assert!(
             survivor.retired_at.is_none(),
-            "an accepted change proposal must survive until its edit has been collected"
+            "an accepted change proposal must survive until its edit has been carried into a pull request"
         );
     }
 

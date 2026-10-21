@@ -1,8 +1,8 @@
 //! Turns the editor's approved records into one pull request per project.
 //!
-//! `docs/src/editor/collection.md` is the contract this implements and wins on
+//! `docs/src/editor/publishing-to-git.md` is the contract this implements and wins on
 //! any difference. The two things it is easiest to get wrong, and which the
-//! modules below hold: collection state is keyed on the project's shortcode,
+//! modules below hold: pull-request state is keyed on the project's shortcode,
 //! never on the record id, and an **open** pull request is force-pushed onto
 //! rather than joined by a second one.
 
@@ -20,7 +20,6 @@ use std::process::ExitCode;
 
 use config::Config;
 
-/// The branch a collection pull request targets.
 const BASE_BRANCH: &str = "main";
 
 fn main() -> ExitCode {
@@ -39,7 +38,7 @@ fn execute() -> Result<ExitCode, String> {
     let editor = editor::Editor::new(&config.editor_base_url)?;
     let forge = forge::CommandForge::new(&config.repository, BASE_BRANCH, std::path::Path::new("."));
 
-    let summary = run::collect(&config, &editor, &forge)?;
+    let summary = run::open_pull_requests(&config, &editor, &forge)?;
 
     println!(
         "{} records considered: {} opened, {} updated, {} skipped, {} failed",

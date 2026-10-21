@@ -88,12 +88,12 @@ export const STATUS_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-nojs": DEPOSITOR_SHORTCODES[6],
 };
 /**
- * The collection surface's arc: edit, submit, approve, discard. Its
+ * The Approved records page's arc: edit, submit, approve, discard. Its
  * own project for the same reason as `JOURNEY_SHORTCODE` — a draft is per
  * (user, project), so sharing one with another mutating spec would find that
  * spec's leftover draft state instead of a pristine project.
  */
-export const COLLECTION_SHORTCODE = DEPOSITOR_SHORTCODES[7];
+export const APPROVED_SHORTCODE = DEPOSITOR_SHORTCODES[7];
 
 const PORT = 4101;
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

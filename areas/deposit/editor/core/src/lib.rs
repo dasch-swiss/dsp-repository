@@ -6,8 +6,8 @@
 //! the domain.
 
 pub mod agents;
+pub mod approved_records_api;
 pub mod canonical;
-pub mod collection;
 pub mod draft;
 pub mod form;
 pub mod json;

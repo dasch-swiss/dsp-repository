@@ -349,7 +349,7 @@ async fn context<'a>(
     };
 
     // Everything short of `Approved` locks the form. An approved record is
-    // waiting to be collected into a pull request and is no longer the
+    // waiting for release and is no longer the
     // depositor's to wait on, so editing again starts the next cycle rather
     // than disturbing a review in progress.
     let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
@@ -4248,7 +4248,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_approved_submission_does_not_lock_the_form() {
-        // An approved record is waiting to be collected into a pull request and
+        // An approved record is waiting for release and
         // is no longer the depositor's to wait on, so editing again starts the
         // next cycle rather than disturbing a review in progress.
         let (state, _) = test_state("section-approved").await;

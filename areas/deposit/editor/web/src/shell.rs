@@ -76,7 +76,7 @@ pub(crate) fn format_instant(at: chrono::DateTime<chrono::Utc>) -> String {
 }
 
 /// The published spelling of a shortcode (`080C`), falling back to the stored, folded key
-/// (`080c`). Shared by `review` and `collection` so the fold has one copy.
+/// (`080c`). Shared by `review` and `approved` so the fold has one copy.
 pub(crate) fn shortcode_as_published<'a>(state: &'a EditorState, stored: &'a str) -> String {
     state
         .published

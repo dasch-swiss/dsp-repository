@@ -1,9 +1,9 @@
-//! Keeping a collected project's `temporalCoverage` resolvable.
+//! Keeping a project's `temporalCoverage` resolvable.
 //!
 //! `access-server validate` and `every_committed_temporal_coverage_resolves` both
 //! fail on a free-text `temporalCoverage` that resolves to no date and carries
-//! no reviewed row, so a project collected without one arrives with a red gate
-//! through no reviewer's fault. A skeleton row (`date: null`,
+//! no reviewed row, so a pull request opened for a project without one arrives
+//! with a red gate through no reviewer's fault. A skeleton row (`date: null`,
 //! `source: "unresolved"`) makes the gate pass and leaves the value visibly
 //! unreviewed for whoever replaces it with a range.
 
@@ -100,7 +100,7 @@ mod tests {
 
     /// The row's shape is what closes the gap: `completeness_gap` is the single
     /// decision `access-server validate` and `every_committed_temporal_coverage_resolves`
-    /// both apply, so a row it still rejects would leave the collection pull
+    /// both apply, so a row it still rejects would leave the pull
     /// request red.
     #[test]
     fn a_skeleton_row_is_the_shape_that_stops_counting_as_a_gap() {

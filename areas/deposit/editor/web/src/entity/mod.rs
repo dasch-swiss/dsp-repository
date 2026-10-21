@@ -495,7 +495,7 @@ fn controls(view: &EntityView<'_>) -> Markup {
                     "Discarding this proposal removes it. It cannot be undone, and the id "
                     (view.proposal.entity_id)
                     " is not reused for anything else — the row stays on record as a placeholder so nothing \
-                     collected while this proposal was live can end up naming a different entity."
+                     published while this proposal was live can end up naming a different entity."
                 }
                 div class="flex items-center gap-4" {
                     ({

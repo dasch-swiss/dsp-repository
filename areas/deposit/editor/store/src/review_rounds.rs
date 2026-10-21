@@ -9,8 +9,8 @@
 //!   many rows it removed, and exactly one of two concurrent calls can see the row — so zero means
 //!   somebody finished it first and the answer is [`Transition::AlreadyReviewed`]. Checking with a
 //!   `find` first would leave a window between the read and the write, which is the case this
-//!   exists for: a reject landing after an approve destroys a record the collection endpoint has
-//!   already served.
+//!   exists for: a reject landing after an approve destroys a record the approved-records endpoint
+//!   has already served.
 //! - **Nothing is written on a refusal.** The guard returns before the round is inserted, so an
 //!   already-reviewed submission leaves no second round and no second `approved_records` row — and,
 //!   by the same guard, no `entity_proposals` row moves either. Anything failing later rolls the

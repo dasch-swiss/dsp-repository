@@ -5,11 +5,11 @@
 # the Deposit Area's roles: areas/deposit/ADR-0004, "The shape").
 #
 # A crate at areas/<area>/<capability>/<role>/Cargo.toml may depend on:
-#   every role        its own capability's crates and shared/* crates;
-#   store             also another capability's ports crate (it answers that port);
-#   web               also the area's shell and mosaic-tiles;
-#   ports             shared/* crates only, not even its own capability's;
-#   core, collector   nothing more.
+#   every role            its own capability's crates and shared/* crates;
+#   store                 also another capability's ports crate (it answers that port);
+#   web                   also the area's shell and mosaic-tiles;
+#   ports                 shared/* crates only, not even its own capability's;
+#   core, pull-requests   nothing more.
 # areas/<area>/shell may depend on shared/* crates and mosaic-tiles only.
 # Third-party crates: a ports crate may use none, a core crate no web framework,
 # Maud or database crate, the shell no web framework; other roles are not
@@ -99,12 +99,12 @@ main() {
     IFS=/ read -r -a parts <<<"$path"
     # <segment count>:<role>:<capability or root-level name>
     case "${#parts[@]}:${parts[3]:-}:${parts[2]:-}" in
-      4:core:* | 4:store:* | 4:ports:* | 4:web:* | 4:collector:*)
+      4:core:* | 4:store:* | 4:ports:* | 4:web:* | 4:pull-requests:*)
         capabilities="${capabilities}${parts[1]}"$'\n'
         ;;
       3::shell | 3::server) ;;
       *)
-        problems="${problems}$name ($path) is in no role this gate knows: core, store, ports, web or collector under a capability, or the area's shell or server"$'\n'
+        problems="${problems}$name ($path) is in no role this gate knows: core, store, ports, web or pull-requests under a capability, or the area's shell or server"$'\n'
         ;;
     esac
   done <<<"$graph"

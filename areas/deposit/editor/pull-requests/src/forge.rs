@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use editor_core::collection::BRANCH_PREFIX;
+use editor_core::approved_records_api::BRANCH_PREFIX;
 
 /// Where a pull request sits on the forge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,23 +18,23 @@ pub enum PullRequestState {
     Closed,
 }
 
-/// The trailer marking a commit as this collector's.
+/// The trailer marking a commit as this run's.
 ///
 /// The force-push guard reads it off the branch tip. A reviewer's fixup does
 /// not carry it, which is what stops the next run from silently overwriting
 /// their work; nothing else about a commit distinguishes the two reliably,
-/// since the bot identity is not exclusive to this collector.
-pub const COLLECTED_BY_TRAILER: &str = "Collected-by: editor-collector";
+/// since the bot identity is not exclusive to this run.
+pub const OPENED_BY_TRAILER: &str = "Opened-by: editor-pull-requests";
 
 /// The prefix of the pull request body line naming the approved record the
 /// branch carries.
 const RECORD_MARKER: &str = "Approved-record: ";
 
 /// The prefix of a pull request body line recording one entity id renumbered at
-/// collection.
+/// pull-request time.
 const RENUMBERED_MARKER: &str = "Renumbered: ";
 
-/// How many collection pull requests one listing may return.
+/// How many editor pull requests one listing may return.
 ///
 /// A truncated listing would hide an open pull request and let a second one
 /// open against the same project file — the state that keying on the shortcode
@@ -42,7 +42,6 @@ const RENUMBERED_MARKER: &str = "Renumbered: ";
 /// boundary to read past.
 const PULL_REQUEST_LIMIT: usize = 200;
 
-/// The branch one project's collection lives on.
 #[must_use]
 pub fn branch_for(shortcode: &str) -> String {
     format!("{BRANCH_PREFIX}{shortcode}")
@@ -56,7 +55,7 @@ pub fn record_line(record: &str) -> String {
 }
 
 /// The record id a pull request body names. The last such line wins, since
-/// the collector writes its own at the end.
+/// the pull-request run writes its own at the end.
 #[must_use]
 pub fn record_in(body: &str) -> Option<String> {
     body.lines()
@@ -89,9 +88,9 @@ pub fn renumbered_in(body: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
-/// One pull request opened from a collection branch.
+/// One pull request from a [`BRANCH_PREFIX`] branch, in any state.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CollectionPullRequest {
+pub struct EditorPullRequest {
     /// Higher is newer.
     pub number: u64,
     pub url: String,
@@ -113,7 +112,7 @@ pub trait Forge {
     /// One call serves both the skip rule and the sibling-pull-request id
     /// collision check, and it is re-issued after each record so a pull request
     /// this run just opened is visible to the next one.
-    fn collection_pull_requests(&self) -> Result<Vec<CollectionPullRequest>, String>;
+    fn editor_pull_requests(&self) -> Result<Vec<EditorPullRequest>, String>;
 
     /// The tip commit message of `origin/<branch>`, or `None` when the remote
     /// has no such branch.
@@ -127,7 +126,7 @@ pub trait Forge {
 
     /// Stages exactly `paths` and commits them, returning whether a commit was
     /// made: `false` when staging left nothing that differs from the base
-    /// branch. Never `git add -A`: the checkout also holds this collector's own
+    /// branch. Never `git add -A`: the checkout also holds this run's own
     /// build output.
     fn commit(&self, paths: &[PathBuf], message: &str) -> Result<bool, String>;
 
@@ -208,7 +207,7 @@ struct GhFile {
 }
 
 impl Forge for CommandForge {
-    fn collection_pull_requests(&self) -> Result<Vec<CollectionPullRequest>, String> {
+    fn editor_pull_requests(&self) -> Result<Vec<EditorPullRequest>, String> {
         let search = format!("head:{BRANCH_PREFIX}");
         let json = self.run(
             "gh",
@@ -242,9 +241,9 @@ impl Forge for CommandForge {
             .into_iter()
             // `head:` is a search qualifier, not an exact filter, so the prefix
             // is re-checked here: a loose match must not widen the set of
-            // branches this collector believes it owns.
+            // branches this run believes it owns.
             .filter(|pull_request| pull_request.head_ref_name.starts_with(BRANCH_PREFIX))
-            .map(|pull_request| CollectionPullRequest {
+            .map(|pull_request| EditorPullRequest {
                 number: pull_request.number,
                 url: pull_request.url,
                 head_ref: pull_request.head_ref_name,
@@ -345,8 +344,8 @@ mod tests {
 
     #[test]
     fn a_branch_is_the_prefix_and_the_shortcode() {
-        assert_eq!(branch_for("0803"), "editor-collect/0803");
-        assert_eq!(branch_for("0801d"), "editor-collect/0801d");
+        assert_eq!(branch_for("0803"), "editor/0803");
+        assert_eq!(branch_for("0801d"), "editor/0801d");
     }
 
     #[test]

@@ -67,7 +67,7 @@ pub fn write_draft(draft: &ProjectDraft) -> Result<String, DraftError> {
 ///
 /// [`Person`]: shared_metadata::person::Person
 /// [`Organization`]: shared_metadata::organization::Organization
-/// [`ProposedEntityView`]: crate::collection::ProposedEntityView
+/// [`ProposedEntityView`]: crate::approved_records_api::ProposedEntityView
 pub fn write_entity(entity: &Value) -> Result<String, serde_json::Error> {
     let mut value = entity.clone();
     strip_null_members(&mut value);

@@ -147,22 +147,6 @@ impl PullRequestState {
             Self::Closed => "closed",
         }
     }
-
-    /// Whether a pull request in this state still stands between the record and
-    /// the published corpus.
-    ///
-    /// The single definition of "live". A second approved record may not be
-    /// created for a project while one of its records is live, and the supersede
-    /// `DELETE` in `ReviewRoundRepository::approve` must match exactly the
-    /// states this rejects. A variant added here without revisiting both is the
-    /// way those two silently disagree.
-    #[must_use]
-    pub const fn is_live(self) -> bool {
-        match self {
-            Self::Open | Self::Merged => true,
-            Self::Closed => false,
-        }
-    }
 }
 
 impl fmt::Display for PullRequestState {

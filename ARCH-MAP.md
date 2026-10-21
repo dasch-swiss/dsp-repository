@@ -293,8 +293,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `approved_records` is created only by approve, updated only by
   `POST /api/v1/collection-report` (`mark_collected`, `report_collection`), and deleted by three
   paths: the startup reconcile that derives Online (`editor-web`'s `startup.rs`, inside
-  `Editor::start`), approve's own transaction, which supersedes an earlier record for the same
-  project when no pull request of its own is live, and RDU's discard
+  `Editor::start`), approve's own transaction, which supersedes the project's earlier record whatever its
+  pull request's state, and RDU's discard
   (`POST /collection/{id}/discard`).
 - **Fingerprint:** `3ab6a7e4f739`
 

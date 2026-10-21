@@ -338,12 +338,8 @@ mod tests {
     use chrono::Utc;
     use editor_core::draft::ProjectDraft;
     use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
-    use editor_core::records::{
-        ApprovedRecord, PullRequestState, ReviewOutcome, ReviewRound, Submission, SubmissionState,
-    };
-    use editor_core::repository::{
-        ApprovedRecordRepository, EntityProposalRepository, ReviewRoundRepository, SubmissionRepository, Transition,
-    };
+    use editor_core::records::{ApprovedRecord, PullRequestState};
+    use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository};
     use editor_ports::Role;
     use serde_json::{json, Value};
     use tower::ServiceExt;
@@ -616,27 +612,6 @@ mod tests {
             .expect("list should succeed")
     }
 
-    /// A pending submission on `shortcode`, so `ReviewRoundRepository::approve` has something to
-    /// claim.
-    async fn a_pending_submission(state: &crate::shell::EditorState, shortcode: &str) -> Submission {
-        let submission = Submission {
-            id: Uuid::new_v4(),
-            shortcode: shortcode.to_string(),
-            payload: valid_payload(),
-            state: SubmissionState::InReview,
-            submitted_by: None,
-            submitted_at: Utc::now(),
-            reviewed_by: None,
-            reviewed_at: None,
-            reviewer_note: None,
-            review_state: None,
-        };
-        SubmissionRepository::create(&*state.editor, &submission)
-            .await
-            .expect("seed a submission");
-        submission
-    }
-
     #[tokio::test]
     async fn a_valid_first_report_stamps_collected_at_and_stores_the_pull_request() {
         let (state, _) = state_with_collection_token("collection-report-first", TOKEN).await;
@@ -862,55 +837,6 @@ mod tests {
         });
         let response = test_app(&state).oneshot(report_request(Some("anything"), &body)).await.unwrap();
         assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
-    }
-
-    #[tokio::test]
-    async fn a_record_reported_closed_keeps_collected_at_and_stops_blocking_a_new_approval() {
-        let (state, _) = state_with_collection_token("collection-report-closed", TOKEN).await;
-        let record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        ApprovedRecordRepository::create(&*state.editor, &record)
-            .await
-            .expect("seed a record");
-
-        let body = json!({
-            "record": record.id,
-            "pullRequest": "https://github.com/dasch-swiss/dsp-repository/pull/9",
-            "state": "closed",
-            "failure": null,
-        });
-        let response = test_app(&state).oneshot(report_request(Some(TOKEN), &body)).await.unwrap();
-        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
-
-        let after_report = ApprovedRecordRepository::find_by_shortcode(&*state.editor, PUBLISHED_SHORTCODE)
-            .await
-            .expect("read the record back");
-        assert_eq!(after_report.len(), 1);
-        assert!(after_report[0].collected_at.is_some(), "the first dispatch stamped it");
-
-        // A closed pull request no longer stands between the record and the published corpus,
-        // so a fresh approval must supersede it rather than be refused.
-        let submission = a_pending_submission(&state, PUBLISHED_SHORTCODE).await;
-        let new_record = approved_record(PUBLISHED_SHORTCODE, &valid_payload());
-        let round = ReviewRound {
-            id: Uuid::new_v4(),
-            shortcode: PUBLISHED_SHORTCODE.to_string(),
-            submission_id: submission.id,
-            outcome: ReviewOutcome::Approved,
-            note: None,
-            review_state: None,
-            actor: None,
-            at: Utc::now(),
-        };
-        let transition = ReviewRoundRepository::approve(&*state.editor, submission.id, &new_record, &round)
-            .await
-            .expect("approval should succeed");
-        assert_eq!(transition, Transition::Applied);
-
-        let after_approve = ApprovedRecordRepository::find_by_shortcode(&*state.editor, PUBLISHED_SHORTCODE)
-            .await
-            .expect("read the record back");
-        assert_eq!(after_approve.len(), 1);
-        assert_eq!(after_approve[0].id, new_record.id, "the closed record must be superseded");
     }
 
     // ---- The RDU browser surface --------------------------------------------

@@ -156,9 +156,8 @@ async fn project_state(state: &EditorState, shortcode: &str) -> Result<ProjectSt
 /// and whether it holds one at all.
 ///
 /// Shared with the form (`crate::handlers::sections`), which needs the same answer for the
-/// waiting-for-release notice. **The newest record is the one whose publication
-/// is in question** — `find_by_shortcode` orders oldest first, and a project
-/// holds more than one whenever collection has lagged.
+/// waiting-for-release notice. A project holds at most one approved record, since an
+/// approval supersedes the earlier one.
 ///
 /// `key` is a normalized shortcode. A record whose payload cannot be parsed is
 /// treated as no record rather than as an error: the page's job is to render a

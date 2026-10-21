@@ -96,8 +96,8 @@ pub trait SubmissionRepository: Send + Sync {
 pub trait ApprovedRecordRepository: Send + Sync {
     async fn create(&self, record: &ApprovedRecord) -> Result<()>;
 
-    /// Every approved record for a project, so the startup comparison can find
-    /// the one that matches the published data.
+    /// A project's approved record, as a list that holds at most one: approve
+    /// supersedes the earlier record.
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>>;
 
     /// Every approved record, collected or not, oldest approval first.

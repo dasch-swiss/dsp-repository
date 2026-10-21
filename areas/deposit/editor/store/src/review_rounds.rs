@@ -114,16 +114,12 @@ impl ReviewRoundRepository for Database {
             if claim(tx, submission_id)? == Transition::AlreadyReviewed {
                 return Ok(Transition::AlreadyReviewed);
             }
-            // A record is whole-project, so a newer one fully supersedes an older one whose
-            // pull request has not gone live; the review handler refuses the approval instead
-            // once one has. Keyed on the record's own (un-normalized) shortcode, matching the
-            // INSERT below — `approved_records.shortcode` is never folded, unlike
-            // `entity_proposals.shortcode` further down.
-            tx.execute(
-                "DELETE FROM approved_records WHERE shortcode = ?1 AND (pull_request_state IS NULL OR \
-                 pull_request_state = ?2)",
-                params![record.shortcode, PullRequestState::Closed.as_str()],
-            )?;
+            // A record is whole-project, so the newest approval replaces every earlier record of
+            // the project, whatever its pull request state; deleting in this transaction as the
+            // INSERT below leaves no window with zero records. Keyed on the record's own
+            // (un-normalized) shortcode, matching the INSERT: `approved_records.shortcode` is never
+            // folded, unlike `entity_proposals.shortcode` further down.
+            tx.execute("DELETE FROM approved_records WHERE shortcode = ?1", params![record.shortcode])?;
             tx.execute(
                 "INSERT INTO approved_records (id, shortcode, payload, approved_by, approved_at, collected_at, \
                  pull_request_url, pull_request_state, last_failure) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
@@ -376,16 +372,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_the_supersede_delete_agrees_with_pull_request_state_is_live() {
-        // The supersede `DELETE`'s SQL predicate and `PullRequestState::is_live` are two
-        // encodings of the same rule, and this is what holds them together: a variant added
-        // to the enum without revisiting the SQL would silently change which records survive
-        // an approval.
+    async fn test_approving_over_an_earlier_record_of_any_pull_request_state_leaves_only_the_new_record() {
         for state in [
             None,
-            Some(PullRequestState::Closed),
             Some(PullRequestState::Open),
             Some(PullRequestState::Merged),
+            Some(PullRequestState::Closed),
         ] {
             let label = state.map_or("none", PullRequestState::as_str);
             let db = test_db(&format!("rounds-supersede-{label}")).await;
@@ -402,15 +394,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            let surviving = ApprovedRecordRepository::find_by_shortcode(&db, "0801").await.unwrap();
             assert_eq!(
-                surviving.iter().any(|held| held.id == earlier.id),
-                state.is_some_and(PullRequestState::is_live),
-                "{label}: the supersede DELETE and `is_live` disagree about this state"
-            );
-            assert!(
-                surviving.iter().any(|held| held.id == record.id),
-                "{label}: the approval always writes its own record"
+                ApprovedRecordRepository::find_by_shortcode(&db, "0801").await.unwrap(),
+                vec![record],
+                "{label}: only the new record remains"
             );
         }
     }

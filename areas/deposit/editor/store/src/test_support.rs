@@ -217,10 +217,6 @@ pub struct Faults {
     /// where a database that cannot be read must leave every record alone rather than reconcile a
     /// set it never saw.
     pub approved_records_list_all: bool,
-    /// `ApprovedRecordRepository::find_by_shortcode`: the approval gate's read of a project's
-    /// existing records, and the branch where it must be reported as a storage failure rather
-    /// than as the live-pull-request refusal.
-    pub approved_records_find_by_shortcode: bool,
     /// `ApprovedRecordRepository::delete` answers `Ok(false)`: the row was already gone.
     /// Reachable for real only as a race between two instances sharing one database file, which
     /// is why it needs a seam: the startup pass must not report a discard it did not make.
@@ -355,9 +351,6 @@ impl ApprovedRecordRepository for FaultyStore {
     }
 
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>> {
-        if self.faults.approved_records_find_by_shortcode {
-            return Err(injected("ApprovedRecordRepository::find_by_shortcode"));
-        }
         ApprovedRecordRepository::find_by_shortcode(&*self.inner, shortcode).await
     }
 

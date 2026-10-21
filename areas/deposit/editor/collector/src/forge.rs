@@ -4,6 +4,7 @@
 //! in-repo precedent for querying pull requests with `gh`, and a trait keeps the
 //! run loop testable without either binary on the machine.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -23,6 +24,10 @@ pub const COLLECTED_BY_TRAILER: &str = "Collected-by: editor-collector";
 /// The prefix of the pull request body line naming the approved record the
 /// branch carries.
 const RECORD_MARKER: &str = "Approved-record: ";
+
+/// The prefix of a pull request body line recording one entity id renumbered at
+/// collection.
+const RENUMBERED_MARKER: &str = "Renumbered: ";
 
 /// How many collection pull requests one listing may return.
 ///
@@ -56,6 +61,29 @@ pub fn record_in(body: &str) -> Option<String> {
         .filter(|id| !id.is_empty())
 }
 
+/// The body line recording that the proposed id `from` was written as `to`,
+/// which [`renumbered_in`] reads back. It must stay a line of its own.
+#[must_use]
+pub fn renumbered_line(from: &str, to: &str) -> String {
+    format!("{RENUMBERED_MARKER}{from} {to}")
+}
+
+/// Every `original -> landed` id pair a pull request body records. A line that
+/// is not exactly two ids after the marker is ignored.
+#[must_use]
+pub fn renumbered_in(body: &str) -> BTreeMap<String, String> {
+    body.lines()
+        .filter_map(|line| line.strip_prefix(RENUMBERED_MARKER))
+        .filter_map(|ids| {
+            let mut ids = ids.split_whitespace();
+            match (ids.next(), ids.next(), ids.next()) {
+                (Some(from), Some(to), None) => Some((from.to_string(), to.to_string())),
+                _ => None,
+            }
+        })
+        .collect()
+}
+
 /// One pull request opened from a collection branch.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CollectionPullRequest {
@@ -69,6 +97,7 @@ pub struct CollectionPullRequest {
     /// that has not merged still holds its ids.
     pub files: Vec<String>,
     pub record: Option<String>,
+    pub renumbered: BTreeMap<String, String>,
 }
 
 /// Everything the run loop needs from git and GitHub.
@@ -91,9 +120,11 @@ pub trait Forge {
     /// request carries only its own change.
     fn start_branch(&self, branch: &str, data_dir: &Path) -> Result<(), String>;
 
-    /// Stages exactly `paths` and commits them. Never `git add -A`: the
-    /// checkout also holds this collector's own build output.
-    fn commit(&self, paths: &[PathBuf], message: &str) -> Result<(), String>;
+    /// Stages exactly `paths` and commits them, returning whether a commit was
+    /// made: `false` when staging left nothing that differs from the base
+    /// branch. Never `git add -A`: the checkout also holds this collector's own
+    /// build output.
+    fn commit(&self, paths: &[PathBuf], message: &str) -> Result<bool, String>;
 
     fn force_push(&self, branch: &str) -> Result<(), String>;
 
@@ -135,6 +166,20 @@ impl CommandForge {
             ));
         }
         Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    }
+
+    /// Runs one command and returns its exit code, for a command whose non-zero
+    /// exit is an answer rather than a failure. A command killed by a signal has
+    /// no code and is an error.
+    fn exit_code(&self, program: &str, arguments: &[&str]) -> Result<i32, String> {
+        let status = Command::new(program)
+            .args(arguments)
+            .current_dir(&self.working_dir)
+            .status()
+            .map_err(|error| format!("could not run `{program}`: {error}"))?;
+        status
+            .code()
+            .ok_or_else(|| format!("`{program} {}` ended without an exit code", arguments.join(" ")))
     }
 }
 
@@ -205,6 +250,7 @@ impl Forge for CommandForge {
                 },
                 files: pull_request.files.into_iter().map(|file| file.path).collect(),
                 record: record_in(&pull_request.body),
+                renumbered: renumbered_in(&pull_request.body),
             })
             .collect())
     }
@@ -233,13 +279,22 @@ impl Forge for CommandForge {
         Ok(())
     }
 
-    fn commit(&self, paths: &[PathBuf], message: &str) -> Result<(), String> {
+    fn commit(&self, paths: &[PathBuf], message: &str) -> Result<bool, String> {
         for path in paths {
             let path = path.to_string_lossy().into_owned();
             self.run("git", &["add", "--", &path])?;
         }
-        self.run("git", &["commit", "-m", message])?;
-        Ok(())
+        // `git commit` exits 1 on an empty index, which `run` cannot tell from a
+        // real failure, so emptiness is asked first: 0 is nothing staged, 1 is a
+        // staged change.
+        match self.exit_code("git", &["diff", "--cached", "--quiet"])? {
+            0 => Ok(false),
+            1 => {
+                self.run("git", &["commit", "-m", message])?;
+                Ok(true)
+            }
+            code => Err(format!("`git diff --cached --quiet` exited {code}")),
+        }
     }
 
     fn force_push(&self, branch: &str) -> Result<(), String> {
@@ -287,5 +342,24 @@ mod tests {
     fn a_branch_is_the_prefix_and_the_shortcode() {
         assert_eq!(branch_for("0803"), "editor-collect/0803");
         assert_eq!(branch_for("0801d"), "editor-collect/0801d");
+    }
+
+    #[test]
+    fn a_renumbered_line_reads_back_and_the_record_line_survives_beside_it() {
+        let body = format!(
+            "Approved on 2026-10-21.\n\n{}\n{}\nRenumbered: person-1\nRenumbered: a b c\nRenumbered person-2 to person-3\n\n{}\n",
+            renumbered_line("person-417", "person-418"),
+            renumbered_line("organization-002", "organization-009"),
+            record_line("abc"),
+        );
+
+        assert_eq!(
+            renumbered_in(&body),
+            BTreeMap::from([
+                ("person-417".to_string(), "person-418".to_string()),
+                ("organization-002".to_string(), "organization-009".to_string()),
+            ])
+        );
+        assert_eq!(record_in(&body), Some("abc".to_string()));
     }
 }

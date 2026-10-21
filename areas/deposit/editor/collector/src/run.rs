@@ -9,14 +9,14 @@
 //! The one exception: a merged pull request speaks only for the record its
 //! body names (`pull_requests_for`).
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::path::Path;
 
 use editor_core::agents::Agents;
 use editor_core::canonical::{write_entity, write_project};
 use editor_core::collection::{ApprovedRecordView, ProposedEntityView};
-use editor_core::proposals::{entity_id_number, ProposalKind};
+use editor_core::proposals::{entity_id_number, ProposalKind, ProposalOperation};
 use editor_core::records::PullRequestState;
 use serde_json::Value;
 use shared_metadata::project::{is_valid_shortcode, ProjectRaw};
@@ -24,7 +24,7 @@ use shared_metadata::project::{is_valid_shortcode, ProjectRaw};
 use crate::config::Config;
 use crate::editor::Editor;
 use crate::enrichment::{self, ENRICHMENT_FILE};
-use crate::forge::{branch_for, record_line, CollectionPullRequest, Forge, COLLECTED_BY_TRAILER};
+use crate::forge::{branch_for, record_line, renumbered_line, CollectionPullRequest, Forge, COLLECTED_BY_TRAILER};
 use crate::manifest::{self, MANIFEST_FILE};
 use crate::{layout, renumber};
 
@@ -49,14 +49,19 @@ enum Outcome {
     Updated {
         url: String,
     },
-    /// Not acted on: a merged pull request already speaks for this record.
+    /// Not acted on, for `reason`; `url` is the pull request that speaks for
+    /// the record, when there is one.
     Skipped {
-        url: String,
+        url: Option<String>,
+        reason: &'static str,
     },
     Failed {
         reason: String,
     },
 }
+
+const MERGED_REASON: &str = "a pull request for this record is already merged";
+const ON_MAIN_REASON: &str = "main already carries this record";
 
 /// The job summary's title and table header. A table needs the blank line
 /// before it, or the title and the header row fuse into one paragraph.
@@ -136,7 +141,7 @@ fn collect_one(
         .iter()
         .find(|pull_request| pull_request.state == PullRequestState::Merged)
     {
-        return Ok(Outcome::Skipped { url: merged.url.clone() });
+        return Ok(Outcome::Skipped { url: Some(merged.url.clone()), reason: MERGED_REASON });
     }
 
     let Some(project) = record.project.as_ref() else {
@@ -171,13 +176,26 @@ fn collect_one(
     forge.start_branch(&branch, &config.data_dir)?;
 
     let taken = taken_ids(&config.data_dir, pull_requests, &branch)?;
-    let mapping = renumber::plan(&record.entities, &taken);
+    let landed = landed_entities(pull_requests, &branch);
+    let fresh: Vec<ProposedEntityView> = record
+        .entities
+        .iter()
+        .filter(|entity| landed.landed_id(entity).is_none())
+        .cloned()
+        .collect();
+    let mapping = renumber::plan(&fresh, &taken);
+    let mut references = mapping.clone();
+    for entity in &record.entities {
+        if let Some(id) = landed.landed_id(entity).filter(|id| *id != entity.id) {
+            references.insert(entity.id.clone(), id);
+        }
+    }
     let mut written = Vec::new();
 
-    for entity in &record.entities {
+    for entity in &fresh {
         let id = mapping.get(&entity.id).unwrap_or(&entity.id).clone();
         let mut body = entity.body.clone();
-        renumber::rewrite(&mut body, &mapping);
+        renumber::rewrite(&mut body, &references);
         let Value::Object(members) = &mut body else {
             unreachable!("check_entities rejected every non-object body")
         };
@@ -193,7 +211,7 @@ fn collect_one(
 
     let mut value =
         serde_json::to_value(project).map_err(|error| format!("could not read the published project: {error}"))?;
-    renumber::rewrite(&mut value, &mapping);
+    renumber::rewrite(&mut value, &references);
     let project: ProjectRaw = serde_json::from_value(value)
         .map_err(|error| format!("renumbering produced an unreadable project: {error}"))?;
 
@@ -209,7 +227,24 @@ fn collect_one(
     manifest::rewrite(&config.data_dir)?;
     written.push(config.data_dir.join(MANIFEST_FILE));
 
-    forge.commit(&written, &commit_message(record, &mapping, &rows))?;
+    let open = on_branch
+        .iter()
+        .find(|pull_request| pull_request.state == PullRequestState::Open);
+
+    // Nothing differs from the base branch: an earlier pull request landed this
+    // very content. Pushing would open an empty pull request or rewrite an open
+    // one to an empty change.
+    if !forge.commit(&written, &commit_message(record, &mapping, &rows))? {
+        return Ok(match open {
+            Some(open) => Outcome::Failed {
+                reason: format!(
+                    "{ON_MAIN_REASON}, so the open pull request {} carries a superseded record; close it",
+                    open.url
+                ),
+            },
+            None => Outcome::Skipped { url: None, reason: ON_MAIN_REASON },
+        });
+    }
     forge.force_push(&branch)?;
     let body = pull_request_body(record, &mapping, &rows);
 
@@ -217,10 +252,7 @@ fn collect_one(
     // second would orphan the first, with no record referencing it. Its body
     // is renamed after the push, never before: a body naming a record the
     // branch does not carry would, once merged, skip that record uncollected.
-    if let Some(open) = on_branch
-        .iter()
-        .find(|pull_request| pull_request.state == PullRequestState::Open)
-    {
+    if let Some(open) = open {
         forge.edit_pull_request_body(&open.url, &body).map_err(|error| {
             format!("pushed onto {}, but its body still names the earlier record: {error}", open.url)
         })?;
@@ -285,6 +317,69 @@ fn taken_ids(
     Ok(taken)
 }
 
+/// The entities that already landed on main through merged pull requests from
+/// `own_branch`, whichever record each one named.
+///
+/// A `new` proposal stays on its record until a release carries it, so a re-approved project
+/// still carries an entity that landed: writing it again would duplicate it. A renumbered entity
+/// landed under a different id than the record says, and only the [`renumbered_line`] in the
+/// pull request's body links the two.
+#[derive(Default)]
+struct Landed {
+    ids: BTreeSet<String>,
+    renumbered: BTreeMap<String, String>,
+}
+
+impl Landed {
+    /// The id `entity` landed under, when it is a `new` proposal that landed,
+    /// either directly or as the original of a renumbering. A `change` proposal
+    /// never counts.
+    fn landed_id(&self, entity: &ProposedEntityView) -> Option<String> {
+        if !matches!(entity.operation.parse(), Ok(ProposalOperation::New)) {
+            return None;
+        }
+        if let Some(landed) = self.renumbered.get(&entity.id) {
+            return Some(landed.clone());
+        }
+        // A renumbering's target landed as another proposal's entity, so a proposal that
+        // carries that id itself is a different entity and still needs writing.
+        let renumbered_onto = self.renumbered.values().any(|landed| landed == &entity.id);
+        (self.ids.contains(&entity.id) && !renumbered_onto).then(|| entity.id.clone())
+    }
+}
+
+fn landed_entities(pull_requests: &[CollectionPullRequest], own_branch: &str) -> Landed {
+    let mut merged: Vec<&CollectionPullRequest> = pull_requests
+        .iter()
+        .filter(|pull_request| pull_request.head_ref == own_branch && pull_request.state == PullRequestState::Merged)
+        .collect();
+    // Oldest first, so the newest pull request's mapping wins a clash.
+    merged.sort_by_key(|pull_request| pull_request.number);
+
+    let mut landed = Landed::default();
+    for pull_request in merged {
+        let files: BTreeSet<String> = pull_request.files.iter().filter_map(|path| entity_id_at(path)).collect();
+        // A body line is editable text, so a renumbering counts only when its target is a file
+        // this pull request carried, of the same kind as the id it replaces.
+        let renumbered = pull_request
+            .renumbered
+            .iter()
+            .filter(|(from, to)| files.contains(*to) && kind_of(from).is_some() && kind_of(from) == kind_of(to));
+        landed
+            .renumbered
+            .extend(renumbered.map(|(from, to)| (from.clone(), to.clone())));
+        landed.ids.extend(files);
+    }
+    landed
+}
+
+/// The kind of a well-formed entity id, `person-417` being a person.
+fn kind_of(id: &str) -> Option<ProposalKind> {
+    let (kind, _) = id.rsplit_once('-')?;
+    let kind = kind.parse::<ProposalKind>().ok()?;
+    entity_id_number(kind, id).map(|_| kind)
+}
+
 /// The entity id a changed path claims, or `None` for a path that is not an
 /// entity file.
 fn entity_id_at(path: &str) -> Option<String> {
@@ -334,7 +429,7 @@ fn summary_row(record: &ApprovedRecordView, outcome: &Outcome) -> String {
     let (word, url, reason) = match outcome {
         Outcome::Opened { url } => ("opened", url.as_str(), ""),
         Outcome::Updated { url } => ("updated", url.as_str(), ""),
-        Outcome::Skipped { url } => ("skipped", url.as_str(), "a pull request for this record is already merged"),
+        Outcome::Skipped { url, reason } => ("skipped", url.as_deref().unwrap_or(""), *reason),
         Outcome::Failed { reason } => ("failed", "", reason.as_str()),
     };
     format!(
@@ -372,21 +467,13 @@ fn subject(record: &ApprovedRecordView) -> String {
 }
 
 /// The commit message, carrying the trailer the force-push guard reads back.
-fn commit_message(
-    record: &ApprovedRecordView,
-    mapping: &std::collections::BTreeMap<String, String>,
-    rows: &[String],
-) -> String {
+fn commit_message(record: &ApprovedRecordView, mapping: &BTreeMap<String, String>, rows: &[String]) -> String {
     let mut message = format!("{}\n\n{}\n", subject(record), notes(mapping, rows));
     message.push_str(&format!("\n{COLLECTED_BY_TRAILER}\n"));
     message
 }
 
-fn pull_request_body(
-    record: &ApprovedRecordView,
-    mapping: &std::collections::BTreeMap<String, String>,
-    rows: &[String],
-) -> String {
+fn pull_request_body(record: &ApprovedRecordView, mapping: &BTreeMap<String, String>, rows: &[String]) -> String {
     format!(
         "Approved in the metadata editor on {}.\n\n{}\n\n{}\n",
         record.approved_at.format("%Y-%m-%d"),
@@ -397,10 +484,15 @@ fn pull_request_body(
 
 /// What a reviewer needs to know beyond the diff: which ids moved, and which
 /// temporal-coverage values still need a range.
-fn notes(mapping: &std::collections::BTreeMap<String, String>, rows: &[String]) -> String {
+///
+/// Each renumbering is a [`renumbered_line`], parsed back by `forge::renumbered_in`.
+fn notes(mapping: &BTreeMap<String, String>, rows: &[String]) -> String {
     let mut lines = Vec::new();
-    for (from, to) in mapping {
-        lines.push(format!("Renumbered {from} to {to}, which was already taken."));
+    if !mapping.is_empty() {
+        lines.push("These entity ids were already taken and were renumbered:".to_string());
+        for (from, to) in mapping {
+            lines.push(renumbered_line(from, to));
+        }
     }
     for name in rows {
         lines.push(format!(
@@ -451,7 +543,7 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
-    use crate::forge::record_in;
+    use crate::forge::{record_in, renumbered_in};
 
     const CREATED_URL: &str = "https://github.com/dasch-swiss/dsp-repository/pull/999";
     const EXISTING_URL: &str = "https://github.com/dasch-swiss/dsp-repository/pull/412";
@@ -462,6 +554,8 @@ mod tests {
     struct FakeForge {
         pull_requests: Vec<CollectionPullRequest>,
         tip_message: Option<String>,
+        /// Makes `commit` report that nothing differed from the base branch.
+        nothing_to_commit: bool,
         calls: RefCell<Vec<String>>,
         bodies: RefCell<Vec<String>>,
     }
@@ -486,9 +580,9 @@ mod tests {
             Ok(())
         }
 
-        fn commit(&self, _paths: &[PathBuf], _message: &str) -> Result<(), String> {
+        fn commit(&self, _paths: &[PathBuf], _message: &str) -> Result<bool, String> {
             self.calls.borrow_mut().push("commit".to_string());
-            Ok(())
+            Ok(!self.nothing_to_commit)
         }
 
         fn force_push(&self, _branch: &str) -> Result<(), String> {
@@ -517,6 +611,7 @@ mod tests {
             state,
             files: Vec::new(),
             record: None,
+            renumbered: BTreeMap::new(),
         }
     }
 
@@ -581,8 +676,48 @@ mod tests {
         let outcome =
             collect_one(&config, &forge, &record, &forge.pull_requests).expect("the skip rule decides without failing");
 
-        assert_eq!(outcome, Outcome::Skipped { url: EXISTING_URL.to_string() });
+        assert_eq!(
+            outcome,
+            Outcome::Skipped { url: Some(EXISTING_URL.to_string()), reason: MERGED_REASON }
+        );
         assert!(!forge.did("start") && !forge.did("commit") && !forge.did("push"));
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn nothing_to_commit_and_no_open_pull_request_skips_without_pushing_or_opening_one() {
+        let config = fixture("nothing-to-commit");
+        let record = record("0803", Some(committed_project()), None);
+        let forge = FakeForge { nothing_to_commit: true, ..FakeForge::default() };
+
+        let outcome = collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record is decided");
+
+        assert_eq!(outcome, Outcome::Skipped { url: None, reason: ON_MAIN_REASON });
+        assert!(!forge.did("push") && !forge.did("create") && !forge.did("edit"));
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn nothing_to_commit_with_an_open_pull_request_fails_naming_it_and_pushes_nothing() {
+        let config = fixture("nothing-to-commit-open");
+        let record = record("0803", Some(committed_project()), None);
+        let forge = FakeForge {
+            pull_requests: vec![pull_request(
+                "editor-collect/0803",
+                PullRequestState::Open,
+                EXISTING_URL,
+            )],
+            nothing_to_commit: true,
+            ..FakeForge::default()
+        };
+
+        let outcome = collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record is decided");
+
+        let Outcome::Failed { reason } = outcome else {
+            panic!("expected a failure, got {outcome:?}");
+        };
+        assert!(reason.contains(EXISTING_URL), "{reason}");
+        assert!(!forge.did("push") && !forge.did("create") && !forge.did("edit"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
@@ -735,7 +870,7 @@ mod tests {
     /// would make the collector refuse to update its own branch.
     #[test]
     fn every_commit_carries_the_trailer_the_guard_reads() {
-        let message = commit_message(&record("0803", None, None), &std::collections::BTreeMap::new(), &[]);
+        let message = commit_message(&record("0803", None, None), &BTreeMap::new(), &[]);
         assert!(message.contains(COLLECTED_BY_TRAILER), "{message}");
         assert!(
             message.starts_with("feat(dpe-data): publish the approved metadata for 0803\n"),
@@ -754,12 +889,21 @@ mod tests {
         let updated = summary_row(&record, &Outcome::Updated { url: EXISTING_URL.to_string() });
         assert_eq!(updated, format!("| `0803` | {id} | updated | {EXISTING_URL} |  |\n"));
 
-        let skipped = summary_row(&record, &Outcome::Skipped { url: EXISTING_URL.to_string() });
+        let skipped = summary_row(
+            &record,
+            &Outcome::Skipped { url: Some(EXISTING_URL.to_string()), reason: MERGED_REASON },
+        );
         assert_eq!(
             skipped,
             format!(
                 "| `0803` | {id} | skipped | {EXISTING_URL} | `a pull request for this record is already merged` |\n"
             )
+        );
+
+        let on_main = summary_row(&record, &Outcome::Skipped { url: None, reason: ON_MAIN_REASON });
+        assert_eq!(
+            on_main,
+            format!("| `0803` | {id} | skipped |  | `main already carries this record` |\n")
         );
 
         let failed = summary_row(&record, &Outcome::Failed { reason: "no usable project".to_string() });
@@ -863,6 +1007,7 @@ mod tests {
                 format!("{}/projects/0804_x.json", editor_core::DPE_DATA_DIR),
             ],
             record: None,
+            renumbered: BTreeMap::new(),
         }];
 
         let taken = taken_ids(&config.data_dir, &pull_requests, "editor-collect/0803").expect("the fixture loads");
@@ -884,6 +1029,7 @@ mod tests {
             state: PullRequestState::Open,
             files: vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)],
             record: None,
+            renumbered: BTreeMap::new(),
         }];
 
         let taken = taken_ids(&config.data_dir, &pull_requests, "editor-collect/0803").expect("the fixture loads");
@@ -1047,6 +1193,196 @@ mod tests {
             "the reference follows the renumbering: {project}"
         );
         assert!(!project.contains("person-001"), "no reference is left pointing at the taken id");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    const PUBLISHED_PERSON: &str =
+        r#"{"id": "ID", "givenNames": ["Published"], "familyNames": ["Already"], "jobTitles": []}"#;
+
+    fn publish_person(config: &Config, id: &str) {
+        std::fs::write(
+            config.data_dir.join(format!("persons/{id}.json")),
+            PUBLISHED_PERSON.replace("ID", id),
+        )
+        .expect("a published person");
+    }
+
+    fn new_person_referenced_by_the_project(id: &str) -> ApprovedRecordView {
+        let mut record = record("0803", Some(committed_project()), None);
+        record.entities = vec![ProposedEntityView {
+            kind: "person".to_string(),
+            operation: "new".to_string(),
+            id: id.to_string(),
+            body: serde_json::json!({"id": id, "givenNames": ["Ada"], "familyNames": ["Lovelace"]}),
+        }];
+        if let Some(project) = record.project.as_mut() {
+            project.contact_point = Some(vec![id.to_string()]);
+        }
+        record
+    }
+
+    fn only_written_project(config: &Config) -> String {
+        let path = std::fs::read_dir(config.data_dir.join("projects"))
+            .expect("the projects directory is readable")
+            .flatten()
+            .map(|entry| entry.path())
+            .next()
+            .expect("the project is written");
+        std::fs::read_to_string(path).expect("the project is readable")
+    }
+
+    /// A `new` proposal stays on its record until a release carries it, so a
+    /// re-approval after the first pull request merged still holds it.
+    #[test]
+    fn an_entity_that_landed_through_a_merged_pull_request_is_neither_renumbered_nor_written() {
+        let config = fixture("landed");
+        publish_person(&config, "person-417");
+        let earlier = record("0803", Some(committed_project()), None);
+        let mut landed = naming(
+            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+            &earlier,
+        );
+        landed.files = vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)];
+        let forge = FakeForge { pull_requests: vec![landed], ..FakeForge::default() };
+        let record = new_person_referenced_by_the_project("person-417");
+
+        let outcome =
+            collect_one(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
+
+        assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
+        let published = std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("still there");
+        assert!(
+            published.contains("Published") && !published.contains("Lovelace"),
+            "{published}"
+        );
+        assert!(!config.data_dir.join("persons/person-418.json").exists(), "no duplicate entity");
+        assert!(!forge.bodies.borrow()[0].contains("Renumbered"), "{}", forge.bodies.borrow()[0]);
+        let project = only_written_project(&config);
+        assert!(project.contains("person-417"), "{project}");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    /// The landed file is `person-418`, while the record still says
+    /// `person-417`: only the pull request body's line connects the two.
+    #[test]
+    fn an_entity_that_landed_renumbered_is_found_through_the_body_line_and_referenced_by_its_landed_id() {
+        let config = fixture("landed-renumbered");
+        publish_person(&config, "person-417");
+        publish_person(&config, "person-418");
+        let earlier = record("0803", Some(committed_project()), None);
+        let mut landed = naming(
+            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+            &earlier,
+        );
+        landed.files = vec![format!("{}/persons/person-418.json", editor_core::DPE_DATA_DIR)];
+        landed.renumbered = renumbered_in(&renumbered_line("person-417", "person-418"));
+        let forge = FakeForge { pull_requests: vec![landed], ..FakeForge::default() };
+        let record = new_person_referenced_by_the_project("person-417");
+
+        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
+
+        let published = std::fs::read_to_string(config.data_dir.join("persons/person-418.json")).expect("still there");
+        assert!(
+            published.contains("Published") && !published.contains("Lovelace"),
+            "{published}"
+        );
+        assert!(!config.data_dir.join("persons/person-419.json").exists(), "no duplicate entity");
+        let project = only_written_project(&config);
+        assert!(project.contains("person-418") && !project.contains("person-417"), "{project}");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn the_pull_request_body_carries_its_renumbering_in_a_form_the_collector_reads_back() {
+        let record = record("0803", Some(committed_project()), None);
+        let mapping = BTreeMap::from([("person-417".to_string(), "person-418".to_string())]);
+
+        assert_eq!(renumbered_in(&pull_request_body(&record, &mapping, &[])), mapping);
+    }
+
+    #[test]
+    fn a_renumbering_whose_target_the_pull_request_did_not_carry_is_ignored() {
+        let earlier = record("0803", Some(committed_project()), None);
+        let mut merged = naming(
+            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+            &earlier,
+        );
+        merged.files = vec![format!("{}/persons/person-418.json", editor_core::DPE_DATA_DIR)];
+        merged.renumbered = BTreeMap::from([
+            ("person-417".to_string(), "person-001".to_string()),
+            ("person-500".to_string(), "organization-418".to_string()),
+        ]);
+
+        let landed = landed_entities(&[merged], "editor-collect/0803");
+
+        assert!(landed.renumbered.is_empty(), "{:?}", landed.renumbered);
+    }
+
+    /// `person-418` landed as the renumbered `person-417`, so a proposal that is
+    /// itself `person-418` is a different person and must still be written.
+    #[test]
+    fn a_proposal_carrying_a_renumberings_target_id_is_not_mistaken_for_the_landed_entity() {
+        let config = fixture("landed-renumbered-target");
+        publish_person(&config, "person-417");
+        publish_person(&config, "person-418");
+        let earlier = record("0803", Some(committed_project()), None);
+        let mut landed = naming(
+            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+            &earlier,
+        );
+        landed.files = vec![format!("{}/persons/person-418.json", editor_core::DPE_DATA_DIR)];
+        landed.renumbered = renumbered_in(&renumbered_line("person-417", "person-418"));
+        let forge = FakeForge { pull_requests: vec![landed], ..FakeForge::default() };
+        let record = new_person_referenced_by_the_project("person-418");
+
+        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
+
+        let written = std::fs::read_to_string(config.data_dir.join("persons/person-419.json"))
+            .expect("the new person is written under the next free id");
+        assert!(written.contains("Lovelace"), "{written}");
+        let project = only_written_project(&config);
+        assert!(project.contains("person-419"), "{project}");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    /// An open pull request has not landed anything: only a merged one counts.
+    #[test]
+    fn an_entity_in_an_open_pull_request_on_the_records_branch_has_not_landed() {
+        let config = fixture("open-not-landed");
+        let mut open = pull_request("editor-collect/0803", PullRequestState::Open, EXISTING_URL);
+        open.files = vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)];
+        let forge = FakeForge { pull_requests: vec![open], ..FakeForge::default() };
+        let record = new_person_referenced_by_the_project("person-417");
+
+        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record publishes");
+
+        let written =
+            std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("the entity is written");
+        assert!(written.contains("Lovelace"), "{written}");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    /// A `change` proposal rewrites a published entity, so an id in a merged
+    /// pull request's files does not make it landed.
+    #[test]
+    fn a_change_to_an_entity_a_merged_pull_request_carried_is_still_written() {
+        let config = fixture("change-not-landed");
+        publish_person(&config, "person-417");
+        let earlier = record("0803", Some(committed_project()), None);
+        let mut merged = naming(
+            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+            &earlier,
+        );
+        merged.files = vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)];
+        let forge = FakeForge { pull_requests: vec![merged], ..FakeForge::default() };
+        let mut record = new_person_referenced_by_the_project("person-417");
+        record.entities[0].operation = "change".to_string();
+
+        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record publishes");
+
+        let written =
+            std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("the entity is written");
+        assert!(written.contains("Lovelace"), "{written}");
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 }

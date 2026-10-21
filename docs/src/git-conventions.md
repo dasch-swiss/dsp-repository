@@ -155,12 +155,32 @@ A reviewer asking for a split turns case 3 into case 2. Each commit stands on it
 
 In a stack, the commit-hygiene gate counts commits from each PR's own base, so the one-commit cap applies per PR.
 
+### History lives in git, documents hold the current state
+
+Documents in the repository — `docs/`, ADRs, `ARCH-MAP.md`, `CONTEXT.md`, `CLAUDE.md` files,
+code comments — state what the code is and does now, or, for an ADR, the target it is being
+moved to. They never narrate how they got there: no "previously X, now Y", no dated amendment,
+no "superseded by", no status that goes stale once a PR merges. Write a document as though the
+PR that introduces it is already merged. What is still to come — a decided target, an open
+question, a deferred option — is current information and stays, marked as such and linked to
+its Linear issue where one exists (`docs/adr/CLAUDE.md` → *What is still to come*).
+
+The history of a document is the git history of its file. When a commit changes what a document
+says — above all when it changes a decision in an ADR — the commit body states what the
+document said before and why it changed. That body is the record of the decision's evolution;
+`git log -p -- <file>` reads it back. A commit that only says "update ADR-0003" loses the one
+thing the rewritten document no longer carries.
+
+`docs/specs/` is the exception: PRDs, plans and journals are point-in-time records of what was
+intended when they were written, and are not rewritten to follow the code.
+
 ### Where context lives
 
 | Layer | Audience | Content |
 |-------|----------|---------|
-| Commit messages | Release notes readers | Every change; `feat:`/`fix:` carry the user-visible ones |
+| Commit messages | Release notes readers, future developers | Every change; `feat:`/`fix:` carry the user-visible ones; the body says what changed in a document or decision, and why |
 | PR description | Reviewers + future developers | Full context including challenges |
+| Documents and ADRs | Everyone | The current state, or the target state with a Linear id; never the journey |
 | Learnings docs | Future Claude + engineers | Structured, searchable knowledge |
 | Code comments | Code readers | "Why not the obvious approach" |
 
@@ -191,6 +211,7 @@ The "Challenges and Decisions" section captures the debugging journey that would
 | Build/CI/refactor details | Commit message (`build:` / `chore(ci):` / `refactor:`) |
 | Why the work was needed | PR Motivation section |
 | What was tried and failed | PR Challenges section |
-| Architecture decisions + rationale | PR Challenges section |
+| Architecture decisions + rationale | PR Challenges section; a hard-to-reverse one also as an ADR |
+| How a decision or document changed, and why | Commit body (the document itself is rewritten in place) |
 | Things to watch out for | PR Gotchas section |
 | Structured, searchable knowledge | Learnings doc (dasch-specs) |

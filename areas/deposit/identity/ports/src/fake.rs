@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::{AuthoredWork, PortFuture, Unavailable};
+use crate::{OpenWork, PortFuture, Unavailable};
 
 /// Answers with the shortcodes it was given per account, or fails the reads it was told to.
 #[derive(Clone, Debug, Default)]
-pub struct FakeAuthoredWork {
+pub struct FakeOpenWork {
     drafts: HashMap<String, Vec<String>>,
     submissions: HashMap<String, Vec<String>>,
     failing_drafts: bool,
     failing_submissions: bool,
 }
 
-impl FakeAuthoredWork {
+impl FakeOpenWork {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -65,13 +65,13 @@ impl fmt::Display for FakeFailure {
 
 impl std::error::Error for FakeFailure {}
 
-impl AuthoredWork for FakeAuthoredWork {
-    fn open_drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
+impl OpenWork for FakeOpenWork {
+    fn drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
         let result = answer(self.failing_drafts, &self.drafts, account_id);
         Box::pin(async move { result })
     }
 
-    fn open_submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
+    fn submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
         let result = answer(self.failing_submissions, &self.submissions, account_id);
         Box::pin(async move { result })
     }

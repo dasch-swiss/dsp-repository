@@ -77,7 +77,7 @@ pub(crate) fn state_over(
         css_href: "/assets/app.css".to_string(),
         store: identity,
         // The open-work list over real rows is `deposit-server`'s `cross_capability.rs`.
-        authored_work: Arc::new(identity_ports::FakeAuthoredWork::new()),
+        open_work: Arc::new(identity_ports::FakeOpenWork::new()),
         mailer: Arc::new(mailer),
         auth,
         // Off by default: the reveal is the exception, so a test that wants it

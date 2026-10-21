@@ -15,7 +15,7 @@ test-support = []
 # connection on a thread of its own so every call goes through `interact()` and none can be
 # held across an `.await`.
 editor-core = { path = "../core" }
-# The port this store answers for identity (`LiveAuthoredWork`): a provider's store may depend
+# The port this store answers for identity (`LiveOpenWork`): a provider's store may depend
 # on its consumer's ports crate.
 identity-ports = { path = "../../identity/ports" }
 async-trait.workspace = true

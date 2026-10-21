@@ -9,7 +9,7 @@ pub(crate) struct IdentityState {
     /// can make a chosen storage call fail; the auth flow's error branches depend on it.
     pub(crate) store: std::sync::Arc<dyn identity_core::repository::IdentityRepositories>,
     /// The editor work an account still has open, for the depositor-removal confirmation.
-    pub(crate) authored_work: std::sync::Arc<dyn identity_ports::AuthoredWork>,
+    pub(crate) open_work: std::sync::Arc<dyn identity_ports::OpenWork>,
     /// Behind a trait so a test can watch what was sent and make sending fail.
     pub(crate) mailer: std::sync::Arc<dyn identity_core::mail::Mailer>,
     pub(crate) auth: identity_core::login::AuthConfig,

@@ -49,7 +49,7 @@ areas/
     ├── shell/                 # The area's document shell, sign-in link and error pages (crate: deposit-shell)
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
-    │   ├── ports/             # What identity asks of the editor: AuthoredWork (crate: identity-ports)
+    │   ├── ports/             # What identity asks of the editor: OpenWork (crate: identity-ports)
     │   ├── store/             # Identity's SQLite store, mail transports, editor-ports adapters (crate: identity-store)
     │   └── web/               # Identity's pages, handlers, routes and the Identity facade (crate: identity-web)
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
@@ -96,12 +96,12 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
 | `deposit-shell` | `areas/deposit/shell` | The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; `maud` and `mosaic-tiles` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |
-| `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `AuthoredWork`; `std` only |
+| `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `OpenWork`; `std` only |
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |
 | `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only |
-| `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveAuthoredWork` behind `identity-ports` |
+| `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveOpenWork` behind `identity-ports` |
 | `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: pages, the project form, handlers and routes, behind the `Editor` facade |
 | `deposit-server` | `areas/deposit/server` | The Deposit Area's composition root and binary: both stores, identity's and the editor's routers merged |
 | `editor-collector` | `areas/deposit/editor/collector` | CI binary — collects approved records into pull requests |

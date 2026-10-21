@@ -1,6 +1,6 @@
 # Identity
 
-The Deposit Area's identity capability: who has an account, how they sign in, and which projects each account may reach. Four crates: `identity-core` (`core/`), the account, session and login-code records, the login and session rules, and the repository traits their storage implements; `identity-ports` (`ports/`), `AuthoredWork`, what identity asks of the editor; `identity-store` (`store/`), the SQLite implementation in `identity.sqlite`, the mail transports, and the adapters that answer the editor's ports; and `identity-web` (`web/`), the login and depositor pages, their handlers and routes. The editor's binary starts identity and serves its routes; `docs/src/editor/architecture.md` lists what is left to move. The target shape is `areas/deposit/ADR-0004`.
+The Deposit Area's identity capability: who has an account, how they sign in, and which projects each account may reach. Four crates: `identity-core` (`core/`), the account, session and login-code records, the login and session rules, and the repository traits their storage implements; `identity-ports` (`ports/`), `OpenWork`, what identity asks of the editor; `identity-store` (`store/`), the SQLite implementation in `identity.sqlite`, the mail transports, and the adapters that answer the editor's ports; and `identity-web` (`web/`), the login and depositor pages, their handlers and routes. The editor's binary starts identity and serves its routes; `docs/src/editor/architecture.md` lists what is left to move. The target shape is `areas/deposit/ADR-0004`.
 
 ## Language
 
@@ -17,6 +17,10 @@ _Avoid_: admin, reviewer as a role name (a reviewer is what RDU does on a given 
 **Assigned project**:
 A `user_shortcodes` row: one project a depositor may reach, matched on the case-folded Shortcode (`editor-ports`' `Actor::assigned_shortcodes` and `Actor::may_reach`, over what `LiveAuthenticator` hands the editor; `Actor` is defined in [`areas/deposit/editor/CONTEXT.md`](../editor/CONTEXT.md)).
 _Avoid_: permission, membership, assignment (the row is named for the project it grants, not the act).
+
+**Open work**:
+What identity asks of the editor through `identity-ports`' `OpenWork`: the drafts an account saved last and its submissions short of `Approved`, which the depositor-removal confirmation names before removal orphans them.
+_Avoid_: authored work (a draft is last-write-wins, so the account saved it last, not necessarily created it), pending work ("pending" already qualifies a Submission in Withdrawal).
 
 **Login code**:
 A one-time code mailed to a depositor and bound to a browser token, exchanged for a Session.

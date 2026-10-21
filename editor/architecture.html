@@ -253,7 +253,6 @@
   Round --&gt;|approve, one transaction| AR[Approved record]
   AR --&gt;|GET /api/v1/approved-records| C[editor-collector&lt;br/&gt;in GitHub Actions]
   C --&gt;|one pull request per project| PR[Pull request on&lt;br/&gt;this repository]
-  C --&gt;|POST /api/v1/collection-report| AR
   PR --&gt;|CI checks, human merge, release| Corpus[Published project files]
   Corpus --&gt;|baked into the image| DPE
   Corpus --&gt;|baked into the image| E[editor, next deployment]
@@ -263,7 +262,7 @@
 <li>A <strong>Draft</strong> is the depositor's working copy: the project's JSON members verbatim, one per project, last write wins (<a href="./project-representation.html">The Project Representation</a>, <code>areas/deposit/ADR-0002</code>).</li>
 <li>A <strong>Submission</strong> is the draft as submitted, at most one per project. RDU claims it, decides each changed field, substitutes values beside the payload rather than over it, and ends the round with approve, request changes or reject; the depositor can withdraw (<a href="./review.html">The Review Surface</a>).</li>
 <li>Approve writes the <strong>Approved record</strong>, the submitted draft with every decision applied, deletes the submission and appends the <strong>Review round</strong>, all in one transaction. The record waits to be collected.</li>
-<li>The <strong>collector</strong> runs in GitHub Actions, never in the service. It reads every approved record over the editor's API, writes each project's onto an <code>editor-collect/&lt;shortcode&gt;</code> branch, opens or updates one pull request per project, and reports the outcome back (<a href="./collection.html">Collection</a>). The pull request, its CI checks and a human merge are the gate between the editor and anything served.</li>
+<li>The <strong>collector</strong> runs in GitHub Actions, never in the service. It reads every approved record over the editor's API, writes each project's onto an <code>editor-collect/&lt;shortcode&gt;</code> branch, and opens or updates one pull request per project (<a href="./collection.html">Collection</a>). Nothing is reported back. The pull request, its CI checks and a human merge are the gate between the editor and anything served.</li>
 <li><strong>Online</strong> is never stored. The merged file is baked into the next editor image, and the editor compares its records with that published set once at startup: a record whose data is published is discarded, and the project reads Online (<a href="./status.html">Project State and Online Detection</a>, <code>areas/deposit/ADR-0003</code>).</li>
 </ul>
 <h2 id="components-and-crates"><a class="header" href="#components-and-crates">Components and crates</a></h2>
@@ -303,7 +302,7 @@
   SMTP[SMTP relay]
   B --&gt;|session cookie, every write a POST with Sec-Fetch-Site same-origin| T
   S --&gt;|login codes, outbound only| SMTP
-  Act --&gt;|bearer EDITOR_COLLECTION_TOKEN| T
+  Act --&gt;|GET /api/v1/approved-records, public| T
   Act --&gt;|pull request per project, secrets.GH_TOKEN| Repo
   Repo --&gt;|release: the image build bakes the corpus| S
   Repo --&gt;|release| DPE
@@ -312,7 +311,7 @@
 <ul>
 <li><strong>Browser to editor.</strong> A session comes from a one-time login code sent by mail; there are no passwords. Every state-changing route is <code>POST</code> and passes the <code>Sec-Fetch-Site: same-origin</code> check, applied as the outermost layer so no route escapes it. Access is two extractors, <code>Authenticated</code> and <code>Rdu</code>, not a middleware: a handler that names neither is public in its signature (<a href="./authentication.html">Authentication</a>, <a href="./routing.html">Routing</a>).</li>
 <li><strong>Editor to DPE.</strong> Separate deployables on separate origins; see <a href="#relationship-to-dpe">Relationship to DPE</a>.</li>
-<li><strong>CI to editor.</strong> The collector authenticates to the editor with a bearer token the editor verifies (<code>EDITOR_COLLECTION_TOKEN</code>). The editor holds no GitHub credential in either direction and makes no outbound GitHub call (<a href="./collection.html">Collection</a>).</li>
+<li><strong>CI to editor.</strong> The collector only reads the editor: <code>GET /api/v1/approved-records</code> is public and rate-limited, and nothing is written back. The editor holds no credential at all and makes no outbound GitHub call (<a href="./collection.html">Collection</a>).</li>
 <li><strong>Editor to repository.</strong> Only through the pull request the collector opens. The collector writes a disposable checkout on its own <code>editor-collect/&lt;shortcode&gt;</code> branch, never in place, and refuses to force-push over a tip it did not write. The pull request is opened with <code>secrets.GH_TOKEN</code> so the repository's checks run on it.</li>
 <li><strong>Editor to the relay.</strong> Outbound only, and no address ever reaches a log (<a href="./authentication.html#mail">Authentication</a>).</li>
 </ul>

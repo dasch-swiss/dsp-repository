@@ -14,7 +14,7 @@ use axum::body::Body;
 use axum::http::header::COOKIE;
 use axum::http::{Request, Response};
 use editor_core::repository::EditorRepositories;
-use editor_ports::{FakeAuthenticator, FakeUserDirectory, Principal, Role};
+use editor_ports::{Actor, FakeAuthenticator, FakeUserDirectory, Role};
 use uuid::Uuid;
 
 use crate::shell::EditorState;
@@ -149,7 +149,7 @@ pub(crate) async fn a_session(state: &TestState, user_id: Uuid) -> String {
     let token = Uuid::new_v4().to_string();
     state.authenticator.insert_session(
         &token,
-        Principal {
+        Actor {
             account_id: user.id.to_string(),
             display_name: user.name,
             role: user.role,

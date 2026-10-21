@@ -1,6 +1,6 @@
 //! The editor's extractors: who may reach an editor route, answered by identity through the
 //! [`Authenticator`](editor_ports::Authenticator) port.
-//! The editor never reads identity's tables: it sees a [`Principal`].
+//! The editor never reads identity's tables: it sees an [`Actor`].
 
 use std::time::SystemTime;
 
@@ -11,7 +11,7 @@ use axum::http::Method;
 use axum::response::{IntoResponse, Redirect, Response};
 use chrono::{DateTime, Utc};
 use deposit_shell::sign_in::login_url;
-use editor_ports::Principal;
+use editor_ports::Actor;
 use uuid::Uuid;
 
 use crate::shell::EditorState;
@@ -37,14 +37,14 @@ fn destination(parts: &Parts) -> Option<&str> {
 /// The signed-in account, as the editor's handlers use it.
 #[derive(Debug, Clone)]
 pub(crate) struct Account {
-    /// [`Principal::account_id`], parsed once into the `Uuid` the editor's records hold.
+    /// [`Actor::account_id`], parsed once into the `Uuid` the editor's records hold.
     pub(crate) id: Uuid,
-    pub(crate) principal: Principal,
+    pub(crate) actor: Actor,
 }
 
 impl Account {
     pub(crate) fn signed_out_at(&self) -> DateTime<Utc> {
-        self.principal.signed_out_at.into()
+        self.actor.signed_out_at.into()
     }
 }
 
@@ -57,15 +57,15 @@ impl FromRequestParts<EditorState> for Authenticated {
 
     async fn from_request_parts(parts: &mut Parts, state: &EditorState) -> Result<Self, Self::Rejection> {
         let sign_in = || Redirect::to(&login_url(destination(parts))).into_response();
-        let Some(principal) = state
+        let Some(actor) = state
             .authenticator
             .authenticate(&cookie_values(&parts.headers), SystemTime::now())
             .await
         else {
             return Err(sign_in());
         };
-        match Uuid::parse_str(&principal.account_id) {
-            Ok(id) => Ok(Self(Account { id, principal })),
+        match Uuid::parse_str(&actor.account_id) {
+            Ok(id) => Ok(Self(Account { id, actor })),
             // Identity mints every id as a `Uuid`, so this is a broken adapter rather than a
             // visitor's doing; failing closed keeps an id the records cannot hold off every write.
             Err(error) => {
@@ -88,12 +88,12 @@ impl FromRequestParts<EditorState> for Rdu {
 
     async fn from_request_parts(parts: &mut Parts, state: &EditorState) -> Result<Self, Self::Rejection> {
         let Authenticated(account) = Authenticated::from_request_parts(parts, state).await?;
-        if !account.principal.is_rdu() {
+        if !account.actor.is_rdu() {
             // No `http.route` field: the enclosing server span carries it (see identity's `guard`).
             tracing::info!("refused an RDU-only page to an account that is not RDU");
             return Err(crate::shell::forbidden(
                 state,
-                &account.principal.display_name,
+                &account.actor.display_name,
                 deposit_shell::RDU_ONLY,
             ));
         }
@@ -139,8 +139,8 @@ mod tests {
         assert_eq!(destination(&parts("DELETE", "/collection/x/discard")), None);
     }
 
-    fn principal(account_id: &str, role: Role) -> Principal {
-        Principal {
+    fn actor(account_id: &str, role: Role) -> Actor {
+        Actor {
             account_id: account_id.to_string(),
             display_name: "A Depositor".to_string(),
             role,
@@ -149,9 +149,9 @@ mod tests {
         }
     }
 
-    async fn state_signed_in_as(principal: Principal) -> TestState {
+    async fn state_signed_in_as(actor: Actor) -> TestState {
         let (mut state, _) = test_state("editor-auth").await;
-        state.authenticator = Arc::new(FakeAuthenticator::new().with_session("token", principal));
+        state.authenticator = Arc::new(FakeAuthenticator::new().with_session("token", actor));
         state
     }
 
@@ -166,18 +166,18 @@ mod tests {
     #[tokio::test]
     async fn test_a_session_yields_the_account_with_its_id_parsed() {
         let id = Uuid::new_v4();
-        let state = state_signed_in_as(principal(&id.to_string(), Role::Depositor)).await;
+        let state = state_signed_in_as(actor(&id.to_string(), Role::Depositor)).await;
 
         let Authenticated(account) = Authenticated::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
             .expect("a live session");
         assert_eq!(account.id, id);
-        assert_eq!(account.principal.display_name, "A Depositor");
+        assert_eq!(account.actor.display_name, "A Depositor");
     }
 
     #[tokio::test]
     async fn test_no_session_is_sent_to_sign_in_and_back() {
-        let state = state_signed_in_as(principal(&Uuid::new_v4().to_string(), Role::Depositor)).await;
+        let state = state_signed_in_as(actor(&Uuid::new_v4().to_string(), Role::Depositor)).await;
 
         let refused = Authenticated::from_request_parts(&mut session_parts(None), &state)
             .await
@@ -188,7 +188,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_account_id_that_is_not_a_uuid_is_no_session() {
-        let state = state_signed_in_as(principal("not-a-uuid", Role::Rdu)).await;
+        let state = state_signed_in_as(actor("not-a-uuid", Role::Rdu)).await;
 
         let refused = Authenticated::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
@@ -199,7 +199,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_depositor_gets_the_rdu_only_page_rather_than_sign_in() {
-        let state = state_signed_in_as(principal(&Uuid::new_v4().to_string(), Role::Depositor)).await;
+        let state = state_signed_in_as(actor(&Uuid::new_v4().to_string(), Role::Depositor)).await;
 
         let refused = Rdu::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
@@ -212,15 +212,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_rdu_session_passes() {
-        let state = state_signed_in_as(principal(&Uuid::new_v4().to_string(), Role::Rdu)).await;
+        let state = state_signed_in_as(actor(&Uuid::new_v4().to_string(), Role::Rdu)).await;
 
         assert!(Rdu::from_request_parts(&mut session_parts(Some("s=token")), &state)
             .await
             .is_ok());
     }
 
-    fn depositor(assigned_shortcodes: &[&str]) -> Principal {
-        Principal {
+    fn depositor(assigned_shortcodes: &[&str]) -> Actor {
+        Actor {
             account_id: uuid::Uuid::nil().to_string(),
             display_name: "A".to_string(),
             role: Role::Depositor,

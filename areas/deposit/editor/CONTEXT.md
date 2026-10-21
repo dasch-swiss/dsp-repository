@@ -8,12 +8,12 @@ The producer side of the Trusted Repository: where a depositing project team edi
 
 Depositor, RDU, Assigned project, Login code and Session are identity's terms, defined in [`areas/deposit/identity/CONTEXT.md`](../identity/CONTEXT.md).
 
-**Principal**:
-Who is asking, as the editor receives a live Session from identity: the account id, its display name, its role, its Assigned projects and when the Session ends (`editor-ports`). The editor's own word for the signed-in account; it never sees a `users` row.
-_Avoid_: user, viewer (the page header's name for the same person).
+**Actor**:
+Who is asking, as the editor receives a live Session from identity: the account id, its display name, its role, its Assigned projects and when the Session ends (`editor-ports`). The editor's own word for the signed-in account; it never sees a `users` row. `review_rounds.actor` and the `auth.actor` log field hold the Actor's account id.
+_Avoid_: user, viewer (the page header's name for the same person), principal (security vocabulary that nobody depositing or reviewing says).
 
 **Account** (in `editor-web`):
-A Principal with its account id parsed once into the `Uuid` the editor's records hold; what the editor's `Authenticated` and `Rdu` extractors yield. The Principal crosses the port; the Account never leaves `editor-web`.
+An Actor with its account id parsed once into the `Uuid` the editor's records hold; what the editor's `Authenticated` and `Rdu` extractors yield. The Actor crosses the port; the Account never leaves `editor-web`.
 
 ### The record and its journey
 

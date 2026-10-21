@@ -36,7 +36,7 @@ pub(crate) async fn list(State(state): State<EditorState>, Authenticated(user): 
     // Not one page with a branch inside it: an RDU account's `assigned_shortcodes` is
     // empty by design, so rendering it through the depositor's list
     // would tell an administrator they have no projects.
-    let content = if user.principal.is_rdu() {
+    let content = if user.actor.is_rdu() {
         let rows: Vec<_> = state.published.summaries().collect();
         crate::pages::projects::rdu_overview(&rows)
     } else {
@@ -45,7 +45,7 @@ pub(crate) async fn list(State(state): State<EditorState>, Authenticated(user): 
         // the difference is a distinct state with a distinct message — a
         // depositor whose projects are merely unpublished must not be told
         // nobody assigned them anything.
-        let summaries: Vec<_> = state.published.summaries_for(&user.principal.assigned_shortcodes).collect();
+        let summaries: Vec<_> = state.published.summaries_for(&user.actor.assigned_shortcodes).collect();
         let mut rows = Vec::with_capacity(summaries.len());
         for summary in summaries {
             // One read set per row rather than one for the page: a depositor
@@ -56,13 +56,13 @@ pub(crate) async fn list(State(state): State<EditorState>, Authenticated(user): 
                 Err(error) => return storage_error(&state, &user, "read this project's state", &error),
             }
         }
-        crate::pages::projects::assigned(&rows, user.principal.assigned_shortcodes.len())
+        crate::pages::projects::assigned(&rows, user.actor.assigned_shortcodes.len())
     };
     crate::shell::render(
         &state,
         "Projects — DaSCH Metadata Editor",
         axum::http::StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         content,
     )
 }
@@ -95,7 +95,7 @@ pub(crate) async fn detail(
     // only locally, so "absent from the published set" is not "does not exist",
     // and the section handler opens such a project blank rather than refusing
     // it.
-    if !user.principal.may_reach(&shortcode) {
+    if !user.actor.may_reach(&shortcode) {
         // Logged because a depositor repeatedly reaching for projects
         // that are not theirs is worth seeing, and the two identifiers here are
         // both non-personal: an opaque account id and a shortcode.
@@ -104,9 +104,9 @@ pub(crate) async fn detail(
             project.shortcode = %shortcode,
             "refused a project that is not assigned to this account"
         );
-        return crate::shell::forbidden(&state, &user.principal.display_name, NOT_ASSIGNED);
+        return crate::shell::forbidden(&state, &user.actor.display_name, NOT_ASSIGNED);
     }
-    let audience = if user.principal.is_rdu() {
+    let audience = if user.actor.is_rdu() {
         crate::form::registry::Audience::RduOnly
     } else {
         crate::form::registry::Audience::Everyone
@@ -124,7 +124,7 @@ pub(crate) async fn states(State(state): State<EditorState>, Authenticated(user)
         &state,
         "What the states mean — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         crate::pages::states::explanation(),
     )
 }
@@ -182,7 +182,7 @@ fn storage_error(state: &EditorState, viewer: &Account, what: &str, error: &impl
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&viewer.principal.display_name),
+        Some(&viewer.actor.display_name),
         deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

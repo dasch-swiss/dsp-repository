@@ -54,7 +54,7 @@ areas/
     │   └── web/               # Identity's pages, handlers, routes and the Identity facade (crate: identity-web)
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
         ├── core/              # Pure domain types (crate: editor-core)
-        ├── ports/             # What the editor asks of identity: Principal, Authenticator, UserDirectory (crate: editor-ports)
+        ├── ports/             # What the editor asks of identity: Actor, Authenticator, UserDirectory (crate: editor-ports)
         ├── store/             # SQLite store for the editor's tables, the identity-ports adapter (crate: editor-store)
         ├── web/               # View layer: Maud pages and the project form (crate: editor-web)
         ├── collector/         # CI binary: turns approved records into pull requests (crate: editor-collector)
@@ -100,7 +100,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |
 | `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
-| `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Principal`, `Authenticator`, `UserDirectory`; `std` only |
+| `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveAuthoredWork` behind `identity-ports` |
 | `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: pages, the project form, handlers and routes, behind the `Editor` facade |
 | `deposit-server` | `areas/deposit/server` | The Deposit Area's composition root and binary: both stores, identity's and the editor's routers merged |

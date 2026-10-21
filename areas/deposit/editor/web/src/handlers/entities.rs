@@ -68,7 +68,7 @@ async fn context<'a>(
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
     }
-    if !user.principal.may_reach(shortcode) {
+    if !user.actor.may_reach(shortcode) {
         tracing::info!(
             auth.subject = %user.id,
             project.shortcode = %shortcode,
@@ -76,7 +76,7 @@ async fn context<'a>(
         );
         return Err(crate::shell::forbidden(
             state,
-            &user.principal.display_name,
+            &user.actor.display_name,
             crate::handlers::projects::NOT_ASSIGNED,
         ));
     }
@@ -635,7 +635,7 @@ fn render_page(
         state,
         &title,
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         crate::entity::page(&view),
     )
 }
@@ -661,7 +661,7 @@ fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl s
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

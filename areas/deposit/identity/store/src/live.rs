@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 use chrono::{DateTime, Utc};
-use editor_ports::{Authenticator, PortFuture, Principal, Unavailable, UserDirectory};
+use editor_ports::{Actor, Authenticator, PortFuture, Unavailable, UserDirectory};
 use identity_core::login::AuthConfig;
 use identity_core::records::Role;
 use identity_core::repository::{IdentityRepositories, UserRepository};
@@ -29,11 +29,11 @@ impl LiveAuthenticator {
 }
 
 impl Authenticator for LiveAuthenticator {
-    fn authenticate<'a>(&'a self, cookie_headers: &'a [&'a str], now: SystemTime) -> PortFuture<'a, Option<Principal>> {
+    fn authenticate<'a>(&'a self, cookie_headers: &'a [&'a str], now: SystemTime) -> PortFuture<'a, Option<Actor>> {
         Box::pin(async move {
             let viewer = session::current(&*self.store, &self.auth, cookie_headers, DateTime::<Utc>::from(now)).await?;
             let user = viewer.user;
-            Some(Principal {
+            Some(Actor {
                 account_id: user.id.to_string(),
                 display_name: user.name,
                 role: match user.role {
@@ -119,7 +119,7 @@ mod tests {
         format!("{SESSION}={token}")
     }
 
-    async fn authenticate(db: &Arc<Database>, headers: &[&str], now: DateTime<Utc>) -> Option<Principal> {
+    async fn authenticate(db: &Arc<Database>, headers: &[&str], now: DateTime<Utc>) -> Option<Actor> {
         LiveAuthenticator::new(db.clone(), auth())
             .authenticate(headers, now.into())
             .await
@@ -131,14 +131,14 @@ mod tests {
         let now = Utc::now();
         let (id, token) = signed_in(&db, now).await;
 
-        let principal = authenticate(&db, &[&cookie(&token)], now).await.expect("a live session");
-        assert_eq!(principal.account_id, id);
-        assert_eq!(principal.display_name, "A Depositor");
-        assert_eq!(principal.role, editor_ports::Role::Depositor);
-        assert_eq!(principal.assigned_shortcodes, vec!["0801".to_string()]);
+        let actor = authenticate(&db, &[&cookie(&token)], now).await.expect("a live session");
+        assert_eq!(actor.account_id, id);
+        assert_eq!(actor.display_name, "A Depositor");
+        assert_eq!(actor.role, editor_ports::Role::Depositor);
+        assert_eq!(actor.assigned_shortcodes, vec!["0801".to_string()]);
         // The idle deadline comes first on a fresh session: it is the one the page warns about.
         assert_eq!(
-            DateTime::<Utc>::from(principal.signed_out_at),
+            DateTime::<Utc>::from(actor.signed_out_at),
             now + identity_core::login::delta(auth().session_idle)
         );
     }
@@ -204,9 +204,9 @@ mod tests {
         // The deadline a request is told is measured from the last-seen time it found, so the
         // next request is the one that sees the advanced deadline.
         let later = now + TimeDelta::seconds(1);
-        let principal = authenticate(&db, &[&cookie(&token)], later).await.expect("still live");
+        let actor = authenticate(&db, &[&cookie(&token)], later).await.expect("still live");
         assert_eq!(
-            DateTime::<Utc>::from(principal.signed_out_at),
+            DateTime::<Utc>::from(actor.signed_out_at),
             now + identity_core::login::delta(auth().session_idle)
         );
     }
@@ -219,8 +219,8 @@ mod tests {
         let expires = now + TimeDelta::minutes(5);
         db.set_session_expiry(&token, expires).await;
 
-        let principal = authenticate(&db, &[&cookie(&token)], now).await.expect("still live");
-        assert_eq!(DateTime::<Utc>::from(principal.signed_out_at), expires);
+        let actor = authenticate(&db, &[&cookie(&token)], now).await.expect("still live");
+        assert_eq!(DateTime::<Utc>::from(actor.signed_out_at), expires);
     }
 
     #[tokio::test]
@@ -243,9 +243,9 @@ mod tests {
             .unwrap()
             .id;
 
-        let principal = authenticate(&db, &[&cookie(&token)], now).await.expect("a live session");
-        assert!(principal.is_rdu());
-        assert!(principal.may_reach("0801"));
+        let actor = authenticate(&db, &[&cookie(&token)], now).await.expect("a live session");
+        assert!(actor.is_rdu());
+        assert!(actor.may_reach("0801"));
     }
 
     #[tokio::test]

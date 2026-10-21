@@ -108,7 +108,7 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
         &state,
         "Collection — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         page::list(&view_rows),
     )
 }
@@ -160,7 +160,7 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
         &state,
         "Discard record — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         page::confirm_discard(&id, &impact),
     )
 }
@@ -196,7 +196,7 @@ fn no_such_record(state: &EditorState, user: &Account) -> Response {
         state,
         "Nothing to discard — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         content,
     )
 }
@@ -208,7 +208,7 @@ fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl s
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.principal.display_name),
+        Some(&user.actor.display_name),
         deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

@@ -15,7 +15,7 @@ The reviewer role: the Research Data Unit member who reviews submissions and adm
 _Avoid_: admin, reviewer as a role name (a reviewer is what RDU does on a given round).
 
 **Assigned project**:
-A `user_shortcodes` row: one project a depositor may reach, matched on the case-folded Shortcode (`editor-ports`' `Principal::may_reach`, over what `LiveAuthenticator` hands the editor).
+A `user_shortcodes` row: one project a depositor may reach, matched on the case-folded Shortcode (`editor-ports`' `Actor::assigned_shortcodes` and `Actor::may_reach`, over what `LiveAuthenticator` hands the editor; `Actor` is defined in [`areas/deposit/editor/CONTEXT.md`](../editor/CONTEXT.md)).
 _Avoid_: permission, membership, assignment (the row is named for the project it grants, not the act).
 
 **Login code**:

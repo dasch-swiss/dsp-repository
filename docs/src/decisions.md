@@ -4,18 +4,29 @@ Architecture decision records (ADRs) capture the "why" behind a decision, not ju
 
 ## Where a decision lives, and how it is cited
 
-System-wide decisions live in the root `docs/adr/`, with one sequence starting at 0001. A
-root-level component with its own decision history keeps its own `docs/adr/` under the component
-directory, with its own sequence also starting at 0001. The two sequences collide by number; the
-citation form is what disambiguates:
+System-wide decisions live in the root `docs/adr/`, with one sequence starting at 0001. An area
+keeps its own series at `areas/<area>/docs/adr/`, and a root-level component with its own
+decision history keeps one at `<component>/docs/adr/`, each also starting at 0001. The sequences
+collide by number; the citation form is what disambiguates:
 
 - A bare `ADR-NNNN` always names a root ADR, from anywhere in the repository.
-- A component ADR is always cited qualified, as `<component>/ADR-NNNN` — also from inside that
-  component.
+- An area or component ADR is always cited qualified, as `areas/<area>/ADR-NNNN` or
+  `<component>/ADR-NNNN` — also from inside that area or component.
 
-An amendment refines a decision in place, under a dated `## Amendment` heading. A decision that
-changes rather than narrows becomes a new ADR, and the superseded one takes
-`status: superseded by <the new one>`.
+## An ADR is the current decision
+
+An ADR states the decision in force now, or the target the code is being moved to, with any gap
+named against a Linear issue. It is rewritten in place when the decision changes, and retired when
+the decision no longer holds. An ADR number is an identifier and is never reused: a retired record
+keeps its file as a one-line tombstone that says where its decision lives now, so every citation
+still resolves, and its row below stays, marked retired. The history of a decision is the
+git history of its file: the commit that changes a record says what it decided before and why
+([Git conventions](git-conventions.md#history-lives-in-git-documents-hold-the-current-state)). The
+writing rules are in
+[`docs/adr/CLAUDE.md`](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/CLAUDE.md).
+
+Specs in `docs/specs/` are not rewritten: an ADR they cite may have been rewritten since the
+spec's date.
 
 `just check` runs `check-adr-refs.sh`, which verifies that every `ADR-NNNN` and
 `<component>/ADR-NNNN` reference in the repository (outside `docs/specs/`) resolves to a file.
@@ -31,7 +42,7 @@ for the full decision.
 | [ADR-0003](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0003-one-modulith-per-area.md) | One modulith per area |
 | [ADR-0004](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0004-hypermedia-frontends.md) | Every user-facing surface is a hypermedia server |
 | [ADR-0005](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0005-fair-landing-pages-in-the-access-area.md) | Every landing page in the Access Area is FAIR-assessable by machine |
-| [ADR-0006](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md) | Decision records are colocated with what they govern, and a component's are cited qualified |
+| [ADR-0006](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md) | Decision records are colocated with what they govern, hold only the current decision, and a component's are cited qualified |
 | [ADR-0007](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md) | CPE joins the Access Area as its second capability |
 | [ADR-0008](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md) | A reading capability may keep a derived read model |
 | [ADR-0009](https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md) | DaTEI joins the Access Area as its third capability |

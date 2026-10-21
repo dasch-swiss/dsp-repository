@@ -171,8 +171,8 @@ These are easy to miss and load-bearing. Reviewers should call them out.
 
 ## When in doubt
 
-- A change that contradicts an ADR is a red flag. Either the change is wrong, or the ADR needs
-  amendment in the same PR.
+- A change that contradicts an ADR is a red flag. Either the change is wrong, or the ADR is
+  rewritten in the same PR (`../docs/adr/CLAUDE.md`).
 - A new domain noun or verb that isn't in `CONTEXT.md` is a red flag. Pause, define it, add it,
   then continue.
 - Output shape changed? Run `just dsp-cli-snap-review` and accept the diff in the PR.

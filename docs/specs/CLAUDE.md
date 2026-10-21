@@ -9,3 +9,10 @@ that plan's `assets/` (Git LFS). Folder/file/asset conventions: see
 This folder is not part of the mdBook under `docs/src/`. Do not add specs to
 `docs/src/SUMMARY.md`; when a spec ships, the lasting knowledge moves into the
 developer documentation there and the spec stays behind as the record of intent.
+
+## References are historic
+
+A spec is never rewritten to follow the code, so what it cites — ADRs, their sections, file paths,
+crate names, other documents — means what it meant on the spec's `date:`. An ADR keeps its number
+but is rewritten in place (`docs/adr/CLAUDE.md`), so the record a spec cites may say something
+different today: compare with the current record before relying on the spec's reading of it.

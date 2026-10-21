@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-15
+date: 2026-10-21
 ---
 
 # Architecture Map
@@ -207,20 +207,20 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Principal`, `Authenticator`,
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveAuthoredWork`, `Editor`,
-  `EditorSettings`, `EditorState`, `CollectionToken`, `COLLECTION_REPORT_PATH`, `is_enhanced`,
+  `EditorSettings`, `EditorState`, `is_enhanced`,
   `routes`, `route_paths`, `reconcile_published`,
-  `Forge`, `CollectionReport`
+  `Forge`, `CollectionPullRequest`
 - **Public interface:** the HTTP routes of `editor-web`'s route table, root-mounted on the
   editor's own hostname (`/` (a redirect), `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
   `/projects/{shortcode}/entities/{proposal}` and its row-action `POST`s, `/review`, `/review/{shortcode}`,
   `/collection`, `/collection/{id}/discard`, `/states`,
-  `GET /api/v1/approved-records`, `POST /api/v1/collection-report`), served only through
+  `GET /api/v1/approved-records`), served only through
   `Editor::router`, which `deposit-server` merges with identity's; the
-  `editor-collector` CLI (no arguments), invoked only by
+  `editor-collector` CLI (no arguments; one job-summary row per record), invoked only by
   `.github/workflows/collect-editor-records.yml`. The `editor_web` library for the root
-  (`Editor::{start, router}`, `EditorSettings`, `CollectionToken`, `route_paths`,
-  `RightmostXffKeyExtractor`, `COLLECTION_REPORT_PATH`; `Editor::for_test` and `test_support`
+  (`Editor::{start, router}`, `EditorSettings`, `route_paths`,
+  `RightmostXffKeyExtractor`; `Editor::for_test` and `test_support`
   behind `test-support`). The `editor_store` library for the root (`Database`, `Source`,
   `LiveAuthoredWork`; `test_support`'s plain-value seed helpers and row readers behind
   `test-support`). The `editor_ports` library, which `identity-store` implements. Outside this
@@ -238,7 +238,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor-web` and `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
   never its code — `editor-collector` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
-  (`bundled`) + deadpool-sqlite, tower_governor, subtle,
+  (`bundled`) + deadpool-sqlite, tower_governor,
   reqwest (`editor-collector`), the OpenTelemetry API, insta
 - **Used by:** areas/deposit/server (`editor-web`'s facade and `editor-store`; `editor-ports`
   in its tests), areas/deposit/identity (`identity-store` on `editor-ports`, the ports it answers)
@@ -250,10 +250,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     into DPE's tree; unset is a configured state (the PR preview runs without a snapshot), so
     nothing refuses to start (**review**).
   - Separate origin from DPE; every state-changing route is `POST` and passes the
-    `Sec-Fetch-Site` same-origin check in `deposit-server`; a write URL also answers `GET` (**review**).
-    The one exemption, `POST /api/v1/collection-report`, is `editor-web`'s
-    `COLLECTION_REPORT_PATH`, which the route table and the root's `csrf.rs` both read
-    (**structure**); its handler checks a bearer token in constant time (`CollectionToken`).
+    `Sec-Fetch-Site` same-origin check in `deposit-server`, with no exemption; a write URL also
+    answers `GET` (**review**). The editor holds no credential and makes no outbound GitHub call
+    (**review**).
   - `route_paths()` exports the paths of `routes.rs`'s table, so the root labels every editor
     route without a second list (**structure**).
   - `Editor::router` returns its routes without CSRF or tracing; `deposit-server` supplies
@@ -290,13 +289,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several of
   `editor-web`'s handlers call the same port, serialized by the one writer connection, and every
   multi-table transition is one repository method. `review_rounds` is append-only.
-  `approved_records` is created only by approve, updated only by
-  `POST /api/v1/collection-report` (`mark_collected`, `report_collection`), and deleted by three
+  `approved_records` is created only by approve, never updated, and deleted by three
   paths: the startup reconcile that derives Online (`editor-web`'s `startup.rs`, inside
-  `Editor::start`), approve's own transaction, which supersedes the project's earlier record whatever its
-  pull request's state, and RDU's discard
+  `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
+  project holds at most one, and RDU's discard
   (`POST /collection/{id}/discard`).
-- **Fingerprint:** `3ab6a7e4f739`
+- **Fingerprint:** `873e7e1fee48`
 
 ### areas/deposit/shell
 
@@ -441,7 +439,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** areas/deposit/identity (`identity-web`: `Identity`, `IdentitySettings`,
   `SmtpPassword`, `CODE_TTL`, `is_plausible_address`, `route_paths`; `identity-store`:
   `Database`, `Source`, `LiveAuthenticator`, `LiveUserDirectory`), areas/deposit/editor
-  (`editor-web`: `Editor`, `EditorSettings`, `CollectionToken`, `COLLECTION_REPORT_PATH`,
+  (`editor-web`: `Editor`, `EditorSettings`,
   `RightmostXffKeyExtractor`, `route_paths`; `editor-store`: `Database`, `Source`,
   `LiveAuthoredWork`; `editor-ports` in tests only), areas/deposit/shell (the fallback 404),
   shared/telemetry (`collect_route`, `is_valid_traceparent`); third-party: axum, clap, figment,
@@ -463,15 +461,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `identity_web::route_paths()`, so a traced route cannot go unlabelled (**structure**); that
     `matchit`'s match is axum's is pinned by `every_label_is_the_route_axum_matches`
     (**static-analysis**).
-  - The CSRF exemption is exactly `editor_web::COLLECTION_REPORT_PATH`, the path the route
-    table also reads (**structure**).
+  - The CSRF layer exempts no path; `csrf.rs`'s test enumerates every state-changing route
+    (**static-analysis**).
   - The telemetry identity is pinned, not derived from the crate name: tracer and Pyroscope
     application name `"editor-server"` (`TELEMETRY_NAME`), Pyroscope `service.namespace=editor`,
     beacon scope `"editor"` (**review**; recorded in `CLAUDE.md`).
 - **Durable state:** none of its own. It opens `identity.sqlite` and `editor.sqlite` in
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer.
-- **Fingerprint:** `a5503a494053`
+- **Fingerprint:** `263fe68217ee`
 
 ### modules/mosaic
 

@@ -20,9 +20,9 @@ Stated so a violation is describable: no column stores Online; nothing polls the
 ## Consequences
 
 - A change is Online at the next deployment, never before; `/states` shows the expected wait (REQ-2.6).
-- A record already collected that still differs is stranded, and RDU resolves it by discarding (`docs/src/editor/collection.md`, "What the editor does with a report").
+- A record whose pull request merged with reviewer edits reads Waiting for release indefinitely, and RDU resolves it by discarding it from `/collection` (`docs/src/editor/collection.md`, "What RDU sees in the editor").
 - The published set stays the editor's, loaded once at the composition root and injected, not behind a port (`docs/src/editor/project-representation.md`, "The published set"; `areas/deposit/ADR-0004`).
 
-Enforced by: the `reconcile` tests in `editor-server` pin the discard, the stranded case, the dropped-upstream case and the retirement (**static-analysis**); the single-comparison rule by **review**.
+Enforced by: the `reconcile` tests in `editor-server` pin the discard, the dropped-upstream case and the retirement (**static-analysis**); the single-comparison rule by **review**.
 
 Note (2026-10-14): `editor-server` is now `deposit-server` (`areas/deposit/server`), and the `reconcile` module and its tests are in `editor-web` (`areas/deposit/editor/web/src/reconcile.rs`).

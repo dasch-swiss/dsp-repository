@@ -19,13 +19,11 @@ mod startup;
 pub mod test_support;
 mod traceparent;
 
-use std::fmt;
 use std::sync::Arc;
 
 use editor_core::repository::EditorRepositories;
-use subtle::ConstantTimeEq;
 
-pub use crate::routes::{route_paths, RightmostXffKeyExtractor, COLLECTION_REPORT_PATH};
+pub use crate::routes::{route_paths, RightmostXffKeyExtractor};
 use crate::shell::EditorState;
 
 #[derive(Clone, Debug)]
@@ -33,33 +31,6 @@ pub struct EditorSettings {
     pub css_href: String,
     /// `None` leaves the published set, the temporal tables and the agents empty.
     pub data_dir: Option<std::path::PathBuf>,
-    pub collection_token: Option<CollectionToken>,
-}
-
-/// The collection-report bearer token, with a redacted `Debug`.
-#[derive(Clone)]
-pub struct CollectionToken(String);
-
-impl CollectionToken {
-    #[must_use]
-    pub fn new(value: String) -> Self {
-        Self(value)
-    }
-
-    /// Whether a presented token equals this one, in constant time.
-    ///
-    /// A `==` on strings returns at the first differing byte, so the time it takes
-    /// reveals how long a shared prefix is. `ConstantTimeEq` on slices compares every
-    /// byte, and reports unequal lengths as a mismatch without comparing.
-    pub(crate) fn matches(&self, presented: &str) -> bool {
-        presented.as_bytes().ct_eq(self.0.as_bytes()).into()
-    }
-}
-
-impl fmt::Debug for CollectionToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("CollectionToken(redacted)")
-    }
 }
 
 pub struct Editor {
@@ -87,7 +58,6 @@ impl Editor {
                 editor: store,
                 authenticator,
                 directory,
-                collection_token: settings.collection_token,
                 published,
                 temporal,
                 agents,
@@ -106,8 +76,7 @@ impl Editor {
 
 #[cfg(any(test, feature = "test-support"))]
 impl Editor {
-    /// None of [`Editor::start`]'s work: the committed corpora stand in for the data directory,
-    /// and no collection token is configured.
+    /// None of [`Editor::start`]'s work: the committed corpora stand in for the data directory.
     #[must_use]
     pub fn for_test(
         store: Arc<dyn EditorRepositories>,
@@ -120,7 +89,6 @@ impl Editor {
                 editor: store,
                 authenticator,
                 directory,
-                collection_token: None,
                 published: test_support::published_corpus(),
                 temporal: test_support::temporal_tables(),
                 agents: test_support::agent_corpus(),

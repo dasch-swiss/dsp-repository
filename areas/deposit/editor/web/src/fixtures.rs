@@ -96,19 +96,11 @@ pub(crate) fn state_over(editor: Arc<dyn EditorRepositories>) -> TestState {
     let authenticator = Arc::new(FakeAuthenticator::new());
     let directory = Arc::new(FakeUserDirectory::new());
     TestState {
-        // No collection token, matching production's fail-closed default; a test of
-        // `POST /api/v1/collection-report` uses `state_with_collection_token` instead.
         state: crate::Editor::for_test(editor, authenticator.clone(), directory.clone()).state,
         authenticator,
         directory,
         users: Arc::default(),
     }
-}
-
-pub(crate) async fn state_with_collection_token(label: &str, token: &str) -> (TestState, ()) {
-    let (mut state, ()) = test_state(label).await;
-    state.collection_token = Some(crate::CollectionToken::new(token.to_string()));
-    (state, ())
 }
 
 /// The editor's router over `state`, as `Editor::router` returns it: no CSRF layer and no root

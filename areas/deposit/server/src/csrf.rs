@@ -11,14 +11,6 @@ use axum::extract::Request;
 use axum::http::{Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-// The one path exempted from the `Sec-Fetch-Site` check.
-//
-// A GitHub Actions runner posts here and sends no `Sec-Fetch-*` header at all, so the ordinary
-// rule would refuse every call. Safe specifically because `editor-web`'s collection-report handler
-// authenticates by bearer token instead of a session, which is the control this exemption trades
-// away. Keyed on the exact path, checked by equality rather than a prefix, so a second endpoint
-// cannot slip under it by sharing a leading segment.
-use editor_web::COLLECTION_REPORT_PATH;
 
 /// The only value that may accompany a state-changing request.
 const SAME_ORIGIN: &str = "same-origin";
@@ -42,7 +34,7 @@ fn is_state_changing(method: &Method) -> bool {
 /// outermost layer, so it also covers the telemetry beacon, which expects no
 /// HTML.
 pub(crate) async fn require_same_origin(req: Request, next: Next) -> Response {
-    if !is_state_changing(req.method()) || req.uri().path() == COLLECTION_REPORT_PATH {
+    if !is_state_changing(req.method()) {
         return next.run(req).await;
     }
 
@@ -145,14 +137,13 @@ mod tests {
         assert_eq!(status("HEAD", "/read", None).await, StatusCode::OK);
     }
 
-    /// Enumerates the real router's other state-changing paths, so a future change that widens
-    /// the collection-report exemption — say, to a prefix match — is caught even though none of
-    /// today's paths happen to share its prefix.
+    /// Enumerates every state-changing path of the real router, so a route that slipped past the
+    /// layer, or an exemption added to it, is caught.
     #[tokio::test]
-    async fn test_every_other_state_changing_path_in_the_app_still_requires_the_header() {
+    async fn test_every_state_changing_path_requires_the_header() {
         use crate::test_support::test_state;
 
-        let other_post_paths = [
+        let post_paths = [
             "/login",
             "/login/code",
             "/logout",
@@ -170,8 +161,8 @@ mod tests {
             "/collection/00000000-0000-0000-0000-000000000000/discard",
         ];
 
-        let app = crate::test_support::test_app(&test_state("csrf-exemption-scope").await.0);
-        for path in other_post_paths {
+        let app = crate::test_support::test_app(&test_state("csrf-every-path").await.0);
+        for path in post_paths {
             let request = Request::builder().method("POST").uri(path).body(Body::empty()).unwrap();
             let status = app.clone().oneshot(request).await.unwrap().status();
             assert_eq!(

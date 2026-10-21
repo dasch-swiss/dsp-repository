@@ -13,7 +13,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::proposals::{EntityProposal, ProposalDecision};
-use crate::records::{ApprovedRecord, DraftRecord, PullRequestState, ReviewRound, Submission};
+use crate::records::{ApprovedRecord, DraftRecord, ReviewRound, Submission};
 
 /// What can go wrong in a repository call.
 ///
@@ -100,41 +100,12 @@ pub trait ApprovedRecordRepository: Send + Sync {
     /// supersedes the earlier record.
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>>;
 
-    /// Every approved record, collected or not, oldest approval first.
+    /// Every approved record, oldest approval first.
     ///
-    /// What the public endpoint serves, unfiltered, so advisory collection state
-    /// can never decide what is published. Also the startup comparison's
-    /// enumeration. It cannot walk the published set instead: a record whose
-    /// project the published set no longer holds is invisible to such a walk.
-    /// Filtering out collected records is no substitute either: a record is
-    /// collected by the time its change ships, so that would hide every record
-    /// about to go Online.
+    /// What the public endpoint serves, unfiltered, and what the startup comparison
+    /// enumerates. That comparison cannot walk the published set instead: a record
+    /// whose project the published set no longer holds is invisible to such a walk.
     async fn list_all(&self) -> Result<Vec<ApprovedRecord>>;
-
-    /// Stamp a record as collected. Leaving it unstamped is what makes a failed
-    /// collection retry on the next run.
-    async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()>;
-
-    /// Record the advisory outcome of one collection attempt. May run any number of times.
-    ///
-    /// A report carries **either** a pull request and its state **or** a failure, never both;
-    /// the two write different columns. A pull request replaces the stored reference and clears
-    /// the last failure. A failure records itself and **leaves the pull request reference
-    /// alone**: it says nothing about that pull request, so erasing a reference an earlier
-    /// report established would lose a live pull request the editor still knows about.
-    ///
-    /// Never touches `collected_at` — that column belongs to [`Self::mark_collected`] alone.
-    /// `at` always stamps `reported_at`, in both branches: a failure is still a report.
-    /// `false` when `id` names no row, which covers both an unknown id and one whose record was
-    /// already discarded (see [`Self::delete`]); the caller must apply nothing else in that case.
-    async fn report_collection(
-        &self,
-        id: Uuid,
-        pull_request_url: Option<&str>,
-        state: Option<PullRequestState>,
-        failure: Option<&str>,
-        at: DateTime<Utc>,
-    ) -> Result<bool>;
 
     /// `false` if there was no record to delete. Used when the change goes
     /// Online and the local record is discarded.

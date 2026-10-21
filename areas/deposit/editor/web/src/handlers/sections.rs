@@ -5150,11 +5150,6 @@ mod tests {
                 payload: serde_json::to_string(&approved).expect("serializes"),
                 approved_by: Some(user.id),
                 approved_at: chrono::Utc::now(),
-                collected_at: None,
-                reported_at: None,
-                pull_request_url: None,
-                pull_request_state: None,
-                last_failure: None,
             },
         )
         .await
@@ -5192,11 +5187,6 @@ mod tests {
                 payload: serde_json::to_string(&ProjectDraft::from_raw(published)).expect("serializes"),
                 approved_by: Some(user.id),
                 approved_at: chrono::Utc::now(),
-                collected_at: Some(chrono::Utc::now()),
-                reported_at: None,
-                pull_request_url: None,
-                pull_request_state: None,
-                last_failure: None,
             },
         )
         .await

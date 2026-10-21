@@ -12,9 +12,6 @@ pub(crate) struct EditorState {
     pub(crate) authenticator: std::sync::Arc<dyn editor_ports::Authenticator>,
     /// The names behind the account ids the editor's records hold.
     pub(crate) directory: std::sync::Arc<dyn editor_ports::UserDirectory>,
-    /// The bearer token `POST /api/v1/collection-report` checks against. `None` refuses every
-    /// call, so an unconfigured service never accepts an empty token.
-    pub(crate) collection_token: Option<crate::CollectionToken>,
     /// The published project set, read once at startup from `EDITOR_DATA_DIR`. An immutable
     /// snapshot, so not behind a port.
     pub(crate) published: std::sync::Arc<editor_core::published::PublishedProjects>,

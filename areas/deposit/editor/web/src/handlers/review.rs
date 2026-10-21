@@ -618,11 +618,6 @@ fn approved_record(context: &Context<'_>, user: &Account, at: DateTime<Utc>) -> 
         payload: serde_json::to_string(&decided_draft(context)).ok()?,
         approved_by: Some(user.id),
         approved_at: at,
-        collected_at: None,
-        reported_at: None,
-        pull_request_url: None,
-        pull_request_state: None,
-        last_failure: None,
     })
 }
 
@@ -1264,7 +1259,6 @@ mod tests {
         assert_eq!(SubmissionRepository::find(&*state.editor, submission.id).await.unwrap(), None);
         let record = the_record(&state, "0801d").await;
         assert!(record.payload.contains("A New Title"), "{}", record.payload);
-        assert_eq!(record.collected_at, None, "uncollected, so the endpoint will serve it");
         assert_eq!(the_round(&state, "0801d").await.outcome, ReviewOutcome::Approved);
     }
 

@@ -91,7 +91,6 @@ pub(crate) async fn reconcile(
         Ok(summary) if summary.needs_attention() => tracing::warn!(
             projects.online = summary.online,
             projects.waiting = summary.waiting,
-            projects.stranded = summary.stranded,
             projects.removed_upstream = summary.removed_upstream,
             records.unreadable = summary.unreadable,
             records.retry_failed = summary.retry_failed,
@@ -102,7 +101,6 @@ pub(crate) async fn reconcile(
         Ok(summary) => tracing::info!(
             projects.online = summary.online,
             projects.waiting = summary.waiting,
-            projects.stranded = summary.stranded,
             projects.removed_upstream = summary.removed_upstream,
             records.unreadable = summary.unreadable,
             records.retry_failed = summary.retry_failed,

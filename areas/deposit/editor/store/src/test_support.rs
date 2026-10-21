@@ -11,7 +11,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use editor_core::proposals::{EntityProposal, ProposalDecision};
-use editor_core::records::{ApprovedRecord, DraftRecord, PullRequestState, ReviewRound, Submission};
+use editor_core::records::{ApprovedRecord, DraftRecord, ReviewRound, Submission};
 use editor_core::repository::{
     ApprovedRecordRepository, DraftRepository, EntityProposalRepository, RepositoryError, Result,
     ReviewRoundRepository, SubmissionRepository, Transition,
@@ -359,21 +359,6 @@ impl ApprovedRecordRepository for FaultyStore {
             return Err(injected("ApprovedRecordRepository::list_all"));
         }
         ApprovedRecordRepository::list_all(&*self.inner).await
-    }
-
-    async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
-        ApprovedRecordRepository::mark_collected(&*self.inner, id, at).await
-    }
-
-    async fn report_collection(
-        &self,
-        id: Uuid,
-        pull_request_url: Option<&str>,
-        state: Option<PullRequestState>,
-        failure: Option<&str>,
-        at: DateTime<Utc>,
-    ) -> Result<bool> {
-        ApprovedRecordRepository::report_collection(&*self.inner, id, pull_request_url, state, failure, at).await
     }
 
     async fn delete(&self, id: Uuid) -> Result<bool> {

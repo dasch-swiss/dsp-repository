@@ -29,8 +29,7 @@ impl Editor {
 
     /// Every approved record the editor holds.
     ///
-    /// Unauthenticated and unfiltered by contract, so there is no
-    /// state-dependent selection here for a stale flag to hide.
+    /// Unauthenticated and unfiltered by contract.
     pub fn approved_records(&self) -> Result<Vec<ApprovedRecordView>, String> {
         let url = format!("{}/api/v1/approved-records", self.base_url);
         let response = self

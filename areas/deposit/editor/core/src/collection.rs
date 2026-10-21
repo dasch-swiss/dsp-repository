@@ -16,7 +16,11 @@ use uuid::Uuid;
 
 use crate::draft::ProjectDraft;
 use crate::proposals::{EntityProposal, ProposalStatus};
-use crate::records::{ApprovedRecord, PullRequestState};
+use crate::records::ApprovedRecord;
+
+/// The branch prefix the collector pushes a project's record to (`<prefix><shortcode>`), and the
+/// head the editor's GitHub link searches for.
+pub const BRANCH_PREFIX: &str = "editor-collect/";
 
 /// The response body for the approved-records endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,7 +47,6 @@ pub struct ApprovedRecordView {
     /// About the project conversion only — an entity whose own payload will
     /// not parse is represented in [`Self::entities`], not reported here.
     pub problem: Option<String>,
-    pub collection: CollectionStateView,
 }
 
 /// One accepted proposal, joined onto the record it rides with.
@@ -54,16 +57,6 @@ pub struct ProposedEntityView {
     pub operation: String,
     pub id: String,
     pub body: Value,
-}
-
-/// Where a record's collection into a pull request stands.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CollectionStateView {
-    pub collected_at: Option<DateTime<Utc>>,
-    pub pull_request: Option<String>,
-    pub state: Option<String>,
-    pub last_failure: Option<String>,
 }
 
 impl ApprovedRecordView {
@@ -103,7 +96,6 @@ impl ApprovedRecordView {
             project,
             entities,
             problem,
-            collection: CollectionStateView::from_record(record),
         }
     }
 }
@@ -137,32 +129,6 @@ impl ProposedEntityView {
     }
 }
 
-impl CollectionStateView {
-    fn from_record(record: &ApprovedRecord) -> Self {
-        Self {
-            collected_at: record.collected_at,
-            pull_request: record.pull_request_url.clone(),
-            state: record.pull_request_state.map(|state| state.as_str().to_string()),
-            last_failure: record.last_failure.clone(),
-        }
-    }
-}
-
-/// The body of `POST /api/v1/collection-report`: one record's outcome, as the collecting
-/// workflow last saw it.
-///
-/// A wire type only — the exactly-one-of-`pull_request`-or-`failure` rule and the pull request's
-/// origin are HTTP contract validation, not a domain invariant this crate enforces elsewhere, so
-/// they live in `editor-web` next to the handler that rejects a report failing them.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CollectionReport {
-    pub record: Uuid,
-    pub pull_request: Option<String>,
-    pub state: Option<PullRequestState>,
-    pub failure: Option<String>,
-}
-
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
@@ -172,7 +138,6 @@ mod tests {
 
     use super::*;
     use crate::proposals::{ProposalDecision, ProposalKind, ProposalOperation};
-    use crate::records::PullRequestState;
     use crate::test_support::sample_raw;
 
     fn fully_populated_record() -> ApprovedRecord {
@@ -183,11 +148,6 @@ mod tests {
             payload: serde_json::to_string(&draft).expect("a draft serializes"),
             approved_by: Some(Uuid::new_v4()),
             approved_at: Utc::now(),
-            collected_at: Some(Utc::now()),
-            reported_at: Some(Utc::now()),
-            pull_request_url: Some("https://github.com/dasch-swiss/dasch-specs/pull/1".to_string()),
-            pull_request_state: Some(PullRequestState::Open),
-            last_failure: Some("boom".to_string()),
         }
     }
 
@@ -216,10 +176,9 @@ mod tests {
         keys
     }
 
-    /// Pins the allow-list. A member added to or removed from
-    /// `ApprovedRecordView` or `CollectionStateView` must show up here as a
-    /// deliberate change to this list, not as silent drift from a field added
-    /// to the stored record.
+    /// Pins the allow-list. A member added to or removed from `ApprovedRecordView` must show up
+    /// here as a deliberate change to this list, not as silent drift from a field added to the
+    /// stored record.
     #[test]
     fn serializes_only_the_allow_listed_keys() {
         let record = fully_populated_record();
@@ -235,7 +194,6 @@ mod tests {
             object_keys(&value),
             vec![
                 "approvedAt".to_string(),
-                "collection".to_string(),
                 "entities".to_string(),
                 "id".to_string(),
                 "problem".to_string(),
@@ -252,19 +210,6 @@ mod tests {
         assert!(
             value.get("payload").is_none(),
             "the opaque draft payload must never reach the public payload"
-        );
-
-        let collection = value.get("collection").expect("a collection member");
-        assert_eq!(
-            object_keys(collection),
-            vec![
-                "collectedAt".to_string(),
-                "lastFailure".to_string(),
-                "pullRequest".to_string(),
-                "state".to_string(),
-            ],
-            "the public CollectionStateView key set changed; if that is intended, update this allow-list \
-             deliberately rather than letting a new member ride along silently"
         );
     }
 

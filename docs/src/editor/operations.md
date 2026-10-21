@@ -51,7 +51,6 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `EDITOR_PUBLIC_DIR` | No | `areas/deposit/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
-| `EDITOR_COLLECTION_TOKEN` | Yes in `PROD` | *(none)* | Verifier for the bearer token the collecting workflow presents to `POST /api/v1/collection-report`. Unset, the endpoint refuses every report; `EDITOR_ENV=PROD` refuses to start without it, and every environment refuses a blank value. The editor never presents a token to GitHub — see [Collection](./collection.md). |
 | `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`; **`PROD` requires `EDITOR_SMTP_HOST`** or startup is refused, because a relay-less production writes every login code to the log. The PR preview and `just run-docker-editor` override it to `DEV`. |
 | `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the two SQLite databases, `identity.sqlite` and `editor.sqlite`. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never a database file. |
 | `EDITOR_DB_READERS` | No | `4` | Size of each database's reader connection pool. Each writer pool is always one connection. |
@@ -120,14 +119,13 @@ A malformed entry stops startup rather than being skipped: every entry becomes a
 Every start compares the published project set baked into the image against the editor's own approved records, and reports what it found in one line:
 
 ```
-projects.online=3 projects.waiting=1 projects.stranded=0 projects.removed_upstream=0 records.unreadable=0 records.retry_failed=0
+projects.online=3 projects.waiting=1 projects.removed_upstream=0 records.unreadable=0 records.retry_failed=0
 ```
 
 `online` is the ordinary outcome — those changes are live and their local records have been discarded. `waiting` is also ordinary: those are approved and will go Online with the release that carries them.
 
-The line is logged at **`warn` rather than `info`** when any of the last four is non-zero, and each is a to-do rather than noise:
+The line is logged at **`warn` rather than `info`** when any of the last three is non-zero, and each is a to-do rather than noise:
 
-- **`stranded`** — an approved record whose pull request was opened but whose data still does not match what shipped. Either the pull request merged *with reviewer edits*, or it was closed unmerged. Such a record can never go Online on its own, and the project will read "waiting for the next release" indefinitely. The per-record `warn` beside this line names the project and the fields that differ. Resolving it needs a force-online or force-discard decision from RDU.
 - **`removed_upstream`** — a record for a project the published set no longer holds. The record is kept deliberately: it may be the only surviving copy of that work.
 - **`unreadable`** — a record whose payload could not be parsed. Left untouched; the per-record `error` names it.
 - **`retry_failed`** — a record that matched but could not be discarded, or whose row was already gone. Harmless on its own and retried on the next start; a number that stays non-zero across restarts is worth investigating.
@@ -238,7 +236,7 @@ If virtiofs `mmap` ever misbehaves, the escape hatch is `locking_mode=EXCLUSIVE`
 
 ### Backups
 
-Optional. Git holds everything irreplaceable. Back up both files, `identity.sqlite` and `editor.sqlite`, each with its `-wal` and `-shm` siblings. The two have no foreign key between them, so they need not be copied at the same instant, though a restore of only one can leave editor rows naming an account identity no longer has (pages render those as unknown). A total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt a database, and never on an application crash.
+Optional. Git holds everything irreplaceable. Back up both files, `identity.sqlite` and `editor.sqlite`, each with its `-wal` and `-shm` siblings. The two have no foreign key between them, so they need not be copied at the same instant, though a restore of only one can leave editor rows naming an account identity no longer has (pages render those as unknown). A total loss of the volume costs drafts, in-flight submissions, approved records not yet released and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt a database, and never on an application crash.
 
 ## Resource Requirements
 

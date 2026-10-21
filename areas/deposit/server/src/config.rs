@@ -94,15 +94,6 @@ impl fmt::Debug for Secret {
     }
 }
 
-#[cfg(test)]
-impl Secret {
-    /// Build one directly from a literal, for a test that needs a token without loading it
-    /// through configuration.
-    pub(crate) fn for_test(value: &str) -> Self {
-        Self(value.to_string())
-    }
-}
-
 /// Why the configuration could not be used.
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
@@ -219,13 +210,6 @@ pub struct EditorConfig {
     /// failure log line names it so the remedy is found from the error itself.
     pub smtp_break_glass: bool,
 
-    /// Bearer token the collecting workflow presents to
-    /// `POST /api/v1/collection-report`, set via `EDITOR_COLLECTION_TOKEN`.
-    ///
-    /// A verifier for a token CI presents to the editor, never a credential the
-    /// editor presents to GitHub.
-    pub collection_token: Option<Secret>,
-
     /// Seconds before another code may be sent to the same address,
     /// set via `EDITOR_LOGIN_COOLDOWN_SECS`.
     ///
@@ -310,7 +294,6 @@ impl Default for EditorConfig {
             smtp_password: None,
             smtp_from: "noreply@dasch.swiss".to_string(),
             smtp_break_glass: false,
-            collection_token: None,
             login_cooldown_secs: 60,
             login_max_failed: 10,
             login_lockout_secs: 900,
@@ -467,26 +450,6 @@ impl EditorConfig {
             return invalid(
                 "EDITOR_SMTP_BREAK_GLASS has no effect without EDITOR_SMTP_HOST — with no relay configured, every \
                  code already goes to the log"
-                    .to_string(),
-            );
-        }
-        if self
-            .collection_token
-            .as_ref()
-            .is_some_and(|token| token.expose().trim().is_empty())
-        {
-            return invalid(
-                "EDITOR_COLLECTION_TOKEN is set but blank, which would let any caller report on a record. Set a \
-                 token, or unset the variable to refuse every report"
-                    .to_string(),
-            );
-        }
-        if self.env == "PROD" && self.collection_token.is_none() {
-            return invalid(
-                "EDITOR_ENV=PROD requires EDITOR_COLLECTION_TOKEN. Without it the collection report endpoint \
-                 refuses every call, so a record is collected into a pull request and nothing ever reports back \
-                 — the pull request exists and the editor shows the record as never collected. Set the token, or \
-                 set EDITOR_ENV=DEV if this is not a production deployment"
                     .to_string(),
             );
         }
@@ -714,11 +677,9 @@ mod tests {
     fn env_env_override_switches_otlp_log_export() {
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_ENV", "PROD");
-            // A relay and a collection token, because PROD without either is refused — see
-            // `production_without_a_relay_is_refused` and
-            // `production_without_a_collection_token_is_refused`.
+            // A relay, because PROD without one is refused — see
+            // `production_without_a_relay_is_refused`.
             jail.set_env("EDITOR_SMTP_HOST", "smtp-relay.gmail.com");
-            jail.set_env("EDITOR_COLLECTION_TOKEN", "a-collection-token");
             let config = EditorConfig::load().expect("config should load");
             assert_eq!(config.env, "PROD");
             assert!(!config.exports_otlp_logs());
@@ -733,8 +694,7 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 "editor.toml",
-                "site_addr = \"127.0.0.1:4200\"\nenv = \"PROD\"\nsmtp_host = \"smtp-relay.gmail.com\"\n\
-                 collection_token = \"a-collection-token\"\n",
+                "site_addr = \"127.0.0.1:4200\"\nenv = \"PROD\"\nsmtp_host = \"smtp-relay.gmail.com\"\n",
             )?;
             let from_file = EditorConfig::load().expect("config should load");
             assert_eq!(from_file.site_addr, "127.0.0.1:4200");
@@ -887,37 +847,10 @@ mod tests {
     }
 
     #[test]
-    fn production_without_a_collection_token_is_refused() {
-        // Same shape of silent failure as the missing relay: the service runs, a record is
-        // collected into a pull request, and every report back is refused, so the editor shows
-        // a record that was never collected while its pull request is open.
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EDITOR_ENV", "PROD");
-            jail.set_env("EDITOR_SMTP_HOST", "smtp-relay.gmail.com");
-            let error = EditorConfig::load().expect_err("production without a collection token must be refused");
-            assert!(error.to_string().contains("EDITOR_COLLECTION_TOKEN"), "{error}");
-            Ok(())
-        });
-    }
-
-    #[test]
-    fn a_blank_collection_token_is_refused() {
-        for value in ["", "   "] {
-            figment::Jail::expect_with(|jail| {
-                jail.set_env("EDITOR_COLLECTION_TOKEN", value);
-                let error = EditorConfig::load().expect_err("a blank collection token must be refused");
-                assert!(error.to_string().contains("EDITOR_COLLECTION_TOKEN"), "{error}");
-                Ok(())
-            });
-        }
-    }
-
-    #[test]
     fn production_with_a_relay_loads() {
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_ENV", "PROD");
             jail.set_env("EDITOR_SMTP_HOST", "smtp-relay.gmail.com");
-            jail.set_env("EDITOR_COLLECTION_TOKEN", "a-collection-token");
             let config = EditorConfig::load().expect("production with a relay should load");
             assert!(!config.exports_otlp_logs());
             Ok(())

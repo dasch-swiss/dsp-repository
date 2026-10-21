@@ -10,7 +10,6 @@ use std::fmt;
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// A stored value outside the known set. Reachable only if the database is
@@ -124,51 +123,7 @@ pub struct Submission {
     pub review_state: Option<String>,
 }
 
-/// Where a collected record's pull request sits, as last reported.
-///
-/// The wire form is the same lowercase set [`Self::as_str`] produces and the schema's `CHECK`
-/// constraint pins. `test_pull_request_state_deserializes_from_its_stored_form` holds the two
-/// together.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum PullRequestState {
-    Open,
-    Merged,
-    Closed,
-}
-
-impl PullRequestState {
-    /// The stored form, pinned by a `CHECK` constraint in the schema.
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Open => "open",
-            Self::Merged => "merged",
-            Self::Closed => "closed",
-        }
-    }
-}
-
-impl fmt::Display for PullRequestState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl FromStr for PullRequestState {
-    type Err = UnknownVariant;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "open" => Ok(Self::Open),
-            "merged" => Ok(Self::Merged),
-            "closed" => Ok(Self::Closed),
-            other => Err(UnknownVariant { kind: "pull request state", value: other.to_string() }),
-        }
-    }
-}
-
-/// An approved record waiting to be collected into a pull request.
+/// An approved record: what the collector turns into a pull request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ApprovedRecord {
     pub id: Uuid,
@@ -178,22 +133,6 @@ pub struct ApprovedRecord {
     /// Kept when the approver's account is removed; see [`DraftRecord::updated_by`].
     pub approved_by: Option<Uuid>,
     pub approved_at: DateTime<Utc>,
-    /// `None` while uncollected. A failed collection leaves it `None` so the
-    /// next run retries it.
-    pub collected_at: Option<DateTime<Utc>>,
-    /// `None` until a collection run has reported on this record. Moved by
-    /// every report, whatever it said, so this is the age of the state beside
-    /// it, not the moment of first dispatch.
-    pub reported_at: Option<DateTime<Utc>>,
-    /// The pull request a collection run opened for this record, `None` until
-    /// one has.
-    pub pull_request_url: Option<String>,
-    /// The pull request's state as last reported, `None` alongside
-    /// `pull_request_url`.
-    pub pull_request_state: Option<PullRequestState>,
-    /// Why the last collection attempt failed, `None` when it last succeeded
-    /// or none has run yet.
-    pub last_failure: Option<String>,
 }
 
 /// How a review round ended.
@@ -335,20 +274,6 @@ mod tests {
             ReviewOutcome::Withdrawn,
         ] {
             assert!(outcome.returns_the_project(), "{outcome}");
-        }
-    }
-
-    #[test]
-    fn test_pull_request_state_deserializes_from_its_stored_form() {
-        // A `#[serde(rename_all)]` change here would otherwise silently disagree with both
-        // `as_str` and the schema's `CHECK` constraint.
-        for state in [
-            PullRequestState::Open,
-            PullRequestState::Merged,
-            PullRequestState::Closed,
-        ] {
-            let wire = format!("\"{}\"", state.as_str());
-            assert_eq!(serde_json::from_str::<PullRequestState>(&wire).unwrap(), state);
         }
     }
 }

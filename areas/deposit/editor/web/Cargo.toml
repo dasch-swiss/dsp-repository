@@ -33,8 +33,6 @@ shared-telemetry = { path = "../../../../shared/telemetry" }
 # The `?saved=<stamp>` redirect marker: RFC 3339 carries `+` and `:`, which an
 # unencoded query value would corrupt.
 urlencoding = "2.1"
-# The collection-report bearer token is compared in constant time.
-subtle = "2.6"
 
 axum.workspace = true
 chrono.workspace = true

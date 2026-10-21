@@ -27,7 +27,7 @@ beside `shared/`, `vitrinli/` and `chischtli/`, so read the globs here as curren
 `dsp-cli/` is a sixth root, outside the `services → shared, mosaic` arrow entirely (ADR-0002
 amendment): it is a client of every area rather than a member of one, no area depends on it, and it depends on no area
 crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
-(the context index and the shared contract terms), `areas/deposit/editor/CONTEXT.md`,
+(the context index and the shared contract terms), `areas/deposit/editor/CONTEXT.md`, `areas/deposit/identity/CONTEXT.md`,
 `areas/access/CONTEXT.md`, `areas/access/cpe/CONTEXT.md`, `areas/access/sync/CONTEXT.md`,
 `areas/access/datei/CONTEXT.md`,
 `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
@@ -77,7 +77,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`.github/actions/build-editor/action.yml`, `justfile`) and read by the editor's tests through
   `editor_core::checkout_dpe_data_dir()` (`DPE_DATA_DIR`, the one Rust definition of the path); shared/metadata's and shared/fair's
   committed-data tests live here (`core/src/temporal_enrichment_cache.rs`,
-  `api-oai/src/metadata/corpus.rs`); `editor-collector` writes the corpus through a pull request
+  `api-oai/src/metadata/corpus.rs`); `editor-pull-requests` writes the corpus through a pull request
   (see **Durable state** above), still never through a `dpe-*` import
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
@@ -112,10 +112,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   placeholder bearer and writes into the tracked directory at startup; the shortcode list is
   duplicated between `justfile` and `record_cache.rs` (single-writer violation, recorded). The
   two lookup tables are written by `scripts/*.py`. Cover images: drop-at-path, hand-written.
-  `editor-collector` is a further writer of `projects/`, the first automated writer of `persons/`
+  `editor-pull-requests` is a further writer of `projects/`, the first automated writer of `persons/`
   and `organizations/`, and a second writer of `temporal-coverage-enrichment.json` and
   `corpus-manifest.json` — but never in place: it writes a disposable checkout on an
-  `editor-collect/<shortcode>` branch, and the gate between that and anything served is the pull
+  `editor/<shortcode>` branch, and the gate between that and anything served is the pull
   request it opens plus a human merge (**static-analysis** via `canonical_round_trip`,
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
@@ -193,11 +193,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's field registry
   and widgets, the handlers and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
-  `deposit-shell`, below), `editor-collector` (the CI binary that turns an approved record into a
+  `deposit-shell`, below), `editor-pull-requests` (the CI binary that turns an approved record into a
   pull request against this repository — outside the service's request path, and the only crate
   here that writes anything under `areas/access/dpe/`).
   Depositors edit their projects section by section; RDU reviews field by field; approve
-  writes an approved record, which the collector publishes as a pull request. The Deposit
+  writes an approved record, which the pull-request run publishes as a pull request. The Deposit
   Area is two capabilities, `identity` and `editor`, under the composition root `deposit-server`
   (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
   `areas/deposit/identity` and the area shell in `areas/deposit/shell`.
@@ -209,16 +209,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,
   `routes`, `route_paths`, `reconcile_published`,
-  `Forge`, `CollectionPullRequest`
+  `Forge`, `EditorPullRequest`
 - **Public interface:** the HTTP routes of `editor-web`'s route table, root-mounted on the
   editor's own hostname (`/` (a redirect), `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
   `/projects/{shortcode}/entities/{proposal}` and its row-action `POST`s, `/review`, `/review/{shortcode}`,
-  `/collection`, `/collection/{id}/discard`, `/states`,
+  `/approved`, `/approved/{id}/discard`, `/states`,
   `GET /api/v1/approved-records`), served only through
   `Editor::router`, which `deposit-server` merges with identity's; the
-  `editor-collector` CLI (no arguments; one job-summary row per record), invoked only by
-  `.github/workflows/collect-editor-records.yml`. The `editor_web` library for the root
+  `editor-pull-requests` CLI (no arguments; one job-summary row per record), invoked only by
+  `.github/workflows/open-editor-pull-requests.yml`. The `editor_web` library for the root
   (`Editor::{start, router}`, `EditorSettings`, `route_paths`,
   `RightmostXffKeyExtractor`; `Editor::for_test` and `test_support`
   behind `test-support`). The `editor_store` library for the root (`Database`, `Source`,
@@ -230,16 +230,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/server/src/router.rs`, `areas/deposit/editor/core/src/form.rs`,
   `areas/deposit/editor/store/src/lib.rs`. The kit is at its seven-file budget; the next reads
   are `web/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
-  `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{collection,architecture}.md`.
-- **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-collector`),
+  `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{publishing-to-git,architecture}.md`.
+- **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-pull-requests`),
   shared/telemetry (`editor-web`: `is_valid_traceparent`),
   modules/mosaic (`editor-web`), areas/deposit/shell (`editor-web`),
   areas/deposit/identity (`editor-store` on `identity-ports` alone, the port it answers;
   `editor-web` and `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
-  never its code — `editor-collector` additionally *writes* that corpus, through a pull request
-  and never at runtime (`docs/src/editor/collection.md`); third-party: axum, maud, rusqlite
+  never its code — `editor-pull-requests` additionally *writes* that corpus, through a pull request
+  and never at runtime (`docs/src/editor/publishing-to-git.md`); third-party: axum, maud, rusqlite
   (`bundled`) + deadpool-sqlite, tower_governor,
-  reqwest (`editor-collector`), the OpenTelemetry API, insta
+  reqwest (`editor-pull-requests`), the OpenTelemetry API, insta
 - **Used by:** areas/deposit/server (`editor-web`'s facade and `editor-store`; `editor-ports`
   in its tests), areas/deposit/identity (`identity-store` on `editor-ports`, the ports it answers)
 - **Boundary rules:**
@@ -293,8 +293,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   paths: the startup reconcile that derives Online (`editor-web`'s `startup.rs`, inside
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
-  (`POST /collection/{id}/discard`).
-- **Fingerprint:** `873e7e1fee48`
+  (`POST /approved/{id}/discard`).
+- **Fingerprint:** `4624f479c564`
 
 ### areas/deposit/shell
 
@@ -412,7 +412,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `f3bc3870556b`
+- **Fingerprint:** `4b5c490aa6f6`
 
 ### areas/deposit/server
 
@@ -469,7 +469,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** none of its own. It opens `identity.sqlite` and `editor.sqlite` in
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer.
-- **Fingerprint:** `263fe68217ee`
+- **Fingerprint:** `7082ea2ab555`
 
 ### modules/mosaic
 
@@ -602,7 +602,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (a contract member moves with all four consumer files in one commit)
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json (`preserve_order`,
   which the editor's canonical writer requires), tracing
-- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (`editor-core`, `editor-web`, `editor-collector`),
+- **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (`editor-core`, `editor-web`, `editor-pull-requests`),
   areas/deposit/identity (`identity-web`), shared/fair,
   the DPE fuzz crate
 - **Boundary rules:**
@@ -610,7 +610,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).
   - Reads no environment: both lookup tables load from a caller-supplied `data_dir`; the caches
     live in `dpe-core`, and `dpe-server`'s validation, `editor-web` (`startup.rs`) and
-    `editor-collector` load their own (**review**).
+    `editor-pull-requests` load their own (**review**).
   - Member order in `ProjectRaw` **is** the on-disk order of every committed project file
     (**static-analysis** — `every_committed_project_file_round_trips_byte_identically`).
   - Tests that read committed data live in the consumer that owns the data, not here
@@ -1192,7 +1192,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   *Enforcement:* **static-analysis** for the crate edges inside the Deposit Area (`check-capability-deps.sh`,
   `just check`: a capability's crates on its own and `shared-*`, a `store` crate also on another
   capability's `ports`, a `web` crate also on the shell and `mosaic-tiles`, a `ports` crate on
-  `shared-*` alone, the shell on `mosaic-tiles` and `shared-*`, `collector` as `core`; among
+  `shared-*` alone, the shell on `mosaic-tiles` and `shared-*`, `pull-requests` as `core`; among
   third-party crates, a `ports` crate on none, a `core` crate on no web framework, Maud or database
   crate, the shell on no web framework; the root's edges are `check-composition-root-deps.sh`'s). The Access Area is not covered yet
   (`check-cpe-seam.sh` holds CPE's edges; ADR-0003, amendment of 2026-10-13). **review** for the

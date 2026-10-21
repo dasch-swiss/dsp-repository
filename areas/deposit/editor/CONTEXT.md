@@ -45,20 +45,24 @@ The depositor's own discard of a pending Submission, recorded as a Review round 
 _Avoid_: cancel, delete.
 
 **Approved record**:
-An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting to be collected into the published corpus by the Collection run. At most one per project: re-approving supersedes the old row in the same transaction, whatever its pull request's state.
-_Avoid_: published record (Online is the state after collection, not this), export.
+An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting for release: the Pull-request run opens its pull request, and the merge plus a release carry it into the published set. At most one per project: re-approving supersedes the old row in the same transaction, whatever its pull request's state. The row type is `records::ApprovedRecord`; its public wire view is `approved_records_api::ApprovedRecordView`.
+_Avoid_: published record (Online is the state after the merge and a release, not this), export.
 
-**Collection run**:
-One invocation of `.github/workflows/collect-editor-records.yml`: it reads every Approved record, writes each project's into a Collection branch, opens or updates one pull request per project, and writes one row per record to the run's job summary. Manual, dispatched after approving. [`docs/src/editor/collection.md`](../../../docs/src/editor/collection.md) is its contract.
-_Avoid_: sync, export, deploy, publish (publication is the merge plus a release, not the run).
+**Pull-request run**:
+One invocation of `.github/workflows/open-editor-pull-requests.yml`: it reads every Approved record, writes each project's into its Project branch, opens or updates one pull request per project, and writes one row per record to the run's job summary. Manual, dispatched after approving. [`docs/src/editor/publishing-to-git.md`](../../../docs/src/editor/publishing-to-git.md) is its contract.
+_Avoid_: sync, export, deploy, publish (publication is the merge plus a release, not the run), collection, collect (the metadata model's Collection is a different thing), collector (the telemetry beacon collector is a different thing).
 
-**Collection branch**:
-`editor-collect/<shortcode>` — the one branch a project's collection lives on, keyed on the Shortcode so at most one pull request is ever open against a project's file. Owned by the Collection run, which refuses to force-push over a tip it did not write.
-_Avoid_: record branch (it is keyed on the project, not the record).
+**Project branch**:
+`editor/<shortcode>` (`editor_core::approved_records_api::BRANCH_PREFIX`): the one branch a project's pull request lives on, keyed on the Shortcode so at most one pull request is ever open against a project's file. Owned by the Pull-request run, which refuses to force-push over a tip it did not write.
+_Avoid_: record branch (it is keyed on the project, not the record), collection branch, feature branch, `editor-collect/` (the earlier prefix).
 
 **Waiting for release**:
-The RDU-facing classification of an Approved record whose data the published set does not carry yet, shown as a badge on `/collection`. Distinct from the depositor-facing waiting-for-release notice, which `areas/deposit/editor/CLAUDE.md` names.
-_Avoid_: pending, uncollected (the record may already have a pull request).
+The RDU-facing classification of an Approved record whose data the published set does not carry yet, shown as a badge on the Approved records page. Distinct from the depositor-facing waiting-for-release notice, which `areas/deposit/editor/CLAUDE.md` names.
+_Avoid_: pending, not yet opened (the record may already have a pull request).
+
+**Approved records page**:
+`/approved`: the RDU page listing every Approved record against the published set, with a link to its pull requests on GitHub and Discard.
+_Avoid_: collection surface, `/collection`.
 
 **Project state**:
 One of exactly five depositor-facing values, `ProjectState`: Draft, Submitted, In review, Approved, Online — normative per REQ-2.1, where Online is derived from the published set, never stored.
@@ -103,7 +107,7 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 ## Example dialogue
 
 > **Dev:** "When RDU approves, does the **Submission** become the **Approved record**?"
-> **Domain expert:** "No. Approve writes an **Approved record** from the submitted **Draft** with every **Decision** applied, deletes the **Submission**, and writes the **Review round** — all in one transaction. The record then waits to be collected; the project shows **Approved** until the **Published set** contains it, and only then reads **Online**."
+> **Domain expert:** "No. Approve writes an **Approved record** from the submitted **Draft** with every **Decision** applied, deletes the **Submission**, and writes the **Review round** — all in one transaction. The record then waits for release; the project shows **Approved** until the **Published set** contains it, and only then reads **Online**."
 
 > **Dev:** "A depositor changed a field RDU had already accepted in the previous round. Do we keep the new value?"
 > **Domain expert:** "While the latest round asked for changes, an accepted **Field** is fixed: the section handler skips its applier, so a hand-built body cannot alter it either. A reverted field is not locked — the depositor has nothing to preserve there."
@@ -114,11 +118,10 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 ## Flagged ambiguities
 
 - **"Draft"** is three things: the `drafts` row, the `ProjectDraft` value, and `ProjectState::Draft` (which also covers an unpublished project with nothing pending). Resolution: unqualified "Draft" is the row; say "draft value" or "Draft state" otherwise.
-- **"Approved"** is three things: `SubmissionState::Approved` (the window between the decision and the record write), `ProjectState::Approved` (a record exists, not yet Online) and `ReviewOutcome::Approved`. Resolution: qualify by type in code; in depositor-facing prose only the Project state exists.
+- **"Approved"** is four things: `SubmissionState::Approved` (the window between the decision and the record write), `ProjectState::Approved` (a record exists, not yet Online) and `ReviewOutcome::Approved`. Resolution: qualify by type in code; in depositor-facing prose only the Project state exists. `/approved`, `handlers::approved` and `pages::approved` are the Approved records page and its `GET /api/v1/approved-records` sibling, not a state.
 - **"State"** names three types plus a page (`/states`). Resolution: never say "state" alone; say Project state, Submission state or Review state.
 - **"Section"** is a form grouping, a handler module (`web/src/handlers/sections.rs`), a view module and a path segment. Resolution: the domain term is the grouping; the others are named after it.
-- **"Collect"** is the telemetry endpoint (`/telemetry/collect`) and the carrying of an approved record into a pull request. Resolution: "collect a beacon" vs "collect an approved record"; never bare.
-- **"Collection"** in the editor is that second sense as a noun — the RDU surface listing each approved record against the published set, with a link to its pull requests on GitHub. _Avoid_ for the metadata-model **Collection** (`ProjectRaw.collections`), which `areas/access/CONTEXT.md` defines and the root `CONTEXT.md` already separates from Cluster. Nothing in the editor reads or writes that one. DEV-7357 proposes replacing this whole vocabulary; until it lands, qualify as "the collection surface".
+- **"Collection"** is the metadata model's (`ProjectRaw.collections`, defined in `areas/access/CONTEXT.md`), not editor vocabulary: the form does not offer it (`registry::OMITTED`) and drafts carry it through verbatim; no editor term uses the word.
 - **"Retire"** is the system stamping `entity_proposals.retired_at` once an accepted `new`-entity proposal's entity appears in the published set, so it stops riding along with later approved records. _Avoid_ for **Withdrawal**, which is the depositor abandoning their own proposal before a decision. Retirement is never a person's action and never applies to a `change`.
 - **"Submission" vs "SIP"**: see the root `CONTEXT.md`. Nothing in the editor produces a SIP today.
 - **Depositor-facing vocabulary is normative (REQ-2.2)**: "export", "JSON", "transfer", "commit" and "pull request" may not appear where a depositor reads; `depositor_vocabulary.rs` and the E2E suite assert it against rendered markup. RDU-facing strings are exempt.

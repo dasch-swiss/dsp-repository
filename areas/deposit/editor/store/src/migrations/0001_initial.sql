@@ -206,11 +206,11 @@ CREATE TABLE entity_proposals (
 -- renumbers on collision with the repository, and nothing in it stops two
 -- proposals inside the editor both taking the next free id. Terminal rows stay
 -- in the index on purpose — an id handed to a rejected proposal must not be
--- handed to a different entity later, because a sibling collection pull request
+-- handed to a different entity later, because a sibling editor pull request
 -- may already carry it.
 --
 -- Partial, on `new` only: a `change` names an id somebody else allocated, and
--- several projects may propose changes to one entity (last collected wins).
+-- several projects may propose changes to one entity (last opened wins).
 CREATE UNIQUE INDEX entity_proposals_allocated_id ON entity_proposals (entity_id) WHERE operation = 'new';
 
 -- One live proposal per project per entity. Without it a depositor who proposes

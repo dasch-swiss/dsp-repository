@@ -123,7 +123,7 @@ pub struct Submission {
     pub review_state: Option<String>,
 }
 
-/// An approved record: what the collector turns into a pull request.
+/// An approved record: what the pull-request run turns into a pull request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ApprovedRecord {
     pub id: Uuid,

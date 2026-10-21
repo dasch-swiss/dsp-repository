@@ -18,7 +18,7 @@ REQ-2.3 names three outcomes — published only, local only, and in both. There 
 
 ## What the pass writes
 
-Exactly one thing: it deletes an approved record whose data the published set now carries (REQ-2.4). That is safe by construction — the comparison authorising the delete is the proof that the content is already published. Everything else is reported and left alone, including a record whose pull request merged with reviewer edits: REQ-2.4 can never fire for it, and RDU resolves it by discarding ([Collection](./collection.md#what-rdu-sees-in-the-editor)).
+Exactly one thing: it deletes an approved record whose data the published set now carries (REQ-2.4). That is safe by construction — the comparison authorising the delete is the proof that the content is already published. Everything else is reported and left alone, including a record whose pull request merged with reviewer edits: REQ-2.4 can never fire for it, and RDU resolves it by discarding ([Publishing to Git](./publishing-to-git.md#what-rdu-sees-in-the-editor)).
 
 A failure here is deliberately not fatal, unlike the RDU account bootstrap. Every project keeps working and the only symptom is a stale label; refusing to start would take the service down to avoid one.
 

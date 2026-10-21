@@ -1,4 +1,4 @@
-//! The RDU collection surface: every approved record and how it compares with
+//! The RDU approved-records page: every approved record and how it compares with
 //! the published set, and the confirmation for discarding one.
 //!
 //! [`list`] renders [`RecordClassification`], the same classification the
@@ -20,7 +20,7 @@ use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use mosaic_tiles::ComponentBuilder;
 
 /// One approved record, as the list renders it.
-pub struct CollectionRow<'a> {
+pub struct ApprovedRow<'a> {
     pub id: &'a str,
     pub shortcode: &'a str,
     pub project_name: Option<&'a str>,
@@ -30,23 +30,23 @@ pub struct CollectionRow<'a> {
     pub state: &'a RecordClassification,
 }
 
-/// `GET /collection`: every approved record and how it compares with the published set.
-pub fn list(rows: &[CollectionRow<'_>]) -> Markup {
+/// `GET /approved`: every approved record and how it compares with the published set.
+pub fn list(rows: &[ApprovedRow<'_>]) -> Markup {
     html! {
         div class="py-8" {
-            h1 class="font-display text-2xl mb-2" { "Collection" }
+            h1 class="font-display text-2xl mb-2" { "Approved records" }
             p class="text-gray-600 mb-6" {
                 "Status compares each approved record with the published set as of the last start. Whether its \
                  pull request is open, merged or closed is read on GitHub through the link."
             }
             @if rows.is_empty() {
                 p class="text-gray-600" { "No approved records are waiting for release." }
-            } @else { (collection_table(rows)) }
+            } @else { (approved_table(rows)) }
         }
     }
 }
 
-fn collection_table(rows: &[CollectionRow<'_>]) -> Markup {
+fn approved_table(rows: &[ApprovedRow<'_>]) -> Markup {
     let actions = html! {
         span class="sr-only" { "Actions" }
     };
@@ -60,14 +60,14 @@ fn collection_table(rows: &[CollectionRow<'_>]) -> Markup {
         }
     };
     let body = html! {
-        @for row in rows { (collection_row(row)) }
+        @for row in rows { (approved_row(row)) }
     };
     html! {
         (table("Approved records").head(head).body(body))
     }
 }
 
-fn collection_row(row: &CollectionRow<'_>) -> Markup {
+fn approved_row(row: &ApprovedRow<'_>) -> Markup {
     let name = html! {
         @match row.project_name {
             Some(name) => (name)
@@ -112,7 +112,7 @@ fn status_label_and_variant(state: &RecordClassification) -> (&'static str, Badg
     }
 }
 
-fn status_cell(row: &CollectionRow<'_>) -> Markup {
+fn status_cell(row: &ApprovedRow<'_>) -> Markup {
     let (label, variant) = status_label_and_variant(row.state);
     html! {
         div class="flex flex-col gap-1" {
@@ -145,8 +145,8 @@ fn status_detail(state: &RecordClassification) -> Markup {
 
 /// Offered on every row. A link, not a button: it opens the confirmation, which
 /// is a `GET`, so the flow still works with JavaScript off.
-fn discard_control(row: &CollectionRow<'_>) -> Markup {
-    link("Discard", format!("/collection/{}/discard", row.id))
+fn discard_control(row: &ApprovedRow<'_>) -> Markup {
+    link("Discard", format!("/approved/{}/discard", row.id))
         .aria_label(format!("Discard the approved record for {}", row.shortcode))
         .build()
 }
@@ -163,7 +163,7 @@ pub struct DiscardImpact<'a> {
     pub state: &'a RecordClassification,
 }
 
-/// `GET /collection/{id}/discard`: the confirmation before the `POST` that deletes the record.
+/// `GET /approved/{id}/discard`: the confirmation before the `POST` that deletes the record.
 pub fn confirm_discard(id: &str, impact: &DiscardImpact<'_>) -> Markup {
     html! {
         div class="max-w-lg py-8" {
@@ -192,7 +192,7 @@ pub fn confirm_discard(id: &str, impact: &DiscardImpact<'_>) -> Markup {
             }
             form
                 method="post"
-                action={ "/collection/" (id) "/discard" }
+                action={ "/approved/" (id) "/discard" }
                 class="flex items-center gap-3"
             {
                 ({
@@ -200,7 +200,7 @@ pub fn confirm_discard(id: &str, impact: &DiscardImpact<'_>) -> Markup {
                         .button_type(ButtonType::Submit)
                         .variant(ButtonVariant::Secondary)
                 })
-                (link("Cancel", "/collection"))
+                (link("Cancel", "/approved"))
             }
         }
     }
@@ -209,15 +209,15 @@ pub fn confirm_discard(id: &str, impact: &DiscardImpact<'_>) -> Markup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::handlers::collection::pull_requests_url;
+    use crate::handlers::approved::pull_requests_url;
 
     fn row<'a>(
         id: &'a str,
         shortcode: &'a str,
         pull_requests_url: &'a str,
         state: &'a RecordClassification,
-    ) -> CollectionRow<'a> {
-        CollectionRow {
+    ) -> ApprovedRow<'a> {
+        ApprovedRow {
             id,
             shortcode,
             project_name: Some("Bernoulli-Euler Online"),
@@ -239,7 +239,7 @@ mod tests {
             state: &waiting,
         };
         let out = confirm_discard("42", &impact).into_string();
-        assert!(out.contains(r#"<form method="post" action="/collection/42/discard""#), "{out}");
+        assert!(out.contains(r#"<form method="post" action="/approved/42/discard""#), "{out}");
         assert!(out.contains(&url), "{out}");
         assert!(
             out.contains("Waiting for release"),
@@ -248,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_the_collection_list_over_every_classification() {
+    fn snapshot_the_approved_list_over_every_classification() {
         let published = RecordClassification::Published;
         let waiting =
             RecordClassification::WaitingForRelease { changed: vec!["name".to_string(), "abstract".to_string()] };
@@ -264,6 +264,6 @@ mod tests {
             row("4", "0804", &urls[3], &unreadable),
             row("5", "0805", &urls[4], &anomalous),
         ];
-        insta::assert_snapshot!("collection_list", list(&rows).into_string());
+        insta::assert_snapshot!("approved_list", list(&rows).into_string());
     }
 }

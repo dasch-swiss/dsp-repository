@@ -98,13 +98,13 @@ pub(crate) fn routes() -> Vec<Route> {
         // here from every page, so without it the 404 page's own header is
         // another 404.
         ("/", get(crate::shell::root)),
-        // Public and unauthenticated on purpose — `crate::handlers::collection::list` takes no
+        // Public and unauthenticated on purpose — `crate::handlers::approved::list` takes no
         // `Authenticated`/`Rdu` extractor, which is what "public" looks like from a handler
         // signature. Traced, unlike `/telemetry/collect`: this is the one thing a CI poller
         // actually needs a span for.
         (
             "/api/v1/approved-records",
-            get(crate::handlers::collection::list).layer(per_ip_limit!(
+            get(crate::handlers::approved::list).layer(per_ip_limit!(
                 APPROVED_RECORDS_REPLENISH_SECS,
                 APPROVED_RECORDS_BURST,
                 "approved records"
@@ -168,10 +168,10 @@ pub(crate) fn routes() -> Vec<Route> {
             "/review/{shortcode}",
             get(crate::handlers::review::show).post(crate::handlers::review::act),
         ),
-        ("/collection", get(crate::handlers::collection::overview)),
+        ("/approved", get(crate::handlers::approved::overview)),
         (
-            "/collection/{id}/discard",
-            get(crate::handlers::collection::discard_form).post(crate::handlers::collection::discard),
+            "/approved/{id}/discard",
+            get(crate::handlers::approved::discard_form).post(crate::handlers::approved::discard),
         ),
     ]
 }

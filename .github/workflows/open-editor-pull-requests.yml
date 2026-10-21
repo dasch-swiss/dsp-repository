@@ -1,11 +1,11 @@
-name: Collect Editor Records
+name: Open Editor Pull Requests
 
 # Turns the editor's approved records into one pull request per project.
 #
 # Manual: no schedule and no editor-side webhook, because neither notifies
-# anyone sooner than a person deciding to collect. Each record's outcome is a
+# anyone sooner than a person deciding to open them. Each record's outcome is a
 # row in the run's job summary, and a failed record fails the run.
-# `docs/src/editor/collection.md` is the contract this implements and wins on
+# `docs/src/editor/publishing-to-git.md` is the contract this implements and wins on
 # any difference.
 
 on:
@@ -16,15 +16,15 @@ on:
 # its pull request's body, and the entity-id allocation is re-derived per
 # record, not per run.
 concurrency:
-  group: collect-editor-records
+  group: open-editor-pull-requests
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  collect:
-    name: Collect
+  open:
+    name: Open pull requests
     runs-on: ubuntu-latest
     if: github.repository_owner == 'dasch-swiss'
     steps:
@@ -43,12 +43,12 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          # Full history: the collector inspects each editor-collect/<shortcode>
+          # Full history: the pull-request run inspects each editor/<shortcode>
           # branch tip to decide whether it made that commit, and refuses to
           # force-push over a reviewer's fixups.
           fetch-depth: 0
           # Not github.token. A pull request opened with GITHUB_TOKEN triggers no
-          # workflows, so a collection pull request would arrive with no check,
+          # workflows, so an editor pull request would arrive with no check,
           # no test and no commit-hygiene run — green because nothing ran.
           token: ${{ secrets.GH_TOKEN }}
 
@@ -56,14 +56,14 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Identify the collector's commits
+      - name: Identify the pull-request run's commits
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Collect approved records
+      - name: Open pull requests for approved records
         env:
           EDITOR_BASE_URL: ${{ vars.EDITOR_BASE_URL }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          COLLECTOR_REPOSITORY: ${{ github.repository }}
-        run: cargo run --release -p editor-collector
+          PULL_REQUESTS_REPOSITORY: ${{ github.repository }}
+        run: cargo run --release -p editor-pull-requests

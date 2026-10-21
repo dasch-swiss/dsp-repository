@@ -18,11 +18,11 @@ The editor is the surface where a depositing project edits its own metadata and 
 - **Project state and Online detection**: See `docs/src/editor/status.md`
 - **Authentication and sessions**: See `docs/src/editor/authentication.md`
 - **The project form**: See `docs/src/editor/project-form.md`
-- **Collection (the approved-records endpoint and the collector)**: See `docs/src/editor/collection.md`
+- **Publishing to Git (the approved-records endpoint and the pull-request run)**: See `docs/src/editor/publishing-to-git.md`
 - **Operations (Docker, env vars, CLI)**: See `docs/src/editor/operations.md`
 - **Observability**: See `docs/src/editor/observability.md`
 
-Five crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveOpenWork` behind `identity-ports`), `editor-web` (`web/`, the views, the editor's handlers and routes, and the `Editor` facade `deposit-server` starts and mounts; the document shell around the views is the area's `deposit-shell`, `areas/deposit/shell`) and `editor-collector` (`collector/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/collection.md`). Identity — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`), `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports) and `identity-web` (`areas/deposit/identity/web`, the login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on an identity crate: an account fact the editor needs (a display name, a role, the session's deadline) reaches it through `editor-ports` (`Actor`, `UserDirectory`), and only the Deposit Area's composition root, `deposit-server` (`areas/deposit/server`, with its own guide in `areas/deposit/server/CLAUDE.md`), names both capabilities' crates.
+Five crates: `editor-core` (`core/`, the draft model, validation and canonical writer), `editor-ports` (`ports/`, what the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only), `editor-store` (`store/`, the SQLite implementation of `editor-core`'s repository ports, file `editor.sqlite`, and `LiveOpenWork` behind `identity-ports`), `editor-web` (`web/`, the views, the editor's handlers and routes, and the `Editor` facade `deposit-server` starts and mounts; the document shell around the views is the area's `deposit-shell`, `areas/deposit/shell`) and `editor-pull-requests` (`pull-requests/`, the CI binary that turns an approved record into a pull request — not part of the service's request path; see `docs/src/editor/publishing-to-git.md`). Identity — accounts, sessions, login codes and their rules — is in `identity-core` (`areas/deposit/identity/core`), `identity-ports` (`areas/deposit/identity/ports`), `identity-store` (`areas/deposit/identity/store`, its SQLite file `identity.sqlite` and the mail transports) and `identity-web` (`areas/deposit/identity/web`, the login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts), with its own guide in `areas/deposit/identity/CLAUDE.md`; the startup-configuration pitfalls of the login flow are there. `editor-core` and `editor-web` never depend on an identity crate: an account fact the editor needs (a display name, a role, the session's deadline) reaches it through `editor-ports` (`Actor`, `UserDirectory`), and only the Deposit Area's composition root, `deposit-server` (`areas/deposit/server`, with its own guide in `areas/deposit/server/CLAUDE.md`), names both capabilities' crates.
 
 ## Code Organization Patterns
 
@@ -90,13 +90,13 @@ REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, A
 
 RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism named.
 
-## Collection holds two invariants
+## Publishing holds two invariants
 
-`docs/src/editor/collection.md` is the contract; these two are the parts a change here can quietly break.
+`docs/src/editor/publishing-to-git.md` is the contract; these two are the parts a change here can quietly break.
 
-**Nothing served or published depends on collection state.** `GET /api/v1/approved-records` applies no filter at all — it enumerates with `ApprovedRecordRepository::list_all`, and a test pins it by serving every record.
+**Nothing served or published depends on pull-request state.** `GET /api/v1/approved-records` applies no filter at all — it enumerates with `ApprovedRecordRepository::list_all`, and a test pins it by serving every record.
 
-**The editor holds no GitHub or CI credential.** It is never told what the collector did, presents nothing to GitHub and makes no outbound GitHub call.
+**The editor holds no GitHub or CI credential.** It is never told what the pull-request run did, presents nothing to GitHub and makes no outbound GitHub call.
 
 ## Observability
 

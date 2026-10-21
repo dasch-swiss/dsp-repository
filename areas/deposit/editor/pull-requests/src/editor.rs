@@ -1,18 +1,18 @@
-//! The editor's collection endpoint.
+//! The editor's approved-records endpoint.
 //!
 //! The wire types are `editor_core`'s own, not a mirror of them: a member added
-//! to the payload reaches the collector by recompiling, and the two cannot
+//! to the payload reaches the pull-request run by recompiling, and the two cannot
 //! drift on a shape neither side owns alone.
 
 use std::time::Duration;
 
-use editor_core::collection::{ApprovedRecordView, ApprovedRecordsResponse};
+use editor_core::approved_records_api::{ApprovedRecordView, ApprovedRecordsResponse};
 
-/// How long one call may take. A collect run handles records in sequence, so a
+/// How long one call may take. A pull-request run handles records in sequence, so a
 /// hung editor must not hold the whole run open.
 const TIMEOUT: Duration = Duration::from_secs(30);
 
-/// The editor, as the collector talks to it.
+/// The editor, as the pull-request run talks to it.
 pub struct Editor {
     base_url: String,
     http: reqwest::blocking::Client,
@@ -45,7 +45,7 @@ impl Editor {
 
         let body: ApprovedRecordsResponse = response
             .json()
-            .map_err(|error| format!("GET {url} returned a body this collector cannot read: {error}"))?;
+            .map_err(|error| format!("GET {url} returned a body this run cannot read: {error}"))?;
         Ok(body.records)
     }
 }

@@ -29,11 +29,11 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/depositors/new` | GET | RDU | The create form. |
 | `/depositors/{id}/edit` | GET, POST | RDU | The edit form, and the change it makes. |
 | `/depositors/{id}/remove` | GET, POST | RDU | The removal confirmation, and the removal. |
-| `/collection` | GET | RDU | Every approved record, its status against the published set, and a link to its pull requests on GitHub. |
-| `/collection/{id}/discard` | GET, POST | RDU | The discard confirmation, and the discard. |
+| `/approved` | GET | RDU | Every approved record, its status against the published set, and a link to its pull requests on GitHub. |
+| `/approved/{id}/discard` | GET, POST | RDU | The discard confirmation, and the discard. |
 | `/healthz` | GET | public | Liveness probe. Untraced. |
 | `/telemetry/collect` | POST | public | Browser telemetry beacon. Untraced, rate-limited per IP. |
-| `/api/v1/approved-records` | GET | public | Every approved record and its accepted entity proposals, as JSON, for the collecting workflow. Rate-limited per IP. |
+| `/api/v1/approved-records` | GET | public | Every approved record and its accepted entity proposals, as JSON, for the Pull-request run. Rate-limited per IP. |
 
 Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.
 

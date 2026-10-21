@@ -1130,19 +1130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "editor-collector"
-version = "0.8.10"
-dependencies = [
- "chrono",
- "editor-core",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "shared-metadata",
- "uuid",
-]
-
-[[package]]
 name = "editor-core"
 version = "0.8.10"
 dependencies = [
@@ -1158,6 +1145,19 @@ dependencies = [
 [[package]]
 name = "editor-ports"
 version = "0.8.10"
+
+[[package]]
+name = "editor-pull-requests"
+version = "0.8.10"
+dependencies = [
+ "chrono",
+ "editor-core",
+ "reqwest 0.13.4",
+ "serde",
+ "serde_json",
+ "shared-metadata",
+ "uuid",
+]
 
 [[package]]
 name = "editor-store"

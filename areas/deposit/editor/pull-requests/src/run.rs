@@ -1,6 +1,6 @@
 //! The per-record loop: the skip rule, the force-push guard, and the job summary.
 //!
-//! Collection state is derived from GitHub and keyed on the project's
+//! Pull-request state is derived from GitHub and keyed on the project's
 //! shortcode, never on the record id. A record id identifies a row the editor
 //! may legitimately replace, while the conflict being avoided is per project
 //! file, so keying on the record would let a superseded record's pull request
@@ -14,8 +14,8 @@ use std::io::Write;
 use std::path::Path;
 
 use editor_core::agents::Agents;
+use editor_core::approved_records_api::{ApprovedRecordView, ProposedEntityView};
 use editor_core::canonical::{write_entity, write_project};
-use editor_core::collection::{ApprovedRecordView, ProposedEntityView};
 use editor_core::proposals::{entity_id_number, ProposalKind, ProposalOperation};
 use serde_json::Value;
 use shared_metadata::project::{is_valid_shortcode, ProjectRaw};
@@ -24,7 +24,7 @@ use crate::config::Config;
 use crate::editor::Editor;
 use crate::enrichment::{self, ENRICHMENT_FILE};
 use crate::forge::{
-    branch_for, record_line, renumbered_line, CollectionPullRequest, Forge, PullRequestState, COLLECTED_BY_TRAILER,
+    branch_for, record_line, renumbered_line, EditorPullRequest, Forge, PullRequestState, OPENED_BY_TRAILER,
 };
 use crate::manifest::{self, MANIFEST_FILE};
 use crate::{layout, renumber};
@@ -67,22 +67,21 @@ const ON_MAIN_REASON: &str = "main already carries this record";
 /// The job summary's title and table header. A table needs the blank line
 /// before it, or the title and the header row fuse into one paragraph.
 const SUMMARY_HEADER: &str =
-    "## Editor collection\n\n| Project | Record | Outcome | Pull request | Reason |\n| --- | --- | --- | --- | --- |\n";
+    "## Editor pull requests\n\n| Project | Record | Outcome | Pull request | Reason |\n| --- | --- | --- | --- | --- |\n";
 
 /// Written in place of the table when the editor holds no approved record.
-const SUMMARY_NO_RECORDS: &str = "## Editor collection\n\nThe editor holds no approved records.\n";
+const SUMMARY_NO_RECORDS: &str = "## Editor pull requests\n\nThe editor holds no approved records.\n";
 
-/// Fetch and publish.
-pub fn collect(config: &Config, editor: &Editor, forge: &dyn Forge) -> Result<Summary, String> {
+pub fn open_pull_requests(config: &Config, editor: &Editor, forge: &dyn Forge) -> Result<Summary, String> {
     let records = editor.approved_records()?;
-    collect_records(config, &records, forge)
+    handle_records(config, &records, forge)
 }
 
 /// Each record's row is appended to the job summary as soon as that record is
 /// handled, so a run that aborts on a later listing error keeps the rows it
 /// already wrote. A summary that cannot be written never stops the loop: the
 /// first write failure is returned only after every record has been handled.
-fn collect_records(config: &Config, records: &[ApprovedRecordView], forge: &dyn Forge) -> Result<Summary, String> {
+fn handle_records(config: &Config, records: &[ApprovedRecordView], forge: &dyn Forge) -> Result<Summary, String> {
     let mut summary = Summary::default();
     let summary_path = config.step_summary.as_deref();
     let mut write_failure: Option<String> = None;
@@ -100,18 +99,18 @@ fn collect_records(config: &Config, records: &[ApprovedRecordView], forge: &dyn 
     } else {
         SUMMARY_HEADER
     });
-    let mut pull_requests = forge.collection_pull_requests()?;
+    let mut pull_requests = forge.editor_pull_requests()?;
 
     for record in records {
         let outcome =
-            collect_one(config, forge, record, &pull_requests).unwrap_or_else(|reason| Outcome::Failed { reason });
+            handle_record(config, forge, record, &pull_requests).unwrap_or_else(|reason| Outcome::Failed { reason });
         finish(record, &outcome, &mut summary);
         write(&summary_row(record, &outcome));
 
         // Re-derived after each record, not read once per run: the pull request
         // this record just opened claims entity ids the next record must not
         // allocate again, and another run may have opened one meanwhile.
-        pull_requests = forge.collection_pull_requests()?;
+        pull_requests = forge.editor_pull_requests()?;
     }
     match write_failure {
         Some(error) => Err(error),
@@ -119,11 +118,11 @@ fn collect_records(config: &Config, records: &[ApprovedRecordView], forge: &dyn 
     }
 }
 
-fn collect_one(
+fn handle_record(
     config: &Config,
     forge: &dyn Forge,
     record: &ApprovedRecordView,
-    pull_requests: &[CollectionPullRequest],
+    pull_requests: &[EditorPullRequest],
 ) -> Result<Outcome, String> {
     // The shortcode arrives over the wire and becomes both a git ref and a
     // path under the data directory, so it is checked before either is built.
@@ -157,10 +156,10 @@ fn collect_one(
     // Before anything is written: a reviewer's fixups on this branch must not be
     // silently overwritten by the next trigger.
     if let Some(message) = forge.remote_tip_message(&branch)? {
-        if !message.contains(COLLECTED_BY_TRAILER) {
+        if !message.contains(OPENED_BY_TRAILER) {
             return Ok(Outcome::Failed {
                 reason: format!(
-                    "{branch} has a tip commit this collector did not make; refusing to force-push over it. \
+                    "{branch} has a tip commit this run did not make; refusing to force-push over it. \
                      Merge its pull request, or close it and delete the branch, then run again."
                 ),
             });
@@ -251,7 +250,7 @@ fn collect_one(
 
     // An open pull request is updated, not joined by a second that no record would reference.
     // Its body is edited after the push, never before: a body naming a record the branch does
-    // not carry would, once merged, skip that record uncollected.
+    // not carry would, once merged, skip that record unpublished.
     if let Some(open) = open {
         forge.edit_pull_request_body(&open.url, &body).map_err(|error| {
             format!("pushed onto {}, but its body still names the earlier record: {error}", open.url)
@@ -292,7 +291,7 @@ fn check_entities(entities: &[ProposedEntityView]) -> Result<(), String> {
 /// its id looking free and let an allocation overwrite a committed entity.
 fn taken_ids(
     data_dir: &Path,
-    pull_requests: &[CollectionPullRequest],
+    pull_requests: &[EditorPullRequest],
     own_branch: &str,
 ) -> Result<BTreeSet<String>, String> {
     let (published, errors) = Agents::load_from(&data_dir.join("persons"), &data_dir.join("organizations"));
@@ -348,8 +347,8 @@ impl Landed {
     }
 }
 
-fn landed_entities(pull_requests: &[CollectionPullRequest], own_branch: &str) -> Landed {
-    let mut merged: Vec<&CollectionPullRequest> = pull_requests
+fn landed_entities(pull_requests: &[EditorPullRequest], own_branch: &str) -> Landed {
+    let mut merged: Vec<&EditorPullRequest> = pull_requests
         .iter()
         .filter(|pull_request| pull_request.head_ref == own_branch && pull_request.state == PullRequestState::Merged)
         .collect();
@@ -393,9 +392,9 @@ fn entity_id_at(path: &str) -> Option<String> {
 /// The pull requests on this record's branch that speak for it: all except a
 /// merged one naming another record. The skip rule starts here.
 fn pull_requests_for<'a>(
-    pull_requests: &'a [CollectionPullRequest],
+    pull_requests: &'a [EditorPullRequest],
     record: &ApprovedRecordView,
-) -> Vec<&'a CollectionPullRequest> {
+) -> Vec<&'a EditorPullRequest> {
     let branch = branch_for(&record.shortcode);
     let id = record.id.to_string();
     pull_requests
@@ -469,7 +468,7 @@ fn subject(record: &ApprovedRecordView) -> String {
 /// The commit message, carrying the trailer the force-push guard reads back.
 fn commit_message(record: &ApprovedRecordView, mapping: &BTreeMap<String, String>, rows: &[String]) -> String {
     let mut message = format!("{}\n\n{}\n", subject(record), notes(mapping, rows));
-    message.push_str(&format!("\n{COLLECTED_BY_TRAILER}\n"));
+    message.push_str(&format!("\n{OPENED_BY_TRAILER}\n"));
     message
 }
 
@@ -551,7 +550,7 @@ mod tests {
     /// do, so a test can assert that a skip wrote nothing.
     #[derive(Default)]
     struct FakeForge {
-        pull_requests: Vec<CollectionPullRequest>,
+        pull_requests: Vec<EditorPullRequest>,
         tip_message: Option<String>,
         /// Makes `commit` report that nothing differed from the base branch.
         nothing_to_commit: bool,
@@ -566,7 +565,7 @@ mod tests {
     }
 
     impl Forge for FakeForge {
-        fn collection_pull_requests(&self) -> Result<Vec<CollectionPullRequest>, String> {
+        fn editor_pull_requests(&self) -> Result<Vec<EditorPullRequest>, String> {
             Ok(self.pull_requests.clone())
         }
 
@@ -602,8 +601,8 @@ mod tests {
         }
     }
 
-    fn pull_request(branch: &str, state: PullRequestState, url: &str) -> CollectionPullRequest {
-        CollectionPullRequest {
+    fn pull_request(branch: &str, state: PullRequestState, url: &str) -> EditorPullRequest {
+        EditorPullRequest {
             number: 412,
             url: url.to_string(),
             head_ref: branch.to_string(),
@@ -614,7 +613,7 @@ mod tests {
         }
     }
 
-    fn naming(mut pull_request: CollectionPullRequest, record: &ApprovedRecordView) -> CollectionPullRequest {
+    fn naming(mut pull_request: EditorPullRequest, record: &ApprovedRecordView) -> EditorPullRequest {
         pull_request.record = Some(record.id.to_string());
         pull_request
     }
@@ -622,7 +621,7 @@ mod tests {
     /// A data directory holding one real committed project, so the publish path
     /// writes a project the canonical writer accepts rather than a stub.
     fn fixture(name: &str) -> Config {
-        let dir = std::env::temp_dir().join(format!("editor-collector-run-{name}"));
+        let dir = std::env::temp_dir().join(format!("editor-pull-requests-run-{name}"));
         let _ = std::fs::remove_dir_all(&dir);
         for sub in ["projects", "persons", "organizations"] {
             std::fs::create_dir_all(dir.join(sub)).expect("a fixture directory");
@@ -658,14 +657,14 @@ mod tests {
         let record = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
             pull_requests: vec![naming(
-                pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+                pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL),
                 &record,
             )],
             ..FakeForge::default()
         };
 
-        let outcome =
-            collect_one(&config, &forge, &record, &forge.pull_requests).expect("the skip rule decides without failing");
+        let outcome = handle_record(&config, &forge, &record, &forge.pull_requests)
+            .expect("the skip rule decides without failing");
 
         assert_eq!(
             outcome,
@@ -681,7 +680,7 @@ mod tests {
         let record = record("0803", Some(committed_project()), None);
         let forge = FakeForge { nothing_to_commit: true, ..FakeForge::default() };
 
-        let outcome = collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record is decided");
+        let outcome = handle_record(&config, &forge, &record, &forge.pull_requests).expect("the record is decided");
 
         assert_eq!(outcome, Outcome::Skipped { url: None, reason: ON_MAIN_REASON });
         assert!(!forge.did("push") && !forge.did("create") && !forge.did("edit"));
@@ -693,16 +692,12 @@ mod tests {
         let config = fixture("nothing-to-commit-open");
         let record = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
-            pull_requests: vec![pull_request(
-                "editor-collect/0803",
-                PullRequestState::Open,
-                EXISTING_URL,
-            )],
+            pull_requests: vec![pull_request("editor/0803", PullRequestState::Open, EXISTING_URL)],
             nothing_to_commit: true,
             ..FakeForge::default()
         };
 
-        let outcome = collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record is decided");
+        let outcome = handle_record(&config, &forge, &record, &forge.pull_requests).expect("the record is decided");
 
         let Outcome::Failed { reason } = outcome else {
             panic!("expected a failure, got {outcome:?}");
@@ -719,14 +714,13 @@ mod tests {
         let newer = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
             pull_requests: vec![naming(
-                pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
+                pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL),
                 &earlier,
             )],
             ..FakeForge::default()
         };
 
-        let outcome =
-            collect_one(&config, &forge, &newer, &forge.pull_requests).expect("the newer record is collected");
+        let outcome = handle_record(&config, &forge, &newer, &forge.pull_requests).expect("the newer record is opened");
 
         assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
         assert!(forge.did("push") && forge.did("create"));
@@ -740,14 +734,14 @@ mod tests {
         let newer = record("0803", Some(committed_project()), None);
         let forge = FakeForge {
             pull_requests: vec![naming(
-                pull_request("editor-collect/0803", PullRequestState::Open, EXISTING_URL),
+                pull_request("editor/0803", PullRequestState::Open, EXISTING_URL),
                 &earlier,
             )],
             ..FakeForge::default()
         };
 
         let outcome =
-            collect_one(&config, &forge, &newer, &forge.pull_requests).expect("an open pull request is updated");
+            handle_record(&config, &forge, &newer, &forge.pull_requests).expect("an open pull request is updated");
 
         assert_eq!(outcome, Outcome::Updated { url: EXISTING_URL.to_string() });
         assert!(forge.did("push"), "the branch is force-pushed");
@@ -765,7 +759,7 @@ mod tests {
 
         let record = record("0803", Some(committed_project()), None);
 
-        let outcome = collect_one(&config, &forge, &record, &[]).expect("a new pull request is opened");
+        let outcome = handle_record(&config, &forge, &record, &[]).expect("a new pull request is opened");
 
         assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
         assert!(forge.did("push") && forge.did("create"));
@@ -779,15 +773,11 @@ mod tests {
     fn a_closed_unmerged_pull_request_gets_a_new_one_rather_than_being_reopened() {
         let config = fixture("closed");
         let forge = FakeForge {
-            pull_requests: vec![pull_request(
-                "editor-collect/0803",
-                PullRequestState::Closed,
-                EXISTING_URL,
-            )],
+            pull_requests: vec![pull_request("editor/0803", PullRequestState::Closed, EXISTING_URL)],
             ..FakeForge::default()
         };
 
-        let outcome = collect_one(
+        let outcome = handle_record(
             &config,
             &forge,
             &record("0803", Some(committed_project()), None),
@@ -801,33 +791,33 @@ mod tests {
     }
 
     #[test]
-    fn a_branch_tip_the_collector_did_not_make_is_refused_before_anything_is_written() {
+    fn a_branch_tip_the_pull_request_run_did_not_make_is_refused_before_anything_is_written() {
         let config = fixture("guard");
         let forge = FakeForge {
             tip_message: Some("fix(dpe-data): correct the contact address\n".to_string()),
             ..FakeForge::default()
         };
 
-        let outcome = collect_one(&config, &forge, &record("0803", Some(committed_project()), None), &[])
+        let outcome = handle_record(&config, &forge, &record("0803", Some(committed_project()), None), &[])
             .expect("the guard reports rather than erroring");
 
         let Outcome::Failed { reason } = outcome else {
             panic!("expected a refusal, got {outcome:?}")
         };
-        assert!(reason.contains("editor-collect/0803"), "{reason}");
+        assert!(reason.contains("editor/0803"), "{reason}");
         assert!(!forge.did("start") && !forge.did("push"), "nothing may be written or pushed");
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 
     #[test]
-    fn a_tip_this_collector_made_is_force_pushed_over() {
+    fn a_tip_this_run_made_is_force_pushed_over() {
         let config = fixture("own-tip");
         let forge = FakeForge {
-            tip_message: Some(format!("feat(dpe-data): publish 0803\n\n{COLLECTED_BY_TRAILER}\n")),
+            tip_message: Some(format!("feat(dpe-data): publish 0803\n\n{OPENED_BY_TRAILER}\n")),
             ..FakeForge::default()
         };
 
-        collect_one(&config, &forge, &record("0803", Some(committed_project()), None), &[])
+        handle_record(&config, &forge, &record("0803", Some(committed_project()), None), &[])
             .expect("its own tip is replaceable");
 
         assert!(forge.did("push"));
@@ -841,7 +831,7 @@ mod tests {
         let forge = FakeForge::default();
         let record = record("0803", None, Some("shortDescription is required".to_string()));
 
-        let outcome = collect_one(&config, &forge, &record, &[]).expect("a problem is returned as a failure");
+        let outcome = handle_record(&config, &forge, &record, &[]).expect("a problem is returned as a failure");
 
         assert_eq!(outcome, Outcome::Failed { reason: "shortDescription is required".to_string() });
         let _ = std::fs::remove_dir_all(&config.data_dir);
@@ -850,7 +840,7 @@ mod tests {
     #[test]
     fn every_commit_carries_the_trailer_the_guard_reads() {
         let message = commit_message(&record("0803", None, None), &BTreeMap::new(), &[]);
-        assert!(message.contains(COLLECTED_BY_TRAILER), "{message}");
+        assert!(message.contains(OPENED_BY_TRAILER), "{message}");
         assert!(
             message.starts_with("feat(dpe-data): publish the approved metadata for 0803\n"),
             "{message}"
@@ -912,7 +902,7 @@ mod tests {
 
     #[test]
     fn the_summary_holds_the_header_then_one_row_per_record_in_order() {
-        let path = std::env::temp_dir().join(format!("editor-collector-summary-rows-{}.md", std::process::id()));
+        let path = std::env::temp_dir().join(format!("editor-pull-requests-summary-rows-{}.md", std::process::id()));
         let _ = std::fs::remove_file(&path);
         let config = config_writing_summary_to("summary-rows", &path);
         let forge = FakeForge::default();
@@ -921,7 +911,7 @@ mod tests {
             record("0804", None, Some("shortDescription is required".to_string())),
         ];
 
-        let summary = collect_records(&config, &records, &forge).expect("both records are handled");
+        let summary = handle_records(&config, &records, &forge).expect("both records are handled");
 
         assert_eq!((summary.opened, summary.failed), (1, 1));
         let written = std::fs::read_to_string(&path).expect("the summary file exists");
@@ -940,11 +930,11 @@ mod tests {
 
     #[test]
     fn no_records_writes_the_no_records_line_and_no_table() {
-        let path = std::env::temp_dir().join(format!("editor-collector-summary-empty-{}.md", std::process::id()));
+        let path = std::env::temp_dir().join(format!("editor-pull-requests-summary-empty-{}.md", std::process::id()));
         let _ = std::fs::remove_file(&path);
         let config = config_writing_summary_to("summary-empty", &path);
 
-        collect_records(&config, &[], &FakeForge::default()).expect("nothing to handle");
+        handle_records(&config, &[], &FakeForge::default()).expect("nothing to handle");
 
         let written = std::fs::read_to_string(&path).expect("the summary file exists");
         assert_eq!(written, SUMMARY_NO_RECORDS);
@@ -955,7 +945,7 @@ mod tests {
     #[test]
     fn an_unwritable_summary_does_not_stop_the_records_but_fails_the_run() {
         let path = std::env::temp_dir()
-            .join(format!("editor-collector-no-such-dir-{}", std::process::id()))
+            .join(format!("editor-pull-requests-no-such-dir-{}", std::process::id()))
             .join("summary.md");
         let config = config_writing_summary_to("summary-unwritable", &path);
         let forge = FakeForge::default();
@@ -964,7 +954,7 @@ mod tests {
             record("0803", Some(committed_project()), None),
         ];
 
-        let result = collect_records(&config, &records, &forge);
+        let result = handle_records(&config, &records, &forge);
 
         let error = result.expect_err("a summary that cannot be written fails the run");
         assert!(error.contains("job summary"), "{error}");
@@ -976,10 +966,10 @@ mod tests {
     #[test]
     fn a_sibling_open_pull_requests_entity_ids_are_taken() {
         let config = fixture("siblings");
-        let pull_requests = vec![CollectionPullRequest {
+        let pull_requests = vec![EditorPullRequest {
             number: 1,
             url: EXISTING_URL.to_string(),
-            head_ref: "editor-collect/0804".to_string(),
+            head_ref: "editor/0804".to_string(),
             state: PullRequestState::Open,
             files: vec![
                 format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR),
@@ -989,7 +979,7 @@ mod tests {
             renumbered: BTreeMap::new(),
         }];
 
-        let taken = taken_ids(&config.data_dir, &pull_requests, "editor-collect/0803").expect("the fixture loads");
+        let taken = taken_ids(&config.data_dir, &pull_requests, "editor/0803").expect("the fixture loads");
 
         assert!(taken.contains("person-417"), "a sibling's proposed id is taken");
         assert!(!taken.contains("0804_x"), "a project file is not an entity id");
@@ -999,17 +989,17 @@ mod tests {
     #[test]
     fn the_records_own_branch_does_not_make_its_ids_taken() {
         let config = fixture("own-ids");
-        let pull_requests = vec![CollectionPullRequest {
+        let pull_requests = vec![EditorPullRequest {
             number: 1,
             url: EXISTING_URL.to_string(),
-            head_ref: "editor-collect/0803".to_string(),
+            head_ref: "editor/0803".to_string(),
             state: PullRequestState::Open,
             files: vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)],
             record: None,
             renumbered: BTreeMap::new(),
         }];
 
-        let taken = taken_ids(&config.data_dir, &pull_requests, "editor-collect/0803").expect("the fixture loads");
+        let taken = taken_ids(&config.data_dir, &pull_requests, "editor/0803").expect("the fixture loads");
 
         assert!(!taken.contains("person-417"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
@@ -1021,7 +1011,7 @@ mod tests {
         let forge = FakeForge::default();
 
         let escapes = [
-            ("person", "/tmp/collector-should-never-write-here"),
+            ("person", "/tmp/pull-requests-should-never-write-here"),
             ("person", "../../../etc/shadow"),
             ("../../../etc", "person-001"),
             ("person", "person-001/../../../x"),
@@ -1036,7 +1026,7 @@ mod tests {
                 body: serde_json::json!({ "givenNames": ["Ada"] }),
             }];
 
-            let outcome = collect_one(&config, &forge, &record, &[]).expect("a bad entity is returned as a failure");
+            let outcome = handle_record(&config, &forge, &record, &[]).expect("a bad entity is returned as a failure");
 
             assert!(
                 matches!(outcome, Outcome::Failed { .. }),
@@ -1070,7 +1060,7 @@ mod tests {
             },
         ];
 
-        let outcome = collect_one(&config, &forge, &record, &[]).expect("a bad body is returned as a failure");
+        let outcome = handle_record(&config, &forge, &record, &[]).expect("a bad body is returned as a failure");
 
         assert!(matches!(outcome, Outcome::Failed { .. }), "{outcome:?}");
         assert!(
@@ -1087,7 +1077,7 @@ mod tests {
         let forge = FakeForge::default();
 
         for candidate in ["../../etc", "0803/../0804", "", "has space"] {
-            let outcome = collect_one(&config, &forge, &record(candidate, Some(committed_project()), None), &[])
+            let outcome = handle_record(&config, &forge, &record(candidate, Some(committed_project()), None), &[])
                 .expect("a bad shortcode is returned as a failure");
             assert!(matches!(outcome, Outcome::Failed { .. }), "{candidate:?} produced {outcome:?}");
         }
@@ -1101,8 +1091,8 @@ mod tests {
         std::fs::write(config.data_dir.join("persons/person-001.json"), "{ not json")
             .expect("a broken published person");
 
-        let error = taken_ids(&config.data_dir, &[], "editor-collect/0803")
-            .expect_err("a corpus that does not load is refused");
+        let error =
+            taken_ids(&config.data_dir, &[], "editor/0803").expect_err("a corpus that does not load is refused");
 
         assert!(error.contains("person-001"), "{error}");
         let _ = std::fs::remove_dir_all(&config.data_dir);
@@ -1131,7 +1121,7 @@ mod tests {
         }
 
         let forge = FakeForge::default();
-        collect_one(&config, &forge, &record, &[]).expect("the record publishes");
+        handle_record(&config, &forge, &record, &[]).expect("the record publishes");
 
         let renumbered = std::fs::read_to_string(config.data_dir.join("persons/person-002.json"))
             .expect("the proposed person is written under the next free id");
@@ -1204,16 +1194,13 @@ mod tests {
         let config = fixture("landed");
         publish_person(&config, "person-417");
         let earlier = record("0803", Some(committed_project()), None);
-        let mut landed = naming(
-            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
-            &earlier,
-        );
+        let mut landed = naming(pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL), &earlier);
         landed.files = vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)];
         let forge = FakeForge { pull_requests: vec![landed], ..FakeForge::default() };
         let record = new_person_referenced_by_the_project("person-417");
 
         let outcome =
-            collect_one(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
+            handle_record(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
 
         assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
         let published = std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("still there");
@@ -1236,16 +1223,13 @@ mod tests {
         publish_person(&config, "person-417");
         publish_person(&config, "person-418");
         let earlier = record("0803", Some(committed_project()), None);
-        let mut landed = naming(
-            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
-            &earlier,
-        );
+        let mut landed = naming(pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL), &earlier);
         landed.files = vec![format!("{}/persons/person-418.json", editor_core::DPE_DATA_DIR)];
         landed.renumbered = renumbered_in(&renumbered_line("person-417", "person-418"));
         let forge = FakeForge { pull_requests: vec![landed], ..FakeForge::default() };
         let record = new_person_referenced_by_the_project("person-417");
 
-        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
+        handle_record(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
 
         let published = std::fs::read_to_string(config.data_dir.join("persons/person-418.json")).expect("still there");
         assert!(
@@ -1259,7 +1243,7 @@ mod tests {
     }
 
     #[test]
-    fn the_pull_request_body_carries_its_renumbering_in_a_form_the_collector_reads_back() {
+    fn the_pull_request_body_carries_its_renumbering_in_a_form_the_pull_request_run_reads_back() {
         let record = record("0803", Some(committed_project()), None);
         let mapping = BTreeMap::from([("person-417".to_string(), "person-418".to_string())]);
 
@@ -1269,17 +1253,14 @@ mod tests {
     #[test]
     fn a_renumbering_whose_target_the_pull_request_did_not_carry_is_ignored() {
         let earlier = record("0803", Some(committed_project()), None);
-        let mut merged = naming(
-            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
-            &earlier,
-        );
+        let mut merged = naming(pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL), &earlier);
         merged.files = vec![format!("{}/persons/person-418.json", editor_core::DPE_DATA_DIR)];
         merged.renumbered = BTreeMap::from([
             ("person-417".to_string(), "person-001".to_string()),
             ("person-500".to_string(), "organization-418".to_string()),
         ]);
 
-        let landed = landed_entities(&[merged], "editor-collect/0803");
+        let landed = landed_entities(&[merged], "editor/0803");
 
         assert!(landed.renumbered.is_empty(), "{:?}", landed.renumbered);
     }
@@ -1292,16 +1273,13 @@ mod tests {
         publish_person(&config, "person-417");
         publish_person(&config, "person-418");
         let earlier = record("0803", Some(committed_project()), None);
-        let mut landed = naming(
-            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
-            &earlier,
-        );
+        let mut landed = naming(pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL), &earlier);
         landed.files = vec![format!("{}/persons/person-418.json", editor_core::DPE_DATA_DIR)];
         landed.renumbered = renumbered_in(&renumbered_line("person-417", "person-418"));
         let forge = FakeForge { pull_requests: vec![landed], ..FakeForge::default() };
         let record = new_person_referenced_by_the_project("person-418");
 
-        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
+        handle_record(&config, &forge, &record, &forge.pull_requests).expect("the re-approved record publishes");
 
         let written = std::fs::read_to_string(config.data_dir.join("persons/person-419.json"))
             .expect("the new person is written under the next free id");
@@ -1315,12 +1293,12 @@ mod tests {
     #[test]
     fn an_entity_in_an_open_pull_request_on_the_records_branch_has_not_landed() {
         let config = fixture("open-not-landed");
-        let mut open = pull_request("editor-collect/0803", PullRequestState::Open, EXISTING_URL);
+        let mut open = pull_request("editor/0803", PullRequestState::Open, EXISTING_URL);
         open.files = vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)];
         let forge = FakeForge { pull_requests: vec![open], ..FakeForge::default() };
         let record = new_person_referenced_by_the_project("person-417");
 
-        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record publishes");
+        handle_record(&config, &forge, &record, &forge.pull_requests).expect("the record publishes");
 
         let written =
             std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("the entity is written");
@@ -1335,16 +1313,13 @@ mod tests {
         let config = fixture("change-not-landed");
         publish_person(&config, "person-417");
         let earlier = record("0803", Some(committed_project()), None);
-        let mut merged = naming(
-            pull_request("editor-collect/0803", PullRequestState::Merged, EXISTING_URL),
-            &earlier,
-        );
+        let mut merged = naming(pull_request("editor/0803", PullRequestState::Merged, EXISTING_URL), &earlier);
         merged.files = vec![format!("{}/persons/person-417.json", editor_core::DPE_DATA_DIR)];
         let forge = FakeForge { pull_requests: vec![merged], ..FakeForge::default() };
         let mut record = new_person_referenced_by_the_project("person-417");
         record.entities[0].operation = "change".to_string();
 
-        collect_one(&config, &forge, &record, &forge.pull_requests).expect("the record publishes");
+        handle_record(&config, &forge, &record, &forge.pull_requests).expect("the record publishes");
 
         let written =
             std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("the entity is written");

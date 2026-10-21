@@ -143,7 +143,7 @@ mod tests {
     /// A `data_dir` holding `project_files` as `projects/<name>.json`, removed
     /// by the caller.
     fn data_dir_with(name: &str, project_files: &[(&str, String)]) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("editor-collector-layout-{name}"));
+        let dir = std::env::temp_dir().join(format!("editor-pull-requests-layout-{name}"));
         let _ = std::fs::remove_dir_all(&dir);
         let projects_dir = dir.join("projects");
         std::fs::create_dir_all(&projects_dir).expect("temp dir");

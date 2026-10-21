@@ -136,7 +136,7 @@ mod tests {
     fn test_a_write_is_not_sent_back_to_itself() {
         // A POST's destination is a side effect, not a page.
         assert_eq!(destination(&parts("POST", "/projects/0801/sections/overview")), None);
-        assert_eq!(destination(&parts("DELETE", "/collection/x/discard")), None);
+        assert_eq!(destination(&parts("DELETE", "/approved/x/discard")), None);
     }
 
     fn actor(account_id: &str, role: Role) -> Actor {

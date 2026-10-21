@@ -3,8 +3,8 @@
 
 use axum::http::HeaderMap;
 
+pub(crate) mod approved;
 pub(crate) mod auth;
-pub(crate) mod collection;
 pub(crate) mod entities;
 pub(crate) mod projects;
 pub(crate) mod review;

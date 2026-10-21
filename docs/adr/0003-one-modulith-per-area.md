@@ -59,7 +59,7 @@ Three rules the Deposit Area's split into two capabilities (`areas/deposit/ADR-0
 
   Note (2026-10-13, DEV-7375): the composition root may not depend on anything in its area; the amendment of 2026-10-13 below narrows it.
 
-  Note (2026-10-15, DEV-7375): the script has landed and checks the Deposit Area. It also lets a `web` crate depend on its area's shell and `mosaic-tiles`, and knows `collector` as a role beside this record's anatomy, held to its own capability and `shared-*`.
+  Note (2026-10-15, DEV-7375): the script has landed and checks the Deposit Area. It also lets a `web` crate depend on its area's shell and `mosaic-tiles`, and knows `pull-requests` as a role beside this record's anatomy, held to its own capability and `shared-*`.
 
 Added to Considered Options:
 

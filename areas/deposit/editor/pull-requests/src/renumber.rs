@@ -10,7 +10,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::str::FromStr;
 
-use editor_core::collection::ProposedEntityView;
+use editor_core::approved_records_api::ProposedEntityView;
 use editor_core::proposals::{next_entity_id, ProposalKind, ProposalOperation};
 use serde_json::Value;
 

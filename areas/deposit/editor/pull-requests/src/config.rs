@@ -2,9 +2,9 @@
 
 use std::path::PathBuf;
 
-/// The project metadata this collector writes into.
+/// The project metadata this run writes into.
 ///
-/// A cross-module path, deliberately: the collector runs inside a checkout of
+/// A cross-module path, deliberately: the pull-request run executes inside a checkout of
 /// this repository and its whole job is to write that directory. It is a field
 /// on [`Config`] rather than a constant at the write sites so a test can point
 /// the run loop at a fixture.
@@ -31,7 +31,7 @@ impl Config {
     pub fn from_env() -> Result<Self, String> {
         let mut missing = Vec::new();
         let editor_base_url = required("EDITOR_BASE_URL", &mut missing);
-        let repository = required("COLLECTOR_REPOSITORY", &mut missing);
+        let repository = required("PULL_REQUESTS_REPOSITORY", &mut missing);
 
         if !missing.is_empty() {
             return Err(format!("not configured: {}", missing.join(", ")));
@@ -65,8 +65,8 @@ mod tests {
     #[test]
     fn every_missing_variable_is_named_at_once() {
         let mut missing = Vec::new();
-        required("COLLECTOR_TEST_ABSENT_ONE", &mut missing);
-        required("COLLECTOR_TEST_ABSENT_TWO", &mut missing);
-        assert_eq!(missing, ["COLLECTOR_TEST_ABSENT_ONE", "COLLECTOR_TEST_ABSENT_TWO"]);
+        required("PULL_REQUESTS_TEST_ABSENT_ONE", &mut missing);
+        required("PULL_REQUESTS_TEST_ABSENT_TWO", &mut missing);
+        assert_eq!(missing, ["PULL_REQUESTS_TEST_ABSENT_ONE", "PULL_REQUESTS_TEST_ABSENT_TWO"]);
     }
 }

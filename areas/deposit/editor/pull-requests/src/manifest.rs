@@ -1,8 +1,8 @@
-//! The corpus manifest, which every collection has to keep true.
+//! The corpus manifest, which every pull request has to keep true.
 //!
 //! `corpus-manifest.json` is the one place the published set's size is written
 //! down, and `the_corpus_is_the_whole_published_set` fails the moment a data
-//! file is added without it. A collection adds data files, so it updates the
+//! file is added without it. A pull request adds data files, so it updates the
 //! manifest in the same commit or arrives red.
 
 use std::path::Path;
@@ -45,7 +45,7 @@ mod tests {
     /// set, same indent, same trailing newline.
     #[test]
     fn the_manifest_is_rewritten_in_the_committed_form() {
-        let dir = std::env::temp_dir().join("collector-manifest-form");
+        let dir = std::env::temp_dir().join("pull-requests-manifest-form");
         let _ = std::fs::remove_dir_all(&dir);
         for sub in ["projects", "persons", "organizations"] {
             std::fs::create_dir_all(dir.join(sub)).expect("a fixture directory");

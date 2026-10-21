@@ -2,7 +2,7 @@
 //!
 //! Every handler here takes [`Rdu`], which puts the
 //! access rule in one place: RDU access is role-based rather than per-project,
-//! so there is no assignment to check and no per-project 403 to render. A depositor's
+//! so there is no assigned project to check and no per-project 403 to render. A depositor's
 //! session gets the 403 page from the extractor, and no session is redirected
 //! to login.
 //!

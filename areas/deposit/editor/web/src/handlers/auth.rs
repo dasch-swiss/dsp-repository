@@ -144,7 +144,7 @@ mod tests {
             account_id: account_id.to_string(),
             display_name: "A Depositor".to_string(),
             role,
-            shortcodes: vec!["0801".to_string()],
+            assigned_shortcodes: vec!["0801".to_string()],
             signed_out_at: SystemTime::now(),
         }
     }
@@ -219,18 +219,18 @@ mod tests {
             .is_ok());
     }
 
-    fn depositor(shortcodes: &[&str]) -> Principal {
+    fn depositor(assigned_shortcodes: &[&str]) -> Principal {
         Principal {
             account_id: uuid::Uuid::nil().to_string(),
             display_name: "A".to_string(),
             role: Role::Depositor,
-            shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
+            assigned_shortcodes: assigned_shortcodes.iter().map(|s| (*s).to_string()).collect(),
             signed_out_at: std::time::SystemTime::UNIX_EPOCH,
         }
     }
 
     #[test]
-    fn the_assignment_comparison_agrees_with_the_storage_key() {
+    fn the_assigned_project_comparison_agrees_with_the_storage_key() {
         // Two expressions of one rule: `may_reach` compares, `normalize_shortcode`
         // keys. If they ever disagreed, a depositor could reach a project whose
         // draft they cannot load — or load someone else's. Checked over the

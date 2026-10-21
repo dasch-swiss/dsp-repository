@@ -23,7 +23,7 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<User> {
         role: parsed_column::<Role>(row, 3)?,
         // Filled in by the caller: the shortcodes live in a child table, and
         // joining them into this row would repeat every user column per
-        // assignment.
+        // assigned project.
         shortcodes: Vec::new(),
         failed_logins: counter(row.get::<_, i64>(4)?),
         failed_login_at: row.get(5)?,
@@ -40,7 +40,7 @@ fn shortcodes_of(tx: &Transaction<'_>, user_id: Uuid) -> rusqlite::Result<Vec<St
 
 /// Delete-then-insert rather than a diff: the set is a handful of entries, and a
 /// diff would have to be right about both directions to avoid leaving an
-/// assignment behind.
+/// assigned project behind.
 fn replace_shortcodes(tx: &Transaction<'_>, user_id: Uuid, shortcodes: &[String]) -> rusqlite::Result<()> {
     tx.execute("DELETE FROM user_shortcodes WHERE user_id = ?1", params![user_id.to_string()])?;
     let mut stmt = tx.prepare("INSERT INTO user_shortcodes (user_id, shortcode) VALUES (?1, ?2)")?;
@@ -112,7 +112,7 @@ impl UserRepository for Database {
     }
 
     async fn delete(&self, id: Uuid) -> Result<()> {
-        // Sessions, codes and shortcode assignments go with it via
+        // Sessions, codes and assigned projects go with it via
         // `ON DELETE CASCADE` — which only fires because
         // `PRAGMA foreign_keys` is set per connection outside any transaction.
         let deleted = self
@@ -126,7 +126,7 @@ impl UserRepository for Database {
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<User>> {
         // `read_tx`, not `read`: the shortcodes come from a second query and both
-        // have to see one snapshot, or an assignment change landing between them
+        // have to see one snapshot, or an assigned-project change landing between them
         // returns a user with shortcodes it no longer has. Not `write` either —
         // every authenticated request looks a user up, and routing those through
         // the single writer connection would serialise all of them.
@@ -170,13 +170,13 @@ impl UserRepository for Database {
                     let rows = stmt.query_map([], map_row)?;
                     rows.collect::<rusqlite::Result<Vec<User>>>()?
                 };
-                // One query for every assignment rather than one per user, so
+                // One query for every assigned project rather than one per user, so
                 // the depositor list does not scale in queries with its length.
                 let mut stmt = tx.prepare("SELECT user_id, shortcode FROM user_shortcodes ORDER BY shortcode")?;
-                let assignments = stmt
+                let assigned_shortcodes = stmt
                     .query_map([], |row| Ok((uuid_column(row, 0)?, row.get::<_, String>(1)?)))?
                     .collect::<rusqlite::Result<Vec<_>>>()?;
-                for (user_id, shortcode) in assignments {
+                for (user_id, shortcode) in assigned_shortcodes {
                     if let Some(user) = users.iter_mut().find(|u| u.id == user_id) {
                         user.shortcodes.push(shortcode);
                     }
@@ -312,7 +312,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_replaces_shortcodes_rather_than_adding_to_them() {
-        // Removing an assignment has to actually remove it — a depositor who
+        // Removing an assigned project has to actually remove it — a depositor who
         // keeps a shortcode after RDU takes it away keeps access to that project.
         let db = test_db("users-update").await;
         let mut user = depositor("a@x.test", &["0801", "0803"]);
@@ -338,7 +338,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_takes_sessions_codes_and_assignments_with_it() {
+    async fn test_delete_takes_sessions_codes_and_assigned_projects_with_it() {
         // Removal takes them all, and this is the observable proof that
         // `PRAGMA foreign_keys` is on: without it the cascade silently does
         // nothing and orphaned sessions accumulate against a deleted account.
@@ -365,7 +365,7 @@ mod tests {
         assert_eq!(count(&db, "users").await, 0);
         assert_eq!(count(&db, "sessions").await, 0, "sessions must cascade");
         assert_eq!(count(&db, "login_codes").await, 0, "codes must cascade");
-        assert_eq!(count(&db, "user_shortcodes").await, 0, "assignments must cascade");
+        assert_eq!(count(&db, "user_shortcodes").await, 0, "assigned projects must cascade");
     }
 
     #[tokio::test]
@@ -460,7 +460,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_list_returns_every_user_with_its_own_assignments() {
+    async fn test_list_returns_every_user_with_its_own_assigned_projects() {
         let db = test_db("users-list").await;
         db.create(&depositor("b@x.test", &["0803"])).await.unwrap();
         db.create(&depositor("a@x.test", &["0801", "0802"])).await.unwrap();
@@ -477,7 +477,7 @@ mod tests {
                 ("b@x.test", vec!["0803".to_string()]),
                 ("c@x.test", vec![]),
             ],
-            "assignments must not leak between users"
+            "assigned projects must not leak between users"
         );
     }
 }

@@ -56,19 +56,19 @@ pub type Result<T> = std::result::Result<T, RepositoryError>;
 /// Accounts and the account-level failure counter the login flow needs.
 #[async_trait]
 pub trait UserRepository: Send + Sync {
-    /// Insert a user, together with its shortcode assignments.
+    /// Insert a user, together with its assigned projects.
     ///
     /// Returns [`RepositoryError::Conflict`] if the normalized address is
     /// already taken.
     async fn create(&self, user: &User) -> Result<()>;
 
-    /// Replace name, address, role and shortcode assignments. Exists because
+    /// Replace name, address, role and assigned projects. Exists because
     /// removing a shortcode from someone holding a draft on it is otherwise
     /// undefined.
     async fn update(&self, user: &User) -> Result<()>;
 
     /// Delete a user. `ON DELETE CASCADE` takes its sessions, codes and
-    /// shortcode assignments with it. Editor rows it authored are not
+    /// assigned projects with it. Editor rows it authored are not
     /// identity's, and keep its id.
     async fn delete(&self, id: Uuid) -> Result<()>;
 

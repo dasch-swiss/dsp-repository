@@ -59,7 +59,7 @@ pub struct Principal {
     pub role: Role,
     /// Project shortcodes this account may reach. Empty for an RDU member, whose access is
     /// role-based rather than per-project.
-    pub shortcodes: Vec<String>,
+    pub assigned_shortcodes: Vec<String>,
     /// The earlier of the session's absolute expiry and its idle deadline.
     pub signed_out_at: SystemTime,
 }
@@ -72,21 +72,24 @@ impl Principal {
 
     /// Whether this account may reach the project identified by `shortcode`.
     ///
-    /// RDU is unconditional: access is role-based, which is why an RDU account's `shortcodes` is
-    /// empty. A depositor is scoped to their assignments.
+    /// RDU is unconditional: access is role-based, which is why an RDU account's
+    /// `assigned_shortcodes` is empty. A depositor is scoped to their assigned projects.
     ///
     /// The comparison ignores ASCII case: the published set mixes `080C` with `0801a`, and no two
     /// published shortcodes differ only in case. This is
     /// `editor_core::records::normalize_shortcode`'s rule, compared rather than keyed. It does
     /// not trim: the argument has passed `is_valid_shortcode`, which admits no whitespace, and
     /// an authorization check must not be more permissive than the validator.
-    /// `the_assignment_comparison_agrees_with_the_storage_key`, in `editor-web`'s
+    /// `the_assigned_project_comparison_agrees_with_the_storage_key`, in `editor-web`'s
     /// `handlers/auth.rs` tests, pins the two against each other.
     #[must_use]
     pub fn may_reach(&self, shortcode: &str) -> bool {
         match self.role {
             Role::Rdu => true,
-            Role::Depositor => self.shortcodes.iter().any(|assigned| assigned.eq_ignore_ascii_case(shortcode)),
+            Role::Depositor => self
+                .assigned_shortcodes
+                .iter()
+                .any(|assigned| assigned.eq_ignore_ascii_case(shortcode)),
         }
     }
 }
@@ -141,12 +144,12 @@ pub trait UserDirectory: Send + Sync {
 mod tests {
     use super::*;
 
-    fn principal(role: Role, shortcodes: &[&str]) -> Principal {
+    fn principal(role: Role, assigned_shortcodes: &[&str]) -> Principal {
         Principal {
             account_id: "00000000-0000-0000-0000-000000000000".to_string(),
             display_name: "A".to_string(),
             role,
-            shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
+            assigned_shortcodes: assigned_shortcodes.iter().map(|s| (*s).to_string()).collect(),
             signed_out_at: SystemTime::UNIX_EPOCH,
         }
     }
@@ -160,7 +163,7 @@ mod tests {
     }
 
     #[test]
-    fn test_an_assignment_matches_however_it_is_capitalised() {
+    fn test_an_assigned_shortcode_matches_however_it_is_capitalised() {
         let depositor = principal(Role::Depositor, &["080c"]);
         assert!(depositor.may_reach("080C"));
         assert!(depositor.may_reach("080c"));
@@ -168,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rdu_reaches_every_project_without_an_assignment() {
+    fn test_rdu_reaches_every_project_without_an_assigned_project() {
         let rdu = principal(Role::Rdu, &[]);
         assert!(rdu.may_reach("0801"));
         assert!(rdu.may_reach("anything"));

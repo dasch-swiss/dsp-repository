@@ -28,7 +28,7 @@ pub(crate) struct User {
     pub(crate) id: Uuid,
     pub(crate) name: String,
     pub(crate) role: Role,
-    pub(crate) shortcodes: Vec<String>,
+    pub(crate) assigned_shortcodes: Vec<String>,
 }
 
 /// [`EditorState`] plus the fakes it was built over, so a test can sign accounts in after the
@@ -111,12 +111,18 @@ pub(crate) fn test_app(state: &TestState) -> axum::Router {
 
 /// Register an account and return it. The address is not modelled: the editor never sees one. Its
 /// display name goes into the directory, which is where the editor reads the names it shows.
-pub(crate) async fn a_user(state: &TestState, _email: &str, name: &str, role: Role, shortcodes: &[&str]) -> User {
+pub(crate) async fn a_user(
+    state: &TestState,
+    _email: &str,
+    name: &str,
+    role: Role,
+    assigned_shortcodes: &[&str],
+) -> User {
     let user = User {
         id: Uuid::new_v4(),
         name: name.to_string(),
         role,
-        shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
+        assigned_shortcodes: assigned_shortcodes.iter().map(|s| (*s).to_string()).collect(),
     };
     state.directory.insert_account(&user.id.to_string(), &user.name);
     state
@@ -147,7 +153,7 @@ pub(crate) async fn a_session(state: &TestState, user_id: Uuid) -> String {
             account_id: user.id.to_string(),
             display_name: user.name,
             role: user.role,
-            shortcodes: user.shortcodes,
+            assigned_shortcodes: user.assigned_shortcodes,
             signed_out_at: SystemTime::now() + Duration::from_secs(2 * 60 * 60),
         },
     );

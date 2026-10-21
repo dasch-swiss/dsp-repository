@@ -104,8 +104,8 @@ fn the_project_list_carries_none_of_the_forbidden_words_in_any_state() {
         );
     }
     // And the two empty states, which are prose rather than a table.
-    for assignments in [0, 2] {
-        let markup = projects::assigned(&[], assignments).into_string();
+    for assigned_count in [0, 2] {
+        let markup = projects::assigned(&[], assigned_count).into_string();
         assert!(forbidden_words_in(&markup).is_empty(), "{:?}", forbidden_words_in(&markup));
     }
 }

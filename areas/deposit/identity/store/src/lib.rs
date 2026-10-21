@@ -284,7 +284,7 @@ impl Database {
     ///
     /// In autocommit mode each statement gets its own implicit read transaction,
     /// so another connection's commit can land between two of them and the pair
-    /// can disagree — a user read back with shortcode assignments it no longer
+    /// can disagree — a user read back with assigned projects it no longer
     /// has. A deferred `BEGIN` gives both statements one snapshot.
     ///
     /// Still a reader connection, so it cannot write, and still one closure, so

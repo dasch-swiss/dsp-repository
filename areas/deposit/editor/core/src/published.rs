@@ -357,7 +357,7 @@ mod tests {
     }
 
     #[test]
-    fn an_assignment_naming_no_published_project_is_skipped_not_rendered_broken() {
+    fn an_assigned_shortcode_naming_no_published_project_is_skipped_not_rendered_broken() {
         let (published, _) = PublishedProjects::load_from(&corpus());
         let assigned = vec!["0801d".to_string(), "9999".to_string()];
         let codes: Vec<&str> = published.summaries_for(&assigned).map(|s| s.shortcode).collect();

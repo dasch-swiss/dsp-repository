@@ -265,7 +265,7 @@ mod depositors {
     }
 
     /// What the editor is told about the account `user` once they sign in: the access an
-    /// assignment grants.
+    /// assigned project grants.
     async fn access_of(state: &TestState, user: &str) -> editor_ports::Principal {
         let session = a_session(state, user).await;
         state
@@ -350,7 +350,7 @@ mod depositors {
         assert!(updated.last_code_at.is_some(), "nor is the last-code stamp");
         assert_eq!(updated.created_at, created_at);
 
-        // And the assignment change is what access now follows.
+        // And the assigned-project change is what access now follows.
         let access = access_of(&state, &updated.id).await;
         assert!(!access.may_reach("0801"));
         assert!(access.may_reach("0812"));
@@ -359,7 +359,7 @@ mod depositors {
     #[tokio::test]
     async fn test_dropping_a_shortcode_leaves_the_projects_draft_alone() {
         // A draft is keyed by shortcode, not by user, so it belongs to the
-        // project. Taking away an assignment takes away access and nothing else,
+        // project. Taking away an assigned project takes away access and nothing else,
         // and RDU still sees the draft.
         let (state, _) = test_state("dep-update-draft").await;
         let (_, session) = rdu(&state).await;
@@ -408,7 +408,7 @@ mod depositors {
         for session in [&their_session, &second_session] {
             assert!(!session_exists(&state.identity.store, session).await);
         }
-        // And the assignments went with it, so nothing is left pointing at a
+        // And the assigned projects went with it, so nothing is left pointing at a
         // row that is gone.
         assert_eq!(db.identity.count_rows("user_shortcodes").await, 0);
 

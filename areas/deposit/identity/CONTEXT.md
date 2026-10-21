@@ -14,9 +14,9 @@ _Avoid_: user (too broad — RDU members are users too), researcher, project tea
 The reviewer role: the Research Data Unit member who reviews submissions and administers depositors; `Role::Rdu` when stored, the `Rdu` extractor when authorizing, `Audience::RduOnly` when deciding field visibility.
 _Avoid_: admin, reviewer as a role name (a reviewer is what RDU does on a given round).
 
-**Assignment**:
+**Assigned project**:
 A `user_shortcodes` row: one project a depositor may reach, matched on the case-folded Shortcode (`editor-ports`' `Principal::may_reach`, over what `LiveAuthenticator` hands the editor).
-_Avoid_: permission, membership.
+_Avoid_: permission, membership, assignment (the row is named for the project it grants, not the act).
 
 **Login code**:
 A one-time code mailed to a depositor and bound to a browser token, exchanged for a Session.

@@ -17,7 +17,7 @@ Every push and pull request runs:
 
 Defined in `a11y-dpe.yml`.
 
-Runs on PRs and pushes to `main` that touch `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**` or `shared/**` — everything compiled into the binary the suite starts. The suite tests DPE's pages. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
+Runs on PRs and pushes to `main` that touch `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**`, `areas/access/media/**` or `shared/**` — everything compiled into the binary the suite starts. The suite tests DPE's pages. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
 
 ### Fuzz Testing
 
@@ -76,7 +76,7 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 
 | Action | Purpose |
 |--------|---------|
-| `build-dpe` | Compile the Access Area's binary (static musl `access-server` + content-hashed Tailwind `app.css` via `just css-release`) and stage it with DPE's public files and data, `sync`'s data and CPE's project folders |
+| `build-dpe` | Compile the Access Area's binary (static musl `access-server` + content-hashed Tailwind `app.css` via `just css-release`) and stage it with DPE's public files and data, `sync`'s data, `media`'s data and CPE's project folders |
 | `build-editor` | Compile the metadata editor (static musl `deposit-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
 | `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
@@ -111,9 +111,9 @@ When changes to `modules/mosaic/` are merged to `main`, the playground image is 
 
 Defined in `cloud-run-dpe-pull-request.yml`.
 
-When a pull request modifies files under `areas/access/dpe/`, `areas/access/server/` or `shared/`, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `areas/access/dpe/`, `areas/access/server/`, `areas/access/cpe/`, `areas/access/sync/`, `areas/access/media/`, `shared/` or the `build-dpe` action it builds with, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
 
-The preview is the whole image, so it serves CPE under `/cpe` too. It runs without CPU throttling, because CPE loads its projects after the port is bound. A pull request that changes only `areas/access/cpe/` or `areas/access/sync/` does not start one.
+The preview is the whole image, so it serves CPE under `/cpe` too, from the data the image carries; a change to a presentation's code or files gets a preview of its own. It runs without CPU throttling, because CPE loads its projects after the port is bound.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 

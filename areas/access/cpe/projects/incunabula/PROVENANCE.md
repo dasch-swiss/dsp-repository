@@ -1,8 +1,11 @@
 # Incunabula: where the store comes from
 
 Incunabula's store is built by the store builder, [`cpe-store-build`](../../store-build/README.md), from the
-`cpe-ports` snapshot of DSP project 0803, which `sync`'s archive projection serves. Nothing in this directory is an
-input to it: there is no `raw/` directory, no CSV and no `translate.py` any more.
+`cpe-ports` snapshot of DSP project 0803, which `sync`'s archive projection serves, and from the project's curation
+file and the `remodel {}` block of its `config.kdl`, which `media` serves as deposited files from
+`areas/access/media/data/0803/` (whose `PROVENANCE`, `areas/access/media/data/PROVENANCE`, records where they came
+from). Nothing in this directory is an input to it: there is no `raw/` directory, no CSV and no `translate.py` any
+more.
 
 This repository commits no store file. `dsp-incubator`, where this document was written, commits the builder's
 output as `cpe/projects/incunabula/data.sql` and keeps the test that regenerates it and compares the two byte for
@@ -16,21 +19,26 @@ hook).
 
 ## The port and the pin
 
-The builder reads one thing, a `cpe_ports::ProjectSnapshot`. In `dsp-incubator`, the binary gets it from `sync-store`'s adapter, which
-serves the vendored data directory `vendor/dsp-repository/areas/access/sync/data`:
+From the ports the builder reads two things: a `cpe_ports::ProjectSnapshot` and the project's curated values. Here
+CPE's activation reads the snapshot through `sync-store`'s adapter and the curation file,
+`areas/access/media/data/0803/curation.csv` (what the editors authored about single resources, one row per resource),
+through `media-store`'s. In `dsp-incubator`, the binary gets the snapshot from `sync-store`'s adapter, which serves
+the vendored data directory `vendor/dsp-repository/areas/access/sync/data`:
 
 | File | What it is |
 |---|---|
 | `0803.nq` | the archive's facts: the snapshot of project 0803 that the `snapshot` subcommand of `dsp-incubator cpe/tools/dao-lift` wrote from a DSP dump |
-| `0803-curation.csv` | the project's curation: what the editors authored about single resources (one row per resource) |
 | `0803-arks.txt` | a frozen list of the data ARKs Incunabula's store held when the file was made; `sync-store`'s tests check the served ARKs against it |
-| `PROVENANCE` | the dump, the `dao-lift` commit and the commands behind the three files |
+| `PROVENANCE` | the dump, the `dao-lift` commit and the commands behind the files |
+
+Its copy of the curation file comes from that vendored `sync` directory until its next re-vendor, which takes it, and
+Incunabula's `config.kdl` and narrative, from `areas/access/media/data/0803/` instead.
 
 `sync-store`, `cpe-ports` and that directory are copies of the monorepo (`dasch-swiss/dsp-repository`) at the commit
 in `vendor/PIN`, and are never edited there (`dsp-incubator cpe/vendor/README.md`, `dsp-incubator cpe/docs/adr/0013-new-projects-are-prototyped-against-a-vendored-monorepo-cpe.md`). `just cpe
 vendor-diff` prints whether the copy still equals the pin.
 
-Not from the port, and declared in the `remodel {}` block of `projects/incunabula/config.kdl`: the office and side
+Not from the archive projection, and declared in the `remodel {}` block of `areas/access/media/data/0803/config.kdl`: the office and side
 vocabularies with their labels, the images' authorship and licence, the IIIF host (production,
 `https://iiif.dasch.swiss/0803/`, owner decision O3 of the design handoff), the sentinel `[missing]`, the curated keys
 and the classes annotations may touch. What the block cannot say is Incunabula's hook,
@@ -46,13 +54,13 @@ The store is never edited by hand, and neither is the incubator's `data.sql`.
 
 - **A curated value** (a Book's id, office, date display, title override, sort key, cover, teaser or catalogue
   override; a strip's id or name; whether an annotation or a link is kept, its language and its short name) is
-  edited in `areas/access/sync/data/0803-curation.csv`. The incubator holds a copy of it under `vendor/` and
+  edited in `areas/access/media/data/0803/curation.csv`. The incubator holds a copy of it under `vendor/` and
   nowhere else.
 - **The archive's facts** change with a new dump: `0803.nq` in `areas/access/sync/data` is written again with
   `dao-lift snapshot`, a tool of `dsp-incubator` (`cpe/tools/dao-lift`), as the `PROVENANCE` file beside it
   describes.
 - **A constant** (an office's or a side's label, the image rights, the IIIF host) is edited in the `remodel {}`
-  block of `projects/incunabula/config.kdl`.
+  block of `areas/access/media/data/0803/config.kdl`.
 - **A rule** (how a value becomes a row) is changed in `store-build/`: in the block where a node says it, in the
   builder's generic code, or in Incunabula's hook.
 
@@ -125,7 +133,7 @@ The covers were picked on 2026-09-29 by viewing 300×400 IIIF renders of each Bo
 preference: the title woodcut, then a title page, then the first full-page woodcut (for a manuscript, the first
 illustration), then the first text page. Bindings, pastedowns, flyleaves, colour targets, blanks and `[missing]`
 pages are skipped. No Incunabula scan is restricted or limited-view. A re-pick is a one-cell edit of
-`0803-curation.csv`.
+`areas/access/media/data/0803/curation.csv`.
 
 | Book | Cover (Page id) | Page number | Reason |
 |---|---|---|---|
@@ -152,8 +160,8 @@ pages are skipped. No Incunabula scan is restricted or limited-view. A re-pick i
 ### The catalogue override
 
 Three Books' catalogue address in the archive is a dead Cologne link. The override is curated: each of the three
-has two values in the monorepo's `0803-curation.csv`, `catalogue_uri` (the address to write) and
-`catalogue_uri_replaces` (the dead address), and the port serves them (DEV-7497). A rule of Incunabula's hook,
+has two values in the monorepo's curation file, `areas/access/media/data/0803/curation.csv`, `catalogue_uri` (the
+address to write) and `catalogue_uri_replaces` (the dead address), and CPE reads them through the bytes port (DEV-7497). A rule of Incunabula's hook,
 `store-build/src/projects/incunabula/catalogue.rs`, reads the two keys and replaces the address while the archive
 has exactly the one the override names; with any other address, or none, the Book is refused until both values are
 taken out of the curation file (row "Book `catalogue-uri`"). The rule holds no address and names no Book. The
@@ -191,5 +199,5 @@ from Slice 2 and Books from Slice 8, when the curated columns moved into a hand-
 
 The hop is retired (DEV-7496, 2026-10-10). The DAO stage is still the pipeline: the incubator's `dao-lift snapshot` writes
 `0803.nq` in the monorepo, `sync-store` serves it through the port, and the store builder writes `data.sql` from
-that. `translate.py` and the CSV files are deleted; the curated layer is the monorepo's `0803-curation.csv`.
+that. `translate.py` and the CSV files are deleted; the curated layer is the monorepo's curation file, today `areas/access/media/data/0803/curation.csv`.
 `dao-lift cpe-export` still exists and nothing in `cpe` reads its output (`dsp-incubator cpe/tools/dao-lift/README.md`).

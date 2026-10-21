@@ -107,7 +107,7 @@ Everything, not a slice: 19 Books, 4,024 Pages with their IIIF filenames and dim
 38 Bands, plus the **77 Regions** (page, geometry, colour, remark; 52 rectangles, 24 polygons
 and 1 circle) and the **woodcut link objects** (curated subset of the 40). *(As built in Slice 6:
 dropping the test artefacts keeps 64 annotations on 59 pages and 35 links; which ones are kept is
-the `keep` column of `areas/access/sync/data/0803-curation.csv`, see [`PROVENANCE.md`](./PROVENANCE.md).)* How Regions and links map onto CPE's generic schema
+the `keep` column of `areas/access/media/data/0803/curation.csv`, see [`PROVENANCE.md`](./PROVENANCE.md).)* How Regions and links map onto CPE's generic schema
 is a Stage D/E decision — the likely shape is a `Region` class with a link to its Page and
 the geometry JSON as text, and a `Reuse` class linking 2–4 Regions — and is itself a finding
 about the schema. *(**Superseded by O2** — see `dsp-incubator cpe/projects/incunabula/DESIGN.md` §3: annotations are a
@@ -123,8 +123,8 @@ and is **never committed**: its admin graph carries user records with password h
 `SHAPE.md` §9). Only derived artefacts are committed, stripped of
 `attachedToUser` and every other knora-base admin predicate, and checked to contain no
 `rdfh.ch/users/` IRI. *(As built since DEV-7496: this directory holds no `raw/`, and in this repository no `data.sql`. The derived
-artefacts are the snapshot `0803.nq` and the hand-edited `0803-curation.csv` in `areas/access/sync/data`, of which
-the incubator's `vendor/` holds a copy; a curated value is edited in this repository, see
+artefacts are the snapshot `0803.nq` in `areas/access/sync/data` and the hand-edited curation file
+`areas/access/media/data/0803/curation.csv`, of which the incubator's `vendor/` holds a copy; a curated value is edited in this repository, see
 [`PROVENANCE.md`](./PROVENANCE.md).)* The project's content itself is open (CC BY 4.0, every resource and
 file value viewable by unknown users), so committing derived data raises no access question
 for Incunabula; HdM and Solec need the same check before anything of theirs is committed.

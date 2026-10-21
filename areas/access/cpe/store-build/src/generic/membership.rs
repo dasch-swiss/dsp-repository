@@ -133,7 +133,6 @@ remodel {
                 resource("http://a.example/x/only", "Leaf", Some("urn:w2"), Some(1)),
             ],
             list_nodes: Vec::new(),
-            curation: Vec::new(),
         };
         let mut errors = Vec::new();
         let mut draft = classify(&snapshot, &mapping, &mut errors);

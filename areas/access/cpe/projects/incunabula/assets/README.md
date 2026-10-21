@@ -3,7 +3,7 @@
 ## cover.webp
 
 Site-index teaser image for the Incunabula project: CPE's overview of its projects, at its base, shows it on
-Incunabula's teaser, with `image-credit` and `eyebrow` of `../config.kdl`. The file is validated when the
+Incunabula's teaser, with `image-credit` and `eyebrow` of its `config.kdl` (`areas/access/media/data/0803/config.kdl`). The file is validated when the
 project is loaded and is served with the project's other assets.
 
 445x239, WebP. Matches the
@@ -32,7 +32,7 @@ cwebp -q 75 /tmp/inc-cover.png -o areas/access/cpe/projects/incunabula/assets/co
 `https://repository.dasch.swiss/dpe/projects/0803` (fetched 2026-09-03), states Access Rights
 "Full Open Access", License **CC BY 4.0** (dated 2012-08-31), copyright holder the project
 itself; the copy is held by Universitätsbibliothek Basel. Hence the
-`image-credit "Universitätsbibliothek Basel · CC BY 4.0"` declared in `../config.kdl`.
+`image-credit "Universitätsbibliothek Basel · CC BY 4.0"` declared in `areas/access/media/data/0803/config.kdl`.
 
 **Note — rejected DPE teaser**: the DaSCH repository page also carries its own teaser asset at
 `https://repository.dasch.swiss/assets/images/0803.webp` (452x500). It was inspected and

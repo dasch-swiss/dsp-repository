@@ -63,6 +63,7 @@ fn load_fixture(fixture_name: &str, project_id: &str) -> Result<(), HashSet<Diag
         project_id,
         reserved_ids: &["_static"],
         narrative_files: &narrative_files,
+        narrative_files_complete: false,
         // Truthful empty inventory: this config declares no `cover-image`.
         // `&[]` asserts "no asset files" — never "unknown" (see
         // `ValidationContext::asset_files`), so do not copy it blindly.
@@ -132,6 +133,7 @@ fn load_fixture_diagnostics(fixture_name: &str, project_id: &str) -> Result<(), 
         project_id,
         reserved_ids: &["_static"],
         narrative_files: &narrative_files,
+        narrative_files_complete: false,
         // Truthful empty inventory: this config declares no `cover-image`.
         // `&[]` asserts "no asset files" — never "unknown" (see
         // `ValidationContext::asset_files`), so do not copy it blindly.
@@ -499,6 +501,7 @@ fn load_fixture_project(fixture_name: &str, project_id: &str) -> Result<Project,
         project_id,
         reserved_ids: &["_static"],
         narrative_files: &narrative_files,
+        narrative_files_complete: false,
         // Truthful empty inventory: this config declares no `cover-image`.
         // `&[]` asserts "no asset files" — never "unknown" (see
         // `ValidationContext::asset_files`), so do not copy it blindly.

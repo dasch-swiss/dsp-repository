@@ -1,22 +1,65 @@
 //! Project discovery: find the project folders under the projects directory.
 //!
-//! A direct subfolder is a project when its name passes `cpe-core`'s id rule
-//! and it holds a `config.kdl`; the name is the project id and the URL
-//! segment. `narrative/` is flat and `assets/` is walked to any depth. A
-//! `data.sql` is read by `Cpe::from_sql_folders` alone.
+//! A direct subfolder is a project when its name passes `cpe-core`'s id rule;
+//! the name is the project id and the URL segment. What else makes it one
+//! depends on the caller:
 //!
-//! Nothing here follows a symbolic link, and every path read is built from a
-//! directory listing, never from a request.
+//! - [`discover_for_activation`], for `Cpe::activate`: a regular `SHORTCODE` file naming the
+//!   project whose deposited files and snapshot the ports serve. Its config and narrative come
+//!   through the bytes port, never from the folder.
+//! - [`discover_sql_folders`], the legacy path of `Cpe::from_sql_folders`: a `config.kdl`, read
+//!   from the folder with its flat `narrative/` and its `data.sql`.
+//!
+//! Either way `assets/` is walked to any depth. Nothing here follows a
+//! symbolic link, and every path read is built from a directory listing,
+//! never from a request.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// A project folder: a directory holding a `config.kdl`. The id is the
-/// directory name.
+/// A project folder. The id is the directory name.
 #[derive(Debug)]
 pub(crate) struct DiscoveredProject {
     pub(crate) id: String,
     dir: PathBuf,
+    /// The shortcode of the folder's `SHORTCODE` file; `None` for a folder
+    /// [`discover_sql_folders`] found.
+    pub(crate) shortcode: Option<String>,
+    /// Why the folder, a project, is not loaded: another folder declares its
+    /// shortcode.
+    pub(crate) refusal: Option<String>,
+}
+
+/// A folder [`discover_for_activation`] does not take as a project.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Skipped {
+    pub(crate) folder: String,
+    pub(crate) reason: SkipReason,
+}
+
+/// Why a folder is not a project to activate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum SkipReason {
+    /// The folder holds nothing named `SHORTCODE`.
+    NoShortcode,
+    /// `SHORTCODE` is a symbolic link, a directory or another file that is not
+    /// regular.
+    ShortcodeNotARegularFile,
+    /// `SHORTCODE` cannot be read, or is not UTF-8.
+    UnreadableShortcode,
+    /// `SHORTCODE`, trimmed, fails `cpe_ports::is_shortcode`.
+    MalformedShortcode(String),
+    /// The folder's name fails the project id rule.
+    NotAProjectId,
+}
+
+/// The projects [`discover_for_activation`] found, sorted by id, and the
+/// folders it passed over, sorted by name.
+#[derive(Debug)]
+pub(crate) struct Discovery {
+    pub(crate) projects: Vec<DiscoveredProject>,
+    pub(crate) skipped: Vec<Skipped>,
 }
 
 /// What can go wrong reading the files of a discovered project.
@@ -180,20 +223,96 @@ impl DiscoveredProject {
     }
 }
 
-/// The projects under `root`, sorted by id. A missing or unreadable `root`
-/// holds none.
-pub(crate) fn discover(root: &Path) -> Vec<DiscoveredProject> {
+/// The real directories directly under `root`, as `(name, path)`. A missing
+/// or unreadable `root` holds none, and a name that is not UTF-8 is left out.
+fn folders(root: &Path) -> Vec<(String, PathBuf)> {
     let Ok(entries) = fs::read_dir(root) else {
         return Vec::new();
     };
-    let mut projects: Vec<DiscoveredProject> = entries
+    entries
         .filter_map(Result::ok)
         // `DirEntry::file_type` does not follow a symbolic link, so a link to
         // a folder is not a project.
         .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
-        .filter_map(|entry| {
-            let id = entry.file_name().into_string().ok()?;
-            let dir = entry.path();
+        .filter_map(|entry| Some((entry.file_name().into_string().ok()?, entry.path())))
+        .collect()
+}
+
+/// The shortcode `SHORTCODE` in `dir` declares, trimmed of the white space
+/// around it.
+fn read_shortcode(dir: &Path) -> Result<String, SkipReason> {
+    let path = dir.join("SHORTCODE");
+    match fs::symlink_metadata(&path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Err(SkipReason::NoShortcode),
+        Err(_) => return Err(SkipReason::UnreadableShortcode),
+        Ok(meta) if !meta.is_file() => return Err(SkipReason::ShortcodeNotARegularFile),
+        Ok(_) => {}
+    }
+    let text = fs::read(&path)
+        .ok()
+        .and_then(|bytes| String::from_utf8(bytes).ok())
+        .ok_or(SkipReason::UnreadableShortcode)?;
+    let shortcode = text.trim();
+    if cpe_ports::is_shortcode(shortcode) {
+        Ok(shortcode.to_owned())
+    } else {
+        Err(SkipReason::MalformedShortcode(shortcode.to_owned()))
+    }
+}
+
+/// The projects under `root` that `Cpe::activate` loads: every folder with a
+/// regular `SHORTCODE` file that holds a shortcode, and whose name is a project
+/// id. Every other folder is skipped, with the reason.
+///
+/// Folders that declare one shortcode are each a project, refused with the
+/// names of the others: "not ready" is not "not there", so their prefixes
+/// answer 503 and not 404.
+pub(crate) fn discover_for_activation(root: &Path) -> Discovery {
+    let mut projects = Vec::new();
+    let mut skipped = Vec::new();
+    for (folder, dir) in folders(root) {
+        let reason = match read_shortcode(&dir) {
+            Ok(_) if !cpe_core::validate::is_valid_project_id(&folder) => SkipReason::NotAProjectId,
+            Ok(shortcode) => {
+                projects.push(DiscoveredProject { id: folder, dir, shortcode: Some(shortcode), refusal: None });
+                continue;
+            }
+            Err(reason) => reason,
+        };
+        skipped.push(Skipped { folder, reason });
+    }
+    projects.sort_by(|a, b| a.id.cmp(&b.id));
+    skipped.sort_by(|a, b| a.folder.cmp(&b.folder));
+
+    let mut folders_of: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for project in &projects {
+        let shortcode = project.shortcode.clone().unwrap_or_default();
+        folders_of.entry(shortcode).or_default().push(project.id.clone());
+    }
+    for project in &mut projects {
+        let shortcode = project.shortcode.as_deref().unwrap_or_default();
+        let others: Vec<&str> = folders_of[shortcode]
+            .iter()
+            .map(String::as_str)
+            .filter(|id| *id != project.id)
+            .collect();
+        if !others.is_empty() {
+            project.refusal = Some(format!(
+                "its SHORTCODE {shortcode} is also that of the folder(s) {}; no project is served under a shared \
+                 shortcode",
+                others.join(", ")
+            ));
+        }
+    }
+    Discovery { projects, skipped }
+}
+
+/// The projects under `root` that `Cpe::from_sql_folders` loads: every folder
+/// with a regular `config.kdl` whose name is a project id, sorted by id.
+pub(crate) fn discover_sql_folders(root: &Path) -> Vec<DiscoveredProject> {
+    let mut projects: Vec<DiscoveredProject> = folders(root)
+        .into_iter()
+        .filter_map(|(id, dir)| {
             if !is_regular_file(&dir.join("config.kdl")) {
                 return None;
             }
@@ -205,7 +324,7 @@ pub(crate) fn discover(root: &Path) -> Vec<DiscoveredProject> {
                 );
                 return None;
             }
-            Some(DiscoveredProject { id, dir })
+            Some(DiscoveredProject { id, dir, shortcode: None, refusal: None })
         })
         .collect();
     projects.sort_by(|a, b| a.id.cmp(&b.id));
@@ -225,7 +344,7 @@ mod tests {
     }
 
     fn project(id: &str) -> DiscoveredProject {
-        discover(&fixture())
+        discover_sql_folders(&fixture())
             .into_iter()
             .find(|p| p.id == id)
             .unwrap_or_else(|| panic!("the {id} fixture should be discovered"))
@@ -241,7 +360,7 @@ mod tests {
 
     #[test]
     fn discovers_dirs_with_config() {
-        let projects = discover(&fixture());
+        let projects = discover_sql_folders(&fixture());
         let found = ids(&projects);
         assert!(found.contains(&"alpha"));
         assert!(found.contains(&"gamma"));
@@ -249,13 +368,13 @@ mod tests {
 
     #[test]
     fn skips_dirs_without_config() {
-        let projects = discover(&fixture());
+        let projects = discover_sql_folders(&fixture());
         assert!(!ids(&projects).contains(&"beta"), "beta has no config.kdl");
     }
 
     #[test]
     fn result_is_sorted_by_id() {
-        let projects = discover(&fixture());
+        let projects = discover_sql_folders(&fixture());
         let found = ids(&projects);
         let mut sorted = found.clone();
         sorted.sort();
@@ -265,7 +384,7 @@ mod tests {
 
     #[test]
     fn a_missing_root_holds_no_project() {
-        assert!(discover(&fixture().join("no-such-folder")).is_empty());
+        assert!(discover_sql_folders(&fixture().join("no-such-folder")).is_empty());
     }
 
     #[test]
@@ -275,7 +394,7 @@ mod tests {
         for name in ["_static", "Upper", ".hidden", "with space", "-leading"] {
             make_project(root.path(), name);
         }
-        assert_eq!(ids(&discover(root.path())), vec!["good-one"]);
+        assert_eq!(ids(&discover_sql_folders(root.path())), vec!["good-one"]);
     }
 
     #[cfg(unix)]
@@ -286,7 +405,7 @@ mod tests {
         let target = make_project(outside.path(), "elsewhere");
         make_project(root.path(), "real");
         std::os::unix::fs::symlink(&target, root.path().join("linked")).expect("the link is created");
-        assert_eq!(ids(&discover(root.path())), vec!["real"]);
+        assert_eq!(ids(&discover_sql_folders(root.path())), vec!["real"]);
     }
 
     #[cfg(unix)]
@@ -297,7 +416,7 @@ mod tests {
         let hollow = root.path().join("hollow");
         fs::create_dir(&hollow).expect("the folder is created");
         std::os::unix::fs::symlink(real.join("config.kdl"), hollow.join("config.kdl")).expect("the link is created");
-        assert_eq!(ids(&discover(root.path())), vec!["real"]);
+        assert_eq!(ids(&discover_sql_folders(root.path())), vec!["real"]);
     }
 
     #[cfg(unix)]
@@ -314,7 +433,7 @@ mod tests {
         }
         std::os::unix::fs::symlink(root.path(), dir.join("assets").join("up")).expect("the folder link is created");
 
-        let found = discover(root.path());
+        let found = discover_sql_folders(root.path());
         let real = &found[0];
         assert_eq!(real.asset_files(), vec!["assets/kept.md".to_owned()]);
         assert_eq!(real.narrative_files(), vec!["kept.md".to_owned()]);
@@ -347,7 +466,9 @@ mod tests {
         let root = tempfile::tempdir().expect("a temporary directory");
         let dir = make_project(root.path(), "broken");
         fs::write(dir.join("config.kdl"), [0xff, 0xfe]).expect("config.kdl is overwritten");
-        let error = discover(root.path())[0].config_source().expect_err("invalid UTF-8 is an error");
+        let error = discover_sql_folders(root.path())[0]
+            .config_source()
+            .expect_err("invalid UTF-8 is an error");
         assert_eq!(error.to_string(), "project 'broken': config.kdl is not valid UTF-8");
     }
 
@@ -410,7 +531,113 @@ mod tests {
         fs::create_dir(dir.join("narrative/nested")).expect("a nested folder is created");
         fs::write(dir.join("narrative/nested/deep.md"), "deep").expect("the nested file is written");
 
-        let contents = discover(root.path())[0].narrative_contents().expect("the narrative is UTF-8");
+        let contents = discover_sql_folders(root.path())[0]
+            .narrative_contents()
+            .expect("the narrative is UTF-8");
         assert_eq!(contents, vec![("home.md".to_owned(), "# Home\n".to_owned())]);
+    }
+
+    /// A folder whose `SHORTCODE` holds `shortcode`.
+    fn shortcode_folder(root: &Path, name: &str, shortcode: &str) -> PathBuf {
+        let dir = root.join(name);
+        fs::create_dir_all(&dir).expect("the temporary project folder is created");
+        fs::write(dir.join("SHORTCODE"), shortcode).expect("SHORTCODE is written");
+        dir
+    }
+
+    fn skipped(folder: &str, reason: SkipReason) -> Skipped {
+        Skipped { folder: folder.to_owned(), reason }
+    }
+
+    #[test]
+    fn discovery_for_activation_finds_a_folder_with_a_shortcode_and_carries_it() {
+        let root = tempfile::tempdir().expect("a temporary directory");
+        shortcode_folder(root.path(), "things", " 0803\n");
+        make_project(root.path(), "legacy");
+
+        let found = discover_for_activation(root.path());
+        let projects: Vec<_> = found
+            .projects
+            .iter()
+            .map(|project| (project.id.as_str(), project.shortcode.as_deref(), project.refusal.as_deref()))
+            .collect();
+        assert_eq!(projects, [("things", Some("0803"), None)]);
+        assert_eq!(found.skipped, [skipped("legacy", SkipReason::NoShortcode)]);
+        assert_eq!(
+            ids(&discover_sql_folders(root.path())),
+            ["legacy"],
+            "the legacy path reads config.kdl"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn discovery_for_activation_skips_a_folder_without_a_shortcode_and_says_why() {
+        let root = tempfile::tempdir().expect("a temporary directory");
+        let real = shortcode_folder(root.path(), "real", "0001");
+        fs::create_dir(root.path().join("none")).expect("the folder is created");
+        let linked = root.path().join("linked");
+        fs::create_dir(&linked).expect("the folder is created");
+        std::os::unix::fs::symlink(real.join("SHORTCODE"), linked.join("SHORTCODE")).expect("the link is created");
+        shortcode_folder(root.path(), "short", "803");
+        shortcode_folder(root.path(), "lower", "0ab1");
+        fs::create_dir_all(root.path().join("folder/SHORTCODE")).expect("a folder named SHORTCODE is created");
+        fs::create_dir(root.path().join("bytes")).expect("the folder is created");
+        fs::write(root.path().join("bytes/SHORTCODE"), [0xff, 0xfe]).expect("SHORTCODE is written");
+        shortcode_folder(root.path(), "Upper", "0002");
+
+        let found = discover_for_activation(root.path());
+        assert_eq!(ids(&found.projects), ["real"]);
+        assert_eq!(
+            found.skipped,
+            [
+                skipped("Upper", SkipReason::NotAProjectId),
+                skipped("bytes", SkipReason::UnreadableShortcode),
+                skipped("folder", SkipReason::ShortcodeNotARegularFile),
+                skipped("linked", SkipReason::ShortcodeNotARegularFile),
+                skipped("lower", SkipReason::MalformedShortcode("0ab1".to_owned())),
+                skipped("none", SkipReason::NoShortcode),
+                skipped("short", SkipReason::MalformedShortcode("803".to_owned())),
+            ]
+        );
+    }
+
+    #[test]
+    fn folders_that_share_a_shortcode_are_each_refused_naming_the_others() {
+        let root = tempfile::tempdir().expect("a temporary directory");
+        for (name, shortcode) in [
+            ("first", "0803"),
+            ("second", "0803\n"),
+            ("third", "0803"),
+            ("other", "0001"),
+        ] {
+            shortcode_folder(root.path(), name, shortcode);
+        }
+
+        let found = discover_for_activation(root.path());
+        let refusal = |id: &str| {
+            let project = found
+                .projects
+                .iter()
+                .find(|project| project.id == id)
+                .expect("the folder is a project");
+            project.refusal.clone()
+        };
+        assert_eq!(refusal("other"), None);
+        for (id, others) in [
+            ("first", ["second", "third"]),
+            ("second", ["first", "third"]),
+            ("third", ["first", "second"]),
+        ] {
+            let refusal = refusal(id).unwrap_or_else(|| panic!("{id} is refused"));
+            assert!(refusal.contains("0803"), "{refusal}");
+            for other in others {
+                assert!(refusal.contains(other), "{id}'s refusal names {other}: {refusal}");
+            }
+            assert!(
+                !refusal.contains(&format!(" {id}")),
+                "{id}'s refusal names the others: {refusal}"
+            );
+        }
     }
 }

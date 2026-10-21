@@ -9,13 +9,14 @@ on:
     paths:
       # Any DPE crate (server/core/api-oai/web), styles, assets, or the e2e suite —
       # a server-side render change must trigger the a11y job too. `shared/**`
-      # covers the shared crates DPE renders through. CPE and `sync` are built
-      # into the same binary, so a change there must not break the server the
-      # suite starts; the suite tests DPE's pages only.
+      # covers the shared crates DPE renders through. CPE, `sync` and `media` are
+      # built into the same binary, so a change there must not break the server
+      # the suite starts; the suite tests DPE's pages only.
       - "areas/access/dpe/**"
       - "areas/access/server/**"
       - "areas/access/cpe/**"
       - "areas/access/sync/**"
+      - "areas/access/media/**"
       - "shared/**"
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - "areas/access/server/**"
       - "areas/access/cpe/**"
       - "areas/access/sync/**"
+      - "areas/access/media/**"
       - "shared/**"
 
 concurrency:

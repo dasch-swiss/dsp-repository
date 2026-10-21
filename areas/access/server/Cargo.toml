@@ -17,6 +17,7 @@ dev = ["dpe-server/dev"]
 cpe-ports = { path = "../cpe/ports" }
 cpe-server = { path = "../cpe/server" }
 dpe-server = { path = "../dpe/server" }
+media-store = { path = "../media/store" }
 sync-store = { path = "../sync/store" }
 shared-telemetry = { path = "../../../shared/telemetry" }
 

@@ -1,13 +1,14 @@
-//! Builds a project's CPE store from the `cpe-ports` snapshot of the project and from the
-//! project's mapping, the `remodel` block of its config.
+//! Builds a project's CPE store from the `cpe-ports` snapshot of the project, from its curated
+//! values and from the project's mapping, the `remodel` block of its config.
 //!
 //! [`build`] is the one entry. What a project's mapping says is done by `mapping` and
 //! `generic`, which name no project. What it cannot say is the project's hook, a module under
 //! `projects` with a row in [`hooks::HOOKS`]; a hook reaches the build only through the seam
 //! of [`hook`].
 //!
-//! The library is pure: it reads nothing but what it is given. Reading a config, getting the
-//! snapshot from an adapter and writing a file are its caller's.
+//! The library is pure: it reads nothing but what it is given. Reading a config or a curation
+//! file, getting the snapshot from an adapter and writing a file are its caller's; the curation
+//! file's bytes become curated values through [`CuratedValues::parse`].
 
 use cpe_core::remodel::Remodel;
 use cpe_ports::contract::{self, Violation};
@@ -18,6 +19,7 @@ use crate::generic::curation::{self, Curation};
 use crate::hook::Hook;
 use crate::store::Store;
 
+pub(crate) mod curation_file;
 pub(crate) mod draft;
 pub mod error;
 pub(crate) mod finalise;
@@ -29,13 +31,15 @@ pub(crate) mod projects;
 pub mod sql;
 pub mod store;
 
+pub use crate::curation_file::{CuratedValue, CuratedValues, CurationFault, InvalidCuration};
 pub use crate::generic::slug::is_url_safe;
 
 /// `cpe-store`'s schema (`store/schema.sql`), which every built store must load under.
 pub const SCHEMA_SQL: &str = include_str!("../../store/schema.sql");
 
-/// The store of the project `mapping` describes, built from `snapshot`, from `mapping` and from
-/// nothing else. It checks a resource's class, the keys of the curated values and a member's
+/// The store of the project `mapping` describes, built from `snapshot`, from `curated`, the
+/// project's curated values read against that snapshot, from `mapping` and from nothing else.
+/// It checks a resource's class, the keys of the curated values and a member's
 /// parent, position and file, gives every resource of a declared class its id, the values of its
 /// `property` and `curated` nodes, its image and its counts, checks every annotation, and
 /// builds every table of the store. A table whose block the mapping does not have stays empty.
@@ -51,14 +55,19 @@ pub const SCHEMA_SQL: &str = include_str!("../../store/schema.sql");
 /// it. Every other refusal is collected. A resource that is refused takes no part in the rules
 /// after its own, so a refusal that needs two resources may show only once the first is
 /// mended.
-pub fn build(snapshot: &ProjectSnapshot, mapping: &Remodel, hook: Option<&Hook>) -> Result<Store, BuildErrors> {
+pub fn build(
+    snapshot: &ProjectSnapshot,
+    curated: &CuratedValues,
+    mapping: &Remodel,
+    hook: Option<&Hook>,
+) -> Result<Store, BuildErrors> {
     let violations = contract::violations(mapping.shortcode.as_str(), snapshot);
     if let Some(errors) = BuildErrors::new(violations.iter().map(contract_error).collect()) {
         return Err(errors);
     }
 
     let mut errors = Vec::new();
-    refuse_interior_nuls(snapshot, &mut errors);
+    refuse_interior_nuls(snapshot, curated, &mut errors);
     refuse_mapping_nuls(mapping, &mut errors);
     // A hook is called only when it is given and declared; either without the other is refused.
     let declared_hook = match (hook, &mapping.hook) {
@@ -86,7 +95,7 @@ pub fn build(snapshot: &ProjectSnapshot, mapping: &Remodel, hook: Option<&Hook>)
     let mut store = Store::default();
     generic::lists::fill(&mapping.lists, &mut store);
     let mut draft = generic::classes::classify(snapshot, mapping, &mut errors);
-    let curation = Curation::read(snapshot, mapping.sentinel.as_deref());
+    let curation = Curation::read(curated, mapping.sentinel.as_deref());
     curation::refuse_misplaced_keys(&curation, &draft, mapping, &mut errors);
     generic::membership::read(&mut draft, &mut errors);
     generic::images::read(&mut draft, &mut errors);
@@ -126,10 +135,7 @@ fn contract_error(violation: &Violation) -> BuildError {
         | Violation::InvertedDate { resource, .. }
         | Violation::MissingValueUuid { resource, .. }
         | Violation::DuplicateValueUuid { resource, .. }
-        | Violation::LinkWithValueUuid { resource, .. }
-        | Violation::DanglingCuration { resource }
-        | Violation::DuplicateCuration { resource, .. }
-        | Violation::MalformedCuration { resource, .. } => resource.as_str(),
+        | Violation::LinkWithValueUuid { resource, .. } => resource.as_str(),
         Violation::DanglingListNode { missing, .. } => missing.as_str(),
         Violation::DuplicateListNode { node } | Violation::ListNodeCycle { node } => node.as_str(),
         Violation::DuplicateSiblingPosition { parent, .. } => parent.as_str(),
@@ -193,9 +199,10 @@ fn refuse_mapping_nuls(mapping: &Remodel, errors: &mut Vec<BuildError>) {
     }
 }
 
-/// Refuses U+0000 in every string of the snapshot that can reach the store. The contract already
-/// restricts an ARK and a curated value's key and language to characters that exclude it.
-fn refuse_interior_nuls(snapshot: &ProjectSnapshot, errors: &mut Vec<BuildError>) {
+/// Refuses U+0000 in every string of the snapshot and of `curated` that can reach the store. The
+/// contract already restricts an ARK, and the curation file's reader a curated value's key and
+/// language, to characters that exclude it.
+fn refuse_interior_nuls(snapshot: &ProjectSnapshot, curated: &CuratedValues, errors: &mut Vec<BuildError>) {
     let mut check = |resource: &ResourceIri, text: &str, place: &str| {
         if text.contains('\0') {
             let subject = resource.as_str();
@@ -233,7 +240,10 @@ fn refuse_interior_nuls(snapshot: &ProjectSnapshot, errors: &mut Vec<BuildError>
             }
         }
     }
-    for curated in &snapshot.curation {
-        check(&curated.resource, &curated.text, &curated.key);
+    for value in curated.as_slice() {
+        check(&value.resource, &value.text, &value.key);
     }
 }
+
+#[cfg(test)]
+mod curation_file_tests;

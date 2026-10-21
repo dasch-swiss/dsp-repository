@@ -9,14 +9,30 @@ use cpe_core::remodel::Remodel;
 use cpe_core::validate::load_remodel;
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, Calendar, ClassIri, CuratedValue, DataArk, DateBound, DatePrecision, DateValue, File, ListNode,
-    ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
+    Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, ListNode, ListNodeIri,
+    Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
 };
+use cpe_store_build::error::BuildErrors;
+use cpe_store_build::hook::Hook;
 use cpe_store_build::store::{PropertyRow, Store, Table};
-use cpe_store_build::{sql, SCHEMA_SQL};
+use cpe_store_build::{sql, CuratedValue, CuratedValues, SCHEMA_SQL};
 use rusqlite::Connection;
 
 use crate::{build, shortcode, HEADER, MAPPING};
+
+/// What a test builds: a snapshot's facts and the curated values that go beside them.
+#[derive(Debug, Clone)]
+pub struct Fixture {
+    pub facts: ProjectSnapshot,
+    pub curation: Vec<CuratedValue>,
+}
+
+/// The store of `snapshot` under `mapping` and `hook`, with its curated values as they are, so a
+/// case can hold values the curation file's reader refuses.
+pub fn build_with(snapshot: &Fixture, mapping: &Remodel, hook: Option<&Hook>) -> Result<Store, BuildErrors> {
+    let curated = CuratedValues::from_unchecked(snapshot.curation.clone());
+    cpe_store_build::build(&snapshot.facts, &curated, mapping, hook)
+}
 
 /// The snapshot's one Book.
 pub const BOOK: &str = "http://rdfh.ch/0803/CDYZPN5zVVKbIcjA1DZxKQ";
@@ -68,33 +84,35 @@ pub const RECTANGLE: &str = r#"{"type":"rectangle","points":[{"x":0.25,"y":0.25}
 /// The smallest snapshot `build` accepts: a Book with what every Book needs, and its one Page,
 /// which is its cover. It satisfies the port's contract, so a test's snapshot is wrong only
 /// where the test changed it.
-pub fn minimal() -> ProjectSnapshot {
-    let empty = ProjectSnapshot {
-        shortcode: shortcode().to_string(),
-        resources: Vec::new(),
-        list_nodes: Vec::new(),
+pub fn minimal() -> Fixture {
+    let empty = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: shortcode().to_string(),
+            resources: Vec::new(),
+            list_nodes: Vec::new(),
+        },
         curation: Vec::new(),
     };
     let snapshot = with_book(empty, BOOK, "bereitung", BOOK_TITLE);
     let snapshot = with_resource(snapshot, page(PAGE, BOOK, 1, "a1r", PAGE_ASSET));
     let snapshot = with_curation(snapshot, BOOK, "cover_page", PAGE);
-    assert_eq!(violations(shortcode(), &snapshot), []);
+    assert_eq!(violations(shortcode(), &snapshot.facts), []);
     snapshot
 }
 
 /// The minimal snapshot with a second Page of its Book, [`ADDED`], after the first.
-pub fn with_page(pagenum: &str) -> ProjectSnapshot {
+pub fn with_page(pagenum: &str) -> Fixture {
     let second = page(ADDED, BOOK, 2, pagenum, "ScanOfTheSecondPage.jp2");
     with_resource(minimal(), second)
 }
 
 /// The minimal snapshot with a Band labelled `label`, [`ADDED`], whose one title is its label.
-pub fn with_band(label: &str) -> ProjectSnapshot {
+pub fn with_band(label: &str) -> Fixture {
     with_resource(minimal(), band(ADDED, label, STRIP_ASSET))
 }
 
 /// [`with_page`] with a Band labelled `label`, [`OTHER`], that the Page links to under `property`.
-pub fn with_strip(label: &str, property: &str) -> ProjectSnapshot {
+pub fn with_strip(label: &str, property: &str) -> Fixture {
     let snapshot = with_resource(with_page("a1v"), band(OTHER, label, STRIP_ASSET));
     with_link(snapshot, ADDED, property, OTHER)
 }
@@ -102,7 +120,7 @@ pub fn with_strip(label: &str, property: &str) -> ProjectSnapshot {
 /// `snapshot` with one more Book that has what every Book needs except a cover: a label that
 /// is its one title, a publication date ([`year_1489`]), and the curated slug, office and date
 /// display.
-pub fn with_book(snapshot: ProjectSnapshot, iri: &str, slug: &str, title: &str) -> ProjectSnapshot {
+pub fn with_book(snapshot: Fixture, iri: &str, slug: &str, title: &str) -> Fixture {
     let mut book = resource(iri, BOOK_CLASS);
     book.label = title.to_string();
     let snapshot = with_resource(snapshot, book);
@@ -127,7 +145,7 @@ pub fn year_1489() -> DateValue {
 /// A test that reads rows takes its store from here: the schema checks the words of a date row
 /// and the key of every row, and the tests over the committed 0803 data reach only the values
 /// that data has.
-pub fn built(snapshot: &ProjectSnapshot) -> Store {
+pub fn built(snapshot: &Fixture) -> Store {
     let store = build(snapshot).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
     let filled: Vec<Table> = Table::ALL.into_iter().filter(|&table| store.row_count(table) > 0).collect();
     let sql = sql::to_sql_tables(&store, &MAPPING, &HEADER, &filled).expect("every table written has a row");
@@ -237,20 +255,21 @@ pub fn link_obj(iri: &str, targets: &[&str]) -> Resource {
 }
 
 /// `snapshot` with `annotation`, a Region or a LinkObj, and the editors' `keep` for it.
-pub fn with_annotation(snapshot: ProjectSnapshot, annotation: Resource, keep: &str) -> ProjectSnapshot {
+pub fn with_annotation(snapshot: Fixture, annotation: Resource, keep: &str) -> Fixture {
     let iri = annotation.iri.as_str().to_string();
     with_curation(with_resource(snapshot, annotation), &iri, "keep", keep)
 }
 
 /// `snapshot` with one more resource.
-pub fn with_resource(mut snapshot: ProjectSnapshot, resource: Resource) -> ProjectSnapshot {
-    snapshot.resources.push(resource);
+pub fn with_resource(mut snapshot: Fixture, resource: Resource) -> Fixture {
+    snapshot.facts.resources.push(resource);
     snapshot
 }
 
 /// `snapshot` with `resource`, which must be in it, changed by `change`.
-pub fn changed(mut snapshot: ProjectSnapshot, resource: &str, change: impl FnOnce(&mut Resource)) -> ProjectSnapshot {
+pub fn changed(mut snapshot: Fixture, resource: &str, change: impl FnOnce(&mut Resource)) -> Fixture {
     let found = snapshot
+        .facts
         .resources
         .iter_mut()
         .find(|candidate| candidate.iri.as_str() == resource)
@@ -260,12 +279,12 @@ pub fn changed(mut snapshot: ProjectSnapshot, resource: &str, change: impl FnOnc
 }
 
 /// `snapshot` with another label on `resource`.
-pub fn with_label(snapshot: ProjectSnapshot, resource: &str, label: &str) -> ProjectSnapshot {
+pub fn with_label(snapshot: Fixture, resource: &str, label: &str) -> Fixture {
     changed(snapshot, resource, |found| found.label = label.to_string())
 }
 
 /// `snapshot` with one more text on `resource`, after the values it has.
-pub fn with_text(snapshot: ProjectSnapshot, resource: &str, property: &str, text: &str) -> ProjectSnapshot {
+pub fn with_text(snapshot: Fixture, resource: &str, property: &str, text: &str) -> Fixture {
     changed(snapshot, resource, |found| {
         let value = text_value(found.values.len(), property, text);
         found.values.push(value);
@@ -274,7 +293,7 @@ pub fn with_text(snapshot: ProjectSnapshot, resource: &str, property: &str, text
 
 /// `snapshot` with one more value of `kind` on `resource`, after the values it has. Not for a
 /// link, which has no UUID: [`with_link`] adds one.
-pub fn with_value(snapshot: ProjectSnapshot, resource: &str, property: &str, kind: ValueKind) -> ProjectSnapshot {
+pub fn with_value(snapshot: Fixture, resource: &str, property: &str, kind: ValueKind) -> Fixture {
     changed(snapshot, resource, |found| {
         let value = value(found.values.len(), property, kind);
         found.values.push(value);
@@ -282,16 +301,16 @@ pub fn with_value(snapshot: ProjectSnapshot, resource: &str, property: &str, kin
 }
 
 /// `snapshot` with one more link from `resource` to `target`, which must be in it.
-pub fn with_link(snapshot: ProjectSnapshot, resource: &str, property: &str, target: &str) -> ProjectSnapshot {
+pub fn with_link(snapshot: Fixture, resource: &str, property: &str, target: &str) -> Fixture {
     changed(snapshot, resource, |found| {
         found.values.push(link_value(property, target));
     })
 }
 
 /// `snapshot` with a list node, and a value of that node on `resource`.
-pub fn with_list_node(mut snapshot: ProjectSnapshot, resource: &str, property: &str) -> ProjectSnapshot {
+pub fn with_list_node(mut snapshot: Fixture, resource: &str, property: &str) -> Fixture {
     let node = ListNodeIri("http://rdfh.ch/lists/0803/node".to_string());
-    snapshot.list_nodes.push(ListNode {
+    snapshot.facts.list_nodes.push(ListNode {
         iri: node.clone(),
         parent: None,
         position: None,
@@ -307,25 +326,19 @@ pub fn with_list_node(mut snapshot: ProjectSnapshot, resource: &str, property: &
 }
 
 /// `snapshot` with one more curated value, on any IRI.
-pub fn with_curation(mut snapshot: ProjectSnapshot, resource: &str, key: &str, text: &str) -> ProjectSnapshot {
+pub fn with_curation(mut snapshot: Fixture, resource: &str, key: &str, text: &str) -> Fixture {
     snapshot.curation.push(curated(resource, key, None, text));
     snapshot
 }
 
 /// `snapshot` with one more curated value that has a language.
-pub fn with_curation_in(
-    mut snapshot: ProjectSnapshot,
-    resource: &str,
-    key: &str,
-    lang: &str,
-    text: &str,
-) -> ProjectSnapshot {
+pub fn with_curation_in(mut snapshot: Fixture, resource: &str, key: &str, lang: &str, text: &str) -> Fixture {
     snapshot.curation.push(curated(resource, key, Some(lang), text));
     snapshot
 }
 
 /// `snapshot` with the curated values of `resource` under `key` replaced by `text`, or removed.
-pub fn recurated(mut snapshot: ProjectSnapshot, resource: &str, key: &str, text: Option<&str>) -> ProjectSnapshot {
+pub fn recurated(mut snapshot: Fixture, resource: &str, key: &str, text: Option<&str>) -> Fixture {
     snapshot
         .curation
         .retain(|value| value.resource.as_str() != resource || value.key != key);
@@ -451,14 +464,16 @@ pub fn link(target: &str) -> ValueKind {
 pub const THING: &str = "http://rdfh.ch/0001/thing";
 
 /// A snapshot of `minimal`: one Thing, then `more` resources, and `curation`.
-pub fn minimal_snapshot(more: Vec<Resource>, curation: Vec<CuratedValue>) -> ProjectSnapshot {
+pub fn minimal_snapshot(more: Vec<Resource>, curation: Vec<CuratedValue>) -> Fixture {
     let thing = fixture_resource(THING, "http://www.knora.org/ontology/0001/minimal#Thing", "A thing");
     let mut resources = vec![thing];
     resources.extend(more);
-    ProjectSnapshot {
-        shortcode: MINIMAL.shortcode.as_str().to_string(),
-        resources,
-        list_nodes: Vec::new(),
+    Fixture {
+        facts: ProjectSnapshot {
+            shortcode: MINIMAL.shortcode.as_str().to_string(),
+            resources,
+            list_nodes: Vec::new(),
+        },
         curation,
     }
 }

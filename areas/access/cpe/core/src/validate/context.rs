@@ -13,10 +13,15 @@ pub struct ValidationContext<'a> {
     /// Engine-reserved ids the host must not use as project ids. The host
     /// passes `&["_static"]`; this crate owns the check.
     pub reserved_ids: &'a [&'static str],
-    /// Bare relative names from the project's `narrative/` directory,
+    /// The bare names of the project's narrative files (e.g. `home.de.md`),
     /// enumerated by the host before calling `validate`. Used by the narrative
     /// checks.
     pub narrative_files: &'a [String],
+    /// Whether `narrative_files` is the project's whole narrative inventory.
+    /// When it is, an empty list asserts "this project has no narrative
+    /// files" and every named narrative is checked against it; when it is not,
+    /// an empty list means "unknown" and existence is not checked.
+    pub narrative_files_complete: bool,
     /// Relative names from the project's `assets/` directory, enumerated by
     /// the host before calling `validate`. Unlike `narrative_files` (which
     /// genuinely is bare), each entry carries the `assets/` segment as its
@@ -33,8 +38,8 @@ pub struct ValidationContext<'a> {
 }
 
 impl<'a> ValidationContext<'a> {
-    /// Convenience constructor for tests: empty `reserved_ids` + empty
-    /// `narrative_files` + empty `asset_files`.
+    /// Convenience constructor for tests: empty `reserved_ids` + empty,
+    /// incomplete `narrative_files` + empty `asset_files`.
     ///
     /// The empty `asset_files` means "this project has no asset files"
     /// (see the field doc) — fine for the configs that use this
@@ -45,6 +50,7 @@ impl<'a> ValidationContext<'a> {
             project_id,
             reserved_ids: &[],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         }
     }

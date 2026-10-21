@@ -32,14 +32,13 @@ fn invalid(subject: &str, reason: InvalidFact) -> Invalid {
     Invalid { subject: subject.to_string(), reason }
 }
 
-/// The quads hold no curation, so `curation` is empty here.
+/// The snapshot of the project's quads, or the first fact that breaks a rule the mapping holds.
 pub(crate) fn map(shortcode: &str, quads: &[Quad]) -> Result<ProjectSnapshot, Invalid> {
     let index = Index::build(shortcode, quads)?;
     Ok(ProjectSnapshot {
         shortcode: shortcode.to_string(),
         list_nodes: list_nodes::map(&index)?,
         resources: resources::map(&index)?,
-        curation: Vec::new(),
     })
 }
 

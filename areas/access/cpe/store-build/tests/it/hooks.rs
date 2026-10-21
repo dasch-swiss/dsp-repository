@@ -12,17 +12,17 @@ use cpe_core::diagnostic::{DiagnosticKind, ValidationReport};
 use cpe_core::remodel::Remodel;
 use cpe_core::validate::{load_remodel, ConfigLoadError};
 use cpe_ports::contract::violations;
-use cpe_ports::{CuratedValue, ProjectSnapshot, Resource, ValueKind};
-use cpe_store_build::build;
+use cpe_ports::{ProjectSnapshot, Resource, ValueKind};
 use cpe_store_build::error::Rule;
 use cpe_store_build::hook::{Draft, Hook, HookFn, Mapped, Refusals, Value};
 use cpe_store_build::hooks::{resolve, HOOKS};
 use cpe_store_build::store::Store;
+use cpe_store_build::CuratedValue;
 
 use crate::support::{
-    changed, curated, fixture_member, fixture_resource, link, link_to, lowered, minimal_snapshot, properties,
-    recurated, region_on, resources, still_image, text, values, with_annotation, with_link, with_resource, with_text,
-    with_value, MINIMAL,
+    build_with, changed, curated, fixture_member, fixture_resource, link, link_to, lowered, minimal_snapshot,
+    properties, recurated, region_on, resources, still_image, text, values, with_annotation, with_link, with_resource,
+    with_text, with_value, Fixture, MINIMAL,
 };
 use crate::{MAPPING as INCUNABULA_MAPPING, PROJECT as INCUNABULA};
 
@@ -69,22 +69,24 @@ fn sheet(iri: &str, seqnum: i64, number: &str, more: Vec<(&str, ValueKind)>) -> 
 /// The snapshot of `hooked`: a Volume with three Sheets, the second of them blank, a Region on
 /// the first Sheet and a link to the Volume and the Region. The third Sheet names the first as
 /// its next, and the Volume's cover is the first.
-fn snapshot() -> ProjectSnapshot {
+fn snapshot() -> Fixture {
     let volume = Resource {
         values: values(vec![(HAS_HOMEPAGE, ValueKind::Uri(HOMEPAGE.to_string()))]),
         ..fixture_resource(VOLUME, VOLUME_CLASS, "Chronik")
     };
-    let snapshot = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: vec![
-            sheet(SHEET_3, 3, "2r", vec![(HAS_NEXT, link(SHEET_1))]),
-            volume,
-            sheet(SHEET_BLANK, 2, "[fehlt]", Vec::new()),
-            region_on(REGION, SHEET_1),
-            sheet(SHEET_1, 1, "1r", Vec::new()),
-            link_to(LINK, &[VOLUME, REGION]),
-        ],
-        list_nodes: Vec::new(),
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                sheet(SHEET_3, 3, "2r", vec![(HAS_NEXT, link(SHEET_1))]),
+                volume,
+                sheet(SHEET_BLANK, 2, "[fehlt]", Vec::new()),
+                region_on(REGION, SHEET_1),
+                sheet(SHEET_1, 1, "1r", Vec::new()),
+                link_to(LINK, &[VOLUME, REGION]),
+            ],
+            list_nodes: Vec::new(),
+        },
         curation: vec![
             curated(VOLUME, "rank", None, "7"),
             curated(REGION, "keep", None, "yes"),
@@ -92,12 +94,12 @@ fn snapshot() -> ProjectSnapshot {
             curated(LINK, "keep", None, "yes"),
         ],
     };
-    assert_eq!(violations(SHORTCODE, &snapshot), []);
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
     snapshot
 }
 
 /// [`snapshot`] with [`DEAD_HOMEPAGE`] as the Volume's homepage.
-fn moved() -> ProjectSnapshot {
+fn moved() -> Fixture {
     changed(snapshot(), VOLUME, |volume| {
         volume.values = values(vec![(HAS_HOMEPAGE, ValueKind::Uri(DEAD_HOMEPAGE.to_string()))]);
     })
@@ -244,9 +246,9 @@ fn records(draft: &mut Draft<'_>, refusals: &mut Refusals) {
 }
 
 /// What [`records`] saw when `snapshot` was built.
-fn recorded(snapshot: &ProjectSnapshot) -> Vec<String> {
+fn recorded(snapshot: &Fixture) -> Vec<String> {
     SEEN.with(|all| all.borrow_mut().clear());
-    let _ = build(snapshot, &HOOKED, Some(&hook(records)));
+    let _ = build_with(snapshot, &HOOKED, Some(&hook(records)));
     SEEN.with(|all| all.borrow().clone())
 }
 
@@ -257,9 +259,9 @@ fn hook(remodel: HookFn) -> Hook {
 }
 
 /// (rule, subject) of every error `build` returns, in the order returned.
-fn refused_under(snapshot: &ProjectSnapshot, mapping: &Remodel, remodel: Option<HookFn>) -> Vec<(Rule, String)> {
+fn refused_under(snapshot: &Fixture, mapping: &Remodel, remodel: Option<HookFn>) -> Vec<(Rule, String)> {
     let hook = remodel.map(hook);
-    match build(snapshot, mapping, hook.as_ref()) {
+    match build_with(snapshot, mapping, hook.as_ref()) {
         Ok(_) => Vec::new(),
         Err(errors) => errors
             .as_slice()
@@ -270,13 +272,13 @@ fn refused_under(snapshot: &ProjectSnapshot, mapping: &Remodel, remodel: Option<
 }
 
 /// [`refused_under`] the mapping of `hooked` and the hook `remodel`.
-fn refused(snapshot: &ProjectSnapshot, remodel: HookFn) -> Vec<(Rule, String)> {
+fn refused(snapshot: &Fixture, remodel: HookFn) -> Vec<(Rule, String)> {
     refused_under(snapshot, &HOOKED, Some(remodel))
 }
 
 /// The store of `snapshot` under the mapping of `hooked` and the hook `remodel`.
-fn built(snapshot: &ProjectSnapshot, remodel: HookFn) -> Store {
-    build(snapshot, &HOOKED, Some(&hook(remodel))).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"))
+fn built(snapshot: &Fixture, remodel: HookFn) -> Store {
+    build_with(snapshot, &HOOKED, Some(&hook(remodel))).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"))
 }
 
 /// One refusal that needs a hook, or the lack of one: a build that is refused by `rule` alone.
@@ -286,7 +288,7 @@ struct Case {
     rule: Rule,
     mapping: fn() -> &'static Remodel,
     hook: Option<HookFn>,
-    snapshot: fn() -> ProjectSnapshot,
+    snapshot: fn() -> Fixture,
     /// What the one error names.
     subject: &'static str,
 }
@@ -586,10 +588,12 @@ fn names_twice(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 #[test]
 fn test_build_override_of_a_property_told_from_the_label_has_exactly_one_value() {
     let mapping = lowered(RENAMING);
-    let snapshot = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: vec![fixture_resource(VOLUME, VOLUME_CLASS, "Chronik")],
-        list_nodes: Vec::new(),
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![fixture_resource(VOLUME, VOLUME_CLASS, "Chronik")],
+            list_nodes: Vec::new(),
+        },
         curation: Vec::new(),
     };
     let refused = |remodel: HookFn| refused_under(&snapshot, &mapping, Some(remodel));
@@ -617,11 +621,13 @@ fn test_build_override_of_a_property_told_from_the_label_holds_no_address() {
 }
 
 /// A snapshot of `resources` and `curation` alone.
-fn of(resources: Vec<Resource>, curation: Vec<CuratedValue>) -> ProjectSnapshot {
-    ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources,
-        list_nodes: Vec::new(),
+fn of(resources: Vec<Resource>, curation: Vec<CuratedValue>) -> Fixture {
+    Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources,
+            list_nodes: Vec::new(),
+        },
         curation,
     }
 }
@@ -849,7 +855,7 @@ fn test_build_curated_stand_in_of_an_overridden_property_is_not_held_to_the_sour
         vec![curated(VOLUME, "name", None, "Annalen")],
     );
 
-    let store = build(&snapshot, &lowered(STANDING_IN), Some(&hook(quiet)))
+    let store = build_with(&snapshot, &lowered(STANDING_IN), Some(&hook(quiet)))
         .unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
 
     assert_eq!(properties(&store), [("volume-chronik", "name", 0, "Annalen@-".to_string())]);
@@ -901,10 +907,12 @@ fn test_view_says_whether_a_label_the_mapping_did_not_read_may_be_a_text() {
         ("http://rdfh.ch/0123/v4", VOLUME_CLASS, "Chronik"),
         ("http://rdfh.ch/0123/w1", SHEET_CLASS, "siehe http://a.example"),
     ];
-    let snapshot = ProjectSnapshot {
-        shortcode: SHORTCODE.to_string(),
-        resources: labelled.map(|(iri, class, label)| fixture_resource(iri, class, label)).to_vec(),
-        list_nodes: Vec::new(),
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: labelled.map(|(iri, class, label)| fixture_resource(iri, class, label)).to_vec(),
+            list_nodes: Vec::new(),
+        },
         curation: labelled.map(|(iri, _, _)| curated(iri, "title", None, "Ein Titel")).to_vec(),
     };
     SEEN.with(|all| all.borrow_mut().clear());
@@ -1066,12 +1074,28 @@ fn test_build_dropped_resource_stays_in_the_check_on_shared_files() {
 
 // ── The table and the project folders ─────────────────────────────────────────
 
+/// The config of a project folder `dir`, if it has one.
+type ConfigOf = fn(&std::path::Path) -> Option<String>;
+
+/// The config a committed project deposited: the folder's `SHORTCODE` names its directory in
+/// `media`'s committed data, which holds its `config.kdl`.
+fn deposited_config(dir: &std::path::Path) -> Option<String> {
+    let shortcode = std::fs::read_to_string(dir.join("SHORTCODE")).ok()?;
+    let media = concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/data");
+    std::fs::read_to_string(format!("{media}/{}/config.kdl", shortcode.trim())).ok()
+}
+
+/// The config of a fixture project, the `config.kdl` in its folder.
+fn folder_config(dir: &std::path::Path) -> Option<String> {
+    std::fs::read_to_string(dir.join("config.kdl")).ok()
+}
+
 /// Those of `projects` that have no folder under `root` whose `remodel` block declares a hook:
-/// no folder, no block, or a block without the node.
-fn without_a_declared_hook(root: &str, projects: &[&str]) -> Vec<String> {
+/// no folder, no config, no block, or a block without the node.
+fn without_a_declared_hook(root: &str, projects: &[&str], config_of: ConfigOf) -> Vec<String> {
     let declares = |project: &&&str| {
-        let config = std::fs::read_to_string(format!("{root}/{project}/config.kdl"));
-        let mapping = config.ok().and_then(|config| load_remodel(&config).ok());
+        let config = config_of(&std::path::Path::new(root).join(project));
+        let mapping = config.and_then(|config| load_remodel(&config).ok());
         mapping.is_some_and(|mapping| mapping.hook.is_some())
     };
     let undeclared = projects.iter().filter(|project| !declares(project));
@@ -1084,7 +1108,7 @@ fn test_every_row_of_the_hook_table_names_a_project_whose_block_declares_a_hook(
     let projects = concat!(env!("CARGO_MANIFEST_DIR"), "/../projects");
     let rows: Vec<&str> = HOOKS.iter().map(|hook| hook.project).collect();
 
-    assert_eq!(without_a_declared_hook(projects, &rows), Vec::<String>::new());
+    assert_eq!(without_a_declared_hook(projects, &rows, deposited_config), Vec::<String>::new());
     for project in rows {
         assert!(resolve(project).is_some(), "{project}");
     }
@@ -1098,7 +1122,7 @@ fn test_without_a_declared_hook_finds_a_block_without_the_node_and_a_missing_fol
     let fixtures = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
 
     assert_eq!(
-        without_a_declared_hook(fixtures, &["hooked", "plain", "nowhere"]),
+        without_a_declared_hook(fixtures, &["hooked", "plain", "nowhere"], folder_config),
         ["plain", "nowhere"]
     );
 }
@@ -1106,12 +1130,12 @@ fn test_without_a_declared_hook_finds_a_block_without_the_node_and_a_missing_fol
 /// The folders under `root` whose `remodel` block declares a hook, by name. A folder without a
 /// config declares none, and neither does a config without a block. A block that does not
 /// lower fails the test: what it declares cannot be read.
-fn declaring_a_hook(root: &str) -> Vec<String> {
+fn declaring_a_hook(root: &str, config_of: ConfigOf) -> Vec<String> {
     let folders = std::fs::read_dir(root).unwrap_or_else(|error| panic!("{root}: {error}"));
     let mut found = Vec::new();
     for folder in folders {
         let path = folder.unwrap_or_else(|error| panic!("{root}: {error}")).path();
-        let Ok(config) = std::fs::read_to_string(path.join("config.kdl")) else {
+        let Some(config) = config_of(&path) else {
             continue;
         };
         let name = path.file_name().expect("a folder has a name");
@@ -1137,7 +1161,7 @@ fn declaring_a_hook(root: &str) -> Vec<String> {
 fn test_every_project_whose_block_declares_a_hook_has_a_row_of_the_hook_table() {
     let projects = concat!(env!("CARGO_MANIFEST_DIR"), "/../projects");
 
-    let declaring = declaring_a_hook(projects);
+    let declaring = declaring_a_hook(projects, deposited_config);
 
     let without_a_row = declaring.iter().filter(|name| resolve(name).is_none());
     assert_eq!(without_a_row.collect::<Vec<_>>(), Vec::<&String>::new());
@@ -1150,7 +1174,7 @@ fn test_every_project_whose_block_declares_a_hook_has_a_row_of_the_hook_table() 
 fn test_declaring_a_hook_finds_the_one_fixture_whose_block_has_the_node() {
     let fixtures = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
 
-    assert_eq!(declaring_a_hook(fixtures), ["hooked"]);
+    assert_eq!(declaring_a_hook(fixtures, folder_config), ["hooked"]);
     assert!(resolve("hooked").is_none());
 }
 
@@ -1182,7 +1206,7 @@ fn test_view_tells_a_refused_property_from_one_without_a_value() {
     let as_text = with_text(snapshot(), VOLUME, HAS_HOMEPAGE, "keine Adresse");
     let none = changed(snapshot(), VOLUME, |volume| volume.values.clear());
 
-    let homepage = |snapshot: &ProjectSnapshot| recorded(snapshot)[1..3].to_vec();
+    let homepage = |snapshot: &Fixture| recorded(snapshot)[1..3].to_vec();
     assert_eq!(
         homepage(&two),
         [
@@ -1347,7 +1371,7 @@ fn changes(before: &View, after: &View) -> Changes {
 fn test_incunabula_s_hook_changes_only_what_its_block_declares() {
     let hook = Hook { project: INCUNABULA, remodel: recording };
 
-    let built = build(&crate::SNAPSHOT, &INCUNABULA_MAPPING, Some(&hook));
+    let built = build_with(&crate::COMMITTED, &INCUNABULA_MAPPING, Some(&hook));
 
     assert!(built.is_ok(), "the vendored snapshot builds");
     let recorded = RECORDED.lock().expect("the hook did not panic").take();
@@ -1387,7 +1411,7 @@ fn test_incunabula_s_hook_reads_exactly_the_curated_keys_its_block_declares() {
     let declared = INCUNABULA_MAPPING.hook.as_ref().expect("the block has a hook node");
     assert!(!declared.keys.is_empty(), "the node declares no key");
 
-    let as_declared = build(&crate::SNAPSHOT, &INCUNABULA_MAPPING, hook);
+    let as_declared = build_with(&crate::COMMITTED, &INCUNABULA_MAPPING, hook);
     assert!(as_declared.is_ok(), "the vendored snapshot builds");
 
     for (at, key) in declared.keys.iter().enumerate() {
@@ -1396,7 +1420,7 @@ fn test_incunabula_s_hook_reads_exactly_the_curated_keys_its_block_declares() {
         node.keys.remove(at);
         let read = format!("read the curated key {}", key.key.as_str());
 
-        let built = build(&crate::SNAPSHOT, &undeclared, hook);
+        let built = build_with(&crate::COMMITTED, &undeclared, hook);
 
         let errors = built.expect_err("a read beyond the declaration is refused");
         let beyond = errors

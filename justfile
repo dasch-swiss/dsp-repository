@@ -88,7 +88,7 @@ check-capability-deps:
 # A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
 # the workspace still compiles, so only a grep catches the boundary break.
 
-# Verify CPE's dependency seam: only its port and its host crate are used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate, a sync crate is a dev-dependency only, the store, its builder and the host crate use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007, ADR-0008)
+# Verify CPE's dependency seam: only its port and its host crate are used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate, a sync or media crate is a dev-dependency only, the store, its builder and the host crate use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007, ADR-0008, ADR-0012)
 check-cpe-seam:
     bash .github/scripts/check-cpe-seam.sh
 
@@ -584,11 +584,13 @@ build-docker-dpe arch="": css-release
             cargo build -p access-server --release --target $target
         "
     rm -rf "$stage"
-    mkdir -p "$stage/sync"
+    mkdir -p "$stage/sync" "$stage/cpe" "$stage/media"
     cp "target/container/$target/release/access-server" "$stage/"
     cp -r areas/access/dpe/public "$stage/"
     cp -r {{ DPE_DATA_DIR }} "$stage/"
     cp -r areas/access/sync/data "$stage/sync/"
+    cp -r areas/access/cpe/projects "$stage/cpe/"
+    cp -r areas/access/media/data "$stage/media/"
     cp areas/access/server/Dockerfile "$stage/"
     docker build --platform "$platform" -f "$stage/Dockerfile" -t dpe "$stage"
 

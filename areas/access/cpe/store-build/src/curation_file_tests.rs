@@ -1,9 +1,8 @@
 use std::collections::BTreeSet;
 
-use cpe_ports::{CuratedValue, ResourceIri};
+use cpe_ports::{ClassIri, DataArk, ProjectSnapshot, Resource, ResourceIri};
 
-use crate::curation::parse;
-use crate::{CurationFault, InvalidCuration};
+use crate::curation_file::{is_curation_name, parse, CuratedValue, CuratedValues, CurationFault, InvalidCuration};
 
 const X: &str = "http://rdfh.ch/0803/xA1b";
 const Y: &str = "http://rdfh.ch/0803/yB2c";
@@ -35,6 +34,38 @@ fn fault_of(input: impl AsRef<[u8]>) -> CurationFault {
         Ok(values) => panic!("{:?} is served: {values:?}", String::from_utf8_lossy(input)),
         Err(fault) => fault,
     }
+}
+
+#[test]
+fn test_is_curation_name_accepts_lowercase_names_and_refuses_the_rest() {
+    for name in ["slug", "date_display", "sort-key", "de", "a1"] {
+        assert!(is_curation_name(name), "{name:?}");
+    }
+    for name in ["", "Slug", "1st", "_a", "-a", "a b", "a@b", "de-CH", "ü"] {
+        assert!(!is_curation_name(name), "{name:?}");
+    }
+}
+
+#[test]
+fn test_curated_values_sort_by_resource_key_and_language() {
+    let mut values = vec![
+        value(Y, "caption", Some("en"), "Red"),
+        value(Y, "caption", Some("de"), "Rot"),
+        value(Y, "caption", None, "plain"),
+        value(X, "size", None, "big"),
+    ];
+
+    values.sort();
+
+    assert_eq!(
+        values,
+        vec![
+            value(X, "size", None, "big"),
+            value(Y, "caption", None, "plain"),
+            value(Y, "caption", Some("de"), "Rot"),
+            value(Y, "caption", Some("en"), "Red"),
+        ]
+    );
 }
 
 fn fault(line: usize, reason: InvalidCuration) -> CurationFault {
@@ -341,5 +372,60 @@ fn test_curation_parse_returns_the_first_fault_only() {
 
     for (input, expected) in cases {
         assert_eq!(fault_of(&input), expected, "{input:?}");
+    }
+}
+
+/// A snapshot whose resources are `X`, `Y` and `Z`.
+fn snapshot() -> ProjectSnapshot {
+    let resource = |iri: &str| Resource {
+        iri: ResourceIri(iri.to_string()),
+        ark: DataArk(String::new()),
+        class: ClassIri("http://e/o#Thing".to_string()),
+        label: iri.to_string(),
+        values: Vec::new(),
+        file: None,
+        part_of: Vec::new(),
+        seqnum: None,
+        annotation: None,
+    };
+    ProjectSnapshot {
+        shortcode: "0803".to_string(),
+        resources: [X, Y, Z].map(resource).to_vec(),
+        list_nodes: Vec::new(),
+    }
+}
+
+#[test]
+fn test_curated_values_parse_reads_against_the_snapshots_resources() {
+    let parsed = CuratedValues::parse(format!("iri,b,a@de\n{Y},2,\n{X},,1\n").as_bytes(), &snapshot())
+        .unwrap_or_else(|fault| panic!("{fault}"));
+    assert_eq!(parsed.as_slice(), [value(X, "a", Some("de"), "1"), value(Y, "b", None, "2")]);
+    assert_eq!(parsed.len(), 2);
+    assert!(CuratedValues::none().is_empty());
+
+    let cases = [
+        (
+            format!("iri,a\n{U},v\n"),
+            fault(2, InvalidCuration::UnknownResource { iri: U.to_string() }),
+        ),
+        (
+            format!("iri,a\n{X},v\n{X},w\n"),
+            fault(3, InvalidCuration::DuplicateRow { iri: X.to_string(), first_line: 2 }),
+        ),
+        (
+            "iri,Key\n".to_string(),
+            fault(1, InvalidCuration::MalformedColumn { column: "Key".to_string() }),
+        ),
+        (
+            "iri,a@DE\n".to_string(),
+            fault(1, InvalidCuration::MalformedColumn { column: "a@DE".to_string() }),
+        ),
+        (
+            format!("iri,a\n{X},v\u{7}\n"),
+            fault(2, InvalidCuration::ControlCharacter { character: '\u{7}' }),
+        ),
+    ];
+    for (input, expected) in cases {
+        assert_eq!(CuratedValues::parse(input.as_bytes(), &snapshot()), Err(expected), "{input:?}");
     }
 }

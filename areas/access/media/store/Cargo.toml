@@ -1,0 +1,12 @@
+[package]
+name = "media-store"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+cpe-ports = { path = "../../cpe/ports" }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

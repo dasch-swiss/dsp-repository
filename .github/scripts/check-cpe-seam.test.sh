@@ -4,8 +4,9 @@
 #
 # Fixtures build throwaway git repos because the gate reads its forbidden sets
 # out of the index (the [package] names of areas/access/cpe/*/Cargo.toml,
-# modules/mosaic/*/Cargo.toml and areas/access/sync/*/Cargo.toml), so stubbing git would test the stub, not the
-# derivation. mktemp names an explicit TMPDIR template: a bare mktemp resolves to
+# modules/mosaic/*/Cargo.toml, areas/access/sync/*/Cargo.toml and
+# areas/access/media/*/Cargo.toml), so stubbing git would test the stub, not
+# the derivation. mktemp names an explicit TMPDIR template: a bare mktemp resolves to
 # a path a sandboxed shell may not be allowed to write.
 #
 # Run: bash .github/scripts/check-cpe-seam.test.sh   (or `just test`)
@@ -52,8 +53,8 @@ crate() {
 }
 
 # base_repo: an uncommitted throwaway tree with seven CPE crates, two Mosaic
-# crates, a DPE crate, sync-store and a workspace root without [package]. It
-# passes the gate as it is. Echoes the path; stage_repo finishes it.
+# crates, a DPE crate, sync-store, media-store and a workspace root without
+# [package]. It passes the gate as it is. Echoes the path; stage_repo finishes it.
 base_repo() {
   local dir
   dir="$(mktemp -d "${TMPDIR:-/tmp}/cpe-seam.XXXXXX")"
@@ -68,6 +69,7 @@ base_repo() {
   crate "$dir/modules/mosaic/playground" mosaic-playground
   crate "$dir/areas/access/dpe/web" dpe-web
   crate "$dir/areas/access/sync/store" sync-store
+  crate "$dir/areas/access/media/store" media-store
   printf '[workspace]\nmembers = ["areas/access/dpe/web"]\n\n[workspace.dependencies]\nmaud = "0.27"\n' >"$dir/Cargo.toml"
   printf '%s' "$dir"
 }
@@ -123,7 +125,7 @@ repo="$(base_repo)"
 stage_repo "$repo"
 gate_in "$repo"
 check "the base fixture passes" 0 "$RC"
-check_msg "the success line counts what it checked" "✓ CPE seam: 11 manifests checked against 7 CPE and 2 Mosaic crates" "$OUT"
+check_msg "the success line counts what it checked" "✓ CPE seam: 12 manifests checked against 7 CPE, 2 Mosaic, 1 sync and 1 media crates" "$OUT"
 exec_in "$repo"
 check "the executed script passes on the base fixture" 0 "$RC"
 rm -rf "$repo"
@@ -153,12 +155,17 @@ check "rule 1: a DPE crate depending on cpe-image-viewer fails" 1 "$RC"
 
 case_run areas/access/sync/store 'cpe-ports = { path = "../../cpe/ports" }'
 check "rule 1: sync-store depending on cpe-ports passes" 0 "$RC"
+case_run areas/access/media/store 'cpe-ports = { path = "../../cpe/ports" }'
+check "rule 1: media-store depending on cpe-ports passes" 0 "$RC"
+case_run areas/access/media/store 'cpe-core = { path = "../../cpe/core" }'
+check "rule 1: media-store depending on cpe-core fails" 1 "$RC"
+check_msg "rule 1: the media violation names manifest, dependency and rule" "areas/access/media/store/Cargo.toml depends on cpe-core (rule 1" "$OUT"
 
 # The composition root mounts the host crate and hands it the port's adapter.
 case_run areas/access/server 'cpe-server = { path = "../cpe/server" }
 cpe-ports = { path = "../cpe/ports" }'
 check "rule 1: the composition root depending on cpe-server and cpe-ports passes" 0 "$RC"
-# The store is not an exception: the adapter is sync-store's.
+# The store is not an exception: the adapters are sync-store's and media-store's.
 case_run areas/access/server 'cpe-server = { path = "../cpe/server" }
 cpe-store = { path = "../cpe/store" }'
 check "rule 1: the composition root depending on cpe-store fails" 1 "$RC"
@@ -304,7 +311,7 @@ case_run "$CPE/core" '[lib]
 name = "cpe_core"'
 check "rule 3: a leaf's [lib] name does not trip it" 0 "$RC"
 
-# --- Rule 4: a CPE crate names a sync crate under dev-dependencies only.
+# --- Rule 4: a CPE crate names a sync or media crate under dev-dependencies only.
 # case_run appends below the fixture crate's [dependencies] header.
 
 # fails_rule4 <desc>: the gate failed, and by rule 4. A case that guards the
@@ -451,6 +458,27 @@ check "rule 4: a new sync crate is forbidden without an edit to the script" 1 "$
 check_msg "rule 4: the violation names the new crate" "$CPE/components/Cargo.toml depends on sync-replay (rule 4" "$OUT"
 rm -rf "$repo"
 
+# The media edge is rule 4's as well: CPE's tests may build its adapter too.
+case_run "$CPE/server" 'media-store = { path = "../../media/store" }'
+fails_rule4 "rule 4: a CPE crate depending on media-store fails"
+check_msg "rule 4: the media violation names manifest, dependency and rule" "$CPE/server/Cargo.toml depends on media-store (rule 4" "$OUT"
+check_msg "rule 4: the guidance names the media area" "areas/access/media/ under [dev-dependencies] only" "$OUT"
+case_run "$CPE/server" '[dev-dependencies]
+media-store = { path = "../../media/store" }'
+check "rule 4: media-store under [dev-dependencies] passes" 0 "$RC"
+case_run "$CPE/server" 'files = { package = "media-store", path = "../../media/store" }'
+fails_rule4 "rule 4: a rename of media-store under [dependencies] fails"
+repo="$(base_repo)"
+crate "$repo/areas/access/media/derive" media-derive
+printf 'media-derive = { path = "../../media/derive" }\n' >>"$repo/$CPE/components/Cargo.toml"
+stage_repo "$repo"
+gate_in "$repo"
+check "rule 4: a new media crate is forbidden without an edit to the script" 1 "$RC"
+check_msg "rule 4: the violation names the new media crate" "$CPE/components/Cargo.toml depends on media-derive (rule 4" "$OUT"
+rm -rf "$repo"
+case_run "$DPE" 'media-store = { path = "../../media/store" }'
+check "rule 4: a DPE crate depending on media-store passes" 0 "$RC"
+
 # --- Rule 5: a crate in CPE_EDGES depends on the CPE crates listed for it only.
 case_run "$CPE/store-build" 'cpe-store = { path = "../store" }'
 check "rule 5: cpe-store-build depending on cpe-store fails" 1 "$RC"
@@ -575,6 +603,10 @@ named_run modules/mosaic/tiles '[package]
 version = "0.1.0"'
 check "a Mosaic crate whose [package] name cannot be read fails" 1 "$RC"
 check_msg "the message names the manifest" "✗ modules/mosaic/tiles/Cargo.toml: cannot read the [package] name" "$OUT"
+named_run areas/access/media/store '[package]
+version = "0.1.0"'
+check "a media crate whose [package] name cannot be read fails" 1 "$RC"
+check_msg "the message names the manifest" "✗ areas/access/media/store/Cargo.toml: cannot read the [package] name" "$OUT"
 named_run "$CPE/components" '[workspace]
 members = []'
 check "a manifest without [package] where a CPE crate is expected fails" 1 "$RC"
@@ -618,7 +650,7 @@ printf 'cpe-core = { path = "areas/access/cpe/core" }\n\n[workspace.dependencies
 stage_repo "$repo"
 gate_in "$repo"
 check "a package = key in a root dependency table does not make the root a crate" 0 "$RC"
-check_msg "the root is not counted as a crate" "✓ CPE seam: 11 manifests checked" "$OUT"
+check_msg "the root is not counted as a crate" "✓ CPE seam: 12 manifests checked" "$OUT"
 rm -rf "$repo"
 repo="$(base_repo)"
 printf '\n[workspace.dependencies.foo]\npath = "areas/access/cpe/core"\npackage = "cpe-core"\n' >>"$repo/Cargo.toml"
@@ -681,6 +713,14 @@ gate_in "$repo"
 check "rule 4: a rename of a sync crate in a root dependency table fails" 1 "$RC"
 check_msg "rule 4: the table rename violation names the root manifest and the rule" "Cargo.toml depends on sync-store (rule 4" "$OUT"
 rm -rf "$repo"
+repo="$(base_repo)"
+printf 'files = { package = "media-store", path = "areas/access/media/store" }\n' >>"$repo/Cargo.toml"
+printf 'files.workspace = true\n' >>"$repo/$CPE/server/Cargo.toml"
+stage_repo "$repo"
+gate_in "$repo"
+check "rule 4: a rename of a media crate declared in the root fails" 1 "$RC"
+check_msg "rule 4: the media rename violation names the root manifest, the dependency and the rule" "Cargo.toml depends on media-store (rule 4" "$OUT"
+rm -rf "$repo"
 # Without a rename the inheriting line names the crate, and its own table
 # decides.
 repo="$(base_repo)"
@@ -718,6 +758,9 @@ check_msg "the message says what is missing" "no modules/mosaic/*/Cargo.toml" "$
 dropped_run areas/access/sync
 check "a repository without areas/access/sync/ fails" 1 "$RC"
 check_msg "the message says what is missing" "no areas/access/sync/*/Cargo.toml" "$OUT"
+dropped_run areas/access/media
+check "a repository without areas/access/media/ fails" 1 "$RC"
+check_msg "the message says what is missing" "no areas/access/media/*/Cargo.toml" "$OUT"
 dropped_run areas/access/cpe/image-viewer
 check "a leaf path that is not tracked fails" 1 "$RC"
 check_msg "the message names the path" "areas/access/cpe/image-viewer/Cargo.toml" "$OUT"

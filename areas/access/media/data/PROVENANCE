@@ -1,0 +1,72 @@
+The deposited files media holds, one directory per project shortcode. CPE reads them through its
+bytes port (LiveDepositedFiles in areas/access/media/store).
+
+0803/config.kdl: the CPE configuration of project 0803 (incunabula): its site, labels, pages and the
+remodel {} block the store builder reads, in the language docs/src/cpe/config-language.md defines.
+0803/narrative/: the editorial texts the configuration names, one Markdown file per text and language
+(de, en).
+Both are hand-authored and edited in place, never generated.
+
+Source
+  files:           cpe/projects/incunabula/config.kdl
+                   cpe/projects/incunabula/narrative/
+  repository:      dasch-swiss/dsp-incubator, at commit d68f214bf50c8999e1c7750160822ffa063a5c33
+
+They came into this repository as areas/access/cpe/projects/incunabula/config.kdl and narrative/ with
+the store builder (DEV-7465), and DEV-7511 and DEV-7512 moved them here. A change is made here; the
+incubator follows when it re-vendors. A change to the remodel {} block changes Incunabula's store, which
+cpe-server's Incunabula store pins hold; a narrative file the configuration names and media does not
+hold leaves the project not ready.
+
+0803/curation.csv: the curation of project 0803 (incunabula), which CPE reads against sync's snapshot
+of the project: what the project's editors authored about single resources. One row per resource,
+138 lines with the header. Hand-authored: it is edited in place by a person and never regenerated.
+It was areas/access/sync/data/0803-curation.csv, served inside sync's snapshot, until DEV-7511 and
+DEV-7512 moved it here.
+
+Source
+  files:           cpe/projects/incunabula/raw/curation.csv
+                   cpe/projects/incunabula/raw/annotation-curation.csv
+                   cpe/projects/incunabula/raw/pages.csv
+                   cpe/projects/incunabula/translate.py:1030-1031 (UNSIGNED_STRIP_ID, UNSIGNED_STRIP_NAME)
+  repository:      dasch-swiss/dsp-incubator, at commit 6e8e4063b54603f4615a6ed96025362a37dae70b
+
+Mapping
+  curation.csv, one row per Book, in file order
+    dsp_id                             iri, as http://rdfh.ch/0803/<dsp_id>
+    id                                 slug
+    date_display                       date_display@de
+    office, title_override, sort_key   the same key
+    cover_page (a pages.csv id)        cover_page, as that Page's IRI
+    teaser_de, teaser_en               teaser@de, teaser@en
+  annotation-curation.csv, one row per Region or LinkObj, in file order
+    id                                 iri, as http://rdfh.ch/0803/<id>
+    keep, lang, name                   the same key
+    note                               #note, a comment column, never served
+    kind                               dropped: it restates the resource's class
+  translate.py, the last row, the Band http://rdfh.ch/0803/EJZQcYisXECHxchG_KQ27w
+    UNSIGNED_STRIP_ID                  slug
+    UNSIGNED_STRIP_NAME                name
+
+pages.csv has no IRI column. A Page's IRI is http://rdfh.ch/0803/ followed by the last path segment of
+its ark cell, without the check digit (the last character) and with every = turned into -. Every value
+is copied verbatim.
+
+The file was derived once, by a script that is not kept, and is edited by hand from then on: it is not
+regenerated. Since dsp-incubator#500 (DEV-7496, merged 2026-10-10) it is the only copy of
+Incunabula's curation: the incubator deleted the source files above and builds its store from this
+file, which it vendors. A curation change is made here and reaches the incubator when it re-vendors.
+
+Every row names a resource of areas/access/sync/data/0803.nq. If a regenerated 0803.nq drops one, CPE
+leaves Incunabula not ready until the row is removed or re-keyed by hand.
+
+Edited by hand since
+  2026-10-11 (DEV-7497)  catalogue_uri and catalogue_uri_replaces, on the three Books held in Cologne:
+                         the replacement and dead cells of CATALOGUE_OVERRIDES in dsp-incubator's
+                         cpe/store-build/src/projects/incunabula/catalogue.rs, at commit
+                         1cd5781f987ed860218462c086c77ce759185fcc, copied verbatim.
+
+catalogue_uri is written in place of a Book's catalogue address, which is dead in the archive.
+catalogue_uri_replaces is that dead address: the replacement holds only while 0803.nq has exactly it,
+and the committed tests check that. Once a regenerated 0803.nq has the mended address, the Book's two
+cells are emptied.

@@ -52,14 +52,14 @@ _Avoid_: IR (fine inside the code; as a concept name it says nothing about owner
 
 ## What the port serves
 
-The files of one project, with their bytes: the Configuration, Edition files, ODD, Project CSS, Driving files, Tables of contents. An adapter serves current, archived files only, each with its rights attached (ADR-0013), and omits what the archive does not hold. DaTEI needs none of the archive-shaped facts CPE's port serves and declares no port against `sync`. The provider is the Access Area's `media` capability, the Access bucket's only consumer, which reads Service Files from it; a TEI file's or a TOML document's Service File is the file itself (ADR-0012; DEV-7442 decided). Until the bucket exists, `media` serves a hand-fed stand-in directory (DEV-7512).
+The files of one project, with their bytes: the Configuration, Edition files, ODD, Project CSS, Driving files, Tables of contents. An adapter serves current, archived files only, each with its rights attached (ADR-0013), and omits what the archive does not hold. DaTEI needs none of the archive-shaped facts CPE's port serves and declares no port against `sync`. The provider is the Access Area's `media` capability, the Access bucket's only consumer, which reads Service Files from it; a TEI file's or a TOML document's Service File is the file itself (ADR-0012; DEV-7442 decided). Until the bucket exists, `media` serves a hand-fed stand-in directory, `areas/access/media/data/`, as it already does for CPE's bytes port (see [`../media/CONTEXT.md`](../media/CONTEXT.md)). DaTEI's adapter there waits for DaTEI's port: neither exists until DaTEI has code.
 
 ## Relationships
 
 - One DaTEI project presents exactly one contract **Project**, keyed by its **Shortcode**, under its own route prefix.
 - A project has one **Configuration**, one or more **Edition files**, zero or one **ODD**, zero or more **Project CSS** files, zero or more **Driving files** (one per synoptic view) and zero or more **Tables of contents** (one per view is possible); all of them deposited.
 - A **Rebuild** produces exactly one **Read model** per project from those; the **Presenter** reads it and nothing else.
-- DaTEI declares one port; `media` implements it (ADR-0012).
+- DaTEI declares one port; `media` implements it (ADR-0012), once the port exists.
 
 ## Boundary commitments
 
@@ -79,7 +79,7 @@ The files of one project, with their bytes: the Configuration, Edition files, OD
 ## Flagged ambiguities
 
 - **Archived data versus authored content** (2026-09-29; resolved 2026-10-13, ADR-0012). Everything the Rebuild consumes is deposited, whoever authored it: Driving files, Tables of contents and the Configuration included. Nothing the Rebuild reads is authored beside the code.
-- **Where the Configuration is authored, and how it reaches DaTEI** (2026-09-29; resolved 2026-10-13, ADR-0012). The Configurator lives on the Deposit side; the TOML it writes is deposited and arrives through the port, and DaTEI's project folder, if any, holds code. Until the archive exists it sits in `media`'s stand-in directory (DEV-7512).
+- **Where the Configuration is authored, and how it reaches DaTEI** (2026-09-29; resolved 2026-10-13, ADR-0012). The Configurator lives on the Deposit side; the TOML it writes is deposited and arrives through the port, and DaTEI's project folder, if any, holds code. Until the archive exists it will sit in `media`'s stand-in directory, which holds no DaTEI project yet.
 - **"ingest"** is the incubator's word for TEI to IR and its `src/ir/ingest` module; the Archive Area owns the word. Resolution: **Rebuild** in all prose here; the identifier is renamed on entry.
 - **"asset"** is the incubator's word for its uploads and its runtime directory (`assets/<id>/`); this repository already avoids it (see `vitrinli/CONTEXT.md`). Resolution: not used here; say Edition file, ODD, Project CSS, or "public assets" for static web files.
 - **"project"** in the incubator is an id-keyed directory (`assets/<id>`, a server-derived slug); here a DaTEI project is the contract Project by Shortcode. Resolution: say "DaTEI project" only for the presented unit; the identifier is the Shortcode.

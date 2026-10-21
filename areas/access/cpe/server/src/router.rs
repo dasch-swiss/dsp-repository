@@ -2645,7 +2645,7 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::discovery::discover;
+    use crate::discovery::discover_sql_folders;
     use crate::request::resolve_request_prefs;
 
     /// The folder of fixture projects (`alpha`, `gamma`, `delta` to `theta`).
@@ -2701,7 +2701,7 @@ mod tests {
     }
 
     fn load_fixture_projects() -> Vec<Arc<cpe_web::project::Project>> {
-        discover(&discovery_fixture())
+        discover_sql_folders(&discovery_fixture())
             .iter()
             .map(|d| {
                 let (c, dt) = d.sources().expect("fixture sources are readable");
@@ -2713,6 +2713,7 @@ mod tests {
                     project_id: &d.id,
                     reserved_ids: &["_static"],
                     narrative_files: &narrative_files,
+                    narrative_files_complete: false,
                     asset_files: &asset_files,
                 };
                 Arc::new(cpe_web::project::Project::load(&ctx, &c, &dt, &[]).expect("fixture project loads"))
@@ -3516,7 +3517,7 @@ mod tests {
     /// Load the delta fixture project, which has a resource-detail page at
     /// `/characters/:id` with two known characters (alice, white-rabbit).
     fn load_delta_project() -> Arc<cpe_web::project::Project> {
-        let discovered = discover(&discovery_fixture());
+        let discovered = discover_sql_folders(&discovery_fixture());
         let delta = discovered
             .iter()
             .find(|d| d.id == "delta")
@@ -3528,6 +3529,7 @@ mod tests {
             project_id: &delta.id,
             reserved_ids: &["_static"],
             narrative_files: &narrative_files,
+            narrative_files_complete: false,
             asset_files: &asset_files,
         };
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("delta project loads"))
@@ -3619,7 +3621,7 @@ mod tests {
     /// Load the epsilon fixture project, which has a static `/featured` page with
     /// a literal-id `resource-detail id="res-01"`.
     fn load_epsilon_project() -> Arc<cpe_web::project::Project> {
-        let discovered = discover(&discovery_fixture());
+        let discovered = discover_sql_folders(&discovery_fixture());
         let epsilon = discovered
             .iter()
             .find(|d| d.id == "epsilon")
@@ -3631,6 +3633,7 @@ mod tests {
             project_id: &epsilon.id,
             reserved_ids: &["_static"],
             narrative_files: &narrative_files,
+            narrative_files_complete: false,
             asset_files: &asset_files,
         };
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("epsilon project loads"))
@@ -3641,7 +3644,7 @@ mod tests {
     /// target="things" searches="name"` on `/things`. Used by the
     /// search-query-injection tests.
     fn load_zeta_project() -> Arc<cpe_web::project::Project> {
-        let discovered = discover(&discovery_fixture());
+        let discovered = discover_sql_folders(&discovery_fixture());
         let zeta = discovered
             .iter()
             .find(|d| d.id == "zeta")
@@ -3653,6 +3656,7 @@ mod tests {
             project_id: &zeta.id,
             reserved_ids: &["_static"],
             narrative_files: &narrative_files,
+            narrative_files_complete: false,
             asset_files: &asset_files,
         };
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("zeta project loads"))
@@ -3664,7 +3668,7 @@ mod tests {
     /// counterpart to `zeta` (search-only, no facet-panel), used by the
     /// `_search` fragment-handler router tests.
     fn load_eta_project() -> Arc<cpe_web::project::Project> {
-        let discovered = discover(&discovery_fixture());
+        let discovered = discover_sql_folders(&discovery_fixture());
         let eta = discovered
             .iter()
             .find(|d| d.id == "eta")
@@ -3676,6 +3680,7 @@ mod tests {
             project_id: &eta.id,
             reserved_ids: &["_static"],
             narrative_files: &narrative_files,
+            narrative_files_complete: false,
             asset_files: &asset_files,
         };
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("eta project loads"))
@@ -3688,7 +3693,7 @@ mod tests {
     /// counterpart to `eta` (real, non-empty facet group), used by the
     /// `_search` fragment-handler zero-groups test.
     fn load_theta_project() -> Arc<cpe_web::project::Project> {
-        let discovered = discover(&discovery_fixture());
+        let discovered = discover_sql_folders(&discovery_fixture());
         let theta = discovered
             .iter()
             .find(|d| d.id == "theta")
@@ -3700,6 +3705,7 @@ mod tests {
             project_id: &theta.id,
             reserved_ids: &["_static"],
             narrative_files: &narrative_files,
+            narrative_files_complete: false,
             asset_files: &asset_files,
         };
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("theta project loads"))
@@ -5067,6 +5073,7 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
             project_id: "param-compound",
             reserved_ids: &["_static"],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         Arc::new(
@@ -5161,6 +5168,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
             project_id: "incoming",
             reserved_ids: &["_static"],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         Arc::new(cpe_web::project::Project::load(&ctx, config_src, data_sql, &[]).expect("incoming project loads"))
@@ -5424,6 +5432,7 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
             project_id: "pages-compound",
             reserved_ids: &["_static"],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         Arc::new(
@@ -5573,6 +5582,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
             project_id: "annotated-book",
             reserved_ids: &["_static"],
             narrative_files: &[],
+            narrative_files_complete: false,
             asset_files: &[],
         };
         Arc::new(

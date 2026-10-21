@@ -3,8 +3,9 @@
 #   access-server  (static musl binary)
 #   public/        (static assets + the content-hashed app.<hash>.css)
 #   data/          (JSON data files)
-#   sync/data/     (sync's committed snapshots and curation files)
-#   cpe/projects/  (CPE's project folders: configuration, narrative, assets)
+#   sync/data/     (sync's committed snapshots)
+#   cpe/projects/  (CPE's project folders: SHORTCODE, assets, documents on the data)
+#   media/data/    (media's deposited files: configuration, curation, narrative)
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
@@ -15,6 +16,7 @@ COPY public /app/public
 COPY data /app/server/data
 COPY sync/data /app/sync/data
 COPY cpe/projects /app/cpe/projects
+COPY media/data /app/media/data
 
 ENV RUST_LOG="info"
 # Enable backtrace capture for the structured panic hook in access-server.
@@ -28,6 +30,7 @@ ENV DPE_PUBLIC_DIR="/app/public"
 ENV DPE_DATA_DIR="/app/server/data"
 ENV SYNC_DATA_DIR="/app/sync/data"
 ENV CPE_PROJECTS_DIR="/app/cpe/projects"
+ENV MEDIA_DATA_DIR="/app/media/data"
 # CPE is mounted only where a base is set. CPE_PUBLIC_ORIGIN is the deployment's
 # to set: unset, CPE takes the origin of its absolute URLs from each request.
 ENV CPE_BASE="/cpe"

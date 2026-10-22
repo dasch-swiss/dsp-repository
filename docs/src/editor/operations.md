@@ -90,7 +90,7 @@ Configuration is layered: code defaults → optional `editor.toml` → `EDITOR_*
 
 ## Deployment
 
-The editor deploys as its **own `deposit` stack** in ops-deploy, with its own inventory group, hosts (`deposit-stage-01`, `deposit-prod-01`) and playbook (`deposit.yml`). The stack has no dev host: a merge to `main` deploys to `deposit.stage.dasch.swiss` (`editor-docker-publish.yml`, posting `Service=deposit` to the stack's Jenkins update job; see [Deployment](../deployment.md#editor)). Nothing deploys prod, `deposit.dasch.swiss`, yet: it waits for a mail relay ([DEV-7618](https://linear.app/dasch/issue/DEV-7618)).
+The editor deploys as its **own `deposit` stack** in ops-deploy, with its own inventory group, hosts (`deposit-stage-01`, `deposit-prod-01`) and playbook (`deposit.yml`). The stack has no dev host: a merge to `main` deploys to `deposit.stage.dasch.swiss` (`editor-docker-publish.yml`), a GitHub release to `deposit.dasch.swiss` (`editor-release-publish.yml`). Both post `Service=deposit` to the stack's Jenkins update jobs; see [Deployment](../deployment.md#editor).
 
 It deploys on a **separate hostname** from DPE, not a path under `repository.dasch.swiss` — see the CSRF reasoning in [Architecture](./architecture.md#relationship-to-dpe).
 

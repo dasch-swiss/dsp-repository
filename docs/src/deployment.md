@@ -149,7 +149,13 @@ On every push to `main`:
 3. Pushes the Docker image to Docker Hub (`daschswiss/metadata-editor:{tag}`)
 4. Triggers a Jenkins webhook (`Service=deposit`) for STAGE deployment, `deposit.stage.dasch.swiss`
 
-The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`. No workflow deploys the editor to prod yet: that waits for a mail relay ([DEV-7618](https://linear.app/dasch/issue/DEV-7618)).
+The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`.
+
+#### Release Publishing
+
+Defined in `editor-release-publish.yml`.
+
+When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image and triggers the PROD deployment, `deposit.dasch.swiss`. Unlike DPE's release, it does not deploy to stage.
 
 ### Release Please
 

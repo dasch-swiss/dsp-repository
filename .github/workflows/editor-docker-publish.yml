@@ -60,7 +60,7 @@ jobs:
           docker-user: ${{ secrets.DOCKER_USER }}
           docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-  # The deposit stack has no dev host; stage follows main. Nothing deploys prod yet.
+  # The deposit stack has no dev host; stage follows main, prod only releases (editor-release-publish.yml).
   trigger-stage-deployment:
     name: Trigger deployment to STAGE
     runs-on: ubuntu-latest

@@ -446,7 +446,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, pyroscope, matchit
 - **Used by:** nothing in the workspace; the top of the Deposit Area's dependency graph, a
   separate deployable (`daschswiss/metadata-editor`), deployed as ops-deploy's `deposit` stack
-  (`Service=deposit`) by `editor-docker-publish.yml` (main → stage; nothing deploys prod yet)
+  (`Service=deposit`) by `editor-docker-publish.yml` (main → stage) and
+  `editor-release-publish.yml` (release → prod)
 - **Boundary rules:**
   - Never depends on a capability's `core` or `api-*` crate, dev-dependencies included; it
     mounts `identity` and `editor` through their `web` crates' facades because neither has a

@@ -241,7 +241,7 @@ The code-entry screen therefore shows the code when **all three** of these hold,
 | No `EDITOR_SMTP_HOST` | With no relay the code is **already** written to the log in plaintext. Showing it to the browser that just asked for it discloses nothing the deployment is not already doing. With a relay, the code goes to a mailbox and the screen must not become a second channel. |
 | No `EDITOR_DB_DIR` | Everything dies with the process. This is the condition separating a throwaway deployment from a real one: an environment holding accounts people actually use has to mount a volume, or it loses them on every restart. |
 
-Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and nothing else. Startup logs a `warn` naming the state, so an operator sees it asserted rather than inferring it from three unset variables.
+Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and stage while it holds no real data ([Operations](./operations.md#deployment)), nothing else. Startup logs a `warn` naming the state, so an operator sees it asserted rather than inferring it from three unset variables.
 
 The predicate is deliberately **self-contained** rather than leaning on the `PROD`-requires-a-relay rule in `validate`. That rule does make two of these combinations unbootable, but a guard you can read in one place is one nobody has to reconstruct.
 

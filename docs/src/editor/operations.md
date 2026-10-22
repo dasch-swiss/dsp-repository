@@ -90,15 +90,13 @@ Configuration is layered: code defaults → optional `editor.toml` → `EDITOR_*
 
 ## Deployment
 
-The editor deploys as its **own Swarm stack on the same VMs as DPE**, with its own inventory host entry and its own playbook — not as a second stack inside the `repository` inventory group. Co-habiting VMs with separate inventory hosts is how the platform already runs multiple stacks (`ark` and `mosaic` share a host that way). The `repository` group and `repository.yml` playbook are a holdover that should really be called `dpe`; splitting them is separate work.
+The editor deploys as its **own `deposit` stack** in ops-deploy, with its own inventory group, hosts (`deposit-stage-01`, `deposit-prod-01`) and playbook (`deposit.yml`). The stack has no dev host: a merge to `main` deploys to `deposit.stage.dasch.swiss` (`editor-docker-publish.yml`, posting `Service=deposit` to the stack's Jenkins update job; see [Deployment](../deployment.md#editor)). Nothing deploys prod, `deposit.dasch.swiss`, yet: it waits for a mail relay ([DEV-7618](https://linear.app/dasch/issue/DEV-7618)).
 
 It deploys on a **separate hostname** from DPE, not a path under `repository.dasch.swiss` — see the CSRF reasoning in [Architecture](./architecture.md#relationship-to-dpe).
 
-Not yet in place, and blocking production deployment only:
+**Stage runs in preview mode** until it holds real data: ops-deploy's `DEPOSIT_THROWAWAY` deploys it with `EDITOR_ENV=DEV`, no relay and no `EDITOR_DB_DIR`, so the login code is shown on the page ([Authentication](./authentication.md#showing-the-code-instead-of-sending-it)) and every deploy starts from an empty database. The RDU members sign in there with their own addresses (the same `EDITOR_RDU_EMAILS` as prod). Anyone who knows one of those addresses can sign in too, so beyond the RDU list stage holds fictitious data only: depositor accounts created there use made-up addresses, never a real depositor's, and no real project data is entered. Mail delivery and the on-disk database are not exercised on stage; switch it to prod's configuration once before the first prod deploy to check both.
 
-- The editor is **not registered as a deployable service in Jenkins**, so the DEV deploy trigger in `editor-docker-publish.yml` is marked `continue-on-error` and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.
-- The writable data volume `EDITOR_DB_DIR` points at, tracked as [INFRA-1378](https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes). Development and tests use the in-memory database, so only production waits on it.
-- **SMTP relay host, port and credentials**, provisioned as vaulted group vars. Development and the PR previews are unblocked by the console fallback, so only production login waits on it. DKIM and SPF for `dasch.swiss` are already set up.
+Not yet in place, for prod: the **SMTP relay host, port and credentials** and the RDU members' addresses (`EDITOR_RDU_EMAILS`), provisioned in ops-deploy, the password vaulted. `EDITOR_ENV=PROD` refuses to start without `EDITOR_SMTP_HOST`; an empty `EDITOR_RDU_EMAILS` starts but leaves nobody able to review. Development and the PR previews are unblocked by the console fallback. DKIM and SPF for `dasch.swiss` are already set up.
 
 ## Login and mail
 

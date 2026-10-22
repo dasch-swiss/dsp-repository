@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # User-facing vocabulary diverges from DaSCH knowledge hub
 
 `dsp-cli`'s user-facing vocabulary uses `resource-type`, `field`, `value-type`, and `data-model` — diverging from the DaSCH knowledge hub glossary, which
@@ -8,7 +13,7 @@ The CLI's charter (per `docs/src/dsp-cli/overview.md`) is to use domain-expert l
 lexically obvious (`resource-type` ↔ `resource`, `field` ↔ `value`) serves that
 charter better than mirroring the published glossary.
 
-## Considered alternatives
+## Considered Options
 
 - **(A) Mirror DSP-API verbatim** (`class`, `property`, `ontology`). Rejected — defeats the abstraction goal in `docs/src/dsp-cli/overview.md`.
 - **(B) Mirror the DaSCH knowledge hub** (`class`/"resource class", `property`, `data-model`). Rejected — keeps the property/value and class/OOP overloads that cause
@@ -30,7 +35,10 @@ charter better than mirroring the published glossary.
   linguistic case is principled.
 - This ADR is the entry point for any future request to "just use the same words as DSP-APP" — the answer is no, and here is why.
 
-## Amendment — 2026-06-12
+Enforced by: the help snapshots in `dsp-cli/tests/cli.rs`, which pin the noun-group prose naming the DSP-API equivalent and the "See also: `dsp docs concepts`"
+pointers, and the `*_snapshots.rs` assertions that rendered output contains no "export" and no `knora-api:` (**static-analysis**); the rest by **review**.
+
+## Amendment (2026-06-12) — the DSP-API mapping lives in `dsp docs concepts`, not in per-flag annotations
 
 The original "Consequences" bullets prescribed surfacing the dsp-cli↔DSP-API mapping in "every relevant `--help` text" via per-flag annotations
 (e.g. `field (DSP-API: knora-api:Property)`).
@@ -39,15 +47,14 @@ That prescription was never implemented and is now superseded.
 **Reason for amendment:** Per-flag `(DSP-API: …)` annotations re-expose the RDF vocabulary the CLI exists to hide, defeating the abstraction goal in `docs/src/dsp-cli/overview.md`.
 The mapping belongs in one canonical, well-labelled place — not scattered across individual flag doc-comments.
 
-**Actual mitigation (as amended above):** The `dsp docs concepts` topic (shipped in Phase 6, plan 018) already contains a "## The DSP-API vocabulary mapping" table
+**Actual mitigation (as amended above):** The `dsp docs concepts` topic contains a "## The DSP-API vocabulary mapping" table
 covering `data-model`↔`ontology`, `resource-type`↔`class`, `field`↔`property`, `value-type`↔value subclass, plus inline "(DSP-API calls this …)" notes.
 Every schema-noun command (`project list/describe`, `data-model list/describe/structure`, `resource-type list/describe`) carries a "See also: `dsp docs concepts`"
-pointer in its `--help` output (audited and completed in plan 021, 2026-06-12). The noun-group subcommand prose already names the equivalence inline (wording
-unchanged since Phase 5).
+pointer in its `--help` output. The noun-group subcommand prose names the equivalence inline.
 
-## Amendment — 2026-07-30
+## Amendment (2026-07-30) — `vocabulary` joins the divergent terms
 
-`vocabulary` joins the divergent-term list (plan 034). `dsp-cli` says `vocabulary`; DSP-API says "list"; DSP-APP's UI section is titled
+`vocabulary` joins the divergent-term list. `dsp-cli` says `vocabulary`; DSP-API says "list"; DSP-APP's UI section is titled
 "Controlled vocabularies". `dsp vre vocabulary list`/`describe` surface a project's controlled vocabularies and one vocabulary's node tree.
 
 **Considered and rejected:**
@@ -66,9 +73,7 @@ vocabulary dsp-cli speaks", `docs/topics/dsp-cli.md`), but every existing occurr
 speaks"), never a **count noun** naming a data object (`a vocabulary`, `three vocabularies`). Introducing the count-noun sense as a new command-surface
 term does not create real-world ambiguity with the existing mass-noun usage.
 
-## Amendment (2026-08-07, plan 035)
-
-### Deliberate raw-surface carve-out: `dsp vre sparql query`
+## Amendment (2026-08-07) — deliberate raw-surface carve-out: `dsp vre sparql query`
 
 This ADR's translation duty is about DSP-API's *invented* jargon for domain concepts (`ontology` →
 data-model, `class` → resource-type). `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md))

@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # CLI command shape: noun-group hierarchy with identifier flags
 
 `dsp-cli` organises commands as `dsp <area> <noun-group> <verb> [--flags]`. Noun-groups provide a hierarchy for progressive-disclosure help,
@@ -5,7 +10,7 @@ but resource identifiers (project shortname, data-model name, resource IRI, etc.
 This honours the nested sub-commands with help text at every level that `docs/src/dsp-cli/overview.md` calls for through the noun-group hierarchy,
 while avoiding identifier-stacking friction that hurts AI-agent ergonomics.
 
-## Considered alternatives
+## Considered Options
 
 - **Style 1 — deeply nested noun paths with positional identifiers**, e.g. `dsp vre project incunabula data-model anything-onto resource-type list`.
   Rejected because every command at depth N restates N−1 parent identifiers; discovery requires enumeration at each level;
@@ -24,3 +29,6 @@ while avoiding identifier-stacking friction that hurts AI-agent ergonomics.
 - Resource lookups by IRI can be direct (`dsp vre resource describe <iri>`) without restating the project shortcode — the IRI embeds it.
 - Possible future shortcut: a top-level `dsp vre describe <iri>` that dispatches based on IRI type (project / resource / data-model / etc.).
   To be decided when needed; ADR if formalised.
+
+Enforced by: the help snapshots in `dsp-cli/tests/cli.rs`, which pin every noun-group's verbs and every leaf's flags (**static-analysis**);
+the rest by **review**.

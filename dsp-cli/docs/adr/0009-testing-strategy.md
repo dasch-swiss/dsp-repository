@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Testing strategy
 
 `dsp-cli`'s test suite has four layers, each addressing a distinct class of failure. The primary seam is the `DspClient` trait (per dsp-cli/ADR-0008);
@@ -39,7 +44,7 @@ CI runs only the offline layers (1–4).
 
 Right trade for a personal exploratory project: drift detection when needed, no commitment to credentialed CI infrastructure or shared-environment uptime.
 
-## Considered alternatives
+## Considered Options
 
 - **(A2) Structural assertions on prose output.** Rejected — brittle on whitespace; weak on layout regressions; doesn't catch the most common breakage modes.
 - **(B1) Hand-written fixtures only.** Rejected — drifts from real API.
@@ -66,9 +71,11 @@ Right trade for a personal exploratory project: drift detection when needed, no 
 - "Open a can of worms" remains accurate for now; this ADR is the answer to "shouldn't we have spin-up-stack e2e tests?" — yes, eventually,
   but not until the cost is justified by the test scenarios.
 
-## Amendment (2026-08-07, plan 035)
+Enforced by: `.github/scripts/check-live-tests-ignored.sh`, run by `just check`, for live tests staying out of the default suite, and `insta`,
+which fails `just test` on any unaccepted snapshot diff (**static-analysis**); one snapshot per `(noun, verb, format)` cell, and the fixture split,
+by **review**.
 
-### The no-`Renderer` carve-out has no `(noun, verb, format)` snapshot cells
+## Amendment (2026-08-07) — the no-`Renderer` carve-out has no `(noun, verb, format)` snapshot cells
 
 This ADR states prose snapshots as the unconditional regression detector for every `(noun, verb,
 format)` cell. Three commands are exceptions, because they have no format and no `Renderer` to begin
@@ -105,3 +112,28 @@ CI stands it up, via `just dsp-cli-stack-up` / `just dsp-cli-stack-fixtures` / `
 
 This does not reopen (C1): the stack is disposable and pinned, not a shared always-on environment,
 which was the objection to C1.
+
+## Amendment (2026-10-22) — the test layout as built
+
+The suite has five layers, as listed under _Layers_; the opening sentence's "four" undercounts them.
+The directories named there (`tests/actions/`, `tests/snapshots/` for test code, `tests/client/`,
+`tests/live/`) were never created. Integration tests are flat files directly in `dsp-cli/tests/`, one
+binary each:
+
+- **Layers 1 and 2** live in `src/`, as inline `#[cfg(test)]` modules. Action-level tests sit in each
+  `src/actions/**` file, each with its own local `MockDspClient`, because `tests/support/` is not
+  reachable from `src/`.
+- **Layer 3** is `tests/*_snapshots.rs`, one file per noun and verb (plus `auth_snapshots.rs`,
+  `dump_progress_snapshots.rs` and `output_format_flags_snapshots.rs`). `tests/snapshots/` holds only
+  the `insta` `.snap` files.
+- **Layer 4** is `tests/*_http.rs`, one file per noun and verb (plus `login_http.rs`,
+  `set_token_http.rs` and `project_lookup_http.rs`), and `tests/update_check.rs`. Most fixtures are
+  inline `serde_json::json!` bodies; `tests/fixtures/` holds the few kept as files.
+- **Layer 5** is `tests/live_*.rs`, behind the `live` feature and `#[ignore]`d.
+- **Binary-level tests** run the built `dsp` through `assert_cmd` in the default suite: `tests/cli.rs`
+  (the help snapshots, usage errors, the JSON error envelope), `tests/docs.rs` and
+  `tests/stdout_broken_pipe.rs`.
+
+Two shared modules are included with `mod`: `tests/support/mod.rs` (a `MockDspClient` and the
+`SharedBuf` output capture, for snapshot and binary-level tests) and `tests/common/mod.rs`
+(`require_env` and `optional_env`, for live tests, with the `DSP_LIVE_STRICT` behaviour).

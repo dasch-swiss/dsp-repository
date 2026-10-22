@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Binary name, local install, and agent discoverability
 
 The invoked command is named **`dsp`**, not `dsp-cli` (the crate name). For the personal-project phase,
@@ -70,7 +75,7 @@ maintainer's GitHub-authenticated crates.io login; `cargo owner --add github:das
 - **Against:** crates.io publishes are irrevocable; name-squatting locks in the project name and crate name forever; ongoing version maintenance obligation;
   limited benefit if `cargo install --git` is good enough.
 
-## Considered alternatives
+## Considered Options
 
 - **Symlinked debug binary** (`ln -sf target/debug/dsp ~/.cargo/bin/dsp`). Rejected — stale-binary failure mode if a build fails silently;
   the agent invokes the previous binary without warning. `cargo install` produces a real artefact and fails loudly.
@@ -90,6 +95,9 @@ maintainer's GitHub-authenticated crates.io login; `cargo owner --add github:das
   fallback for the pre-publish window and for anyone tracking `main` ahead of a release.
 - The skill becomes a public-facing artefact that other dsp-cli users (eventually) install alongside the binary.
   Its quality matters: bad skill content misleads every agent that reads it.
+
+Enforced by: the binary name `dsp`, by the integration tests that run it as `Command::cargo_bin("dsp")`
+(e.g. `dsp-cli/tests/cli.rs`, `dsp-cli/tests/docs.rs`; **static-analysis**); the rest by **review**.
 
 ## Amendment (2026-07-24) — skill relocated to dasch-claude-plugins
 

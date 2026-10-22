@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-06-18
+---
+
 # Migration to dsp-repository
 
 `dsp-cli` currently lives in `dasch-swiss/dsp-incubator` as a prototype (it began as
@@ -5,13 +10,13 @@ a private `balduinLandolt/dsp-cli` repo — see dsp-cli/ADR-0005). Its intended 
 is the `dasch-swiss/dsp-repository` Cargo workspace (dsp-cli/ADR-0005, dsp-cli/ADR-0008). This ADR
 records the **decision to migrate there and how** — sequencing, target shape, git
 history, the (open) versioning question, and convention harmonization. It does **not** execute the
-migration: the mechanical runbook is written when the migration is actually scheduled
-(PROJECT_PLAN Phase 11). dsp-cli/ADR-0005 and dsp-cli/ADR-0008 predicted this move and shaped the code
+migration: the mechanical runbook is written when the migration is actually scheduled.
+dsp-cli/ADR-0005 and dsp-cli/ADR-0008 predicted this move and shaped the code
 to make it cheap; this ADR is the concrete record of the *how*.
 
 ## Context
 
-- The crate **name + owner** are settled (PROJECT_PLAN, 2026-06-18): the published
+- The crate **name + owner** are settled (dsp-cli/ADR-0011, 2026-06-18): the published
   crate is `dsp-cli`, owned via the `dasch-swiss` GitHub team added as a crate owner
   (crates.io has no "organization account" — crates are owned by users and/or GitHub
   teams). `dsp-cli` is available on crates.io; the name was chosen to survive this move.
@@ -78,7 +83,7 @@ once it joins the workspace — **not decided here**:
   `dsp-cli` semantics.
 
 **Lean: independent.** Deferred until the consequences for `dsp-repository`'s release
-tooling are understood — resolve in the migration runbook (Phase 11), or sooner if it
+tooling are understood — resolve in the migration runbook, or sooner if it
 turns out to affect anything before then. The 0.1.0 release from `dsp-incubator` is
 unaffected either way (it predates the workspace entirely).
 
@@ -106,7 +111,7 @@ Performed in the migration move (not before the 0.1.0 publish):
 
 ### What does not change
 
-The design decisions in ADRs 0001–0013 (vocabulary divergence, command shape, output
+The design decisions in dsp-cli's ADRs 0001–0013 (vocabulary divergence, command shape, output
 contract, diagnostics, instance reads, …) are about the *tool*, not its hosting. They
 survive the move unchanged; only their physical location in the docs tree changes.
 
@@ -115,8 +120,8 @@ survive the move unchanged; only their physical location in the docs tree change
 - 0.1.0 publishes from `dsp-incubator`; the crate's `repository` metadata initially
   points at `dsp-incubator` and is updated to `dsp-repository` in the migration release
   — a pre-1.0 metadata bump, no breakage.
-- The migration is a distinct, post-0.1.0 milestone (PROJECT_PLAN **Phase 11**), with
-  its own mechanical runbook authored when it is scheduled.
+- The migration is a distinct, post-0.1.0 milestone, with its own mechanical runbook
+  authored when it is scheduled.
 - After migration, the `dsp-incubator` prototype is archived (`/archive-prototype
   dsp-cli`); it remains the historical archive.
 - Whether `dsp-cli` participates in `dsp-repository`'s synchronized workspace
@@ -125,7 +130,9 @@ survive the move unchanged; only their physical location in the docs tree change
 - dsp-cli/ADR-0005's and dsp-cli/ADR-0008's migration notes are elaborated (not contradicted) by this
   ADR; they predicted the move, this records its shape.
 
-## Considered alternatives
+Enforced by: **review**.
+
+## Considered Options
 
 - **Migrate-first (publish 0.1.0 only from `dsp-repository`).** Rejected — gates the
   first release on a large migration and delays reserving the crate name (squatting

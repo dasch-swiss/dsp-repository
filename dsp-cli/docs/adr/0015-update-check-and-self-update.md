@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-07-21
+---
+
 # Update check and self-update
 
 `dsp-cli` is published to crates.io (0.1.0, 2026-07-17). A user who ran
@@ -7,8 +12,8 @@ deliberately, how far it goes (advise, not self-replace) and why.
 
 Scope note: this ADR covers the **advise-only update check shipping in 0.1.3**
 and draws the boundary to the two heavier self-update mechanisms it does *not*
-adopt. The heavier mechanism (binary self-replace) is deferred to a
-post-migration follow-on (PROJECT_PLAN Phase 11) and gets its own decision record
+adopt. The heavier mechanism (binary self-replace) is deferred to a follow-on
+after the migration to dsp-repository (dsp-cli/ADR-0014) and gets its own decision record
 when it is actually built.
 
 ## Context
@@ -80,7 +85,7 @@ non-interactive / agent path costs nothing.
   non-prerelease** `vers` is "latest". The index is built for exactly this
   lightweight lookup (ETag-cacheable, no rate-limit policy text). A
   `User-Agent` (`dsp-cli/<version>`) is sent as good citizenship even though the
-  index does not mandate it. _(Amended 2026-07-24, plan 033: the update-check
+  index does not mandate it. _(Amended 2026-07-24: the update-check
   client now shares the single `crate::util::USER_AGENT` constant used by every
   dsp-cli HTTP client; the former repo-suffixed form
   `dsp-cli/<version> (github.com/dasch-swiss/dsp-incubator)` was simplified to
@@ -124,8 +129,8 @@ dsp-cli/ADR-0003 stay unamended — the notice is deliberately kept out of the c
 Mechanism 3 (true self-replace) is deferred and **gated on first standing up a
 prebuilt cross-platform binary pipeline** (per-target GitHub-Release archives on
 every tag). That pipeline is a distribution-model addition best done in the
-dsp-repository release tooling — hence **post-migration** (PROJECT_PLAN Phase 11
-follow-on, owner's steer 2026-07-21). Once prebuilt binaries exist, adding
+dsp-repository release tooling — hence **post-migration** (owner's steer,
+2026-07-21). Once prebuilt binaries exist, adding
 `self_update`/`self_replace` against the GitHub backend extends this advise-only
 check into active self-replace. That work gets its own decision record (and likely
 a distribution ADR) when scheduled; this ADR only records that the door is left
@@ -144,7 +149,12 @@ open and why it is not walked through in 0.1.3.
 - Self-replace remains available as a future extension without re-litigating the
   advise-only decision — it is a strictly additive, infrastructure-gated follow-on.
 
-## Considered alternatives
+Enforced by: the unit tests in `dsp-cli/src/update/mod.rs` (the format, TTY and opt-out gate, index
+parsing, the cached version) and `dsp-cli/tests/update_check.rs` (the sparse-index fetch, the plain
+`User-Agent`, failures returning no version) (**static-analysis**); the stderr-only placement, the
+24-hour fetch window and the exit code staying untouched, by **review**.
+
+## Considered Options
 
 - **Notice in the JSON `_meta` envelope.** Rejected — `_meta` is a stable public
   contract and an update notice is not command data; keeping it stderr-only (all

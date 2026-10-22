@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Chaining model and output formats
 
 `dsp-cli` is designed for **agent-mediated chaining**: each command stands alone, takes explicit flags,
@@ -5,7 +10,7 @@ and emits output meant to be read either by an AI agent constructing the next ca
 The CLI itself has no piping-aware behaviour — no implicit stdin reading, no session state — because the agent is already doing the pipe's job.
 Five output formats span the prose / Unix-friendly / structured-interchange spectrum.
 
-## Considered alternatives
+## Considered Options
 
 - **P1 — Pipes as first-class.** Implicit stdin reading, default parseable output. Rejected — conflicts with prose-by-default;
   "magic" stdin behaviour is surprising in a flag-based CLI; the agent is already pipe-equivalent.
@@ -53,7 +58,11 @@ Every `json` response is a single object on stdout with `_meta` first, plus **ex
 - If real demand emerges later for session-context shortcuts, the option remains open as a thin wrapper or new ADR — but the core CLI stays stateless.
 - Two explicit "no"s recorded so they don't get re-litigated: no implicit stdin reading, no implicit session state.
 
-## Amendment (2026-06-12, plan 020)
+Enforced by: the JSON-envelope and `--columns`/header-flag usage tests in `dsp-cli/tests/cli.rs` and `dsp-cli/tests/docs.rs`, the per-format renders in
+`dsp-cli/tests/*_snapshots.rs` (including `output_format_flags_snapshots.rs`), and the `replace_control_chars` unit tests in `dsp-cli/src/util/text.rs`
+(**static-analysis**); statelessness and the no-stdin rule by **review**.
+
+## Amendment (2026-06-12)
 
 ### `--columns` replaces the envisioned `--fields`
 
@@ -125,9 +134,7 @@ the auth-state disclosure line, and `Diagnostic` error messages).
 No auth/server context applies to embedded documentation, and new `_meta` vocabulary (e.g. a version stamp) is deferred until something concrete needs it.
 The shape `{"_meta": {}, "data": [{…}]}` is part of the stable contract; `_meta` is still present and still first.
 
-## Amendment (2026-06-16, plan 022)
-
-### Pagination `_meta` keys — stable contract for list commands with pagination
+## Amendment (2026-06-16) — pagination `_meta` keys, a stable contract for list commands with pagination
 
 `dsp vre resource list` introduces pagination to the JSON output.
 The following `_meta` keys are a stable public contract (snake_case; additive — existing callers that pass no pagination emit neither key):
@@ -144,24 +151,20 @@ The following `_meta` keys are a stable public contract (snake_case; additive �
 exactly one of the two keys will be present, depending on the mode used.
 Consumers should branch on the presence of `pages_fetched` to distinguish `--all` output from single-page output.
 
-This amendment is **unconditional** of the simple-vs-complex response schema choice for `resource list` (deferred to dsp-cli/ADR-0013, Phase 8c).
+This amendment is **unconditional** of the simple-vs-complex response schema choice for `resource list` (deferred to dsp-cli/ADR-0013).
 The `_meta` pagination shape is stable regardless of which schema the HTTP client uses internally to decode the response.
 
-## Amendment (2026-06-19, Phase 8.5)
+## Amendment (2026-06-19) — tabular control-char neutralisation supersedes the original csv/tsv "fidelity" stance
 
-### Tabular control-char neutralisation — supersedes the original csv/tsv "fidelity" stance
-
-The original catalog described `tsv` escaping as "no (embedded tabs unescaped; … Phase 7)" and treated `csv`/`tsv` as fidelity-preserving machine formats.
-A security review of the prose resource-label hardening (Phase 8.5 #1) surfaced that this left a terminal-escape-sequence-injection surface in `csv`/`tsv` output
+The original catalog described `tsv` escaping as "no (embedded tabs unescaped; …)" and treated `csv`/`tsv` as fidelity-preserving machine formats.
+That stance left a terminal-escape-sequence-injection surface in `csv`/`tsv` output
 (and, for `tsv`, a latent column-corruption bug, since the mode was identity).
 This amendment revises the stance: **all three tabular formats (`lines`/`csv`/`tsv`) now replace every ASCII control character with a space**
 at the shared `QuoteMode::apply` chokepoint (helper `crate::util::text::replace_control_chars`).
 See the revised _Output format catalog_ table and the _Tabular formats: control characters replaced by spaces_ section above for the full contract,
 the convention assumption behind the negligible-fidelity-loss claim, the `json`/header-cell carve-outs, and the stderr-diagnostics scope-out.
 
-## Amendment (2026-07-13, plan 026)
-
-### `dsp auth token` — a second no-envelope, no-`--format` raw output shape
+## Amendment (2026-07-13) — `dsp auth token`, a second no-envelope, no-`--format` raw output shape
 
 `dsp auth token` prints a single raw value — the resolved bearer token — directly to stdout: **no envelope, no `_meta`, and no `--format`/`-j`/`-l`**.
 This is not a variant of the `json` envelope with an empty `_meta`
@@ -174,19 +177,15 @@ A JWT is not a JSON object, so wrapping it in `{"_meta": …, "data": "<token>"}
 This is the CLI's **second** no-`Renderer` command after `dsp docs <topic>`; [dsp-cli/ADR-0010](0010-embedded-documentation.md) is the precedent this amendment follows.
 As with `docs`, errors still go through the normal `Diagnostic`/exit-code path (`AuthRequired`, exit `3`, for a missing or locally-expired token) — only the success path is raw.
 
-## Amendment (2026-07-21, plan 032)
-
-### Top-level errors get a reduced `_meta`
+## Amendment (2026-07-21) — top-level errors get a reduced `_meta`
 
 Top-level errors — those caught by the binary-level handler in `main.rs`, as opposed to a command's own action-layer error — emit a **reduced** `_meta` compared to a normal command response: `exit_code` is always present, `server` is best-effort (populated when resolvable from the `--server`/`-s` flag at the top level, omitted otherwise), and `auth` is omitted unconditionally (`main` has no auth-cache access at that point). This is a narrower `_meta` shape than every other JSON output cataloged above, scoped specifically to the top-level error path.
 
-## Amendment (2026-08-07, plan 035)
-
-### A rule for the no-`Renderer` carve-out, not just a third example
+## Amendment (2026-08-07) — a rule for the no-`Renderer` carve-out, not just a third example
 
 `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the **third** command with no
-`Renderer`, no `--format`, no `-j`/`-l`, and no `--columns`/`--no-header` — after `dsp docs` (plan
-018) and `dsp auth token` (plan 026). It goes further than either precedent: it also relays a
+`Renderer`, no `--format`, no `-j`/`-l`, and no `--columns`/`--no-header` — after `dsp docs`
+(dsp-cli/ADR-0010) and `dsp auth token` (the 2026-07-13 amendment above). It goes further than either precedent: it also relays a
 store-chosen `Content-Type` and a store-chosen status, which neither prior carve-out did. Three data
 points are now a pattern; a fourth candidate should apply a rule, not eyeball similarity to three
 examples:

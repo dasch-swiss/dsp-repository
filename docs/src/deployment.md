@@ -129,7 +129,7 @@ On every push to `main`:
 
 Defined in `dpe-release-publish.yml`.
 
-When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image.
+When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image and triggers the STAGE and PROD deployments.
 
 ### Editor
 
@@ -147,9 +147,9 @@ On every push to `main`:
 1. Builds the content-hashed Tailwind stylesheet (`just css-editor-release`)
 2. Builds a static musl-linked `deposit-server` binary
 3. Pushes the Docker image to Docker Hub (`daschswiss/metadata-editor:{tag}`)
-4. Attempts a Jenkins webhook for DEV deployment
+4. Triggers a Jenkins webhook (`Service=deposit`) for STAGE deployment, `deposit.stage.dasch.swiss`
 
-Step 4 is marked `continue-on-error` and only warns. The editor is not yet registered as a deployable service in Jenkins — that lands with its inventory host and playbook — so the webhook rejects `Service=editor`. The image is already published by the time the trigger runs, so a rejection must not fail the workflow on `main`. Remove the guard once the Jenkins job exists, so a genuinely broken webhook is loud again.
+The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`. No workflow deploys the editor to prod yet: that waits for a mail relay ([DEV-7618](https://linear.app/dasch/issue/DEV-7618)).
 
 ### Release Please
 

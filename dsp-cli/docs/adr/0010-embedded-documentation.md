@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Embedded end-user documentation via `dsp docs`
 
 `dsp-cli` embeds its end-user documentation in the binary at compile time and exposes it through a top-level `dsp docs <topic>` command.
@@ -25,7 +30,7 @@ A doc topic that would just be the long version of a `--help` text does not belo
 
 ## v1 topic catalog
 
-> **Amendment (2026-06-09, plan 018):** the catalog is expanded from 6 to **9 topics**.
+> **Amendment (2026-06-09):** the catalog is expanded from 6 to **9 topics**.
 > The original six were *orienting* (they describe the world) but none teach an agent how
 > to *operate* it — and design principle 3 (agent-mediated chaining, no session state)
 > means the agent must compose the stateless commands itself, which `--help` does not
@@ -56,7 +61,7 @@ dsp docs <topic> --pager  # pages output (optional; agents typically don't want 
 dsp docs -j               # machine-readable JSON topic index
 ```
 
-> **Amendment (2026-06-12, plan 020 step 6):** `dsp docs -j` emits the standard
+> **Amendment (2026-06-12):** `dsp docs -j` emits the standard
 > JSON envelope with name+summary for every topic:
 >
 > ```json
@@ -66,8 +71,8 @@ dsp docs -j               # machine-readable JSON topic index
 > `_meta` is present but **literally `{}`** — no server/auth context applies to
 > embedded documentation. `-j` conflicts with the `<topic>` positional and
 > `--pager` (clap-level, exit 2); it exists only for the no-arg index form.
-> Topic *bodies* are never JSON-wrapped. The plan 018 D1 decision (no `Renderer`,
-> no `--format` flag on `docs`) is unchanged; `-j` is a narrow flag on `DocsArgs`
+> Topic *bodies* are never JSON-wrapped. The decision that `docs` has no `Renderer`
+> and no `--format` flag is unchanged; `-j` is a narrow flag on `DocsArgs`
 > that writes directly to the injected writer.
 
 Topic resolution is strict-match with a "did you mean" suggestion on miss:
@@ -110,16 +115,16 @@ docs/
     ├── connecting.md
     ├── output.md
     ├── dsp-tools.md
-    ├── workflows.md      # added (plan 018)
-    ├── identifiers.md    # added (plan 018)
-    └── errors.md         # added (plan 018)
+    ├── workflows.md      # added (2026-06-09 amendment)
+    ├── identifiers.md    # added (2026-06-09 amendment)
+    └── errors.md         # added (2026-06-09 amendment)
 ```
 
-## Considered alternatives
+## Considered Options
 
 - **Web-only documentation.** Rejected — agents would need network access; version drift between binary and website is silent and inevitable.
 - **`--help` only, no separate docs.** Rejected — `--help` cannot fit conceptual or crosscutting content without bloating into uselessness.
-- **Topic-per-command structure.** Rejected (this round of grilling) — duplicates `--help`, gives docs no independent value.
+- **Topic-per-command structure.** Rejected — duplicates `--help`, gives docs no independent value.
   The valuable docs are the ones with no command to attach to.
 - **Expose ADRs via `dsp docs`.** Rejected — ADRs are contributor artefacts; they explain *why we chose this design*, not *how to use it*.
   Reading ADRs as usage guidance would mislead an agent.
@@ -134,9 +139,11 @@ docs/
 - Documentation discipline is now part of the development loop: changing user-facing behaviour without updating relevant topics
   produces stale docs that ship in the very next binary.
 
-## Amendment (2026-08-07, plan 035)
+Enforced by: `dsp-cli/tests/docs.rs` for the topic index, strict topic resolution with its "did you mean"
+suggestion, and the `-j` index envelope and its flag conflicts (**static-analysis**); the boundary between
+`dsp docs` and `--help`, the "See also" discipline, and keeping topics in step with behaviour, by **review**.
 
-### Topic catalogue: 9 → 10, `sparql` added
+## Amendment (2026-08-07) — topic catalogue: 9 → 10, `sparql` added
 
 A new topic, `sparql`, joins the catalogue (`dsp docs sparql`) — see
 [dsp-cli/ADR-0016](0016-sparql-passthrough.md) for the command it documents. It carries what `--help` cannot:

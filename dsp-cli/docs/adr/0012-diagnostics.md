@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Diagnostics: errors, exit codes, and logging
 
 `dsp-cli` partitions "anything that is not the requested data" into two channels: errors (the command failed, exit non-zero) and logs (the command is reporting on its work,
@@ -86,7 +91,7 @@ Logging is for diagnostics during a command's execution — *not* for the comman
   No JSON-structured logs in v1; if a use case for log aggregation emerges, that's a future ADR.
 - Logging is initialised once, in `main.rs`, before any command logic runs. Library callers can install their own subscriber.
 
-## Considered alternatives
+## Considered Options
 
 - **Two-code model (`0` / `1`).** Rejected — agents lose the ability to distinguish "I should retry after login" from "the server is unreachable" without parsing prose.
   The cost of three extra codes is negligible; the agent ergonomics win is real.
@@ -98,9 +103,9 @@ Logging is for diagnostics during a command's execution — *not* for the comman
   Use `thiserror`-defined error types in library code and convert at the binary boundary.
 - **Auto-detect a `--quiet` flag.** Rejected for v1. Default is already terse (no logging output on success). Add `--quiet` if real noise emerges.
 
-## Amendment (2026-07-21, plan 032)
+## Amendment (2026-07-21) — top-level errors are routed through the renderer
 
-The binary-level error handler in `main.rs` now routes every top-level error through the selected format's `Renderer::diagnostic` — no `anyhow` (D2 of plan 032; the existing `Diagnostic` enum is routed through unchanged, closing out the "anyhow handler" language in the original Phase-1 backlog item). Under `-j` this emits the JSON error envelope to stdout; other formats emit `Error: {diag}` to stderr, matching the per-format `diagnostic()` contract already specified above.
+The binary-level error handler in `main.rs` now routes every top-level error through the selected format's `Renderer::diagnostic` — no `anyhow`; the existing `Diagnostic` enum is routed through unchanged. Under `-j` this emits the JSON error envelope to stdout; other formats emit `Error: {diag}` to stderr, matching the per-format `diagnostic()` contract already specified above.
 
 ## Consequences
 
@@ -111,9 +116,12 @@ The binary-level error handler in `main.rs` now routes every top-level error thr
 - Implementation: a single `Diagnostic` (or `DspError`) enum in `src/diagnostic.rs` carries the `kind`, message, and optional hint;
   the renderer trait grows `error_prose` / `error_json` / etc. methods symmetric to the data-rendering ones.
 
-## Amendment (2026-08-07, plan 035)
+Enforced by: the unit tests in `dsp-cli/src/diagnostic.rs` (kind to exit-code mapping), `dsp-cli/tests/cli.rs`
+(usage errors exit `2`, the JSON error envelope on stdout), `dsp-cli/tests/stdout_broken_pipe.rs`,
+`dsp-cli/tests/sparql_query_http.rs` (status mapping), and the per-format `insta` snapshots (**static-analysis**);
+the closed set of exit codes and the logging defaults, by **review**.
 
-### Exit semantics when the payload is a store-authored error document
+## Amendment (2026-08-07) — exit semantics when the payload is a store-authored error document
 
 `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the first command whose payload
 can itself be an error document authored by something other than dsp-cli — the triplestore's own

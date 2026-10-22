@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Boundary between dsp-cli and dsp-tools
 
 `dsp-cli` and `dsp-tools` coexist permanently as separate tools with non-overlapping interaction modes. We do not change anything about `dsp-tools` to accommodate `dsp-cli`,
@@ -16,7 +21,7 @@ The two tools can read the same project schema — they package the result diffe
   `dsp-tools get` writes a JSON file; `dsp vre data-model describe` emits prose.
   Same data, different interaction modes, different audiences.
 
-## Considered alternatives
+## Considered Options
 
 - **R1 — `dsp-cli` eventually replaces `dsp-tools`.** Rejected. Forces a long-term migration plan and ties language/scope decisions to `dsp-tools`' Python heritage.
   We don't want that pressure.
@@ -39,3 +44,5 @@ The two tools can read the same project schema — they package the result diffe
   When they become relevant, this ADR governs the decision: if the natural interaction mode is per-command (not file-driven), it belongs to `dsp-cli`.
 - This ADR is the answer to every future "let's just add X to dsp-cli that dsp-tools already does" or "let's just deprecate dsp-tools" —
   the answer is no, and here's the rule that decides it.
+
+Enforced by: **review**.

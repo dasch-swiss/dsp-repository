@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Top-level command shape: areas and meta-groups
 
 `dsp-cli`'s top level distinguishes **areas** of the DaSCH Service Platform (operational scope) from **meta-groups** (cross-cutting concerns like authentication).
@@ -15,7 +20,7 @@ Auth tokens are **server-keyed, not area-keyed**: the same token authenticates a
 Nesting `auth` inside `vre` would falsely imply VRE-scoped auth and would force an awkward duplication if `dsp repo` is added later.
 Top-level `dsp auth` matches the standard pattern (`gh auth`, `aws configure`, `kubectl config`).
 
-## Considered alternatives
+## Considered Options
 
 - **`dsp vre auth ...`** (auth scoped under each area). Rejected — falsely implies area-scoped tokens; doesn't generalise when a second area arrives.
 - **No `auth` commands; rely solely on env vars / external token provisioning.** Rejected — leaves humans without a built-in login flow and forces
@@ -26,3 +31,6 @@ Top-level `dsp auth` matches the standard pattern (`gh auth`, `aws configure`, `
 - v1 ships two top-level groups: `dsp auth` and `dsp vre`.
 - `dsp repo` is reserved but not implemented. The shape is here so we don't have to renegotiate it later.
 - Future meta-groups (e.g. `dsp config` for non-secret settings, `dsp completion` for shell completions) can live alongside `auth` without restructuring.
+
+Enforced by: the top-level help snapshot (`help_top`) in `dsp-cli/tests/cli.rs`, which pins the top-level command groups (**static-analysis**);
+the rest by **review**.

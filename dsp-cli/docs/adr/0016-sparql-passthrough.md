@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-08-07
+---
+
 # SPARQL passthrough as a deliberate raw-surface carve-out
 
 `dsp-cli` exists to abstract DSP-API's RDF surface behind domain-expert vocabulary
@@ -12,10 +17,6 @@ dumb."* dsp-cli is named the primary headless/agent client of that surface. This
 `dsp vre sparql query` ships as a **thin, unabstracted relay**, and which of dsp-cli's usual rules it
 narrowly and explicitly suspends to do so. Depends on dsp-cli/ADR-0001, dsp-cli/ADR-0002, dsp-cli/ADR-0003, dsp-cli/ADR-0004,
 dsp-cli/ADR-0007, dsp-cli/ADR-0012. Amends dsp-cli/ADR-0001, dsp-cli/ADR-0003, dsp-cli/ADR-0007, dsp-cli/ADR-0008, dsp-cli/ADR-0009, dsp-cli/ADR-0010, dsp-cli/ADR-0012.
-
-Full design decisions (D1–D19) live in plan
-[035-vre-sparql-query](../design/plans/035-vre-sparql-query/implementation-plan.md); this ADR
-records the load-bearing shape for future readers who won't read the plan.
 
 ## Decision
 
@@ -76,7 +77,7 @@ practice.
 Two things this design knowingly does not bound, both proportionate to a CLI that staff run against
 servers they name themselves:
 
-- **stdout is unsanitised store bytes by contract** (D3). A triplestore literal containing ANSI escapes
+- **stdout is unsanitised store bytes by contract.** A triplestore literal containing ANSI escapes
   reaches the terminal as-is. Sanitising conditionally on stdout being a TTY was considered and
   rejected: it would make `dsp … > file` and `dsp …` emit *different bytes*, a worse and more
   surprising footgun than the escape sequence it prevents. The mitigation is documentation
@@ -115,7 +116,12 @@ shape.
 - The store's own error body is contractually opaque (dsp-api's E2E spec asserts only non-emptiness);
   dsp-cli relays it, never parses it.
 
-## Considered alternatives
+Enforced by: `dsp-cli/tests/sparql_query_http.rs` (byte relay and content type, request shape, the status
+mapping, redirects not followed) and `dsp-cli/tests/cli.rs` (`--format`/`--columns` rejected, the
+`--query`/`--query-file` parsing) (**static-analysis**); the vocabulary carve-out, the `Debug` that never
+prints the body, and the no-post-processing rule, by **review**.
+
+## Considered Options
 
 - **Render SPARQL results through the five formats.** Rejected — re-imposes the abstraction this
   command exists to bypass, and only works for `SELECT`.

@@ -1,3 +1,8 @@
+---
+status: accepted
+date: 2026-05-26
+---
+
 # Internal architecture: layers, test seam, crate layout
 
 `dsp-cli` is organised as a five-layer architecture inside a single crate that exposes both a library (`src/lib.rs`) and a binary (`src/main.rs`).
@@ -63,7 +68,7 @@ dsp-cli/
 └── tests/                   # wiremock integration tests + cli-level assert_cmd tests
 ```
 
-> **Amendment (2026-06-17, plan 024 / Phase 8c):** `src/util/` was added as a layer-neutral home for dependency-free helpers.
+> **Amendment (2026-06-17):** `src/util/` was added as a layer-neutral home for dependency-free helpers.
 > It imports from no other crate-internal layer; any layer may import it freely.
 > The immediate resident is `src/util/text.rs` (`html_to_text`, `strip_control_chars`), relocated from `src/render/html.rs` to eliminate the client→render layering
 > violation that arose when value parsing (in `src/client/`) needed `html_to_text`.
@@ -89,7 +94,7 @@ trait Renderer {
 }
 ```
 
-> **Implementation note (Phase 4):** the real `Renderer::projects` signature takes `view: &ProjectListView` (an owned per-noun view struct carrying the
+> **Implementation note:** the real `Renderer::projects` signature takes `view: &ProjectListView` (an owned per-noun view struct carrying the
 > post-filter items, the pre-filter total, and the filter string) rather than the `items: &[Project]` shown above.
 > The sketch is illustrative — the view-struct pattern lets prose render a "(m of n matching …)" count line without the action duplicating that logic.
 > Future list methods will follow the same `<Noun>ListView` pattern.
@@ -99,7 +104,7 @@ Prose rendering is irreducibly per-noun (each entity has its own natural-languag
 Generic rendering via a trait object would force every format to read the same data through the same lens, which is exactly wrong for prose.
 The slight cost (more trait methods as the surface grows) is bounded by the fact that the noun-group set is small and grows slowly.
 
-## Considered alternatives
+## Considered Options
 
 - **L1 (binary-only single crate).** Rejected — actions only testable via end-to-end `assert_cmd`, which is slow and friction-heavy for the dominant test mode.
 - **L3 (Cargo workspace).** Rejected for now — adds ceremony without benefit at personal-project scale.
@@ -119,17 +124,18 @@ The slight cost (more trait methods as the surface grows) is bounded by the fact
 - Sync execution + trait-object dispatch keeps compile times reasonable and stack traces readable.
 - When the migration to dsp-repository happens, the natural split is: `dsp-client` (model + client trait + HTTP impl),
   `dsp-render` (model is shared via dsp-client, renderer trait + impls live here), `dsp-cli` (clap + actions + main).
-  The current layout makes that split a directory-rename operation. The move is now a recorded decision — see dsp-cli/ADR-0014 (PROJECT_PLAN Phase 11).
+  The current layout makes that split a directory-rename operation. The move is now a recorded decision — see dsp-cli/ADR-0014.
 
-## Amendment (2026-08-07, plan 035)
+Enforced by: the fail-loudly DTO contract of the 2026-09-22 amendment by the wiremock suites in `dsp-cli/tests/project_list_http.rs` and
+`dsp-cli/tests/project_describe_http.rs` (**static-analysis**); the layers and their import rules by **review**.
 
-### Layer 4 vs layer 3a: translated domain types vs transport-shaped relay types
+## Amendment (2026-08-07) — layer 4 vs layer 3a: translated domain types vs transport-shaped relay types
 
 This ADR's layer-4 contract (`src/model/`) has always held translated domain types only, but never
 said so in words. `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the first method
 to return something else — `SparqlResponse` (an HTTP status, a MIME string, and raw bytes) — and it
 lives in `src/client/sparql.rs`, layer 3a, not `src/model/`. Stated explicitly so the next
-`src/client/`-vs-`src/model/` call has a rule to apply rather than having to re-derive it from a plan:
+`src/client/`-vs-`src/model/` call has a rule to apply rather than having to re-derive it:
 
 > `src/model/` (layer 4) holds translated domain types only. Transport-shaped relay types — where the
 > shape is chosen by the server or the store, not by dsp-cli's translation — live in `src/client/`

@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its two ports, onto the archive projection and for bytes, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. A project's KDL, narrative and curation are deposited files that CPE reads at activation through a second port, for bytes, against `media` (ADR-0012); Incunabula's are in `media`'s stand-in directory, `areas/access/media/data/0803/` ([`../media/CONTEXT.md`](../media/CONTEXT.md)). `access-server` mounts the host crate's router at the base; the crates moved in from `dsp-incubator` one by one, in dependency order (ADR-0007, 2026-10-02 and 2026-10-11 amendments; ADR-0011). CPE's store is a derived read model, rebuilt from empty from what its two ports serve and fed by nothing else (ADR-0008); in the target both ports serve it with rights attached, it stores each row's rights and CPE filters every request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its two ports, onto the archive projection and for bytes, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. A project's KDL, narrative, curation and assets are deposited files: CPE reads the first three at activation through a second port, for bytes, against `media`, and `media` is to serve the assets at request time (ADR-0012). A project's folder holds no code (ADR-0007). Incunabula's KDL, narrative and curation are in `media`'s stand-in directory, `areas/access/media/data/0803/` ([`../media/CONTEXT.md`](../media/CONTEXT.md)); until `media` serves assets, they are in the project folder. `access-server` mounts the host crate's router at the base. CPE's store is a derived read model, rebuilt from empty from what its two ports serve and fed by nothing else (ADR-0008); in the target both ports serve it with rights attached, it stores each row's rights and CPE filters every request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -25,7 +25,7 @@ A resource the archive marks `oa:Annotation`: a Region or LinkObj, or a project 
 _Avoid_: Region as the name for every annotation (a LinkObj is one too), a separate annotation DTO.
 
 **Data ARK**:
-`cpe_ports::DataArk`, a resource's plain data ARK (`https://ark.dasch.swiss/ark:/72163/1/<SHORTCODE>/<id+checkdigit>`), carried by every `cpe_ports::Resource`. It resolves to the DSP data and never to CPE (ADR-0007, 2026-10-02 amendment). Distinct from the project or record **Pid** (`RecordPid`) defined in [`../CONTEXT.md`](../CONTEXT.md).
+`cpe_ports::DataArk`, a resource's plain data ARK (`https://ark.dasch.swiss/ark:/72163/1/<SHORTCODE>/<id+checkdigit>`), carried by every `cpe_ports::Resource`. It resolves to the DSP data and never to CPE (ADR-0007). Distinct from the project or record **Pid** (`RecordPid`) defined in [`../CONTEXT.md`](../CONTEXT.md).
 _Avoid_: presentation ARK (ADR-0007's open kind), version ARK, Pid.
 
 **Curation**:
@@ -117,7 +117,7 @@ vendored OpenSeadragon, with the `Viewer` Maud builder that renders the element 
 the element's files to a host. It depends on `maud` alone and on no other CPE crate.
 
 It is interim: a cut-down copy of `dsp-incubator shared/dasch-image-viewer`, reduced to the one engine CPE
-uses (ADR-0007, amendment of 2026-10-11, DEV-7401). The full viewer, with its other engines, stays in the
+uses (ADR-0007). The full viewer, with its other engines, stays in the
 incubator, which chooses the final engine; the result replaces this crate. Until then a viewer fix lands here
 and is applied by hand there. Its README says what was removed.
 
@@ -168,14 +168,14 @@ declaration, a declaration without a hook, and any read or change beyond it. A h
 `hook::Draft` of the mapped resources and never sees the snapshot. Incunabula has the only one. A project
 with a hook therefore adds a module and a table row to this crate, and its names to two hand-kept lists of
 the crate's `tests/it/hygiene.rs`; the crate's `README.md`, "Adding a project", has every step. A project
-without one adds no code: a folder with its `SHORTCODE`, and its deposited files (ADR-0007, amendment of
-2026-10-11, DEV-7465; ADR-0012).
+without one adds no registry row: a folder with its `SHORTCODE`, and its deposited files (ADR-0007,
+ADR-0012).
 _Avoid_: script, plugin (a hook is compiled in and typed), registry entry in the project's folder.
 
 The crate depends on `cpe-core` and `cpe-ports`, and not on `cpe-store`: it includes `store/schema.sql` as text. Its tests over Incunabula read the committed
-0803 snapshot through `sync-store`'s adapter, which is a dev-dependency and never a dependency (ADR-0008,
-amendment of 2026-10-11), and Incunabula's `config.kdl` and `curation.csv` from `media`'s stand-in directory
-as files. The rule table of what the builder does to each value is in its `README.md`.
+0803 snapshot through `sync-store`'s adapter, which is a dev-dependency and never a dependency (ADR-0008),
+and Incunabula's `config.kdl` and `curation.csv` from `media`'s stand-in directory as files. The rule table
+of what the builder does to each value is in its `README.md`.
 
 ## The page assembly
 
@@ -274,8 +274,7 @@ project or cannot be read, a deposited file is not UTF-8 or a required one is no
 narrative file it names and the port does not hold included), the KDL declares another shortcode than
 `SHORTCODE`, the curation file or the build refuses the data, or any of these panics. It is
 logged with its id, and every path under its prefix is answered 503 with `Retry-After` and
-`Cache-Control: no-store`; the other projects are served ("a project fails alone", ADR-0007, amendment of
-2026-10-11 on activation), and the **Overview** does not list it. 404 is for a path that names no project
+`Cache-Control: no-store`; the other projects are served ("a project fails alone", ADR-0007), and the **Overview** does not list it. 404 is for a path that names no project
 folder. A folder is a project when its
 name passes the **Project id** rule and it holds a regular `SHORTCODE` file whose trimmed text passes
 `cpe_ports::is_shortcode`. A folder that fails either is not a project, so its paths are 404; it is logged,
@@ -294,12 +293,13 @@ DEV-7498.
 
 ## The project folders
 
-A project is a folder under `projects/`, named by its **Project id**, and it holds code: the project's hook
-and components, and the documents about its data (ADR-0012). Its KDL, narrative and curation are deposited
-files read through the **Bytes port**, which `media` serves from `areas/access/media/data/<shortcode>/`.
-`projects/incunabula/` holds `SHORTCODE` (`0803`), the files under `assets/`, and four documents about the
-project's data (`SHAPE.md`, `CURATION.md`, `PROVENANCE.md`, `DATA_ISSUES.md`); its hook is a module of the
-builder. Those four were written in the incubator and still describe its pipeline in places: its
+A project's folder under `projects/` is named by its **Project id** and holds no code: the project's hook is
+a `HOOKS` row and its components are `PROJECT_RENDERERS` rows (ADR-0007). Its KDL, narrative, curation and
+assets are deposited files, the first three read through the **Bytes port**, which `media` serves from
+`areas/access/media/data/<shortcode>/` (ADR-0012). `projects/incunabula/` holds `SHORTCODE` (`0803`), the
+files under `assets/`, and four documents about the project's data (`SHAPE.md`, `CURATION.md`,
+`PROVENANCE.md`, `DATA_ISSUES.md`); its hook is a module of the builder. Those four were written in the
+incubator and still describe its pipeline in places: its
 committed `data.sql`, its `vendor/` directory, its `just cpe` recipes and other files of the incubator (its
 design documents, its mockup, its scripts, `dao-lift`) are not in this repository. A citation that starts
 with `dsp-incubator`, as `dsp-incubator cpe/docs/…` does in these documents, in
@@ -311,15 +311,15 @@ under `_assets/` until `media` serves assets at request time; then they leave th
 
 ## The dependency seam
 
-`just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007, amendment
-of 2026-10-11, DEV-7401). No crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`,
-which `sync-store` and `media-store` implement, and `cpe-server`, which `access-server` mounts (amendment of
-2026-10-12); no manifest under `areas/access/cpe/` depends on a Mosaic crate;
+`just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007). No crate
+outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`, which `sync-store` and
+`media-store` implement, and `cpe-server`, which `access-server` mounts; no manifest under
+`areas/access/cpe/` depends on a Mosaic crate;
 `cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate; no manifest under
 `areas/access/cpe/` names a crate of `areas/access/sync/` or `areas/access/media/` outside a
-dev-dependencies table (ADR-0008, amendment of 2026-10-11; ADR-0012); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
+dev-dependencies table (ADR-0008, ADR-0012); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
 but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but `cpe-store` (the script's `CPE_EDGES`;
-ADR-0007, amendments of 2026-10-11, DEV-7465, and of 2026-10-12). A
+ADR-0007). A
 rename (`package = "…"`) of a CPE, Mosaic, `sync` or `media` crate in the workspace root is reported where it is
 declared, whichever crate inherits it. The
 first, second and fourth rules cover a new crate without an edit. A new crate that must stay a leaf has to be
@@ -339,7 +339,7 @@ them (ADR-0012).
 | In | Out, deliberately | Why out |
 |---|---|---|
 | Resources: IRI, class, label | Ontology definitions (class and property labels, cardinalities, the subproperty hierarchy) | KDL declares CPE's labels |
-| The data ARK of every resource, annotations included: the plain data ARK only, never a value or version ARK; the adapter derives it from the IRI until DAO carries it | Value and version ARKs | CPE links back to the data it presents; data ARKs resolve to the DSP data and never to CPE (ADR-0007, 2026-10-02 amendment) |
+| The data ARK of every resource, annotations included: the plain data ARK only, never a value or version ARK; the adapter derives it from the IRI until DAO carries it | Value and version ARKs | CPE links back to the data it presents; data ARKs resolve to the DSP data and never to CPE (ADR-0007) |
 | Text (plain text plus language), texts with markup included | Standoff markup | Nothing in CPE presents it yet; it is added as `Text`'s own field when a project needs it, never as an opt-in flag |
 | Integer, decimal, boolean, URI; geometry (knora-base's JSON) and color, both verbatim | Geoname, time and interval values; the planned structured geolocation value | No CPE component presents them. Map display is deferred to CPE by the geolocation PRD (`dasch-specs/specs/2026-09-07-support-geographic-location-data-in-dsp/01-geolocation-value-type-PRD.md`); it comes in with the first project that shows a map |
 | Date (calendar, start and end as JDN plus precision) | Islamic calendar | Accepted by DSP-API, but the corpus has Gregorian and Julian only |

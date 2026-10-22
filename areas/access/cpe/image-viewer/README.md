@@ -13,8 +13,7 @@ This crate is a cut-down copy of `shared/dasch-image-viewer` in
 library can render a viewer from this repository. The incubator keeps developing
 its viewer and chooses the final engine there; the result then replaces this
 crate. The decision is recorded in
-[`docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`](../../../../docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md),
-amendment of 2026-10-11 (DEV-7401).
+[`docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md`](../../../../docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md).
 
 Until then:
 
@@ -108,9 +107,9 @@ let app = app.route("/_static/image-viewer/{*path}", get(serve_viewer_asset));
 The route should send `X-Content-Type-Options: nosniff`, as the sample does:
 `asset()` returns the bytes and a content type and sets no header itself.
 
-`ASSET_PREFIX` is a default, and a host replaces it. ADR-0007's amendment
-of 2026-09-29 (DEV-7405) serves the engine's shared files under each project's
-own prefix, at `/cpe/<shortname>/_static/…`. The JS finds the vendored
+`ASSET_PREFIX` is a default, and a host replaces it. ADR-0007 serves the
+engine's shared files under each project's own prefix, at
+`<base>/<project id>/_static/…`. The JS finds the vendored
 OpenSeadragon and its sprites relative to its own module URL, so no path is
 fixed in the bundle; the host passes the prefix it mounted to `head_tag()`.
 

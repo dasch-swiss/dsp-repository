@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # Every crate of an area in CHECKED_AREAS depends, among this workspace's
-# crates, only on what its role allows (ADR-0003, amendment of 2026-09-25;
-# the Deposit Area's roles: areas/deposit/ADR-0004, "The shape").
+# crates, only on what its role allows (ADR-0003; the Deposit Area's roles:
+# areas/deposit/ADR-0004, "The shape").
 #
 # A crate at areas/<area>/<capability>/<role>/Cargo.toml may depend on:
 #   every role            its own capability's crates and shared/* crates;

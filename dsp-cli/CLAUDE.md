@@ -48,12 +48,9 @@ rationale.
 These are easy to miss and load-bearing. Reviewers should call them out.
 
 - **Vocabulary divergence is intentional.** The CLI says `data-model` / `resource-type` / `field` /
-  `value-type` where DSP-API says `ontology` / `class` / `property` / `Value` subclass. Translation
-  happens **once**, at the client/deserialisation boundary (`src/client/`). Everything above the
-  client layer uses dsp-cli vocabulary; everything `OntologyDto`-shaped stays inside the client.
-  This includes the word "export" (which DSP-API uses for what dsp-cli calls a "dump") — it must not
-  appear in help text, error messages, type names, or module names outside `src/client/`. See
-  [dsp-cli/ADR-0001](./docs/adr/0001-vocabulary-divergence.md) and the full glossary in
+  `value-type` where DSP-API says `ontology` / `class` / `property` / `Value` subclass, translated
+  once, in `src/client/`; "export" never appears above it. See
+  [dsp-cli/ADR-0001](./docs/adr/0001-vocabulary-divergence.md) ("Translation boundary") and the full glossary in
   [`CONTEXT.md`](./CONTEXT.md) — read that first before naming or renaming anything domain-facing.
 - **Unit-test mocks are always LOCAL to the action file, deliberately duplicated rather than
   shared.** `tests/support/mod.rs` is a separate integration-test crate and is NOT reachable from
@@ -69,7 +66,8 @@ These are easy to miss and load-bearing. Reviewers should call them out.
   noun-group's clap variant shares its name (`VreCmd::ResourceType { … }`), so not every
   `ResourceType {` hit is a construction of the model.
 - **No implicit session state, no default server, no positional identifiers.** Every command takes
-  its identifiers as flags and fails fast if no server is specified. See
+  its identifiers as flags (the one positional is the topic of `dsp docs <topic>`) and fails fast
+  if no server is specified. See
   [dsp-cli/ADR-0002](./docs/adr/0002-command-shape.md),
   [dsp-cli/ADR-0003](./docs/adr/0003-chaining-and-output.md),
   [dsp-cli/ADR-0007](./docs/adr/0007-auth-and-environments.md). The one carve-out is `.env` loading
@@ -168,6 +166,10 @@ These are easy to miss and load-bearing. Reviewers should call them out.
   in [`dasch-claude-plugins`](https://github.com/dasch-swiss/dasch-claude-plugins) as
   `misc:dsp-cli` (plugin marketplace); see
   [dsp-cli/ADR-0011](./docs/adr/0011-distribution-and-discoverability.md).
+- **History before the move** — dsp-cli's earlier history and its planning documents (design plans,
+  `PROJECT_PLAN`, backlog) live in the archived
+  [dasch-swiss/dsp-incubator](https://github.com/dasch-swiss/dsp-incubator); source comments that
+  cite a plan number (`plan 022 D1`) point there.
 
 ## When in doubt
 

@@ -516,7 +516,7 @@ impl Renderer for LinesRenderer {
         detail: &crate::model::ResourceDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // Lines format: `detail.values` selects the shape (dsp-cli/ADR-0013 D1).
+        // Lines format: `detail.values` selects the shape (dsp-cli/ADR-0013).
         // None → the metadata row (single row, label TAB iri lean default), unchanged.
         // Some(fields) → one row per value (long-format), metadata row dropped.
         match &detail.values {

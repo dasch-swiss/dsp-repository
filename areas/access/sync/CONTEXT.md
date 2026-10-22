@@ -7,7 +7,7 @@ with no Chischtli, replay or bus. `sync` is the single consumer of the archive's
 bucket is `media`'s, and a deposited file such as a project's curation file reaches CPE through its bytes port
 against `media` (ADR-0012). `access-server`
 constructs it over the directory `SYNC_DATA_DIR` names (default `areas/access/sync/data`) and hands it to
-CPE's activation. ADR-0007's DEV-7399 amendment records why the committed projection is interim-DAO. The
+CPE's activation. ADR-0007 records why the committed projection is interim-DAO. The
 port's terms (Archive projection port, Project snapshot, Source property, Archive-shaped fact, Annotation)
 are in
 [`../cpe/CONTEXT.md`](../cpe/CONTEXT.md), the Access Area's in [`../CONTEXT.md`](../CONTEXT.md), the

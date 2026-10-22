@@ -95,7 +95,7 @@ fn docs_json_flag_emits_topic_index() {
     insta::assert_snapshot!("docs_json_index", text);
 }
 
-/// `_meta` must be the very first key in the JSON output (dsp-cli/ADR-0003, plan 020 D4).
+/// `_meta` must be the very first key in the JSON output (dsp-cli/ADR-0003).
 /// The assertion is byte-position: no leading whitespace is permitted before
 /// `{"_meta"`. `trim_start()` is intentionally absent — that would allow the
 /// contract to be silently weakened by leading whitespace or a BOM.

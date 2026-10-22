@@ -304,7 +304,7 @@ pub(crate) const RESOURCE_DESCRIBE_COLUMNS: &[&str] = &[
 ];
 
 /// Column set for `resource describe --values` (long-format, one row per
-/// value). `label`/`iri` are the leading key columns (dsp-cli/ADR-0013 option 1).
+/// value). `label`/`iri` are the leading key columns (dsp-cli/ADR-0013).
 pub(crate) const RESOURCE_DESCRIBE_VALUES_COLUMNS: &[&str] =
     &["label", "iri", "field", "field_label", "value_type", "value", "comment"];
 

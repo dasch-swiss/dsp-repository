@@ -185,7 +185,7 @@ pub fn run(cli: Cli) -> Result<(), Diagnostic> {
                     actions::vre::vocabulary::describe(&args, &cfg, &client, &mut *renderer)
                 }
             },
-            // No renderer, no table_options — D2/D16: the response is a
+            // No renderer, no table_options (dsp-cli/ADR-0016): the response is a
             // store-authored byte stream, not a dsp-cli-rendered view.
             VreCmd::Sparql { cmd } => match cmd {
                 SparqlCmd::Query(args) => {

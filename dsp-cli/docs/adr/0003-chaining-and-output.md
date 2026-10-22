@@ -1,9 +1,4 @@
----
-status: accepted
-date: 2026-05-26
----
-
-# Chaining model and output formats
+# Commands are stateless; output is one of five formats in a stable envelope
 
 `dsp-cli` is designed for **agent-mediated chaining**: each command stands alone, takes explicit flags,
 and emits output meant to be read either by an AI agent constructing the next call or by a shell using standard Unix tooling.
@@ -15,8 +10,8 @@ Five output formats span the prose / Unix-friendly / structured-interchange spec
 - **P1 — Pipes as first-class.** Implicit stdin reading, default parseable output. Rejected — conflicts with prose-by-default;
   "magic" stdin behaviour is surprising in a flag-based CLI; the agent is already pipe-equivalent.
 - **P3 — Implicit session state.** Persistent context (env var, state file, REPL) so subsequent commands inherit project/data-model identifiers.
-  Rejected — hidden state breaks reproducibility: an agent replaying a transcript should get identical results regardless of prior commands.
-  Can be added later as a thin shell wrapper (or a separate context-aware tool) without baking statefulness into the CLI core.
+  Rejected inside the CLI — hidden state breaks reproducibility: an agent replaying a transcript should get identical results regardless of prior commands.
+  *Deferred* outside it: a thin shell wrapper or a separate context-aware tool, if demand for session-context shortcuts emerges. The core CLI stays stateless.
 - **P2 — Agent-mediated, with structured output as the bridge to Unix.** Chosen. Each command is self-contained and replay-safe;
   the structured formats let `jq`, `cut`, `awk`, and `xargs` handle bulk work for shell users.
 
@@ -30,12 +25,39 @@ Five output formats span the prose / Unix-friendly / structured-interchange spec
 | `csv` | — | yes | yes (RFC 4180); control chars → space | formal comma-separated table, universal interchange |
 | `json` | `-j` | n/a | n/a | nested structure, full type fidelity; for `jq` |
 
-The format is selected via `--format=<value>` (canonical) or the short aliases `-j` / `-l`. Adding more formats later (e.g. yaml) extends the enum without proliferating flags.
+The format is selected via `--format=<value>` (canonical) or the short aliases `-j` / `-l`; `-j` wins over `-l`, which wins over `--format`.
+A new format extends the enum without proliferating flags.
 
-`--columns=X,Y,Z` selects and reorders output columns for `csv`, `tsv`, and `lines` output; the valid column names per noun-group are documented in each command's `--help`.
-*(The flag was originally envisioned as `--fields`; see the Amendment below for the rename rationale and the full contract.)*
+Each noun-group specifies which columns it emits in which format, documented in each command's `--help`. This is part of the public CLI contract (stability obligation).
 
-### JSON envelope (canonical)
+### Columns and headers
+
+- `--columns=X,Y,Z` selects **and reorders** columns for `csv`, `tsv` and `lines`; the user's order wins.
+  It is not supported for `json` (consumers have `jq`) or `prose`: either is `Diagnostic::Usage`, exit 2, hint "`--columns` works with csv, tsv, and lines output".
+  Duplicates are rejected with `Diagnostic::Usage`, and names are matched case-sensitively against the csv header names.
+  The flag is `--columns`, not `--fields`, because `field` is a reserved domain noun (a slot on a resource-type).
+- On `lines`, `--columns` selects from the **full column set** (the csv header set), overriding the lean default subset:
+  `--columns iri --format lines` yields bare IRIs for piping. Without the flag, `lines` emits its lean subset.
+- `--no-header` suppresses the header row of `csv`/`tsv` (enabling `>> all.csv` concatenation). `--header-only` emits only the header row and exits 0;
+  with `--columns` it emits the selected header. The two are mutually exclusive (`clap conflicts_with`), and either with `prose`, `lines` or `json`
+  is `Diagnostic::Usage`, exit 2. Headers are on by default; there is no `--header` flag. `--header-only` still contacts the server
+  before it emits the header; skipping that fetch is *deferred* until a caller needs the header without a server.
+
+### Tabular formats: control characters replaced by spaces
+
+`lines`, `csv` and `tsv` replace every ASCII control character (`char::is_ascii_control()`: the C0 range plus DEL) with a single space before any format-specific quoting,
+at the single `QuoteMode::apply` chokepoint, so every column of every tabular command is covered. `csv` then applies RFC-4180 quoting.
+This closes a terminal-escape-sequence-injection surface and keeps an embedded tab or newline from breaking one-record-per-line or delimited consumers,
+especially since `--columns` makes arbitrary server-controlled columns (`label`, `longname`, …) first-class output.
+
+The fidelity cost is negligible on the convention that tabular columns hold single-line values (identifiers, single-line labels, dates; multi-line text is prose-only).
+This is a DSP convention, not enforced at the client boundary: instance labels in particular are user-entered. Callers needing byte-for-byte server fidelity use `-j`.
+
+Not sanitised, under the personal-CLI / user-controls-the-server threat model: `json` values (`serde_json` escapes C0 including ESC, so a raw ESC never reaches the terminal;
+a raw DEL may, which is not an escape-sequence vector alone), header cells (compile-time `&'static str` constants), and stderr diagnostics
+(server-derived dump IDs and project IRIs in progress output, the auth-state line, `Diagnostic` messages).
+
+### JSON envelope
 
 Every `json` response is a single object on stdout with `_meta` first, plus **exactly one** of `data` (success) or `error` (failure):
 
@@ -44,157 +66,38 @@ Every `json` response is a single object on stdout with `_meta` first, plus **ex
 {"_meta": {"server": "…", "auth": "…", "exit_code": 3}, "error": {"kind": "…", "message": "…"}}
 ```
 
-- `data` is an object for single-result commands and an **array** for list commands, so the envelope is uniform across the whole CLI.
-  A consumer always parses one object: if `.error` is present the command failed, otherwise read `.data`.
+- `data` is an object for single-result commands and an **array** for list commands, so the envelope is uniform across the CLI.
+  A consumer parses one object: if `.error` is present the command failed, otherwise read `.data`.
 - The `error` block is defined by [dsp-cli/ADR-0012](0012-diagnostics.md); the `error`-bearing form is the documented stdout exception (errors don't split across stdout/stderr).
-- `server` appears only in `_meta`, never duplicated inside `data`.
+- `server` appears only in `_meta`, never inside `data`.
 - Key order is deterministic (`serde_json` `preserve_order`); `_meta` is always first. The shape is part of the public CLI contract (stability obligation).
+- Top-level errors, caught by the binary-level handler in `main.rs` rather than by a command's own action layer, carry a **reduced** `_meta`:
+  `exit_code` always, `server` when resolvable from the `--server`/`-s` flag, and no `auth` (`main` has no auth-cache access there).
+- `dsp docs -j` is the one command whose `_meta` is the empty object `{}`: no auth or server context applies to embedded documentation.
+  `{"_meta": {}, "data": [{…}]}` is part of the stable contract. A version stamp or other new `_meta` vocabulary there is *deferred* until something concrete needs it.
+- List commands with pagination (`dsp vre resource list`) add stable, snake_case `_meta` keys: in single-page mode (default, or `--page N`) `page`
+  (zero-based) and `may_have_more_results`; with `--all`, `pages_fetched` and `may_have_more_results` (always `false`).
+  Exactly one of `page` and `pages_fetched` is present, so consumers branch on `pages_fetched` to tell `--all` output from single-page output.
+
+### Commands without a `Renderer`
+
+Three commands have no `Renderer`, no `--format`, no `-j`/`-l`, no `--columns` and no `_meta`: `dsp docs <topic>` (a markdown document), `dsp auth token`
+(a bearer token; a JWT is not a JSON object, so an envelope would only get in the way of `export DSP_TOKEN=$(dsp auth token -s dev)`),
+and `dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)). Errors still go through the normal `Diagnostic`/exit-code path; only the success path is raw.
+`Cli::output_format()` returns `None` for `AuthCmd::Token` and `SparqlCmd::Query`.
+
+A fourth candidate applies this rule, not a resemblance to the three:
+
+> No `Renderer` when the response body's shape and encoding are chosen by something other than dsp-cli, and re-encoding it through dsp-cli's envelope would
+> corrupt it (csv/tsv/lines) or double-encode it (json embedding a JSON document as a string).
 
 ## Consequences
 
 - Every command is reproducible in isolation. Replaying a transcript always behaves the same — critical for AI-agent debuggability.
 - Bulk shell work composes with standard Unix tools: `dsp vre … --json | jq …` or `dsp vre … -l | xargs …`. Nothing dsp-cli-specific is required.
-- Each noun-group must specify which fields it emits in which format. This is documented in `--help` and is part of the public CLI contract (stability obligation).
-- If real demand emerges later for session-context shortcuts, the option remains open as a thin wrapper or new ADR — but the core CLI stays stateless.
-- Two explicit "no"s recorded so they don't get re-litigated: no implicit stdin reading, no implicit session state.
+- Two explicit "no"s so they don't get re-litigated: no implicit stdin reading, no implicit session state.
 
-Enforced by: the JSON-envelope and `--columns`/header-flag usage tests in `dsp-cli/tests/cli.rs` and `dsp-cli/tests/docs.rs`, the per-format renders in
-`dsp-cli/tests/*_snapshots.rs` (including `output_format_flags_snapshots.rs`), and the `replace_control_chars` unit tests in `dsp-cli/src/util/text.rs`
-(**static-analysis**); statelessness and the no-stdin rule by **review**.
-
-## Amendment (2026-06-12)
-
-### `--columns` replaces the envisioned `--fields`
-
-The flag was originally named `--fields` in this ADR. The name is changed to `--columns` because `field` is a reserved domain noun in dsp-cli vocabulary
-(a slot on a resource-type — see `CONTEXT.md`).
-In `resource-type describe` tabular output the *rows* are fields; `--fields=name,label` would read as schema-field selection.
-`--columns` names the output concept directly (a named position in tabular output).
-The flag was envisioned but never shipped, so there is no compatibility break.
-
-### Projection scope: `csv`, `tsv`, `lines` only
-
-`--columns` applies to `csv`, `tsv`, and `lines` output.
-It is **not** supported for `json` (JSON consumers have `jq`; projection there would touch the serde view path and key-order guarantees for marginal gain)
-or `prose` (format-agnostic narrative, not column-structured).
-Using `--columns` with `prose` or `json` → `Diagnostic::Usage`, exit 2, with the hint: "`--columns` works with csv, tsv, and lines output".
-
-On `lines`, projection selects from the **full column set** (the csv header set), overriding the lean default subset — `--columns iri --format lines` yields bare IRIs for piping.
-Without the flag, `lines` keeps its current lean subset byte-identically.
-
-### Projection semantics: select and reorder; duplicates rejected
-
-`--columns` selects **and reorders** columns — user order wins.
-**Duplicates are rejected** with `Diagnostic::Usage` (duplicate CSV header cells break downstream parsers; a projection that is dedup-free surprises nobody).
-Column name matching is case-sensitive exact match on the csv header names. The valid column set per noun-group is listed in each command's `--help`.
-
-### Header control: `--no-header` and `--header-only`
-
-Two boolean flags control header emission for `csv` and `tsv` output:
-
-- `--no-header` — suppress the header row (enables `>> all.csv` row concatenation across invocations).
-- `--header-only` — emit only the header row and no data rows (exit 0). Note: **the server fetch still happens** — short-circuiting the fetch is out of scope for v1.
-
-Headers-on is the unflagged default; there is no redundant `--header` flag. The two flags are mutually exclusive (`clap conflicts_with`).
-Either flag with `prose`, `lines`, or `json` → `Diagnostic::Usage`, exit 2 (`lines` has no header concept by design).
-
-When composed with `--columns`, `--header-only` emits the selected header.
-
-### Tabular formats: control characters replaced by spaces
-
-**All three tabular formats — `lines`, `csv`, and `tsv` — replace every ASCII control character**
-(Rust's `char::is_ascii_control()`: the C0 range — tab `\t`, newline `\n`, carriage return `\r`, NUL, ESC, … — plus DEL `\x7f`)
-**with a single space** before any format-specific quoting.
-The shared helper is `crate::util::text::replace_control_chars` (a sibling of `strip_control_chars`, the prose sanitiser that keeps `\n`/`\t`).
-This is applied at the single `QuoteMode::apply` chokepoint, so it covers every column of every tabular command:
-
-- `lines` → `replace_control_chars` only.
-- `tsv` → `replace_control_chars` only (this also prevents an embedded tab/newline from silently splitting a column — `tsv` was previously identity, a latent integrity bug).
-- `csv` → `replace_control_chars`, then RFC-4180 quoting (`csv_field`).
-
-Rationale: closes a terminal-escape-sequence-injection surface uniformly across every human-viewable format,
-and prevents embedded `\t`/`\n` from breaking one-record-per-line / delimited consumers —
-especially once `--columns` makes arbitrary server-controlled columns (`label`, `longname`, …) first-class tabular output.
-
-The fidelity cost is negligible **on the convention** that tabular columns hold single-line values (short identifiers, single-line labels, dates;
-multi-line text such as descriptions is prose-only).
-This is a DSP convention, *not* enforced at the client boundary — instance labels in particular are user-entered.
-Callers needing byte-for-byte server fidelity use `-j` (json), which is unaffected.
-
-Out of scope (not sanitised, accepted under the personal-CLI / user-controls-the-server threat model — the same residual posture as `csv_field`'s formula-injection note):
-`json` (raw values; `serde_json` escapes all C0 incl. ESC as `\uXXXX`, so a raw ESC never reaches the terminal —
-a raw DEL `\x7f` may, but DEL alone is not an escape-sequence vector);
-**header cells** (compile-time `&'static str` column-name consts, never server-controlled);
-and **stderr diagnostic output** (`HumanProgress` server-derived dump IDs / project IRIs in `src/render/progress.rs`,
-the auth-state disclosure line, and `Diagnostic` error messages).
-
-### `dsp docs -j` and empty `_meta`
-
-`dsp docs -j` (the no-arg topic index in JSON) is the one command whose `_meta` is **literally the empty object** `{}`.
-No auth/server context applies to embedded documentation, and new `_meta` vocabulary (e.g. a version stamp) is deferred until something concrete needs it.
-The shape `{"_meta": {}, "data": [{…}]}` is part of the stable contract; `_meta` is still present and still first.
-
-## Amendment (2026-06-16) — pagination `_meta` keys, a stable contract for list commands with pagination
-
-`dsp vre resource list` introduces pagination to the JSON output.
-The following `_meta` keys are a stable public contract (snake_case; additive — existing callers that pass no pagination emit neither key):
-
-**Single-page mode** (default, or `--page N` explicit):
-- `page` (integer) — the zero-based page number that was fetched.
-- `may_have_more_results` (boolean) — whether the server indicated that more pages are available beyond this one.
-
-**All-pages mode** (`--all`):
-- `pages_fetched` (integer) — the total number of pages fetched to build the full result.
-- `may_have_more_results` (boolean) — always `false` in `--all` mode (the loop exits only once the server reports no more results).
-
-**By-mode asymmetry is intentional.** Code must not assume both `page` and `pages_fetched` are present simultaneously —
-exactly one of the two keys will be present, depending on the mode used.
-Consumers should branch on the presence of `pages_fetched` to distinguish `--all` output from single-page output.
-
-This amendment is **unconditional** of the simple-vs-complex response schema choice for `resource list` (deferred to dsp-cli/ADR-0013).
-The `_meta` pagination shape is stable regardless of which schema the HTTP client uses internally to decode the response.
-
-## Amendment (2026-06-19) — tabular control-char neutralisation supersedes the original csv/tsv "fidelity" stance
-
-The original catalog described `tsv` escaping as "no (embedded tabs unescaped; …)" and treated `csv`/`tsv` as fidelity-preserving machine formats.
-That stance left a terminal-escape-sequence-injection surface in `csv`/`tsv` output
-(and, for `tsv`, a latent column-corruption bug, since the mode was identity).
-This amendment revises the stance: **all three tabular formats (`lines`/`csv`/`tsv`) now replace every ASCII control character with a space**
-at the shared `QuoteMode::apply` chokepoint (helper `crate::util::text::replace_control_chars`).
-See the revised _Output format catalog_ table and the _Tabular formats: control characters replaced by spaces_ section above for the full contract,
-the convention assumption behind the negligible-fidelity-loss claim, the `json`/header-cell carve-outs, and the stderr-diagnostics scope-out.
-
-## Amendment (2026-07-13) — `dsp auth token`, a second no-envelope, no-`--format` raw output shape
-
-`dsp auth token` prints a single raw value — the resolved bearer token — directly to stdout: **no envelope, no `_meta`, and no `--format`/`-j`/`-l`**.
-This is not a variant of the `json` envelope with an empty `_meta`
-(that carve-out, documented above under _`dsp docs -j` and empty `_meta`_, is specifically about `docs`' JSON *mode* and does not apply here).
-Rather, `dsp auth token` has no `--format` flag at all, in the same way `dsp docs <topic>` has none:
-both commands hand back one raw value that isn't structured data to begin with (a markdown document; a JWT).
-A JWT is not a JSON object, so wrapping it in `{"_meta": …, "data": "<token>"}` would only get in the way of the piping idioms this command exists for
-(`export DSP_TOKEN=$(dsp auth token -s dev)`, `curl -H "Authorization: Bearer $(dsp auth token -s dev)"`).
-
-This is the CLI's **second** no-`Renderer` command after `dsp docs <topic>`; [dsp-cli/ADR-0010](0010-embedded-documentation.md) is the precedent this amendment follows.
-As with `docs`, errors still go through the normal `Diagnostic`/exit-code path (`AuthRequired`, exit `3`, for a missing or locally-expired token) — only the success path is raw.
-
-## Amendment (2026-07-21) — top-level errors get a reduced `_meta`
-
-Top-level errors — those caught by the binary-level handler in `main.rs`, as opposed to a command's own action-layer error — emit a **reduced** `_meta` compared to a normal command response: `exit_code` is always present, `server` is best-effort (populated when resolvable from the `--server`/`-s` flag at the top level, omitted otherwise), and `auth` is omitted unconditionally (`main` has no auth-cache access at that point). This is a narrower `_meta` shape than every other JSON output cataloged above, scoped specifically to the top-level error path.
-
-## Amendment (2026-08-07) — a rule for the no-`Renderer` carve-out, not just a third example
-
-`dsp vre sparql query` ([dsp-cli/ADR-0016](0016-sparql-passthrough.md)) is the **third** command with no
-`Renderer`, no `--format`, no `-j`/`-l`, and no `--columns`/`--no-header` — after `dsp docs`
-(dsp-cli/ADR-0010) and `dsp auth token` (the 2026-07-13 amendment above). It goes further than either precedent: it also relays a
-store-chosen `Content-Type` and a store-chosen status, which neither prior carve-out did. Three data
-points are now a pattern; a fourth candidate should apply a rule, not eyeball similarity to three
-examples:
-
-> No `Renderer` when the response body's shape and encoding are chosen by something other than
-> dsp-cli, and re-encoding it through dsp-cli's envelope would corrupt it (csv/tsv/lines) or
-> double-encode it (json embedding a JSON document as a string).
-
-`dsp vre sparql query`'s stdout is the store's own bytes, byte-verbatim, in whatever media type it
-negotiated (default `application/sparql-results+json`, overridable via `--accept`) — never re-encoded,
-never control-character-stripped. Consequently `Cli::output_format()` returns `None` for this leaf,
-exactly as it does for `AuthCmd::Token(_)`.
+Enforced by: the per-format renders in `dsp-cli/tests/*_snapshots.rs` (including `output_format_flags_snapshots.rs`), the JSON-envelope and
+`--columns`/header-flag usage tests in `dsp-cli/tests/cli.rs` and `dsp-cli/tests/docs.rs`, a drift-guard test between the `after_help` column lines and the
+column constants, and the `replace_control_chars` unit tests in `dsp-cli/src/util/text.rs` (**static-analysis**); statelessness and the no-stdin rule by
+**review**.

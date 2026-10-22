@@ -1,8 +1,3 @@
----
-status: accepted
-date: 2026-10-22
----
-
 # Authorisation is decided centrally and enforced locally
 
 Every surface of the Access Area answers the same question before it shows anything: may this principal see
@@ -18,8 +13,7 @@ from and where it is applied. The decision, phrased so a violation is describabl
   right.
 - **Identity comes from one Access-Area capability through a consumer-defined port.** Who is asking is
   answered by the one capability that owns sessions; each capability that needs it declares its own
-  authenticator port and principal DTO in its own `ports` crate, as ADR-0003's amendment of 2026-09-25
-  prescribes. No surface reads a session, a token or a cookie of its own.
+  authenticator port and principal DTO in its own `ports` crate, as ADR-0003 prescribes. No surface reads a session, a token or a cookie of its own.
 - **The decision is one pure function in a `shared-*` crate.** It takes a principal and a set of rights and
   returns allow or deny, with no I/O: no store, no network, no clock it reads itself. It is the one place
   that says what a right means. Every capability that enforces depends on it, as any capability may depend
@@ -31,9 +25,6 @@ from and where it is applied. The decision, phrased so a violation is describabl
   Authorisation check, so a file and the page that shows it get the same answer.
 - **Until an authentication mechanism exists, every request is the anonymous principal.** Each surface
   evaluates the function for it; that is ADR-0012's interim for CPE and DaTEI.
-
-Not yet in code: the shared crate and its function, rights on any port, a rights column in any read model,
-the predicate in any query layer, `media`'s check and the Access Area's identity port (not scheduled).
 
 ## Considered Options
 
@@ -57,9 +48,12 @@ the predicate in any query layer, `media`'s check and the Access Area's identity
 - The port against `sync` serves rights per resource; CPE's port table moves permissions from out to in when
   it does (`areas/access/cpe/CONTEXT.md`, "What the port serves").
 - A `shared-*` crate joins `shared/` when the first capability enforces; it depends on nothing that does I/O.
-- ADR-0003's Vitrinli clause, in which `media` "owns the routes and the authorisation", reads as
-  enforcement: `media` owns its routes and its check, and the decision is this record's function.
+- `media` owns its routes and its authorisation check (ADR-0003); the decision the check applies is this
+  record's function.
 - The SPARQL endpoint, when it is built, filters in its query layer as the other surfaces do.
+
+Not yet in code: the shared crate and its function, rights on any port, a rights column in any read model,
+the predicate in any query layer, `media`'s check and the Access Area's identity port (not scheduled).
 
 Enforced by: review until the crate exists; then the crate graph (`check-capability-deps.sh`, Bazel
 `visibility` after ADR-0001) for "the decision lives in one `shared-*` crate with no I/O dependency"

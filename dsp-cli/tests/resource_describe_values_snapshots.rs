@@ -800,7 +800,7 @@ fn values_json_no_values_key_absent() {
     );
 }
 
-// ── Tabular formats: --values renders value rows (dsp-cli/ADR-0013 D1/D2) ─────────────
+// ── Tabular formats: --values renders value rows (dsp-cli/ADR-0013) ───────────────────
 //
 // Each format reuses one of the shared multi-type fixtures (a/b/c) for
 // breadth across the suite. Stdout is snapshotted in the DEFAULT columns

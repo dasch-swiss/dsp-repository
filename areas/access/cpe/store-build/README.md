@@ -28,8 +28,8 @@ block is absent: a project with no `list` has no list tables, one with no `membe
 Below its header, the rendered text for Incunabula is, byte for byte, the `data.sql` the prototype in
 `dsp-incubator` embeds. That file is not in this repository; `cpe-server`'s test
 `incunabulas_store_text_below_its_header_is_the_prototypes` holds the text after the first blank line to that file's
-length and SHA-256, and `incunabulas_whole_store_text_is_pinned` holds the whole text, header included (ADR-0007,
-amendment of 2026-10-21). The header names both ports, and `sql::header` still writes the prototype's regenerate
+length and SHA-256, and `incunabulas_whole_store_text_is_pinned` holds the whole text, header included
+(ADR-0007). The header names both ports, and `sql::header` still writes the prototype's regenerate
 command (`just cpe store-build <project> --inplace`), which does not exist here. Changing the header changes the
 whole text's two constants; changing the layout changes all four.
 
@@ -74,7 +74,7 @@ Incunabula's hook (`src/projects/incunabula/`) holds four rules:
 | `catalogue.rs` | The replacement of a Book's dead catalogue address by the one the editors curated, while the archive still has the dead address (the curated `catalogue_uri` and `catalogue_uri_replaces`; `stale-catalogue-override`, `unpaired-catalogue-override`, `curated-count`) |
 
 `dsp-incubator cpe/docs/adr/0016-remodelling-is-a-mapping-and-a-registered-hook.md` records the decisions, and
-ADR-0007's amendment of 2026-10-11 (DEV-7465) why the hook is in this crate and not in the project's folder.
+ADR-0007 why the hook is in this crate and not in the project's folder.
 
 ## Tests
 

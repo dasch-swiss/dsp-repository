@@ -141,7 +141,7 @@ fn status_cache_expired_outcome() -> AuthStatusOutcome {
 }
 
 fn status_cache_expired_meta() -> MetaContext {
-    // _meta.auth uses presence/origin semantics (dsp-cli/ADR-0007 / D3): an expired
+    // _meta.auth uses presence/origin semantics (dsp-cli/ADR-0007): an expired
     // cached token still reports "authenticated as <user>", exactly as the
     // read commands do. The expiry detail lives in the data output
     // (LoggedIn.expired == true, state == "expired").

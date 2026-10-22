@@ -547,7 +547,7 @@ fn project_list_json_no_vocabulary_leak() {
 
 // ── iri absent in prose, present in tsv/csv/json ──────────────────────────────
 
-/// Prose: `iri` field must NOT appear (per dsp-cli/ADR-0003 / plan Step 3c).
+/// Prose: `iri` field must NOT appear.
 #[test]
 fn project_list_prose_no_iri() {
     let (buf, w) = shared_buf();

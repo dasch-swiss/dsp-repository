@@ -113,7 +113,7 @@ _Avoid_: field (for output positions), attribute.
 **Field**:
 A slot defined on a resource-type that can hold one or more values — for example a `title` field on "Manuscript".
 Distinct from **Column** (an output position in tabular formats).
-See `docs/adr/0003-chaining-and-output.md` for the rename rationale (`--fields` → `--columns`).
+See `docs/adr/0003-chaining-and-output.md` for the `--columns` contract.
 _Avoid_: property (the DSP-API/DSP-APP term we diverge from), attribute, slot.
 
 **Value**:

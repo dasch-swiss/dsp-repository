@@ -5,7 +5,7 @@
 //! - Two impls (Human, JSON) vs five renderers keeps it right-sized — stderr is non-data output so
 //!   prose/lines/csv/tsv all share the human reporter.
 //! - Isolates the novel "multi-line polling progress to stderr" concern from the renderer's stdout
-//!   concerns (endorsed in the Step 6 rationale, dsp-cli/ADR-0008).
+//!   concerns.
 //!
 //! Returning `Result` is intentional: stderr writes can fail (e.g. the other
 //! end of a pipe closed unexpectedly). The action treats a stderr-write failure

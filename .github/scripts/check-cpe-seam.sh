@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
-# CPE's dependency seam (ADR-0007, amendments of 2026-10-11 and, for cpe-server
-# in rules 1 and 5, of 2026-10-12; ADR-0008 and ADR-0012 for rule 4;
+# CPE's dependency seam (ADR-0007; ADR-0008 and ADR-0012 for rule 4;
 # ARCH-MAP.md, areas/access/cpe). A grep until Bazel `visibility` lands. Five
 # rules over the tracked Cargo.toml files:
 #
@@ -14,9 +13,10 @@
 #   2. No manifest under areas/access/cpe/ depends on a Mosaic crate.
 #   3. The crates in LEAVES depend on no CPE crate, the port included.
 #   4. No manifest under areas/access/cpe/ names a crate of areas/access/sync/
-#      or areas/access/media/ outside a dev-dependencies table. CPE's only feeds
-#      are its ports (ADR-0008, ADR-0012); only its tests may build an adapter,
-#      to read the committed snapshot or the committed deposited files.
+#      or areas/access/media/ outside a dev-dependencies table. CPE's read model
+#      is fed by its ports only (ADR-0008, ADR-0012); only its tests may build
+#      an adapter, to read the committed snapshot or the committed deposited
+#      files.
 #      Exempt are the lines below a [dev-dependencies] header, a
 #      target-specific one, and [dev-dependencies.<name>]. An inline
 #      `dev-dependencies = { ... }`, a dotted `dev-dependencies.<name>` key

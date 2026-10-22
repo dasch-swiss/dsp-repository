@@ -1,6 +1,6 @@
 //! `dsp-cli` — AI-agent-friendly CLI for the DaSCH Service Platform.
 //!
-//! The orientation entry point is `idea.md` in the repository root; the
+//! The orientation entry point is `docs/src/dsp-cli/overview.md`; the
 //! ubiquitous-language reference is `CONTEXT.md`. The internal architecture
 //! is described in dsp-cli/ADR-0008 (`docs/adr/0008-internal-architecture.md`).
 //!

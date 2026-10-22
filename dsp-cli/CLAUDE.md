@@ -9,12 +9,13 @@ abstracts DSP-API's verbose RDF/JSON-LD surface behind the vocabulary a research
 **data-model**, **resource-type**, **field**, **value** — instead of DSP-API's own `ontology` /
 `class` / `property` / `Value` subclass terms. The binary is named `dsp`; the crate is `dsp-cli`. It
 is a root peer of the areas: it depends on no workspace crate and reaches DSP-API purely over HTTP.
-v1 covers the VRE only, and is read-only (no write operations). See [`idea.md`](./idea.md) for the
-vision.
+v1 covers the VRE only, and is read-only (no write operations). See
+[Overview](../docs/src/dsp-cli/overview.md) for the purpose and design principles.
 
 ## Build & Test Commands
 
-All recipes go through `just`, run from the repository root:
+All recipes go through `just`, run from the repository root. `just check` and `just test` cover
+dsp-cli like every other crate (dsp-cli/ADR-0009 layers 1-4); these are the crate's own:
 
 ```bash
 just dsp-cli-run <args>       # cargo run --bin dsp -- <args>
@@ -23,8 +24,6 @@ just dsp-cli-snap-review      # cargo insta review
 just dsp-cli-stack-up         # start the pinned Fuseki + knora-api stack and load fixtures
 just dsp-cli-stack-fixtures   # reload fixtures into an already-running stack
 just dsp-cli-stack-down       # tear the stack down, volumes included
-just check                    # workspace-wide: fmt/clippy/lint gates, including dsp-cli
-just test                     # workspace-wide: the cheap test suite (dsp-cli/ADR-0009 layers 1-4)
 ```
 
 The stack recipes need Docker; they wrap `dsp-cli/ci/stack/`, which the `dsp-cli-drift` workflow
@@ -60,13 +59,15 @@ These are easy to miss and load-bearing. Reviewers should call them out.
   shared.** `tests/support/mod.rs` is a separate integration-test crate and is NOT reachable from
   `#[cfg(test)] mod tests` blocks inside `src/` — a plain Rust visibility boundary, not a style
   choice. Each action file that needs a mock client therefore defines its own `MockDspClient`
-  inline; see `src/actions/auth/login.rs` for the canonical pattern. A plan that says "uses the
-  shared `MockDspClient` for unit tests" is wrong: only integration tests (under `tests/`) can reach
-  `tests/support/mod.rs`.
+  inline; see `src/actions/auth/login.rs` for the canonical pattern. Only integration tests (under
+  `tests/`) can reach `tests/support/mod.rs`, and anything they use from `src/` must be `pub`, not
+  `pub(crate)`.
 - **Extending a trait's method set has more touch-points than you expect.** Adding a method to
   `DspClient` or `Renderer` breaks every impl — including the local `MockDspClient` impls described
-  above. Before drafting any step that extends a trait, run `grep -rn "impl DspClient for" src/
-  tests/` (and likewise for `Renderer`) and list every path as a required touch-point.
+  above. List them up front with `grep -rn "impl DspClient for" src/ tests/` (and likewise for
+  `Renderer`). When grepping for struct literals of a model type instead, note that each
+  noun-group's clap variant shares its name (`VreCmd::ResourceType { … }`), so not every
+  `ResourceType {` hit is a construction of the model.
 - **No implicit session state, no default server, no positional identifiers.** Every command takes
   its identifiers as flags and fails fast if no server is specified. See
   [dsp-cli/ADR-0002](./docs/adr/0002-command-shape.md),
@@ -86,19 +87,71 @@ These are easy to miss and load-bearing. Reviewers should call them out.
 - **Output format is part of the public API** once shipped. Prose snapshot tests via `insta` are
   the regression detector. Every (noun, verb, format) cell gets a snapshot — see
   [Testing Strategy](../docs/src/dsp-cli/testing-strategy.md).
-- **No `unwrap()` / `expect()` outside test code.** Library code returns `Result<T, Diagnostic>`.
-  `anyhow` is only allowed in `main.rs`.
+- **No `unwrap()` / `expect()` outside test code.** Code returns `Result<T, Diagnostic>`, defined
+  with `thiserror`; keep the cause chain with `#[source]` / `#[from]`.
 - **`#[allow(clippy::too_many_arguments)]` on six action functions in `src/actions/vre/project.rs`
   and `src/actions/vre/sparql.rs` is deliberate**, not an oversight to "clean up" — those signatures
   carry the action layer's full context (config, client, renderer, and command-specific args) by
   design, per the layering in dsp-cli/ADR-0008. Splitting them to satisfy the lint would break the
   uniform `fn(args, cfg, client, renderer)` shape the action layer relies on.
 - **Pre-1.0 versioning:** `0.x.y`. Breakage is allowed. [`CHANGELOG.md`](./CHANGELOG.md) is generated
-  by release-please from commit messages; don't hand-edit it.
+  by release-please from commit messages; don't hand-edit it. Renamed or reshaped output needs no
+  deprecated alias.
+
+## Code conventions
+
+- **A remediation message must fit the state that produced it.** When a `Diagnostic` variant is
+  reachable from several origins (flag, env, `.env` or cached token, dsp-cli/ADR-0007), branch the
+  message on the origin: suggesting `dsp auth login` for an expired `DSP_TOKEN` sends the caller to
+  a dead end. `src/actions/auth/token.rs` is the reference; test the message content, not only the
+  `kind`.
+- **Renderers write data, never logs.** No `tracing` call in `src/render/`; a new `Renderer` method
+  is implemented for all five formats.
+- **Build expensive `debug!` / `trace!` arguments inside the macro call**, so a suppressed level
+  costs nothing.
+- **Test-only `use` statements go inside `mod tests`**, or non-test builds warn on unused imports.
+- **Tabular column consts** live in `src/render/table.rs`. `<NOUN_VERB>_COLUMNS` is the full set,
+  the union across csv, tsv and lines, and is what `--columns` validates against and the drift-guard
+  help text derives from. An optional `<NOUN_VERB>_DEFAULT_COLUMNS` is the narrower csv/tsv default.
+  Derive the default from the full set, never the other way; a default column missing from the
+  full set is an internal error.
+- **JSON: omit an optional key when its value is `None`**, rather than emitting `null`, for any
+  field added after the object first shipped (`"values"` in `resource describe` is the precedent).
+  Existing consumers and snapshots then see an unchanged shape.
+- **JSON: an output's shape is part of the contract.** Build a renderer to the specified shape
+  (nested or flat, object or list) instead of reusing an adjacent helper that has the right fields
+  in the wrong structure; field-level tests do not catch a shape mismatch.
+- **Pin on-disk TOML shape with a raw-string test** of `to_string_pretty` output; a round-trip test
+  also passes for inline tables. A bare `BTreeMap<String, T>` already serialises to standalone
+  `[key]` sections without `#[serde(flatten)]`.
+- **Control-character sanitisers cover the C1 range** (`U+0080`–`U+009F`), not just ASCII C0:
+  `U+009B` is a single-character escape-sequence introducer. Apply them to untrusted input (server
+  responses), not only to argv.
+- **A type holding a secret gets a manual `Debug` impl** that prints `[REDACTED]`, with a test
+  pinning it (`src/config/token.rs`). `#[derive(Debug)]` leaks the value into logs and panics.
+- **Use array patterns for multi-char matches**: `rsplit(['#', '/', ':'])`, not a closure (clippy
+  `manual_pattern_char_comparison`).
+- **Keep the `lib.rs` re-exports small.** Anything not re-exported there is internal even if `pub`.
+- **No async runtime** in the CLI (dsp-cli/ADR-0008); `tokio` is a dev-dependency for `wiremock`
+  only. Each new dependency gets a one-line rationale in the PR.
+
+## Review checklist
+
+- [ ] No DSP-API vocabulary (`ontology`, `class`, `property`, `export`) above `src/client/`:
+      `grep -rni export src/ | grep -v src/client/` shows no new hits. IRI values containing
+      `/ontology/` are data, not vocabulary, so `describe` snapshot guards check only `export`,
+      `class` and `property`. Commit subjects, which feed `CHANGELOG.md`, follow the same rule.
+- [ ] A changed literal that an ADR quotes (header value, message, format string) is changed in
+      the ADR too: `grep -rn "<old literal>" docs/adr/`.
+- [ ] User-visible behaviour changed: the matching `docs/topics/*.md` is updated in the same PR
+      (dsp-cli/ADR-0010).
+- [ ] New action: action-level test. New format or output: snapshot. New wire format: wiremock
+      test.
+- [ ] Non-trivial client change: live tests run against a real server or `just dsp-cli-stack-up`.
 
 ## Documentation index
 
-- [`idea.md`](./idea.md) — vision and design principles.
+- [Overview](../docs/src/dsp-cli/overview.md) — purpose, design principles, scope.
 - [`CONTEXT.md`](./CONTEXT.md) — canonical domain glossary. Read first.
 - [`CHANGELOG.md`](./CHANGELOG.md): generated by release-please; don't hand-edit it.
 - [`docs/adr/`](./docs/adr/) — dsp-cli's own Architecture Decision Records, cited qualified

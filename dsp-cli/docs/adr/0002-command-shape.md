@@ -2,7 +2,7 @@
 
 `dsp-cli` organises commands as `dsp <area> <noun-group> <verb> [--flags]`. Noun-groups provide a hierarchy for progressive-disclosure help,
 but resource identifiers (project shortname, data-model name, resource IRI, etc.) are passed as flags rather than baked into the command path as positional elements.
-This honours `idea.md`'s "deeply nested sub-commands with meaningful help texts" through the noun-group hierarchy,
+This honours the nested sub-commands with help text at every level that `docs/src/dsp-cli/overview.md` calls for through the noun-group hierarchy,
 while avoiding identifier-stacking friction that hurts AI-agent ergonomics.
 
 ## Considered alternatives
@@ -11,7 +11,7 @@ while avoiding identifier-stacking friction that hurts AI-agent ergonomics.
   Rejected because every command at depth N restates N−1 parent identifiers; discovery requires enumeration at each level;
   IRI-addressable lookups (which embed the project shortcode and uniquely address the resource) become awkward;
   positional-identifiers-interleaved-with-subcommands is poorly supported by mainstream CLI frameworks.
-- **Style 2 — flat noun-verb-args** (no hierarchy). Rejected because it eliminates progressive-disclosure help, which `idea.md` calls out as a design goal.
+- **Style 2 — flat noun-verb-args** (no hierarchy). Rejected because it eliminates progressive-disclosure help, which `docs/src/dsp-cli/overview.md` calls out as a design goal.
 - **Style 3 — noun-group hierarchy + identifier flags** (chosen). Per-noun-group `--help` screens give the progressive-disclosure surface;
   flags compose freely; IRI-addressable concepts can be looked up directly.
 

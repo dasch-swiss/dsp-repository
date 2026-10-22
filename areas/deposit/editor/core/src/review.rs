@@ -3,8 +3,8 @@
 //!
 //! [`diff`] is a pure comparison of two drafts; [`ReviewState`] is what a
 //! reviewer decided, stored beside the submission. Neither knows a field's
-//! label: that is the registry's, in `editor-web`, and the dependency runs the
-//! other way.
+//! label: that is the registry's (`form::registry`), which this module does not
+//! depend on.
 //!
 //! The comparison is over top-level members, not registry fields: enumerating
 //! the registry would show a reviewer only the fields the form knows, so a

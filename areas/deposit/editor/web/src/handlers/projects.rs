@@ -108,11 +108,11 @@ pub(crate) async fn detail(
         return crate::shell::forbidden(&state, &user.actor.display_name, NOT_ASSIGNED);
     }
     let audience = if user.actor.is_rdu() {
-        crate::form::registry::Audience::RduOnly
+        editor_core::form::registry::Audience::RduOnly
     } else {
-        crate::form::registry::Audience::Everyone
+        editor_core::form::registry::Audience::Everyone
     };
-    let section = crate::form::registry::first_section(audience);
+    let section = editor_core::form::registry::first_section(audience);
     axum::response::Redirect::to(&format!("/projects/{shortcode}/sections/{}", section.id)).into_response()
 }
 

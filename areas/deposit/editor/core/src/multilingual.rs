@@ -7,6 +7,7 @@
 //! serde derives: a draft stores fields as `serde_json` values, so this is
 //! built on demand and written back.
 
+use serde_json::Value;
 use shared_metadata::utils::Multilingual;
 
 /// The language tags the form offers, in the order it offers them.
@@ -113,6 +114,27 @@ impl DraftMultilingual {
     pub fn len(&self) -> usize {
         self.entries.len()
     }
+}
+
+/// A language map as the form's editing view over it, in UI-tag order. `pub`
+/// because `editor-web`'s widgets render a row through it, and
+/// `untouched_form_round_trip` has to read a row the same way, or it tests a body
+/// no browser would send.
+pub fn as_multilingual(value: &Value) -> DraftMultilingual {
+    let contract = serde_json::from_value(value.clone()).unwrap_or_default();
+    DraftMultilingual::from_contract(&contract)
+}
+
+/// Whether a stored object is a language map rather than a structured value:
+/// every member is a short lowercase tag holding a string. A structured value is
+/// summarised by its member count instead.
+pub fn is_language_map(value: &Value) -> bool {
+    value.as_object().is_some_and(|members| {
+        !members.is_empty()
+            && members
+                .iter()
+                .all(|(key, text)| text.is_string() && key.len() <= 3 && key.chars().all(|c| c.is_ascii_lowercase()))
+    })
 }
 
 #[cfg(test)]

@@ -9,10 +9,10 @@
 //! [`visible_text`]. The browser-level half lives in the E2E suite.
 
 use editor_core::draft::ProjectDraft;
+use editor_core::form::registry::{self, Audience};
 use editor_core::published::{ProjectSummary, PublishedProjects};
 use editor_core::records::ReviewOutcome;
 use editor_core::status::ProjectState;
-use editor_web::form::registry::{self, Audience};
 use editor_web::pages::projects::AssignedProject;
 use editor_web::pages::{projects, section, states};
 

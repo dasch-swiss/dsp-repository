@@ -23,6 +23,9 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
+use editor_core::form::obligation::unsatisfied_required;
+use editor_core::form::registry::{self, Audience, Section};
+use editor_core::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use editor_core::form::{apply, FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::{normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState};
@@ -34,9 +37,6 @@ use editor_core::submission::unresolved_temporal_coverage;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::form::obligation::unsatisfied_required;
-use crate::form::registry::{self, Audience, Section};
-use crate::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
 use crate::handlers::{is_enhanced, storage_error, StorageSurface};
@@ -4693,7 +4693,7 @@ mod tests {
     ///
     /// Chosen rather than sampled: a project with no trap would let this pass on
     /// the strength of the plumbing alone. The whole-corpus version of the same
-    /// check is `editor-web`'s `untouched_form_round_trip`; what these two add
+    /// check is `editor-core`'s `untouched_form_round_trip`; what these two add
     /// is the handler layer, and what the handler layer can break is specific to
     /// the values a project holds.
     ///
@@ -4771,7 +4771,7 @@ mod tests {
 
     #[tokio::test]
     async fn saving_a_section_nobody_edited_leaves_the_committed_file_byte_identical() {
-        // The end-to-end form of `editor-web`'s `untouched_form_round_trip`,
+        // The end-to-end form of `editor-core`'s `untouched_form_round_trip`,
         // through the real routes: that test builds the body a control would
         // post, and this one drives every section of a real project with the
         // values the rendered form actually carries, then writes the stored
@@ -5035,7 +5035,7 @@ mod tests {
                         let texts = if is_reference {
                             editor_core::multilingual::DraftMultilingual::default()
                         } else {
-                            crate::form::widgets::as_multilingual(row)
+                            editor_core::multilingual::as_multilingual(row)
                         };
                         for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
                             pairs
@@ -5100,7 +5100,7 @@ mod tests {
                     for (position, row) in rows.iter().enumerate() {
                         let key = format!("r{position}");
                         pairs.push((format!("{}.row", field.id), key.clone()));
-                        let stored = crate::form::widgets::as_multilingual(row);
+                        let stored = editor_core::multilingual::as_multilingual(row);
                         for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
                             pairs.push((
                                 format!("{}.{key}.{tag}", field.id),

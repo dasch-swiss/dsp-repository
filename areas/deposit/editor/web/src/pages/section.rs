@@ -19,6 +19,8 @@
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
+use editor_core::form::obligation::{section_progress, SectionProgress};
+use editor_core::form::registry::{sections_for, Audience, Section};
 use editor_core::form::FormBody;
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
 use editor_core::records::ReviewOutcome;
@@ -28,8 +30,6 @@ use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use serde_json::Value;
 
-use crate::form::obligation::{section_progress, SectionProgress};
-use crate::form::registry::{sections_for, Audience, Section};
 use crate::form::widgets::{field_row, Mode, Rows};
 use crate::form::INTENT;
 
@@ -387,8 +387,8 @@ impl SectionView<'_> {
             .filter_map(|(path, message)| {
                 // The field id is the path with any `[index]` suffix off.
                 let id = path.split_once('[').map_or(path.as_str(), |(id, _)| id);
-                let section = crate::form::registry::section_of(id)?;
-                let label = crate::form::registry::field(id).map_or(id, |field| field.label);
+                let section = editor_core::form::registry::section_of(id)?;
+                let label = editor_core::form::registry::field(id).map_or(id, |field| field.label);
                 Some((section, label, message.as_str()))
             })
             .collect()
@@ -660,7 +660,7 @@ fn review_round(round: &RoundSummary<'_>) -> Markup {
                 "text-xs font-bold uppercase tracking-wide" {
                 "Values RDU changed before deciding" } ul class =
                 "flex flex-col gap-2 mt-1" { @ for (field, value) in round.substitutions
-                { li { strong { (crate ::form::registry::field(field).map_or(field
+                { li { strong { (editor_core::form::registry::field(field).map_or(field
                 .as_str(), | f | f.label)) } ": "(crate
                 ::form::widgets::value_markup(Some(value))) } } } } }
             };
@@ -947,10 +947,10 @@ fn controls(view: &SectionView<'_>) -> Markup {
 mod tests {
     use editor_core::agents::{AgentScope, Agents};
     use editor_core::draft::ProjectDraft;
+    use editor_core::form::registry::section;
     use serde_json::json;
 
     use super::*;
-    use crate::form::registry::section;
 
     /// The committed agent set, loaded once for the whole test binary.
     fn published_agents() -> &'static Agents {

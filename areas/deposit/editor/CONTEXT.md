@@ -82,10 +82,10 @@ A grouping of Fields in the project form (`registry::Section`), one URL each, wh
 _Avoid_: tab, step, page (the section renders as a page, but the page is not the concept).
 
 **Field**:
-One editable contract member as the form knows it (`registry::Field`): label, hint, obligation, audience and Shape, keyed by the contract member's id.
+One editable contract member as the form knows it (`registry::Field`, in `editor-core`): label, hint, obligation, audience and Shape, keyed by the contract member's id.
 
 **Shape**:
-How a posted body is read back into a Draft for one Field (`form::Shape`): a scalar, a language map, a closed choice, a URL slot, a list of strings, or one of four kinds of row. The widget is chosen by field id, the decoder by Shape, and they are declared together so they cannot drift.
+How a posted body is read back into a Draft for one Field (`form::Shape`): a scalar, a language map, a closed choice, a URL slot, a list of strings, or one of four kinds of row. The widget (`editor-web`) is chosen by field id, the decoder by Shape, and a test ties each Shape to the names its widget posts so they cannot drift.
 
 **Obligation**:
 Whether a Field is required, and the count the rail shows; refusal happens at submit, never at save.

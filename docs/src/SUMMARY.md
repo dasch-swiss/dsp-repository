@@ -57,6 +57,7 @@
 
 ## dsp-cli
 
+- [Overview](./dsp-cli/overview.md)
 - [Architecture](./dsp-cli/architecture.md)
 - [Testing Strategy](./dsp-cli/testing-strategy.md)
 - [Usage](./dsp-cli/usage.md)

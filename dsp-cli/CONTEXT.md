@@ -1,6 +1,6 @@
 # dsp-cli
 
-A CLI for interacting with the DaSCH Service Platform (DSP), designed for AI-agent ergonomics while remaining human-readable. See `idea.md` for the high-level vision.
+A CLI for interacting with the DaSCH Service Platform (DSP), designed for AI-agent ergonomics while remaining human-readable. See `docs/src/dsp-cli/overview.md` for the high-level vision.
 v1 covers the VRE only.
 
 ## Language

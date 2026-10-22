@@ -27,7 +27,7 @@ name = "dsp_cli"
 path = "src/lib.rs"
 
 [features]
-# Live tests against a real DSP environment. Not in CI (dsp-cli/ADR-0009).
+# Live tests against a real DSP environment; CI runs them in the dsp-cli-drift workflow (dsp-cli/ADR-0009).
 live = []
 
 [dependencies]

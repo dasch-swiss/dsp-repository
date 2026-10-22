@@ -13,7 +13,7 @@ when it is actually built.
 
 ## Context
 
-- **Agent-first (dsp-cli/ADR-0001, `idea.md`).** The primary consumer is an LLM agent.
+- **Agent-first (dsp-cli/ADR-0001, `docs/src/dsp-cli/overview.md`).** The primary consumer is an LLM agent.
   stdout is data (dsp-cli/ADR-0012); an update notice is neither data nor an error, so it
   has no slot in the output — least of all the JSON `_meta`/error envelope
   (dsp-cli/ADR-0003, a stable contract). A background network call on every invocation

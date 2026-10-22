@@ -4,13 +4,13 @@
 canonises `class` (a.k.a. "resource class"), `property`, and `ontology`.
 We accept this divergence because the existing vocabulary has two recurring failure modes the CLI cannot afford: "property" is routinely confused with "value" by
 non-technical users (slot vs. content), and "class" is overloaded with the OOP meaning that dominates AI-agent training data.
-The CLI's charter (per `idea.md`) is to use domain-expert language that abstracts away DSP-API's RDF surface — picking words whose schema/instance pairing is
+The CLI's charter (per `docs/src/dsp-cli/overview.md`) is to use domain-expert language that abstracts away DSP-API's RDF surface — picking words whose schema/instance pairing is
 lexically obvious (`resource-type` ↔ `resource`, `field` ↔ `value`) serves that
 charter better than mirroring the published glossary.
 
 ## Considered alternatives
 
-- **(A) Mirror DSP-API verbatim** (`class`, `property`, `ontology`). Rejected — defeats the abstraction goal in `idea.md`.
+- **(A) Mirror DSP-API verbatim** (`class`, `property`, `ontology`). Rejected — defeats the abstraction goal in `docs/src/dsp-cli/overview.md`.
 - **(B) Mirror the DaSCH knowledge hub** (`class`/"resource class", `property`, `data-model`). Rejected — keeps the property/value and class/OOP overloads that cause
   real, recurring confusion.
   The hub's own entry for "class" is titled `Class (Resource Class)`, signalling that bare "class" is already ambiguous.
@@ -36,7 +36,7 @@ The original "Consequences" bullets prescribed surfacing the dsp-cli↔DSP-API m
 (e.g. `field (DSP-API: knora-api:Property)`).
 That prescription was never implemented and is now superseded.
 
-**Reason for amendment:** Per-flag `(DSP-API: …)` annotations re-expose the RDF vocabulary the CLI exists to hide, defeating the abstraction goal in `idea.md`.
+**Reason for amendment:** Per-flag `(DSP-API: …)` annotations re-expose the RDF vocabulary the CLI exists to hide, defeating the abstraction goal in `docs/src/dsp-cli/overview.md`.
 The mapping belongs in one canonical, well-labelled place — not scattered across individual flag doc-comments.
 
 **Actual mitigation (as amended above):** The `dsp docs concepts` topic (shipped in Phase 6, plan 018) already contains a "## The DSP-API vocabulary mapping" table

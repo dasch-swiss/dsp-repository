@@ -10,6 +10,7 @@
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
+use editor_core::form::registry::{Audience, Field, Obligation};
 use editor_core::form::{FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind};
 use maud::{html, Markup};
@@ -19,7 +20,6 @@ use mosaic_tiles::link::link;
 use mosaic_tiles::text_field::{text_field, InputType};
 use serde_json::Value;
 
-use crate::form::registry::{Audience, Field, Obligation};
 use crate::form::widgets::{agent_rows, labelled, multilingual, reference_rows, stated, string_rows, Mode, Rows};
 use crate::form::INTENT;
 

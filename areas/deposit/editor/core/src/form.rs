@@ -12,8 +12,10 @@
 //!
 //! This module knows no field shapes. [`FormBody`] reads names and values; the
 //! appliers below each know one shape, and choosing a shape per field is the
-//! field registry's job in `editor-web`, so a field's control and its decoder
-//! are declared together and cannot drift.
+//! field registry's job (`form::registry`, in this crate), so a field's decoder
+//! and its control are keyed by the same field id. `editor-web`'s
+//! `widgets::tests::every_shaped_field_has_a_control` is the drift guard between
+//! a [`Shape`] and the names a rendered control posts.
 //!
 //! Absent is not empty. A name missing from the body means "this section did
 //! not carry that field" and every applier leaves it alone; a name present with
@@ -28,8 +30,12 @@
 //! `normalise_newlines` settles the comparison; a value differing from the
 //! stored one only in surrounding whitespace keeps the stored bytes; a stored
 //! placeholder renders as an empty control and survives an empty submit. All
-//! three are pinned by `editor-web/tests/untouched_form_round_trip.rs`, which
+//! three are pinned by `editor-core/tests/untouched_form_round_trip.rs`, which
 //! runs the form over the committed corpus.
+
+pub mod obligation;
+pub mod registry;
+pub mod submit;
 
 use std::collections::HashSet;
 
@@ -297,7 +303,7 @@ pub enum WhenCleared {
     /// the committed data spells that way, such as `endDate` on an ongoing
     /// project. Dropping it instead would make every ongoing project
     /// unpublishable. Which field gets which is declared once, on
-    /// `editor_web::form::registry`'s `Field`, as part of its [`Shape`].
+    /// `editor_core::form::registry`'s `Field`, as part of its [`Shape`].
     Placeholder,
 }
 

@@ -204,12 +204,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
-  `editor-core` (the draft model, validation, the canonical project and entity writers, the
-  persistence ports), `editor-ports` (what the editor asks of identity: `Actor`,
+  `editor-core` (the draft model, the form's field registry with its obligation and per-field
+  submit rules, validation, the canonical project and entity writers, the persistence ports),
+  `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
-  `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's field registry
-  and widgets, the handlers and route table, the extractors, the startup loaders and reconcile,
+  `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
+  the handlers (which hold the submit and approve gate sequences) and route table, the
+  extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
   `deposit-shell`, below), `editor-pull-requests` (the CI binary that turns an approved record into a
   pull request against this repository — outside the service's request path, and the only crate
@@ -222,7 +224,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
-  `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
+  `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
+  `editor_web::form::INTENT`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Actor`, `Authenticator`,
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,
@@ -247,7 +250,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/editor/web/src/routes.rs`, `areas/deposit/editor/web/src/handlers/auth.rs`,
   `areas/deposit/server/src/router.rs`, `areas/deposit/editor/core/src/form.rs`,
   `areas/deposit/editor/store/src/lib.rs`. The kit is at its seven-file budget; the next reads
-  are `web/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
+  are `core/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
   `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{publishing-to-git,architecture}.md`.
 - **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-pull-requests`),
   shared/rate-limit (`editor-web`), shared/telemetry (`editor-web`: `is_valid_traceparent`),
@@ -281,7 +284,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     signature (**structure**).
   - Reader connections are `query_only=ON`; the only write path is `Database::write`, one
     connection, `BEGIN IMMEDIATE`, in each store (**structure**).
-  - Every contract member is either a registry `Field` or listed in `OMITTED`
+  - Every contract member is either a registry `Field` (`editor_core::form::registry`) or listed in `OMITTED`
     (**static-analysis** — `every_contract_field_is_either_placed_in_the_form_or_deliberately_omitted`).
   - Depositor-facing vocabulary is closed (REQ-2.1 / REQ-2.2): five states, no "export", "JSON",
     "transfer", "commit", "pull request" (**static-analysis** — `depositor_vocabulary.rs` plus the
@@ -617,7 +620,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   single copy of the sample (`testdata/0862-records.json` is read by the crate's own tests only).
 - **Local-context kit:** `shared/metadata/src/project.rs`,
   `shared/metadata/src/lib.rs`, `shared/README.md`,
-  `areas/deposit/editor/web/src/form/registry.rs`, `areas/deposit/editor/core/src/draft.rs`,
+  `areas/deposit/editor/core/src/form/registry.rs`, `areas/deposit/editor/core/src/draft.rs`,
   `areas/access/dpe/core/src/project.rs`, `areas/deposit/editor/core/tests/canonical_round_trip.rs`
   (a contract member moves with all four consumer files in one commit; the editor's `pull-requests`
   crate reads the contract too)

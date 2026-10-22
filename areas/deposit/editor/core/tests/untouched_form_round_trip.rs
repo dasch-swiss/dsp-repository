@@ -3,8 +3,8 @@
 //! this one puts the form in the middle, with the submit carrying exactly what
 //! an untouched control would post.
 //!
-//! In `editor-web` because it derives its table from
-//! [`registry::Field`](editor_web::form::registry::Field)'s declared shapes, so a
+//! Its table derives from
+//! [`registry::Field`](editor_core::form::registry::Field)'s declared shapes, so a
 //! field whose shape is declared is covered automatically. Asserted against the
 //! committed bytes rather than a fixture because every way this fails is silent:
 //! the only symptom is a pull request touching dozens of projects nobody edited.
@@ -13,9 +13,9 @@ use std::path::PathBuf;
 
 use editor_core::canonical::{write_draft, write_project};
 use editor_core::draft::ProjectDraft;
+use editor_core::form::registry::{Field, FIELDS};
 use editor_core::form::{apply, FormBody, Shape};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
-use editor_web::form::registry::{Field, FIELDS};
 use serde_json::Value;
 use shared_metadata::project::ProjectRaw;
 
@@ -175,7 +175,7 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                     let texts = if is_reference {
                         DraftMultilingual::default()
                     } else {
-                        editor_web::form::widgets::as_multilingual(row)
+                        editor_core::multilingual::as_multilingual(row)
                     };
                     for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
                         pairs.push((format!("{prefix}.text.{tag}"), texts.get(tag).unwrap_or_default().to_string()));
@@ -232,7 +232,7 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 for (position, row) in rows.iter().enumerate() {
                     let key = format!("r{position}");
                     pairs.push((format!("{}.row", field.id), key.clone()));
-                    let stored = editor_web::form::widgets::as_multilingual(row);
+                    let stored = editor_core::multilingual::as_multilingual(row);
                     for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
                         pairs.push((
                             format!("{}.{key}.{tag}", field.id),

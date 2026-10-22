@@ -9,11 +9,11 @@
 //! present. Presence is read off the stored value rather than a shape, so a
 //! field whose control has not landed still counts honestly.
 
-use editor_core::draft::ProjectDraft;
 use serde_json::Value;
 use shared_metadata::is_placeholder;
 
 use super::registry::{sections_for, Audience, Field, Obligation, Section};
+use crate::draft::ProjectDraft;
 
 /// A section's required-field state, as the rail shows it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -107,8 +107,8 @@ mod tests {
     /// A draft over a real committed project, so a published project can be
     /// shown to come out complete, which a hand-written fixture cannot claim.
     fn draft() -> ProjectDraft {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
         ProjectDraft::from_raw(published.get("0801d").expect("0801d is in the committed corpus"))
     }
@@ -195,8 +195,8 @@ mod tests {
 
     #[test]
     fn the_required_fields_the_committed_corpus_does_not_answer_are_the_measured_ones() {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let shortcodes: Vec<String> = published.summaries().map(|s| s.shortcode.to_string()).collect();
@@ -233,8 +233,8 @@ mod tests {
     fn every_published_project_opens_complete_for_a_depositor() {
         // A live project must not open showing a depositor work they did not
         // create; this is also the submit gate's guarantee, one project at a time.
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, _) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, _) = crate::published::PublishedProjects::load_from(&dir);
         let shortcodes: Vec<String> = published.summaries().map(|s| s.shortcode.to_string()).collect();
 
         let complete = shortcodes
@@ -271,8 +271,8 @@ mod tests {
     fn no_published_project_is_refused_by_the_submit_gate() {
         // Through the function the route calls rather than the rail, over both
         // audiences, since RDU submits through the same handler.
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let mut refused: Vec<(String, Vec<&str>)> = Vec::new();

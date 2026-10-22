@@ -19,9 +19,6 @@
 //! the completeness test can tell "decided against" from "forgotten". They ride
 //! through a draft untouched.
 
-use editor_core::draft::UrlSlot;
-use editor_core::form::{ChoiceSet, Shape, WhenCleared};
-use editor_core::multilingual::UI_LANGUAGES;
 use shared_metadata::project::{ACCESS_RIGHTS_VALUES, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES};
 use Audience::{Everyone, RduOnly};
 use Obligation::{Optional, Recommended, Required};
@@ -29,6 +26,10 @@ use Shape::{
     AgentRows, AttributionRows, Choice, FundingRows, Multilingual, MultilingualRows, PublicationRows, ReferenceRows,
     StringList, StringRows, Text, TextOrReferenceRows, Url,
 };
+
+use crate::draft::UrlSlot;
+use crate::form::{ChoiceSet, Shape, WhenCleared};
+use crate::multilingual::UI_LANGUAGES;
 
 /// A required contract `String` whose empty state the committed data spells as a
 /// sentinel. Named because the distinction reads as the UI tier beside it and is
@@ -637,8 +638,8 @@ mod tests {
     /// project so a field added to the contract shows up without editing this
     /// file. Nulls are members: `ProjectRaw` carries no `skip_serializing_if`.
     fn contract() -> serde_json::Value {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
         let project = published.get("0801d").expect("0801d is in the committed corpus");
         serde_json::to_value(project).expect("ProjectRaw serializes")
@@ -733,8 +734,8 @@ mod tests {
     /// Every committed project, parsed as the contract sees it, nulls intact: the
     /// only way to tell an Option member from a required one.
     fn contracts() -> Vec<serde_json::Value> {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
         let contracts: Vec<serde_json::Value> = published
             .summaries()
@@ -753,7 +754,7 @@ mod tests {
 
     /// The fields the form does not read back yet. Empty: every editable field has
     /// a control, and the test below keeps it so. The fallback rendering stays in
-    /// `widgets::stated`, for the next new field.
+    /// `editor-web`'s `widgets::stated`, for the next new field.
     const NOT_READ_YET_IDS: &[&str] = &[];
 
     /// `typeOfData` is a closed vocabulary with no enum behind it, so only this
@@ -761,8 +762,8 @@ mod tests {
     /// `shared-metadata`, which takes no path into a service's data directory.
     #[test]
     fn the_offered_data_kinds_cover_every_value_the_corpus_holds() {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let mut unknown: Vec<&str> = Vec::new();
@@ -784,8 +785,8 @@ mod tests {
     /// case-insensitively.
     #[test]
     fn the_offered_roles_cover_the_roles_several_projects_share() {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let mut projects_per_role: BTreeMap<String, BTreeSet<&str>> = BTreeMap::new();

@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.8.11](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.10...v0.8.11) (2026-10-22)
+
+
+### Features
+
+* **cpe-ports,media-store,cpe-store-build,sync-store,cpe-server:** Activate CPE from the archive projection and media's deposited files (DEV-7511, DEV-7512) ([5da01f2](https://github.com/dasch-swiss/dsp-repository/commit/5da01f26574b8ce48d288621b471fb824bc695a6))
+* **editor-collector:** Write a per-record run summary instead of reporting to the editor ([51f3364](https://github.com/dasch-swiss/dsp-repository/commit/51f3364fc7f694c585223b99ec79c97f5adddb7b))
+* **editor-web,editor-pull-requests:** Replace the collection vocabulary with pull requests and approved records ([5c522fb](https://github.com/dasch-swiss/dsp-repository/commit/5c522fb042f5d84f7fe8acdc23d90a1d0a26e9e7))
+* **editor-web,editor-store,deposit-server:** Drop the collection report and its token ([cf97bfe](https://github.com/dasch-swiss/dsp-repository/commit/cf97bfe9c2a89d89de3955c6329e643558adc841))
+* **editor-web,editor-store,editor-collector:** Approving a project always supersedes its earlier record ([fa49637](https://github.com/dasch-swiss/dsp-repository/commit/fa4963795aa06b5d7fa8f8c70407b5f525dd8525))
+
+
+### Bug Fixes
+
+* **editor-collector:** Skip a merged pull request only for the record it names ([638e66e](https://github.com/dasch-swiss/dsp-repository/commit/638e66e3dbb4105d195c4c0b2ffe6e72ed1e8cb3))
+* **mosaic-tiles,editor-web:** Keep a table's sr-only header inside its scroll region ([05cab0d](https://github.com/dasch-swiss/dsp-repository/commit/05cab0d9695d8004563295cc9fb5d9543bdcf5c6))
+
+
+### Code Refactoring
+
+* **deposit-server,identity-web,identity-store:** Make deposit-server the area's composition root ([d6a467a](https://github.com/dasch-swiss/dsp-repository/commit/d6a467a8920d1116ed46dfaa77cf6cd559d5a384))
+* **deposit-shell,editor-server,editor-web:** Move the document shell and the sign-in link into the area shell ([5d7d626](https://github.com/dasch-swiss/dsp-repository/commit/5d7d6268ffddd0d4d1625cff90b950bf4ac40983))
+* **editor-ports,editor-web,identity-store:** Rename Principal to Actor ([4435908](https://github.com/dasch-swiss/dsp-repository/commit/443590875e4530823908a73f82ad27a0763415bc))
+* **editor-ports,identity-ports,identity-store,editor-store,editor-server:** Put the editor on Principal behind the capabilities' ports ([8e96cf0](https://github.com/dasch-swiss/dsp-repository/commit/8e96cf09229cd836d5cb6ac931bcf342f9dc067e))
+* **editor-server:** Build the page-URL normalizer from the route table ([62cb161](https://github.com/dasch-swiss/dsp-repository/commit/62cb16173de50df559143731443cdd71a6156858))
+* **editor-web,editor-server,editor-ports:** Move the editor's handlers, routes and startup into editor-web ([03e8120](https://github.com/dasch-swiss/dsp-repository/commit/03e812068cb651fa21a0cc25229d90fc38af25ed))
+* **identity-core,editor-core,editor-server:** Extract identity's domain into identity-core ([08630a9](https://github.com/dasch-swiss/dsp-repository/commit/08630a9cc12779923aad96157eae1da9715a1c7d))
+* **identity-ports,editor-store,identity-web:** Rename AuthoredWork to OpenWork ([142b099](https://github.com/dasch-swiss/dsp-repository/commit/142b099eec11accbb5d4c030cda637bd8670ad94))
+* **identity-store,editor-ports,editor-web:** Rename Assignment to Assigned project ([ea999b1](https://github.com/dasch-swiss/dsp-repository/commit/ea999b1edbe23cad0cd028ce84015344ae59d059))
+* **identity-store,editor-store,editor-server:** Split the store into two crates over two database files ([44dfb6e](https://github.com/dasch-swiss/dsp-repository/commit/44dfb6e425ec1ded3ffe9ab7391f3a3682425d85))
+* **identity-web,editor-server,editor-web:** Move identity's pages, handlers, routes and startup into identity-web ([e2dacde](https://github.com/dasch-swiss/dsp-repository/commit/e2dacde7b0d35d118f8d5617bb3cab7037bcf1be))
+
+
+### Documentation
+
+* **docs:** Amend areas/deposit/ADR-0004 where the code disproved it, and plan the refactor ([32f57d6](https://github.com/dasch-swiss/dsp-repository/commit/32f57d6244932599aa86e678eb31d52f54182c09))
+* **docs:** Decide the two archive channels, deposited files through media, and one authorisation decision (DEV-7442, DEV-7488) ([c89f338](https://github.com/dasch-swiss/dsp-repository/commit/c89f338cb5259c1f5c3295782e1132ab53880b28))
+* **docs:** Keep only the current decision in an ADR, and its history in git ([f48fa0b](https://github.com/dasch-swiss/dsp-repository/commit/f48fa0be366b30fe588c2a84ecf9d6fb412b5324))
+* **docs:** Retire three ADRs that no longer decide anything, keeping their numbers ([e9d6261](https://github.com/dasch-swiss/dsp-repository/commit/e9d6261b5a46a22b4b6f1ca2667455cbc701f71a))
+* **docs:** Rewrite every ADR to the decision in force, keeping what is still to come ([8565887](https://github.com/dasch-swiss/dsp-repository/commit/8565887b48416b44b5be57cc11d9c7f7c076e8bd))
+* **dsp-cli,docs:** Re-home the incubator's vision and conventions ([d89a65a](https://github.com/dasch-swiss/dsp-repository/commit/d89a65ab6ed45f1a9ff741fea45265c91d1a43f7))
+
+
+### Miscellaneous Chores
+
+* **ci:** Gate the Deposit Area's crate graph with check-capability-deps.sh ([a659795](https://github.com/dasch-swiss/dsp-repository/commit/a659795d44c35d58d5e954fab8e532bc5b3eb897))
+
 ## [0.8.10](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.9...v0.8.10) (2026-10-19)
 
 

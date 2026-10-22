@@ -48,7 +48,7 @@ pub enum Diagnostic {
     /// Also carries a **relayed store rejection** from `dsp vre sparql query`:
     /// the triplestore's own `4xx` is not dsp-cli's failure to classify, so it
     /// is reported here with the store's status and its (sanitised, capped)
-    /// message. Exit category `Runtime` (1) — see dsp-cli/ADR-0016 / plan 035 D7.
+    /// message. Exit category `Runtime` (1) — see dsp-cli/ADR-0016.
     #[error("server error: {0}")]
     ServerError(String),
 

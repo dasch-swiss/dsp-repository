@@ -1,133 +1,37 @@
----
-status: accepted
-date: 2026-05-26
----
+# dsp-cli is installed as `dsp` from crates.io, with its agent skill in dasch-claude-plugins
 
-# Binary name, local install, and agent discoverability
-
-The invoked command is named **`dsp`**, not `dsp-cli` (the crate name). For the personal-project phase,
-the tool is installed locally via `cargo install --path .` and made discoverable to AI agents through a Claude Code skill that ships in the repository
-and gets symlinked into `~/.claude/skills/`.
-A single `just install` recipe wires both together. Public distribution is via `cargo install --git`; crates.io publishing is
-recorded as a decision: publish under the `dasch-swiss` GitHub team as crate owner, starting at 0.1.0.
+The invoked command is **`dsp`**, not `dsp-cli` (the crate name). It is distributed as a crates.io crate only, on its own version line, and made discoverable to AI agents through a Claude Code skill that is not shipped from this repository.
 
 ## Binary name
 
-`dsp` is the user-facing command (set via `[[bin]] name = "dsp"` in Cargo.toml). The crate, the GitHub repo,
-and most documentation prose continue to use `dsp-cli` — the distinction matters:
-every character of friction matters in agent prompts that already carry a lot of context,
-and "dsp" reads naturally in sentences ("run dsp to list projects", "dsp couldn't reach the server").
+`dsp` is the user-facing command (`[[bin]] name = "dsp"` in `dsp-cli/Cargo.toml`). The crate and most documentation prose use `dsp-cli`. The distinction matters: every character of friction counts in agent prompts that already carry a lot of context, and "dsp" reads naturally in sentences ("run dsp to list projects", "dsp couldn't reach the server"). There is no collision risk: `dsp-tools` ships as `dsp-tools`, not `dsp`.
 
-No collision risk: `dsp-tools` ships as `dsp-tools`, not `dsp`; nothing else common claims the name.
+## Install
 
-## Local install for the personal phase
+- **From crates.io:** `cargo install dsp-cli`. This is the primary and only distribution channel; there are no prebuilt binaries (dsp-cli/ADR-0015 depends on that).
+- **Tracking `main` ahead of a release:** `cargo install --git https://github.com/dasch-swiss/dsp-repository dsp-cli`.
+- **From a checkout:** `cargo install --path dsp-cli`. A real artefact fails loudly when a build fails, which a symlinked debug binary does not.
 
-```bash
-cargo install --path .
-```
+A `dasch-swiss` GitHub team is an owner of the crate on crates.io, so publishing never depends on one person's account. The binary name need not be unique on crates.io.
 
-Lands the binary at `~/.cargo/bin/dsp`. This is the canonical install for the developer's own use.
+## Versioning and publishing
 
-A `justfile` (or `Makefile`) recipe wraps the install so binary + skill update in one step:
+`dsp-cli` has its own version line. Its `version` in `dsp-cli/Cargo.toml` is a literal that release-please writes, not `version.workspace = true`, and the workspace version does not apply to it. It is a separate release-please package, with a separate release PR and tags of the form `dsp-cli-v<version>`. Publishing to crates.io runs on a published GitHub release whose tag has that prefix (`.github/workflows/publish-dsp-cli.yml`). The mechanics are in `docs/src/deployment.md`.
 
-```just
-install:
-    cargo install --path .
-    mkdir -p ~/.claude/skills
-    ln -sf {{justfile_directory()}}/skill ~/.claude/skills/dsp-cli
-```
+The published crate packages an allowlist (`include` in `Cargo.toml`): the sources, `docs/topics/*.md` (compiled in with `include_str!`, dsp-cli/ADR-0010), the README, the licence and the changelog.
 
-Symlink (not copy) of the skill so edits to `skill/SKILL.md` take effect immediately during active development.
+## Agent discoverability
 
-## Agent discoverability: the Claude Code skill
-
-A small skill at `<repo>/skill/SKILL.md` declares dsp-cli's existence and the absolute path of its binary. When installed (via the symlink above),
-it surfaces in every Claude Code session as a discoverable capability — independent of the calling shell's `PATH`.
-
-The skill answers three questions for any agent that finds it:
-
-1. **When to reach for `dsp`** — DSP interactions, especially project / data-model / resource-type discovery; prefer it over manual DSP-API curl calls.
-2. **How to invoke it** — `command -v dsp` falling back to `$HOME/.cargo/bin/dsp`. PATH-independent.
-3. **What to do if it's missing** — `cargo install --git https://github.com/dasch-swiss/dsp-incubator dsp-cli --force`.
-
-The skill is itself agent-facing documentation. It is *not* a replacement for `dsp docs <topic>` (dsp-cli/ADR-0010) — the skill is a doorway into the tool; `dsp docs` is the room.
-
-## Public distribution
-
-When the project goes public:
-
-- **Primary install path:** `cargo install --git https://github.com/dasch-swiss/dsp-incubator dsp-cli` (or wherever the public repo lives).
-  No infrastructure to set up; works for anyone with Rust toolchain.
-
-## Decision: crates.io publishing
-
-Publish `dsp-cli` to crates.io, starting at version 0.1.0. Crate name `dsp-cli` (the binary stays `dsp` — binary names need not
-be unique on crates.io); name verified available on crates.io as of 2026-06-18 (the crates.io API returned 404 = unclaimed).
-
-**Owner:** the `dasch-swiss` GitHub team, added as a crate owner — not a personal account. crates.io has no "organization
-account" concept: a crate is owned by crates.io users and/or GitHub teams. The first `cargo publish` runs under a
-maintainer's GitHub-authenticated crates.io login; `cargo owner --add github:dasch-swiss:<team>` then adds the
-`dasch-swiss` team as a co-owner. See dsp-cli/ADR-0014 for the publish-first sequencing this decision unblocks.
-
-### Rationale
-
-- **For:** simplest install command for users (`cargo install dsp-cli`); standard Rust ecosystem visibility.
-- **Against:** crates.io publishes are irrevocable; name-squatting locks in the project name and crate name forever; ongoing version maintenance obligation;
-  limited benefit if `cargo install --git` is good enough.
+The agent-facing Claude Code skill is not shipped from this repository. Its home is `dasch-swiss/dasch-claude-plugins` (`misc:dsp-cli`), distributed through the Claude Code plugin marketplace. The repository has no skill file, no `just install` recipe and no symlink step. The skill is a doorway into the tool; `dsp docs <topic>` (dsp-cli/ADR-0010) is the room, and the skill does not replace it.
 
 ## Considered Options
 
-- **Symlinked debug binary** (`ln -sf target/debug/dsp ~/.cargo/bin/dsp`). Rejected — stale-binary failure mode if a build fails silently;
-  the agent invokes the previous binary without warning. `cargo install` produces a real artefact and fails loudly.
-- **Wrapper script that builds on each invocation.** Rejected — every command runs a `cargo build` check; adds latency and noise to agent transcripts.
-- **Relying on shell PATH inheritance** for agent discoverability. Rejected — agents may launch with a different (more austere) environment than the user's interactive shell;
-  aliases and shell config don't help. Absolute path through the skill is robust.
-- **Updating each DaSCH project's CLAUDE.md** to mention dsp-cli. Rejected — multiple files to maintain; fragile.
-- **Binary name `dsp-cli`** instead of `dsp`. Rejected — agent-prompt friction; nothing about ergonomics is improved by the longer name.
-- **Distribute as Homebrew tap / Nix flake.** Deferred — value only emerges with non-Rust users.
+- **Ship the skill from this repository** (symlinked into `~/.claude/skills/`): rejected. The plugins repository is the DaSCH-wide distribution mechanism for agent skills, and two copies in two distribution channels drift.
+- **Name the binary `dsp-cli`**: rejected. It adds agent-prompt friction and improves no ergonomics.
+- **Mention dsp-cli in each DaSCH project's `CLAUDE.md`**: rejected. It means many files to maintain, and they would go stale.
+- **A Homebrew tap or a Nix flake**: deferred, not rejected. Their value only emerges with non-Rust users; that is what would bring them back.
+- **Inherit the workspace version**: rejected. Every workspace release would bump dsp-cli with no dsp-cli change, and the published version would carry no dsp-cli semantics.
 
-## Consequences
-
-- `just install` is the canonical "make my changes available" command during development. The README's first instruction.
-- The skill source lives at `<repo>/skill/SKILL.md` and is versioned with the code. Updates to the skill propagate through the symlink without re-running `just install`.
-- Other DaSCH project sessions automatically see dsp-cli as available — no per-project CLAUDE.md changes needed.
-- Once 0.1.0 is published, the primary install command becomes `cargo install dsp-cli`; `cargo install --git ...` remains the
-  fallback for the pre-publish window and for anyone tracking `main` ahead of a release.
-- The skill becomes a public-facing artefact that other dsp-cli users (eventually) install alongside the binary.
-  Its quality matters: bad skill content misleads every agent that reads it.
-
-Enforced by: the binary name `dsp`, by the integration tests that run it as `Command::cargo_bin("dsp")`
-(e.g. `dsp-cli/tests/cli.rs`, `dsp-cli/tests/docs.rs`; **static-analysis**); the rest by **review**.
-
-## Amendment (2026-07-24) — skill relocated to dasch-claude-plugins
-
-The in-repo skill and its `just install` symlink are **withdrawn**. The agent-facing Claude Code skill is no longer
-shipped from this repository; its canonical home is now the `dasch-swiss/dasch-claude-plugins` repo
-(`misc/skills/dsp-cli/`, surfaced as the `misc:dsp-cli` skill) and it is distributed via the Claude Code plugin
-marketplace rather than a per-repo symlink.
-
-What changed as a result:
-
-- `skill/SKILL.md` deleted from this repo.
-- The `just install` recipe was **removed entirely**. It existed only to install the binary *and* symlink the skill;
-  with the skill gone it did nothing a plain `cargo install --path . --force` doesn't, so it was dropped rather than kept
-  as a thin wrapper. (Anyone who previously ran `just install` has a now-dangling symlink at `~/.claude/skills/dsp-cli` —
-  remove it manually.) This retires the "`just install` is the canonical 'make my changes available' command" consequence
-  recorded above.
-- The crate's `Cargo.toml` `include` allowlist no longer packages the skill.
-- The compile-time `skill/SKILL.md` ↔ clap drift-guard test (`src/cli/mod.rs`) was removed with the file.
-
-Why: the plugins repo already carried a diverged, more current copy of the skill, and maintaining two copies in two
-distribution channels guaranteed drift. The plugin marketplace is the DaSCH-wide distribution mechanism for agent
-skills, so the crate no longer needs to ship or symlink its own. The rest of this ADR (binary name, `cargo install`,
-crates.io publishing) stands unchanged; only the skill-shipping/symlink mechanism is withdrawn.
-
-## Amendment (2026-09-19) — repository moved
-
-`dsp-cli` now lives in `dasch-swiss/dsp-repository` (crate directory `dsp-cli/`), per dsp-cli/ADR-0014.
-The "Public distribution" `cargo install --git` fallback above, and the "for anyone tracking `main`
-ahead of a release" fallback in Consequences, now resolve against
-`https://github.com/dasch-swiss/dsp-repository`, not `dasch-swiss/dsp-incubator`. The "what to do if
-it's missing" fallback in "Agent discoverability: the Claude Code skill" is not updated — that whole
-mechanism was already withdrawn by the 2026-07-24 amendment above and describes a skill that no
-longer ships from either repository.
+Enforced by: the binary name `dsp`, by the integration tests that run it as `Command::cargo_bin("dsp")` (e.g. `dsp-cli/tests/cli.rs`,
+`dsp-cli/tests/docs.rs`); the separate release-please package and the tag-prefix guard on the publish workflow (**static-analysis**);
+`cargo publish -p dsp-cli --dry-run` in the publish workflow; the rest by **review**.

@@ -29,8 +29,8 @@ pub fn <verb>(
     args: &<Verb><Noun>Args,
     cfg: &Config,
     client: &dyn DspClient,
-    renderer: &dyn Renderer,
-) -> Result<()>
+    renderer: &mut dyn Renderer,
+) -> Result<(), Diagnostic>
 ```
 
 This forces two properties:
@@ -61,20 +61,21 @@ See [Testing Strategy](./testing-strategy.md) for the full layer breakdown.
 dsp-cli/
 ├── Cargo.toml
 ├── src/
-│   ├── main.rs              # binary entry: parse → dispatch
-│   ├── lib.rs               # library re-exports
-│   ├── cli/                 # clap derive structs (layer 1)
-│   ├── actions/             # layer 2
-│   │   └── vre/
-│   │       ├── project.rs
-│   │       ├── data_model.rs
-│   │       └── resource_type.rs
-│   ├── client/              # layer 3a — trait + HTTP impl
+│   ├── main.rs               # binary entry: parse → dispatch
+│   ├── lib.rs                # library re-exports and command dispatch
+│   ├── diagnostic.rs         # Diagnostic: error kind, exit category, message (dsp-cli/ADR-0012)
+│   ├── cli/                  # clap derive structs (layer 1)
+│   ├── actions/              # layer 2
+│   │   ├── auth/             # login, logout, set-token, status, token
+│   │   ├── docs.rs           # dsp docs (embedded topics)
+│   │   └── vre/              # project, data_model, resource_type, resource, vocabulary, sparql
+│   ├── client/               # layer 3a — DspClient trait + HTTP impl
 │   ├── render/               # layer 3b — Renderer trait + format impls
 │   ├── model/                # layer 4 — domain types
-│   ├── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
-│   │   └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
-│   └── config/                # layer 5 — config stack
+│   ├── config/               # layer 5 — config stack
+│   ├── update/               # the update check (dsp-cli/ADR-0015)
+│   └── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
+│       └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
 └── tests/                    # wiremock integration tests + cli-level assert_cmd tests
 ```
 
@@ -92,20 +93,22 @@ Explicit per-(noun, shape) methods, not a generic `render<T: Renderable>`:
 
 ```rust
 trait Renderer {
-    fn projects(&mut self, view: &ProjectListView, meta: &MetaContext) -> Result<()>;
-    fn project_detail(&mut self, item: &Project, data_models: &[DataModelSummary], meta: &MetaContext) -> Result<()>;
-    fn data_models(&mut self, items: &[DataModel], meta: &MetaContext) -> Result<()>;
-    fn data_model_detail(&mut self, item: &DataModel, resource_types: &[ResourceTypeSummary], meta: &MetaContext) -> Result<()>;
-    fn resource_types(&mut self, items: &[ResourceType], meta: &MetaContext) -> Result<()>;
-    fn resource_type_detail(&mut self, item: &ResourceType, meta: &MetaContext) -> Result<()>;
-    // ...
+    fn diagnostic(&mut self, diag: &Diagnostic, meta: &MetaContext) -> Result<(), Diagnostic>;
+    fn projects(&mut self, view: &ProjectListView, meta: &MetaContext) -> Result<(), Diagnostic>;
+    fn project_describe(&mut self, project: &ProjectDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
+    fn data_models(&mut self, view: &DataModelListView, meta: &MetaContext) -> Result<(), Diagnostic>;
+    fn data_model_describe(&mut self, detail: &DataModelDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
+    fn resource_types(&mut self, view: &ResourceTypeListView, meta: &MetaContext) -> Result<(), Diagnostic>;
+    fn resource_type_describe(&mut self, detail: &ResourceTypeDetail, meta: &MetaContext) -> Result<(), Diagnostic>;
+    // ... one method per (noun, shape), plus the auth and dump outcomes
 }
 ```
 
 List methods take an owned per-noun view struct (e.g. `ProjectListView`) carrying the post-filter
 items, the pre-filter total, and the filter string, rather than a bare slice — this lets prose
 render a "(m of n matching …)" count line without the action layer duplicating that logic. The
-`_meta` argument (`MetaContext`: server label, auth state, optional filter warning) threads through
+`_meta` argument (`MetaContext`: server label, auth state, and the optional notes `filter_warning`,
+`count_caveat` and `count_cost`) threads through
 every renderer call; this is the implementation site of dsp-cli/ADR-0007's auth-state disclosure
 requirement.
 
@@ -118,9 +121,8 @@ grows) is bounded by the fact that the noun-group set is small and grows slowly.
 
 - **Binary-only single crate.** Rejected — actions only testable via end-to-end `assert_cmd`,
   which is slow and friction-heavy for the dominant test mode.
-- **Cargo workspace.** Rejected while dsp-cli was a standalone repository — adds ceremony without
-  benefit at personal-project scale. The move into this monorepo (dsp-cli/ADR-0014) kept the
-  single-crate internal layout; it did not split dsp-cli itself into multiple crates.
+- **Several crates.** dsp-cli remains a single crate; a split into `dsp-client`, `dsp-render` and
+  `dsp-cli` is a deferred option in dsp-cli/ADR-0008.
 - **Wiremock-only test seam.** Rejected — action-level tests become 10-100x slower; edge cases
   (error paths, partial data) harder to construct.
 - **Generic `render<T>` trait.** Rejected — wrong shape for prose.
@@ -129,7 +131,7 @@ grows) is bounded by the fact that the noun-group set is small and grows slowly.
 
 ## Consequences
 
-- `DspClient` is a trait from day one. The trait's surface co-evolves with the action layer: every
+- `DspClient` is a trait. The trait's surface co-evolves with the action layer: every
   new verb that needs a new endpoint adds a method to the trait.
 - `Renderer` is a trait with explicit per-noun methods. New noun-groups add new methods; each
   format impl gets a new method.

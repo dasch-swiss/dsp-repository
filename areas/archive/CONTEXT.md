@@ -70,7 +70,7 @@ _Avoid_: upload session, transaction.
 The Submission Information Package — the wire format crossing from a producer into the archive; not a stored entity (the Deposition is).
 
 **Data product**:
-What the archive publishes outward for the Access Area, on two channels. The projection stream: immutable snapshots and deltas in object storage, announced by pointer messages on a message bus, written before they are announced; the Access Area's `sync` is its only consumer. The Access bucket: the Service Files the archive derives, one per Representation, and the deposited files whose delivery form is themselves (a project's configuration, its curation, an edition's TEI); the Access Area's `media` is its only consumer. Every read-side service is a disposable projection over them, rebuildable from snapshot plus replay (ADR-0012).
+What the archive publishes outward for the Access Area, on two channels. The projection stream: immutable snapshots and deltas in object storage, announced by pointer messages on a message bus, written before they are announced; the Access Area's `sync` is its only consumer. The Access bucket: the Service Files the archive derives, one per Representation, and the deposited files whose delivery form is themselves (a project's configuration, its curation, an edition's TEI); the Access Area's `media` is its only consumer. Every read-side service is a disposable projection over them, rebuildable from snapshot plus replay (ADR-0003, ADR-0012).
 _Avoid_: event stream (no fat events cross the boundary), export.
 
 ## Relationships

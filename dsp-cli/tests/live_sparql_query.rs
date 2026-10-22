@@ -5,7 +5,8 @@
 //
 // The `just test-live` recipe runs exactly this command.
 //
-// dsp-cli/ADR-0009 (testing strategy): live tests are **not** in CI. They require a
+// dsp-cli/ADR-0009 (testing strategy): live tests are #[ignore]d in the default suite and
+// run strict by the dsp-cli-drift CI job. They require a
 // real local DSP-API instance with the SPARQL passthrough enabled — no
 // deployed `api.*.dasch.swiss` environment has the route yet (§Verified API
 // facts). Missing config causes an early-return skip — never a test failure.

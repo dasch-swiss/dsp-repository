@@ -76,7 +76,7 @@ pub(crate) fn replace_control_chars(s: &str) -> String {
 ///
 /// Shared by `src/client/http.rs`'s `classify_sparql_status` (the `500`/`502`/
 /// `503`/`504` raw-body fallback) and the `dsp vre sparql query` action's
-/// relay path (D7's stderr prose path) — see plan 035 D7's ⚠️ note: it must be
+/// relay path (the stderr prose path of dsp-cli/ADR-0016): it must be
 /// exactly one function so both paths sanitise identically: a store error body
 /// can arrive under any status, including the `500` the classifier's fallback
 /// handles, so sanitising only one path leaves the hole wherever the status

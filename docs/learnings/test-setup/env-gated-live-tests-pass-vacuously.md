@@ -128,5 +128,5 @@ The `pinned` drift job passed on CI in 2 min 39 s with `DSP_LIVE_STRICT=1`.
 
 - PR: https://github.com/dasch-swiss/dsp-repository/pull/409, commits `build(dsp-cli,docs): register the crate and harmonize it with the workspace` and `chore(ci): run dsp-cli live tests against a pinned dsp-api stack`
 - `dsp-cli/tests/common/mod.rs`, `.github/scripts/check-live-tests-ignored.sh`, `justfile` (`dsp-cli-test-live`), `.github/workflows/dsp-cli-drift.yml`
-- `dsp-cli/docs/adr/0009-testing-strategy.md` (amendment 2026-09-19, option C4 adopted), `docs/src/dsp-cli/testing-strategy.md`
+- `dsp-cli/docs/adr/0009-testing-strategy.md` (live tests strict against a pinned stack in CI), `docs/src/dsp-cli/testing-strategy.md`
 - Plan: "Two CI traps found in the baseline"; the `ARCH-MAP.md` dsp-cli boundary rule "live tests never run in the default suite"

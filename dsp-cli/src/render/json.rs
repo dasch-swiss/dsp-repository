@@ -100,7 +100,7 @@ fn localized_text_array(items: &[crate::model::LocalizedText]) -> Vec<serde_json
 ///
 /// Key order is deterministic: `value_type` is always first, then type-specific
 /// keys in the order specified by the matrix. Raw server values are kept verbatim
-/// (no sanitisation — dsp-cli/ADR-0003 fidelity; sanitisation is prose-only per D7).
+/// (no sanitisation in json — dsp-cli/ADR-0003).
 fn value_content_to_json(vc: &ValueContent) -> serde_json::Value {
     use serde_json::Map;
     let mut m = Map::new();

@@ -2,7 +2,7 @@
 
 The metadata editor is the Deposit Area's first capability (ADR-0002, ADR-0003): the surface where a depositing project team edits its project metadata, RDU reviews it field by field, and an approved record is carried back into this repository as a pull request. Git stays the source of truth and the editor's database is working state (`areas/deposit/ADR-0001`).
 
-This page describes the architecture **as implemented**. The Deposit Area's target lives only in its decision records, `areas/deposit/docs/adr/`, and the code matches them today; a gap that opens gets a "Divergence from the target architecture" section at the end of this page again (`areas/deposit/editor/CLAUDE.md`). Subsystem detail is on the topic pages each section links to.
+This page describes the architecture **as implemented**. The Deposit Area's target lives only in its decision records, `areas/deposit/docs/adr/`; where the code does not meet it, the ADR names the gap as a `Not yet in code:` line (`areas/deposit/editor/CLAUDE.md`). Subsystem detail is on the topic pages each section links to.
 
 ## The flow, end to end
 
@@ -105,5 +105,5 @@ Server-rendered HTML with Maud, served by Axum, Datastar for enhancement on top 
 
 ## Decisions
 
-- Platform: the areas and the origin split (ADR-0002), one modulith per area with capabilities behind consumer-defined ports (ADR-0003, amended 2026-09-25 for authentication ports, the area shell and the crate-graph gate, and 2026-10-13 for what a composition root depends on), hypermedia surfaces (ADR-0004), where decision records live (ADR-0006).
-- The editor's own: git as the source of truth (`areas/deposit/ADR-0001`), the draft as the project's JSON members (`areas/deposit/ADR-0002`), Online derived at startup (`areas/deposit/ADR-0003`), and the target shape of the area (`areas/deposit/ADR-0004`, amended 2026-10-13 for `identity-ports`, the session deadline in `Actor`, the web facades and the shell's sign-in link).
+- Platform: the areas and the origin split (ADR-0002), one modulith per area with capabilities behind consumer-defined ports (ADR-0003: authentication ports, the area shell, the crate-graph gate and what a composition root depends on), hypermedia surfaces (ADR-0004), where decision records live (ADR-0006).
+- The editor's own: git as the source of truth (`areas/deposit/ADR-0001`), the draft as the project's JSON members (`areas/deposit/ADR-0002`), Online derived at startup (`areas/deposit/ADR-0003`), and the shape of the area (`areas/deposit/ADR-0004`: `identity-ports`, the session deadline in `Actor`, the web facades and the shell's sign-in link).

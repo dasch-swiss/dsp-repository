@@ -20,7 +20,7 @@
 //!
 //! Vocabulary guard: no `export`/`class`/`property`/`ontolog` in prose output.
 //! Tabular/json formats render raw IRIs so the `ontolog` check is skipped there
-//! (the documented exception — dsp-cli/ADR-0001 / plan 022 learning from plan 014).
+//! (the documented exception — dsp-cli/ADR-0001).
 
 use dsp_cli::model::ResourceSummary;
 use dsp_cli::render::csv::CsvRenderer;

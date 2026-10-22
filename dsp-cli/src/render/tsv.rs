@@ -485,7 +485,7 @@ impl Renderer for TsvRenderer {
         detail: &crate::model::ResourceDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // TSV format: `detail.values` selects the shape (dsp-cli/ADR-0013 D1).
+        // TSV format: `detail.values` selects the shape (dsp-cli/ADR-0013).
         // None → header + metadata row (all ten RESOURCE_DESCRIBE_COLUMNS), unchanged.
         // Some(fields) → header + one row per value (long-format), metadata dropped.
         match &detail.values {

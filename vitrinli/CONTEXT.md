@@ -29,7 +29,7 @@ The trait through which Vitrinli asks whether a request may see a file; implemen
 The trait through which Vitrinli hands a derived Service File back; implemented by the Deposit Area's `media`, which stores it and records it as servable.
 
 **Access bucket**:
-The object-storage location the archive publishes Service Files to; the Access Area's `media` reads from it and from nowhere else, and is its only consumer, as `sync` is the projection stream's (ADR-0012). Until the archive exists, a hand-fed directory laid out as the bucket will be stands in for it: `areas/access/media/data/`, which the Access Area's `media` serves behind CPE's bytes port (`areas/access/media/CONTEXT.md`).
+The object-storage location the archive publishes Service Files to; the Access Area's `media` reads from it and from nowhere else, and is its only consumer, as `sync` is the projection stream's (ADR-0003). Until the archive exists, a hand-fed directory laid out as the bucket will be stands in for it: `areas/access/media/data/`, which the Access Area's `media` serves behind CPE's bytes port (`areas/access/media/CONTEXT.md`).
 
 ## Relationships
 

@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "api-bindings"]
 # Allowlist (not an exclude list): only what the packaged crate needs to compile and
 # describe itself. docs/topics/*.md are include_str!'d at compile time
 # (src/actions/docs.rs) and must ship; Cargo.toml/Cargo.lock are auto-included by cargo.
-# See dsp-cli/ADR-0011 (crates.io publishing decision).
+# See dsp-cli/ADR-0011.
 include = ["src/**/*", "docs/topics/*.md", "README.md", "LICENSE", "CHANGELOG.md"]
 
 [[bin]]

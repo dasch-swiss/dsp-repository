@@ -1,4 +1,4 @@
-//! What identity needs from the editor (`areas/deposit/ADR-0004`, amendment of 2026-10-13): the
+//! What identity needs from the editor (`areas/deposit/ADR-0004`, "The shape"): the
 //! work an account still has open, which the depositor-removal confirmation lists. `editor-store`
 //! implements [`OpenWork`] beside the editor's data; identity's tests use
 //! `FakeOpenWork` (feature `test-support`).

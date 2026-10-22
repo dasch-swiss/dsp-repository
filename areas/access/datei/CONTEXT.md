@@ -52,7 +52,7 @@ _Avoid_: IR (fine inside the code; as a concept name it says nothing about owner
 
 ## What the port serves
 
-The files of one project, with their bytes: the Configuration, Edition files, ODD, Project CSS, Driving files, Tables of contents. An adapter serves current, archived files only, each with its rights attached (ADR-0013), and omits what the archive does not hold. DaTEI needs none of the archive-shaped facts CPE's port serves and declares no port against `sync`. The provider is the Access Area's `media` capability, the Access bucket's only consumer, which reads Service Files from it; a TEI file's or a TOML document's Service File is the file itself (ADR-0012; DEV-7442 decided). Until the bucket exists, `media` serves a hand-fed stand-in directory, `areas/access/media/data/`, as it already does for CPE's bytes port (see [`../media/CONTEXT.md`](../media/CONTEXT.md)). DaTEI's adapter there waits for DaTEI's port: neither exists until DaTEI has code.
+The files of one project, with their bytes: the Configuration, Edition files, ODD, Project CSS, Driving files, Tables of contents. An adapter serves current, archived files only, each with its rights attached (ADR-0013), and omits what the archive does not hold. DaTEI needs none of the archive-shaped facts CPE's port serves and declares no port against `sync`. The provider is the Access Area's `media` capability, the Access bucket's only consumer, which reads Service Files from it; a TEI file's or a TOML document's Service File is the file itself (ADR-0003, ADR-0012). Until the bucket exists, `media` serves a hand-fed stand-in directory, `areas/access/media/data/`, as it already does for CPE's bytes port (see [`../media/CONTEXT.md`](../media/CONTEXT.md)). DaTEI's adapter there waits for DaTEI's port: neither exists until DaTEI has code.
 
 ## Relationships
 
@@ -63,7 +63,7 @@ The files of one project, with their bytes: the Configuration, Edition files, OD
 
 ## Boundary commitments
 
-- The Read model is fed by the port only, the Configuration included. Nothing under DaTEI's directory is a Configuration, an Edition file, an ODD, a Project CSS, a Driving file or a Table of contents; a project folder, if DaTEI has one, holds code (ADR-0012). Target enforcement: one test that rebuilds from empty against a `Fake<Port>` and asserts what the Presenter serves is unchanged (ADR-0008); review until then.
+- The Read model is fed by the port only, the Configuration included. Nothing under DaTEI's directory is a Configuration, an Edition file, an ODD, a Project CSS, a Driving file or a Table of contents; a project folder, if DaTEI has one, holds only the documents that describe the project's data (ADR-0009). Target enforcement: one test that rebuilds from empty against a `Fake<Port>` and asserts what the Presenter serves is unchanged (ADR-0008); review until then.
 - The Presenter never writes the Read model; the Rebuild is its only writer and stores each row's rights, and the Presenter filters every request on them with ADR-0013's decision, as the anonymous consumer until an authorisation mechanism exists (ADR-0012).
 - DaTEI reads nothing from `sync` and never opens Chischtli.
 - A project fails alone, as for CPE (ADR-0007): a project whose Rebuild fails is offline on its own prefix while every other project keeps serving.
@@ -79,7 +79,7 @@ The files of one project, with their bytes: the Configuration, Edition files, OD
 ## Flagged ambiguities
 
 - **Archived data versus authored content** (2026-09-29; resolved 2026-10-13, ADR-0012). Everything the Rebuild consumes is deposited, whoever authored it: Driving files, Tables of contents and the Configuration included. Nothing the Rebuild reads is authored beside the code.
-- **Where the Configuration is authored, and how it reaches DaTEI** (2026-09-29; resolved 2026-10-13, ADR-0012). The Configurator lives on the Deposit side; the TOML it writes is deposited and arrives through the port, and DaTEI's project folder, if any, holds code. Until the archive exists it will sit in `media`'s stand-in directory, which holds no DaTEI project yet.
+- **Where the Configuration is authored, and how it reaches DaTEI** (2026-09-29; resolved 2026-10-13, ADR-0012). The Configurator lives on the Deposit side; the TOML it writes is deposited and arrives through the port, and DaTEI's project folder, if any, holds only documents about the project's data. Until the archive exists it will sit in `media`'s stand-in directory, which holds no DaTEI project yet.
 - **"ingest"** is the incubator's word for TEI to IR and its `src/ir/ingest` module; the Archive Area owns the word. Resolution: **Rebuild** in all prose here; the identifier is renamed on entry.
 - **"asset"** is the incubator's word for its uploads and its runtime directory (`assets/<id>/`); this repository already avoids it (see `vitrinli/CONTEXT.md`). Resolution: not used here; say Edition file, ODD, Project CSS, or "public assets" for static web files.
 - **"project"** in the incubator is an id-keyed directory (`assets/<id>`, a server-derived slug); here a DaTEI project is the contract Project by Shortcode. Resolution: say "DaTEI project" only for the presented unit; the identifier is the Shortcode.

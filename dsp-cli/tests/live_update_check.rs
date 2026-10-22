@@ -8,7 +8,9 @@
 //
 // The `just test-live` recipe runs the former.
 //
-// dsp-cli/ADR-0009 (testing strategy): live tests are layer 5 and are **not** in CI.
+// dsp-cli/ADR-0009 (testing strategy): live tests are layer 5 and #[ignore]d in the
+// default suite. Unlike its siblings, this one is not run by the dsp-cli-drift CI job
+// (`just dsp-cli-test-live` excludes it): it checks crates.io, not a DSP stack.
 //
 // Unlike the other live tests in this file's siblings (e.g.
 // `live_project_list.rs`, `live_data_model_list.rs`), this test needs NO

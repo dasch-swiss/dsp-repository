@@ -105,8 +105,8 @@ struct DocsJsonEnvelope<'a> {
 }
 
 /// The empty `_meta` block for `dsp docs -j` (no server/auth context applies to
-/// embedded documentation). Serialises as `{}`. See plan 020 D4 and dsp-cli/ADR-0003
-/// amendment for the empty-`_meta` carve-out.
+/// embedded documentation). Serialises as `{}`. See dsp-cli/ADR-0003 (`dsp docs -j` has
+/// an empty `_meta`).
 #[derive(Serialize)]
 struct EmptyMeta {}
 
@@ -139,7 +139,7 @@ fn run_impl(args: &DocsArgs, out: &mut dyn Write) -> Result<(), Diagnostic> {
 /// Uses compact `serde_json::to_string` (same style as `src/render/json.rs`) so
 /// `dsp docs -j` output is visually uniform with other `dsp … -j` commands.
 /// `_meta` is first because it is the first declared field on `DocsJsonEnvelope`
-/// (dsp-cli/ADR-0003, plan 020 D4).
+/// (dsp-cli/ADR-0003).
 fn write_topic_index_json(out: &mut dyn Write) -> Result<(), Diagnostic> {
     let data: Vec<TopicIndexEntry<'_>> = TOPICS
         .iter()

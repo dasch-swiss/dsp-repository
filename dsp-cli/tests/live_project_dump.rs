@@ -5,7 +5,8 @@
 //
 // The `just test-live` recipe runs exactly this command.
 //
-// dsp-cli/ADR-0009 (testing strategy): live tests are **not** in CI. They require
+// dsp-cli/ADR-0009 (testing strategy): live tests are #[ignore]d in the default suite and
+// run strict by the dsp-cli-drift CI job. They require
 // real environment variables pointing at a live DSP instance. Missing config
 // causes an early-return skip — never a test failure.
 //

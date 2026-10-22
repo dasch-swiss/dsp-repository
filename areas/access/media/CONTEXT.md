@@ -68,4 +68,4 @@ no `sync` crate and no sibling's domain or web crate is review.
 
 A new consumer of `media`, DaTEI for one, declares its own bytes port in its own ports crate, and `media-store`
 implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` are CPE's rules until a second
-consumer needs them; moving them out of `cpe-ports` is an architecture change, made by an ADR or an amendment.
+consumer needs them; moving them out of `cpe-ports` is an architecture change, made by an ADR.

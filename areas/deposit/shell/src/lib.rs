@@ -1,5 +1,5 @@
 //! `deposit-shell`: the Deposit Area's document shell (`areas/deposit/ADR-0004`). It depends on
-//! no capability crate (ADR-0003, amendment of 2026-09-25), so it returns `Markup` and each caller
+//! no capability crate (ADR-0003), so it returns `Markup` and each caller
 //! turns it into a response.
 //!
 //! The routes it links are string literals, a coupling to the capabilities' route tables that

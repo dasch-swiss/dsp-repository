@@ -489,7 +489,7 @@ impl Renderer for CsvRenderer {
         detail: &crate::model::ResourceDetail,
         meta: &MetaContext,
     ) -> Result<(), Diagnostic> {
-        // CSV format: `detail.values` selects the shape (dsp-cli/ADR-0013 D1).
+        // CSV format: `detail.values` selects the shape (dsp-cli/ADR-0013).
         // None → header + metadata row (all ten RESOURCE_DESCRIBE_COLUMNS), unchanged.
         // Some(fields) → header + one row per value (long-format), metadata dropped.
         match &detail.values {

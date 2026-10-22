@@ -192,7 +192,7 @@ impl Renderer for ProseRenderer {
 
         for item in &view.items {
             let longname = item.longname.as_deref().unwrap_or("");
-            // iri is intentionally omitted from prose (dsp-cli/ADR-0003 / plan Step 3c).
+            // iri is intentionally omitted from prose.
             // The data-models hint is right-appended to the row, per the locked
             // PRD output format. The row is assembled first and trimmed at the
             // end so a project with no longname and no data-models does not

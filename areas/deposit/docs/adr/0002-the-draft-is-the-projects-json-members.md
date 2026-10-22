@@ -1,11 +1,6 @@
----
-status: accepted
-date: 2026-09-25
----
-
 # The draft is the project's JSON members, not a typed mirror
 
-`editor_core::draft::ProjectDraft` is `#[serde(transparent)]` over the project file's members, a `serde_json` map, not a struct mirroring `ProjectRaw` with 36 `Option` fields. An absent key is a field not yet filled in, any value is kept as typed whether it validates or not, every member the editor does not manage is carried unchanged, and validity is decided once, at `to_raw`, the submission boundary. Recorded on the architecture page on 2026-08-28 (a8e35e2f); recorded here retroactively (DEV-7374).
+`editor_core::draft::ProjectDraft` is `#[serde(transparent)]` over the project file's members, a `serde_json` map, not a struct mirroring `ProjectRaw` with an `Option` field per member. An absent key is a field not yet filled in, any value is kept as typed whether it validates or not, every member the editor does not manage is carried unchanged, and validity is decided once, at `to_raw`, the submission boundary.
 
 Three requirements pull that way at once: a draft must hold a field the depositor has not filled in and a value that is present but invalid, it must carry every field the editor does not manage unchanged, and it must survive a field being added to the contract without an editor change (`docs/src/editor/project-representation.md`, opening section).
 
@@ -14,7 +9,7 @@ Stated so a violation is describable: no `editor-*` crate defines a struct whose
 ## Considered Options
 
 - **The project's JSON members (chosen).**
-- **A struct of 36 `Option` fields** — rejected: it cannot hold an invalid value as typed, drops members it does not know, and needs an editor change for every member added to the contract.
+- **A struct of `Option` fields, one per member** — rejected: it cannot hold an invalid value as typed, drops members it does not know, and needs an editor change for every member added to the contract.
 
 ## Consequences
 
@@ -22,4 +17,4 @@ Stated so a violation is describable: no `editor-*` crate defines a struct whose
 - The review diff compares top-level members, not registry fields, so a change arriving through a member no applier touches is still shown (`docs/src/editor/review.md`, "The comparison is over top-level members, not registry fields").
 - Entity proposals cannot live in the payload, since `to_raw` would drop a non-contract member; hence the `entity_proposals` table (`docs/src/editor/entity-proposals.md`).
 
-Enforced by: `editor-core/tests/canonical_round_trip.rs` (load → draft → write byte-identical over the whole published corpus) and `editor-web/tests/untouched_form_round_trip.rs` (**static-analysis**).
+Enforced by: `areas/deposit/editor/core/tests/canonical_round_trip.rs` (load → draft → write byte-identical over the whole published corpus) and `areas/deposit/editor/web/tests/untouched_form_round_trip.rs` (**static-analysis**).

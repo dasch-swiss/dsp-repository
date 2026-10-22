@@ -382,7 +382,7 @@ pub trait DspClient {
     /// `POST /admin/sparql/query`, and relay the store's own response.
     ///
     /// This is the **one** `DspClient` method that returns a relay struct
-    /// ([`SparqlResponse`]) rather than a parsed domain model — dsp-cli/ADR-0016 (D16).
+    /// ([`SparqlResponse`]) rather than a parsed domain model — dsp-cli/ADR-0016.
     /// dsp-cli deliberately does not interpret the response body: the status,
     /// media type and bytes are the store's own, negotiated by `accept`.
     ///

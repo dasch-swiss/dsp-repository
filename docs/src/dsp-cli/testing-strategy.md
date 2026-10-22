@@ -3,7 +3,7 @@
 `dsp-cli`'s test suite has five layers, each addressing a distinct class of failure. The primary
 seam is the `DspClient` trait (see [Architecture](./architecture.md)); the dominant test mode is
 action-level tests with mocks and snapshotted output. Live tests against a real DSP environment are
-opt-in and not part of the default suite; a dedicated CI job now runs them against a pinned,
+opt-in and not part of the default suite; a dedicated CI job runs them against a pinned,
 containerized stack (see [Drift detection in CI](#drift-detection-in-ci) below).
 
 ## Layers

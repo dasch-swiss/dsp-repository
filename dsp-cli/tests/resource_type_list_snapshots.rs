@@ -26,7 +26,7 @@
 //! (e.g. `http://api.dasch.swiss/ontology/0801/beol/v2#letter`) — those are data
 //! values, the documented exception. Only prose (which does not render IRIs) gets
 //! the `ontolog` check; tabular/json formats render raw IRIs so the `ontolog` check
-//! is explicitly skipped there. (dsp-cli/ADR-0001 / Step-5 learning from plan 014.)
+//! is explicitly skipped there. (dsp-cli/ADR-0001.)
 
 use dsp_cli::diagnostic::Diagnostic;
 use dsp_cli::model::ResourceType;

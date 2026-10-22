@@ -61,6 +61,7 @@
 - [Architecture](./dsp-cli/architecture.md)
 - [Testing Strategy](./dsp-cli/testing-strategy.md)
 - [Usage](./dsp-cli/usage.md)
+- [Value Rendering](./dsp-cli/value-rendering.md)
 
 ---
 

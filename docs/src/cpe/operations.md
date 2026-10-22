@@ -13,10 +13,10 @@ to CPE.
   `SYNC_DATA_DIR` and `media`'s deposited files in `MEDIA_DATA_DIR` (configuration, curation, narrative). All
   three are in the image. Each project's store is built in memory from that data at every start; nothing is
   written to disk, and a restart leaves nothing behind.
-- **Refresh**: for now, a restart. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE only
-  when `access-server` restarts, since activation runs once. Not yet in code: the ports announce change, `sync`
-  and `media` each with an operator lever that makes its adapter announce, and CPE rebuilds the one project
-  named, with no endpoint of its own (ADR-0012, DEV-7622).
+- **Refresh**: a deploy. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE with the next
+  deploy, since the data ships in the image and activation builds every project from empty at each start. Not
+  yet in code: the ports announce change and CPE rebuilds the one project named, with no endpoint of its own
+  (ADR-0012; not scheduled).
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
   `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
   project's own files at `/cpe/<project id>/_assets/…`.

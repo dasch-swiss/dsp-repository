@@ -12,8 +12,8 @@
 //! anonymous consumer.
 //!
 //! The composition root constructs the adapter over the directory `MEDIA_DATA_DIR` names, once, at
-//! start: an edit to it reaches a reader only on a restart. Not yet in code: the port announces
-//! change (DEV-7622).
+//! start: data ships in the image, so an edit to it reaches a reader with a deploy. Not yet in
+//! code: the port announces change (ADR-0012; not scheduled).
 
 use std::path::{Path, PathBuf};
 use std::{fs, io};

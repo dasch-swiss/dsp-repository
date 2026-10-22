@@ -39,9 +39,9 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   `LiveDepositedFiles` on `MEDIA_DATA_DIR` (default `areas/access/media/data`); `data_dir` takes an empty value
   for unset. Until it finishes, and for a project that failed, CPE answers 503; a missing data directory is
   such a failure, not a start-up error, and a missing `MEDIA_DATA_DIR` is logged as a warning. Do not `.await` the activation and do not `expect` anything of CPE's in `serve()`.
-  Activation runs once per start, so for now an edit under either data directory needs a restart. Not yet in
-  code: the ports announce change and CPE rebuilds the one project named; the operator lever belongs to `sync`
-  and `media`, so add no reload endpoint or signal for CPE here (ADR-0012, DEV-7622).
+  Activation runs once per start, and data ships in the image, so an edit under either data directory reaches
+  CPE with a deploy. Not yet in code: the ports announce change and CPE rebuilds the one project named; the
+  trigger belongs to the providers, so add no reload endpoint or signal for CPE here (ADR-0012; not scheduled).
   `app` builds the router with CPE inside `catch_unwind`: if that build panics, it logs an error naming
   `CPE_BASE` and builds DPE alone. No base does that today: a route of DPE's or the binary's under the base
   (`/healthz`, `/dpe/projects`) keeps answering, and only a second any-method route for `<base>/` panics.

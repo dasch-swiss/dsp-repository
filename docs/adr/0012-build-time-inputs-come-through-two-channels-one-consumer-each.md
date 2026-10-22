@@ -41,18 +41,19 @@ phrased so a violation is describable in code:
   Driving files and Tables of contents are build-time inputs, not assets: the Rebuild parses them into the read
   model and the Presenter serves rendered text. The rights a rebuild stores with each row are what make that
   consistent: a rendered text is filtered as the file it came from would be.
-- **Change reaches a reader only through its port, and the port announces it.** A port carries a change
-  subscription, and the trigger lives on the provider's side. In the target, `sync`'s stream consumer
-  announces a project's new sequence through the port, and `media` does the same for the bucket. For the
-  stand-ins, `sync` and `media` each own an operator lever, a file watch or an admin endpoint behind a token,
-  that makes its adapter announce. A reader rebuilds the one project the port named, and every project at
-  start; CPE and DaTEI grow no endpoint of their own, and the binary is never restarted to refresh data. The
-  lever is the operator's way in before the archive exists, and there is no second trigger to remove later.
+- **Change reaches a reader only through its port.** In the target a port carries a change subscription, and the
+  trigger lives on the provider's side: `sync`'s stream consumer announces a project's new sequence, and `media`
+  does the same for the bucket. An announcement names a shortcode and nothing else; the reader rebuilds that one
+  project through its ports, as it builds every project at start. The new read model replaces the old one only
+  when the rebuild succeeds; until then, and when it fails, the reader serves the last one it built. CPE and
+  DaTEI grow no endpoint of their own, and the binary is not restarted to refresh data. Before the archive
+  exists, data ships in the image with the code: a deploy is the only change, and every start builds every
+  project from empty, so there is no interim lever and nothing to announce.
 - **Before the archive exists, each channel has a hand-fed stand-in.** `sync`'s committed snapshot stands in
   for the projection stream (ADR-0007); `media`'s on-disk directory, laid out as the Access bucket will be,
   stands in for the bucket. Each sits behind the port and adapter the real channel will stand behind, is fed
   by hand from today's systems, and records its provenance. Before the archive exists, changing a project's
-  presentation means editing a file in the stand-in and rebuilding; afterwards it means a deposit. That cost is
+  presentation means editing the file and deploying; afterwards it means a deposit. That cost is
   accepted.
 
 ## Considered Options
@@ -77,9 +78,11 @@ phrased so a violation is describable in code:
   rejected: a read model built that way cannot serve a signed-in user what they may see, so reaching the
   target would mean a second port and a different read model. Rights per row cost a predicate in every
   search, facet and count, which ADR-0013 accepts.
-- **An operator endpoint or signal on CPE or DaTEI that re-runs activation** — rejected: a second trigger
-  beside the port, to be removed once the port carries change. The stand-ins' lever lives with the provider
-  and makes the port announce, so it is the trigger the target keeps.
+- **An operator endpoint or signal on CPE or DaTEI that re-runs activation** — rejected: a second trigger beside
+  the port. Before the archive exists a deploy is the trigger, and afterwards the provider is.
+- **An operator lever on the stand-ins (a file watch or an admin endpoint behind a token)** — rejected: before the
+  archive exists data changes only with a deploy, which rebuilds every project at start, so the lever would have
+  nothing to trigger.
 
 ## Consequences
 
@@ -94,8 +97,8 @@ Not yet in code: a configuration carries no format identifier or schema version,
 version N and N-1 (not scheduled).
 Not yet in code: neither port serves rights, no read model stores them per row, and no presenter filters on
 them; the port against `sync` and CPE's store carry no rights (not scheduled).
-Not yet in code: neither port carries a change subscription, the stand-ins have no lever, and no reader
-rebuilds one named project; a restart is the rebuild (DEV-7622).
+Not yet in code: neither port carries a change subscription, and no reader rebuilds one named project or keeps its
+last read model across a failed rebuild (not scheduled).
 Not yet in code: CPE's rebuild test runs against `FakeArchiveProjection` only, with curated values passed in by
 hand; no rebuild test runs against a fake of the bytes port (not scheduled).
 Not yet in code: CPE reads Incunabula's `assets/` from `areas/access/cpe/projects/incunabula/` at activation

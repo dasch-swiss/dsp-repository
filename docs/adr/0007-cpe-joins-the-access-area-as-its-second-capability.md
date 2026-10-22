@@ -299,7 +299,7 @@ Not yet in code: the bytes port and the port against `sync` serve no rights, and
 neither store nor filter on them; the target is each file and resource with its rights attached and CPE
 deciding at request time (ADR-0012, ADR-0013; not scheduled).
 Not yet in code: neither port announces change, and CPE does not rebuild the one project a port names; the
-target is `media` and `sync` owning the trigger (ADR-0012, DEV-7622).
+target is `media` and `sync` owning the trigger (ADR-0012; not scheduled).
 Not yet in code: CPE serves Incunabula alone; the incubator's `alice-in-daschland` and `hdm` have not moved in
 (not scheduled).
 Not yet in code: `access-server validate` checks DPE's data only and fails on no CPE project, and the page of an

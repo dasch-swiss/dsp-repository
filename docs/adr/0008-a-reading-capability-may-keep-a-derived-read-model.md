@@ -38,9 +38,10 @@ code:
   with its rights attached and never pre-filter; the read model stores the rights per row, and the presenter
   filters at request time, as the anonymous consumer until an authorisation mechanism exists (ADR-0012,
   ADR-0013).
-- **Change reaches a reader only through its port, and the port announces it.** The provider owns the
-  trigger; the reader rebuilds the one project the port named and grows no endpoint of its own. Until a port
-  carries change, a restart is the rebuild.
+- **Change reaches a reader only through its port.** The provider owns the trigger; the reader rebuilds the
+  one project the port named, serves its last read model until the rebuild succeeds and if it fails, and grows
+  no endpoint of its own (ADR-0012). Until a port carries change, data changes with a deploy and every start
+  builds every project from empty.
 - **Staleness is legitimate.** While `sync` has nothing new, or a port is unavailable, the read model serves
   what it has, exactly as the projection does while the archive is unavailable (`areas/archive/CONTEXT.md`,
   `chischtli/CONTEXT.md`).
@@ -81,14 +82,14 @@ code:
 - DPE's corpus caches, fields of `dpe_core::Corpus`, are DPE's read model, built from the corpus on disk. Read
   through a port against `sync`, they are a read model under this record with no change of shape.
 - A refresh between starts needs a port that announces change. `sync`'s minimum (ADR-0007) serves the
-  committed projection of one shortcode and announces nothing, so a full rebuild at start is the only refresh
+  committed projection of one shortcode and announces nothing, so a full rebuild at start, with the deploy that changed the data, is the only refresh
   until the ports carry change.
 - `ARCH-MAP.md`'s "Durable state" line for a reading capability of the Access Area says which it is: a read
   model behind its ports, single writer the capability, rebuilt from empty; or no store, reading live.
 
 Not yet in code: DPE reads its corpus from disk, not through a port against `sync` (not scheduled).
 Not yet in code: neither the port against `sync` nor the bytes port against `media` announces change, and no
-reader rebuilds one named project (DEV-7622).
+reader rebuilds one named project (not scheduled).
 Not yet in code: neither port serves rights, no read model stores them per row, and no presenter filters on
 them (not scheduled).
 

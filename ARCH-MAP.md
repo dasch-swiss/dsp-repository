@@ -194,7 +194,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `e95bb40cab5c`
+- **Fingerprint:** `2487d733640c`
 
 ### areas/deposit/editor
 
@@ -1036,8 +1036,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   No port pre-filters for the anonymous consumer: in the target the store keeps each row's rights and every
   handler filters on them with ADR-0013's decision, not yet in code; no asset's bytes reach the store; until `media` serves assets at request time, `cpe-server` reads a
   project's `assets/` from its folder at activation and serves them from memory, the one interim exception
-  (ADR-0007; **review**). A project is rebuilt when its port announces change, and
-  CPE grows no endpoint for it; not yet in code, a restart is the rebuild (ADR-0012, DEV-7622; **review**).
+  (ADR-0007; **review**). Data ships in the image with the code, so a deploy is the only change and every
+  start builds every project from empty; in the target a project is rebuilt when its port announces change, and
+  CPE grows no endpoint for it (ADR-0012; **review**; not yet in code, not scheduled).
   Some tests read committed files past a crate's interface by relative path: `cpe-store-build`'s
   `test_tolerance_is_the_one_the_engine_checks_a_store_with` reads `cpe-core`'s `validate.rs` source to
   hold its `TOLERANCE` to `ANNOTATION_TOLERANCE`, its integration tests read
@@ -1056,7 +1057,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `7d61fc7e6e04`
+- **Fingerprint:** `7395722c90dc`
 
 ### areas/access/datei
 
@@ -1153,8 +1154,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008: the Access bucket is `media`'s channel, and `sync`
   never reads it); serves every resource with its rights attached and never pre-filters for a consumer (ADR-0012, ADR-0013;
-  **review**; not yet in code, the port carries no rights); announces a project's new sequence through the port, and until the stream exists owns the
-  operator lever that makes its adapter announce (ADR-0012; not yet in code, DEV-7622); maps its
+  **review**; not yet in code, the port carries no rights); in the target announces a project's new sequence through the port
+  (ADR-0012; not yet in code, not scheduled); maps its
   data to each consumer's DTOs, archive-shaped, and holds no presentation remodelling (ADR-0007's guardrail);
   it serves no deposited file, a project's curation included (ADR-0012; **review**); readers reach the projection only through the
   ports it implements, never by opening its store; a reader's tests may build `sync-store`'s adapter, as a
@@ -1228,11 +1229,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `is_file_name` accept them, and no component below the directory may be a symbolic link
   (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads the
   projection stream (ADR-0003); a bytes port serves every file with its rights attached
-  and never pre-filters; change reaches a reader only through its port, which `media` announces, and until
-  the bucket exists `media` owns the operator lever (a file watch or an admin endpoint behind a token) that
-  makes its adapter announce; a reader grows no endpoint of its own (ADR-0012; **review**). Not yet in code:
-  rights on the port, the announcement and the lever; until they land, an edit under `MEDIA_DATA_DIR` needs a
-  restart (DEV-7622).
+  and never pre-filters; change reaches a reader only through its port, which in the target `media` announces; a
+  reader grows no endpoint of its own (ADR-0012; **review**). Not yet in code: rights on the port and the
+  announcement (not scheduled); until then an edit under `MEDIA_DATA_DIR` reaches a reader with a deploy.
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
   (target design). Until the Access bucket: the hand-fed stand-in directory `areas/access/media/data/`, laid
   out as the bucket will be (`0803/config.kdl`, `curation.csv`, `narrative/`), text in plain git with its
@@ -1242,7 +1241,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
   commit (**review**).
-- **Fingerprint:** `ad28798ca3dd`
+- **Fingerprint:** `b5b25639cfd8`
 
 ## Conventions
 

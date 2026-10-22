@@ -86,7 +86,7 @@ impl Error for ProjectionError {
 ///
 /// It gives no file a meaning and refuses no file for want of a right: in the target each file
 /// comes with its rights attached and CPE decides at request time (ADR-0012, ADR-0013). Not yet in
-/// code: the rights, and the change the port announces (DEV-7622); today it announces none.
+/// code: the rights, and the change the port announces (not scheduled); today it announces none.
 /// Synchronous and dyn-compatible like [`ArchiveProjection`]; CPE calls it inside
 /// `spawn_blocking`.
 pub trait DepositedFiles: Send + Sync {

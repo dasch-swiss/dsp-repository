@@ -53,11 +53,10 @@ _Avoid_: public user, guest (a request's viewer; a bytes port has no request).
   (ADR-0012). An image is an IIIF URL, served by the IIIF server CPE's store names.
 - **Render or derive.** Vitrinli is not here, and the Access Area's `media` never derives: the archive already
   did (`vitrinli/CONTEXT.md`).
-- **Announce change.** A file edited under `MEDIA_DATA_DIR` reaches CPE only when the Access binary restarts,
-  since activation runs once. Not yet in code: the ports announce change, `media` for its bytes ports and
-  `sync` for the archive projection port; until the bucket exists `media` owns the operator lever, a file watch
-  or an admin endpoint behind a token, that makes its adapter announce, and CPE rebuilds the one project named
-  and grows no endpoint of its own (ADR-0012, DEV-7622).
+- **Announce change.** Data ships in the image, so a file edited under `MEDIA_DATA_DIR` reaches CPE with a deploy,
+  which builds every project from empty. Not yet in code: the ports announce change, `media` for its bytes
+  ports and `sync` for the archive projection port, and CPE rebuilds the one project named and grows no
+  endpoint of its own (ADR-0012; not scheduled).
 - **Serve DaTEI.** DaTEI has no code and declares no port yet; its adapter here waits for that port.
 - **Read the Access bucket.** The adapter that replaces `LiveDepositedFiles` there resolves a name without
   following a symbolic link (`openat2`, `cap-std`) rather than checking first.

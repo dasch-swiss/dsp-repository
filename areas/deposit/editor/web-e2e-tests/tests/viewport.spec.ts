@@ -1,6 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { DEPOSITOR_STATE, NOTICE_SHORTCODE } from "../playwright.config";
+import {
+  DEPOSITOR_STATE,
+  NOTICE_SHORTCODE,
+  RDU_STATE,
+} from "../playwright.config";
 
 test.use({ storageState: DEPOSITOR_STATE });
 
@@ -97,4 +101,33 @@ test("a save without JavaScript reports that it happened", async ({ page }) => {
 
   // Also in the title: a live region filled at page load is not reliably announced.
   await expect(page).toHaveTitle(/^Draft saved — /);
+});
+
+// SC 1.4.10 Reflow: 320px is 400% zoom on a 1280px desktop. axe does not test it.
+test.describe("at 320px wide", () => {
+  test.use({ storageState: RDU_STATE, viewport: { width: 320, height: 640 } });
+
+  test("a table scrolls inside its region, not the page", async ({ page }) => {
+    await page.goto("/depositors");
+
+    const region = page.getByRole("region", { name: "Accounts", exact: true });
+    const [regionScroll, regionClient] = await region.evaluate((el) => [
+      el.scrollWidth,
+      el.clientWidth,
+    ]);
+    expect(
+      regionScroll,
+      "the accounts table fits at 320px, so this no longer exercises its scroll region",
+    ).toBeGreaterThan(regionClient);
+
+    const [pageScroll, pageClient] = await page.evaluate(() => [
+      document.documentElement.scrollWidth,
+      document.documentElement.clientWidth,
+    ]);
+    expect(
+      pageScroll,
+      "the page scrolls sideways: an sr-only header escapes the table's scroll region; " +
+        "check `relative` on .data-table-scroll in modules/mosaic/tiles/src/components/table/table.css",
+    ).toBeLessThanOrEqual(pageClient);
+  });
 });

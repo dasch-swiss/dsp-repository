@@ -48,7 +48,7 @@ use crate::form::registry::Audience;
 use crate::form::submit::unresolved_agents;
 use crate::form::{registry, INTENT};
 use crate::handlers::auth::{Account, Rdu};
-use crate::handlers::is_enhanced;
+use crate::handlers::{is_enhanced, storage_error, StorageSurface};
 use crate::pages::review as page;
 use crate::shell::EditorState;
 
@@ -84,11 +84,11 @@ const APPROVE_REFUSED_UNPUBLISHABLE: &str = "This project, as decided, cannot be
 pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let submissions = match SubmissionRepository::list(&*state.editor).await {
         Ok(submissions) => submissions,
-        Err(error) => return storage_error(&state, &user, "read the review queue", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the review queue", &error),
     };
     let drafts = match DraftRepository::list(&*state.editor).await {
         Ok(drafts) => drafts,
-        Err(error) => return storage_error(&state, &user, "read the drafts", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the drafts", &error),
     };
     let ids = submissions
         .iter()
@@ -96,7 +96,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         .chain(drafts.iter().map(|draft| draft.updated_by));
     let names = match account_names(&state, ids).await {
         Ok(names) => names,
-        Err(error) => return storage_error(&state, &user, "read the accounts", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the accounts", &error),
     };
 
     // Owned first, borrowed second: a row borrows its formatted instant and its
@@ -749,7 +749,7 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
     let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
         Ok(Some(submission)) => submission,
         Ok(None) => return Err(no_submission(state, user)),
-        Err(error) => return Err(storage_error(state, user, "read this project's submission", &error)),
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's submission", &error)),
     };
 
     let submitted: ProjectDraft = match serde_json::from_str(&submission.payload) {
@@ -784,7 +784,7 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
 
     let names = match account_names(state, [submission.submitted_by, submission.reviewed_by]).await {
         Ok(names) => names,
-        Err(error) => return Err(storage_error(state, user, "read the accounts", &error)),
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read the accounts", &error)),
     };
 
     // The entity half of the review: a proposed person or organisation is not a project field, so
@@ -797,14 +797,30 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
                 .into_iter()
                 .filter(|proposal| proposal.status == ProposalStatus::Submitted)
                 .collect(),
-            Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
+            Err(error) => {
+                return Err(storage_error(
+                    state,
+                    user,
+                    SURFACE,
+                    "read this project's entity proposals",
+                    &error,
+                ))
+            }
         };
 
     let mut entity_cross_project: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
     for proposal in &entity_proposals {
         let live = match EntityProposalRepository::list_live_for_entity(&*state.editor, &proposal.entity_id).await {
             Ok(live) => live,
-            Err(error) => return Err(storage_error(state, user, "read this entity's other proposals", &error)),
+            Err(error) => {
+                return Err(storage_error(
+                    state,
+                    user,
+                    SURFACE,
+                    "read this entity's other proposals",
+                    &error,
+                ))
+            }
         };
         let others: Vec<String> = live
             .into_iter()
@@ -1144,20 +1160,10 @@ fn unreadable_submission(state: &EditorState, user: &Account) -> Response {
     )
 }
 
-/// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the review surface could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface {
+    log: "the review surface could not reach storage",
+    noun: "page",
+};
 
 #[cfg(test)]
 mod tests {

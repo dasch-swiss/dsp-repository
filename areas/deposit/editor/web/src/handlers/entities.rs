@@ -30,7 +30,7 @@ use shared_metadata::is_valid_shortcode;
 use crate::entity as page;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
-use crate::handlers::is_enhanced;
+use crate::handlers::{is_enhanced, storage_error, StorageSurface};
 use crate::shell::EditorState;
 
 const SAVE_REFUSED_NOT_LIVE: &str = "This proposal is no longer open, so it cannot be changed.";
@@ -84,7 +84,15 @@ async fn context<'a>(
     let key = normalize_shortcode(shortcode);
     let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(proposals) => proposals,
-        Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
+        Err(error) => {
+            return Err(storage_error(
+                state,
+                user,
+                SURFACE,
+                "read this project's entity proposals",
+                &error,
+            ))
+        }
     };
     // The reader invented the pairing if this comes back empty — a proposal id under the wrong
     // shortcode is exactly that, so it is a 404 rather than a 403.
@@ -655,19 +663,7 @@ fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'
     }
 }
 
-fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the entity form could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface { log: "the entity form could not reach storage", noun: "form" };
 
 #[cfg(test)]
 mod tests {

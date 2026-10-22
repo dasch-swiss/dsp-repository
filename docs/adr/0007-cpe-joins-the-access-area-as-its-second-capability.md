@@ -273,8 +273,9 @@ normaliser per process, so it changes when they do).
   project segment; it comes back when a project's segment has to change.
 - **A builder that writes SQLite directly** — *deferred*: it saves the parse of the SQL text; it comes back when
   that parse costs enough to matter.
-- **`cpe-store-build` folded into `cpe-store`** — *deferred*: the two are kept apart, and rule 5 of the seam
-  holds the builder off the store it fills; it comes back if the separation stops paying for itself.
+- **`cpe-store-build` folded into `cpe-store`** — rejected: the per-project build code (hooks, remodelling) stays
+  out of the crate that serves requests, and the builder stays a pure transform tested without a store.
+  `check-cpe-seam.sh` rule 5 enforces the split.
 
 ## Consequences
 

@@ -9,9 +9,13 @@
    * use. Row separators are decorative: the table's structure is carried by the
    * markup, so SC 1.4.11's 3:1 does not apply to them the way it does to an
    * input's border.
+   *
+   * `relative` makes the wrapper the containing block of absolutely positioned
+   * content such as an `sr-only` header; without it that content escapes the
+   * scroll box and widens the page at 320px (SC 1.4.10).
    */
   .data-table-scroll {
-    @apply overflow-x-auto focus-visible:outline-2 focus-visible:outline-primary-600;
+    @apply relative overflow-x-auto focus-visible:outline-2 focus-visible:outline-primary-600;
   }
 
   .data-table {

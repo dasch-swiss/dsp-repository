@@ -12,6 +12,7 @@ identity-web = { path = "../identity/web" }
 editor-store = { path = "../editor/store" }
 editor-web = { path = "../editor/web" }
 deposit-shell = { path = "../shell" }
+shared-rate-limit = { path = "../../../shared/rate-limit" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
 # contract modules are serde-only; `collector` adds axum/opentelemetry/url.

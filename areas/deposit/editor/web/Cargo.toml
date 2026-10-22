@@ -28,6 +28,7 @@ shared-metadata = { path = "../../../../shared/metadata" }
 # The form, the entity form and the review pages render tiles (buttons, alerts,
 # text fields, tables).
 mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
+shared-rate-limit = { path = "../../../../shared/rate-limit" }
 # `is_valid_traceparent`, for the `<meta name="traceparent">` every page carries.
 shared-telemetry = { path = "../../../../shared/telemetry" }
 # The `?saved=<stamp>` redirect marker: RFC 3339 carries `+` and `:`, which an

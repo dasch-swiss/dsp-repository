@@ -68,9 +68,9 @@ paths, so a change to a presentation's files is previewed, scanned and checked f
 ## Dependency boundary
 
 `Cargo.toml` depends on `dpe-server`, `cpe-server`, `cpe-ports`, `sync-store`, `media-store`,
-`shared-telemetry` and infra crates only — never on a capability's `core`, `web` or `api-*` crate, and never on
+`shared-rate-limit`, `shared-telemetry` and infra crates only — never on a capability's `core`, `web` or `api-*` crate, and never on
 `cpe-store`. This crate imports only `dpe-server`'s public surface (`DpeConfig`, `Dpe`, `validate`,
-`normalize_page_url`, `RightmostXffKeyExtractor`), `cpe-server`'s (`CpeConfig`, `Cpe`,
+`normalize_page_url`), `cpe-server`'s (`CpeConfig`, `Cpe`,
 `MatchedRoute`), the ports' traits from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
 `media-store`'s `LiveDepositedFiles`;
 reaching past them into a capability's internals defeats the boundary the capability crate exists

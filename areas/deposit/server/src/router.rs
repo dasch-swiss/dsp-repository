@@ -51,7 +51,7 @@ pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, publ
                 let config = GovernorConfigBuilder::default()
                     .per_second(1)
                     .burst_size(10)
-                    .key_extractor(editor_web::RightmostXffKeyExtractor)
+                    .key_extractor(shared_rate_limit::RightmostXffKeyExtractor)
                     .finish()
                     .expect("beacon GovernorConfig should build with valid defaults");
                 GovernorLayer { config: std::sync::Arc::new(config) }

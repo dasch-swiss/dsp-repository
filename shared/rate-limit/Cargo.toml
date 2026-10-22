@@ -1,0 +1,9 @@
+[package]
+name = "shared-rate-limit"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+axum.workspace = true
+tower_governor.workspace = true

@@ -39,7 +39,7 @@ use crate::form::registry::{self, Audience, Section};
 use crate::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
-use crate::handlers::is_enhanced;
+use crate::handlers::{is_enhanced, storage_error, StorageSurface};
 use crate::pages::section as page;
 use crate::shell::EditorState;
 
@@ -324,7 +324,7 @@ async fn context<'a>(
     let key = normalize_shortcode(shortcode);
     let record = match DraftRepository::find(&*state.editor, &key).await {
         Ok(record) => record,
-        Err(error) => return Err(storage_error(state, user, "read this project's draft", &error)),
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's draft", &error)),
     };
     // Only when somebody else saved it: two members of one project team is the
     // normal case, and this is what turns a silent overwrite into a named one.
@@ -354,7 +354,7 @@ async fn context<'a>(
     // than disturbing a review in progress.
     let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
         Ok(submission) => submission,
-        Err(error) => return Err(storage_error(state, user, "read this project's submission", &error)),
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's submission", &error)),
     };
     let locked = submission.as_ref().and_then(|submission| match submission.state {
         SubmissionState::Submitted => Some(page::Locked::Submitted),
@@ -369,7 +369,15 @@ async fn context<'a>(
         // A record the published set already carries is Online, not waiting —
         // the startup pass will discard it.
         Ok((held, comparison)) => held && !comparison.permits_online(),
-        Err(error) => return Err(storage_error(state, user, "read this project's approved records", &error)),
+        Err(error) => {
+            return Err(storage_error(
+                state,
+                user,
+                SURFACE,
+                "read this project's approved records",
+                &error,
+            ))
+        }
     };
 
     // Newest first, so the head is the round that decides what the form says.
@@ -377,7 +385,15 @@ async fn context<'a>(
     // depositor is answering, and the form is read-only rather than blank.
     let latest_round = match ReviewRoundRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(mut rounds) => rounds.drain(..).next(),
-        Err(error) => return Err(storage_error(state, user, "read this project's review history", &error)),
+        Err(error) => {
+            return Err(storage_error(
+                state,
+                user,
+                SURFACE,
+                "read this project's review history",
+                &error,
+            ))
+        }
     };
     // One parse of the round's decisions, read for two different things: which
     // fields are fixed, and which values RDU put in place of the depositor's.
@@ -430,7 +446,15 @@ async fn context<'a>(
     // below needs `is_live` per row to decide which to check.
     let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(proposals) => proposals,
-        Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
+        Err(error) => {
+            return Err(storage_error(
+                state,
+                user,
+                SURFACE,
+                "read this project's entity proposals",
+                &error,
+            ))
+        }
     };
 
     let published = state.published.get(shortcode);
@@ -1893,20 +1917,10 @@ fn view<'a>(
     }
 }
 
-/// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the project form could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface {
+    log: "the project form could not reach storage",
+    noun: "form",
+};
 
 #[cfg(test)]
 mod tests {

@@ -21,6 +21,7 @@ use maud::html;
 use uuid::Uuid;
 
 use crate::handlers::auth::{Account, Rdu};
+use crate::handlers::{storage_error, StorageSurface};
 use crate::pages::approved as page;
 use crate::shell::EditorState;
 
@@ -78,7 +79,7 @@ struct RowStrings {
 pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let records = match ApprovedRecordRepository::list_all(&*state.editor).await {
         Ok(records) => records,
-        Err(error) => return storage_error(&state, &user, "read the approved records", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the approved records", &error),
     };
 
     let rows: Vec<RowStrings> = records
@@ -141,7 +142,7 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
     let record = match find_record(&state, &id).await {
         Ok(Some(record)) => record,
         Ok(None) => return no_such_record(&state, &user),
-        Err(error) => return storage_error(&state, &user, "read the approved records", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the approved records", &error),
     };
     let shortcode = crate::shell::shortcode_as_published(&state, &record.shortcode);
     let approved_at = crate::shell::format_instant(record.approved_at);
@@ -179,7 +180,7 @@ pub(crate) async fn discard(State(state): State<EditorState>, Rdu(user): Rdu, Pa
         Ok(_) => Redirect::to("/approved").into_response(),
         Err(error) => {
             tracing::error!(error = %error, "could not discard an approved record");
-            storage_error(&state, &user, "discard the record", &error)
+            storage_error(&state, &user, SURFACE, "discard the record", &error)
         }
     }
 }
@@ -202,20 +203,10 @@ fn no_such_record(state: &EditorState, user: &Account) -> Response {
     )
 }
 
-/// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the approved-records page could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface {
+    log: "the approved-records page could not reach storage",
+    noun: "page",
+};
 
 #[cfg(test)]
 mod tests {

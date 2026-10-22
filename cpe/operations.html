@@ -251,16 +251,21 @@ to CPE.</p>
 <li><strong>Where</strong>: every path under <code>/cpe</code> (<code>CPE_BASE</code>). A project is at <code>/cpe/&lt;project id&gt;/</code>; today there is one,
 Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's overview: the projects it serves, each
 with a link to its start page. Any other path that names no project is CPE's own not-found page.</li>
-<li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (configuration, narrative, assets) and <code>sync</code>'s
-data in <code>SYNC_DATA_DIR</code>. Both are in the image. Each project's store is built in memory from that data at
-every start; nothing is written to disk, and a restart leaves nothing behind.</li>
+<li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (<code>SHORTCODE</code>, assets), <code>sync</code>'s snapshots in
+<code>SYNC_DATA_DIR</code> and <code>media</code>'s deposited files in <code>MEDIA_DATA_DIR</code> (configuration, curation, narrative). All
+three are in the image. Each project's store is built in memory from that data at every start; nothing is
+written to disk, and a restart leaves nothing behind.</li>
+<li><strong>Refresh</strong>: for now, a restart. A file edited under <code>MEDIA_DATA_DIR</code> or <code>SYNC_DATA_DIR</code> reaches CPE only
+when <code>access-server</code> restarts, since activation runs once. Not yet in code: the ports announce change, <code>sync</code>
+and <code>media</code> each with an operator lever that makes its adapter announce, and CPE rebuilds the one project
+named, with no endpoint of its own (ADR-0012, DEV-7622).</li>
 <li><strong>Static files</strong>: CPE's stylesheets, scripts and logos are compiled into the binary and served at
 <code>/cpe/&lt;project id&gt;/_static/…</code>, and at <code>/cpe/_static/…</code> for the overview and CPE's not-found page; a
 project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
 </ul>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>The four variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>) are in the
-<a href="../dpe/operations.html#environment-variables">environment table</a> of DPE Operations. The image sets all but
+<p>The five variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>, <code>MEDIA_DATA_DIR</code>) are
+in the <a href="../dpe/operations.html#environment-variables">environment table</a> of DPE Operations. The image sets all but
 <code>CPE_PUBLIC_ORIGIN</code>. The three <code>CPE_*</code> values can also come from a <code>cpe.toml</code> in the working directory; the
 environment wins.</p>
 <h2 id="start-up-and-what-cpe-answers-when-something-is-missing"><a class="header" href="#start-up-and-what-cpe-answers-when-something-is-missing">Start-up, and what CPE answers when something is missing</a></h2>
@@ -271,6 +276,10 @@ answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 <tr><td>Projects are still loading</td><td><code>503</code>, every path</td><td><code>CPE is mounted and activates in the background</code> (info)</td><td>serves</td></tr>
 <tr><td>A project is loaded</td><td>its pages, and its entry in the overview</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
 <tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
+<tr><td><code>MEDIA_DATA_DIR</code>, a project's directory in it, or a file the project needs from it is missing, unreadable or not UTF-8</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>MEDIA_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
+<tr><td>A project folder has no <code>SHORTCODE</code></td><td>the folder is no project: CPE's not-found, <code>404</code>, on its paths</td><td>nothing</td><td>serves</td></tr>
+<tr><td>A project folder's <code>SHORTCODE</code> is malformed or a symlink</td><td>the project is not served: CPE's not-found, <code>404</code>, on its paths</td><td><code>a project folder is not served</code>, with the folder and the reason (warning)</td><td>serves</td></tr>
+<tr><td>Two project folders declare the same <code>SHORTCODE</code></td><td><code>503</code> on both projects' paths</td><td><code>project does not load; its prefix answers 503</code>, naming the other folder (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>the overview with no project, <code>200</code>, at <code>/cpe</code> and <code>/cpe/</code>; CPE's not-found, <code>404</code>, on every other path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code> is refused (a path, a trailing slash)</td><td><code>503</code>, every path</td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_BASE</code> is unset or empty</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE_BASE is not set: CPE is not mounted …</code> (warning)</td><td>serves alone</td></tr>
@@ -285,7 +294,8 @@ answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 route (<code>GET /cpe/incunabula/books/{id}</code>).</p>
 <h2 id="measurements"><a class="header" href="#measurements">Measurements</a></h2>
 <p>Measured on 2026-10-12. Two set-ups, both with the image's environment and the committed data (Incunabula: 4,198 resources,
-20.3 MB in <code>SYNC_DATA_DIR</code>):</p>
+20.3 MB of snapshot and curation files, on that date both in <code>SYNC_DATA_DIR</code>; the curation file has since moved
+to <code>MEDIA_DATA_DIR</code>):</p>
 <ul>
 <li><strong>The image</strong>, built from a staged context as CI builds it, but for <code>linux/arm64</code> (CI builds <code>linux/amd64</code>):
 a static musl binary, run with <code>docker run --cpus=1 --memory=512m</code>, the limits of a PR preview, under Docker
@@ -311,9 +321,8 @@ no restart and no out-of-memory kill.</p>
 <p>A PR preview on Cloud Run is deployed with <code>--no-cpu-throttling</code>. With throttling, an instance gets CPU only
 while it handles a request, and <code>/cpe/incunabula/</code> answered <code>503</code> after a cold start until the sixth request.
 The load time on Cloud Run without throttling is not measured.</p>
-<p>The image's data grew by 195,708 bytes (23 files, <code>cpe/projects</code>): the staged
-directory without the binary was 69,819,957 bytes before and is 70,015,665 bytes with it. <code>sync/data</code>
-(20,281,022 bytes) was already staged.</p>
+<p>CPE's data in the image, counted on 2026-10-21 as the sum of the files' sizes: <code>sync/data</code> 20,264,543 bytes
+(3 files), <code>media/data</code> 90,734 bytes (19 files) and <code>cpe/projects</code> 122,868 bytes (7 files).</p>
 <h2 id="response-times-the-baseline-for-store-reads-on-the-request-path"><a class="header" href="#response-times-the-baseline-for-store-reads-on-the-request-path">Response times: the baseline for store reads on the request path</a></h2>
 <p>A page's store reads run on the async worker threads the binary shares with DPE, and one project's requests
 wait on one lock (<code>ARCH-MAP.md</code>, <code>areas/access/cpe</code>). These figures are what a change to that is compared

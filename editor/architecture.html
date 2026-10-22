@@ -244,7 +244,7 @@
 </style>
 <h1 id="editor-architecture"><a class="header" href="#editor-architecture">Editor Architecture</a></h1>
 <p>The metadata editor is the Deposit Area's first capability (ADR-0002, ADR-0003): the surface where a depositing project team edits its project metadata, RDU reviews it field by field, and an approved record is carried back into this repository as a pull request. Git stays the source of truth and the editor's database is working state (<code>areas/deposit/ADR-0001</code>).</p>
-<p>This page describes the architecture <strong>as implemented</strong>. The Deposit Area's target lives only in its decision records, <code>areas/deposit/docs/adr/</code>, and the code matches them today; a gap that opens gets a "Divergence from the target architecture" section at the end of this page again (<code>areas/deposit/editor/CLAUDE.md</code>). Subsystem detail is on the topic pages each section links to.</p>
+<p>This page describes the architecture <strong>as implemented</strong>. The Deposit Area's target lives only in its decision records, <code>areas/deposit/docs/adr/</code>; where the code does not meet it, the ADR names the gap as a <code>Not yet in code:</code> line (<code>areas/deposit/editor/CLAUDE.md</code>). Subsystem detail is on the topic pages each section links to.</p>
 <h2 id="the-flow-end-to-end"><a class="header" href="#the-flow-end-to-end">The flow, end to end</a></h2>
 <pre class="mermaid">flowchart LR
   D[Depositor] --&gt;|edits, section by section| Draft
@@ -329,8 +329,8 @@
 <p>Server-rendered HTML with Maud, served by Axum, Datastar for enhancement on top of forms that work without it (ADR-0004). Paths are root-mounted on the editor's own hostname. Every write shares its URL with the <code>GET</code> that renders its form and answers two ways, a redirect on the plain path and the changed region as <code>text/html</code> on the enhanced one. Two layers wrap the app, CSRF outermost and OTel inside it, and <code>/healthz</code> and the telemetry beacon are declared after the OTel layers on purpose, so they stay untraced (<a href="./routing.html">Routing</a>, <a href="./rendering.html">Rendering</a>, <a href="./observability.html">Observability</a>).</p>
 <h2 id="decisions"><a class="header" href="#decisions">Decisions</a></h2>
 <ul>
-<li>Platform: the areas and the origin split (ADR-0002), one modulith per area with capabilities behind consumer-defined ports (ADR-0003, amended 2026-09-25 for authentication ports, the area shell and the crate-graph gate, and 2026-10-13 for what a composition root depends on), hypermedia surfaces (ADR-0004), where decision records live (ADR-0006).</li>
-<li>The editor's own: git as the source of truth (<code>areas/deposit/ADR-0001</code>), the draft as the project's JSON members (<code>areas/deposit/ADR-0002</code>), Online derived at startup (<code>areas/deposit/ADR-0003</code>), and the target shape of the area (<code>areas/deposit/ADR-0004</code>, amended 2026-10-13 for <code>identity-ports</code>, the session deadline in <code>Actor</code>, the web facades and the shell's sign-in link).</li>
+<li>Platform: the areas and the origin split (ADR-0002), one modulith per area with capabilities behind consumer-defined ports (ADR-0003: authentication ports, the area shell, the crate-graph gate and what a composition root depends on), hypermedia surfaces (ADR-0004), where decision records live (ADR-0006).</li>
+<li>The editor's own: git as the source of truth (<code>areas/deposit/ADR-0001</code>), the draft as the project's JSON members (<code>areas/deposit/ADR-0002</code>), Online derived at startup (<code>areas/deposit/ADR-0003</code>), and the shape of the area (<code>areas/deposit/ADR-0004</code>: <code>identity-ports</code>, the session deadline in <code>Actor</code>, the web facades and the shell's sign-in link).</li>
 </ul>
 
                     </main>

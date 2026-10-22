@@ -313,7 +313,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>access-server</code>, <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>cpe-ports</code>, <code>cpe-core</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>cpe-store</code>, <code>cpe-store-build</code>, <code>cpe-web</code>, <code>cpe-server</code>, <code>sync-store</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-ports</code>, <code>editor-store</code>, <code>editor-web</code>, <code>deposit-server</code>, <code>editor-pull-requests</code>, <code>deposit-shell</code>, <code>identity-core</code>, <code>identity-ports</code>, <code>identity-store</code>, <code>identity-web</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
+<li><strong>Crate scopes:</strong> <code>access-server</code>, <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>cpe-ports</code>, <code>cpe-core</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>cpe-store</code>, <code>cpe-store-build</code>, <code>cpe-web</code>, <code>cpe-server</code>, <code>sync-store</code>, <code>media-store</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-ports</code>, <code>editor-store</code>, <code>editor-web</code>, <code>deposit-server</code>, <code>editor-pull-requests</code>, <code>deposit-shell</code>, <code>identity-core</code>, <code>identity-ports</code>, <code>identity-store</code>, <code>identity-web</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>areas/access/dpe/server/data/</code></li>
@@ -371,10 +371,26 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </ol>
 <p>A reviewer asking for a split turns case 3 into case 2. Each commit stands on its own in every case, per the principle above.</p>
 <p>In a stack, the commit-hygiene gate counts commits from each PR's own base, so the one-commit cap applies per PR.</p>
+<h3 id="history-lives-in-git-documents-hold-the-current-state"><a class="header" href="#history-lives-in-git-documents-hold-the-current-state">History lives in git, documents hold the current state</a></h3>
+<p>Documents in the repository — <code>docs/</code>, ADRs, <code>ARCH-MAP.md</code>, <code>CONTEXT.md</code>, <code>CLAUDE.md</code> files,
+code comments — state what the code is and does now, or, for an ADR, the target it is being
+moved to. They never narrate how they got there: no "previously X, now Y", no dated amendment,
+no "superseded by", no status that goes stale once a PR merges. Write a document as though the
+PR that introduces it is already merged. What is still to come — a decided target, an open
+question, a deferred option — is current information and stays, marked as such and linked to
+its Linear issue where one exists (<code>docs/adr/CLAUDE.md</code> → <em>What is still to come</em>).</p>
+<p>The history of a document is the git history of its file. When a commit changes what a document
+says — above all when it changes a decision in an ADR — the commit body states what the
+document said before and why it changed. That body is the record of the decision's evolution;
+<code>git log -p -- &lt;file&gt;</code> reads it back. A commit that only says "update ADR-0003" loses the one
+thing the rewritten document no longer carries.</p>
+<p><code>docs/specs/</code> is the exception: PRDs, plans and journals are point-in-time records of what was
+intended when they were written, and are not rewritten to follow the code.</p>
 <h3 id="where-context-lives"><a class="header" href="#where-context-lives">Where context lives</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Layer</th><th>Audience</th><th>Content</th></tr></thead><tbody>
-<tr><td>Commit messages</td><td>Release notes readers</td><td>Every change; <code>feat:</code>/<code>fix:</code> carry the user-visible ones</td></tr>
+<tr><td>Commit messages</td><td>Release notes readers, future developers</td><td>Every change; <code>feat:</code>/<code>fix:</code> carry the user-visible ones; the body says what changed in a document or decision, and why</td></tr>
 <tr><td>PR description</td><td>Reviewers + future developers</td><td>Full context including challenges</td></tr>
+<tr><td>Documents and ADRs</td><td>Everyone</td><td>The current state, or the target state with a Linear id; never the journey</td></tr>
 <tr><td>Learnings docs</td><td>Future Claude + engineers</td><td>Structured, searchable knowledge</td></tr>
 <tr><td>Code comments</td><td>Code readers</td><td>"Why not the obvious approach"</td></tr>
 </tbody></table>
@@ -398,7 +414,8 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <tr><td>Build/CI/refactor details</td><td>Commit message (<code>build:</code> / <code>chore(ci):</code> / <code>refactor:</code>)</td></tr>
 <tr><td>Why the work was needed</td><td>PR Motivation section</td></tr>
 <tr><td>What was tried and failed</td><td>PR Challenges section</td></tr>
-<tr><td>Architecture decisions + rationale</td><td>PR Challenges section</td></tr>
+<tr><td>Architecture decisions + rationale</td><td>PR Challenges section; a hard-to-reverse one also as an ADR</td></tr>
+<tr><td>How a decision or document changed, and why</td><td>Commit body (the document itself is rewritten in place)</td></tr>
 <tr><td>Things to watch out for</td><td>PR Gotchas section</td></tr>
 <tr><td>Structured, searchable knowledge</td><td>Learnings doc (dasch-specs)</td></tr>
 </tbody></table>

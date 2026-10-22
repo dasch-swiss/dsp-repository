@@ -440,7 +440,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-capability-deps</code></td><td>Fail the build if a Deposit Area crate depends on a workspace crate its role may not use: a sibling capability's crate (except a <code>store</code> crate on the other capability's <code>ports</code>), another area's crate, or anything but <code>shared-*</code> from a <code>ports</code> crate; on a third-party crate its role denies (any, for <code>ports</code>; a web framework, Maud or database crate, for <code>core</code>; a web framework, for the shell); also on a crate in a role the script does not know (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-cpe-seam</code></td><td>Fail the build if a crate outside <code>areas/access/cpe/</code> depends on a CPE crate other than <code>cpe-ports</code> and <code>cpe-server</code>, a CPE crate depends on Mosaic, <code>cpe-core</code>, <code>cpe-ports</code> or <code>cpe-image-viewer</code> depends on a CPE crate, a CPE crate names a crate of <code>areas/access/sync/</code> outside its dev-dependencies, or <code>cpe-store</code>, <code>cpe-store-build</code> or <code>cpe-server</code> depends on a CPE crate that is not listed for it (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-cpe-seam</code></td><td>Fail the build if a crate outside <code>areas/access/cpe/</code> depends on a CPE crate other than <code>cpe-ports</code> and <code>cpe-server</code>, a CPE crate depends on Mosaic, <code>cpe-core</code>, <code>cpe-ports</code> or <code>cpe-image-viewer</code> depends on a CPE crate, a CPE crate names a crate of <code>areas/access/sync/</code> or <code>areas/access/media/</code> outside its dev-dependencies, or <code>cpe-store</code>, <code>cpe-store-build</code> or <code>cpe-server</code> depends on a CPE crate that is not listed for it (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-adr-refs</code></td><td>Fail the build if a decision-record reference does not resolve to a record (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-live-tests-ignored</code></td><td>Fail the build if a dsp-cli live test is not <code>#[ignore]</code>d (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
@@ -598,7 +598,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>access-server</code>, <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>cpe-ports</code>, <code>cpe-core</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>cpe-store</code>, <code>cpe-store-build</code>, <code>cpe-web</code>, <code>cpe-server</code>, <code>sync-store</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-ports</code>, <code>editor-store</code>, <code>editor-web</code>, <code>deposit-server</code>, <code>editor-pull-requests</code>, <code>deposit-shell</code>, <code>identity-core</code>, <code>identity-ports</code>, <code>identity-store</code>, <code>identity-web</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
+<li><strong>Crate scopes:</strong> <code>access-server</code>, <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>cpe-ports</code>, <code>cpe-core</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>cpe-store</code>, <code>cpe-store-build</code>, <code>cpe-web</code>, <code>cpe-server</code>, <code>sync-store</code>, <code>media-store</code>, <code>shared-fair</code>, <code>shared-metadata</code>, <code>shared-telemetry</code>, <code>editor-core</code>, <code>editor-ports</code>, <code>editor-store</code>, <code>editor-web</code>, <code>deposit-server</code>, <code>editor-pull-requests</code>, <code>deposit-shell</code>, <code>identity-core</code>, <code>identity-ports</code>, <code>identity-store</code>, <code>identity-web</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>dsp-cli</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>areas/access/dpe/server/data/</code></li>
@@ -656,10 +656,26 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </ol>
 <p>A reviewer asking for a split turns case 3 into case 2. Each commit stands on its own in every case, per the principle above.</p>
 <p>In a stack, the commit-hygiene gate counts commits from each PR's own base, so the one-commit cap applies per PR.</p>
+<h3 id="history-lives-in-git-documents-hold-the-current-state"><a class="header" href="#history-lives-in-git-documents-hold-the-current-state">History lives in git, documents hold the current state</a></h3>
+<p>Documents in the repository — <code>docs/</code>, ADRs, <code>ARCH-MAP.md</code>, <code>CONTEXT.md</code>, <code>CLAUDE.md</code> files,
+code comments — state what the code is and does now, or, for an ADR, the target it is being
+moved to. They never narrate how they got there: no "previously X, now Y", no dated amendment,
+no "superseded by", no status that goes stale once a PR merges. Write a document as though the
+PR that introduces it is already merged. What is still to come — a decided target, an open
+question, a deferred option — is current information and stays, marked as such and linked to
+its Linear issue where one exists (<code>docs/adr/CLAUDE.md</code> → <em>What is still to come</em>).</p>
+<p>The history of a document is the git history of its file. When a commit changes what a document
+says — above all when it changes a decision in an ADR — the commit body states what the
+document said before and why it changed. That body is the record of the decision's evolution;
+<code>git log -p -- &lt;file&gt;</code> reads it back. A commit that only says "update ADR-0003" loses the one
+thing the rewritten document no longer carries.</p>
+<p><code>docs/specs/</code> is the exception: PRDs, plans and journals are point-in-time records of what was
+intended when they were written, and are not rewritten to follow the code.</p>
 <h3 id="where-context-lives"><a class="header" href="#where-context-lives">Where context lives</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Layer</th><th>Audience</th><th>Content</th></tr></thead><tbody>
-<tr><td>Commit messages</td><td>Release notes readers</td><td>Every change; <code>feat:</code>/<code>fix:</code> carry the user-visible ones</td></tr>
+<tr><td>Commit messages</td><td>Release notes readers, future developers</td><td>Every change; <code>feat:</code>/<code>fix:</code> carry the user-visible ones; the body says what changed in a document or decision, and why</td></tr>
 <tr><td>PR description</td><td>Reviewers + future developers</td><td>Full context including challenges</td></tr>
+<tr><td>Documents and ADRs</td><td>Everyone</td><td>The current state, or the target state with a Linear id; never the journey</td></tr>
 <tr><td>Learnings docs</td><td>Future Claude + engineers</td><td>Structured, searchable knowledge</td></tr>
 <tr><td>Code comments</td><td>Code readers</td><td>"Why not the obvious approach"</td></tr>
 </tbody></table>
@@ -683,7 +699,8 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <tr><td>Build/CI/refactor details</td><td>Commit message (<code>build:</code> / <code>chore(ci):</code> / <code>refactor:</code>)</td></tr>
 <tr><td>Why the work was needed</td><td>PR Motivation section</td></tr>
 <tr><td>What was tried and failed</td><td>PR Challenges section</td></tr>
-<tr><td>Architecture decisions + rationale</td><td>PR Challenges section</td></tr>
+<tr><td>Architecture decisions + rationale</td><td>PR Challenges section; a hard-to-reverse one also as an ADR</td></tr>
+<tr><td>How a decision or document changed, and why</td><td>Commit body (the document itself is rewritten in place)</td></tr>
 <tr><td>Things to watch out for</td><td>PR Gotchas section</td></tr>
 <tr><td>Structured, searchable knowledge</td><td>Learnings doc (dasch-specs)</td></tr>
 </tbody></table>
@@ -757,7 +774,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p>This repository is a Rust workspace structured as a monorepo. The design system is organized as a subdirectory of the <code>modules/</code> directory, DPE sits in the Access Area at <code>areas/access/dpe/</code> and the metadata editor in the Deposit Area at <code>areas/deposit/editor/</code>; the crates shared by more than one service sit in <code>shared/</code>, a sibling of <code>modules/</code> and <code>areas/</code> at the repository root.</p>
-<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>areas/deposit/editor/CONTEXT.md</code>, <code>areas/deposit/identity/CONTEXT.md</code>, <code>areas/access/CONTEXT.md</code>, <code>areas/access/cpe/CONTEXT.md</code>, <code>areas/access/sync/CONTEXT.md</code>, <code>areas/access/datei/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>), one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>) and one for <code>dsp-cli</code> (<code>dsp-cli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Eleven ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code>, <code>chischtli/</code> and <code>dsp-cli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root <code>docs/adr/</code>, a root-level component's or an area's own decision history lives in its own <code>docs/adr/</code>, and a bare <code>ADR-NNNN</code> names the root series while <code>&lt;component&gt;/ADR-NNNN</code> names a component's (<code>dsp-cli/ADR-NNNN</code>, <code>areas/deposit/ADR-NNNN</code>; ADR-0006). Five concern how the Access Area grows: the shape in which CPE joins it as its second capability (ADR-0007), the rule that a capability reading the archive projection may keep its own derived read model, fed only through its port against <code>sync</code> (ADR-0008), and the shape in which DaTEI joins it as its third, reading archived files through a port that <code>media</code> implements (ADR-0009), a proposed record that lets CPE's port also serve per-resource curation (ADR-0010), and the order in which CPE's crates move in, by dependency (ADR-0011). All but ADR-0010 are accepted. The Deposit Area carries the first area series, <code>areas/deposit/docs/adr/</code>: three retroactive editor decisions and the target shape of two capabilities, <code>identity</code> and <code>editor</code> (<code>areas/deposit/ADR-0004</code>), which the code does not have yet. The editor and DPE have moved to their areas; until the rest of the migration lands, this page describes the layout as it is.</p>
+<p>Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: <code>ARCH-MAP.md</code> at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), <code>CONTEXT.md</code> at the root plus one per bounded context (<code>areas/deposit/editor/CONTEXT.md</code>, <code>areas/deposit/identity/CONTEXT.md</code>, <code>areas/access/CONTEXT.md</code>, <code>areas/access/cpe/CONTEXT.md</code>, <code>areas/access/sync/CONTEXT.md</code>, <code>areas/access/media/CONTEXT.md</code>, <code>areas/access/datei/CONTEXT.md</code>, <code>areas/archive/CONTEXT.md</code>), one per shared engine (<code>vitrinli/CONTEXT.md</code>, <code>chischtli/CONTEXT.md</code>) and one for <code>dsp-cli</code> (<code>dsp-cli/CONTEXT.md</code>), holding the domain vocabulary, and <code>docs/adr/</code> (architecture decision records). Three root ADRs describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository grouped under <code>areas/</code> (<code>areas/deposit/</code>, <code>areas/archive/</code>, <code>areas/access/</code>), replacing <code>modules/</code> at the root, beside <code>shared/</code>, <code>mosaic/</code>, <code>vitrinli/</code>, <code>chischtli/</code> and <code>dsp-cli/</code> (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). One binds how the repository's own decision records are homed and cited: system-wide decisions live in the root <code>docs/adr/</code>, a root-level component's or an area's own decision history lives in its own <code>docs/adr/</code>, and a bare <code>ADR-NNNN</code> names the root series while <code>&lt;component&gt;/ADR-NNNN</code> names a component's (<code>dsp-cli/ADR-NNNN</code>, <code>areas/deposit/ADR-NNNN</code>; ADR-0006). Five concern how the Access Area grows: the shape in which CPE joins it as its second capability (ADR-0007), the rule that a capability reading the archive projection may keep its own derived read model, fed only through its ports (ADR-0008), the shape in which DaTEI joins it as its third, reading archived files through a port that <code>media</code> implements (ADR-0009), the two channels through which a build-time input reaches a capability, <code>sync</code>'s archive projection and <code>media</code>'s deposited files, one consumer each (ADR-0012), and authorisation, decided by one shared function and enforced by each surface at its own edge (ADR-0013). The Deposit Area carries the first area series, <code>areas/deposit/docs/adr/</code>: three editor decisions and the shape of two capabilities, <code>identity</code> and <code>editor</code> (<code>areas/deposit/ADR-0004</code>). Where the code does not yet match an ADR (Mosaic under <code>modules/</code>, no Bazel), the ADR names the gap; this page describes the layout as it is.</p>
 <pre><code class="language-txt">modules/
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
@@ -768,14 +785,14 @@ areas/
 ├── access/                    # Access Area
 │   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
 │   │   └── Dockerfile         # Production container image
-│   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer, port, store, store builder, page assembly and host crate so far)
+│   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer, ports, store, store builder, page assembly and host crate so far)
 │   │   ├── components/        # CPE's component library (crate: cpe-components)
 │   │   │   ├── src/           # The components, the chrome message catalogue, the per-project components
 │   │   │   └── style/         # The seven stylesheets the components' markup is written against; a host serves them
 │   │   ├── core/              # CPE's domain: config language, validation, IR, diagnostics (crate: cpe-core)
 │   │   ├── image-viewer/      # The `&lt;image-viewer&gt;` element and its Maud builder, an interim copy (crate: cpe-image-viewer)
-│   │   ├── ports/             # CPE's port onto the archive projection (crate: cpe-ports)
-│   │   ├── projects/          # One folder per project: its KDL, narrative and assets (Incunabula so far)
+│   │   ├── ports/             # CPE's two ports, onto the archive projection and for bytes (crate: cpe-ports)
+│   │   ├── projects/          # One folder per project: its SHORTCODE, its assets and the documents about its data (Incunabula so far)
 │   │   ├── public/            # CPE's shared static files: the DaSCH logos and fingerprint; cpe-server embeds them
 │   │   │   └── vendor/        # Vendored Datastar, with the README that records its checksum
 │   │   ├── server/            # CPE's host crate: configuration, discovery, router (crate: cpe-server)
@@ -783,8 +800,11 @@ areas/
 │   │   ├── store-build/       # Builds a project's store from the port's snapshot (crate: cpe-store-build)
 │   │   └── web/               # CPE's page assembly: a loaded project, its pages and fragments (crate: cpe-web)
 │   ├── sync/                  # sync, the archive projection's writer (at its minimum so far)
-│   │   ├── store/             # Serves the committed snapshots and curation behind CPE's port (crate: sync-store)
-│   │   └── data/              # Committed interim-DAO snapshots, curation files and their PROVENANCE
+│   │   ├── store/             # Serves the committed snapshots behind CPE's archive projection port (crate: sync-store)
+│   │   └── data/              # Committed interim-DAO snapshots and their PROVENANCE
+│   ├── media/                 # media, the Access bucket's consumer (at its minimum so far)
+│   │   ├── store/             # Serves the deposited files behind CPE's bytes port (crate: media-store)
+│   │   └── data/              # The stand-in for the Access bucket: one directory per shortcode, and the PROVENANCE
 │   └── dpe/                   # Discovery and Presentation Environment
 │       ├── core/              # DPE's view model, caches, repositories (crate: dpe-core)
 │       ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
@@ -824,20 +844,21 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. <code>dsp-cli</code> is an explicit exception: it is a single crate named after the product it publishes, not after a module-plus-role pair, and its folder keeps the crate's full name.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dsp-cli</code></td><td><code>dsp-cli</code></td><td>Command-line client for the DaSCH Service Platform — a root peer of the areas, not a service (ADR-0002)</td></tr>
-<tr><td><code>access-server</code></td><td><code>areas/access/server</code></td><td>The Access Area's composition root (ADR-0003) — CLI, observability, route mounting (DPE's router, and CPE's nested at its base and activated over <code>sync-store</code>'s adapter); no business logic</td></tr>
+<tr><td><code>access-server</code></td><td><code>areas/access/server</code></td><td>The Access Area's composition root (ADR-0003) — CLI, observability, route mounting (DPE's router, and CPE's nested at its base and activated over <code>sync-store</code>'s and <code>media-store</code>'s adapters); no business logic</td></tr>
 <tr><td><code>dpe-core</code></td><td><code>areas/access/dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
 <tr><td><code>dpe-api-oai</code></td><td><code>areas/access/dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code>, <code>shared-metadata</code> and <code>shared-fair</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>areas/access/dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>areas/access/dpe/server</code></td><td>A library — DPE's router, config and validate logic; no binary</td></tr>
-<tr><td><code>cpe-ports</code></td><td><code>areas/access/cpe/ports</code></td><td>CPE's port onto the archive projection (ADR-0007, ADR-0008): the <code>ArchiveProjection</code> trait, its DTOs (archive-shaped facts and, beside them, per-resource curation, ADR-0010, proposed), an in-memory fake and the contract every adapter satisfies; depends on <code>std</code> alone</td></tr>
+<tr><td><code>cpe-ports</code></td><td><code>areas/access/cpe/ports</code></td><td>CPE's two ports (ADR-0007, ADR-0008, ADR-0012): the <code>ArchiveProjection</code> trait with its DTOs (archive-shaped facts), an in-memory fake and the contract every adapter satisfies; the bytes port <code>DepositedFiles</code> with <code>FilesError</code>, an in-memory fake and the name rules <code>is_shortcode</code> and <code>is_file_name</code>; depends on <code>std</code> alone</td></tr>
 <tr><td><code>cpe-core</code></td><td><code>areas/access/cpe/core</code></td><td>CPE's domain (ADR-0007): the KDL config language and its validation, the IR, diagnostics, labels, language, theme and the per-request view data; depends on <code>kdl</code>, <code>pulldown-cmark</code>, <code>percent-encoding</code> and <code>thiserror</code>, on no CPE crate, and on no <code>maud</code>, <code>axum</code> or <code>rusqlite</code></td></tr>
-<tr><td><code>cpe-components</code></td><td><code>areas/access/cpe/components</code></td><td>CPE's component library (ADR-0007, amendment of 2026-10-11, DEV-7401): the Maud components a page is assembled from, the chrome message catalogue and the per-project components with their registry; its seven stylesheets are plain files in <code>style/</code>, which the crate neither embeds nor serves; depends on <code>cpe-core</code>, <code>cpe-image-viewer</code>, <code>maud</code>, <code>pulldown-cmark</code> and <code>tracing</code>, and on no <code>mosaic-tiles</code>, <code>axum</code> or <code>rusqlite</code></td></tr>
-<tr><td><code>cpe-image-viewer</code></td><td><code>areas/access/cpe/image-viewer</code></td><td>CPE's IIIF deep-zoom viewer (ADR-0007, amendment of 2026-10-11, DEV-7401): the <code>&lt;image-viewer&gt;</code> web component with a vendored OpenSeadragon compiled in, and the <code>Viewer</code> Maud builder; an interim, cut-down copy of dsp-incubator's <code>shared/dasch-image-viewer</code> that the incubator's final viewer replaces; depends on <code>maud</code> alone and on no CPE crate</td></tr>
+<tr><td><code>cpe-components</code></td><td><code>areas/access/cpe/components</code></td><td>CPE's component library (ADR-0007): the Maud components a page is assembled from, the chrome message catalogue and the per-project components with their registry; its seven stylesheets are plain files in <code>style/</code>, which the crate neither embeds nor serves; depends on <code>cpe-core</code>, <code>cpe-image-viewer</code>, <code>maud</code>, <code>pulldown-cmark</code> and <code>tracing</code>, and on no <code>mosaic-tiles</code>, <code>axum</code> or <code>rusqlite</code></td></tr>
+<tr><td><code>cpe-image-viewer</code></td><td><code>areas/access/cpe/image-viewer</code></td><td>CPE's IIIF deep-zoom viewer (ADR-0007): the <code>&lt;image-viewer&gt;</code> web component with a vendored OpenSeadragon compiled in, and the <code>Viewer</code> Maud builder; an interim, cut-down copy of dsp-incubator's <code>shared/dasch-image-viewer</code> that the incubator's final viewer replaces; depends on <code>maud</code> alone and on no CPE crate</td></tr>
 <tr><td><code>cpe-store</code></td><td><code>areas/access/cpe/store</code></td><td>CPE's read-side store, a derived read model (ADR-0008): the SQLite schema (<code>schema.sql</code>), the type that opens and owns a project's in-memory database, and the query layer that answers the validator's questions about a project's data and assembles a page's data; depends on <code>cpe-core</code>, <code>rusqlite</code>, <code>thiserror</code> and <code>tracing</code>, and on no <code>maud</code> or <code>axum</code>; <code>cpe-web</code> depends on it</td></tr>
-<tr><td><code>cpe-store-build</code></td><td><code>areas/access/cpe/store-build</code></td><td>The builder of CPE's store, a library (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>build</code> turns the snapshot the port serves and a project's <code>remodel {}</code> block into the store's rows, with the project's hook where the block declares one (<code>hooks::HOOKS</code>), and <code>sql</code> renders them as the SQL text <code>cpe-store</code> opens; depends on <code>cpe-core</code>, <code>cpe-ports</code>, <code>serde_json</code>, <code>thiserror</code> and <code>unicode-normalization</code>, and on <code>sync-store</code> and <code>rusqlite</code> for its tests only; <code>cpe-server</code> is its consumer</td></tr>
-<tr><td><code>cpe-web</code></td><td><code>areas/access/cpe/web</code></td><td>CPE's page assembly (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>project::Project</code>, a project loaded from its KDL, its store's SQL text and its narrative, and validated; <code>page</code>, which renders a page, the compound viewer's fragment, the overview of the projects and the not-found pages from <code>cpe-components</code>' parts; <code>share_link</code>, the canonical URL of a view; it holds no routes; depends on <code>cpe-core</code>, <code>cpe-store</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>maud</code> and <code>thiserror</code>, and on no <code>axum</code> or <code>rusqlite</code>; <code>cpe-server</code> is its consumer</td></tr>
-<tr><td><code>cpe-server</code></td><td><code>areas/access/cpe/server</code></td><td>CPE's host crate, a facade in the shape of <code>dpe-server</code> (ADR-0007, amendment of 2026-10-11, DEV-7465): <code>CpeConfig</code> (<code>cpe.toml</code>, <code>CPE_*</code>), <code>Cpe</code> with <code>router()</code>, <code>base()</code>, <code>activate()</code> and <code>projects()</code>, <code>MatchedRoute</code>, discovery of the project folders on disk, each project's store built at activation from the snapshot <code>cpe-ports</code>' <code>ArchiveProjection</code> serves (through <code>cpe-store-build</code>, and <code>sync-store</code> for its tests only), the shared static files compiled in, each project's assets served from an inventory, the overview of the projects at the router's root, and one route per configured page closed by CPE's own fallback. No <code>pub</code> signature names a type of another CPE crate. It answers 503 until it is activated and for a project that did not activate. <code>access-server</code> mounts it at <code>Cpe::base()</code></td></tr>
-<tr><td><code>sync-store</code></td><td><code>areas/access/sync/store</code></td><td><code>sync</code> at its minimum (ADR-0007): <code>LiveArchiveProjection</code>, CPE's <code>ArchiveProjection</code> served from the committed interim-DAO snapshots and the committed curation files in <code>areas/access/sync/data/</code>; depends on <code>cpe-ports</code> and no other CPE or DPE crate</td></tr>
+<tr><td><code>cpe-store-build</code></td><td><code>areas/access/cpe/store-build</code></td><td>The builder of CPE's store, a library (ADR-0007): <code>CuratedValues::parse</code> reads a project's curation file against its snapshot, <code>build</code> turns the snapshot the archive projection port serves, those curated values and a project's <code>remodel {}</code> block into the store's rows, with the project's hook where the block declares one (<code>hooks::HOOKS</code>), and <code>sql</code> renders them as the SQL text <code>cpe-store</code> opens; depends on <code>cpe-core</code>, <code>cpe-ports</code>, <code>serde_json</code>, <code>thiserror</code> and <code>unicode-normalization</code>, and on <code>sync-store</code> and <code>rusqlite</code> for its tests only; <code>cpe-server</code> is its consumer</td></tr>
+<tr><td><code>cpe-web</code></td><td><code>areas/access/cpe/web</code></td><td>CPE's page assembly (ADR-0007): <code>project::Project</code>, a project loaded from its KDL, its store's SQL text and its narrative, and validated; <code>page</code>, which renders a page, the compound viewer's fragment, the overview of the projects and the not-found pages from <code>cpe-components</code>' parts; <code>share_link</code>, the canonical URL of a view; it holds no routes; depends on <code>cpe-core</code>, <code>cpe-store</code>, <code>cpe-components</code>, <code>cpe-image-viewer</code>, <code>maud</code> and <code>thiserror</code>, and on no <code>axum</code> or <code>rusqlite</code>; <code>cpe-server</code> is its consumer</td></tr>
+<tr><td><code>cpe-server</code></td><td><code>areas/access/cpe/server</code></td><td>CPE's host crate, a facade in the shape of <code>dpe-server</code> (ADR-0007): <code>CpeConfig</code> (<code>cpe.toml</code>, <code>CPE_*</code>), <code>Cpe</code> with <code>router()</code>, <code>base()</code>, <code>activate()</code> and <code>projects()</code>, <code>MatchedRoute</code>, discovery of the project folders on disk by their <code>SHORTCODE</code>, each project's configuration, narrative and curation read at activation through <code>cpe-ports</code>' <code>DepositedFiles</code> and its store built from the snapshot <code>ArchiveProjection</code> serves (through <code>cpe-store-build</code>; <code>sync-store</code> and <code>media-store</code> for its tests only), the shared static files compiled in, each project's assets served from an inventory, the overview of the projects at the router's root, and one route per configured page closed by CPE's own fallback. No <code>pub</code> signature names a type of another CPE crate. It answers 503 until it is activated and for a project that did not activate. <code>access-server</code> mounts it at <code>Cpe::base()</code></td></tr>
+<tr><td><code>sync-store</code></td><td><code>areas/access/sync/store</code></td><td><code>sync</code> at its minimum (ADR-0007): <code>LiveArchiveProjection</code>, CPE's <code>ArchiveProjection</code> served from the committed interim-DAO snapshots in <code>areas/access/sync/data/</code>; depends on <code>cpe-ports</code> and no other CPE or DPE crate</td></tr>
+<tr><td><code>media-store</code></td><td><code>areas/access/media/store</code></td><td><code>media</code> at its minimum (ADR-0012): <code>LiveDepositedFiles</code>, CPE's <code>DepositedFiles</code> served from the stand-in directory <code>MEDIA_DATA_DIR</code> names (default <code>areas/access/media/data/</code>), every file it holds, with no file refused for want of a right; depends on <code>cpe-ports</code> and <code>tracing</code>, and on no other CPE or DPE crate</td></tr>
 <tr><td><code>shared-fair</code></td><td><code>shared/fair</code></td><td>The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — <code>dpe-api-oai</code> is its only consumer today</td></tr>
 <tr><td><code>shared-metadata</code></td><td><code>shared/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
 <tr><td><code>shared-telemetry</code></td><td><code>shared/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
@@ -860,7 +881,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <p><strong>A crate that more than one service depends on lives under <code>shared/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>shared-{role}</code> in the same commit.</p>
 <p>The directory is the ownership signal, and four things read it:</p>
 <ul>
-<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>areas/access/dpe/**</code> and <code>areas/access/server/**</code> for DPE's preview, Scout and a11y jobs (the a11y job also <code>areas/access/cpe/**</code> and <code>areas/access/sync/**</code>), <code>areas/deposit/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
+<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code> and <code>areas/access/media/**</code> for DPE's preview, Scout and a11y jobs, <code>areas/deposit/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
 <li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory (the editor's also watches <code>areas/deposit/identity</code> and <code>areas/deposit/shell</code>). A shared crate outside <code>shared/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
 <li><strong>Directory-scoped agent instructions.</strong> <code>areas/access/dpe/CLAUDE.md</code> governs everything under <code>areas/access/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries two, both pointing into <code>areas/access/dpe</code> (its vendored JS and <code>dpe-server</code>'s <code>page_url.rs</code>) — and those need to name the real location.</li>
 <li><strong>The dependency direction.</strong> <code>shared-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>).</li>
@@ -947,18 +968,27 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <h1 id="decision-records"><a class="header" href="#decision-records">Decision Records</a></h1>
 <p>Architecture decision records (ADRs) capture the "why" behind a decision, not just the "what".</p>
 <h2 id="where-a-decision-lives-and-how-it-is-cited"><a class="header" href="#where-a-decision-lives-and-how-it-is-cited">Where a decision lives, and how it is cited</a></h2>
-<p>System-wide decisions live in the root <code>docs/adr/</code>, with one sequence starting at 0001. A
-root-level component with its own decision history keeps its own <code>docs/adr/</code> under the component
-directory, with its own sequence also starting at 0001. The two sequences collide by number; the
-citation form is what disambiguates:</p>
+<p>System-wide decisions live in the root <code>docs/adr/</code>, with one sequence starting at 0001. An area
+keeps its own series at <code>areas/&lt;area&gt;/docs/adr/</code>, and a root-level component with its own
+decision history keeps one at <code>&lt;component&gt;/docs/adr/</code>, each also starting at 0001. The sequences
+collide by number; the citation form is what disambiguates:</p>
 <ul>
 <li>A bare <code>ADR-NNNN</code> always names a root ADR, from anywhere in the repository.</li>
-<li>A component ADR is always cited qualified, as <code>&lt;component&gt;/ADR-NNNN</code> — also from inside that
-component.</li>
+<li>An area or component ADR is always cited qualified, as <code>areas/&lt;area&gt;/ADR-NNNN</code> or
+<code>&lt;component&gt;/ADR-NNNN</code> — also from inside that area or component.</li>
 </ul>
-<p>An amendment refines a decision in place, under a dated <code>## Amendment</code> heading. A decision that
-changes rather than narrows becomes a new ADR, and the superseded one takes
-<code>status: superseded by &lt;the new one&gt;</code>.</p>
+<h2 id="an-adr-is-the-current-decision"><a class="header" href="#an-adr-is-the-current-decision">An ADR is the current decision</a></h2>
+<p>An ADR states the decision in force now, or the target the code is being moved to, with any gap
+named against a Linear issue. It is rewritten in place when the decision changes, and retired when
+the decision no longer holds. An ADR number is an identifier and is never reused: a retired record
+keeps its file as a one-line tombstone that says where its decision lives now, so every citation
+still resolves, and its row below stays, marked retired. The history of a decision is the
+git history of its file: the commit that changes a record says what it decided before and why
+(<a href="git-conventions.html#history-lives-in-git-documents-hold-the-current-state">Git conventions</a>). The
+writing rules are in
+<a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/CLAUDE.md"><code>docs/adr/CLAUDE.md</code></a>.</p>
+<p>Specs in <code>docs/specs/</code> are not rewritten: an ADR they cite may have been rewritten since the
+spec's date.</p>
 <p><code>just check</code> runs <code>check-adr-refs.sh</code>, which verifies that every <code>ADR-NNNN</code> and
 <code>&lt;component&gt;/ADR-NNNN</code> reference in the repository (outside <code>docs/specs/</code>) resolves to a file.
 See <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a>
@@ -970,12 +1000,14 @@ for the full decision.</p>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0003-one-modulith-per-area.md">ADR-0003</a></td><td>One modulith per area</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0004-hypermedia-frontends.md">ADR-0004</a></td><td>Every user-facing surface is a hypermedia server</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0005-fair-landing-pages-in-the-access-area.md">ADR-0005</a></td><td>Every landing page in the Access Area is FAIR-assessable by machine</td></tr>
-<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a></td><td>Decision records are colocated with what they govern, and a component's are cited qualified</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a></td><td>Decision records are colocated with what they govern, hold only the current decision, and a component's are cited qualified</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md">ADR-0007</a></td><td>CPE joins the Access Area as its second capability</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md">ADR-0008</a></td><td>A reading capability may keep a derived read model</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md">ADR-0009</a></td><td>DaTEI joins the Access Area as its third capability</td></tr>
-<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md">ADR-0010</a></td><td>The port also serves per-resource curation (proposed)</td></tr>
-<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0011-cpe-crates-move-in-dependency-order.md">ADR-0011</a></td><td>CPE's crates move in dependency order</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md">ADR-0010</a></td><td><em>Retired, see ADR-0012.</em> The port also serves per-resource curation</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0011-cpe-crates-move-in-dependency-order.md">ADR-0011</a></td><td><em>Retired, see ADR-0007.</em> CPE's crates move in dependency order</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0012-build-time-inputs-come-through-two-channels-one-consumer-each.md">ADR-0012</a></td><td>Build-time inputs come through two channels, one consumer each</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0013-authorisation-is-decided-centrally-and-enforced-locally.md">ADR-0013</a></td><td>Authorisation is decided centrally and enforced locally</td></tr>
 </tbody></table>
 </div>
 <h2 id="component-series"><a class="header" href="#component-series">Component series</a></h2>
@@ -1064,7 +1096,7 @@ for the full decision.</p>
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code> or <code>shared/**</code> — everything compiled into the binary the suite starts. The suite tests DPE's pages. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code> or <code>shared/**</code> — everything compiled into the binary the suite starts. The suite tests DPE's pages. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
@@ -1108,7 +1140,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>build-dpe</code></td><td>Compile the Access Area's binary (static musl <code>access-server</code> + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage it with DPE's public files and data, <code>sync</code>'s data and CPE's project folders</td></tr>
+<tr><td><code>build-dpe</code></td><td>Compile the Access Area's binary (static musl <code>access-server</code> + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage it with DPE's public files and data, <code>sync</code>'s data, <code>media</code>'s data and CPE's project folders</td></tr>
 <tr><td><code>build-editor</code></td><td>Compile the metadata editor (static musl <code>deposit-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-editor-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
@@ -1133,8 +1165,8 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>areas/access/dpe/</code>, <code>areas/access/server/</code> or <code>shared/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
-<p>The preview is the whole image, so it serves CPE under <code>/cpe</code> too. It runs without CPU throttling, because CPE loads its projects after the port is bound. A pull request that changes only <code>areas/access/cpe/</code> or <code>areas/access/sync/</code> does not start one.</p>
+<p>When a pull request modifies files under <code>areas/access/dpe/</code>, <code>areas/access/server/</code>, <code>areas/access/cpe/</code>, <code>areas/access/sync/</code>, <code>areas/access/media/</code>, <code>shared/</code> or the <code>build-dpe</code> action it builds with, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>The preview is the whole image, so it serves CPE under <code>/cpe</code> too, from the data the image carries; a change to a presentation's code or files gets a preview of its own. It runs without CPU throttling, because CPE loads its projects after the port is bound.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
@@ -1261,7 +1293,7 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>areas/deposit/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
 </tbody></table>
@@ -2822,10 +2854,12 @@ the settings of both are in the table below.</p>
 <li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>access-server</code> (CLI with subcommands).</li>
-<li><strong>Data</strong>: DPE's JSON corpus at <code>/app/server/data</code> (<code>DPE_DATA_DIR</code>); <code>sync</code>'s committed snapshots and curation files
-(<code>areas/access/sync/data/</code>) at <code>/app/sync/data</code> (<code>SYNC_DATA_DIR</code>), which CPE builds each project's store from at start;
-and CPE's project folders (<code>areas/access/cpe/projects/</code>) at <code>/app/cpe/projects</code> (<code>CPE_PROJECTS_DIR</code>). CPE's stylesheets,
-scripts and logos are compiled into the binary.</li>
+<li><strong>Data</strong>: DPE's JSON corpus at <code>/app/server/data</code> (<code>DPE_DATA_DIR</code>); <code>sync</code>'s committed snapshots
+(<code>areas/access/sync/data/</code>) at <code>/app/sync/data</code> (<code>SYNC_DATA_DIR</code>) and <code>media</code>'s deposited files, each project's
+configuration, curation and narrative (<code>areas/access/media/data/</code>), at <code>/app/media/data</code> (<code>MEDIA_DATA_DIR</code>), which
+CPE builds each project's store from at start; and CPE's project folders (<code>areas/access/cpe/projects/</code>: <code>SHORTCODE</code>,
+assets, documents on the data) at <code>/app/cpe/projects</code> (<code>CPE_PROJECTS_DIR</code>). CPE's stylesheets, scripts and logos
+are compiled into the binary.</li>
 </ul>
 <p>The Dockerfile packages pre-built artifacts; the Rust build happens in <code>.github/actions/build-dpe</code>.
 <code>just build-docker-dpe</code> reproduces the same staging locally, compiling the binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
@@ -2886,9 +2920,10 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4000</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
 <tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>areas/access/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="dpe/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
-<tr><td><code>SYNC_DATA_DIR</code></td><td>No</td><td><code>areas/access/sync/data</code></td><td>Directory of <code>sync</code>'s committed snapshots and curation files, read once at start to build each CPE project's store. The Docker image sets <code>/app/sync/data</code>, where it carries the data; a deployment that sets the variable too has to name that path. If the directory or a project's file in it is missing, that project answers <code>503</code> and an error is logged; DPE is unaffected.</td></tr>
+<tr><td><code>SYNC_DATA_DIR</code></td><td>No</td><td><code>areas/access/sync/data</code></td><td>Directory of <code>sync</code>'s committed snapshots, read once at start to build each CPE project's store. Empty is treated as unset. The Docker image sets <code>/app/sync/data</code>, where it carries the data; a deployment that sets the variable too has to name that path. If the directory or a project's file in it is missing, that project answers <code>503</code> and an error is logged; DPE is unaffected.</td></tr>
+<tr><td><code>MEDIA_DATA_DIR</code></td><td>No</td><td><code>areas/access/media/data</code></td><td>Directory of <code>media</code>'s deposited files, one subdirectory per shortcode (<code>0803/config.kdl</code>, <code>0803/curation.csv</code>, <code>0803/narrative/…</code>), read once at start to build each CPE project's store. Empty is treated as unset. The Docker image sets <code>/app/media/data</code>, where it carries the files; a deployment that sets the variable too has to name that path or a directory of the same layout. If the directory, or a file a project needs from it, is missing or unreadable, that project answers <code>503</code> and an error is logged (a missing directory also as a warning at start); DPE is unaffected.</td></tr>
 <tr><td><code>CPE_BASE</code></td><td>No</td><td><em>(empty)</em></td><td>Path CPE is mounted at. The Docker image sets <code>/cpe</code>. A leading <code>/</code>, no trailing one, unreserved characters only. Unset, empty or refused (logged as a warning and as an error with the reason): CPE is not mounted and DPE is served alone. It must not be a path DPE serves (<code>/dpe</code>, <code>/assets</code>, …): nothing checks that, and under such a base CPE answers every path DPE has no route of its own for, its static files included. A path the binary or DPE has a route for (<code>/healthz</code>, <code>/telemetry/collect</code>, <code>/dpe/projects</code>) keeps its answer under any base. If the router cannot be built with CPE at the base, that is logged as an error naming <code>CPE_BASE</code>, and CPE is not mounted; no value is known to do that.</td></tr>
-<tr><td><code>CPE_PROJECTS_DIR</code></td><td>No</td><td><code>areas/access/cpe/projects</code></td><td>Folder whose subfolders are CPE's projects (configuration, narrative, assets). The Docker image sets <code>/app/cpe/projects</code>.</td></tr>
+<tr><td><code>CPE_PROJECTS_DIR</code></td><td>No</td><td><code>areas/access/cpe/projects</code></td><td>Folder whose subfolders are CPE's projects: each declares its shortcode in a <code>SHORTCODE</code> file and holds its assets and the documents on its data; its configuration, curation and narrative are in <code>MEDIA_DATA_DIR</code>. The Docker image sets <code>/app/cpe/projects</code>.</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code></td><td>No</td><td><em>(none)</em></td><td>Origin CPE's absolute URLs (the share links) start with, e.g. <code>https://repository.dasch.swiss</code>. An origin only: scheme <code>http</code> or <code>https</code> and a host, no path (not <code>…/cpe</code>: the base is <code>CPE_BASE</code>), no query, no trailing slash. A value of another shape is refused, and CPE then answers <code>503</code> on every path under its base. Not set in the image. Unset, CPE takes the origin of each request from <code>X-Forwarded-Proto</code> and <code>Host</code> and logs once at start that it does. Both headers are the client's unless a proxy in front overwrites them (Cloud Run does), so set the variable on every deployment that has a cache or a proxy that passes them through.</td></tr>
 </tbody></table>
 </div>
@@ -2896,7 +2931,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 <p><strong>Two base URLs, on purpose.</strong> <code>DPE_PUBLIC_BASE_URL</code> and <code>DPE_OAI_BASE_URL</code> are set independently and neither is derived from the other. The OAI endpoint advertises its own <code>baseURL</code> in every response, and on DEV that endpoint lives on a different host (<code>https://api.dev.dasch.swiss/dpe/oai</code>) from the site (<code>https://repository.dev.dasch.swiss</code>). Set both per environment.</p>
 <p><strong>Assessing a local run from a container.</strong> A FAIR assessor running in Docker resolves the URLs the page emits, so <code>DPE_PUBLIC_BASE_URL</code> must name a host the container can reach — <code>http://host.docker.internal:4000</code>, not <code>http://localhost:4000</code>, which inside the container is the container itself.</p>
 <p><strong>PR previews set all three themselves.</strong> <code>cloud-run-dpe-pull-request.yml</code> runs <code>gcloud run services update</code> right after the deploy, setting <code>DPE_PUBLIC_BASE_URL</code>, <code>DPE_OAI_BASE_URL</code> and <code>DPE_ARK_RESOLVER_BASE_URL</code> to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the <code>303</code> target, the OAI <code>baseURL</code>, and every emitted ARK respectively.</p>
-<p><strong>PR previews set no <code>CPE_*</code> variable and no <code>SYNC_DATA_DIR</code>.</strong> They run with the image's own, so CPE is served under <code>/cpe</code> there and its share links carry the preview's host, taken from each request.</p>
+<p><strong>PR previews set no <code>CPE_*</code> variable, no <code>SYNC_DATA_DIR</code> and no <code>MEDIA_DATA_DIR</code>.</strong> They run with the image's own, so CPE is served under <code>/cpe</code> there from the data the image carries, and its share links carry the preview's host, taken from each request.</p>
 <p><strong>Why a preview rewrites its ARKs.</strong> A preview runs code that is not merged. If it publishes the recorded ARK, a FAIR assessor harvests an identifier that resolves to production — so the deployment it assessed and the deployment it dereferenced are two different things running different code, and the assessment says nothing about either. <code>DPE_ARK_RESOLVER_BASE_URL</code> makes the preview's identifiers point at the preview, and mounts the resolver that answers them, so what is measured is one deployment throughout.</p>
 <p><strong>Applied once, as corpus data enters.</strong> <code>dpe-core</code>'s caches normalise the ARK host on load, so everything downstream — the embedded JSON-LD, the Dublin Core tags, the <code>Link</code> header, the OAI payloads, the sidebar permalink a person clicks and copies, and the <code>pid</code> in <code>/dpe/api/v2/projects</code> — is correct without any of them knowing a resolver exists. Conceptually this is the <code>sync</code> capability's work and moves there when <code>sync</code> lands; <code>dpe_core::ark</code> records that.</p>
 <p>Only the host is rewritten. The ARK path — <code>ark:/72163/1/{shortcode}</code> — is the identifier and passes through untouched, and <strong>recorded text is quoted rather than asserted</strong>: a <code>howToCite</code> citation whose author wrote the ARK into the sentence, and a project's recorded website (083D records its own ARK there), are served as written.</p>
@@ -5407,7 +5442,7 @@ not use it. For where Incunabula's data comes from, see
 <p>The block is optional and top-level, at most once (see "Top-level
 structure"). A node or attribute that the grammar below does not list is
 refused as unknown. The worked example is Incunabula's block: the <code>remodel</code>
-node stands in <code>projects/incunabula/config.kdl</code> as written here, line for
+node stands in <code>areas/access/media/data/0803/config.kdl</code> as written here, line for
 line, IRIs in full. A test of the store builder
 (<code>areas/access/cpe/store-build/tests/it/worked_example.rs</code>) lowers the example and the file
 and holds the two equal.</p>
@@ -7040,7 +7075,7 @@ the default language is itself the requested one (already tried at
 step 1).</li>
 <li>the base <code>file</code> as declared in config (e.g. <code>home.md</code>).</li>
 </ol>
-<p>The first rung present in the <code>narrative/</code> directory wins; title
+<p>The first rung present among the project's narrative files wins; title
 derivation (<code>compose_page_title</code>'s narrative-heading path) uses the
 exact same chain, so a page's <code>&lt;title&gt;</code> and body content can never
 disagree on which variant was picked.</p>
@@ -7052,7 +7087,7 @@ only guarantees the terminal rung of the chain is reachable</strong>: a
 narrative <code>file</code> must resolve to the base file <strong>or</strong> the
 default-language variant (<code>NarrativeFileNotFound</code> hard-fails
 otherwise) — because those are the two rungs the chain is guaranteed to
-reach. A bundle offering only a non-default variant (e.g. <code>home.fr.md</code>
+reach. A project whose narrative files offer only a non-default variant (e.g. <code>home.fr.md</code>
 with no <code>home.md</code> and no <code>home.en.md</code>, <code>en</code> being the default) fails at
 boot rather than silently rendering an empty article for every visitor
 who doesn't request <code>fr</code>.</p>
@@ -7570,16 +7605,21 @@ to CPE.</p>
 <li><strong>Where</strong>: every path under <code>/cpe</code> (<code>CPE_BASE</code>). A project is at <code>/cpe/&lt;project id&gt;/</code>; today there is one,
 Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's overview: the projects it serves, each
 with a link to its start page. Any other path that names no project is CPE's own not-found page.</li>
-<li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (configuration, narrative, assets) and <code>sync</code>'s
-data in <code>SYNC_DATA_DIR</code>. Both are in the image. Each project's store is built in memory from that data at
-every start; nothing is written to disk, and a restart leaves nothing behind.</li>
+<li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (<code>SHORTCODE</code>, assets), <code>sync</code>'s snapshots in
+<code>SYNC_DATA_DIR</code> and <code>media</code>'s deposited files in <code>MEDIA_DATA_DIR</code> (configuration, curation, narrative). All
+three are in the image. Each project's store is built in memory from that data at every start; nothing is
+written to disk, and a restart leaves nothing behind.</li>
+<li><strong>Refresh</strong>: for now, a restart. A file edited under <code>MEDIA_DATA_DIR</code> or <code>SYNC_DATA_DIR</code> reaches CPE only
+when <code>access-server</code> restarts, since activation runs once. Not yet in code: the ports announce change, <code>sync</code>
+and <code>media</code> each with an operator lever that makes its adapter announce, and CPE rebuilds the one project
+named, with no endpoint of its own (ADR-0012, DEV-7622).</li>
 <li><strong>Static files</strong>: CPE's stylesheets, scripts and logos are compiled into the binary and served at
 <code>/cpe/&lt;project id&gt;/_static/…</code>, and at <code>/cpe/_static/…</code> for the overview and CPE's not-found page; a
 project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
 </ul>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>The four variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>) are in the
-<a href="cpe/../dpe/operations.html#environment-variables">environment table</a> of DPE Operations. The image sets all but
+<p>The five variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>, <code>MEDIA_DATA_DIR</code>) are
+in the <a href="cpe/../dpe/operations.html#environment-variables">environment table</a> of DPE Operations. The image sets all but
 <code>CPE_PUBLIC_ORIGIN</code>. The three <code>CPE_*</code> values can also come from a <code>cpe.toml</code> in the working directory; the
 environment wins.</p>
 <h2 id="start-up-and-what-cpe-answers-when-something-is-missing"><a class="header" href="#start-up-and-what-cpe-answers-when-something-is-missing">Start-up, and what CPE answers when something is missing</a></h2>
@@ -7590,6 +7630,10 @@ answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 <tr><td>Projects are still loading</td><td><code>503</code>, every path</td><td><code>CPE is mounted and activates in the background</code> (info)</td><td>serves</td></tr>
 <tr><td>A project is loaded</td><td>its pages, and its entry in the overview</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
 <tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
+<tr><td><code>MEDIA_DATA_DIR</code>, a project's directory in it, or a file the project needs from it is missing, unreadable or not UTF-8</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>MEDIA_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
+<tr><td>A project folder has no <code>SHORTCODE</code></td><td>the folder is no project: CPE's not-found, <code>404</code>, on its paths</td><td>nothing</td><td>serves</td></tr>
+<tr><td>A project folder's <code>SHORTCODE</code> is malformed or a symlink</td><td>the project is not served: CPE's not-found, <code>404</code>, on its paths</td><td><code>a project folder is not served</code>, with the folder and the reason (warning)</td><td>serves</td></tr>
+<tr><td>Two project folders declare the same <code>SHORTCODE</code></td><td><code>503</code> on both projects' paths</td><td><code>project does not load; its prefix answers 503</code>, naming the other folder (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>the overview with no project, <code>200</code>, at <code>/cpe</code> and <code>/cpe/</code>; CPE's not-found, <code>404</code>, on every other path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code> is refused (a path, a trailing slash)</td><td><code>503</code>, every path</td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_BASE</code> is unset or empty</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE_BASE is not set: CPE is not mounted …</code> (warning)</td><td>serves alone</td></tr>
@@ -7604,7 +7648,8 @@ answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 route (<code>GET /cpe/incunabula/books/{id}</code>).</p>
 <h2 id="measurements"><a class="header" href="#measurements">Measurements</a></h2>
 <p>Measured on 2026-10-12. Two set-ups, both with the image's environment and the committed data (Incunabula: 4,198 resources,
-20.3 MB in <code>SYNC_DATA_DIR</code>):</p>
+20.3 MB of snapshot and curation files, on that date both in <code>SYNC_DATA_DIR</code>; the curation file has since moved
+to <code>MEDIA_DATA_DIR</code>):</p>
 <ul>
 <li><strong>The image</strong>, built from a staged context as CI builds it, but for <code>linux/arm64</code> (CI builds <code>linux/amd64</code>):
 a static musl binary, run with <code>docker run --cpus=1 --memory=512m</code>, the limits of a PR preview, under Docker
@@ -7630,9 +7675,8 @@ no restart and no out-of-memory kill.</p>
 <p>A PR preview on Cloud Run is deployed with <code>--no-cpu-throttling</code>. With throttling, an instance gets CPU only
 while it handles a request, and <code>/cpe/incunabula/</code> answered <code>503</code> after a cold start until the sixth request.
 The load time on Cloud Run without throttling is not measured.</p>
-<p>The image's data grew by 195,708 bytes (23 files, <code>cpe/projects</code>): the staged
-directory without the binary was 69,819,957 bytes before and is 70,015,665 bytes with it. <code>sync/data</code>
-(20,281,022 bytes) was already staged.</p>
+<p>CPE's data in the image, counted on 2026-10-21 as the sum of the files' sizes: <code>sync/data</code> 20,264,543 bytes
+(3 files), <code>media/data</code> 90,734 bytes (19 files) and <code>cpe/projects</code> 122,868 bytes (7 files).</p>
 <h2 id="response-times-the-baseline-for-store-reads-on-the-request-path"><a class="header" href="#response-times-the-baseline-for-store-reads-on-the-request-path">Response times: the baseline for store reads on the request path</a></h2>
 <p>A page's store reads run on the async worker threads the binary shares with DPE, and one project's requests
 wait on one lock (<code>ARCH-MAP.md</code>, <code>areas/access/cpe</code>). These figures are what a change to that is compared
@@ -7740,7 +7784,7 @@ not mounted in them. <code>just run</code> and <code>just dev</code> set <code>C
 </style>
 <h1 id="editor-architecture"><a class="header" href="#editor-architecture">Editor Architecture</a></h1>
 <p>The metadata editor is the Deposit Area's first capability (ADR-0002, ADR-0003): the surface where a depositing project team edits its project metadata, RDU reviews it field by field, and an approved record is carried back into this repository as a pull request. Git stays the source of truth and the editor's database is working state (<code>areas/deposit/ADR-0001</code>).</p>
-<p>This page describes the architecture <strong>as implemented</strong>. The Deposit Area's target lives only in its decision records, <code>areas/deposit/docs/adr/</code>, and the code matches them today; a gap that opens gets a "Divergence from the target architecture" section at the end of this page again (<code>areas/deposit/editor/CLAUDE.md</code>). Subsystem detail is on the topic pages each section links to.</p>
+<p>This page describes the architecture <strong>as implemented</strong>. The Deposit Area's target lives only in its decision records, <code>areas/deposit/docs/adr/</code>; where the code does not meet it, the ADR names the gap as a <code>Not yet in code:</code> line (<code>areas/deposit/editor/CLAUDE.md</code>). Subsystem detail is on the topic pages each section links to.</p>
 <h2 id="the-flow-end-to-end"><a class="header" href="#the-flow-end-to-end">The flow, end to end</a></h2>
 <pre class="mermaid">flowchart LR
   D[Depositor] --&gt;|edits, section by section| Draft
@@ -7825,8 +7869,8 @@ not mounted in them. <code>just run</code> and <code>just dev</code> set <code>C
 <p>Server-rendered HTML with Maud, served by Axum, Datastar for enhancement on top of forms that work without it (ADR-0004). Paths are root-mounted on the editor's own hostname. Every write shares its URL with the <code>GET</code> that renders its form and answers two ways, a redirect on the plain path and the changed region as <code>text/html</code> on the enhanced one. Two layers wrap the app, CSRF outermost and OTel inside it, and <code>/healthz</code> and the telemetry beacon are declared after the OTel layers on purpose, so they stay untraced (<a href="editor/./routing.html">Routing</a>, <a href="editor/./rendering.html">Rendering</a>, <a href="editor/./observability.html">Observability</a>).</p>
 <h2 id="decisions"><a class="header" href="#decisions">Decisions</a></h2>
 <ul>
-<li>Platform: the areas and the origin split (ADR-0002), one modulith per area with capabilities behind consumer-defined ports (ADR-0003, amended 2026-09-25 for authentication ports, the area shell and the crate-graph gate, and 2026-10-13 for what a composition root depends on), hypermedia surfaces (ADR-0004), where decision records live (ADR-0006).</li>
-<li>The editor's own: git as the source of truth (<code>areas/deposit/ADR-0001</code>), the draft as the project's JSON members (<code>areas/deposit/ADR-0002</code>), Online derived at startup (<code>areas/deposit/ADR-0003</code>), and the target shape of the area (<code>areas/deposit/ADR-0004</code>, amended 2026-10-13 for <code>identity-ports</code>, the session deadline in <code>Actor</code>, the web facades and the shell's sign-in link).</li>
+<li>Platform: the areas and the origin split (ADR-0002), one modulith per area with capabilities behind consumer-defined ports (ADR-0003: authentication ports, the area shell, the crate-graph gate and what a composition root depends on), hypermedia surfaces (ADR-0004), where decision records live (ADR-0006).</li>
+<li>The editor's own: git as the source of truth (<code>areas/deposit/ADR-0001</code>), the draft as the project's JSON members (<code>areas/deposit/ADR-0002</code>), Online derived at startup (<code>areas/deposit/ADR-0003</code>), and the shape of the area (<code>areas/deposit/ADR-0004</code>: <code>identity-ports</code>, the session deadline in <code>Actor</code>, the web facades and the shell's sign-in link).</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -9994,8 +10038,8 @@ into business logic.</p>
     args: &amp;&lt;Verb&gt;&lt;Noun&gt;Args,
     cfg: &amp;Config,
     client: &amp;dyn DspClient,
-    renderer: &amp;dyn Renderer,
-) -&gt; Result&lt;()&gt;
+    renderer: &amp;mut dyn Renderer,
+) -&gt; Result&lt;(), Diagnostic&gt;
 <span class="boring">}</span></code></pre></pre>
 <p>This forces two properties:</p>
 <ul>
@@ -10021,20 +10065,21 @@ retry/error behaviour. Slower; few in number; not where verb logic gets validate
 <pre><code>dsp-cli/
 ├── Cargo.toml
 ├── src/
-│   ├── main.rs              # binary entry: parse → dispatch
-│   ├── lib.rs               # library re-exports
-│   ├── cli/                 # clap derive structs (layer 1)
-│   ├── actions/             # layer 2
-│   │   └── vre/
-│   │       ├── project.rs
-│   │       ├── data_model.rs
-│   │       └── resource_type.rs
-│   ├── client/              # layer 3a — trait + HTTP impl
+│   ├── main.rs               # binary entry: parse → dispatch
+│   ├── lib.rs                # library re-exports and command dispatch
+│   ├── diagnostic.rs         # Diagnostic: error kind, exit category, message (dsp-cli/ADR-0012)
+│   ├── cli/                  # clap derive structs (layer 1)
+│   ├── actions/              # layer 2
+│   │   ├── auth/             # login, logout, set-token, status, token
+│   │   ├── docs.rs           # dsp docs (embedded topics)
+│   │   └── vre/              # project, data_model, resource_type, resource, vocabulary, sparql
+│   ├── client/               # layer 3a — DspClient trait + HTTP impl
 │   ├── render/               # layer 3b — Renderer trait + format impls
 │   ├── model/                # layer 4 — domain types
-│   ├── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
-│   │   └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
-│   └── config/                # layer 5 — config stack
+│   ├── config/               # layer 5 — config stack
+│   ├── update/               # the update check (dsp-cli/ADR-0015)
+│   └── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
+│       └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
 └── tests/                    # wiremock integration tests + cli-level assert_cmd tests
 </code></pre>
 <p>The cross-layer dependency rule: <strong>client and render are sibling layers; neither may import the
@@ -10048,19 +10093,21 @@ mechanical: <code>src/actions/vre/data_model.rs</code>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>trait Renderer {
-    fn projects(&amp;mut self, view: &amp;ProjectListView, meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn project_detail(&amp;mut self, item: &amp;Project, data_models: &amp;[DataModelSummary], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn data_models(&amp;mut self, items: &amp;[DataModel], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn data_model_detail(&amp;mut self, item: &amp;DataModel, resource_types: &amp;[ResourceTypeSummary], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn resource_types(&amp;mut self, items: &amp;[ResourceType], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn resource_type_detail(&amp;mut self, item: &amp;ResourceType, meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    // ...
+    fn diagnostic(&amp;mut self, diag: &amp;Diagnostic, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn projects(&amp;mut self, view: &amp;ProjectListView, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn project_describe(&amp;mut self, project: &amp;ProjectDetail, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn data_models(&amp;mut self, view: &amp;DataModelListView, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn data_model_describe(&amp;mut self, detail: &amp;DataModelDetail, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn resource_types(&amp;mut self, view: &amp;ResourceTypeListView, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn resource_type_describe(&amp;mut self, detail: &amp;ResourceTypeDetail, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    // ... one method per (noun, shape), plus the auth and dump outcomes
 }
 <span class="boring">}</span></code></pre></pre>
 <p>List methods take an owned per-noun view struct (e.g. <code>ProjectListView</code>) carrying the post-filter
 items, the pre-filter total, and the filter string, rather than a bare slice — this lets prose
 render a "(m of n matching …)" count line without the action layer duplicating that logic. The
-<code>_meta</code> argument (<code>MetaContext</code>: server label, auth state, optional filter warning) threads through
+<code>_meta</code> argument (<code>MetaContext</code>: server label, auth state, and the optional notes <code>filter_warning</code>,
+<code>count_caveat</code> and <code>count_cost</code>) threads through
 every renderer call; this is the implementation site of dsp-cli/ADR-0007's auth-state disclosure
 requirement.</p>
 <p>Prose rendering is irreducibly per-noun (each entity has its own natural-language phrasing).
@@ -10071,9 +10118,8 @@ grows) is bounded by the fact that the noun-group set is small and grows slowly.
 <ul>
 <li><strong>Binary-only single crate.</strong> Rejected — actions only testable via end-to-end <code>assert_cmd</code>,
 which is slow and friction-heavy for the dominant test mode.</li>
-<li><strong>Cargo workspace.</strong> Rejected while dsp-cli was a standalone repository — adds ceremony without
-benefit at personal-project scale. The move into this monorepo (dsp-cli/ADR-0014) kept the
-single-crate internal layout; it did not split dsp-cli itself into multiple crates.</li>
+<li><strong>Several crates.</strong> dsp-cli remains a single crate; a split into <code>dsp-client</code>, <code>dsp-render</code> and
+<code>dsp-cli</code> is a deferred option in dsp-cli/ADR-0008.</li>
 <li><strong>Wiremock-only test seam.</strong> Rejected — action-level tests become 10-100x slower; edge cases
 (error paths, partial data) harder to construct.</li>
 <li><strong>Generic <code>render&lt;T&gt;</code> trait.</strong> Rejected — wrong shape for prose.</li>
@@ -10082,7 +10128,7 @@ test seam.</li>
 </ul>
 <h2 id="consequences"><a class="header" href="#consequences">Consequences</a></h2>
 <ul>
-<li><code>DspClient</code> is a trait from day one. The trait's surface co-evolves with the action layer: every
+<li><code>DspClient</code> is a trait. The trait's surface co-evolves with the action layer: every
 new verb that needs a new endpoint adds a method to the trait.</li>
 <li><code>Renderer</code> is a trait with explicit per-noun methods. New noun-groups add new methods; each
 format impl gets a new method.</li>
@@ -10163,7 +10209,7 @@ for the vocabulary-translation boundary.</p>
 <p><code>dsp-cli</code>'s test suite has five layers, each addressing a distinct class of failure. The primary
 seam is the <code>DspClient</code> trait (see <a href="dsp-cli/./architecture.html">Architecture</a>); the dominant test mode is
 action-level tests with mocks and snapshotted output. Live tests against a real DSP environment are
-opt-in and not part of the default suite; a dedicated CI job now runs them against a pinned,
+opt-in and not part of the default suite; a dedicated CI job runs them against a pinned,
 containerized stack (see <a href="dsp-cli/testing-strategy.html#drift-detection-in-ci">Drift detection in CI</a> below).</p>
 <h2 id="layers-1"><a class="header" href="#layers-1">Layers</a></h2>
 <ol>
@@ -10380,6 +10426,162 @@ dsp auth logout --server stage                           # clears the cached tok
 <a href="dsp-cli/./testing-strategy.html#general-configuration-variables">Testing Strategy</a> for the environment
 variables (<code>DSP_SERVER</code>, <code>DSP_USER</code>, <code>DSP_PASSWORD</code>, <code>DSP_TOKEN</code>) that let a script or agent skip
 the interactive prompts entirely.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="dsp-cli-value-rendering"><a class="header" href="#dsp-cli-value-rendering">dsp-cli Value Rendering</a></h1>
+<p>How <code>dsp vre resource describe --values</code> turns the Values of a Resource into output. The decisions
+behind it (complex schema, opt-in <code>--values</code>, field labels, output shapes, sanitisation) are in
+dsp-cli/ADR-0013; this page holds the per-type rules, which are the specification of
+<code>parse_value</code> in <code>dsp-cli/src/client/http.rs</code> and of the shared <code>render_value_content</code> helper in
+<code>dsp-cli/src/render/value.rs</code>.</p>
+<h2 id="where-each-value-comes-from"><a class="header" href="#where-each-value-comes-from">Where each value comes from</a></h2>
+<p>Each Value's type is detected from the value object's <code>@type</code>. The value-type token (the
+<code>value_type</code> in output) reuses the vocabulary in <code>dsp-cli/CONTEXT.md</code>: <code>text</code>, <code>integer</code>,
+<code>decimal</code>, <code>boolean</code>, <code>date</code>, <code>time</code>, <code>uri</code>, <code>color</code>, <code>geoname</code>, <code>vocabulary-item</code>, <code>link</code>,
+<code>still-image</code>, <code>moving-image</code>, <code>audio</code>, <code>document</code>, <code>archive</code>. The DSP-API class names (<code>TextValue</code>,
+<code>LinkValue</code>, …) never leave <code>src/client/</code>.</p>
+<p>Every datum key in the table below is a <code>knora-api:</code>-prefixed CURIE in the JSON-LD value object
+(for example <code>knora-api:intValueAsInt</code>, <code>knora-api:linkValueHasTarget</code>). The JSON-LD <code>@context</code>
+applies at the document level, not inside nested value objects, so the keys arrive as CURIE strings
+and a lookup must use the full prefixed key. The prefix is omitted from the table cells for brevity.</p>
+<h2 id="what-counts-as-a-field"><a class="header" href="#what-counts-as-a-field">What counts as a field</a></h2>
+<p>Not every key on the resource is a user field. A key in the flattened <code>extra</code> map is a field if and
+only if its value is a value object (or an array of value objects) whose <code>@type</code> is a knora-api
+value class (a <code>knora-api:*Value</code>: <code>TextValue</code>, <code>IntValue</code>, <code>LinkValue</code>, <code>StillImageFileValue</code>, …).
+Requiring a value-class <code>@type</code>, not merely any <code>@type</code>, excludes envelope-metadata objects that
+carry an <code>xsd:</code> <code>@type</code>, notably <code>knora-api:versionArkUrl</code> (<code>{"@value":…,"@type":"xsd:anyURI"}</code>),
+which would otherwise leak as a spurious <code>raw</code> field. Scalar system keys (<code>knora-api:isDeleted</code>) and
+<code>@</code>-keys are skipped, since they have no value-class <code>@type</code>.</p>
+<p>An explicit denylist skips value objects that are <code>*Value</code>-shaped but are not the resource's own
+user fields:</p>
+<ul>
+<li><code>knora-api:hasIncomingLinkValue</code> (reverse links);</li>
+<li><code>knora-api:hasStandoffLinkToValue</code> and <code>knora-api:hasStandoffLinkValue</code> (standoff-internal links,
+both spellings);</li>
+<li>any value whose <code>@type</code> is <code>knora-api:DeletedValue</code>.</li>
+</ul>
+<p>The envelope metadata captured as named DTO fields (<code>arkUrl</code>, <code>creationDate</code>,
+<code>lastModificationDate</code>, <code>attachedToProject</code>, <code>attachedToUser</code>, <code>hasPermissions</code>,
+<code>userHasPermission</code>, and <code>@context</code>) never reaches <code>extra</code>. Among <code>knora-api:</code>-prefixed keys, only
+file values are genuine fields, and they pass the value-class test (<code>*FileValue</code>).</p>
+<h2 id="value-type-rendering-matrix"><a class="header" href="#value-type-rendering-matrix">Value-type rendering matrix</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>value-type</th><th>DSP-API <code>@type</code></th><th>Datum key(s) (complex schema)</th><th>dsp-cli rendering</th></tr></thead><tbody>
+<tr><td><code>text</code></td><td><code>TextValue</code></td><td>presence-based: <code>textValueAsXml</code> if present (formatted), stripped; else <code>valueAsString</code> (plain)</td><td>plain text; standoff XML stripped via <code>html_to_text</code> (lossy for custom standoff tags, which are dropped, not rendered)</td></tr>
+<tr><td><code>integer</code></td><td><code>IntValue</code></td><td><code>intValueAsInt</code> (JSON number)</td><td>the integer</td></tr>
+<tr><td><code>decimal</code></td><td><code>DecimalValue</code></td><td><code>decimalValueAsDecimal.@value</code> (string)</td><td>the decimal string (precision preserved)</td></tr>
+<tr><td><code>boolean</code></td><td><code>BooleanValue</code></td><td><code>booleanValueAsBoolean</code></td><td><code>true</code> / <code>false</code></td></tr>
+<tr><td><code>date</code></td><td><code>DateValue</code></td><td><code>dateValueHasCalendar</code>, <code>dateValueHasStart{Year,Month,Day,Era}</code>, <code>dateValueHasEnd{…}</code></td><td>calendar-aware human date; a range collapses to a single point when start equals end (below)</td></tr>
+<tr><td><code>time</code></td><td><code>TimeValue</code></td><td><code>timeValueAsTimeStamp.@value</code></td><td>the timestamp string</td></tr>
+<tr><td><code>uri</code></td><td><code>UriValue</code></td><td><code>uriValueAsUri.@value</code></td><td>the URI</td></tr>
+<tr><td><code>color</code></td><td><code>ColorValue</code></td><td><code>colorValueAsColor</code> (string)</td><td>the hex string</td></tr>
+<tr><td><code>geoname</code></td><td><code>GeonameValue</code></td><td><code>geonameValueAsGeonameCode</code> (string)</td><td>the geonames code</td></tr>
+<tr><td><code>vocabulary-item</code></td><td><code>ListValue</code></td><td><code>listValueAsListNode.@id</code></td><td>resolved node label (via <code>/v2/node</code>); degrades to the node IRI</td></tr>
+<tr><td><code>link</code></td><td><code>LinkValue</code></td><td><code>linkValueHasTarget</code> (embedded) or <code>linkValueHasTargetIri.@id</code></td><td><code>&lt;target label&gt; [&lt;target iri&gt;]</code>; degrades to <code>&lt;target iri&gt;</code> alone (no brackets) when no label is available</td></tr>
+<tr><td><code>still-image</code></td><td><code>StillImageFileValue</code> (and the <code>StillImageExternalFileValue</code> and <code>StillImageVectorFileValue</code> siblings)</td><td><code>fileValueHasFilename</code>, <code>fileValueAsUrl.@value</code>, <code>stillImageFileValueHasDimX/Y</code></td><td><code>&lt;filename&gt; (&lt;W&gt;×&lt;H&gt;) &lt;url&gt;</code></td></tr>
+<tr><td><code>moving-image</code></td><td><code>MovingImageFileValue</code></td><td><code>fileValueHasFilename</code>, <code>fileValueAsUrl.@value</code></td><td><code>&lt;filename&gt; &lt;url&gt;</code></td></tr>
+<tr><td><code>audio</code></td><td><code>AudioFileValue</code></td><td><code>fileValueHasFilename</code>, <code>fileValueAsUrl.@value</code></td><td><code>&lt;filename&gt; &lt;url&gt;</code></td></tr>
+<tr><td><code>document</code></td><td><code>DocumentFileValue</code></td><td><code>fileValueHasFilename</code>, <code>fileValueAsUrl.@value</code></td><td><code>&lt;filename&gt; &lt;url&gt;</code></td></tr>
+<tr><td><code>archive</code></td><td><code>ArchiveFileValue</code></td><td><code>fileValueHasFilename</code>, <code>fileValueAsUrl.@value</code></td><td><code>&lt;filename&gt; &lt;url&gt;</code></td></tr>
+<tr><td>long tail</td><td><code>IntervalValue</code>, <code>GeomValue</code>, any unrecognised <code>*Value</code></td><td>none</td><td><code>raw</code> fallback (below)</td></tr>
+</tbody></table>
+</div>
+<p>In the tabular formats a link renders with the <code>→</code> glyph (<code>→ &lt;target label&gt; [&lt;target iri&gt;]</code>), the
+same glyph prose uses.</p>
+<h2 id="dates"><a class="header" href="#dates">Dates</a></h2>
+<p>A date is built from the structured calendar fields, not from <code>valueAsString</code>, which is not always
+present and is machine-oriented. The format is <code>&lt;start&gt; – &lt;end&gt; (&lt;Calendar&gt;)</code>, collapsing to
+<code>&lt;point&gt; (&lt;Calendar&gt;)</code> when start equals end (a field-by-field equality on the date point). A
+point's precision follows the fields present: year, year-month, or year-month-day. The era (<code>CE</code> or
+<code>BCE</code>) is appended when present. Examples: a single Gregorian year renders as <code>1489 CE (GREGORIAN)</code>,
+a full Julian day as <code>1456-03-14 CE (JULIAN)</code>, and a range as <code>1489 CE – 1490 CE (GREGORIAN)</code>. The
+exact glyphs are locked by snapshots; the shape is fixed here.</p>
+<h2 id="the-raw-fallback"><a class="header" href="#the-raw-fallback">The <code>raw</code> fallback</a></h2>
+<p>The long tail (interval, geometry, and any value-type DSP-API adds later) renders generically
+instead of failing, so a read never breaks on an unknown type. For such a value, <code>value_type</code> is the
+lowercased local name of the <code>@type</code> (for example <code>interval</code>). The datum (<code>raw.text</code>) is
+<code>valueAsString</code> if present, else the value object's non-metadata literals joined, else a compact
+JSON of the value object minus the standard metadata keys. It is never a hard error. This mirrors
+the rule in <code>CONTEXT.md</code> that value-types outside the canonical set degrade to their lowercased
+local name.</p>
+<h2 id="text-values"><a class="header" href="#text-values">Text values</a></h2>
+<p>Formatted and plain text are told apart by presence (<code>textValueAsXml</code> present means formatted,
+otherwise <code>valueAsString</code>). Detection deliberately does not use the <code>knora-api:hasTextValueType</code>
+discriminant: its server-side implementation in dsp-api is incompletely finished and may be absent
+or unreliable on real or older resources. If presence-based detection proves insufficient on real
+data, the <code>raw</code> fallback still keeps the read from breaking. Live tests cover
+unformatted and formatted (standoff) text (<code>dsp-cli/tests/live_resource_describe.rs</code>).</p>
+<h2 id="file-values"><a class="header" href="#file-values">File values</a></h2>
+<p>The whole <code>*FileValue</code> family is matched by the leading kind of the <code>@type</code>: <code>StillImage*</code> is
+<code>still-image</code> (the plain, <code>External</code> and <code>Vector</code> variants), <code>MovingImage*</code> is <code>moving-image</code>,
+<code>Audio*</code> is <code>audio</code>, <code>Document*</code> is <code>document</code>, <code>Archive*</code> is <code>archive</code>, and <code>Text*FileValue</code> is
+<code>document</code> (filename and URL). All share <code>fileValueHasFilename</code> and <code>fileValueAsUrl</code>; only
+<code>still-image</code> adds dimensions. An unrecognised <code>*FileValue</code> degrades to <code>raw</code>, never to a hard
+error.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

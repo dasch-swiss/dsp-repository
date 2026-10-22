@@ -267,8 +267,8 @@ into business logic.</p>
     args: &amp;&lt;Verb&gt;&lt;Noun&gt;Args,
     cfg: &amp;Config,
     client: &amp;dyn DspClient,
-    renderer: &amp;dyn Renderer,
-) -&gt; Result&lt;()&gt;
+    renderer: &amp;mut dyn Renderer,
+) -&gt; Result&lt;(), Diagnostic&gt;
 <span class="boring">}</span></code></pre></pre>
 <p>This forces two properties:</p>
 <ul>
@@ -294,20 +294,21 @@ retry/error behaviour. Slower; few in number; not where verb logic gets validate
 <pre><code>dsp-cli/
 ├── Cargo.toml
 ├── src/
-│   ├── main.rs              # binary entry: parse → dispatch
-│   ├── lib.rs               # library re-exports
-│   ├── cli/                 # clap derive structs (layer 1)
-│   ├── actions/             # layer 2
-│   │   └── vre/
-│   │       ├── project.rs
-│   │       ├── data_model.rs
-│   │       └── resource_type.rs
-│   ├── client/              # layer 3a — trait + HTTP impl
+│   ├── main.rs               # binary entry: parse → dispatch
+│   ├── lib.rs                # library re-exports and command dispatch
+│   ├── diagnostic.rs         # Diagnostic: error kind, exit category, message (dsp-cli/ADR-0012)
+│   ├── cli/                  # clap derive structs (layer 1)
+│   ├── actions/              # layer 2
+│   │   ├── auth/             # login, logout, set-token, status, token
+│   │   ├── docs.rs           # dsp docs (embedded topics)
+│   │   └── vre/              # project, data_model, resource_type, resource, vocabulary, sparql
+│   ├── client/               # layer 3a — DspClient trait + HTTP impl
 │   ├── render/               # layer 3b — Renderer trait + format impls
 │   ├── model/                # layer 4 — domain types
-│   ├── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
-│   │   └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
-│   └── config/                # layer 5 — config stack
+│   ├── config/               # layer 5 — config stack
+│   ├── update/               # the update check (dsp-cli/ADR-0015)
+│   └── util/                 # layer-neutral helpers (imports from no other layer; all layers may import it)
+│       └── text.rs           # html_to_text, strip_control_chars (dependency-free text processing)
 └── tests/                    # wiremock integration tests + cli-level assert_cmd tests
 </code></pre>
 <p>The cross-layer dependency rule: <strong>client and render are sibling layers; neither may import the
@@ -321,19 +322,21 @@ mechanical: <code>src/actions/vre/data_model.rs</code>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>trait Renderer {
-    fn projects(&amp;mut self, view: &amp;ProjectListView, meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn project_detail(&amp;mut self, item: &amp;Project, data_models: &amp;[DataModelSummary], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn data_models(&amp;mut self, items: &amp;[DataModel], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn data_model_detail(&amp;mut self, item: &amp;DataModel, resource_types: &amp;[ResourceTypeSummary], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn resource_types(&amp;mut self, items: &amp;[ResourceType], meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    fn resource_type_detail(&amp;mut self, item: &amp;ResourceType, meta: &amp;MetaContext) -&gt; Result&lt;()&gt;;
-    // ...
+    fn diagnostic(&amp;mut self, diag: &amp;Diagnostic, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn projects(&amp;mut self, view: &amp;ProjectListView, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn project_describe(&amp;mut self, project: &amp;ProjectDetail, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn data_models(&amp;mut self, view: &amp;DataModelListView, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn data_model_describe(&amp;mut self, detail: &amp;DataModelDetail, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn resource_types(&amp;mut self, view: &amp;ResourceTypeListView, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    fn resource_type_describe(&amp;mut self, detail: &amp;ResourceTypeDetail, meta: &amp;MetaContext) -&gt; Result&lt;(), Diagnostic&gt;;
+    // ... one method per (noun, shape), plus the auth and dump outcomes
 }
 <span class="boring">}</span></code></pre></pre>
 <p>List methods take an owned per-noun view struct (e.g. <code>ProjectListView</code>) carrying the post-filter
 items, the pre-filter total, and the filter string, rather than a bare slice — this lets prose
 render a "(m of n matching …)" count line without the action layer duplicating that logic. The
-<code>_meta</code> argument (<code>MetaContext</code>: server label, auth state, optional filter warning) threads through
+<code>_meta</code> argument (<code>MetaContext</code>: server label, auth state, and the optional notes <code>filter_warning</code>,
+<code>count_caveat</code> and <code>count_cost</code>) threads through
 every renderer call; this is the implementation site of dsp-cli/ADR-0007's auth-state disclosure
 requirement.</p>
 <p>Prose rendering is irreducibly per-noun (each entity has its own natural-language phrasing).
@@ -344,9 +347,8 @@ grows) is bounded by the fact that the noun-group set is small and grows slowly.
 <ul>
 <li><strong>Binary-only single crate.</strong> Rejected — actions only testable via end-to-end <code>assert_cmd</code>,
 which is slow and friction-heavy for the dominant test mode.</li>
-<li><strong>Cargo workspace.</strong> Rejected while dsp-cli was a standalone repository — adds ceremony without
-benefit at personal-project scale. The move into this monorepo (dsp-cli/ADR-0014) kept the
-single-crate internal layout; it did not split dsp-cli itself into multiple crates.</li>
+<li><strong>Several crates.</strong> dsp-cli remains a single crate; a split into <code>dsp-client</code>, <code>dsp-render</code> and
+<code>dsp-cli</code> is a deferred option in dsp-cli/ADR-0008.</li>
 <li><strong>Wiremock-only test seam.</strong> Rejected — action-level tests become 10-100x slower; edge cases
 (error paths, partial data) harder to construct.</li>
 <li><strong>Generic <code>render&lt;T&gt;</code> trait.</strong> Rejected — wrong shape for prose.</li>
@@ -355,7 +357,7 @@ test seam.</li>
 </ul>
 <h2 id="consequences"><a class="header" href="#consequences">Consequences</a></h2>
 <ul>
-<li><code>DspClient</code> is a trait from day one. The trait's surface co-evolves with the action layer: every
+<li><code>DspClient</code> is a trait. The trait's surface co-evolves with the action layer: every
 new verb that needs a new endpoint adds a method to the trait.</li>
 <li><code>Renderer</code> is a trait with explicit per-noun methods. New noun-groups add new methods; each
 format impl gets a new method.</li>

@@ -245,18 +245,27 @@
 <h1 id="decision-records"><a class="header" href="#decision-records">Decision Records</a></h1>
 <p>Architecture decision records (ADRs) capture the "why" behind a decision, not just the "what".</p>
 <h2 id="where-a-decision-lives-and-how-it-is-cited"><a class="header" href="#where-a-decision-lives-and-how-it-is-cited">Where a decision lives, and how it is cited</a></h2>
-<p>System-wide decisions live in the root <code>docs/adr/</code>, with one sequence starting at 0001. A
-root-level component with its own decision history keeps its own <code>docs/adr/</code> under the component
-directory, with its own sequence also starting at 0001. The two sequences collide by number; the
-citation form is what disambiguates:</p>
+<p>System-wide decisions live in the root <code>docs/adr/</code>, with one sequence starting at 0001. An area
+keeps its own series at <code>areas/&lt;area&gt;/docs/adr/</code>, and a root-level component with its own
+decision history keeps one at <code>&lt;component&gt;/docs/adr/</code>, each also starting at 0001. The sequences
+collide by number; the citation form is what disambiguates:</p>
 <ul>
 <li>A bare <code>ADR-NNNN</code> always names a root ADR, from anywhere in the repository.</li>
-<li>A component ADR is always cited qualified, as <code>&lt;component&gt;/ADR-NNNN</code> — also from inside that
-component.</li>
+<li>An area or component ADR is always cited qualified, as <code>areas/&lt;area&gt;/ADR-NNNN</code> or
+<code>&lt;component&gt;/ADR-NNNN</code> — also from inside that area or component.</li>
 </ul>
-<p>An amendment refines a decision in place, under a dated <code>## Amendment</code> heading. A decision that
-changes rather than narrows becomes a new ADR, and the superseded one takes
-<code>status: superseded by &lt;the new one&gt;</code>.</p>
+<h2 id="an-adr-is-the-current-decision"><a class="header" href="#an-adr-is-the-current-decision">An ADR is the current decision</a></h2>
+<p>An ADR states the decision in force now, or the target the code is being moved to, with any gap
+named against a Linear issue. It is rewritten in place when the decision changes, and retired when
+the decision no longer holds. An ADR number is an identifier and is never reused: a retired record
+keeps its file as a one-line tombstone that says where its decision lives now, so every citation
+still resolves, and its row below stays, marked retired. The history of a decision is the
+git history of its file: the commit that changes a record says what it decided before and why
+(<a href="git-conventions.html#history-lives-in-git-documents-hold-the-current-state">Git conventions</a>). The
+writing rules are in
+<a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/CLAUDE.md"><code>docs/adr/CLAUDE.md</code></a>.</p>
+<p>Specs in <code>docs/specs/</code> are not rewritten: an ADR they cite may have been rewritten since the
+spec's date.</p>
 <p><code>just check</code> runs <code>check-adr-refs.sh</code>, which verifies that every <code>ADR-NNNN</code> and
 <code>&lt;component&gt;/ADR-NNNN</code> reference in the repository (outside <code>docs/specs/</code>) resolves to a file.
 See <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a>
@@ -268,12 +277,14 @@ for the full decision.</p>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0003-one-modulith-per-area.md">ADR-0003</a></td><td>One modulith per area</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0004-hypermedia-frontends.md">ADR-0004</a></td><td>Every user-facing surface is a hypermedia server</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0005-fair-landing-pages-in-the-access-area.md">ADR-0005</a></td><td>Every landing page in the Access Area is FAIR-assessable by machine</td></tr>
-<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a></td><td>Decision records are colocated with what they govern, and a component's are cited qualified</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0006-decision-records-are-colocated-and-cited-qualified.md">ADR-0006</a></td><td>Decision records are colocated with what they govern, hold only the current decision, and a component's are cited qualified</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0007-cpe-joins-the-access-area-as-its-second-capability.md">ADR-0007</a></td><td>CPE joins the Access Area as its second capability</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0008-a-reading-capability-may-keep-a-derived-read-model.md">ADR-0008</a></td><td>A reading capability may keep a derived read model</td></tr>
 <tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md">ADR-0009</a></td><td>DaTEI joins the Access Area as its third capability</td></tr>
-<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md">ADR-0010</a></td><td>The port also serves per-resource curation (proposed)</td></tr>
-<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0011-cpe-crates-move-in-dependency-order.md">ADR-0011</a></td><td>CPE's crates move in dependency order</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0010-the-port-also-serves-per-resource-curation.md">ADR-0010</a></td><td><em>Retired, see ADR-0012.</em> The port also serves per-resource curation</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0011-cpe-crates-move-in-dependency-order.md">ADR-0011</a></td><td><em>Retired, see ADR-0007.</em> CPE's crates move in dependency order</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0012-build-time-inputs-come-through-two-channels-one-consumer-each.md">ADR-0012</a></td><td>Build-time inputs come through two channels, one consumer each</td></tr>
+<tr><td><a href="https://github.com/dasch-swiss/dsp-repository/blob/main/docs/adr/0013-authorisation-is-decided-centrally-and-enforced-locally.md">ADR-0013</a></td><td>Authorisation is decided centrally and enforced locally</td></tr>
 </tbody></table>
 </div>
 <h2 id="component-series"><a class="header" href="#component-series">Component series</a></h2>

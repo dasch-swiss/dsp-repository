@@ -781,7 +781,7 @@ not use it. For where Incunabula's data comes from, see
 <p>The block is optional and top-level, at most once (see "Top-level
 structure"). A node or attribute that the grammar below does not list is
 refused as unknown. The worked example is Incunabula's block: the <code>remodel</code>
-node stands in <code>projects/incunabula/config.kdl</code> as written here, line for
+node stands in <code>areas/access/media/data/0803/config.kdl</code> as written here, line for
 line, IRIs in full. A test of the store builder
 (<code>areas/access/cpe/store-build/tests/it/worked_example.rs</code>) lowers the example and the file
 and holds the two equal.</p>
@@ -2414,7 +2414,7 @@ the default language is itself the requested one (already tried at
 step 1).</li>
 <li>the base <code>file</code> as declared in config (e.g. <code>home.md</code>).</li>
 </ol>
-<p>The first rung present in the <code>narrative/</code> directory wins; title
+<p>The first rung present among the project's narrative files wins; title
 derivation (<code>compose_page_title</code>'s narrative-heading path) uses the
 exact same chain, so a page's <code>&lt;title&gt;</code> and body content can never
 disagree on which variant was picked.</p>
@@ -2426,7 +2426,7 @@ only guarantees the terminal rung of the chain is reachable</strong>: a
 narrative <code>file</code> must resolve to the base file <strong>or</strong> the
 default-language variant (<code>NarrativeFileNotFound</code> hard-fails
 otherwise) — because those are the two rungs the chain is guaranteed to
-reach. A bundle offering only a non-default variant (e.g. <code>home.fr.md</code>
+reach. A project whose narrative files offer only a non-default variant (e.g. <code>home.fr.md</code>
 with no <code>home.md</code> and no <code>home.en.md</code>, <code>en</code> being the default) fails at
 boot rather than silently rendering an empty article for every visitor
 who doesn't request <code>fr</code>.</p>

@@ -48,7 +48,7 @@ Unlike DPE, the **HTML document shell is the area's, not a capability's**: `depo
 
 Inside `deposit-server`, `serve.rs` opens both stores, starts identity through `identity_web::Identity::start` and then the editor through `editor_web::Editor::start`, handing the editor `identity-store`'s `LiveAuthenticator` and `LiveUserDirectory`; `router.rs` merges the two routers and owns the layer order ([Routing](./routing.md)). Inside `editor-web`, the handlers are one module per surface under `handlers/` (`sections`, `review`, `entities`, `projects`, `approved`), and only they use Axum; `EditorState` holds `editor: Arc<dyn EditorRepositories>`, the editor store's implementation of `editor-core`'s five repository ports ([Persistence](./persistence.md)), and the two ports it asks identity through: the handlers authenticate through `Authenticator` (`handlers/auth.rs`) and read names through `UserDirectory`. `reconcile` runs the startup comparison inside `Editor::start`. Identity's state, inside `identity-web`, holds `Arc<dyn IdentityRepositories>` (`identity-core`'s four ports), the mailer, and `OpenWork`, through which the depositor-removal confirmation reads open work.
 
-Outside the area the editor depends on `shared-metadata` (the research-metadata contract), `shared-telemetry` (the browser beacon) and `mosaic-tiles`, and on nothing else in the workspace. It never depends on a `dpe-*` crate: DPE's corpus is consumed as data, an image-baked snapshot handed over as `EDITOR_DATA_DIR`, never as code (ADR-0002).
+Outside the area the editor depends on `shared-metadata` (the research-metadata contract), `shared-telemetry` (the browser beacon), `shared-rate-limit` (the per-IP rate-limit key) and `mosaic-tiles`, and on nothing else in the workspace. It never depends on a `dpe-*` crate: DPE's corpus is consumed as data, an image-baked snapshot handed over as `EDITOR_DATA_DIR`, never as code (ADR-0002).
 
 ## Deployment topology and trust boundaries
 
@@ -86,7 +86,7 @@ Five boundaries, and what holds each:
 
 ### Relationship to DPE
 
-The editor is a **separate service** from DPE, not a section of it. They share `shared-telemetry` for the browser-beacon contract, `shared-metadata` for the research-metadata contract and `mosaic-tiles` for components — but not a process, an image, or an origin.
+The editor is a **separate service** from DPE, not a section of it. They share `shared-telemetry` for the browser-beacon contract, `shared-metadata` for the research-metadata contract, `shared-rate-limit` for the per-IP rate-limit key and `mosaic-tiles` for components — but not a process, an image, or an origin.
 
 The separation is deliberate:
 

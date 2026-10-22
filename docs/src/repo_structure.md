@@ -68,6 +68,7 @@ areas/
 shared/                        # Crates shared by more than one service
 ├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
 ├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
+├── rate-limit/                # Per-client-IP key extractor for the rate limiters (crate: shared-rate-limit)
 └── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 
 dsp-cli/                       # Command-line client for the DaSCH Service Platform (crate: dsp-cli); a root peer, not a service
@@ -97,6 +98,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `media-store` | `areas/access/media/store` | `media` at its minimum (ADR-0012): `LiveDepositedFiles`, CPE's `DepositedFiles` served from the stand-in directory `MEDIA_DATA_DIR` names (default `areas/access/media/data/`), every file it holds, with no file refused for want of a right; depends on `cpe-ports` and `tracing`, and on no other CPE or DPE crate |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
+| `shared-rate-limit` | `shared/rate-limit` | The key extractor the per-IP rate limiters use, `RightmostXffKeyExtractor`: the rightmost `X-Forwarded-For` entry, falling back to the connection peer address — shared by DPE, the access server and the Deposit Area's services |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
 | `deposit-shell` | `areas/deposit/shell` | The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; `maud` and `mosaic-tiles` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |

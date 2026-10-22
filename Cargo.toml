@@ -2,6 +2,7 @@
 members = [
   "shared/fair",
   "shared/metadata",
+  "shared/rate-limit",
   "shared/telemetry",
   "modules/mosaic/playground",
   "modules/mosaic/tiles",

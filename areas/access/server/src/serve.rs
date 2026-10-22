@@ -86,7 +86,7 @@ fn assemble(dpe: Router, cpe: Option<&Cpe>) -> Router {
             // dashboards filter on: DPE's telemetry identity, not this crate's
             // name. Do not change it.
             shared_telemetry::collector::collect_route("dpe", dpe_server::normalize_page_url).layer({
-                use dpe_server::RightmostXffKeyExtractor;
+                use shared_rate_limit::RightmostXffKeyExtractor;
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 

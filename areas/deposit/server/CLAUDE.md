@@ -12,7 +12,7 @@ The Deposit Area's composition root (`areas/deposit/ADR-0004`), binary `deposit-
 
 ## Dependency boundary
 
-`Cargo.toml` depends on the two web crates (`identity-web`, `editor-web`), the two store crates, `deposit-shell`, `shared-telemetry` and infra crates (`editor-ports` only as a dev-dependency, for the port types its tests hold), and never on a `core` crate, dev-dependencies included: what the root needs from identity's rules (`CODE_TTL`, `is_plausible_address`) it takes from `identity-web`, and its tests seed and read through the stores' `test-support` helpers and the web crates' test support. `.github/scripts/check-composition-root-deps.sh` enforces this in CI: a root never depends on a capability's `core` or `api-*` crate, and on a capability's `web` crate only where the capability has no `server` crate, as here.
+`Cargo.toml` depends on the two web crates (`identity-web`, `editor-web`), the two store crates, `deposit-shell`, `shared-rate-limit`, `shared-telemetry` and infra crates (`editor-ports` only as a dev-dependency, for the port types its tests hold), and never on a `core` crate, dev-dependencies included: what the root needs from identity's rules (`CODE_TTL`, `is_plausible_address`) it takes from `identity-web`, and its tests seed and read through the stores' `test-support` helpers and the web crates' test support. `.github/scripts/check-composition-root-deps.sh` enforces this in CI: a root never depends on a capability's `core` or `api-*` crate, and on a capability's `web` crate only where the capability has no `server` crate, as here.
 
 ## Telemetry identity
 

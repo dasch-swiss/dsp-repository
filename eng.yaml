@@ -77,3 +77,5 @@ overrides:
     reviewers: [eng:review:ivan-reviewer]
   - when: "shared/telemetry/**"
     reviewers: [eng:review:observability-reviewer]
+  - when: "shared/rate-limit/**"
+    reviewers: [eng:review:security-reviewer]

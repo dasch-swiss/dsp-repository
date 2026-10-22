@@ -13,6 +13,7 @@ dev = ["dep:tower-livereload", "dep:notify"]
 dpe-core = { path = "../core" }
 shared-fair = { path = "../../../../shared/fair" }
 shared-metadata = { path = "../../../../shared/metadata" }
+shared-rate-limit = { path = "../../../../shared/rate-limit" }
 shared-telemetry = { path = "../../../../shared/telemetry" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../web" }

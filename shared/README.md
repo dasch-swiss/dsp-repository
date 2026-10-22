@@ -6,6 +6,7 @@ Crates that exist only to be depended on by more than one area. A crate lands he
 shared/
 ├── fair/              # FAIR exposure engine: resolved graphs + representation writers (crate: shared-fair)
 ├── metadata/          # Research-metadata wire contract (crate: shared-metadata)
+├── rate-limit/        # Per-client-IP key extractor for the rate limiters (crate: shared-rate-limit)
 └── telemetry/         # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 ```
 
@@ -51,6 +52,16 @@ No web framework, no Maud, no routes: a writer returns a `String` or a `serde_js
 Two consumers today: `dpe-api-oai` for the OAI writers, and `dpe-server` for the landing page's JSON-LD, meta tags and Signposting links. Unlike the other two crates here, `shared-fair` was shared from the start rather than on a second consumer's arrival, because ADR-0005 names the ones after those: DPE's record pages and CPE in the Access Area, and the Deposit Area, where a depositor assesses a project's FAIRness before submitting it.
 
 Dependencies: `shared-metadata`, and `serde_json` at runtime — the JSON-LD writer's output type is `serde_json::Value`, taken from the workspace so `preserve_order` holds. Nothing else.
+
+## `shared-rate-limit` (rate-limit/)
+
+The client-IP key the rate limiters bucket on. Contains `RightmostXffKeyExtractor`, a `tower_governor` `KeyExtractor` that keys on the rightmost `X-Forwarded-For` entry and falls back to the connection peer address when the header is absent or unparsable.
+
+The rightmost entry is the one Traefik appends, so it is proxy-authored; the leftmost is whatever the client sent. `tower_governor`'s own `SmartIpKeyExtractor` takes the leftmost, so a client rotating that header would get a fresh bucket per request and the limiter would stop limiting. The crate exists so that choice is made once, with its tests, rather than per service.
+
+It is shared because the Access and Deposit Areas both rate-limit by client IP: `dpe-server` (the OAI-PMH endpoint), `access-server` (its `/telemetry/collect`), `editor-web` and `identity-web` (their rate-limited routes) and `deposit-server` (its `/telemetry/collect`). Each service keeps its own limiter configuration: the `per_ip_limit!` macros and the quotas stay where they are, and only the extractor is shared.
+
+Dependencies: `axum` and `tower_governor`.
 
 ## `shared-telemetry` (telemetry/)
 

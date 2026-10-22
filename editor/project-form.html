@@ -365,7 +365,7 @@
 </ol>
 <p>Two further checks run on <strong>every</strong> write rather than only on a submit, and therefore before these: the per-field cap, because an applier truncates silently and deferring it would let an over-cap save store the truncated value; and the concurrent-save baseline, because a save is exactly what would overwrite somebody else's work.</p>
 <p>A refusal re-renders rather than redirecting, so nothing typed is lost, and per-field errors render beside the control they name. Submit validation is whole-project while the form is sectioned, so an error routinely names a field the depositor is not looking at — those are listed separately with a link to the section that holds them, otherwise the refusal says "the fields below say what needs changing" and nothing below says anything.</p>
-<p>RDU submits through the same path: <code>Principal::may_reach</code> is already true for every project for an RDU account, so the direct-editing half was already there and this is the half that makes the result reviewable.</p>
+<p>RDU submits through the same path: <code>Actor::may_reach</code> is already true for every project for an RDU account, so the direct-editing half was already there and this is the half that makes the result reviewable.</p>
 
                     </main>
 

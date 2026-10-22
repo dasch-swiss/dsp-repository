@@ -288,15 +288,15 @@ areas/
     ├── shell/                 # The area's document shell, sign-in link and error pages (crate: deposit-shell)
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
-    │   ├── ports/             # What identity asks of the editor: AuthoredWork (crate: identity-ports)
+    │   ├── ports/             # What identity asks of the editor: OpenWork (crate: identity-ports)
     │   ├── store/             # Identity's SQLite store, mail transports, editor-ports adapters (crate: identity-store)
     │   └── web/               # Identity's pages, handlers, routes and the Identity facade (crate: identity-web)
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
         ├── core/              # Pure domain types (crate: editor-core)
-        ├── ports/             # What the editor asks of identity: Principal, Authenticator, UserDirectory (crate: editor-ports)
+        ├── ports/             # What the editor asks of identity: Actor, Authenticator, UserDirectory (crate: editor-ports)
         ├── store/             # SQLite store for the editor's tables, the identity-ports adapter (crate: editor-store)
         ├── web/               # View layer: Maud pages and the project form (crate: editor-web)
-        ├── collector/         # CI binary: turns approved records into pull requests (crate: editor-collector)
+        ├── pull-requests/     # CI binary: turns approved records into pull requests (crate: editor-pull-requests)
         ├── web-e2e-tests/     # Playwright E2E tests
         ├── public/            # Static assets (incl. vendored JS)
         └── style/             # CSS / Tailwind
@@ -331,15 +331,15 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <tr><td><code>shared-telemetry</code></td><td><code>shared/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
 <tr><td><code>deposit-shell</code></td><td><code>areas/deposit/shell</code></td><td>The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (<code>safe_next</code>, <code>login_url</code>) and the RDU-only text; <code>maud</code> and <code>mosaic-tiles</code> only</td></tr>
 <tr><td><code>identity-core</code></td><td><code>areas/deposit/identity/core</code></td><td>Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps)</td></tr>
-<tr><td><code>identity-ports</code></td><td><code>areas/deposit/identity/ports</code></td><td>What identity asks of the editor: <code>AuthoredWork</code>; <code>std</code> only</td></tr>
+<tr><td><code>identity-ports</code></td><td><code>areas/deposit/identity/ports</code></td><td>What identity asks of the editor: <code>OpenWork</code>; <code>std</code> only</td></tr>
 <tr><td><code>identity-store</code></td><td><code>areas/deposit/identity/store</code></td><td>Identity's SQLite store (<code>identity.sqlite</code>), the mail transports, and <code>LiveAuthenticator</code> and <code>LiveUserDirectory</code> behind <code>editor-ports</code></td></tr>
 <tr><td><code>identity-web</code></td><td><code>areas/deposit/identity/web</code></td><td>Identity's login and depositor pages, their handlers and routes, and the <code>Identity</code> facade <code>deposit-server</code> starts and mounts</td></tr>
 <tr><td><code>editor-core</code></td><td><code>areas/deposit/editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
-<tr><td><code>editor-ports</code></td><td><code>areas/deposit/editor/ports</code></td><td>What the editor asks of identity: <code>Principal</code>, <code>Authenticator</code>, <code>UserDirectory</code>; <code>std</code> only</td></tr>
-<tr><td><code>editor-store</code></td><td><code>areas/deposit/editor/store</code></td><td>The editor's SQLite store (<code>editor.sqlite</code>) and <code>LiveAuthoredWork</code> behind <code>identity-ports</code></td></tr>
+<tr><td><code>editor-ports</code></td><td><code>areas/deposit/editor/ports</code></td><td>What the editor asks of identity: <code>Actor</code>, <code>Authenticator</code>, <code>UserDirectory</code>; <code>std</code> only</td></tr>
+<tr><td><code>editor-store</code></td><td><code>areas/deposit/editor/store</code></td><td>The editor's SQLite store (<code>editor.sqlite</code>) and <code>LiveOpenWork</code> behind <code>identity-ports</code></td></tr>
 <tr><td><code>editor-web</code></td><td><code>areas/deposit/editor/web</code></td><td>The editor's HTTP surface: pages, the project form, handlers and routes, behind the <code>Editor</code> facade</td></tr>
 <tr><td><code>deposit-server</code></td><td><code>areas/deposit/server</code></td><td>The Deposit Area's composition root and binary: both stores, identity's and the editor's routers merged</td></tr>
-<tr><td><code>editor-collector</code></td><td><code>areas/deposit/editor/collector</code></td><td>CI binary — collects approved records into pull requests</td></tr>
+<tr><td><code>editor-pull-requests</code></td><td><code>areas/deposit/editor/pull-requests</code></td><td>CI binary: opens pull requests for approved records</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
 </tbody></table>

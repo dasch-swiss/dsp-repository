@@ -45,7 +45,7 @@ The depositor's own discard of a pending Submission, recorded as a Review round 
 _Avoid_: cancel, delete.
 
 **Approved record**:
-An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting for release: the Pull-request run opens its pull request, and the merge plus a release carry it into the published set. At most one per project: re-approving supersedes the old row in the same transaction, whatever its pull request's state. The row type is `records::ApprovedRecord`; its public wire view is `approved_records_api::ApprovedRecordView`.
+An `approved_records` row: the submitted draft with every Decision applied, written by approve once `editor_core::review::approval` passes, and waiting for release: the Pull-request run opens its pull request, and the merge plus a release carry it into the published set. At most one per project: re-approving supersedes the old row in the same transaction, whatever its pull request's state. The row type is `records::ApprovedRecord`; its public wire view is `approved_records_api::ApprovedRecordView`.
 _Avoid_: published record (Online is the state after the merge and a release, not this), export.
 
 **Pull-request run**:

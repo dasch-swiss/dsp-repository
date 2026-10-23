@@ -26,7 +26,7 @@ use editor_core::draft::ProjectDraft;
 use editor_core::form::registry::Field;
 use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalKind, ProposalOperation};
 use editor_core::records::SubmissionState;
-use editor_core::review::Decision;
+use editor_core::review::{Decision, DECISION_PREFIX};
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::badge::{badge, BadgeVariant};
@@ -42,10 +42,6 @@ use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets, and the anchor a save returns to.
 pub const REGION_ID: &str = "review-surface";
-
-/// The name every decision control on the diff form posts under, before the
-/// field id. Stated once, because the renderer and the decoder both spell it.
-pub const DECISION_PREFIX: &str = "decision";
 
 /// The name a proposed entity's decision control posts under, before its
 /// `entity_id`: [`DECISION_PREFIX`]'s counterpart for a proposal. A separate

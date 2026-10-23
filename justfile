@@ -13,6 +13,10 @@ DPE_DATA_DIR := "areas/access/dpe/server/data"
 
 RECORD_SHORTCODES := "081C 0868 0803"
 
+# Pinned nightly rustfmt, shared with CI and flake.nix. Bumping it: see CONVENTIONS.md → Formatting.
+
+RUSTFMT_NIGHTLY := trim(read(".rustfmt-nightly"))
+
 # List all recipes
 default:
     just --list --unsorted
@@ -21,9 +25,9 @@ default:
 install-requirements: install-e2e-requirements
     #!/usr/bin/env sh
     rustup show
-    # Nightly rustfmt: .rustfmt.toml sets nightly-only options and `just fmt` runs `cargo +nightly fmt`.
+    # Nightly rustfmt: .rustfmt.toml sets nightly-only options and `just fmt` runs the pinned nightly.
     # rust-toolchain.toml pins stable, so `rustup show` alone never provisions it.
-    rustup toolchain install nightly --component rustfmt
+    rustup toolchain install {{ RUSTFMT_NIGHTLY }} --component rustfmt
     brew install cargo-binstall
     # Native build deps the Nix devShell provides via flake.nix buildInputs; without them this path
     # has no cmake for aws-lc-sys. `jq` is what `just fair-check` reads F-UJI's JSON result with.
@@ -130,18 +134,18 @@ check: verify-checksums check-shared-paths check-composition-root-deps check-cap
         if ! diff -q "$f" "$tmp" >/dev/null; then echo "maudfmt would reformat: $f" >&2; rc=1; fi
     done < <(git ls-files -z '*.rs')
     [ "$rc" -eq 0 ] || { echo "run 'just fmt' to fix Maud formatting" >&2; exit 1; }
-    cargo +nightly fmt --check --all
+    cargo +{{ RUSTFMT_NIGHTLY }} fmt --check --all
     cargo clippy --all-features -- -D warnings
     # Fail on declared-but-unconsumed dependencies (a dep added "for later wiring" that never
     # got wired survives on the strength of a comment otherwise).
     cargo machete
 
-# Format all code: maudfmt for the `html!` Maud macros, then cargo +nightly fmt for the rest.
+# Format all code: maudfmt for the `html!` Maud macros, then the pinned nightly rustfmt for the rest.
 fmt:
     #!/usr/bin/env bash
     set -euo pipefail
     git ls-files -z '*.rs' | xargs -0 maudfmt --
-    cargo +nightly fmt --all
+    cargo +{{ RUSTFMT_NIGHTLY }} fmt --all
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
 fix:

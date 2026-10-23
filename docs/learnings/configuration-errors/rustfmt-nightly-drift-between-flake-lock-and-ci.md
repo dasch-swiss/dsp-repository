@@ -106,7 +106,8 @@ RUSTFMT=~/.rustup/toolchains/nightly-*/bin/rustfmt ~/.cargo/bin/cargo +nightly f
   `pkgs.rust-bin.nightly."2026-09-18".minimal.override { … }` instead of `nightly.latest`; in
   `check.yml`, `uses: dtolnay/rust-toolchain@master` with `toolchain: nightly-2026-09-18` instead of
   `@nightly`. Then neither side can move alone. This is the repository decision that removes the
-  class of failure; it was not taken in #409, which only re-synchronised the lock.
+  class of failure; it was not taken in #409, which only re-synchronised the lock. Taken in #537:
+  CI, the `justfile` and `flake.nix` all read the date from `.rustfmt-nightly`.
 - **Cheap tripwire until then:** print the version next to the check so drift reads as two
   different version strings in the logs rather than as a style disagreement. In the `justfile`
   `check` recipe, `cargo +nightly fmt --version` before `cargo +nightly fmt --check --all`, and the

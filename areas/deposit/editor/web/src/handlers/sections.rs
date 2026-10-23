@@ -465,9 +465,6 @@ async fn context<'a>(
         round,
         last_editor,
         signed_out_at,
-        // Built from `proposals` before it moves into the struct below: `with_proposals` copies out
-        // the labels it needs into its own `Vec<Agent>`, so the scope does not borrow the vector and
-        // the two can sit on `Context` side by side.
         agents: editor_core::agents::AgentScope::with_proposals(&state.agents, &proposals),
         proposals,
         posted: None,
@@ -1260,8 +1257,8 @@ async fn propose(
             let proposal = EntityProposal {
                 id: Uuid::new_v4(),
                 shortcode: normalize_shortcode(shortcode),
-                // Filled in by `create_new`, inside the write transaction that allocates it — nothing
-                // out here can compute it without racing every other proposal of this kind.
+                // Allocated by `create_new` inside its write transaction; computing it here races
+                // other proposals of this kind.
                 entity_id: String::new(),
                 kind,
                 operation: ProposalOperation::New,
@@ -1351,10 +1348,9 @@ async fn propose(
             )
             .await
         }
-        // `entity_proposals_allocated_id` (only reachable from `ProposePerson`/`ProposeOrganization`,
-        // since it applies to `operation = 'new'` rows alone) is a genuine allocation race;
-        // `entity_proposals_live_per_entity` (only reachable from `ProposeChanges`) is an ordinary
-        // double-click. Both are refusals, not 500s.
+        // A refusal, not a 500. The intent says which unique index fired:
+        // `entity_proposals_live_per_entity` for `ProposeChanges` (a double-click),
+        // `entity_proposals_allocated_id` for the other two (an allocation race).
         Err(RepositoryError::Conflict { .. }) => {
             span.record("form.outcome", "propose_conflict");
             let message = if intent == Intent::ProposeChanges {

@@ -19,13 +19,16 @@
         # Stable Rust toolchain — reads rust-toolchain.toml so version stays in sync
         rustStable = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
-        # Nightly rustfmt — needed by `cargo +nightly fmt` in justfile
-        rustNightly = pkgs.rust-bin.nightly.latest.minimal.override {
+        # Pinned with CI and the justfile; the locked rust-overlay must know the date in
+        # .rustfmt-nightly, or this fails to evaluate.
+        rustfmtNightlyDate = pkgs.lib.removePrefix "nightly-"
+          (pkgs.lib.trim (builtins.readFile ./.rustfmt-nightly));
+        rustNightly = pkgs.rust-bin.nightly.${rustfmtNightlyDate}.minimal.override {
           extensions = [ "rustfmt" ];
         };
 
-        # Wrapper that makes `cargo +nightly fmt` work without rustup.
-        # The justfile uses `cargo +nightly fmt` which is a rustup-only feature.
+        # Wrapper that makes the justfile's `cargo +<toolchain> fmt` work without rustup, where
+        # `+toolchain` is a rustup-only feature.
         # This shim strips `+toolchain` args and delegates to the real cargo,
         # while RUSTFMT env var ensures nightly rustfmt is used for formatting.
         cargoWrapper = pkgs.writeShellScriptBin "cargo" ''

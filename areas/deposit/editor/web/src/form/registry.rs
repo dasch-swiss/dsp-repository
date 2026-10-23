@@ -285,8 +285,8 @@ pub const FIELDS: &[Field] = &[
         ),
         Everyone,
     ),
-    // `Recommended`, not `Required`: published projects without a `url` exist, so a submit gate on it would refuse
-    // them. See `Obligation`.
+    // `Recommended`, not `Required`: published projects without a `url` exist, so a submit gate on
+    // it would refuse them. See `Obligation`.
     hinted(
         "url",
         "DaSCH project URL",

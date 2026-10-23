@@ -33,6 +33,8 @@ shared-metadata         ← the wire contract, shared with the editor;
               access-server     ← Access Area's composition root; areas/access/server
               shared-telemetry  ← beacon contract + collector endpoint, shared
                                   with deposit-server; lives in `shared/`
+              shared-rate-limit ← per-IP rate-limit key, shared with editor-web,
+                                  identity-web and deposit-server; lives in `shared/`
 ```
 
 `dpe-api-oai`, `dpe-web` and `dpe-server` depend on `shared-metadata` directly

@@ -18,7 +18,7 @@ An Actor with its account id parsed once into the `Uuid` the editor's records ho
 ### The record and its journey
 
 **Draft**:
-The depositor's working copy of one project: a `drafts` row holding a `ProjectDraft`, which is the project's JSON members verbatim — a field not yet filled in is an absent key, an invalid value is kept as typed, and validity is decided once, at submit. One draft per project, last write wins.
+The depositor's working copy of one project: a `drafts` row holding a `ProjectDraft`, which is the project's JSON members verbatim — a field not yet filled in is an absent key, an invalid value is kept as typed, and validity is decided once, at submit, by `editor_core::submission::check`. One draft per project, last write wins.
 _Avoid_: working copy, unsaved changes (a draft is saved), "the JSON" or "the export" anywhere a depositor reads (REQ-2.2).
 
 **Submission**:
@@ -45,7 +45,7 @@ The depositor's own discard of a pending Submission, recorded as a Review round 
 _Avoid_: cancel, delete.
 
 **Approved record**:
-An `approved_records` row: the submitted draft with every Decision applied, written by approve and waiting for release: the Pull-request run opens its pull request, and the merge plus a release carry it into the published set. At most one per project: re-approving supersedes the old row in the same transaction, whatever its pull request's state. The row type is `records::ApprovedRecord`; its public wire view is `approved_records_api::ApprovedRecordView`.
+An `approved_records` row: the submitted draft with every Decision applied, written by approve once `editor_core::review::approval` passes, and waiting for release: the Pull-request run opens its pull request, and the merge plus a release carry it into the published set. At most one per project: re-approving supersedes the old row in the same transaction, whatever its pull request's state. The row type is `records::ApprovedRecord`; its public wire view is `approved_records_api::ApprovedRecordView`.
 _Avoid_: published record (Online is the state after the merge and a release, not this), export.
 
 **Pull-request run**:
@@ -69,7 +69,7 @@ One of exactly five depositor-facing values, `ProjectState`: Draft, Submitted, I
 _Avoid_: status (the contract's `ProjectStatus` is the research project's own lifecycle, a different thing), any sixth word ("rejected" is shown as the outcome of a round, not as a state).
 
 **Submission state**:
-The three stored values of a Submission (`SubmissionState`: Submitted, In review, Approved); a reviewer's claim moves Submitted to In review, which the project form reads as a reason to lock the depositor out.
+The three stored values of a Submission (`SubmissionState`: Submitted, In review, Approved); a reviewer's claim moves Submitted to In review, which the project form reads as a reason to lock the depositor out. Submitted and In review are pending (`SubmissionState::is_pending`, the one definition).
 
 **Published set**:
 The `projects/*.json` files baked into the editor image (`PublishedProjects`), keyed by the case-folded `shortcode` field — not the filename stem, which disagrees with the field in five files.
@@ -82,10 +82,10 @@ A grouping of Fields in the project form (`registry::Section`), one URL each, wh
 _Avoid_: tab, step, page (the section renders as a page, but the page is not the concept).
 
 **Field**:
-One editable contract member as the form knows it (`registry::Field`): label, hint, obligation, audience and Shape, keyed by the contract member's id.
+One editable contract member as the form knows it (`registry::Field`, in `editor-core`): label, hint, obligation, audience and Shape, keyed by the contract member's id.
 
 **Shape**:
-How a posted body is read back into a Draft for one Field (`form::Shape`): a scalar, a language map, a closed choice, a URL slot, a list of strings, or one of four kinds of row. The widget is chosen by field id, the decoder by Shape, and they are declared together so they cannot drift.
+How a posted body is read back into a Draft for one Field (`form::Shape`): a scalar, a language map, a closed choice, a URL slot, a list of strings, or one of four kinds of row. The widget (`editor-web`) is chosen by field id, the decoder by Shape, and a test ties each Shape to the names its widget posts so they cannot drift.
 
 **Obligation**:
 Whether a Field is required, and the count the rail shows; refusal happens at submit, never at save.

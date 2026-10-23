@@ -79,6 +79,19 @@ impl SubmissionState {
             Self::Approved => "approved",
         }
     }
+
+    /// Whether the submission is still pending: everything short of [`Self::Approved`].
+    ///
+    /// An approved record is waiting for release, no longer for a reviewer, and is no longer the
+    /// depositor's to take back. Exhaustive on purpose: a new state has to be classified here
+    /// before it compiles.
+    #[must_use]
+    pub const fn is_pending(self) -> bool {
+        match self {
+            Self::Submitted | Self::InReview => true,
+            Self::Approved => false,
+        }
+    }
 }
 
 impl fmt::Display for SubmissionState {
@@ -172,6 +185,15 @@ impl ReviewOutcome {
     #[must_use]
     pub const fn returns_the_project(self) -> bool {
         !matches!(self, Self::Approved)
+    }
+
+    /// Whether a round ending this way must carry a note: every outcome but [`Self::Approved`].
+    #[must_use]
+    pub const fn requires_note(self) -> bool {
+        match self {
+            Self::Approved => false,
+            Self::ChangesRequested | Self::Rejected | Self::Withdrawn => true,
+        }
     }
 }
 

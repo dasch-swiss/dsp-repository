@@ -1,5 +1,5 @@
 //! Which control each field renders, keyed by the same ids
-//! [`registry`](super::registry) is.
+//! [`registry`](editor_core::form::registry) is.
 //!
 //! The dispatch is a `match` on the field id, not on the shape: two fields can
 //! share a shape and want different controls (`provenance` and
@@ -16,8 +16,9 @@
 
 use editor_core::agents::{Agent, AgentKind, AgentMatches, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
+use editor_core::form::registry::{Field, Obligation};
 use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, REFERENCE_KIND};
-use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
+use editor_core::multilingual::{as_multilingual, is_language_map, DraftMultilingual, UI_LANGUAGES};
 use maud::{html, Markup};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
@@ -31,7 +32,6 @@ use serde_json::Value;
 use shared_metadata::is_placeholder;
 use shared_metadata::project::CONTRIBUTOR_ROLES;
 
-use super::registry::{Field, Obligation};
 use crate::form::INTENT;
 use crate::pages::section::{propose_changes_intent, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON};
 
@@ -127,26 +127,6 @@ pub(crate) fn value_markup(value: Option<&Value>) -> Markup {
             }
         }
     }
-}
-
-/// A language map as the form's editing view over it, in UI-tag order. `pub`
-/// because `untouched_form_round_trip` has to read a row the same way the widget
-/// does, or it tests a body no browser would send.
-pub fn as_multilingual(value: &Value) -> DraftMultilingual {
-    let contract = serde_json::from_value(value.clone()).unwrap_or_default();
-    DraftMultilingual::from_contract(&contract)
-}
-
-/// Whether a stored object is a language map rather than a structured value:
-/// every member is a short lowercase tag holding a string. A structured value is
-/// summarised by its member count instead.
-pub(crate) fn is_language_map(value: &Value) -> bool {
-    value.as_object().is_some_and(|members| {
-        !members.is_empty()
-            && members
-                .iter()
-                .all(|(key, text)| text.is_string() && key.len() <= 3 && key.chars().all(|c| c.is_ascii_lowercase()))
-    })
 }
 
 /// A read-only language map: one line per language, in the form's own order.
@@ -1392,9 +1372,9 @@ const fn pill_class(obligation: Obligation) -> &'static str {
 #[cfg(test)]
 mod tests {
     use editor_core::draft::ProjectDraft;
+    use editor_core::form::registry::{sections_for, Audience, Section, FIELDS, SECTIONS};
 
     use super::*;
-    use crate::form::registry::{sections_for, Audience, Section, FIELDS, SECTIONS};
 
     /// A draft over a real committed project, so a control renders against the
     /// values the corpus actually holds.
@@ -1558,7 +1538,7 @@ mod tests {
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008", "person-999999"]));
-        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
             posted: None,
             action: "/x",
@@ -1587,7 +1567,7 @@ mod tests {
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["person-999999"]));
-        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
             posted: None,
             action: "/x",
@@ -1618,7 +1598,7 @@ mod tests {
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
-        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let fresh = Rows {
             posted: None,
             action: "/x",
@@ -1665,7 +1645,7 @@ mod tests {
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
-        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let body = editor_core::form::FormBody::from_pairs(vec![
             ("contactPoint.row".to_string(), "r0".to_string()),
             ("contactPoint.r0".to_string(), "organization-008".to_string()),
@@ -1703,7 +1683,7 @@ mod tests {
             "attributions",
             serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
         );
-        let field = crate::form::registry::field("attributions").expect("attributions is a known field");
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
         let rows = Rows {
             posted: None,
             action: "/x",
@@ -1726,7 +1706,7 @@ mod tests {
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
-        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
             posted: None,
             action: "/x",
@@ -1752,7 +1732,7 @@ mod tests {
             serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
         );
         let body = posted_contributor_row();
-        let field = crate::form::registry::field("attributions").expect("attributions is a known field");
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
         let rows = Rows {
             posted: Some(&body),
             action: "/x",
@@ -1781,7 +1761,7 @@ mod tests {
             "funding",
             serde_json::json!([{ "funders": ["organization-002"], "number": "1" }]),
         );
-        let field = crate::form::registry::field("funding").expect("funding is a known field");
+        let field = editor_core::form::registry::field("funding").expect("funding is a known field");
 
         let mut posted: Vec<(String, String)> = vec![
             ("funding.row".to_string(), "r0".to_string()),

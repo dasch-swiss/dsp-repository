@@ -23,9 +23,10 @@
 //! unset a field the contract requires. Accept and edit-in-place still apply.
 
 use editor_core::draft::ProjectDraft;
+use editor_core::form::registry::Field;
 use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalKind, ProposalOperation};
 use editor_core::records::SubmissionState;
-use editor_core::review::Decision;
+use editor_core::review::{Decision, DECISION_PREFIX};
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::badge::{badge, BadgeVariant};
@@ -36,16 +37,11 @@ use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use serde_json::Value;
 
 use crate::entity;
-use crate::form::registry::Field;
 use crate::form::widgets::{control, value_markup};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets, and the anchor a save returns to.
 pub const REGION_ID: &str = "review-surface";
-
-/// The name every decision control on the diff form posts under, before the
-/// field id. Stated once, because the renderer and the decoder both spell it.
-pub const DECISION_PREFIX: &str = "decision";
 
 /// The name a proposed entity's decision control posts under, before its
 /// `entity_id`: [`DECISION_PREFIX`]'s counterpart for a proposal. A separate
@@ -1121,7 +1117,7 @@ mod tests {
         vec![
             ReviewRow {
                 field: "name",
-                registry: crate::form::registry::field("name"),
+                registry: editor_core::form::registry::field("name"),
                 published: Some(&OLD),
                 submitted: Some(&NEW),
                 substitute: None,
@@ -1130,7 +1126,7 @@ mod tests {
             },
             ReviewRow {
                 field: "abstract",
-                registry: crate::form::registry::field("abstract"),
+                registry: editor_core::form::registry::field("abstract"),
                 published: Some(&OLD_ABSTRACT),
                 submitted: Some(&NEW_ABSTRACT),
                 substitute: None,
@@ -1139,7 +1135,7 @@ mod tests {
             },
             ReviewRow {
                 field: "shortcode",
-                registry: crate::form::registry::field("shortcode"),
+                registry: editor_core::form::registry::field("shortcode"),
                 published: Some(&UNCHANGED),
                 submitted: Some(&UNCHANGED),
                 substitute: None,
@@ -1192,8 +1188,8 @@ mod tests {
     #[test]
     fn no_registry_field_id_begins_with_the_entity_decision_prefix() {
         // The collision ENTITY_DECISION_PREFIX's docs argue against, pinned.
-        for section in crate::form::registry::sections_for(crate::form::registry::Audience::RduOnly) {
-            for field in section.fields_for(crate::form::registry::Audience::RduOnly) {
+        for section in editor_core::form::registry::sections_for(editor_core::form::registry::Audience::RduOnly) {
+            for field in section.fields_for(editor_core::form::registry::Audience::RduOnly) {
                 assert!(
                     !field.id.starts_with(ENTITY_DECISION_PREFIX),
                     "{} begins with the entity-decision prefix and would collide with a proposal's own \

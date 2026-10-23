@@ -19,6 +19,7 @@ cpe-server = { path = "../cpe/server" }
 dpe-server = { path = "../dpe/server" }
 media-store = { path = "../media/store" }
 sync-store = { path = "../sync/store" }
+shared-rate-limit = { path = "../../../shared/rate-limit" }
 shared-telemetry = { path = "../../../shared/telemetry" }
 
 axum.workspace = true

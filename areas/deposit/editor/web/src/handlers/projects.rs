@@ -18,7 +18,8 @@ use editor_core::repository::{ApprovedRecordRepository, DraftRepository, Reposit
 use editor_core::status::{depositor_state, Comparison, ProjectState};
 use shared_metadata::is_valid_shortcode;
 
-use crate::handlers::auth::{Account, Authenticated};
+use crate::handlers::auth::Authenticated;
+use crate::handlers::{storage_error, StorageSurface};
 use crate::pages::projects::AssignedProject;
 use crate::shell::EditorState;
 
@@ -53,7 +54,7 @@ pub(crate) async fn list(State(state): State<EditorState>, Authenticated(user): 
             // otherwise need is three new ports for a list that is never long.
             match project_state(&state, summary.shortcode).await {
                 Ok(project) => rows.push(AssignedProject { summary, state: project }),
-                Err(error) => return storage_error(&state, &user, "read this project's state", &error),
+                Err(error) => return storage_error(&state, &user, SURFACE, "read this project's state", &error),
             }
         }
         crate::pages::projects::assigned(&rows, user.actor.assigned_shortcodes.len())
@@ -107,11 +108,11 @@ pub(crate) async fn detail(
         return crate::shell::forbidden(&state, &user.actor.display_name, NOT_ASSIGNED);
     }
     let audience = if user.actor.is_rdu() {
-        crate::form::registry::Audience::RduOnly
+        editor_core::form::registry::Audience::RduOnly
     } else {
-        crate::form::registry::Audience::Everyone
+        editor_core::form::registry::Audience::Everyone
     };
-    let section = crate::form::registry::first_section(audience);
+    let section = editor_core::form::registry::first_section(audience);
     axum::response::Redirect::to(&format!("/projects/{shortcode}/sections/{}", section.id)).into_response()
 }
 
@@ -175,20 +176,10 @@ pub(crate) async fn approved_comparison(state: &EditorState, key: &str) -> Resul
     ))
 }
 
-/// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &EditorState, viewer: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the project list could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&viewer.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface {
+    log: "the project list could not reach storage",
+    noun: "page",
+};
 
 #[cfg(test)]
 mod tests {

@@ -263,6 +263,20 @@ impl EntityProposal {
     }
 }
 
+/// The proposal for `entity_id` among one project's `proposals`: the live one if there is one,
+/// else the most recently updated. `None` when the project has never proposed this entity.
+///
+/// A project holds at most one live proposal per entity (`entity_proposals_live_per_entity`) but
+/// may hold several terminal ones, so a stale link still resolves to something coherent.
+#[must_use]
+pub fn proposal_for(proposals: &[EntityProposal], entity_id: &str) -> Option<EntityProposal> {
+    proposals
+        .iter()
+        .filter(|proposal| proposal.entity_id == entity_id)
+        .max_by_key(|proposal| (proposal.is_live(), proposal.updated_at))
+        .cloned()
+}
+
 /// The numeric suffix of `id`, if `id` has the shape `{kind.as_str()}-N`.
 /// `None` for anything else: a different kind's prefix, a missing or non-numeric
 /// suffix, or a number too large for `u32`.
@@ -542,6 +556,26 @@ mod tests {
         for status in [ProposalStatus::Rejected, ProposalStatus::Withdrawn] {
             assert!(!proposal(status).is_referenceable(), "{status}");
         }
+    }
+
+    #[test]
+    fn proposal_for_prefers_the_live_proposal_then_the_most_recently_updated() {
+        let at = |seconds| DateTime::<Utc>::from_timestamp(seconds, 0).expect("a timestamp");
+        let with = |status, updated_at, entity_id: &str| EntityProposal {
+            updated_at,
+            entity_id: entity_id.to_string(),
+            ..proposal(status)
+        };
+        let live = with(ProposalStatus::Draft, at(10), "person-417");
+        let newer_withdrawn = with(ProposalStatus::Withdrawn, at(20), "person-417");
+        let other_entity = with(ProposalStatus::Submitted, at(30), "person-418");
+        let proposals = [newer_withdrawn.clone(), live.clone(), other_entity];
+        assert_eq!(proposal_for(&proposals, "person-417"), Some(live));
+
+        let newest_rejected = with(ProposalStatus::Rejected, at(30), "person-417");
+        let terminal = [newer_withdrawn, newest_rejected.clone()];
+        assert_eq!(proposal_for(&terminal, "person-417"), Some(newest_rejected));
+        assert_eq!(proposal_for(&terminal, "person-999"), None);
     }
 
     #[test]

@@ -2,48 +2,12 @@
 //! setup) so the routing — including the per-route rate limiter — is
 //! unit-testable.
 
-use std::net::{IpAddr, SocketAddr};
-
-use axum::extract::ConnectInfo;
-use axum::http::Request;
 use axum::Router;
-use tower_governor::key_extractor::KeyExtractor;
-use tower_governor::GovernorError;
+use shared_rate_limit::RightmostXffKeyExtractor;
 
 use crate::config::DpeConfig;
 use crate::fragments;
 use crate::shell::{about_page_handler, project_page_handler, projects_page_handler, AppState};
-
-/// Rate-limit key extractor that keys on the **rightmost** `X-Forwarded-For`
-/// entry — the address our reverse proxy (Traefik) itself appended — falling back
-/// to the connection peer IP.
-///
-/// SECURITY: `tower_governor`'s stock `SmartIpKeyExtractor` reads the *leftmost*
-/// XFF entry, which is client-forgeable. Traefik appends the real client IP after
-/// any value the client supplied, so the leftmost entry stays attacker-controlled;
-/// a single client can rotate it to mint unlimited rate-limit buckets and defeat
-/// the per-IP limit. The rightmost entry is the one Traefik wrote and cannot be
-/// spoofed, given Traefik is the only hop in front of DPE. This mirrors SIPI's
-/// `client_ip` resolver, which is deployed behind the same ingress.
-///
-/// `pub`: `access-server` reuses it to key the `/telemetry/collect` governor,
-/// the one other rate-limited route, which lives outside this crate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RightmostXffKeyExtractor;
-
-impl KeyExtractor for RightmostXffKeyExtractor {
-    type Key = IpAddr;
-
-    fn extract<T>(&self, req: &Request<T>) -> Result<Self::Key, GovernorError> {
-        req.headers()
-            .get("x-forwarded-for")
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.rsplit(',').next())
-            .and_then(|s| s.trim().parse::<IpAddr>().ok())
-            .or_else(|| req.extensions().get::<ConnectInfo<SocketAddr>>().map(|ci| ci.0.ip()))
-            .ok_or(GovernorError::UnableToExtractKey)
-    }
-}
 
 /// The rate-limited routes as a standalone sub-router with `limiter` applied to
 /// them: `/dpe/oai` and the two machine-readable representations of a project.
@@ -518,72 +482,5 @@ mod tests {
         let oai_state = dpe_api_oai::OaiState::new(&config.oai_base_url, state.corpus);
         let app = build_router(state, NO_PUBLIC_DIR.as_ref(), rate_limited_router(&config, oai_state));
         assert_ne!(status_of(app, "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
-    }
-
-    /// The rate-limit key extractor: keys on the rightmost (Traefik-appended)
-    /// `X-Forwarded-For` entry, never the client-forgeable leftmost one.
-    mod key_extractor {
-        use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-        use axum::extract::ConnectInfo;
-        use axum::http::Request;
-        use tower_governor::key_extractor::KeyExtractor;
-
-        use crate::router::RightmostXffKeyExtractor;
-
-        fn extract(xff: Option<&str>, peer: Option<SocketAddr>) -> Result<IpAddr, ()> {
-            let mut b = Request::builder();
-            if let Some(v) = xff {
-                b = b.header("x-forwarded-for", v);
-            }
-            let mut req = b.body(()).unwrap();
-            if let Some(addr) = peer {
-                req.extensions_mut().insert(ConnectInfo(addr));
-            }
-            RightmostXffKeyExtractor.extract(&req).map_err(|_| ())
-        }
-
-        fn ip(a: u8, b: u8, c: u8, d: u8) -> IpAddr {
-            IpAddr::V4(Ipv4Addr::new(a, b, c, d))
-        }
-
-        #[test]
-        fn takes_rightmost_xff() {
-            assert_eq!(extract(Some("1.1.1.1, 2.2.2.2, 3.3.3.3"), None), Ok(ip(3, 3, 3, 3)));
-        }
-
-        #[test]
-        fn single_xff() {
-            assert_eq!(extract(Some("4.4.4.4"), None), Ok(ip(4, 4, 4, 4)));
-        }
-
-        #[test]
-        fn trims_whitespace() {
-            assert_eq!(extract(Some("1.1.1.1,  5.5.5.5 "), None), Ok(ip(5, 5, 5, 5)));
-        }
-
-        #[test]
-        fn ignores_client_forged_leftmost() {
-            // A client that prepends a fake IP cannot change the key: Traefik
-            // appends the real client last, and we read the last entry.
-            assert_eq!(extract(Some("9.9.9.9, 6.6.6.6"), None), Ok(ip(6, 6, 6, 6)));
-        }
-
-        #[test]
-        fn falls_back_to_peer_when_no_xff() {
-            let peer = SocketAddr::new(ip(7, 7, 7, 7), 40000);
-            assert_eq!(extract(None, Some(peer)), Ok(ip(7, 7, 7, 7)));
-        }
-
-        #[test]
-        fn falls_back_to_peer_when_rightmost_unparseable() {
-            let peer = SocketAddr::new(ip(8, 8, 8, 8), 40000);
-            assert_eq!(extract(Some("garbage"), Some(peer)), Ok(ip(8, 8, 8, 8)));
-        }
-
-        #[test]
-        fn errors_when_no_xff_and_no_peer() {
-            assert_eq!(extract(None, None), Err(()));
-        }
     }
 }

@@ -17,4 +17,4 @@ Stated so a violation is describable: no `editor-*` crate defines a struct whose
 - The review diff compares top-level members, not registry fields, so a change arriving through a member no applier touches is still shown (`docs/src/editor/review.md`, "The comparison is over top-level members, not registry fields").
 - Entity proposals cannot live in the payload, since `to_raw` would drop a non-contract member; hence the `entity_proposals` table (`docs/src/editor/entity-proposals.md`).
 
-Enforced by: `areas/deposit/editor/core/tests/canonical_round_trip.rs` (load → draft → write byte-identical over the whole published corpus) and `areas/deposit/editor/web/tests/untouched_form_round_trip.rs` (**static-analysis**).
+Enforced by: `areas/deposit/editor/core/tests/canonical_round_trip.rs` (load → draft → write byte-identical over the whole published corpus) and `areas/deposit/editor/core/tests/untouched_form_round_trip.rs` (**static-analysis**).

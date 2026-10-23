@@ -49,12 +49,12 @@ So `check_organization` judges what the depositor wrote, not what they inherited
 
 The review surface compares changed project *fields*, and a proposed person is not one, so entity proposals would otherwise reach an approval without ever being displayed — and the referential-integrity question could not even arise, there being no per-entity action to invoke. Proposed entities therefore get their own rows below the field diff, each with an accept/reject control posting under `entity.{entity_id}`. That namespace cannot collide with the field surface's `decision.{field}` or with a member name.
 
-Approve gains two refusals beside the undecided-fields one:
+`editor_core::review::approval` gives approve two refusals beside the undecided-fields one:
 
 - **while any proposal is undecided**, for the reason the field gate exists: approving an undecided row commits bytes nobody looked at. `review_rounds`' `approve` leaves an undecided proposal `submitted` and names this gate as what prevents that, so the two halves are one coupling.
 - **while the payload still references a rejected entity.** The approval is blocked and the referencing fields are named, so RDU substitutes them in place or requests changes; nothing is stripped silently.
 
-The second gate has a trap worth stating, because getting it wrong disables it without any test failing. At approve time every proposal's `status` is still `submitted` — the statuses change inside `approve`'s own transaction — so `is_referenceable`, which is status-based, answers **true** for a proposal RDU has just rejected. The scope the check runs against is therefore built from only the proposals that will *survive* the approval, filtered on `decision`, and the check runs over the **decided** payload rather than the submitted one, since a revert can remove a reference and a substitution can add one. It reuses `form::submit::unresolved_agents` rather than walking references a second way.
+The second gate, which `editor_core::review::approval` runs, has a trap worth stating, because getting it wrong disables it without any test failing. At approve time every proposal's `status` is still `submitted` — the statuses change inside `approve`'s own transaction — so `is_referenceable`, which is status-based, answers **true** for a proposal RDU has just rejected. The scope the check runs against is therefore built from only the proposals that will *survive* the approval, filtered on `decision`, and the check runs over the **decided** payload rather than the submitted one, since a revert can remove a reference and a substitution can add one. It reuses `form::submit::unresolved_agents` rather than walking references a second way.
 
 ## What the two projects case does
 

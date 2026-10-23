@@ -30,7 +30,7 @@ flowchart LR
 
 | Crate | Folder | Role |
 |-------|--------|------|
-| `editor-core` | `areas/deposit/editor/core` | The domain: the draft, the review diff, project state, the canonical project and entity writers, the published set, and one repository port per aggregate (no Axum, Maud or database dependency) |
+| `editor-core` | `areas/deposit/editor/core` | The domain: the draft, the form's field registry (each field's label, hint, obligation, audience and shape), its obligation and per-field submit rules, the submit and approve gate sequences, the review diff, project state, the canonical project and entity writers, the published set, and one repository port per aggregate (no Axum, Maud or database dependency) |
 | `deposit-shell` | `areas/deposit/shell` | The area's document shell: `page`, the header and footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; depends on `maud` and `mosaic-tiles` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: `User`, `Role`, `Session`, `LoginCode`, the login and session rules, code and token generation, the cookie names, the `Mailer` trait, and one repository port per aggregate with their `IdentityRepositories` bundle (no Axum, Maud or database dependency, and no `editor-*` dependency) |
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `OpenWork` (an account's open drafts and submissions) and its fake; `std` only |
@@ -38,7 +38,7 @@ flowchart LR
 | `identity-web` | `areas/deposit/identity/web` | Identity's HTTP surface: the login and depositor pages, their handlers and route table, identity's own `Authenticated`/`Rdu` extractors and the `Set-Cookie` glue, and the `Identity` facade (`start`: the RDU accounts, the mailer and the hourly sweep; `router`) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory` and their fakes; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store, the file `editor.sqlite`: the tables behind `editor-core`'s five repository ports, its migration and pool, and the adapter `LiveOpenWork` behind `identity-ports`; no foreign keys |
-| `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: the Maud views (pages, the form's field registry and widgets), the handlers and route table, the editor's `Authenticated`/`Rdu` extractors over `Authenticator`, the startup reconcile, and the `Editor` facade (`start`: the published set, the temporal tables, the agents and the reconcile; `router`) |
+| `editor-web` | `areas/deposit/editor/web` | The editor's HTTP surface: the Maud views (pages, the form's widgets), the handlers and route table, the editor's `Authenticated`/`Rdu` extractors over `Authenticator`, the startup reconcile, and the `Editor` facade (`start`: the published set, the temporal tables, the agents and the reconcile; `router`) |
 | `deposit-server` | `areas/deposit/server` | The binary and composition root: configuration, observability, the CSRF and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and the fallback 404; opens the two stores, starts identity and then the editor, and merges their routers |
 | `editor-pull-requests` | `areas/deposit/editor/pull-requests` | The CI binary that turns approved records into pull requests ([Publishing to Git](./publishing-to-git.md)) |
 
@@ -48,7 +48,7 @@ Unlike DPE, the **HTML document shell is the area's, not a capability's**: `depo
 
 Inside `deposit-server`, `serve.rs` opens both stores, starts identity through `identity_web::Identity::start` and then the editor through `editor_web::Editor::start`, handing the editor `identity-store`'s `LiveAuthenticator` and `LiveUserDirectory`; `router.rs` merges the two routers and owns the layer order ([Routing](./routing.md)). Inside `editor-web`, the handlers are one module per surface under `handlers/` (`sections`, `review`, `entities`, `projects`, `approved`), and only they use Axum; `EditorState` holds `editor: Arc<dyn EditorRepositories>`, the editor store's implementation of `editor-core`'s five repository ports ([Persistence](./persistence.md)), and the two ports it asks identity through: the handlers authenticate through `Authenticator` (`handlers/auth.rs`) and read names through `UserDirectory`. `reconcile` runs the startup comparison inside `Editor::start`. Identity's state, inside `identity-web`, holds `Arc<dyn IdentityRepositories>` (`identity-core`'s four ports), the mailer, and `OpenWork`, through which the depositor-removal confirmation reads open work.
 
-Outside the area the editor depends on `shared-metadata` (the research-metadata contract), `shared-telemetry` (the browser beacon) and `mosaic-tiles`, and on nothing else in the workspace. It never depends on a `dpe-*` crate: DPE's corpus is consumed as data, an image-baked snapshot handed over as `EDITOR_DATA_DIR`, never as code (ADR-0002).
+Outside the area the editor depends on `shared-metadata` (the research-metadata contract), `shared-telemetry` (the browser beacon), `shared-rate-limit` (the per-IP rate-limit key) and `mosaic-tiles`, and on nothing else in the workspace. It never depends on a `dpe-*` crate: DPE's corpus is consumed as data, an image-baked snapshot handed over as `EDITOR_DATA_DIR`, never as code (ADR-0002).
 
 ## Deployment topology and trust boundaries
 
@@ -86,7 +86,7 @@ Five boundaries, and what holds each:
 
 ### Relationship to DPE
 
-The editor is a **separate service** from DPE, not a section of it. They share `shared-telemetry` for the browser-beacon contract, `shared-metadata` for the research-metadata contract and `mosaic-tiles` for components — but not a process, an image, or an origin.
+The editor is a **separate service** from DPE, not a section of it. They share `shared-telemetry` for the browser-beacon contract, `shared-metadata` for the research-metadata contract, `shared-rate-limit` for the per-IP rate-limit key and `mosaic-tiles` for components — but not a process, an image, or an origin.
 
 The separation is deliberate:
 

@@ -26,8 +26,9 @@ contexts, and what they share or what serves them.
   Presentation Environment; the further read-side capabilities are listed in ADR-0003.
 - `shared/` — `shared-{role}` crates used by more than one area, or decided to be: the record that creates a
   shared crate with one consuming area names the second. Today `shared-metadata` (the research-metadata
-  contract), `shared-telemetry` (the browser-beacon collector) and `shared-fair` (the FAIR exposure engine,
-  whose Deposit-Area consumer ADR-0005 names).
+  contract), `shared-telemetry` (the browser-beacon collector), `shared-rate-limit` (the client-IP key
+  every per-IP rate limit buckets on) and `shared-fair` (the FAIR exposure engine, whose Deposit-Area
+  consumer ADR-0005 names).
 - `mosaic/` — the design system, a component library plus its playground, used by the hypermedia servers of
   both areas (CPE keeps its own component library, ADR-0007).
 - `vitrinli/` — the media engine (IIIF Image API rendering, range-served downloads, derivation of Service

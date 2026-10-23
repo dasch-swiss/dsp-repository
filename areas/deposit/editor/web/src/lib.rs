@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use editor_core::repository::EditorRepositories;
 
-pub use crate::routes::{route_paths, RightmostXffKeyExtractor};
+pub use crate::routes::route_paths;
 use crate::shell::EditorState;
 
 #[derive(Clone, Debug)]

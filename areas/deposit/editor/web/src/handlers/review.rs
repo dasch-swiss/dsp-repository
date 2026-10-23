@@ -16,9 +16,9 @@
 //!   `review_state`; overwriting `payload` would destroy the depositor's own value, which is the
 //!   one thing the absence of a second approver makes it necessary to keep.
 //! - **A substitution is computed by running the form's own applier** over a clone of the submitted
-//!   draft. That is what makes a reviewer's edit obey the same trimming, newline and placeholder
-//!   rules a depositor's does — rules whose whole purpose is that an untouched value writes no
-//!   bytes.
+//!   draft (`editor_core::review::decisions`). That is what makes a reviewer's edit obey the same
+//!   trimming, newline and placeholder rules a depositor's does — rules whose whole purpose is that
+//!   an untouched value writes no bytes.
 //! - **The enhanced path answers 200 even when it refuses**, and the plain path redirects after a
 //!   write. Same two rules as the project form, for the same two reasons.
 
@@ -31,24 +31,22 @@ use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
-use editor_core::form::{apply, FormBody};
-use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalOperation, ProposalStatus};
+use editor_core::form::{registry, FormBody};
+use editor_core::proposals::{EntityProposal, ProposalOperation, ProposalStatus};
 use editor_core::records::{
     normalize_shortcode, ApprovedRecord, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState,
 };
 use editor_core::repository::{
     DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition,
 };
-use editor_core::review::{diff, Decision, FieldDiff, FieldReview, ReviewState};
+use editor_core::review::{approval, decided_draft, decisions, diff, ApproveRefusal, Decision, FieldDiff, ReviewState};
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::form::registry::Audience;
-use crate::form::submit::unresolved_agents;
-use crate::form::{registry, INTENT};
+use crate::form::INTENT;
 use crate::handlers::auth::{Account, Rdu};
-use crate::handlers::is_enhanced;
+use crate::handlers::{is_enhanced, storage_error, StorageSurface};
 use crate::pages::review as page;
 use crate::shell::EditorState;
 
@@ -84,11 +82,11 @@ const APPROVE_REFUSED_UNPUBLISHABLE: &str = "This project, as decided, cannot be
 pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let submissions = match SubmissionRepository::list(&*state.editor).await {
         Ok(submissions) => submissions,
-        Err(error) => return storage_error(&state, &user, "read the review queue", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the review queue", &error),
     };
     let drafts = match DraftRepository::list(&*state.editor).await {
         Ok(drafts) => drafts,
-        Err(error) => return storage_error(&state, &user, "read the drafts", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the drafts", &error),
     };
     let ids = submissions
         .iter()
@@ -96,7 +94,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         .chain(drafts.iter().map(|draft| draft.updated_by));
     let names = match account_names(&state, ids).await {
         Ok(names) => names,
-        Err(error) => return storage_error(&state, &user, "read the accounts", &error),
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the accounts", &error),
     };
 
     // Owned first, borrowed second: a row borrows its formatted instant and its
@@ -106,7 +104,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         // The queue lists *pending* submissions. An approved record is waiting to
         // be carried into a pull request, not for a reviewer, so a row for it
         // here would be a queue entry nobody can clear.
-        .filter(|submission| submission.state != SubmissionState::Approved)
+        .filter(|submission| submission.state.is_pending())
         .map(|submission| PendingRow {
             shortcode: crate::shell::shortcode_as_published(&state, &submission.shortcode),
             project_name: crate::shell::project_name(&state, &submission.shortcode).map(str::to_string),
@@ -269,7 +267,7 @@ pub(crate) async fn act(
     // last saved. Approve especially: the two differ exactly when somebody
     // decided a row and went straight to Approve without saving first.
     if matches!(intent, page::APPROVE | page::REQUEST_CHANGES | page::REJECT) {
-        context.state = decisions_from(&body, &context.rows, &context.submitted, false, context.published.is_some());
+        context.state = decisions(&body, &context.rows, &context.submitted, false, context.published.is_some());
         return finish(&state, &user, &context, &body, filter, headers, intent).await;
     }
 
@@ -279,7 +277,7 @@ pub(crate) async fn act(
         page::Notice::Claimed
     } else {
         let accept_all = intent == page::ACCEPT_ALL;
-        context.state = decisions_from(
+        context.state = decisions(
             &body,
             &context.rows,
             &context.submitted,
@@ -381,7 +379,7 @@ async fn finish(
         _ => ReviewOutcome::Rejected,
     };
 
-    if outcome != ReviewOutcome::Approved && note.trim().is_empty() {
+    if outcome.requires_note() && note.trim().is_empty() {
         span.record("review.outcome", "note_required");
         tracing::info!(review.outcome = %outcome, "refused a review round with no note");
         // The prompt again *with the reason*: re-rendered silently it looks
@@ -391,86 +389,48 @@ async fn finish(
         return asking(state, user, context, filter, headers, prompt);
     }
 
-    // Approving an undecided change commits bytes nobody looked at, which is
-    // the one thing a field-by-field surface exists to prevent. Only approve:
-    // request-changes and reject do not commit anything, and an undecided row
-    // is a perfectly ordinary state to return or discard a submission in.
     if outcome == ReviewOutcome::Approved {
-        let changed = context.changed_fields();
-        let undecided = changed.len()
-            - context.state.count(&changed, Decision::Accept)
-            - context.state.count(&changed, Decision::Revert);
-        if undecided > 0 {
-            span.record("review.outcome", "undecided");
-            tracing::info!(review.undecided = undecided, "refused an approval with undecided changes");
-            return refused(state, user, context, filter, headers, APPROVE_REFUSED_UNDECIDED);
-        }
-
-        // The same argument, applied to a proposed entity: approving one nobody decided commits an
-        // entity nobody looked at. `editor_store::review_rounds`'s module docs name this gate as
-        // the reason an undecided proposal's own `approve()` mapping is safe to leave `submitted`
-        // rather than guessed at — this is the other half of that coupling.
-        let undecided_proposals = context
-            .entity_proposals
-            .iter()
-            .filter(|proposal| proposal.decision.is_none())
-            .count();
-        if undecided_proposals > 0 {
-            span.record("review.outcome", "undecided_proposal");
-            tracing::info!(
-                review.undecided_proposals = undecided_proposals,
-                "refused an approval with an undecided proposal"
-            );
-            return refused(state, user, context, filter, headers, APPROVE_REFUSED_UNDECIDED_PROPOSAL);
-        }
-
-        // The referential-integrity case, and the user's decision: an approval must not ship a
-        // reference to an entity that is about to be rejected. Nothing is stripped silently
-        // — RDU substitutes the referencing fields or requests changes instead.
-        //
-        // The scope is built from only the proposals that will *survive* this approval, not from
-        // every `Submitted` one. Every proposal here still carries `status: Submitted` — the status
-        // only changes inside `ReviewRoundRepository::approve`'s own transaction, which has not run
-        // yet — so `EntityProposal::is_referenceable` (status-based) would resolve a proposal this
-        // round is about to reject just as happily as one it is about to accept. Filtering on
-        // `decision` instead is what makes the gate answer for what approval is actually about to
-        // commit, rather than for what the row currently says.
-        let surviving: Vec<EntityProposal> = context
-            .entity_proposals
-            .iter()
-            .filter(|proposal| proposal.decision != Some(ProposalDecision::Reject))
-            .cloned()
-            .collect();
-        let scope = AgentScope::with_proposals(&state.agents, &surviving);
-        // The decided draft, not the submitted one: a revert can remove a reference and a
-        // substitution can add one, so checking the submitted draft would check a document that is
-        // not what gets committed.
-        let decided = decided_draft(context);
-        let dangling = unresolved_agents(Audience::RduOnly, &decided, &scope);
-        if !dangling.is_empty() {
-            let mut fields: Vec<&str> = Vec::new();
-            for (field, _) in &dangling {
-                if !fields.contains(&field.label) {
-                    fields.push(field.label);
+        if let Err(refusal) = approval(
+            &context.submitted,
+            &context.rows,
+            &context.state,
+            &context.entity_proposals,
+            &state.agents,
+        ) {
+            let message = match refusal {
+                ApproveRefusal::Undecided { count } => {
+                    span.record("review.outcome", "undecided");
+                    tracing::info!(review.undecided = count, "refused an approval with undecided changes");
+                    APPROVE_REFUSED_UNDECIDED.to_string()
                 }
-            }
-            span.record("review.outcome", "dangling_reference");
-            tracing::info!(
-                review.dangling_fields = ?fields,
-                "refused an approval whose payload still references a rejected entity"
-            );
-            let message = format!("{APPROVE_REFUSED_REJECTED_ENTITY} {}.", fields.join(", "));
-            return refused(state, user, context, filter, headers, &message);
-        }
-
-        // The gate's type-level half: a permissive draft can pass every check above
-        // and still fail to become a project file. Checked here, against the same document
-        // `approved_record` commits, so a bad field is refused before approval rather than only
-        // when something later tries to serve it.
-        if let Err(error) = decided.to_raw() {
-            span.record("review.outcome", "unpublishable");
-            tracing::info!(error = %error, "refused an approval whose decided draft is not a publishable project");
-            let message = format!("{APPROVE_REFUSED_UNPUBLISHABLE} {error}");
+                ApproveRefusal::UndecidedProposal { count } => {
+                    span.record("review.outcome", "undecided_proposal");
+                    tracing::info!(
+                        review.undecided_proposals = count,
+                        "refused an approval with an undecided proposal"
+                    );
+                    APPROVE_REFUSED_UNDECIDED_PROPOSAL.to_string()
+                }
+                ApproveRefusal::RejectedEntity(dangling) => {
+                    let mut fields: Vec<&str> = Vec::new();
+                    for (field, _) in &dangling {
+                        if !fields.contains(&field.label) {
+                            fields.push(field.label);
+                        }
+                    }
+                    span.record("review.outcome", "dangling_reference");
+                    tracing::info!(
+                        review.dangling_fields = ?fields,
+                        "refused an approval whose payload still references a rejected entity"
+                    );
+                    format!("{APPROVE_REFUSED_REJECTED_ENTITY} {}.", fields.join(", "))
+                }
+                ApproveRefusal::Unpublishable(error) => {
+                    span.record("review.outcome", "unpublishable");
+                    tracing::info!(error = %error, "refused an approval whose decided draft is not a publishable project");
+                    format!("{APPROVE_REFUSED_UNPUBLISHABLE} {error}")
+                }
+            };
             return refused(state, user, context, filter, headers, &message);
         }
     }
@@ -562,51 +522,6 @@ fn working_note<'a>(context: &'a Context<'_>, body: &'a FormBody) -> &'a str {
         .unwrap_or_default()
 }
 
-/// The submitted draft with every field decision applied — what an approval commits, and what the
-/// referential-integrity gate in [`finish`] has to check against.
-///
-/// Not the submitted payload. An accepted field takes the reviewer's substitute
-/// where there is one, and a reverted field goes back to the published value —
-/// so the result is what RDU decided, while `submissions.payload` stayed the
-/// depositor's own until the moment it was deleted.
-///
-/// Extracted out of [`approved_record`] rather than left inline so the gate and the record read
-/// the same computation: checking the submitted draft instead would check a document that is not
-/// what gets committed, since a revert can remove a reference and a substitution can add one.
-fn decided_draft(context: &Context<'_>) -> ProjectDraft {
-    let mut decided = context.submitted.clone();
-    for row in context.rows.iter().filter(|row| row.changed()) {
-        match context.state.decision(&row.field) {
-            Some(Decision::Accept) => {
-                if let Some(substitute) = context.state.substitute(&row.field) {
-                    // `Null` is a reviewer clearing an optional field, which is
-                    // a removal and not a stored null — the canonical writer
-                    // strips nulls, so writing one would differ from what the
-                    // depositor's own clear produces.
-                    if substitute.is_null() {
-                        decided.remove(&row.field);
-                    } else {
-                        decided.set(&row.field, substitute.clone());
-                    }
-                }
-            }
-            // Back to what is published. Absent there means the submission
-            // added the member, so reverting removes it again.
-            Some(Decision::Revert) => match row.published.as_ref() {
-                Some(published) => decided.set(&row.field, published.clone()),
-                None => {
-                    decided.remove(&row.field);
-                }
-            },
-            // Unreachable: an approval with an undecided change is refused
-            // above. Left as the submitted value rather than guessed at, so if
-            // the guard ever regresses the record is at least what was sent.
-            None => {}
-        }
-    }
-    decided
-}
-
 /// What an approval commits, as an [`ApprovedRecord`].
 ///
 /// `None` only if the result will not serialize, which cannot happen for a
@@ -615,7 +530,7 @@ fn approved_record(context: &Context<'_>, user: &Account, at: DateTime<Utc>) -> 
     Some(ApprovedRecord {
         id: Uuid::new_v4(),
         shortcode: context.submission.shortcode.clone(),
-        payload: serde_json::to_string(&decided_draft(context)).ok()?,
+        payload: serde_json::to_string(&decided_draft(&context.submitted, &context.rows, &context.state)).ok()?,
         approved_by: Some(user.id),
         approved_at: at,
     })
@@ -718,8 +633,8 @@ struct Context<'a> {
     /// gets a row here.
     entity_proposals: Vec<EntityProposal>,
     /// The published/proposed agent resolver, built from [`Self::entity_proposals`] — used to label
-    /// an `affiliations`/`sameAs` reference inside a proposal's own rows, and as the starting point
-    /// for the referential-integrity gate in [`finish`], which narrows it further.
+    /// an `affiliations`/`sameAs` reference inside a proposal's own rows. Never the approve gates'
+    /// scope: it also resolves a proposal this round rejects.
     agents: AgentScope<'a>,
     /// Other projects (by their published shortcode) holding a live proposal for the same entity,
     /// keyed by `entity_id`. Absent for an entity nobody else has touched.
@@ -749,7 +664,7 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
     let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
         Ok(Some(submission)) => submission,
         Ok(None) => return Err(no_submission(state, user)),
-        Err(error) => return Err(storage_error(state, user, "read this project's submission", &error)),
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's submission", &error)),
     };
 
     let submitted: ProjectDraft = match serde_json::from_str(&submission.payload) {
@@ -784,7 +699,7 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
 
     let names = match account_names(state, [submission.submitted_by, submission.reviewed_by]).await {
         Ok(names) => names,
-        Err(error) => return Err(storage_error(state, user, "read the accounts", &error)),
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read the accounts", &error)),
     };
 
     // The entity half of the review: a proposed person or organisation is not a project field, so
@@ -797,14 +712,30 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
                 .into_iter()
                 .filter(|proposal| proposal.status == ProposalStatus::Submitted)
                 .collect(),
-            Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
+            Err(error) => {
+                return Err(storage_error(
+                    state,
+                    user,
+                    SURFACE,
+                    "read this project's entity proposals",
+                    &error,
+                ))
+            }
         };
 
     let mut entity_cross_project: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
     for proposal in &entity_proposals {
         let live = match EntityProposalRepository::list_live_for_entity(&*state.editor, &proposal.entity_id).await {
             Ok(live) => live,
-            Err(error) => return Err(storage_error(state, user, "read this entity's other proposals", &error)),
+            Err(error) => {
+                return Err(storage_error(
+                    state,
+                    user,
+                    SURFACE,
+                    "read this entity's other proposals",
+                    &error,
+                ))
+            }
         };
         let others: Vec<String> = live
             .into_iter()
@@ -836,54 +767,15 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
     })
 }
 
-/// Read every decision and substitution the body carries.
-///
-/// Only rows the submission actually changes are considered: an unchanged field
-/// has no decision control rendered, so a decision naming one came from a
-/// hand-built body, and honouring it would store a decision the surface can
-/// never show.
-fn decisions_from(
-    body: &FormBody,
-    rows: &[FieldDiff],
-    submitted: &ProjectDraft,
-    accept_all: bool,
-    published: bool,
-) -> ReviewState {
-    let mut state = ReviewState::new();
-    for row in rows.iter().filter(|row| row.changed()) {
-        let posted = body.get(&format!("{}.{}", page::DECISION_PREFIX, row.field));
-        let decision = match posted.and_then(Decision::parse) {
-            // A revert on a project with no published counterpart is a decision
-            // the surface never offers, because there is nothing to revert *to*.
-            // Stored anyway it renders "Reverted — keeps published" beside a
-            // "Not published yet" column, in a radio group with no matching
-            // option — so it shows as undecided and cannot be cleared.
-            Some(Decision::Revert) if !published => None,
-            Some(decision) => Some(decision),
-            None if accept_all => Some(Decision::Accept),
-            None => None,
-        };
-        // A reverted row renders read-only, so it posts no value control and
-        // there is nothing to read — and reading one anyway would let a
-        // hand-built body attach a substitute to a decision that discards it.
-        let value = if decision == Some(Decision::Revert) {
-            None
-        } else {
-            substitute(body, submitted, &row.field)
-        };
-        state.set(&row.field, FieldReview { decision, value });
-    }
-    state
-}
-
 /// Read every posted proposal decision, and persist the ones that changed.
 ///
 /// A decision naming a proposal that is not on this submission is ignored, for the same reason
-/// [`decisions_from`] ignores one naming an unchanged field: it came from a hand-built body, and
+/// [`decisions`] ignores one naming an unchanged field: it came from a hand-built body, and
 /// storing it would record something the surface can never show or undo — only `proposals` (this
 /// submission's own [`ProposalStatus::Submitted`] rows) are ever looked up. Reading a value this
 /// build does not know leaves the proposal undecided rather than picking one, the same argument
-/// [`ProposalDecision`]'s own `FromStr` makes for [`Decision::parse`]'s.
+/// [`ProposalDecision`](editor_core::proposals::ProposalDecision)'s own `FromStr` makes for
+/// [`Decision::parse`]'s.
 async fn apply_entity_decisions(
     state: &EditorState,
     proposals: &mut [EntityProposal],
@@ -900,31 +792,6 @@ async fn apply_entity_decisions(
         }
     }
     Ok(())
-}
-
-/// What the reviewer put in place of the submitted value, or `None` where they
-/// left it alone.
-///
-/// Computed by running the field's own applier over a clone of the submitted
-/// draft rather than by comparing strings. That is the only way the reviewer's
-/// edit obeys the rules a depositor's does: a value differing only in
-/// surrounding whitespace or in how a newline was encoded is not a change, and
-/// a stored `MISSING` renders empty and must survive an empty submit. A
-/// second comparison here would agree with those rules only by inspection.
-///
-/// `Some(Value::Null)` is a reviewer clearing a field the contract types as an
-/// `Option` — a real substitution, and the one the `or`-shaped alternative
-/// (`substitute.or(submitted)`) could not express if absence meant "unchanged".
-fn substitute(body: &FormBody, submitted: &ProjectDraft, field: &str) -> Option<Value> {
-    let shape = registry::field(field).and_then(|field| field.shape)?;
-    let mut edited = submitted.clone();
-    apply(shape, body, &mut edited, field);
-    let before = submitted.get(field);
-    let after = edited.get(field);
-    if before == after {
-        return None;
-    }
-    Some(after.cloned().unwrap_or(Value::Null))
 }
 
 /// A stored decision: a redirect on the plain path, the patched region on the
@@ -1144,25 +1011,17 @@ fn unreadable_submission(state: &EditorState, user: &Account) -> Response {
     )
 }
 
-/// Storage would not answer, so the page cannot show what it should.
-fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the review surface could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface {
+    log: "the review surface could not reach storage",
+    noun: "page",
+};
 
 #[cfg(test)]
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
+    use editor_core::proposals::ProposalDecision;
+    use editor_core::review::DECISION_PREFIX;
     use editor_ports::Role;
     use editor_store::test_support::{Faults, FaultyStore};
     use serde_json::json;
@@ -1203,7 +1062,7 @@ mod tests {
     fn finishing(intent: &str, decisions: &[(&str, &str)], note: &str) -> String {
         let mut body = format!("intent={intent}&{}=1", page::CONFIRMED);
         for (field, decision) in decisions {
-            body.push_str(&format!("&{}.{field}={decision}", page::DECISION_PREFIX));
+            body.push_str(&format!("&{DECISION_PREFIX}.{field}={decision}"));
         }
         if !note.is_empty() {
             body.push_str(&format!("&{}={}", page::NOTE, note.replace(' ', "+")));
@@ -1590,7 +1449,7 @@ mod tests {
         as_session(&app, post("/review/0801d", &format!("{}=Out+of+scope", page::NOTE)), &session).await;
 
         // A save carrying decisions and no note at all.
-        let body = format!("intent={}&{}.name=accept", page::SAVE, page::DECISION_PREFIX);
+        let body = format!("intent={}&{}.name=accept", page::SAVE, DECISION_PREFIX);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
         let stored = SubmissionRepository::find(&*state.editor, submission.id)
@@ -1804,7 +1663,7 @@ mod tests {
         let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
         let app = test_app(&state);
 
-        let body = format!("intent=publish&{}=1&{}.name=accept", page::CONFIRMED, page::DECISION_PREFIX);
+        let body = format!("intent=publish&{}=1&{}.name=accept", page::CONFIRMED, DECISION_PREFIX);
         as_session(&app, post("/review/0801d", &body), &session).await;
 
         let stored = SubmissionRepository::find(&*state.editor, submission.id)
@@ -2483,7 +2342,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_decision_for_a_proposal_not_on_this_submission_is_ignored() {
-        // The same reason `decisions_from` ignores a decision naming an unchanged field: it came
+        // The same reason `decisions` ignores a decision naming an unchanged field: it came
         // from a hand-built body, and storing it would record something the surface can never show.
         let (state, _) = test_state("review-entity-decision-foreign").await;
         let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;

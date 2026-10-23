@@ -1,19 +1,17 @@
 //! What submit refuses that needs the field registry to decide.
 //!
-//! `ProjectDraft::to_raw` is a contract question and `unresolved_temporal_coverage`
-//! a data question, so both live in `editor-core`; these need a field's declared
-//! shape and audience, which is registry knowledge, and `server -> web -> core`
-//! puts that here. [`obligation::unsatisfied_required`](super::obligation::unsatisfied_required)
-//! stays in its own module because the rail counts presence through the same
-//! function.
+//! The gate sequence, which decides when each rule runs, is
+//! [`crate::submission::check`]; a new rule is wired in there.
+//! [`obligation::unsatisfied_required`](super::obligation::unsatisfied_required) stays in its own
+//! module because the rail counts presence through the same function.
 
-use editor_core::agents::AgentScope;
-use editor_core::draft::ProjectDraft;
-use editor_core::form::{FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
 use serde_json::Value;
 use shared_metadata::is_placeholder;
 
 use super::registry::{sections_for, Audience, Field, Section};
+use crate::agents::AgentScope;
+use crate::draft::ProjectDraft;
+use crate::form::{FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
 
 /// Every field whose stored value is a placeholder sentinel the editor could not
 /// have written there, which leaves one way for it to have arrived: a depositor
@@ -220,8 +218,8 @@ mod tests {
     use crate::form::registry::field;
 
     fn draft() -> ProjectDraft {
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
         ProjectDraft::from_raw(published.get("0801d").expect("0801d is in the committed corpus"))
     }
@@ -229,7 +227,7 @@ mod tests {
     /// The dead end this module closes, reproduced through the real applier.
     #[test]
     fn a_typed_sentinel_in_an_optional_field_cannot_be_cleared_again() {
-        use editor_core::form::{apply, FormBody};
+        use crate::form::{apply, FormBody};
 
         let shape = field("provenance").expect("provenance").shape.expect("a declared shape");
         let mut draft = draft();
@@ -271,8 +269,8 @@ mod tests {
     fn a_published_project_holds_no_typed_sentinel() {
         // The committed corpus is full of sentinels, and every one must be legitimate, or submit
         // refuses a live project for data it did not write.
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let mut refused: Vec<(String, Vec<&str>)> = Vec::new();
@@ -349,10 +347,10 @@ mod tests {
     /// save, so this fails first and somebody raises the cap deliberately.
     #[test]
     fn the_cap_is_above_anything_the_committed_corpus_holds() {
-        use editor_core::form::MAX_VALUES_PER_FIELD;
+        use crate::form::MAX_VALUES_PER_FIELD;
 
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
 
         let mut widest_map = 0;
@@ -362,7 +360,7 @@ mod tests {
             let draft = ProjectDraft::from_raw(raw);
             for id in draft.fields().map(str::to_string).collect::<Vec<_>>() {
                 match draft.get(&id) {
-                    Some(Value::Object(map)) if crate::form::widgets::is_language_map(&Value::Object(map.clone())) => {
+                    Some(Value::Object(map)) if crate::multilingual::is_language_map(&Value::Object(map.clone())) => {
                         widest_map = widest_map.max(map.len());
                     }
                     Some(Value::Array(items)) if items.len() > longest_list.1 => {
@@ -390,7 +388,7 @@ mod tests {
 
     #[test]
     fn a_body_over_the_language_cap_is_reported_and_one_at_the_cap_is_not() {
-        use editor_core::form::{FormBody, MAX_VALUES_PER_FIELD};
+        use crate::form::{FormBody, MAX_VALUES_PER_FIELD};
 
         let section = crate::form::registry::section("overview").expect("overview");
         let at_cap: Vec<(String, String)> = (0..MAX_VALUES_PER_FIELD)
@@ -415,7 +413,7 @@ mod tests {
 
     #[test]
     fn a_repeated_tag_does_not_count_twice_towards_the_cap() {
-        use editor_core::form::{FormBody, MAX_VALUES_PER_FIELD};
+        use crate::form::{FormBody, MAX_VALUES_PER_FIELD};
 
         // The cap counts distinct tags, which is what the stored map holds.
         let section = crate::form::registry::section("overview").expect("overview");
@@ -427,7 +425,7 @@ mod tests {
 
     #[test]
     fn the_cap_never_names_a_field_the_section_does_not_show() {
-        use editor_core::form::FormBody;
+        use crate::form::FormBody;
 
         // Section-scoped because a POST carries one section; a refusal naming a
         // field the reader is not posting would be unactionable.
@@ -436,9 +434,9 @@ mod tests {
         assert!(over_cap(Audience::Everyone, dataset, &FormBody::from_pairs(over)).is_empty());
     }
 
-    fn agents() -> editor_core::agents::Agents {
-        let dir = editor_core::checkout_dpe_data_dir();
-        let (agents, errors) = editor_core::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
+    fn agents() -> crate::agents::Agents {
+        let dir = crate::checkout_dpe_data_dir();
+        let (agents, errors) = crate::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
         assert!(errors.is_empty(), "{errors:?}");
         agents
     }
@@ -448,8 +446,8 @@ mod tests {
         // Every committed agent id resolves, so submit refuses no live project.
         let agents = agents();
         let scope = AgentScope::published_only(&agents);
-        let dir = editor_core::checkout_dpe_data_dir().join("projects");
-        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "{errors:?}");
 
         let mut refused: Vec<String> = Vec::new();
@@ -531,7 +529,7 @@ mod tests {
         // resolve would publish bare ids.
         let mut draft = draft();
         draft.set("contactPoint", json!(["organization-008"]));
-        let empty = editor_core::agents::Agents::default();
+        let empty = crate::agents::Agents::default();
         let scope = AgentScope::published_only(&empty);
         let refused: Vec<(&str, String)> = unresolved_agents(Audience::Everyone, &draft, &scope)
             .into_iter()

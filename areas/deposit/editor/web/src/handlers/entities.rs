@@ -4,9 +4,7 @@
 //! `id` — the same value `pages::section` links to and the propose controls post back under
 //! `propose.entity`. A project may hold more than one row for one `entity_id` over time (a
 //! withdrawn proposal, then a fresh one for the same entity), but never more than one *live* one
-//! (`entity_proposals_live_per_entity`); [`proposal_for`] resolves the live one where there is
-//! one, and otherwise the most recently touched, so a stale link still shows something
-//! coherent.
+//! (`entity_proposals_live_per_entity`); [`proposal_for`] picks the row a link resolves to.
 //!
 //! Same shape as `sections.rs`: [`context`] resolves a request in the order that module's own
 //! docs argue for — shape, then authorization, then anything that reads state — and a proposal
@@ -21,7 +19,7 @@ use chrono::{DateTime, Utc};
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape, WhenCleared};
-use editor_core::proposals::{EntityProposal, ProposalKind, ProposalStatus};
+use editor_core::proposals::{proposal_for, EntityProposal, ProposalKind, ProposalStatus};
 use editor_core::records::normalize_shortcode;
 use editor_core::repository::EntityProposalRepository;
 use serde_json::Value;
@@ -30,7 +28,7 @@ use shared_metadata::is_valid_shortcode;
 use crate::entity as page;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
-use crate::handlers::is_enhanced;
+use crate::handlers::{is_enhanced, storage_error, StorageSurface};
 use crate::shell::EditorState;
 
 const SAVE_REFUSED_NOT_LIVE: &str = "This proposal is no longer open, so it cannot be changed.";
@@ -84,7 +82,15 @@ async fn context<'a>(
     let key = normalize_shortcode(shortcode);
     let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(proposals) => proposals,
-        Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
+        Err(error) => {
+            return Err(storage_error(
+                state,
+                user,
+                SURFACE,
+                "read this project's entity proposals",
+                &error,
+            ))
+        }
     };
     // The reader invented the pairing if this comes back empty — a proposal id under the wrong
     // shortcode is exactly that, so it is a 404 rather than a 403.
@@ -107,16 +113,6 @@ async fn context<'a>(
     let agents = AgentScope::with_proposals(&state.agents, &proposals);
 
     Ok(Context { proposal, draft, agents, posted: None, signed_out_at })
-}
-
-/// This shortcode's proposal for `entity_id`: the live one if there is one, else the most
-/// recently touched. `None` when this shortcode has never proposed this entity at all.
-fn proposal_for(proposals: &[EntityProposal], entity_id: &str) -> Option<EntityProposal> {
-    proposals
-        .iter()
-        .filter(|proposal| proposal.entity_id == entity_id)
-        .max_by_key(|proposal| (proposal.is_live(), proposal.updated_at))
-        .cloned()
 }
 
 /// Whether this `GET` follows a plain-path save or discard, as `sections.rs::ShowParams` does for
@@ -655,19 +651,7 @@ fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'
     }
 }
 
-fn storage_error(state: &EditorState, user: &Account, what: &str, error: &impl std::fmt::Display) -> Response {
-    tracing::error!(error = %error, operation = what, "the entity form could not reach storage");
-    crate::shell::render(
-        state,
-        "Page unavailable — DaSCH Metadata Editor",
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
-        deposit_shell::pages::problem::unavailable(
-            "The editor could not reach its database, so this form is not showing what it should. Try again; if it \
-             keeps happening, the service needs attention.",
-        ),
-    )
-}
+const SURFACE: StorageSurface = StorageSurface { log: "the entity form could not reach storage", noun: "form" };
 
 #[cfg(test)]
 mod tests {

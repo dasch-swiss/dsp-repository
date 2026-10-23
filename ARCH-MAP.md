@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-21
+date: 2026-10-22
 ---
 
 # Architecture Map
@@ -12,7 +12,8 @@ date: 2026-10-21
 server-rendered hypermedia services on Axum + Maud + Datastar, plus the crates they share.
 Two services exist — **DPE**, the public read-only Discovery and Presentation Environment,
 and the authenticated **metadata editor** — each a separate deployable on its own origin;
-they share `shared-metadata` (the research-metadata contract), `shared-telemetry` (the
+they share `shared-metadata` (the research-metadata contract), `shared-rate-limit` (the rate
+limiters' client-IP key), `shared-telemetry` (the
 browser-beacon collector) and `mosaic-tiles` (the design system), and nothing else. The
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
 another service. The shared root has moved to `shared/` at the repository root, the
@@ -59,7 +60,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   to `/dpe/projects`, `/ark:/72163/1/{shortcode}` when `ark_resolver_base_url` is set, and a `ServeDir`
   fallback for static assets: DPE answers every path outside `CPE_BASE`, `/` included); to areas/access/server only,
   `dpe-server`'s library surface `DpeConfig`, `Dpe::{new, router, warm}`, `validate`,
-  `normalize_page_url`, `RightmostXffKeyExtractor`, which names no `dpe-core`/`dpe-web`/`dpe-api-oai`
+  `normalize_page_url`, which names no `dpe-core`/`dpe-web`/`dpe-api-oai`
   type; and the corpus files under `server/data/`, which the editor consumes as an image-baked
   snapshot through `EDITOR_DATA_DIR`. No `dpe-*` crate other than `dpe-server` is depended on by
   any crate outside this component, and `dpe-server` only by areas/access/server.
@@ -70,7 +71,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   shared/metadata's own kit). The kit is at its seven-file budget, so
   `areas/access/dpe/server/src/lib.rs` (the `Dpe` surface the composition root mounts, and the
   one production `Box::leak` of the corpus) is named here rather than added.
-- **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/telemetry
+- **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/rate-limit
+  (`dpe-server`), shared/telemetry
   (`dpe-server`, `traceparent.rs`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio,
   tower / tower-http / tower_governor, maud, datastar, figment, serde / serde_json, quick-xml,
   ureq, chrono (`dpe-api-oai`), futures and urlencoding (`dpe-server`, `dpe-web`), opentelemetry /
@@ -109,7 +111,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** — a test in `dpe-server` greps every file under its own `src/` so
     `PreEscaped(` appears exactly once in the crate). The first two splice a constant. The
     search-query echo in `fragments.rs` stays an auto-escaped splice (**review**).
-  - Page, fragment and API routes live in `server/src/router.rs::build_router`, un-layered;
+  - Page, fragment and API routes live in `server/src/router.rs`, un-layered: `build_router`, plus
+    the rate-limited `/dpe/oai` and representation routes that `rate_limited_router[_with]` builds
+    in the same file and `build_router` merges in;
     the OTel layers and the two untraced routes, `/healthz` and `POST /telemetry/collect`, are
     areas/access/server's.
   - No process-global state: the corpus, the OAI base URL and the placeholder flag are values
@@ -131,7 +135,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   The `Corpus`'s instance `OnceLock` caches load once per process and never invalidate.
-- **Fingerprint:** `d5ce25de1ac8`
+- **Fingerprint:** `a29d6f8744a1`
 
 ### areas/access/server
 
@@ -157,7 +161,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** areas/access/dpe (`dpe-server` only), areas/access/cpe (`cpe-server`, and
   `cpe-ports` for the trait of the adapter it hands over; never `cpe-store`), areas/access/sync
   (`sync-store`, to construct `LiveArchiveProjection`), areas/access/media (`media-store`, to construct
-  `LiveDepositedFiles`), shared/telemetry; expected, as each arrives: areas/access/datei (its `server` crate,
+  `LiveDepositedFiles`), shared/rate-limit (`RightmostXffKeyExtractor`), shared/telemetry; expected, as each arrives: areas/access/datei (its `server` crate,
   plus its `store` / `ports` crates only to construct `Live<Port>` adapters) and `media`'s `server` crate once
   it has routes;
   third-party:
@@ -194,18 +198,22 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `e95bb40cab5c`
+- **Fingerprint:** `1e688ab55a1f`
 
 ### areas/deposit/editor
 
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
-  `editor-core` (the draft model, validation, the canonical project and entity writers, the
-  persistence ports), `editor-ports` (what the editor asks of identity: `Actor`,
+  `editor-core` (the draft model, the form's field registry with its obligation and per-field
+  submit rules, the submit and approve gate sequences (`editor_core::submission`,
+  `editor_core::review`), validation, the canonical project and entity writers, the persistence
+  ports),
+  `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
-  `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's field registry
-  and widgets, the handlers and route table, the extractors, the startup loaders and reconcile,
+  `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
+  the handlers (which map each submit and approve refusal to its message)
+  and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
   `deposit-shell`, below), `editor-pull-requests` (the CI binary that turns an approved record into a
   pull request against this repository — outside the service's request path, and the only crate
@@ -218,7 +226,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
-  `registry::FIELDS`, `registry::SECTIONS`, `Shape`,
+  `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
+  `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`, `editor_core::review::{approval, ApproveRefusal}`,
+  `SubmissionState::is_pending`,
+  `proposals::proposal_for`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Actor`, `Authenticator`,
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,
@@ -233,8 +244,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::router`, which `deposit-server` merges with identity's; the
   `editor-pull-requests` CLI (no arguments; one job-summary row per record), invoked only by
   `.github/workflows/open-editor-pull-requests.yml`. The `editor_web` library for the root
-  (`Editor::{start, router}`, `EditorSettings`, `route_paths`,
-  `RightmostXffKeyExtractor`; `Editor::for_test` and `test_support`
+  (`Editor::{start, router}`, `EditorSettings`, `route_paths`;
+  `Editor::for_test` and `test_support`
   behind `test-support`). The `editor_store` library for the root (`Database`, `Source`,
   `LiveOpenWork`; `test_support`'s plain-value seed helpers and row readers behind
   `test-support`). The `editor_ports` library, which `identity-store` implements. Outside this
@@ -243,10 +254,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/editor/web/src/routes.rs`, `areas/deposit/editor/web/src/handlers/auth.rs`,
   `areas/deposit/server/src/router.rs`, `areas/deposit/editor/core/src/form.rs`,
   `areas/deposit/editor/store/src/lib.rs`. The kit is at its seven-file budget; the next reads
-  are `web/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
+  are `core/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
   `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{publishing-to-git,architecture}.md`.
 - **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-pull-requests`),
-  shared/telemetry (`editor-web`: `is_valid_traceparent`),
+  shared/rate-limit (`editor-web`), shared/telemetry (`editor-web`: `is_valid_traceparent`),
   modules/mosaic (`editor-web`), areas/deposit/shell (`editor-web`),
   areas/deposit/identity (`editor-store` on `identity-ports` alone, the port it answers;
   `editor-web` and `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
@@ -277,7 +288,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     signature (**structure**).
   - Reader connections are `query_only=ON`; the only write path is `Database::write`, one
     connection, `BEGIN IMMEDIATE`, in each store (**structure**).
-  - Every contract member is either a registry `Field` or listed in `OMITTED`
+  - Every contract member is either a registry `Field` (`editor_core::form::registry`) or listed in `OMITTED`
     (**static-analysis** — `every_contract_field_is_either_placed_in_the_form_or_deliberately_omitted`).
   - Depositor-facing vocabulary is closed (REQ-2.1 / REQ-2.2): five states, no "export", "JSON",
     "transfer", "commit", "pull request" (**static-analysis** — `depositor_vocabulary.rs` plus the
@@ -308,7 +319,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `4624f479c564`
+- **Fingerprint:** `c302d6c9ca28`
 
 ### areas/deposit/shell
 
@@ -393,7 +404,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/identity/web/src/routes.rs`, `docs/src/editor/authentication.md`
 - **Depends on:** areas/deposit/editor (`identity-store` on `editor-ports` alone, the ports it
   answers; `identity-ports` on `std` alone), areas/deposit/shell, modules/mosaic,
-  shared/metadata and shared/telemetry (`identity-web`); third-party: async-trait, base64,
+  shared/metadata, shared/rate-limit and shared/telemetry (`identity-web`); third-party: async-trait, base64,
   chrono, rand + subtle, thiserror, tracing, uuid; rusqlite (`bundled`) + deadpool-sqlite and
   lettre (`identity-store`); axum, maud, tower_governor, tokio, the OpenTelemetry API
   (`identity-web`)
@@ -426,7 +437,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `576e6a1a499a`
+- **Fingerprint:** `2c615fb8d48c`
 
 ### areas/deposit/server
 
@@ -454,9 +465,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `SmtpPassword`, `CODE_TTL`, `is_plausible_address`, `route_paths`; `identity-store`:
   `Database`, `Source`, `LiveAuthenticator`, `LiveUserDirectory`), areas/deposit/editor
   (`editor-web`: `Editor`, `EditorSettings`,
-  `RightmostXffKeyExtractor`, `route_paths`; `editor-store`: `Database`, `Source`,
+  `route_paths`; `editor-store`: `Database`, `Source`,
   `LiveOpenWork`; `editor-ports` in tests only), areas/deposit/shell (the fallback 404),
-  shared/telemetry (`collect_route`, `is_valid_traceparent`); third-party: axum, clap, figment,
+  shared/rate-limit (`RightmostXffKeyExtractor`), shared/telemetry (`collect_route`, `is_valid_traceparent`); third-party: axum, clap, figment,
   ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, pyroscope, matchit
 - **Used by:** nothing in the workspace; the top of the Deposit Area's dependency graph, a
   separate deployable (`daschswiss/metadata-editor`)
@@ -483,7 +494,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** none of its own. It opens `identity.sqlite` and `editor.sqlite` in
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer.
-- **Fingerprint:** `7082ea2ab555`
+- **Fingerprint:** `5d2c7506ab10`
 
 ### modules/mosaic
 
@@ -613,7 +624,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   single copy of the sample (`testdata/0862-records.json` is read by the crate's own tests only).
 - **Local-context kit:** `shared/metadata/src/project.rs`,
   `shared/metadata/src/lib.rs`, `shared/README.md`,
-  `areas/deposit/editor/web/src/form/registry.rs`, `areas/deposit/editor/core/src/draft.rs`,
+  `areas/deposit/editor/core/src/form/registry.rs`, `areas/deposit/editor/core/src/draft.rs`,
   `areas/access/dpe/core/src/project.rs`, `areas/deposit/editor/core/tests/canonical_round_trip.rs`
   (a contract member moves with all four consumer files in one commit; the editor's `pull-requests`
   crate reads the contract too)
@@ -636,6 +647,35 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
 - **Fingerprint:** `c9c7113614f0`
+
+### shared/rate-limit
+
+- **Paths:** `:(glob)shared/rate-limit/**`
+- **Purpose:** `shared-rate-limit` — the client-IP key the per-IP rate limiters bucket on:
+  `RightmostXffKeyExtractor`, a `tower_governor` `KeyExtractor` keyed on the rightmost
+  `X-Forwarded-For` entry (the one Traefik appends), falling back to the connection peer address.
+  `tower_governor`'s `SmartIpKeyExtractor` takes the leftmost, client-forgeable entry, so a
+  client could mint a fresh bucket per request.
+- **Key entities:** `RightmostXffKeyExtractor`
+- **Public interface:** `RightmostXffKeyExtractor`, a unit struct implementing
+  `tower_governor::key_extractor::KeyExtractor` with `Key = IpAddr`. The limiter configuration
+  (`per_ip_limit!`, the quotas) stays in each consumer.
+- **Local-context kit:** `shared/rate-limit/src/lib.rs`, `shared/README.md`,
+  `docs/src/dpe/operations.md`, `docs/src/editor/operations.md`
+- **Depends on:** nothing in the workspace; third-party: axum, tower_governor
+- **Used by:** areas/access/dpe (`dpe-server`), areas/access/server (`/telemetry/collect`),
+  areas/deposit/editor (`editor-web`), areas/deposit/identity (`identity-web`),
+  areas/deposit/server (`/telemetry/collect`)
+- **Boundary rules:**
+  - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
+    as for `shared-metadata`).
+  - The key is the rightmost `X-Forwarded-For` entry, never the leftmost (**static-analysis**: the
+    crate's tests). Every per-IP limiter keys on this extractor; one keyed on the leftmost entry
+    (`SmartIpKeyExtractor`) is bypassable by a forged header (**review**).
+  - Correct only while Traefik is the sole hop in front of the service; a second proxy that
+    appends to `X-Forwarded-For` shifts the trusted entry (**review**).
+- **Durable state:** none.
+- **Fingerprint:** `7c7b6401130c`
 
 ### shared/telemetry
 

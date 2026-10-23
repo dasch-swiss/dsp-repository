@@ -19,6 +19,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "pyroscope",
+ "shared-rate-limit",
  "shared-telemetry",
  "sync-store",
  "tempfile",
@@ -890,6 +891,7 @@ dependencies = [
  "opentelemetry_sdk",
  "pyroscope",
  "serde",
+ "shared-rate-limit",
  "shared-telemetry",
  "thiserror 2.0.18",
  "tokio",
@@ -1036,6 +1038,7 @@ dependencies = [
  "serde_json",
  "shared-fair",
  "shared-metadata",
+ "shared-rate-limit",
  "shared-telemetry",
  "tokio",
  "tower",
@@ -1194,6 +1197,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shared-metadata",
+ "shared-rate-limit",
  "shared-telemetry",
  "tokio",
  "tower",
@@ -2272,6 +2276,7 @@ dependencies = [
  "opentelemetry",
  "serde",
  "shared-metadata",
+ "shared-rate-limit",
  "shared-telemetry",
  "thiserror 2.0.18",
  "tokio",
@@ -4357,6 +4362,14 @@ dependencies = [
  "serde",
  "serde_json",
  "tracing",
+]
+
+[[package]]
+name = "shared-rate-limit"
+version = "0.8.10"
+dependencies = [
+ "axum",
+ "tower_governor",
 ]
 
 [[package]]

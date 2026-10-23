@@ -25,7 +25,6 @@ mod view;
 
 pub use config::DpeConfig;
 pub use page_url::normalize_page_url;
-pub use router::RightmostXffKeyExtractor;
 
 /// DPE, built once from its config: the leaked corpus, the OAI-PMH state and
 /// everything DPE's router needs. Cheap to clone (`DpeConfig`'s strings and

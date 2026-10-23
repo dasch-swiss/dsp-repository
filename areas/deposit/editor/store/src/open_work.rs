@@ -2,7 +2,6 @@
 
 use std::sync::Arc;
 
-use editor_core::records::SubmissionState;
 use editor_core::repository::{DraftRepository, EditorRepositories, SubmissionRepository};
 use identity_ports::{OpenWork, PortFuture, Unavailable};
 use uuid::Uuid;
@@ -55,9 +54,7 @@ impl OpenWork for LiveOpenWork {
                 // about work that can no longer be *returned* to its depositor, and an `InReview`
                 // submission is as unreturnable as a `Submitted` one. Filtering to `Submitted`
                 // alone would hide the case where the loss matters most.
-                .filter(|submission| {
-                    submission.submitted_by == Some(id) && submission.state != SubmissionState::Approved
-                })
+                .filter(|submission| submission.submitted_by == Some(id) && submission.state.is_pending())
                 .map(|submission| submission.shortcode)
                 .collect())
         })

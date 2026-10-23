@@ -186,6 +186,15 @@ impl ReviewOutcome {
     pub const fn returns_the_project(self) -> bool {
         !matches!(self, Self::Approved)
     }
+
+    /// Whether a round ending this way must carry a note: every outcome but [`Self::Approved`].
+    #[must_use]
+    pub const fn requires_note(self) -> bool {
+        match self {
+            Self::Approved => false,
+            Self::ChangesRequested | Self::Rejected | Self::Withdrawn => true,
+        }
+    }
 }
 
 impl fmt::Display for ReviewOutcome {

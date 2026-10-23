@@ -3,8 +3,8 @@
 //!
 //! [`diff`] is a pure comparison of two drafts; [`ReviewState`] is what a
 //! reviewer decided, stored beside the submission. Neither knows a field's
-//! label: that is the registry's (`form::registry`), which this module does not
-//! depend on.
+//! label. [`decisions`] reads a posted review body into a [`ReviewState`],
+//! [`decided_draft`] applies it, and [`approval`] runs the approve gates.
 //!
 //! The comparison is over top-level members, not registry fields: enumerating
 //! the registry would show a reviewer only the fields the form knows, so a
@@ -25,7 +25,16 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::draft::ProjectDraft;
+use crate::agents::{AgentScope, Agents};
+use crate::draft::{DraftError, ProjectDraft};
+use crate::form::registry::{self, Audience, Field};
+use crate::form::submit::unresolved_agents;
+use crate::form::{apply, FormBody};
+use crate::proposals::{EntityProposal, ProposalDecision};
+
+/// The name every decision control on the diff form posts under, before the
+/// field id. Stated once, because the renderer and [`decisions`] both spell it.
+pub const DECISION_PREFIX: &str = "decision";
 
 /// What a reviewer decided about one field.
 ///
@@ -253,6 +262,178 @@ pub fn diff(published: Option<&ProjectDraft>, submitted: &ProjectDraft) -> Vec<F
         );
     }
     rows
+}
+
+/// The submitted draft with every field decision applied: what an approval commits, and what
+/// [`approval`]'s gates check. Checking the submitted draft instead would check a document that is
+/// not what gets committed: a revert can remove a reference and a substitution can add one.
+///
+/// An accepted field takes the reviewer's substitute where there is one, and a reverted field goes
+/// back to the published value; `submissions.payload` stays the depositor's own.
+#[must_use]
+pub fn decided_draft(submitted: &ProjectDraft, rows: &[FieldDiff], state: &ReviewState) -> ProjectDraft {
+    let mut decided = submitted.clone();
+    for row in rows.iter().filter(|row| row.changed()) {
+        match state.decision(&row.field) {
+            Some(Decision::Accept) => {
+                if let Some(substitute) = state.substitute(&row.field) {
+                    // `Null` is a reviewer clearing an optional field, which is
+                    // a removal and not a stored null: the canonical writer
+                    // strips nulls, so writing one would differ from what the
+                    // depositor's own clear produces.
+                    if substitute.is_null() {
+                        decided.remove(&row.field);
+                    } else {
+                        decided.set(&row.field, substitute.clone());
+                    }
+                }
+            }
+            // Back to what is published. Absent there means the submission
+            // added the member, so reverting removes it again.
+            Some(Decision::Revert) => match row.published.as_ref() {
+                Some(published) => decided.set(&row.field, published.clone()),
+                None => {
+                    decided.remove(&row.field);
+                }
+            },
+            // Unreachable: an approval with an undecided change is refused by
+            // [`approval`]. Left as the submitted value rather than guessed at, so if
+            // the guard ever regresses the record is at least what was sent.
+            None => {}
+        }
+    }
+    decided
+}
+
+/// Read every decision and substitution the body carries.
+///
+/// Only rows the submission actually changes are considered: an unchanged field
+/// has no decision control rendered, so a decision naming one came from a
+/// hand-built body, and honouring it would store a decision the surface can
+/// never show.
+#[must_use]
+pub fn decisions(
+    body: &FormBody,
+    rows: &[FieldDiff],
+    submitted: &ProjectDraft,
+    accept_all: bool,
+    published: bool,
+) -> ReviewState {
+    let mut state = ReviewState::new();
+    for row in rows.iter().filter(|row| row.changed()) {
+        let posted = body.get(&format!("{DECISION_PREFIX}.{}", row.field));
+        let decision = match posted.and_then(Decision::parse) {
+            // A revert on a project with no published counterpart is a decision
+            // the surface never offers, because there is nothing to revert *to*.
+            // Stored anyway it renders "Reverted — keeps published" beside a
+            // "Not published yet" column, in a radio group with no matching
+            // option — so it shows as undecided and cannot be cleared.
+            Some(Decision::Revert) if !published => None,
+            Some(decision) => Some(decision),
+            None if accept_all => Some(Decision::Accept),
+            None => None,
+        };
+        // A reverted row renders read-only, so it posts no value control and
+        // there is nothing to read — and reading one anyway would let a
+        // hand-built body attach a substitute to a decision that discards it.
+        let value = if decision == Some(Decision::Revert) {
+            None
+        } else {
+            substitute(body, submitted, &row.field)
+        };
+        state.set(&row.field, FieldReview { decision, value });
+    }
+    state
+}
+
+/// What the reviewer put in place of the submitted value, or `None` where they
+/// left it alone.
+///
+/// Runs the field's own applier over a clone of the submitted draft, so the reviewer's edit obeys
+/// the rules a depositor's does (whitespace, newline encoding, a stored `MISSING` surviving an
+/// empty submit). `Some(Value::Null)` is a reviewer clearing an optional field.
+fn substitute(body: &FormBody, submitted: &ProjectDraft, field: &str) -> Option<Value> {
+    let shape = registry::field(field).and_then(|field| field.shape)?;
+    let mut edited = submitted.clone();
+    apply(shape, body, &mut edited, field);
+    let before = submitted.get(field);
+    let after = edited.get(field);
+    if before == after {
+        return None;
+    }
+    Some(after.cloned().unwrap_or(Value::Null))
+}
+
+/// The first approval gate a decided review failed, and what it found there.
+#[derive(Debug)]
+pub enum ApproveRefusal {
+    /// Changed fields nobody decided.
+    Undecided { count: usize },
+    /// Proposed entities nobody decided.
+    UndecidedProposal { count: usize },
+    /// Fields referring to an entity this approval rejects or that does not exist, with the
+    /// reference each holds.
+    RejectedEntity(Vec<(&'static Field, String)>),
+    /// The decided draft is not a [`ProjectRaw`](shared_metadata::project::ProjectRaw).
+    Unpublishable(DraftError),
+}
+
+/// Run the approval gates in order and return the first refusal. Call only for an approving
+/// outcome: request-changes and reject commit nothing, and an undecided row is an ordinary state
+/// to return or discard a submission in.
+///
+/// 1. every changed field is decided ([`ApproveRefusal::Undecided`]): approving an undecided change
+///    commits bytes nobody looked at;
+/// 2. every proposed entity is decided ([`ApproveRefusal::UndecidedProposal`]):
+///    `editor_store::review_rounds` relies on this to leave an undecided proposal's own `approve()`
+///    mapping `submitted` rather than guessed at;
+/// 3. the decided draft refers to no rejected or unknown entity
+///    ([`ApproveRefusal::RejectedEntity`]): nothing is stripped silently, RDU substitutes the
+///    referencing fields or requests changes instead;
+/// 4. the decided draft converts to a project file ([`ApproveRefusal::Unpublishable`]): a
+///    permissive draft can pass every check above and still fail to become one.
+///
+/// `proposals` are the project's [`Submitted`](crate::proposals::ProposalStatus::Submitted) ones
+/// with the decisions applied in memory, and `agents` the published store. The reference scope is
+/// built from the proposals not being rejected, never by status: every one is still `Submitted`
+/// until `ReviewRoundRepository::approve` runs (`docs/src/editor/entity-proposals.md`, "The
+/// second gate has a trap").
+///
+/// # Errors
+///
+/// The first failing gate's [`ApproveRefusal`].
+pub fn approval(
+    submitted: &ProjectDraft,
+    rows: &[FieldDiff],
+    state: &ReviewState,
+    proposals: &[EntityProposal],
+    agents: &Agents,
+) -> Result<(), ApproveRefusal> {
+    let changed: Vec<String> = rows.iter().filter(|row| row.changed()).map(|row| row.field.clone()).collect();
+    let undecided = changed.len() - state.count(&changed, Decision::Accept) - state.count(&changed, Decision::Revert);
+    if undecided > 0 {
+        return Err(ApproveRefusal::Undecided { count: undecided });
+    }
+
+    let undecided_proposals = proposals.iter().filter(|proposal| proposal.decision.is_none()).count();
+    if undecided_proposals > 0 {
+        return Err(ApproveRefusal::UndecidedProposal { count: undecided_proposals });
+    }
+
+    let surviving: Vec<EntityProposal> = proposals
+        .iter()
+        .filter(|proposal| proposal.decision != Some(ProposalDecision::Reject))
+        .cloned()
+        .collect();
+    let scope = AgentScope::with_proposals(agents, &surviving);
+    let decided = decided_draft(submitted, rows, state);
+    let dangling = unresolved_agents(Audience::RduOnly, &decided, &scope);
+    if !dangling.is_empty() {
+        return Err(ApproveRefusal::RejectedEntity(dangling));
+    }
+
+    decided.to_raw().map_err(ApproveRefusal::Unpublishable)?;
+    Ok(())
 }
 
 #[cfg(test)]

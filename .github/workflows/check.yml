@@ -36,9 +36,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      # Pinned, not `@nightly`: a new nightly that re-wraps comments turns every open PR red.
+      - name: Read pinned nightly
+        id: nightly
+        run: echo "toolchain=$(cat .rustfmt-nightly)" >> "$GITHUB_OUTPUT"
       - name: Install nightly
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ steps.nightly.outputs.toolchain }}
           components: rustfmt, clippy
       - name: Install just
         uses: extractions/setup-just@v4

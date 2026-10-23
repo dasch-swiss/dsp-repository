@@ -1,9 +1,7 @@
 //! What submit refuses that needs the field registry to decide.
 //!
-//! This module holds per-field rules that need the registry: a field's declared
-//! shape and audience. Submission-level checks, such as
-//! `ProjectDraft::to_raw` and `unresolved_temporal_coverage`, live in
-//! `ProjectDraft` and [`crate::submission`].
+//! The gate sequence, which decides when each rule runs, is
+//! [`crate::submission::check`]; a new rule is wired in there.
 //! [`obligation::unsatisfied_required`](super::obligation::unsatisfied_required) stays in its own
 //! module because the rail counts presence through the same function.
 

@@ -115,8 +115,8 @@ impl ProjectDraft {
 
     /// The publishable project, or why the draft is not one yet.
     ///
-    /// This is the submission gate's type-level half: a draft that
-    /// omits a required field or holds an invalid value fails here.
+    /// Gate B of [`crate::submission::check`], the type-level half: a draft
+    /// that omits a required field or holds an invalid value fails here.
     pub fn to_raw(&self) -> Result<ProjectRaw, DraftError> {
         serde_json::from_value(Value::Object(self.members.clone()))
             .map_err(|err| DraftError::NotPublishable(err.to_string()))

@@ -30,7 +30,7 @@ flowchart LR
 
 | Crate | Folder | Role |
 |-------|--------|------|
-| `editor-core` | `areas/deposit/editor/core` | The domain: the draft, the form's field registry (each field's label, hint, obligation, audience and shape), its obligation and per-field submit rules, the review diff, project state, the canonical project and entity writers, the published set, and one repository port per aggregate (no Axum, Maud or database dependency) |
+| `editor-core` | `areas/deposit/editor/core` | The domain: the draft, the form's field registry (each field's label, hint, obligation, audience and shape), its obligation and per-field submit rules, the submit gate sequence, the review diff, project state, the canonical project and entity writers, the published set, and one repository port per aggregate (no Axum, Maud or database dependency) |
 | `deposit-shell` | `areas/deposit/shell` | The area's document shell: `page`, the header and footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; depends on `maud` and `mosaic-tiles` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: `User`, `Role`, `Session`, `LoginCode`, the login and session rules, code and token generation, the cookie names, the `Mailer` trait, and one repository port per aggregate with their `IdentityRepositories` bundle (no Axum, Maud or database dependency, and no `editor-*` dependency) |
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `OpenWork` (an account's open drafts and submissions) and its fake; `std` only |

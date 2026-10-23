@@ -23,17 +23,16 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
-use editor_core::form::obligation::unsatisfied_required;
 use editor_core::form::registry::{self, Audience, Section};
-use editor_core::form::submit::{over_cap, typed_sentinels, unresolved_agents};
+use editor_core::form::submit::over_cap;
 use editor_core::form::{apply, FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::{normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState};
 use editor_core::repository::{
     DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition,
 };
-use editor_core::review::{diff, FieldDiff, ReviewState};
-use editor_core::submission::unresolved_temporal_coverage;
+use editor_core::review::ReviewState;
+use editor_core::submission::{ProposalFault, SubmitRefusal};
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
@@ -102,6 +101,20 @@ const DISCARD_REFUSED_STORAGE: &str = "The draft could not be discarded, so it i
 const SUBMIT_REFUSED_UNKNOWN_AGENT: &str = "This project cannot be submitted yet: it refers to a person or \
                                             organisation the repository does not have. Your draft has been saved, \
                                             and each one is named below with a link to it.";
+
+/// What a proposal problem renders as beside the proposal it names.
+fn proposal_fault_message(fault: ProposalFault) -> String {
+    match fault {
+        ProposalFault::Unreadable => "its stored data could not be read".to_string(),
+        ProposalFault::Finding(finding) => {
+            let field = match finding.index {
+                Some(index) => format!("{}[{index}]", finding.field),
+                None => finding.field.to_string(),
+            };
+            format!("{field}: {}", finding.message)
+        }
+    }
+}
 
 /// The field-level error an unresolvable agent reference renders as.
 fn unknown_agent_message(id: &str) -> String {
@@ -229,9 +242,9 @@ struct Context<'a> {
     /// This project's own entity proposals, every status.
     ///
     /// Read once here rather than filtered at each use: [`Self::agents`] is built from it (only the
-    /// referenceable ones contribute), the submit gate below walks the live ones, and the summary
-    /// panel renders the live ones too — three readers of one list rather than three queries that
-    /// could disagree about which proposals exist.
+    /// referenceable ones contribute), `editor_core::submission::check` walks the live ones, and
+    /// the summary panel renders the live ones too — three readers of one list rather than
+    /// three queries that could disagree about which proposals exist.
     proposals: Vec<EntityProposal>,
     /// The body that was posted, or `None` on a `GET`.
     ///
@@ -442,8 +455,9 @@ async fn context<'a>(
     });
 
     // Every status, not only the live ones: `AgentScope::with_proposals` also resolves an
-    // `Accepted` proposal, which the referential-integrity gate needs, and the submit gate
-    // below needs `is_live` per row to decide which to check.
+    // `Accepted` proposal, which the referential-integrity gate needs, and
+    // `editor_core::submission::check` needs `is_live` per row to decide which to check (it builds
+    // its own scope from the same list).
     let proposals = match EntityProposalRepository::list_for_shortcode(&*state.editor, &key).await {
         Ok(proposals) => proposals,
         Err(error) => {
@@ -1050,157 +1064,88 @@ async fn submit(
 ) -> Response {
     let span = tracing::Span::current();
 
-    // The obligation gate reads the draft, so it needs nothing from the contract conversion below
-    // and must stay ahead of it: every way a required value can be missing — absent, `[]`,
-    // `{}`, `""`, a placeholder sentinel — is reachable from the form, and the conversion can
-    // only report the first of them, without naming a field. Presence is read through
-    // `obligation::is_satisfied`, the same function the section rail counts with, so the gate
-    // cannot refuse a submission the rail has just called complete.
-    let unanswered = unsatisfied_required(context.audience, &context.draft);
-    if !unanswered.is_empty() {
-        span.record("form.outcome", "unanswered");
-        tracing::info!(
-            fields.unanswered = unanswered.len(),
-            "refused a submission with unanswered required fields"
-        );
-        let errors: Vec<(String, String)> = unanswered
-            .iter()
-            .map(|field| (field.id.to_string(), UNANSWERED_MESSAGE.to_string()))
-            .collect();
-        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNANSWERED, &errors);
-    }
-
-    // Do not move this ahead of the obligation gate. Emptying a required list to zero rows removes
-    // the member — `keywords`, `attributions`, `disciplines`, `temporalCoverage` and
-    // `spatialCoverage` are non-`Option` `Vec`s and the row appliers use absent as their empty
-    // state — so the conversion fails first with a generic "missing field" and this branch
-    // reports it naming no field at all. What is left for it is what no field-level rule can
-    // explain: a member of the wrong JSON kind, which the form cannot produce.
-    let raw = match context.draft.to_raw() {
-        Ok(raw) => raw,
-        Err(error) => {
-            span.record("form.outcome", "incomplete");
-            tracing::info!(error = %error, "refused a submission whose draft is not a complete project");
-            return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_INCOMPLETE, &[]);
-        }
-    };
-
-    // Every agent reference must resolve. The applier stores whatever arrives,
-    // because a draft may hold a value that does not validate — this
-    // is what stops an unresolvable id reaching a published file, where it
-    // renders as a bare `person-001` on the public project page.
-    let unknown = unresolved_agents(context.audience, &context.draft, &context.agents);
-    if !unknown.is_empty() {
-        span.record("form.outcome", "unknown_agent");
-        tracing::info!(
-            fields.unknown_agents = unknown.len(),
-            "refused a submission with an unresolvable agent"
-        );
-        let errors: Vec<(String, String)> = unknown
-            .iter()
-            .map(|(field, id)| (field.id.to_string(), unknown_agent_message(id)))
-            .collect();
-        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNKNOWN_AGENT, &errors);
-    }
-
-    // This project's own live proposals must satisfy the same rules the entity form enforces: a
-    // `Draft`/`Submitted` proposal riding into review with an incomplete payload would let RDU
-    // accept it into a broken committed file, with no field-level check left to stop
-    // it once this project is approved.
-    let mut proposal_findings: Vec<(String, ProposalKind, String)> = Vec::new();
-    for proposal in context.proposals.iter().filter(|proposal| proposal.is_live()) {
-        let payload: serde_json::Value = match serde_json::from_str(&proposal.payload) {
-            Ok(payload) => payload,
-            // Cannot happen through this form — every writer here stores what `serde_json::Value`
-            // itself produced — but a stored payload this build cannot parse is a reason to refuse,
-            // not to skip the check silently.
-            Err(_) => {
-                proposal_findings.push((
-                    proposal.entity_id.clone(),
-                    proposal.kind,
-                    "its stored data could not be read".to_string(),
-                ));
-                continue;
-            }
-        };
-        let findings = match proposal.kind {
-            ProposalKind::Person => editor_core::proposals::check_person(&payload),
-            // The published side is what makes the address carve-out work: an incomplete address
-            // inherited unchanged from a published organisation is passed through, one the
-            // depositor wrote is refused. `None` for a `New` proposal, which has nothing to
-            // inherit — `published_body` answers only for the published store, so a proposal's own
-            // payload can never grandfather itself.
-            ProposalKind::Organization => {
-                editor_core::proposals::check_organization(&payload, context.agents.published_body(&proposal.entity_id))
-            }
-        };
-        for finding in findings {
-            let field = match finding.index {
-                Some(index) => format!("{}[{index}]", finding.field),
-                None => finding.field.to_string(),
-            };
-            proposal_findings.push((
-                proposal.entity_id.clone(),
-                proposal.kind,
-                format!("{field}: {}", finding.message),
-            ));
-        }
-    }
-    if !proposal_findings.is_empty() {
-        span.record("form.outcome", "proposal_incomplete");
-        tracing::info!(
-            proposals.findings = proposal_findings.len(),
-            "refused a submission with an unfinished entity proposal"
-        );
-        return refused_with_proposal_findings(state, user, shortcode, context, headers, &proposal_findings);
-    }
-
-    // A sentinel a depositor typed, which the shape is what recognises: a
-    // sentinel is the *correct* stored value wherever clearing the field writes
-    // one, so this refuses only the shapes where clearing means something else.
-    // Left through, the field reads as empty, an empty submit will not clear it,
-    // and the platform reads the stored word as no value at all.
-    let sentinels = typed_sentinels(context.audience, &context.draft);
-    if !sentinels.is_empty() {
-        span.record("form.outcome", "sentinel");
-        tracing::info!(
-            fields.sentinel = sentinels.len(),
-            "refused a submission holding a typed placeholder sentinel"
-        );
-        let errors: Vec<(String, String)> = sentinels
-            .iter()
-            .map(|field| (field.id.to_string(), SENTINEL_MESSAGE.to_string()))
-            .collect();
-        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_SENTINEL, &errors);
-    }
-
-    // Every `temporalCoverage` entry has to resolve to a structured date, checked through the
-    // same function `access-server validate` and `dpe-api-oai` apply, so the three cannot disagree
-    // about what counts as a gap. Re-run on every submit, which is what makes a resubmission
-    // revalidated rather than trusted because it was reviewed once.
-    let unresolved = unresolved_temporal_coverage(&raw, &state.temporal.periods, &state.temporal.enrichment);
-    if !unresolved.is_empty() {
-        span.record("form.outcome", "invalid");
-        tracing::info!(
-            fields.invalid = unresolved.len(),
-            "refused a submission with unresolvable periods"
-        );
-        let errors: Vec<(String, String)> = unresolved
-            .iter()
-            .map(|entry| (entry.field_path(), unresolved_message(&entry.name)))
-            .collect();
-        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_INVALID, &errors);
-    }
-
-    // Nothing to review. Allowed through, this locks the depositor's own form
-    // on a submission a reviewer can only clear by rejecting it. The comparison
-    // is `editor_core::review::diff`, the one the review surface itself renders
-    // from, so "changes nothing" means here exactly what it means there.
     let published = state.published.get(shortcode).map(ProjectDraft::from_raw);
-    if !diff(published.as_ref(), &context.draft).iter().any(FieldDiff::changed) {
-        span.record("form.outcome", "unchanged");
-        tracing::info!("refused a submission identical to the published project");
-        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNCHANGED, &[]);
+    if let Err(refusal) = editor_core::submission::check(
+        context.audience,
+        &context.draft,
+        &state.agents,
+        &context.proposals,
+        &state.temporal.periods,
+        &state.temporal.enrichment,
+        published.as_ref(),
+    ) {
+        return match refusal {
+            SubmitRefusal::Unanswered(unanswered) => {
+                span.record("form.outcome", "unanswered");
+                tracing::info!(
+                    fields.unanswered = unanswered.len(),
+                    "refused a submission with unanswered required fields"
+                );
+                let errors: Vec<(String, String)> = unanswered
+                    .iter()
+                    .map(|field| (field.id.to_string(), UNANSWERED_MESSAGE.to_string()))
+                    .collect();
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNANSWERED, &errors)
+            }
+            SubmitRefusal::Incomplete(error) => {
+                span.record("form.outcome", "incomplete");
+                tracing::info!(error = %error, "refused a submission whose draft is not a complete project");
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_INCOMPLETE, &[])
+            }
+            SubmitRefusal::UnknownAgent(unknown) => {
+                span.record("form.outcome", "unknown_agent");
+                tracing::info!(
+                    fields.unknown_agents = unknown.len(),
+                    "refused a submission with an unresolvable agent"
+                );
+                let errors: Vec<(String, String)> = unknown
+                    .iter()
+                    .map(|(field, id)| (field.id.to_string(), unknown_agent_message(id)))
+                    .collect();
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNKNOWN_AGENT, &errors)
+            }
+            SubmitRefusal::ProposalIncomplete(problems) => {
+                let proposal_findings: Vec<(String, ProposalKind, String)> = problems
+                    .into_iter()
+                    .map(|problem| (problem.entity_id, problem.kind, proposal_fault_message(problem.fault)))
+                    .collect();
+                span.record("form.outcome", "proposal_incomplete");
+                tracing::info!(
+                    proposals.findings = proposal_findings.len(),
+                    "refused a submission with an unfinished entity proposal"
+                );
+                refused_with_proposal_findings(state, user, shortcode, context, headers, &proposal_findings)
+            }
+            SubmitRefusal::Sentinel(sentinels) => {
+                span.record("form.outcome", "sentinel");
+                tracing::info!(
+                    fields.sentinel = sentinels.len(),
+                    "refused a submission holding a typed placeholder sentinel"
+                );
+                let errors: Vec<(String, String)> = sentinels
+                    .iter()
+                    .map(|field| (field.id.to_string(), SENTINEL_MESSAGE.to_string()))
+                    .collect();
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_SENTINEL, &errors)
+            }
+            SubmitRefusal::Invalid(unresolved) => {
+                span.record("form.outcome", "invalid");
+                tracing::info!(
+                    fields.invalid = unresolved.len(),
+                    "refused a submission with unresolvable periods"
+                );
+                let errors: Vec<(String, String)> = unresolved
+                    .iter()
+                    .map(|entry| (entry.field_path(), unresolved_message(&entry.name)))
+                    .collect();
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_INVALID, &errors)
+            }
+            SubmitRefusal::Unchanged => {
+                span.record("form.outcome", "unchanged");
+                tracing::info!("refused a submission identical to the published project");
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNCHANGED, &[])
+            }
+        };
     }
 
     let submission = Submission {
@@ -1785,8 +1730,8 @@ fn refused_with_proposal_findings(
 struct Rendering<'a> {
     notice: Option<page::Notice<'a>>,
     errors: &'a [(String, String)],
-    /// Findings against this project's own live proposals (the submit gate below), each keyed by
-    /// which proposal and what needs finishing.
+    /// Findings against this project's own live proposals (`editor_core::submission::check`), each
+    /// keyed by which proposal and what needs finishing.
     ///
     /// A parallel channel to `errors` rather than sharing it: a proposal is not a registry field,
     /// so `errors_elsewhere`'s field-id lookup would resolve to nothing and silently drop every

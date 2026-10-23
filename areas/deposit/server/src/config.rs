@@ -491,7 +491,8 @@ impl EditorConfig {
     ///
     /// Together they describe exactly one thing — a deployment with no relay,
     /// no durable state and no production flag — which is the PR preview, a
-    /// local run, and nothing else. See `docs/src/editor/authentication.md`.
+    /// local run and the throwaway stage, nothing else. See
+    /// `docs/src/editor/authentication.md`.
     pub fn reveals_login_code(&self) -> bool {
         self.is_throwaway()
     }

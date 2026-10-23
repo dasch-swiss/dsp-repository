@@ -205,13 +205,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
   `editor-core` (the draft model, the form's field registry with its obligation and per-field
-  submit rules, validation, the canonical project and entity writers, the persistence ports),
+  submit rules, the submit gate sequence (`editor_core::submission`), validation, the canonical
+  project and entity writers, the persistence ports),
   `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
   `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
-  the handlers (which hold the submit and approve gate sequences) and route table, the
-  extractors, the startup loaders and reconcile,
+  the handlers (which hold the approve gate sequence and map each submit refusal to its message)
+  and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
   `deposit-shell`, below), `editor-pull-requests` (the CI binary that turns an approved record into a
   pull request against this repository — outside the service's request path, and the only crate
@@ -225,7 +226,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
-  `editor_web::form::INTENT`,
+  `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Actor`, `Authenticator`,
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,

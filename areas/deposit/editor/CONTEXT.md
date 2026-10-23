@@ -18,7 +18,7 @@ An Actor with its account id parsed once into the `Uuid` the editor's records ho
 ### The record and its journey
 
 **Draft**:
-The depositor's working copy of one project: a `drafts` row holding a `ProjectDraft`, which is the project's JSON members verbatim — a field not yet filled in is an absent key, an invalid value is kept as typed, and validity is decided once, at submit. One draft per project, last write wins.
+The depositor's working copy of one project: a `drafts` row holding a `ProjectDraft`, which is the project's JSON members verbatim — a field not yet filled in is an absent key, an invalid value is kept as typed, and validity is decided once, at submit, by `editor_core::submission::check`. One draft per project, last write wins.
 _Avoid_: working copy, unsaved changes (a draft is saved), "the JSON" or "the export" anywhere a depositor reads (REQ-2.2).
 
 **Submission**:

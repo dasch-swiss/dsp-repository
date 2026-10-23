@@ -135,7 +135,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   The `Corpus`'s instance `OnceLock` caches load once per process and never invalidate.
-- **Fingerprint:** `d5ce25de1ac8`
+- **Fingerprint:** `a29d6f8744a1`
 
 ### areas/access/server
 
@@ -198,20 +198,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `e95bb40cab5c`
+- **Fingerprint:** `1e688ab55a1f`
 
 ### areas/deposit/editor
 
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
   `editor-core` (the draft model, the form's field registry with its obligation and per-field
-  submit rules, the submit gate sequence (`editor_core::submission`), validation, the canonical
-  project and entity writers, the persistence ports),
+  submit rules, the submit and approve gate sequences (`editor_core::submission`,
+  `editor_core::review`), validation, the canonical project and entity writers, the persistence
+  ports),
   `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
   `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
-  the handlers (which hold the approve gate sequence and map each submit refusal to its message)
+  the handlers (which map each submit and approve refusal to its message)
   and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
   `deposit-shell`, below), `editor-pull-requests` (the CI binary that turns an approved record into a
@@ -226,7 +227,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
-  `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`, `SubmissionState::is_pending`,
+  `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`, `editor_core::review::{approval, ApproveRefusal}`,
+  `SubmissionState::is_pending`,
   `proposals::proposal_for`,
   `apply`, `write_project`, `write_entity`, `normalize_shortcode`, `Actor`, `Authenticator`,
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
@@ -317,7 +319,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `4624f479c564`
+- **Fingerprint:** `c302d6c9ca28`
 
 ### areas/deposit/shell
 
@@ -435,7 +437,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `576e6a1a499a`
+- **Fingerprint:** `2c615fb8d48c`
 
 ### areas/deposit/server
 
@@ -673,7 +675,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Correct only while Traefik is the sole hop in front of the service; a second proxy that
     appends to `X-Forwarded-For` shifts the trusted entry (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `e5b88f76bf0b`
+- **Fingerprint:** `7c7b6401130c`
 
 ### shared/telemetry
 

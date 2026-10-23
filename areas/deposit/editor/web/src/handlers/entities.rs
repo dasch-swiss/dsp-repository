@@ -4,9 +4,7 @@
 //! `id` — the same value `pages::section` links to and the propose controls post back under
 //! `propose.entity`. A project may hold more than one row for one `entity_id` over time (a
 //! withdrawn proposal, then a fresh one for the same entity), but never more than one *live* one
-//! (`entity_proposals_live_per_entity`); [`proposal_for`] resolves the live one where there is
-//! one, and otherwise the most recently touched, so a stale link still shows something
-//! coherent.
+//! (`entity_proposals_live_per_entity`); [`proposal_for`] picks the row a link resolves to.
 //!
 //! Same shape as `sections.rs`: [`context`] resolves a request in the order that module's own
 //! docs argue for — shape, then authorization, then anything that reads state — and a proposal
@@ -21,7 +19,7 @@ use chrono::{DateTime, Utc};
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape, WhenCleared};
-use editor_core::proposals::{EntityProposal, ProposalKind, ProposalStatus};
+use editor_core::proposals::{proposal_for, EntityProposal, ProposalKind, ProposalStatus};
 use editor_core::records::normalize_shortcode;
 use editor_core::repository::EntityProposalRepository;
 use serde_json::Value;
@@ -115,16 +113,6 @@ async fn context<'a>(
     let agents = AgentScope::with_proposals(&state.agents, &proposals);
 
     Ok(Context { proposal, draft, agents, posted: None, signed_out_at })
-}
-
-/// This shortcode's proposal for `entity_id`: the live one if there is one, else the most
-/// recently touched. `None` when this shortcode has never proposed this entity at all.
-fn proposal_for(proposals: &[EntityProposal], entity_id: &str) -> Option<EntityProposal> {
-    proposals
-        .iter()
-        .filter(|proposal| proposal.entity_id == entity_id)
-        .max_by_key(|proposal| (proposal.is_live(), proposal.updated_at))
-        .cloned()
 }
 
 /// Whether this `GET` follows a plain-path save or discard, as `sections.rs::ShowParams` does for

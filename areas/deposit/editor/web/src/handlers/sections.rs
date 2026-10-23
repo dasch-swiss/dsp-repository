@@ -290,7 +290,7 @@ impl Context<'_> {
     /// The renderer and the handler both read this, so the control cannot be
     /// offered where the write would refuse.
     fn pending_submission(&self) -> Option<&Submission> {
-        self.submission.as_ref().filter(|s| s.state != SubmissionState::Approved)
+        self.submission.as_ref().filter(|s| s.state.is_pending())
     }
 }
 
@@ -361,10 +361,9 @@ async fn context<'a>(
         _ => None,
     };
 
-    // Everything short of `Approved` locks the form. An approved record is
-    // waiting for release and is no longer the
-    // depositor's to wait on, so editing again starts the next cycle rather
-    // than disturbing a review in progress.
+    // Each pending state (`SubmissionState::is_pending`) locks with its own `page::Locked` reason,
+    // so this keeps its own exhaustive match. Approved does not lock: editing again starts the
+    // next cycle rather than disturbing a review in progress.
     let submission = match SubmissionRepository::find_by_shortcode(&*state.editor, &key).await {
         Ok(submission) => submission,
         Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's submission", &error)),

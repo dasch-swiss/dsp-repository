@@ -69,7 +69,7 @@ One of exactly five depositor-facing values, `ProjectState`: Draft, Submitted, I
 _Avoid_: status (the contract's `ProjectStatus` is the research project's own lifecycle, a different thing), any sixth word ("rejected" is shown as the outcome of a round, not as a state).
 
 **Submission state**:
-The three stored values of a Submission (`SubmissionState`: Submitted, In review, Approved); a reviewer's claim moves Submitted to In review, which the project form reads as a reason to lock the depositor out.
+The three stored values of a Submission (`SubmissionState`: Submitted, In review, Approved); a reviewer's claim moves Submitted to In review, which the project form reads as a reason to lock the depositor out. Submitted and In review are pending (`SubmissionState::is_pending`, the one definition).
 
 **Published set**:
 The `projects/*.json` files baked into the editor image (`PublishedProjects`), keyed by the case-folded `shortcode` field — not the filename stem, which disagrees with the field in five files.

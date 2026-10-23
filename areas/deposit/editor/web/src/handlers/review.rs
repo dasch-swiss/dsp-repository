@@ -106,7 +106,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         // The queue lists *pending* submissions. An approved record is waiting to
         // be carried into a pull request, not for a reviewer, so a row for it
         // here would be a queue entry nobody can clear.
-        .filter(|submission| submission.state != SubmissionState::Approved)
+        .filter(|submission| submission.state.is_pending())
         .map(|submission| PendingRow {
             shortcode: crate::shell::shortcode_as_published(&state, &submission.shortcode),
             project_name: crate::shell::project_name(&state, &submission.shortcode).map(str::to_string),

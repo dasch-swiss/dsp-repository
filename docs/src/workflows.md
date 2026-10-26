@@ -27,6 +27,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just verify-checksums` | Check vendored JS against each `vendor/README.md` table and `tailwind.pins` for completeness (also run by `just check`) |
 | `just check-shared-paths` | Fail the build if a crate under `shared/` hardcodes a path into a service module (also run by `just check`) |
 | `just check-capability-deps` | Fail the build if a Deposit or Access Area crate depends on a workspace or third-party crate its role may not use, or sits in a role the script does not know; the roles and their edges are listed at the top of `.github/scripts/check-capability-deps.sh` (ADR-0003) (also run by `just check`) |
+| `just check-views-no-axum` | Fail the build if a file of `editor-web`'s or `identity-web`'s `src/` outside `handlers/`, `routes.rs`, `shell.rs`, `lib.rs` and `fixtures.rs` names an `axum` or `axum_*` path: views are `fn -> Markup` (also run by `just check`) |
 | `just check-cpe-seam` | Fail the build if a crate outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports` and `cpe-server`, a CPE crate depends on Mosaic, `cpe-core` depends on a CPE crate, or `cpe-store`, `cpe-store-build` or `cpe-server` depends on a CPE crate that is not listed for it (also run by `just check`) |
 | `just check-adr-refs` | Fail the build if a decision-record reference does not resolve to a record (also run by `just check`) |
 | `just check-live-tests-ignored` | Fail the build if a dsp-cli live test is not `#[ignore]`d (also run by `just check`) |

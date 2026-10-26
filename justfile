@@ -89,6 +89,13 @@ check-composition-root-deps:
 check-capability-deps:
     bash .github/scripts/check-capability-deps.sh
 
+# editor-web and identity-web depend on axum for their handlers, so a view that
+# uses it compiles fine and only a grep over the sources catches it.
+
+# Verify only handlers/, routes.rs, shell.rs, lib.rs and fixtures.rs of editor-web and identity-web use axum. Run by `just check`. (DEV-7527)
+check-views-no-axum:
+    bash .github/scripts/check-views-no-axum.sh
+
 # A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
 # the workspace still compiles, so only a grep catches the boundary break.
 
@@ -118,7 +125,7 @@ check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-composition-root-deps check-capability-deps check-cpe-seam check-datastar-delimiters check-adr-refs check-live-tests-ignored
+check: verify-checksums check-shared-paths check-composition-root-deps check-capability-deps check-views-no-axum check-cpe-seam check-datastar-delimiters check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable

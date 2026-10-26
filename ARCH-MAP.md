@@ -284,8 +284,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     route without a second list (**structure**).
   - `Editor::router` returns its routes without CSRF or tracing; `deposit-server` supplies
     both (**review**).
-  - Only `editor-web`'s `handlers/`, route table, `shell.rs` and `lib.rs` use axum; `pages/`, `form/` and `entity/` are
-    `fn -> Markup` (**review**).
+  - Only `editor-web`'s `handlers/`, route table, `shell.rs`, `lib.rs` and the handler tests' `fixtures.rs` use axum;
+    `pages/`, `form/` and `entity/` are `fn -> Markup` (**static-analysis** — `check-views-no-axum.sh`, which
+    checks every other file of the crate's `src/`).
   - `Authenticated` / `Rdu` are extractors, not middleware: a public handler is public in its
     signature (**structure**).
   - Reader connections are `query_only=ON`; the only write path is `Database::write`, one
@@ -426,7 +427,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
   - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work comes
     through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
-    route table, `shell.rs` and `lib.rs` use axum; `pages/` are `fn -> Markup` (**review**).
+    route table, `shell.rs`, `lib.rs` and the handler tests' `fixtures.rs` use axum; `pages/` are
+    `fn -> Markup` (**static-analysis** — `check-views-no-axum.sh`, which checks every other file of the
+    crate's `src/`).
   - `route_paths()` exports the paths of `routes.rs`'s table, so the root labels every identity
     route without a second list (**structure**).
   - `Identity::router` returns its routes without CSRF or tracing; whoever mounts it supplies
@@ -439,7 +442,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `2c615fb8d48c`
+- **Fingerprint:** `ca9d26f4cb16`
 
 ### areas/deposit/server
 
@@ -1407,7 +1410,7 @@ Not code components; they span the repo and are staleness-exempt here:
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
-  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`),
+  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`),
   release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,

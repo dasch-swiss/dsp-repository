@@ -249,7 +249,7 @@
 <p>Every push and pull request runs:</p>
 <ul>
 <li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), third-party artifact checksums (see <a href="./security.html">Security</a>), and a dsp-cli packaging dry run (<code>cargo publish -p dsp-cli --dry-run</code>)</li>
-<li><strong>test.yml</strong> — Runs the full test suite</li>
+<li><strong>test.yml</strong> — Runs the full test suite, and the tests of the <code>.github/scripts</code> gates (<code>just test-scripts</code>)</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
 <li><strong>dsp-cli-drift.yml</strong> — its <code>changes</code> job (deciding whether anything under <code>dsp-cli/**</code> changed) runs on every PR; see <a href="#dsp-cli-drift-detection">dsp-cli drift detection</a> below</li>
 </ul>

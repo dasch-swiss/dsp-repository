@@ -270,6 +270,8 @@ Area's composition root (ADR-0003), which mounts <code>dpe-server</code>'s route
               access-server     ← Access Area's composition root; areas/access/server
               shared-telemetry  ← beacon contract + collector endpoint, shared
                                   with deposit-server; lives in `shared/`
+              shared-rate-limit ← per-IP rate-limit key, shared with editor-web,
+                                  identity-web and deposit-server; lives in `shared/`
 </code></pre>
 <p><code>dpe-api-oai</code>, <code>dpe-web</code> and <code>dpe-server</code> depend on <code>shared-metadata</code> directly
 as well as through <code>dpe-core</code> — the contract types are theirs to import, not

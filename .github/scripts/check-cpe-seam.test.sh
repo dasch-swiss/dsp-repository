@@ -3,10 +3,9 @@
 # Tests for check-cpe-seam.sh. Dependency-free: bash, git, awk, grep.
 #
 # Fixtures build throwaway git repos because the gate reads its forbidden sets
-# out of the index (the [package] names of areas/access/cpe/*/Cargo.toml,
-# modules/mosaic/*/Cargo.toml, areas/access/sync/*/Cargo.toml and
-# areas/access/media/*/Cargo.toml), so stubbing git would test the stub, not
-# the derivation. mktemp names an explicit TMPDIR template: a bare mktemp resolves to
+# out of the index (the [package] names of areas/access/cpe/*/Cargo.toml and
+# modules/mosaic/*/Cargo.toml), so stubbing git would test the stub, not the
+# derivation. mktemp names an explicit TMPDIR template: a bare mktemp resolves to
 # a path a sandboxed shell may not be allowed to write.
 #
 # Run: bash .github/scripts/check-cpe-seam.test.sh   (or `just test`)
@@ -125,7 +124,7 @@ repo="$(base_repo)"
 stage_repo "$repo"
 gate_in "$repo"
 check "the base fixture passes" 0 "$RC"
-check_msg "the success line counts what it checked" "✓ CPE seam: 12 manifests checked against 7 CPE, 2 Mosaic, 1 sync and 1 media crates" "$OUT"
+check_msg "the success line counts what it checked" "✓ CPE seam: 12 manifests checked against 7 CPE and 2 Mosaic crates" "$OUT"
 exec_in "$repo"
 check "the executed script passes on the base fixture" 0 "$RC"
 rm -rf "$repo"
@@ -266,6 +265,11 @@ check "matcher: a patch header for a longer name does not match" 0 "$RC"
 case_run "$DPE" '[package.metadata.cpe-core]
 note = "x"'
 check "matcher: a header that is neither a dependency nor a patch table does not match" 0 "$RC"
+case_run "$DPE" "[target.'cfg(unix)']
+build-dependencies.cpe-core = { path = \"../../cpe/core\" }"
+check "matcher: a dotted key that starts with the table is caught" 1 "$RC"
+case_run "$DPE" "target.'cfg(unix)'.dependencies.cpe-core.path = \"../../cpe/core\""
+check "matcher: a dotted key with the target before the table is caught" 1 "$RC"
 
 # --- Rule 2: no CPE crate depends on Mosaic.
 case_run "$CPE/components" 'mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }'
@@ -293,10 +297,6 @@ rm -rf "$repo"
 case_run "$CPE/core" 'cpe-components = { path = "../components" }'
 check "rule 3: cpe-core depending on cpe-components fails" 1 "$RC"
 check_msg "rule 3: the violation names manifest, dependency and rule" "$CPE/core/Cargo.toml depends on cpe-components (rule 3" "$OUT"
-case_run "$CPE/image-viewer" 'cpe-core = { path = "../core" }'
-check "rule 3: cpe-image-viewer depending on cpe-core fails" 1 "$RC"
-case_run "$CPE/ports" 'cpe-core = { path = "../core" }'
-check "rule 3: cpe-ports depending on cpe-core fails" 1 "$RC"
 case_run "$CPE/core" 'cpe-ports = { path = "../ports" }'
 check "rule 3: cpe-core depending on cpe-ports fails" 1 "$RC"
 case_run "$CPE/core" "[target.'cfg(unix)']
@@ -311,202 +311,34 @@ case_run "$CPE/core" '[lib]
 name = "cpe_core"'
 check "rule 3: a leaf's [lib] name does not trip it" 0 "$RC"
 
-# --- Rule 4: a CPE crate names a sync or media crate under dev-dependencies only.
-# case_run appends below the fixture crate's [dependencies] header.
-
-# fails_rule4 <desc>: the gate failed, and by rule 4. A case that guards the
-# edge of the exemption would otherwise pass on any other rule's failure.
-fails_rule4() {
-  check "$1" 1 "$RC"
-  check_msg "$1: by rule 4" "(rule 4" "$OUT"
-}
-
-case_run "$CPE/store-build" 'sync-store = { path = "../../sync/store" }'
-check "rule 4: a CPE crate depending on sync-store fails" 1 "$RC"
-check_msg "rule 4: the violation names manifest, dependency and rule" "$CPE/store-build/Cargo.toml depends on sync-store (rule 4" "$OUT"
-check_msg "rule 4: the guidance names the table" "[dev-dependencies] only" "$OUT"
-case_run "$CPE/store-build" '[dev-dependencies]
-sync-store = { path = "../../sync/store" }'
-check "rule 4: sync-store under [dev-dependencies] passes" 0 "$RC"
-case_run "$CPE/store-build" '  [ dev-dependencies ] # the adapter, for the tests
-sync-store.path = "../../sync/store"'
-check "rule 4: a [dev-dependencies] header with spaces and a comment passes" 0 "$RC"
-case_run "$CPE/store-build" '[dev-dependencies.sync-store]
-path = "../../sync/store"'
-check "rule 4: a [dev-dependencies.name] header passes" 0 "$RC"
-case_run "$CPE/store-build" "[target.'cfg(unix)'.dev-dependencies]
-sync-store = { path = \"../../sync/store\" }"
-check "rule 4: a target-specific dev-dependencies table passes" 0 "$RC"
-case_run "$CPE/store-build" '[dev-dependencies]
-adapter = { package = "sync-store", path = "../../sync/store" }'
-check "rule 4: a rename under [dev-dependencies] passes" 0 "$RC"
-case_run "$CPE/store-build" 'adapter = { package = "sync-store", path = "../../sync/store" }'
-fails_rule4 "rule 4: a rename under [dependencies] fails"
-case_run "$CPE/store-build" '[build-dependencies]
-sync-store = { path = "../../sync/store" }'
-fails_rule4 "rule 4: sync-store under [build-dependencies] fails"
-case_run "$CPE/store-build" "[target.'cfg(unix)'.dependencies.sync-store]
-path = \"../../sync/store\""
-fails_rule4 "rule 4: a target-specific dependencies header fails"
-# The exemption ends at the next header.
-case_run "$CPE/store-build" '[dev-dependencies]
-tempfile = "3"
-
-[dependencies.sync-store]
-path = "../../sync/store"'
-fails_rule4 "rule 4: a dependencies table after the dev-dependencies table fails"
-# `dev-dependencies` is a whole segment of the header, not the tail of a name.
-case_run "$CPE/store-build" '[dependencies.x-dev-dependencies]
-package = "sync-store"'
-fails_rule4 "rule 4: a dependency whose name ends in dev-dependencies is not exempt"
-case_run "$CPE/store-build" '[dependencies.dev-dependencies]
-package = "sync-store"'
-fails_rule4 "rule 4: a dependency named dev-dependencies is not exempt"
-# A header's trailing comment is not part of the header.
-case_run "$CPE/store-build" '[dependencies.sync-store] # moved out of [dev-dependencies]
-path = "../../sync/store"'
-fails_rule4 "rule 4: a comment that ends in [dev-dependencies] exempts nothing"
-case_run "$CPE/store-build" "[target.'cfg(any(unix, target_os = \"x\"))'.dev-dependencies] # tests
-sync-store = { path = \"../../sync/store\" }"
-check "rule 4: a dev-dependencies table below a cfg with dots, quotes and a comment passes" 0 "$RC"
-case_run "$CPE/store-build" "[target.x.dev-dependencies.sync-store]
-path = \"../../sync/store\""
-check "rule 4: a target-specific [dev-dependencies.name] header passes" 0 "$RC"
-# The line is not parsed, so the inline form and the dotted key are reported.
-case_run "$CPE/store-build" "[target.'cfg(unix)']
-dev-dependencies = { sync-store = { path = \"../../sync/store\" } }"
-fails_rule4 "rule 4: an inline dev-dependencies table is reported"
-case_run "$CPE/store-build" "[target.'cfg(unix)']
-dev-dependencies.sync-store.path = \"../../sync/store\""
-fails_rule4 "rule 4: a dotted dev-dependencies key is reported"
-case_run "$CPE/store-build" "[target.'cfg(unix)']
-dependencies.sync-store.path = \"../../sync/store\""
-fails_rule4 "rule 4: a dotted dependencies key fails"
-case_run "$DPE" "[target.'cfg(unix)']
-build-dependencies.cpe-core = { path = \"../../cpe/core\" }"
-check "matcher: a dotted key that starts with the table is caught" 1 "$RC"
-# The target may stand before the table in the key itself, which TOML allows
-# only above the first header.
-repo="$(base_repo)"
-printf "target.'cfg(unix)'.dependencies.sync-store.path = \"../../sync/store\"\n\n[package]\nname = \"cpe-store-build\"\nversion = \"0.1.0\"\n" >"$repo/$CPE/store-build/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-fails_rule4 "rule 4: a dotted key with the target before the table, above the first header, fails"
-rm -rf "$repo"
-# The cases below append the key under [dependencies], where TOML would read
-# it otherwise: they hold the pattern to the line, which is all the gate reads.
-case_run "$CPE/store-build" "target.'cfg(target_os = \"linux\")'.dependencies.sync-store = { path = \"../../sync/store\" }"
-fails_rule4 "rule 4: a dotted key below a cfg that holds an equals sign fails"
-case_run "$CPE/store-build" "target . \"cfg(unix)\" . build-dependencies . sync-store.path = \"../../sync/store\""
-fails_rule4 "rule 4: a dotted target key with spaces around the dots fails"
-case_run "$CPE/store-build" "target.'cfg(unix)'.dev-dependencies.sync-store.path = \"../../sync/store\""
-fails_rule4 "rule 4: a dotted target key into dev-dependencies is reported"
-case_run "$CPE/store-build" "# target.'cfg(unix)'.dependencies.sync-store.path = \"../../sync/store\""
-check "rule 4: a commented dotted target key does not match" 0 "$RC"
-case_run "$CPE/store-build" "target.'cfg(unix)'.dependencies.sync-store-extras.path = \"../extras\""
-check "rule 4: a dotted target key for a longer name does not match" 0 "$RC"
-case_run "$DPE" "target.'cfg(unix)'.dependencies.cpe-core.path = \"../../cpe/core\""
-check "matcher: a dotted key with the target before the table is caught" 1 "$RC"
-# Cargo also reads the tables in an underscore spelling.
-case_run "$CPE/store-build" "[target.'cfg(unix)']
-build_dependencies.sync-store.path = \"../../sync/store\""
-fails_rule4 "rule 4: a dotted build_dependencies key fails"
-case_run "$CPE/store-build" "[target.'cfg(unix)']
-dev_dependencies.sync-store.path = \"../../sync/store\""
-fails_rule4 "rule 4: a dotted dev_dependencies key is reported"
-case_run "$CPE/store-build" '[dev_dependencies]
-sync-store = { path = "../../sync/store" }'
-fails_rule4 "rule 4: a [dev_dependencies] header is not exempt"
-# The line is not parsed, so a key that is no dependency and is spelled like
-# one is reported. Kept: the report is seen, and renaming the key ends it.
-case_run "$CPE/store-build" '[features]
-sync-store = []'
-fails_rule4 "rule 4: a feature named like a sync crate is reported"
-case_run "$CPE/store-build" '[package.metadata.docs]
-sync-store = "see the adapter"'
-fails_rule4 "rule 4: a metadata key named like a sync crate is reported"
-# A match in the first lines of a long manifest: grep leaves early, and the
-# executed script runs under pipefail.
-repo="$(base_repo)"
-crate "$repo/$CPE/store-build" cpe-store-build
-{
-  printf 'sync-store = { path = "../../sync/store" }\n'
-  i=0
-  while [ "$i" -lt 4000 ]; do
-    printf '# a line of padding to make the manifest longer than a pipe holds\n'
-    i=$((i + 1))
-  done
-} >>"$repo/$CPE/store-build/Cargo.toml"
-stage_repo "$repo"
-exec_in "$repo"
-check "rule 4: the executed script fails on a match at the top of a long manifest" 1 "$RC"
-check_msg "rule 4: the executed script prints the violation" "$CPE/store-build/Cargo.toml depends on sync-store (rule 4" "$OUT"
-rm -rf "$repo"
-# A manifest nested below a crate is held to the rule too.
-case_run "$CPE/core/fuzz" 'sync-store = { path = "../../../sync/store" }'
-fails_rule4 "rule 4: a nested manifest under the capability fails"
-# The rule is the capability's: another capability may depend on sync-store.
-case_run "$DPE" 'sync-store = { path = "../../sync/store" }'
-check "rule 4: a DPE crate depending on sync-store passes" 0 "$RC"
-# A second sync crate is forbidden by its [package] name, with no edit here.
-repo="$(base_repo)"
-crate "$repo/areas/access/sync/replay" sync-replay
-printf 'sync-replay = { path = "../../sync/replay" }\n' >>"$repo/$CPE/components/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-check "rule 4: a new sync crate is forbidden without an edit to the script" 1 "$RC"
-check_msg "rule 4: the violation names the new crate" "$CPE/components/Cargo.toml depends on sync-replay (rule 4" "$OUT"
-rm -rf "$repo"
-
-# The media edge is rule 4's as well: CPE's tests may build its adapter too.
-case_run "$CPE/server" 'media-store = { path = "../../media/store" }'
-fails_rule4 "rule 4: a CPE crate depending on media-store fails"
-check_msg "rule 4: the media violation names manifest, dependency and rule" "$CPE/server/Cargo.toml depends on media-store (rule 4" "$OUT"
-check_msg "rule 4: the guidance names the media area" "areas/access/media/ under [dev-dependencies] only" "$OUT"
-case_run "$CPE/server" '[dev-dependencies]
-media-store = { path = "../../media/store" }'
-check "rule 4: media-store under [dev-dependencies] passes" 0 "$RC"
-case_run "$CPE/server" 'files = { package = "media-store", path = "../../media/store" }'
-fails_rule4 "rule 4: a rename of media-store under [dependencies] fails"
-repo="$(base_repo)"
-crate "$repo/areas/access/media/derive" media-derive
-printf 'media-derive = { path = "../../media/derive" }\n' >>"$repo/$CPE/components/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-check "rule 4: a new media crate is forbidden without an edit to the script" 1 "$RC"
-check_msg "rule 4: the violation names the new media crate" "$CPE/components/Cargo.toml depends on media-derive (rule 4" "$OUT"
-rm -rf "$repo"
-case_run "$DPE" 'media-store = { path = "../../media/store" }'
-check "rule 4: a DPE crate depending on media-store passes" 0 "$RC"
-
-# --- Rule 5: a crate in CPE_EDGES depends on the CPE crates listed for it only.
+# --- Rule 4: a crate in CPE_EDGES depends on the CPE crates listed for it only.
 case_run "$CPE/store-build" 'cpe-store = { path = "../store" }'
-check "rule 5: cpe-store-build depending on cpe-store fails" 1 "$RC"
-check_msg "rule 5: the violation names manifest, dependency and rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 5" "$OUT"
-check_msg "rule 5: the guidance names the list" "From a crate in CPE_EDGES" "$OUT"
+check "rule 4: cpe-store-build depending on cpe-store fails" 1 "$RC"
+check_msg "rule 4: the violation names manifest, dependency and rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 4" "$OUT"
+check_msg "rule 4: the guidance names the list" "From a crate in CPE_EDGES" "$OUT"
 case_run "$CPE/store" 'cpe-store-build = { path = "../store-build" }'
-check "rule 5: cpe-store depending on cpe-store-build fails" 1 "$RC"
-check_msg "rule 5: the violation names the builder" "$CPE/store/Cargo.toml depends on cpe-store-build (rule 5" "$OUT"
+check "rule 4: cpe-store depending on cpe-store-build fails" 1 "$RC"
+check_msg "rule 4: the violation names the builder" "$CPE/store/Cargo.toml depends on cpe-store-build (rule 4" "$OUT"
 case_run "$CPE/store" 'cpe-components = { path = "../components" }'
-check "rule 5: cpe-store depending on cpe-components fails" 1 "$RC"
-check_msg "rule 5: the violation names the component library" "$CPE/store/Cargo.toml depends on cpe-components (rule 5" "$OUT"
+check "rule 4: cpe-store depending on cpe-components fails" 1 "$RC"
+check_msg "rule 4: the violation names the component library" "$CPE/store/Cargo.toml depends on cpe-components (rule 4" "$OUT"
 # The lists differ: the port is the builder's, not the store's.
 case_run "$CPE/store" 'cpe-ports = { path = "../ports" }'
-check "rule 5: cpe-store depending on cpe-ports fails" 1 "$RC"
-check_msg "rule 5: the violation names the port" "$CPE/store/Cargo.toml depends on cpe-ports (rule 5" "$OUT"
+check "rule 4: cpe-store depending on cpe-ports fails" 1 "$RC"
+check_msg "rule 4: the violation names the port" "$CPE/store/Cargo.toml depends on cpe-ports (rule 4" "$OUT"
 case_run "$CPE/store" 'cpe-core = { path = "../core" }'
-check "rule 5: cpe-store depending on cpe-core passes" 0 "$RC"
+check "rule 4: cpe-store depending on cpe-core passes" 0 "$RC"
 case_run "$CPE/store-build" 'cpe-core = { path = "../core" }
 cpe-ports = { path = "../ports" }'
-check "rule 5: cpe-store-build depending on cpe-core and cpe-ports passes" 0 "$RC"
+check "rule 4: cpe-store-build depending on cpe-core and cpe-ports passes" 0 "$RC"
 # No table is exempt: the builder's tests read the schema as a file too.
 case_run "$CPE/store-build" '[dev-dependencies]
 cpe-store = { path = "../store" }'
-check "rule 5: cpe-store under the builder's [dev-dependencies] fails" 1 "$RC"
-check_msg "rule 5: the dev-dependency violation names the rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 5" "$OUT"
+check "rule 4: cpe-store under the builder's [dev-dependencies] fails" 1 "$RC"
+check_msg "rule 4: the dev-dependency violation names the rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 4" "$OUT"
 case_run "$CPE/store-build" 's = { package = "cpe-store", path = "../store" }'
-check "rule 5: a rename of cpe-store in the builder fails" 1 "$RC"
-check_msg "rule 5: the rename violation names the rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 5" "$OUT"
+check "rule 4: a rename of cpe-store in the builder fails" 1 "$RC"
+check_msg "rule 4: the rename violation names the rule" "$CPE/store-build/Cargo.toml depends on cpe-store (rule 4" "$OUT"
 # The host crate: every CPE crate but the store, which it reaches through the
 # page assembly.
 case_run "$CPE/server" 'cpe-core = { path = "../core" }
@@ -515,20 +347,20 @@ cpe-store-build = { path = "../store-build" }
 cpe-web = { path = "../web" }
 cpe-components = { path = "../components" }
 cpe-image-viewer = { path = "../image-viewer" }'
-check "rule 5: cpe-server depending on the six crates listed for it passes" 0 "$RC"
+check "rule 4: cpe-server depending on the six crates listed for it passes" 0 "$RC"
 case_run "$CPE/server" 'cpe-web = { path = "../web" }
 cpe-store = { path = "../store" }'
-check "rule 5: cpe-server depending on cpe-store fails" 1 "$RC"
-check_msg "rule 5: the violation names the host crate and the store" "$CPE/server/Cargo.toml depends on cpe-store (rule 5" "$OUT"
+check "rule 4: cpe-server depending on cpe-store fails" 1 "$RC"
+check_msg "rule 4: the violation names the host crate and the store" "$CPE/server/Cargo.toml depends on cpe-store (rule 4" "$OUT"
 # A crate that is not in the list is free: the page assembly depends on the
 # store.
 case_run "$CPE/web" 'cpe-store = { path = "../store" }
 cpe-store-build = { path = "../store-build" }
 cpe-components = { path = "../components" }'
-check "rule 5: a CPE crate that is not in CPE_EDGES may depend on the store and the builder" 0 "$RC"
+check "rule 4: a CPE crate that is not in CPE_EDGES may depend on the store and the builder" 0 "$RC"
 dropped_run areas/access/cpe/store-build
-check "rule 5: a CPE_EDGES path that is not tracked fails" 1 "$RC"
-check_msg "rule 5: the message names the path and the list" "areas/access/cpe/store-build/Cargo.toml is not tracked. Update PORT_EXCEPTIONS, LEAVES or CPE_EDGES" "$OUT"
+check "rule 4: a CPE_EDGES path that is not tracked fails" 1 "$RC"
+check_msg "rule 4: the message names the path and the list" "areas/access/cpe/store-build/Cargo.toml is not tracked. Update PORT_EXCEPTIONS, LEAVES or CPE_EDGES" "$OUT"
 
 # --- Which manifests are CPE's and Mosaic's crates.
 # A manifest nested below a crate is not one: its name is not forbidden.
@@ -603,10 +435,6 @@ named_run modules/mosaic/tiles '[package]
 version = "0.1.0"'
 check "a Mosaic crate whose [package] name cannot be read fails" 1 "$RC"
 check_msg "the message names the manifest" "✗ modules/mosaic/tiles/Cargo.toml: cannot read the [package] name" "$OUT"
-named_run areas/access/media/store '[package]
-version = "0.1.0"'
-check "a media crate whose [package] name cannot be read fails" 1 "$RC"
-check_msg "the message names the manifest" "✗ areas/access/media/store/Cargo.toml: cannot read the [package] name" "$OUT"
 named_run "$CPE/components" '[workspace]
 members = []'
 check "a manifest without [package] where a CPE crate is expected fails" 1 "$RC"
@@ -687,8 +515,8 @@ stage_repo "$repo"
 gate_in "$repo"
 check "a plain root entry for the port, inherited by sync-store, passes" 0 "$RC"
 rm -rf "$repo"
-# A CPE crate inherits a renamed Mosaic or sync crate as `x.workspace = true`
-# as well, so the root's renames are held to rules 2 and 4 too.
+# A CPE crate inherits a renamed Mosaic crate as `x.workspace = true` as well,
+# so the root's renames are held to rule 2 too.
 repo="$(base_repo)"
 printf 'm = { package = "mosaic-tiles", path = "modules/mosaic/tiles" }\n' >>"$repo/Cargo.toml"
 printf 'm.workspace = true\n' >>"$repo/$CPE/components/Cargo.toml"
@@ -696,56 +524,6 @@ stage_repo "$repo"
 gate_in "$repo"
 check "rule 2: a rename of a Mosaic crate declared in the root fails" 1 "$RC"
 check_msg "rule 2: the rename violation names the root manifest, the dependency and the rule" "Cargo.toml depends on mosaic-tiles (rule 2" "$OUT"
-rm -rf "$repo"
-repo="$(base_repo)"
-printf 'adapter = { package = "sync-store", path = "areas/access/sync/store" }\n' >>"$repo/Cargo.toml"
-printf 'adapter.workspace = true\n' >>"$repo/$CPE/store-build/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-check "rule 4: a rename of a sync crate declared in the root fails" 1 "$RC"
-check_msg "rule 4: the rename violation names the root manifest, the dependency and the rule" "Cargo.toml depends on sync-store (rule 4" "$OUT"
-check_msg "rule 4: the guidance names the root's renames" "In the workspace root, rename no" "$OUT"
-rm -rf "$repo"
-repo="$(base_repo)"
-printf '\n[workspace.dependencies.adapter]\npath = "areas/access/sync/store"\npackage = "sync-store"\n' >>"$repo/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-check "rule 4: a rename of a sync crate in a root dependency table fails" 1 "$RC"
-check_msg "rule 4: the table rename violation names the root manifest and the rule" "Cargo.toml depends on sync-store (rule 4" "$OUT"
-rm -rf "$repo"
-repo="$(base_repo)"
-printf 'files = { package = "media-store", path = "areas/access/media/store" }\n' >>"$repo/Cargo.toml"
-printf 'files.workspace = true\n' >>"$repo/$CPE/server/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-check "rule 4: a rename of a media crate declared in the root fails" 1 "$RC"
-check_msg "rule 4: the media rename violation names the root manifest, the dependency and the rule" "Cargo.toml depends on media-store (rule 4" "$OUT"
-rm -rf "$repo"
-# Without a rename the inheriting line names the crate, and its own table
-# decides.
-repo="$(base_repo)"
-printf 'sync-store = { path = "areas/access/sync/store" }\n' >>"$repo/Cargo.toml"
-printf '\n[dev-dependencies]\nsync-store.workspace = true\n' >>"$repo/$CPE/store-build/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-check "rule 4: a plain root entry inherited under [dev-dependencies] passes" 0 "$RC"
-rm -rf "$repo"
-# With the rename the inheriting table cannot be read, so the root's line is
-# reported even for a dev-dependency. Kept: declaring it plainly ends the report.
-repo="$(base_repo)"
-printf 'adapter = { package = "sync-store", path = "areas/access/sync/store" }\n' >>"$repo/Cargo.toml"
-printf '\n[dev-dependencies]\nadapter.workspace = true\n' >>"$repo/$CPE/store-build/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-fails_rule4 "rule 4: a renamed root entry inherited under [dev-dependencies] is reported"
-rm -rf "$repo"
-repo="$(base_repo)"
-printf 'sync-store = { path = "areas/access/sync/store" }\n' >>"$repo/Cargo.toml"
-printf 'sync-store.workspace = true\n' >>"$repo/$CPE/store-build/Cargo.toml"
-stage_repo "$repo"
-gate_in "$repo"
-fails_rule4 "rule 4: a plain root entry inherited under [dependencies] fails"
-check_msg "rule 4: the violation is the inheriting crate's" "$CPE/store-build/Cargo.toml depends on sync-store (rule 4" "$OUT"
 rm -rf "$repo"
 
 # --- Absence is an error.
@@ -755,15 +533,9 @@ check_msg "the message says what is missing" "no areas/access/cpe/*/Cargo.toml" 
 dropped_run modules/mosaic
 check "a repository without modules/mosaic/ fails" 1 "$RC"
 check_msg "the message says what is missing" "no modules/mosaic/*/Cargo.toml" "$OUT"
-dropped_run areas/access/sync
-check "a repository without areas/access/sync/ fails" 1 "$RC"
-check_msg "the message says what is missing" "no areas/access/sync/*/Cargo.toml" "$OUT"
-dropped_run areas/access/media
-check "a repository without areas/access/media/ fails" 1 "$RC"
-check_msg "the message says what is missing" "no areas/access/media/*/Cargo.toml" "$OUT"
-dropped_run areas/access/cpe/image-viewer
+dropped_run areas/access/cpe/core
 check "a leaf path that is not tracked fails" 1 "$RC"
-check_msg "the message names the path" "areas/access/cpe/image-viewer/Cargo.toml" "$OUT"
+check_msg "the message names the path" "areas/access/cpe/core/Cargo.toml" "$OUT"
 dropped_run areas/access/cpe/ports
 check "an exception path that is not tracked fails" 1 "$RC"
 check_msg "the message names the path" "areas/access/cpe/ports/Cargo.toml" "$OUT"

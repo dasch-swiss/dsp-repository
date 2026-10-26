@@ -88,7 +88,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (see **Durable state** above), still never through a `dpe-*` import
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
-    (**review** for this side; **static-analysis** for the editor's, `check-capability-deps.sh`;
+    (**static-analysis** for both sides, `check-capability-deps.sh` fails an edge to another area;
     **structure** via Bazel visibility after ADR-0001).
   - areas/access/server depends on `dpe-server` only, never on `dpe-core`, `dpe-web` or
     `dpe-api-oai` (**static-analysis**: `.github/scripts/check-composition-root-deps.sh`, run by
@@ -96,10 +96,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - DPE's router ends in a `ServeDir` fallback, so another capability's router is nested under its
     base, never merged with DPE's (`access-server`'s `serve.rs::mount_cpe`; **static-analysis** via
     its unit tests).
-  - `dpe-api-oai` depends on `dpe-core`, `shared-metadata` and `shared-fair` only — never on
-    `dpe-web` or another API crate (**review**; a `Cargo.toml` check in the style of
-    `check-shared-paths.sh` would make it **static-analysis** today — tracked with the
-    `dpe-*`/`editor-*` check as a follow-up).
+  - `dpe-api-oai` depends on `dpe-core` and `shared-*` crates only — never on `dpe-web` or
+    another API crate (**static-analysis**: `check-capability-deps.sh`, the `api-*` role).
+  - `dpe-web` holds views only and uses no web framework: the handlers are `dpe-server`'s
+    (**static-analysis**: `check-capability-deps.sh`, a `web` crate beside its capability's
+    `server` crate).
   - The editor's path is `ProjectRaw` → draft → `ProjectRaw`, never through `dpe_core::Project`,
     whose `From` impls are lossy on `url` and `clusters` (**review**).
   - Every `<a>` enhanced by Datastar keeps a working `href` (**review**).
@@ -998,26 +999,26 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
   in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA.
-  That `cpe/ports` reaches only `std` and `shared-*` is **review** until Bazel `visibility`
-  (ADR-0003). The dependency seam is
+  That `cpe/ports` reaches only `std` and `shared-*` is **static-analysis** (`check-capability-deps.sh`,
+  the `ports` role), **structure** with Bazel `visibility` (ADR-0003). The dependency seam is
   **static-analysis** (`.github/scripts/check-cpe-seam.sh`, run by `just check`; ADR-0007): no crate of this repository outside
-  `areas/access/cpe/` depends on a CPE crate other than `cpe-ports` and `cpe-server`; no manifest under `areas/access/cpe/` depends on a Mosaic crate; `cpe-core`, `cpe-ports`
-  and `cpe-image-viewer` depend on no CPE crate; no manifest under `areas/access/cpe/` names a crate of
-  `areas/access/sync/` or `areas/access/media/` outside a dev-dependencies table (rule 4; ADR-0008,
-  ADR-0012); and
+  `areas/access/cpe/` depends on a CPE crate other than `cpe-ports` and `cpe-server`; no manifest under `areas/access/cpe/` depends on a Mosaic crate; `cpe-core`
+  depends on no CPE crate (the script's `LEAVES`); and
   `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none but `cpe-core` and `cpe-ports`,
   `cpe-server` on every CPE crate but `cpe-store`
-  (rule 5, the script's `CPE_EDGES`; ADR-0007). A rename
-  (`package = "…"`) of a CPE, Mosaic, `sync` or `media` crate in the workspace
+  (rule 4, the script's `CPE_EDGES`; ADR-0007). A rename
+  (`package = "…"`) of a CPE or Mosaic crate in the workspace
   root is reported where it is declared, whichever crate inherits it. The
-  first, second and fourth rules cover a new crate by its
+  first and second rules cover a new crate by its
   `[package]` name, without an edit; a new crate that must stay a leaf has to be added to the script's
   `LEAVES`, one whose CPE dependencies are to be held to its `CPE_EDGES`, and a crate another capability or
   the composition root may depend on has to be added to its
-  `PORT_EXCEPTIONS` first. What the script does not check is **review**: that no CPE crate depends on DPE's
-  domain, store or web crates, which CPE crates a crate outside `LEAVES` and `CPE_EDGES` depends on, `cpe-components`' own dependency list
-  (no `axum`, no `rusqlite`), `cpe-store`'s (no `maud`, no `axum`), and `cpe-web`'s (no `axum`: the crate
-  holds no routes).
+  `PORT_EXCEPTIONS` first. What CPE's crates share with every capability's is **static-analysis** by
+  `check-capability-deps.sh`, by role (ADR-0003, ADR-0007): no CPE crate depends on DPE's crates; a crate of
+  `areas/access/sync/` or `areas/access/media/` is a dev-dependency only (ADR-0008, ADR-0012); `cpe-ports` and
+  `cpe-image-viewer` depend on no CPE crate; `cpe-components` uses no web framework or database crate, and
+  `cpe-web`, which holds no routes, no web framework. **Review**: which CPE crates a crate outside `LEAVES` and
+  `CPE_EDGES` depends on, and `cpe-store`'s own dependency list (no `maud`, no `axum`).
   `cpe-store`'s `ProjectStore` owns a project's connection in a `Mutex`, and no `pub` item hands out the
   connection or a guard, so every lock is taken inside the crate and none can be held across an `.await`
   (**structure** for a caller outside the crate: the field and `ProjectStore::lock` are not `pub`; that neither
@@ -1054,7 +1055,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   onto a directory (structural where a request is answered, since `AssetInventory::serve` and
   `static_files::serve` are given strings; **review** in `discovery`, the one module that reads the disk);
   `sync-store` and `media-store` are dev-dependencies, so the crate's own code cannot name either adapter
-  (**static-analysis**: `check-cpe-seam.sh`, rule 4); that a host feeds a store through `Cpe::activate` and the
+  (**static-analysis**: `check-capability-deps.sh`, its `DEV_ONLY`); that a host feeds a store through `Cpe::activate` and the
   ports, and not through the doc-hidden, legacy `Cpe::from_sql_folders` (a committed `data.sql`, with the
   configuration and narrative read from the folder, kept for the incubator's host and for tests until
   DEV-7498), is **review**; activation reads a project's configuration, narrative and curation through the
@@ -1062,9 +1063,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   its shortcode with another folder, and leaves a project whose block reads a curated key and that deposited
   no curation file not ready (**static-analysis**: the tests of its `activation` and `discovery` modules); a request's origin, where none is configured, is taken from `Host` and
   `X-Forwarded-Proto` under the rule the configured origin is held to (**static-analysis**: its tests). `cpe-core` is
-  framework-free: that its manifest and sources name no `maud`, `axum` or `rusqlite` is **review**
-  here, and is checked by the incubator's `just cpe crate-deps-check` at each pin move.
-  That `cpe-image-viewer` depends on `maud` alone is **review**. Its vendored OpenSeadragon files
+  framework-free: that its manifest names no web framework, Maud or database crate is **static-analysis**
+  (`check-capability-deps.sh`, the `core` role), and the incubator's `just cpe crate-deps-check` checks it at
+  each pin move. That `cpe-image-viewer` depends on no crate of this repository but `shared-*` and on no web
+  framework or database crate is **static-analysis** (the same script, its `image-viewer` role); that it
+  depends on `maud` alone is **review**. Its vendored OpenSeadragon files
   are checked against `areas/access/cpe/image-viewer/assets/vendor/VENDOR.lock` by hand, not by
   `just verify-checksums` (**review**); a file under its `assets/` without a row in its `ASSETS`
   table fails the crate's tests (**static-analysis**).
@@ -1100,7 +1103,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `7d61fc7e6e04`
+- **Fingerprint:** `959f53b8321c`
 
 ### areas/access/datei
 
@@ -1203,10 +1206,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   it serves no deposited file, a project's curation included (ADR-0012; **review**); readers reach the projection only through the
   ports it implements, never by opening its store; a reader's tests may build `sync-store`'s adapter, as a
   dev-dependency, and read through the port it implements (ADR-0008; that it is
-  a dev-dependency only is **static-analysis** for CPE, rule 4 of `check-cpe-seam.sh`; that the tests read
+  a dev-dependency only is **static-analysis**, `check-capability-deps.sh`'s `DEV_ONLY`; that the tests read
   through the port is **review**); `sync-store` depends on `cpe-ports` and on no
-  other CPE or DPE crate (no other CPE crate: **static-analysis**, `check-cpe-seam.sh` in `just check`;
-  no DPE crate: **review**; both **structure** via Bazel visibility after ADR-0001;
+  other CPE or DPE crate (**static-analysis**: `check-capability-deps.sh`, a `store` crate reaches another
+  capability through its `ports` crate only, and `check-cpe-seam.sh` rule 1 for CPE's crates;
+  **structure** via Bazel visibility after ADR-0001;
   `check-composition-root-deps.sh` does not scan it). A file that breaks a fact the port serves
   is refused whole, never served in part (**static-analysis**: `sync-store`'s tests), and so is
   one whose mapped snapshot fails `cpe_ports::contract::violations`, run on every call; the
@@ -1266,9 +1270,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   directory; never the sealed store, Preservation Files or Originals; never derives, because the
   archive already did; implements consumer-declared ports beside its data and never serves a
   consumer's shape (`vitrinli/CONTEXT.md` → Boundary commitments; **review**, then **structure** via Bazel
-  visibility). `media-store` depends on `cpe-ports` and on no `sync` or other sibling crate (**review**;
-  `check-cpe-seam.sh` checks only that no CPE manifest names a `media` crate outside a dev-dependencies
-  table, rule 4). A caller's shortcode and name reach the file system only after `is_shortcode` and
+  visibility). `media-store` depends on `cpe-ports` and on no `sync` or other sibling crate
+  (**static-analysis**: `check-capability-deps.sh`, the `store` role), and a reader names it as a
+  dev-dependency only (the same script's `DEV_ONLY`). A caller's shortcode and name reach the file system only after `is_shortcode` and
   `is_file_name` accept them, and no component below the directory may be a symbolic link
   (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads the
   projection stream (ADR-0003); a bytes port serves every file with its rights attached
@@ -1286,7 +1290,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
   commit (**review**).
-- **Fingerprint:** `ad28798ca3dd`
+- **Fingerprint:** `c1a1d485164f`
 
 ## Conventions
 
@@ -1294,9 +1298,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `shared-*`, `mosaic-*`, Vitrinli and Chischtli never import a service; a service never
   imports another service. *Enforcement:*
   **structure** for the shared half (a service dependency in a shared crate is a Cargo
-  cycle) + **static-analysis** for hardcoded paths (`check-shared-paths.sh`); **review** for
-  service→service today (**static-analysis** from a Deposit Area capability or its shell,
-  `check-capability-deps.sh`; not from its root),
+  cycle) + **static-analysis** for hardcoded paths (`check-shared-paths.sh`) and for
+  service→service across areas (`check-capability-deps.sh` from a capability or a shell,
+  `check-composition-root-deps.sh` from a root),
   **structure** via Bazel visibility after ADR-0001.
 - **Areas are bounded contexts (ADR-0002):** the Deposit, Archive and Access Areas integrate
   over the wire, never by Rust import; each service is the sole reader and writer of its
@@ -1307,13 +1311,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   capabilities that own their tables, collaborate only through consumer-defined `ports` crates
   with `Live<Port>` adapters in the provider's store, reference each other by opaque id, and
   never span a transaction. The Access Area's root is `areas/access/server` (ADR-0003); the Deposit Area's is `areas/deposit/server` (`areas/deposit/ADR-0004`).
-  *Enforcement:* **static-analysis** for the crate edges inside the Deposit Area (`check-capability-deps.sh`,
+  *Enforcement:* **static-analysis** for the crate edges inside the Deposit and Access Areas (`check-capability-deps.sh`,
   `just check`: a capability's crates on its own and `shared-*`, a `store` crate also on another
-  capability's `ports`, a `web` crate also on the shell and `mosaic-tiles`, a `ports` crate on
-  `shared-*` alone, the shell on `mosaic-tiles` and `shared-*`, `pull-requests` as `core`; among
-  third-party crates, a `ports` crate on none, a `core` crate on no web framework, Maud or database
-  crate, the shell on no web framework; the root's edges are `check-composition-root-deps.sh`'s). The Access Area is not covered yet
-  (`check-cpe-seam.sh` holds CPE's edges; ADR-0003). **review** for the
+  capability's `ports`, a `web` or `server` crate also on the shell and `mosaic-tiles`, a `ports` or
+  `image-viewer` crate on `shared-*` alone, an `api-*` crate on its capability's `core` and `shared-*` alone, the shell on
+  `mosaic-tiles` and `shared-*`, `pull-requests`, `components` and `store-build` as `core`, and `sync-store`
+  and `media-store` as dev-dependencies only (ADR-0008); among third-party crates, a `ports` crate on none, a
+  `core` crate on no web framework, Maud or database crate, a `components` or `image-viewer` crate on no web
+  framework or database crate, a `web` crate beside a `server` crate and the shell on no web framework; the
+  root's edges are `check-composition-root-deps.sh`'s; `check-cpe-seam.sh` holds the edges particular to
+  CPE). **review** for the
   rest, becoming **structure** (Bazel
   visibility: `ports` public within the area; domain / store / web visible to the capability
   and the composition root only) with ADR-0001.
@@ -1377,8 +1384,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 | Locally-attractive pattern | Why it couples globally | Supported alternative | Enforcement |
 |---|---|---|---|
-| A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | static-analysis for an `editor-*` crate (`check-capability-deps.sh`), review for the reverse → structure (ADR-0001) |
-| A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | static-analysis in the Deposit Area (`check-capability-deps.sh`, ADR-0003), review in the Access Area → structure (ADR-0001) |
+| A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | static-analysis (`check-capability-deps.sh`, both sides) → structure (ADR-0001) |
+| A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | static-analysis for the imports (`check-capability-deps.sh`, ADR-0003), review for the tables → structure (ADR-0001) |
 | Opening the area's Chischtli instance to read or write a graph another capability owns | A graph with two writers is a table with two writers; readers past the owner's ports freeze the owner's internal graph layout | Query through the owning capability's ports (`sync` for the archive projection); a new graph gets a new owner, not a second writer (ADR-0003) | review → structure (store handle visible to owners only) |
 | A relative path from a `shared-*` crate into `modules/<service>/`, in a source file or a test fixture | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`); the repo-root `justfile` is what may name a module path | static-analysis (`shared/*/src/*.rs` and `shared/*/testdata/**`) |
 | Reading `dpe_core::Project` in the editor | The view model is lossy on `url` and `clusters`; the editor must preserve both | `ProjectRaw` → draft → `ProjectRaw` | review |

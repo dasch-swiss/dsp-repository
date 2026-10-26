@@ -45,7 +45,8 @@ code:
   what it has, exactly as the projection does while the archive is unavailable (`areas/archive/CONTEXT.md`,
   `chischtli/CONTEXT.md`).
 - **A reading capability's tests may build `sync`'s adapter.** A crate of a reading capability may name
-  `sync`'s store crate as a dev-dependency, and only as one. Cargo gives a dev-dependency to test builds alone,
+  `sync`'s store crate as a dev-dependency, and only as one; the same holds for `media`'s, the adapter of its
+  bytes port (ADR-0012). Cargo gives a dev-dependency to test builds alone,
   so a library or binary as built for use is still fed by its ports only. Such a test constructs
   `LiveArchiveProjection` over the committed snapshot and hands the builder what the port serves; it never opens
   `sync`'s data itself. The tests of `cpe-store-build` and `cpe-server` build Incunabula's store this way.
@@ -94,9 +95,11 @@ them (not scheduled).
 
 Enforced by: the target is Bazel `visibility` per ADR-0001 for "fed by its own ports": a reading capability's
 crates see its own `ports` crate and never `sync`'s store crates or Chischtli, except as a dev-dependency
-(**structure**). For CPE today, `check-cpe-seam.sh` rule 4, run by `just check`: no manifest under
-`areas/access/cpe/` names a crate of `areas/access/sync/` or `areas/access/media/` outside a dev-dependencies
-table (**static-analysis**). The rule lets through any crate of either as a dev-dependency of any CPE crate, and it reads no
-source, so what a test does with the adapter is review. One test per read model rebuilds it from empty against a
+(**structure**). Today `check-capability-deps.sh`, run by `just check`: a crate of another capability names
+`sync-store` or `media-store` as a dev-dependency only (its `DEV_ONLY`), a `ports`, `image-viewer` or `api-*` crate
+or a crate of `sync` or `media` not even as one, and no capability's crate names another store crate at all
+(**static-analysis**); the composition root, which constructs the adapters, is `check-composition-root-deps.sh`'s.
+The rule lets through either adapter as a dev-dependency of any other crate of the area, and it reads no source,
+so what a test does with the adapter is review. One test per read model rebuilds it from empty against a
 `Fake<Port>` and asserts what the capability serves is unchanged (**static-analysis**; for CPE, `areas/access/cpe/store-build/tests/it/rebuild.rs`). Review for any
 other reading capability, for "the port speaks archive-shaped facts" and for "never repaired in place".

@@ -85,14 +85,14 @@ check-composition-root-deps:
 # and the workspace still compiles, so only a check of the crate graph catches
 # the boundary break.
 
-# Verify every Deposit Area crate depends only on the workspace crates its role allows. Run by `just check`. (DEV-7375, ADR-0003)
+# Verify every Deposit and Access Area crate depends only on the workspace and third-party crates its role allows. Run by `just check`. (DEV-7375, DEV-7527, ADR-0003)
 check-capability-deps:
     bash .github/scripts/check-capability-deps.sh
 
 # A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
 # the workspace still compiles, so only a grep catches the boundary break.
 
-# Verify CPE's dependency seam: only its port and its host crate are used from outside, no CPE crate uses Mosaic, its leaf crates use no CPE crate, a sync or media crate is a dev-dependency only, the store, its builder and the host crate use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007, ADR-0008, ADR-0012)
+# Verify CPE's dependency seam: only its port and its host crate are used from outside, no CPE crate uses Mosaic, its leaf crate uses no CPE crate, the store, its builder and the host crate use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007)
 check-cpe-seam:
     bash .github/scripts/check-cpe-seam.sh
 

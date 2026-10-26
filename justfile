@@ -185,17 +185,19 @@ test:
     cargo test --tests
     # The dev-only live-reload code is feature-gated, so its tests need the feature enabled.
     cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
-    bash .github/scripts/check-commit-count.test.sh
-    # Commit-advisory helpers (deterministic parts only; needs jq)
-    bash .github/scripts/commit-advisory.test.sh
-    bash .github/scripts/verify-checksums.test.sh
-    bash .github/scripts/check-shared-paths.test.sh
-    bash .github/scripts/check-composition-root-deps.test.sh
-    bash .github/scripts/check-capability-deps.test.sh
-    bash .github/scripts/check-cpe-seam.test.sh
-    bash .github/scripts/check-datastar-delimiters.test.sh
-    bash .github/scripts/check-adr-refs.test.sh
-    bash .github/scripts/check-live-tests-ignored.test.sh
+    just test-scripts
+
+# Run the tests of every .github/scripts/*.sh gate. Needs bash, git, awk, jq and cargo.
+test-scripts:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    # Every file, not a list: a new gate's tests run without an edit here. All
+    # run, so one report names every failing gate.
+    rc=0
+    for t in .github/scripts/*.test.sh; do
+        bash "$t" || rc=1
+    done
+    exit "$rc"
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":

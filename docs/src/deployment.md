@@ -9,7 +9,7 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 Every push and pull request runs:
 
 - **check.yml** — Formatting (`maudfmt` for `html!` macros + `cargo +nightly fmt`), linting (`clippy`), third-party artifact checksums (see [Security](./security.md)), and a dsp-cli packaging dry run (`cargo publish -p dsp-cli --dry-run`)
-- **test.yml** — Runs the full test suite
+- **test.yml** — Runs the full test suite, and the tests of the `.github/scripts` gates (`just test-scripts`)
 - **scout-dpe.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning (see [Security](./security.md))
 - **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
 

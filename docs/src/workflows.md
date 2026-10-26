@@ -12,7 +12,8 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 |---------|-------------|
 | `just check` | Run formatting, linting and checksum checks |
 | `just build` | Build all targets |
-| `just test` | Run all tests |
+| `just test` | Run all tests, the gate scripts' tests (`just test-scripts`) included |
+| `just test-scripts` | Run the tests of every `.github/scripts` gate (`*.test.sh`); CI runs it as the `test / scripts` job |
 | `just fmt` | Format all code (`maudfmt` for `maud::html!` macro contents, then `cargo +nightly fmt`) |
 | `just run` | Run server (release mode) |
 | `just watch` | Watch for changes and run tests |

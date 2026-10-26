@@ -43,6 +43,20 @@ jobs:
       - name: cargo test --doc
         run: cargo test --locked --all-features --doc
 
+  scripts:
+    runs-on: ubuntu-latest
+    name: test / scripts
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # check-capability-deps.test.sh reads its fixture workspaces with `cargo metadata`.
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install just
+        uses: extractions/setup-just@v4
+      - name: just test-scripts
+        run: just test-scripts
+
   coverage:
     runs-on: ubuntu-latest
     name: test / coverage

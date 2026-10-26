@@ -77,7 +77,7 @@ check-shared-paths:
 # the web crate of a capability that has a server crate, and still compile fine,
 # so only a grep catches the boundary break.
 
-# Verify no areas/<area>/server/Cargo.toml depends on a capability's core/api-* crate, or on its web crate where it has a server crate. Run by `just check`. (DEV-7397, ADR-0007)
+# Verify no areas/<area>/server/Cargo.toml depends on a capability's core/api-* crate, on its web crate where it has a server crate, or on another area's crate. Run by `just check`. (DEV-7397, DEV-7527, ADR-0007, ADR-0002)
 check-composition-root-deps:
     bash .github/scripts/check-composition-root-deps.sh
 

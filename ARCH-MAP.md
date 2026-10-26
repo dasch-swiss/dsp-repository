@@ -173,6 +173,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     name have to agree (**review**; see `areas/access/server/CLAUDE.md`).
   - Depends on each capability's `server` crate only, never a capability's `core`, `web` or
     `api-*` crate (**static-analysis**: `check-composition-root-deps.sh` in `just check`).
+  - Depends on no crate of another area (ADR-0002; **static-analysis**: `check-composition-root-deps.sh`).
   - Routes declared after the OTel layers are untraced, so the order in `app` is load-bearing
     (**static-analysis**: `serve.rs` tests assert the traceparent split).
   - No adapter or domain logic: wiring only (**review**).
@@ -478,6 +479,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `server` crate (**static-analysis** — `check-composition-root-deps.sh`, the root's one
     enforcer: `check-capability-deps.sh` skips `areas/<area>/server`). Its tests seed and
     read through the stores' plain-value `test-support` helpers instead of `core` types.
+  - Depends on no crate of another area, dev-dependencies included (ADR-0002; **static-analysis** —
+    `check-composition-root-deps.sh`).
   - The root declares no capability route: `build_router` merges `Editor::router()` and
     `Identity::router()` before the OTel layers, and `build_app` declares `/healthz` and
     `POST /telemetry/collect` after them, so both stay untraced, then wraps everything in the
@@ -1328,7 +1331,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   crate only when the capability has no `server` crate (the Deposit Area mounts `identity` and
   `editor` through their web facades, `areas/deposit/ADR-0004`; DPE and CPE keep theirs); views are
   `fn(...) -> Markup` in the `web` crate; the domain / contract crate has no framework
-  dependency. *Enforcement:* **static-analysis** for the root's dependencies
+  dependency; the root depends on no crate of another area. *Enforcement:* **static-analysis** for the root's dependencies
   (`check-composition-root-deps.sh`) and for a Deposit `core` crate's ({G}), **review** for the rest (DPE's views read the corpus
   handed to them through `RenderContext` rather than taking every value as an argument — a
   recorded exception).

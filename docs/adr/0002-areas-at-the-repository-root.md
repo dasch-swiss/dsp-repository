@@ -139,6 +139,7 @@ Access-Area crate is caught in review (DEV-7527).
 
 Enforced by: `check-shared-paths.sh` for paths from a shared crate into an area (static-analysis);
 `check-capability-deps.sh` for edges from a Deposit-Area crate to anything outside its area (static-analysis);
+`check-composition-root-deps.sh` for an `areas/<area>/server` crate's edges to another area (static-analysis);
 `cargo publish -p dsp-cli --dry-run --locked` in `check.yml` for dsp-cli's dependencies (static-analysis), with Bazel
 `visibility` per area under ADR-0001 as the target (structure); review for state ownership, shared concepts and the archive's
 storage.

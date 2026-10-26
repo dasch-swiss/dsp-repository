@@ -5,12 +5,15 @@
 # (ADR-0007; the rule and why store/ports stay allowed: ARCH-MAP.md
 # "Composition root"). A capability without a server crate has no host crate to
 # depend on instead, so the Deposit Area mounts it through its web crate's
-# facade (ADR-0004). A grep until Bazel `visibility` lands.
+# facade (ADR-0004). Nor may it depend on any crate of another area: areas
+# integrate over the wire (ADR-0002). A grep until Bazel `visibility` lands.
 #
 # Forbidden names are the [package] names of every
 # areas/<area>/<capability>/{core,web,api-*}/Cargo.toml (web only beside a
 # server/Cargo.toml), so a new capability is covered without editing this
-# script. A new forbidden role goes in the pathspecs of forbidden_crates.
+# script. A new forbidden role goes in the pathspecs of forbidden_crates. The
+# other areas' names are those of every areas/<other>/**/Cargo.toml, so a new
+# area is covered too.
 #
 # Safe to `source`. Dependencies: bash, git, awk, grep.
 
@@ -39,6 +42,17 @@ forbidden_crates() {
       done
 }
 
+# The [package] names of every Cargo.toml under areas/ outside areas/$1/, at any
+# depth.
+foreign_crates() {
+  local area="$1" f
+  git ls-files -- 'areas/*/Cargo.toml' \
+    | awk -F/ -v area="$area" '$2 != area' \
+    | while IFS= read -r f; do
+        crate_name "$f"
+      done
+}
+
 # True if Cargo.toml $1 names dependency $2: a `name = ...` line, a
 # `name.workspace = true` line or a `[dependencies.name]` table header, all
 # anchored at line start (Cargo.toml keys are not indented under
@@ -51,7 +65,7 @@ depends_on() {
 }
 
 main() {
-  local server_files count=0 file area forbidden name violations=""
+  local server_files count=0 file area forbidden foreign name violations=""
 
   # Same NF filter as forbidden_crates: a composition root is exactly
   # areas/<area>/server/Cargo.toml (NF==4), not a capability's
@@ -66,22 +80,28 @@ main() {
     count=$((count + 1))
     area="$(printf '%s\n' "$file" | awk -F/ '{print $2}')"
     forbidden="$(forbidden_crates "$area")"
-    [ -n "$forbidden" ] || continue
     while IFS= read -r name; do
       [ -n "$name" ] || continue
       if depends_on "$file" "$name"; then
         violations="${violations}${violations:+$'\n'}$file depends on $name, a $area capability's core/web/api-* crate (web only where the capability has a server crate)"
       fi
     done <<<"$forbidden"
+    foreign="$(foreign_crates "$area")"
+    while IFS= read -r name; do
+      [ -n "$name" ] || continue
+      if depends_on "$file" "$name"; then
+        violations="${violations}${violations:+$'\n'}$file depends on $name, a crate of another area"
+      fi
+    done <<<"$foreign"
   done <<<"$server_files"
 
   if [ -n "$violations" ]; then
     printf '%s\n\n' "$violations" >&2
-    echo "✗ a composition root depends directly on a capability's core or api-* crate, or on a web crate whose capability has a server crate." >&2
-    echo "  Depend on the capability's server crate instead; see ADR-0007." >&2
+    echo "✗ a composition root depends directly on a capability's core or api-* crate, on a web crate whose capability has a server crate, or on another area's crate." >&2
+    echo "  Depend on the capability's server crate instead (ADR-0007); reach another area over the wire (ADR-0002)." >&2
     return 1
   fi
-  echo "✓ composition roots: no core or api-* dependency, no web one where a server crate exists ($count areas/*/server/Cargo.toml checked)"
+  echo "✓ composition roots: no core or api-* dependency, no web one where a server crate exists, none on another area ($count areas/*/server/Cargo.toml checked)"
 }
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then

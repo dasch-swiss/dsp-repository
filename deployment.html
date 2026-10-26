@@ -337,7 +337,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 </ol>
 <h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
 <p>Defined in <code>dpe-release-publish.yml</code>.</p>
-<p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image.</p>
+<p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image and triggers the STAGE and PROD deployments.</p>
 <h3 id="editor"><a class="header" href="#editor">Editor</a></h3>
 <h4 id="pr-preview-cloud-run-2"><a class="header" href="#pr-preview-cloud-run-2">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-editor-pull-request.yml</code>.</p>
@@ -349,9 +349,9 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <li>Builds the content-hashed Tailwind stylesheet (<code>just css-editor-release</code>)</li>
 <li>Builds a static musl-linked <code>deposit-server</code> binary</li>
 <li>Pushes the Docker image to Docker Hub (<code>daschswiss/metadata-editor:{tag}</code>)</li>
-<li>Attempts a Jenkins webhook for DEV deployment</li>
+<li>Triggers a Jenkins webhook (<code>Service=deposit</code>) for STAGE deployment, <code>deposit.stage.dasch.swiss</code></li>
 </ol>
-<p>Step 4 is marked <code>continue-on-error</code> and only warns. The editor is not yet registered as a deployable service in Jenkins — that lands with its inventory host and playbook — so the webhook rejects <code>Service=editor</code>. The image is already published by the time the trigger runs, so a rejection must not fail the workflow on <code>main</code>. Remove the guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</p>
+<p>The editor deploys as its own <code>deposit</code> stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows <code>main</code>. No workflow deploys the editor to prod yet: that waits for a mail relay (<a href="https://linear.app/dasch/issue/DEV-7618">DEV-7618</a>).</p>
 <h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>

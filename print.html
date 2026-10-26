@@ -1178,7 +1178,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 </ol>
 <h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
 <p>Defined in <code>dpe-release-publish.yml</code>.</p>
-<p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image.</p>
+<p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image and triggers the STAGE and PROD deployments.</p>
 <h3 id="editor"><a class="header" href="#editor">Editor</a></h3>
 <h4 id="pr-preview-cloud-run-2"><a class="header" href="#pr-preview-cloud-run-2">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-editor-pull-request.yml</code>.</p>
@@ -1190,9 +1190,9 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <li>Builds the content-hashed Tailwind stylesheet (<code>just css-editor-release</code>)</li>
 <li>Builds a static musl-linked <code>deposit-server</code> binary</li>
 <li>Pushes the Docker image to Docker Hub (<code>daschswiss/metadata-editor:{tag}</code>)</li>
-<li>Attempts a Jenkins webhook for DEV deployment</li>
+<li>Triggers a Jenkins webhook (<code>Service=deposit</code>) for STAGE deployment, <code>deposit.stage.dasch.swiss</code></li>
 </ol>
-<p>Step 4 is marked <code>continue-on-error</code> and only warns. The editor is not yet registered as a deployable service in Jenkins — that lands with its inventory host and playbook — so the webhook rejects <code>Service=editor</code>. The image is already published by the time the trigger runs, so a rejection must not fail the workflow on <code>main</code>. Remove the guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</p>
+<p>The editor deploys as its own <code>deposit</code> stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows <code>main</code>. No workflow deploys the editor to prod yet: that waits for a mail relay (<a href="https://linear.app/dasch/issue/DEV-7618">DEV-7618</a>).</p>
 <h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
@@ -8983,7 +8983,7 @@ POST /logout       session deleted, cookie cleared
 <tr><td>No <code>EDITOR_DB_DIR</code></td><td>Everything dies with the process. This is the condition separating a throwaway deployment from a real one: an environment holding accounts people actually use has to mount a volume, or it loses them on every restart.</td></tr>
 </tbody></table>
 </div>
-<p>Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and nothing else. Startup logs a <code>warn</code> naming the state, so an operator sees it asserted rather than inferring it from three unset variables.</p>
+<p>Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and stage while it holds no real data (<a href="editor/./operations.html#deployment">Operations</a>), nothing else. Startup logs a <code>warn</code> naming the state, so an operator sees it asserted rather than inferring it from three unset variables.</p>
 <p>The predicate is deliberately <strong>self-contained</strong> rather than leaning on the <code>PROD</code>-requires-a-relay rule in <code>validate</code>. That rule does make two of these combinations unbootable, but a guard you can read in one place is one nobody has to reconstruct.</p>
 <h3 id="what-it-costs-stated-rather-than-left-to-be-found"><a class="header" href="#what-it-costs-stated-rather-than-left-to-be-found">What it costs, stated rather than left to be found</a></h3>
 <ul>
@@ -9421,14 +9421,10 @@ image CI publishes, under emulation.</p>
 <p>It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where <code>/healthz</code> answers 200, and the image's own <code>HEALTHCHECK</code> calls <code>deposit-server healthcheck</code> against loopback <em>inside</em> the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (<code>just build-docker-editor &amp;&amp; just run-docker-editor</code>) rather than probing a preview URL.</p>
 </blockquote>
 <h2 id="deployment-1"><a class="header" href="#deployment-1">Deployment</a></h2>
-<p>The editor deploys as its <strong>own Swarm stack on the same VMs as DPE</strong>, with its own inventory host entry and its own playbook — not as a second stack inside the <code>repository</code> inventory group. Co-habiting VMs with separate inventory hosts is how the platform already runs multiple stacks (<code>ark</code> and <code>mosaic</code> share a host that way). The <code>repository</code> group and <code>repository.yml</code> playbook are a holdover that should really be called <code>dpe</code>; splitting them is separate work.</p>
+<p>The editor deploys as its <strong>own <code>deposit</code> stack</strong> in ops-deploy, with its own inventory group, hosts (<code>deposit-stage-01</code>, <code>deposit-prod-01</code>) and playbook (<code>deposit.yml</code>). The stack has no dev host: a merge to <code>main</code> deploys to <code>deposit.stage.dasch.swiss</code> (<code>editor-docker-publish.yml</code>, posting <code>Service=deposit</code> to the stack's Jenkins update job; see <a href="editor/../deployment.html#editor">Deployment</a>). Nothing deploys prod, <code>deposit.dasch.swiss</code>, yet: it waits for a mail relay (<a href="https://linear.app/dasch/issue/DEV-7618">DEV-7618</a>).</p>
 <p>It deploys on a <strong>separate hostname</strong> from DPE, not a path under <code>repository.dasch.swiss</code> — see the CSRF reasoning in <a href="editor/./architecture.html#relationship-to-dpe">Architecture</a>.</p>
-<p>Not yet in place, and blocking production deployment only:</p>
-<ul>
-<li>The editor is <strong>not registered as a deployable service in Jenkins</strong>, so the DEV deploy trigger in <code>editor-docker-publish.yml</code> is marked <code>continue-on-error</code> and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</li>
-<li>The writable data volume <code>EDITOR_DB_DIR</code> points at, tracked as <a href="https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes">INFRA-1378</a>. Development and tests use the in-memory database, so only production waits on it.</li>
-<li><strong>SMTP relay host, port and credentials</strong>, provisioned as vaulted group vars. Development and the PR previews are unblocked by the console fallback, so only production login waits on it. DKIM and SPF for <code>dasch.swiss</code> are already set up.</li>
-</ul>
+<p><strong>Stage runs in preview mode</strong> (ops-deploy's <code>deposit.yml</code>): it shows the login code on the page (<a href="editor/./authentication.html#showing-the-code-instead-of-sending-it">Authentication</a>) to anyone who types an RDU address, and starts from an empty database on every deploy, so it never holds real data.</p>
+<p>Not yet in place, for prod: the <strong>SMTP relay host, port and credentials</strong> and the RDU members' addresses (<code>EDITOR_RDU_EMAILS</code>), provisioned in ops-deploy, the password vaulted. <code>EDITOR_ENV=PROD</code> refuses to start without <code>EDITOR_SMTP_HOST</code>; an empty <code>EDITOR_RDU_EMAILS</code> starts but leaves nobody able to review. Development and the PR previews are unblocked by the console fallback. DKIM and SPF for <code>dasch.swiss</code> are already set up.</p>
 <h2 id="login-and-mail"><a class="header" href="#login-and-mail">Login and mail</a></h2>
 <p>Design and rationale live in <a href="editor/./authentication.html">Authentication</a>. What an operator needs:</p>
 <h3 id="accounts-1"><a class="header" href="#accounts-1">Accounts</a></h3>

@@ -20,7 +20,9 @@ repository. The decision, phrased so a violation is describable in code:
 - **CPE has three crate roles that ADR-0003's anatomy does not list.** `cpe-store-build` is the library that
   turns the port's snapshot and a project's `remodel {}` block into the rows of CPE's store; it depends on
   `cpe-core` and `cpe-ports` and not on `cpe-store`, whose schema it includes as a file. `cpe-components` is
-  CPE's component library, and `cpe-image-viewer` its image viewer (both below).
+  CPE's component library, and `cpe-image-viewer` its image viewer (both below). `cpe-components` depends on
+  CPE's crates and on no web framework or database crate; `cpe-image-viewer` depends on no crate of this
+  repository but the `shared-*` crates, and on no web framework or database crate.
 
 **The port and the store**
 
@@ -119,16 +121,13 @@ repository. The decision, phrased so a violation is describable in code:
   1. No crate outside `areas/access/cpe/` depends on a CPE crate except `cpe-ports`, which `sync-store` and
      `media-store` implement, and `cpe-server`, which the composition root mounts (`PORT_EXCEPTIONS`).
   2. No manifest under `areas/access/cpe/` depends on a Mosaic crate (any crate of `modules/mosaic/`).
-  3. `cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate (`LEAVES`); a new crate that must
-     stay a leaf is added there.
-  4. No CPE manifest names a crate of `areas/access/sync/` or `areas/access/media/` outside a
-     dev-dependencies table (ADR-0008, ADR-0012).
-  5. `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none but `cpe-core` and
+  3. `cpe-core` depends on no CPE crate (`LEAVES`); a new crate that must stay a leaf is added there.
+  4. `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none but `cpe-core` and
      `cpe-ports`, and `cpe-server` on every CPE crate but `cpe-store`, which it reaches through `cpe-web`
      (`CPE_EDGES`).
 
-  Not checked by the script: that no CPE crate depends on DPE's crates or on `sync`'s store outside a
-  dev-dependencies table, and that `cpe-components` depends on neither `axum` nor `rusqlite`.
+  The edges CPE's crates have by their roles (ADR-0003 and the roles above), the `sync` and `media` crates
+  as dev-dependencies only among them (ADR-0008, ADR-0012), are `check-capability-deps.sh`'s.
 - **The image viewer is `cpe-image-viewer`, at `areas/access/cpe/image-viewer`**: a copy of the incubator's
   `shared/dasch-image-viewer`, reduced to the one engine CPE uses (OpenSeadragon in a shadow root). It is not
   in `shared/`, because it has one consumer, and it is not part of the component library; a consumer outside
@@ -273,7 +272,7 @@ normaliser per process, so it changes when they do).
   project segment; it comes back when a project's segment has to change.
 - **A builder that writes SQLite directly** — *deferred*: it saves the parse of the SQL text; it comes back when
   that parse costs enough to matter.
-- **`cpe-store-build` folded into `cpe-store`** — *deferred*: the two are kept apart, and rule 5 of the seam
+- **`cpe-store-build` folded into `cpe-store`** — *deferred*: the two are kept apart, and rule 4 of the seam
   holds the builder off the store it fills; it comes back if the separation stops paying for itself.
 
 ## Consequences
@@ -311,8 +310,9 @@ scheduled).
 Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, `store-build/`, `web/`, `bin/`)
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store` (DEV-7408).
 
-Enforced by: **static-analysis** — `check-cpe-seam.sh` and `check-composition-root-deps.sh`, run by
-`just check`, for the seam and the composition root's dependencies, with Bazel `visibility` per ADR-0001 as
+Enforced by: **static-analysis** — `check-cpe-seam.sh`, `check-capability-deps.sh` and
+`check-composition-root-deps.sh`, run by `just check`, for the seam, CPE's crates by their roles and the
+composition root's dependencies, with Bazel `visibility` per ADR-0001 as
 the target (**structure**); `cpe-server`'s tests for the facade (`no_pub_item_names_another_cpe_crate`), for
 the 503 and 404 behaviour (its `activation` module, over `FakeArchiveProjection`), for Incunabula's store text
 (length and SHA-256, below its header and whole, in its `activation` module), for the `SHORTCODE` rules (its

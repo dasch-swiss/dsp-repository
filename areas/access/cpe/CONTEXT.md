@@ -315,20 +315,18 @@ under `_assets/` until `media` serves assets at request time; then they leave th
 outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`, which `sync-store` and
 `media-store` implement, and `cpe-server`, which `access-server` mounts; no manifest under
 `areas/access/cpe/` depends on a Mosaic crate;
-`cpe-core`, `cpe-ports` and `cpe-image-viewer` depend on no CPE crate; no manifest under
-`areas/access/cpe/` names a crate of `areas/access/sync/` or `areas/access/media/` outside a
-dev-dependencies table (ADR-0008, ADR-0012); and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
+`cpe-core` depends on no CPE crate; and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
 but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but `cpe-store` (the script's `CPE_EDGES`;
 ADR-0007). A
-rename (`package = "…"`) of a CPE, Mosaic, `sync` or `media` crate in the workspace root is reported where it is
+rename (`package = "…"`) of a CPE or Mosaic crate in the workspace root is reported where it is
 declared, whichever crate inherits it. The
-first, second and fourth rules cover a new crate without an edit. A new crate that must stay a leaf has to be
+first and second rules cover a new crate without an edit. A new crate that must stay a leaf has to be
 added to the script's `LEAVES`, and one whose CPE dependencies are to be held to its `CPE_EDGES`; one that a
-crate outside the capability may depend on has to be added to its exception list. What the script does not
-check is review: that no CPE crate depends on DPE's domain, store or web crates, which CPE crates a crate
-outside `LEAVES` and `CPE_EDGES` depends on, `cpe-components`' own
-dependency list (no `axum`, no `rusqlite`), and `cpe-store`'s (no `maud`, no
-`axum`).
+crate outside the capability may depend on has to be added to its exception list.
+
+The edges CPE's crates have by their roles, the `sync` and `media` crates as dev-dependencies only among them,
+are `check-capability-deps.sh`'s (ADR-0003, ADR-0007). Review: which CPE crates a crate outside `LEAVES` and
+`CPE_EDGES` depends on, and `cpe-store`'s own dependency list (no `maud`, no `axum`).
 
 ## What the port serves
 

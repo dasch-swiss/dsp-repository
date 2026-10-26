@@ -57,9 +57,12 @@ dep() {
 }
 
 # new_ws: a workspace shaped like the Deposit Area, every allowed edge present
-# once. Sets WS.
+# once. Sets WS, and CHECKED_AREAS, CAPABILITY_ROLES and DEV_ONLY for it.
 new_ws() {
   WS="$(mktemp -d "${TMPDIR:-/tmp}/capability-deps.XXXXXX")" || exit 1
+  CHECKED_AREAS=deposit
+  CAPABILITY_ROLES=deposit/alpha/pull-requests
+  DEV_ONLY="areas/access/sync/store areas/access/media/store"
   local cap
   for cap in alpha beta; do
     crate "areas/deposit/$cap/core" "$cap-core"
@@ -87,6 +90,53 @@ new_ws() {
   dep areas/deposit/shell 'shared-metadata = { path = "@/shared/metadata" }'
   # The root's edges are check-composition-root-deps.sh's.
   dep areas/deposit/server 'alpha-core = { path = "@/areas/deposit/alpha/core" }'
+}
+
+# new_access_ws: a workspace shaped like the Access Area, every allowed edge
+# present once: a capability with every role a server crate brings, a provider
+# answering its port, and the two DEV_ONLY adapters as its tests use them. Sets
+# WS, and CHECKED_AREAS, CAPABILITY_ROLES and DEV_ONLY for it.
+new_access_ws() {
+  WS="$(mktemp -d "${TMPDIR:-/tmp}/capability-deps.XXXXXX")" || exit 1
+  CHECKED_AREAS=access
+  CAPABILITY_ROLES="access/alpha/components access/alpha/image-viewer access/alpha/store-build"
+  DEV_ONLY="areas/access/sync/store areas/access/media/store"
+  local role
+  for role in core ports store web server api-oai components image-viewer store-build; do
+    crate "areas/access/alpha/$role" "alpha-$role"
+  done
+  crate areas/access/sync/store sync-store
+  crate areas/access/media/store media-store
+  crate areas/access/server access-server
+  crate shared/metadata shared-metadata
+  crate modules/mosaic/tiles mosaic-tiles
+
+  dep areas/access/alpha/api-oai 'alpha-core = { path = "@/areas/access/alpha/core" }'
+  dep areas/access/alpha/api-oai 'shared-metadata = { path = "@/shared/metadata" }'
+  dep areas/access/alpha/api-oai 'axum = "0.8"'
+  dep areas/access/alpha/image-viewer 'shared-metadata = { path = "@/shared/metadata" }'
+  dep areas/access/alpha/image-viewer 'maud = "0.27"'
+  dep areas/access/alpha/components 'alpha-core = { path = "@/areas/access/alpha/core" }'
+  dep areas/access/alpha/components 'alpha-image-viewer = { path = "@/areas/access/alpha/image-viewer" }'
+  dep areas/access/alpha/components 'maud = "0.27"'
+  dep areas/access/alpha/store 'rusqlite = "0.37"'
+  dep areas/access/alpha/web 'alpha-components = { path = "@/areas/access/alpha/components" }'
+  dep areas/access/alpha/web 'alpha-store = { path = "@/areas/access/alpha/store" }'
+  dep areas/access/alpha/web 'mosaic-tiles = { path = "@/modules/mosaic/tiles" }'
+  dep areas/access/alpha/store-build 'alpha-core = { path = "@/areas/access/alpha/core" }'
+  dep areas/access/alpha/store-build 'alpha-ports = { path = "@/areas/access/alpha/ports" }'
+  dep areas/access/alpha/server 'alpha-api-oai = { path = "@/areas/access/alpha/api-oai" }'
+  dep areas/access/alpha/server 'alpha-store-build = { path = "@/areas/access/alpha/store-build" }'
+  dep areas/access/alpha/server 'alpha-web = { path = "@/areas/access/alpha/web" }'
+  dep areas/access/alpha/server 'mosaic-tiles = { path = "@/modules/mosaic/tiles" }'
+  dep areas/access/alpha/server 'axum = "0.8"'
+  dep areas/access/sync/store 'alpha-ports = { path = "@/areas/access/alpha/ports" }'
+  dep areas/access/media/store 'alpha-ports = { path = "@/areas/access/alpha/ports" }'
+  dep areas/access/alpha/store-build '[dev-dependencies]'
+  dep areas/access/alpha/store-build 'sync-store = { path = "@/areas/access/sync/store" }'
+  dep areas/access/alpha/server '[dev-dependencies]'
+  dep areas/access/alpha/server 'sync-store = { path = "@/areas/access/sync/store" }'
+  dep areas/access/alpha/server 'media-store = { path = "@/areas/access/media/store" }'
 }
 
 # run_gate: write the workspace manifest, run the gate in it, remove it;
@@ -154,11 +204,11 @@ fails_with "a renamed dependency on another capability's core fails" "areas/depo
 new_ws
 dep areas/deposit/alpha/web '[dev-dependencies]'
 dep areas/deposit/alpha/web 'beta-store = { path = "@/areas/deposit/beta/store" }'
-fails_with "a dev-dependency on another capability's store fails" "areas/deposit/alpha/web depends on beta-store (areas/deposit/beta/store, dev), an edge its role does not allow"
+fails_with "a dev-dependency on another capability's store fails" "areas/deposit/alpha/web depends on beta-store (areas/deposit/beta/store, dev), an edge its role does not allow (across capabilities, a dev-dependency only on a crate in DEV_ONLY, ADR-0008)"
 
 new_ws
 crate areas/deposit/alpha/cli alpha-cli
-fails_with "a crate in an unknown role fails" "alpha-cli (areas/deposit/alpha/cli) is in no role this gate knows: core, store, ports, web or pull-requests under a capability, or the area's shell or server"
+fails_with "a crate in an unknown role fails" "alpha-cli (areas/deposit/alpha/cli) is in no role this gate knows: core, store, ports, web, server or api-* under a capability, a role CAPABILITY_ROLES gives its capability, or the area's shell or server"
 
 new_ws
 dep areas/deposit/alpha/ports 'serde = "1"'
@@ -179,7 +229,70 @@ new_ws
 dep areas/deposit/shell 'axum = "0.8"'
 fails_with "the shell on a web framework fails" "areas/deposit/shell depends on axum (third-party, normal), a crate its role may not use"
 
+new_access_ws
+check "every allowed Access Area edge, the DEV_ONLY dev-dependencies included, passes" 0 "$(rc)"
+
+new_access_ws
+dep areas/access/alpha/api-oai 'alpha-web = { path = "@/areas/access/alpha/web" }'
+fails_with "an api-* crate on its own capability's web crate fails" "areas/access/alpha/api-oai depends on alpha-web (areas/access/alpha/web, normal), an edge its role does not allow"
+
+new_access_ws
+dep areas/access/alpha/image-viewer 'alpha-core = { path = "@/areas/access/alpha/core" }'
+fails_with "an image-viewer crate on its own capability's core fails" "areas/access/alpha/image-viewer depends on alpha-core (areas/access/alpha/core, normal), an edge its role does not allow"
+
+new_access_ws
+dep areas/access/alpha/web 'sync-store = { path = "@/areas/access/sync/store" }'
+fails_with "a DEV_ONLY crate as a normal dependency fails" "areas/access/alpha/web depends on sync-store (areas/access/sync/store, normal), an edge its role does not allow"
+
+new_access_ws
+dep areas/access/alpha/components '[dev-dependencies]'
+dep areas/access/alpha/components 'rusqlite = "0.37"'
+fails_with "a components crate on a database crate fails" "areas/access/alpha/components depends on rusqlite (third-party, dev), a crate its role may not use"
+
+new_access_ws
+dep areas/access/alpha/components 'tower = "0.5"'
+fails_with "a components crate on a web framework fails" "areas/access/alpha/components depends on tower (third-party, normal), a crate its role may not use"
+
+new_access_ws
+dep areas/access/alpha/web 'axum = "0.8"'
+fails_with "a web crate beside a server crate on a web framework fails" "areas/access/alpha/web depends on axum (third-party, normal), a crate its role may not use"
+
+new_access_ws
+dep areas/access/alpha/server "[target.'cfg(unix)'.dependencies]"
+dep areas/access/alpha/server 'beta = { package = "media-store", path = "@/areas/access/media/store" }'
+fails_with "a server crate on another capability's store fails" "areas/access/alpha/server depends on media-store (areas/access/media/store, normal), an edge its role does not allow"
+
+new_access_ws
+CHECKED_AREAS="deposit access"
+crate areas/deposit/beta/core beta-core
+dep areas/deposit/beta/core '[dev-dependencies]'
+dep areas/deposit/beta/core 'sync-store = { path = "@/areas/access/sync/store" }'
+fails_with "another area's DEV_ONLY crate as a dev-dependency fails" "areas/deposit/beta/core depends on sync-store (areas/access/sync/store, dev), an edge its role does not allow (across capabilities, a dev-dependency only on a crate in DEV_ONLY, ADR-0008)"
+
+new_access_ws
+dep areas/access/alpha/ports '[dev-dependencies]'
+dep areas/access/alpha/ports 'sync-store = { path = "@/areas/access/sync/store" }'
+fails_with "a ports crate on a DEV_ONLY crate, dev-only, fails" "areas/access/alpha/ports depends on sync-store (areas/access/sync/store, dev), an edge its role does not allow (across capabilities, a dev-dependency only on a crate in DEV_ONLY, ADR-0008)"
+
+new_access_ws
+dep areas/access/media/store '[dev-dependencies]'
+dep areas/access/media/store 'sync-store = { path = "@/areas/access/sync/store" }'
+fails_with "a DEV_ONLY provider on another DEV_ONLY crate, dev-only, fails" "areas/access/media/store depends on sync-store (areas/access/sync/store, dev), an edge its role does not allow (across capabilities, a dev-dependency only on a crate in DEV_ONLY, ADR-0008)"
+
+new_access_ws
+crate areas/access/beta/components beta-components
+fails_with "a role CAPABILITY_ROLES gives another capability fails" "beta-components (areas/access/beta/components) is in no role this gate knows: core, store, ports, web, server or api-* under a capability, a role CAPABILITY_ROLES gives its capability, or the area's shell or server"
+
+new_access_ws
+dep areas/access/alpha/web 'axum-extra = "0.10"'
+fails_with "a web crate beside a server crate on an axum-* crate fails" "areas/access/alpha/web depends on axum-extra (third-party, normal), a crate its role may not use"
+
+new_access_ws
+DEV_ONLY="areas/access/sync/store areas/access/gone/store"
+fails_with "a DEV_ONLY path that is no workspace crate fails" "DEV_ONLY names areas/access/gone/store, which is no workspace crate"
+
 WS="$(mktemp -d "${TMPDIR:-/tmp}/capability-deps.XXXXXX")" || exit 1
+CHECKED_AREAS=deposit
 crate areas/deposit/shell deposit-shell
 crate areas/deposit/server deposit-server
 fails_with "an area with no capability crate fails" "areas/deposit has no capability crate (areas/deposit/<capability>/<role>/Cargo.toml)"

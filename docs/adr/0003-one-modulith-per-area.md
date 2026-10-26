@@ -39,8 +39,8 @@ The contract inside an area:
 - **One permitted capability-to-capability dependency:** a provider's store crate on a consumer's `ports`
   crate. Never on another capability's domain, store or web crate. A port declared by a `shared-*` crate stays
   in that crate; a capability implementing it depends on the shared crate, which is always allowed. The one
-  exception is ADR-0008's: a crate of a reading capability may name `sync-store` as a dev-dependency, and only
-  as one.
+  exception is ADR-0008's: a crate of a reading capability may name `sync-store`, or `media-store` for its bytes
+  port (ADR-0012), as a dev-dependency, and only as one.
 - **References are opaque ids.** A capability stores only the foreign identifier (a shortcode, an entity id) — a
   foreign key by convention, not a database constraint across capabilities — and fetches names, labels and
   details through the port, never by reading the other capability's tables.
@@ -60,10 +60,12 @@ Within a capability, the crates are `{capability}-{role}`. The general roles:
 - `core` — the framework-free domain: no web framework, no Maud, no database crate.
 - `store` — where the capability persists, and where it implements other capabilities' ports.
 - `web` — views and, where the capability has no `server` crate, its routes and handlers. It may also depend on
-  its area's shell and on `mosaic-tiles`.
+  its area's shell and on `mosaic-tiles`. Beside a `server` crate it holds views only and uses no web framework.
 - `ports` — the ports the capability declares as a consumer.
-- `server` — the capability's host crate, holding its routes, configuration and startup behind its facade.
-- `api-*` — a machine-facing protocol surface of the capability (`dpe-api-oai`).
+- `server` — the capability's host crate, holding its routes, configuration and startup behind its facade. It
+  may also depend on its area's shell and on `mosaic-tiles`.
+- `api-*` — a machine-facing protocol surface of the capability (`dpe-api-oai`), depending on the capability's
+  `core` and on `shared-*` crates alone.
 
 A capability may add a role. The role is named, with its allowed edges, in the record that governs the
 capability or its area, and `check-capability-deps.sh` learns it in the same change: `pull-requests` in
@@ -185,12 +187,9 @@ Not yet in code: `sync` serves a committed N-Quads snapshot through `sync-store`
 rebuilt from snapshot plus replay (not scheduled).
 Not yet in code: DPE reads its own data directory (`areas/access/dpe/server/data`) through `dpe-core`, not
 through a port against `sync` (not scheduled).
-Not yet in code: `check-capability-deps.sh` checks only the Deposit Area (`CHECKED_AREAS="deposit"`); it does
-not know the Access Area's roles `server`, `api-*`, `components`, `image-viewer` and `store-build`, nor
-ADR-0008's dev-dependency on `sync-store`, and `check-cpe-seam.sh` holds CPE's edges meanwhile (DEV-7527).
 
 Enforced by: `check-capability-deps.sh`, run by `just check`, for the crate edges inside the areas it lists
 (static-analysis); `check-composition-root-deps.sh` for the composition roots' edges, so each rule has one
-enforcer (static-analysis); `check-cpe-seam.sh` for CPE's edges (static-analysis), with Bazel `visibility`
+enforcer (static-analysis); `check-cpe-seam.sh` for the edges particular to CPE (static-analysis), with Bazel `visibility`
 under ADR-0001 as the target (structure), also for "one consumer per channel"; review for data sovereignty, the facade, the no-middleware rule (a middleware is one
 `.layer()` line) and the engine rules.

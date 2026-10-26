@@ -149,6 +149,29 @@ check "a core crate of a capability without a server crate fails" 1 \
   "$(gate_rc_noserver "$DEPS_HEADER
 solo-core = { path = \"../solo/core\" }")"
 
+# 8c. A crate of another area fails in every role, a store crate and that
+#     area's own composition root included: areas integrate over the wire.
+gate_rc_two_areas() {
+  local repo rc
+  repo="$(make_repo "$1")"
+  ( cd "$repo" && crate areas/deposit/editor/store editor-store && crate areas/deposit/server deposit-server \
+      && git add -A && git commit -qm deposit && main >/dev/null 2>&1 )
+  rc=$?
+  rm -rf "$repo"
+  echo "$rc"
+}
+check "a dependency on another area's store crate fails" 1 \
+  "$(gate_rc_two_areas "$DEPS_HEADER
+dpe-server = { path = \"../dpe/server\" }
+editor-store = { path = \"../../deposit/editor/store\" }")"
+check "a dependency on another area's composition root fails" 1 \
+  "$(gate_rc_two_areas "$DEPS_HEADER
+dpe-server = { path = \"../dpe/server\" }
+deposit-server = { path = \"../../deposit/server\" }")"
+check "a second area alone changes nothing" 0 \
+  "$(gate_rc_two_areas "$DEPS_HEADER
+dpe-server = { path = \"../dpe/server\" }")"
+
 # 9. Absence of any areas/*/server/Cargo.toml is an error, not zero work.
 repo="$(make_repo "$DEPS_HEADER
 dpe-server = { path = \"../dpe/server\" }")"

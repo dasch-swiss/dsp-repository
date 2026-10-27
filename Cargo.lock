@@ -603,6 +603,7 @@ dependencies = [
  "insta",
  "maud",
  "pulldown-cmark",
+ "shared-datastar",
  "tracing",
 ]
 

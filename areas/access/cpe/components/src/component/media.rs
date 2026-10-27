@@ -387,7 +387,7 @@ pub fn viewer_reset_signals_json() -> String {
 /// containing such code points. This escapes exactly what a JS
 /// double-quoted literal needs: backslash, double quote, and C0 control
 /// characters; everything else (including non-ASCII text) passes through
-/// unchanged. `util::encode_get_arg` is a different, narrower tool
+/// unchanged. The `shared-datastar` path encoding is a different, narrower tool
 /// (percent-encoding a handful of chars for a single-quoted `@get('…')` URL
 /// context) and is not a fit here.
 fn js_dq_string(s: &str) -> String {
@@ -540,10 +540,9 @@ fn ico(icon: Icon) -> Markup {
 /// three signals, rather than three separate `data-on:viewer-zoom` bindings
 /// on the same element (DataStar allows only one `data-on:<event>` per
 /// element per key). DataStar `data-on:*` expressions accept multiple
-/// semicolon-separated statements (mirrors `facet_panel.rs`'s
-/// `"document.getElementById('q').value = ''; @get('{frag}')"` two-statement
-/// click expression) — each assignment is its own statement, evaluated left
-/// to right.
+/// semicolon-separated statements (mirrors `facet_panel.rs`'s two-statement
+/// clear click, `document.getElementById('q').value = ''; @get('…')`) — each assignment is its own
+/// statement, evaluated left to right.
 const VIEWER_ZOOM_EXPR: &str = "$scale = (evt.detail.atHome || evt.detail.ratioToHome == null) ? 'FIT' : ('×' + evt.detail.ratioToHome.toFixed(2) + (evt.detail.atNative ? ' · native' : '')); $atHome = evt.detail.atHome; $atNative = evt.detail.atNative; $atMin = evt.detail.atMin; $atMax = evt.detail.atMax";
 
 /// The `data-on:viewer-error` expression bound alongside [`VIEWER_ZOOM_EXPR`]

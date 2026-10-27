@@ -21,8 +21,9 @@ repository. The decision, phrased so a violation is describable in code:
   turns the port's snapshot and a project's `remodel {}` block into the rows of CPE's store; it depends on
   `cpe-core` and `cpe-ports` and not on `cpe-store`, whose schema it includes as a file. `cpe-components` is
   CPE's component library, and `cpe-image-viewer` its image viewer (both below). `cpe-components` depends on
-  CPE's crates and on no web framework or database crate; `cpe-image-viewer` depends on no crate of this
-  repository but the `shared-*` crates, and on no web framework or database crate.
+  no crate of this repository but CPE's crates and the `shared-*` crates, and on no web framework or database
+  crate; `cpe-image-viewer` depends on no crate of this repository but the `shared-*` crates, and on no web
+  framework or database crate.
 
 **The port and the store**
 
@@ -308,7 +309,8 @@ store (DEV-7409).
 Not yet in code: CPE's glossary is `dsp-incubator cpe/CONTEXT.md`, not `areas/access/cpe/CONTEXT.md` (not
 scheduled).
 Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, `store-build/`, `web/`, `bin/`)
-and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store` (DEV-7408).
+and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
+`shared-datastar`, which `cpe-components` depends on (DEV-7408).
 
 Enforced by: **static-analysis** — `check-cpe-seam.sh`, `check-capability-deps.sh` and
 `check-composition-root-deps.sh`, run by `just check`, for the seam, CPE's crates by their roles and the

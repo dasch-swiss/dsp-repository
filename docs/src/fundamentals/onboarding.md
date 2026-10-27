@@ -11,6 +11,8 @@ Two supported paths:
 
 Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node explicitly, so this affects local non-Nix development only.
 
+**macOS: run `just clean` once in an older checkout.** `.cargo/config.toml` stops cargo leaving stale `.o` files in `target/debug/deps`, which slow the first launch of each new test binary, but does not remove the ones already there. Its comment names the rustflags settings it overrides and is overridden by. The setting drops file:line from backtrace frames and lldb; to debug with them, build with `RUSTFLAGS="-C split-debuginfo=unpacked"`.
+
 ## Rust
 
 The main technology we use is Rust.

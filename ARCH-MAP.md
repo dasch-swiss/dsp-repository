@@ -1404,7 +1404,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 Not code components; they span the repo and are staleness-exempt here:
 
-- **Build, toolchain and dev loop:** `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`,
+- **Build, toolchain and dev loop:** `Cargo.toml`, `Cargo.lock`, `.cargo/config.toml` (rustflags), `rust-toolchain.toml`,
   `.rustfmt.toml`, `deny.toml`, `bacon.toml`, `justfile`, `tailwind.pins`, `flake.nix`,
   `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.dockerignore`, `.worktreeinclude`,
   `.commitlintrc.yml`, `.kodus-readiness.yml`

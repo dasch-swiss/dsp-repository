@@ -190,8 +190,8 @@ html[data-align="justify"] .record__intro .prose > p {
   width: 0.62em; height: 0.62em; border-radius: 50%;
   background: var(--accent);
 }
-.v-bool[data-on="false"] { color: var(--ink-faint); }
-.v-bool[data-on="false"]::before { background: var(--rule-strong); }
+.v-bool[data-bool="false"] { color: var(--ink-faint); }
+.v-bool[data-bool="false"]::before { background: var(--rule-strong); }
 
 /* date — with precision */
 .v-date { font-family: var(--font-meta); font-size: var(--size-3); color: var(--ink); }

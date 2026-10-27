@@ -29,6 +29,8 @@
       "Bash(just fmt)",
       "Bash(just fmt:*)",
       "Bash(just test)",
+      "Bash(just test-changed)",
+      "Bash(just test-changed:*)",
       "Bash(just test:*)",
       "Bash(just watch-mosaic-playground)",
       "Bash(rg:*)",

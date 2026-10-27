@@ -35,7 +35,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 
 ## Style
 
-- [ ] Datastar attribute patterns match conventions (`_` prefix for signals)
+- [ ] Datastar attribute patterns match conventions (`_` prefix for signals); actions come from `shared-datastar`, not strings
 - [ ] Fragment handlers in `fragments/` module, not inline
 - [ ] Contract types in `shared-metadata`, DPE's view model in `dpe-core`, representation mappings in `shared-fair` — not in web or API crates
 - [ ] No non-trivial `html!` block passed directly as a function argument — bind to a `let` or extract a `fn -> Markup` helper (nested-as-arg `html!` gets mangled by `just fmt`)

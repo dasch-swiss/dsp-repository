@@ -32,9 +32,10 @@ shared-metadata   The wire contract, shared with the editor
 
 - **shared-metadata**: The research-metadata wire contract, shared with the editor and living in `shared/` rather than under `areas/access/dpe/`.
 - **shared-fair**: The FAIR exposure engine (ADR-0005) — one resolved graph per published object and one writer per representation over it, including the DataCite and Dublin Core mappings OAI-PMH uses. Lives in `shared/`, depends on shared-metadata only, and knows no routes.
+- **shared-datastar**: Typed Datastar actions (`@get`, `@post`), spliced into Maud attribute values. Lives in `shared/` and depends on nothing.
 - **dpe-core**: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.
 - **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends on shared-metadata, dpe-core and shared-fair.
-- **dpe-web**: A native library of [Maud](https://maud.lambda.xyz/) page and component functions (`fn -> Markup`). Imports shared-metadata and dpe-core types directly.
+- **dpe-web**: A native library of [Maud](https://maud.lambda.xyz/) page and component functions (`fn -> Markup`). Imports shared-metadata and dpe-core types directly, and builds its Datastar actions with shared-datastar.
 - **dpe-server**: A library — DPE's native Axum router, the `<head>`/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers. `access-server` (`areas/access/server`), the Access Area's composition root, mounts this router, owns `main`, CLI dispatch and observability init.
 
 ## Hypermedia-Driven Architecture
@@ -118,7 +119,8 @@ The client never needs to track tab state — the server-rendered HTML IS the st
 ## Datastar Attribute Conventions
 
 - **Signal naming**: Use `_` prefix for client-only signals (e.g., `_tab_loading`). The underscore excludes the signal from server payloads.
-- **`retry: 'never', retryMaxCount: 0`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying. `retry: 'never'` alone covers only HTTP statuses: a network failure or dropped stream is still retried (10 times, about 3 minutes with the defaults) before `retries-failed` fires. `retryMaxCount: 0` makes it fire on the first failure.
+- **Actions**: Build `@get()` and `@post()` values with `shared_datastar` (`datastar::get(…)`), never as strings. The attribute name stays a Maud literal.
+- **`Get::retry_never()`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying; it emits `{retry: 'never', retryMaxCount: 0}`. `retry: 'never'` alone covers only HTTP statuses: a network failure or dropped stream is still retried (10 times, about 3 minutes with the defaults) before `retries-failed` fires. `retryMaxCount: 0` makes it fire on the first failure.
 - **Graceful degradation**: Every Datastar-enhanced `<a>` must have a valid `href` for no-JS fallback.
 
 ## See Also

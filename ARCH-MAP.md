@@ -73,7 +73,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   one production `Box::leak` of the corpus) is named here rather than added.
 - **Depends on:** shared/metadata (all four crates), shared/fair (`dpe-api-oai`, `dpe-server`), shared/rate-limit
   (`dpe-server`), shared/telemetry
-  (`dpe-server`, `traceparent.rs`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio,
+  (`dpe-server`, `traceparent.rs`), shared/datastar (`dpe-web`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio,
   tower / tower-http / tower_governor, maud, datastar, figment, serde / serde_json, quick-xml,
   ureq, chrono (`dpe-api-oai`), futures and urlencoding (`dpe-server`, `dpe-web`), opentelemetry /
   tracing-opentelemetry, tower-livereload and notify (`dpe-server`'s `dev` feature, which
@@ -725,6 +725,37 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
 - **Fingerprint:** `31be7dec978d`
+
+### shared/datastar
+
+- **Paths:** `:(glob)shared/datastar/**`
+- **Purpose:** `shared-datastar` — a typed builder for Datastar action expressions
+  (`@get(…)`, `@post(…)`), spliced into Maud attribute values, so no view crate writes an action
+  as a string; a JS statement before the action (`…value = ''; {action}`) stays hand-written,
+  joined with `format!`. Attribute names stay Maud literals: Maud 0.27 takes only literal tokens as names.
+- **Key entities:** `get`, `post`, `Get`, `Post`
+- **Public interface:** `get(path) -> Get` with `plus_js(expr)` and `retry_never()`;
+  `post(path) -> Post` with `submitter_first()` and `form()`. Both implement `Display`, not
+  `maud::Render`; Maud escapes the splice. A missing option or verb is a new method here, with a
+  test of its output; every state change is a POST (ADR-0004).
+- **Local-context kit:** `shared/datastar/src/lib.rs`, `shared/README.md`,
+  `docs/src/dpe/architecture.md` (Datastar Attribute Conventions),
+  `areas/deposit/editor/CLAUDE.md` (Datastar attribute syntax, the `formaction` pitfall)
+- **Depends on:** nothing; dev: maud
+- **Used by:** areas/access/dpe (`dpe-web`)
+- **Boundary rules:**
+  - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
+    as for `shared-metadata`).
+  - The path is percent-encoded for `'`, `` ` `` and `\`, so it cannot end the JS string it is
+    written into (**static-analysis**: the crate's tests); a `plus_js` tail is emitted verbatim and is
+    a `&'static str`, so no runtime value reaches it (**structure**).
+  - Neither type implements `maud::Render` or escapes HTML: Maud's splice escaping is the only
+    HTML escaping, and a second one would double-escape (**static-analysis**: the crate's `html!`
+    test).
+  - `retry: 'never'` is only ever emitted together with `retryMaxCount: 0` (**structure**: one
+    method emits both).
+- **Durable state:** none.
+- **Fingerprint:** `507a6c19cf26`
 
 ### dsp-cli
 

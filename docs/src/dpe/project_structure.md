@@ -35,6 +35,10 @@ shared-metadata         ← the wire contract, shared with the editor;
                                   with deposit-server; lives in `shared/`
               shared-rate-limit ← per-IP rate-limit key, shared with editor-web,
                                   identity-web and deposit-server; lives in `shared/`
+
+shared-datastar         ← typed Datastar actions, no dependencies; lives in `shared/`
+  ↑
+  └── dpe-web
 ```
 
 `dpe-api-oai`, `dpe-web` and `dpe-server` depend on `shared-metadata` directly
@@ -103,7 +107,7 @@ Maud view library — a plain `lib` crate of page and component functions return
 - **Components**: navbar, footer, project cards, tab panels, search input — small `fn -> Markup` partials
 - **Data access**: loaders and resolvers (`get_project`, `list_projects`, `get_contributors`) as plain functions over `dpe-core`
 
-Imports `shared-metadata` and `dpe-core` types directly; depends on `maud` and `mosaic-tiles`. No Leptos, no WASM, no `cdylib`/`hydrate`/`ssr` features.
+Imports `shared-metadata` and `dpe-core` types directly; depends on `maud`, `mosaic-tiles` and `shared-datastar`, which builds its Datastar actions. No Leptos, no WASM, no `cdylib`/`hydrate`/`ssr` features.
 
 ### Browser telemetry
 

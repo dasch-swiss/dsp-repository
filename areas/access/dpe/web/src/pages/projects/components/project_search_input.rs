@@ -1,5 +1,6 @@
 use maud::{html, Markup};
 use mosaic_tiles::icon::{icon, IconSearch};
+use shared_datastar as datastar;
 
 /// Keyboard navigation for the search-results dropdown.
 /// Uses native JS (not Datastar) because it manipulates DOM classes on
@@ -63,7 +64,7 @@ pub fn project_search_input() -> Markup {
                         aria-expanded="false"
                         data-attr:aria-expanded="$_focused && $search.length > 0 ? 'true' : 'false'"
                         data-bind:search
-                        "data-on:input__debounce.300ms"="@get('/dpe/projects/search')"
+                        "data-on:input__debounce.300ms"=(datastar::get("/dpe/projects/search"))
                         data-on:focus="$_focused = true"
                         "data-on:blur__debounce.200ms"="$_focused = false"
                         onkeydown=(SEARCH_KEYBOARD_NAV);

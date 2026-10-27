@@ -41,7 +41,7 @@ Review checklist for the DSP Repository. Organized by priority.
 
 ## Style
 
-- Follow existing Datastar attribute patterns (signal naming with `_` prefix) — see [DPE Architecture](../dpe/architecture.md)
+- Follow existing Datastar attribute patterns (signal naming with `_` prefix; actions built with `shared-datastar`, not written as strings) — see [DPE Architecture](../dpe/architecture.md)
 - Fragment handlers in `fragments/` module, not inline in `main.rs`
 - Contract types belong in `shared-metadata` and DPE's view model in `dpe-core`, not in web or API crates
 - API crate exposes a handler function (e.g., `pub async fn oai_handler(...)`) for composition in dpe-server

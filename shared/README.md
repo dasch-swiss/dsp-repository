@@ -4,6 +4,7 @@ Crates that exist only to be depended on by more than one area. A crate lands he
 
 ```txt
 shared/
+├── datastar/          # Typed builder for Datastar actions (crate: shared-datastar)
 ├── fair/              # FAIR exposure engine: resolved graphs + representation writers (crate: shared-fair)
 ├── metadata/          # Research-metadata wire contract (crate: shared-metadata)
 ├── rate-limit/        # Per-client-IP key extractor for the rate limiters (crate: shared-rate-limit)
@@ -34,6 +35,20 @@ Dependencies: `serde`, `serde_json`, `tracing`.
 The workspace enables `serde_json`'s `preserve_order` feature, which the editor's canonical project writer requires: it round-trips `ProjectRaw` through `serde_json::Value` to strip `null` members, and `Value` alphabetises every key unless the feature is on. With it, output follows the struct's declaration order, which is what the 85 committed project files hold. Two consequences to know: `Map::remove` becomes swap-remove (use `retain` to drop members in place), and a `HashMap` field would serialize in its own random iteration order, which is why multilingual fields are `Multilingual` rather than `HashMap`.
 
 `testdata/` holds two supported cross-crate test fixtures, not private ones: `0803-records.json` (a plain record) and `0862-records.json` (the one committed record carrying the full technical file metadata). `record.rs`'s own tests `include_str!` both; `dpe-api-oai`'s `get_record` and `test_utils` tests read `0803-records.json` by relative path. That direction (a service crate reading into a shared crate) is the allowed one, and these are the single copy of each sample, so moving or renaming one breaks those call sites at compile time; update them in the same commit. They live here rather than under `areas/access/dpe/server/data/` because `record.rs` is what reads them, and a shared crate takes no path into a service module.
+
+## `shared-datastar` (datastar/)
+
+The typed builder for Datastar actions, the value of a `data-on:*` attribute. `shared_datastar::get(path)` and `shared_datastar::post(path)` return a `Get` or a `Post`; both implement `Display` and are spliced into a Maud attribute value, e.g. `a href=(href) data-on:click__prevent=(datastar::get(tab_url).retry_never()) { … }` with `use shared_datastar as datastar;` at the call site. Contains:
+
+- **`Get`**: `plus_js(expr)` appends a JS expression to the path (`'path' + <expr>`), and `retry_never()` adds `{retry: 'never', retryMaxCount: 0}`. The two keys cannot be split: `retry: 'never'` alone leaves network failures retried (DEV-7366)
+- **`Post`**: `submitter_first()` prefers the submitting button's `formAction` (`evt.submitter?.formAction || 'path'`), and `form()` adds `{contentType: 'form'}`
+- **Path encoding**: `'`, `` ` `` and `\` in the path are percent-encoded, so a path cannot end the JS string it is written into
+
+Maud HTML-escapes the value when it is spliced in (`&` becomes `&amp;`, which the browser decodes before Datastar reads it), so the crate does not escape for HTML. Attribute names stay Maud literals, because Maud takes only literal tokens as attribute names. Signal names and JS expressions are not typed.
+
+Used by `dpe-web`.
+
+Dependencies: none (`maud` as a dev-dependency, for the tests).
 
 ## `shared-fair` (fair/)
 

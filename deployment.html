@@ -351,7 +351,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <li>Pushes the Docker image to Docker Hub (<code>daschswiss/metadata-editor:{tag}</code>)</li>
 <li>Triggers a Jenkins webhook (<code>Service=deposit</code>) for STAGE deployment, <code>deposit.stage.dasch.swiss</code></li>
 </ol>
-<p>The editor deploys as its own <code>deposit</code> stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows <code>main</code>. No workflow deploys the editor to prod yet: that waits for a mail relay (<a href="https://linear.app/dasch/issue/DEV-7618">DEV-7618</a>).</p>
+<p>The editor deploys as its own <code>deposit</code> stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows <code>main</code>. No workflow deploys the editor to prod yet: the relay is settled, and the deploy waits on <a href="https://linear.app/dasch/issue/DEV-7618">DEV-7618</a>.</p>
 <h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>

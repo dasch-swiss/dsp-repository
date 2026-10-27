@@ -55,8 +55,15 @@ second rendering path built for machines alone.
 
 ## Consequences
 
-- Datastar's attribute syntax is a compile-invisible contract: a wrong delimiter renders fine and does nothing.
-  `.github/scripts/check-datastar-delimiters.sh` fails `just check` on the retired forms.
+- Datastar's attribute syntax is a compile-invisible contract: a wrong delimiter, an unknown plugin or a bad
+  modifier renders fine and does nothing. Actions (`@get(…)`, `@post(…)`) are typed: they come from the
+  `shared-datastar` crate and are spliced into the attribute value. Attribute names are Maud literals and
+  cannot be typed, so `.github/scripts/check-datastar-attributes.sh` holds every Datastar-shaped `data-*` name in
+  production code to a whitelist grammar and rejects a raw action; `just check` fails on either.
+- The gate does not catch a misspelled key-less plugin (`data-sigals=` reads as a custom `data-*` attribute), the
+  hyphen-named plugins (`ignore-morph`, `json-signals`, `preserve-attr`), an action built through `PreEscaped`
+  or a computed method name, or JavaScript inside an attribute value. The no-JavaScript end-to-end passes are
+  the backstop.
 - Accessibility is a server-side concern and lives in the components a page is built from: the Mosaic tiles,
   and CPE's own component library (ADR-0007). That is why the tiles carry the semantic methods and the a11y
   suites run on tile changes.
@@ -70,6 +77,6 @@ Not yet in code: CPE has no end-to-end suite, so no journey of it runs with Java
 Not yet in code: DPE's suite (`areas/access/dpe/web-e2e-tests`) disables JavaScript in single specs only, not
 for every journey (not scheduled).
 
-Enforced by: `check-datastar-delimiters.sh` (static-analysis); the Deposit Area's no-JavaScript Playwright pass
+Enforced by: `check-datastar-attributes.sh` (static-analysis); the Deposit Area's no-JavaScript Playwright pass
 in `areas/deposit/editor/web-e2e-tests` (static-analysis); review for the absence of a client framework and a
 BFF (review).

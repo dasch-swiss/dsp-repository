@@ -741,7 +741,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   test of its output; every state change is a POST (ADR-0004).
 - **Local-context kit:** `shared/datastar/src/lib.rs`, `shared/README.md`,
   `docs/src/dpe/architecture.md` (Datastar Attribute Conventions),
-  `areas/deposit/editor/CLAUDE.md` (Datastar attribute syntax, the `formaction` pitfall)
+  `areas/deposit/editor/CLAUDE.md` (Datastar attribute syntax, the `formaction` pitfall),
+  `.github/scripts/check-datastar-attributes.sh` (the attribute-name grammar, no raw actions)
 - **Depends on:** nothing; dev: maud
 - **Used by:** areas/access/dpe (`dpe-web`), areas/deposit/editor (`editor-web`),
   areas/access/cpe (`cpe-components`)
@@ -757,7 +758,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - `retry: 'never'` is only ever emitted together with `retryMaxCount: 0` (**structure**: one
     method emits both).
 - **Durable state:** none.
-- **Fingerprint:** `507a6c19cf26`
+- **Fingerprint:** `58e156618680`
 
 ### dsp-cli
 
@@ -1381,7 +1382,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Hypermedia, server-authoritative (ADR-0004):** server-rendered HTML with Datastar SSE
   fragments; no SPA, no WASM, no client-side state store, no BFF; every enhanced link keeps a
   working `href`; every state-changing route is `POST`; a page is never rendered differently
-  by header. *Enforcement:* **review** + **static-analysis** (`check-datastar-delimiters.sh`;
+  by header. *Enforcement:* **review** + **static-analysis** (`check-datastar-attributes.sh`: Datastar
+  attribute names against a whitelist grammar, no raw actions, which come from `shared-datastar`;
   the editor's no-JavaScript E2E pass).
 - **FAIR landing pages (ADR-0005):** every Access-Area page a persistent identifier resolves to
   embeds standards-shaped metadata in the served HTML, carries FAIR Signposting `Link` headers,
@@ -1442,7 +1444,7 @@ Not code components; they span the repo and are staleness-exempt here:
   `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.dockerignore`, `.worktreeinclude`,
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
-  (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
+  (`check-shared-paths.sh`, `check-datastar-attributes.sh`, `check-commit-count.sh`,
   `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`),
   release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),

@@ -44,7 +44,7 @@ The typed builder for Datastar actions, the value of a `data-on:*` attribute. `s
 - **`Post`**: `submitter_first()` prefers the submitting button's `formAction` (`evt.submitter?.formAction || 'path'`), and `form()` adds `{contentType: 'form'}`
 - **Path encoding**: `'`, `` ` `` and `\` in the path are percent-encoded, so a path cannot end the JS string it is written into
 
-Maud HTML-escapes the value when it is spliced in (`&` becomes `&amp;`, which the browser decodes before Datastar reads it), so the crate does not escape for HTML. Attribute names stay Maud literals, because Maud takes only literal tokens as attribute names. Signal names and JS expressions are not typed.
+Maud HTML-escapes the value when it is spliced in (`&` becomes `&amp;`, which the browser decodes before Datastar reads it), so the crate does not escape for HTML. Attribute names stay Maud literals, because Maud takes only literal tokens as attribute names; `.github/scripts/check-datastar-attributes.sh` holds them to a whitelist grammar and rejects a raw action. Signal names and JS expressions are not typed.
 
 Used by `dpe-web`, `editor-web` and `cpe-components`.
 

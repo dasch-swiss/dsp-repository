@@ -1,0 +1,9 @@
+# macOS only: `off` keeps no debug info outside the binary, so no `.o` files pile up in
+# target/debug/deps (they slow the first launch of every new test binary) and no
+# dsymutil runs. Backtrace frames and lldb lose file:line; a panic's own location stays.
+# Not in [profile.dev], which would also change Linux CI.
+# On macOS this table replaces any `[build] rustflags`, and a RUSTFLAGS environment
+# variable replaces it: a flag meant for every platform goes in `[build] rustflags`
+# and in this table too.
+[target.'cfg(target_os = "macos")']
+rustflags = ["-C", "split-debuginfo=off"]

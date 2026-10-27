@@ -13,6 +13,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just check` | Run formatting, linting and checksum checks |
 | `just build` | Build all targets |
 | `just test` | Run all tests, the gate scripts' tests (`just test-scripts`) included |
+| `just test-changed [base]` | Run only the tests of the packages changed since `merge-base(base, HEAD)` (default `origin/main`; working tree and untracked files included) and of their dependents, plus the changed scripts' tests; falls back to `just test` for a workspace-wide or unknown path. The selection rules are the tables at the top of `.github/scripts/test-changed.sh`; after adding a read of another package's files, run `bash .github/scripts/test-changed.sh --audit`, which names the reads its `EXTRA_EDGES` table misses. Run `just test` before pushing |
 | `just test-scripts` | Run the tests of every `.github/scripts` gate (`*.test.sh`); CI runs it as the `test / scripts` job |
 | `just fmt` | Format all code (`maudfmt` for `maud::html!` macro contents, then `cargo +nightly fmt`) |
 | `just run` | Run server (release mode) |

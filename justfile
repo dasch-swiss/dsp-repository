@@ -187,6 +187,9 @@ fetch-records:
             -d '{"shortcode": "'"$sc"'"}' -o "$out" -w "$out %{http_code}\n" >&2
     done
 
+# .github/scripts/test-changed.sh runs these commands restricted to the
+# changed packages, so a change here needs the same change there.
+
 # Run all tests
 test:
     cargo test --tests
@@ -194,7 +197,11 @@ test:
     cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
     just test-scripts
 
-# Run the tests of every .github/scripts/*.sh gate. Needs bash, git, awk, jq and cargo.
+# Run the tests of the packages changed since <base> and their dependents; falls back to `just test` (rules: .github/scripts/test-changed.sh)
+test-changed $base="origin/main":
+    bash .github/scripts/test-changed.sh "$base"
+
+# Run the tests of every .github/scripts/*.sh gate. Needs bash, git, awk, perl, jq and cargo.
 test-scripts:
     #!/usr/bin/env bash
     set -uo pipefail

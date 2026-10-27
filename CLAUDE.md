@@ -21,6 +21,7 @@ Learnings (the documents `/eng:workflows:compound` writes) live in `docs/learnin
 ## Development Workflow
 
 - **Use `just` recipes where one exists** (`just --list` shows every recipe); for a single test, `cargo test -p <crate> <filter>` is fine.
+- **While iterating, `just test-changed`** runs only the tests of the packages changed since `origin/main` and their dependents; `just test` stays the run before pushing.
 
 Before considering a change done:
 

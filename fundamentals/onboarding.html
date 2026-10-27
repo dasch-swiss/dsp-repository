@@ -251,6 +251,7 @@
 </ul>
 <p><strong>Node must be on <code>PATH</code> for all shells (non-Nix path).</strong> <code>just</code> runs recipes in <code>sh</code>, which does not load shell-function-based version managers. A <em>lazy</em> nvm setup (where <code>node</code>/<code>npm</code> are shell functions) therefore leaves them invisible to <code>just</code>, and recipes such as <code>lint-e2e</code>, <code>test-a11y-dpe</code>, and the Playwright e2e tests fail with <code>env: node: No such file</code>. To fix, expose your default Node bin on <code>PATH</code> at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf.</p>
 <p>Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node explicitly, so this affects local non-Nix development only.</p>
+<p><strong>macOS: run <code>just clean</code> once in an older checkout.</strong> <code>.cargo/config.toml</code> stops cargo leaving stale <code>.o</code> files in <code>target/debug/deps</code>, which slow the first launch of each new test binary, but does not remove the ones already there. Its comment names the rustflags settings it overrides and is overridden by. The setting drops file:line from backtrace frames and lldb; to debug with them, build with <code>RUSTFLAGS="-C split-debuginfo=unpacked"</code>.</p>
 <h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
 <p>The main technology we use is Rust.
 A solid understanding of Rust is needed,

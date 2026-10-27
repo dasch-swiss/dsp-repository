@@ -251,6 +251,7 @@
 <tr><td><code>just check</code></td><td>Run formatting, linting and checksum checks</td></tr>
 <tr><td><code>just build</code></td><td>Build all targets</td></tr>
 <tr><td><code>just test</code></td><td>Run all tests, the gate scripts' tests (<code>just test-scripts</code>) included</td></tr>
+<tr><td><code>just test-changed [base]</code></td><td>Run only the tests of the packages changed since <code>merge-base(base, HEAD)</code> (default <code>origin/main</code>; working tree and untracked files included) and of their dependents, plus the changed scripts' tests; falls back to <code>just test</code> for a workspace-wide or unknown path. The selection rules are the tables at the top of <code>.github/scripts/test-changed.sh</code>; after adding a read of another package's files, run <code>bash .github/scripts/test-changed.sh --audit</code>, which names the reads its <code>EXTRA_EDGES</code> table misses. Run <code>just test</code> before pushing</td></tr>
 <tr><td><code>just test-scripts</code></td><td>Run the tests of every <code>.github/scripts</code> gate (<code>*.test.sh</code>); CI runs it as the <code>test / scripts</code> job</td></tr>
 <tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
 <tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>

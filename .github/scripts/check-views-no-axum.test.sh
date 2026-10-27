@@ -10,7 +10,7 @@
 
 set -uo pipefail
 
-# See check-datastar-delimiters.test.sh: git init honours an inherited GIT_DIR
+# See check-datastar-attributes.test.sh: git init honours an inherited GIT_DIR
 # over the directory it is run in.
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_NAMESPACE
 

@@ -121,7 +121,7 @@ crate, or by vendoring the concept, never by a path dependency.
 - Commit scopes stay crate names (`CONVENTIONS.md`); an area is not a scope.
 - "Deposit Area" is the canonical name; design material that says "Ingest Area" means this area, and the root
   `CONTEXT.md` records the alias under Flagged ambiguities.
-- A gate that globs application directories (`check-shared-paths.sh`, `check-datastar-delimiters.sh`,
+- A gate that globs application directories (`check-shared-paths.sh`, `check-datastar-attributes.sh`,
   `verify-checksums.sh`, the `eng.yaml` overrides) covers every root that holds an application crate. A glob
   that misses a root drops its crates silently: the gates' absence checks fire only when nothing at all matches.
 

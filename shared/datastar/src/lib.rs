@@ -1,8 +1,9 @@
 //! Typed builders for Datastar action expressions (`@get(...)`, `@post(...)`).
 //!
 //! Attribute names (`data-on:click`, ...) stay Maud literals, since Maud takes
-//! only literal tokens as attribute names; this crate types only the action
-//! expression that is the attribute's value.
+//! only literal tokens as attribute names, checked by
+//! `.github/scripts/check-datastar-attributes.sh`; this crate types only the
+//! action expression that is the attribute's value.
 //!
 //! [`Get`] and [`Post`] implement [`std::fmt::Display`] and emit raw text.
 //! They do not implement `maud::Render` and do not escape HTML: Maud escapes

@@ -106,9 +106,9 @@ check-cpe-seam:
 # `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
 # fine and the control is inert, so only a grep or a browser catches it.
 
-# Verify no Maud template uses Datastar's pre-RC.6 hyphen delimiter. Run by `just check`. (DEV-6920)
-check-datastar-delimiters:
-    bash .github/scripts/check-datastar-delimiters.sh
+# Verify Datastar attribute names fit the whitelist grammar and no template spells an action out. Run by `just check`. (DEV-6920, DEV-7369)
+check-datastar-attributes:
+    bash .github/scripts/check-datastar-attributes.sh
 
 # A wrong ADR citation reads fine in prose and compiles fine as code, so only
 # a grep over the whole tree catches a renumbered or never-written record.
@@ -125,7 +125,7 @@ check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-composition-root-deps check-capability-deps check-views-no-axum check-cpe-seam check-datastar-delimiters check-adr-refs check-live-tests-ignored
+check: verify-checksums check-shared-paths check-composition-root-deps check-capability-deps check-views-no-axum check-cpe-seam check-datastar-attributes check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable

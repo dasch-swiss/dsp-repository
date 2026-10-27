@@ -35,6 +35,7 @@ use mosaic_tiles::link::link;
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use serde_json::Value;
+use shared_datastar as datastar;
 
 use crate::entity;
 use crate::form::widgets::{control, value_markup};
@@ -630,7 +631,7 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
             method="post"
             action=(action)
             class="flex flex-col gap-4"
-            data-on:submit={ "@post('" (action) "', {contentType: 'form'})" }
+            data-on:submit=(datastar::post(&action).form())
         {
             // The filter travels with the save, or a reviewer looking at every field
             // is silently returned to the changed-only view.

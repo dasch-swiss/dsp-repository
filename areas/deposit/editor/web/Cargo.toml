@@ -25,6 +25,8 @@ serde_json.workspace = true
 # which is the rule the whole untouched-save guarantee rests on. The shared
 # crate's own predicate rather than a second copy of the two sentinel strings.
 shared-metadata = { path = "../../../../shared/metadata" }
+# The forms' Datastar actions (`data-on:submit`, `data-on:change`).
+shared-datastar = { path = "../../../../shared/datastar" }
 # The form, the entity form and the review pages render tiles (buttons, alerts,
 # text fields, tables).
 mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }

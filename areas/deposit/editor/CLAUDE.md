@@ -58,13 +58,15 @@ The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptE
 
 ### A row control is a submit button carrying `formaction`
 
-Datastar calls `preventDefault` on the form's `submit` unconditionally, which **discards the submitter's URL**. A `data-on:submit` handler that posts the form's own `action` therefore turns every add and remove control on the page into a plain save, while the no-JS path keeps working perfectly. Post `evt.submitter?.formAction` instead. Server tests, rendering tests and snapshots all pass through this bug — only a browser with JavaScript enabled catches it.
+Datastar calls `preventDefault` on the form's `submit` unconditionally, which **discards the submitter's URL**. A `data-on:submit` handler that posts the form's own `action` therefore turns every add and remove control on the page into a plain save, while the no-JS path keeps working perfectly. Post `evt.submitter?.formAction` instead: `datastar::post(action).submitter_first()` builds it. Server tests, rendering tests and snapshots all pass through this bug — only a browser with JavaScript enabled catches it.
 
 ### Datastar attribute syntax
 
 The delimiter is a **colon**, not a hyphen: `data-on:submit`, `data-attr:disabled`. The pre-RC.6 hyphen forms (`data-on-`, `data-attr-`, `data-class-`, `data-style-`) are inert — the failure mode is a console error and a dead control that still renders fine and still passes any snapshot test asserting the attribute is present.
 
 Dotted names (`data-on:change__debounce.1s`) must be written as a quoted string-literal attribute name; Maud only allows `:`/`-` between bare name fragments.
+
+Actions are built with `shared_datastar` (`datastar::post(action).form()`), never written as strings; only the attribute name is a literal.
 
 ### Selecting a submit button in a test
 

@@ -743,7 +743,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `docs/src/dpe/architecture.md` (Datastar Attribute Conventions),
   `areas/deposit/editor/CLAUDE.md` (Datastar attribute syntax, the `formaction` pitfall)
 - **Depends on:** nothing; dev: maud
-- **Used by:** areas/access/dpe (`dpe-web`), areas/deposit/editor (`editor-web`)
+- **Used by:** areas/access/dpe (`dpe-web`), areas/deposit/editor (`editor-web`),
+  areas/access/cpe (`cpe-components`)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
     as for `shared-metadata`).
@@ -1006,7 +1007,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** `cpe-ports` depends on `std` alone. `cpe-core` depends on `kdl`,
   `pulldown-cmark`, `percent-encoding` and `thiserror`, and on no CPE crate, `cpe-ports`
   included. `cpe-image-viewer` depends on `maud` alone and on no CPE crate. `cpe-components` depends on
-  `cpe-core` and `cpe-image-viewer`, and on `maud`, `pulldown-cmark` and `tracing`. `cpe-store` depends on
+  `cpe-core`, `cpe-image-viewer` and shared/datastar, and on `maud`, `pulldown-cmark` and `tracing`. `cpe-store` depends on
   `cpe-core`, and on `rusqlite`, `thiserror` and `tracing`. `cpe-store-build` depends on `cpe-core` and
   `cpe-ports`, and on `serde_json`, `thiserror` and `unicode-normalization`; it does not depend on `cpe-store`
   and reads `store/schema.sql` with `include_str!`; its tests alone depend on `sync-store` and `rusqlite`.

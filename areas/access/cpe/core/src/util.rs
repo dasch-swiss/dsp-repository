@@ -437,60 +437,15 @@ pub fn substitute_count(template: &str, value: &str) -> String {
 
 // ── JS-context encoders (DataStar `@get` arguments, JS string literals) ───────
 
-/// Percent-encode characters that are dangerous inside a `@get('…')` JS-string
-/// context in DataStar attribute values.
-///
-/// Encodes:
-/// - `'` → `%27` (single quote — would close the `@get('…')` string)
-/// - `` ` `` → `%60` (backtick — ES6 template-literal delimiter)
-/// - `\` → `%5C` (backslash — JS escape character)
-///
-/// Note: Maud HTML-escapes attribute values on top of this (converting `"` to
-/// `&amp;quot;`, `&` to `&amp;`, etc.) — those are separate concerns. This
-/// function only handles the JS-string-context break-out chars that Maud does
-/// not escape. The no-JS `href` value does NOT need `encode_get_arg` — Maud's
-/// HTML escaping is sufficient for href values.
-///
-/// All three characters are absent from Alice's current facet keys/values and
-/// from the lang/appearance/img/member/page params, so calling this function
-/// on today's query strings is effectively a no-op — but it future-proofs
-/// against crafted query values (belt-and-suspenders, same rationale as the
-/// existing `replace('\'', "%27")` in the carousel/compound viewers).
-pub fn encode_get_arg(s: &str) -> String {
-    // Iterate over chars and replace dangerous JS-string-context chars.
-    // Allocation is only done when one of the three chars is present.
-    let mut out = String::new();
-    let mut last = 0;
-    for (i, ch) in s.char_indices() {
-        let encoded = match ch {
-            '\'' => "%27",
-            '`' => "%60",
-            '\\' => "%5C",
-            _ => continue,
-        };
-        out.push_str(&s[last..i]);
-        out.push_str(encoded);
-        last = i + ch.len_utf8();
-    }
-    if last == 0 {
-        // No replacements needed — return the input unchanged (no allocation).
-        return s.to_owned();
-    }
-    out.push_str(&s[last..]);
-    out
-}
-
 /// Escape an arbitrary string for safe interpolation inside a **single-quoted
 /// JS string literal** embedded in an HTML attribute (e.g.
 /// `document.getElementById('{id}').zoomIn()`) — the opening/closing `'`s
 /// are the CALLER's, this returns only the escaped content.
 ///
-/// Unlike `encode_get_arg` above (which percent-encodes only the three
-/// dangerous chars for a value later read back through a URL/query-string
-/// context), this is a full allow-list: `\` and `'` are backslash-escaped,
-/// and every other character outside `[A-Za-z0-9_-]` is emitted as a
-/// `\uXXXX` escape (via `char::encode_utf16`, so a character outside the
-/// BMP correctly becomes a surrogate pair of two `\uXXXX` escapes) — safe
+/// A full allow-list: `\` and `'` are backslash-escaped, and every other
+/// character outside `[A-Za-z0-9_-]` is emitted as a `\uXXXX` escape (via
+/// `char::encode_utf16`, so a character outside the BMP correctly becomes a
+/// surrogate pair of two `\uXXXX` escapes) — safe
 /// regardless of the input's content, not conditional on an assumed id
 /// shape: the allow-list, not a `debug_assert!` (a no-op in a release
 /// build), is what keeps a resource id from breaking out of these literals.
@@ -520,9 +475,7 @@ pub fn escape_js_string_literal(s: &str) -> String {
 /// record-surface reactive `href` array of `dsp-incubator cpe/web` and the
 /// `_compound` fragment handler's pushState/title `ExecuteScript`. `pub`
 /// (re-exported from `dsp-incubator cpe/engine`) because that handler
-/// is built in the binary, a separate crate — unlike `encode_get_arg`, which
-/// targets a different context (a `@get('…')` URL argument, not a JS string
-/// literal) and has no caller in the host.
+/// is built in the binary, a separate crate.
 ///
 /// Escapes, in order: `\` and `'` (breaking out of the single-quoted JS
 /// string literal itself); `<` as `\x3C` (defeating any `</script>`
@@ -671,43 +624,6 @@ pub fn is_safe_external_url(text: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // ── encode_get_arg ─────────────────────────────────────────────────────────
-
-    /// Single-quote is percent-encoded.
-    #[test]
-    fn encode_get_arg_encodes_single_quote() {
-        let s = encode_get_arg("foo'bar");
-        assert_eq!(s, "foo%27bar");
-    }
-
-    /// Backtick is percent-encoded.
-    #[test]
-    fn encode_get_arg_encodes_backtick() {
-        let s = encode_get_arg("foo`bar");
-        assert_eq!(s, "foo%60bar");
-    }
-
-    /// Backslash is percent-encoded.
-    #[test]
-    fn encode_get_arg_encodes_backslash() {
-        let s = encode_get_arg("foo\\bar");
-        assert_eq!(s, "foo%5Cbar");
-    }
-
-    /// All three chars in one string.
-    #[test]
-    fn encode_get_arg_encodes_all_three() {
-        let s = encode_get_arg("a'b`c\\d");
-        assert_eq!(s, "a%27b%60c%5Cd");
-    }
-
-    /// Clean ASCII string (no special chars) is returned unchanged.
-    #[test]
-    fn encode_get_arg_clean_string_unchanged() {
-        let s = encode_get_arg("/alice/characters/_facets?role=R_01");
-        assert_eq!(s, "/alice/characters/_facets?role=R_01");
-    }
 
     // ── escape_js_string_literal ────────────────────────────────────────────────
 

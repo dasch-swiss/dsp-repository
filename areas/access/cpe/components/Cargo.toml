@@ -9,6 +9,7 @@ cpe-core = { path = "../core" }
 cpe-image-viewer = { path = "../image-viewer" }
 maud = { workspace = true }
 pulldown-cmark = { workspace = true }
+shared-datastar = { path = "../../../../shared/datastar" }
 # The timeline skips a Resource with an unparsable date with a warning. This crate installs no
 # subscriber; the host's does.
 tracing = { workspace = true }

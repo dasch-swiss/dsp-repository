@@ -91,8 +91,8 @@ use cpe_core::ir::{
     ClassLabel, CompoundLayout, CompoundPage, MemberIndex, PickerMode, PropertyLabel, PropertyValue, Resource,
 };
 use cpe_core::lang::Lang;
-use cpe_core::util::encode_get_arg;
 use maud::{html, Markup, PreEscaped};
+use shared_datastar::{self as datastar, Get};
 
 use crate::chrome::{
     anno_count_text, anno_group_marked_name, anno_marked_name, anno_marked_suffix, compound_contents_cap,
@@ -607,8 +607,8 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     // The `data-on:click__prevent` `@get(...)` counterpart to each plain
     // href above — `None`
     // exactly when `*_href` is `None` (an inert boundary end gets neither).
-    let prev_get: Option<String> = prev_id.map(|id| compound_fragment_get(cfg.current_path, cfg.current_query, id));
-    let next_get: Option<String> = next_id.map(|id| compound_fragment_get(cfg.current_path, cfg.current_query, id));
+    let prev_get: Option<Get> = prev_id.map(|id| compound_fragment_get(cfg.current_path, cfg.current_query, id));
+    let next_get: Option<Get> = next_id.map(|id| compound_fragment_get(cfg.current_path, cfg.current_query, id));
 
     let count_text = format!("{index} / {total}");
 
@@ -647,10 +647,11 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
                                     CURRENT_ENTRY_CLICK_EXPR.to_owned()
                                 } else {
                                     compound_fragment_get(
-                                        cfg.current_path,
-                                        cfg.current_query,
-                                        &m.id,
-                                    )
+                                            cfg.current_path,
+                                            cfg.current_query,
+                                            &m.id,
+                                        )
+                                        .to_string()
                                 }
                             })
                             aria-current=[current.then_some("page")]
@@ -670,12 +671,12 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     // `index="rail"` wraps it in the same `div.cv-toc` as the contents
     // layout.
     if cfg.layout == CompoundLayout::Pages {
-        let step = |n: Option<u32>, href: Option<&str>, get: Option<&str>| -> Option<ReaderStep> {
+        let step = |n: Option<u32>, href: Option<&str>, get: Option<&Get>| -> Option<ReaderStep> {
             let pos = usize::try_from(n?).ok()?.checked_sub(1)?;
             let target = page.members.get(pos);
             Some(ReaderStep {
                 href: href?.to_owned(),
-                get: get?.to_owned(),
+                get: get?.clone(),
                 target: target.map_or("", |m| m.name.as_str()).to_owned(),
                 annotated: target.is_some_and(|m| page.is_annotated(&m.id)),
             })
@@ -687,8 +688,8 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
             },
         };
         let nav_markup = render_reader_pager(
-            step(prev_member, prev_href.as_deref(), prev_get.as_deref()),
-            step(next_member, next_href.as_deref(), next_get.as_deref()),
+            step(prev_member, prev_href.as_deref(), prev_get.as_ref()),
+            step(next_member, next_href.as_deref(), next_get.as_ref()),
             centre,
             lang,
         );
@@ -747,8 +748,8 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         prev_label,
         next_label,
         &count_text,
-        prev_href.as_deref().zip(prev_get.as_deref()),
-        next_href.as_deref().zip(next_get.as_deref()),
+        prev_href.as_deref().zip(prev_get.as_ref()),
+        next_href.as_deref().zip(next_get.as_ref()),
     );
 
     // ── Collapsed / no index ──────────────────────────────
@@ -807,9 +808,9 @@ const PICKER_TOGGLE_EXPR: &str = "if (!el.open) return; const p = el.querySelect
 /// page's entry, which only closes: its swap would push the address already
 /// shown, leaving a Back press that goes nowhere. A modified click
 /// (Ctrl/Cmd/Shift/Alt) is left to the browser, so "open in a new tab" still
-/// works. `{base}` is the `encode_get_arg`-escaped
-/// `{path}/{COMPOUND_FRAGMENT_SEGMENT}`.
-fn picker_click_expr(base: &str) -> String {
+/// works. `path` is the raw (unencoded)
+/// `{path}/{COMPOUND_FRAGMENT_SEGMENT}`; `shared-datastar` encodes it.
+fn picker_click_expr(path: &str) -> String {
     format!(
         "const a = evt.target.closest('a[href]'); \
          if (!a || evt.ctrlKey || evt.metaKey || evt.shiftKey || evt.altKey) return; evt.preventDefault(); \
@@ -820,7 +821,8 @@ fn picker_click_expr(base: &str) -> String {
          const d = document.getElementById('{PICKER_ID}'); d.open = false; \
          d.querySelector('summary').focus({{preventScroll: true}}); \
          if (a.getAttribute('aria-current') === 'page') return; \
-         @get('{base}' + a.search)"
+         {}",
+        datastar::get(path).plus_js("a.search")
     )
 }
 
@@ -980,7 +982,7 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
     } else {
         ChromeMsg::PickerIndexPages.text(lang)
     };
-    let base = encode_get_arg(&format!("{}/{COMPOUND_FRAGMENT_SEGMENT}", cfg.current_path));
+    let base = format!("{}/{COMPOUND_FRAGMENT_SEGMENT}", cfg.current_path);
     // A group holding a page with a register carries a dot on its band mark
     // and its heading, and says so in its name.
     let names: Vec<(String, String, bool)> = groups
@@ -1395,7 +1397,7 @@ fn render_pages_stage(page: &CompoundPage, member_title: &str, lang: &Lang) -> O
 /// that member has a register.
 struct ReaderStep {
     href: String,
-    get: String,
+    get: Get,
     target: String,
     annotated: bool,
 }
@@ -1505,8 +1507,8 @@ fn render_compound_pager(
     prev_label: &str,
     next_label: &str,
     count_text: &str,
-    prev: Option<(&str, &str)>,
-    next: Option<(&str, &str)>,
+    prev: Option<(&str, &Get)>,
+    next: Option<(&str, &Get)>,
 ) -> Markup {
     html! {
         nav.pg aria-label=(nav_aria) {
@@ -1553,11 +1555,8 @@ fn compound_fragment_href(current_path: &str, current_query: Option<&str>, membe
 
 /// [`compound_fragment_href`] wrapped as a DataStar `@get(...)` expression,
 /// ready to drop straight into a `data-on:click__prevent` attribute.
-fn compound_fragment_get(current_path: &str, current_query: Option<&str>, member_id: &str) -> String {
-    format!(
-        "@get('{}')",
-        encode_get_arg(&compound_fragment_href(current_path, current_query, member_id))
-    )
+fn compound_fragment_get(current_path: &str, current_query: Option<&str>, member_id: &str) -> Get {
+    datastar::get(compound_fragment_href(current_path, current_query, member_id))
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -1812,8 +1811,8 @@ mod tests {
         );
     }
 
-    /// `compound_fragment_get`'s `@get('…')` must pass the whole href through
-    /// `encode_get_arg` before embedding it — a `current_query` value
+    /// `compound_fragment_get`'s `@get('…')` must carry the whole href
+    /// percent-encoded (`shared-datastar` encodes it) — a `current_query` value
     /// containing `'`, `` ` `` or `\` must come out percent-encoded in the
     /// `data-on:click__prevent` expression, never spliced in raw (this would
     /// otherwise let a crafted query value break out of the single-quoted
@@ -1831,7 +1830,7 @@ mod tests {
                 "data-on:click__prevent=\"@get('/alice-in-daschland/story/_compound?\
                  q=a%27b%60c%5Cd&amp;page=SCH_001')\""
             ),
-            "the @get expression must be encode_get_arg-escaped, got: {out}"
+            "the @get expression must be percent-encoded for `'`, `` ` `` and `\\`, got: {out}"
         );
         assert!(
             !out.contains("@get('/alice-in-daschland/story/_compound?q=a'b`c\\d"),

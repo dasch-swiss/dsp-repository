@@ -69,8 +69,9 @@ use cpe_core::iiif::{iiif_grid_tile_url_clamped, iiif_tall_tile_url, iiif_thumb_
 use cpe_core::ir::{ChipKind, ChipSpec, MediaThumb, Pagination, PropertyValue, Resource, ResourceListPage, TileRatio};
 use cpe_core::labels::{OrderRow, ResolvedGloss, ResolvedGlossPart};
 use cpe_core::lang::Lang;
-use cpe_core::util::{encode_get_arg, is_safe_external_url};
+use cpe_core::util::is_safe_external_url;
 use maud::{html, Markup};
+use shared_datastar as datastar;
 
 use crate::chrome::{count_of_text, count_resources_text, pager_page_n, pager_page_of, ChromeMsg};
 use crate::component::links::LinkResolver;
@@ -1159,8 +1160,8 @@ fn preserved_query_dropping_sort_and_page(current_query: Option<&str>) -> String
 /// `cfg.list_id` is `None`, no `data-on:submit__prevent` is emitted and the
 /// form is a plain GET.
 ///
-/// `encode_get_arg` is applied to the interpolated `@get` PREFIX only, never
-/// to the composed expression — the static `querySelector('details')`-style
+/// Only the interpolated `@get` PREFIX goes through `shared-datastar`, never
+/// the composed expression — the static `querySelector('details')`-style
 /// quotes must stay literal; the prefix's own `'` → `%27` is what blocks a
 /// JS-string breakout from a crafted preserved query pair.
 ///
@@ -1206,13 +1207,7 @@ fn render_order_control(cfg: &ResourceListCfg<'_>, current_sort: Option<&str>, l
     // patch target. PREFIX = "{current_path}/{SORT_FRAGMENT_SEGMENT}?{preserved}"
     // with a trailing `&` only when `preserved` is non-empty (mirrors
     // `search_bar::search_fragment_prefix` — today's control emits a stray
-    // `?&`), passed through `encode_get_arg` (percent-encodes `'`, `` ` ``,
-    // `\`); the runtime JS then concatenates `sort=' + evt.submitter.value`
-    // onto it. Note Maud escapes `&` to `&amp;` in the rendered attribute
-    // value, so any assertion spanning the expression's `&&` operators must
-    // expect `&amp;&amp;` in the output (the browser decodes it back to `&`
-    // before DataStar's JS ever sees it — same precedent as the facet
-    // toggle `@get` attributes).
+    // `?&`); the runtime JS appends `evt.submitter.value` to `…sort=`.
     let data_on_submit: Option<String> = cfg.list_id.map(|_| {
         let preserved_qs = preserved_query_dropping_sort_and_page(cfg.current_query);
         let prefix = if preserved_qs.is_empty() {
@@ -1220,9 +1215,9 @@ fn render_order_control(cfg: &ResourceListCfg<'_>, current_sort: Option<&str>, l
         } else {
             format!("{}/{}?{}&", cfg.current_path, SORT_FRAGMENT_SEGMENT, preserved_qs)
         };
-        let encoded_prefix = encode_get_arg(&prefix);
+        let sort_get = datastar::get(format!("{prefix}sort=")).plus_js("evt.submitter.value");
         format!(
-            "evt.submitter ? (document.getElementById('orderctl').open = false, document.getElementById('orderctl').querySelector('summary').focus({{preventScroll: true}}), @get('{encoded_prefix}sort=' + evt.submitter.value)) : el.submit()"
+            "evt.submitter ? (document.getElementById('orderctl').open = false, document.getElementById('orderctl').querySelector('summary').focus({{preventScroll: true}}), {sort_get}) : el.submit()"
         )
     });
 

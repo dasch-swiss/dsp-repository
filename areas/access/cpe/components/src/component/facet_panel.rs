@@ -9,8 +9,7 @@
 //! Each option renders as `<a class="facet-option__toggle" href="…"
 //! data-on:click__prevent="@get('…')">`. The `href` is the no-JS fallback: a full-page reload with
 //! the toggled query string. The `@get` URL is the DataStar fragment URL (`{path}/_facets?{qs}`),
-//! built via [`cpe_core::util::encode_get_arg`] to percent-encode `'`, `` ` ``, and
-//! `\` so the URL cannot break out of the `@get('…')` JS-string context.
+//! built with `shared_datastar::get`, which keeps it inside the `@get('…')` JS string.
 //!
 //! ## URL encoding
 //!
@@ -21,7 +20,7 @@
 //! ids and for query-structural chars (`&`, `=`, `+`) is not done.
 //! Note this distinction: Maud's HTML-attribute
 //! escaping handles the `href` value; only the `@get('…')` JS-string context needs
-//! `encode_get_arg`.
+//! the path encoding `shared_datastar::get` applies.
 //!
 //! ## Empty branches
 //!
@@ -77,8 +76,8 @@
 
 use cpe_core::ir::{any_facet_selected, FacetGroup, FacetOption};
 use cpe_core::lang::Lang;
-use cpe_core::util::encode_get_arg;
 use maud::{html, Markup};
+use shared_datastar as datastar;
 
 use super::search_bar;
 use crate::chrome::{facet_empty_group_text, facet_group_remainder_text, remove_filter_label, ChromeMsg};
@@ -256,12 +255,10 @@ pub fn render_facet_panel(groups: &[FacetGroup], cfg: &FacetPanelCfg<'_>, lang: 
                             // `:hover`/`:focus-within` (record.css).
                             @if group_has_selection {
                                 @let g_href = group_clear_href(cfg, &group.property);
-                                @let g_frag = encode_get_arg(
-                                    &group_clear_fragment_href(cfg, &group.property),
-                                );
+                                @let g_frag = group_clear_fragment_href(cfg, &group.property);
                                 a   .facet-group__clear
                                     href=(g_href)
-                                    data-on:click__prevent=(format!("@get('{g_frag}')"))
+                                    data-on:click__prevent=(datastar::get(g_frag))
                                 { (ChromeMsg::FacetGroupClearLabel.text(lang)) }
                             }
                         }
@@ -336,12 +333,11 @@ pub fn render_facet_panel(groups: &[FacetGroup], cfg: &FacetPanelCfg<'_>, lang: 
 fn render_facet_option(cfg: &FacetPanelCfg<'_>, property: &str, opt: &FacetOption) -> Markup {
     let href = toggle_href(cfg, property, &opt.value);
     let frag = fragment_href(cfg, property, &opt.value);
-    let encoded_frag = encode_get_arg(&frag);
     html! {
         li.facet-option {
             a   .facet-option__toggle
                 href=(href)
-                data-on:click__prevent=(format!("@get('{encoded_frag}')"))
+                data-on:click__prevent=(datastar::get(frag))
                 aria-current=[opt.selected.then_some("true")]
             {
                 // CSS check-glyph box; removed from a11y tree.
@@ -375,7 +371,7 @@ fn render_facet_option(cfg: &FacetPanelCfg<'_>, property: &str, opt: &FacetOptio
 ///
 /// Zero-JS: every facet-chip/Clear-all control here is a plain `<a href=…>`;
 /// `data-on:click__prevent` only enhances it through the shared `_facets`
-/// fragment `@get`, via `encode_get_arg`. The query chip is the one exception
+/// fragment `@get`, built with `shared_datastar::get`. The query chip is the one exception
 /// — see the module doc comment.
 ///
 /// **No `.page` class (deliberate, unlike every other component root):** the
@@ -413,7 +409,7 @@ pub fn render_active_filters(
         Some(qs) => format!("{}?{}", cfg.current_path, qs),
         None => cfg.current_path.to_owned(),
     };
-    let clear_all_frag = encode_get_arg(&clear_all_fragment_href(cfg, &facet_keys));
+    let clear_all_frag = clear_all_fragment_href(cfg, &facet_keys);
     // "Clear all" drops `q` too, so it must also EMPTY the
     // search field — but `#q` lives in the search row, OUTSIDE this filter bar's
     // `_facets`/`_search` swap, so it is never re-rendered and would otherwise
@@ -424,9 +420,9 @@ pub fn render_active_filters(
     // the page, so the lookup is never null (a facet-only page has no `#q`).
     let clear_all_click = match query {
         Some(_) => {
-            format!("document.getElementById('q').value = ''; @get('{clear_all_frag}')")
+            format!("document.getElementById('q').value = ''; {}", datastar::get(clear_all_frag))
         }
-        None => format!("@get('{clear_all_frag}')"),
+        None => datastar::get(clear_all_frag).to_string(),
     };
 
     html! {
@@ -437,13 +433,11 @@ pub fn render_active_filters(
                 @for opt in &group.options {
                     @if opt.selected {
                         @let href = toggle_href(cfg, &group.property, &opt.value);
-                        @let frag = encode_get_arg(
-                            &fragment_href(cfg, &group.property, &opt.value),
-                        );
+                        @let frag = fragment_href(cfg, &group.property, &opt.value);
                         @let remove_label = remove_filter_label(lang, &opt.label);
                         a   .filterchip
                             href=(href)
-                            data-on:click__prevent=(format!("@get('{frag}')"))
+                            data-on:click__prevent=(datastar::get(frag))
                             aria-label=(remove_label)
                         {
                             (opt.label)
@@ -486,7 +480,7 @@ fn render_query_chip(cfg: &FacetPanelCfg<'_>, q: &str, lang: &Lang) -> Markup {
     // `preserved_qs` is non-empty — shared with `search_bar::render_search_bar`
     // so the two `_search` URL builders can never drift on the empty-query
     // edge case (a stray leading `?&q=` when no facets/sort are active).
-    let frag = encode_get_arg(&search_bar::search_fragment_prefix(cfg.current_path, &preserved_qs));
+    let frag = search_bar::search_fragment_prefix(cfg.current_path, &preserved_qs);
     let clear_label = ChromeMsg::SearchClear.text(lang);
 
     html! {
@@ -500,7 +494,12 @@ fn render_query_chip(cfg: &FacetPanelCfg<'_>, q: &str, lang: &Lang) -> Markup {
                 type="submit"
                 name="q"
                 value=""
-                data-on:click__prevent=(format!("document.getElementById('q').value = ''; @get('{frag}')"))
+                data-on:click__prevent=({
+                    format!(
+                        "document.getElementById('q').value = ''; {}",
+                        datastar::get(frag),
+                    )
+                })
                 aria-label=(clear_label)
             {
                 span.q { "\"" (q) "\"" }
@@ -650,9 +649,6 @@ fn toggle_href(cfg: &FacetPanelCfg<'_>, property: &str, value: &str) -> String {
 /// No `#…` anchor (unlike the compound `href`; the morph handles positioning).
 /// The toggle direction is computed inside `toggle_query_param` — no external
 /// `selected` flag is needed here.
-///
-/// Note: the caller must pass this through `encode_get_arg` before embedding
-/// it in `@get('…')` to percent-encode `'`, `` ` ``, and `\`.
 #[must_use]
 fn fragment_href(cfg: &FacetPanelCfg<'_>, property: &str, value: &str) -> String {
     let qs = toggle_query_param(cfg.current_query, property, value);
@@ -670,9 +666,6 @@ fn group_clear_href(cfg: &FacetPanelCfg<'_>, property: &str) -> String {
 }
 
 /// Build the DataStar `@get` fragment URL for a per-group "clear" link.
-///
-/// Caller must pass the result through [`encode_get_arg`] before embedding it
-/// in `@get('…')`.
 #[must_use]
 fn group_clear_fragment_href(cfg: &FacetPanelCfg<'_>, property: &str) -> String {
     let qs = clear_group_query(cfg.current_query, property);
@@ -682,8 +675,7 @@ fn group_clear_fragment_href(cfg: &FacetPanelCfg<'_>, property: &str) -> String 
 /// Build the DataStar `@get` fragment URL for the filterbar's "Clear all" link.
 ///
 /// Drops every facet param in `facet_keys` (+ `page`) — same query as the
-/// no-JS `clear_all_href`, just under `FACET_FRAGMENT_SEGMENT`. Caller must
-/// pass the result through [`encode_get_arg`] before embedding it in `@get('…')`.
+/// no-JS `clear_all_href`, just under `FACET_FRAGMENT_SEGMENT`.
 #[must_use]
 fn clear_all_fragment_href(cfg: &FacetPanelCfg<'_>, facet_keys: &[&str]) -> String {
     let qs = clear_filters_query(cfg.current_query, facet_keys);

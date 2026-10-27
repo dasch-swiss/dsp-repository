@@ -26,8 +26,8 @@
 //! separate, non-HTML-markup concern.
 
 use cpe_core::lang::Lang;
-use cpe_core::util::encode_get_arg;
 use maud::{html, Markup};
+use shared_datastar as datastar;
 
 use crate::chrome::ChromeMsg;
 
@@ -135,10 +135,10 @@ pub(crate) fn search_fragment_prefix(action_path: &str, preserved_qs: &str) -> S
 ///   the request. Reflected-input safety: emitted only via Maud's `name=(k)`/`value=(v)`
 ///   interpolation (auto-escaped) — never hand-built.
 /// - **Live debounced fetch** — `data-on:input__debounce.250ms` GETs a static `@get` prefix
-///   (`{action_path}/{SEARCH_FRAGMENT_SEGMENT}?{preserved}&q=`, escaped for the DataStar
-///   string-literal context via `encode_get_arg`) with the TYPED value appended
+///   (`{action_path}/{SEARCH_FRAGMENT_SEGMENT}?{preserved}&q=`, passed raw; `shared-datastar`
+///   escapes it for the DataStar string-literal context) with the TYPED value appended
 ///   `encodeURIComponent`-wrapped at the JS layer — unlike the ordering control's per-row
-///   `<button>` submits (a closed vocabulary, safe with `encode_get_arg` alone), free text with a
+///   `<button>` submits (a closed vocabulary, safe with the path encoding alone), free text with a
 ///   space/`&`/`+`/`#` would corrupt the fragment URL without the additional URL-encoding.
 /// - **Clear `×`** — a real `type="submit" name="q" value=""` control (works with no JS); under
 ///   DataStar it ALSO fires the same static prefix (no value appended = `q=` empty) via
@@ -180,19 +180,15 @@ pub fn render_search_bar(cfg: &SearchBarCfg<'_>, lang: &Lang) -> Markup {
     // Static @get prefix — used alone (nothing appended) it IS the "clear"
     // URL (empty q=); with `+ encodeURIComponent(evt.target.value)` appended
     // by the browser at input time, it's the live debounced fetch.
-    // `encode_get_arg` escapes JS-string-breakout chars (`'`, `` ` ``, `\`)
-    // in the STATIC part only, mirroring `render_order_control`'s
-    // `data_on_submit` construction exactly. `search_fragment_prefix` only
-    // prepends `&` before `q=` when `preserved_qs` is non-empty, so an
-    // unfaceted/unfiltered page never emits a stray `?&q=` (leading `&` with
-    // nothing before it).
+    // `search_fragment_prefix` only prepends `&` before `q=` when
+    // `preserved_qs` is non-empty, so an unfaceted/unfiltered page never
+    // emits a stray `?&q=` (leading `&` with nothing before it).
     let preserved_qs = preserved_query_dropping_q_and_page(cfg.current_query);
-    let raw_prefix = search_fragment_prefix(cfg.action_path, &preserved_qs);
-    let encoded_prefix = encode_get_arg(&raw_prefix);
-    let live_fetch_expr = format!("@get('{encoded_prefix}' + encodeURIComponent(evt.target.value))");
+    let prefix = search_fragment_prefix(cfg.action_path, &preserved_qs);
+    let live_fetch_expr = datastar::get(&prefix).plus_js("encodeURIComponent(evt.target.value)");
     // Blank the input's own value (outside the SSE swap region) in the SAME
     // click, then fire the fragment fetch — see this fn's doc comment.
-    let clear_click_expr = format!("el.form.querySelector('#q').value = ''; @get('{encoded_prefix}')");
+    let clear_click_expr = format!("el.form.querySelector('#q').value = ''; {}", datastar::get(&prefix));
 
     // The form's children — built once and interpolated into whichever root
     // (`.search-row.page` or `.search-row`) `cfg.standalone` selects, so the

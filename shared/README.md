@@ -46,7 +46,7 @@ The typed builder for Datastar actions, the value of a `data-on:*` attribute. `s
 
 Maud HTML-escapes the value when it is spliced in (`&` becomes `&amp;`, which the browser decodes before Datastar reads it), so the crate does not escape for HTML. Attribute names stay Maud literals, because Maud takes only literal tokens as attribute names. Signal names and JS expressions are not typed.
 
-Used by `dpe-web` and `editor-web`.
+Used by `dpe-web`, `editor-web` and `cpe-components`.
 
 Dependencies: none (`maud` as a dev-dependency, for the tests).
 

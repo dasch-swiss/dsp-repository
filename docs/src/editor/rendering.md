@@ -22,6 +22,8 @@ The editor vendors Datastar from `areas/deposit/editor/public/vendor/`, whose RE
 
 One thing to get right, and it fails quietly: **keyed plugin attributes use `:`, not `-`** — `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.
 
+The action an attribute carries (`@get(...)`, `@post(...)`) is built with `shared-datastar` (`datastar::post(path).submitter_first().form()`), never written as a string; only the attribute name stays a literal, because Maud takes only literal tokens there.
+
 ## Styling
 
 `areas/deposit/editor/style/main.css` is the single Tailwind entry, built by `just css-editor` (dev) or `just css-editor-release` (content-hashed). It imports the design tokens and the `mosaic-tiles` component barrel.

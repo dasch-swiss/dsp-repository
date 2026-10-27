@@ -14,7 +14,7 @@ Two services exist — **DPE**, the public read-only Discovery and Presentation 
 and the authenticated **metadata editor** — each a separate deployable on its own origin;
 they share `shared-metadata` (the research-metadata contract), `shared-rate-limit` (the rate
 limiters' client-IP key), `shared-telemetry` (the
-browser-beacon collector) and `mosaic-tiles` (the design system), and nothing else. The
+browser-beacon collector), `shared-datastar` (typed Datastar actions) and `mosaic-tiles` (the design system), and nothing else. The
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
 another service. The shared root has moved to `shared/` at the repository root, the
 metadata editor to `areas/deposit/editor/` with its area's composition root `deposit-server` at `areas/deposit/server/`, and DPE to `areas/access/dpe/` (ADR-0002); Mosaic
@@ -260,6 +260,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{publishing-to-git,architecture}.md`.
 - **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-pull-requests`),
   shared/rate-limit (`editor-web`), shared/telemetry (`editor-web`: `is_valid_traceparent`),
+  shared/datastar (`editor-web`),
   modules/mosaic (`editor-web`), areas/deposit/shell (`editor-web`),
   areas/deposit/identity (`editor-store` on `identity-ports` alone, the port it answers;
   `editor-web` and `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
@@ -742,7 +743,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `docs/src/dpe/architecture.md` (Datastar Attribute Conventions),
   `areas/deposit/editor/CLAUDE.md` (Datastar attribute syntax, the `formaction` pitfall)
 - **Depends on:** nothing; dev: maud
-- **Used by:** areas/access/dpe (`dpe-web`)
+- **Used by:** areas/access/dpe (`dpe-web`), areas/deposit/editor (`editor-web`)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
     as for `shared-metadata`).

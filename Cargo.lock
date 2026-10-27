@@ -1197,6 +1197,7 @@ dependencies = [
  "opentelemetry",
  "serde",
  "serde_json",
+ "shared-datastar",
  "shared-metadata",
  "shared-rate-limit",
  "shared-telemetry",

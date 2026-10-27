@@ -19,6 +19,7 @@ use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::text_field::{text_field, InputType};
 use serde_json::Value;
+use shared_datastar as datastar;
 
 use crate::form::widgets::{agent_rows, labelled, multilingual, reference_rows, stated, string_rows, Mode, Rows};
 use crate::form::INTENT;
@@ -395,11 +396,7 @@ fn form(view: &EntityView<'_>) -> Markup {
             method="post"
             action=(action)
             class="flex flex-col gap-6 mt-6"
-            data-on:submit={
-                "@post(evt.submitter?.formAction || '"
-                (action)
-                "', {contentType: 'form'})"
-            }
+            data-on:submit=(datastar::post(&action).submitter_first().form())
         {
             @for field in view.fields() {
                 (entity_field_row(field, view.draft, view.mode(), view.rows()))
@@ -621,5 +618,48 @@ mod tests {
         let mut declared: Vec<String> = ADDRESS_MEMBERS.iter().map(|(name, _)| (*name).to_string()).collect();
         declared.sort();
         assert_eq!(declared, members(&serialized));
+    }
+
+    /// The enhanced path posts the submitter's `formaction` before the form's own: without it,
+    /// every add and remove control acts as a plain save once JavaScript is on.
+    #[test]
+    fn the_enhanced_path_posts_the_submitters_formaction_and_the_form_body() {
+        let now = chrono::Utc::now();
+        let proposal = EntityProposal {
+            id: uuid::Uuid::nil(),
+            shortcode: "0801d".to_string(),
+            entity_id: "person-001".to_string(),
+            kind: ProposalKind::Person,
+            operation: editor_core::proposals::ProposalOperation::New,
+            payload: "{}".to_string(),
+            status: editor_core::proposals::ProposalStatus::Draft,
+            proposed_by: None,
+            created_at: now,
+            updated_at: now,
+            decision: None,
+            decided_by: None,
+            decided_at: None,
+            retired_at: None,
+        };
+        let draft = ProjectDraft::default();
+        let view = EntityView {
+            shortcode: "0801d",
+            proposal: &proposal,
+            over: None,
+            draft: &draft,
+            confirming: None,
+            notice: None,
+            posted: None,
+            adding_row: None,
+            agents: None,
+            rows_action: "/projects/0801d/entities/person-001/fields".to_string(),
+        };
+        let out = form(&view).into_string();
+        assert!(
+            out.contains(
+                r#"data-on:submit="@post(evt.submitter?.formAction || '/projects/0801d/entities/person-001', {contentType: 'form'})""#
+            ),
+            "{out}"
+        );
     }
 }

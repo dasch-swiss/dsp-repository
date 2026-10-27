@@ -29,6 +29,7 @@ use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use serde_json::Value;
+use shared_datastar as datastar;
 
 use crate::form::widgets::{field_row, Mode, Rows};
 use crate::form::INTENT;
@@ -588,10 +589,7 @@ fn form(view: &SectionView<'_>) -> Markup {
     // Only on a form a save can change: a read-only one has no controls for
     // change to fire from, and advertising a save the handler would refuse is
     // worse than none.
-    let autosave = view
-        .locked
-        .is_none()
-        .then(|| format!("@post('{}', {{contentType: 'form'}})", view.action()));
+    let autosave = view.locked.is_none().then(|| datastar::post(view.action()).form());
     let action = view.action();
     html! {
         @if let Some(round) = view.round.as_ref() { (review_round(round)) }
@@ -621,12 +619,8 @@ fn form(view: &SectionView<'_>) -> Markup {
             method="post"
             action=(action)
             class="flex flex-col gap-6"
-            data-on:submit={
-                "@post(evt.submitter?.formAction || '"
-                (action)
-                "', {contentType: 'form'})"
-            }
-            "data-on:change__debounce.1s"=[autosave.as_deref()]
+            data-on:submit=(datastar::post(&action).submitter_first().form())
+            "data-on:change__debounce.1s"=[autosave]
         {
             // The revision this form was rendered from; absent with no stored draft.
             @if let Some(baseline) = view.baseline {

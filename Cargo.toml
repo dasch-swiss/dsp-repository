@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "shared/datastar",
   "shared/fair",
   "shared/metadata",
   "shared/rate-limit",

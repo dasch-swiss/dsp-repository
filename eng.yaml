@@ -79,3 +79,6 @@ overrides:
     reviewers: [eng:review:observability-reviewer]
   - when: "shared/rate-limit/**"
     reviewers: [eng:review:security-reviewer]
+  # The crate encodes URLs into a JS string context inside an HTML attribute.
+  - when: "shared/datastar/**"
+    reviewers: [eng:review:security-reviewer]

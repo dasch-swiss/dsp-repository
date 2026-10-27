@@ -89,6 +89,7 @@ The scan runs once per process, so a file added while the server is running is n
 
 - Colon/hyphen attribute names are written bare (`data-on:click__prevent`, `data-bind:search`).
 - **Dotted** names (`data-on:input__debounce.300ms`) must be a quoted string-literal attribute name — Maud only allows `:`/`-` between bare name fragments.
+- Actions are built with `shared_datastar` (`datastar::get(…)`), never written as strings; only the attribute name is a literal.
 - Maud HTML-escapes literal attribute values (`&` → `&amp;`); the browser decodes them back for Datastar — semantically identical to hand-written HTML.
 
 ### Nested `html!` as a function argument

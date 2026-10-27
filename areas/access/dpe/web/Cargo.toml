@@ -8,6 +8,7 @@ publish = false
 dpe-core = { path = "../core" }
 shared-metadata = { path = "../../../../shared/metadata" }
 mosaic-tiles = { path = "../../../../modules/mosaic/tiles" }
+shared-datastar = { path = "../../../../shared/datastar" }
 maud.workspace = true
 serde.workspace = true
 serde_json.workspace = true

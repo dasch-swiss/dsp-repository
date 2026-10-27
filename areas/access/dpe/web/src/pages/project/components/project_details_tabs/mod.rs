@@ -8,6 +8,7 @@ use dpe_core::{Project, ResolvedContributor};
 use maud::{html, Markup, PreEscaped};
 use mosaic_tiles::icon::{Document, IconData, Info, People};
 use publication_tab::publication_tab;
+use shared_datastar as datastar;
 
 use crate::RenderContext;
 
@@ -102,9 +103,8 @@ fn tab_link(value: &str, active_tab: &str, icon: IconData, label: &str, shortcod
             aria-controls="tab-panel"
             tabindex=(if is_active { "0" } else { "-1" })
             data-on:click__prevent=({
-                format!(
-                    "@get('/dpe/projects/{shortcode}/tab/{value}', {{retry: 'never', retryMaxCount: 0}})",
-                )
+                datastar::get(format!("/dpe/projects/{shortcode}/tab/{value}"))
+                    .retry_never()
             })
             data-indicator:_tab_loading
             class=(class)

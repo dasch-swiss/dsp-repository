@@ -32,6 +32,7 @@ uuid.workspace = true
 # the rest of the graph happens to have enabled.
 lettre = { version = "0.11.23", default-features = false, features = [
     "builder",
+    "dkim",
     "hostname",
     "pool",
     "smtp-transport",
@@ -40,6 +41,12 @@ lettre = { version = "0.11.23", default-features = false, features = [
     "ring",
     "webpki-roots",
 ] }
+# Reads the DKIM key as PKCS#8, which lettre's `DkimSigningKey` cannot; the same major as
+# lettre's own `rsa`, so the lockfile holds one copy.
+rsa = "0.9"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+# `rsa` 0.9 takes `rand_core` 0.6: do not align this with `identity-core`'s `rand = "0.9"`.
+rand = "0.8"
+tempfile = "3"

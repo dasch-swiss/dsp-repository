@@ -51,21 +51,23 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `EDITOR_PUBLIC_DIR` | No | `areas/deposit/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
-| `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`; **`PROD` requires `EDITOR_SMTP_HOST`** or startup is refused, because a relay-less production writes every login code to the log. The PR preview and `just run-docker-editor` override it to `DEV`. |
+| `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`; **`PROD` requires `EDITOR_SMTP_HOST`** or startup is refused, because a relay-less production writes every login code to the log. **`PROD` with a relay also requires `EDITOR_DKIM_SELECTOR` and `EDITOR_DKIM_PRIVATE_KEY_FILE`**, because unsigned mail is quarantined and nothing in the editor would notice. The PR preview and `just run-docker-editor` override it to `DEV`. |
 | `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the two SQLite databases, `identity.sqlite` and `editor.sqlite`. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never a database file. |
 | `EDITOR_DB_READERS` | No | `4` | Size of each database's reader connection pool. Each writer pool is always one connection. |
 | `EDITOR_DB_BUSY_TIMEOUT_MS` | No | `5000` | SQLite `busy_timeout`, applied per connection, to both databases. |
 | `EDITOR_RDU_EMAILS` | No | *(none)* | Comma-separated addresses that always have an RDU account. Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address **does not revoke** the account — see [Login and mail](#login-and-mail). |
 | `EDITOR_SMTP_HOST` | No | *(none — console)* | SMTP relay host. **Unset means codes are written to the log** and the service stays usable. That is the development and PR-preview default. |
-| `EDITOR_SMTP_PORT` | No | `587` | Submission with STARTTLS, which is what `smtp-relay.gmail.com` speaks. |
+| `EDITOR_SMTP_PORT` | No | `587` | STARTTLS. The default is the submission port; prod sets `25`, which `smtp.unibas.ch` speaks without authentication. |
 | `EDITOR_SMTP_USERNAME` | No | *(none)* | Relay username. Must be set together with the password. |
 | `EDITOR_SMTP_PASSWORD` | No | *(none)* | Relay password. Redacted in any debug rendering of the configuration. |
-| `EDITOR_SMTP_FROM` | No | `noreply@dasch.swiss` | Envelope sender. Must be a domain with DKIM enabled in the Workspace Admin Console — see [Authentication](./authentication.md#relay-prerequisites-not-the-applications-job-but-they-block-delivery). |
+| `EDITOR_SMTP_FROM` | No | `noreply@dasch.swiss` | Envelope sender. Its domain is the DKIM `d=` the editor signs with, so it must be a domain that publishes the signing key at `<selector>._domainkey.<domain>` — see [Authentication](./authentication.md#relay-prerequisites-not-the-applications-job-but-they-block-delivery). |
+| `EDITOR_DKIM_SELECTOR` | In `PROD` with a relay | *(none — unsigned)* | DKIM selector (`s=`). An RFC 6376 selector: dot-separated labels of `A-Za-z0-9-`, containing a non-digit (an all-digit value is parsed as a number and config load fails). Dated scheme `dasch-deposit-<env>-<year>`. Set together with `EDITOR_DKIM_PRIVATE_KEY_FILE`, and refused without `EDITOR_SMTP_HOST`. |
+| `EDITOR_DKIM_PRIVATE_KEY_FILE` | In `PROD` with a relay | *(none — unsigned)* | Path to a PEM private key (PKCS#8 or PKCS#1, RSA 1024 to 4096 bits). Prod mounts `/run/secrets/dkim_private_key.pem`. A value containing a newline or `PRIVATE KEY` is refused without being echoed, and key errors name the path only. |
 | `EDITOR_SMTP_BREAK_GLASS` | No | `false` | When a **configured** relay fails, write the undelivered code to the log instead of rolling it back. Off by default: it puts a live credential in the log pipeline. See [Login and mail](#login-and-mail). |
 | `EDITOR_LOGIN_COOLDOWN_SECS` | No | `60` | Before another code may be sent to the same address. Must be shorter than the ten-minute code lifetime, which startup validates. |
 | `EDITOR_LOGIN_MAX_FAILED` | No | `10` | Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates. |
 | `EDITOR_LOGIN_LOCKOUT_SECS` | No | `900` | How long throttling lasts after the cap is reached. |
-| `EDITOR_MAIL_DAILY_CAP` | No | `500` | Codes that may be sent across **all** users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders. |
+| `EDITOR_MAIL_DAILY_CAP` | No | `500` | Codes that may be sent across **all** users in 24 hours. Bounds what a resend loop can spend of a relay shared with other senders, whose limit is not published to us. |
 | `EDITOR_MAIL_ACCOUNT_DAILY_CAP` | No | `20` | Codes that may be sent to a **single account** in 24 hours. The global cap alone does not bound one address: at a 60-second cooldown one address fits 1,440 codes a day. Must not exceed `EDITOR_MAIL_DAILY_CAP`, which startup validates. |
 | `EDITOR_SESSION_ABSOLUTE_SECS` | No | `43200` (12 h) | Absolute session lifetime, set at creation and never extended. |
 | `EDITOR_SESSION_IDLE_SECS` | No | `7200` (2 h) | Idle session timeout. Must not exceed the absolute lifetime, which startup validates. |
@@ -90,13 +92,15 @@ Configuration is layered: code defaults → optional `editor.toml` → `EDITOR_*
 
 ## Deployment
 
-The editor deploys as its **own `deposit` stack** in ops-deploy, with its own inventory group, hosts (`deposit-stage-01`, `deposit-prod-01`) and playbook (`deposit.yml`). The stack has no dev host: a merge to `main` deploys to `deposit.stage.dasch.swiss` (`editor-docker-publish.yml`, posting `Service=deposit` to the stack's Jenkins update job; see [Deployment](../deployment.md#editor)). Nothing deploys prod, `deposit.dasch.swiss`, yet: it waits for a mail relay ([DEV-7618](https://linear.app/dasch/issue/DEV-7618)).
+The editor deploys as its **own `deposit` stack** in ops-deploy, with its own inventory group, hosts (`deposit-stage-01`, `deposit-prod-01`) and playbook (`deposit.yml`). The stack has no dev host: a merge to `main` deploys to `deposit.stage.dasch.swiss` (`editor-docker-publish.yml`, posting `Service=deposit` to the stack's Jenkins update job; see [Deployment](../deployment.md#editor)). Nothing deploys prod, `deposit.dasch.swiss`, yet: the relay is settled, and the deploy waits on [DEV-7618](https://linear.app/dasch/issue/DEV-7618).
 
 It deploys on a **separate hostname** from DPE, not a path under `repository.dasch.swiss` — see the CSRF reasoning in [Architecture](./architecture.md#relationship-to-dpe).
 
 **Stage runs in preview mode** (ops-deploy's `deposit.yml`): it shows the login code on the page ([Authentication](./authentication.md#showing-the-code-instead-of-sending-it)) to anyone who types an RDU address, and starts from an empty database on every deploy, so it never holds real data.
 
-Not yet in place, for prod: the **SMTP relay host, port and credentials** and the RDU members' addresses (`EDITOR_RDU_EMAILS`), provisioned in ops-deploy, the password vaulted. `EDITOR_ENV=PROD` refuses to start without `EDITOR_SMTP_HOST`; an empty `EDITOR_RDU_EMAILS` starts but leaves nobody able to review. Development and the PR previews are unblocked by the console fallback. DKIM and SPF for `dasch.swiss` are already set up.
+For prod, ops-deploy provisions the relay (`smtp.unibas.ch:25`, no credentials), the DKIM key and selector ([ops-deploy#1466](https://github.com/dasch-swiss/ops-deploy/pull/1466)) and the RDU members' addresses (`EDITOR_RDU_EMAILS`). `EDITOR_ENV=PROD` refuses to start with a relay and no DKIM, or without `EDITOR_SMTP_HOST`; an empty `EDITOR_RDU_EMAILS` starts but leaves nobody able to review. Development and the PR previews are unblocked by the console fallback.
+
+**Key rotation.** Publish the new dated selector's TXT record, then switch the key and `EDITOR_DKIM_SELECTOR`, then retire the old record; the procedure is in [ops-deploy#1466](https://github.com/dasch-swiss/ops-deploy/pull/1466). After each rotation, check one received login mail for `dkim=pass`: a key that does not match the published record signs and starts without error, and the mail is then quarantined.
 
 ## Login and mail
 
@@ -157,7 +161,7 @@ If the relay is broken long enough that people are locked out:
 2. Fix the relay.
 3. **Set it back to `false`.** While it is on, every relay hiccup writes a live login code into a log pipeline that retains it for weeks and is readable by everyone with log access.
 
-Unsetting `EDITOR_SMTP_HOST` entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.
+Unsetting `EDITOR_SMTP_HOST` entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo. `EDITOR_DKIM_SELECTOR` and `EDITOR_DKIM_PRIVATE_KEY_FILE` must be unset with it, since they are refused without a relay.
 
 ### Signing in locally
 

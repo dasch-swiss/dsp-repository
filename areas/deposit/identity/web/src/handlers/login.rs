@@ -2244,7 +2244,7 @@ mod tests {
 
         // No relay host selects the console transport.
         let console =
-            identity_store::mail::mailer(None, 587, None, "noreply@dasch.swiss").expect("the console transport");
+            identity_store::mail::mailer(None, 587, None, None, "noreply@dasch.swiss").expect("the console transport");
         let (logs, guard) = capture_logs();
         assert_eq!(console.send(&mail).await, Ok(()));
         drop(guard);

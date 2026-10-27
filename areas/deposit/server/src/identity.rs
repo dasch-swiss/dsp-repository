@@ -23,6 +23,9 @@ impl EditorConfig {
             smtp_credentials: self
                 .smtp_credentials()
                 .map(|(username, password)| (username.to_string(), SmtpPassword::new(password.to_string()))),
+            dkim: self
+                .dkim()
+                .map(|(selector, key_file)| (selector.to_string(), key_file.to_path_buf())),
             smtp_from: self.smtp_from.clone(),
             rdu_addresses: self.rdu_addresses(),
             reveal_login_code: self.reveals_login_code(),
@@ -32,6 +35,8 @@ impl EditorConfig {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
 
     #[test]
@@ -46,5 +51,21 @@ mod tests {
         assert_eq!(auth.session_absolute, Duration::from_secs(config.session_absolute_secs));
         assert_eq!(auth.session_idle, Duration::from_secs(config.session_idle_secs));
         assert!(!auth.break_glass, "the break-glass log fallback must be off unless asked for");
+    }
+
+    #[test]
+    fn test_a_configured_dkim_selector_and_key_reach_the_settings() {
+        let config = EditorConfig {
+            dkim_selector: Some("dasch-deposit-prod-2026".to_string()),
+            dkim_private_key_file: Some(PathBuf::from("/run/secrets/dkim_private_key.pem")),
+            ..EditorConfig::default()
+        };
+        assert_eq!(
+            config.identity_settings(String::new()).dkim,
+            Some((
+                "dasch-deposit-prod-2026".to_string(),
+                PathBuf::from("/run/secrets/dkim_private_key.pem")
+            ))
+        );
     }
 }

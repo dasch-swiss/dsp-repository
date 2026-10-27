@@ -7,7 +7,7 @@
 //! 3. Environment variables (`EDITOR_*` prefix, override all)
 
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use figment::providers::{Env, Format, Serialized, Toml};
 use figment::Figment;
@@ -39,8 +39,7 @@ impl<'de> Deserialize<'de> for Secret {
     /// One edge worth knowing: a password figment reads as a *number* is stringified back from the
     /// parsed value, so a leading zero (`0755`) or a trailing one (`1.10`) is not preserved. It
     /// fails closed — the relay rejects the credential — but choose a password that is not purely
-    /// numeric. A Google Workspace app password is sixteen lowercase letters, so the intended one
-    /// cannot hit this.
+    /// numeric.
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct AnyScalar;
 
@@ -178,8 +177,8 @@ pub struct EditorConfig {
     /// or spend its daily quota.
     pub smtp_host: Option<String>,
 
-    /// SMTP port, set via `EDITOR_SMTP_PORT`. 587 is submission with STARTTLS,
-    /// which is what `smtp-relay.gmail.com` speaks.
+    /// SMTP port, set via `EDITOR_SMTP_PORT`. The default 587 is submission with
+    /// STARTTLS; production sets 25.
     pub smtp_port: u16,
 
     /// SMTP username, set via `EDITOR_SMTP_USERNAME`.
@@ -192,10 +191,19 @@ pub struct EditorConfig {
     ///
     /// `noreply@dasch.swiss` rather than a university address: a login code
     /// arriving from `dasch.unibas.ch` reads as a phishing attempt to a
-    /// depositor, and Google DKIM-signs relayed mail with the envelope sender's
-    /// domain only if that domain has DKIM enabled in the Workspace Admin
-    /// Console.
+    /// depositor. Its domain is the DKIM signing domain (`d=`), so it must be a
+    /// domain the configured selector's key is published under.
     pub smtp_from: String,
+
+    /// Path of the DKIM private key file, set via `EDITOR_DKIM_PRIVATE_KEY_FILE`.
+    pub dkim_private_key_file: Option<PathBuf>,
+
+    /// DKIM selector, set via `EDITOR_DKIM_SELECTOR`.
+    ///
+    /// The DNS label under which the public key is published
+    /// (`<selector>._domainkey.<From: domain>`). Must contain a non-digit:
+    /// figment reads an all-digit value as a number and refuses to load it.
+    pub dkim_selector: Option<String>,
 
     /// Whether a **configured but failing** relay falls back to writing the code
     /// to the log, set via `EDITOR_SMTP_BREAK_GLASS`.
@@ -238,11 +246,11 @@ pub struct EditorConfig {
     /// The most codes that may be sent across **all** users in 24 hours, set via
     /// `EDITOR_MAIL_DAILY_CAP`.
     ///
-    /// The Google Workspace relay allows 10,000 recipients a day and the quota
-    /// is shared with other senders, so this sits well below it. Without the cap,
-    /// an attacker looping resend across the known addresses exhausts the quota
-    /// and locks out every user, RDU included — a login denial of service that
-    /// costs nothing to mount.
+    /// The relay is shared with other senders and its limit is not published to
+    /// us, so this bounds abuse of it rather than tracking a known quota. Without
+    /// the cap, an attacker looping resend across the known addresses exhausts
+    /// the relay's allowance and locks out every user, RDU included — a login
+    /// denial of service that costs nothing to mount.
     pub mail_daily_cap: u64,
 
     /// The most codes that may be sent to a **single account** in 24 hours, set
@@ -293,6 +301,8 @@ impl Default for EditorConfig {
             smtp_username: None,
             smtp_password: None,
             smtp_from: "noreply@dasch.swiss".to_string(),
+            dkim_private_key_file: None,
+            dkim_selector: None,
             smtp_break_glass: false,
             login_cooldown_secs: 60,
             login_max_failed: 10,
@@ -308,6 +318,14 @@ impl Default for EditorConfig {
             rdu_emails: None,
         }
     }
+}
+
+/// RFC 6376 `selector`: one or more dot-separated labels, each non-empty and
+/// made of letters, digits and hyphens.
+fn is_dkim_selector(value: &str) -> bool {
+    value
+        .split('.')
+        .all(|label| !label.is_empty() && label.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'))
 }
 
 impl EditorConfig {
@@ -446,10 +464,60 @@ impl EditorConfig {
                     .to_string(),
             );
         }
+        // Unsigned mail through the production relay is quarantined by the
+        // recipient's DMARC check: nothing fails here, and no login code arrives.
+        if self.env == "PROD" && self.smtp_host.is_some() && self.dkim().is_none() {
+            return invalid(
+                "EDITOR_ENV=PROD with EDITOR_SMTP_HOST requires EDITOR_DKIM_SELECTOR and \
+                 EDITOR_DKIM_PRIVATE_KEY_FILE. Mail sent through this relay without a DKIM signature is quarantined \
+                 under the From domain's DMARC policy, so no login code would arrive"
+                    .to_string(),
+            );
+        }
         if self.smtp_break_glass && self.smtp_host.is_none() {
             return invalid(
                 "EDITOR_SMTP_BREAK_GLASS has no effect without EDITOR_SMTP_HOST — with no relay configured, every \
                  code already goes to the log"
+                    .to_string(),
+            );
+        }
+        // Half a signing key signs nothing, and the mail goes out unsigned.
+        if self.dkim_selector.is_some() != self.dkim_private_key_file.is_some() {
+            return invalid(
+                "EDITOR_DKIM_SELECTOR and EDITOR_DKIM_PRIVATE_KEY_FILE must be set together — one without the other \
+                 cannot sign"
+                    .to_string(),
+            );
+        }
+        // The selector is a DNS name, so it is public and may be echoed. A quoted
+        // value (`docker stack deploy` keeps single quotes) or an underscore would
+        // sign with a selector no DNS record answers.
+        if let Some(selector) = &self.dkim_selector {
+            if !is_dkim_selector(selector) {
+                return invalid(format!(
+                    "EDITOR_DKIM_SELECTOR ({selector:?}) is not a DNS selector: it must be one or more \
+                     dot-separated labels of letters, digits and hyphens, with no quotes or underscores"
+                ));
+            }
+        }
+        // Never echoed: this message reaches stderr, the log pipeline, and a
+        // private key pasted where the path belongs must not follow it there. The
+        // length catches one pasted without its PEM lines: every RSA key of 1024
+        // bits or more is longer than 255 characters in base64, and no key path is.
+        if let Some(path) = &self.dkim_private_key_file {
+            let value = path.to_string_lossy();
+            if value.contains('\n') || value.contains("PRIVATE KEY") || value.len() > 255 {
+                return invalid(
+                    "EDITOR_DKIM_PRIVATE_KEY_FILE must be the path of a key file, not the key itself (the value is \
+                     not repeated here: it would put a private key in the log)"
+                        .to_string(),
+                );
+            }
+        }
+        if self.dkim().is_some() && self.smtp_host.is_none() {
+            return invalid(
+                "EDITOR_DKIM_SELECTOR and EDITOR_DKIM_PRIVATE_KEY_FILE have no effect without EDITOR_SMTP_HOST — \
+                 with no relay configured, the console transport sends nothing to sign"
                     .to_string(),
             );
         }
@@ -523,6 +591,14 @@ impl EditorConfig {
     pub fn smtp_credentials(&self) -> Option<(&str, &str)> {
         match (&self.smtp_username, &self.smtp_password) {
             (Some(username), Some(password)) => Some((username.as_str(), password.expose())),
+            _ => None,
+        }
+    }
+
+    /// The DKIM selector and key file, present only when both are.
+    pub fn dkim(&self) -> Option<(&str, &Path)> {
+        match (&self.dkim_selector, &self.dkim_private_key_file) {
+            (Some(selector), Some(key_file)) => Some((selector.as_str(), key_file.as_path())),
             _ => None,
         }
     }
@@ -678,9 +754,10 @@ mod tests {
     fn env_env_override_switches_otlp_log_export() {
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_ENV", "PROD");
-            // A relay, because PROD without one is refused — see
-            // `production_without_a_relay_is_refused`.
+            // A relay and a signing key, because PROD without either is refused.
             jail.set_env("EDITOR_SMTP_HOST", "smtp-relay.gmail.com");
+            jail.set_env("EDITOR_DKIM_SELECTOR", "dasch-deposit-prod-2026");
+            jail.set_env("EDITOR_DKIM_PRIVATE_KEY_FILE", "/run/secrets/dkim.pem");
             let config = EditorConfig::load().expect("config should load");
             assert_eq!(config.env, "PROD");
             assert!(!config.exports_otlp_logs());
@@ -695,7 +772,8 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 "editor.toml",
-                "site_addr = \"127.0.0.1:4200\"\nenv = \"PROD\"\nsmtp_host = \"smtp-relay.gmail.com\"\n",
+                "site_addr = \"127.0.0.1:4200\"\nenv = \"PROD\"\nsmtp_host = \"smtp-relay.gmail.com\"\n\
+                 dkim_selector = \"dasch-deposit-prod-2026\"\ndkim_private_key_file = \"/run/secrets/dkim.pem\"\n",
             )?;
             let from_file = EditorConfig::load().expect("config should load");
             assert_eq!(from_file.site_addr, "127.0.0.1:4200");
@@ -852,6 +930,8 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_ENV", "PROD");
             jail.set_env("EDITOR_SMTP_HOST", "smtp-relay.gmail.com");
+            jail.set_env("EDITOR_DKIM_SELECTOR", "dasch-deposit-prod-2026");
+            jail.set_env("EDITOR_DKIM_PRIVATE_KEY_FILE", "/run/secrets/dkim.pem");
             let config = EditorConfig::load().expect("production with a relay should load");
             assert!(!config.exports_otlp_logs());
             Ok(())
@@ -876,6 +956,100 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_SMTP_BREAK_GLASS", "true");
             let error = EditorConfig::load().expect_err("break-glass without a relay must be refused");
+            assert!(error.to_string().contains("no effect"), "{error}");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_production_with_a_relay_but_no_dkim_is_refused() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_ENV", "PROD");
+            jail.set_env("EDITOR_SMTP_HOST", "smtp.example.test");
+            let error = EditorConfig::load().expect_err("production without DKIM must be refused");
+            let rendered = error.to_string();
+            assert!(rendered.contains("EDITOR_DKIM_SELECTOR"), "{rendered}");
+            assert!(rendered.contains("EDITOR_DKIM_PRIVATE_KEY_FILE"), "{rendered}");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_half_a_dkim_configuration_is_refused() {
+        for (name, value) in [
+            ("EDITOR_DKIM_SELECTOR", "dasch-deposit-prod-2026"),
+            ("EDITOR_DKIM_PRIVATE_KEY_FILE", "/run/secrets/dkim.pem"),
+        ] {
+            figment::Jail::expect_with(|jail| {
+                jail.set_env("EDITOR_SMTP_HOST", "smtp.example.test");
+                jail.set_env(name, value);
+                let error = EditorConfig::load().expect_err("half a DKIM configuration must be refused");
+                assert!(error.to_string().contains("must be set together"), "{error}");
+                Ok(())
+            });
+        }
+    }
+
+    #[test]
+    fn test_a_dkim_selector_that_is_not_a_dns_name_is_refused() {
+        // A single-quoted value is what `docker stack deploy` hands over from an
+        // `env_file`; figment strips only double quotes.
+        for selector in ["", "'dasch-deposit-prod-2026'", "dasch_deposit", "a..b"] {
+            figment::Jail::expect_with(|jail| {
+                jail.set_env("EDITOR_SMTP_HOST", "smtp.example.test");
+                jail.set_env("EDITOR_DKIM_SELECTOR", selector);
+                jail.set_env("EDITOR_DKIM_PRIVATE_KEY_FILE", "/run/secrets/dkim.pem");
+                let error = EditorConfig::load().expect_err("a malformed selector must be refused");
+                assert!(error.to_string().contains("is not a DNS selector"), "{selector:?}: {error}");
+                Ok(())
+            });
+        }
+    }
+
+    #[test]
+    fn test_a_pem_in_the_key_file_variable_is_refused_without_echoing_it() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_SMTP_HOST", "smtp.example.test");
+            jail.set_env("EDITOR_DKIM_SELECTOR", "dasch-deposit-prod-2026");
+            jail.set_env(
+                "EDITOR_DKIM_PRIVATE_KEY_FILE",
+                "-----BEGIN PRIVATE KEY-----\nSECRETMARKER123\n-----END PRIVATE KEY-----",
+            );
+            let error = EditorConfig::load().expect_err("a PEM in the path variable must be refused");
+            let rendered = error.to_string();
+            assert!(rendered.contains("not the key itself"), "{rendered}");
+            assert!(
+                !rendered.contains("SECRETMARKER123") && !rendered.contains("BEGIN"),
+                "the key material must not be repeated: {rendered}"
+            );
+            Ok(())
+        });
+        // The same key with its PEM lines dropped: one line, no `PRIVATE KEY`.
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_SMTP_HOST", "smtp.example.test");
+            jail.set_env("EDITOR_DKIM_SELECTOR", "dasch-deposit-prod-2026");
+            let body = format!(
+                "MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBSECRETMARKER123{}",
+                "A".repeat(800)
+            );
+            jail.set_env("EDITOR_DKIM_PRIVATE_KEY_FILE", &body);
+            let error = EditorConfig::load().expect_err("a bare key body in the path variable must be refused");
+            let rendered = error.to_string();
+            assert!(rendered.contains("not the key itself"), "{rendered}");
+            assert!(
+                !rendered.contains("SECRETMARKER123"),
+                "the key material must not be repeated: {rendered}"
+            );
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_dkim_without_a_relay_is_refused_as_a_misunderstanding() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_DKIM_SELECTOR", "dasch-deposit-prod-2026");
+            jail.set_env("EDITOR_DKIM_PRIVATE_KEY_FILE", "/run/secrets/dkim.pem");
+            let error = EditorConfig::load().expect_err("DKIM without a relay must be refused");
             assert!(error.to_string().contains("no effect"), "{error}");
             Ok(())
         });
@@ -1015,8 +1189,8 @@ mod reveal_tests {
 
     #[test]
     fn test_production_never_shows_it_whatever_else_is_set() {
-        // Belt and braces. `validate` already refuses `PROD` without a relay, so
-        // two of these three cannot even start — the predicate still answers
+        // Belt and braces. `validate` already refuses `PROD` without a relay or
+        // without DKIM, so none of these three can even start — the predicate still answers
         // false, so it does not depend on that rule holding.
         for config in [
             EditorConfig { env: "PROD".to_string(), ..EditorConfig::default() },

@@ -14,6 +14,6 @@ A new account, session, login-code or mail type goes in `identity-core`, never i
 
 ### Configuration refuses unsafe combinations at startup
 
-`EditorConfig::validate` (`areas/deposit/server/src/config.rs`; `EditorConfig::identity_settings` builds `IdentitySettings` from the same config) stops the process rather than starting in a state that locks users out or leaks. Two that bite in test setups: `EDITOR_ENV=PROD` requires `EDITOR_SMTP_HOST` (a console mailer in production is a standing credential leak), and `EDITOR_LOGIN_COOLDOWN_SECS` must be **at least 1** — it cannot be set to zero.
+`EditorConfig::validate` (`areas/deposit/server/src/config.rs`; `EditorConfig::identity_settings` builds `IdentitySettings` from the same config) stops the process rather than starting in a state that locks users out or leaks. Three that bite in test setups: `EDITOR_ENV=PROD` requires `EDITOR_SMTP_HOST` (a console mailer in production is a standing credential leak), `EDITOR_ENV=PROD` with `EDITOR_SMTP_HOST` requires `EDITOR_DKIM_SELECTOR` and `EDITOR_DKIM_PRIVATE_KEY_FILE` (unsigned mail is quarantined), and `EDITOR_LOGIN_COOLDOWN_SECS` must be **at least 1** — it cannot be set to zero.
 
 With `EDITOR_SMTP_HOST` unset the console transport writes login codes to the log, which is how development, the PR preview and the E2E suite sign in.

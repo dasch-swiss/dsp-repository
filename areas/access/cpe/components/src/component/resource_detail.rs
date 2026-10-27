@@ -13,7 +13,7 @@
 //! - `Text` plain → `span.v-text`.
 //! - `Richtext` → `div.v-richtext` wrapping the markdown fragment.
 //! - `Integer`/`Decimal` → `span.v-number`.
-//! - `Boolean` → `span.v-bool[data-on]` + localised Yes/No | Ja/Nein.
+//! - `Boolean` → `span.v-bool[data-bool]` + localised Yes/No | Ja/Nein.
 //! - `Date` → `span.v-date`.
 //! - `Link { target_label: Some }` → `<a class="int-link">` when the target class is bound in the
 //!   `LinkResolver`; otherwise falls back to `span.v-text` plain.
@@ -1380,7 +1380,7 @@ fn render_keyword_item(value: &PropertyValue, lang: &Lang) -> Markup {
 /// - `Text` (plain) → `span.v-text`.
 /// - `Richtext` → `div.v-richtext` wrapping `render_richtext_fragment`.
 /// - `Integer`/`Decimal` → `span.v-number`.
-/// - `Boolean` → `span.v-bool[data-on="true"|"false"]` + localised label.
+/// - `Boolean` → `span.v-bool[data-bool="true"|"false"]` + localised label.
 /// - `Date` → `span.v-date`.
 /// - `Link { target_label: Some }` → `<a class="int-link" href=…>` when the resolver binds the
 ///   target's class; otherwise `span.v-text` fallback.
@@ -1448,11 +1448,11 @@ pub(crate) fn render_value_opts(
         PropertyValue::Boolean(b) => {
             let (yes, no) = bool_labels(lang);
             let label = if *b { yes } else { no };
-            let data_on = if *b { "true" } else { "false" };
-            // Maud's [...] shorthand does not support hyphenated attributes.
-            // Emit data-on as a bare inline attribute.
+            let data_bool = if *b { "true" } else { "false" };
+            // Not `data-on`: Datastar reads any `data-on` as its event plugin
+            // and throws `KeyRequired` on one without an event key.
             html! {
-                span.v-bool data-on=(data_on) { (label) }
+                span.v-bool data-bool=(data_bool) { (label) }
             }
         }
         PropertyValue::Date { .. } => format_date(value, lang, date_precision_word),
@@ -2165,19 +2165,27 @@ mod tests {
             "boolean must be wrapped in span.v-bool, got: {out}"
         );
         assert!(
-            out.contains("data-on=\"true\""),
-            "boolean true must have data-on=\"true\", got: {out}"
+            out.contains("data-bool=\"true\""),
+            "boolean true must have data-bool=\"true\", got: {out}"
+        );
+        assert!(
+            !out.contains("data-on="),
+            "a key-less data-on throws Datastar's KeyRequired, got: {out}"
         );
         assert!(out.contains("Yes"), "EN true must show Yes, got: {out}");
     }
 
     #[test]
-    fn render_value_boolean_false_en_has_data_on_false() {
+    fn render_value_boolean_false_en_has_data_bool_false() {
         let v = PropertyValue::Boolean(false);
         let out = render_value(&v, &make_lang("en"), None).into_string();
         assert!(
-            out.contains("data-on=\"false\""),
-            "boolean false must have data-on=\"false\", got: {out}"
+            out.contains("data-bool=\"false\""),
+            "boolean false must have data-bool=\"false\", got: {out}"
+        );
+        assert!(
+            !out.contains("data-on="),
+            "a key-less data-on throws Datastar's KeyRequired, got: {out}"
         );
         assert!(out.contains("No"), "EN false must show No, got: {out}");
     }
@@ -2187,7 +2195,7 @@ mod tests {
         let v = PropertyValue::Boolean(true);
         let out = render_value(&v, &make_lang("de"), None).into_string();
         assert!(out.contains("Ja"), "DE true must show Ja, got: {out}");
-        assert!(out.contains("data-on=\"true\""), "must carry data-on=true, got: {out}");
+        assert!(out.contains("data-bool=\"true\""), "must carry data-bool=true, got: {out}");
     }
 
     #[test]
@@ -2195,7 +2203,7 @@ mod tests {
         let v = PropertyValue::Boolean(false);
         let out = render_value(&v, &make_lang("de"), None).into_string();
         assert!(out.contains("Nein"), "DE false must show Nein, got: {out}");
-        assert!(out.contains("data-on=\"false\""), "must carry data-on=false, got: {out}");
+        assert!(out.contains("data-bool=\"false\""), "must carry data-bool=false, got: {out}");
     }
 
     #[test]
@@ -2203,7 +2211,7 @@ mod tests {
         let v = PropertyValue::Boolean(true);
         let out = render_value(&v, &make_lang("fr"), None).into_string();
         assert!(out.contains("Oui"), "FR true must show Oui, got: {out}");
-        assert!(out.contains("data-on=\"true\""), "must carry data-on=true, got: {out}");
+        assert!(out.contains("data-bool=\"true\""), "must carry data-bool=true, got: {out}");
     }
 
     #[test]
@@ -2211,7 +2219,7 @@ mod tests {
         let v = PropertyValue::Boolean(false);
         let out = render_value(&v, &make_lang("fr"), None).into_string();
         assert!(out.contains("Non"), "FR false must show Non, got: {out}");
-        assert!(out.contains("data-on=\"false\""), "must carry data-on=false, got: {out}");
+        assert!(out.contains("data-bool=\"false\""), "must carry data-bool=false, got: {out}");
     }
 
     #[test]
@@ -2219,7 +2227,7 @@ mod tests {
         let v = PropertyValue::Boolean(true);
         let out = render_value(&v, &make_lang("it"), None).into_string();
         assert!(out.contains("Sì"), "IT true must show Sì, got: {out}");
-        assert!(out.contains("data-on=\"true\""), "must carry data-on=true, got: {out}");
+        assert!(out.contains("data-bool=\"true\""), "must carry data-bool=true, got: {out}");
     }
 
     #[test]
@@ -2232,7 +2240,7 @@ mod tests {
         let v = PropertyValue::Boolean(false);
         let out = render_value(&v, &make_lang("it"), None).into_string();
         assert!(out.contains("No"), "IT false must show No, got: {out}");
-        assert!(out.contains("data-on=\"false\""), "must carry data-on=false, got: {out}");
+        assert!(out.contains("data-bool=\"false\""), "must carry data-bool=false, got: {out}");
         // Belt-and-suspenders: confirm the class is present too, so this
         // assertion at least validates the structural output even if the label
         // is ambiguous with EN.

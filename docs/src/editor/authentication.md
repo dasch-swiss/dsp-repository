@@ -38,7 +38,7 @@ There is no resend endpoint. Asking again is another `POST /login`, governed by 
 | Three strikes per code | Guessing against one code |
 | Account counter surviving resend | Guessing across codes — see below |
 | Single use (`consumed_at`) | Replay |
-| Global daily send cap | Exhausting the shared relay quota, which locks out everyone |
+| Global daily send cap | Exhausting the shared relay's allowance, which locks out everyone |
 | Per-account daily send cap | One address spending that shared budget on its own |
 | Per-IP rate limit | One host driving either endpoint flat out |
 | Fresh session id on login | Fixation |
@@ -68,9 +68,9 @@ An outstanding code's binding is never handed to a second browser. A browser ins
 
 ### The two send caps, and what they count
 
-There are two, and both are needed. `EDITOR_MAIL_DAILY_CAP` (500) bounds sends across **all** users, because the Workspace relay quota is shared with other senders: an attacker looping resend across the known addresses would otherwise exhaust it and lock out everyone, RDU included.
+There are two, and both are needed. `EDITOR_MAIL_DAILY_CAP` (500) bounds sends across **all** users, because the University of Basel relay is shared with other senders and its limit is not published to us: an attacker looping resend across the known addresses would otherwise exhaust it and lock out everyone, RDU included.
 
-`EDITOR_MAIL_ACCOUNT_DAILY_CAP` (20) bounds sends to **one** account, and the global cap alone does not imply it. The resend cooldown is per address and defaults to 60 seconds, so one address fits 1,440 codes a day — nearly three times the global budget — and the per-IP limit on `POST /login` (burst 20, one token per 30 seconds, so 2,880 a day) does not bind first. Without the per-account cap, one attacker from one IP using one address they know is registered exhausts the shared budget in about eight hours, which is the outage the global cap exists to prevent, reached about twenty times more cheaply than exhausting the relay itself. Startup refuses a per-account cap above the global one: the global cap would always refuse first, so the value would be dead configuration.
+`EDITOR_MAIL_ACCOUNT_DAILY_CAP` (20) bounds sends to **one** account, and the global cap alone does not imply it. The resend cooldown is per address and defaults to 60 seconds, so one address fits 1,440 codes a day — nearly three times the global budget — and the per-IP limit on `POST /login` (burst 20, one token per 30 seconds, so 2,880 a day) does not bind first. Without the per-account cap, one attacker from one IP using one address they know is registered exhausts the shared budget in about eight hours, which is the outage the global cap exists to prevent. Startup refuses a per-account cap above the global one: the global cap would always refuse first, so the value would be dead configuration.
 
 Both count rows in `mail_sends`, an **append-only** record written when a message is actually delivered. The earlier form counted live `login_codes` rows, which is an inference and read low: codes rolled back after a failed delivery vanish (correctly — nothing was sent), but a user's unspent codes are deleted when they sign in, and those *were* mailed. So real send volume could exceed a cap named for sends.
 
@@ -198,13 +198,15 @@ The list also carries **last code sent** per account. An unconfigured relay and 
 
 ## Mail
 
-`lettre` over STARTTLS to the Google Workspace relay, sending as `noreply@dasch.swiss`. A university relay cannot send as `dasch.swiss`, and a login code arriving from `dasch.unibas.ch` reads as a phishing attempt.
+`lettre` over STARTTLS to the University of Basel relay (`smtp.unibas.ch`, port 25, no authentication), sending as `noreply@dasch.swiss`. The editor DKIM-signs every login mail itself as `d=dasch.swiss`, the domain of the `From:` address, so the relay may carry mail for a domain it does not own: `dasch.swiss` publishes `p=quarantine; adkim=s; aspf=s`, and the signature is what satisfies DMARC. The signing domain is derived from `EDITOR_SMTP_FROM`, never configured separately. The selector (`s=`) comes from `EDITOR_DKIM_SELECTOR`, canonicalization is relaxed/relaxed, and the signed headers are `From`, `To`, `Subject`, `Date`, `Message-ID` and `Content-Type`. The editor sets `Message-ID` to `<uuid@dasch.swiss>`.
 
 ### Relay prerequisites (not the application's job, but they block delivery)
 
-- **DKIM** — Google DKIM-signs relayed mail with the envelope sender's domain *only if that domain has DKIM enabled in the Workspace Admin Console*. Set up for `dasch.swiss`.
-- **SPF** — remains the sending domain's responsibility; `dasch.swiss` must include Google. Set up.
-- **Quota** — the relay allows 10,000 recipients a day, and whether that is shared with other senders determines where `EDITOR_MAIL_DAILY_CAP` should sit. The default of 500 is well below the ceiling either way, and `EDITOR_MAIL_ACCOUNT_DAILY_CAP` must stay below it.
+- **DKIM** — the editor's own. The private key and the selector are provisioned by ops-deploy ([ops-deploy#1466](https://github.com/dasch-swiss/ops-deploy/pull/1466)); the public key is a TXT record at `<selector>._domainkey.dasch.swiss`. Unsigned mail, and mail whose signature does not verify, is quarantined.
+- **SPF** — deliberately does not cover the relay, so DMARC rests on the DKIM signature alone.
+- **Volume** — the relay is shared and its limit is not published to us. `EDITOR_MAIL_DAILY_CAP` bounds what the editor can spend of it, and `EDITOR_MAIL_ACCOUNT_DAILY_CAP` must stay below that.
+
+**`EDITOR_ENV=PROD` with a relay and no DKIM is refused at startup.** That is `EDITOR_SMTP_HOST` set without `EDITOR_DKIM_SELECTOR` and `EDITOR_DKIM_PRIVATE_KEY_FILE`. It is refused because nothing in the editor would notice the result: the relay accepts the mail, the receiving side quarantines it, and users see success and no code. Errors about the key name the path only, never its content or the parser's message, because `Identity::start` failures go to the log pipeline. The startup line `mail transport ready` states `DKIM d=<domain> s=<selector>` or `unsigned`.
 
 ### No address ever reaches a log
 

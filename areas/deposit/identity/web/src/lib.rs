@@ -13,6 +13,7 @@ pub mod test_support;
 mod traceparent;
 
 use std::fmt;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -43,6 +44,8 @@ pub struct IdentitySettings {
     pub smtp_host: Option<String>,
     pub smtp_port: u16,
     pub smtp_credentials: Option<(String, SmtpPassword)>,
+    /// Selector and key file for DKIM-signing every sent message; `None` sends unsigned.
+    pub dkim: Option<(String, PathBuf)>,
     pub smtp_from: String,
     pub rdu_addresses: Vec<String>,
     pub reveal_login_code: bool,
@@ -119,6 +122,10 @@ impl Identity {
                 .smtp_credentials
                 .as_ref()
                 .map(|(username, password)| (username.as_str(), password.0.as_str())),
+            settings
+                .dkim
+                .as_ref()
+                .map(|(selector, key_file)| (selector.as_str(), key_file.as_path())),
             &settings.smtp_from,
         )
         .map_err(StartupError::Mail)?;

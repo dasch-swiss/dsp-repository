@@ -409,7 +409,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   answers; `identity-ports` on `std` alone), areas/deposit/shell, modules/mosaic,
   shared/metadata, shared/rate-limit and shared/telemetry (`identity-web`); third-party: async-trait, base64,
   chrono, rand + subtle, thiserror, tracing, uuid; rusqlite (`bundled`) + deadpool-sqlite and
-  lettre (`identity-store`); axum, maud, tower_governor, tokio, the OpenTelemetry API
+  lettre + rsa (`identity-store`); axum, maud, tower_governor, tokio, the OpenTelemetry API
   (`identity-web`)
 - **Used by:** areas/deposit/server (`identity-web`'s facade and re-exports, `identity-store`'s
   stores and adapters; never `identity-core`), areas/deposit/editor (`editor-store` on

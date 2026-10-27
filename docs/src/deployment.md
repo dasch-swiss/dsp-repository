@@ -149,7 +149,7 @@ On every push to `main`:
 3. Pushes the Docker image to Docker Hub (`daschswiss/metadata-editor:{tag}`)
 4. Triggers a Jenkins webhook (`Service=deposit`) for STAGE deployment, `deposit.stage.dasch.swiss`
 
-The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`. No workflow deploys the editor to prod yet: that waits for a mail relay ([DEV-7618](https://linear.app/dasch/issue/DEV-7618)).
+The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`. No workflow deploys the editor to prod yet: the relay is settled, and the deploy waits on [DEV-7618](https://linear.app/dasch/issue/DEV-7618).
 
 ### Release Please
 

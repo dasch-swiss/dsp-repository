@@ -72,7 +72,7 @@ A text branch is namespaced under `.text.<tag>`, which is load-bearing rather th
 
 Removing a row **is** the applier seeing one fewer key, so there is no separate delete. The empty marker is re-added when the last key goes: without it the field reads as absent, the applier leaves it alone, and the last removal does not stick.
 
-A blank added row is never stored — an empty row must not reach a published file — so it lives in the form. The tile emits a hidden `{field}.row` for it, the body carries its key back, and the re-render finds it there. Nothing is held server-side between requests. Row keys are positional on a fresh render (`r0`, `r1`, …) and only have to stay stable for the life of one rendered form: order comes from the repetition of the hidden field, never from a number.
+A blank added row is never stored — an empty row must not reach a published file — so it lives in the form. The tile emits a hidden `{field}.row` for it, the body carries its key back, and the re-render finds it there. An autosave re-renders from the posted body too, so a row whose variant was just chosen survives it; an explicit save drops a row with nothing storable. Nothing is held server-side between requests. Row keys are positional on a fresh render (`r0`, `r1`, …) and only have to stay stable for the life of one rendered form: order comes from the repetition of the hidden field, never from a number.
 
 ## Discarding a draft
 

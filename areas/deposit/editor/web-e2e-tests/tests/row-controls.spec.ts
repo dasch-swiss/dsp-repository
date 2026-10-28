@@ -4,6 +4,7 @@ import {
   DEPOSITOR_SHORTCODE,
   DEPOSITOR_STATE,
   SWEEP_SHORTCODE,
+  VARIANT_SHORTCODE,
 } from "../playwright.config";
 
 test.use({ storageState: DEPOSITOR_STATE });
@@ -136,4 +137,37 @@ test.describe("row controls resolve", () => {
       ).toEqual([]);
     });
   }
+});
+
+test.describe("a variant switch survives the autosave", () => {
+  test.beforeEach(() => {
+    test.skip(
+      test.info().project.name !== "chromium-js",
+      "the autosave is a Datastar trigger",
+    );
+  });
+
+  /** Resolves once the autosave has answered and the region is patched. */
+  const autosaved = (page: Page) =>
+    expect(page.locator('div[aria-live="polite"]').first()).toContainText(
+      "Draft saved",
+    );
+
+  test("a new row switched to a recognised entry stays, on that branch", async ({
+    page,
+  }) => {
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    const before = await rowCount(page, "disciplines");
+    await page.locator('[formaction$="/fields/disciplines/add"]').click();
+    await expect.poll(() => rowCount(page, "disciplines")).toBe(before + 1);
+
+    const added = page.locator(
+      "fieldset#disciplines > ol.repeatable-rows > li.repeatable-row",
+    );
+    await added.last().getByLabel("A recognised entry").check();
+    await autosaved(page);
+
+    expect(await rowCount(page, "disciplines")).toBe(before + 1);
+    await expect(added.last().getByLabel("Link")).toBeVisible();
+  });
 });

@@ -326,9 +326,9 @@ pub struct SectionView<'a> {
     pub notice: Option<Notice<'a>>,
     /// The body that was posted, when this render is answering a `POST`. Only
     /// repeatable fields read it, for the one thing the draft cannot hold: a row a
-    /// depositor added but has not filled in, which is never stored. `None` after a
-    /// successful save, since a row with no text is not data; `Some` for a refusal
-    /// and for add/remove.
+    /// depositor added but has not filled in, which is never stored. `None` after an
+    /// explicit save, since a row with no text is not data; `Some` for a refusal,
+    /// for add/remove and for an autosave.
     pub posted: Option<&'a FormBody>,
     /// The field one more blank row was just asked for.
     pub adding_row: Option<&'a str>,

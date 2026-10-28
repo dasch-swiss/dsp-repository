@@ -630,6 +630,9 @@ pub(crate) async fn act(
         _ => Intent::Save,
     };
     span.record("form.intent", tracing::field::display(intent.as_str()));
+    // The autosave trigger has no submitter, so it alone posts no intent; see
+    // `Rendering::keep_posted` for what that changes.
+    let autosave = body.get(INTENT).is_none();
 
     if intent == Intent::Withdraw || intent == Intent::ConfirmWithdrawal {
         return withdraw(&state, &user, &shortcode, &context, headers, intent).await;
@@ -705,7 +708,7 @@ pub(crate) async fn act(
     if intent == Intent::Save {
         span.record("form.outcome", "saved");
         tracing::info!("saved a project draft");
-        return saved(&shortcode, &context, headers);
+        return saved(&shortcode, &context, headers, autosave);
     }
 
     // A search stores the body exactly as a save does — so nothing typed is at risk of being
@@ -1531,7 +1534,7 @@ async fn withdraw(
 
 /// A successful save: a redirect on the plain path, the patched region on the
 /// enhanced one.
-fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
+fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap, autosave: bool) -> Response {
     if !is_enhanced(&headers) {
         // POST-redirect-GET: a `POST` left in the history re-posts on
         // refresh. `apply_and_store` always sets `context.record` before this
@@ -1544,7 +1547,11 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response
     region(
         shortcode,
         context,
-        Rendering { notice: Some(page::Notice::Saved), ..Rendering::default() },
+        Rendering {
+            notice: Some(page::Notice::Saved),
+            keep_posted: autosave,
+            ..Rendering::default()
+        },
     )
 }
 
@@ -1737,10 +1744,11 @@ struct Rendering<'a> {
     adding_row: Option<&'a str>,
     /// Whether this render must preserve the posted editing state.
     ///
-    /// Set for a refusal and for a row action, and deliberately **not** for a
-    /// successful save: a save commits every row with any text in it, and a row
-    /// that still has none is not data, so dropping it is the point rather than
-    /// a loss.
+    /// Set for a refusal, a row action and an autosave, and deliberately **not**
+    /// for an explicit save: a save commits every row with any text in it, and a
+    /// row that still has none is not data, so dropping it is the point rather
+    /// than a loss. An autosave is the exception because it fires mid-edit: a row
+    /// whose variant was just chosen holds nothing storable yet.
     keep_posted: bool,
 }
 
@@ -2677,6 +2685,51 @@ mod tests {
             "{}",
             draft.payload
         );
+    }
+
+    /// A Disciplines row switched to "A recognised entry" before its link is typed, as the
+    /// autosave posts it: no intent.
+    const RECOGNISED_ENTRY_WITHOUT_LINK: &str = "disciplines.row=r0&disciplines.r0.kind=reference\
+                                                 &disciplines.r0.ref.type=Skos&disciplines.r0.ref.url=\
+                                                 &disciplines.r0.ref.label=&disciplines.r0.text.en=";
+
+    #[tokio::test]
+    async fn an_autosave_keeps_a_row_that_is_still_being_filled_in() {
+        let (state, app, session) = a_depositor_on("section-autosave-row").await;
+
+        let response = as_session(&app, enhanced(DATASET, RECOGNISED_ENTRY_WITHOUT_LINK), &session).await;
+        let body = body_string(response).await;
+
+        assert!(
+            body.contains(r#"name="disciplines.r0.kind" value="reference" checked"#),
+            "the row stays, on the branch just chosen: {body}"
+        );
+        assert_eq!(stored_draft(&state, "0801d").await.get("disciplines"), None);
+    }
+
+    #[tokio::test]
+    async fn an_explicit_save_still_drops_a_row_with_nothing_storable() {
+        let (_state, app, session) = a_depositor_on("section-save-drops-row").await;
+
+        let form = format!("{RECOGNISED_ENTRY_WITHOUT_LINK}&{INTENT}={}", page::SAVE);
+        let body = body_string(as_session(&app, enhanced(DATASET, &form), &session).await).await;
+
+        assert!(!body.contains(r#"name="disciplines.r0.kind""#), "{body}");
+    }
+
+    #[tokio::test]
+    async fn an_autosave_keeps_the_funding_variant_just_chosen() {
+        let (_state, app, session) = a_depositor_on("section-autosave-funding").await;
+
+        let response = as_session(
+            &app,
+            enhanced("/projects/0801d/sections/access", "funding.kind=text&funding.text="),
+            &session,
+        )
+        .await;
+        let body = body_string(response).await;
+
+        assert!(body.contains(r#"name="funding.kind" value="text" checked"#), "{body}");
     }
 
     #[tokio::test]

@@ -62,6 +62,12 @@ The corpus round trip **cannot** catch that mistake — an untouched form's valu
 
 A text branch is namespaced under `.text.<tag>`, which is load-bearing rather than tidy: `FormBody::entries` reads every dotted suffix under a prefix as a language tag, so texts posted directly under the row would have turned `kind`, `type` and `url` into languages of those names.
 
+## A language list is one value per row
+
+`keywords` and `alternativeNames` are lists of language maps, and a map is one keyword or one name with its translations. The form shows each map as one row of lines, a line being a text field and a language dropdown, and posts each line as a repeated `{field}.<key>.lang` / `{field}.<key>.text` pair in DOM order.
+
+A fresh row is one line on English. A translation is a row of its own rather than a second line, because nearly every map in the corpus holds one language ([What the corpus measures](#what-the-corpus-measures)). A stored map with several languages renders as one row with a line per language and round-trips untouched. A language repeated within one row starts a new map instead of overwriting the earlier line. A dropdown offers the four UI languages plus its own line's tag, so an `ar` keyword keeps its language. Only its own: every option is markup on every line, so offering every tag the field holds made a field's render grow with lines times tags.
+
 ## Rows are added and removed by round-trip
 
 `POST …/sections/{section}/fields/{field}/add` and `…/{field}/{key}/remove`, under the section's own URL and handled by the same module, so a row action resolves through one `context()` — the audience gate, the lock check and the shortcode fold are the section's rather than a second copy. The URL names the field, so it is checked against `fields_for` too; without that it would be a way to reach an RDU-only or a display-only field. `apply_and_store` is shared with the save path, so a row action cannot become a second, weaker write.
@@ -117,6 +123,7 @@ Every closed vocabulary, enforced tier and cap above is decided by measuring the
 | Variant branches, both live | `temporalCoverage` 86 of 141 entries free text; `disciplines` 131 of 204 free text; `funding` 77 projects hold grants, 8 a single string |
 | Grant members | Of 121 grants, 91 carry all three optional members and 12 only a number |
 | Widest committed language map | 3 tags, against the cap of 250 |
+| Languages per `keywords` / `alternativeNames` map | 803 of 810 / 68 of 69 hold one; the rest two |
 
 ## The decoder knows shapes, the registry knows fields
 

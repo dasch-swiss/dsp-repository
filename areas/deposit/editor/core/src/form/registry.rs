@@ -238,7 +238,7 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "alternativeNames",
         "Alternative names",
-        "Acronyms or alternate spellings — one value per language.",
+        "Acronyms or other names the project is known by. One name per row, with its language.",
         Optional,
         Everyone,
         Some(MultilingualRows),
@@ -271,7 +271,7 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "keywords",
         "Keywords",
-        "At least one keyword — each is one multilingual term.",
+        "Add at least one keyword. One keyword per row, with its language; a translation goes in a row of its own.",
         Required,
         Everyone,
         Some(MultilingualRows),

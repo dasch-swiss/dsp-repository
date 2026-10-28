@@ -2579,7 +2579,7 @@ mod tests {
             &app,
             post(
                 "/projects/0801d/sections/dataset/fields/keywords/r0/remove",
-                "keywords.row=r0&keywords.r0.en=the+only+keyword",
+                "keywords.row=r0&keywords.r0.lang=en&keywords.r0.text=the+only+keyword",
             ),
             &session,
         )
@@ -2661,7 +2661,7 @@ mod tests {
             &app,
             post(
                 &format!("{DATASET}/fields/keywords/add"),
-                "keywords.row=r0&keywords.r0.en=manuscripts",
+                "keywords.row=r0&keywords.r0.lang=en&keywords.r0.text=manuscripts",
             ),
             &session,
         )
@@ -2676,7 +2676,7 @@ mod tests {
         // The row that was filled in comes back, and one blank row is added
         // under a fresh key.
         assert!(body.contains("manuscripts"), "the filled row survives: {body}");
-        assert!(body.contains(r#"name="keywords.r1.en""#), "the new row renders: {body}");
+        assert!(body.contains(r#"name="keywords.r1.text""#), "the new row renders: {body}");
 
         // Only the filled row reached storage. The blank one is a rendering.
         let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
@@ -2747,7 +2747,10 @@ mod tests {
         for (position, keyword) in published.keywords.iter().enumerate() {
             form.push_str(&format!("&keywords.row=r{position}"));
             for (tag, text) in keyword.iter() {
-                form.push_str(&format!("&keywords.r{position}.{tag}={}", urlencoding(text)));
+                form.push_str(&format!(
+                    "&keywords.r{position}.lang={tag}&keywords.r{position}.text={}",
+                    urlencoding(text)
+                ));
             }
         }
         let response = as_session(
@@ -2780,7 +2783,7 @@ mod tests {
             &app,
             post(
                 &format!("{DATASET}/fields/keywords/r0/remove"),
-                "keywords.row=r0&keywords.r0.en=only",
+                "keywords.row=r0&keywords.r0.lang=en&keywords.r0.text=only",
             ),
             &session,
         )
@@ -4716,8 +4719,8 @@ mod tests {
         // `endDate` is the `MISSING` sentinel — the placeholder trap.
         ("0816", "0816_vitrocentre.json"),
         // `description.ar` is a tag outside `UI_LANGUAGES`, and `keywords` carries
-        // rows tagged `ar` too — the only project here exercising the
-        // extra-language-tag branch of `untouched_body`'s `Multilingual` and
+        // rows tagged `ar` too — the only project here exercising a language
+        // outside the four in `untouched_body`'s `Multilingual` and
         // `MultilingualRows` arms through the handler layer rather than only the
         // whole-corpus unit test.
         ("0820", "0820_lhtt.json"),
@@ -4889,7 +4892,7 @@ mod tests {
         );
         assert!(
             lhtt.keywords.iter().any(|keyword| keyword.contains_key("ar")),
-            "0820 was chosen for an `ar` keywords row outside UI_LANGUAGES, exercising the extra-language-tag branch of `untouched_body`'s MultilingualRows arm"
+            "0820 was chosen for an `ar` keywords row outside UI_LANGUAGES, exercising a language outside the four in `untouched_body`'s MultilingualRows arm"
         );
     }
 
@@ -5112,11 +5115,9 @@ mod tests {
                         let key = format!("r{position}");
                         pairs.push((format!("{}.row", field.id), key.clone()));
                         let stored = editor_core::multilingual::as_multilingual(row);
-                        for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
-                            pairs.push((
-                                format!("{}.{key}.{tag}", field.id),
-                                stored.get(tag).unwrap_or_default().to_string(),
-                            ));
+                        for (tag, text) in stored.iter() {
+                            pairs.push((format!("{}.{key}.lang", field.id), tag.to_string()));
+                            pairs.push((format!("{}.{key}.text", field.id), text.to_string()));
                         }
                     }
                 }

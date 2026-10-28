@@ -130,11 +130,14 @@ pub fn as_multilingual(value: &Value) -> DraftMultilingual {
 /// summarised by its member count instead.
 pub fn is_language_map(value: &Value) -> bool {
     value.as_object().is_some_and(|members| {
-        !members.is_empty()
-            && members
-                .iter()
-                .all(|(key, text)| text.is_string() && key.len() <= 3 && key.chars().all(|c| c.is_ascii_lowercase()))
+        !members.is_empty() && members.iter().all(|(key, text)| text.is_string() && is_language_tag(key))
     })
+}
+
+/// Whether `tag` is the short lowercase code a language map is keyed by.
+#[must_use]
+pub fn is_language_tag(tag: &str) -> bool {
+    (1..=3).contains(&tag.len()) && tag.bytes().all(|b| b.is_ascii_lowercase())
 }
 
 #[cfg(test)]

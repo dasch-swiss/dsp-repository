@@ -36,6 +36,7 @@ use editor_core::submission::{ProposalFault, SubmitRefusal};
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
+use crate::form::widgets::apply_agent_choice;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
 use crate::handlers::{is_enhanced, storage_error, StorageSurface};
@@ -602,7 +603,7 @@ pub(crate) async fn act(
     // Declared before the context so it outlives it: the context borrows it, so
     // that every render reached from here can preserve the editing state
     // without the body being threaded through each refusal.
-    let body = FormBody::from_pairs(pairs);
+    let body = FormBody::from_pairs(apply_agent_choice(pairs));
 
     let mut context = match context(&state, &user, &shortcode, &section_id, user.signed_out_at()).await {
         Ok(context) => context,
@@ -631,8 +632,9 @@ pub(crate) async fn act(
     };
     span.record("form.intent", tracing::field::display(intent.as_str()));
     // The autosave trigger has no submitter, so it alone posts no intent; see
-    // `Rendering::keep_posted` for what that changes.
-    let autosave = body.get(INTENT).is_none();
+    // `Rendering::keep_posted` for what that changes. A picker's choice renders the
+    // same way: the rest of the form may hold a row that is not storable yet.
+    let autosave = body.get(INTENT).is_none_or(|intent| page::chosen_agent(intent).is_some());
 
     if intent == Intent::Withdraw || intent == Intent::ConfirmWithdrawal {
         return withdraw(&state, &user, &shortcode, &context, headers, intent).await;
@@ -2886,7 +2888,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_search_offers_matches_stores_the_body_and_changes_no_reference() {
-        // The picker's whole round trip: type a name, press Search, choose from the menu, save.
+        // The picker's whole round trip: type a name, press Search, choose a match.
         // The search itself must store what was typed like a save does — so nothing is lost to a
         // lookup — while changing no reference of its own.
         let (state, app, session) = a_depositor_on("section-agent-search").await;
@@ -2914,7 +2916,10 @@ mod tests {
             .await,
         )
         .await;
-        assert!(searched.contains("<select"), "the search offers a real menu: {searched}");
+        assert!(
+            searched.contains("choose-agent:contactPoint.r0:"),
+            "the search offers matches: {searched}"
+        );
         assert!(searched.contains(r#"value="Bernoulli""#), "the query comes back in the box");
         // A search decides nothing: the stored reference is still the one that was there.
         let after_search = stored_draft(&state, "0801d").await;
@@ -2924,13 +2929,22 @@ mod tests {
             "a search must not change a reference"
         );
 
-        // Now choose from the menu, which posts under the same name the applier already reads.
-        as_session(
-            &app,
-            post(CONTRIBUTORS, "contactPoint.row=r0&contactPoint.r0=organization-002"),
-            &session,
+        // Now choose a match: the button posts the whole form, the stored id and the query still in
+        // it.
+        let chose = body_string(
+            as_session(
+                &app,
+                post(
+                    CONTRIBUTORS,
+                    "contactPoint.row=r0&contactPoint.r0=organization-008&contactPoint.r0.q=Bernoulli\
+                     &intent=choose-agent:contactPoint.r0:organization-002",
+                ),
+                &session,
+            )
+            .await,
         )
         .await;
+        assert!(!chose.contains("choose-agent:contactPoint.r0:"), "the list closes: {chose}");
         assert_eq!(
             stored_draft(&state, "0801d").await.get("contactPoint"),
             Some(&serde_json::json!(["organization-002"])),
@@ -4634,7 +4648,7 @@ mod tests {
         )
         .await;
         assert!(
-            searched.contains(r#"value="person-417""#),
+            searched.contains(r#"contributor:person-417""#),
             "the search must offer the proposal it just allocated: {searched}"
         );
 

@@ -141,6 +141,10 @@ impl FormBody {
     /// not `[A-Za-z0-9_-]+` are dropped, since a row key becomes part of a field
     /// name the server reads back; duplicates are dropped too, keeping the first,
     /// because two rows with one key collapse wherever the key is a map key.
+    ///
+    /// At most [`MAX_VALUES_PER_FIELD`] keys: every row reader scans the body once
+    /// per key, so an unbounded list is quadratic. A body over the cap is refused
+    /// by `submit::over_cap`, which counts `{field}.row` itself.
     #[must_use]
     pub fn rows(&self, field: &str) -> Vec<&str> {
         let name = format!("{field}.row");
@@ -149,6 +153,9 @@ impl FormBody {
         for key in self.all(&name) {
             if is_valid_segment(key) && seen.insert(key) {
                 keys.push(key);
+                if keys.len() == MAX_VALUES_PER_FIELD {
+                    break;
+                }
             }
         }
         keys
@@ -1144,6 +1151,14 @@ mod tests {
             ("keywords.row", "k2"),
         ]);
         assert_eq!(body.rows("keywords"), ["k1", "k2"]);
+    }
+
+    #[test]
+    fn row_keys_stop_at_the_cap() {
+        let pairs: Vec<(String, String)> = (0..=MAX_VALUES_PER_FIELD)
+            .map(|n| ("keywords.row".to_string(), format!("k{n}")))
+            .collect();
+        assert_eq!(FormBody::from_pairs(pairs).rows("keywords").len(), MAX_VALUES_PER_FIELD);
     }
 
     #[test]

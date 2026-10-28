@@ -656,6 +656,23 @@ pub(crate) async fn act(
         return refused(&state, &user, &shortcode, &context, headers, SAVE_REFUSED_LOCKED);
     }
 
+    // Before any applier runs, and on a save as much as a submit: an applier
+    // silently truncates at `MAX_VALUES_PER_FIELD`, so deferring this to
+    // submit would let an over-cap save store the truncated value and leave
+    // submit looking at a draft already within the cap. Nothing is written on
+    // this branch, which is what makes the refusal honest about "nothing was
+    // saved".
+    let over = over_cap(context.audience, context.section, &body);
+    if !over.is_empty() {
+        span.record("form.outcome", "over_cap");
+        tracing::info!(fields.over_cap = over.len(), "refused a write carrying too many values");
+        let errors: Vec<(String, String)> = over
+            .iter()
+            .map(|field| (field.id.to_string(), over_cap_message(field.label)))
+            .collect();
+        return refused_with(&state, &user, &shortcode, &context, headers, WRITE_REFUSED_OVER_CAP, &errors);
+    }
+
     // Did the draft move under this form? The draft is one row and `upsert` is last-write-wins, so
     // without this a save silently replaces work somebody else did while this form was open.
     // Refused **once**: the re-render carries what was typed and a refreshed baseline, so
@@ -683,23 +700,6 @@ pub(crate) async fn act(
         } else {
             render_page(&state, &user, &shortcode, &context, rendering)
         };
-    }
-
-    // Before any applier runs, and on a save as much as a submit: an applier
-    // silently truncates at `MAX_VALUES_PER_FIELD`, so deferring this to
-    // submit would let an over-cap save store the truncated value and leave
-    // submit looking at a draft already within the cap. Nothing is written on
-    // this branch, which is what makes the refusal honest about "nothing was
-    // saved".
-    let over = over_cap(context.audience, context.section, &body);
-    if !over.is_empty() {
-        span.record("form.outcome", "over_cap");
-        tracing::info!(fields.over_cap = over.len(), "refused a write carrying too many values");
-        let errors: Vec<(String, String)> = over
-            .iter()
-            .map(|field| (field.id.to_string(), over_cap_message(field.label)))
-            .collect();
-        return refused_with(&state, &user, &shortcode, &context, headers, WRITE_REFUSED_OVER_CAP, &errors);
     }
 
     let record = match apply_and_store(&state, &user, &shortcode, &mut context, &headers, &body).await {

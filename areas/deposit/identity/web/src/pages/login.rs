@@ -68,6 +68,35 @@ fn revealed_code(code: &str) -> Markup {
     }
 }
 
+/// What the code-entry page shows about the login code.
+pub enum Revealed {
+    /// A deployment that mails codes, or a storage failure: nothing about the code is shown.
+    Hidden,
+    /// The live code this browser's binding owns.
+    Code(String),
+    /// A revealing deployment whose binding owns no live code.
+    NoCode,
+}
+
+/// Shown where a revealing deployment has no code for this browser. Hedged on
+/// purpose: an empty binding also follows a cooldown in a fresh browser, a
+/// lockout, the daily cap, or an expired or used code, so it must not assert
+/// that no account has the address.
+fn no_code_hint() -> Markup {
+    let body = html! {
+        p class="mt-1" {
+            "No live code is bound to this browser. Usually that means no account has this address: an RDU member \
+             has to create it at "
+            code { "/depositors" }
+            " first, and this deployment forgets every account when it restarts. An expired or used code is not \
+             shown either."
+        }
+    };
+    html! {
+        (alert(body).variant(AlertVariant::Info).title("No code to show"))
+    }
+}
+
 fn email_field() -> Markup {
     html! {
         ({
@@ -94,7 +123,7 @@ fn code_field() -> Markup {
 /// address, and the only places to keep it would be a hidden field or a third
 /// endpoint. `one_time_code(6)` sets `autocomplete`, `inputmode`, the pattern
 /// and the length together; the tile says why they only work as a set.
-pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str>) -> Markup {
+pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: &Revealed) -> Markup {
     html! {
         div class="max-w-md mx-auto py-12" {
             h1 class="font-display text-2xl mb-2" { "Enter your code" }
@@ -103,7 +132,11 @@ pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str
                  code below."
             }
             @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger)) }
-            @if let Some(code) = revealed { (revealed_code(code)) }
+            @match revealed {
+                Revealed::Hidden => {}
+                Revealed::Code(code) => (revealed_code(code))
+                Revealed::NoCode => (no_code_hint())
+            }
             form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
                 (code_field())
                 div { (button("Sign in").button_type(ButtonType::Submit)) }
@@ -134,7 +167,7 @@ mod tests {
     fn test_enter_code_constrains_the_field_to_six_digits() {
         // Not validation — the server does that — but it keeps a mistyped
         // seven-digit paste from costing an attempt against the account counter.
-        let out = enter_code(None, None, None).into_string();
+        let out = enter_code(None, None, &Revealed::Hidden).into_string();
         assert!(out.contains(r#"<form method="post" action="/login/code""#), "{out}");
         assert!(out.contains(r#"pattern="[0-9]{6}""#), "{out}");
         assert!(out.contains(r#"maxlength="6""#), "{out}");
@@ -146,7 +179,7 @@ mod tests {
     fn test_both_forms_are_plain_posts_without_datastar() {
         for out in [
             request_code(None, None).into_string(),
-            enter_code(None, None, None).into_string(),
+            enter_code(None, None, &Revealed::Hidden).into_string(),
         ] {
             assert!(!out.contains("data-on"), "{out}");
             assert!(!out.contains("data-bind"), "{out}");
@@ -164,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_an_error_message_is_escaped() {
-        let out = enter_code(None, Some("<script>alert(1)</script>"), None).into_string();
+        let out = enter_code(None, Some("<script>alert(1)</script>"), &Revealed::Hidden).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
     }
@@ -173,14 +206,23 @@ mod tests {
     fn test_the_code_is_absent_unless_the_caller_passes_one() {
         // Every deployment that mails a code renders this page, so the block
         // appearing by accident is the failure that matters.
-        let out = enter_code(None, None, None).into_string();
+        let out = enter_code(None, None, &Revealed::Hidden).into_string();
         assert!(!out.contains("no mail was sent"), "{out}");
+        assert!(!out.contains("alert-warning"), "{out}");
+        assert!(!out.contains("No code to show"), "{out}");
+    }
+
+    #[test]
+    fn test_no_code_on_a_revealing_deployment_shows_the_hint() {
+        let out = enter_code(None, None, &Revealed::NoCode).into_string();
+        assert!(out.contains("No code to show"), "{out}");
+        assert!(out.contains("/depositors"), "{out}");
         assert!(!out.contains("alert-warning"), "{out}");
     }
 
     #[test]
     fn test_a_revealed_code_says_why_it_is_on_the_page() {
-        let out = enter_code(None, None, Some("482917")).into_string();
+        let out = enter_code(None, None, &Revealed::Code("482917".into())).into_string();
         assert!(out.contains("482917"), "{out}");
         assert!(out.contains("no mail relay"), "{out}");
         assert!(out.contains("alert-warning"), "{out}");
@@ -190,21 +232,21 @@ mod tests {
     fn test_a_revealed_code_is_escaped() {
         // The code comes from the database, not the request; a credential rendered
         // into a page is still escaped here.
-        let out = enter_code(None, None, Some("<script>alert(1)</script>")).into_string();
+        let out = enter_code(None, None, &Revealed::Code("<script>alert(1)</script>".into())).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
     }
 
     #[test]
     fn test_neither_page_carries_an_address_field_to_repost() {
-        let out = enter_code(None, None, None).into_string();
+        let out = enter_code(None, None, &Revealed::Hidden).into_string();
         assert!(!out.contains(r#"type="hidden""#), "{out}");
         assert!(!out.contains(r#"name="email""#), "{out}");
     }
 
     #[test]
     fn test_the_way_back_from_the_code_page_is_a_get_link() {
-        let out = enter_code(None, None, None).into_string();
+        let out = enter_code(None, None, &Revealed::Hidden).into_string();
         assert!(out.contains(r#"<a href="/login""#), "{out}");
     }
 
@@ -215,7 +257,7 @@ mod tests {
         let first = request_code(Some("/projects/0801"), None).into_string();
         assert!(first.contains(r#"action="/login?next=/projects/0801""#), "{first}");
 
-        let second = enter_code(Some("/projects/0801"), None, None).into_string();
+        let second = enter_code(Some("/projects/0801"), None, &Revealed::Hidden).into_string();
         assert!(second.contains(r#"action="/login/code?next=/projects/0801""#), "{second}");
         assert!(second.contains(r#"<a href="/login?next=/projects/0801""#), "{second}");
     }

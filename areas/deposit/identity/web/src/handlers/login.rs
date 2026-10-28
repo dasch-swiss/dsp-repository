@@ -24,6 +24,7 @@ use uuid::Uuid;
 
 use super::cookie;
 use super::guard::{destination_or_root, next_from};
+use crate::pages::login::Revealed;
 use crate::shell::IdentityState;
 
 /// The one message every code-entry failure produces.
@@ -157,7 +158,7 @@ pub(crate) async fn login_submit(
 
 /// The code this browser's binding owns, when this deployment may show it.
 ///
-/// Returns `None` unless [`IdentityState::reveal_login_code`] is set — resolved once
+/// Returns [`Revealed::Hidden`] unless [`IdentityState::reveal_login_code`] is set — resolved once
 /// at startup from three conditions, all of which have to hold: no mail relay,
 /// no database that outlives the process, and not `PROD`. See
 /// `EditorConfig::reveals_login_code` in the composition root.
@@ -169,22 +170,23 @@ pub(crate) async fn login_submit(
 ///
 /// **It costs anti-enumeration on this page.** The code-entry screen now differs between
 /// an address with an account and one without, because a binding that resolves
-/// to nothing shows nothing. That is inherent to showing a code at all, it is
-/// confined to the same throwaway condition, and it is recorded in
-/// `docs/src/editor/authentication.md` rather than left to be discovered.
+/// to nothing shows no code, only the no-code hint. That is inherent to showing a
+/// code at all, it is confined to the same throwaway condition, and it is recorded
+/// in `docs/src/editor/authentication.md` rather than left to be discovered.
 ///
-/// A storage failure yields `None`: a screen that cannot show the code is a
-/// nuisance on a preview, and guessing is not an option for a credential.
-async fn revealed_code(state: &IdentityState, token: &str, now: DateTime<Utc>) -> Option<String> {
+/// A storage failure yields `Hidden`: a screen that cannot show the code is a
+/// nuisance on a preview, it must not claim there is no code, and guessing is
+/// not an option for a credential.
+async fn revealed_code(state: &IdentityState, token: &str, now: DateTime<Utc>) -> Revealed {
     if !state.reveal_login_code {
-        return None;
+        return Revealed::Hidden;
     }
     match LoginCodeRepository::find_by_browser_token(&*state.store, token).await {
-        Ok(Some(code)) if code.consumed_at.is_none() && now < code.expires_at => Some(code.code),
-        Ok(_) => None,
+        Ok(Some(code)) if code.consumed_at.is_none() && now < code.expires_at => Revealed::Code(code.code),
+        Ok(_) => Revealed::NoCode,
         Err(error) => {
             tracing::warn!(error = %error, "could not read the code to show on screen");
-            None
+            Revealed::Hidden
         }
     }
 }
@@ -209,7 +211,7 @@ pub(crate) async fn code_form(State(state): State<IdentityState>, uri: Uri, head
         &state,
         ENTER_CODE_TITLE,
         StatusCode::OK,
-        crate::pages::login::enter_code(next, None, revealed.as_deref()),
+        crate::pages::login::enter_code(next, None, &revealed),
     )
 }
 
@@ -255,7 +257,7 @@ pub(crate) async fn code_submit(
                 &state,
                 ENTER_CODE_TITLE,
                 StatusCode::OK,
-                crate::pages::login::enter_code(next, Some(CODE_REJECTED), revealed.as_deref()),
+                crate::pages::login::enter_code(next, Some(CODE_REJECTED), &revealed),
             )
         }
     }
@@ -1078,6 +1080,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_a_revealing_deployment_explains_an_address_with_no_account() {
+        let (state, _) = revealing_state("reveal-no-account").await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, UNKNOWN, None).await;
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
+
+        let page = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
+            .await
+            .unwrap();
+        let body = body_string(page).await;
+        assert!(body.contains("No code to show"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn test_the_ordinary_deployment_does_not_explain_an_address_with_no_account() {
+        // Reveal off is every deployment that mails codes: for them the page for
+        // an unknown address must be the page for a known one.
+        let (state, _) = test_state("reveal-off-no-account").await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, UNKNOWN, None).await;
+        let binding = cookie_set(&issued, LOGIN).expect("a binding");
+
+        let page = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
+            .await
+            .unwrap();
+        let body = body_string(page).await;
+        assert!(!body.contains("No code to show"), "{body}");
+    }
+
+    #[tokio::test]
     async fn test_a_browser_sees_only_the_code_its_own_binding_owns() {
         // The lookup is by the token the request carries, so one browser cannot
         // read another's code by visiting the page.
@@ -1127,7 +1165,9 @@ mod tests {
             .oneshot(with_cookie(get("/login/code"), LOGIN, &binding))
             .await
             .unwrap();
-        assert!(!body_string(page).await.contains(&code));
+        let body = body_string(page).await;
+        assert!(!body.contains(&code), "{body}");
+        assert!(body.contains("No code to show"), "{body}");
     }
 
     #[tokio::test]

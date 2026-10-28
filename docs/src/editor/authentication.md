@@ -243,14 +243,14 @@ The code-entry screen therefore shows the code when **all three** of these hold,
 | No `EDITOR_SMTP_HOST` | With no relay the code is **already** written to the log in plaintext. Showing it to the browser that just asked for it discloses nothing the deployment is not already doing. With a relay, the code goes to a mailbox and the screen must not become a second channel. |
 | No `EDITOR_DB_DIR` | Everything dies with the process. This is the condition separating a throwaway deployment from a real one: an environment holding accounts people actually use has to mount a volume, or it loses them on every restart. |
 
-Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and stage while it holds no real data ([Operations](./operations.md#deployment)), nothing else. Startup logs a `warn` naming the state, so an operator sees it asserted rather than inferring it from three unset variables.
+Together they describe a deployment with no relay, no durable state and no production flag — the PR preview and a local run, nothing else. Startup logs a `warn` naming the state, so an operator sees it asserted rather than inferring it from three unset variables.
 
 The predicate is deliberately **self-contained** rather than leaning on the `PROD`-requires-a-relay rule in `validate`. That rule does make two of these combinations unbootable, but a guard you can read in one place is one nobody has to reconstruct.
 
 ### What it costs, stated rather than left to be found
 
 - **A real disclosure, not a token one.** The code shown is the genuine CSPRNG value bound to the requesting browser's token. Anyone who can reach such a deployment can start a sign-in for any address and read that address's code. What makes it acceptable is not the size of the disclosure but where it can happen: no relay, no durable accounts, nothing that outlives the process.
-- **Anti-enumeration does not hold on this page in this mode.** The code-entry screen now differs between an address with an account and one without, because a binding that resolves to nothing shows nothing. That is inherent to showing a code at all. Everywhere else — including every `POST /login` — the identical-response property is untouched.
+- **Anti-enumeration does not hold on this page in this mode.** The code-entry screen now differs between an address with an account and one without, because a binding that owns no live code shows no code, only a hint saying so. That is inherent to showing a code at all; the hint spells out the same difference rather than adding one. Everywhere else — including every `POST /login` — the identical-response property is untouched.
 - **A spent or expired code is never shown**, and a browser only ever sees the code its own binding owns.
 
 ### What was rejected, and why

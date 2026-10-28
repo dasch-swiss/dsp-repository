@@ -97,6 +97,8 @@ impl<'a> FieldShell<'a> {
 /// there, and putting it on every member control would announce the same group
 /// error once per choice. `data-invalid` is what the CSS selects on.
 ///
+/// The hint precedes the controls, so a long list cannot push it out of sight.
+///
 /// `controls` arrives already wrapped in its own layout container, so a tile
 /// laying its choices out in a row needs no parameter threaded through here.
 pub(super) fn group_shell(
@@ -117,10 +119,10 @@ pub(super) fn group_shell(
             data-invalid=[shell.aria_invalid()]
         {
             legend class="field-label" { (legend) }
-            (controls)
             @if let Some(hint) = hint {
                 p class="field-hint" id=[hint_id.as_deref()] { (hint) }
             }
+            (controls)
             p class="field-error" id=(shell.error_id()) aria-live="polite" {
                 @if let Some(error) = error { (error) }
             }
@@ -191,6 +193,16 @@ mod tests {
         assert!(out.contains(r#"<legend class="field-label">Name</legend>"#), "{out}");
         assert!(!out.contains("for="), "{out}");
         assert!(out.contains(r#"aria-describedby="kinds-hint""#), "{out}");
+    }
+
+    #[test]
+    fn a_group_states_its_hint_before_its_controls() {
+        let hint = markup("Pick any that apply.");
+        let controls = html! {
+            input type="checkbox";
+        };
+        let out = group_shell("kinds", &label(), Some(&hint), None, controls).into_string();
+        assert!(out.find("Pick any that apply.") < out.find("<input"), "{out}");
     }
 
     #[test]

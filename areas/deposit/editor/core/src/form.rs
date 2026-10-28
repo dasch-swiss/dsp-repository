@@ -44,7 +44,7 @@ use shared_metadata::is_placeholder;
 use shared_metadata::utils::Multilingual;
 
 use crate::draft::{ProjectDraft, UrlSlot};
-use crate::multilingual::DraftMultilingual;
+use crate::multilingual::{is_language_tag, DraftMultilingual};
 
 /// The longest a language tag may be, and the longest an opaque row key may be.
 ///
@@ -408,7 +408,7 @@ pub enum Shape {
     StringRows,
     /// A list of language maps, read by `apply_multilingual_rows`: `keywords`
     /// and `alternativeNames`. Rows come from `{field}.row` in DOM order and each
-    /// row's texts from `{field}.<key>.<tag>`.
+    /// row's lines from the paired `{field}.<key>.lang` and `{field}.<key>.text`.
     MultilingualRows,
     /// One of a fixed set of wire values, read by `apply_choice`. The set rides
     /// inside the shape so a hand-built body cannot put `status: "Cancelled"`
@@ -670,10 +670,14 @@ fn unchanged_in<'a>(stored: &'a [DraftMultilingual], tag: &str, submitted: &str)
 /// Apply a submitted list of language maps to `field`: `keywords` and
 /// `alternativeNames`.
 ///
-/// Rows come from `{field}.row` in DOM order and each row's texts from
-/// `{field}.<key>.<tag>`. A row whose every language is empty is dropped rather
-/// than written as `{}`. Absent `{field}.row` leaves the field alone; present
-/// with no valid key, the hidden marker of an empty list, clears it.
+/// Rows come from `{field}.row` in DOM order. A row posts lines, each a
+/// `{field}.<key>.lang` and `{field}.<key>.text` pair in the same order, and a
+/// language repeated within a row starts a new map rather than overwriting the
+/// earlier text. A line with no valid tag or no text is dropped, and a row left
+/// with no line is not written as `{}`. At most [`MAX_VALUES_PER_FIELD`] lines
+/// are read across the field. Absent
+/// `{field}.row` leaves the field alone; present with no valid key, the hidden
+/// marker of an empty list, clears it.
 pub(crate) fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
     let row_name = format!("{field}.row");
     if !body.has(&row_name) {
@@ -693,30 +697,44 @@ pub(crate) fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft,
         .unwrap_or_default();
 
     let mut rows: Vec<Value> = Vec::new();
-    for key in body.rows(field) {
-        let prefix = format!("{field}.{key}");
-        let mut value = DraftMultilingual::new();
-        for (tag, text) in body.entries(&prefix) {
-            // Tag folded for the same reason as in `apply_multilingual`.
-            let tag = tag.to_ascii_lowercase();
-            // Looked up by text across every row, not by position: a row key is
-            // opaque and need not map to a position.
-            match unchanged_in(&stored, &tag, text) {
-                Some(kept) => value.set(&tag, kept),
-                None => {
-                    if let Resolved::Value(text) = resolve(text, None) {
-                        value.set(&tag, text);
-                    }
-                }
-            }
-        }
+    let mut push_row = |value: &DraftMultilingual| {
         let contract = value.to_contract();
         if contract.is_empty() {
-            continue;
+            return;
         }
         if let Ok(row) = serde_json::to_value(&contract) {
             rows.push(row);
         }
+    };
+    let mut budget = MAX_VALUES_PER_FIELD;
+    for key in body.rows(field) {
+        let prefix = format!("{field}.{key}");
+        let langs = body.all(&format!("{prefix}.lang"));
+        let texts = body.all(&format!("{prefix}.text"));
+        let lines: Vec<(&str, &str)> = langs.zip(texts).take(budget).collect();
+        budget -= lines.len();
+        let mut value = DraftMultilingual::new();
+        for (tag, text) in lines {
+            // Tag folded for the same reason as in `apply_multilingual`.
+            let tag = tag.trim().to_ascii_lowercase();
+            if !is_language_tag(&tag) {
+                continue;
+            }
+            // Looked up by text across every row, not by position: a row key is
+            // opaque and need not map to a position.
+            let text = match unchanged_in(&stored, &tag, text) {
+                Some(kept) => kept.to_string(),
+                None => match resolve(text, None) {
+                    Resolved::Value(text) => text,
+                    Resolved::Unchanged | Resolved::Cleared => continue,
+                },
+            };
+            if value.get(&tag).is_some() {
+                push_row(&std::mem::take(&mut value));
+            }
+            value.set(&tag, text);
+        }
+        push_row(&value);
     }
     if rows.is_empty() {
         draft.remove(field);
@@ -1433,14 +1451,6 @@ mod tests {
         assert_eq!(draft.get("typeOfData"), Some(&json!(["Text"])));
     }
 
-    #[test]
-    fn a_row_s_language_tag_is_folded_too() {
-        let mut draft = draft();
-        let posted = body(&[("keywords.row", "k1"), ("keywords.k1.DE", "Handschriften")]);
-        apply_multilingual_rows(&posted, &mut draft, "keywords");
-        assert_eq!(draft.get("keywords"), Some(&json!([{"de": "Handschriften"}])));
-    }
-
     // --- apply_multilingual_rows -----------------------------------------
 
     #[test]
@@ -1448,19 +1458,61 @@ mod tests {
         let mut draft = draft();
         let posted = body(&[
             ("keywords.row", "k7f3"),
-            ("keywords.k7f3.en", "manuscripts"),
-            ("keywords.k7f3.de", "Handschriften"),
+            ("keywords.k7f3.lang", "en"),
+            ("keywords.k7f3.text", "manuscripts"),
             ("keywords.row", "k2b9"),
-            ("keywords.k2b9.en", "palaeography"),
+            ("keywords.k2b9.lang", "en"),
+            ("keywords.k2b9.text", "palaeography"),
         ]);
         apply_multilingual_rows(&posted, &mut draft, "keywords");
         assert_eq!(
             draft.get("keywords"),
-            Some(&json!([
-                {"de": "Handschriften", "en": "manuscripts"},
-                {"en": "palaeography"},
-            ]))
+            Some(&json!([{"en": "manuscripts"}, {"en": "palaeography"}]))
         );
+    }
+
+    #[test]
+    fn a_row_with_two_lines_builds_one_two_language_map() {
+        let mut draft = draft();
+        let posted = body(&[
+            ("keywords.row", "k1"),
+            ("keywords.k1.lang", "de"),
+            ("keywords.k1.text", "Nomaden"),
+            ("keywords.k1.lang", "en"),
+            ("keywords.k1.text", "Nomads"),
+        ]);
+        apply_multilingual_rows(&posted, &mut draft, "keywords");
+        assert_eq!(draft.get("keywords"), Some(&json!([{"de": "Nomaden", "en": "Nomads"}])));
+    }
+
+    #[test]
+    fn a_language_repeated_within_a_row_starts_a_new_map_instead_of_overwriting() {
+        let mut draft = draft();
+        let posted = body(&[
+            ("keywords.row", "k1"),
+            ("keywords.k1.lang", "en"),
+            ("keywords.k1.text", "Nomads"),
+            ("keywords.k1.lang", "en"),
+            ("keywords.k1.text", "Wanderers"),
+        ]);
+        apply_multilingual_rows(&posted, &mut draft, "keywords");
+        assert_eq!(draft.get("keywords"), Some(&json!([{"en": "Nomads"}, {"en": "Wanderers"}])));
+    }
+
+    #[test]
+    fn a_language_tag_is_folded_and_one_that_is_no_tag_drops_its_line() {
+        let mut draft = draft();
+        let posted = body(&[
+            ("keywords.row", "k1"),
+            ("keywords.k1.lang", " DE "),
+            ("keywords.k1.text", "Handschriften"),
+            ("keywords.k1.lang", "english"),
+            ("keywords.k1.text", "dropped"),
+            ("keywords.k1.lang", "e1"),
+            ("keywords.k1.text", "dropped too"),
+        ]);
+        apply_multilingual_rows(&posted, &mut draft, "keywords");
+        assert_eq!(draft.get("keywords"), Some(&json!([{"de": "Handschriften"}])));
     }
 
     #[test]
@@ -1470,12 +1522,15 @@ mod tests {
         let mut draft = draft();
         let posted = body(&[
             ("keywords.row", "k1"),
-            ("keywords.k1.en", "first"),
+            ("keywords.k1.lang", "en"),
+            ("keywords.k1.text", "first"),
             ("keywords.row", "k3"),
-            ("keywords.k3.en", "third"),
+            ("keywords.k3.lang", "en"),
+            ("keywords.k3.text", "third"),
             // k2's fields are still in the body — a removed row's inputs are
             // gone from the DOM, but a stale one must not resurrect it either.
-            ("keywords.k2.en", "second"),
+            ("keywords.k2.lang", "en"),
+            ("keywords.k2.text", "second"),
         ]);
         apply_multilingual_rows(&posted, &mut draft, "keywords");
         assert_eq!(
@@ -1490,10 +1545,11 @@ mod tests {
         let mut draft = draft();
         let posted = body(&[
             ("keywords.row", "k1"),
-            ("keywords.k1.en", "manuscripts"),
+            ("keywords.k1.lang", "en"),
+            ("keywords.k1.text", "manuscripts"),
             ("keywords.row", "k2"),
-            ("keywords.k2.en", ""),
-            ("keywords.k2.de", "  "),
+            ("keywords.k2.lang", "en"),
+            ("keywords.k2.text", "  "),
         ]);
         apply_multilingual_rows(&posted, &mut draft, "keywords");
         assert_eq!(draft.get("keywords"), Some(&json!([{"en": "manuscripts"}])));
@@ -1521,8 +1577,10 @@ mod tests {
         let mut draft = draft();
         let posted = body(&[
             ("keywords.row", "k1"),
-            ("keywords.k1.en", "kept"),
-            ("keywords.zz.en", "injected"),
+            ("keywords.k1.lang", "en"),
+            ("keywords.k1.text", "kept"),
+            ("keywords.zz.lang", "en"),
+            ("keywords.zz.text", "injected"),
         ]);
         apply_multilingual_rows(&posted, &mut draft, "keywords");
         assert_eq!(draft.get("keywords"), Some(&json!([{"en": "kept"}])));

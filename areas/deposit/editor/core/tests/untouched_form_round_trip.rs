@@ -233,11 +233,9 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                     let key = format!("r{position}");
                     pairs.push((format!("{}.row", field.id), key.clone()));
                     let stored = editor_core::multilingual::as_multilingual(row);
-                    for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
-                        pairs.push((
-                            format!("{}.{key}.{tag}", field.id),
-                            stored.get(tag).unwrap_or_default().to_string(),
-                        ));
+                    for (tag, text) in stored.iter() {
+                        pairs.push((format!("{}.{key}.lang", field.id), tag.to_string()));
+                        pairs.push((format!("{}.{key}.text", field.id), text.to_string()));
                     }
                 }
             }

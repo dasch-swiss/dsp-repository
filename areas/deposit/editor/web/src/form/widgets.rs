@@ -17,8 +17,8 @@
 use editor_core::agents::{Agent, AgentKind, AgentMatches, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::registry::{Field, Obligation};
-use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, REFERENCE_KIND};
-use editor_core::multilingual::{as_multilingual, is_language_map, DraftMultilingual, UI_LANGUAGES};
+use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND};
+use editor_core::multilingual::{as_multilingual, is_language_map, is_language_tag, DraftMultilingual, UI_LANGUAGES};
 use maud::{html, Markup};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
@@ -254,6 +254,10 @@ fn row_keys(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Vec<String> 
     keys
 }
 
+/// Focuses the row an Add just created where the enhanced path morphs it in, since
+/// a browser honours `autofocus` only at page load.
+const FOCUS_AUTOFOCUS: &str = "el.querySelector('[autofocus]')?.focus()";
+
 fn is_added_row(field: &Field, rows: Rows<'_>, position: usize, count: usize) -> bool {
     rows.adding == Some(field.id) && position + 1 == count
 }
@@ -278,25 +282,38 @@ fn stored_rows<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a Value> {
         .collect()
 }
 
-/// One row's language map, from the body when this is a re-render and from the
-/// stored list otherwise. The two never mix: reading texts from one and keys from
-/// the other shows a value the depositor did not type.
-fn row_value(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, position: usize) -> DraftMultilingual {
+/// One row's lines, `(tag, text)` in order, from the body when this is a re-render
+/// and from the stored list otherwise. The two never mix: reading texts from one
+/// and tags from the other shows a value the depositor did not type. A `Vec`, not
+/// a language map, so a tag repeated within a row stays two lines until the
+/// applier splits it.
+fn row_lines(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, position: usize) -> Vec<(String, String)> {
     let row_name = format!("{}.row", field.id);
-    match rows.posted {
-        Some(body) if body.has(&row_name) => {
-            let mut value = DraftMultilingual::new();
-            for (tag, text) in body.entries(&format!("{}.{key}", field.id)) {
-                value.set(&tag.to_ascii_lowercase(), text);
-            }
-            value
-        }
+    let mut lines: Vec<(String, String)> = match rows.posted {
+        Some(body) if body.has(&row_name) => body
+            .all(&format!("{}.{key}.lang", field.id))
+            .zip(body.all(&format!("{}.{key}.text", field.id)))
+            .map(|(tag, text)| (tag.trim().to_ascii_lowercase(), text.to_string()))
+            .filter(|(tag, _)| is_language_tag(tag))
+            .take(MAX_VALUES_PER_FIELD)
+            .collect(),
         _ => stored_rows(field, draft)
             .get(position)
-            .map(|row| as_multilingual(row))
+            .map(|row| {
+                as_multilingual(row)
+                    .iter()
+                    .map(|(tag, text)| (tag.to_string(), text.to_string()))
+                    .collect()
+            })
             .unwrap_or_default(),
+    };
+    if lines.is_empty() {
+        lines.push((BLANK_ROW_LANGUAGE.to_string(), String::new()));
     }
+    lines
 }
+
+const BLANK_ROW_LANGUAGE: &str = "en";
 
 /// A list of single strings: one text control per row, sharing the row protocol
 /// with [`multilingual_rows`] and differing only in what a row contains.
@@ -407,9 +424,7 @@ fn agent_picker(
     };
 
     html! {
-        div class="flex flex-col gap-2"
-            data-init=[focus.then_some("el.querySelector('[autofocus]')?.focus()")]
-        {
+        div class="flex flex-col gap-2" data-init=[focus.then_some(FOCUS_AUTOFOCUS)] {
             input type="hidden" name=(value_name) value=(id);
             p class="text-sm" {
                 (label)
@@ -1139,26 +1154,87 @@ fn row_noun(field: &Field) -> String {
     label.strip_suffix('s').map_or(label.clone(), str::to_string)
 }
 
-/// A list of language maps: one multilingual group per row, added and removed by
-/// server round-trip.
+/// A list of language maps: one row per map, each a text field and a language
+/// select per language the map holds, added and removed by server round-trip.
+///
+/// A select offers [`UI_LANGUAGES`] plus its own line's tag: a tag with no option
+/// would post as whichever language the browser then selects. Lines stop at
+/// [`MAX_VALUES_PER_FIELD`] across the field, as the applier's do.
 fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
-    let keys = row_keys(field, draft, rows);
+    let mut keys = row_keys(field, draft, rows);
+    keys.truncate(MAX_VALUES_PER_FIELD);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
-    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
-    for (position, key) in keys.iter().enumerate() {
-        let value = row_value(field, draft, rows, key, position);
+    let mut capitalised = noun.chars();
+    let name = capitalised
+        .next()
+        .map(|first| first.to_uppercase().chain(capitalised).collect::<String>())
+        .unwrap_or_default();
+    let mut budget = MAX_VALUES_PER_FIELD;
+    let row_lines: Vec<Vec<(String, String)>> = keys
+        .iter()
+        .enumerate()
+        .map_while(|(position, key)| {
+            let mut lines = row_lines(field, draft, rows, key, position);
+            lines.truncate(budget);
+            budget -= lines.len();
+            (!lines.is_empty()).then_some(lines)
+        })
+        .collect();
+    let mut list = repeatable_list(field.id, labelled(field), &action)
+        .item_noun(&noun)
+        .add_label(format!("Add {noun}"));
+    for (position, (key, lines)) in keys.iter().zip(&row_lines).enumerate() {
         let prefix = format!("{}.{key}", field.id);
+        let focus = is_added_row(field, rows, position, keys.len());
         list = list.row(
             key,
             html! {
-                div class="flex flex-col gap-2" {
-                    @for tag in UI_LANGUAGES.iter().copied().chain(value.extra_tags()) {
-                        ({
-                            text_field(format!("{prefix}.{tag}"), language_name(tag))
-                                .input_type(InputType::Text)
-                                .value(value.get(tag).unwrap_or_default())
-                        })
+                div class="flex flex-col gap-2" data-init=[focus.then_some(FOCUS_AUTOFOCUS)] {
+                    @for (line, (tag, text)) in lines.iter().enumerate() {
+                        @let suffix = if line == 0 {
+                            String::new()
+                        } else {
+                            format!(", translation {}", line + 1)
+                        };
+                        @let id = format!("{}-{key}-{line}", field.id);
+                        div class="flex flex-wrap items-end gap-2" {
+                            div {
+                                ({
+                                    select(
+                                            format!("{prefix}.lang"),
+                                            format!("Language of {noun} {}{suffix}", position + 1),
+                                        )
+                                        .options(
+                                            UI_LANGUAGES
+                                                .iter()
+                                                .copied()
+                                                .chain(
+                                                    (!UI_LANGUAGES.contains(&tag.as_str()))
+                                                        .then_some(tag.as_str()),
+                                                )
+                                                .map(|tag| (tag, language_name(tag))),
+                                        )
+                                        .selected(tag)
+                                        .with_id(format!("{id}-lang"))
+                                })
+                            }
+                            div class="grow min-w-0" {
+                                ({
+                                    let input = text_field(
+                                            format!("{prefix}.text"),
+                                            format!("{}{suffix}", row_label(&name, position)),
+                                        )
+                                        .input_type(InputType::Text)
+                                        .value(text)
+                                        .with_id(format!("{id}-text"));
+                                    match focus && line == 0 {
+                                        true => input.autofocus(),
+                                        false => input,
+                                    }
+                                })
+                            }
+                        }
                     }
                 }
             },
@@ -1378,6 +1454,9 @@ pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Ma
     html! {
         fieldset class="field field-group" id=(field.id) aria-describedby=[hint_id.as_deref()] {
             legend class="field-label" { (labelled(field)) }
+            @if let Some(hint) = field.hint {
+                p class="field-hint" id=[hint_id.as_deref()] { (hint) }
+            }
             div class="flex flex-col gap-3" {
                 @for tag in &tags {
                     ({
@@ -1386,9 +1465,6 @@ pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Ma
                             .value(value.get(tag).unwrap_or_default())
                     })
                 }
-            }
-            @if let Some(hint) = field.hint {
-                p class="field-hint" id=[hint_id.as_deref()] { (hint) }
             }
         }
     }
@@ -1443,6 +1519,36 @@ mod tests {
     }
 
     #[test]
+    fn a_two_language_keyword_is_one_row_of_two_lines_and_a_held_tag_keeps_its_option() {
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "keywords",
+            serde_json::json!([{ "de": "Nomaden", "en": "Nomads" }, { "ar": "x" }]),
+        );
+        let out = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        assert_eq!(out.matches(r#"name="keywords.r0.lang""#).count(), 2, "{out}");
+        assert!(out.contains(r#"<option value="de" selected>"#), "{out}");
+        assert!(out.contains(r#"<option value="en" selected>"#), "{out}");
+        assert!(out.contains(r#"<option value="ar" selected>Arabic</option>"#), "{out}");
+    }
+
+    #[test]
+    fn the_keyword_row_an_add_just_appended_takes_focus() {
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let draft = ProjectDraft::default();
+        let rows = Rows { action: "/x", adding: Some("keywords"), ..Rows::default() };
+        let added = multilingual_rows(field, &draft, rows).into_string();
+        assert_eq!(added.matches(" autofocus").count(), 1, "{added}");
+        assert!(added.find(" autofocus") > added.find(r#"name="keywords.r0.text""#), "{added}");
+        assert_eq!(added.matches("data-init").count(), 1, "{added}");
+
+        let plain = multilingual_rows(field, &draft, Rows { adding: None, ..rows }).into_string();
+        assert!(!plain.contains("autofocus"), "{plain}");
+    }
+
+    #[test]
     fn every_shaped_field_has_a_control() {
         // The fallback arm's debug_assert! is compiled out of a release build, so
         // a field given a shape with no arm here would render the unbuilt note in
@@ -1466,6 +1572,11 @@ mod tests {
                     Some(Shape::Choice(_)) => out.contains(&format!(r#"name="{}""#, field.id)),
                     // A URL slot posts under the field's own name, like a scalar.
                     Some(Shape::Url(_) | Shape::StringList(_)) => out.contains(&format!(r#"name="{}""#, field.id)),
+                    // A language list's first stored row posts the line pair the
+                    // applier reads, which the marker alone does not show.
+                    Some(Shape::MultilingualRows) if !stored_rows(field, &draft).is_empty() => ["lang", "text"]
+                        .iter()
+                        .all(|part| out.contains(&format!(r#"name="{}.r0.{part}""#, field.id))),
                     // A repeatable field posts {field}.row even when empty: the marker.
                     Some(
                         Shape::MultilingualRows

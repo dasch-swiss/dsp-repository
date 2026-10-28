@@ -135,11 +135,19 @@ pub fn over_cap(audience: Audience, section: &Section, body: &FormBody) -> Vec<&
             Some(Shape::Multilingual) => body.exceeds_entries(field.id, MAX_VALUES_PER_FIELD),
             // Repeated under one name rather than suffixed.
             Some(Shape::StringList(_)) => body.exceeds_all(field.id, MAX_VALUES_PER_FIELD),
-            // Rows are repeated `{field}.row` values, and each row's own languages
-            // are bounded by the same cap under their own prefix.
+            // Lines are counted across every row too: render cost grows with them.
+            Some(Shape::MultilingualRows) => {
+                body.exceeds_all(&format!("{}.row", field.id), MAX_VALUES_PER_FIELD)
+                    || body
+                        .rows(field.id)
+                        .iter()
+                        .map(|key| body.all(&format!("{}.{key}.lang", field.id)).count())
+                        .sum::<usize>()
+                        > MAX_VALUES_PER_FIELD
+            }
+            // Rows are repeated `{field}.row` values.
             Some(
-                Shape::MultilingualRows
-                | Shape::StringRows
+                Shape::StringRows
                 | Shape::AgentRows
                 | Shape::AttributionRows
                 | Shape::TextOrReferenceRows(_)
@@ -408,6 +416,25 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["description"],
             "one past the cap is refused, and named"
+        );
+    }
+
+    #[test]
+    fn a_language_list_is_capped_on_its_lines_not_only_its_rows() {
+        use crate::form::{FormBody, MAX_VALUES_PER_FIELD};
+
+        let dataset = crate::form::registry::section("dataset").expect("dataset");
+        let mut body = vec![("keywords.row".to_string(), "r0".to_string())];
+        for _ in 0..=MAX_VALUES_PER_FIELD {
+            body.push(("keywords.r0.lang".to_string(), "en".to_string()));
+            body.push(("keywords.r0.text".to_string(), "x".to_string()));
+        }
+        assert_eq!(
+            over_cap(Audience::Everyone, dataset, &FormBody::from_pairs(body))
+                .iter()
+                .map(|f| f.id)
+                .collect::<Vec<_>>(),
+            ["keywords"]
         );
     }
 

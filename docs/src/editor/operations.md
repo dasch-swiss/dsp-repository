@@ -96,7 +96,7 @@ The editor deploys as its **own `deposit` stack** in ops-deploy, with its own in
 
 It deploys on a **separate hostname** from DPE, not a path under `repository.dasch.swiss` — see the CSRF reasoning in [Architecture](./architecture.md#relationship-to-dpe).
 
-**Stage runs in preview mode** (ops-deploy's `deposit.yml`): it shows the login code on the page ([Authentication](./authentication.md#showing-the-code-instead-of-sending-it)) to anyone who types an RDU address, and starts from an empty database on every deploy, so it never holds real data.
+**Stage runs `EDITOR_ENV=PROD`** with the unibas relay and a persistent database (`EDITOR_DB_DIR`), per ops-deploy's `deposit.yml` and [ops-deploy#1466](https://github.com/dasch-swiss/ops-deploy/pull/1466): it mails every code, never shows one, and accounts survive deploys. To test it as a depositor, see [Testing as a depositor](#testing-as-a-depositor).
 
 For prod, ops-deploy provisions the relay (`smtp.unibas.ch:25`, no credentials), the DKIM key and selector ([ops-deploy#1466](https://github.com/dasch-swiss/ops-deploy/pull/1466)) and the RDU members' addresses (`EDITOR_RDU_EMAILS`). `EDITOR_ENV=PROD` refuses to start with a relay and no DKIM, or without `EDITOR_SMTP_HOST`; an empty `EDITOR_RDU_EMAILS` starts but leaves nobody able to review. Development and the PR previews are unblocked by the console fallback.
 
@@ -165,7 +165,7 @@ Unsetting `EDITOR_SMTP_HOST` entirely is the heavier version of the same escape 
 
 ### Signing in locally
 
-A fresh database has **no accounts**, and `POST /login` answers identically whether an address is known or not — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:
+A fresh database has **no accounts**, and `POST /login` answers identically whether an address is known or not — so with none configured you reach the code screen and no mail is sent. With an in-memory database the screen says so ("No code to show"); with `EDITOR_DB_DIR` set it stays blank, which looks like a broken relay and is not. Name an address first:
 
 ```bash
 EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
@@ -204,6 +204,14 @@ If you run the binary from outside the repository root, set `EDITOR_PUBLIC_DIR` 
 Nothing has to be read from Cloud Run logs, and nothing has to be known in advance. An earlier version of this page said to find the code in the log; that procedure required project log access nobody on the team has, so it could not be followed.
 
 Everything in a preview dies with it: the database is in-memory, no mail can leave (there is no relay), and the service is deleted when the PR closes.
+
+### Testing as a depositor
+
+On both stage and a PR preview, an RDU member creates the depositor at `/depositors` **before** the first sign-in: until then the address has no account and no code is issued.
+
+**Stage** mails the code, so use a real, plus-addressed mailbox (`<name>+researcher@dasch.swiss`). Addresses are only trimmed and lowercased, so each plus variant is its own account. A made-up address can never receive the code: the relay mail bounces, and the code page looks the same as for a real account.
+
+**A PR preview** accepts any address and shows the code on the page, but accounts live in memory and disappear with a new revision or when Cloud Run stops the idle instance, so create the depositor and sign in in one sitting. An address with no account gets the "No code to show" hint instead of a code.
 
 ## Database
 

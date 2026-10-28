@@ -289,7 +289,7 @@
 </ul>
 <h2 id="style"><a class="header" href="#style">Style</a></h2>
 <ul>
-<li>Follow existing Datastar attribute patterns (signal naming with <code>_</code> prefix) — see <a href="../dpe/architecture.html">DPE Architecture</a></li>
+<li>Follow existing Datastar attribute patterns (signal naming with <code>_</code> prefix; actions built with <code>shared-datastar</code>, not written as strings) — see <a href="../dpe/architecture.html">DPE Architecture</a></li>
 <li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
 <li>Contract types belong in <code>shared-metadata</code> and DPE's view model in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>

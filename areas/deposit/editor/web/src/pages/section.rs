@@ -104,6 +104,28 @@ pub fn proposed_entity(intent: &str) -> Option<&str> {
         .filter(|entity_id| !entity_id.is_empty())
 }
 
+/// The intent a picker's choose button posts, ahead of the picker's `unique`
+/// and the chosen agent id: `choose-agent:{unique}:{id}`.
+const CHOOSE_AGENT: &str = "choose-agent";
+
+/// The intent value choosing `agent_id` in the picker named `unique` posts. No
+/// `unique` contains a colon, and [`PROPOSE_CHANGES_SEPARATOR`] says no entity id does.
+#[must_use]
+pub fn choose_agent_intent(unique: &str, agent_id: &str) -> String {
+    format!("{CHOOSE_AGENT}{PROPOSE_CHANGES_SEPARATOR}{unique}{PROPOSE_CHANGES_SEPARATOR}{agent_id}")
+}
+
+/// The picker and agent id a posted intent carries, or `None` when it is not a
+/// choice or either part is empty.
+#[must_use]
+pub fn chosen_agent(intent: &str) -> Option<(&str, &str)> {
+    intent
+        .strip_prefix(CHOOSE_AGENT)?
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)?
+        .split_once(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|(unique, agent_id)| !unique.is_empty() && !agent_id.is_empty())
+}
+
 /// The name a form posts the draft revision it was rendered from under. The
 /// draft is one row and `upsert` is last-write-wins, so without this a save
 /// silently replaces somebody else's work. A courtesy check between people, not

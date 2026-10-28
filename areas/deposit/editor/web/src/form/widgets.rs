@@ -33,7 +33,9 @@ use shared_metadata::is_placeholder;
 use shared_metadata::project::CONTRIBUTOR_ROLES;
 
 use crate::form::INTENT;
-use crate::pages::section::{propose_changes_intent, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON};
+use crate::pages::section::{
+    choose_agent_intent, chosen_agent, propose_changes_intent, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON,
+};
 
 /// Whether the form is open for editing. A named type rather than a `bool`
 /// argument, which says nothing about which way round `true` is at a call site.
@@ -252,6 +254,10 @@ fn row_keys(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Vec<String> 
     keys
 }
 
+fn is_added_row(field: &Field, rows: Rows<'_>, position: usize, count: usize) -> bool {
+    rows.adding == Some(field.id) && position + 1 == count
+}
+
 /// A row key not already in use: the smallest free `rN`, so the set stays dense
 /// and the accessible "Remove keyword 2" labels match what a reader counts.
 fn next_row_key(keys: &[String]) -> String {
@@ -343,15 +349,29 @@ const FIND_AGENT_BUTTON: &str = "Search";
 /// filters its options against what the box already holds, so with the full id
 /// in the box it offers nothing, and a select of all agents on a project with
 /// dozens of contributors would be megabytes. A search narrows first and then
-/// offers a real `<select>`.
+/// offers one choose button per match.
 ///
-/// `value_name` posts always, and nothing else the appliers read. Before a
-/// search it is a hidden input holding the stored id, so an untouched save
-/// round-trips byte-for-byte; after a search the `<select>` posts under the same
-/// name with the current choice first and selected. `value_name` is shared by
-/// every funder control in a grant, which is how `apply_funding` collects them;
-/// `unique` distinguishes them for element ids and the search box.
-fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_context: &str, rows: Rows<'_>) -> Markup {
+/// `value_name` posts always, from a hidden input holding the current id, and
+/// nothing else the appliers read, so an untouched save round-trips
+/// byte-for-byte. A choose button posts the [`choose_agent_intent`], which
+/// [`apply_agent_choice`] writes into `value_name` before the body is applied.
+/// `value_name` is shared by every funder control in a grant, which is how
+/// `apply_funding` collects them; `unique` distinguishes them for element ids,
+/// the search box and the choice.
+///
+/// `focus` marks a row an Add just created, and the picker a choice was just
+/// made in: its search box takes focus, by `autofocus` on a full page and by
+/// `data-init` where the enhanced path morphs the row in, since a browser
+/// honours `autofocus` only at page load.
+fn agent_picker(
+    value_name: &str,
+    unique: &str,
+    label: &str,
+    id: &str,
+    row_context: &str,
+    focus: bool,
+    rows: Rows<'_>,
+) -> Markup {
     let id = id.trim();
     let resolved = rows.agents.and_then(|agents| agents.get(id));
     let query_name = format!("{unique}.{QUERY_SUFFIX}");
@@ -364,93 +384,55 @@ fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_conte
         .agents
         .filter(|_| !query.trim().is_empty())
         .map(|agents| agents.search(&query));
+    let chosen_here = rows
+        .posted
+        .and_then(|body| body.get(INTENT))
+        .and_then(chosen_agent)
+        .is_some_and(|(picker, _)| picker == unique);
+    let focus = focus || chosen_here;
+    let hint = match resolved {
+        Some(agent) => format!("{FIND_AGENT_HINT} Choosing a match replaces {}.", agent.label),
+        None => FIND_AGENT_HINT.to_string(),
+    };
+    let search = {
+        let field = text_field(&query_name, FIND_AGENT_LABEL)
+            .input_type(InputType::Text)
+            .value(&query)
+            .hint(hint)
+            .with_id(format!("{unique}-{QUERY_SUFFIX}"));
+        match focus {
+            true => field.autofocus(),
+            false => field,
+        }
+    };
 
     html! {
-        div class="flex flex-col gap-2" {
-            @match matches.as_ref().filter(|found| !found.is_empty()) {
-                Some(found) => {
-                    ({
-                        let mut chooser = select(value_name, label)
-                            .with_id(unique)
-                            .selected(id);
-                        chooser = match resolved {
-                            Some(agent) => {
-                                chooser
-                                    .option(
-                                        id,
-                                        format!("Keep {} ({})", agent.label, agent.kind.label()),
-                                    )
-                            }
-                            None if id.is_empty() => chooser.option("", "Nobody chosen"),
-                            None => {
-                                chooser
-                                    .option(id, format!("Keep {id} ({UNRESOLVED_AGENT})"))
-                            }
-                        };
-                        for agent in found
-                            .offered()
-                            .iter()
-                            .filter(|agent| agent.id != id)
-                        {
-                            chooser = chooser
-                                .option(
-                                    &agent.id,
-                                    format!("{} ({})", agent.label, agent.kind.label()),
-                                );
-                        }
-                        chooser
-                            .hint(
-                                match found.truncated() {
-                                    true => {
-                                        format!(
-                                            "{} matches, showing the first {}. Add a word to narrow it.",
-                                            found.total(),
-                                            found.offered().len(),
-                                        )
-                                    }
-                                    false => {
-                                        format!(
-                                            "{} match{}.",
-                                            found.total(),
-                                            if found.total() == 1 { "" } else { "es" },
-                                        )
-                                    }
-                                },
-                            )
-                    })
-                }
-                None => {
-                    input type="hidden" name=(value_name) value=(id);
-                    p class="text-sm" {
-                        (label)
-                        ": "
-                        @match resolved {
-                            Some(agent) => {
-                                strong { (agent.label) }
-                                " ("
-                                (agent.kind.label())
-                                ")"
-                            }
-                            None if id.is_empty() => {
-                                span class="text-neutral-600" { "nobody chosen yet" }
-                            }
-                            None => {
-                                strong { (id) }
-                                " — "
-                                (UNRESOLVED_AGENT)
-                            }
-                        }
+        div class="flex flex-col gap-2"
+            data-init=[focus.then_some("el.querySelector('[autofocus]')?.focus()")]
+        {
+            input type="hidden" name=(value_name) value=(id);
+            p class="text-sm" {
+                (label)
+                ": "
+                @match resolved {
+                    Some(agent) => {
+                        strong { (agent.label) }
+                        " ("
+                        (agent.kind.label())
+                        ")"
+                    }
+                    None if id.is_empty() => {
+                        span class="text-neutral-600" { "nobody chosen yet" }
+                    }
+                    None => {
+                        strong { (id) }
+                        " — "
+                        (UNRESOLVED_AGENT)
                     }
                 }
             }
             div class="flex flex-wrap items-end gap-2" {
-                ({
-                    text_field(&query_name, FIND_AGENT_LABEL)
-                        .input_type(InputType::Text)
-                        .value(&query)
-                        .hint(FIND_AGENT_HINT)
-                        .with_id(format!("{unique}-{QUERY_SUFFIX}"))
-                })
+                (search)
                 ({
                     button(FIND_AGENT_BUTTON)
                         .variant(ButtonVariant::Secondary)
@@ -458,6 +440,9 @@ fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_conte
                         .name_value(INTENT, FIND_AGENT)
                         .aria_label(format!("{FIND_AGENT_LABEL} ({row_context})"))
                 })
+            }
+            @if let Some(found) = matches.as_ref().filter(|found| !found.is_empty()) {
+                (agent_matches(unique, row_context, found))
             }
             // Said here and not only at submit: the form is where it can be fixed.
             @if matches.as_ref().is_some_and(AgentMatches::is_empty) {
@@ -469,6 +454,68 @@ fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_conte
             }
         }
     }
+}
+
+/// A search's matches, one choose button each, under a line counting them.
+/// `row_context` goes into each button's accessible name: two rows can list the
+/// same agent.
+fn agent_matches(unique: &str, row_context: &str, found: &AgentMatches<'_>) -> Markup {
+    let offered = found.offered();
+    let count_id = format!("{unique}-matches");
+    let count = match found.truncated() {
+        true => format!(
+            "{} matches, showing the first {}. Add a word to narrow it.",
+            found.total(),
+            offered.len(),
+        ),
+        false => format!("{} match{}.", found.total(), if found.total() == 1 { "" } else { "es" }),
+    };
+    html! {
+        p class="text-sm" id=(count_id) { (count) }
+        ul class="flex flex-col items-start gap-1" aria-labelledby=(count_id) {
+            @for agent in offered {
+                li {
+                    @let name = format!("{} ({})", agent.label, agent.kind.label());
+                    ({
+                        button(&name)
+                            .variant(ButtonVariant::Secondary)
+                            .name_value(INTENT, choose_agent_intent(unique, &agent.id))
+                            .aria_label(format!("{name}, choose for {row_context}"))
+                    })
+                }
+            }
+        }
+    }
+}
+
+/// Write a posted choice into its picker's value and drop that picker's search.
+/// The intent stays in the body: [`agent_picker`] and the handler read it.
+pub(crate) fn apply_agent_choice(mut pairs: Vec<(String, String)>) -> Vec<(String, String)> {
+    let Some((unique, id)) = pairs
+        .iter()
+        .find(|(name, _)| name == INTENT)
+        .and_then(|(_, intent)| chosen_agent(intent))
+        .map(|(unique, id)| (unique.to_string(), id.to_string()))
+    else {
+        return pairs;
+    };
+    let (value_name, slot) = value_slot(&unique);
+    if let Some((_, value)) = pairs.iter_mut().filter(|(name, _)| name == value_name).nth(slot) {
+        *value = id;
+    }
+    let query_name = format!("{unique}.{QUERY_SUFFIX}");
+    pairs.retain(|(name, _)| name != &query_name);
+    pairs
+}
+
+/// The name a picker's value posts under, and which of its values is the picker's:
+/// a funder's `unique` is the shared name plus its position ([`funder_control`]).
+fn value_slot(unique: &str) -> (&str, usize) {
+    unique
+        .rsplit_once('-')
+        .filter(|(name, _)| name.ends_with(".funder"))
+        .and_then(|(name, position)| Some((name, position.parse().ok()?)))
+        .unwrap_or((unique, 0))
 }
 
 /// A list of agent ids as editable rows, each resolved to a name through [`agent_picker`].
@@ -496,6 +543,7 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
                         &row_label(AGENT_ID_LABEL, position),
                         id,
                         &row_context,
+                        is_added_row(field, rows, position, keys.len()),
                         rows,
                     )
                 })
@@ -629,6 +677,7 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                         &row_label(AGENT_ID_LABEL, position),
                         &contributor,
                         &row_context,
+                        is_added_row(field, rows, position, keys.len()),
                         rows,
                     )
                 })
@@ -1011,7 +1060,7 @@ fn funder_control(
     let unique = format!("{prefix}.funder-{index}");
     html! {
         div class="flex flex-col gap-2" {
-            (agent_picker(&value_name, &unique, label, id, row_context, rows))
+            (agent_picker(&value_name, &unique, label, id, row_context, false, rows))
             @if rows.propose { (propose_controls(resolved, id, row_context)) }
         }
     }
@@ -1593,7 +1642,7 @@ mod tests {
     }
 
     #[test]
-    fn a_picker_shows_no_menu_until_a_search_and_then_keeps_the_current_choice_first() {
+    fn a_search_lists_choose_buttons_below_the_box_and_keeps_the_stored_id_posting() {
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
@@ -1604,39 +1653,116 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
-            propose: true,
+            propose: false,
         };
+        let hidden = r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#;
 
-        // Unsearched: the id posts from a hidden input, so an untouched save is the identity, and
-        // the row says in words who it refers to rather than showing a bare id.
         let quiet = agent_rows(field, &draft, fresh).into_string();
-        assert!(
-            quiet.contains(r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#),
-            "{quiet}"
-        );
-        assert!(quiet.contains("Dokumentationsbibliothek St. Moritz"), "{quiet}");
-        assert!(!quiet.contains("<select"), "no menu before a search: {quiet}");
+        assert!(quiet.contains(hidden), "{quiet}");
+        assert!(!quiet.contains("choose-agent"), "no matches before a search: {quiet}");
 
-        // Searched: a real `<select>` posting under the same name, with what the row already
-        // holds first and selected — so submitting without touching it still changes nothing.
         let body = editor_core::form::FormBody::from_pairs(vec![
             ("contactPoint.row".to_string(), "r0".to_string()),
             ("contactPoint.r0".to_string(), "organization-008".to_string()),
             ("contactPoint.r0.q".to_string(), "Universität".to_string()),
         ]);
-        let searched = agent_rows(field, &draft, Rows { posted: Some(&body), ..fresh }).into_string();
+        let out = agent_rows(field, &draft, Rows { posted: Some(&body), ..fresh }).into_string();
+        assert!(out.contains(hidden), "{out}");
+        let search = out.find(r#"name="contactPoint.r0.q""#).expect("search box");
+        let first = out.find(r#"value="choose-agent:contactPoint.r0:"#).expect("choose buttons");
+        assert!(search < first, "the matches are below the search box: {out}");
         assert!(
-            searched
-                .contains(r#"<select class="field-input field-select" id="contactPoint.r0" name="contactPoint.r0""#),
-            "a real menu, posting under the name the applier already reads: {searched}"
+            out.contains("Choosing a match replaces Dokumentationsbibliothek St. Moritz."),
+            "{out}"
         );
-        assert!(
-            searched.contains(r#"<option value="organization-008" selected>Keep Dokumentationsbibliothek St. Moritz (Organisation)</option>"#),
-            "the current choice is first and selected: {searched}"
+    }
+
+    #[test]
+    fn a_choice_is_written_into_its_own_picker_and_closes_its_search() {
+        let pairs = |list: &[(&str, &str)]| -> Vec<(String, String)> {
+            list.iter().map(|(name, value)| (name.to_string(), value.to_string())).collect()
+        };
+        let row = apply_agent_choice(pairs(&[
+            ("attributions.r1.contributor", ""),
+            ("attributions.r1.contributor.q", "Rita"),
+            ("intent", "choose-agent:attributions.r1.contributor:person-025"),
+        ]));
+        assert!(row.contains(&("attributions.r1.contributor".to_string(), "person-025".to_string())));
+        assert!(!row.iter().any(|(name, _)| name == "attributions.r1.contributor.q"), "{row:?}");
+
+        // Funders share one name; the choice lands on the funder searched in, not the first.
+        let funders = apply_agent_choice(pairs(&[
+            ("funding.r0.funder", "organization-002"),
+            ("funding.r0.funder", ""),
+            ("funding.r0.funder-1.q", "SNF"),
+            ("intent", "choose-agent:funding.r0.funder-1:organization-128"),
+        ]));
+        let ids: Vec<&str> = funders
+            .iter()
+            .filter(|(name, _)| name == "funding.r0.funder")
+            .map(|(_, value)| value.as_str())
+            .collect();
+        assert_eq!(ids, ["organization-002", "organization-128"]);
+    }
+
+    #[test]
+    fn after_a_choice_the_picker_shows_the_chosen_agent_with_its_search_closed_and_focused() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let body = editor_core::form::FormBody::from_pairs(apply_agent_choice(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), String::new()),
+            ("contactPoint.r0.q".to_string(), "Universität".to_string()),
+            (
+                "intent".to_string(),
+                "choose-agent:contactPoint.r0:organization-008".to_string(),
+            ),
+        ]));
+        let out = agent_rows(
+            field,
+            &published_draft(),
+            Rows {
+                posted: Some(&body),
+                action: "/x",
+                adding: None,
+                agents: Some(&scope),
+                propose: false,
+            },
+        )
+        .into_string();
+        assert!(out.contains("Dokumentationsbibliothek St. Moritz"), "{out}");
+        assert!(out.contains(" autofocus"), "focus returns to the search box: {out}");
+    }
+
+    #[test]
+    fn only_the_row_an_add_appended_takes_focus() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows {
+            posted: None,
+            action: "/x",
+            adding: Some("contactPoint"),
+            agents: Some(&scope),
+            propose: false,
+        };
+
+        let added = agent_rows(field, &draft, rows).into_string();
+        // " autofocus" is the attribute; the data-init expression names it as "[autofocus]".
+        assert_eq!(added.matches(" autofocus").count(), 1, "{added}");
+        assert!(added.find(" autofocus") > added.find(r#"name="contactPoint.r1.q""#), "{added}");
+        assert_eq!(
+            added.matches("data-init").count(),
+            1,
+            "the enhanced path focuses it too: {added}"
         );
-        // And the query survives the round trip, or the box would clear under the matches.
-        assert!(searched.contains(r#"value="Universität""#), "{searched}");
-        assert!(!searched.contains("<datalist"), "{searched}");
+
+        let plain = agent_rows(field, &draft, Rows { adding: None, ..rows }).into_string();
+        assert!(!plain.contains("autofocus"), "{plain}");
+        assert!(!plain.contains("data-init"), "{plain}");
     }
 
     #[test]

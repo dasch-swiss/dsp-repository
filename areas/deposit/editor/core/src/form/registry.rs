@@ -391,7 +391,8 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "disciplines",
         "Disciplines",
-        "At least one — pick from the SNSF or UNESCO discipline lists, or add your own if nothing fits.",
+        "At least one. For a recognised entry, paste the link to the discipline in the SNSF or UNESCO list; \
+         if nothing fits, add your own wording.",
         Required,
         Everyone,
         Some(TextOrReferenceRows(DISCIPLINE_SOURCES)),
@@ -399,8 +400,8 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "temporalCoverage",
         "Temporal coverage",
-        "The time period the data covers. Search for a recognised period, for example Bronze Age or Siècle \
-         des Lumières, and we'll record the authority link — or add your own term per language.",
+        "The time period the data covers. For a recognised period, for example Bronze Age or Siècle des \
+         Lumières, paste its PeriodO or Chronontology link; otherwise add your own term per language.",
         Required,
         Everyone,
         Some(TextOrReferenceRows(PERIOD_SOURCES)),
@@ -408,7 +409,7 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "spatialCoverage",
         "Spatial coverage",
-        "Search for a place; we'll record the standard reference link for you.",
+        "Paste the link to the place in GeoNames, Pleiades or another gazetteer, and choose its source.",
         Required,
         Everyone,
         Some(ReferenceRows(PLACE_SOURCES)),

@@ -56,6 +56,7 @@ export const DEPOSITOR_SHORTCODES = [
   "0107",
   "0108",
   "0110",
+  "0112",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -94,6 +95,8 @@ export const STATUS_SHORTCODES: Partial<Record<string, string>> = {
  * spec's leftover draft state instead of a pristine project.
  */
 export const APPROVED_SHORTCODE = DEPOSITOR_SHORTCODES[7];
+/** Switching a row's variant ahead of the autosave. */
+export const VARIANT_SHORTCODE = DEPOSITOR_SHORTCODES[8];
 
 const PORT = 4101;
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

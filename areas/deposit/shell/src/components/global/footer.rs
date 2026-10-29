@@ -8,7 +8,13 @@ const LEGAL_LINKS: [(&str, &str); 3] = [
     ("Impressum", "https://dasch.swiss/impressum"),
 ];
 
-/// The global footer: a slim row of legal links.
+/// Set by `editor-docker-publish.yml` at compile time; other builds read `dev`.
+const VERSION: &str = match option_env!("DEPOSIT_VERSION") {
+    Some(version) => version,
+    None => "dev",
+};
+
+/// The global footer: a slim row of legal links and the version.
 ///
 /// Plain anchors inheriting `text-gray-300` rather than the Mosaic `link` tile:
 /// the tile's `text-primary-600` measures 2.35:1 against `bg-slate-800`, below
@@ -25,6 +31,7 @@ pub fn footer() -> Markup {
                     { (label) }
                 }
             }
+            p class="mt-3 text-center text-xs" { "Version " (VERSION) }
         }
     }
 }
@@ -40,6 +47,12 @@ mod tests {
             assert!(out.contains(href), "missing {href} in {out}");
             assert!(out.contains(label), "missing {label} in {out}");
         }
+    }
+
+    #[test]
+    fn shows_the_build_version() {
+        let out = footer().into_string();
+        assert!(out.contains(&format!("Version {VERSION}")), "{out}");
     }
 
     #[test]

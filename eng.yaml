@@ -6,7 +6,7 @@ defaults:
     test: just test
     lint: just check
     gate: just check && just test
-    # no test_targeted: no recipe takes a file list
+    test_targeted: just test-changed
 
 overrides:
   # Per-application guidance: one override per directory with its own CLAUDE.md.

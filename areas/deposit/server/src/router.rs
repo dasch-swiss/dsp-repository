@@ -18,19 +18,22 @@
 use axum::Router;
 
 /// The whole app: the traced router plus the routes that must stay untraced,
-/// with the CSRF middleware wrapped around all of them.
+/// with the CSRF middleware and then the security headers wrapped around all of
+/// them.
 ///
 /// The traced/untraced split is positional — an Axum layer wraps only routes
 /// declared before it — so it is invisible in the route table and silently
 /// reversible by moving one line. `serve()` uses this function so the untraced
 /// routes cannot drift from the ones the tests assemble.
 ///
-/// [`crate::csrf::require_same_origin`] is applied **last, and therefore
-/// outermost**, so it covers every route here including any added later. Putting
-/// it inside `build_router` would leave `/telemetry/collect` unprotected.
+/// [`crate::csrf::require_same_origin`] is applied **after every route**, so it
+/// covers every route here including any added later. Putting it inside
+/// `build_router` would leave `/telemetry/collect` unprotected. The security
+/// headers wrap it in turn, so CSRF refusals carry them too.
 pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, public_dir: &std::path::Path) -> Router {
-    use axum::http::StatusCode;
+    use axum::http::{header, HeaderValue, StatusCode};
     use axum::routing::get;
+    use tower_http::set_header::SetResponseHeaderLayer;
 
     build_router(identity, editor, css_href, public_dir)
         // --- Untraced routes (declared AFTER build_router's .layer() calls) ---
@@ -57,8 +60,21 @@ pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, publ
                 GovernorLayer { config: std::sync::Arc::new(config) }
             }),
         )
-        // --- CSRF, outermost so nothing declared above can escape it ---
+        // --- CSRF: declare new routes above this line, never below the layers ---
         .layer(axum::middleware::from_fn(crate::csrf::require_same_origin))
+        // --- Security headers: `docs/src/editor/routing.md#request-middleware` ---
+        .layer(SetResponseHeaderLayer::overriding(
+            header::CONTENT_SECURITY_POLICY,
+            HeaderValue::from_static("frame-ancestors 'none'"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::X_FRAME_OPTIONS,
+            HeaderValue::from_static("DENY"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        ))
 }
 
 /// Assemble the traced app router: the editor's routes merged with identity's. Static assets are
@@ -334,7 +350,7 @@ mod tests {
 
     #[tokio::test]
     async fn csrf_middleware_covers_the_untraced_routes_too() {
-        // Pinning the outermost CSRF layer on the beacon specifically: the beacon
+        // Pinning the CSRF layer around the beacon specifically: the beacon
         // is declared *after* the OTel layers, so a CSRF layer added inside
         // `build_router` would have left it — the only pre-auth POST in the app
         // — unprotected, with no test failing.
@@ -351,6 +367,34 @@ mod tests {
             StatusCode::FORBIDDEN,
             "a POST with no Sec-Fetch-Site must be refused before it reaches the beacon"
         );
+    }
+
+    #[tokio::test]
+    async fn every_response_forbids_framing_and_sniffing() {
+        // A real public dir, so `/favicon.ico` reaches `ServeDir`.
+        let public_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../editor/public");
+        let state = test_state("router").await.0;
+        let app = build_app(
+            identity_router(&state),
+            editor_router(&state),
+            CSS_HREF.to_string(),
+            &public_dir,
+        );
+        // The 403 is CSRF's refusal: it fails if the headers move inside CSRF.
+        for (method, uri, status) in [
+            ("GET", "/login", StatusCode::OK),
+            ("GET", "/", StatusCode::SEE_OTHER),
+            ("GET", "/favicon.ico", StatusCode::OK),
+            ("POST", "/login", StatusCode::FORBIDDEN),
+        ] {
+            let request = Request::builder().method(method).uri(uri).body(Body::empty()).unwrap();
+            let response = app.clone().oneshot(request).await.unwrap();
+            assert_eq!(response.status(), status, "{method} {uri}");
+            let headers = response.headers();
+            assert_eq!(headers["content-security-policy"], "frame-ancestors 'none'", "{method} {uri}");
+            assert_eq!(headers["x-frame-options"], "DENY", "{method} {uri}");
+            assert_eq!(headers["x-content-type-options"], "nosniff", "{method} {uri}");
+        }
     }
 
     #[tokio::test]

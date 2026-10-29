@@ -31,7 +31,7 @@ fn is_state_changing(method: &Method) -> bool {
 /// cannot use the editor.
 ///
 /// The response is plain text rather than the page shell: this middleware is the
-/// outermost layer, so it also covers the telemetry beacon, which expects no
+/// layer around every route, so it also covers the telemetry beacon, which expects no
 /// HTML.
 pub(crate) async fn require_same_origin(req: Request, next: Next) -> Response {
     if !is_state_changing(req.method()) {

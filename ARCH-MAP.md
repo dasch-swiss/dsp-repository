@@ -449,8 +449,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 - **Paths:** `:(glob)areas/deposit/server/**`
 - **Purpose:** `deposit-server`, the Deposit Area's composition root and its one binary
-  (`areas/deposit/ADR-0004`): configuration loading and validation, observability, the CSRF and
-  OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and
+  (`areas/deposit/ADR-0004`): configuration loading and validation, observability, the
+  security-header, CSRF and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and
   the fallback 404. It
   opens identity's store, then the editor's, constructs the adapters, starts `Identity` and then
   `Editor`, and merges their routers; it holds no business logic. Its tests are the ones that
@@ -490,7 +490,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `Identity::router()` before the OTel layers, and `build_app` declares `/healthz` and
     `POST /telemetry/collect` after them, so both stay untraced, then wraps everything in the
     CSRF layer (**static-analysis** — `router.rs`'s tests pin the order; the login `POST`s and
-    a section save in `cross_capability.rs`, every other `POST` in `csrf.rs`).
+    a section save in `cross_capability.rs`, every other `POST` in `csrf.rs`), and that in the
+    `frame-ancestors`, `X-Frame-Options` and `nosniff` header layers, so CSRF refusals carry
+    them too (**static-analysis** — `every_response_forbids_framing_and_sniffing`). A new route
+    is declared above the CSRF layer: one below the layers escapes both (**review**).
   - The `page.url` label is built in `page_url.rs` from `editor_web::route_paths()` and
     `identity_web::route_paths()`, so a traced route cannot go unlabelled (**structure**); that
     `matchit`'s match is axum's is pinned by `every_label_is_the_route_axum_matches`

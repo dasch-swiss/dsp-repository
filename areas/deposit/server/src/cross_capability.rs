@@ -544,7 +544,7 @@ mod sections {
 
     #[tokio::test]
     async fn a_save_with_no_sec_fetch_site_never_reaches_the_handler() {
-        // The CSRF control is the outermost layer, and every write in this
+        // The CSRF control wraps every route, and every write in this
         // service depends on it. Asserted here because a new write route is
         // exactly where the assumption would go untested.
         let (state, _) = test_state("section-csrf").await;

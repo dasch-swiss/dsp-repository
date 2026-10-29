@@ -121,6 +121,10 @@ The consequence of failing closed on absent is that a browser too old to send `S
 
 `GET` and `HEAD` are exempt, because a navigation from anywhere is a `GET`. That is only sound while no `GET` handler changes state, which is why every state-changing route is a `POST`, with a test beside each handler asserting it refuses `GET`. The one deliberate exception is the session's idle-timeout touch, which advances `last_seen_at` at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.
 
+### Framing
+
+`Sec-Fetch-Site` cannot stop clickjacking. A page on another `*.dasch.swiss` host is same-site, so it can frame the editor with the signed-in user's cookie, and a click inside the frame (an RDU member pressing Approve under an overlay) is a same-origin request that passes the check. Every response therefore carries `Content-Security-Policy: frame-ancestors 'none'`, with `X-Frame-Options: DENY` for browsers that predate `frame-ancestors` ([Routing](./routing.md#request-middleware)).
+
 ### Code generation
 
 Six digits from a CSPRNG over the full `000000..=999999` range, sampled by rejection rather than by a modulus — `rng % 1_000_000` biases toward low values unless the generator's range is an exact multiple, which is the classic modulo bug and hands an attacker a better-than-uniform guessing order. Compared in constant time, so the time a comparison takes cannot reveal how long a shared prefix is.

@@ -1,6 +1,6 @@
 # Routing and Request Handling
 
-The URL scheme, the method discipline, how a write answers with and without JavaScript, and the two layers that wrap the app.
+The URL scheme, the method discipline, how a write answers with and without JavaScript, and the layers that wrap the app.
 
 ## URL scheme
 
@@ -77,12 +77,13 @@ Three things about the enhanced path fail quietly if changed:
 
 ## Request middleware
 
-Two layers wrap the app, in this order from the outside in:
+Three layers wrap the app, in this order from the outside in:
 
-1. **CSRF** — `Sec-Fetch-Site: same-origin` is required on every non-`GET`/`HEAD` request, failing closed on everything else including an absent header. It is applied **last** in `build_app`, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside `build_router` it would have missed `/telemetry/collect`, the only pre-auth POST in the app, with no test failing. See [Authentication](./authentication.md#csrf) for why `SameSite` and `__Host-` do not close this.
-2. **OTel** — the traced/untraced split below.
+1. **Security headers** — `Content-Security-Policy: frame-ancestors 'none'`, `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff` on every response, set outside CSRF so its refusals carry them too. See [Authentication](./authentication.md#framing) for why framing is refused. There is no full CSP: Google Fonts and the vendored Datastar would need an allowlist, a separate decision. HSTS is not the app's to set.
+2. **CSRF** — `Sec-Fetch-Site: same-origin` is required on every non-`GET`/`HEAD` request, failing closed on everything else including an absent header. It is applied in `build_app` **after every route**, so the positional traced/untraced split cannot route around it: inside `build_router` it would have missed `/telemetry/collect`, the only pre-auth POST in the app, with no test failing. See [Authentication](./authentication.md#csrf) for why `SameSite` and `__Host-` do not close this.
+3. **OTel** — the traced/untraced split below.
 
-Access control is **not** a third layer. It is two extractors, `Authenticated` and `Rdu`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
+Access control is **not** a fourth layer. It is two extractors, `Authenticated` and `Rdu`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
 
 ## Traced and untraced routes
 

@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "access-server"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
@@ -596,7 +596,7 @@ dependencies = [
 
 [[package]]
 name = "cpe-components"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "cpe-core",
  "cpe-image-viewer",
@@ -609,7 +609,7 @@ dependencies = [
 
 [[package]]
 name = "cpe-core"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "kdl",
  "percent-encoding",
@@ -619,18 +619,18 @@ dependencies = [
 
 [[package]]
 name = "cpe-image-viewer"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "maud",
 ]
 
 [[package]]
 name = "cpe-ports"
-version = "0.8.10"
+version = "0.8.11"
 
 [[package]]
 name = "cpe-server"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "cpe-components",
@@ -657,7 +657,7 @@ dependencies = [
 
 [[package]]
 name = "cpe-store"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "cpe-core",
  "rusqlite",
@@ -667,7 +667,7 @@ dependencies = [
 
 [[package]]
 name = "cpe-store-build"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "cpe-core",
  "cpe-ports",
@@ -680,7 +680,7 @@ dependencies = [
 
 [[package]]
 name = "cpe-web"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "cpe-components",
  "cpe-core",
@@ -871,7 +871,7 @@ dependencies = [
 
 [[package]]
 name = "deposit-server"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
@@ -907,7 +907,7 @@ dependencies = [
 
 [[package]]
 name = "deposit-shell"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "maud",
  "mosaic-tiles",
@@ -988,7 +988,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dpe-api-oai"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -1008,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-core"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "serde",
  "serde_json",
@@ -1020,7 +1020,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-server"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "datastar",
@@ -1053,7 +1053,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-web"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "dpe-core",
  "maud",
@@ -1138,7 +1138,7 @@ dependencies = [
 
 [[package]]
 name = "editor-core"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1151,11 +1151,11 @@ dependencies = [
 
 [[package]]
 name = "editor-ports"
-version = "0.8.10"
+version = "0.8.11"
 
 [[package]]
 name = "editor-pull-requests"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "chrono",
  "editor-core",
@@ -1168,7 +1168,7 @@ dependencies = [
 
 [[package]]
 name = "editor-store"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1184,7 +1184,7 @@ dependencies = [
 
 [[package]]
 name = "editor-web"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "chrono",
@@ -2230,7 +2230,7 @@ checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
 
 [[package]]
 name = "identity-core"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -2244,11 +2244,11 @@ dependencies = [
 
 [[package]]
 name = "identity-ports"
-version = "0.8.10"
+version = "0.8.11"
 
 [[package]]
 name = "identity-store"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2268,7 +2268,7 @@ dependencies = [
 
 [[package]]
 name = "identity-web"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "async-trait",
  "axum",
@@ -2749,7 +2749,7 @@ dependencies = [
 
 [[package]]
 name = "media-store"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "cpe-ports",
  "tempfile",
@@ -2827,7 +2827,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-playground"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "maud",
@@ -2841,7 +2841,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-tiles"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "icondata",
  "maud",
@@ -4358,14 +4358,14 @@ dependencies = [
 
 [[package]]
 name = "shared-datastar"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "maud",
 ]
 
 [[package]]
 name = "shared-fair"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "serde_json",
  "shared-metadata",
@@ -4373,7 +4373,7 @@ dependencies = [
 
 [[package]]
 name = "shared-metadata"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "serde",
  "serde_json",
@@ -4382,7 +4382,7 @@ dependencies = [
 
 [[package]]
 name = "shared-rate-limit"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "tower_governor",
@@ -4390,7 +4390,7 @@ dependencies = [
 
 [[package]]
 name = "shared-telemetry"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "axum",
  "opentelemetry",
@@ -4615,7 +4615,7 @@ dependencies = [
 
 [[package]]
 name = "sync-store"
-version = "0.8.10"
+version = "0.8.11"
 dependencies = [
  "cpe-ports",
  "oxrdf",

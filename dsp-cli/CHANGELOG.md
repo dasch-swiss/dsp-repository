@@ -2,6 +2,27 @@
 
 All notable changes to `dsp-cli` are documented in this file.
 
+## [0.3.2](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.1...dsp-cli-v0.3.2) (2026-10-30)
+
+
+### Documentation
+
+* **docs:** Keep only the current decision in an ADR, and its history in git ([f48fa0b](https://github.com/dasch-swiss/dsp-repository/commit/f48fa0be366b30fe588c2a84ecf9d6fb412b5324))
+* **docs:** Retire three ADRs that no longer decide anything, keeping their numbers ([e9d6261](https://github.com/dasch-swiss/dsp-repository/commit/e9d6261b5a46a22b4b6f1ca2667455cbc701f71a))
+* **docs:** Rewrite every ADR to the decision in force, keeping what is still to come ([8565887](https://github.com/dasch-swiss/dsp-repository/commit/8565887b48416b44b5be57cc11d9c7f7c076e8bd))
+* **dsp-cli,docs:** Re-home the incubator's vision and conventions ([d89a65a](https://github.com/dasch-swiss/dsp-repository/commit/d89a65ab6ed45f1a9ff741fea45265c91d1a43f7))
+* **dsp-cli:** Bring the dsp-cli ADRs into the repository's ADR format ([542d5ed](https://github.com/dasch-swiss/dsp-repository/commit/542d5ededf857283186a22db8602b32befcb65a4))
+
+
+### Tests
+
+* **dsp-cli:** Run the corrupt-cache log-leak guard as a binary test (DEV-7446) ([2374603](https://github.com/dasch-swiss/dsp-repository/commit/2374603f72d5f255eec7fc0a36e8b8c34dcedb9f))
+
+
+### Miscellaneous Chores
+
+* **docs,dsp-cli:** Correct stale agent instructions in CLAUDE.md files ([b81801d](https://github.com/dasch-swiss/dsp-repository/commit/b81801dad7f9836773b7055eacd4c15e1c5bf267))
+
 ## [0.3.1](https://github.com/dasch-swiss/dsp-repository/compare/dsp-cli-v0.3.0...dsp-cli-v0.3.1) (2026-09-22)
 
 

@@ -23,18 +23,14 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 // A clearly synthetic token — never a real JWT.
 const TOKEN: &str = "test-token";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /// Build a minimal projects-list API response body.
 fn projects_body(projects: serde_json::Value) -> serde_json::Value {
     json!({ "projects": projects })
 }
 
-// ---------------------------------------------------------------------------
 // Happy path — translates DTO correctly
-// ---------------------------------------------------------------------------
 
 /// A 200 response with a mixed fixture (with/without ontologies, with/without
 /// longname) is translated to the correct `Vec<Project>`.
@@ -119,9 +115,7 @@ async fn happy_path_translates_dto_to_project() {
     assert_eq!(p3.data_models, 1);
 }
 
-// ---------------------------------------------------------------------------
 // Server error path
-// ---------------------------------------------------------------------------
 
 /// A 500 response maps to `Diagnostic::ServerError`.
 #[tokio::test]
@@ -149,9 +143,7 @@ async fn server_error_500_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer-PRESENT assertion
-// ---------------------------------------------------------------------------
 
 /// When `token = Some("test-token")` is passed, the request carries an
 /// `Authorization: Bearer test-token` header. This guards against a future
@@ -193,9 +185,7 @@ async fn bearer_present_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer-ABSENT assertion
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, the request has NO `Authorization` header.
 /// This prevents a future refactor from accidentally sending an empty or
@@ -230,9 +220,7 @@ async fn bearer_absent_when_token_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Parse contract — a v39-shaped item (no `status`) parses
-// ---------------------------------------------------------------------------
 
 /// dsp-api v39.0.0 removed the project active/inactive concept, so
 /// `GET /admin/projects` items no longer carry a `status` key. A response in
@@ -286,9 +274,7 @@ async fn v39_shaped_item_without_status_parses() {
     assert_eq!(projects[0].data_models, 1);
 }
 
-// ---------------------------------------------------------------------------
 // Parse failure — a missing required field → ServerError
-// ---------------------------------------------------------------------------
 
 /// The fields that remain keep the fail-loudly parse contract: an item missing
 /// `shortcode` (no `#[serde(default)]`, by design) must fail parse loudly
@@ -329,9 +315,7 @@ async fn missing_shortcode_field_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // `header_exists` negative check (alternative matcher approach for ABSENT)
-// ---------------------------------------------------------------------------
 
 /// Complementary test using wiremock's `header_exists` negative logic:
 /// mount a mock that only responds when the Authorization header IS present,
@@ -381,9 +365,7 @@ async fn no_token_does_not_match_bearer_gated_mock() {
     // The `expect(0)` on the bearer-gated mock is verified at drop.
 }
 
-// ---------------------------------------------------------------------------
 // Network failure — connection refused maps to Diagnostic::Network (AC 7)
-// ---------------------------------------------------------------------------
 
 /// A connection failure (nothing listening) must map to `Diagnostic::Network`,
 /// not `ServerError`. Port 1 is reserved — the OS refuses the connection

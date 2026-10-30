@@ -335,7 +335,7 @@ mod tests {
     use super::*;
     use crate::model::resource_type::ValueType;
 
-    // ── ValueContent::value_type_token ───────────────────────────────────────
+    // ValueContent::value_type_token
 
     #[test]
     fn value_type_token_text() {
@@ -489,7 +489,7 @@ mod tests {
         );
     }
 
-    // ── FieldValues construction ──────────────────────────────────────────────
+    // FieldValues construction
 
     #[test]
     fn field_values_construction_and_equality() {
@@ -505,7 +505,7 @@ mod tests {
         assert_eq!(fv.values.len(), 1);
     }
 
-    // ── DateValue / DatePoint construction ───────────────────────────────────
+    // DateValue / DatePoint construction
 
     #[test]
     fn date_value_point_equality() {

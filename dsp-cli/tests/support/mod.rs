@@ -26,7 +26,7 @@ use std::collections::VecDeque;
 use std::io::Write;
 use std::rc::Rc;
 
-// ── SharedBuf ─────────────────────────────────────────────────────────────────
+// SharedBuf
 
 /// A `Write` impl wrapping a shared `Vec<u8>` so integration tests can read
 /// captured renderer output after a render call.

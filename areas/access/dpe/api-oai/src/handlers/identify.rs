@@ -64,7 +64,7 @@ mod tests {
         }
     }
 
-    // ---- error cases ----
+    // error cases
 
     #[test]
     fn unexpected_argument_returns_bad_argument() {
@@ -81,7 +81,7 @@ mod tests {
         );
     }
 
-    // ---- base URL ----
+    // base URL
 
     #[test]
     fn identify_emits_configured_base_url_in_both_request_and_base_url() {
@@ -99,7 +99,7 @@ mod tests {
         assert!(!xml.contains("meta.dasch.swiss"), "obsolete host must be gone, got: {xml}");
     }
 
-    // ---- golden tests ----
+    // golden tests
 
     #[test]
     fn golden_identify_response() {
@@ -119,7 +119,7 @@ mod tests {
         assert_eq!(normalize(&xml), expected);
     }
 
-    // ---- schema validation tests ----
+    // schema validation tests
 
     #[test]
     fn identify_response_is_valid_oai_pmh() {

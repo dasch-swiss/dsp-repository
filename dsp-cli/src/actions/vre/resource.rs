@@ -62,19 +62,19 @@ pub(crate) fn run_list_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. --resource-type required (fail-fast, BEFORE any cache/IO) ─────────
+    // 2. --resource-type required (fail-fast, BEFORE any cache/IO)
     let resource_type_arg = args
         .resource_type
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string()))?;
 
-    // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 3. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -87,14 +87,14 @@ pub(crate) fn run_list_impl(
         }
     };
 
-    // ── 4. Resolve token (optional) ───────────────────────────────────────────
+    // 4. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 5. Build auth-state disclosure string ─────────────────────────────────
+    // 5. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 6. D3: filter_warning — always Some for instance-side commands ────────
+    // 6. D3: filter_warning — always Some for instance-side commands
     //
     // Anonymous callers see only public resources; authenticated callers are
     // still bounded by their permissions. Both warrant disclosure.
@@ -104,10 +104,10 @@ pub(crate) fn run_list_impl(
         Some("results limited to your permissions".to_string())
     };
 
-    // ── 7. Resolve project ────────────────────────────────────────────────────
+    // 7. Resolve project
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 8. D1: Resolve resource-type IRI ─────────────────────────────────────
+    // 8. D1: Resolve resource-type IRI
     //
     // Three paths (plan 022 D1):
     //   a. Full IRI (heuristic: contains `://`) → use directly; no scan.
@@ -122,14 +122,14 @@ pub(crate) fn run_list_impl(
         token,
     )?;
 
-    // ── 8b. Resolve --order-by field name to property IRI ────────────────────
+    // 8b. Resolve --order-by field name to property IRI
     let order_by: Option<String> = if let Some(ob) = args.order_by.as_deref() {
         Some(resolve_order_by_property(ob, &rt_ref, &cfg.server, client, token)?)
     } else {
         None
     };
 
-    // ── 9. D5: Fetch pages ────────────────────────────────────────────────────
+    // 9. D5: Fetch pages
     let (all_resources, pagination) = if args.all {
         // Fetch all pages: 0, 1, 2, … until may_have_more is false.
         let mut all: Vec<ResourceSummary> = Vec::new();
@@ -157,17 +157,17 @@ pub(crate) fn run_list_impl(
         )
     };
 
-    // ── 10. Capture total BEFORE client-side filter ───────────────────────────
+    // 10. Capture total BEFORE client-side filter
     let total = all_resources.len();
 
-    // ── 11. Apply --filter (case-insensitive substring over label) ────────────
+    // 11. Apply --filter (case-insensitive substring over label)
     let mut items = all_resources;
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         items.retain(|r| r.label.to_lowercase().contains(&lower));
     }
 
-    // ── 12. Build view + meta and render ─────────────────────────────────────
+    // 12. Build view + meta and render
     let view = ResourceListView {
         items,
         total,
@@ -396,9 +396,7 @@ fn local_name(iri: &str) -> String {
     iri.rsplit(['#', '/', ':']).next().unwrap_or(iri).to_string()
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // resource describe
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Describe a single resource by its internal IRI.
 ///
@@ -434,13 +432,13 @@ pub(crate) fn run_describe_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --resource required (fail-fast, BEFORE any cache/IO) ──────────────
+    // 1. --resource required (fail-fast, BEFORE any cache/IO)
     let resource_iri = args
         .resource
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--resource <iri> is required".to_string()))?;
 
-    // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 2. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -453,14 +451,14 @@ pub(crate) fn run_describe_impl(
         }
     };
 
-    // ── 3. Resolve token (optional) ───────────────────────────────────────────
+    // 3. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 4. Build auth-state disclosure string ─────────────────────────────────
+    // 4. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 5. D3: filter_warning — always Some for instance-side commands ────────
+    // 5. D3: filter_warning — always Some for instance-side commands
     //
     // Anonymous callers see only public resources; authenticated callers are
     // still bounded by their permissions. Both warrant disclosure.
@@ -470,7 +468,7 @@ pub(crate) fn run_describe_impl(
         Some("results limited to your permissions".to_string())
     };
 
-    // ── 6. D2: Resolve project guard (optional) ───────────────────────────────
+    // 6. D2: Resolve project guard (optional)
     //
     // If --project was given, resolve it to a ProjectRef so we have the IRI for
     // the guard comparison after fetching the resource.
@@ -480,10 +478,10 @@ pub(crate) fn run_describe_impl(
         None
     };
 
-    // ── 7. Fetch resource detail ──────────────────────────────────────────────
+    // 7. Fetch resource detail
     let detail = client.describe_resource(&cfg.server, resource_iri, token, args.values)?;
 
-    // ── 8. D2: Cross-project guard ────────────────────────────────────────────
+    // 8. D2: Cross-project guard
     //
     // Fire ONLY when a project was given AND the resource's attached_project is
     // Some(actual) AND actual != resolved_project_iri. A None attached_project
@@ -503,7 +501,7 @@ pub(crate) fn run_describe_impl(
         )));
     }
 
-    // ── 9. Build meta and render ──────────────────────────────────────────────
+    // 9. Build meta and render
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -514,9 +512,7 @@ pub(crate) fn run_describe_impl(
     renderer.resource_describe(&detail, &meta)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Tests
-// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -540,7 +536,7 @@ mod tests {
         ResourceListView, ResourceTypeListView,
     };
 
-    // ── MockDspClient ─────────────────────────────────────────────────────────
+    // MockDspClient
     //
     // Uses a `Vec<Result<DataModelDetail, Diagnostic>>` queue for
     // `describe_data_model` (popped in call order) so that the ambiguous-name
@@ -853,7 +849,7 @@ mod tests {
         }
     }
 
-    // ── RecordingRenderer ─────────────────────────────────────────────────────
+    // RecordingRenderer
 
     struct RecordingRenderer {
         resources_view: Option<ResourceListView>,
@@ -983,7 +979,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     const SERVER: &str = "https://api.test.dasch.swiss";
     const PROJECT_IRI: &str = "http://rdfh.ch/projects/0801";
@@ -1152,9 +1148,9 @@ mod tests {
         }
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    // tests
 
-    // ── describe tests ────────────────────────────────────────────────────────
+    // describe tests
 
     /// Happy path: renderer receives the expected ResourceDetail.
     #[test]
@@ -1434,7 +1430,7 @@ mod tests {
         assert_eq!(meta.auth_state, "anonymous");
     }
 
-    // ── list tests ────────────────────────────────────────────────────────────
+    // list tests
 
     /// Full-IRI bypass: no data-model scan, list_data_models not called.
     #[test]
@@ -1908,7 +1904,7 @@ mod tests {
         );
     }
 
-    // ── order-by tests ────────────────────────────────────────────────────────
+    // order-by tests
 
     /// Build a ResourceTypeDetail with a set of fields for testing.
     fn make_rt_detail_with_fields(rt_name: &str, field_names: &[(&str, &str)]) -> ResourceTypeDetail {

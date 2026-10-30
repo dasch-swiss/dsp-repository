@@ -29,9 +29,7 @@ use dsp_cli::model::RelationKind;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: resolve project `0801` (beol), list its data-models,
 /// find the `beol` data-model, then call `data_model_structure` and assert
@@ -59,7 +57,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_data_model_structure_returns_valid_structure() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -69,7 +67,7 @@ fn live_data_model_structure_returns_valid_structure() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // `data_model_structure` uses a public endpoint; the token is optional. If
     // present it exercises the authenticated code path, but its absence is not
     // a skip condition. NEVER interpolate the token value in any log or
@@ -83,10 +81,10 @@ fn live_data_model_structure_returns_valid_structure() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the known project (beol / shortcode 0801) ─────────────────
+    // 4. Resolve the known project (beol / shortcode 0801)
     // beol is chosen for its cross-ontology link relations (e.g. beol:letter →
     // biblio:Book), which exercise both in-model and cross-model edges.
     let project_identifier = "0801";
@@ -103,7 +101,7 @@ fn live_data_model_structure_returns_valid_structure() {
         proj.iri, proj.shortcode, proj.shortname
     );
 
-    // ── 5. List data-models and find the beol data-model ─────────────────────
+    // 5. List data-models and find the beol data-model
     eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
@@ -121,7 +119,7 @@ fn live_data_model_structure_returns_valid_structure() {
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
-    // ── 6. Call data_model_structure ─────────────────────────────────────────
+    // 6. Call data_model_structure
     eprintln!("live test: calling data_model_structure for IRI {}", beol_dm.iri);
 
     let structure = client.data_model_structure(&cfg.server, &beol_dm.iri, token_ref).expect(
@@ -136,7 +134,7 @@ fn live_data_model_structure_returns_valid_structure() {
         structure.relations.len()
     );
 
-    // ── 7. Assert structural invariants ──────────────────────────────────────
+    // 7. Assert structural invariants
 
     // data_model must be "beol" — we resolved this data-model by name.
     assert_eq!(

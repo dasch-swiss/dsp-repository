@@ -2300,7 +2300,7 @@ mod tests {
         assert_eq!(stored.substitute("abstract"), Some(&json!({ "en": "A reviewed abstract." })));
     }
 
-    // --- Entity proposals -----------------------------------------------
+    // Entity proposals
 
     #[tokio::test]
     async fn a_posted_entity_decision_is_stored_on_the_right_proposal() {

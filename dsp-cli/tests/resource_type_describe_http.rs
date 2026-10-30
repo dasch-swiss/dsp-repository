@@ -33,9 +33,7 @@ const TEST_NS: &str = "http://0.0.0.0:3333/ontology/0001/test/v2#";
 const SIB_IRI: &str = "http://0.0.0.0:3333/ontology/0001/sib/v2";
 const SIB_NS: &str = "http://0.0.0.0:3333/ontology/0001/sib/v2#";
 
-// ---------------------------------------------------------------------------
 // Helpers — path construction
-// ---------------------------------------------------------------------------
 
 /// Build the expected URL path for the allentities endpoint (percent-encoded IRI).
 fn allentities_path(iri: &str) -> String {
@@ -60,9 +58,7 @@ fn sib_allentities_path() -> String {
     allentities_path(SIB_IRI)
 }
 
-// ---------------------------------------------------------------------------
 // Fixture builders
-// ---------------------------------------------------------------------------
 
 /// The context for the primary `test` ontology fixture (always the same).
 fn test_context() -> serde_json::Value {
@@ -193,9 +189,7 @@ fn happy_fixture() -> serde_json::Value {
     })
 }
 
-// ---------------------------------------------------------------------------
 // Test 1: Happy path — query `test:Doc`
-// ---------------------------------------------------------------------------
 
 /// Happy path: querying `test:Doc` returns a well-formed `ResourceTypeDetail`.
 ///
@@ -301,9 +295,7 @@ async fn happy_path_describe_doc_resource_type() {
     assert_eq!(ark.data_model, None, "system field data_model must be None");
 }
 
-// ---------------------------------------------------------------------------
 // Test 2: Cardinality + value-type mapping
-// ---------------------------------------------------------------------------
 
 /// Tests all four cardinality variants and several value-type mappings.
 ///
@@ -417,9 +409,7 @@ async fn cardinality_and_value_type_mapping() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 3: Bearer present / absent
-// ---------------------------------------------------------------------------
 
 /// When `token = Some(TOKEN)` is passed, the request must carry
 /// `Authorization: Bearer <TOKEN>`.
@@ -500,9 +490,7 @@ async fn bearer_absent_when_token_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 4: Resource-type not found
-// ---------------------------------------------------------------------------
 
 /// Querying a name absent from the graph returns `Err(Diagnostic::NotFound(_))`.
 /// The error message must NOT contain "resource-type list" — that hint is the
@@ -541,9 +529,7 @@ async fn resource_type_not_found_returns_not_found_diagnostic() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Test 5: Server error (500)
-// ---------------------------------------------------------------------------
 
 /// A 500 response from allentities returns `Err(Diagnostic::ServerError(_))`.
 #[tokio::test]
@@ -571,9 +557,7 @@ async fn server_error_500_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 6: Two-ontology sibling fetch (Decision 9)
-// ---------------------------------------------------------------------------
 
 /// When a class restriction references a property from a sibling ontology (`sib:`),
 /// the client fetches the sibling's allentities and resolves the property node.
@@ -693,9 +677,7 @@ async fn two_ontology_sibling_fetch_resolves_field() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 6b: Representation detected from restriction, NOT from superclass ref
-// ---------------------------------------------------------------------------
 
 /// R8 isolation: representation is detected from the file-value RESTRICTION
 /// (`owl:onProperty knora-api:hasMovingImageFileValue`), NOT from a
@@ -780,9 +762,7 @@ async fn representation_detected_from_restriction_not_superclass_ref() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 7: Sibling fetch fails (non-fatal)
-// ---------------------------------------------------------------------------
 
 /// When the sibling ontology fetch fails (server error), the field is degraded
 /// but the command still returns Ok. The degraded field:
@@ -894,9 +874,7 @@ async fn sibling_fetch_fails_field_degrades_but_command_succeeds() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 8: Missing prefix in @context degrades gracefully (non-fatal, no panic)
-// ---------------------------------------------------------------------------
 
 /// When a restriction's onProperty CURIE prefix (`weird:`) is NOT in `@context`,
 /// the sibling-fetch loop skips that prefix with a warning (no panic, no Err).
@@ -1001,9 +979,7 @@ async fn field_with_prefix_absent_from_context_degrades_gracefully() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 9: Bearer token forwarded to the sibling ontology fetch (R10)
-// ---------------------------------------------------------------------------
 
 /// When `token = Some(TOKEN)` is passed, the sibling ontology fetch must also
 /// carry `Authorization: Bearer <TOKEN>`. This verifies R10 (bearer token

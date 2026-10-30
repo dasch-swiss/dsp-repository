@@ -42,13 +42,13 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 /// Standard server label for all snapshot tests — mirrors what `run_describe_impl`
 /// sets from `cfg.server`.
 const SERVER: &str = "api.dasch.swiss";
 
-// ── MetaContext helper ────────────────────────────────────────────────────────
+// MetaContext helper
 
 /// Anonymous `MetaContext` — mirrors what `run_describe_impl` builds when no
 /// token is present. `count_cost` is always `None` for `describe` — plan 034's
@@ -63,7 +63,7 @@ fn anon_meta() -> MetaContext {
     }
 }
 
-// ── fixture ───────────────────────────────────────────────────────────────────
+// fixture
 
 fn text(value: &str, language: Option<&str>) -> LocalizedText {
     LocalizedText {
@@ -214,7 +214,7 @@ fn leaf_subtree_detail() -> VocabularyDetail {
     VocabularyDetail { tree, subtree_of: Some(iri), node_count, depth }
 }
 
-// ── case 1: whole-vocabulary describe × 5 formats ────────────────────────────
+// case 1: whole-vocabulary describe × 5 formats
 
 /// Prose render of the whole-vocabulary fixture. Locks the header line
 /// (name/labels), the `Root:` IRI line, the `N nodes · M levels` summary with
@@ -299,7 +299,7 @@ fn vocabulary_describe_tsv() {
     insta::assert_snapshot!("vocabulary_describe_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── case 2: node-IRI describe (requested_node, no subtree) ──────────────────
+// case 2: node-IRI describe (requested_node, no subtree)
 
 /// Prose render of the node-IRI fixture. Locks the whole vocabulary still
 /// rendering (all 6 nodes present), the header's "you asked about 1.1" note
@@ -361,7 +361,7 @@ fn vocabulary_describe_json_requested_node() {
     insta::assert_snapshot!(out);
 }
 
-// ── case 3: --subtree describe (prehistory branch) ───────────────────────────
+// case 3: --subtree describe (prehistory branch)
 
 /// Prose render of the `--subtree` fixture. Locks the narrowed branch (only
 /// `prehistory`, `stoneAge`, `neolithic`, `bronzeAge` — `antiquity` and
@@ -415,7 +415,7 @@ fn vocabulary_describe_json_subtree() {
     insta::assert_snapshot!(out);
 }
 
-// ── case 4: --subtree on a leaf (bronzeAge) ──────────────────────────────────
+// case 4: --subtree on a leaf (bronzeAge)
 
 /// Prose render of the leaf-subtree fixture. D14b: the addressed leaf is
 /// included as its own one-node branch — exactly one node line renders, and

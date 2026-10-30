@@ -329,7 +329,7 @@ pub(crate) fn build_marker<'a>(
     })
 }
 
-// ── Markup (steps 4–5) ─────────────────────────────────────────────────────────
+// Markup (steps 4–5)
 
 /// The borrowed configuration of one `timeline` render: the property names
 /// and axis bounds from `ir::Component::Timeline`, plus the href resolver
@@ -613,7 +613,7 @@ fn rows_rem(rows: usize) -> f64 {
     f64::from(u32::try_from(rows).unwrap_or(u32::MAX)) * ROW_HEIGHT_REM
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
+// Private helpers
 
 /// `pct(year + offset)`, with the addition done in `f64` so it cannot overflow.
 fn pct_after(year: i32, offset: i32, axis_start: i32, axis_end: i32) -> f64 {
@@ -643,7 +643,7 @@ fn parse_year(iso: &str) -> Option<i32> {
         .and_then(|y| y.parse().ok())
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -1119,7 +1119,7 @@ mod tests {
         assert_eq!(en.label, "Die wunderbare Meerfahrt des hl. Brandan · 19 February 1491");
     }
 
-    // ── render_timeline — small synthetic resource bags ─────────────
+    // render_timeline — small synthetic resource bags
 
     /// A synthetic Book: `name` (universal text), `pub-date` (year precision,
     /// `end` stored even for a point, as in Incunabula's data), an optional

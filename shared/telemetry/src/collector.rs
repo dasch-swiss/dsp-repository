@@ -22,7 +22,7 @@ fn extract_host(value: &str) -> Option<String> {
     Url::parse(value).ok().and_then(|u| u.host_str().map(String::from))
 }
 
-// --- OTel metrics ---
+// OTel metrics
 
 /// The resolved OTel instrumentation scope name, e.g. `dpe.browser`.
 static METER_SCOPE: OnceLock<String> = OnceLock::new();
@@ -137,7 +137,7 @@ static BROWSER_METRICS: LazyLock<BrowserMetrics> = LazyLock::new(|| {
     }
 });
 
-// --- Collector endpoint ---
+// Collector endpoint
 
 /// Maximum beacon payload size (16 KiB).
 const MAX_PAYLOAD_SIZE: usize = 16 * 1024;
@@ -410,7 +410,7 @@ mod tests {
         .to_string()
     }
 
-    // --- Handler integration tests ---
+    // Handler integration tests
 
     #[tokio::test]
     async fn handler_oversized_payload_returns_413() {
@@ -550,7 +550,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NO_CONTENT);
     }
 
-    // --- Validation tests ---
+    // Validation tests
 
     #[test]
     fn unknown_vital_name_is_silently_dropped() {

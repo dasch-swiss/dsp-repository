@@ -26,7 +26,7 @@ use dsp_cli::render::progress::{HumanProgress, JsonProgress, ProgressReporter};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── fixed event sequence ──────────────────────────────────────────────────────
+// fixed event sequence
 
 fn fixed_events() -> Vec<DumpEvent> {
     vec![
@@ -38,7 +38,7 @@ fn fixed_events() -> Vec<DumpEvent> {
     ]
 }
 
-// ── fixed adopt/delete/probe sequence ────────────────────────────────────────
+// fixed adopt/delete/probe sequence
 
 fn adopt_delete_probe_events() -> Vec<DumpEvent> {
     vec![
@@ -48,7 +48,7 @@ fn adopt_delete_probe_events() -> Vec<DumpEvent> {
     ]
 }
 
-// ── fixed discard-other-project sequence ─────────────────────────────────────
+// fixed discard-other-project sequence
 
 /// Sequence representing --replace --discard-other-project: the warning event,
 /// then the new dump being triggered and downloaded.
@@ -64,7 +64,7 @@ fn discard_other_project_events() -> Vec<DumpEvent> {
     ]
 }
 
-// ── snapshot tests ────────────────────────────────────────────────────────────
+// snapshot tests
 
 #[test]
 fn human_progress_full_sequence() {

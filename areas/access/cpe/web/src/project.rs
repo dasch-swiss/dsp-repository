@@ -641,7 +641,7 @@ page id="book" route="/book" {
         );
     }
 
-    // ── `narrative-for` resource existence (both validate_with_data arms) ──────
+    // `narrative-for` resource existence (both validate_with_data arms)
 
     const NARRATIVE_FOR_DATA: &str = "INSERT INTO resources (id, class) VALUES ('b1', 'Book');";
 
@@ -722,7 +722,7 @@ page id="book" route="/books/:id" {
         );
     }
 
-    // ── Pagination helper unit tests ──────────────────────────────────────────
+    // Pagination helper unit tests
 
     #[test]
     fn last_page_for_zero_total_is_one() {
@@ -741,7 +741,7 @@ page id="book" route="/books/:id" {
         assert_eq!(last_page_for(1, 20), 1, "1 / 20 = 1 (ceiling)");
     }
 
-    // ── list_resources integration tests ─────────────────────────────────────
+    // list_resources integration tests
     //
     // Build a minimal Project via `Project::load` (the only public constructor)
     // and exercise `list_resources` against the in-memory SQLite.
@@ -968,7 +968,7 @@ page id="home" route="/"
         );
     }
 
-    // ── count_resources integration tests ────────────────────────────────────
+    // count_resources integration tests
 
     #[test]
     fn count_resources_no_wheres_counts_all_of_class() {
@@ -1000,7 +1000,7 @@ page id="home" route="/"
         assert_eq!(count, 2, "only the 2 Locations, not Characters");
     }
 
-    // ── search-bar FTS5 boot indexing integration tests ───────────────────────
+    // search-bar FTS5 boot indexing integration tests
     //
     // Uses the `good-search` fixture (`web/tests/projects/good-search/`) —
     // a `Thing` class with `name` (text) and `description` (richtext)
@@ -1105,7 +1105,7 @@ page id="home" route="/"
         }
     }
 
-    // ── compound_parts integration tests ──────────────────────────────────────
+    // compound_parts integration tests
     //
     // Build a minimal Project via `Project::load` and exercise
     // `Project::compound_parts` directly. Through its delegation this
@@ -1228,7 +1228,7 @@ page id="home" route="/"
         assert_eq!(page.index, 1, "empty compound still reports index == 1 (documented invariant)");
     }
 
-    // ── resolve_page_param ────────────────────────────────────────────────────
+    // resolve_page_param
     //
     // Headers modelled on the real postilla book (Incunabula's data): a
     // lower-case first quire (`a1r; Titelblatt`, `a2v`) and a capital second
@@ -1409,7 +1409,7 @@ page id="home" route="/"
         assert_eq!((empty.total, empty.stale_page), (0, None));
     }
 
-    // ── media_items / media_thumbs integration tests ─────────────────────────
+    // media_items / media_thumbs integration tests
     //
     // A Character host resource ("c1") pointing at three Image resources via
     // its `image` link property, at seq 2, 0, 1 (deliberately out of id
@@ -1496,7 +1496,7 @@ page id="home" route="/"
         );
     }
 
-    // ── facet_options integration tests ──────────────────────────────────────
+    // facet_options integration tests
     //
     // Use a fixture with two Character resources, each with list_value `role`
     // properties pointing at nodes n1 (count=2) and n2 (count=1, only c2).
@@ -1903,7 +1903,7 @@ page id="home" route="/"
         );
     }
 
-    // ── page_data: which side data each scope fills ───────────────────────────
+    // page_data: which side data each scope fills
 
     const GOOD_MEDIA_CONFIG: &str = include_str!("../tests/projects/good-media/config.kdl");
     const GOOD_MEDIA_DATA: &str = include_str!("../tests/projects/good-media/data.sql");

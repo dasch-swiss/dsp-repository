@@ -105,7 +105,7 @@ fn moved() -> Fixture {
     })
 }
 
-// ── The hooks ─────────────────────────────────────────────────────────────────
+// The hooks
 
 /// Makes one of each change the block declares: drops every Sheet whose number is the sentinel
 /// alone, gives every Volume its curated rank, and replaces a Volume's homepage that is
@@ -252,7 +252,7 @@ fn recorded(snapshot: &Fixture) -> Vec<String> {
     SEEN.with(|all| all.borrow().clone())
 }
 
-// ── The cases ─────────────────────────────────────────────────────────────────
+// The cases
 
 fn hook(remodel: HookFn) -> Hook {
     Hook { project: PROJECT, remodel }
@@ -451,7 +451,7 @@ fn test_build_what_points_at_a_resource_is_refused_only_once_a_hook_dropped_it()
     }
 }
 
-// ── The declared changes ──────────────────────────────────────────────────────
+// The declared changes
 
 /// The blank Sheet gets no row, no Image and no place among the parts, and the Volume's extent
 /// counts the two Sheets left. The Volume has its rank, and the address the hook set.
@@ -1030,7 +1030,7 @@ fn test_build_hook_s_own_refusal_is_reported_with_the_builder_s() {
     );
 }
 
-// ── The dropped resource ──────────────────────────────────────────────────────
+// The dropped resource
 
 /// What the mapping refuses a value for is withdrawn with the resource: a description that
 /// holds the sentinel, and a link to a resource of another class. On a Sheet that stays, each
@@ -1072,7 +1072,7 @@ fn test_build_dropped_resource_stays_in_the_check_on_shared_files() {
     assert_eq!(refused(&shared, tidy), [(Rule::SharedFile, "sheet-1".to_string())]);
 }
 
-// ── The table and the project folders ─────────────────────────────────────────
+// The table and the project folders
 
 /// The config of a project folder `dir`, if it has one.
 type ConfigOf = fn(&std::path::Path) -> Option<String>;
@@ -1178,7 +1178,7 @@ fn test_declaring_a_hook_finds_the_one_fixture_whose_block_has_the_node() {
     assert!(resolve("hooked").is_none());
 }
 
-// ── What a hook reads ─────────────────────────────────────────────────────────
+// What a hook reads
 
 #[test]
 fn test_view_shows_the_mapping_s_result_the_values_as_served_and_the_curated_texts() {
@@ -1224,7 +1224,7 @@ fn test_view_tells_a_refused_property_from_one_without_a_value() {
     assert_eq!(homepage(&none), ["homepage: Values([])", "as served: []"]);
 }
 
-// ── A project's hook, held to its declaration ─────────────────────────────────
+// A project's hook, held to its declaration
 
 // The one project that has a hook is the one the other test modules build: `INCUNABULA` is
 // its folder and `INCUNABULA_MAPPING` its mapping.

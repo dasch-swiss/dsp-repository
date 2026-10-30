@@ -87,7 +87,7 @@ pub struct ListingSource<'a> {
     pub default_lang: &'a Lang,
 }
 
-// ── Client behaviour ──────────────────────────────────────────────────────────
+// Client behaviour
 //
 // Every expression is static and identical on every entry: it reads the entry
 // from the DOM (`el.closest('li')`), so no store data ever enters a script.
@@ -864,7 +864,7 @@ mod tests {
         assert_eq!(summary(&panel), [pair("Book", "[Das] Narrenschiff (dt.)")]);
     }
 
-    // ── The listing form (figure blocks) ────────────────────────────
+    // The listing form (figure blocks)
 
     use cpe_core::ir::{
         AnnotationCrop, CaseLayout, FigureSlot, MemberParent, PagePlate, ShowcaseCase, ShowcaseCrop, SiteConfig,
@@ -1247,7 +1247,7 @@ mod tests {
         assert!(!entry.contains("crumb-data__pid-label"), "{entry}");
     }
 
-    // ── Rendering ────────────────────────────────────────────────────────────
+    // Rendering
 
     /// Book, Page and two Regions, rendered in `code`.
     fn rendered(code: &str) -> String {

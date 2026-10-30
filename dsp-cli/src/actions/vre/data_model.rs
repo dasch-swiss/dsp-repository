@@ -47,13 +47,13 @@ fn run_list_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 2. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -66,28 +66,28 @@ fn run_list_impl(
         }
     };
 
-    // ── 3. Resolve token (optional) ───────────────────────────────────────────
+    // 3. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 4. Build auth-state disclosure string ─────────────────────────────────
+    // 4. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 5. Resolve project (public endpoint; no token needed) ─────────────────
+    // 5. Resolve project (public endpoint; no token needed)
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 6. Fetch project's own data-models ───────────────────────────────────
+    // 6. Fetch project's own data-models
     let mut items = client.list_data_models(&cfg.server, &pref.iri, token)?;
 
-    // ── 7. Append builtins if requested ──────────────────────────────────────
+    // 7. Append builtins if requested
     if args.include_builtins {
         items.extend(crate::client::builtin_data_models());
     }
 
-    // ── 8. Capture total AFTER builtins, BEFORE filter ───────────────────────
+    // 8. Capture total AFTER builtins, BEFORE filter
     let total = items.len();
 
-    // ── 9. Apply --filter (case-insensitive substring over name + label) ──────
+    // 9. Apply --filter (case-insensitive substring over name + label)
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         items.retain(|dm| {
@@ -95,10 +95,10 @@ fn run_list_impl(
         });
     }
 
-    // ── 10. Sort surviving items by name ascending ────────────────────────────
+    // 10. Sort surviving items by name ascending
     items.sort_by(|a, b| a.name.cmp(&b.name));
 
-    // ── 11. Build view + meta and render ─────────────────────────────────────
+    // 11. Build view + meta and render
     let view = DataModelListView { items, total, filter: args.filter.clone() };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
@@ -144,19 +144,19 @@ fn run_describe_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
+    // 2. --data-model required (fail-fast, BEFORE any cache/IO)
     let data_model = args
         .data_model
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--data-model <name-or-IRI> is required".to_string()))?;
 
-    // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 3. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -169,20 +169,20 @@ fn run_describe_impl(
         }
     };
 
-    // ── 4. Resolve token (optional) ───────────────────────────────────────────
+    // 4. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 5. Build auth-state disclosure string ─────────────────────────────────
+    // 5. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 6. Resolve project ────────────────────────────────────────────────────
+    // 6. Resolve project
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 7. Fetch project's own data-models ───────────────────────────────────
+    // 7. Fetch project's own data-models
     let data_models = client.list_data_models(&cfg.server, &pref.iri, token)?;
 
-    // ── 8. Match --data-model against the project's data-models ──────────────
+    // 8. Match --data-model against the project's data-models
     // Truncation is for display only — never truncate before the equality check.
     let dm_iri = data_models
         .iter()
@@ -201,10 +201,10 @@ fn run_describe_impl(
             ))
         })?;
 
-    // ── 9. Fetch the data-model detail ────────────────────────────────────────
+    // 9. Fetch the data-model detail
     let detail = client.describe_data_model(&cfg.server, &dm_iri, token)?;
 
-    // ── 10. Build meta and render ─────────────────────────────────────────────
+    // 10. Build meta and render
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -249,19 +249,19 @@ fn run_structure_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
+    // 2. --data-model required (fail-fast, BEFORE any cache/IO)
     let data_model = args
         .data_model
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--data-model <name-or-IRI> is required".to_string()))?;
 
-    // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 3. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -274,20 +274,20 @@ fn run_structure_impl(
         }
     };
 
-    // ── 4. Resolve token (optional) ───────────────────────────────────────────
+    // 4. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 5. Build auth-state disclosure string ─────────────────────────────────
+    // 5. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 6. Resolve project ────────────────────────────────────────────────────
+    // 6. Resolve project
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 7. Fetch project's own data-models ───────────────────────────────────
+    // 7. Fetch project's own data-models
     let data_models = client.list_data_models(&cfg.server, &pref.iri, token)?;
 
-    // ── 8. Match --data-model against the project's data-models ──────────────
+    // 8. Match --data-model against the project's data-models
     let dm_iri = data_models
         .iter()
         .find(|dm| dm.iri == data_model || dm.name.eq_ignore_ascii_case(data_model))
@@ -305,15 +305,15 @@ fn run_structure_impl(
             ))
         })?;
 
-    // ── 9. Fetch the data-model structure ─────────────────────────────────────
+    // 9. Fetch the data-model structure
     let mut structure = client.data_model_structure(&cfg.server, &dm_iri, token)?;
 
-    // ── 10. Filter built-in relations unless --include-builtins ───────────────
+    // 10. Filter built-in relations unless --include-builtins
     if !args.include_builtins {
         structure.relations.retain(|r| !r.is_builtin);
     }
 
-    // ── 11. Build meta and render ─────────────────────────────────────────────
+    // 11. Build meta and render
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -324,9 +324,7 @@ fn run_structure_impl(
     renderer.data_model_structure(&structure, &meta)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Tests
-// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -348,7 +346,7 @@ mod tests {
         DataModelListView, DumpDeleteOutcome, DumpOutcome, Format, MetaContext, ProjectListView, Renderer,
     };
 
-    // ── MockDspClient ─────────────────────────────────────────────────────────
+    // MockDspClient
 
     struct MockDspClient {
         resolve_result: Option<Result<ProjectRef, Diagnostic>>,
@@ -635,7 +633,7 @@ mod tests {
         }
     }
 
-    // ── RecordingRenderer ─────────────────────────────────────────────────────
+    // RecordingRenderer
 
     struct RecordingRenderer {
         data_models_view: Option<DataModelListView>,
@@ -779,7 +777,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     const SERVER: &str = "https://api.test.dasch.swiss";
 
@@ -842,7 +840,7 @@ mod tests {
         path
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    // tests
 
     #[test]
     fn test_list_data_models_success_sorted_view() {
@@ -1171,7 +1169,7 @@ mod tests {
         assert_eq!(view.items[0].name, "beol");
     }
 
-    // ── auth-state seam tests ─────────────────────────────────────────────────
+    // auth-state seam tests
 
     #[test]
     fn test_list_data_models_auth_anonymous_when_no_token() {
@@ -1256,7 +1254,7 @@ mod tests {
         );
     }
 
-    // ── describe helpers ──────────────────────────────────────────────────────
+    // describe helpers
 
     fn make_describe_args(project: Option<&str>, data_model: Option<&str>) -> DataModelDescribeArgs {
         DataModelDescribeArgs {
@@ -1288,7 +1286,7 @@ mod tests {
         }
     }
 
-    // ── describe tests ────────────────────────────────────────────────────────
+    // describe tests
 
     #[test]
     fn test_describe_data_model_success() {
@@ -1575,7 +1573,7 @@ mod tests {
         );
     }
 
-    // ── structure helpers ─────────────────────────────────────────────────────
+    // structure helpers
 
     fn make_structure_args(
         project: Option<&str>,
@@ -1635,7 +1633,7 @@ mod tests {
         DataModelStructure { data_model: data_model.to_string(), relations }
     }
 
-    // ── structure tests ───────────────────────────────────────────────────────
+    // structure tests
 
     #[test]
     fn test_structure_link_only() {

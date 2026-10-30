@@ -42,7 +42,7 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Standard server label for all snapshot tests — mirrors what `run_describe_impl`
 /// sets from `cfg.server`.
@@ -114,7 +114,7 @@ fn edge_detail() -> ProjectDetail {
     }
 }
 
-// ── main fixture × 5 formats ──────────────────────────────────────────────────
+// main fixture × 5 formats
 
 /// Prose render of the beol fixture. Locks the label/value block layout,
 /// the `Data-models (4): beol, biblio, leibniz, newton` line, the
@@ -185,7 +185,7 @@ fn project_describe_tsv() {
     insta::assert_snapshot!("project_describe_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── edge fixture × prose + json ───────────────────────────────────────────────
+// edge fixture × prose + json
 
 /// Prose render of the edge fixture (`longname: None`, empty keywords,
 /// empty description, zero data-models). Locks:
@@ -267,7 +267,7 @@ fn project_describe_json_edge() {
     insta::assert_snapshot!(out);
 }
 
-// ── error cell: not_found JSON envelope ──────────────────────────────────────
+// error cell: not_found JSON envelope
 
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.

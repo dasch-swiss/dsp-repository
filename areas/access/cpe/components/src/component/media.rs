@@ -1337,7 +1337,7 @@ fn render_viewer_bar(viewer_id: &str, has_viewer: bool, has_details: bool, lang:
     }
 }
 
-// ── record-viewer sequence paging ──────────────
+// record-viewer sequence paging
 //
 // The record viewer pages a SINGLE multi-source `<image-viewer>` client-side:
 // the `.pg` pager and the thumb strip set the `$plate` signal and call
@@ -1696,7 +1696,7 @@ mod tests {
         img
     }
 
-    // ── find_text_property ─────────────────────
+    // find_text_property
 
     fn image_with_text_props(id: &str, props: &[(&str, &str)]) -> Resource {
         let mut img = image(id, "https://iiif.demo.dasch.swiss:443/0854/a.jpx/full/max/0/default.jpg");
@@ -1743,7 +1743,7 @@ mod tests {
         );
     }
 
-    // ── compose_legal_run ─────────────
+    // compose_legal_run
 
     #[test]
     fn compose_legal_run_all_present_and_distinct() {
@@ -1800,7 +1800,7 @@ mod tests {
         assert_eq!(run, vec!["No known copyright restrictions"]);
     }
 
-    // ── image_dimensions ────────────────────────
+    // image_dimensions
 
     fn repr_with_size(width: Option<i64>, height: Option<i64>) -> cpe_core::ir::Representation {
         cpe_core::ir::Representation {
@@ -1844,7 +1844,7 @@ mod tests {
         assert_eq!(image_dimensions(&repr), None);
     }
 
-    // ── render_media_viewer ─────────────────────
+    // render_media_viewer
 
     /// Same shape as [`image_with_text_props`] but for the picture's legal
     /// EAV triple, for `render_viewer_bar`'s markup-integration coverage.
@@ -2030,7 +2030,7 @@ mod tests {
         );
     }
 
-    // ── render_media_viewer zoom cluster ────────
+    // render_media_viewer zoom cluster
 
     #[test]
     fn render_media_viewer_zoom_out_and_home_chips_wire_datastar_click() {
@@ -2193,7 +2193,7 @@ mod tests {
         );
     }
 
-    // ── render_viewer_canvas drawers ───────────
+    // render_viewer_canvas drawers
 
     #[test]
     fn render_media_viewer_rail_signal_declared_on_rv_with_reactive_class_binding() {
@@ -2258,7 +2258,7 @@ mod tests {
         );
     }
 
-    // ── sequence paging ──────
+    // sequence paging
 
     fn three_iiif_images() -> Vec<Resource> {
         vec![
@@ -2557,7 +2557,7 @@ mod tests {
         );
     }
 
-    // ── Details toggle, dimming, closed rails, accessible names, range bounds ────
+    // Details toggle, dimming, closed rails, accessible names, range bounds
 
     #[test]
     fn render_media_viewer_details_toggle_has_no_glyph_adjust_toggle_does() {
@@ -2705,7 +2705,7 @@ mod tests {
         );
     }
 
-    // ── Snapshot matrix ────────────────────────────────────────────
+    // Snapshot matrix
     //
     // A representative matrix, not a full cross-product: open
     // vs restricted, single vs sequence (CH_001-shaped — several images incl.

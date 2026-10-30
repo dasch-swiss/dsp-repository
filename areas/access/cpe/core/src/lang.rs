@@ -133,7 +133,7 @@ mod tests {
         assert_eq!(lang.as_str(), "en");
     }
 
-    // ── resolve_builtin ───────────────────────────────────────────────────────
+    // resolve_builtin
 
     #[test]
     fn resolve_builtin_picks_a_declared_builtin_language() {

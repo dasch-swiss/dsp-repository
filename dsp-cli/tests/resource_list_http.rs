@@ -37,9 +37,7 @@ const RESOURCE_CLASS_IRI: &str = "http://api.dasch.swiss/ontology/0803/incunabul
 // The endpoint path for the resource list.
 const RESOURCES_PATH: &str = "/v2/resources";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /// Mount a mock that returns `body` as a 200 JSON response for GET /v2/resources.
 async fn mount_200(server: &MockServer, body: serde_json::Value) {
@@ -73,9 +71,7 @@ fn resource_node(
     node
 }
 
-// ---------------------------------------------------------------------------
 // (a) Paged progression: page=0 → mayHaveMoreResults:true, page=1 → false
-// ---------------------------------------------------------------------------
 
 /// A two-page progression: the first call returns `may_have_more_results: true`
 /// (page 0), the second call returns `may_have_more_results: false` (page 1).
@@ -198,9 +194,7 @@ async fn paged_progression_page0_more_true_page1_false() {
     assert!(!page1.may_have_more_results, "page 1 must report may_have_more_results: false");
 }
 
-// ---------------------------------------------------------------------------
 // (b) Empty-final-page variant: page=1 returns no @graph/empty with false
-// ---------------------------------------------------------------------------
 
 /// An empty final page: page 1 has no `@graph` and no `@id`, and reports
 /// `may_have_more_results: false`. This exercises the empty-final-page variant
@@ -285,9 +279,7 @@ async fn empty_final_page_returns_zero_resources_with_false() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (c) `resourceClass` query param is sent
-// ---------------------------------------------------------------------------
 
 /// The `resourceClass` query parameter must be present in every request and
 /// carry the class IRI. A wiremock mock gated on the exact query param value
@@ -333,9 +325,7 @@ async fn resource_class_query_param_is_sent() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (d) `x-knora-accept-project` header is sent with the project IRI
-// ---------------------------------------------------------------------------
 
 /// The `x-knora-accept-project` header must be sent with the project IRI as
 /// its value. This guards that the HTTP client sets this header — without it
@@ -428,9 +418,7 @@ async fn x_knora_accept_project_different_iri_does_not_match_project_iri_mock() 
     // The `expect(0)` on the PROJECT_IRI-gated mock is verified at server drop.
 }
 
-// ---------------------------------------------------------------------------
 // (e) Zero-result response (no @graph, no @id)
-// ---------------------------------------------------------------------------
 
 /// A response with neither `@graph` nor `@id` must yield an empty
 /// `ResourcePage` (zero resources, `may_have_more_results: false`), not an
@@ -479,9 +467,7 @@ async fn zero_result_with_explicit_false_flag() {
     assert!(!page.may_have_more_results);
 }
 
-// ---------------------------------------------------------------------------
 // (f) Single-result form (no @graph but has @id) parses to exactly one resource
-// ---------------------------------------------------------------------------
 
 /// The JSON-LD single-result form: the server returns the resource at the
 /// top level (no `@graph` wrapper) when there is exactly one matching resource.
@@ -600,9 +586,7 @@ async fn single_result_without_optional_fields_yields_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer present
-// ---------------------------------------------------------------------------
 
 /// When `token = Some("test-token")` is passed, the request carries an
 /// `Authorization: Bearer test-token` header.
@@ -641,9 +625,7 @@ async fn bearer_present_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer absent
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, NO `Authorization` header must be sent.
 #[tokio::test]
@@ -709,9 +691,7 @@ async fn no_token_does_not_match_bearer_gated_mock() {
     // The `expect(0)` on the bearer-gated mock is verified at drop.
 }
 
-// ---------------------------------------------------------------------------
 // 500 → ServerError
-// ---------------------------------------------------------------------------
 
 /// A 500 response maps to `Diagnostic::ServerError`.
 #[tokio::test]
@@ -739,9 +719,7 @@ async fn server_error_500_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Malformed body → ServerError
-// ---------------------------------------------------------------------------
 
 /// A 200 response with an invalid JSON body must yield `ServerError` (not panic).
 #[tokio::test]
@@ -769,9 +747,7 @@ async fn malformed_body_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Network failure → Diagnostic::Network
-// ---------------------------------------------------------------------------
 
 /// A connection failure (nothing listening) must map to `Diagnostic::Network`.
 #[tokio::test]
@@ -793,9 +769,7 @@ async fn list_resources_connection_refused_returns_network() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // `orderByProperty` query param: present when order_by=Some, absent when None
-// ---------------------------------------------------------------------------
 
 /// When `order_by = Some(iri)` is passed, the `orderByProperty` query param must
 /// be present in the request with the exact IRI value (URL-encoded by reqwest).
@@ -875,9 +849,7 @@ async fn order_by_property_absent_when_order_by_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // `schema=complex` query param is always sent
-// ---------------------------------------------------------------------------
 
 /// The `schema=complex` query parameter must always be present per D4 (switched
 /// 2026-06-17 after live verification that complex carries creation/last-modified

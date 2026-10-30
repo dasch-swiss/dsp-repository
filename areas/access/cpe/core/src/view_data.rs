@@ -14,7 +14,7 @@ use crate::ir::{
     ResourceLink, ResourceListPage, Sort, StripRowPayload, TimelinePayload, WoodcutCasesPayload,
 };
 
-// ── ComponentData — unified per-slot carrier ──────────────────────────────────
+// ComponentData — unified per-slot carrier
 
 /// The unified per-slot data carrier for `render_page`.
 ///
@@ -63,7 +63,7 @@ pub enum ComponentData {
     Other,
 }
 
-// ── Outcome and status ────────────────────────────────────────────────────────
+// Outcome and status
 
 /// The outcome of one data-backed slot's fetch.
 ///
@@ -114,7 +114,7 @@ impl PageStatus {
     }
 }
 
-// ── The request ───────────────────────────────────────────────────────────────
+// The request
 
 /// Which response the page data is for, and so which side data the store
 /// looks up: it runs only the lookups the scope needs.
@@ -178,7 +178,7 @@ pub struct PageRequest<'a> {
     pub scope: PageScope,
 }
 
-// ── The bundle ────────────────────────────────────────────────────────────────
+// The bundle
 
 /// Everything one page request renders from: the per-slot data, the page's
 /// status and the side data `RenderContext` borrows.

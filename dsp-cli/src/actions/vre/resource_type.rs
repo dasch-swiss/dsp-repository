@@ -56,19 +56,19 @@ fn run_list_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
+    // 2. --data-model required (fail-fast, BEFORE any cache/IO)
     let data_model = args
         .data_model
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--data-model <name-or-IRI> is required".to_string()))?;
 
-    // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 3. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -81,20 +81,20 @@ fn run_list_impl(
         }
     };
 
-    // ── 4. Resolve token (optional) ───────────────────────────────────────────
+    // 4. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 5. Build auth-state disclosure string ─────────────────────────────────
+    // 5. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 6. Resolve project ────────────────────────────────────────────────────
+    // 6. Resolve project
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 7. Fetch project's own data-models (pass token — auth users see private ontologies) ──
+    // 7. Fetch project's own data-models (pass token — auth users see private ontologies)
     let data_models = client.list_data_models(&cfg.server, &pref.iri, token)?;
 
-    // ── 8. Match --data-model against the project's data-models ──────────────
+    // 8. Match --data-model against the project's data-models
     // Bind both iri and name from the same find — do not re-scan.
     // Truncation is for display only — never truncate before the equality check.
     let (dm_iri, dm_name) = data_models
@@ -114,10 +114,10 @@ fn run_list_impl(
             ))
         })?;
 
-    // ── 9. Fetch the data-model detail ────────────────────────────────────────
+    // 9. Fetch the data-model detail
     let detail = client.describe_data_model(&cfg.server, &dm_iri, token)?;
 
-    // ── 10. Map ResourceTypeSummary → ResourceType { is_builtin: false } ──────
+    // 10. Map ResourceTypeSummary → ResourceType { is_builtin: false }
     // `detail` is owned and only its `resource_types` are needed, so move the
     // fields out rather than cloning.
     let mut items: Vec<ResourceType> = detail
@@ -132,12 +132,12 @@ fn run_list_impl(
         })
         .collect();
 
-    // ── 11. Append builtins if requested ──────────────────────────────────────
+    // 11. Append builtins if requested
     if args.include_builtins {
         items.extend(crate::client::builtin_resource_types());
     }
 
-    // ── 12. Fetch and merge instance counts if --count ────────────────────────
+    // 12. Fetch and merge instance counts if --count
     if args.count {
         let counts = client.resource_counts(&cfg.server, &pref.iri, token)?;
         for item in &mut items {
@@ -145,10 +145,10 @@ fn run_list_impl(
         }
     }
 
-    // ── 13. Capture total AFTER builtins, BEFORE filter ───────────────────────
+    // 13. Capture total AFTER builtins, BEFORE filter
     let total = items.len();
 
-    // ── 14. Apply --filter (case-insensitive substring over name + label) ─────
+    // 14. Apply --filter (case-insensitive substring over name + label)
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         items.retain(|rt| {
@@ -156,10 +156,10 @@ fn run_list_impl(
         });
     }
 
-    // ── 15. Sort surviving items by name ascending ────────────────────────────
+    // 15. Sort surviving items by name ascending
     items.sort_by(|a, b| a.name.cmp(&b.name));
 
-    // ── 16. Build view + meta and render ─────────────────────────────────────
+    // 16. Build view + meta and render
     let view = ResourceTypeListView {
         items,
         total,
@@ -214,25 +214,25 @@ fn run_describe_impl(
     env_token: Option<String>,
     cache_path: Option<&std::path::Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. --data-model required (fail-fast, BEFORE any cache/IO) ────────────
+    // 2. --data-model required (fail-fast, BEFORE any cache/IO)
     let data_model = args
         .data_model
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--data-model <name-or-IRI> is required".to_string()))?;
 
-    // ── 3. --resource-type required (fail-fast, BEFORE any cache/IO) ─────────
+    // 3. --resource-type required (fail-fast, BEFORE any cache/IO)
     let resource_type = args
         .resource_type
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string()))?;
 
-    // ── 4. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 4. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -245,20 +245,20 @@ fn run_describe_impl(
         }
     };
 
-    // ── 5. Resolve token (optional) ───────────────────────────────────────────
+    // 5. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 6. Build auth-state disclosure string ─────────────────────────────────
+    // 6. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 7. Resolve project ────────────────────────────────────────────────────
+    // 7. Resolve project
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 8. Fetch project's own data-models (pass token — auth users see private ontologies) ──
+    // 8. Fetch project's own data-models (pass token — auth users see private ontologies)
     let data_models = client.list_data_models(&cfg.server, &pref.iri, token)?;
 
-    // ── 9. Match --data-model against the project's data-models ──────────────
+    // 9. Match --data-model against the project's data-models
     // Bind both iri and name from the same find — do not re-scan.
     // Truncation is for display only — never truncate before the equality check.
     let (dm_iri, dm_name) = data_models
@@ -278,7 +278,7 @@ fn run_describe_impl(
             ))
         })?;
 
-    // ── 10. Fetch the resource-type detail ────────────────────────────────────
+    // 10. Fetch the resource-type detail
     // On NotFound, re-frame with a resource-type list hint (keeps hint text in
     // CLI vocab — dsp-cli/ADR-0001; the client only knows it didn't find the class).
     let detail = client
@@ -299,19 +299,19 @@ fn run_describe_impl(
             other => other,
         })?;
 
-    // ── 11. Filter built-in fields unless --include-builtins ──────────────────
+    // 11. Filter built-in fields unless --include-builtins
     let mut detail = detail;
     if !args.include_builtins {
         detail.fields.retain(|f| !f.is_builtin);
     }
 
-    // ── 12. Fetch and merge the instance count if --count ─────────────────────
+    // 12. Fetch and merge the instance count if --count
     if args.count {
         let counts = client.resource_counts(&cfg.server, &pref.iri, token)?;
         detail.count = counts.get(&detail.iri).copied();
     }
 
-    // ── 13. Build meta and render ─────────────────────────────────────────────
+    // 13. Build meta and render
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -326,9 +326,7 @@ fn run_describe_impl(
     renderer.resource_type_describe(&detail, &meta)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Tests
-// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -352,7 +350,7 @@ mod tests {
         ResourceTypeListView,
     };
 
-    // ── MockDspClient ─────────────────────────────────────────────────────────
+    // MockDspClient
 
     struct MockDspClient {
         resolve_result: Option<Result<ProjectRef, Diagnostic>>,
@@ -654,7 +652,7 @@ mod tests {
         }
     }
 
-    // ── RecordingRenderer ─────────────────────────────────────────────────────
+    // RecordingRenderer
 
     struct RecordingRenderer {
         resource_types_view: Option<ResourceTypeListView>,
@@ -788,7 +786,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     const SERVER: &str = "https://api.test.dasch.swiss";
 
@@ -871,7 +869,7 @@ mod tests {
         path
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    // tests
 
     /// Project-only list: resource-types are mapped from ResourceTypeSummary,
     /// all have is_builtin=false, and the result is sorted by name.
@@ -1113,7 +1111,7 @@ mod tests {
         assert!(renderer.resource_types_view.is_none());
     }
 
-    // ── auth-state seam tests ─────────────────────────────────────────────────
+    // auth-state seam tests
 
     /// Anonymous: no env_token + no cache → auth_state is "anonymous".
     #[test]
@@ -1286,7 +1284,7 @@ mod tests {
         assert_eq!(letter.label.as_deref(), Some("A letter type"));
     }
 
-    // ── --count tests (plan 030) ──────────────────────────────────────────────
+    // --count tests (plan 030)
 
     /// --count merges instance counts onto matching rows by exact IRI.
     #[test]
@@ -1439,7 +1437,7 @@ mod tests {
         assert_eq!(meta.count_caveat, None, "count_caveat must be None when --count is not used");
     }
 
-    // ── describe helpers ──────────────────────────────────────────────────────
+    // describe helpers
 
     fn make_describe_args(
         project: Option<&str>,
@@ -1503,7 +1501,7 @@ mod tests {
         }
     }
 
-    // ── describe tests ────────────────────────────────────────────────────────
+    // describe tests
 
     /// Success path: returns Ok, renderer received the expected detail.
     #[test]
@@ -1823,7 +1821,7 @@ mod tests {
         assert_eq!(rendered.fields[0].data_model.as_deref(), Some("biblio"));
     }
 
-    // ── describe auth-state seam tests ────────────────────────────────────────
+    // describe auth-state seam tests
 
     /// Anonymous: no env_token + no cache → auth_state is "anonymous".
     #[test]
@@ -1983,7 +1981,7 @@ mod tests {
         );
     }
 
-    // ── --count tests (plan 030) ──────────────────────────────────────────────
+    // --count tests (plan 030)
 
     /// --count sets the described resource-type's count.
     #[test]

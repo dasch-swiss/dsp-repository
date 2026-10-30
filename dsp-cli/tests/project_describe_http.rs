@@ -23,9 +23,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 // A clearly synthetic token — never a real JWT.
 const TOKEN: &str = "test-token";
 
-// ---------------------------------------------------------------------------
 // Realistic beol fixture (grounded in live API — see plan §Grounding)
-// ---------------------------------------------------------------------------
 
 /// Build the beol-shaped project detail fixture.
 ///
@@ -59,9 +57,7 @@ fn beol_body() -> serde_json::Value {
     })
 }
 
-// ---------------------------------------------------------------------------
 // Happy path — translates DTO correctly incl. sorted data-model names
-// ---------------------------------------------------------------------------
 
 /// A 200 response with the beol fixture is translated to the correct
 /// `ProjectDetail`, including:
@@ -141,9 +137,7 @@ async fn happy_path_translates_dto_to_project_detail() {
     assert_eq!(detail.data_models, expected, "full DataModelSummary match");
 }
 
-// ---------------------------------------------------------------------------
 // 404 → Diagnostic::NotFound with describe-specific hint
-// ---------------------------------------------------------------------------
 
 /// A 404 response maps to `Diagnostic::NotFound` with a message that contains
 /// the project input and the `dsp vre project list` recovery hint.
@@ -182,9 +176,7 @@ async fn not_found_returns_not_found_diagnostic_with_hint() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Malformed success body → Diagnostic::ServerError
-// ---------------------------------------------------------------------------
 
 /// A 200 response with a body that cannot be parsed as `ProjectDetailApiResponse`
 /// maps to `Diagnostic::ServerError`.
@@ -222,9 +214,7 @@ async fn malformed_success_body_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer-token forwarding — mirrors project_list_http.rs pattern
-// ---------------------------------------------------------------------------
 
 /// When `token = Some("test-token")` is passed, the request carries
 /// `Authorization: Bearer test-token`.
@@ -292,9 +282,7 @@ async fn bearer_absent_when_token_is_none() {
     // The `expect(0)` on the bearer-gated mock is verified at drop.
 }
 
-// ---------------------------------------------------------------------------
 // Network failure → Diagnostic::Network
-// ---------------------------------------------------------------------------
 
 /// A connection failure (nothing listening) must map to `Diagnostic::Network`.
 #[tokio::test]
@@ -315,9 +303,7 @@ async fn describe_project_connection_refused_returns_network() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // v39 key set (no `status`) parses
-// ---------------------------------------------------------------------------
 
 /// dsp-api v39.0.0 removed the project active/inactive concept, so the
 /// single-project lookup no longer returns a `status` key. A body carrying the
@@ -367,9 +353,7 @@ async fn v39_shaped_body_without_status_parses() {
     assert!(detail.data_models.is_empty());
 }
 
-// ---------------------------------------------------------------------------
 // Over-80-char input that 404s → truncated message with ellipsis
-// ---------------------------------------------------------------------------
 
 /// A project input longer than 80 chars that results in a 404 must produce a
 /// `Diagnostic::NotFound` whose message contains a `…` (ellipsis) and does NOT
@@ -415,9 +399,7 @@ async fn long_input_404_message_is_truncated_with_ellipsis() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Shortname and IRI routing — URL path must be correct
-// ---------------------------------------------------------------------------
 
 /// describe_project with a shortname input routes to `/admin/projects/shortname/beol`.
 #[tokio::test]

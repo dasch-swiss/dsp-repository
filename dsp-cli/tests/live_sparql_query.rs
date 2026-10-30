@@ -49,9 +49,7 @@ fn require_server_and_token() -> Option<(String, String)> {
     Some((cfg.server, token))
 }
 
-// ---------------------------------------------------------------------------
 // SELECT → parseable SPARQL-JSON
-// ---------------------------------------------------------------------------
 
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
@@ -91,9 +89,7 @@ fn live_select_returns_parseable_sparql_json_with_bindings() {
     eprintln!("live test: PASSED — SELECT returned parseable SPARQL-JSON");
 }
 
-// ---------------------------------------------------------------------------
 // --accept csv → a header row
-// ---------------------------------------------------------------------------
 
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
@@ -121,9 +117,7 @@ fn live_accept_csv_returns_a_header_row() {
     eprintln!("live test: PASSED — --accept csv returned a header row");
 }
 
-// ---------------------------------------------------------------------------
 // Malformed query → the store's own 4xx, relayed (not an Internal error)
-// ---------------------------------------------------------------------------
 
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
@@ -155,9 +149,7 @@ fn live_malformed_query_relays_as_ok_with_a_non_2xx_status() {
     eprintln!("live test: PASSED — malformed query relayed with status {}", resp.status);
 }
 
-// ---------------------------------------------------------------------------
 // 403 (non-admin token) — best-effort, skipped unless a second token is set
-// ---------------------------------------------------------------------------
 
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]

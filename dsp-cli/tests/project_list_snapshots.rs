@@ -52,7 +52,7 @@ fn project(iri: &str, shortcode: &str, shortname: &str, longname: Option<&str>, 
     }
 }
 
-// ── realistic fixture (shared by the format cells) ───────────────────────────
+// realistic fixture (shared by the format cells)
 
 /// Realistic, special-character-free fixture. Returned in server order
 /// (unsorted) so the sort in `full_view` is meaningful. Covers the legitimate
@@ -88,7 +88,7 @@ fn realistic_projects() -> Vec<Project> {
 /// Standard server for all snapshot tests.
 const SERVER: &str = "https://api.test.dasch.swiss";
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// helpers
 
 /// Fully synthetic `MetaContext` for anonymous snapshots.
 fn anon_meta() -> MetaContext {
@@ -155,7 +155,7 @@ fn empty_view() -> ProjectListView {
     ProjectListView { items, total, filter: Some("no-match-xyzzy".to_string()) }
 }
 
-// ── cells: realistic fixture × 5 formats (anonymous) ─────────────────────────
+// cells: realistic fixture × 5 formats (anonymous)
 
 #[test]
 fn project_list_prose() {
@@ -210,7 +210,7 @@ fn project_list_csv() {
     insta::assert_snapshot!("project_list_csv_stderr", buf_to_string(&err_buf));
 }
 
-// ── filter prose snapshot: "m of n matching" count line ──────────────────────
+// filter prose snapshot: "m of n matching" count line
 
 /// Prose with `--filter "online"`: one match out of four. Locks the count-line
 /// shape with realistic data (no special characters).
@@ -227,7 +227,7 @@ fn project_list_prose_filtered() {
     insta::assert_snapshot!(out);
 }
 
-// ── empty-result case (non-matching filter) ───────────────────────────────────
+// empty-result case (non-matching filter)
 
 /// Prose with non-matching filter: must show "(0 of N matching …)".
 #[test]
@@ -322,7 +322,7 @@ fn project_list_csv_empty() {
     insta::assert_snapshot!("project_list_csv_empty_stderr", stderr);
 }
 
-// ── authenticated-footer variant ──────────────────────────────────────────────
+// authenticated-footer variant
 
 /// Prose with authenticated user in `MetaContext`: footer must show
 /// "[authenticated as alice@example.com on <server>]".
@@ -353,7 +353,7 @@ fn project_list_json_authenticated() {
     insta::assert_snapshot!(out);
 }
 
-// ── dedicated edge-case fixtures (isolated from the realistic fixture) ─────────
+// dedicated edge-case fixtures (isolated from the realistic fixture)
 
 /// Adversarial fixture used ONLY by the CSV/TSV quoting tests: longnames that
 /// trigger every quoting path — an embedded comma, a leading `=` (spreadsheet
@@ -449,7 +449,7 @@ fn project_list_prose_filter_non_ascii() {
     insta::assert_snapshot!("project_list_prose_filter_non_ascii", out);
 }
 
-// ── stdout/stderr contract assertions (non-snapshot) ─────────────────────────
+// stdout/stderr contract assertions (non-snapshot)
 
 /// Lines: disclosure lands on stderr, NOT on stdout.
 #[test]
@@ -508,7 +508,7 @@ fn project_list_csv_disclosure_on_stderr_not_stdout() {
     );
 }
 
-// ── vocabulary guard (inline) ─────────────────────────────────────────────────
+// vocabulary guard (inline)
 
 /// Prose and JSON output must not contain vocabulary-leaked words from the
 /// DSP-API layer: "ontology", "export", "class" (as field), "property".
@@ -545,7 +545,7 @@ fn project_list_json_no_vocabulary_leak() {
     );
 }
 
-// ── iri absent in prose, present in tsv/csv/json ──────────────────────────────
+// iri absent in prose, present in tsv/csv/json
 
 /// Prose: `iri` field must NOT appear.
 #[test]

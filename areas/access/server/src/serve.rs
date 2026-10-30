@@ -71,13 +71,13 @@ fn assemble(dpe: Router, cpe: Option<&Cpe>) -> Router {
         None => capabilities,
     };
     capabilities
-        // --- OTel layers ---
+        // OTel layers
         // Axum layers wrap in reverse declaration order:
         // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
         // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
         .layer(OtelInResponseLayer)
         .layer(OtelAxumLayer::default())
-        // --- Untraced routes ---
+        // Untraced routes
         // Routes declared AFTER .layer() calls are NOT wrapped by those layers.
         .route("/healthz", get(|| async { StatusCode::OK }))
         .route(

@@ -136,7 +136,7 @@ mod tests {
         InMemoryRecordRepository::new(vec![first_0803_record()])
     }
 
-    // ---- error cases ----
+    // error cases
 
     #[test]
     fn missing_identifier_returns_bad_argument() {
@@ -221,7 +221,7 @@ mod tests {
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
 
-    // ---- project golden tests (existing behaviour) ----
+    // project golden tests (existing behaviour)
 
     #[test]
     fn golden_oai_dc_response() {
@@ -255,7 +255,7 @@ mod tests {
         assert_eq!(normalize(&xml), expected);
     }
 
-    // ---- record golden tests ----
+    // record golden tests
 
     #[test]
     fn record_golden_oai_dc_response() {
@@ -295,7 +295,7 @@ mod tests {
         assert_eq!(normalize(&xml), expected);
     }
 
-    // ---- schema validation tests ----
+    // schema validation tests
 
     #[test]
     fn get_record_oai_dc_response_is_valid_oai_pmh() {

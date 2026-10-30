@@ -63,7 +63,7 @@ make_repo() {
   printf '%s' "$dir"
 }
 
-# --- git helpers ----------------------------------------------------------
+# git helpers
 
 test_range_and_diffs() {
   local repo out; repo="$(make_repo)"
@@ -82,7 +82,7 @@ assert_contains "diffs: includes the subject"   "feat(dpe-web): add a" "$diffs_o
 assert_contains "diffs: includes patch body"    "+line one"           "$diffs_out"
 assert_contains "diffs: names the changed file" "a.txt"               "$diffs_out"
 
-# --- build_diffs: per-file cap --------------------------------------------
+# build_diffs: per-file cap
 # A small file keeps its full hunk; a file whose patch exceeds the cap collapses
 # to header + marker, and its bulk never reaches the payload.
 
@@ -106,7 +106,7 @@ assert_contains     "cap: still names the big file"    "big.txt"                
 assert_contains     "cap: marker with change counts"   "[patch omitted: +2000/-0 lines" "$cap_out"
 assert_not_contains "cap: big file hunk not inlined"   "+a big generated line"   "$cap_out"
 
-# --- build_diffs: total cap -----------------------------------------------
+# build_diffs: total cap
 
 test_total_cap() {
   local repo out; repo="$(make_repo)"
@@ -122,7 +122,7 @@ test_total_cap() {
 total_out="$(test_total_cap)"
 assert_contains "total cap: appends truncation marker" "[diff truncated" "$total_out"
 
-# --- build_request_body: argv-safe for large diffs ------------------------
+# build_request_body: argv-safe for large diffs
 # A user string well past the ~128 KB single-argument limit must still build a
 # valid request body (regression for the jq "Argument list too long" failure).
 
@@ -134,7 +134,7 @@ assert_eq "request body: user content preserved intact" \
   "$(printf '%s' "$big_user" | wc -c | tr -d ' ')" \
   "$(jq -rj '.messages[0].content' <<<"$body_out" | wc -c | tr -d ' ')"
 
-# --- extract_text ---------------------------------------------------------
+# extract_text
 
 assert_eq "extract_text: pulls first text block" '{"issues":[]}' \
   "$(extract_text '{"content":[{"type":"text","text":"{\"issues\":[]}"}]}')"
@@ -145,12 +145,12 @@ assert_eq "extract_text: empty on API error envelope" "" \
 assert_eq "extract_text: empty on malformed json" "" \
   "$(extract_text 'not json at all')"
 
-# --- issues_count ---------------------------------------------------------
+# issues_count
 
 assert_eq "issues_count: zero for empty array" "0" "$(issues_count '[]')"
 assert_eq "issues_count: counts entries" "2" "$(issues_count '[{"a":1},{"a":2}]')"
 
-# --- format_comment -------------------------------------------------------
+# format_comment
 
 issues='[{"kind":"squash","commits":"abc123, def456","rationale":"both touch the same parser fix","suggestion":"squash into one fix(dpe-core): commit"}]'
 comment="$(BASE_REF=origin/main format_comment "$issues")"
@@ -161,7 +161,7 @@ assert_contains "comment: renders the commits"               "abc123, def456"   
 assert_contains "comment: renders the rationale"             "same parser fix"                 "$comment"
 assert_contains "comment: renders the rebase hint"           "git rebase -i origin/main"       "$comment"
 
-# --- Summary --------------------------------------------------------------
+# Summary
 
 echo
 echo "commit-advisory tests: $PASS passed, $FAIL failed"

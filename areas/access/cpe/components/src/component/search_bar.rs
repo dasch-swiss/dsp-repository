@@ -40,7 +40,7 @@ use crate::chrome::ChromeMsg;
 /// `SORT_FRAGMENT_SEGMENT`.
 pub const SEARCH_FRAGMENT_SEGMENT: &str = "_search";
 
-// ── Config borrow struct ──────────────────────────────────────────────────────
+// Config borrow struct
 
 /// Borrowed context needed by `render_search_bar`.
 ///
@@ -282,7 +282,7 @@ mod tests {
         resolve(&["en".to_owned()], &make_site())
     }
 
-    // ── Layer-1: preserved_query_dropping_q_and_page ──────────────────────────
+    // Layer-1: preserved_query_dropping_q_and_page
 
     /// `view=grid` survives while `q`/`page`/`datastar` drop (each
     /// query-param-preserving helper needs its own
@@ -535,7 +535,7 @@ mod tests {
         );
     }
 
-    // ── Snapshots ────────────────────────────────────────────────────────────
+    // Snapshots
 
     #[test]
     fn snapshot_search_bar_inactive_standalone() {

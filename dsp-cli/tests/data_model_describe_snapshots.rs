@@ -33,13 +33,13 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 /// Standard server label for all snapshot tests — mirrors what `run_describe_impl`
 /// sets from `cfg.server`.
 const SERVER: &str = "https://api.dasch.swiss";
 
-// ── MetaContext helpers ────────────────────────────────────────────────────────
+// MetaContext helpers
 
 /// Anonymous `MetaContext` — mirrors what `run_describe_impl` builds when no
 /// token is present.
@@ -53,7 +53,7 @@ fn anon_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Helper to construct a `ResourceTypeSummary`.
 fn rt(name: &str, iri: &str, label: Option<&str>) -> ResourceTypeSummary {
@@ -107,7 +107,7 @@ fn minimal_detail() -> DataModelDetail {
     }
 }
 
-// ── main fixture × 5 formats ──────────────────────────────────────────────────
+// main fixture × 5 formats
 
 /// Prose render of the main fixture. Locks:
 /// - Header `Data-model: beol`
@@ -182,7 +182,7 @@ fn data_model_describe_tsv() {
     insta::assert_snapshot!("data_model_describe_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── empty fixture × prose + json + csv ────────────────────────────────────────
+// empty fixture × prose + json + csv
 
 /// Prose render of the empty fixture. Locks:
 /// - `Label:` line omitted when None
@@ -276,7 +276,7 @@ fn data_model_describe_csv_empty() {
     insta::assert_snapshot!("data_model_describe_csv_empty_stderr", buf_to_string(&err_buf));
 }
 
-// ── not_found JSON error envelope ─────────────────────────────────────────────
+// not_found JSON error envelope
 
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
@@ -317,7 +317,7 @@ fn data_model_describe_json_not_found() {
     insta::assert_snapshot!(out);
 }
 
-// ── stderr/stdout contract assertions (non-snapshot) ─────────────────────────
+// stderr/stdout contract assertions (non-snapshot)
 
 /// Lines: disclosure lands on stderr, NOT on stdout.
 #[test]
@@ -376,7 +376,7 @@ fn data_model_describe_tsv_disclosure_on_stderr_not_stdout() {
     );
 }
 
-// ── vocabulary guard (inline) ─────────────────────────────────────────────────
+// vocabulary guard (inline)
 
 /// Prose output must not contain vocabulary-leaked words from the DSP-API layer.
 /// Exception: the `IRI:` field is always rendered in `data-model describe` prose

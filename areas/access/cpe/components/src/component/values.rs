@@ -13,7 +13,7 @@ use cpe_core::lang::Lang;
 
 use crate::chrome::ChromeMsg;
 
-// ── Language-pick helpers ─────────────────────────────────────────────────────
+// Language-pick helpers
 
 /// Select which property values to display for the given language.
 ///
@@ -69,7 +69,7 @@ pub(crate) fn pick_values<'a>(property: &'a Property, lang: &Lang) -> Vec<&'a Pr
     property.values.iter().collect()
 }
 
-// ── Title resolution ──────────────────────────────────────────────────────────
+// Title resolution
 
 /// Resolve the display title for a resource to a borrowed `&str`: the first
 /// non-empty language-picked text/richtext value of `title_property`.
@@ -99,7 +99,7 @@ pub fn resolve_title_str<'a>(resource: &'a Resource, title_property: Option<&str
     &resource.id
 }
 
-// ── Keyword split ───────────────────────────────────────────────────────────
+// Keyword split
 
 /// Split a keyword label into (path_parts, leaf).
 ///
@@ -196,7 +196,7 @@ fn split_on_separators(label: &str) -> Vec<&str> {
     segments
 }
 
-// ── Date formatting ───────────────────────────────────────────────────────────
+// Date formatting
 
 /// Format a date value to its plain-text display string — the date only, no
 /// precision word, no markup. The one text formatter every date surface
@@ -290,7 +290,7 @@ fn format_date_part_long(date_iso: &str, precision: DatePrecision, lang: &Lang) 
     }
 }
 
-// ── Member text ─────────────────────────────────────────────────────────────
+// Member text
 
 /// The first language-picked, non-empty text of `property` on `member`.
 pub(crate) fn member_text<'a>(member: &'a Resource, property: &str, lang: &Lang) -> Option<&'a str> {
@@ -303,7 +303,7 @@ pub(crate) fn member_text<'a>(member: &'a Resource, property: &str, lang: &Lang)
     })
 }
 
-// ── Composed parts ──────────────────────────────────────────────────────────
+// Composed parts
 
 /// The rendered text of each composed part (a row gloss's, or a record
 /// header's imprint), in part order: the part's language-picked values joined

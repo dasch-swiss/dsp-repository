@@ -73,7 +73,7 @@
 // emitted. (A fallback is optional; the builder supports
 // one for a consumer that wants a pre-upgrade placeholder.)
 //
-// ── Public JS control surface (host-rendered chrome) ───────────────────────
+// Public JS control surface (host-rendered chrome)
 // A host that renders its OWN chrome (buttons, pager, adjust rail — e.g. CPE's
 // zoom takeover) drives the element via these public methods instead of
 // mutating attributes (mutating an OBSERVED attribute like `tile-sources`
@@ -751,7 +751,7 @@ class ImageViewer extends HTMLElement {
     }
   }
 
-  // ── Public JS control surface (host-rendered chrome) ───────────────────────
+  // Public JS control surface (host-rendered chrome)
   // See the file-header doc comment "Public JS control surface" for the
   // contract. All methods below are safe to call before the viewer has opened.
 
@@ -1349,7 +1349,7 @@ class ImageViewer extends HTMLElement {
     }
   }
 
-  // ── Image adjustment (CSS filters on the tiled-image canvas) ──────────────
+  // Image adjustment (CSS filters on the tiled-image canvas)
   // One CSS `filter` string is composed and set on the
   // drawing surface `_filterTarget` picks. GPU-composited, no tile
   // reprocessing. Re-asserted on `open` (the canvas is recreated).

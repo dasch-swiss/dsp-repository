@@ -218,7 +218,7 @@ fn query(
     file_text: Option<String>,
     out: &mut dyn Write,
 ) -> Result<(), Diagnostic> {
-    // ── 1. Resolve token, fail fast (D11) — BEFORE any HTTP call ────────────
+    // 1. Resolve token, fail fast (D11) — BEFORE any HTTP call
     let env_token_would_win = env_token.as_deref().map(str::trim).map(|s| !s.is_empty()).unwrap_or(false);
 
     let cache_result = match cache_path {
@@ -242,14 +242,14 @@ fn query(
         )
     })?;
 
-    // ── 2. Resolve query text and --accept — pure, no IO, no client call ───
+    // 2. Resolve query text and --accept — pure, no IO, no client call
     let query_text = resolve_query(args, stdin_is_tty, stdin_text, file_text)?;
     let accept = resolve_accept(args.accept.as_deref())?;
 
-    // ── 3. Issue the request ────────────────────────────────────────────────
+    // 3. Issue the request
     let resp = client.sparql_query(&cfg.server, &resolved.token, &query_text, &accept, args.timeout)?;
 
-    // ── 4. D7's split — the only decision this action owns ─────────────────
+    // 4. D7's split — the only decision this action owns
     if (200..300).contains(&resp.status) {
         out.write_all(&resp.body)?;
         out.flush()?;
@@ -275,7 +275,7 @@ mod tests {
     use crate::client::sparql::SparqlResponse;
     use crate::model::ProjectRef;
 
-    // ── resolve_accept ───────────────────────────────────────────────────────
+    // resolve_accept
 
     #[test]
     fn resolve_accept_defaults_to_json() {
@@ -326,7 +326,7 @@ mod tests {
         assert!(matches!(err, Diagnostic::Usage(_)));
     }
 
-    // ── resolve_query ────────────────────────────────────────────────────────
+    // resolve_query
 
     fn args_with(query: Option<&str>, query_file: Option<&str>) -> SparqlQueryArgs {
         SparqlQueryArgs {
@@ -373,7 +373,7 @@ mod tests {
         assert!(matches!(err, Diagnostic::Usage(_)));
     }
 
-    // ── MockDspClient ────────────────────────────────────────────────────────
+    // MockDspClient
 
     struct MockDspClient {
         sparql_query_result: Option<Result<SparqlResponse, Diagnostic>>,
@@ -586,7 +586,7 @@ mod tests {
         tempfile::tempdir().expect("tempdir")
     }
 
-    // ── action-level tests ───────────────────────────────────────────────────
+    // action-level tests
 
     #[test]
     fn success_writes_exact_bytes_to_out() {

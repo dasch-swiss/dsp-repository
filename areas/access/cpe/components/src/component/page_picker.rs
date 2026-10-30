@@ -579,7 +579,7 @@ mod tests {
         assert!(group(&[], PickerMode::Signatures).is_empty());
     }
 
-    // ── the real data: every Incunabula book ──────────────────────────────
+    // the real data: every Incunabula book
 
     /// Every Incunabula book's members, in `compound_parts.seq` order, read from
     /// `testdata/incunabula-book-members.tsv`: one line per member, with the book's id, the

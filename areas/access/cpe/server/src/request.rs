@@ -113,7 +113,7 @@ pub(crate) async fn report_matched_route(
 ///
 /// Returns `(prefs, from_query)`.
 pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (Vec<String>, bool) {
-    // --- ?lang= query parameter ---
+    // ?lang= query parameter
     if let Some(lang_q) = query_lang(query) {
         if !lang_q.is_empty() {
             let normalized = normalize_lang(&lang_q);
@@ -123,7 +123,7 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
         }
     }
 
-    // --- cookie then Accept-Language ---
+    // cookie then Accept-Language
     let mut prefs: Vec<String> = Vec::new();
 
     // Cookie: lang=<value>
@@ -164,14 +164,14 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
 /// the default light scheme). The cookie is never touched here; the handler
 /// manages it when `from_query` is true (set `dark`, or clear for `light`).
 pub(crate) fn extract_appearance(headers: &HeaderMap, query: Option<&str>) -> RequestedAppearance {
-    // --- ?appearance= query parameter ---
+    // ?appearance= query parameter
     if let Some(raw) = query_appearance(query) {
         // The key was present; parse the value.
         let value = cpe_core::theme::Appearance::parse_config_str(&raw);
         return RequestedAppearance { value, from_query: true };
     }
 
-    // --- appearance cookie ---
+    // appearance cookie
     if let Some(raw) = cookie_appearance(headers) {
         let value = cpe_core::theme::Appearance::parse_config_str(&raw);
         return RequestedAppearance { value, from_query: false };
@@ -354,7 +354,7 @@ pub(crate) fn derive_request_origin(headers: &HeaderMap, port: u16) -> String {
 mod tests {
     use super::*;
 
-    // ── Language middleware unit tests ─────────────────────────────────────────
+    // Language middleware unit tests
 
     fn empty_headers() -> HeaderMap {
         HeaderMap::new()
@@ -502,7 +502,7 @@ mod tests {
         assert_eq!(prefs, vec!["it".to_owned()]);
     }
 
-    // ── Appearance extraction tests ───────────────────────────────────────────
+    // Appearance extraction tests
 
     fn headers_with_appearance_cookie(val: &str) -> HeaderMap {
         let cookie = format!("appearance={val}");
@@ -609,7 +609,7 @@ mod tests {
         assert_eq!(result.value, Some(cpe_core::theme::Appearance::Light));
     }
 
-    // ── query_img: ?img= extraction ──────────────────────────────────────────
+    // query_img: ?img= extraction
 
     #[test]
     fn query_img_absent_returns_one() {
@@ -630,7 +630,7 @@ mod tests {
         assert_eq!(query_img(Some("img=0&lang=en")), 1);
     }
 
-    // ── query_strip: ?strip= extraction ───────────────────────────────────────
+    // query_strip: ?strip= extraction
 
     #[test]
     fn query_strip_absent_defaults_open() {
@@ -655,7 +655,7 @@ mod tests {
         assert_eq!(query_img(Some("img=")), 1);
     }
 
-    // ── query_pairs ────────────────────────────────────────────────────────
+    // query_pairs
 
     #[test]
     fn query_pairs_splits_and_parses_ampersand_and_equals() {
@@ -675,7 +675,7 @@ mod tests {
         assert_eq!(pairs, Vec::<(&str, &str)>::new());
     }
 
-    // ── OriginConfig / derive_request_origin ──
+    // OriginConfig / derive_request_origin
 
     #[test]
     fn derive_request_origin_uses_forwarded_proto_and_host_when_both_present() {

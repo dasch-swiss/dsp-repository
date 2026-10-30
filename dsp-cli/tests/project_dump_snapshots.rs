@@ -32,7 +32,7 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Fixed `DumpOutcome` with `cleaned_up: false`, `reused: false`.
 fn dump_outcome_not_cleaned() -> DumpOutcome {
@@ -115,7 +115,7 @@ fn dump_meta() -> MetaContext {
     }
 }
 
-// ── cells: cleaned_up=false ───────────────────────────────────────────────────
+// cells: cleaned_up=false
 
 #[test]
 fn project_dump_prose() {
@@ -157,7 +157,7 @@ fn project_dump_tsv() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── cells: cleaned_up=true (cleanup disclosure) ───────────────────────────────
+// cells: cleaned_up=true (cleanup disclosure)
 
 /// Prose with cleanup: must emit the second line "Cleaned up the server-side dump."
 #[test]
@@ -187,7 +187,7 @@ fn project_dump_json_cleaned_up() {
     insta::assert_snapshot!(out);
 }
 
-// ── cells: reused=true (adopt disclosure) ────────────────────────────────────
+// cells: reused=true (adopt disclosure)
 
 /// Prose with reused=true+created_at: must prepend the "Downloaded existing dump" line.
 #[test]
@@ -217,7 +217,7 @@ fn project_dump_json_reused() {
     insta::assert_snapshot!(out);
 }
 
-// ── cells: project_dump_deleted (deleted=true) ───────────────────────────────
+// cells: project_dump_deleted (deleted=true)
 
 #[test]
 fn project_dump_deleted_prose() {
@@ -259,7 +259,7 @@ fn project_dump_deleted_tsv() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── cells: project_dump_deleted (deleted=false, probe note) ──────────────────
+// cells: project_dump_deleted (deleted=false, probe note)
 
 /// Prose with deleted=false: must print the note instead of the delete confirmation.
 #[test]
@@ -295,7 +295,7 @@ fn project_dump_deleted_json_probe() {
     insta::assert_snapshot!(out);
 }
 
-// ── cells: project_dump_deleted (deleted=false, foreign-slot note) ────────────
+// cells: project_dump_deleted (deleted=false, foreign-slot note)
 
 /// Prose with deleted=false (foreign-slot case): must print the foreign-project note.
 #[test]
@@ -340,7 +340,7 @@ fn project_dump_deleted_json_other_project() {
     insta::assert_snapshot!(out);
 }
 
-// ── cells: error envelopes for cross-project guard refusals ──────────────────
+// cells: error envelopes for cross-project guard refusals
 
 /// Default-mode cross-project refusal — JSON error envelope.
 ///

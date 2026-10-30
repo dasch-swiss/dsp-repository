@@ -24,9 +24,7 @@ use serde_json::json;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-// ---------------------------------------------------------------------------
 // FailingWriter — always returns an io::Error on write
-// ---------------------------------------------------------------------------
 
 /// A `Write` sink whose `write` always returns `Err(ErrorKind::Other)`.
 ///
@@ -55,9 +53,7 @@ fn task_body(id: &str, status: &str) -> serde_json::Value {
     json!({ "id": id, "status": status })
 }
 
-// ---------------------------------------------------------------------------
 // create_project_dump — happy path (trigger)
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn trigger_happy_returns_in_progress_task() {
@@ -454,9 +450,7 @@ async fn trigger_401_returns_auth_required() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // get_project_dump_status — poll
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn poll_200_in_progress_returns_correct_status() {
@@ -582,9 +576,7 @@ async fn poll_404_returns_not_found() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // download_project_dump — happy path + Content-Disposition ignore
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn download_happy_streams_bytes_and_ignores_content_disposition() {
@@ -720,9 +712,7 @@ async fn download_401_returns_auth_required() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // delete_project_dump
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn delete_204_returns_ok() {
@@ -830,9 +820,7 @@ async fn delete_401_returns_auth_required() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Fix 1 regression: download write-failure → Diagnostic::Io (not Network)
-// ---------------------------------------------------------------------------
 
 /// Regression test for the `io::copy` replacement (Fix 1, review).
 ///

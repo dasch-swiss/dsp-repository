@@ -267,7 +267,7 @@ pub fn crumb_element_id(share_id: &str) -> String {
     format!("crumb-{}", share_id.strip_prefix("share-").unwrap_or(share_id))
 }
 
-// ── Shared crumb-row + share-control rendering ──────────────────────────
+// Shared crumb-row + share-control rendering
 
 /// A linked crumb of the trail: an ancestor of the current page.
 #[derive(Clone, Copy)]
@@ -441,7 +441,7 @@ fn chain_glyph() -> Markup {
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -691,7 +691,7 @@ mod tests {
         );
     }
 
-    // ── Share control ──────────────────────────────────────────────────────
+    // Share control
 
     #[test]
     fn share_control_has_href_and_stable_id() {
@@ -935,7 +935,7 @@ mod tests {
         );
     }
 
-    // ── Crumb row layout ──────────────────────────────────────────────────
+    // Crumb row layout
 
     #[test]
     fn crumb_row_wraps_list_and_control() {
@@ -961,7 +961,7 @@ mod tests {
         assert!(after_row.contains("crumb-share"));
     }
 
-    // ── crumb-actions frame ──────────────────────────────────────────────
+    // crumb-actions frame
 
     /// Copy link sits in the frame's first row, and the frame follows the
     /// path list inside the flex row.
@@ -1052,7 +1052,7 @@ mod tests {
         assert!(!out.contains("crumb-actions"), "N3 has no Copy link, so no frame, got: {out}");
     }
 
-    // ── the back link (the phone row's one link) ─────────────────────────
+    // the back link (the phone row's one link)
 
     /// The back link's `(href, visible label)`, read from the markup.
     fn back_link(out: &str) -> Option<(&str, &str)> {
@@ -1175,7 +1175,7 @@ mod tests {
         }
     }
 
-    // ── render_browse_breadcrumb ─────────────────────────────────────────
+    // render_browse_breadcrumb
 
     #[test]
     fn browse_breadcrumb_has_three_crumbs_class_label_current() {
@@ -1222,7 +1222,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_narrative_breadcrumb ──────────────────────────────────────
+    // render_narrative_breadcrumb
 
     #[test]
     fn narrative_breadcrumb_with_page_title_has_three_crumbs() {
@@ -1327,7 +1327,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_narrative_breadcrumb — reader member segment ─────────────────────
+    // render_narrative_breadcrumb — reader member segment
 
     #[test]
     fn narrative_breadcrumb_with_member_has_four_crumbs_title_links_member_current() {
@@ -1421,7 +1421,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_site_index_breadcrumb ─────────────────────────────────────
+    // render_site_index_breadcrumb
 
     #[test]
     fn site_index_breadcrumb_is_single_current_cpe_crumb() {
@@ -1448,7 +1448,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Snapshots (existing detail variant) ──────────────────────────────
+    // Snapshots (existing detail variant)
 
     #[test]
     fn snapshot_breadcrumb_en() {
@@ -1469,7 +1469,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Share control — record `?img=` client tracking ──
+    // Share control — record `?img=` client tracking
 
     #[test]
     fn share_control_reactive_href_attr_renders_data_attr_when_present() {
@@ -1557,7 +1557,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_breadcrumb — class crumb (breadcrumb-class-segment task) ────
+    // render_breadcrumb — class crumb (breadcrumb-class-segment task)
 
     #[test]
     fn breadcrumb_class_crumb_inserted_between_project_and_current() {
@@ -1652,7 +1652,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── render_not_found_breadcrumb ──
+    // render_not_found_breadcrumb
 
     #[test]
     fn not_found_breadcrumb_without_class_crumb_has_three_items() {

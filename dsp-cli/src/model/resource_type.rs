@@ -262,7 +262,7 @@ impl fmt::Display for ValueType {
 mod tests {
     use super::*;
 
-    // --- Construction, equality, clone round-trip ---
+    // Construction, equality, clone round-trip
 
     #[test]
     fn resource_type_detail_full_construction_and_equality() {
@@ -360,7 +360,7 @@ mod tests {
         assert_eq!(field.data_model, None);
     }
 
-    // --- Display assertions for Cardinality (all 4 variants) ---
+    // Display assertions for Cardinality (all 4 variants)
 
     #[test]
     fn cardinality_display_one() {
@@ -382,7 +382,7 @@ mod tests {
         assert_eq!(Cardinality::OneOrMore.to_string(), "1-n");
     }
 
-    // --- Display assertions for Representation (all 6 variants) ---
+    // Display assertions for Representation (all 6 variants)
 
     #[test]
     fn representation_display_still_image() {
@@ -414,7 +414,7 @@ mod tests {
         assert_eq!(Representation::Text.to_string(), "text");
     }
 
-    // --- Display assertions for ValueType (all 16 named + Other) ---
+    // Display assertions for ValueType (all 16 named + Other)
 
     #[test]
     fn value_type_display_text() {
@@ -502,7 +502,7 @@ mod tests {
         assert_eq!(ValueType::Other("text-file".into()).to_string(), "text-file");
     }
 
-    // --- ValueType::as_token matches Display for all variants ---
+    // ValueType::as_token matches Display for all variants
 
     /// `as_token` returns the correct kebab string for a representative of each
     /// named variant, and matches `Display` output exactly.
@@ -554,7 +554,7 @@ mod tests {
         assert_eq!(vt.as_token(), vt.to_string());
     }
 
-    // --- Link ⇔ link_target invariant, both directions ---
+    // Link ⇔ link_target invariant, both directions
 
     #[test]
     fn link_field_has_link_target_some() {

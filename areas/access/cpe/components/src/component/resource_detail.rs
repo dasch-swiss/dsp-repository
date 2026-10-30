@@ -41,7 +41,7 @@ use crate::component::values::{
     composed_part_texts, format_date_text, pick_values, resolve_title_str, split_keyword_label, with_calendar_word,
 };
 
-// ── Config borrow struct ──────────────────────────────────────────────────────
+// Config borrow struct
 
 /// One resolved config property group.
 #[derive(Debug, Clone, Copy)]
@@ -233,7 +233,7 @@ pub struct IncomingCfg<'a> {
     pub note: Option<&'a str>,
 }
 
-// ── Public renderer entry points ──────────────────────────────────────────────
+// Public renderer entry points
 
 /// The header slots under the record's `h1`, in order: `p.record__alt`,
 /// `p.record__author`, `p.record__imprint`, each only when it has text. The
@@ -1248,7 +1248,7 @@ pub fn render_notfound_shell(
     }
 }
 
-// ── Internal rendering helpers ────────────────────────────────────────────────
+// Internal rendering helpers
 
 /// Render one `Property` as a `.prop` block: label + value(s).
 ///
@@ -1549,7 +1549,7 @@ fn format_date(value: &PropertyValue, lang: &Lang, precision_word: bool) -> Mark
     }
 }
 
-// ── Incoming-links grouping ───────────────────────────────────────────────────
+// Incoming-links grouping
 
 /// One partition of an `incoming-links` list, produced by [`group_incoming`].
 #[derive(Debug, Clone, PartialEq)]
@@ -1782,7 +1782,7 @@ mod group_incoming_tests {
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -1803,7 +1803,7 @@ mod tests {
         assert_eq!(text("1475-01-01", Some("1499-12-31"), DatePrecision::Year), "1475\u{2013}1499");
     }
 
-    // ── Date rendering ────────────────────────────
+    // Date rendering
 
     fn date_value(
         start: &str,
@@ -2005,7 +2005,7 @@ mod tests {
         cpe_core::lang::resolve(&[code.to_owned()], &site)
     }
 
-    // ── render_value: Text ────────────────────────────────────────────────────
+    // render_value: Text
 
     #[test]
     fn render_value_text_plain_wraps_v_text() {
@@ -2100,7 +2100,7 @@ mod tests {
         assert!(!out.contains("<a"), "data: URL must not produce an <a>, got: {out}");
     }
 
-    // ── render_value: Richtext ────────────────────────────────────────────────
+    // render_value: Richtext
 
     #[test]
     fn render_value_richtext_wraps_v_richtext() {
@@ -2123,7 +2123,7 @@ mod tests {
         assert!(!out.contains("<script"), "richtext must strip raw HTML, got: {out}");
     }
 
-    // ── render_value: Integer / Decimal ───────────────────────────────────────
+    // render_value: Integer / Decimal
 
     #[test]
     fn render_value_integer_wraps_v_number() {
@@ -2154,7 +2154,7 @@ mod tests {
         assert!(out.contains("4.5"), "decimal value must appear: {out}");
     }
 
-    // ── render_value: Boolean ─────────────────────────────────────────────────
+    // render_value: Boolean
 
     #[test]
     fn render_value_boolean_true_en_wraps_v_bool() {
@@ -2250,7 +2250,7 @@ mod tests {
         );
     }
 
-    // ── render_value: Date ────────────────────────────────────────────────────
+    // render_value: Date
 
     #[test]
     fn render_value_date_wraps_v_date() {
@@ -2298,7 +2298,7 @@ mod tests {
         assert!(out.contains("1865-07-04\u{2013}1865-12-31"), "range with en-dash: {out}");
     }
 
-    // ── render_value: Link ────────────────────────────────────────────────────
+    // render_value: Link
 
     #[test]
     fn render_value_link_resolved_label_wraps_v_text_no_anchor() {
@@ -2382,7 +2382,7 @@ mod tests {
         assert!(!out.contains("<a"), "no resolver passed, must not be an anchor, got: {out}");
     }
 
-    // ── render_value: ListValue (single → .term) ──────────────────────────────
+    // render_value: ListValue (single → .term)
 
     #[test]
     fn render_value_list_value_single_resolved_wraps_term() {
@@ -2409,7 +2409,7 @@ mod tests {
         assert!(out.contains("ROLE_MISSING"), "unresolved list must show node_id, got: {out}");
     }
 
-    // ── Keyword split ─────────────────────────────────────────────────────────
+    // Keyword split
 
     #[test]
     fn render_keyword_item_multi_segment_has_path_and_leaf_spans() {
@@ -2453,7 +2453,7 @@ mod tests {
         );
     }
 
-    // ── Multi-valued ListValue property → ul.keyword-set ─────────────────────
+    // Multi-valued ListValue property → ul.keyword-set
 
     #[test]
     fn render_property_block_multi_list_value_renders_keyword_set() {
@@ -2498,7 +2498,7 @@ mod tests {
         );
     }
 
-    // ── No double-render: title + quote excluded from .props ──────────────────
+    // No double-render: title + quote excluded from .props
 
     #[test]
     fn render_resource_detail_title_not_in_props() {
@@ -2639,7 +2639,7 @@ mod tests {
         // Description should still appear as a prop.
         assert!(out.contains("Description"), "description must still be in props, got: {out}");
     }
-    // ── Body --noimg modifier ─────────────────────────────────────────────────
+    // Body --noimg modifier
 
     #[test]
     fn render_resource_detail_noimg_modifier_when_no_image() {
@@ -2868,7 +2868,7 @@ mod tests {
         );
     }
 
-    // ── humanize_property_name ────────────────────────────────────────────────
+    // humanize_property_name
 
     #[test]
     fn humanize_property_name_titlecases_and_splits() {
@@ -2880,7 +2880,7 @@ mod tests {
         assert_eq!(humanize_property_name("a--b__c"), "A B C");
     }
 
-    // ── Language pick ─────────────────────────────────────────────────────────
+    // Language pick
 
     #[test]
     fn pick_values_exact_lang_match() {
@@ -2910,7 +2910,7 @@ mod tests {
         assert_eq!(picked.len(), 2, "all integer values rendered");
     }
 
-    // ── Title resolution ──────────────────────────────────────────────────────
+    // Title resolution
 
     // The Alice fixture's
     // `name` value is identical in EN/DE ("Alice"), so the snapshot tests never
@@ -2951,7 +2951,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: insta snapshots ──────────────────────────────────────────────
+    // Layer-3: insta snapshots
 
     fn make_alice_resource() -> Resource {
         Resource {
@@ -3082,7 +3082,7 @@ mod tests {
         }
     }
 
-    // ── v-date snapshots ──────────────────────────
+    // v-date snapshots
 
     /// A Book with a title, a publication date and a place — the book-page
     /// row shape the date renderer's snapshots pin.
@@ -3639,7 +3639,7 @@ mod tests {
         );
     }
 
-    // ── LinkResolver unit tests ───────────────────────────────────────────────
+    // LinkResolver unit tests
 
     fn make_resolver<'a>(
         project_id: &'a str,
@@ -3767,7 +3767,7 @@ mod tests {
         );
     }
 
-    // ── render_value Link arm: with resolver ──────────────────────────────────
+    // render_value Link arm: with resolver
 
     #[test]
     fn render_value_link_with_resolver_bound_class_emits_int_link_anchor() {
@@ -3842,7 +3842,7 @@ mod tests {
         );
     }
 
-    // ── Multi-valued Link property → all values render as distinct int-link anchors ──
+    // Multi-valued Link property → all values render as distinct int-link anchors
 
     /// A property with TWO Link values (each with a distinct target) must render
     /// BOTH as separate `<a class="int-link">` anchors when the resolver binds
@@ -4007,7 +4007,7 @@ mod tests {
         );
     }
 
-    // ── LinkResolver::href — special-char encoding + non-trailing :param ─────
+    // LinkResolver::href — special-char encoding + non-trailing :param
 
     /// An empty `target_id` yields `None` (the guard prevents a trailing-slash
     /// URL like `/my-project/items/`).
@@ -4063,7 +4063,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3 snapshot: clickable link path ─────────────────────────────────
+    // Layer-3 snapshot: clickable link path
 
     /// Snapshot of render_resource_detail with a LinkResolver that binds the
     /// "Character" class, exercising the clickable <a class="int-link"> path.
@@ -4110,7 +4110,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-3 snapshot: unresolved link ──────────────────────────────────
+    // Layer-3 snapshot: unresolved link
 
     /// Snapshot of render_resource_detail with an unresolved `related` Link
     /// value (target does not exist: `target_label: None`, `target_class:
@@ -4140,7 +4140,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Config property groups ────────────────────────────────────────────
+    // Config property groups
 
     fn text_prop(name: &str, text: &str) -> Property {
         Property {
@@ -4398,7 +4398,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── The navigator-keyed record ───────────────────────────
+    // The navigator-keyed record
 
     fn make_members() -> Vec<MemberHeader> {
         vec![
@@ -4614,7 +4614,7 @@ mod tests {
         assert_eq!(body.matches("record__apparat").count(), 1, "{body}");
     }
 
-    // ── The tall frame: `data-frame="tall"` on a viewer record ────────────────
+    // The tall frame: `data-frame="tall"` on a viewer record
 
     fn sized_image(id: &str, width: Option<i64>, height: Option<i64>) -> Resource {
         Resource {
@@ -4690,7 +4690,7 @@ mod tests {
         assert_eq!(article_tag(&[]), r#"<article class="record page">"#);
     }
 
-    // ── The incoming-links list ──────────────────────────
+    // The incoming-links list
     //
     // A synthetic bag, not a project's data: a `Band` target, sources of two
     // classes — `Folio` (own detail binding) and `Leaf` (no binding; a member
@@ -5012,7 +5012,7 @@ mod tests {
         insta::assert_snapshot!(render_incoming(Some(&rows), &[], None, "de"));
     }
 
-    // ── Grouped incoming links + row anatomy ──────────────
+    // Grouped incoming links + row anatomy
 
     /// The ungrouped `section.pgroup.incoming` for [`three_rung_rows`] in
     /// `en`: the markup the ungrouped mode must keep emitting (the
@@ -5288,7 +5288,7 @@ mod tests {
         assert!(!out.contains("Nothing links here."), "{out}");
     }
 
-    // ── Record header slots ─────────────────────────
+    // Record header slots
 
     fn texts_prop(name: &str, values: &[&str]) -> Property {
         Property {

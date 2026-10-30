@@ -120,7 +120,7 @@ use crate::component::values::{member_text, resolve_title_str};
 /// `SEARCH_FRAGMENT_SEGMENT`.
 pub const COMPOUND_FRAGMENT_SEGMENT: &str = "_compound";
 
-// ── Config borrow struct ──────────────────────────────────────────────────────
+// Config borrow struct
 
 /// Borrowed context needed by `render_compound_viewer`.
 ///
@@ -389,7 +389,7 @@ fn pages_keydown(page: &CompoundPage) -> std::borrow::Cow<'static, str> {
     }
 }
 
-// ── Public renderer entry point ───────────────────────────────────────────────
+// Public renderer entry point
 
 /// Render a `CompoundPage` as a component-level block.
 ///
@@ -404,7 +404,7 @@ fn pages_keydown(page: &CompoundPage) -> std::borrow::Cow<'static, str> {
 ///   aria-atomic="true"` position indicator, since member paging is a same-document fragment swap
 ///   again (`reader-paging-fragment-swap`); boundary ends use inert `span`s).
 pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, lang: &Lang) -> Markup {
-    // ── Empty compound (total == 0) ──────────────────────────────────────────
+    // Empty compound (total == 0)
     if page.total == 0 {
         // `id="compound-viewer" tabindex="-1"` matches the populated branches
         // below, even when the compound resolves to zero parts — see
@@ -493,7 +493,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         .as_ref()
         .expect("CompoundPage invariant: member is Some when total >= 1");
 
-    // ── Member title ──────────────────────────────────────────────────────────
+    // Member title
     let title = resolve_title_str(member, Some("name"), lang);
 
     // Try to resolve the member's class into a detail href.
@@ -551,10 +551,10 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         }
     };
 
-    // ── Member scan (opt-in `media=`) ───────────────────────────
+    // Member scan (opt-in `media=`)
     let scan_markup = || render_member_scan(page.member_media.first(), title);
 
-    // ── `pages` layout, total == 1: head + stage, no pager row ──────────────
+    // `pages` layout, total == 1: head + stage, no pager row
     if page.total == 1 && cfg.layout == CompoundLayout::Pages {
         let stage = render_pages_stage(page, title, lang);
         let wide = stage.is_some().then_some(PAGES_WIDE_CLASS_ATTR);
@@ -572,7 +572,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         );
     }
 
-    // ── total == 1: member head + props only — no rail, no nav ───────────────
+    // total == 1: member head + props only — no rail, no nav
     if page.total == 1 {
         let body = html! {
             (head_markup)
@@ -582,7 +582,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         return render_cv_root(None, None, false, None, body);
     }
 
-    // ── total >= 2: two-column reader (contents rail + foot nav) ────────
+    // total >= 2: two-column reader (contents rail + foot nav)
     let index = page.index;
     // 1-based prev/next positions.
     let prev_member: Option<u32> = index.checked_sub(1).filter(|&n| n >= 1);
@@ -665,7 +665,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         }
     };
 
-    // ── `pages` layout ─────────────────────
+    // `pages` layout
     // One column: the identity head, the stage, the `.pg--reader` pager row
     // directly under it, then — with no rail — a collapsed index.
     // `index="rail"` wraps it in the same `div.cv-toc` as the contents
@@ -752,7 +752,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         next_href.as_deref().zip(next_get.as_ref()),
     );
 
-    // ── Collapsed / no index ──────────────────────────────
+    // Collapsed / no index
     // No `div.cv-toc`: the reader's blocks sit directly in the article, then
     // (collapsed only) a closed `details.cv-index` with the rail's caption as
     // its summary.
@@ -772,7 +772,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
         return render_cv_root(None, None, false, None, body);
     }
 
-    // ── Member container ──────────────────────────────────────────────────────
+    // Member container
     let body = html! {
         div.cv-toc {
             nav.cv-toc__contents aria-label=(contents_label) {
@@ -790,7 +790,7 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
     render_cv_root(None, None, false, None, body)
 }
 
-// ── Page picker ────────────────
+// Page picker
 
 /// The picker's fixed `<details>` id: a page holds at most one navigator.
 const PICKER_ID: &str = "cv-picker";
@@ -1074,7 +1074,7 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
     }
 }
 
-// ── Member scan ───────────────────────────────────────────────────────────────
+// Member scan
 
 /// Render the current member's scan: the
 /// FIRST linked Image's safe `Image` representation as a plain,
@@ -1123,7 +1123,7 @@ fn member_scan_img(image: Option<&Resource>, member_title: &str) -> Option<Marku
     })
 }
 
-// ── `pages` layout ─────────────────────────────────
+// `pages` layout
 
 /// `data-class` binding for the `pages` article when its stage renders: the
 /// record viewer unit's `$expand` (WIDER) toggles `.is-wide`, the same idiom
@@ -1489,7 +1489,7 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
     }
 }
 
-// ── Prev/next pager (DataStar-enhanced, compound-local) ────────────────────────
+// Prev/next pager (DataStar-enhanced, compound-local)
 
 /// The compound-viewer's own `.pg` prev/next pager renderer:
 /// the `.pg` markup shape with `data-on:click__prevent`
@@ -1527,7 +1527,7 @@ fn render_compound_pager(
     }
 }
 
-// ── Query-string builder ──────────────────────────────────────────────────────
+// Query-string builder
 
 /// Build a full href for a compound prev/next or contents-rail link:
 /// [`member_href_for`] with the current query — see [`reader_query`] for the
@@ -1559,7 +1559,7 @@ fn compound_fragment_get(current_path: &str, current_query: Option<&str>, member
     datastar::get(compound_fragment_href(current_path, current_query, member_id))
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -1570,7 +1570,7 @@ mod tests {
     use super::*;
     use crate::component::pager::override_query_param;
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
+    // Test helpers
 
     fn make_lang(code: &str) -> Lang {
         use cpe_core::ir::SiteConfig;
@@ -1762,7 +1762,7 @@ mod tests {
             .collect()
     }
 
-    // ── Layer-1: override_query_param ─────────────────────────────────────────
+    // Layer-1: override_query_param
 
     #[test]
     fn override_query_param_appends_when_absent() {
@@ -1788,7 +1788,7 @@ mod tests {
         assert_eq!(qs, "lang=fr&appearance=dark&member=2");
     }
 
-    // ── Layer-1: build_compound_href ──────────────────────────────────────────
+    // Layer-1: build_compound_href
 
     #[test]
     fn build_compound_href_no_existing_query() {
@@ -1840,7 +1840,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: inert-end behaviour ──────────────────────────────────────────
+    // Layer-1: inert-end behaviour
 
     /// At index == 1 (first member), prev must be an inert span (aria-disabled).
     #[test]
@@ -1943,7 +1943,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: real navigation + fragment-swap enhancement ──────────────────
+    // Layer-1: real navigation + fragment-swap enhancement
 
     /// Member paging is a real page load (every active pager step / rail
     /// link carries a plain `href` — the byte-identical no-JS/initial-load
@@ -2080,7 +2080,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: total == 1 → no nav ─────────────────────────────────────────
+    // Layer-1: total == 1 → no nav
 
     #[test]
     fn total_one_renders_no_nav() {
@@ -2107,7 +2107,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: total == 0 → empty-state ────────────────────────────────────
+    // Layer-1: total == 0 → empty-state
 
     #[test]
     fn total_zero_renders_empty_state_no_nav() {
@@ -2158,7 +2158,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: empty compound with a resolved parent ──────────────────
+    // Layer-1: empty compound with a resolved parent
 
     /// A resolved compound parent renders `.cv-compound-head` (eyebrow + big
     /// italic title) + the class-aware `compound_no_members_text` sentence + the
@@ -2330,7 +2330,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: empty-compound snapshots ──────────────────────────────────────────────────
+    // Layer-3: empty-compound snapshots
 
     /// (f) Empty compound WITH a resolved parent — `.cv-compound-head` + props.
     #[test]
@@ -2354,7 +2354,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-1: link-resolver binding ───────────────────────────────────────
+    // Layer-1: link-resolver binding
 
     /// Member with a bound class → title renders as an `<a>`.
     #[test]
@@ -2386,7 +2386,7 @@ mod tests {
         assert!(out.contains("Down the Rabbit Hole"), "title text must still appear, got: {out}");
     }
 
-    // ── Layer-1: count display ────────────────────────────────────────────────
+    // Layer-1: count display
 
     #[test]
     fn count_text_shows_n_of_total() {
@@ -2416,7 +2416,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: contents rail ───────────────────────────────────────────
+    // Layer-1: contents rail
 
     /// `total >= 2` renders one `.cv-toc__item` per `page.members`, in order,
     /// with the current member marked `aria-current="page"` and the rest not.
@@ -2555,7 +2555,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: insta snapshots ──────────────────────────────────────────────
+    // Layer-3: insta snapshots
 
     /// (a) Member 1 — prev inert, next active.
     #[test]
@@ -2638,7 +2638,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Member scan (`media=`) ────────────────
+    // Member scan (`media=`)
 
     const SCAN_URI: &str = "https://iiif.example.org/0803/p1.jpx/full/max/0/default.jpg";
 
@@ -2853,7 +2853,7 @@ mod tests {
         }
     }
 
-    // ── Member index modes ─────────────
+    // Member index modes
 
     /// A synthetic 3-member compound on member 2.
     fn render_index_mode(index: MemberIndex) -> String {
@@ -2903,7 +2903,7 @@ mod tests {
         assert!(out.ends_with("</nav></article>"), "got: {out}");
     }
 
-    // ── `pages` layout ─────────────────────
+    // `pages` layout
 
     /// A synthetic Page Image carrying `authorship` + `license` (no
     /// `copyright`) — the legal run is `"Test Library · CC BY 4.0"`.
@@ -3409,7 +3409,7 @@ mod tests {
         assert!(out.contains("· 1 / 1"), "got: {out}");
     }
 
-    // ── `pages` reader head + pager row ─────
+    // `pages` reader head + pager row
 
     /// The `pages` pager row of `out`.
     fn reader_pager(out: &str) -> &str {

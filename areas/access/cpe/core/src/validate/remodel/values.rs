@@ -89,7 +89,7 @@ fn count_attr(node: &RawNode, attr: &str, report: &mut ValidationReport) -> Resu
     }
 }
 
-// ── property ──────────────────────────────────────────────────────────────────
+// property
 
 pub(super) fn lower_property(
     node: &RawNode,
@@ -415,7 +415,7 @@ fn lower_property_type(word: &str, span: Span, report: &mut ValidationReport) ->
     form
 }
 
-// ── curated ───────────────────────────────────────────────────────────────────
+// curated
 
 /// The forms of a `curated` node's `type`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

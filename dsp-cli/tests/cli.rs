@@ -60,7 +60,7 @@ fn dsp() -> Command {
     cmd
 }
 
-// ── Help-text snapshot tests ─────────────────────────────────────────────────
+// Help-text snapshot tests
 
 #[test]
 fn help_top() {
@@ -411,7 +411,7 @@ fn help_docs() {
     insta::assert_snapshot!("help_docs", text);
 }
 
-// ── Dispatch smoke test ───────────────────────────────────────────────────────
+// Dispatch smoke test
 
 #[test]
 fn dispatch_vre_project_list_no_server_exits_usage() {
@@ -498,7 +498,7 @@ fn dump_delete_with_cleanup_exits_usage() {
         .code(2);
 }
 
-// ── plan 020: FormatArgs flag validation CLI-level tests ─────────────────────
+// plan 020: FormatArgs flag validation CLI-level tests
 
 #[test]
 fn columns_with_default_prose_exits_usage() {
@@ -739,7 +739,7 @@ fn docs_json_with_pager_exits_usage() {
     dsp().args(["docs", "-j", "--pager"]).assert().failure().code(2);
 }
 
-// ── sparql query parse tests (plan 035, Step 3) ────────────────────────────────
+// sparql query parse tests (plan 035, Step 3)
 
 #[test]
 fn sparql_query_parses_with_query_flag() {
@@ -850,7 +850,7 @@ fn sparql_query_rejects_columns_flag() {
         .code(2);
 }
 
-// ── --server scheme validation (5b) ──────────────────────────────────────────
+// --server scheme validation (5b)
 //
 // `Config::resolve` refuses a non-local `--server` on plain http:// before any
 // network call, in all five output formats. `dsp vre project list` reaches
@@ -956,7 +956,7 @@ fn insecure_http_server_refused_lines() {
     insta::assert_snapshot!("insecure_http_refused_lines", stderr);
 }
 
-// ── --server control-character refusal (1a) ──────────────────────────────────
+// --server control-character refusal (1a)
 //
 // `dsp auth status` never makes a network call (pure auth-cache read), so it
 // exercises Config::resolve's control-character refusal with no live server
@@ -980,7 +980,7 @@ fn control_character_in_server_refused_prose() {
     insta::assert_snapshot!("control_character_in_server_refused_prose", stderr);
 }
 
-// ── --allow-insecure-server flag / DSP_ALLOW_INSECURE_SERVER env precedence ──
+// --allow-insecure-server flag / DSP_ALLOW_INSECURE_SERVER env precedence
 //
 // `dsp auth status` never makes a network call (pure auth-cache read), so it
 // exercises the override end-to-end (clap parsing -> Cli::allow_insecure_server
@@ -1052,7 +1052,7 @@ fn allow_insecure_flag_wins_over_conflicting_env_var() {
         .success();
 }
 
-// ── corrupt auth cache at default verbosity ──────────────────────────────────
+// corrupt auth cache at default verbosity
 //
 // Runs the real binary so the assertion covers what `init_tracing(0)` actually
 // writes to stderr. An in-process test with a thread-scoped subscriber is

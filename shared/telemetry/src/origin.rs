@@ -54,7 +54,7 @@ mod tests {
         assert!(!is_allowed_origin(""));
     }
 
-    // --- Property-based tests ---
+    // Property-based tests
 
     fn dns_label() -> impl Strategy<Value = String> {
         "[a-z0-9][a-z0-9\\-]{0,18}[a-z0-9]"

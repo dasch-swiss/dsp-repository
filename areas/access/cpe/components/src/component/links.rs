@@ -16,7 +16,7 @@ use cpe_core::util::percent_encode_component;
 use crate::component::dom::entry_id;
 use crate::component::pager::override_query_param;
 
-// ── LinkResolver ──────────────────────────────────────────────────────────────
+// LinkResolver
 
 /// Resolves a `target_id` + `target_class` pair into the href of that resource's page.
 ///
@@ -147,7 +147,7 @@ fn substitute_route_param(template: &str, id: &str) -> String {
     out[1..].to_owned()
 }
 
-// ── Reader member links ─────────────────────────────────────────────────────
+// Reader member links
 
 /// Compose the reader query for a link to the member with id `member_id`:
 /// the inherited query with any

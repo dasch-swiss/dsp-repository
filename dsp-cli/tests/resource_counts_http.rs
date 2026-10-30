@@ -40,9 +40,7 @@ fn expected_path() -> String {
     format!("/v3/projects/{ENCODED_IRI}/resourcesPerOntology")
 }
 
-// ---------------------------------------------------------------------------
 // Happy path — multi-ontology, multi-class flattening
-// ---------------------------------------------------------------------------
 
 /// Two ontology entries, each with multiple classes. Asserts the returned map
 /// flattens all entries' `classesAndCount` into one `{iri: count}` map with
@@ -99,9 +97,7 @@ async fn happy_path_flattens_multiple_ontologies_and_classes() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Empty classesAndCount for one ontology entry
-// ---------------------------------------------------------------------------
 
 /// An ontology entry with `"classesAndCount": []` must contribute no map
 /// entries and must not error — exercises `#[serde(default)]` on
@@ -148,9 +144,7 @@ async fn empty_classes_and_count_contributes_no_entries_and_does_not_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer header — present when token is Some
-// ---------------------------------------------------------------------------
 
 /// When `token = Some(TOKEN)` is passed, the request carries an
 /// `Authorization: Bearer <token>` header.
@@ -189,9 +183,7 @@ async fn bearer_header_sent_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer header — absent when token is None
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, NO `Authorization` header must be sent.
 /// Mirrors `list_data_models`/`describe_data_model`'s public-endpoint pattern
@@ -226,9 +218,7 @@ async fn bearer_header_absent_when_token_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // URL path — percent-encoded project IRI
-// ---------------------------------------------------------------------------
 
 /// Asserts the exact requested path includes the percent-encoded project IRI.
 /// A regression that drops `enc()` in the impl would send a raw IRI
@@ -266,9 +256,7 @@ async fn url_path_is_correctly_percent_encoded() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Status-code mapping
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn status_404_returns_not_found() {

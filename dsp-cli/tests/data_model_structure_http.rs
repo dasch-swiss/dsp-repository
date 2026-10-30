@@ -42,9 +42,7 @@ const MY_NS: &str = "http://0.0.0.0:3333/ontology/0001/myonto/v2#";
 // absent from this ontology's graph (v1 skip).
 const SIB_NS: &str = "http://0.0.0.0:3333/ontology/0001/sibling/v2#";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /// Percent-encode the data-model IRI the same way `enc()` does in http.rs.
 fn allentities_path(iri: &str) -> String {
@@ -96,7 +94,7 @@ fn happy_fixture() -> serde_json::Value {
         "@id": DATA_MODEL_IRI,
         "rdfs:label": "My ontology",
         "@graph": [
-            // ── myonto:Letter class ─────────────────────────────────────────────
+            // myonto:Letter class
             {
                 "@id": "myonto:Letter",
                 "@type": "owl:Class",
@@ -140,7 +138,7 @@ fn happy_fixture() -> serde_json::Value {
                     }
                 ]
             },
-            // ── myonto:WrittenSource class ──────────────────────────────────────
+            // myonto:WrittenSource class
             {
                 "@id": "myonto:WrittenSource",
                 "@type": "owl:Class",
@@ -150,7 +148,7 @@ fn happy_fixture() -> serde_json::Value {
                     { "@id": "knora-base:Resource" }
                 ]
             },
-            // ── myonto:Person class ─────────────────────────────────────────────
+            // myonto:Person class
             {
                 "@id": "myonto:Person",
                 "@type": "owl:Class",
@@ -160,7 +158,7 @@ fn happy_fixture() -> serde_json::Value {
                     { "@id": "knora-base:Resource" }
                 ]
             },
-            // ── property nodes ──────────────────────────────────────────────────
+            // property nodes
             // myonto:hasSender — link to myonto:Person (same DM)
             {
                 "@id": "myonto:hasSender",
@@ -199,9 +197,7 @@ fn happy_fixture() -> serde_json::Value {
     })
 }
 
-// ---------------------------------------------------------------------------
 // Test 1: Happy path — full relation set
-// ---------------------------------------------------------------------------
 
 /// Happy path: the full fixture produces the expected `DataModelStructure`
 /// with all the right relations, sort order, and edge annotations.
@@ -233,14 +229,14 @@ async fn happy_path_data_model_structure() {
         "data_model must be the local name derived from the IRI"
     );
 
-    // ── Verify the hasSenderValue twin is NOT present ───────────────────────
+    // Verify the hasSenderValue twin is NOT present
     let twin_present = structure.relations.iter().any(|r| r.field.as_deref() == Some("hasSenderValue"));
     assert!(
         !twin_present,
         "hasSenderValue (link-value twin) must be dropped from the relation list"
     );
 
-    // ── Verify the sibling:thingLink absent-node skip ──────────────────────
+    // Verify the sibling:thingLink absent-node skip
     // The restriction `sibling:thingLink` on Letter should be skipped because
     // the property node is absent from the graph (v1 limitation).
     let absent_node_present = structure.relations.iter().any(|r| r.field.as_deref() == Some("thingLink"));
@@ -249,7 +245,7 @@ async fn happy_path_data_model_structure() {
         "sibling:thingLink restriction (node absent) must be skipped (v1 limitation)"
     );
 
-    // ── Find and assert specific relations ────────────────────────────────────
+    // Find and assert specific relations
 
     // 1. Letter → hasSender → Person (same-DM link)
     let has_sender = structure
@@ -338,7 +334,7 @@ async fn happy_path_data_model_structure() {
         "inherits to system super knora-base:Resource must be is_builtin=true"
     );
 
-    // ── D6 sort order: (source, kind, field, target) ─────────────────────────
+    // D6 sort order: (source, kind, field, target)
     // Link < Inherits within same source; None < Some for field (inherits have None).
     // Within Letter: links first (sorted by field name), then inherits.
     let letter_relations: Vec<&Relation> = structure.relations.iter().filter(|r| r.source == "Letter").collect();
@@ -367,9 +363,7 @@ async fn happy_path_data_model_structure() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 2: Bearer present — token forwarded to the allentities request
-// ---------------------------------------------------------------------------
 
 /// When `token = Some(TOKEN)` is passed, the request must carry
 /// `Authorization: Bearer <TOKEN>`.
@@ -408,9 +402,7 @@ async fn bearer_present_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 3: Bearer absent — no Authorization header when token is None
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, NO `Authorization` header must be sent.
 /// Guards against a future refactor accidentally sending an unconditional bearer.
@@ -440,9 +432,7 @@ async fn bearer_absent_when_token_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 4: Exactly one request — no sibling fetch
-// ---------------------------------------------------------------------------
 
 /// `data_model_structure` must make exactly ONE `allentities` request.
 /// Cross-DM property nodes that are absent are silently skipped (v1 limitation).
@@ -482,9 +472,7 @@ async fn exactly_one_allentities_request_no_sibling_fetch() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 5: Server error (500)
-// ---------------------------------------------------------------------------
 
 /// A 500 response from allentities returns `Err(Diagnostic::ServerError(_))`.
 #[tokio::test]
@@ -512,9 +500,7 @@ async fn server_error_500_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Test 6: Empty graph → empty relations
-// ---------------------------------------------------------------------------
 
 /// An ontology with no resource classes returns an empty `relations` vec.
 #[tokio::test]
@@ -552,9 +538,7 @@ async fn empty_graph_yields_empty_relations() {
     assert!(structure.relations.is_empty(), "empty graph must yield empty relations");
 }
 
-// ---------------------------------------------------------------------------
 // Test 7: D6 multi-source ordering
-// ---------------------------------------------------------------------------
 
 /// Verifies that the top-level sort by source puts sources in alphabetical order,
 /// and within each source link relations come before inherits relations (D6).

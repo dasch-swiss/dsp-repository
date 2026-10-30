@@ -28,9 +28,7 @@ use dsp_cli::config::Config;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: resolve project `0801` (beol), list its data-models,
 /// find the `beol` data-model, then call `describe_data_model` against a real
@@ -50,7 +48,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_data_model_describe_returns_valid_data_model_detail() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -60,7 +58,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // `describe_data_model` uses a public endpoint; the token is optional. If
     // present it exercises the authenticated code path, but its absence is not
     // a skip condition. NEVER interpolate the token value in any log or
@@ -74,10 +72,10 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the known project (beol / shortcode 0801) ─────────────────
+    // 4. Resolve the known project (beol / shortcode 0801)
     let project_identifier = "0801";
     eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
@@ -92,7 +90,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
         proj.iri, proj.shortcode, proj.shortname
     );
 
-    // ── 5. List data-models and find the beol data-model ─────────────────────
+    // 5. List data-models and find the beol data-model
     eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
@@ -110,7 +108,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
-    // ── 6. Call describe_data_model ───────────────────────────────────────────
+    // 6. Call describe_data_model
     eprintln!("live test: calling describe_data_model for IRI {}", beol_dm.iri);
 
     let detail = client
@@ -123,7 +121,7 @@ fn live_data_model_describe_returns_valid_data_model_detail() {
         detail.resource_types.len()
     );
 
-    // ── 7. Assert structural invariants ──────────────────────────────────────
+    // 7. Assert structural invariants
 
     // name must be "beol" — we resolved this data-model by name.
     assert_eq!(detail.name, "beol", "data-model name must be 'beol'; got '{}'", detail.name);

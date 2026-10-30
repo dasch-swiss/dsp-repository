@@ -48,7 +48,7 @@ use facts::{push_internal_query_error, ProjectFacts};
 use media_property::check_single_media_property;
 use parts::{check_role_value_types, lower_gloss_part, lower_imprint, part_roles};
 
-// ── Public surface ────────────────────────────────────────────────────────────
+// Public surface
 
 /// Validate `raw` against `ctx`, lower valid parts to a [`ValidatedConfig`].
 ///
@@ -63,13 +63,13 @@ use parts::{check_role_value_types, lower_gloss_part, lower_imprint, part_roles}
 fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<ValidatedConfig>, ValidationReport) {
     let mut report = ValidationReport::new();
 
-    // ── Project-id checks (span-less — id comes from directory name) ──────────
+    // Project-id checks (span-less — id comes from directory name)
     check_project_id(ctx.project_id, ctx.reserved_ids, &mut report);
 
-    // ── Top-level node checks ─────────────────────────────────────────────────
+    // Top-level node checks
     check_unexpected_top_level(raw, &mut report);
 
-    // ── Site checks ───────────────────────────────────────────────────────────
+    // Site checks
     let site_result = check_and_lower_site(raw, ctx, &mut report);
 
     // Default language for the narrative existence probe: a narrative `file`
@@ -80,10 +80,10 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
     // noise on top of an already-broken site block.
     let default_language: Option<String> = site_result.as_ref().map(|s| s.default_language.clone());
 
-    // ── Page checks ───────────────────────────────────────────────────────────
+    // Page checks
     let pages = check_and_lower_pages(raw, ctx, default_language.as_deref(), &mut report);
 
-    // ── Nav-route existence checks ────────────────────────────────────────────
+    // Nav-route existence checks
     // Only run when site lowering succeeded — the nav items live on SiteConfig.
     // `pages` is always available (partially lowered even when body errors fired).
     if let Some(ref site) = site_result {
@@ -92,12 +92,12 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
         check_not_found_browse_routes(&site.not_found_browse, &declared_routes, &mut report);
         check_figure_more_routes(&pages, &declared_routes, &mut report);
 
-        // ── Desk header row budget ────────────────────────────────────────────
+        // Desk header row budget
         // Same placement rationale as `check_class_plurals` below: config-
         // internal, needs the lowered site title, nav and chrome.
         header_budget::check_header_row_budget(site, &mut report);
 
-        // ── Class-plural completeness ─────────────────────────────────────────
+        // Class-plural completeness
         // Config-internal (no data needed), so it runs here — before the
         // `validate_with_data` fork — and therefore reaches both arms without
         // a `*_into_raw` sibling. It does sit inside the `site_result` guard
@@ -106,43 +106,43 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
         // — acceptable for an advisory on a boot that hard-fails anyway.
         check_class_plurals(&site.class_labels, &mut report);
 
-        // ── Property-group + incoming-links captions ─────────────────
+        // Property-group + incoming-links captions
         // Same placement rationale as `check_class_plurals`: config-internal,
         // needs the lowered `site.chrome`, runs before the fork.
         check_group_labels(&pages, &site.chrome, &mut report);
 
-        // ── Ordering-option labels ───────────────────────────────────────
+        // Ordering-option labels
         // Same placement rationale: config-internal, needs `site.chrome`.
         check_order_labels(&pages, &site.chrome, &mut report);
 
-        // ── Composed-gloss units ──────────────────────────────────────────────
+        // Composed-gloss units
         // Same placement rationale: config-internal, needs `site.chrome`.
         check_gloss_units(&pages, &site.chrome, &mut report);
 
-        // ── Figure-block slot labels ──────────────────────────────────────────
+        // Figure-block slot labels
         // Same placement rationale: config-internal, needs `site.chrome`.
         check_figure_labels(&pages, &site.chrome, &mut report);
 
-        // ── Showcase remark labels ────────────────────────────────────────────
+        // Showcase remark labels
         // Same placement rationale: config-internal, needs `site.chrome`.
         showcase::check_showcase_labels(&pages, &site.chrome, &mut report);
     }
 
-    // ── Class→route map validation ────────────────────────────────────────────
+    // Class→route map validation
     // Detect ambiguous class bindings (two pages, same class, both parameterised).
     // The map itself is built during Project::load from the validated config via
     // `build_class_routes`, but we run the duplicate-detection pass here so it
     // participates in the full accumulated-error report.
     check_class_routes(&pages, &mut report);
 
-    // ── Grid-mode without media ────────────────────────────────────────────────
+    // Grid-mode without media
     check_grid_without_media(&pages, &mut report);
     check_tile_ratio_without_grid(&pages, &mut report);
 
-    // ── Narrative layout attributes on a later narrative ──────────────────────
+    // Narrative layout attributes on a later narrative
     check_narrative_layout_first(&pages, &mut report);
 
-    // ── Remodel block ─────────────────────────────────────────────────────────
+    // Remodel block
     // Config-internal, so it runs before the `validate_with_data` fork and
     // reaches both arms. The languages come from the raw config, not the
     // lowered site, so a failed site still gets its list translations checked.
@@ -153,7 +153,7 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
         let _ = remodel::lower(block, &declared_languages(raw), &mut report);
     }
 
-    // ── Final result ──────────────────────────────────────────────────────────
+    // Final result
     if report.has_errors() {
         return (None, report);
     }
@@ -180,7 +180,7 @@ fn declared_languages(raw: &RawConfig) -> Vec<&str> {
     languages
 }
 
-// ── Data-dependent validation ─────────────────────────────────────────────────
+// Data-dependent validation
 
 /// Why loading a project's config failed: it did not parse, or it did not validate.
 #[derive(Debug)]
@@ -3605,7 +3605,7 @@ fn check_single_resource_detail(
     }
 }
 
-// ── Project-id checks ─────────────────────────────────────────────────────────
+// Project-id checks
 
 fn check_project_id(project_id: &str, reserved_ids: &[&str], report: &mut ValidationReport) {
     // ReservedProjectId — span-less (id is the directory name, not in config.kdl).
@@ -3643,7 +3643,7 @@ pub fn is_valid_project_id(id: &str) -> bool {
     chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
 }
 
-// ── Top-level node checks ─────────────────────────────────────────────────────
+// Top-level node checks
 
 fn check_unexpected_top_level(raw: &RawConfig, report: &mut ValidationReport) {
     for (name, span) in &raw.unknown_top_level {
@@ -3661,7 +3661,7 @@ fn unexpected_top_level(name: &str, span: Span) -> Diagnostic {
     )
 }
 
-// ── Site checks ───────────────────────────────────────────────────────────────
+// Site checks
 
 /// Validate and lower the site metadata. Returns `Some(SiteConfig)` when
 /// no errors were found; `None` when at least one error was pushed.
@@ -3672,7 +3672,7 @@ fn check_and_lower_site(
 ) -> Option<SiteConfig> {
     let error_count_before = error_count(report);
 
-    // ── title ────────────────────────────────────────────────────────────────
+    // title
     if raw.title.is_none() {
         report.push(Diagnostic::error_spanless(
             DiagnosticKind::MissingSiteTitle,
@@ -3680,7 +3680,7 @@ fn check_and_lower_site(
         ));
     }
 
-    // ── languages ─────────────────────────────────────────────────────────────
+    // languages
     // Check for absent or empty languages list first.
     let mut valid_languages: Vec<String> = Vec::new();
 
@@ -3726,7 +3726,7 @@ fn check_and_lower_site(
         }
     }
 
-    // ── default-language ──────────────────────────────────────────────────────
+    // default-language
     let default_language: Option<String> = if let Some(dl) = &raw.default_language {
         if !valid_languages.is_empty() && !valid_languages.contains(dl) {
             report.push(Diagnostic::error_spanless(
@@ -3741,7 +3741,7 @@ fn check_and_lower_site(
         None
     };
 
-    // ── chrome ────────────────────────────────────────────────────────────────
+    // chrome
     let mut validated_chrome: Vec<ChromeString> = Vec::new();
     for cs in &raw.chrome {
         let id = match &cs.id {
@@ -3770,7 +3770,7 @@ fn check_and_lower_site(
         validated_chrome.push(ChromeString { id, translations });
     }
 
-    // ── labels ────────────────────────────────────────────────────────────────
+    // labels
     let mut validated_property_labels: Vec<PropertyLabel> = Vec::new();
     let mut validated_class_labels: Vec<ClassLabel> = Vec::new();
     for rl in &raw.labels {
@@ -3841,7 +3841,7 @@ fn check_and_lower_site(
         }
     }
 
-    // ── theme ─────────────────────────────────────────────────────────────────
+    // theme
     // Lower raw key/value pairs into a `ThemeKnob`. Unknown keys or values
     // push `UnknownThemeValue` diagnostics without short-circuiting — the full
     // theme block is always processed so all errors are reported at once.
@@ -3937,7 +3937,7 @@ fn check_and_lower_site(
         typeface: theme_typeface.unwrap_or_default(),
     };
 
-    // ── nav ───────────────────────────────────────────────────────────────────
+    // nav
     let validated_nav: Vec<NavItem> = raw
         .nav
         .iter()
@@ -3948,7 +3948,7 @@ fn check_and_lower_site(
         })
         .collect();
 
-    // ── nav label / chrome-id "collision": deliberately NOT a diagnostic ──────
+    // nav label / chrome-id "collision": deliberately NOT a diagnostic
     // A nav item's `label` is "chrome-string id OR literal" by design, and
     // `labels::nav_label` resolves the id first. A label that matches a
     // chrome-string id the project ITSELF declares is therefore the intended
@@ -3959,7 +3959,7 @@ fn check_and_lower_site(
     // is pure boot-log noise. Don't add one without a set of ids the project
     // did NOT declare to compare against.
 
-    // ── cover-image ───────────────────────────────────────────────────────────
+    // cover-image
     if let Some(path) = &raw.cover_image {
         // InvalidCoverImagePath — bare relative path only: no ".." segment,
         // no leading '/', and no empty or dot-prefixed segment. This MUST
@@ -4003,7 +4003,7 @@ fn check_and_lower_site(
         }
     }
 
-    // ── date-precision-word ───────────────────────────────────────────────────
+    // date-precision-word
     // `site { date-precision-word #true }`. Absent (or a bare node with no
     // argument) ⇒ `false`. A non-boolean argument is `InvalidFieldType` — the
     // kind for a wrong-typed `site {}` child (the `languages` precedent) —
@@ -4022,14 +4022,14 @@ fn check_and_lower_site(
         }
     };
 
-    // ── footer-attribution ─────────────────────────────────────────────────────
+    // footer-attribution
     // Copy override: a chrome-id-or-literal string (the `description`
     // precedent), resolved at render time; a non-string argument is
     // `InvalidFieldType`, never a silent absence. Absent ⇒ `None` ⇒ the
     // engine's own copy.
     let footer_attribution = lower_site_string(&raw.footer_attribution, "footer-attribution", report);
 
-    // ── narrative-companion / narrative-side / text-align ─────────────────────
+    // narrative-companion / narrative-side / text-align
     let narrative_companion = lower_site_choice(
         &raw.narrative_companion,
         "narrative-companion",
@@ -4052,7 +4052,7 @@ fn check_and_lower_site(
         report,
     );
 
-    // ── not-found { browse } ──────────────────────────────────────────────────
+    // not-found { browse }
     // Route existence is checked in `validate_inner`
     // beside `check_nav_routes` (it needs the lowered page routes); the
     // cap of three is checked here.
@@ -4167,7 +4167,7 @@ fn lower_site_choice<T: Default>(
     })
 }
 
-// ── Page checks ───────────────────────────────────────────────────────────────
+// Page checks
 
 /// Validate pages (id/route uniqueness) and lower to the typed `Page` IR.
 /// Page bodies are lowered via `lower_page_body`.
@@ -4558,7 +4558,7 @@ pub(crate) fn extract_route_params(route: &str) -> Vec<String> {
         .collect()
 }
 
-// ── Component lowering ───────────────────────────────────────────────
+// Component lowering
 
 /// The six generic v1 component names, valid in every project. Per-project
 /// custom components (e.g. Incunabula's `timeline`) are not listed here: they
@@ -4757,7 +4757,7 @@ fn error_count(report: &ValidationReport) -> usize {
         .count()
 }
 
-// ── Per-component lowering helpers ────────────────────────────────────────────
+// Per-component lowering helpers
 
 fn lower_narrative(
     raw: &crate::config::Component,
@@ -5207,7 +5207,7 @@ pub fn build_class_list_routes(pages: &[Page]) -> std::collections::HashMap<Stri
     map
 }
 
-// ── `media="…"` — the embedded-media axis ─────────────────────────────────────
+// `media="…"` — the embedded-media axis
 //
 // A `resource-detail`/`compound-viewer`/`resource-list` `media` attribute
 // names the host→image `link` property carrying a resource's (or a list
@@ -6858,7 +6858,7 @@ fn lower_search_bar(
     Some(Component::SearchBar { target, searches, placeholder, scope })
 }
 
-// ── Data-binding child node lowering ─────────────────────────────────────────
+// Data-binding child node lowering
 
 fn lower_where_clause(
     raw: &crate::config::Component,
@@ -6940,7 +6940,7 @@ fn lower_sort(raw: &crate::config::Component, report: &mut ValidationReport) -> 
     Some(Sort { key: SortKey::Property(property), direction })
 }
 
-// ── $param resolution ─────────────────────────────────────────────────────────
+// $param resolution
 
 /// Check a string value for a leading `$` — if present, treat it as a
 /// `$paramName` reference and validate against `page_params`.
@@ -6962,7 +6962,7 @@ fn check_param_refs_in_value(value: &str, page_params: &[String], span: Span, re
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -6970,7 +6970,7 @@ mod tests {
     use crate::config;
     use crate::diagnostic::DiagnosticKind;
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // Helpers
 
     /// Parse KDL source and run validation in one call. Panics on KDL syntax
     /// errors (all test fixtures should be syntactically valid).
@@ -6999,7 +6999,7 @@ site {
 page id="home" route="/"
 "#;
 
-    // ── Project-id checks ─────────────────────────────────────────────────────
+    // Project-id checks
 
     #[test]
     fn valid_project_id_passes() {
@@ -7082,7 +7082,7 @@ page id="home" route="/"
         );
     }
 
-    // ── UnexpectedTopLevelNode ─────────────────────────────────────────────────
+    // UnexpectedTopLevelNode
 
     #[test]
     fn unexpected_top_level_node_fails() {
@@ -7110,7 +7110,7 @@ page id="home" route="/"
         assert!(result.is_ok(), "good config should pass: {:?}", result);
     }
 
-    // ── remodel block ─────────────────────────────────────────────────────────
+    // remodel block
 
     #[test]
     fn a_config_without_a_remodel_block_has_no_remodel_diagnostic_and_load_remodel_refuses_it() {
@@ -7294,7 +7294,7 @@ page id="home" route="/"
         assert_eq!(remodel.classes[0].name.as_str(), "Book");
     }
 
-    // ── MissingSiteTitle ──────────────────────────────────────────────────────
+    // MissingSiteTitle
 
     #[test]
     fn missing_site_title_fails() {
@@ -7313,7 +7313,7 @@ page id="home" route="/"
         );
     }
 
-    // ── MissingSiteLanguages ──────────────────────────────────────────────────
+    // MissingSiteLanguages
 
     #[test]
     fn missing_languages_fails() {
@@ -7332,7 +7332,7 @@ page id="home" route="/"
         );
     }
 
-    // ── MissingRequiredLanguage ───────────────────────────────────────────────
+    // MissingRequiredLanguage
 
     #[test]
     fn missing_de_language_fails() {
@@ -7372,7 +7372,7 @@ page id="home" route="/"
         );
     }
 
-    // ── InvalidFieldType ──────────────────────────────────────────────────────
+    // InvalidFieldType
 
     #[test]
     fn non_string_language_entry_fails() {
@@ -7418,7 +7418,7 @@ page id="home" route="/"
         );
     }
 
-    // ── site { date-precision-word } lowering ─────
+    // site { date-precision-word } lowering
 
     #[test]
     fn date_precision_word_true_reaches_site_config() {
@@ -7621,7 +7621,7 @@ page id="home" route="/"
         assert_eq!(kinds(&err), vec![DiagnosticKind::InvalidFieldType]);
     }
 
-    // ── site { footer-attribution, not-found } ──
+    // site { footer-attribution, not-found }
 
     #[test]
     fn g11_overrides_reach_site_config() {
@@ -7779,7 +7779,7 @@ page id="home" route="/"
         );
     }
 
-    // ── ThemeKnob lowering ────────────────────────────────────────────────────
+    // ThemeKnob lowering
 
     #[test]
     fn theme_knob_valid_accent_and_background_passes() {
@@ -7847,7 +7847,7 @@ page id="home" route="/"
         );
     }
 
-    // ── Reserved-route (`_`-prefixed) check ────────────────────────────────────
+    // Reserved-route (`_`-prefixed) check
 
     #[test]
     fn reserved_underscore_route_fails() {
@@ -8057,7 +8057,7 @@ page id="home" route="/"
         );
     }
 
-    // ── UnknownDefaultLanguage ────────────────────────────────────────────────
+    // UnknownDefaultLanguage
 
     #[test]
     fn unknown_default_language_fails() {
@@ -8094,7 +8094,7 @@ page id="home" route="/"
         assert_eq!(result.unwrap().site.default_language, "de");
     }
 
-    // ── DuplicatePageId ───────────────────────────────────────────────────────
+    // DuplicatePageId
 
     #[test]
     fn duplicate_page_id_fails() {
@@ -8122,7 +8122,7 @@ page id="home" route="/about"
         assert!(result.is_ok(), "unique page ids should pass: {:?}", result);
     }
 
-    // ── DuplicatePageRoute ────────────────────────────────────────────────────
+    // DuplicatePageRoute
 
     #[test]
     fn duplicate_page_route_fails() {
@@ -8143,7 +8143,7 @@ page id="about" route="/"
         );
     }
 
-    // ── IncompleteChromeTranslation ───────────────────────────────────────────
+    // IncompleteChromeTranslation
 
     #[test]
     fn incomplete_chrome_translation_fails() {
@@ -8188,7 +8188,7 @@ page id="home" route="/"
         assert!(result.is_ok(), "complete chrome should pass: {:?}", result);
     }
 
-    // ── IncompleteLabelTranslation ────────────────────────────────────────────
+    // IncompleteLabelTranslation
 
     #[test]
     fn incomplete_label_translation_fails_for_property() {
@@ -8273,7 +8273,7 @@ page id="home" route="/"
         assert_eq!(config.site.class_labels[0].class, "Character");
     }
 
-    // ── `plural` completeness ──
+    // `plural` completeness
 
     #[test]
     fn incomplete_plural_label_translation_fails_for_class() {
@@ -8379,7 +8379,7 @@ page id="home" route="/"
         );
     }
 
-    // ── MissingClassPlural (advisory) ─────────────────────────────────────────
+    // MissingClassPlural (advisory)
 
     /// Run validation and return the report regardless of outcome — the
     /// Warning-only checks (`MissingClassPlural`) leave `run`'s `Ok` arm,
@@ -8454,7 +8454,7 @@ page id="home" route="/"
         );
     }
 
-    // ── Multi-error accumulation ──────────────────────────────────────────────
+    // Multi-error accumulation
 
     #[test]
     fn multiple_site_errors_accumulate() {
@@ -8511,7 +8511,7 @@ page id="home" route="/"
         );
     }
 
-    // ── Good config → Ok(ValidatedConfig) ─────────────────────────────────────
+    // Good config → Ok(ValidatedConfig)
 
     #[test]
     fn good_config_returns_ok_validated_config() {
@@ -8529,7 +8529,7 @@ page id="home" route="/"
         assert!(page.body.is_empty(), "bodies empty until Step 3");
     }
 
-    // ── Route param extraction ────────────────────────────────────────────────
+    // Route param extraction
 
     #[test]
     fn route_params_extracted_correctly() {
@@ -8561,7 +8561,7 @@ page id="home" route="/books"
         assert!(page.params.is_empty(), "no params in /books");
     }
 
-    // ── is_valid_project_id ───────────────────────────────────────────────────
+    // is_valid_project_id
 
     #[test]
     fn valid_project_ids() {
@@ -8584,7 +8584,7 @@ page id="home" route="/books"
         assert!(!is_valid_project_id("_static"));
     }
 
-    // ── Component lowering tests ─────────────────────────────────────
+    // Component lowering tests
 
     // Minimal good config helper for the lowering tests.
     const GOOD_SITE: &str = r#"
@@ -8604,7 +8604,7 @@ site {
         }
     }
 
-    // ── UnknownComponent ──────────────────────────────────────────────────────
+    // UnknownComponent
 
     #[test]
     fn unknown_component_fails() {
@@ -8625,7 +8625,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── MissingRequiredAttribute ──────────────────────────────────────────────
+    // MissingRequiredAttribute
 
     #[test]
     fn missing_required_attr_narrative_fails() {
@@ -8709,7 +8709,7 @@ page id="home" route="/:id" {{
         );
     }
 
-    // ── InvalidAttributeType ─────────────────────────────────────────────────
+    // InvalidAttributeType
 
     #[test]
     fn invalid_attr_type_resource_list_class_integer_fails() {
@@ -8821,7 +8821,7 @@ page id="home" route="/" {{
         }
     }
 
-    // ── Composed gloss lowering ───────────────────────────────────────────────
+    // Composed gloss lowering
 
     /// A site declaring the unit string `gloss-extent` (`{n}` in both
     /// languages) and `bad-unit` (no `{n}` in `en`).
@@ -8950,7 +8950,7 @@ site {
         );
     }
 
-    // ── Record header slots ───────────────────────────────────────────────────
+    // Record header slots
 
     /// Lower a `resource-detail` with `attrs` and the children `body`.
     fn run_head(attrs: &str, body: &str) -> Result<ValidatedConfig, ValidationReport> {
@@ -9102,7 +9102,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── Wrong-typed optional string attributes in lowering ──────────
+    // Wrong-typed optional string attributes in lowering
     //
     // Every optional string attribute read inside a `lower_*` fn goes through
     // the REPORTING `get_typed_string_attr` (or, for `search-bar`'s required
@@ -9504,7 +9504,7 @@ page id="home" route="/" {{
         assert_eq!(chips[1].kind, Some(ChipKind::Keyword));
     }
 
-    // ── UnknownFacetKind ──────────────────────────────────────────────────────
+    // UnknownFacetKind
 
     #[test]
     fn unknown_facet_kind_fails() {
@@ -9528,7 +9528,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── DuplicateResourceListId ───────────────────────────────────────────────
+    // DuplicateResourceListId
 
     #[test]
     fn duplicate_resource_list_id_fails() {
@@ -9550,7 +9550,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── DuplicateSingletonComponent (resource-list / search-bar) ─────────────────
+    // DuplicateSingletonComponent (resource-list / search-bar)
     //
     // Distinct from `DuplicateResourceListId` above: these two `resource-list`s
     // declare DIFFERENT ids (both lower successfully into `body`), so the guard
@@ -9608,7 +9608,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── CompoundViewerWithPagedList ─────────────────────
+    // CompoundViewerWithPagedList
 
     fn has_compound_paged_list_error(report: &ValidationReport, route: &str) -> bool {
         report.iter().any(|d| {
@@ -9728,7 +9728,7 @@ page id="books" route="/books" {{
         run(&src, &ctx).expect("the two components on different pages must pass");
     }
 
-    // ── PaginationConflict ────────────────────────────────────────────────────
+    // PaginationConflict
 
     #[test]
     fn pagination_conflict_fails() {
@@ -9752,7 +9752,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── UnresolvedTarget ──────────────────────────────────────────────────────
+    // UnresolvedTarget
 
     #[test]
     fn unresolved_target_facet_panel_fails() {
@@ -9831,7 +9831,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── UndeclaredRouteParam ──────────────────────────────────────────────────
+    // UndeclaredRouteParam
 
     #[test]
     fn undeclared_route_param_fails() {
@@ -9923,7 +9923,7 @@ page id="detail" route="/books/:id" {{
         );
     }
 
-    // ── NarrativeFileNotFound ─────────────────────────────────────────────────
+    // NarrativeFileNotFound
 
     #[test]
     fn narrative_file_not_found_fails() {
@@ -9990,7 +9990,7 @@ page id="home" route="/" {{
         assert!(result.is_ok(), "all variants present should pass: {:?}", result);
     }
 
-    // ── InvalidNarrativePath ──────────────────────────────────────────────────
+    // InvalidNarrativePath
 
     #[test]
     fn narrative_path_separator_fails() {
@@ -10035,7 +10035,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── Bare ".." must trigger InvalidNarrativePath ─────────
+    // Bare ".." must trigger InvalidNarrativePath
 
     /// A narrative `file=".."` (bare double-dot, no slash) must be rejected.
     /// `file.split('.').any(|seg| seg == "..")` would never match it: splitting
@@ -10060,7 +10060,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── cover-image (site index card) ─────────────────────────────────────────
+    // cover-image (site index card)
 
     /// Build a `ValidationContext` with custom `asset_files`, empty
     /// `narrative_files` (mirrors `good_ctx`, but for the asset-inventory axis).
@@ -10216,7 +10216,7 @@ site {
         );
     }
 
-    // ── searches list-valued attribute reconstruction ─────────────────────────
+    // searches list-valued attribute reconstruction
 
     #[test]
     fn searches_single_value_degenerate_list() {
@@ -10278,7 +10278,7 @@ page id="home" route="/" {{
         }
     }
 
-    // ── RESERVED_FACET_PROPERTIES — "q" reservation ───────────────────────────
+    // RESERVED_FACET_PROPERTIES — "q" reservation
 
     #[test]
     fn reserved_facet_properties_contains_q() {
@@ -10306,7 +10306,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── search-bar `scope` attribute (chrome-string id, optional) ─────────────
+    // search-bar `scope` attribute (chrome-string id, optional)
 
     #[test]
     fn search_bar_scope_attr_parses() {
@@ -10364,7 +10364,7 @@ page id="home" route="/" {{
         }
     }
 
-    // ── Fully-good page lowers to exact typed IR ──────────────────────────────
+    // Fully-good page lowers to exact typed IR
 
     #[test]
     fn fully_good_page_lowers_to_exact_typed_ir() {
@@ -10478,7 +10478,7 @@ page id="detail" route="/items/:id" {{
         );
     }
 
-    // ── UnknownChildNode on resource-detail ──────────────────────────────────
+    // UnknownChildNode on resource-detail
 
     #[test]
     fn resource_detail_unknown_child_is_error() {
@@ -10593,7 +10593,7 @@ page id="detail" route="/items/:id" {{
         );
     }
 
-    // ── `group` children on resource-detail ───────────────────────────────
+    // `group` children on resource-detail
 
     /// A site with one declared chrome id, `group-a`, for the `group` tests.
     const GROUP_SITE: &str = r#"
@@ -10819,7 +10819,7 @@ site {
         assert_eq!(hits[0].severity, Severity::Warning);
     }
 
-    // ── `incoming-links` child on resource-detail ────
+    // `incoming-links` child on resource-detail
 
     /// `GROUP_SITE`'s one declared chrome id, `group-a`, doubles as the
     /// declared incoming-links caption id.
@@ -10857,7 +10857,7 @@ site {
         );
     }
 
-    // ── Grouped incoming-links attributes ─────────────────
+    // Grouped incoming-links attributes
 
     #[test]
     fn incoming_links_lowers_grouping_and_row_attributes() {
@@ -11414,7 +11414,7 @@ page id="viewer" route="/view/:id" {{
         );
     }
 
-    // ── compound-viewer layout= / index= ─────────
+    // compound-viewer layout= / index=
 
     /// Lower one `compound-viewer` declaration (`attrs` = everything after
     /// the node name) on a `$id` page.
@@ -11934,7 +11934,7 @@ page id="limited" route="/limited" {{
         }
     }
 
-    // ── Per-page / limit integer bounds ────────────────────
+    // Per-page / limit integer bounds
 
     /// `per-page 0` must be rejected (0 is not a positive integer).
     #[test]
@@ -12071,7 +12071,7 @@ page id="home" route="/" {{
         assert!(missing_count >= 2, "expected at least 2 MissingRequiredAttribute, got: {:?}", k);
     }
 
-    // ── `narrative-for` children on resource-detail ───────────────────────
+    // `narrative-for` children on resource-detail
 
     /// A `$id` book page whose `resource-detail` carries `detail_body`.
     fn narrative_for_src(detail_body: &str) -> String {
@@ -12222,7 +12222,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── `order-by` options on resource-list ──────────
+    // `order-by` options on resource-list
 
     /// A site with two chrome strings the `order-by` tests can name as labels.
     const ORDER_SITE: &str = r#"
@@ -12443,7 +12443,7 @@ page id="b" route="/b" {{
         );
     }
 
-    // ── timeline (Incunabula) ─────────────────────────────────────────
+    // timeline (Incunabula)
 
     fn timeline_src(attrs: &str) -> String {
         format!(
@@ -12682,7 +12682,7 @@ page id="home" route="/" {{
         );
     }
 
-    // ── Figure-block slot ─────────────────────────────────────────────────────
+    // Figure-block slot
     // The slot attributes of dsp-incubator cpe/docs/adr/0011-per-project-components.md.
 
     const TIMELINE_ATTRS: &str =

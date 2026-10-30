@@ -40,7 +40,7 @@ use dsp_cli::render::{HeaderMode, MetaContext, Renderer, TableOptions};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// Constants
 
 const SERVER: &str = "api.dasch.swiss";
 const ANON_FILTER_WARNING: &str = "results may be filtered; login to see private resources";
@@ -55,7 +55,7 @@ fn anon_meta() -> MetaContext {
     }
 }
 
-// ── Base envelope (shared) ────────────────────────────────────────────────────
+// Base envelope (shared)
 
 fn base_envelope(values: Option<Vec<FieldValues>>) -> ResourceDetail {
     ResourceDetail {
@@ -73,7 +73,7 @@ fn base_envelope(values: Option<Vec<FieldValues>>) -> ResourceDetail {
     }
 }
 
-// ── Fixtures ──────────────────────────────────────────────────────────────────
+// Fixtures
 
 /// Multi-type fixture A: text (both kinds), integer, decimal, boolean, date single-point,
 /// and a multi-value field. Covers the most common scalar types in one resource.
@@ -346,7 +346,7 @@ fn fixture_d_with_comment() -> ResourceDetail {
     base_envelope(Some(vec![field]))
 }
 
-// ── Prose snapshots — fixture A ───────────────────────────────────────────────
+// Prose snapshots — fixture A
 
 /// Prose render of fixture A (scalars: text, integer, decimal, boolean, date, multi-value).
 ///
@@ -529,7 +529,7 @@ fn values_prose_comment() {
     insta::assert_snapshot!("values_prose_comment", out);
 }
 
-// ── JSON snapshots — fixture A ────────────────────────────────────────────────
+// JSON snapshots — fixture A
 
 /// JSON render of fixture A (scalars).
 ///
@@ -755,7 +755,7 @@ fn values_json_comment() {
     insta::assert_snapshot!("values_json_comment", out);
 }
 
-// ── Negative case: values = None produces 8b-identical output ────────────────
+// Negative case: values = None produces 8b-identical output
 
 /// Prose with `values = None` must NOT include a "Values:" section.
 ///
@@ -800,7 +800,7 @@ fn values_json_no_values_key_absent() {
     );
 }
 
-// ── Tabular formats: --values renders value rows (dsp-cli/ADR-0013) ───────────────────
+// Tabular formats: --values renders value rows (dsp-cli/ADR-0013)
 //
 // Each format reuses one of the shared multi-type fixtures (a/b/c) for
 // breadth across the suite. Stdout is snapshotted in the DEFAULT columns
@@ -909,7 +909,7 @@ fn values_tsv() {
     insta::assert_snapshot!("values_tsv_stderr", stderr);
 }
 
-// ── W1: sanitization end-to-end contract ──────────────────────────────────────
+// W1: sanitization end-to-end contract
 
 /// Prose STRIPS control chars (incl. ANSI escape sequences) from server-supplied
 /// value scalars; JSON keeps them raw (dsp-cli/ADR-0003 fidelity).
@@ -934,7 +934,7 @@ fn sanitization_prose_strips_esc_json_keeps_raw() {
         values: vec![ValueContent::Text(danger_value.clone()).into()],
     }]));
 
-    // ── Prose: ESC must be stripped, visible text must survive ─────────────────
+    // Prose: ESC must be stripped, visible text must survive
     let (prose_buf, prose_w) = shared_buf();
     let mut prose_r = ProseRenderer::with_writer(prose_w);
     prose_r.resource_describe(&fixture, &anon_meta()).unwrap();
@@ -957,7 +957,7 @@ fn sanitization_prose_strips_esc_json_keeps_raw() {
         "prose must keep visible text 'end' after ESC stripping; got:\n{prose_out:?}"
     );
 
-    // ── JSON: raw ESC must be preserved (dsp-cli/ADR-0003 fidelity) ───────────────────
+    // JSON: raw ESC must be preserved (dsp-cli/ADR-0003 fidelity)
     //
     // The JSON serializer encodes the ESC byte (0x1B) as the JSON unicode
     // escape `` — it is NOT emitted as a raw ESC byte in the JSON text.
@@ -982,7 +982,7 @@ fn sanitization_prose_strips_esc_json_keeps_raw() {
     );
 }
 
-// ── S3: vocabulary-leak guard in json ──────────────────────────────────────────
+// S3: vocabulary-leak guard in json
 
 /// The vocabulary-leak guard (`!out.contains("knora-api:")`) from the prose
 /// snapshot tests must ALSO hold in a json values test.
@@ -1013,7 +1013,7 @@ fn json_values_no_knora_api_vocab_leak() {
     );
 }
 
-// ── Tabular --values: control-char neutralisation end-to-end ──────────────────
+// Tabular --values: control-char neutralisation end-to-end
 //
 // Direct assertions (not snapshots — an ESC byte in a .snap file is
 // unreadable). Proves THIS call site (the values-mode row builder feeding
@@ -1096,7 +1096,7 @@ fn tabular_values_tsv_neutralises_control_chars() {
     );
 }
 
-// ── Tabular --values: empty-values shape (Some(vec![])) ───────────────────────
+// Tabular --values: empty-values shape (Some(vec![]))
 //
 // Spec (plan Test plan section): header row per HeaderMode (csv/tsv when on;
 // none for lines), zero data rows, no placeholder row — analogous to
@@ -1164,7 +1164,7 @@ fn tabular_values_lines_empty_stdout_is_empty() {
     );
 }
 
-// ── Tabular --values: --columns projection opts resource keys back in ────────
+// Tabular --values: --columns projection opts resource keys back in
 //
 // D2: `label`/`iri` are opt-in in values mode. Proves the caller can opt them
 // back in via `--columns` and that unlisted columns (here, `field_label`) are
@@ -1210,7 +1210,7 @@ fn tabular_values_csv_columns_projection_opts_in_resource_keys() {
     );
 }
 
-// ── Tabular --values: --columns opts in the per-value `comment` column ───────
+// Tabular --values: --columns opts in the per-value `comment` column
 
 /// CSV `--columns field,value,comment`: the `comment` column is opt-in (not in
 /// the default set) and, once projected, carries the per-value comment text.

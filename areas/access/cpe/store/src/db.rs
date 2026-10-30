@@ -240,7 +240,7 @@ mod tests {
         open_project_db(good_calendar).expect("a known date_calendar must load");
     }
 
-    // ── ProjectStore ──────────────────────────────────────────────────────────
+    // ProjectStore
 
     use std::error::Error;
 

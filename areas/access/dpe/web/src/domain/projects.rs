@@ -256,7 +256,7 @@ mod tests {
         ProjectQuery::default()
     }
 
-    // --- status filtering ---
+    // status filtering
 
     #[test]
     fn no_status_filter_returns_all() {
@@ -307,7 +307,7 @@ mod tests {
         assert_eq!(page.total_items, 2);
     }
 
-    // --- search filtering ---
+    // search filtering
 
     #[test]
     fn search_matches_name() {
@@ -372,7 +372,7 @@ mod tests {
         assert_eq!(page.items.len(), 0);
     }
 
-    // --- type_of_data filtering ---
+    // type_of_data filtering
 
     #[test]
     fn type_of_data_filter_matches() {
@@ -430,7 +430,7 @@ mod tests {
         assert_eq!(page.total_items, 2);
     }
 
-    // --- data_language filtering ---
+    // data_language filtering
 
     #[test]
     fn data_language_filter_matches() {
@@ -458,7 +458,7 @@ mod tests {
         assert_eq!(page.items[0].name, "A");
     }
 
-    // --- access_rights filtering ---
+    // access_rights filtering
 
     #[test]
     fn access_rights_filter_matches() {
@@ -482,7 +482,7 @@ mod tests {
         assert_eq!(page.items[0].name, "A");
     }
 
-    // --- sorting ---
+    // sorting
 
     #[test]
     fn results_sorted_alphabetically_case_insensitive() {
@@ -496,7 +496,7 @@ mod tests {
         assert_eq!(names, vec!["apple", "Mango", "Zebra"]);
     }
 
-    // --- pagination ---
+    // pagination
 
     #[test]
     fn pagination_first_page() {
@@ -535,7 +535,7 @@ mod tests {
         assert_eq!(page.items.len(), 0);
     }
 
-    // --- ProjectQuery toggle methods ---
+    // ProjectQuery toggle methods
 
     #[test]
     fn with_type_of_data_toggled_adds_value() {
@@ -575,7 +575,7 @@ mod tests {
         assert_eq!(q2.page(), 1);
     }
 
-    // --- to_query_string ---
+    // to_query_string
 
     #[test]
     fn to_query_string_empty() {

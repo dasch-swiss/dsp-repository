@@ -159,7 +159,7 @@ mod tests {
         assert!(!dm.is_builtin);
     }
 
-    // --- ResourceType tests ---
+    // ResourceType tests
 
     #[test]
     fn resource_type_with_label_not_builtin() {
@@ -229,7 +229,7 @@ mod tests {
         assert!(rt.is_builtin);
     }
 
-    // --- ResourceTypeSummary tests ---
+    // ResourceTypeSummary tests
 
     #[test]
     fn resource_type_summary_with_label() {
@@ -259,7 +259,7 @@ mod tests {
         assert_eq!(rt.label, None);
     }
 
-    // --- DataModelDetail tests ---
+    // DataModelDetail tests
 
     #[test]
     fn data_model_detail_full_construction_and_equality() {

@@ -199,7 +199,7 @@ const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>
 /// Every field the form knows, in no particular order — [`SECTIONS`] decides
 /// display order.
 pub const FIELDS: &[Field] = &[
-    // --- Identity -----------------------------------------------------------
+    // Identity
     shown(
         "id",
         "Internal ID",
@@ -243,7 +243,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(MultilingualRows),
     ),
-    // --- Descriptions -------------------------------------------------------
+    // Descriptions
     hinted(
         "shortDescription",
         "Short description",
@@ -276,7 +276,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(MultilingualRows),
     ),
-    // --- Links and citation -------------------------------------------------
+    // Links and citation
     shown(
         "howToCite",
         "How to cite",
@@ -305,7 +305,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(Url(UrlSlot::Secondary)),
     ),
-    // --- Status, dates and access ------------------------------------------
+    // Status, dates and access
     hinted(
         "status",
         "Status",
@@ -368,7 +368,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(OPTIONAL_STRING),
     ),
-    // --- The dataset --------------------------------------------------------
+    // The dataset
     // `Recommended` for both: `082C_decoso` is published with neither, so a
     // submit gate on them would refuse it. See `Obligation`.
     hinted(
@@ -440,7 +440,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(StringRows),
     ),
-    // --- People and publications -------------------------------------------
+    // People and publications
     hinted(
         "attributions",
         "Contributors",
@@ -467,7 +467,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(PublicationRows),
     ),
-    // --- Funding ------------------------------------------------------------
+    // Funding
     hinted(
         "funding",
         "Funding",
@@ -477,7 +477,7 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(FundingRows),
     ),
-    // --- Image and legal ----------------------------------------------------
+    // Image and legal
     hinted(
         "imageCredit",
         "Project image credit",

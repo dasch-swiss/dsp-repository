@@ -35,7 +35,7 @@ const PAGES_PER_CASE: usize = 2;
 /// every id into one `IN (…)` query, so the row is a teaser, not a browse.
 const MAX_STRIP_ROW_LIMIT: u32 = 100;
 
-// ── Lowering ──────────────────────────────────────────────────────────────────
+// Lowering
 
 /// Lower a `woodcut-cases` node. `section=` is required here by presence
 /// only: `lower_page_body`'s slot reader owns its type check. `media=` and
@@ -400,7 +400,7 @@ fn unknown_child(raw: &crate::config::Component, component: &str, child: &str, r
     ));
 }
 
-// ── Config-internal page passes ───────────────────────────────────────────────
+// Config-internal page passes
 
 /// `InvalidShowcaseCase` for a case key used by two blocks of one page (a
 /// repeat inside one block is lowering's). Config-internal, run per page in
@@ -470,7 +470,7 @@ pub(super) fn check_showcase_labels(pages: &[Page], chrome: &[ChromeString], rep
     }
 }
 
-// ── Data checks ───────────────────────────────────────────────────────────────
+// Data checks
 
 /// The success-arm data checks of one lowered `woodcut-cases` on page
 /// `route` (its registry row's `check_data`); other variants are ignored.

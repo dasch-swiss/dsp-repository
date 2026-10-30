@@ -245,7 +245,7 @@ site {
 // which is why the later-slice entries below can be declared now: until
 // their data lands they each emit one non-gating boot warning.
 labels {
-    // ---- Book (Slice 1 — the properties the store builder emits) ----
+    // Book (Slice 1 — the properties the store builder emits)
     //
     // THE TRICK THAT MAKES SLICE 1 NEED ZERO ENGINE CHANGES.
     // Incunabula's display title is not called "name" in the source,
@@ -323,7 +323,7 @@ labels {
         en "Image"
     }
 
-    // ---- Page apparatus ------------------------------------------------
+    // Page apparatus
     // Live since Slice 2 — these labels resolve against real Page data,
     // no UnknownLabel warning.
     property "description" {
@@ -376,7 +376,7 @@ labels {
         en "Used on"
     }
 
-    // ---- Classes (INC.ui.<lang>.cls) ---------------------------------
+    // Classes (INC.ui.<lang>.cls)
     // Every declared class carries a `plural { … }`. Plurals are NOT
     // search-only (an earlier comment here claimed they fed the
     // search-bar's no-match copy alone — wrong, and it left the ACTIVE
@@ -443,9 +443,7 @@ labels {
     }
 }
 
-// ===================================================================
 // 1. Home — the narrative entry (the incubator's DESIGN.md §4.2, §4.3)
-// ===================================================================
 // The editorial archetype carries the head, the drop-cap opening, the
 // epigraph, the five office groups with their invite lists, and the two
 // showcase invites — all of that is Markdown convention, no config node.
@@ -458,9 +456,7 @@ page id="home" route="/" {
     narrative file="home-offices.md"
 }
 
-// ===================================================================
 // 2. Books list (the incubator's DESIGN.md §4.4) — annotated rows, sorted by date
-// ===================================================================
 // SLICE 1 — buildable today. 19 Books, one page.
 page id="books" route="/books" {
     // List | Grid toggle: `grid=#true` (URL-bearing `?view=grid`,
@@ -518,9 +514,7 @@ page id="books" route="/books" {
     // it does not need to declare one to feed this thumb.
 }
 
-// ===================================================================
 // 3. Book page (the incubator's DESIGN.md §4.5) + the reader (§4.6)
-// ===================================================================
 // SLICE 1 — the header and the Apparat are buildable today; the reader
 // column below needs Slice 2's Page data, and its overlays Stage E.
 page id="book" route="/books/:id" {
@@ -597,9 +591,7 @@ page id="book" route="/books/:id" {
     // comes with `annotations=#true`; it needs no config of its own.
 }
 
-// ===================================================================
 // 4. Narrenschiff — showcase 1 (the incubator's DESIGN.md §4.7)
-// ===================================================================
 // LIVE. The narrative's three `##` sections each carry a figure block
 // (Slice 7, per-project components, per O4).
 page id="narrenschiff" route="/narrenschiff" {
@@ -646,9 +638,7 @@ page id="narrenschiff" route="/narrenschiff" {
     }
 }
 
-// ===================================================================
 // 5. Woodcuts — showcase 2 (the incubator's DESIGN.md §4.8)
-// ===================================================================
 // LIVE. The narrative's four `##` sections each carry a block of woodcut
 // crop cases (Slice 7, the per-project `woodcut-cases` component, per O4).
 page id="woodcuts" route="/woodcuts" {
@@ -777,9 +767,7 @@ page id="woodcuts" route="/woodcuts" {
     }
 }
 
-// ===================================================================
 // 6. Border strips — browse (the incubator's DESIGN.md §4.9)
-// ===================================================================
 // SLICE 5 — live. 38 strip types.
 page id="strips" route="/strips" {
     // List | Grid toggle: `grid=#true` (URL-bearing `?view=grid`,
@@ -801,9 +789,7 @@ page id="strips" route="/strips" {
     }
 }
 
-// ===================================================================
 // 7. Border strip detail (the incubator's DESIGN.md §4.9)
-// ===================================================================
 // SLICE 5 — a media record: the props first, the strip plate beside.
 page id="strip" route="/strips/:id" {
     resource-detail id="$id" class="BorderStrip" title-property="name" media="image" {
@@ -817,18 +803,14 @@ page id="strip" route="/strips/:id" {
     }
 }
 
-// ===================================================================
 // 404 (the incubator's DESIGN.md §4.10)
-// ===================================================================
 // Not a page: the 404s are the router fallback + the unknown-id branch, an
 // engine-owned surface. The 404's three browse links (`site.not-found`) are
 // project-configurable (Slice 8 / G11, decision 8) — see `site {}` above.
 // The design's settings (Colophon) screen is not built: the settings page
 // was removed (general chrome, owner decision D2).
 
-// ===================================================================
 // The remodel mapping
-// ===================================================================
 // How the archive's data becomes this project's store: the shortcode, the
 // sentinel for a missing value, the closed vocabularies, which archive class
 // and property is which CPE class and property, and how a resource gets its

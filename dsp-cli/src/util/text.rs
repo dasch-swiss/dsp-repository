@@ -124,7 +124,7 @@ pub(crate) fn sanitise_and_cap(s: &str) -> String {
     }
 }
 
-// ── tag scanner ───────────────────────────────────────────────────────────────
+// tag scanner
 
 /// Walk the input char by char, handling tags. Returns a string with tags
 /// replaced by their plain-text equivalents.
@@ -294,7 +294,7 @@ fn extract_href(inner: &str) -> Option<&str> {
     Some(&value_start[..end])
 }
 
-// ── entity unescaping ─────────────────────────────────────────────────────────
+// entity unescaping
 
 /// Unescape common HTML entities.
 fn unescape_entities(s: &str) -> String {
@@ -348,7 +348,7 @@ fn unescape_entities(s: &str) -> String {
     out
 }
 
-// ── blank-line collapsing ─────────────────────────────────────────────────────
+// blank-line collapsing
 
 /// Collapse 3+ consecutive newlines to exactly 2 (at most one blank line).
 fn collapse_newlines(s: &str) -> String {
@@ -371,7 +371,7 @@ fn collapse_newlines(s: &str) -> String {
     out
 }
 
-// ── tests ─────────────────────────────────────────────────────────────────────
+// tests
 
 #[cfg(test)]
 mod tests {
@@ -555,7 +555,7 @@ mod tests {
         assert_eq!(result, "link text (https://x.com)");
     }
 
-    // ── strip_control_chars tests ─────────────────────────────────────────────
+    // strip_control_chars tests
 
     #[test]
     fn strip_control_chars_keeps_printable() {
@@ -578,7 +578,7 @@ mod tests {
         assert_eq!(strip_control_chars("a\x7fb"), "ab");
     }
 
-    // ── replace_control_chars tests (tabular sanitiser; moved from table.rs) ──
+    // replace_control_chars tests (tabular sanitiser; moved from table.rs)
 
     #[test]
     fn replace_control_chars_plain_string_unchanged() {
@@ -636,7 +636,7 @@ mod tests {
         assert_eq!(replace_control_chars("a\t\nb\rc"), "a  b c");
     }
 
-    // ── sanitise_and_cap tests ─────────────────────────────────────────────────
+    // sanitise_and_cap tests
 
     #[test]
     fn strip_control_chars_strips_c1_csi() {

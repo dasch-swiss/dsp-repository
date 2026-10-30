@@ -96,7 +96,7 @@ pub async fn tab_fragment_handler(
     Ok(Sse::new(stream))
 }
 
-// --- Search Fragment Handler ---
+// Search Fragment Handler
 
 #[derive(Deserialize)]
 pub struct SearchSignals {
@@ -222,7 +222,7 @@ mod tests {
 
     use super::*;
 
-    // --- Unit tests: render_search_results ---
+    // Unit tests: render_search_results
 
     #[test]
     fn search_results_empty_renders_no_results() {
@@ -288,7 +288,7 @@ mod tests {
         }
     }
 
-    // --- Integration tests: tab_fragment_handler via tower ---
+    // Integration tests: tab_fragment_handler via tower
 
     fn test_app() -> Router {
         // Show placeholders in tests to exercise the red-styled rendering path.

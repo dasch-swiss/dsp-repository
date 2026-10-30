@@ -47,7 +47,7 @@ assert_fail() {
   fi
 }
 
-# --- Fixtures -------------------------------------------------------------
+# Fixtures
 
 # make_repo: throwaway repo whose default branch is `base` with one commit.
 # Tests pass BASE_REF=base to compute_range.
@@ -64,7 +64,7 @@ make_repo() {
   printf '%s' "$dir"
 }
 
-# --- Unit: has_override ---------------------------------------------------
+# Unit: has_override
 
 # Consumed by has_override in the sourced script, not directly here.
 # shellcheck disable=SC2034
@@ -82,7 +82,7 @@ assert_fail "override: only unticked box present"  has_override "$(printf '## Su
 assert_fail "override: prefixed word (disallow-)"  has_override "disallow-many-commits-please"
 assert_fail "override: no hyphens"                 has_override "allowmanycommits"
 
-# --- Unit: check_count ----------------------------------------------------
+# Unit: check_count
 
 # Consumed by check_count in the sourced script, not directly here.
 # shellcheck disable=SC2034
@@ -95,7 +95,7 @@ assert_ok   "count: 20 with override passes"       check_count 20 "let's allow-m
 assert_fail "count: 2 with UNticked template box still fails" check_count 2 "- [ ] allow-many-commits"
 assert_ok   "count: 2 with ticked box passes"      check_count 2 "- [x] allow-many-commits"
 
-# --- Integration: compute_range (merge-base correctness) ------------------
+# Integration: compute_range (merge-base correctness)
 
 test_range_ignores_base_movement() {
   local repo; repo="$(make_repo)"
@@ -117,7 +117,7 @@ test_range_ignores_base_movement() {
 }
 assert_ok "range: excludes commits added to base after branch point" test_range_ignores_base_movement
 
-# --- Integration: merge commits are rejected ------------------------------
+# Integration: merge commits are rejected
 
 # make_merged_repo <n>: a feature branch with <n> real commits that has had an
 # advanced `base` merged into it — what GitHub's "Update branch" button
@@ -139,13 +139,13 @@ make_merged_repo() {
   printf '%s' "$dir"
 }
 
-# --- Unit: check_no_merges ------------------------------------------------
+# Unit: check_no_merges
 
 assert_ok   "no-merges: a linear branch passes"    check_no_merges 0
 assert_fail "no-merges: one merge commit fails"    check_no_merges 1
 assert_fail "no-merges: several merge commits fail" check_no_merges 3
 
-# --- Integration: the branch shape the Update-branch button produces ------
+# Integration: the branch shape the Update-branch button produces
 
 test_merge_commit_fails() {
   local repo; repo="$(make_merged_repo 1)"
@@ -192,7 +192,7 @@ assert_fail "merge: two real commits plus a merge still trip the cap"     test_c
 assert_fail "merge: 'allow-many-commits' does not excuse a merge"   test_override_does_not_excuse_a_merge
 assert_ok   "merge: rebasing the same branch makes it pass"         test_rebased_branch_passes
 
-# --- Integration: main (end to end) --------------------------------------
+# Integration: main (end to end)
 
 test_main_single_commit() {
   local repo; repo="$(make_repo)"
@@ -230,7 +230,7 @@ assert_ok   "main: single-commit branch passes"          test_main_single_commit
 assert_fail "main: 2 commits, no override, fails"        test_main_two_commits
 assert_ok   "main: 2 commits with ticked override passes" test_main_two_commits_override
 
-# --- Summary --------------------------------------------------------------
+# Summary
 
 echo
 echo "commit-count tests: $PASS passed, $FAIL failed"

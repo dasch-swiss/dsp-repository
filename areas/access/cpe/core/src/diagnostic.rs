@@ -4,7 +4,7 @@
 //! Conversion from `kdl`/`miette` spans happens at the call site in `config.rs`
 //! and (eventually) `validate.rs`, never here.
 
-// ── Span ─────────────────────────────────────────────────────────────────────
+// Span
 
 /// A byte range into a source string, decoupled from `miette::SourceSpan`.
 /// `offset` is the byte index of the first character; `len` is the byte count.
@@ -14,7 +14,7 @@ pub struct Span {
     pub len: usize,
 }
 
-// ── Severity ──────────────────────────────────────────────────────────────────
+// Severity
 
 /// Whether a diagnostic blocks loading or is advisory.
 ///
@@ -26,7 +26,7 @@ pub enum Severity {
     Warning,
 }
 
-// ── DiagnosticKind ────────────────────────────────────────────────────────────
+// DiagnosticKind
 
 /// Which config-declared surface a `labels {}` entry names — a property (its
 /// `<dt>` label / facet-group heading) or a class (the resource-detail eyebrow
@@ -1237,7 +1237,7 @@ impl DiagnosticKind {
     }
 }
 
-// ── Diagnostic ────────────────────────────────────────────────────────────────
+// Diagnostic
 
 /// A single validation finding: a kind, a human message, an optional source
 /// location, and a severity.
@@ -1275,7 +1275,7 @@ impl Diagnostic {
     }
 }
 
-// ── ValidationReport ─────────────────────────────────────────────────────────
+// ValidationReport
 
 /// An accumulator for zero or more [`Diagnostic`]s produced by the validator.
 ///
@@ -1362,7 +1362,7 @@ fn offset_to_line_col(source: &str, offset: usize) -> (usize, usize) {
     (line, col)
 }
 
-// ── Display + Error for ValidationReport ─────────────────────────────────────
+// Display + Error for ValidationReport
 
 /// Degraded display: kind name + message + raw byte offset (no line:col
 /// because the source text is not available here). This form is used when
@@ -1388,7 +1388,7 @@ impl std::fmt::Display for ValidationReport {
 
 impl std::error::Error for ValidationReport {}
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -1407,7 +1407,7 @@ mod tests {
         r
     }
 
-    // ── offset_to_line_col ────────────────────────────────────────────────
+    // offset_to_line_col
 
     #[test]
     fn line_col_at_offset_zero() {
@@ -1460,7 +1460,7 @@ mod tests {
         assert_eq!(offset_to_line_col(src, 6), (2, 1)); // 'z': line 2, col 1
     }
 
-    // ── render ────────────────────────────────────────────────────────────
+    // render
 
     #[test]
     fn render_located_diagnostic() {
@@ -1511,7 +1511,7 @@ mod tests {
         assert!(!out.contains(":0:0"), "span-less render must not contain ':0:0'");
     }
 
-    // ── DiagnosticKind::severity ──────────────────────────────────────────
+    // DiagnosticKind::severity
 
     #[test]
     fn malformed_property_row_severity_is_error() {
@@ -1904,7 +1904,7 @@ mod tests {
         );
     }
 
-    // ── has_errors / is_empty ─────────────────────────────────────────────
+    // has_errors / is_empty
 
     #[test]
     fn empty_report_is_empty_and_no_errors() {
@@ -1934,7 +1934,7 @@ mod tests {
         assert!(!r.has_errors());
     }
 
-    // ── accumulation + ordering ───────────────────────────────────────────
+    // accumulation + ordering
 
     #[test]
     fn diagnostics_preserve_push_order() {

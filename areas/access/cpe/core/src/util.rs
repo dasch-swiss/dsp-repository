@@ -435,7 +435,7 @@ pub fn substitute_count(template: &str, value: &str) -> String {
     template.replace("{n}", value)
 }
 
-// ── JS-context encoders (DataStar `@get` arguments, JS string literals) ───────
+// JS-context encoders (DataStar `@get` arguments, JS string literals)
 
 /// Escape an arbitrary string for safe interpolation inside a **single-quoted
 /// JS string literal** embedded in an HTML attribute (e.g.
@@ -502,7 +502,7 @@ pub fn js_string_escape(s: &str) -> String {
     out
 }
 
-// ── Query-component percent-encoding ──────────────────────────────────────────
+// Query-component percent-encoding
 
 /// The characters percent-encoded when composing a query key/value:
 /// [`NON_ALPHANUMERIC`] minus RFC 3986's unreserved punctuation (`-`, `_`,
@@ -525,7 +525,7 @@ pub fn percent_encode_component(s: &str) -> String {
     utf8_percent_encode(s, QUERY_ENCODE_SET).to_string()
 }
 
-// ── Free-text search query tokenization (FTS5) ────────────────────────────────
+// Free-text search query tokenization (FTS5)
 
 /// Tokenize a raw free-text search query into an FTS5 `MATCH` expression:
 /// prefix-match every surviving whitespace-separated token, quoted to
@@ -588,7 +588,7 @@ pub fn is_active_search_query(q: &str) -> bool {
     fts_match_expr(q).is_some()
 }
 
-// ── URI safety ────────────────────────────────────────────────────────────────
+// URI safety
 
 /// Check whether a `Text` value's content is a safe external URL.
 ///
@@ -625,7 +625,7 @@ pub fn is_safe_external_url(text: &str) -> bool {
 mod tests {
     use super::*;
 
-    // ── escape_js_string_literal ────────────────────────────────────────────────
+    // escape_js_string_literal
 
     #[test]
     fn escape_js_string_literal_passes_through_safe_id_chars() {
@@ -655,7 +655,7 @@ mod tests {
         assert_eq!(escape_js_string_literal("a`b"), "a\\u0060b");
     }
 
-    // ── js_string_escape ────────────────────────────────────────────────────
+    // js_string_escape
 
     #[test]
     fn js_string_escape_escapes_quote_and_backslash() {
@@ -688,7 +688,7 @@ mod tests {
         );
     }
 
-    // ── percent_encode_component ────────────────────────────────────────────────
+    // percent_encode_component
 
     #[test]
     fn percent_encode_component_is_stable_across_calls() {
@@ -711,7 +711,7 @@ mod tests {
         assert_eq!(percent_encode_component("a b/é~#?&"), "a%20b%2F%C3%A9~%23%3F%26");
     }
 
-    // ── fts_match_expr ──────────────────────────────────────────────────────────
+    // fts_match_expr
 
     #[test]
     fn fts_match_expr_single_term() {
@@ -749,7 +749,7 @@ mod tests {
         );
     }
 
-    // ── is_safe_external_url ────────────────────────────────────────────────────
+    // is_safe_external_url
 
     #[test]
     fn is_safe_external_url_rejects_protocol_relative() {
@@ -771,7 +771,7 @@ mod tests {
         assert_eq!(substitute_count("no placeholder", "3"), "no placeholder");
     }
 
-    // ── first_heading tests ───────────────────────────────────────────────────
+    // first_heading tests
 
     #[test]
     fn first_heading_h1_present() {
@@ -824,7 +824,7 @@ mod tests {
         assert_eq!(first_heading("#  \n\nbody"), None);
     }
 
-    // ── narrative_contains_h1 tests ────────────────────────────────────────────
+    // narrative_contains_h1 tests
 
     #[test]
     fn narrative_contains_h1_true_for_leading_h1() {
@@ -850,7 +850,7 @@ mod tests {
         assert!(!narrative_contains_h1("Just some prose."));
     }
 
-    // ── page_title_heading tests ──────────────────────────────────────────────
+    // page_title_heading tests
 
     /// The Incunabula shape: a leading `###` kicker (an eyebrow *label*,
     /// rendered by `component::editorial` as `p.eyebrow.editorial__kicker`)
@@ -928,7 +928,7 @@ mod tests {
         assert_eq!(page_title_heading("### Kicker\n\n#  \n\nBody."), Some("Kicker".to_owned()));
     }
 
-    // ── markdown_to_text tests ─────────────────────────────────────────────────
+    // markdown_to_text tests
 
     #[test]
     fn markdown_to_text_strips_headings_and_emphasis() {
@@ -971,7 +971,7 @@ mod tests {
         assert_eq!(markdown_to_text("Run `cargo test` now."), "Run cargo test now.");
     }
 
-    // ── split_stem_ext tests ──────────────────────────────────────────────────
+    // split_stem_ext tests
 
     #[test]
     fn simple_extension() {
@@ -1000,7 +1000,7 @@ mod tests {
         assert_eq!(split_stem_ext(""), (String::new(), String::new()));
     }
 
-    // ── variant_filename tests ────────────────────────────────────────────────
+    // variant_filename tests
 
     #[test]
     fn variant_filename_simple_extension() {
@@ -1018,7 +1018,7 @@ mod tests {
         assert_eq!(variant_filename("readme", "de"), None);
     }
 
-    // ── decode_query_value / search_query_param tests ─────────────────────────
+    // decode_query_value / search_query_param tests
 
     #[test]
     fn decode_query_value_percent_decodes_space() {
@@ -1035,7 +1035,7 @@ mod tests {
         assert_eq!(decode_query_value("rab"), "rab");
     }
 
-    // ── hidden_pairs_dropping tests ───────────────────────────────────────────
+    // hidden_pairs_dropping tests
 
     fn owned(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
         pairs.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect()
@@ -1098,7 +1098,7 @@ mod tests {
         assert_eq!(search_query_param(Some("q=")), "");
     }
 
-    // ── capitalize_first tests ─────────────────────────────────────────────────
+    // capitalize_first tests
 
     #[test]
     fn capitalize_first_ascii() {

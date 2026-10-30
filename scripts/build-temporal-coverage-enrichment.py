@@ -57,7 +57,7 @@ PERIODS_NAME = "chronontology-periods.json"
 PERIOD_URL_MARKER = "/period/"
 
 
-# --- W3CDTF formatting (mirrors areas/access/dpe/core/src/w3cdtf.rs) ---------------
+# W3CDTF formatting (mirrors areas/access/dpe/core/src/w3cdtf.rs)
 # Used only to convert authoritative ChronOntology year bounds. Free-text ranges
 # are LLM-generated and are expected to already be valid W3CDTF.
 

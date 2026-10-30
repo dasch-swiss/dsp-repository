@@ -52,13 +52,13 @@ setup(
       fs.mkdirSync(path.dirname(state), { recursive: true });
     }
 
-    // --- RDU: seeded by EDITOR_RDU_EMAILS, so it exists at startup ------------
+    // RDU: seeded by EDITOR_RDU_EMAILS, so it exists at startup
     await signIn(page, RDU_EMAIL);
     await page.goto("/depositors");
     await expect(page.locator("body")).toContainText(/depositor/i);
     await context.storageState({ path: RDU_STATE });
 
-    // --- the depositor: nothing seeds it, RDU creates it through the UI -------
+    // the depositor: nothing seeds it, RDU creates it through the UI
     const alreadyExists = await page
       .getByText(DEPOSITOR_EMAIL, { exact: false })
       .count();

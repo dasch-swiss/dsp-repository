@@ -35,13 +35,13 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 /// Standard server label for all snapshot tests — mirrors what `run_describe_impl`
 /// sets from `cfg.server`.
 const SERVER: &str = "https://api.dasch.swiss";
 
-// ── MetaContext helpers ────────────────────────────────────────────────────────
+// MetaContext helpers
 
 /// Anonymous `MetaContext` — mirrors what `run_describe_impl` builds when no
 /// token is present.
@@ -68,7 +68,7 @@ fn count_caveat_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Main fixture — a beol-like manuscript resource-type exercising:
 /// - `label: Some`, `representation: Some(StillImage)`, `super_types: ["writtenSource"]`
@@ -235,7 +235,7 @@ fn degraded_field_detail() -> ResourceTypeDetail {
     }
 }
 
-// ── main fixture × 5 formats ──────────────────────────────────────────────────
+// main fixture × 5 formats
 
 /// Prose render of the main fixture. Locks:
 /// - Header `Resource-type: manuscript`
@@ -342,7 +342,7 @@ fn resource_type_describe_tsv() {
     insta::assert_snapshot!("resource_type_describe_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── main fixture with `--count` (plan 030) ────────────────────────────────────
+// main fixture with `--count` (plan 030)
 
 /// Prose render of the main fixture with `--count`. Locks the `Instances:`
 /// line landing right after `Data-model:` (the load-bearing placement decision
@@ -479,7 +479,7 @@ fn resource_type_describe_tsv_stderr_with_count() {
     insta::assert_snapshot!("resource_type_describe_tsv_stderr_with_count", buf_to_string(&err_buf));
 }
 
-// ── empty fixture ─────────────────────────────────────────────────────────────
+// empty fixture
 
 /// Prose render of the empty fixture. Locks:
 /// - `Label:` line omitted when None
@@ -540,7 +540,7 @@ fn resource_type_describe_prose_empty() {
     insta::assert_snapshot!(out);
 }
 
-// ── include-builtins fixture ──────────────────────────────────────────────────
+// include-builtins fixture
 
 /// Prose render of the include-builtins fixture. Locks:
 /// - Project fields render without `(built-in)` marker
@@ -595,7 +595,7 @@ fn resource_type_describe_prose_include_builtins() {
     insta::assert_snapshot!(out);
 }
 
-// ── degraded-field fixture ────────────────────────────────────────────────────
+// degraded-field fixture
 
 /// Prose render of the degraded-field fixture. Locks:
 /// - A field with `ValueType::Other("—")` renders the em-dash as value-type
@@ -645,7 +645,7 @@ fn resource_type_describe_prose_degraded_field() {
     insta::assert_snapshot!(out);
 }
 
-// ── not_found JSON error envelope ─────────────────────────────────────────────
+// not_found JSON error envelope
 
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
@@ -686,7 +686,7 @@ fn resource_type_describe_json_not_found() {
     insta::assert_snapshot!(out);
 }
 
-// ── stderr/stdout contract assertions (non-snapshot) ─────────────────────────
+// stderr/stdout contract assertions (non-snapshot)
 
 /// Lines: disclosure lands on stderr, NOT on stdout.
 #[test]

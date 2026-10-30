@@ -32,7 +32,7 @@ use rusqlite::{Connection, OptionalExtension};
 use crate::db::ProjectStore;
 use crate::error::SqliteError;
 
-// ── Error type ────────────────────────────────────────────────────────────────
+// Error type
 
 /// Errors that can occur while executing a query against the project's
 /// in-memory SQLite.
@@ -80,7 +80,7 @@ impl From<QueryError> for FactsError {
     }
 }
 
-// ── The validator's facts ─────────────────────────────────────────────────────
+// The validator's facts
 
 /// The live store's answer to the validator's [`ProjectFacts`]: each method
 /// forwards to the query function of the same name (`showcase_annotation` to
@@ -184,7 +184,7 @@ impl ProjectFacts for LiveProjectFacts<'_> {
     }
 }
 
-// ── Crate-internal functions ──────────────────────────────────────────────────
+// Crate-internal functions
 //
 // These functions take a `&rusqlite::Connection` directly and never lock.
 // They are `pub(crate)` or private, so they are not part of `cpe-store`'s
@@ -376,7 +376,7 @@ pub(crate) fn properties_present_on_class_of(conn: &Connection, id: &str) -> Res
     Ok(names)
 }
 
-// ── Resource listing functions ────────────────────────────────────────────────
+// Resource listing functions
 
 /// Return `true` when at least one resource with the given `class` exists.
 ///
@@ -544,7 +544,7 @@ pub(crate) fn list_resource_ids(
 ) -> Result<Vec<String>, QueryError> {
     let (where_fragment, where_params) = build_where(wheres)?;
 
-    // ── Build the inner SELECT (GROUP BY subquery) ────────────────────────────
+    // Build the inner SELECT (GROUP BY subquery)
     //
     // Each sort clause contributes:
     //   - one LEFT JOIN alias (pS0, pS1, …)
@@ -617,7 +617,7 @@ pub(crate) fn list_resource_ids(
     all_params.push(rusqlite::types::Value::Text(class.to_owned()));
     all_params.extend(where_params);
 
-    // ── Build ORDER BY for the outer query ────────────────────────────────────
+    // Build ORDER BY for the outer query
     let order_by = if sorts.is_empty() {
         "id".to_owned()
     } else {
@@ -680,7 +680,7 @@ pub(crate) fn list_resource_ids(
     Ok(ids)
 }
 
-// ── FTS search index building ─────────────────────────────────────────────────
+// FTS search index building
 
 /// Build FTS5 virtual tables for every `search-bar` in `config.pages` and
 /// populate them from the loaded data. Called once at boot
@@ -831,7 +831,7 @@ pub(crate) fn build_search_indexes(
     Ok(())
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
+// Private helpers
 
 /// Build the `WHERE` fragment and bound params for a slice of `WhereClause`s.
 ///
@@ -1232,7 +1232,7 @@ pub(crate) fn data_arks(conn: &Connection) -> Result<DataArks, QueryError> {
     ))
 }
 
-// ── Compound-parts functions ──────────────────────────────────────────────────
+// Compound-parts functions
 
 /// Return `true` when at least one `compound_parts` row exists for `parent_id`.
 ///
@@ -1345,7 +1345,7 @@ pub(crate) fn compound_part_headers(
     Ok(headers)
 }
 
-// ── Incoming links (reverse link resolution) ──────────────────────────────────
+// Incoming links (reverse link resolution)
 
 /// Result-column indices of the OPTIONAL `incoming_links` columns.
 /// The eight base columns are always `0..=7`; each optional column is
@@ -1639,7 +1639,7 @@ pub(crate) fn incoming_links(
     Ok(IncomingLinks { rows: links, total })
 }
 
-// ── Annotations ───────────────────────────────────────────────────────────────
+// Annotations
 // dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md
 
 /// Every annotation with its register number `n`: per resource, larger box
@@ -2158,7 +2158,7 @@ pub(crate) fn link_targets(conn: &Connection, link_id: &str) -> Result<Option<Ve
     Ok(Some(rows))
 }
 
-// ── Embedded-media hydration ──────────────────────────────────────────────────
+// Embedded-media hydration
 
 /// Return the ordered list of target Image resource ids a host resource
 /// points at via its `link`-typed `property`, in `properties.seq` order.
@@ -2261,7 +2261,7 @@ pub(crate) fn media_thumb_uris(
         .collect())
 }
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
+// Internal helpers
 
 /// The five date columns of one property row, grouped so
 /// `build_property_value`'s signature stays readable. Every field is the raw
@@ -2456,7 +2456,7 @@ fn get_list_node_label(conn: &Connection, node_id: &str, lang: &Lang) -> Result<
     Ok(label)
 }
 
-// ── Facet query functions ─────────────────────────────────────────────────────
+// Facet query functions
 
 /// Return `(node_id, label, count)` tuples for every distinct `target_id` on
 /// the given `property` across resources of `class`, subject to `base_wheres`.
@@ -2694,7 +2694,7 @@ pub(crate) fn class_has_representations(conn: &Connection, class: &str) -> Resul
     Ok(exists)
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 //
 // Layer-2 integration tests for the query layer.
 //
@@ -2729,11 +2729,11 @@ mod tests {
         property_value_types_on_class, resource_exists, search_index_name,
     };
 
-    // ── Schema DDL ────────────────────────────────────────────────────────────
+    // Schema DDL
 
     const SCHEMA_SQL: &str = include_str!("../schema.sql");
 
-    // ── Fixture data ──────────────────────────────────────────────────────────
+    // Fixture data
 
     /// All 8 value types covered; includes:
     /// - `link` with a resolvable target (`r2`) and a broken target (`missing`)
@@ -2814,7 +2814,7 @@ mod tests {
             ('r1', 'role', 0, 'list_value', 'n1');
     ";
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // Helpers
 
     fn setup_db() -> Connection {
         let conn = Connection::open_in_memory().expect("in-memory db should open");
@@ -2883,7 +2883,7 @@ mod tests {
         resolve(&[code.to_owned()], &site)
     }
 
-    // ── Tests ─────────────────────────────────────────────────────────────────
+    // Tests
 
     #[test]
     fn missing_id_returns_ok_none() {
@@ -3378,7 +3378,7 @@ mod tests {
         assert!(!msg.is_empty(), "error message should be non-empty: {msg}");
     }
 
-    // ── get_representations round-trip ────────────────────────────────────────
+    // get_representations round-trip
 
     #[test]
     fn get_representations_reads_alt_and_attribution() {
@@ -3439,7 +3439,7 @@ mod tests {
         assert_eq!(repr.height, None);
     }
 
-    // ── malformed_property_rows ───────────────────────────────────────────────
+    // malformed_property_rows
 
     /// Build a minimal DB with schema but no data — used for clean-DB assertions.
     fn setup_clean_db() -> Connection {
@@ -3642,7 +3642,7 @@ mod tests {
         assert!(rows.is_empty(), "NULL date_precision must NOT be a violation: {rows:?}");
     }
 
-    // ── class_of ──────────────────────────────────────────────────────────────
+    // class_of
 
     #[test]
     fn class_of_returns_class_for_existing_resource() {
@@ -3658,7 +3658,7 @@ mod tests {
         assert_eq!(result, None, "absent id should return Ok(None)");
     }
 
-    // ── target_class resolution in get_resource ───────────────────────────────
+    // target_class resolution in get_resource
 
     #[test]
     fn link_populates_target_class_for_existing_target() {
@@ -3718,7 +3718,7 @@ mod tests {
         }
     }
 
-    // ── dangling_link_targets ─────────────────────────────────────────────────
+    // dangling_link_targets
 
     #[test]
     fn dangling_link_targets_returns_only_absent_targets() {
@@ -3829,7 +3829,7 @@ mod tests {
         conn
     }
 
-    // ── class_exists ──────────────────────────────────────────────────────────
+    // class_exists
 
     #[test]
     fn class_exists_true_for_present_class() {
@@ -3846,7 +3846,7 @@ mod tests {
         );
     }
 
-    // ── property_exists_anywhere ──────────────────────────────────────────────
+    // property_exists_anywhere
 
     #[test]
     fn property_exists_anywhere_true_for_present_name() {
@@ -3866,7 +3866,7 @@ mod tests {
         );
     }
 
-    // ── properties_present_on_class ───────────────────────────────────────────
+    // properties_present_on_class
 
     #[test]
     fn properties_present_on_class_returns_union() {
@@ -3894,7 +3894,7 @@ mod tests {
         assert!(!names.contains("age"), "Location should NOT have 'age'");
     }
 
-    // ── list_resource_ids — basic sort ────────────────────────────────────────
+    // list_resource_ids — basic sort
 
     #[test]
     fn list_resource_ids_sort_asc_by_name() {
@@ -3924,7 +3924,7 @@ mod tests {
         assert_eq!(ids, vec!["c3", "c2", "c1", "c4"]);
     }
 
-    // ── list_resource_ids — NULL sort last (both directions) ──────────────────
+    // list_resource_ids — NULL sort last (both directions)
 
     #[test]
     fn list_resource_ids_null_sort_last_asc() {
@@ -4124,7 +4124,7 @@ mod tests {
         );
     }
 
-    // ── list_resource_ids — where equals ──────────────────────────────────────
+    // list_resource_ids — where equals
 
     #[test]
     fn list_resource_ids_where_equals_string() {
@@ -4147,7 +4147,7 @@ mod tests {
         assert_eq!(ids, vec!["c2"]);
     }
 
-    // ── list_resource_ids — where in ──────────────────────────────────────────
+    // list_resource_ids — where in
 
     #[test]
     fn list_resource_ids_where_in() {
@@ -4164,7 +4164,7 @@ mod tests {
         assert_eq!(ids_sorted, vec!["c1", "c3"]);
     }
 
-    // ── list_resource_ids — where range ───────────────────────────────────────
+    // list_resource_ids — where range
 
     #[test]
     fn list_resource_ids_where_range_both_bounds() {
@@ -4214,7 +4214,7 @@ mod tests {
         assert_eq!(ids_sorted, vec!["c1", "c3"]);
     }
 
-    // ── list_resource_ids — pagination ────────────────────────────────────────
+    // list_resource_ids — pagination
 
     #[test]
     fn list_resource_ids_pagination_limit_offset() {
@@ -4242,7 +4242,7 @@ mod tests {
         assert!(ids.is_empty(), "offset beyond end should return empty: {ids:?}");
     }
 
-    // ── list_resource_ids — empty result ──────────────────────────────────────
+    // list_resource_ids — empty result
 
     #[test]
     fn list_resource_ids_empty_for_absent_class() {
@@ -4264,7 +4264,7 @@ mod tests {
         assert!(ids.is_empty(), "non-matching where should return empty: {ids:?}");
     }
 
-    // ── count_resources ───────────────────────────────────────────────────────
+    // count_resources
 
     #[test]
     fn count_resources_matches_list_length_no_filter() {
@@ -4307,7 +4307,7 @@ mod tests {
         assert_eq!(count, 0);
     }
 
-    // ── value_out_of_range error ───────────────────────────────────────────────
+    // value_out_of_range error
 
     #[test]
     fn integer_value_out_of_i64_range_returns_error() {
@@ -4323,7 +4323,7 @@ mod tests {
         );
     }
 
-    // ── Numeric integer sort (regression: no CAST to TEXT) ────────────────────
+    // Numeric integer sort (regression: no CAST to TEXT)
 
     /// Resources with integer sort values including single- and double-digit
     /// numbers must sort in NUMERIC order (1, 2, 9, 10, 11, 12), NOT lexical
@@ -4376,7 +4376,7 @@ mod tests {
         );
     }
 
-    // ── Case-insensitive text sort (COLLATE NOCASE) ───────────────────────────
+    // Case-insensitive text sort (COLLATE NOCASE)
 
     /// A one-class fixture whose `name` values are the given `(id, name)` pairs.
     fn name_sort_db(rows: &[(&str, &str)]) -> Connection {
@@ -4424,7 +4424,7 @@ mod tests {
         assert_eq!(ids_by_name(&conn, SortDir::Asc), vec!["u3", "u2", "u1"]);
     }
 
-    // ── Language-aware text sort ───────────────────────────────────────────────
+    // Language-aware text sort
 
     /// Resources with multi-language name properties must sort by the requested
     /// language's value, not by the minimum across all languages. This test
@@ -4522,7 +4522,7 @@ mod tests {
         );
     }
 
-    // ── list_resource_ids — multi-sort (two sort clauses simultaneously) ────────
+    // list_resource_ids — multi-sort (two sort clauses simultaneously)
 
     /// Guard the param-binding-order invariant for the multi-sort path.
     ///
@@ -4601,7 +4601,7 @@ mod tests {
         );
     }
 
-    // ── list_resource_ids — SortKey::Class / SortKey::Id (field sorts) ────────
+    // list_resource_ids — SortKey::Class / SortKey::Id (field sorts)
     //
     // Every `list_resource_ids` call is already filtered to a single class via
     // its `class: &str` parameter (see the `SortKey` doc comment: `Class`/`Id`
@@ -4654,7 +4654,7 @@ mod tests {
         assert_eq!(ids, vec!["c4", "c3", "c2", "c1"]);
     }
 
-    // ── list_resource_ids — mixed field + property sort (interleaving) ────────
+    // list_resource_ids — mixed field + property sort (interleaving)
 
     /// Locks the param-binding-order invariant when a `SortKey::Class`/`Id`
     /// (zero placeholders) is mixed with a `SortKey::Property` (lang + name
@@ -4708,7 +4708,7 @@ mod tests {
         );
     }
 
-    // ── compound_has_parts ─────────────────────────────────────────────────────
+    // compound_has_parts
 
     /// Minimal compound fixture: a Story parent with three Chapter children,
     /// each at a distinct seq. Shared by `compound_has_parts` and
@@ -4793,7 +4793,7 @@ mod tests {
         );
     }
 
-    // ── compound_part_headers ─────────────────────────────────────────────────
+    // compound_part_headers
 
     /// `setup_compound_db` + a `name` property (EN) on each of the three
     /// members, plus a multi-valued (EN+DE) `name` on SCH_002 to exercise the
@@ -4881,7 +4881,7 @@ mod tests {
         assert!(headers.is_empty(), "parent with no compound_parts rows should return []");
     }
 
-    // ── incoming_links ────────────────────────────────────────────────────────
+    // incoming_links
     //
     // Fixture: target strip T1 (and T2), compounds B1/B2 (class Book), Pages:
     // - P_a: B1 seq 2, name "zeta", strip-left → T1
@@ -5387,7 +5387,7 @@ mod tests {
         assert_eq!(incoming_links_statement(&via, "T1", &lang).sql, PRE_G3_NAME_ORDER);
     }
 
-    // ── incoming_links grouped rows ───────────────────────────────────────────
+    // incoming_links grouped rows
     //
     // Fixture: target Work W1; Performances link to it via `work`:
     // - Q1: decade D1840 (seq 1), genre "Oper", date "12.3.1841", sort-key "1841-03-12", source
@@ -5647,7 +5647,7 @@ mod tests {
         assert_eq!(result.total, 60, "the total stays uncapped");
     }
 
-    // ── media_item_ids / media_thumb_uris ─────────────────────────────────────
+    // media_item_ids / media_thumb_uris
     //
     // Fixture: CH_001 (a Character) → three Image targets (I_001, I_002,
     // I_003) via the `image` link property, seq 2, 0, 1 (deliberately out of
@@ -5760,7 +5760,7 @@ mod tests {
         assert!(out.is_empty());
     }
 
-    // ── Facet query tests ─────────────────────────────────────────────────────
+    // Facet query tests
     //
     // Fixture for facet tests: two Character resources (r1 and r4) sharing a
     // `role` list_value property. r1 → n1 only. r4 → n1 and n2 (multi-valued,
@@ -5796,7 +5796,7 @@ mod tests {
         conn
     }
 
-    // ── TargetIn filtering ────────────────────────────────────────────────────
+    // TargetIn filtering
 
     /// `TargetIn` with a single node id filters to only resources having that node.
     #[test]
@@ -5858,7 +5858,7 @@ mod tests {
         assert!(ids.is_empty(), "empty TargetIn must match nothing (AND 0 branch): {ids:?}");
     }
 
-    // ── WhereClause::Search / search_index_name ──────────────────────────────
+    // WhereClause::Search / search_index_name
 
     /// Query-plan regression guard for the cost of facet narrowing.
     ///
@@ -5963,7 +5963,7 @@ mod tests {
         assert_eq!(name, "search_My_Class_full_text");
     }
 
-    // ── list_facet_values ─────────────────────────────────────────────────────
+    // list_facet_values
 
     /// `list_facet_values` returns (node_id, label, count) for each distinct node
     /// in the `role` property across Character resources.
@@ -6136,7 +6136,7 @@ mod tests {
         assert!(rows.is_empty(), "absent property should return empty vec: {rows:?}");
     }
 
-    // ── property_value_types_on_class ─────────────────────────────────────────
+    // property_value_types_on_class
 
     /// `property_value_types_on_class` returns `{"list_value"}` for the `role`
     /// property on the `Character` class (all rows are `list_value` type).
@@ -6183,7 +6183,7 @@ mod tests {
         assert!(types.is_empty(), "absent class should return empty set: {types:?}");
     }
 
-    // ── link_target_classes_on_class / class_has_representations (embedded-media) ──
+    // link_target_classes_on_class / class_has_representations (embedded-media)
 
     #[test]
     fn link_target_classes_on_class_returns_resolvable_target_classes() {
@@ -6230,7 +6230,7 @@ mod tests {
         assert!(!class_has_representations(&conn, "Character").expect("no error"));
     }
 
-    // ── Annotations ───────────────────────────────────────────────────────────
+    // Annotations
     // dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md
 
     mod annotations {
@@ -6677,7 +6677,7 @@ mod tests {
         }
     }
 
-    // ── Data ARKs ─────────────────────────────────────────────────────────────
+    // Data ARKs
 
     #[test]
     fn data_arks_reads_both_tables_apart_and_omits_null_rows() {

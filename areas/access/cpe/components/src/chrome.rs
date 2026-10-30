@@ -70,7 +70,7 @@ impl L4 {
 /// `ChromeMsg::Variant.text(lang)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChromeMsg {
-    // ── `dsp-incubator cpe/web`'s `page` module — shell chrome ───────────────────
+    // `dsp-incubator cpe/web`'s `page` module — shell chrome
     /// The skip-to-content link's visible/accessible text. Shared verbatim by
     /// `render_page`, the unknown-path page, and `cpe-web`'s `render_site_index`
     /// (independent full-page renderers — see `dsp-incubator cpe/CLAUDE.md`'s Non-obvious
@@ -111,7 +111,7 @@ pub enum ChromeMsg {
     /// official name (drafts).
     FooterDaschLabel,
 
-    // ── `component/breadcrumb.rs` ──────────────────────────────────────────
+    // `component/breadcrumb.rs`
     /// `aria-label` for the resource-detail breadcrumb `<nav>`. New.
     BreadcrumbLabel,
     /// The phone back link's visually hidden prefix ("Back:"), before the
@@ -119,7 +119,7 @@ pub enum ChromeMsg {
     /// declension. fr/it are unreviewed drafts.
     CrumbBackPrefix,
 
-    // ── `component/facet_panel.rs` ─────────────────────────────────────────
+    // `component/facet_panel.rs`
     /// "Filters" — both the facet panel's `aria-label` and the filterbar's
     /// visible label (identical wording in all four languages, so one message
     /// serves both call sites). Pre-existing draft (was `filters_word`).
@@ -134,7 +134,7 @@ pub enum ChromeMsg {
     /// `group_clear_label`).
     FacetGroupClearLabel,
 
-    // ── `component/compound_viewer.rs` ─────────────────────────────────────
+    // `component/compound_viewer.rs`
     /// Generic (non-class-aware) empty-state message for a compound with no
     /// members. Pre-existing draft. The class-aware
     /// `compound_no_members_text` is used whenever the compound's parent
@@ -188,7 +188,7 @@ pub enum ChromeMsg {
     /// drafts — see [`ChromeMsg::CompoundPagerLabel`].
     CompoundStaleAddress,
 
-    // ── `component/resource_detail.rs` ─────────────────────────────────────
+    // `component/resource_detail.rs`
     /// Boolean-value "Yes" label. Pre-existing draft (was one half of the
     /// inline `(yes, no)` match in the property-value renderer).
     BoolYes,
@@ -247,12 +247,12 @@ pub enum ChromeMsg {
     /// ("Image unavailable"). Pre-existing draft.
     ImagePlaceholderAriaLabel,
 
-    // ── `component/resource_list.rs` ───────────────────────────────────────
+    // `component/resource_list.rs`
     /// `aria-label` for the pager `<nav>` element. Pre-existing draft (was
     /// `pager_nav_label`).
     PagerNavLabel,
 
-    // ── `cpe-web`'s `page` module — the overview of the projects (site index) ────────────────────
+    // `cpe-web`'s `page` module — the overview of the projects (site index)
     /// `aria-label` on the site-index brand link ("CPE — site index"). New.
     SiteIndexAriaLabel,
     /// `aria-label`/`alt` for the DaSCH logo lockup in the site-index footer.
@@ -274,7 +274,7 @@ pub enum ChromeMsg {
     /// "DaSCH website" external link label in the site-index footer. New.
     SiteIndexDaschLinkLabel,
 
-    // ── `component/search_bar.rs` ───────────────────────────────────────────
+    // `component/search_bar.rs`
     /// The search row's visible `<label>` text ("Search"). New — fr/it are
     /// unreviewed drafts.
     SearchLabel,
@@ -290,13 +290,13 @@ pub enum ChromeMsg {
     /// unreviewed drafts.
     SearchHint,
 
-    // ── `component/media.rs` — the plate access line ──────────────────────
+    // `component/media.rs` — the plate access line
     /// The plate's ACCESS line for a restricted (`limited-view`) image
     /// (`.em-access`). One source of truth for
     /// the restricted-view sentence.
     RfAccessRestricted,
 
-    // ── `component/media.rs` — the record viewer's zoom chrome ────────────
+    // `component/media.rs` — the record viewer's zoom chrome
     /// `title`/`aria-label` on the viewer bar's "zoom in" chip
     /// (`data-viewer-zoom="in"`). New — fr/it are
     /// unreviewed drafts pending native-speaker review, per this catalog's
@@ -318,7 +318,7 @@ pub enum ChromeMsg {
     /// native-speaker review.
     RvViewerErrorLabel,
 
-    // ── `component/media.rs` — the record viewer's drawers ────────────────
+    // `component/media.rs` — the record viewer's drawers
     /// The bar's "Details" drawer toggle — mono label, deliberately no icon.
     /// Also doubles as the
     /// Details rail's own head label. New — fr/it are unreviewed drafts
@@ -391,7 +391,7 @@ pub enum ChromeMsg {
     /// unreviewed drafts pending native-speaker review.
     RvAdjustNote,
 
-    // ── `component/resource_detail.rs` — `.pgroup`, the host's own rights ──
+    // `component/resource_detail.rs` — `.pgroup`, the host's own rights
     /// `.pgroup__head`'s title. CSS applies
     /// `text-transform: uppercase`, so the source string stays normal-case
     /// (matches every other `.rf`/label string in this catalog). New — fr/it
@@ -417,14 +417,14 @@ pub enum ChromeMsg {
     /// review.
     IncomingLinksEmpty,
 
-    // ── `component/project/incunabula/timeline.rs` — the timeline ───────
+    // `component/project/incunabula/timeline.rs` — the timeline
     /// The key line below the timeline's lanes variant, explaining the bar
     /// grammar. Engine-owned (it describes the component's own visual
     /// grammar, so a second project reusing the timeline inherits it). fr/it are
     /// unreviewed drafts.
     TimelineKey,
 
-    // ── `component/project/incunabula/showcase.rs` — crop figures ────────
+    // `component/project/incunabula/showcase.rs` — crop figures
     // fr/it are unreviewed drafts.
     /// The hidden end of a crop link's accessible name, after the book and
     /// page ("— Seite öffnen").
@@ -447,12 +447,12 @@ pub enum ChromeMsg {
     /// is markup, hidden from assistive technology.
     EditionRead,
 
-    // ── `component/editorial.rs` — the page rail ──────────────────────────
+    // `component/editorial.rs` — the page rail
     /// The page rail's visible caption ("Auf dieser Seite"), which also
     /// names its `nav`. fr/it are unreviewed drafts.
     NarrativeRailLabel,
 
-    // ── `component/resource_list.rs` — grid-mode view toggle ──────────────
+    // `component/resource_list.rs` — grid-mode view toggle
     /// The view-toggle's visible/accessible label ("View"). New; fr/it are unreviewed
     /// drafts.
     ViewLabel,
@@ -464,7 +464,7 @@ pub enum ChromeMsg {
     /// tile with no representation to show. See [`ChromeMsg::ViewLabel`].
     GridNoImage,
 
-    // ── empty states and not-found pages ───────────────────────────────────
+    // empty states and not-found pages
     /// Resource-list empty-class message ("This class contains no
     /// resources."). New; italic `--ink-faint`.
     ListEmptyClass,
@@ -518,7 +518,7 @@ pub enum ChromeMsg {
     /// The unknown-record page's breadcrumb current-item label — "Not found". New.
     NfCrumb,
 
-    // ── share view — copy-link control ─────────────────────────────────────
+    // share view — copy-link control
     /// The copy-link control's resting visible/accessible label ("Copy
     /// link"). New — fr/it are unreviewed drafts pending
     /// native-speaker review.
@@ -543,7 +543,7 @@ pub enum ChromeMsg {
     /// accessible name (WCAG 2.5.3). fr/it are unreviewed drafts.
     CopyLinkShort,
 
-    // ── browse controls — ordering control + pager ─────────────────────────
+    // browse controls — ordering control + pager
     /// The ordering control's visible/`aria-label` prefix ("Order:
     /// `<current>`"). New — fr/it are unreviewed
     /// drafts pending native-speaker review.
@@ -568,7 +568,7 @@ pub enum ChromeMsg {
     /// fr/it unreviewed drafts.
     PagerNext,
 
-    // ── `component/annotation.rs` — the annotation register ───────────────
+    // `component/annotation.rs` — the annotation register
     // fr/it are unreviewed drafts.
     /// A rectangle annotation's shape word ("Rectangle").
     AnnoShapeRectangle,
@@ -604,7 +604,7 @@ pub enum ChromeMsg {
     ColourBlack,
     ColourWhite,
 
-    // ── `component/data_links.rs` — the crumb line's dataset panel ────────
+    // `component/data_links.rs` — the crumb line's dataset panel
     // fr/it are unreviewed drafts.
     /// An annotation's role word in the panel ("Region").
     DataRegion,
@@ -1705,7 +1705,7 @@ impl ChromeMsg {
     }
 }
 
-// ── Tuple wrapper helpers ──────────────────────────────────────────────────────
+// Tuple wrapper helpers
 //
 // A handful of call sites want a `(prev, next)` / `(yes, no)` pair rather than
 // two separate lookups. Each element is still an independent fixed
@@ -1717,7 +1717,7 @@ pub(crate) fn bool_labels(lang: &Lang) -> (&'static str, &'static str) {
     (ChromeMsg::BoolYes.text(lang), ChromeMsg::BoolNo.text(lang))
 }
 
-// ── Dates ──────────────────────────────────────────────────────────────────
+// Dates
 //
 // The long form a date value composes from its ISO bounds when its curated
 // display string is written in ANOTHER language than the request's. New; fr/it are
@@ -1858,7 +1858,7 @@ pub(crate) fn compound_step_labels(lang: &Lang) -> (&'static str, &'static str) 
     (ChromeMsg::CompoundPrevLabel.text(lang), ChromeMsg::CompoundNextLabel.text(lang))
 }
 
-// ── Pluralization ───────────────────────────────────────────────────────────────
+// Pluralization
 
 /// A CLDR-style plural category. Only two categories are needed for the
 /// built-in languages' count-inflected engine strings — no external
@@ -2797,7 +2797,7 @@ pub(crate) fn nf_browse_all_text(class_plural: &str, lang: &Lang) -> String {
     }
 }
 
-// ── Timeline ──────────────────────────────────────────────
+// Timeline
 //
 // Built from `L4` TEMPLATES, not a `match lang.as_str()` with a `_` catch-all:
 // the struct literal makes a missing language a compile error, which a string
@@ -2856,7 +2856,7 @@ pub(crate) fn timeline_decade_label(start_year: i32, lang: &Lang) -> String {
     TIMELINE_DECADE_LABEL.pick(lang).replace("{year}", &start_year.to_string())
 }
 
-// ── Showcase crop figures ────────────────────────────────
+// Showcase crop figures
 //
 // `L4` templates like the timeline's above. fr/it are unreviewed drafts.
 
@@ -2991,7 +2991,7 @@ pub(crate) fn case_alt_fallback(book: &str, page: &str, lang: &Lang) -> String {
     format!("{head}{book}{}", rest.replace("{page}", page))
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -3029,7 +3029,7 @@ mod tests {
         cpe_core::lang::resolve(&[code.to_owned()], &site)
     }
 
-    // ── month_name / date_long_text ─────────────
+    // month_name / date_long_text
 
     #[test]
     fn month_name_covers_twelve_months_in_four_languages() {
@@ -3058,7 +3058,7 @@ mod tests {
         assert_eq!(date_long_text("1491", "Februar", None, &lang("de")), "Februar 1491");
     }
 
-    // ── Timeline ────────────────────────────────
+    // Timeline
 
     #[test]
     fn timeline_key_in_four_languages() {
@@ -3154,7 +3154,7 @@ mod tests {
         assert_eq!(timeline_decade_label(1470, &lang("it")), "anni 1470");
     }
 
-    // ── L4::pick ────────────────────────────────────────────────────────────
+    // L4::pick
 
     #[test]
     fn l4_pick_selects_each_declared_language() {
@@ -3174,14 +3174,14 @@ mod tests {
         assert_eq!(msg.text(&lang("zz")), "Order");
     }
 
-    // ── BUILTIN_LANGUAGES ───────────────────────────────────────────────────
+    // BUILTIN_LANGUAGES
 
     #[test]
     fn builtin_languages_is_en_de_fr_it_in_order() {
         assert_eq!(BUILTIN_LANGUAGES, ["en", "de", "fr", "it"]);
     }
 
-    // ── general chrome: the header menu strings ─────────────────────────────
+    // general chrome: the header menu strings
 
     #[test]
     fn language_current_text_names_the_current_language() {
@@ -3227,7 +3227,7 @@ mod tests {
         }
     }
 
-    // ── plural_category ─────────────────────────────────────────────────────
+    // plural_category
 
     #[test]
     fn plural_category_en_de_it_only_one_is_singular() {
@@ -3280,7 +3280,7 @@ mod tests {
         assert_eq!(plural_category(2, &lang("fr")), PluralCategory::Other);
     }
 
-    // ── group_thousands ──────────────────────────────────────────────────────
+    // group_thousands
 
     /// Every separator is asserted **by codepoint escape**, never by a
     /// hand-typed glyph: an ASCII `'` (U+0027) and a plain space (U+0020) look
@@ -3314,7 +3314,7 @@ mod tests {
         assert_eq!(group_thousands(1_000_000, &lang("fr")), "1\u{202F}000\u{202F}000");
     }
 
-    // ── agree_singular_casing ────────────────────────────────────────────────
+    // agree_singular_casing
 
     #[test]
     fn agree_singular_casing_lowercases_when_plural_is_lowercase() {
@@ -3342,7 +3342,7 @@ mod tests {
         assert_eq!(agree_singular_casing("", "works"), "");
     }
 
-    // ── count_resources_text ─────────────────────────────────────────────────
+    // count_resources_text
 
     /// The noun is the caller's (the class's own declared labels) — there is no
     /// generic `Einträge`/`resources` arm left to fall back to.
@@ -3403,7 +3403,7 @@ mod tests {
         );
     }
 
-    // ── compound_nav_label / compound_contents_cap ───────────────────────────
+    // compound_nav_label / compound_contents_cap
 
     #[test]
     fn compound_nav_label_pluralizes_parts_across_languages() {
@@ -3500,7 +3500,7 @@ mod tests {
         }
     }
 
-    // ── dative_plural_de ─────────────────────────────────────────────────────
+    // dative_plural_de
 
     #[test]
     fn dative_plural_de_appends_n_for_regular_plurals() {
@@ -3519,7 +3519,7 @@ mod tests {
         assert_eq!(dative_plural_de("Kondominiums"), "Kondominiums");
     }
 
-    // ── count_of_text ────────────────────────────────────────────────────────
+    // count_of_text
 
     /// The narrowed "N von M {noun}" form dative-inflects the noun — a
     /// project-declared nominative plural like "Werke" must read "Werken"
@@ -3579,7 +3579,7 @@ mod tests {
         );
     }
 
-    // ── incoming_links_shown_text ────────────────────────────────────────────
+    // incoming_links_shown_text
 
     #[test]
     fn incoming_links_shown_text_all_langs() {
@@ -3594,7 +3594,7 @@ mod tests {
         );
     }
 
-    // ── remove_filter_label ─────────────────────────────────────────────────
+    // remove_filter_label
 
     #[test]
     fn remove_filter_label_interpolates_across_languages() {
@@ -3602,7 +3602,7 @@ mod tests {
         assert_eq!(remove_filter_label(&lang("fr"), "Alice"), "Retirer le filtre : Alice");
     }
 
-    // ── narrowed_to_zero_text ─────────────────────────────────────────────────
+    // narrowed_to_zero_text
 
     #[test]
     fn narrowed_to_zero_text_query_only_across_langs() {
@@ -3697,7 +3697,7 @@ mod tests {
         );
     }
 
-    // ── facet_empty_group_text ───────────────────────────────────────────────
+    // facet_empty_group_text
 
     #[test]
     fn facet_empty_group_text_inflects_group_except_german() {
@@ -3721,7 +3721,7 @@ mod tests {
         );
     }
 
-    // ── compound_no_members_text ─────────────────────────────────────────────
+    // compound_no_members_text
 
     #[test]
     fn compound_no_members_text_interpolates_singular_class_per_lang() {
@@ -3746,7 +3746,7 @@ mod tests {
         );
     }
 
-    // ── index_count_text ──────────────────────────────────────────────────────
+    // index_count_text
 
     #[test]
     fn index_count_text_pluralizes_all_langs() {
@@ -3767,7 +3767,7 @@ mod tests {
         assert_eq!(index_count_text(2, &lang("it")), "2 progetti");
     }
 
-    // ── not-found page parameterized helpers ───────────────────────────────────────
+    // not-found page parameterized helpers
 
     #[test]
     fn nf_home_text_interpolates_project_per_lang() {
@@ -3835,7 +3835,7 @@ mod tests {
         assert_eq!(nf_browse_all_text("personaggi", &lang("it")), "Sfoglia tutti i personaggi");
     }
 
-    // ── New fixed ChromeMsg spot-checks ───────────────────────────────────────
+    // New fixed ChromeMsg spot-checks
 
     #[test]
     fn list_empty_class_text_per_lang() {
@@ -3866,7 +3866,7 @@ mod tests {
         }
     }
 
-    // ── ChromeMsg::SearchLabel ────────────────────────────────────────────────
+    // ChromeMsg::SearchLabel
 
     #[test]
     fn search_label_text_per_lang() {
@@ -3877,7 +3877,7 @@ mod tests {
         assert_eq!(msg.text(&lang("it")), "Cerca");
     }
 
-    // ── share-view copy-link chrome ──────────────────────────────────────────
+    // share-view copy-link chrome
 
     #[test]
     fn copy_link_strings_are_non_empty_in_every_lang() {
@@ -3927,7 +3927,7 @@ mod tests {
         );
     }
 
-    // ── the phone crumb row's short strings ──────────────────────────────────
+    // the phone crumb row's short strings
 
     #[test]
     fn phone_crumb_strings_cover_every_builtin_language() {
@@ -3974,7 +3974,7 @@ mod tests {
         }
     }
 
-    // ── browse controls — ordering control + pager strings ─────────────
+    // browse controls — ordering control + pager strings
 
     #[test]
     fn order_label_text_per_lang() {

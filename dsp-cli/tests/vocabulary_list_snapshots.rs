@@ -36,7 +36,7 @@ use dsp_cli::render::{MetaContext, Renderer, VocabularyListView};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 /// Standard server label for all snapshot tests — mirrors what `run_list_impl`
 /// sets from `cfg.server`.
@@ -46,7 +46,7 @@ const SERVER: &str = "api.dasch.swiss";
 /// two stay in sync.
 const COUNT_COST: &str = "--count issues one extra tree fetch per vocabulary (sequential; can be dozens of calls on projects with many vocabularies).";
 
-// ── MetaContext helpers ───────────────────────────────────────────────────────
+// MetaContext helpers
 
 /// Anonymous `MetaContext` — mirrors what `run_list_impl` builds when no token.
 fn anon_meta() -> MetaContext {
@@ -77,7 +77,7 @@ fn count_cost_all_failed_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 fn text(value: &str, language: Option<&str>) -> LocalizedText {
     LocalizedText {
@@ -199,7 +199,7 @@ fn filter_view() -> VocabularyListView {
     }
 }
 
-// ── main fixture × 5 formats (anonymous) ─────────────────────────────────────
+// main fixture × 5 formats (anonymous)
 
 /// Prose render of the main fixture. Locks the header count line, the
 /// `name  labels` layout (D13 language-join order), no per-item count suffix
@@ -273,7 +273,7 @@ fn vocabulary_list_tsv() {
     insta::assert_snapshot!("vocabulary_list_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── counted fixture (all items carry counts) ─────────────────────────────────
+// counted fixture (all items carry counts)
 
 /// Prose render of the counted fixture. Locks the per-item `· N nodes · M
 /// levels` suffix and the `count_cost` disclosure appended to the dsp-cli/ADR-0007
@@ -354,7 +354,7 @@ fn vocabulary_list_tsv_with_count() {
     insta::assert_snapshot!("vocabulary_list_tsv_with_count_stderr", buf_to_string(&err_buf));
 }
 
-// ── all-failed-counted fixture ───────────────────────────────────────────────
+// all-failed-counted fixture
 
 /// CSV render of the all-failed-counted fixture. Locks that the plain 8-column
 /// default header is kept (NOT the counted 10-column default) — the dynamic
@@ -377,7 +377,7 @@ fn vocabulary_list_csv_count_all_failed() {
     insta::assert_snapshot!("vocabulary_list_csv_count_all_failed_stderr", buf_to_string(&err_buf));
 }
 
-// ── empty fixture × prose ─────────────────────────────────────────────────────
+// empty fixture × prose
 
 /// Prose render of the empty fixture. Locks the `(0)` header count and that
 /// the dsp-cli/ADR-0007 footer is still present.
@@ -395,7 +395,7 @@ fn vocabulary_list_prose_empty() {
     insta::assert_snapshot!(out);
 }
 
-// ── filter fixture × prose ────────────────────────────────────────────────────
+// filter fixture × prose
 
 /// Prose render with an active filter. The main fixture has 4 items; filtering
 /// by "epo" yields 1 match (`epoch`). Total stays at 4. Locks the "(1 of 4

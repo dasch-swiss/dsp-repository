@@ -35,9 +35,7 @@ use dsp_cli::model::VocabularyNode;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test against a configurable project (`DSP_TEST_VOCAB_PROJECT`): lists its
 /// vocabularies, describes the first one the server returns, and proves D2 (a node-IRI describe
@@ -54,7 +52,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_vocabulary_list_and_describe() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -69,7 +67,7 @@ fn live_vocabulary_list_and_describe() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // Both `list_vocabularies` and `describe_vocabulary` are public endpoints;
     // the token is optional. If present it exercises the authenticated code
     // path, but its absence is not a skip condition. NEVER interpolate the
@@ -83,10 +81,10 @@ fn live_vocabulary_list_and_describe() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the configured project ─────────────────────────────────────
+    // 4. Resolve the configured project
     eprintln!("live test: resolving project '{}' on {}", project_identifier, cfg.server);
 
     let proj = match client.resolve_project(&cfg.server, &project_identifier) {
@@ -105,7 +103,7 @@ fn live_vocabulary_list_and_describe() {
         proj.iri, proj.shortcode, proj.shortname
     );
 
-    // ── 5. list_vocabularies must return at least one root ────────────────────
+    // 5. list_vocabularies must return at least one root
     eprintln!("live test: calling list_vocabularies for project IRI {}", proj.iri);
 
     let vocabs = client
@@ -118,7 +116,7 @@ fn live_vocabulary_list_and_describe() {
         "project '{project_identifier}' is expected to carry at least one vocabulary root"
     );
 
-    // ── 6. Describe roots until one is nested deeply enough to exercise D2 ───
+    // 6. Describe roots until one is nested deeply enough to exercise D2
     // DSP-API does not specify the order of the vocabulary list, and a project
     // may legitimately hold flat vocabularies beside nested ones — dsp-api's
     // own `anything` fixture has both (`testList`'s children are all leaves,
@@ -156,7 +154,7 @@ fn live_vocabulary_list_and_describe() {
 
     eprintln!("live test: exercising D2 against vocabulary {chosen_iri} ({whole_count} nodes, depth {whole_depth})");
 
-    // ── 7. Describe a NON-root node directly — must return the WHOLE vocabulary (D2) ──
+    // 7. Describe a NON-root node directly — must return the WHOLE vocabulary (D2)
     let node_iri = vocab_tree
         .children
         .first()
@@ -186,7 +184,7 @@ fn live_vocabulary_list_and_describe() {
          subtree — stats must match the root-addressed describe above"
     );
 
-    // ── 8. --subtree-style branch counting on the SAME tree ──────────────────
+    // 8. --subtree-style branch counting on the SAME tree
     let (branch_count, branch_depth) = node_tree.count_and_depth(Some(&node_iri));
     eprintln!("live test: branch stats for node {node_iri}: ({branch_count} nodes, {branch_depth} levels)");
     assert!(

@@ -1105,7 +1105,7 @@ mod tests {
         ProjectDraft::from_raw(&sample_raw())
     }
 
-    // --- FormBody ---------------------------------------------------------
+    // FormBody
 
     #[test]
     fn a_repeated_name_keeps_every_value_in_body_order() {
@@ -1232,7 +1232,7 @@ mod tests {
         assert_eq!(entries[below - 1].1, format!("text {}", below - 1));
     }
 
-    // --- apply_text -------------------------------------------------------
+    // apply_text
 
     #[test]
     fn a_submitted_value_that_differs_from_the_stored_one_is_stored_trimmed() {
@@ -1362,7 +1362,7 @@ mod tests {
         assert_eq!(draft.get("provenance"), Some(&json!("new")));
     }
 
-    // --- apply_multilingual ----------------------------------------------
+    // apply_multilingual
 
     #[test]
     fn a_language_map_is_read_from_its_tag_suffixes() {
@@ -1428,7 +1428,7 @@ mod tests {
         assert_eq!(draft.get("description"), Some(&json!({"en": "Kept verbatim "})));
     }
 
-    // --- apply_string_list -----------------------------------------------
+    // apply_string_list
 
     /// The closed vocabulary `typeOfData` declares, spelled out so a change to the
     /// real vocabulary cannot quietly change what these tests assert.
@@ -1466,7 +1466,7 @@ mod tests {
         assert_eq!(draft.get("typeOfData"), Some(&json!(["Text"])));
     }
 
-    // --- apply_multilingual_rows -----------------------------------------
+    // apply_multilingual_rows
 
     #[test]
     fn rows_of_language_maps_are_read_in_dom_order() {
@@ -1601,7 +1601,7 @@ mod tests {
         assert_eq!(draft.get("keywords"), Some(&json!([{"en": "kept"}])));
     }
 
-    // --- the shapes together ---------------------------------------------
+    // the shapes together
 
     #[test]
     fn a_draft_nobody_edited_survives_a_full_round_trip_unchanged() {
@@ -1734,7 +1734,7 @@ mod tests {
         assert!(!body.exceeds_all("dataLanguage", 0), "a name that is absent exceeds nothing");
     }
 
-    // --- apply_string_rows -----------------------------------------------
+    // apply_string_rows
 
     #[test]
     fn string_rows_keep_body_order_and_drop_an_empty_row() {
@@ -1801,7 +1801,7 @@ mod tests {
         assert_eq!(draft.get("additionalMaterial"), Some(&json!(["https://one.example/"])));
     }
 
-    // --- apply_attribution_rows -------------------------------------------
+    // apply_attribution_rows
 
     #[test]
     fn an_attribution_row_is_defined_by_its_contributor() {
@@ -1913,7 +1913,7 @@ mod tests {
         assert!(draft.get("attributions").is_none(), "the marker clears it");
     }
 
-    // --- apply_text_or_reference_rows -------------------------------------
+    // apply_text_or_reference_rows
 
     const SOURCES: &[&str] = &["Chronontology", "Periodo", "URL"];
 
@@ -2024,7 +2024,7 @@ mod tests {
         assert_eq!(draft.get("temporalCoverage"), Some(&json!([{ "en": "A period " }])));
     }
 
-    // --- the last three shapes --------------------------------------------
+    // the last three shapes
 
     const PLACES: &[&str] = &["Geonames", "Pleiades", "Gazetteer", "URL"];
 

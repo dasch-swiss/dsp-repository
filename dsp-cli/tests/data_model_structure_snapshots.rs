@@ -31,11 +31,11 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 const SERVER: &str = "https://api.dasch.swiss";
 
-// ── MetaContext helpers ────────────────────────────────────────────────────────
+// MetaContext helpers
 
 fn anon_meta() -> MetaContext {
     MetaContext {
@@ -47,7 +47,7 @@ fn anon_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Full-mixed fixture (beol-like). Relations:
 /// - letter → person via hasSender [link, in-model, no tag]
@@ -190,7 +190,7 @@ fn cross_model_heavy_structure() -> DataModelStructure {
     }
 }
 
-// ── prose ×4 ──────────────────────────────────────────────────────────────────
+// prose ×4
 
 /// Prose render of the full-mixed fixture. Locks:
 /// - Header `Structure: beol  (5 relations)`
@@ -343,7 +343,7 @@ fn data_model_structure_prose_cross_model_heavy() {
     insta::assert_snapshot!(out);
 }
 
-// ── json ×2 ───────────────────────────────────────────────────────────────────
+// json ×2
 
 /// JSON render of the full-mixed fixture. Locks:
 /// - dsp-cli/ADR-0003 `{_meta, data:[…]}` envelope
@@ -405,7 +405,7 @@ fn data_model_structure_json_zero_relations() {
     insta::assert_snapshot!(out);
 }
 
-// ── lines ×2 (stdout + stderr) ───────────────────────────────────────────────
+// lines ×2 (stdout + stderr)
 
 /// Lines render of the full-mixed fixture. Locks:
 /// - One tab-separated row per relation: source TAB target TAB kind TAB field
@@ -469,7 +469,7 @@ fn data_model_structure_lines() {
     insta::assert_snapshot!("data_model_structure_lines_stderr", stderr);
 }
 
-// ── csv ×2 (stdout + stderr) ─────────────────────────────────────────────────
+// csv ×2 (stdout + stderr)
 
 /// CSV render of the full-mixed fixture. Locks:
 /// - Header `source,target,kind,field,target_data_model`
@@ -521,7 +521,7 @@ fn data_model_structure_csv() {
     insta::assert_snapshot!("data_model_structure_csv_stderr", stderr);
 }
 
-// ── tsv ×2 (stdout + stderr) ─────────────────────────────────────────────────
+// tsv ×2 (stdout + stderr)
 
 /// TSV render of the full-mixed fixture. Locks:
 /// - Header `source\ttarget\tkind\tfield\ttarget_data_model`

@@ -153,7 +153,7 @@ mod tests {
         NarrativeStore::from_pairs(&owned)
     }
 
-    // ── resolve_variant tests ─────────────────────────────────────────────────
+    // resolve_variant tests
 
     #[test]
     fn variant_present_returns_candidate() {
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(candidate.as_ref(), "notes.intro.de.md");
     }
 
-    // ── resolve_narrative_content tests ───────────────────────────────────────
+    // resolve_narrative_content tests
 
     #[test]
     fn resolve_narrative_content_hits_requested_variant() {
@@ -288,7 +288,7 @@ mod tests {
         );
     }
 
-    // ── render_narrative edge cases ───────────────────────────────────────────
+    // render_narrative edge cases
 
     #[test]
     fn missing_file_renders_empty_article_editorial() {
@@ -327,7 +327,7 @@ mod tests {
         assert!(out.contains("<h1>Hello</h1>"), "heading should be rendered, got: {out}");
     }
 
-    // ── Snapshots ──────────────────────────────────────────────────────────────
+    // Snapshots
 
     #[test]
     fn snapshot_narrative_requested_variant_wins() {

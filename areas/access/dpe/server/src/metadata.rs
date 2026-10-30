@@ -898,7 +898,7 @@ mod tests {
         assert!(!body.contains("DC.title"), "{body}");
     }
 
-    // --- the one negotiation step ---
+    // the one negotiation step
 
     async fn request(method: &str, uri: &str, accept: Option<&str>) -> (StatusCode, HeaderMap, String) {
         let mut builder = Request::builder().method(method).uri(uri);
@@ -1001,7 +1001,7 @@ mod tests {
         }
     }
 
-    // --- the machine-readable representations ---
+    // the machine-readable representations
 
     fn content_type(headers: &HeaderMap) -> &str {
         headers

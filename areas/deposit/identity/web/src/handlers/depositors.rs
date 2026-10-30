@@ -618,7 +618,7 @@ mod route_tests {
         )
     }
 
-    // ---- Who may reach the surface at all -----------------------------------
+    // Who may reach the surface at all
 
     #[tokio::test]
     async fn test_rdu_reaches_the_account_screens() {
@@ -681,7 +681,7 @@ mod route_tests {
         assert_eq!(location(&response).as_deref(), Some("/login?next=/depositors"));
     }
 
-    // ---- Creation -----------------------------------------------------------
+    // Creation
 
     #[tokio::test]
     async fn test_a_duplicate_address_is_refused_however_it_is_capitalised() {
@@ -741,7 +741,7 @@ mod route_tests {
         );
     }
 
-    // ---- Update -------------------------------------------------------------
+    // Update
 
     #[tokio::test]
     async fn test_an_edit_onto_another_accounts_address_is_refused() {
@@ -782,9 +782,9 @@ mod route_tests {
         );
     }
 
-    // ---- Removal ------------------------------------------------------------
+    // Removal
 
-    // ---- RDU accounts, and ids that name nothing ----------------------------
+    // RDU accounts, and ids that name nothing
 
     #[tokio::test]
     async fn test_an_rdu_account_cannot_be_edited_or_removed_here() {
@@ -873,7 +873,7 @@ mod route_tests {
         }
     }
 
-    // ---- Method discipline, and no address in a log -------------------------
+    // Method discipline, and no address in a log
 
     #[tokio::test]
     async fn test_no_address_reaches_a_log_or_a_span_on_any_account_path() {

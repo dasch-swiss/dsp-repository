@@ -1,16 +1,16 @@
 import { onLCP, onINP, onCLS, onTTFB, onFCP } from './vendor/web-vitals-attribution.js';
 
-// --- Configuration ---
+// Configuration
 const COLLECTOR_URL = '/telemetry/collect';
 const MAX_BUFFER_SIZE = 50;
 const MAX_ERRORS_PER_KIND = 10;
 
-// --- Page identity ---
+// Page identity
 const pageLoadId = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
 const traceparent = document.querySelector('meta[name="traceparent"]')?.content ?? null;
 const pageUrl = location.pathname;
 
-// --- Signal buffer (bounded) ---
+// Signal buffer (bounded)
 let buffer = [];
 const errorCounts = {};
 
@@ -25,7 +25,7 @@ function addSignal(signal) {
   });
 }
 
-// --- Core Web Vitals ---
+// Core Web Vitals
 function onVital(metric) {
   const entry = {
     type: 'web_vital',
@@ -69,7 +69,7 @@ onCLS(onVital);
 onTTFB(onVital);
 onFCP(onVital);
 
-// --- JavaScript errors ---
+// JavaScript errors
 window.addEventListener('error', (e) => {
   const kind = e.target !== window ? 'resource_error' : 'js_error';
   // Cap errors per kind to prevent flood from repeated failures
@@ -109,7 +109,7 @@ window.addEventListener('unhandledrejection', (e) => {
   });
 });
 
-// --- Datastar fetch errors ---
+// Datastar fetch errors
 const reportedRetries = new WeakSet();
 document.addEventListener('datastar-fetch', (e) => {
   const { type, el, argsRaw } = e.detail ?? {};
@@ -129,7 +129,7 @@ document.addEventListener('datastar-fetch', (e) => {
   });
 });
 
-// --- Long Animation Frames (LoAF) ---
+// Long Animation Frames (LoAF)
 if ('PerformanceLongAnimationFrameTiming' in window) {
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
@@ -149,7 +149,7 @@ if ('PerformanceLongAnimationFrameTiming' in window) {
   window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
 }
 
-// --- Navigation timing ---
+// Navigation timing
 window.addEventListener('load', () => {
   // Delay to ensure PerformanceNavigationTiming is populated
   setTimeout(() => {
@@ -170,7 +170,7 @@ window.addEventListener('load', () => {
   }, 0);
 });
 
-// --- Connection quality (contextual) ---
+// Connection quality (contextual)
 function getConnectionInfo() {
   const conn = navigator.connection;
   if (!conn) return null;
@@ -182,7 +182,7 @@ function getConnectionInfo() {
   };
 }
 
-// --- Beacon flush ---
+// Beacon flush
 function flush() {
   if (buffer.length === 0) return;
 

@@ -28,9 +28,7 @@ use dsp_cli::config::Config;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: resolve a known project (beol / shortcode `0801`)
 /// then call `list_data_models` against a real server and assert structural
@@ -50,7 +48,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -60,7 +58,7 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // `list_data_models` uses a public endpoint; the token is optional. If
     // present it exercises the authenticated code path, but its absence is not
     // a skip condition. NEVER interpolate the token value in any log or
@@ -74,10 +72,10 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the known project (beol / shortcode 0801) ─────────────────
+    // 4. Resolve the known project (beol / shortcode 0801)
     // Using a well-known active DaSCH research project that has at least one
     // project-defined data-model, so the assertion `!data_models.is_empty()` is
     // reliable. The shortcode `0801` is the canonical beol project.
@@ -95,7 +93,7 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
         proj.iri, proj.shortcode, proj.shortname
     );
 
-    // ── 5. Call list_data_models ──────────────────────────────────────────────
+    // 5. Call list_data_models
     eprintln!("live test: calling list_data_models for project IRI {}", proj.iri);
 
     let data_models = client
@@ -104,7 +102,7 @@ fn live_data_model_list_returns_non_empty_vec_with_valid_data_models() {
 
     eprintln!("live test: received {} data-model(s)", data_models.len());
 
-    // ── 6. Assert structural invariants ──────────────────────────────────────
+    // 6. Assert structural invariants
 
     // beol (0801) is an active research project that must have at least one
     // project-defined data-model. An empty list indicates a server issue or

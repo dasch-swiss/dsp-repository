@@ -239,7 +239,7 @@ pub fn compose_absolute_url(origin: &str, path: &str, query: &str) -> String {
     }
 }
 
-// ── Internal helpers ─────────────────────────────────────────────────────
+// Internal helpers
 
 /// Split `raw_query` into `(key, value)` pairs, decoding **both** halves
 /// via [`decode_query_value`] (percent- and `+`-decoding) so every
@@ -288,7 +288,7 @@ fn encode_pair(key: &str, value: &str) -> String {
 mod tests {
     use super::*;
 
-    // ── compose_canonical_query: fixed order ──────────────────────────────
+    // compose_canonical_query: fixed order
 
     #[test]
     fn fixed_order_q_facets_sort_view_page() {
@@ -421,7 +421,7 @@ mod tests {
         assert_eq!(out, "q=hat&lang=de");
     }
 
-    // ── omission rules ─────────────────────────────────────────────────────
+    // omission rules
 
     #[test]
     fn empty_query_composes_to_empty_string() {
@@ -559,7 +559,7 @@ mod tests {
         assert_eq!(out, "");
     }
 
-    // ── excluded keys never pass through ──────────────────────────────────
+    // excluded keys never pass through
 
     #[test]
     fn never_included_keys_are_all_dropped() {
@@ -576,7 +576,7 @@ mod tests {
         assert_eq!(out, "q=hat");
     }
 
-    // ── shuffled-input ⇒ byte-identical output; q round-trips ──────────────
+    // shuffled-input ⇒ byte-identical output; q round-trips
 
     #[test]
     fn shuffled_param_order_produces_byte_identical_output() {
@@ -608,7 +608,7 @@ mod tests {
         assert_eq!(out, "q=%E2%80%9Chat%E2%80%9D");
     }
 
-    // ── compose_absolute_url ────────────────────────────────────────────────
+    // compose_absolute_url
 
     #[test]
     fn absolute_url_with_query() {

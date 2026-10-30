@@ -41,7 +41,7 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Fixed timestamp used by all test fixtures — keeps snapshots stable across runs.
 fn fixed_expires() -> chrono::DateTime<Utc> {
@@ -216,7 +216,7 @@ fn failure_meta() -> MetaContext {
     }
 }
 
-// ── success cells: auth_login ─────────────────────────────────────────────────
+// success cells: auth_login
 
 #[test]
 fn auth_login_prose() {
@@ -258,7 +258,7 @@ fn auth_login_tsv() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── success cells: auth_status logged-in ─────────────────────────────────────
+// success cells: auth_status logged-in
 
 #[test]
 fn auth_status_prose_logged_in() {
@@ -300,7 +300,7 @@ fn auth_status_tsv_logged_in() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── success cells: auth_status env-authenticated (DSP_TOKEN) ─────────────────
+// success cells: auth_status env-authenticated (DSP_TOKEN)
 
 #[test]
 fn auth_status_prose_env() {
@@ -351,7 +351,7 @@ fn auth_status_tsv_env() {
     insta::assert_snapshot!(out);
 }
 
-// ── success cells: auth_status env-authenticated (DSP_TOKEN, expired) ─────────
+// success cells: auth_status env-authenticated (DSP_TOKEN, expired)
 
 #[test]
 fn auth_status_prose_env_expired() {
@@ -407,7 +407,7 @@ fn auth_status_tsv_env_expired() {
     insta::assert_snapshot!(out);
 }
 
-// ── success cells: auth_status cached token (expired) ────────────────────────
+// success cells: auth_status cached token (expired)
 //
 // D3 headline case: _meta.auth reports "authenticated as <user>" (presence/origin
 // semantics, same as read commands) while data.state reports "expired".
@@ -457,7 +457,7 @@ fn auth_status_tsv_cache_expired() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── success cells: auth_status env-authenticated (DSP_TOKEN, expiry unknown) ──
+// success cells: auth_status env-authenticated (DSP_TOKEN, expiry unknown)
 
 #[test]
 fn auth_status_prose_env_unknown() {
@@ -513,7 +513,7 @@ fn auth_status_tsv_env_unknown() {
     insta::assert_snapshot!(out);
 }
 
-// ── success cells: auth_status not-logged-in ─────────────────────────────────
+// success cells: auth_status not-logged-in
 
 #[test]
 fn auth_status_prose_not_logged_in() {
@@ -555,7 +555,7 @@ fn auth_status_tsv_not_logged_in() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── success cells: auth_logout was_cached=true ───────────────────────────────
+// success cells: auth_logout was_cached=true
 
 #[test]
 fn auth_logout_prose_was_cached() {
@@ -597,7 +597,7 @@ fn auth_logout_tsv_was_cached() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── success cells: auth_logout was_cached=false ──────────────────────────────
+// success cells: auth_logout was_cached=false
 
 #[test]
 fn auth_logout_prose_not_cached() {
@@ -639,7 +639,7 @@ fn auth_logout_tsv_not_cached() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── failure cells ─────────────────────────────────────────────────────────────
+// failure cells
 
 /// `auth_login` × json × AuthRequired — locks down `kind: auth_required`, exit_code 3.
 ///
@@ -700,7 +700,7 @@ fn auth_login_prose_auth_required() {
     );
 }
 
-// ── fixtures: auth_set_token ──────────────────────────────────────────────────
+// fixtures: auth_set_token
 
 fn set_token_outcome() -> AuthSetTokenOutcome {
     AuthSetTokenOutcome {
@@ -755,7 +755,7 @@ fn set_token_failure_meta() -> MetaContext {
     }
 }
 
-// ── success cells: auth_set_token ─────────────────────────────────────────────
+// success cells: auth_set_token
 
 #[test]
 fn auth_set_token_prose() {
@@ -815,7 +815,7 @@ fn auth_set_token_prose_minimal() {
     insta::assert_snapshot!(out);
 }
 
-// ── failure cells: auth_set_token ─────────────────────────────────────────────
+// failure cells: auth_set_token
 
 /// `auth_set_token` × prose × Usage — non-JWT input on stdin.
 ///

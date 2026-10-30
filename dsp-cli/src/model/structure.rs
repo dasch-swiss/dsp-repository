@@ -113,7 +113,7 @@ impl fmt::Display for RelationKind {
 mod tests {
     use super::*;
 
-    // --- Construction, equality, clone round-trip ---
+    // Construction, equality, clone round-trip
 
     #[test]
     fn data_model_structure_full_construction_and_equality() {
@@ -195,7 +195,7 @@ mod tests {
         assert!(!rel.is_builtin);
     }
 
-    // --- RelationKind Display ---
+    // RelationKind Display
 
     #[test]
     fn relation_kind_display_link() {
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(RelationKind::Inherits.to_string(), "inherits");
     }
 
-    // --- RelationKind ordering: Link < Inherits (D6 load-bearing) ---
+    // RelationKind ordering: Link < Inherits (D6 load-bearing)
 
     #[test]
     fn relation_kind_ordering_link_before_inherits() {
@@ -222,7 +222,7 @@ mod tests {
         assert!(RelationKind::Inherits >= RelationKind::Link);
     }
 
-    // --- Invariant (a): field.is_some() iff kind == Link, both directions ---
+    // Invariant (a): field.is_some() iff kind == Link, both directions
 
     #[test]
     fn link_relation_has_field_some() {
@@ -254,7 +254,7 @@ mod tests {
         assert!(rel.field.is_none(), "a non-Link relation must have field == None");
     }
 
-    // --- Asymmetric is_builtin cases ---
+    // Asymmetric is_builtin cases
 
     #[test]
     fn project_link_field_to_builtin_target_is_not_builtin() {
@@ -299,7 +299,7 @@ mod tests {
         );
     }
 
-    // --- Invariant (b): Some-direction — project/sibling target → target_data_model == Some ---
+    // Invariant (b): Some-direction — project/sibling target → target_data_model == Some
 
     #[test]
     fn non_system_target_has_target_data_model_some() {

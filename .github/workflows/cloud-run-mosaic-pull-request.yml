@@ -21,10 +21,8 @@ env:
   IMAGE_TAG: pr-${{ github.event.pull_request.number }}
 
 jobs:
-  # --------------------------------------------------------------------------
   # Deploy a preview environment for the Mosaic playground on Cloud Run.
   # Only runs for PRs from the same repository (not forks).
-  # --------------------------------------------------------------------------
   deploy-preview:
     name: Build and deploy preview
     # Dependabot PRs are skipped because GitHub does not pass repository secrets
@@ -105,11 +103,9 @@ jobs:
 
             _This preview is updated on every push to this PR._
 
-  # --------------------------------------------------------------------------
   # Clean up Cloud Run service when the PR is closed or merged.
   # The `paths` filter does not apply to the `closed` event type, so we check
   # for the existence of the Cloud Run service before attempting deletion.
-  # --------------------------------------------------------------------------
   cleanup-preview:
     name: Clean up preview
     # Dependabot PRs never deploy a preview, so there is nothing to clean up.

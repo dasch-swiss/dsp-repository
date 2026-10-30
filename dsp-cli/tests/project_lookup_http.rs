@@ -33,9 +33,7 @@ fn project_body(id: &str, shortcode: &str, shortname: &str) -> serde_json::Value
     })
 }
 
-// ---------------------------------------------------------------------------
 // By-shortcode lookup
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn resolve_by_shortcode_requests_correct_path() {
@@ -100,9 +98,7 @@ async fn resolve_by_shortcode_sends_no_authorization_header() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // By-shortname lookup
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn resolve_by_shortname_requests_correct_path() {
@@ -136,9 +132,7 @@ async fn resolve_by_shortname_requests_correct_path() {
     drop(mock);
 }
 
-// ---------------------------------------------------------------------------
 // By-IRI lookup (percent-encoding)
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn resolve_by_iri_encodes_path_segment_correctly() {
@@ -204,9 +198,7 @@ async fn resolve_by_iri_sends_no_authorization_header() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // 404 → NotFound
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn resolve_404_returns_not_found() {
@@ -276,9 +268,7 @@ async fn resolve_404_by_iri_message_contains_project_id() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // 5xx → ServerError
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn resolve_500_returns_server_error() {

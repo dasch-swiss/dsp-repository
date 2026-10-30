@@ -70,7 +70,7 @@ mod tests {
         }
     }
 
-    // ---- error cases ----
+    // error cases
 
     #[test]
     fn missing_metadata_prefix_returns_bad_argument() {
@@ -147,7 +147,7 @@ mod tests {
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
 
-    // ---- paging / resumption token ----
+    // paging / resumption token
 
     #[test]
     fn single_page_emits_no_resumption_token() {
@@ -371,7 +371,7 @@ mod tests {
         assert!(xml.contains("entityType:Record"), "set spec should be Record, got: {}", xml);
     }
 
-    // ---- golden tests ----
+    // golden tests
 
     #[test]
     fn golden_oai_dc_response() {
@@ -451,7 +451,7 @@ mod tests {
         assert_eq!(normalize(&xml), expected);
     }
 
-    // ---- schema validation tests ----
+    // schema validation tests
 
     #[test]
     fn list_identifiers_oai_dc_response_is_valid_oai_pmh() {

@@ -27,9 +27,7 @@ env:
   IMAGE_TAG: pr-${{ github.event.pull_request.number }}
 
 jobs:
-  # --------------------------------------------------------------------------
   # Build DPE outside Docker with Swatinem/rust-cache for fast incremental builds.
-  # --------------------------------------------------------------------------
   build:
     name: Build DPE
     # Dependabot PRs are skipped because GitHub does not pass repository secrets
@@ -54,9 +52,7 @@ jobs:
           path: staging/
           retention-days: 1
 
-  # --------------------------------------------------------------------------
   # Package pre-built artifacts into a Docker image and deploy to Cloud Run.
-  # --------------------------------------------------------------------------
   deploy-preview:
     name: Deploy DPE preview
     needs: build
@@ -167,9 +163,7 @@ jobs:
 
             _This preview is updated on every push to this PR._
 
-  # --------------------------------------------------------------------------
   # Clean up Cloud Run service when the PR is closed or merged.
-  # --------------------------------------------------------------------------
   cleanup-preview:
     name: Clean up DPE preview
     # Dependabot PRs never deploy a preview, so there is nothing to clean up.

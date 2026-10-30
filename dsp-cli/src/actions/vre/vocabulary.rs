@@ -60,13 +60,13 @@ fn run_list_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 2. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -79,20 +79,20 @@ fn run_list_impl(
         }
     };
 
-    // ── 3. Resolve token (optional) ───────────────────────────────────────────
+    // 3. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 4. Build auth-state disclosure string ─────────────────────────────────
+    // 4. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 5. Resolve project ────────────────────────────────────────────────────
+    // 5. Resolve project
     let pref = client.resolve_project(&cfg.server, project)?;
 
-    // ── 6. Fetch the project's vocabularies ───────────────────────────────────
+    // 6. Fetch the project's vocabularies
     let mut items = client.list_vocabularies(&cfg.server, &pref.iri, token)?;
 
-    // ── 7. Capture total BEFORE filter ─────────────────────────────────────────
+    // 7. Capture total BEFORE filter
     let total = items.len();
 
     // ── 8. Apply --filter: case-insensitive substring over `name` AND every
@@ -146,7 +146,7 @@ fn run_list_impl(
         }
     }
 
-    // ── 11. Build the --count cost-disclosure message ─────────────────────────
+    // 11. Build the --count cost-disclosure message
     let count_cost = if args.count {
         let mut msg = COUNT_COST.to_string();
         if failed > 0 {
@@ -161,7 +161,7 @@ fn run_list_impl(
         None
     };
 
-    // ── 12. Build view + meta and render ───────────────────────────────────────
+    // 12. Build view + meta and render
     let view = VocabularyListView {
         items,
         total,
@@ -213,13 +213,13 @@ fn run_describe_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --vocabulary required (fail-fast, BEFORE any cache/IO) ────────────
+    // 1. --vocabulary required (fail-fast, BEFORE any cache/IO)
     let vocabulary = args
         .vocabulary
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--vocabulary <name-or-IRI> is required".to_string()))?;
 
-    // ── 2. Bare name requires --project (fail-fast, BEFORE any cache/IO) ─────
+    // 2. Bare name requires --project (fail-fast, BEFORE any cache/IO)
     // A full IRI needs no project (`describe_vocabulary` takes none); only
     // bare-name resolution does, since it must scan one project's roots.
     if !vocabulary.contains("://") && args.project.is_none() {
@@ -230,7 +230,7 @@ fn run_describe_impl(
         ));
     }
 
-    // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 3. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -243,7 +243,7 @@ fn run_describe_impl(
         }
     };
 
-    // ── 4. Resolve token (optional); filter_warning stays None (schema-side) ──
+    // 4. Resolve token (optional); filter_warning stays None (schema-side)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
@@ -258,7 +258,7 @@ fn run_describe_impl(
         None
     };
 
-    // ── 6. Resolve the vocabulary address to a concrete IRI ────────────────────
+    // 6. Resolve the vocabulary address to a concrete IRI
     // Contains `://` → used directly (root or node; `describe_vocabulary`
     // resolves a node upward internally, D2). Otherwise a bare name — scan
     // the project's roots (bare names resolve ROOTS ONLY; node names are
@@ -314,7 +314,7 @@ fn run_describe_impl(
         }
     };
 
-    // ── 7. Fetch the vocabulary's full tree ─────────────────────────────────────
+    // 7. Fetch the vocabulary's full tree
     let tree = client.describe_vocabulary(&cfg.server, &resolved_iri, token)?;
 
     // ── 8. Cross-project guard — runs whenever --project was given,
@@ -358,7 +358,7 @@ fn run_describe_impl(
     //       (whole vocabulary, or the --subtree branch) — D15 invariant. ─────
     let (node_count, depth) = tree.count_and_depth(subtree_of.as_deref());
 
-    // ── 11. Build detail + meta and render ──────────────────────────────────────
+    // 11. Build detail + meta and render
     let detail = VocabularyDetail { tree, subtree_of, node_count, depth };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
@@ -382,9 +382,7 @@ fn local_name(iri: &str) -> String {
     iri.rsplit(['#', '/', ':']).next().unwrap_or(iri).to_string()
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Tests
-// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -405,7 +403,7 @@ mod tests {
         ResourceTypeListView, VocabularyListView,
     };
 
-    // ── MockDspClient ─────────────────────────────────────────────────────────
+    // MockDspClient
 
     struct MockDspClient {
         resolve_result: Option<Result<ProjectRef, Diagnostic>>,
@@ -660,7 +658,7 @@ mod tests {
         }
     }
 
-    // ── RecordingRenderer ─────────────────────────────────────────────────────
+    // RecordingRenderer
 
     struct RecordingRenderer {
         vocabularies_view: Option<VocabularyListView>,
@@ -786,7 +784,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     const SERVER: &str = "https://api.test.dasch.swiss";
 
@@ -890,7 +888,7 @@ mod tests {
         }
     }
 
-    // ── list: fail-fast ───────────────────────────────────────────────────────
+    // list: fail-fast
 
     #[test]
     fn list_missing_project_is_usage_error() {
@@ -902,7 +900,7 @@ mod tests {
         assert_eq!(client.resolve_calls(), 0);
     }
 
-    // ── describe: fail-fast ───────────────────────────────────────────────────
+    // describe: fail-fast
 
     #[test]
     fn describe_missing_vocabulary_is_usage_error() {
@@ -927,7 +925,7 @@ mod tests {
         assert_eq!(client.resolve_calls(), 0, "must fail before any client call");
     }
 
-    // ── bare-name resolution ──────────────────────────────────────────────────
+    // bare-name resolution
 
     #[test]
     fn describe_bare_name_resolves_to_matching_root() {
@@ -1013,7 +1011,7 @@ mod tests {
         );
     }
 
-    // ── --filter (list) ───────────────────────────────────────────────────────
+    // --filter (list)
 
     #[test]
     fn list_filter_matches_non_english_only_label() {
@@ -1046,7 +1044,7 @@ mod tests {
         assert_eq!(view.total, 2, "total is pre-filter");
     }
 
-    // ── --count (list) ────────────────────────────────────────────────────────
+    // --count (list)
 
     #[test]
     fn list_count_fills_node_count_and_depth() {
@@ -1155,7 +1153,7 @@ mod tests {
         );
     }
 
-    // ── cross-project guard (describe) ───────────────────────────────────────
+    // cross-project guard (describe)
 
     #[test]
     fn describe_cross_project_guard_fires_even_for_bare_name_address() {
@@ -1198,7 +1196,7 @@ mod tests {
         );
     }
 
-    // ── filter_warning always None ────────────────────────────────────────────
+    // filter_warning always None
 
     #[test]
     fn filter_warning_is_always_none_on_list_and_describe() {
@@ -1231,7 +1229,7 @@ mod tests {
         assert_eq!(describe_meta.filter_warning, None);
     }
 
-    // ── --subtree ─────────────────────────────────────────────────────────────
+    // --subtree
 
     #[test]
     fn describe_subtree_with_root_address_is_usage_error_even_on_success() {

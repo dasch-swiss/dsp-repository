@@ -53,7 +53,7 @@ fn run_list_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 1. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -66,20 +66,20 @@ fn run_list_impl(
         }
     };
 
-    // ── 2. Resolve token (optional) ───────────────────────────────────────────
+    // 2. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 3. Build auth-state disclosure string ─────────────────────────────────
+    // 3. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 4. Fetch projects ─────────────────────────────────────────────────────
+    // 4. Fetch projects
     let mut projects = client.list_projects(&cfg.server, token)?;
 
-    // ── 5. Capture total BEFORE filtering ────────────────────────────────────
+    // 5. Capture total BEFORE filtering
     let total = projects.len();
 
-    // ── 6. Apply --filter (case-insensitive substring) ────────────────────────
+    // 6. Apply --filter (case-insensitive substring)
     if let Some(ref f) = args.filter {
         let lower = f.to_lowercase();
         projects.retain(|p| {
@@ -89,10 +89,10 @@ fn run_list_impl(
         });
     }
 
-    // ── 7. Sort surviving projects ascending by shortcode ─────────────────────
+    // 7. Sort surviving projects ascending by shortcode
     projects.sort_by(|a, b| a.shortcode.cmp(&b.shortcode));
 
-    // ── 8. Build view + meta and render ──────────────────────────────────────
+    // 8. Build view + meta and render
     let view = ProjectListView { items: projects, total, filter: args.filter.clone() };
     let meta = MetaContext {
         server_label: cfg.server.clone(),
@@ -137,13 +137,13 @@ fn run_describe_impl(
     env_token: Option<String>,
     cache_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    // ── 1. --project required (fail-fast, BEFORE any cache/IO) ───────────────
+    // 1. --project required (fail-fast, BEFORE any cache/IO)
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 2. Load cache (auth-optional: failures fall back to empty cache) ──────
+    // 2. Load cache (auth-optional: failures fall back to empty cache)
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
         None => AuthCache::load(),
@@ -156,17 +156,17 @@ fn run_describe_impl(
         }
     };
 
-    // ── 3. Resolve token (optional) ───────────────────────────────────────────
+    // 3. Resolve token (optional)
     let resolved = resolve_token(env_token, &cache, &cfg.server);
     let token = resolved.as_ref().map(|r| r.token.as_str());
 
-    // ── 4. Build auth-state disclosure string ─────────────────────────────────
+    // 4. Build auth-state disclosure string
     let auth_state = read_auth_state(resolved.as_ref(), &cache, &cfg.server);
 
-    // ── 5. Fetch project detail ───────────────────────────────────────────────
+    // 5. Fetch project detail
     let detail = client.describe_project(&cfg.server, project, token)?;
 
-    // ── 6. Build meta and render ──────────────────────────────────────────────
+    // 6. Build meta and render
     let meta = MetaContext {
         server_label: cfg.server.clone(),
         auth_state,
@@ -253,7 +253,7 @@ fn run_impl(
     cache_path: Option<&Path>,
     cwd: &Path,
 ) -> Result<(), Diagnostic> {
-    // ── 1. Resolve token (fail fast) ──────────────────────────────────────────
+    // 1. Resolve token (fail fast)
     // dsp-cli/ADR-0007: a non-blank DSP_TOKEN wins over the cache. A corrupt/unreadable
     // auth.toml must not mask the env token — tolerate cache-load failures only
     // when the env token would win (mirrors auth::status).
@@ -281,13 +281,13 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
     })?;
     let token = resolved.token.clone();
 
-    // ── 2. --project required ─────────────────────────────────────────────────
+    // 2. --project required
     let project = args
         .project
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--project <shortcode|shortname|IRI> is required".to_string()))?;
 
-    // ── 3. Derive mode from args ──────────────────────────────────────────────
+    // 3. Derive mode from args
     let mode = if args.delete {
         DumpMode::Delete
     } else if args.replace {
@@ -296,7 +296,7 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
         DumpMode::Default
     };
 
-    // ── 4. Staged overwrite guard (only when downloading) ─────────────────────
+    // 4. Staged overwrite guard (only when downloading)
     // Delete mode neither downloads nor produces an output file — skip the guard.
     // For Default/Replace: check for an explicit collision BEFORE any server call.
     let explicit_output = if mode != DumpMode::Delete {
@@ -315,10 +315,10 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
         )));
     }
 
-    // ── 5. Resolve project (always — every mode needs the IRI) ───────────────
+    // 5. Resolve project (always — every mode needs the IRI)
     let proj = client.resolve_project(&cfg.server, project)?;
 
-    // ── 6. Compute output path (Download modes only) ──────────────────────────
+    // 6. Compute output path (Download modes only)
     let output_path: Option<PathBuf> = if mode != DumpMode::Delete {
         let p = match explicit_output {
             Some(p) => p,
@@ -338,10 +338,10 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
         None
     };
 
-    // ── 7. Create (probe) the dump ────────────────────────────────────────────
+    // 7. Create (probe) the dump
     let create_outcome = client.create_project_dump(&cfg.server, &proj.iri, args.skip_assets, &token)?;
 
-    // ── 8. Build MetaContext for the final render ─────────────────────────────
+    // 8. Build MetaContext for the final render
     // Use the shared dsp-cli/ADR-0007 helper so _meta.auth uses the same uniform
     // vocabulary as all other commands (presence/origin, not validity).
     let meta = MetaContext {
@@ -352,7 +352,7 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
         count_cost: None,
     };
 
-    // ── 9. Dispatch by mode + create outcome ──────────────────────────────────
+    // 9. Dispatch by mode + create outcome
     match mode {
         DumpMode::Default => handle_default(
             create_outcome,
@@ -385,9 +385,7 @@ run `dsp auth login --server <s>` or set DSP_TOKEN"
     }
 }
 
-// ---------------------------------------------------------------------------
 // Private helpers
-// ---------------------------------------------------------------------------
 
 /// Map a `CreateDumpOutcome` from the second `create_project_dump` call in
 /// `handle_replace` (after an existing dump was deleted) to `(id, created_at)`.
@@ -413,9 +411,7 @@ before this one could be created; try again"
     }
 }
 
-// ---------------------------------------------------------------------------
 // Private mode helpers
-// ---------------------------------------------------------------------------
 
 /// Handle `create_project_dump` result in **Default** mode.
 ///
@@ -693,9 +689,7 @@ that will complete server-side",
     }
 }
 
-// ---------------------------------------------------------------------------
 // Shared poll loop
-// ---------------------------------------------------------------------------
 
 /// Poll `get_project_dump_status` until `Completed`, using a deterministic
 /// logical clock and capped exponential backoff.
@@ -884,9 +878,7 @@ fn default_output_path(base: &Path, shortcode: &str, now: DateTime<Utc>) -> Path
     base.join(format!("{shortcode}-{}.zip", now.format("%Y%m%dT%H%M%SZ")))
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Tests
-// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -912,7 +904,7 @@ mod tests {
     use crate::render::progress::ProgressReporter;
     use crate::render::{DumpDeleteOutcome, DumpEvent, DumpOutcome, Format, MetaContext, ProjectListView, Renderer};
 
-    // ── MockDspClient ─────────────────────────────────────────────────────────
+    // MockDspClient
 
     /// Records which client method was called in sequence, for asserting
     /// exact call order in mode-aware orchestration tests.
@@ -1351,7 +1343,7 @@ mod tests {
         }
     }
 
-    // ── RecordingRenderer ─────────────────────────────────────────────────────
+    // RecordingRenderer
 
     struct RecordingRenderer {
         dump_outcome: Option<DumpOutcome>,
@@ -1506,7 +1498,7 @@ mod tests {
         }
     }
 
-    // ── RecordingProgressReporter ─────────────────────────────────────────────
+    // RecordingProgressReporter
 
     struct RecordingProgressReporter {
         events: Vec<EventRecord>,
@@ -1548,7 +1540,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     fn fixed_now() -> chrono::DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 5, 29, 12, 0, 0).unwrap()
@@ -1604,7 +1596,7 @@ mod tests {
         |_| {}
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    // tests
 
     #[test]
     fn happy_path_resolve_trigger_poll_download() {
@@ -2271,7 +2263,7 @@ mod tests {
         assert!(!temp.exists(), "temp file should be cleaned up after rename failure");
     }
 
-    // ── Fix 4: download_error Io variant ─────────────────────────────────────
+    // Fix 4: download_error Io variant
 
     /// Parameterised helper that verifies a download error propagates and
     /// leaves no file at the target path. Covers both `Network` and `Io` error
@@ -2317,7 +2309,7 @@ mod tests {
         ));
     }
 
-    // ── Fix 6: skip_assets pass-through ──────────────────────────────────────
+    // Fix 6: skip_assets pass-through
 
     #[test]
     fn skip_assets_true_is_passed_through_to_create_project_dump() {
@@ -2391,9 +2383,9 @@ mod tests {
         );
     }
 
-    // ── Amendment 1: mode-aware orchestration matrix ──────────────────────────
+    // Amendment 1: mode-aware orchestration matrix
 
-    // --- Default mode ---
+    // Default mode
 
     #[test]
     fn default_fresh_created_no_existing_dump() {
@@ -2631,7 +2623,7 @@ mod tests {
         assert!(msg.contains("--delete"), "message must hint at --delete: {msg}");
     }
 
-    // --- Replace mode ---
+    // Replace mode
 
     #[test]
     fn replace_none_existing_creates_fresh() {
@@ -2895,7 +2887,7 @@ mod tests {
         assert_eq!(*client.delete_calls.borrow(), 0, "delete must not be called when in-progress");
     }
 
-    // --- Delete mode ---
+    // Delete mode
 
     #[test]
     fn delete_completed_deletes_without_downloading() {
@@ -3122,7 +3114,7 @@ mod tests {
         assert_eq!(*client.delete_calls.borrow(), 0);
     }
 
-    // ── ExistsForOtherProject mode arms ──────────────────────────────────────
+    // ExistsForOtherProject mode arms
 
     /// The IRI of the foreign (other) project used in cross-project guard tests.
     fn foreign_iri() -> &'static str {
@@ -3529,9 +3521,7 @@ mod tests {
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
     // run_list_impl tests
-    // ─────────────────────────────────────────────────────────────────────────
 
     const LIST_SERVER: &str = "https://api.test.dasch.swiss";
 
@@ -3852,7 +3842,6 @@ mod tests {
     }
 
     // run_describe_impl tests
-    // ─────────────────────────────────────────────────────────────────────────
 
     const DESCRIBE_SERVER: &str = "https://api.test.dasch.swiss";
 

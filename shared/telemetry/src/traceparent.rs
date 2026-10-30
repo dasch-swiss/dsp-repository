@@ -77,7 +77,7 @@ mod tests {
         assert!(validated_traceparent(&None).is_none());
     }
 
-    // --- Property-based tests ---
+    // Property-based tests
 
     mod properties {
         use proptest::prelude::*;

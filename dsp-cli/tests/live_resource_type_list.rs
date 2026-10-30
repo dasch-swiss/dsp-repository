@@ -29,9 +29,7 @@ use dsp_cli::model::ResourceType;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: resolve project `0801` (beol), list its data-models,
 /// find the first project-defined data-model (beol), call `describe_data_model`
@@ -55,7 +53,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -65,7 +63,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // `describe_data_model` uses a public endpoint; the token is optional. If
     // present it exercises the authenticated code path, but its absence is not
     // a skip condition. NEVER interpolate the token value in any log or
@@ -79,10 +77,10 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the known project (beol / shortcode 0801) ─────────────────
+    // 4. Resolve the known project (beol / shortcode 0801)
     // Using a well-known active DaSCH research project that has at least one
     // project-defined data-model with multiple resource-types.
     let project_identifier = "0801";
@@ -99,7 +97,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
         proj.iri, proj.shortcode, proj.shortname
     );
 
-    // ── 5. List data-models and find the beol data-model ─────────────────────
+    // 5. List data-models and find the beol data-model
     // Mirror the action: call `list_data_models` for the project, then find a
     // project-defined (non-builtin) data-model to query. Using the named beol
     // data-model — a stable fixture — rather than picking `[0]` so the test
@@ -121,7 +119,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
 
     eprintln!("live test: found beol data-model (iri: {})", beol_dm.iri);
 
-    // ── 6. Call describe_data_model to obtain resource-types ─────────────────
+    // 6. Call describe_data_model to obtain resource-types
     // The action uses `describe_data_model` as its data source — no new client
     // method is added for resource-type list (see Locked decision #1 in the
     // implementation plan). Mirror that call directly here.
@@ -137,7 +135,7 @@ fn live_resource_type_list_returns_non_empty_vec_with_valid_resource_types() {
         detail.resource_types.len()
     );
 
-    // ── 7. Assert structural invariants — project resource-types ─────────────
+    // 7. Assert structural invariants — project resource-types
 
     // beol (0801) defines multiple resource-types; an empty list indicates a
     // server issue or an unexpected API change.

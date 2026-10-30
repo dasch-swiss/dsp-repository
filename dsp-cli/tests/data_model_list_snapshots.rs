@@ -37,13 +37,13 @@ use dsp_cli::render::{DataModelListView, MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 /// Standard server label for all snapshot tests — mirrors what `run_list_impl`
 /// sets from `cfg.server`.
 const SERVER: &str = "api.dasch.swiss";
 
-// ── MetaContext helpers ────────────────────────────────────────────────────────
+// MetaContext helpers
 
 /// Anonymous `MetaContext` — mirrors what `run_list_impl` builds when no token.
 fn anon_meta() -> MetaContext {
@@ -56,7 +56,7 @@ fn anon_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Helper to construct a `DataModel`.
 fn dm(name: &str, iri: &str, label: Option<&str>, last_modified: Option<&str>, is_builtin: bool) -> DataModel {
@@ -154,7 +154,7 @@ fn filter_view() -> DataModelListView {
     DataModelListView { items, total, filter: Some(filter.to_string()) }
 }
 
-// ── main fixture × 5 formats (anonymous) ─────────────────────────────────────
+// main fixture × 5 formats (anonymous)
 
 /// Prose render of the main fixture. Locks the aligned column layout,
 /// date-only display (no time component), label vs empty slots,
@@ -222,7 +222,7 @@ fn data_model_list_tsv() {
     insta::assert_snapshot!("data_model_list_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── builtins fixture × 4 formats ─────────────────────────────────────────────
+// builtins fixture × 4 formats
 //
 // Lines is skipped because it omits `is_builtin` — its builtins cell would be
 // indistinguishable from the main fixture's lines cell (name+iri only).
@@ -340,7 +340,7 @@ fn data_model_list_builtins_tsv() {
     insta::assert_snapshot!("data_model_list_builtins_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── empty fixture × prose + json ──────────────────────────────────────────────
+// empty fixture × prose + json
 
 /// Prose render of the empty fixture. Locks the `(0):` header shape and the
 /// dsp-cli/ADR-0007 footer with zero rows between them.
@@ -374,7 +374,7 @@ fn data_model_list_json_empty() {
     insta::assert_snapshot!(out);
 }
 
-// ── filter fixture × prose ────────────────────────────────────────────────────
+// filter fixture × prose
 
 /// Prose render with an active filter. The main fixture has 4 items; filtering
 /// by "beol" yields 1 match (only the `beol` name itself — "biblio"'s label
@@ -396,7 +396,7 @@ fn data_model_list_prose_filter() {
     insta::assert_snapshot!(out);
 }
 
-// ── not_found JSON error envelope ─────────────────────────────────────────────
+// not_found JSON error envelope
 
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
@@ -435,7 +435,7 @@ fn data_model_list_json_not_found() {
     insta::assert_snapshot!(out);
 }
 
-// ── stderr/stdout contract assertions (non-snapshot) ─────────────────────────
+// stderr/stdout contract assertions (non-snapshot)
 
 /// Lines: disclosure lands on stderr, NOT on stdout.
 #[test]
@@ -494,7 +494,7 @@ fn data_model_list_tsv_disclosure_on_stderr_not_stdout() {
     );
 }
 
-// ── vocabulary guard (inline) ─────────────────────────────────────────────────
+// vocabulary guard (inline)
 
 /// Prose output must not contain vocabulary-leaked words from the DSP-API layer
 /// (except inside IRI strings, which are data and the documented exception).

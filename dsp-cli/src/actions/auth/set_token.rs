@@ -150,7 +150,7 @@ mod tests {
     use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{MetaContext, Renderer};
 
-    // ── local mock client ─────────────────────────────────────────────────────
+    // local mock client
 
     struct MockDspClient {
         verify_token_result: Result<(), Diagnostic>,
@@ -333,7 +333,7 @@ mod tests {
         }
     }
 
-    // ── recording renderer ─────────────────────────────────────────────────────
+    // recording renderer
 
     struct RecordingRenderer {
         set_token_outcome: Option<AuthSetTokenOutcome>,
@@ -474,7 +474,7 @@ mod tests {
         }
     }
 
-    // ── helpers ────────────────────────────────────────────────────────────────
+    // helpers
 
     /// Produce a minimal JWT with the given JSON payload.
     /// The secret is arbitrary — `extract_meta` disables signature validation.
@@ -497,7 +497,7 @@ mod tests {
 
     const SERVER: &str = "https://api.test.dasch.swiss";
 
-    // ── tests ──────────────────────────────────────────────────────────────────
+    // tests
 
     #[test]
     fn happy_path_full_jwt_caches_entry_and_notifies_renderer() {

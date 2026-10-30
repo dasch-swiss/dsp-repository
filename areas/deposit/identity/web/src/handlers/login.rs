@@ -784,7 +784,7 @@ mod tests {
         cookie_set(&response, SESSION).expect("a session cookie must be set")
     }
 
-    // ---- Anti-enumeration: the response tells an attacker nothing ------------
+    // Anti-enumeration: the response tells an attacker nothing
 
     #[tokio::test]
     async fn test_a_known_and_an_unknown_address_get_byte_for_byte_the_same_answer() {
@@ -965,7 +965,7 @@ mod tests {
         assert!(body_string(attempt).await.contains("not valid"));
     }
 
-    // ---- The happy path -----------------------------------------------------
+    // The happy path
 
     #[tokio::test]
     async fn test_a_destination_pointing_off_site_is_dropped_rather_than_followed() {
@@ -1021,7 +1021,7 @@ mod tests {
         }
     }
 
-    // ---- The development code reveal ---------------------------------------
+    // The development code reveal
 
     /// App state shaped like the PR preview: no relay, no volume, reveal on.
     async fn revealing_state(label: &str) -> (IdentityState, RecordingMailer) {
@@ -1251,7 +1251,7 @@ mod tests {
         assert!(user.last_code_at.is_some());
     }
 
-    // ---- Guessing, replay and binding --------------------------------------
+    // Guessing, replay and binding
 
     #[tokio::test]
     async fn test_a_wrong_code_counts_against_both_the_code_and_the_account() {
@@ -1346,7 +1346,7 @@ mod tests {
         assert_eq!(location(&bare).as_deref(), Some("/login"));
     }
 
-    // ---- Quota and throttling ----------------------------------------------
+    // Quota and throttling
 
     #[tokio::test]
     async fn test_the_cooldown_refuses_a_second_code_without_touching_the_first() {
@@ -1670,7 +1670,7 @@ mod tests {
         assert_eq!(location(&response).as_deref(), Some("/login/code"));
     }
 
-    // ---- Delivery failure ---------------------------------------------------
+    // Delivery failure
 
     #[tokio::test]
     async fn test_a_failed_send_rolls_the_code_and_its_cooldown_back() {
@@ -1730,7 +1730,7 @@ mod tests {
         assert_eq!(submit_code(&app, &logged, &binding).await.status(), StatusCode::SEE_OTHER);
     }
 
-    // ---- Sessions -----------------------------------------------------------
+    // Sessions
 
     #[tokio::test]
     async fn test_sign_out_deletes_the_session_and_clears_the_cookie() {
@@ -1805,7 +1805,7 @@ mod tests {
         );
     }
 
-    // ---- Method and CSRF discipline ----------------------------------------
+    // Method and CSRF discipline
 
     #[tokio::test]
     async fn test_every_state_changing_route_refuses_get() {
@@ -1835,7 +1835,7 @@ mod tests {
         assert_eq!(login_db.identity.count_rows("sessions").await, 0);
     }
 
-    // ---- Forms and navigation ----------------------------------------------
+    // Forms and navigation
 
     #[tokio::test]
     async fn test_a_malformed_address_is_reported_rather_than_silently_accepted() {
@@ -1876,7 +1876,7 @@ mod tests {
         }
     }
 
-    // ---- The branches only an injected storage failure can reach ------------
+    // The branches only an injected storage failure can reach
     //
     // Four calls in this module log a storage error and carry on, and each one
     // decides something: whether a guess is counted, whether a browser keeps a
@@ -2126,7 +2126,7 @@ mod tests {
         );
     }
 
-    // ---- No address in a log or a trace -------------------------------------
+    // No address in a log or a trace
 
     #[tokio::test]
     async fn test_no_address_reaches_a_log_or_a_span_on_any_path() {

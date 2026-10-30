@@ -126,7 +126,7 @@ mod tests {
     use crate::config::{AuthCache, Config};
     use crate::diagnostic::Diagnostic;
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     fn make_cfg(server: &str) -> Config {
         Config { server: server.to_string() }
@@ -158,7 +158,7 @@ mod tests {
         (result, out)
     }
 
-    // ── (a) this command's unique behaviour — print vs. exit 3 ────────────────
+    // (a) this command's unique behaviour — print vs. exit 3
 
     #[test]
     fn cached_unexpired_prints_token() {
@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(out, "opaque-tok\n");
     }
 
-    // ── (b) shared resolution logic (mirrors resolve_token/status) ────────────
+    // (b) shared resolution logic (mirrors resolve_token/status)
 
     #[test]
     fn env_future_exp_wins_over_cache_prints_env_token() {
@@ -394,7 +394,7 @@ mod tests {
         assert!(out.is_empty(), "nothing should be printed on error");
     }
 
-    // ── (c) secret hygiene ──────────────────────────────────────────────────
+    // (c) secret hygiene
 
     #[test]
     fn printed_bytes_equal_token_exactly() {

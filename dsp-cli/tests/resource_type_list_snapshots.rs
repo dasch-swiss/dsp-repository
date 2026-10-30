@@ -40,13 +40,13 @@ use dsp_cli::render::{MetaContext, Renderer, ResourceTypeListView};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── server constant ───────────────────────────────────────────────────────────
+// server constant
 
 /// Standard server label for all snapshot tests — mirrors what `run_list_impl`
 /// sets from `cfg.server`.
 const SERVER: &str = "api.dasch.swiss";
 
-// ── MetaContext helpers ───────────────────────────────────────────────────────
+// MetaContext helpers
 
 /// Anonymous `MetaContext` — mirrors what `run_list_impl` builds when no token.
 fn anon_meta() -> MetaContext {
@@ -72,7 +72,7 @@ fn count_caveat_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Helper to construct a `ResourceType`.
 fn rt(name: &str, iri: &str, label: Option<&str>, is_builtin: bool) -> ResourceType {
@@ -213,7 +213,7 @@ fn filter_view() -> ResourceTypeListView {
     }
 }
 
-// ── main fixture × 5 formats (anonymous) ─────────────────────────────────────
+// main fixture × 5 formats (anonymous)
 
 /// Prose render of the main fixture. Locks the aligned column layout, label vs
 /// empty slots, no `(built-in)` marker on project-only items, and the dsp-cli/ADR-0007
@@ -294,7 +294,7 @@ fn resource_type_list_tsv() {
     insta::assert_snapshot!("resource_type_list_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── main fixture × 5 formats, with `--count` (plan 030) ──────────────────────
+// main fixture × 5 formats, with `--count` (plan 030)
 
 /// Prose render of the main fixture with `--count`. Locks the right-aligned
 /// count column (populated for Archive/letter, blank for noLabelType) and the
@@ -369,7 +369,7 @@ fn resource_type_list_tsv_with_count() {
     insta::assert_snapshot!("resource_type_list_tsv_with_count_stderr", buf_to_string(&err_buf));
 }
 
-// ── builtins fixture × 4 formats ─────────────────────────────────────────────
+// builtins fixture × 4 formats
 //
 // Lines is skipped because it omits `is_builtin` — its builtins cell would be
 // indistinguishable from the main fixture's lines cell (name+iri only).
@@ -496,7 +496,7 @@ fn resource_type_list_builtins_tsv() {
     insta::assert_snapshot!("resource_type_list_builtins_tsv_stderr", buf_to_string(&err_buf));
 }
 
-// ── empty fixture × prose + json ─────────────────────────────────────────────
+// empty fixture × prose + json
 
 /// Prose render of the empty fixture. Locks the `(0):` header shape (including the
 /// data_model name), the dsp-cli/ADR-0007 footer, and zero rows between them.
@@ -532,7 +532,7 @@ fn resource_type_list_json_empty() {
     insta::assert_snapshot!(out);
 }
 
-// ── filter fixture × prose ────────────────────────────────────────────────────
+// filter fixture × prose
 
 /// Prose render with an active filter. The main fixture has 3 items; filtering by
 /// "let" yields 1 match (`letter` — its name contains "let"). Total stays at 3.
@@ -553,7 +553,7 @@ fn resource_type_list_prose_filter() {
     insta::assert_snapshot!(out);
 }
 
-// ── not_found JSON error envelope ─────────────────────────────────────────────
+// not_found JSON error envelope
 
 /// Snapshot of the `not_found` JSON error envelope produced by
 /// `renderer.diagnostic(Diagnostic::NotFound(…), &meta)` on a `JsonRenderer`.
@@ -593,7 +593,7 @@ fn resource_type_list_json_not_found() {
     insta::assert_snapshot!(out);
 }
 
-// ── stderr/stdout contract assertions (non-snapshot) ─────────────────────────
+// stderr/stdout contract assertions (non-snapshot)
 
 /// Lines: disclosure lands on stderr, NOT on stdout.
 #[test]
@@ -652,7 +652,7 @@ fn resource_type_list_tsv_disclosure_on_stderr_not_stdout() {
     );
 }
 
-// ── vocabulary guard (inline) ─────────────────────────────────────────────────
+// vocabulary guard (inline)
 
 /// Prose output must not contain vocabulary-leaked words from the DSP-API layer.
 /// Note: prose does NOT render IRIs (dsp-cli/ADR-0003), so "ontolog" must also not appear.

@@ -28,9 +28,7 @@ use dsp_cli::config::Config;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: call `GET /admin/projects` against a real server and
 /// assert structural invariants on the returned `Vec<Project>`.
@@ -46,7 +44,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_project_list_returns_non_empty_vec_with_valid_shortcodes() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -56,7 +54,7 @@ fn live_project_list_returns_non_empty_vec_with_valid_shortcodes() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // `list_projects` is a public endpoint; the token is optional. If present
     // it exercises the authenticated code path, but its absence is not a skip
     // condition. NEVER interpolate the token value in any log or assertion
@@ -70,10 +68,10 @@ fn live_project_list_returns_non_empty_vec_with_valid_shortcodes() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Call list_projects ─────────────────────────────────────────────────
+    // 4. Call list_projects
     eprintln!("live test: calling list_projects on {}", cfg.server);
 
     let projects = client
@@ -82,7 +80,7 @@ fn live_project_list_returns_non_empty_vec_with_valid_shortcodes() {
 
     eprintln!("live test: received {} projects", projects.len());
 
-    // ── 5. Assert structural invariants ──────────────────────────────────────
+    // 5. Assert structural invariants
     // A real DSP server always has at least one project (the system project
     // or any active research project). An empty list would indicate a server
     // misconfiguration or an unexpected API change.

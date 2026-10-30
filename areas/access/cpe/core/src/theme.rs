@@ -17,7 +17,7 @@
 //! teal, red}; `data-bg` ∈ {neutral, tint}; `data-pick` ∈ the 11 faces in
 //! `Typeface::all()`).
 
-// ── Per-project theme knob ────────────────────────────────────────────────────
+// Per-project theme knob
 
 /// The accent colour for the project. Controls the `data-accent` attribute on
 /// `<html>`. `areas/access/cpe/components/style/tokens.css` defines colour-token overrides for
@@ -119,7 +119,7 @@ impl Background {
 /// so the default emits `data-pick="newsreader"` as a visual no-op.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Typeface {
-    // ── Bookish (serif-led, literary) ──
+    // Bookish (serif-led, literary)
     /// Newsreader — the edition default.
     #[default]
     Newsreader,
@@ -127,7 +127,7 @@ pub enum Typeface {
     Garamond,
     /// Crimson Pro.
     Crimson,
-    // ── Balanced (middle road, incl. serif-title / sans-body pairings) ──
+    // Balanced (middle road, incl. serif-title / sans-body pairings)
     /// Spectral.
     Spectral,
     /// Lora.
@@ -138,7 +138,7 @@ pub enum Typeface {
     SpectralFigtree,
     /// Newsreader title + Figtree body (pairing).
     NewsreaderFigtree,
-    // ── Casual (sans-led, approachable) ──
+    // Casual (sans-led, approachable)
     /// Figtree.
     Figtree,
     /// Hanken Grotesk.
@@ -258,7 +258,7 @@ pub struct ThemeKnob {
     pub typeface: Typeface,
 }
 
-// ── Appearance ────────────────────────────────────────────────────────────────
+// Appearance
 
 /// The resolved colour scheme for a single HTTP request.
 ///
@@ -304,7 +304,7 @@ impl Appearance {
 mod tests {
     use super::*;
 
-    // ── Accent ────────────────────────────────────────────────────────────────
+    // Accent
 
     #[test]
     fn accent_parse_ochre() {
@@ -352,7 +352,7 @@ mod tests {
         assert_eq!(Accent::Red.as_data_attr(), "red");
     }
 
-    // ── Background ───────────────────────────────────────────────────────────
+    // Background
 
     #[test]
     fn background_parse_neutral() {
@@ -388,7 +388,7 @@ mod tests {
         assert_eq!(Background::Tint.as_data_attr(), "tint");
     }
 
-    // ── Typeface ─────────────────────────────────────────────────────────────
+    // Typeface
 
     #[test]
     fn typeface_parse_known_values() {
@@ -443,7 +443,7 @@ mod tests {
         assert_eq!(Typeface::default(), Typeface::Newsreader);
     }
 
-    // ── ThemeKnob ────────────────────────────────────────────────────────────
+    // ThemeKnob
 
     #[test]
     fn theme_knob_default_is_ochre_tint_newsreader() {
@@ -453,7 +453,7 @@ mod tests {
         assert_eq!(knob.typeface, Typeface::Newsreader, "default typeface must be Newsreader");
     }
 
-    // ── parse_config_str ──────────────────────────────────────────────────────
+    // parse_config_str
 
     #[test]
     fn parse_light_returns_light() {
@@ -482,7 +482,7 @@ mod tests {
         assert_eq!(Appearance::parse_config_str("LIGHT"), None);
     }
 
-    // ── as_str ────────────────────────────────────────────────────────────────
+    // as_str
 
     #[test]
     fn as_str_light_is_light() {
@@ -494,7 +494,7 @@ mod tests {
         assert_eq!(Appearance::Dark.as_str(), "dark");
     }
 
-    // ── round-trip ────────────────────────────────────────────────────────────
+    // round-trip
 
     #[test]
     fn round_trip_light() {

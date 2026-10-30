@@ -44,9 +44,7 @@ use crate::model::{
     ResourceTypeSummary, ResourceVisibility, ValueType, Vocabulary, VocabularyHeader, VocabularyNode, VocabularyTree,
 };
 
-// ---------------------------------------------------------------------------
 // Private wire DTOs (boundary translation — dsp-cli/ADR-0001)
-// ---------------------------------------------------------------------------
 
 /// Private DSP-API wire type for the login response.
 ///
@@ -415,9 +413,7 @@ impl DataTaskStatusApiResponse {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Vocabulary wire DTOs (`/admin/lists`) — plan 034
-// ---------------------------------------------------------------------------
 
 /// Wire shape of `GET /admin/lists?projectIri={enc}`.
 #[derive(serde::Deserialize)]
@@ -640,9 +636,7 @@ fn convert_list_nodes(dtos: Vec<ListNodeDto>) -> Vec<VocabularyNode> {
     result
 }
 
-// ---------------------------------------------------------------------------
 // Private helpers
-// ---------------------------------------------------------------------------
 
 /// DSP-API's `POST /v2/authentication` discriminates the user identifier by
 /// which JSON key is present. dsp-cli takes one `--user` value and infers the
@@ -823,9 +817,7 @@ pub(crate) fn data_model_name_from_iri(iri: &str) -> String {
     t.rsplit('/').next().unwrap_or(t).to_string()
 }
 
-// ---------------------------------------------------------------------------
 // describe_resource_type helpers
-// ---------------------------------------------------------------------------
 
 /// System namespace prefixes (Decision 3). A field whose property CURIE prefix
 /// is in this set is a built-in field (hidden by default; revealed with
@@ -998,9 +990,7 @@ fn curie_prefix(id: &str) -> Option<&str> {
         .map(|(prefix, _)| prefix)
 }
 
-// ---------------------------------------------------------------------------
 // Resource list DTOs (boundary translation — dsp-cli/ADR-0001)
-// ---------------------------------------------------------------------------
 
 /// Top-level DTO for `GET /v2/resources` responses.
 ///
@@ -1344,9 +1334,7 @@ fn dsp_api_default_headers() -> reqwest::header::HeaderMap {
     headers
 }
 
-// ---------------------------------------------------------------------------
 // HttpDspClient
-// ---------------------------------------------------------------------------
 
 /// Real HTTP implementation of `DspClient`, backed by `reqwest::blocking`.
 pub struct HttpDspClient {
@@ -1470,10 +1458,10 @@ impl HttpDspClient {
         context_val: &Option<serde_json::Value>,
         extra: &serde_json::Map<String, serde_json::Value>,
     ) -> Vec<FieldValues> {
-        // ── 1. Build prefix → namespace map from @context ────────────────────────
+        // 1. Build prefix → namespace map from @context
         let prefixes: HashMap<String, String> = build_prefix_map(context_val);
 
-        // ── 2. Iterate extra, identify field entries ─────────────────────────────
+        // 2. Iterate extra, identify field entries
         // Denylist: these keys carry value-class-typed objects but are NOT user fields.
         const DENYLIST: &[&str] = &[
             "knora-api:hasIncomingLinkValue",
@@ -1514,7 +1502,7 @@ impl HttpDspClient {
             field_entries.push((key.as_str(), objs));
         }
 
-        // ── 3. Parse each value object into ValueContent ─────────────────────────
+        // 3. Parse each value object into ValueContent
         // We also record which field keys are link-typed for name derivation (D3).
         struct ParsedField<'a> {
             key: &'a str,
@@ -1547,7 +1535,7 @@ impl HttpDspClient {
             parsed_fields.push(ParsedField { key, is_link: any_link, values: contents });
         }
 
-        // ── 4. Resolve field labels (project ontologies only, deduped) ───────────
+        // 4. Resolve field labels (project ontologies only, deduped)
         // Collect distinct project ontology IRIs for fields that need labels.
         // knora-api built-ins skip the fetch → label = None.
         let mut ontology_labels: HashMap<String, HashMap<String, String>> = HashMap::new(); // ont_iri → (prop_iri → label)
@@ -1596,7 +1584,7 @@ impl HttpDspClient {
             }
         }
 
-        // ── 5. Resolve list-node labels (deduped) ────────────────────────────────
+        // 5. Resolve list-node labels (deduped)
         let mut node_labels: HashMap<String, Option<String>> = HashMap::new();
 
         // Collect distinct node IRIs.
@@ -1651,7 +1639,7 @@ impl HttpDspClient {
             }
         }
 
-        // ── 6. Build Vec<FieldValues>, fold labels, preserve server order ─────────
+        // 6. Build Vec<FieldValues>, fold labels, preserve server order
         let mut result: Vec<FieldValues> = Vec::new();
 
         for pf in parsed_fields {
@@ -1701,9 +1689,7 @@ impl HttpDspClient {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Value parsing helpers (pure — no HTTP; tested directly in unit tests)
-// ---------------------------------------------------------------------------
 
 /// Return true iff `val` is a JSON object whose `@type` is a `knora-api:*Value`
 /// (i.e. its local name ends with `Value` and the prefix is `knora-api`).
@@ -1759,7 +1745,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
     let type_local = get_type_local(obj);
 
     match type_local {
-        // ── TextValue ────────────────────────────────────────────────────────────
+        // TextValue
         "TextValue" => {
             // Presence-based detection (Risk 7 / dsp-cli/ADR-0013): if textValueAsXml present
             // → formatted (standoff); else valueAsString.
@@ -1774,13 +1760,13 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Text(content), false)
         }
 
-        // ── IntValue ─────────────────────────────────────────────────────────────
+        // IntValue
         "IntValue" => {
             let n = obj.get("knora-api:intValueAsInt").and_then(|v| v.as_i64()).unwrap_or(0);
             (ValueContent::Integer(n), false)
         }
 
-        // ── DecimalValue ─────────────────────────────────────────────────────────
+        // DecimalValue
         "DecimalValue" => {
             // `decimalValueAsDecimal` is a typed literal: `{"@value": "3.14", "@type":
             // "xsd:decimal"}`.
@@ -1798,7 +1784,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Decimal(s), false)
         }
 
-        // ── BooleanValue ─────────────────────────────────────────────────────────
+        // BooleanValue
         "BooleanValue" => {
             let b = obj
                 .get("knora-api:booleanValueAsBoolean")
@@ -1807,7 +1793,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Boolean(b), false)
         }
 
-        // ── DateValue ────────────────────────────────────────────────────────────
+        // DateValue
         "DateValue" => {
             let calendar = obj
                 .get("knora-api:dateValueHasCalendar")
@@ -1847,7 +1833,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Date(DateValue { calendar, start, end }), false)
         }
 
-        // ── TimeValue ────────────────────────────────────────────────────────────
+        // TimeValue
         "TimeValue" => {
             let s = obj
                 .get("knora-api:timeValueAsTimeStamp")
@@ -1862,7 +1848,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Time(s), false)
         }
 
-        // ── UriValue ─────────────────────────────────────────────────────────────
+        // UriValue
         "UriValue" => {
             let s = obj
                 .get("knora-api:uriValueAsUri")
@@ -1877,7 +1863,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Uri(s), false)
         }
 
-        // ── ColorValue ───────────────────────────────────────────────────────────
+        // ColorValue
         "ColorValue" => {
             let s = obj
                 .get("knora-api:colorValueAsColor")
@@ -1887,7 +1873,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Color(s), false)
         }
 
-        // ── GeonameValue ─────────────────────────────────────────────────────────
+        // GeonameValue
         "GeonameValue" => {
             let s = obj
                 .get("knora-api:geonameValueAsGeonameCode")
@@ -1897,7 +1883,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             (ValueContent::Geoname(s), false)
         }
 
-        // ── ListValue ────────────────────────────────────────────────────────────
+        // ListValue
         "ListValue" => {
             // `listValueAsListNode` → `{"@id": "…"}`.
             let node_iri = obj
@@ -1915,7 +1901,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             )
         }
 
-        // ── LinkValue ────────────────────────────────────────────────────────────
+        // LinkValue
         "LinkValue" => {
             // Prefer embedded `linkValueHasTarget` (complex schema). Fall back to
             // `linkValueHasTargetIri.@id` when only the IRI is available.
@@ -1938,7 +1924,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             )
         }
 
-        // ── File values ──────────────────────────────────────────────────────────
+        // File values
         // Match the whole *FileValue family by leading kind (dsp-cli/ADR-0013).
         t if t.ends_with("FileValue") => {
             let filename = obj
@@ -2006,7 +1992,7 @@ fn parse_value_content(obj: &serde_json::Value) -> (ValueContent, bool) {
             }
         }
 
-        // ── Long-tail: any other *Value (IntervalValue, GeomValue, …) ────────────
+        // Long-tail: any other *Value (IntervalValue, GeomValue, …)
         other => {
             let value_type = object_type_to_kebab(other);
             // Best-effort text: valueAsString if present; else compact JSON of the
@@ -2504,12 +2490,12 @@ project owns the existing dump; cannot safely proceed"
         data_model_iri: &str,
         token: Option<&str>,
     ) -> Result<DataModelStructure, Diagnostic> {
-        // ── 1. Fetch allentities (single fetch — no sibling fetch in v1) ────────
+        // 1. Fetch allentities (single fetch — no sibling fetch in v1)
         let resp = self.fetch_allentities(server, data_model_iri, token)?;
 
         let graph_entities: Vec<OntologyEntityDto> = resp.graph;
 
-        // ── 2. Build property-node lookup ────────────────────────────────────────
+        // 2. Build property-node lookup
         // Partition graph into resource classes and property nodes. Property nodes
         // carry objectType / isLinkProperty / isResourceProperty. Resource classes
         // carry is_resource_class. The two sets are used separately, so we split
@@ -2524,7 +2510,7 @@ project owns the existing dump; cannot safely proceed"
             }
         }
 
-        // ── 3. Collect relations ─────────────────────────────────────────────────
+        // 3. Collect relations
         let mut relations: Vec<Relation> = Vec::new();
 
         for class in &class_nodes {
@@ -2534,7 +2520,7 @@ project owns the existing dump; cannot safely proceed"
                 if let Some(type_val) = element.get("@type")
                     && type_val.as_str() == Some("owl:Restriction")
                 {
-                    // ── Link edge ────────────────────────────────────────────────
+                    // Link edge
                     let on_prop_id = match element
                         .get("owl:onProperty")
                         .and_then(|v| v.get("@id"))
@@ -2589,7 +2575,7 @@ project owns the existing dump; cannot safely proceed"
                         is_builtin,
                     });
                 } else if let Some(id_val) = element.get("@id").and_then(serde_json::Value::as_str) {
-                    // ── Inherits edge ────────────────────────────────────────────
+                    // Inherits edge
                     // Bare {"@id": "..."} entries are superclass refs (skip blank
                     // nodes / owl:Restriction entries which have @type, not @id at
                     // the top level here).
@@ -2615,7 +2601,7 @@ project owns the existing dump; cannot safely proceed"
             }
         }
 
-        // ── 4. Sort by (source, kind, field, target) — D6 ───────────────────────
+        // 4. Sort by (source, kind, field, target) — D6
         // RelationKind derives Ord with Link < Inherits.
         // Option<String> sorts None < Some (standard Ord).
         relations.sort_by(|a, b| {
@@ -2626,7 +2612,7 @@ project owns the existing dump; cannot safely proceed"
                 .then_with(|| a.target.cmp(&b.target))
         });
 
-        // ── 5. Build and return DataModelStructure ───────────────────────────────
+        // 5. Build and return DataModelStructure
         Ok(DataModelStructure {
             data_model: data_model_name_from_iri(data_model_iri),
             relations,
@@ -2886,7 +2872,7 @@ project owns the existing dump; cannot safely proceed"
         resource_type: &str,
         token: Option<&str>,
     ) -> Result<ResourceTypeDetail, Diagnostic> {
-        // ── 1. Fetch allentities for the queried data-model ───────────────────
+        // 1. Fetch allentities for the queried data-model
         let resp = self.fetch_allentities(server, data_model_iri, token)?;
 
         // Build prefix → namespace map before consuming resp.graph.
@@ -2896,7 +2882,7 @@ project owns the existing dump; cannot safely proceed"
             .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
             .collect();
 
-        // ── 2. Find the target class in this ontology's @graph only ───────────
+        // 2. Find the target class in this ontology's @graph only
         // Expand the queried resource_type: check if it looks like a CURIE or full IRI
         // to allow exact IRI matching.
         let queried_id = resp.id;
@@ -2926,7 +2912,7 @@ project owns the existing dump; cannot safely proceed"
         // target's fields, and we iterate graph_entities for property nodes separately).
         let target = graph_entities.swap_remove(target_idx);
 
-        // ── 3. Parse rdfs:subClassOf into superclass refs + restrictions ───────
+        // 3. Parse rdfs:subClassOf into superclass refs + restrictions
         struct Restriction {
             on_property_id: String,
             cardinality: Cardinality,
@@ -2976,7 +2962,7 @@ project owns the existing dump; cannot safely proceed"
         let representation =
             detect_representation(&restriction_prop_locals.iter().map(String::as_str).collect::<Vec<_>>());
 
-        // ── 5. Build property node lookup from the queried ontology ───────────
+        // 5. Build property node lookup from the queried ontology
         let mut prop_lookup: HashMap<String, OntologyEntityDto> = HashMap::new();
         for entity in graph_entities {
             // Property nodes have an objectType or isResourceProperty/isLinkProperty.
@@ -2986,7 +2972,7 @@ project owns the existing dump; cannot safely proceed"
             }
         }
 
-        // ── 6. Sibling-fetch: resolve missing non-system property nodes ────────
+        // 6. Sibling-fetch: resolve missing non-system property nodes
         // Collect restriction onProperty ids whose node is absent AND whose CURIE
         // prefix is not system-namespace.
         //
@@ -3070,7 +3056,7 @@ project owns the existing dump; cannot safely proceed"
             }
         }
 
-        // ── 7. Build Vec<Field> from restrictions + merged lookup ─────────────
+        // 7. Build Vec<Field> from restrictions + merged lookup
         let mut fields: Vec<(u32, Field)> = Vec::new();
 
         for restriction in &restrictions {
@@ -3079,7 +3065,7 @@ project owns the existing dump; cannot safely proceed"
             // Look up the property node (may be absent for system or failed-fetch fields).
             let node = prop_lookup.get(prop_id.as_str());
 
-            // ── Twin drop (after merges — R-twin) ────────────────────────────
+            // Twin drop (after merges — R-twin)
             if let Some(n) = node {
                 if n.is_link_value_property {
                     // Authoritative node says it's a reification twin — drop it.
@@ -3101,7 +3087,7 @@ project owns the existing dump; cannot safely proceed"
                 }
             }
 
-            // ── Field attributes ─────────────────────────────────────────────
+            // Field attributes
             let prop_prefix = curie_prefix(prop_id).unwrap_or("");
             let is_builtin = is_system_prefix(prop_prefix);
             let (prop_local, prop_iri) = expand_class_id(prop_id, &prefixes);
@@ -3169,13 +3155,13 @@ project owns the existing dump; cannot safely proceed"
             ));
         }
 
-        // ── 8. Sort by guiOrder then name ─────────────────────────────────────
+        // 8. Sort by guiOrder then name
         fields.sort_by(|(order_a, field_a), (order_b, field_b)| {
             order_a.cmp(order_b).then_with(|| field_a.name.cmp(&field_b.name))
         });
         let sorted_fields: Vec<Field> = fields.into_iter().map(|(_, f)| f).collect();
 
-        // ── 9. super_types: non-system superclass refs ─────────────────────────
+        // 9. super_types: non-system superclass refs
         let super_types: Vec<String> = super_type_ids
             .iter()
             .filter(|id| {
@@ -3185,7 +3171,7 @@ project owns the existing dump; cannot safely proceed"
             .map(|id| local_name(id).to_string())
             .collect();
 
-        // ── 10. Build ResourceTypeDetail ─────────────────────────────────────
+        // 10. Build ResourceTypeDetail
         let (class_name, class_iri) = expand_class_id(&target.id, &prefixes);
         let class_label = target.label;
         let dm_name = data_model_name_from_iri(&queried_id);
@@ -3524,17 +3510,13 @@ fn parse_sparql_error_message(content_type: Option<&str>, body: &[u8]) -> Option
         .map(|b| crate::util::text::sanitise_and_cap(&b.message))
 }
 
-// ---------------------------------------------------------------------------
 // Unit tests for pure helpers (classifier)
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // ---------------------------------------------------------------------------
     // `truncate_for_display` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn truncate_for_display_at_exactly_80_chars_no_ellipsis() {
@@ -3553,9 +3535,7 @@ mod tests {
         assert_eq!(result.chars().filter(|&c| c == 'a').count(), 80);
     }
 
-    // ---------------------------------------------------------------------------
     // `map_unexpected_status` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn map_unexpected_status_401_403_are_auth_required() {
@@ -3588,9 +3568,7 @@ mod tests {
         ));
     }
 
-    // ---------------------------------------------------------------------------
     // `identifier_key` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn identifier_key_email_contains_at() {
@@ -3698,9 +3676,7 @@ mod tests {
         );
     }
 
-    // ---------------------------------------------------------------------------
     // `validate_dump_id` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn validate_dump_id_valid_accepts() {
@@ -3736,9 +3712,7 @@ mod tests {
         );
     }
 
-    // ---------------------------------------------------------------------------
     // `into_dump_task` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn into_dump_task_in_progress() {
@@ -3829,9 +3803,7 @@ mod tests {
         assert_eq!(task.error_message.unwrap(), exact_msg);
     }
 
-    // ---------------------------------------------------------------------------
     // `created_at` parsing unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn into_dump_task_valid_created_at_is_parsed() {
@@ -3862,9 +3834,7 @@ mod tests {
         assert!(task.created_at.is_none(), "garbage created_at must map to None");
     }
 
-    // ---------------------------------------------------------------------------
     // `V3ErrorBody::export_exists` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn export_exists_present_with_both_fields() {
@@ -3930,9 +3900,7 @@ mod tests {
         );
     }
 
-    // ---------------------------------------------------------------------------
     // `is_safe_shortcode` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn is_safe_shortcode_valid_hex_shortcode() {
@@ -3998,9 +3966,7 @@ mod tests {
         }
     }
 
-    // ---------------------------------------------------------------------------
     // `data_model_name_from_iri` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn data_model_name_from_iri_standard_form() {
@@ -4041,9 +4007,7 @@ mod tests {
         assert_eq!(super::data_model_name_from_iri(""), "");
     }
 
-    // ---------------------------------------------------------------------------
     // `expand_class_id` unit tests
-    // ---------------------------------------------------------------------------
 
     fn beol_prefixes() -> HashMap<String, String> {
         let mut m = HashMap::new();
@@ -4085,9 +4049,7 @@ mod tests {
         assert_eq!(iri, "bare");
     }
 
-    // ---------------------------------------------------------------------------
     // `local_name` unit tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn local_name_hash_iri() {
@@ -4121,9 +4083,7 @@ mod tests {
         assert_eq!(super::local_name("foo#"), "");
     }
 
-    // ---------------------------------------------------------------------------
     // `object_type_to_kebab` / `map_object_type_to_value_type` unit tests (new)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn object_type_to_kebab_text_value() {
@@ -4203,9 +4163,7 @@ mod tests {
         );
     }
 
-    // ---------------------------------------------------------------------------
     // `decode_cardinality` unit tests (new)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn decode_cardinality_owl_cardinality_1() {
@@ -4277,9 +4235,7 @@ mod tests {
         );
     }
 
-    // ---------------------------------------------------------------------------
     // `detect_representation` unit tests (new)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn detect_representation_still_image() {
@@ -4317,9 +4273,7 @@ mod tests {
         assert_eq!(super::detect_representation(&locals), Some(Representation::Document));
     }
 
-    // ---------------------------------------------------------------------------
     // `is_system_prefix` unit tests (new)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn is_system_prefix_knora_api() {
@@ -4338,9 +4292,7 @@ mod tests {
         assert!(!super::is_system_prefix("biblio"));
     }
 
-    // ---------------------------------------------------------------------------
     // `curie_prefix` unit tests (new)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn curie_prefix_returns_prefix_for_curie() {
@@ -4362,9 +4314,7 @@ mod tests {
         assert_eq!(super::curie_prefix("hasTitle"), None);
     }
 
-    // ---------------------------------------------------------------------------
     // Sibling-IRI resolution / self-loop / delimiter unit tests (new)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn sibling_iri_trim_hash_delimiter() {
@@ -4409,9 +4359,7 @@ mod tests {
         assert!(result.is_none()); // caller skips and warns
     }
 
-    // ---------------------------------------------------------------------------
     // `derive_access` unit tests (D1, Facet B)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn derive_access_rv() {
@@ -4448,9 +4396,7 @@ mod tests {
         assert_eq!(super::derive_access(""), None);
     }
 
-    // ---------------------------------------------------------------------------
     // `derive_visibility` unit tests (D1 ACL parse algorithm)
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn derive_visibility_public_when_unknown_user_has_view() {
@@ -4557,14 +4503,12 @@ mod tests {
         );
     }
 
-    // ---------------------------------------------------------------------------
     // Value-type parse matrix unit tests (pure — no HTTP)
-    // ---------------------------------------------------------------------------
 
     use crate::model::ValueType;
     use crate::model::resource::{DatePoint, DateValue, FileValue, ValueContent};
 
-    // ── TextValue ────────────────────────────────────────────────────────────────
+    // TextValue
 
     #[test]
     fn parse_value_text_plain() {
@@ -4596,7 +4540,7 @@ mod tests {
         }
     }
 
-    // ── IntValue ─────────────────────────────────────────────────────────────────
+    // IntValue
 
     #[test]
     fn parse_value_integer() {
@@ -4619,7 +4563,7 @@ mod tests {
         assert_eq!(content, ValueContent::Integer(-7));
     }
 
-    // ── DecimalValue ─────────────────────────────────────────────────────────────
+    // DecimalValue
 
     #[test]
     fn parse_value_decimal_object_form() {
@@ -4643,7 +4587,7 @@ mod tests {
         assert_eq!(content, ValueContent::Decimal("2.71828".into()));
     }
 
-    // ── BooleanValue ─────────────────────────────────────────────────────────────
+    // BooleanValue
 
     #[test]
     fn parse_value_boolean_true() {
@@ -4666,7 +4610,7 @@ mod tests {
         assert_eq!(content, ValueContent::Boolean(false));
     }
 
-    // ── DateValue ────────────────────────────────────────────────────────────────
+    // DateValue
 
     #[test]
     fn parse_value_date_single_point() {
@@ -4760,7 +4704,7 @@ mod tests {
         );
     }
 
-    // ── TimeValue ────────────────────────────────────────────────────────────────
+    // TimeValue
 
     #[test]
     fn parse_value_time() {
@@ -4783,7 +4727,7 @@ mod tests {
         assert_eq!(content, ValueContent::Time("2022-06-01T00:00:00Z".into()));
     }
 
-    // ── UriValue ─────────────────────────────────────────────────────────────────
+    // UriValue
 
     #[test]
     fn parse_value_uri() {
@@ -4796,7 +4740,7 @@ mod tests {
         assert!(!is_link);
     }
 
-    // ── ColorValue ───────────────────────────────────────────────────────────────
+    // ColorValue
 
     #[test]
     fn parse_value_color() {
@@ -4809,7 +4753,7 @@ mod tests {
         assert!(!is_link);
     }
 
-    // ── GeonameValue ─────────────────────────────────────────────────────────────
+    // GeonameValue
 
     #[test]
     fn parse_value_geoname() {
@@ -4822,7 +4766,7 @@ mod tests {
         assert!(!is_link);
     }
 
-    // ── ListValue ────────────────────────────────────────────────────────────────
+    // ListValue
 
     #[test]
     fn parse_value_vocabulary_item() {
@@ -4841,7 +4785,7 @@ mod tests {
         assert!(!is_link);
     }
 
-    // ── LinkValue ────────────────────────────────────────────────────────────────
+    // LinkValue
 
     #[test]
     fn parse_value_link_with_embedded_target() {
@@ -4882,7 +4826,7 @@ mod tests {
         );
     }
 
-    // ── StillImageFileValue ───────────────────────────────────────────────────────
+    // StillImageFileValue
 
     #[test]
     fn parse_value_still_image_file() {
@@ -4923,7 +4867,7 @@ mod tests {
         }
     }
 
-    // ── MovingImageFileValue ──────────────────────────────────────────────────────
+    // MovingImageFileValue
 
     #[test]
     fn parse_value_moving_image_file() {
@@ -4946,7 +4890,7 @@ mod tests {
         );
     }
 
-    // ── AudioFileValue ────────────────────────────────────────────────────────────
+    // AudioFileValue
 
     #[test]
     fn parse_value_audio_file() {
@@ -4968,7 +4912,7 @@ mod tests {
         );
     }
 
-    // ── DocumentFileValue ─────────────────────────────────────────────────────────
+    // DocumentFileValue
 
     #[test]
     fn parse_value_document_file() {
@@ -4990,7 +4934,7 @@ mod tests {
         );
     }
 
-    // ── ArchiveFileValue ──────────────────────────────────────────────────────────
+    // ArchiveFileValue
 
     #[test]
     fn parse_value_archive_file() {
@@ -5012,7 +4956,7 @@ mod tests {
         );
     }
 
-    // ── TextFileValue (maps to Document per dsp-cli/ADR-0013) ─────────────────────────────
+    // TextFileValue (maps to Document per dsp-cli/ADR-0013)
 
     #[test]
     fn parse_value_text_file_value_maps_to_document() {
@@ -5029,7 +4973,7 @@ mod tests {
         }
     }
 
-    // ── IntervalValue (raw fallback) ──────────────────────────────────────────────
+    // IntervalValue (raw fallback)
 
     #[test]
     fn parse_value_interval_raw_fallback() {
@@ -5063,7 +5007,7 @@ mod tests {
         );
     }
 
-    // ── Value wrapper: per-value comment (`knora-api:valueHasComment`) ───────────
+    // Value wrapper: per-value comment (`knora-api:valueHasComment`)
 
     #[test]
     fn parse_value_with_comment() {
@@ -5103,7 +5047,7 @@ mod tests {
         assert!(!is_link);
     }
 
-    // ── Field-name derivation (D3) ────────────────────────────────────────────────
+    // Field-name derivation (D3)
 
     #[test]
     fn parse_value_link_is_link_true() {
@@ -5166,7 +5110,7 @@ mod tests {
         );
     }
 
-    // ── Field / non-field discrimination (dsp-cli/ADR-0013) ───────────────────────────────
+    // Field / non-field discrimination (dsp-cli/ADR-0013)
 
     #[test]
     fn has_value_class_type_rejects_xsd_any_uri() {
@@ -5206,7 +5150,7 @@ mod tests {
         assert!(super::has_value_class_type(&obj));
     }
 
-    // ── build_prefix_map ──────────────────────────────────────────────────────────
+    // build_prefix_map
 
     #[test]
     fn build_prefix_map_string_entries_only() {
@@ -5234,7 +5178,7 @@ mod tests {
         assert!(map.is_empty());
     }
 
-    // ── compact_value_text (raw fallback) ─────────────────────────────────────────
+    // compact_value_text (raw fallback)
 
     #[test]
     fn compact_value_text_excludes_meta_keys() {
@@ -5260,7 +5204,7 @@ mod tests {
         assert!(text.is_empty(), "all-meta object must yield empty string: {text:?}");
     }
 
-    // ── vocabulary DTO parsing / conversion (plan 034, Step 2) ─────────────────────
+    // vocabulary DTO parsing / conversion (plan 034, Step 2)
 
     #[test]
     fn list_get_response_root_shape_parses_as_root_variant() {

@@ -219,7 +219,7 @@ pub(super) fn string_args(node: &RawNode, report: &mut ValidationReport) -> Vec<
     out
 }
 
-// ── The forms of a property ───────────────────────────────────────────────────
+// The forms of a property
 
 /// The forms a `property` takes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -270,7 +270,7 @@ pub(super) fn form_of_source(property: &RawNode) -> Option<Form> {
     }
 }
 
-// ── What a class has declared ─────────────────────────────────────────────────
+// What a class has declared
 
 /// What one class has declared so far: its `property` iris, its CPE property
 /// names (of every node that yields a property) and its curated keys.
@@ -331,7 +331,7 @@ pub(super) fn declare_key(seen: &mut ClassSeen, key: String, span: Span, report:
     CuratedKey::new(key)
 }
 
-// ── Attribute readers ─────────────────────────────────────────────────────────
+// Attribute readers
 
 /// An optional attribute holding a curated key: `Ok(None)` when absent,
 /// `Err(())` when unreadable (already reported).

@@ -29,9 +29,7 @@ use dsp_cli::config::Config;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: call `GET /admin/projects/<identifier>` against a
 /// real server and assert structural invariants on the returned `ProjectDetail`.
@@ -48,7 +46,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_project_describe_returns_valid_project_detail() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -62,7 +60,7 @@ fn live_project_describe_returns_valid_project_detail() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     // `describe_project` is a public endpoint; the token is optional. If present
     // it exercises the authenticated code path, but its absence is not a skip
     // condition. NEVER interpolate the token value in any log or assertion
@@ -76,10 +74,10 @@ fn live_project_describe_returns_valid_project_detail() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Call describe_project ──────────────────────────────────────────────
+    // 4. Call describe_project
     eprintln!(
         "live test: calling describe_project on {} for project '{}'",
         cfg.server, project_input
@@ -95,7 +93,7 @@ fn live_project_describe_returns_valid_project_detail() {
         detail.shortname, detail.shortcode
     );
 
-    // ── 5. Assert structural invariants ──────────────────────────────────────
+    // 5. Assert structural invariants
 
     // Shortcode must be exactly 4 ASCII hex digits (e.g. "0001", "0801").
     assert_eq!(

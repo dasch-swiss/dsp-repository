@@ -19,9 +19,7 @@
 // is no `DSP_TEST_SERVER`/`DSP_TOKEN` to supply and no skip path to wire up.
 #![cfg(feature = "live")]
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: fetch the real crates.io sparse index for `dsp-cli`
 /// and assert that a published, stable version is returned.

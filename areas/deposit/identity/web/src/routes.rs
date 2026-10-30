@@ -78,7 +78,7 @@ pub(crate) fn routes() -> Vec<Route> {
         // Not rate-limited: signing out costs nothing and refusing it would
         // strand a user in a session they asked to end.
         ("/logout", post(login::logout)),
-        // --- RDU-only routes ---
+        // RDU-only routes
         // Every handler below takes identity's `Rdu`, which composes `Authenticated`: no session
         // redirects to login, and a depositor's session gets the 403 page. Each write shares a
         // URL with the `GET` that renders its form, so a rejected submission re-renders somewhere

@@ -79,7 +79,7 @@ pub const NOTE: &str = "note";
 /// naming an intent without this gets the prompt, never the write.
 pub const CONFIRMED: &str = "confirmed";
 
-// --- The queue ------------------------------------------------------------
+// The queue
 
 /// One pending submission, as the queue renders it.
 pub struct QueueRow<'a> {
@@ -282,7 +282,7 @@ fn editor_name(name: Option<&str>) -> Markup {
     }
 }
 
-// --- The diff surface -----------------------------------------------------
+// The diff surface
 
 /// The name the diff form posts its current filter under, so a save comes back
 /// showing what the reviewer was looking at.

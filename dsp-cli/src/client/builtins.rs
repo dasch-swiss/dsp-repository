@@ -132,7 +132,7 @@ mod tests {
         assert!(names.contains(&"salsah-gui"), "salsah-gui must be a built-in");
     }
 
-    // ── builtin_resource_types tests ──────────────────────────────────────────
+    // builtin_resource_types tests
 
     #[test]
     fn builtin_resource_types_returns_four_entries() {
@@ -173,7 +173,7 @@ mod tests {
         );
     }
 
-    // ── builtin_field_value_type tests ───────────────────────────────────────
+    // builtin_field_value_type tests
 
     /// `hasTextFileValue` must map to `Other("text-file")`, matching the
     /// `map_object_type_to_value_type("TextFileValue")` path in http.rs.

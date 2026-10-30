@@ -177,7 +177,7 @@ fn lower_sentinel(node: &RawNode, report: &mut ValidationReport) -> Option<Strin
     Some(value)
 }
 
-// ── Lists ─────────────────────────────────────────────────────────────────────
+// Lists
 
 fn lower_lists(raw: &RawNode, languages: &[&str], report: &mut ValidationReport) -> Option<Vec<RemodelList>> {
     let mut seen = HashSet::new();
@@ -280,7 +280,7 @@ fn lower_list_node(
     Some(RemodelListNode { slug: slug?, labels })
 }
 
-// ── Classes and properties ────────────────────────────────────────────────────
+// Classes and properties
 
 /// The name of each `node_name` child of `raw` in declared order (`None` where it
 /// is unreadable or empty), read silently. A reference to a `class` or `list`
@@ -411,7 +411,7 @@ fn lower_class(
     (class, seen)
 }
 
-// ── images and annotations ────────────────────────────────────────────────────
+// images and annotations
 
 /// How many `class` children of `raw` are written before its child `node`.
 fn classes_before(raw: &RawNode, node: &RawNode) -> usize {
@@ -2168,7 +2168,7 @@ remodel {
         ]);
     }
 
-    // ── ids, membership, counts, images ───────────────────────────────────────
+    // ids, membership, counts, images
 
     /// A `class` node named `name` with the attributes `attrs` and one child
     /// per line of `body`.
@@ -3069,7 +3069,7 @@ remodel {
         ]);
     }
 
-    // ── the hook node ─────────────────────────────────────────────────────────
+    // the hook node
 
     /// A `hook` node with one child per line of `body`.
     fn hook_node(body: &[&str]) -> String {

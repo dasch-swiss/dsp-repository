@@ -84,7 +84,7 @@ fn docs_far_unknown_topic_exits_one_without_suggestion() {
     assert!(!stderr.contains("Did you mean"), "stderr was: {stderr}");
 }
 
-// ── dsp docs -j ───────────────────────────────────────────────────────────────
+// dsp docs -j
 
 /// `dsp docs -j` emits a machine-readable JSON topic index and exits 0.
 /// Snapshot covers the full output shape (plan 020 step 6 test plan).

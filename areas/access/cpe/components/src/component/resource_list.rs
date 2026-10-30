@@ -89,7 +89,7 @@ use crate::component::values::{
 /// `SEARCH_FRAGMENT_SEGMENT`.
 pub const SORT_FRAGMENT_SEGMENT: &str = "_sort";
 
-// ── View mode ─────────────────────────────────────
+// View mode
 
 /// The resource-list's current presentation: rows (`List`, the default) or
 /// tiles (`Grid`). `pub(crate)` — nothing outside `cpe-components` names this type;
@@ -155,7 +155,7 @@ pub(crate) fn drop_query_param(current_query: Option<&str>, key: &str) -> Option
     }
 }
 
-// ── Search-aware rendering surface ──────────────────
+// Search-aware rendering surface
 
 /// The search-aware rendering surface for a `resource-list` whose sibling
 /// `search-bar` has an **active** query (≥1 usable term after tokenization —
@@ -204,7 +204,7 @@ impl<'a> SearchSurface<'a> {
     }
 }
 
-// ── Narrowed-to-zero rendering surface ──
+// Narrowed-to-zero rendering surface
 
 /// The narrowed-to-zero rendering surface for a `resource-list` empty branch
 /// (an active search query and/or active facet narrowing produced zero
@@ -269,7 +269,7 @@ impl<'a> NarrowedSurface<'a> {
     }
 }
 
-// ── Config borrow struct ──────────────────────────────────────────────────────
+// Config borrow struct
 
 /// Borrowed context needed by `render_resource_list`.
 ///
@@ -452,7 +452,7 @@ impl<'a> ResourceListCfg<'a> {
     }
 }
 
-// ── Public renderer ───────────────────────────────────────────────────────────
+// Public renderer
 
 /// Render a `ResourceListPage` as a `<section class="resource-list-section">`.
 ///
@@ -579,7 +579,7 @@ pub fn render_resource_list(list: &ResourceListPage, cfg: &ResourceListCfg<'_>, 
     }
 }
 
-// ── Surf-head (result count + sort control) ──────────────────────────────────
+// Surf-head (result count + sort control)
 
 /// Render the `.surf-head` bar above the list: class label + result count on
 /// the left, the sort control on the right. Called from both the populated
@@ -722,7 +722,7 @@ fn sort_param(current_query: Option<&str>) -> Option<&str> {
     None
 }
 
-// ── Row rendering ─────────────────────────────────────────────────────────────
+// Row rendering
 
 /// Render one resource as a `<li class="rl-annot__item">`.
 ///
@@ -777,7 +777,7 @@ fn render_row(resource: &Resource, cfg: &ResourceListCfg<'_>, lang: &Lang) -> Ma
     }
 }
 
-// ── Grid tile rendering (grid-mode) ─────────────────────────────────────────────
+// Grid tile rendering (grid-mode)
 
 /// Render one resource as a `<li>` grid tile:
 /// `a.gm__tile` (or `div.gm__tile` non-link fallback, mirroring `render_row`'s
@@ -848,7 +848,7 @@ fn render_grid_tile(resource: &Resource, cfg: &ResourceListCfg<'_>, lang: &Lang)
     }
 }
 
-// ── Row gloss + chips (annotated rows) ────────────────────────────────────
+// Row gloss + chips (annotated rows)
 
 /// A rendered row gloss line.
 struct RowGloss<'a> {
@@ -1054,7 +1054,7 @@ fn render_chip_keyword(label: &str) -> Markup {
     }
 }
 
-// ── Ordering control ─────────────────────────────────────────────────────────
+// Ordering control
 
 /// Normalize a raw `?sort=` value to one of the recognized display keys —
 /// the three non-default built-ins, or a key the list declares via
@@ -1287,7 +1287,7 @@ fn render_order_control(cfg: &ResourceListCfg<'_>, current_sort: Option<&str>, l
     }
 }
 
-// ── Pager ─────────────────────────────────────────────────────────────────────
+// Pager
 
 /// Above this many pages, the numbered-links middle (`.pager__nums`) is
 /// replaced by a single "Page n of N" `span.pager__of`
@@ -1421,7 +1421,7 @@ pub fn override_query_param(current_query: Option<&str>, key: &str, value: &str)
     parts.join("&")
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -1437,7 +1437,7 @@ mod tests {
     /// returns a `ResourceListCfg`, not just a `let`-bound temporary).
     static EMPTY_THUMBS: std::sync::LazyLock<HashMap<String, MediaThumb>> = std::sync::LazyLock::new(HashMap::new);
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
+    // Test helpers
 
     fn make_lang(code: &str) -> Lang {
         use cpe_core::ir::SiteConfig;
@@ -1490,7 +1490,7 @@ mod tests {
         ResourceListPage { items, total, page, pagination, unfiltered_total: None }
     }
 
-    // ── Row thumbnail decorative alt ────────────────────
+    // Row thumbnail decorative alt
 
     /// A row thumbnail is decorative — the adjacent `.rl-annot__name` is its
     /// accessible label — so it must render `alt=""`, never a meaningful alt
@@ -1582,7 +1582,7 @@ mod tests {
         );
     }
 
-    // ── Unit: compute_last_page ───────────────────────────────────────────────
+    // Unit: compute_last_page
 
     #[test]
     fn compute_last_page_exact_division() {
@@ -1609,7 +1609,7 @@ mod tests {
         assert_eq!(compute_last_page(1, 24), 1);
     }
 
-    // ── Unit: override_query_param ────────────────────────────────────────────
+    // Unit: override_query_param
 
     #[test]
     fn override_query_param_appends_when_absent() {
@@ -1646,7 +1646,7 @@ mod tests {
         assert_eq!(qs, "view=grid&page=2");
     }
 
-    // ── Unit: build_pager_href ────────────────────────────────────────────────
+    // Unit: build_pager_href
 
     #[test]
     fn build_pager_href_no_existing_query() {
@@ -1660,7 +1660,7 @@ mod tests {
         assert_eq!(href, "/alice-in-daschland/characters?lang=de&page=3");
     }
 
-    // ── Unit: pager inert-end logic ──────────────────────
+    // Unit: pager inert-end logic
 
     fn base_cfg<'a>(
         resolver: LinkResolver<'a>,
@@ -1851,7 +1851,7 @@ mod tests {
         );
     }
 
-    // ── Unit: localized helpers (sourced from the chrome catalog) ────────
+    // Unit: localized helpers (sourced from the chrome catalog)
 
     #[test]
     fn pager_nav_label_de() {
@@ -1877,7 +1877,7 @@ mod tests {
         assert_eq!(ChromeMsg::PagerNavLabel.text(&lang), "Page navigation");
     }
 
-    // ── Unit: render_order_control ────────────────────────────────────────────
+    // Unit: render_order_control
 
     fn make_sort_cfg<'a>(
         current_path: &'a str,
@@ -2310,7 +2310,7 @@ mod tests {
         );
     }
 
-    // ── Unit: order_label_for_key overrides ───────────────────────────
+    // Unit: order_label_for_key overrides
 
     /// An override for "name" is returned verbatim, without touching the
     /// `ChromeMsg` default.
@@ -2419,7 +2419,7 @@ mod tests {
         );
     }
 
-    // ── Unit: surf-head count text ────────────────────────────────────────────
+    // Unit: surf-head count text
 
     #[test]
     fn surf_head_shows_plain_count_when_not_narrowed() {
@@ -2682,7 +2682,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: insta snapshots ──────────────────────────────────────────────
+    // Layer-3: insta snapshots
 
     /// (a) Populated + paginated (middle page — both prev & next active, linked rows).
     #[test]
@@ -3178,7 +3178,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Unit: declared order-by options ──────────────
+    // Unit: declared order-by options
 
     const DECLARED_ROWS: [OrderRow<'static>; 2] = [
         OrderRow { key: "date", label: "Date" },
@@ -3274,7 +3274,7 @@ mod tests {
         );
     }
 
-    // ── Strengthened pager inert-end assertions ───────────────────────────────
+    // Strengthened pager inert-end assertions
 
     /// First page: PREV end must be an inert `<span aria-disabled="true">` AND
     /// NEXT end must be an active `<a href=...>`. Fails if both ends are inert.
@@ -3381,7 +3381,7 @@ mod tests {
         assert!(!out.contains("page=3"), "last page: must have no href with page=3, got: {out}");
     }
 
-    // ── Gloss + chips (annotated rows) ───────────────────────────────────
+    // Gloss + chips (annotated rows)
 
     /// A Character-like resource with a richtext `description` (gloss source), a
     /// single-valued `role` list value (→ `.term`), and a multi-valued `keyword`
@@ -3488,7 +3488,7 @@ mod tests {
         assert!(!row.contains("prec"), "{row}");
     }
 
-    // ── Composed gloss ────────────────────────────────────────────────────────
+    // Composed gloss
 
     fn text(value: &str, lang: Option<&str>) -> PropertyValue {
         PropertyValue::Text { text: value.to_owned(), lang: lang.map(str::to_owned) }
@@ -4022,7 +4022,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Config-declared class labels (surf-head title) ───────────────────────
+    // Config-declared class labels (surf-head title)
 
     /// A declared `labels { class "…" { … } }` translation is used for the
     /// surf-head `span.surf-head__title`, in preference to the raw/humanized
@@ -4074,7 +4074,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Search-aware rendering (SearchSurface) ───────
+    // Search-aware rendering (SearchSurface)
 
     /// Build a `SearchSurface` for a given (already-active) query —
     /// the populated-list scope note (the empty-branch fields are on
@@ -4312,7 +4312,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Grid mode ─────────────────────────────────────
+    // Grid mode
 
     fn make_grid_cfg<'a>(
         current_path: &'a str,
@@ -4341,7 +4341,7 @@ mod tests {
         }
     }
 
-    // ── Unit: parse_view_param ────────────────────────────────────────────────
+    // Unit: parse_view_param
 
     #[test]
     fn parse_view_param_grid_value_maps_to_grid() {
@@ -4373,7 +4373,7 @@ mod tests {
         assert_eq!(parse_view_param(Some("role=n1&view=grid&sort=name")), ViewMode::Grid);
     }
 
-    // ── Unit: drop_query_param ────────────────────────────────────────────────
+    // Unit: drop_query_param
 
     #[test]
     fn drop_query_param_removes_only_named_key() {
@@ -4397,7 +4397,7 @@ mod tests {
         assert_eq!(qs, Some("lang=en&sort=name".to_owned()));
     }
 
-    // ── Unit: view toggle markup + href preservation ──────────────────────────
+    // Unit: view toggle markup + href preservation
 
     #[test]
     fn view_toggle_not_rendered_when_grid_false() {
@@ -4500,7 +4500,7 @@ mod tests {
         );
     }
 
-    // ── Unit: grid-mode surf-head/toggle wiring via render_resource_list ──────
+    // Unit: grid-mode surf-head/toggle wiring via render_resource_list
 
     #[test]
     fn resource_list_view_ignored_when_grid_false() {
@@ -4631,7 +4631,7 @@ mod tests {
         assert_eq!(grid_open_tag(None), r#"<ul class="gm">"#);
     }
 
-    // ── Unit: grid tile markup (image tile) ───────────────────────────────────
+    // Unit: grid tile markup (image tile)
 
     #[test]
     fn grid_tile_image_renders_box_with_sized_src_and_empty_decorative_alt() {
@@ -4776,7 +4776,7 @@ mod tests {
         );
     }
 
-    // ── Unit: grid tile markup (text tile fallback) ───────────────────────────
+    // Unit: grid tile markup (text tile fallback)
 
     #[test]
     fn grid_tile_text_fallback_renders_when_no_safe_media_uri() {
@@ -4896,7 +4896,7 @@ mod tests {
         );
     }
 
-    // ── Unit: tile link semantics (mirrors render_row's non-link fallback) ────
+    // Unit: tile link semantics (mirrors render_row's non-link fallback)
 
     #[test]
     fn grid_tile_renders_plain_div_when_class_unbound() {
@@ -4967,7 +4967,7 @@ mod tests {
         );
     }
 
-    // ── Unit: pager present in grid view ──────────────────────────────────────
+    // Unit: pager present in grid view
 
     #[test]
     fn pager_present_after_grid_body_on_multi_page_list() {
@@ -4985,7 +4985,7 @@ mod tests {
         );
     }
 
-    // ── Preserved-query assertions ────────────────────────────────
+    // Preserved-query assertions
 
     /// `preserved_query_dropping_sort_and_page` must preserve `view` (it only
     /// drops `sort`/`page`).
@@ -5007,7 +5007,7 @@ mod tests {
         assert_eq!(qs, Some("view=grid".to_owned()));
     }
 
-    // ── Layer-3 snapshots: surf-head grid states + grid populated ────────────
+    // Layer-3 snapshots: surf-head grid states + grid populated
 
     /// Surf-head WITHOUT the grid toggle (grid: false) — still gets the
     /// `.surf-head__ctl` wrapper, but no

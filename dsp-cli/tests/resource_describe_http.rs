@@ -38,11 +38,9 @@ const RESOURCE_IRI_ENCODED: &str = "http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4S
 // Full path the server should see.
 const RESOURCE_PATH: &str = "/v2/resources/http%3A%2F%2Frdfh%2Ech%2F0803%2F%2D%2D6Esp4SVnGG1DBzFvYErw";
 
-// ---------------------------------------------------------------------------
 // Happy-path fixture — the verified complex-schema single-resource body
 // from the real incunabula:Page on dev (trimmed of value fields).
 // See plan Step 10 and D4.
-// ---------------------------------------------------------------------------
 
 fn happy_body() -> serde_json::Value {
     json!({
@@ -73,9 +71,7 @@ fn happy_body() -> serde_json::Value {
     })
 }
 
-// ---------------------------------------------------------------------------
 // (a) Request shape: path uses the pre-encoded IRI and schema=complex is sent
-// ---------------------------------------------------------------------------
 
 /// The GET path sent to the server must be
 /// `/v2/resources/<percent-encoded-iri>` with `schema=complex`.
@@ -122,9 +118,7 @@ async fn request_path_uses_percent_encoded_iri() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (b) Happy-path envelope parse: all fields populated correctly
-// ---------------------------------------------------------------------------
 
 /// Full happy-path assertions on the parsed `ResourceDetail`.
 ///
@@ -201,9 +195,7 @@ async fn happy_path_parses_full_envelope() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (c) @type as array — same parsing as bare string
-// ---------------------------------------------------------------------------
 
 /// Guards that `@type` as an array (the common complex-schema form) is
 /// parsed correctly, mirroring `resource_list_http.rs` test
@@ -252,9 +244,7 @@ async fn type_as_array_is_parsed_correctly() {
     assert_eq!(detail.label, "Folio Array Test");
 }
 
-// ---------------------------------------------------------------------------
 // (d) 404 → Diagnostic::NotFound
-// ---------------------------------------------------------------------------
 
 /// A 404 response must map to `Diagnostic::NotFound`.
 #[tokio::test]
@@ -283,9 +273,7 @@ async fn status_404_returns_not_found() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (e) 403 → Diagnostic::AuthRequired
-// ---------------------------------------------------------------------------
 
 /// A 403 response must map to `Diagnostic::AuthRequired` (not ServerError).
 ///
@@ -319,9 +307,7 @@ async fn status_403_returns_auth_required() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (f) 401 → Diagnostic::AuthRequired
-// ---------------------------------------------------------------------------
 
 /// A 401 response must also map to `Diagnostic::AuthRequired`.
 #[tokio::test]
@@ -350,9 +336,7 @@ async fn status_401_returns_auth_required() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (g) 500 → Diagnostic::ServerError
-// ---------------------------------------------------------------------------
 
 /// A 500 response maps to `Diagnostic::ServerError`.
 #[tokio::test]
@@ -381,9 +365,7 @@ async fn status_500_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (h) Bearer present when token is Some
-// ---------------------------------------------------------------------------
 
 /// When `token = Some("test-token")` is passed, the request carries an
 /// `Authorization: Bearer test-token` header.
@@ -425,9 +407,7 @@ async fn bearer_present_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (i) Bearer absent when token is None
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, NO `Authorization` header must be sent.
 #[tokio::test]
@@ -457,9 +437,7 @@ async fn bearer_absent_when_token_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (j) Visibility derivation end-to-end: ProjectMembers
-// ---------------------------------------------------------------------------
 
 /// A fixture whose `hasPermissions` grants only project groups (no
 /// UnknownUser/KnownUser) → `ProjectMembers` visibility.
@@ -510,9 +488,7 @@ async fn visibility_project_members_from_project_only_acl() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (k) Visibility derivation end-to-end: PublicRestricted
-// ---------------------------------------------------------------------------
 
 /// A fixture whose `hasPermissions` grants exactly `RV` to `UnknownUser` →
 /// `PublicRestricted` visibility.
@@ -563,9 +539,7 @@ async fn visibility_public_restricted_from_rv_unknown_user() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (l) Malformed body → ServerError
-// ---------------------------------------------------------------------------
 
 /// A 200 response with an invalid JSON body must yield `ServerError` (not panic).
 #[tokio::test]
@@ -594,9 +568,7 @@ async fn malformed_body_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (l2) Visibility derivation end-to-end: LoggedInUsers
-// ---------------------------------------------------------------------------
 
 /// A fixture whose `hasPermissions` grants ≥ RV to `KnownUser` but has NO
 /// `UnknownUser` entry → `LoggedInUsers` visibility.
@@ -652,9 +624,7 @@ async fn visibility_logged_in_users_from_known_user_acl() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // (m) Connection refused → Diagnostic::Network
-// ---------------------------------------------------------------------------
 
 /// A connection failure (nothing listening) must map to `Diagnostic::Network`.
 #[tokio::test]

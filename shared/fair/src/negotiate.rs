@@ -153,7 +153,7 @@ mod tests {
         Decision::Redirect("https://example.test/dpe/projects/0001/metadata.datacite.json".to_string())
     }
 
-    // --- one test per row of the plan's decision table ---
+    // one test per row of the plan's decision table
 
     #[test]
     fn a_browser_and_an_absent_header_get_the_page() {
@@ -214,7 +214,7 @@ mod tests {
         }
     }
 
-    // --- the written rules ---
+    // the written rules
 
     #[test]
     fn a_bad_entry_does_not_cost_the_good_one_beside_it() {
@@ -285,7 +285,7 @@ mod tests {
         assert_eq!(decision(Some(&format!("{DATACITE};q=0.5, {JSON_LD};q=0.9"))), jsonld());
     }
 
-    // --- bounds ---
+    // bounds
 
     #[test]
     fn a_header_over_the_byte_limit_is_treated_as_absent() {

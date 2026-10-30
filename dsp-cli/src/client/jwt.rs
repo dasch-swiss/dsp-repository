@@ -89,7 +89,7 @@ mod tests {
             .expect("test JWT encoding should not fail")
     }
 
-    // ── extract_exp tests (preserved) ─────────────────────────────────────────
+    // extract_exp tests (preserved)
 
     #[test]
     fn extract_exp_returns_some_for_token_with_exp_claim() {
@@ -155,7 +155,7 @@ mod tests {
         assert_eq!(result.unwrap().timestamp(), 1800000000);
     }
 
-    // ── extract_meta tests (new) ───────────────────────────────────────────────
+    // extract_meta tests (new)
 
     #[test]
     fn extract_meta_returns_sub_when_present() {

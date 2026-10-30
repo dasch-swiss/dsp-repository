@@ -98,7 +98,7 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_l
 
     Router::new()
         .merge(ark_resolver)
-        // --- Traced routes (declared BEFORE .layer()) ---
+        // Traced routes (declared BEFORE .layer())
         .route("/", get(|| async { Redirect::permanent("/dpe/projects") }))
         .route("/dpe", get(|| async { Redirect::permanent("/dpe/projects") }))
         .route("/dpe/projects", get(projects_page_handler))

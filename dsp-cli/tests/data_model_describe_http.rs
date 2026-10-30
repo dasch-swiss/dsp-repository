@@ -29,9 +29,7 @@ const DATA_MODEL_IRI: &str = "http://api.dasch.swiss/ontology/0801/beol/v2";
 // The BEOL namespace (what `beol:` expands to in the @context).
 const BEOL_NS: &str = "http://api.dasch.swiss/ontology/0801/beol/v2#";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /// Build the expected URL path for the allentities endpoint (percent-encoded IRI).
 fn allentities_path() -> String {
@@ -110,9 +108,7 @@ fn fixture_body() -> serde_json::Value {
     })
 }
 
-// ---------------------------------------------------------------------------
 // Happy path — 2 resource-types, filter, CURIE expansion, sort
-// ---------------------------------------------------------------------------
 
 /// Full happy-path test:
 /// - Exactly 2 resource-types returned (standoff + property filtered out).
@@ -195,9 +191,7 @@ async fn happy_path_returns_two_resource_types_filtered_sorted_expanded() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Empty @graph
-// ---------------------------------------------------------------------------
 
 /// When `@graph` is empty (or absent), `resource_types` must be empty.
 /// Root fields are still parsed from the top-level document.
@@ -230,9 +224,7 @@ async fn empty_graph_returns_zero_resource_types() {
     assert_eq!(detail.label.as_deref(), Some("Empty ontology"));
 }
 
-// ---------------------------------------------------------------------------
 // Bearer present
-// ---------------------------------------------------------------------------
 
 /// When `token = Some(TOKEN)` is passed, the request must carry an
 /// `Authorization: Bearer <TOKEN>` header.
@@ -275,9 +267,7 @@ async fn bearer_present_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer absent
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, NO `Authorization` header must be sent.
 /// Guards against a future refactor accidentally sending an unconditional bearer.
@@ -357,9 +347,7 @@ async fn no_token_does_not_match_bearer_gated_mock() {
     // The `expect(0)` on the bearer-gated mock is verified at drop.
 }
 
-// ---------------------------------------------------------------------------
 // 500 → ServerError
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn server_error_500_returns_server_error_diagnostic() {
@@ -386,9 +374,7 @@ async fn server_error_500_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // 404 → ServerError (via map_unexpected_status — no special handling)
-// ---------------------------------------------------------------------------
 
 /// A 404 from allentities maps to `ServerError` (not `NotFound`).
 /// The action already matched the data-model IRI via `list_data_models`; a 404
@@ -419,9 +405,7 @@ async fn not_found_404_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Malformed body → ServerError
-// ---------------------------------------------------------------------------
 
 /// A 200 response with an invalid JSON body must yield `ServerError` (not panic).
 #[tokio::test]
@@ -449,9 +433,7 @@ async fn malformed_body_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // URL construction helper is coherent
-// ---------------------------------------------------------------------------
 
 /// Verify the URL path helper produces a non-empty path — this keeps the
 /// helper honest without duplicating percent-encoding logic.

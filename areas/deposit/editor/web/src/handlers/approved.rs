@@ -435,7 +435,7 @@ mod tests {
         assert_eq!(entities[0]["id"], "person-417");
     }
 
-    // ---- The RDU browser surface --------------------------------------------
+    // The RDU browser surface
 
     #[tokio::test]
     async fn a_depositor_session_is_refused_every_approved_records_route() {

@@ -35,9 +35,7 @@ const TOKEN: &str = "test-token";
 // realistically-shaped project IRI — this test never hits a real server).
 const PROJECT_IRI: &str = "http://rdfh.ch/projects/n0eRr0vWTDOArdaBAZ-jQQ";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /// Percent-encode an IRI the same way `src/client/http.rs`'s `enc()` does:
 /// every non-alphanumeric byte becomes `%XX` (uppercase hex).
@@ -116,9 +114,7 @@ fn child_json(
     })
 }
 
-// ---------------------------------------------------------------------------
 // `list_vocabularies` — happy path
-// ---------------------------------------------------------------------------
 
 /// Three varied entries: one with a `name`, multi-language labels and
 /// comments; one with `name: null`; one with an untagged label. Asserts
@@ -230,9 +226,7 @@ async fn list_vocabularies_happy_path_parses_varied_entries() {
     assert_eq!(untagged.depth, None);
 }
 
-// ---------------------------------------------------------------------------
 // `list_vocabularies` — empty
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn list_vocabularies_empty_returns_empty_vec() {
@@ -257,9 +251,7 @@ async fn list_vocabularies_empty_returns_empty_vec() {
     assert!(vocabs.is_empty(), "empty lists array must yield empty Vec");
 }
 
-// ---------------------------------------------------------------------------
 // `describe_vocabulary` — root-shaped response
-// ---------------------------------------------------------------------------
 
 /// A small hand-written root fixture: 2 top-level children, one of which has
 /// a nested child — exercises the recursive `ListNodeDto` walk.
@@ -322,9 +314,7 @@ async fn describe_vocabulary_root_shaped_response_builds_tree_directly() {
     assert_eq!(child2.children[0].header.iri, grandchild_iri);
 }
 
-// ---------------------------------------------------------------------------
 // `describe_vocabulary` — node-shaped response resolves upward (D2)
-// ---------------------------------------------------------------------------
 
 /// The addressed IRI is a node. The FIRST fetch returns a node-shaped body
 /// whose own `children` (a decoy) must be discarded; the client then issues
@@ -405,9 +395,7 @@ async fn describe_vocabulary_node_shaped_response_resolves_upward_to_root() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // `describe_vocabulary` — node resolving to ANOTHER node (hard error)
-// ---------------------------------------------------------------------------
 
 /// One resolution hop only, no retry loop: if the `hasRootNode` fetch itself
 /// returns a node-shaped body (not a root), the call must fail rather than
@@ -452,9 +440,7 @@ async fn describe_vocabulary_node_resolving_to_another_node_is_server_error() {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Non-2xx status → ServerError
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn list_vocabularies_server_error_500_returns_server_error_diagnostic() {
@@ -510,9 +496,7 @@ async fn describe_vocabulary_first_fetch_server_error_500_returns_server_error_d
     );
 }
 
-// ---------------------------------------------------------------------------
 // Malformed body → ServerError (not a panic)
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn describe_vocabulary_malformed_body_invalid_json_returns_server_error() {
@@ -571,9 +555,7 @@ async fn describe_vocabulary_body_missing_list_and_node_keys_returns_server_erro
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer-token propagation — `list_vocabularies` (full trio)
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn list_vocabularies_bearer_present_when_token_is_some() {
@@ -672,9 +654,7 @@ async fn list_vocabularies_no_token_does_not_match_bearer_gated_mock() {
     // The `expect(0)` on the bearer-gated mock is verified at drop.
 }
 
-// ---------------------------------------------------------------------------
 // Bearer-token propagation — `describe_vocabulary` (lighter present/absent pair)
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn describe_vocabulary_bearer_present_when_token_is_some() {
@@ -729,9 +709,7 @@ async fn describe_vocabulary_bearer_absent_when_token_is_none() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Recorded-fixture regression tests (dsp-cli/ADR-0009 hybrid-fixture rule)
-// ---------------------------------------------------------------------------
 //
 // Recorded 2026-07-30, unauthenticated, body-only, from `https://api.dasch.swiss`
 // — geoarch project's `epoch` / Period vocabulary. Root IRI

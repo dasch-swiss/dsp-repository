@@ -27,9 +27,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 const TOKEN: &str = "test-token";
 const QUERY: &str = "SELECT * WHERE { ?s ?p ?o } LIMIT 10";
 
-// ---------------------------------------------------------------------------
 // 2xx relay
-// ---------------------------------------------------------------------------
 
 /// A 2xx response is relayed byte-exact, with its `Content-Type` surfaced.
 #[tokio::test]
@@ -64,9 +62,7 @@ async fn success_relays_body_and_content_type() {
     assert_eq!(resp.body, body_bytes, "body must be byte-exact");
 }
 
-// ---------------------------------------------------------------------------
 // Outgoing request shape
-// ---------------------------------------------------------------------------
 
 /// The outgoing request must carry `Content-Type: application/sparql-query`,
 /// `Authorization: Bearer <token>`, `Accept` exactly as passed, the raw query
@@ -109,9 +105,7 @@ async fn outgoing_request_shape_is_correct() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Store non-2xx is relayed, not an Err
-// ---------------------------------------------------------------------------
 
 /// A store `400` (malformed query, D8's note) is relayed as `Ok(SparqlResponse)`,
 /// not `Err` — the action, not the client, decides what a non-2xx relay means.
@@ -169,9 +163,7 @@ async fn unlisted_status_418_relays_as_ok() {
     assert_eq!(resp.status, 418);
 }
 
-// ---------------------------------------------------------------------------
 // dsp-api's own typed failures (D8's table)
-// ---------------------------------------------------------------------------
 
 async fn mount_status(server: &MockServer, status: u16, content_type: Option<&str>, body: &str) {
     let mut template = ResponseTemplate::new(status);
@@ -467,9 +459,7 @@ async fn status_504_maps_to_server_error() {
     assert!(matches!(err, Diagnostic::ServerError(_)), "expected ServerError, got: {err:?}");
 }
 
-// ---------------------------------------------------------------------------
 // Transport failure (D17)
-// ---------------------------------------------------------------------------
 
 /// A transport-level failure maps to `Diagnostic::Network`, with wording that
 /// distinguishes a client-side failure from the server's own `504`.

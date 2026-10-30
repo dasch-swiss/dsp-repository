@@ -33,7 +33,7 @@ pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, publ
     use axum::routing::get;
 
     build_router(identity, editor, css_href, public_dir)
-        // --- Untraced routes (declared AFTER build_router's .layer() calls) ---
+        // Untraced routes (declared AFTER build_router's .layer() calls)
         // A liveness probe every 30s would otherwise mint one span per probe
         // and bury the real traffic.
         .route("/healthz", get(|| async { StatusCode::OK }))
@@ -57,7 +57,7 @@ pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, publ
                 GovernorLayer { config: std::sync::Arc::new(config) }
             }),
         )
-        // --- CSRF, outermost so nothing declared above can escape it ---
+        // CSRF, outermost so nothing declared above can escape it
         .layer(axum::middleware::from_fn(crate::csrf::require_same_origin))
 }
 
@@ -74,12 +74,12 @@ fn build_router(identity: Router, editor: Router, css_href: String, public_dir: 
 
     let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(css_href));
 
-    // --- Traced routes (declared BEFORE .layer()) ---
+    // Traced routes (declared BEFORE .layer())
     editor
         .merge(identity)
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
-        // --- OTel layers ---
+        // OTel layers
         // Axum layers wrap in reverse declaration order:
         // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
         // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request

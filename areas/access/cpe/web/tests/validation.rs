@@ -15,7 +15,7 @@ use cpe_core::diagnostic::{Diagnostic, DiagnosticKind, LabelTarget, Severity};
 use cpe_core::validate::context::ValidationContext;
 use cpe_web::project::{LoadError, Project};
 
-// ── Fixture loader ────────────────────────────────────────────────────────────
+// Fixture loader
 
 /// The `(name, content)` pairs of a fixture's `narrative/` files, sorted by
 /// name, as a host passes them to `Project::load`; empty when the fixture has
@@ -152,7 +152,7 @@ fn load_fixture_diagnostics(fixture_name: &str, project_id: &str) -> Result<(), 
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[test]
 fn good_validates_clean() {
@@ -482,7 +482,7 @@ fn broken_multi_accumulates_multiple_kinds() {
     );
 }
 
-// ── Data-dependent validation ─────────────────────────────────────────────────
+// Data-dependent validation
 
 /// Load a fixture by directory name, returning the loaded `Project` on success.
 /// Panics on non-validation errors (unexpected for these fixtures).
@@ -619,7 +619,7 @@ fn good_baseline_unchanged_after_data_checks() {
     assert_clean("good", "good");
 }
 
-// ── Nav-route existence check (UnresolvedNavRoute) ────────────────────────────
+// Nav-route existence check (UnresolvedNavRoute)
 
 #[test]
 fn broken_nav_route_fires_exactly_one_unresolved_nav_route() {
@@ -640,7 +640,7 @@ fn broken_nav_route_fires_exactly_one_unresolved_nav_route() {
     );
 }
 
-// ── `site { not-found { browse } }` ───────────────────────────────────────────
+// `site { not-found { browse } }`
 
 #[test]
 fn broken_not_found_browse_route_fires_exactly_one() {
@@ -682,7 +682,7 @@ fn broken_not_found_wrong_typed_label_reports_instead_of_vanishing() {
     );
 }
 
-// ── Nav label written as a chrome-string id (no diagnostic) ─────────────────
+// Nav label written as a chrome-string id (no diagnostic)
 
 #[test]
 fn good_nav_chrome_id_label_loads_without_warnings() {
@@ -701,7 +701,7 @@ fn good_nav_chrome_id_label_loads_without_warnings() {
     );
 }
 
-// ── Desk header row budget (HeaderRowOverBudget) ────────────────────────────
+// Desk header row budget (HeaderRowOverBudget)
 
 #[test]
 fn broken_header_row_over_budget_warns_for_the_long_language_only() {
@@ -721,7 +721,7 @@ fn broken_header_row_over_budget_warns_for_the_long_language_only() {
     }
 }
 
-// ── Property-row consistency check (MalformedPropertyRow) ────────────────────
+// Property-row consistency check (MalformedPropertyRow)
 
 #[test]
 fn broken_property_row_accumulates_all_three_violations() {
@@ -749,7 +749,7 @@ fn broken_property_row_accumulates_all_three_violations() {
     );
 }
 
-// ── Annotation store consistency (MalformedAnnotation) ───────────────────────
+// Annotation store consistency (MalformedAnnotation)
 // dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md
 
 /// Each `broken-annotation-<rule>` fixture breaks exactly one rule, so it
@@ -777,7 +777,7 @@ fn broken_annotation_fixtures_fail_in_both_arms() {
     }
 }
 
-// ── Stored data ARKs (MalformedDataArk) ──────────────────────────────────────
+// Stored data ARKs (MalformedDataArk)
 
 /// `broken-data-ark` stores six malformed ARKs (a version ARK and `http:` on
 /// resources; a foreign host, a trailing `/`, a lowercase shortcode and `''`
@@ -826,7 +826,7 @@ fn good_baseline_has_no_malformed_property_row_diagnostics() {
     assert_clean("good", "good");
 }
 
-// ── Class→route map validation (AmbiguousClassRoute) ─────────────────────────
+// Class→route map validation (AmbiguousClassRoute)
 
 #[test]
 fn broken_ambiguous_class_route_hard_fails() {
@@ -911,7 +911,7 @@ fn good_baseline_has_empty_class_routes_map() {
     );
 }
 
-// ── FK-existence check (UnknownLinkTarget) ────────────────────────────────────
+// FK-existence check (UnknownLinkTarget)
 
 #[test]
 fn broken_unknown_link_target_succeeds_with_warnings_only() {
@@ -1014,7 +1014,7 @@ fn good_baseline_has_no_unknown_link_target_warnings() {
     );
 }
 
-// ── resource-list data checks ─────────────────────────────────────────────────
+// resource-list data checks
 
 #[test]
 fn broken_resource_list_class_hard_fails() {
@@ -1141,7 +1141,7 @@ fn good_resource_list_validates_clean() {
     );
 }
 
-// ── IncompatibleWhereValue (Guard 1) ──────────────────────────────────────────
+// IncompatibleWhereValue (Guard 1)
 
 #[test]
 fn broken_resource_list_incompatible_where_succeeds_with_warnings_only() {
@@ -1229,7 +1229,7 @@ fn good_resource_list_matching_where_type_no_incompatible_where_value_warning() 
     );
 }
 
-// ── ReservedFacetProperty (Guard 2) ───────────────────────────────────────────
+// ReservedFacetProperty (Guard 2)
 
 #[test]
 fn broken_facet_reserved_property_hard_fails() {
@@ -1276,7 +1276,7 @@ fn facet_property_role_is_not_reserved() {
     );
 }
 
-// ── Sparse WHERE property (two-tier check applies to WHERE, not only SORT) ─────
+// Sparse WHERE property (two-tier check applies to WHERE, not only SORT)
 
 #[test]
 fn broken_resource_list_sparse_where_succeeds_with_warnings_only() {
@@ -1338,7 +1338,7 @@ fn broken_resource_list_sparse_where_warning_surfaced_on_project() {
     );
 }
 
-// ── EmptyCompoundSource check ─────────────────────────────────────────────────
+// EmptyCompoundSource check
 
 #[test]
 fn broken_empty_compound_source_succeeds_with_warnings_only() {
@@ -1425,7 +1425,7 @@ fn compound_viewer_param_source_no_false_positive() {
     );
 }
 
-// ── EmptyCompoundSource via Err/raw branch ────────────────────────────────────
+// EmptyCompoundSource via Err/raw branch
 
 #[test]
 fn broken_empty_compound_source_raw_branch_surfaces_warning() {
@@ -1477,7 +1477,7 @@ fn broken_empty_compound_source_raw_branch_surfaces_warning() {
     );
 }
 
-// ── Facet data-dependent checks ───────────────────────────────────────────────
+// Facet data-dependent checks
 
 #[test]
 fn broken_facet_unsupported_kind_hard_fails() {
@@ -1609,7 +1609,7 @@ fn broken_facet_sparse_warning_surfaced_on_project() {
     );
 }
 
-// ── Good-facet clean baseline ─────────────────────────────────────────────────
+// Good-facet clean baseline
 
 #[test]
 fn good_facet_validates_clean_no_diagnostics() {
@@ -1643,7 +1643,7 @@ fn good_facet_loads_without_error() {
     assert_clean("good-facet", "good-facet");
 }
 
-// ── Search-bar data checks ────────────────────────────────────────────────────
+// Search-bar data checks
 
 #[test]
 fn broken_search_unknown_property_hard_fails() {
@@ -1753,7 +1753,7 @@ fn good_search_validates_clean_no_diagnostics() {
     );
 }
 
-// ── Duplicate singleton component check (DuplicateSingletonComponent) ────────
+// Duplicate singleton component check (DuplicateSingletonComponent)
 
 #[test]
 fn broken_duplicate_resource_detail_hard_fails() {
@@ -1786,7 +1786,7 @@ fn broken_duplicate_facet_panel_hard_fails() {
     );
 }
 
-// ── Label existence check (UnknownLabel) ──────────────────────────────────────
+// Label existence check (UnknownLabel)
 
 #[test]
 fn broken_label_unknown_property_succeeds_with_warnings_only() {
@@ -1883,7 +1883,7 @@ fn good_label_known_produces_no_unknown_label_warnings() {
     );
 }
 
-// ── `media="…"` ──────────────────────────────────────────────────────
+// `media="…"`
 
 #[test]
 fn good_media_validates_clean_and_builds_map() {
@@ -1993,7 +1993,7 @@ fn broken_media_conflicting_property_hard_fails() {
     );
 }
 
-// ── `compound-viewer media="…"` ───────────────────────────────────────────────
+// `compound-viewer media="…"`
 
 #[test]
 fn good_compound_media_loads_clean() {
@@ -2171,7 +2171,6 @@ fn broken_list_conflicts_with_compound_registered_class_raw_branch_surfaces_erro
 }
 
 // ── `compound-viewer layout=`/`index=`, ownership, and the `pages` reader
-//    ───────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn broken_compound_layout_missing() {
@@ -2336,7 +2335,7 @@ fn good_compound_pages_loads_clean() {
     );
 }
 
-// ── `media="…"` via Err/raw branch ────────────────────────────────────────────
+// `media="…"` via Err/raw branch
 
 #[test]
 fn broken_media_unknown_property_raw_branch_surfaces_error() {
@@ -2457,7 +2456,7 @@ fn broken_media_wrong_typed_class_reports_invalid_attribute_type_once() {
     );
 }
 
-// ── UnknownLabel via Err/raw branch ───────────────────────────────────────────
+// UnknownLabel via Err/raw branch
 
 #[test]
 fn broken_label_unknown_property_raw_branch_surfaces_warning() {
@@ -2503,7 +2502,7 @@ fn good_baseline_has_empty_media_properties_map() {
     );
 }
 
-// ── `grid="…"` (GridWithoutMedia) ─────────────────────────────────────────────
+// `grid="…"` (GridWithoutMedia)
 
 #[test]
 fn broken_grid_without_media_hard_fails() {
@@ -2518,7 +2517,7 @@ fn broken_grid_without_media_hard_fails() {
     );
 }
 
-// ── SparseProperty on a PARAMETERISED resource-detail ─────────────────────────
+// SparseProperty on a PARAMETERISED resource-detail
 
 #[test]
 fn broken_sparse_property_param_warns_over_the_declared_class() {
@@ -2603,7 +2602,7 @@ fn broken_sparse_property_param_raw_branch_surfaces_warning() {
     );
 }
 
-// ── group / narrative-for boot validation ────────────────────────────────────
+// group / narrative-for boot validation
 
 #[test]
 fn broken_group_duplicate_property_hard_fails() {
@@ -2777,7 +2776,7 @@ fn good_group_narrative_for_validates_clean() {
     assert_clean("good-group-narrative-for", "good-group-narrative-for");
 }
 
-// ── incoming-links boot validation ───────────────────────────────────────────
+// incoming-links boot validation
 
 /// Assert a `-raw` fixture fails with BOTH the forcing `MissingSiteTitle` and
 /// `expected` — proving `check_incoming_links_data_into_raw` ran on the
@@ -3104,7 +3103,7 @@ fn broken_incoming_links_unknown_label_succeeds_with_warning() {
     );
 }
 
-// ── `resource-detail class` existence check ────────────────────────────────────
+// `resource-detail class` existence check
 
 fn characters_detail_page() -> String {
     "/characters/:id".to_owned()
@@ -3220,7 +3219,7 @@ fn broken_resource_detail_unknown_class_with_media_reports_once_in_both_arms() {
     );
 }
 
-// ── CompoundViewerWithPagedList Layer-4 coverage ─────────────────────────────
+// CompoundViewerWithPagedList Layer-4 coverage
 // `diagnostic.rs` ~513 — validate.rs already has a unit-level test
 // (`compound_viewer_with_per_page_list_on_one_page_fails`); this is the
 // missing Layer-4 fixture-driven mirror of the other `broken-*` families.
@@ -3234,7 +3233,7 @@ fn broken_compound_with_paged_list_hard_fails() {
     );
 }
 
-// ── `order-by` options on resource-list ───────────────────────────────────────
+// `order-by` options on resource-list
 
 fn books_page() -> String {
     "/books".to_owned()
@@ -3346,7 +3345,7 @@ fn broken_order_default_label_wrong_type_reports_instead_of_vanishing() {
     );
 }
 
-// ── Composed row gloss ────────────────────────────────────────────────────────
+// Composed row gloss
 
 fn incompatible_gloss(property: &str, role: &str, value_type: &str) -> DiagnosticKind {
     DiagnosticKind::IncompatibleGlossPart {
@@ -3410,7 +3409,7 @@ fn broken_gloss_block_shape_errors_hard_fail() {
     );
 }
 
-// ── Record header slots ───────────────────────────────────────────────────────
+// Record header slots
 
 fn incompatible_head_slot(property: &str, role: &str, value_type: &str) -> DiagnosticKind {
     DiagnosticKind::IncompatibleGlossPart {
@@ -3446,7 +3445,7 @@ fn broken_head_slot_incompatible_raw_branch_surfaces_error() {
     }
 }
 
-// ── compound-viewer member-links ─────────────────────────────────────────────
+// compound-viewer member-links
 
 fn member_link_not_link() -> DiagnosticKind {
     DiagnosticKind::IncompatibleGlossPart {
@@ -3520,7 +3519,7 @@ fn broken_order_by_sparse_property_loads_with_warning() {
     );
 }
 
-// ── timeline ──────────────────────────────────────────────────────────────────
+// timeline
 //
 // Every timeline fixture is loaded as project "incunabula": the
 // component is keyed on `(project, name)`, so a fixture loaded under
@@ -3714,7 +3713,7 @@ fn broken_timeline_date_wrong_type_raw_branch_surfaces_both() {
     );
 }
 
-// ── Figure-block slot ─────────────────────────────────────────────────────────
+// Figure-block slot
 //
 // The slotted component is the registered `timeline`, so these fixtures load
 // as "incunabula" (`assert_timeline_errors`).
@@ -3809,7 +3808,7 @@ fn broken_figure_label_fails() {
     );
 }
 
-// ── woodcut-cases ────────────────────────────────────────────────────────────
+// woodcut-cases
 //
 // Every fixture is good-showcase with one change, loaded as "incunabula"; a
 // `-raw` sibling also drops the site title, so the raw arm must report the
@@ -3970,7 +3969,7 @@ fn broken_showcase_case_reports_every_malformed_case() {
     );
 }
 
-// ── edition-cards and strip-row ──────────────────────────────────────────────
+// edition-cards and strip-row
 //
 // Every fixture is good-showcase-cards with one change, loaded as
 // "incunabula"; a `-raw` sibling also drops the site title.

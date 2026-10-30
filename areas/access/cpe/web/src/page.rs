@@ -237,9 +237,9 @@ fn compose_page_title(
 ) -> String {
     let site_title = self::site_title(site, lang);
 
-    // --- 1. resource-detail component with a resolved resource ----------------
+    // 1. resource-detail component with a resolved resource
     let resource_title: Option<String> = resolved_resource_title(page, components, lang)
-        // --- 1b. the first resource-detail is unresolved → its h1 -------
+        // 1b. the first resource-detail is unresolved → its h1
         .or_else(|| not_found_resource_heading(site, page, components, lang));
 
     if let Some(rt) = resource_title {
@@ -250,7 +250,7 @@ fn compose_page_title(
         return format!("{site_title} \u{2014} {page_title}");
     }
 
-    // --- 2. narrative component — first heading of language-resolved content --
+    // 2. narrative component — first heading of language-resolved content
     let narrative_title: Option<String> = resolved_narrative_component_title(page, narrative, lang, default_lang);
 
     if let Some(nt) = narrative_title {
@@ -261,7 +261,7 @@ fn compose_page_title(
         return format!("{site_title} \u{2014} {page_title}");
     }
 
-    // --- 3. No page title ------------------------------------------------
+    // 3. No page title
     site_title.to_owned()
 }
 
@@ -3004,7 +3004,7 @@ mod tests {
     static EMPTY_MEDIA_THUMBS: std::sync::LazyLock<HashMap<String, cpe_core::ir::MediaThumb>> =
         std::sync::LazyLock::new(HashMap::new);
 
-    // ── share_href_for_reader ────────────────────────────────────────────────────
+    // share_href_for_reader
 
     /// A resolved reader member appends no `#compound-viewer` — the fn is
     /// unconditionally anchor-free, regardless of `reader_member`.
@@ -3026,7 +3026,7 @@ mod tests {
         assert_eq!(href, "https://example.com/incunabula/books/b1");
     }
 
-    // ── resolved_reader_member ──────────────────────────────────────────────────
+    // resolved_reader_member
 
     fn compound_at(index: u32) -> ComponentData {
         use cpe_core::ir::{CompoundPage, MemberHeader};
@@ -3075,7 +3075,7 @@ mod tests {
         assert_eq!(resolved_reader_member(&components), Some("M_2"));
     }
 
-    // ── nav_item_is_active ───────────────────────────────────────────────────────
+    // nav_item_is_active
 
     #[test]
     fn nav_item_is_active_exact_match() {
@@ -3104,7 +3104,7 @@ mod tests {
         assert!(!nav_item_is_active("/books", "/strips/:id"));
     }
 
-    // ── test helpers ─────────────────────────────────────────────────────────
+    // test helpers
 
     /// The three states of an order-name label override at the resolution seam itself:
     /// absent, a declared chrome id, and — the branch the lower-layer
@@ -3144,7 +3144,7 @@ mod tests {
         );
     }
 
-    // ── Composed gloss resolution ─────────────────────────────────────────────
+    // Composed gloss resolution
 
     /// A unit resolves to its template for a language that has one, and to
     /// `None` (bare digits at render time, never the raw id) for one that
@@ -3185,7 +3185,7 @@ mod tests {
         );
     }
 
-    // ── Declared `order-by` options ──────────────────────────────────────────
+    // Declared `order-by` options
 
     fn make_order_options() -> Vec<cpe_core::ir::OrderOption> {
         vec![
@@ -3387,7 +3387,7 @@ mod tests {
         NarrativeStore::from_pairs(&pairs)
     }
 
-    // ── Layer-1: compose_page_title (dedupe rule) ─────────────────────────────
+    // Layer-1: compose_page_title (dedupe rule)
 
     /// When the derived page title equals site.title (exact, trimmed,
     /// case-sensitive), the result is site.title alone — no "Site — Site".
@@ -3605,7 +3605,7 @@ mod tests {
         );
     }
 
-    // ── page_heading (hidden-<h1> text derivation) ───────────────────────────
+    // page_heading (hidden-<h1> text derivation)
 
     /// Rung 1: a resolved resource-detail title wins over everything else.
     /// (Unreachable from `render_page`'s actual call site — a page with a
@@ -3709,7 +3709,7 @@ mod tests {
         assert_eq!(heading, site.title);
     }
 
-    // ── page_has_visible_h1 ───────────────────────────────────────────────────
+    // page_has_visible_h1
 
     #[test]
     fn page_has_visible_h1_true_for_resource_detail_component() {
@@ -3802,7 +3802,7 @@ mod tests {
         assert!(!page_has_visible_h1(&page, &narrative, &lang, &lang));
     }
 
-    // ── Layer-1: chrome_lookup ────────────────────────────────────────────────
+    // Layer-1: chrome_lookup
 
     #[test]
     fn chrome_lookup_returns_translation_for_declared_id() {
@@ -3828,7 +3828,7 @@ mod tests {
         assert_eq!(result, None, "unknown chrome id must return None");
     }
 
-    // ── Layer-1: site_title (chrome-id-or-literal) ────────────────────────────
+    // Layer-1: site_title (chrome-id-or-literal)
 
     /// Alice's site with `site.title` declared as a chrome-string id
     /// (`site-title`) instead of a literal — the Incunabula shape.
@@ -3968,7 +3968,7 @@ mod tests {
         }
     }
 
-    // ── Layer-1: resolve_property_label ──────────────────────────────────────
+    // Layer-1: resolve_property_label
 
     #[test]
     fn resolve_property_label_returns_translation_for_declared_hit() {
@@ -4031,7 +4031,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: resolve_class_label ──────────────────────────────────────────
+    // Layer-1: resolve_class_label
 
     #[test]
     fn resolve_class_label_returns_translation_for_declared_hit() {
@@ -4097,7 +4097,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: resolve_class_plural ────────────────────────────────────────
+    // Layer-1: resolve_class_plural
 
     #[test]
     fn resolve_class_plural_returns_declared_plural_for_exact_lang() {
@@ -4172,7 +4172,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: resolve_class_plural_capitalized (breadcrumb copy fix) ──────
+    // Layer-1: resolve_class_plural_capitalized (breadcrumb copy fix)
 
     #[test]
     fn resolve_class_plural_capitalized_capitalizes_declared_plural() {
@@ -4221,7 +4221,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: nav_label ────────────────────────────────────────────────────
+    // Layer-1: nav_label
 
     #[test]
     fn nav_label_resolves_chrome_id() {
@@ -4241,7 +4241,7 @@ mod tests {
         assert_eq!(label, "About", "literal label (no chrome entry) should be returned as-is");
     }
 
-    // ── Layer-3: insta snapshots ──────────────────────────────────────────────
+    // Layer-3: insta snapshots
 
     #[test]
     fn snapshot_render_page_en() {
@@ -4311,7 +4311,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Shell: data-direction and CSS links ───────────────────────────────────
+    // Shell: data-direction and CSS links
 
     /// The rendered `<html>` element must carry `data-direction="edition"` (fixed).
     #[test]
@@ -4496,7 +4496,7 @@ mod tests {
         );
     }
 
-    // ── Appearance: data-appearance attribute emission ────────────────────────
+    // Appearance: data-appearance attribute emission
 
     #[test]
     fn render_page_emits_data_appearance_when_dark() {
@@ -4567,7 +4567,7 @@ mod tests {
         );
     }
 
-    // ── No header-height measurement script ─────────────────────────────────────────
+    // No header-height measurement script
 
     /// `shell_header` emits no `--shell-header-h` measurement
     /// script: no
@@ -4612,7 +4612,7 @@ mod tests {
         );
     }
 
-    // ── Edge-case: single-language site has no language menu ─────────────────
+    // Edge-case: single-language site has no language menu
 
     #[test]
     fn render_page_omits_language_menu_for_single_language() {
@@ -4651,7 +4651,7 @@ mod tests {
         }
     }
 
-    // ── Theme knob: data-accent and data-bg emission ──────────────────────────
+    // Theme knob: data-accent and data-bg emission
 
     /// `render_page` must always emit `data-accent` and `data-bg` on `<html>`.
     /// With `ThemeKnob::default()` (Ochre/Tint) the values are "ochre"/"tint".
@@ -4743,7 +4743,7 @@ mod tests {
         );
     }
 
-    // ── The language menu's links: lang, hreflang, aria-current="true" ──────────────
+    // The language menu's links: lang, hreflang, aria-current="true"
 
     /// Each language link carries `lang` and `hreflang` set to its code and
     /// names its language by endonym; only the current one carries
@@ -4800,7 +4800,7 @@ mod tests {
         );
     }
 
-    // ── Footer attribution override ─────────────────────────────────────────
+    // Footer attribution override
 
     /// Extract the `p.footer__attr` paragraph's inner HTML.
     fn footer_attr_of(out: &str) -> &str {
@@ -4876,7 +4876,7 @@ mod tests {
         }
     }
 
-    // ── DaSCH lockup in the project footer ──────────────────────────────────
+    // DaSCH lockup in the project footer
 
     /// Extract the `a.footer__lockup` element, open tag through `</a>`.
     fn footer_lockup_of(out: &str) -> &str {
@@ -4930,7 +4930,7 @@ mod tests {
         assert_eq!(footer_attr_of(&out), "Daten CC BY 4.0, DaSCH.");
     }
 
-    // ── Footer attribution localizes (chrome-localization gap-fill) ─────────
+    // Footer attribution localizes (chrome-localization gap-fill)
 
     /// The footer's `p.footer__attr` sentence must localize via
     /// `ChromeMsg::FooterAttribution` — a de render shows the German
@@ -4981,7 +4981,7 @@ mod tests {
         );
     }
 
-    // ── Breadcrumb: present on resource-detail AND narrative pages ────────────
+    // Breadcrumb: present on resource-detail AND narrative pages
 
     /// The project home page (route "/") is narrative-only and gets the
     /// degenerate narrative crumb-line variant: `CPE › Project` alone (no
@@ -5226,7 +5226,7 @@ mod tests {
         assert!(!out.contains("no-such-id"), "never the raw id: {out}");
     }
 
-    // ── The pages reader inside its record ───────────────────────────────────
+    // The pages reader inside its record
 
     /// A navigator page — `resource-detail id="$id"` beside its
     /// `layout="pages"` reader over `total` members — through `render_body`,
@@ -5740,7 +5740,7 @@ mod tests {
         assert_eq!(ids_in("de"), ["a", "sec-2", "sec-3", "sec-4"]);
     }
 
-    // ── The page rail and the narrative layout ───────────────────────────────
+    // The page rail and the narrative layout
 
     /// An h1, an intro and one top-level `##`.
     const RAIL_HOME: &str = "# Home\n\nIntro.\n\n## A {#a}\n\nText.\n";
@@ -6473,7 +6473,7 @@ mod tests {
         );
     }
 
-    // ── The incoming-links caption, through `render_component` ────────────────
+    // The incoming-links caption, through `render_component`
     //
     // The ResourceDetail arm is the layer that PERFORMS the caption fallback
     // (chrome id → source-class plural) and pairs it with the host's rows.
@@ -6612,7 +6612,7 @@ mod tests {
         assert!(!out.contains("Nichts verweist hierher."), "{out}");
     }
 
-    // ── `narrative-for` intros, through `render_component` ────────────────────
+    // `narrative-for` intros, through `render_component`
     //
     // `render_component`'s ResourceDetail arm is the layer that PERFORMS the
     // id match and the language fallback (`resolve_narrative_content`), so the
@@ -7313,7 +7313,7 @@ mod tests {
         );
     }
 
-    // ── Breadcrumb: browse surfaces ───────────────────────────────────────────
+    // Breadcrumb: browse surfaces
 
     /// A faceted browse page: `FacetPanel` (real `Facet`s, rail order
     /// role → theme) targeting a `ResourceList` (contrast with `make_faceted_page`
@@ -7876,7 +7876,7 @@ mod tests {
         );
     }
 
-    // ── A11y: hidden-<h1> injection on headless pages ─────────────────────────
+    // A11y: hidden-<h1> injection on headless pages
 
     /// A `ResourceList`-only page (no `Narrative`, no `ResourceDetail`) — the
     /// canonical "headless" archetype.
@@ -8134,7 +8134,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-3: render_page with a resource-detail component ────────────────
+    // Layer-3: render_page with a resource-detail component
 
     /// Build a page whose body contains a single `ResourceDetail` component.
     fn make_character_page() -> cpe_core::ir::Page {
@@ -8401,7 +8401,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-3: render_page with FacetPanel + ResourceList ───────────────────
+    // Layer-3: render_page with FacetPanel + ResourceList
 
     /// Build a page whose body has a FacetPanel + ResourceList (the canonical
     /// faceted browse page shape), each with a matching list id.
@@ -8709,7 +8709,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-3: render_page with FacetPanel + ResourceList + SearchBar ──────
+    // Layer-3: render_page with FacetPanel + ResourceList + SearchBar
     // (the 3-way `render_body` grouping)
 
     /// Build a page whose body has FacetPanel + ResourceList + SearchBar, all
@@ -9304,7 +9304,7 @@ mod tests {
         );
     }
 
-    // ── Contract asserts ──────────────────────────────────────────────────────
+    // Contract asserts
 
     /// `.browse.page` has exactly its four flat grid children, each present
     /// exactly once and in this order: the search row, the facet rail, the
@@ -9622,7 +9622,7 @@ mod tests {
         );
     }
 
-    // ── A11y: ARIA + landmarks ────────────────────────────────────────────────
+    // A11y: ARIA + landmarks
 
     /// The ordering control's `<summary>` has an `aria-label` naming the
     /// current ordering, and every row button carries visible text —
@@ -9676,7 +9676,7 @@ mod tests {
         }
     }
 
-    // ── The crumb line's dataset panel (synthetic ARKs) ──────────────────────
+    // The crumb line's dataset panel (synthetic ARKs)
 
     const DATA_ARK: &str = "https://ark.dasch.swiss/ark:/72163/1/0803/";
 

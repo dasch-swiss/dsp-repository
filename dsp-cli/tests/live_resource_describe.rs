@@ -50,9 +50,7 @@ use dsp_cli::config::Config;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test — describe_resource envelope field assertion
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test for `dsp vre resource describe` against a real DSP instance.
 ///
@@ -78,7 +76,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_describe_envelope_field_assertion() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -96,7 +94,7 @@ fn live_resource_describe_envelope_field_assertion() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     let token: Option<String> = optional_env("DSP_TOKEN");
     let token_ref: Option<&str> = token.as_deref();
 
@@ -106,10 +104,10 @@ fn live_resource_describe_envelope_field_assertion() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the project ────────────────────────────────────────────────
+    // 4. Resolve the project
     eprintln!("live test: resolving project '{}' on {}", project_shortcode, cfg.server);
 
     let proj = client.resolve_project(&cfg.server, &project_shortcode).expect(
@@ -119,7 +117,7 @@ fn live_resource_describe_envelope_field_assertion() {
 
     eprintln!("live test: resolved project '{}' (IRI: {})", proj.shortname, proj.iri);
 
-    // ── 5. List resources (page 0) to obtain a real resource IRI ─────────────
+    // 5. List resources (page 0) to obtain a real resource IRI
     assert!(
         class_iri.contains("://"),
         "DSP_TEST_CLASS_IRI must be a full IRI (contains '://'); got: {class_iri:?}"
@@ -158,7 +156,7 @@ fn live_resource_describe_envelope_field_assertion() {
 
     eprintln!("live test: using resource IRI '{}' for describe call", first_iri);
 
-    // ── 6. Call describe_resource ─────────────────────────────────────────────
+    // 6. Call describe_resource
     let detail = client.describe_resource(&cfg.server, first_iri, token_ref, false).expect(
         "describe_resource failed — check DSP_TEST_SERVER and network connectivity; \
              resource IRI may be inaccessible to anonymous callers if DSP_TOKEN is not set",
@@ -180,12 +178,12 @@ fn live_resource_describe_envelope_field_assertion() {
         detail.your_access,
     );
 
-    // ── 7. D4 hard assertions ─────────────────────────────────────────────────
+    // 7. D4 hard assertions
     //
     // These fields are always present on a real resource when using schema=complex.
     // Failures here indicate a broken DTO extraction or a server regression.
 
-    // -- label (hard assertion) --
+    // label (hard assertion)
     assert!(
         !detail.label.is_empty(),
         "D4 HARD FAIL: `label` is empty on the described resource (iri={:?}, server={:?}). \
@@ -195,7 +193,7 @@ fn live_resource_describe_envelope_field_assertion() {
     );
     eprintln!("live test: D4 field 'label': {:?} ✓", detail.label);
 
-    // -- resource_type (hard assertion) --
+    // resource_type (hard assertion)
     assert!(
         !detail.resource_type.is_empty(),
         "D4 HARD FAIL: `resource_type` is empty on the described resource \
@@ -205,7 +203,7 @@ fn live_resource_describe_envelope_field_assertion() {
     );
     eprintln!("live test: D4 field 'resource_type': {} ✓", detail.resource_type);
 
-    // -- iri (hard assertion) --
+    // iri (hard assertion)
     assert!(
         !detail.iri.is_empty(),
         "D4 HARD FAIL: `iri` is empty on the described resource (server={:?}). \
@@ -220,7 +218,7 @@ fn live_resource_describe_envelope_field_assertion() {
     );
     eprintln!("live test: D4 field 'iri': {} ✓", detail.iri);
 
-    // -- creation_date (hard assertion — complex always carries it) --
+    // creation_date (hard assertion — complex always carries it)
     assert!(
         detail.creation_date.is_some(),
         "D4 HARD FAIL: `creation_date` (knora-api:creationDate) is None on the described \
@@ -231,7 +229,7 @@ fn live_resource_describe_envelope_field_assertion() {
     );
     eprintln!("live test: D4 field 'creation_date': {:?} ✓", detail.creation_date);
 
-    // -- attached_project (hard assertion — complex always carries it) --
+    // attached_project (hard assertion — complex always carries it)
     assert!(
         detail.attached_project.is_some(),
         "D4 HARD FAIL: `attached_project` (knora-api:attachedToProject) is None on the \
@@ -242,7 +240,7 @@ fn live_resource_describe_envelope_field_assertion() {
     );
     eprintln!("live test: D4 field 'attached_project': {:?} ✓", detail.attached_project);
 
-    // -- owner (hard assertion — complex always carries it) --
+    // owner (hard assertion — complex always carries it)
     assert!(
         detail.owner.is_some(),
         "D4 HARD FAIL: `owner` (knora-api:attachedToUser) is None on the described \
@@ -253,9 +251,9 @@ fn live_resource_describe_envelope_field_assertion() {
     );
     eprintln!("live test: D4 field 'owner': {:?} ✓", detail.owner);
 
-    // ── 8. Report-only fields (no assertion) ─────────────────────────────────
+    // 8. Report-only fields (no assertion)
 
-    // -- ark_url (report-only) --
+    // ark_url (report-only)
     if detail.ark_url.is_some() {
         eprintln!("live test: D4 field 'ark_url': {:?} (present)", detail.ark_url);
     } else {
@@ -265,7 +263,7 @@ fn live_resource_describe_envelope_field_assertion() {
         );
     }
 
-    // -- last_modified (report-only — server-side optional) --
+    // last_modified (report-only — server-side optional)
     if detail.last_modified.is_some() {
         eprintln!("live test: D4 field 'last_modified': {:?} (present)", detail.last_modified);
     } else {
@@ -276,13 +274,13 @@ fn live_resource_describe_envelope_field_assertion() {
         );
     }
 
-    // -- visibility (report-only — depends on server permission setup) --
+    // visibility (report-only — depends on server permission setup)
     eprintln!(
         "live test: D4 field 'visibility' (report-only, derived from ACL): {:?}",
         detail.visibility
     );
 
-    // -- your_access (report-only — depends on caller's auth) --
+    // your_access (report-only — depends on caller's auth)
     // NEVER interpolate the token in any assertion or message.
     eprintln!(
         "live test: D4 field 'your_access' (report-only, derived from caller's permission): {:?}",
@@ -296,9 +294,7 @@ fn live_resource_describe_envelope_field_assertion() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Live test — describe_resource --values (Phase 8c)
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test for `dsp vre resource describe --values` against a real
 /// DSP instance.
@@ -347,7 +343,7 @@ fn live_resource_describe_envelope_field_assertion() {
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_describe_values() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -356,7 +352,7 @@ fn live_resource_describe_values() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     let token: Option<String> = optional_env("DSP_TOKEN");
     let token_ref: Option<&str> = token.as_deref();
 
@@ -366,10 +362,10 @@ fn live_resource_describe_values() {
         eprintln!("live test (values): DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Call describe_resource with_values=true ────────────────────────────
+    // 4. Call describe_resource with_values=true
     //
     // Fixed IRI: the known-good incunabula:Page that carries text, integer, link,
     // and still-image values. This resource is public on dev.
@@ -393,7 +389,7 @@ fn live_resource_describe_values() {
         }
     };
 
-    // ── 5. D4 hard assertions — values is Some ────────────────────────────────
+    // 5. D4 hard assertions — values is Some
 
     let fields = match detail.values {
         Some(f) => f,
@@ -485,7 +481,7 @@ fn live_resource_describe_values() {
         }
     }
 
-    // ── 6. Report-only: field labels and vocabulary-item labels ────────────────
+    // 6. Report-only: field labels and vocabulary-item labels
     // (Never a test failure — depends on permission and ontology availability.)
 
     let labelled_fields: Vec<&str> = fields.iter().filter(|f| f.label.is_some()).map(|f| f.name.as_str()).collect();
@@ -531,7 +527,7 @@ fn live_resource_describe_values() {
         commented_values
     );
 
-    // ── 7. Standoff note ──────────────────────────────────────────────────────
+    // 7. Standoff note
     // The incunabula:Page carries unformatted text only. The standoff path
     // (textValueAsXml → html_to_text) is live-verified by
     // `live_resource_describe_values_standoff` below and by the wiremock fixture
@@ -547,9 +543,7 @@ fn live_resource_describe_values() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Live test — describe_resource --values, standoff (formatted) text (Phase 8c)
-// ---------------------------------------------------------------------------
 
 /// Live-verifies the **standoff** text path (`textValueAsXml` → `html_to_text`)
 /// against a real resource that carries formatted text.

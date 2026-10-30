@@ -31,12 +31,12 @@ use dsp_cli::render::{MetaContext, Renderer};
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── constants ─────────────────────────────────────────────────────────────────
+// constants
 
 /// Standard server label for all snapshot tests.
 const SERVER: &str = "api.dasch.swiss";
 
-// ── D3 filter_warning strings ─────────────────────────────────────────────────
+// D3 filter_warning strings
 
 /// D3 anonymous filter_warning: set on every instance-side read, anonymous path.
 const ANON_FILTER_WARNING: &str = "results may be filtered; login to see private resources";
@@ -44,7 +44,7 @@ const ANON_FILTER_WARNING: &str = "results may be filtered; login to see private
 /// D3 authenticated filter_warning: set on every instance-side read, auth path.
 const AUTH_FILTER_WARNING: &str = "results limited to your permissions";
 
-// ── MetaContext helpers ───────────────────────────────────────────────────────
+// MetaContext helpers
 
 fn anon_meta() -> MetaContext {
     MetaContext {
@@ -66,7 +66,7 @@ fn auth_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Main fixture — a realistic incunabula:Page (resource 0803, from the `dev`
 /// instance) with all fields populated including last_modified.
@@ -170,7 +170,7 @@ fn logged_in_users_detail() -> ResourceDetail {
     }
 }
 
-// ── main fixture × 5 formats (anonymous + D3 disclosure) ─────────────────────
+// main fixture × 5 formats (anonymous + D3 disclosure)
 
 /// Prose render of the main fixture (anonymous).
 ///
@@ -334,7 +334,7 @@ fn resource_describe_tsv() {
     insta::assert_snapshot!("resource_describe_tsv_stderr", stderr);
 }
 
-// ── D3 disclosure variants: anonymous vs authenticated ────────────────────────
+// D3 disclosure variants: anonymous vs authenticated
 
 /// Authenticated prose render.
 ///
@@ -376,7 +376,7 @@ fn resource_describe_disclosure_authenticated_json() {
     insta::assert_snapshot!("resource_describe_disclosure_authenticated_json", out);
 }
 
-// ── Visibility variants: public vs project members only ──────────────────────
+// Visibility variants: public vs project members only
 
 /// Prose render with `visibility = ProjectMembers` and `your_access = Manage`.
 ///
@@ -426,7 +426,7 @@ fn resource_describe_json_project_members_visibility() {
     insta::assert_snapshot!("resource_describe_json_project_members", out);
 }
 
-// ── Omitted-field rendering ───────────────────────────────────────────────────
+// Omitted-field rendering
 
 /// Prose render with `last_modified = None`, `ark_url = None`.
 ///
@@ -508,7 +508,7 @@ fn resource_describe_csv_absent_fields() {
     insta::assert_snapshot!("resource_describe_csv_absent_fields", stdout);
 }
 
-// ── stdout/stderr contract assertions ────────────────────────────────────────
+// stdout/stderr contract assertions
 
 /// Lines: disclosure must land on stderr, NOT stdout.
 #[test]
@@ -567,7 +567,7 @@ fn resource_describe_tsv_disclosure_on_stderr_not_stdout() {
     );
 }
 
-// ── vocabulary guard ──────────────────────────────────────────────────────────
+// vocabulary guard
 
 /// Prose output must not contain DSP-API vocabulary leaks.
 #[test]
@@ -618,7 +618,7 @@ fn resource_describe_json_no_raw_permission_codes() {
     );
 }
 
-// ── Visibility variants: public (restricted view) and logged-in users ────────
+// Visibility variants: public (restricted view) and logged-in users
 
 /// Prose render with `visibility = PublicRestricted` and `your_access = RestrictedView`.
 ///
@@ -727,7 +727,7 @@ fn resource_describe_json_logged_in_users_visibility() {
     insta::assert_snapshot!("resource_describe_json_logged_in_users", out);
 }
 
-// ── TSV absent-fields (Fix 4) ────────────────────────────────────────────────
+// TSV absent-fields (Fix 4)
 
 /// TSV render with `last_modified = None`, `ark_url = None`.
 ///
@@ -753,7 +753,7 @@ fn resource_describe_tsv_absent_fields() {
     insta::assert_snapshot!("resource_describe_tsv_absent_fields", stdout);
 }
 
-// ── Prose raw-permission-code guard (Fix 5) ───────────────────────────────────
+// Prose raw-permission-code guard (Fix 5)
 
 /// Prose output must not surface raw permission codes as Visibility or Your access values.
 ///

@@ -380,7 +380,7 @@ pub fn curated(resource: &str, key: &str, lang: Option<&str>, text: &str) -> Cur
     }
 }
 
-// ── The fixture projects ──────────────────────────────────────────────────────
+// The fixture projects
 
 /// The shortcode in the ARK of a fixture project's resource.
 const FIXTURE_SHORTCODE: &str = "0123";

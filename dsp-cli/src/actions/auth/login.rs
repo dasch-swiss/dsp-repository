@@ -163,7 +163,7 @@ mod tests {
     use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{Format, MetaContext, Renderer};
 
-    // ── local mock client ─────────────────────────────────────────────────────
+    // local mock client
 
     struct MockDspClient {
         result: Result<LoginResponse, Diagnostic>,
@@ -346,7 +346,7 @@ mod tests {
         }
     }
 
-    // ── static password source ────────────────────────────────────────────────
+    // static password source
 
     struct StaticPasswordSource(String);
 
@@ -356,7 +356,7 @@ mod tests {
         }
     }
 
-    // ── recording renderer ────────────────────────────────────────────────────
+    // recording renderer
 
     struct RecordingRenderer {
         login_outcome: Option<AuthLoginOutcome>,
@@ -497,7 +497,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     fn fixed_expires() -> chrono::DateTime<Utc> {
         Utc.with_ymd_and_hms(2026, 6, 25, 12, 34, 56).unwrap()
@@ -520,7 +520,7 @@ mod tests {
         (args, cfg)
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    // tests
 
     #[test]
     fn happy_path_stores_entry_in_cache() {

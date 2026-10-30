@@ -110,7 +110,7 @@ mod tests {
     use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{Format, MetaContext, Renderer};
 
-    // ── recording renderer ────────────────────────────────────────────────────
+    // recording renderer
 
     struct LoggedInRecord {
         server: String,
@@ -286,7 +286,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     fn make_args(server: &str) -> (StatusArgs, Config) {
         let args = StatusArgs {
@@ -323,7 +323,7 @@ mod tests {
         make_jwt(&serde_json::json!({ "exp": exp_ts }))
     }
 
-    // ── existing tests (regression guard) ────────────────────────────────────
+    // existing tests (regression guard)
 
     #[test]
     fn logged_in_entry_produces_logged_in_outcome() {
@@ -402,7 +402,7 @@ mod tests {
         assert!(result.is_ok(), "status should always return Ok; got {result:?}");
     }
 
-    // ── env-token tests ───────────────────────────────────────────────────────
+    // env-token tests
 
     #[test]
     fn env_jwt_future_exp_produces_authenticated_via_env_not_expired() {

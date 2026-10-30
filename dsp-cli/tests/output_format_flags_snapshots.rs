@@ -36,7 +36,7 @@ use dsp_cli::render::{HeaderMode, MetaContext, ProjectListView, Renderer, TableO
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 const SERVER: &str = "https://api.test.dasch.swiss";
 
@@ -128,7 +128,7 @@ fn no_header_opts() -> TableOptions {
     TableOptions { columns: None, header: HeaderMode::Off }
 }
 
-// ── projects csv projected ────────────────────────────────────────────────────
+// projects csv projected
 
 #[test]
 fn projects_csv_columns_shortcode_iri() {
@@ -139,7 +139,7 @@ fn projects_csv_columns_shortcode_iri() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── projects lines projected ──────────────────────────────────────────────────
+// projects lines projected
 
 #[test]
 fn projects_lines_columns_iri() {
@@ -150,7 +150,7 @@ fn projects_lines_columns_iri() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── resource_type_describe csv projected ─────────────────────────────────────
+// resource_type_describe csv projected
 
 #[test]
 fn resource_type_describe_csv_columns_name_iri_value_type() {
@@ -161,7 +161,7 @@ fn resource_type_describe_csv_columns_name_iri_value_type() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── csv --no-header ───────────────────────────────────────────────────────────
+// csv --no-header
 
 #[test]
 fn projects_csv_no_header() {
@@ -171,7 +171,7 @@ fn projects_csv_no_header() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── csv --header-only ─────────────────────────────────────────────────────────
+// csv --header-only
 
 #[test]
 fn projects_csv_header_only() {
@@ -181,7 +181,7 @@ fn projects_csv_header_only() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── csv --header-only --columns X,Y composed ─────────────────────────────────
+// csv --header-only --columns X,Y composed
 
 #[test]
 fn projects_csv_header_only_with_columns() {
@@ -194,7 +194,7 @@ fn projects_csv_header_only_with_columns() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── tsv projected ─────────────────────────────────────────────────────────────
+// tsv projected
 
 #[test]
 fn projects_tsv_columns_shortcode_shortname() {
@@ -204,7 +204,7 @@ fn projects_tsv_columns_shortcode_shortname() {
     insta::assert_snapshot!(buf_to_string(&buf));
 }
 
-// ── composability assertion ───────────────────────────────────────────────────
+// composability assertion
 //
 // The data rows of a headered csv run (with --columns + a comma-containing
 // value) must be byte-identical to the same run with --no-header.
@@ -251,7 +251,7 @@ fn csv_no_header_data_rows_byte_equal_headered_data_rows() {
     );
 }
 
-// ── unknown-column error ──────────────────────────────────────────────────────
+// unknown-column error
 //
 // Renderer-level: render with columns=Some(["shortcode","nonexistent"]) and
 // snapshot the exact Diagnostic::Usage Display text (which includes the

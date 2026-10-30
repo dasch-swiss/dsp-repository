@@ -19,7 +19,7 @@ use pulldown_cmark::{html as cmark_html, Event, Parser, Tag, TagEnd};
 
 use crate::url::Base;
 
-// ── Invite-list item parsing ───────────────────────────────────────────────────
+// Invite-list item parsing
 
 /// Attempt to parse an invite-list item from a paragraph's inline events.
 ///
@@ -109,7 +109,7 @@ pub struct InviteItem {
     pub gloss: Option<String>,
 }
 
-// ── Event buffer helpers ───────────────────────────────────────────────────────
+// Event buffer helpers
 
 /// Find the matching `End` event index for a `Start` event at `start_idx`.
 /// Counts nesting levels so nested same-tag pairs are handled correctly.
@@ -149,7 +149,7 @@ fn tag_end_for(tag: &Tag<'_>) -> TagEnd {
     tag.clone().to_end()
 }
 
-// ── Section/invite-list detection ─────────────────────────────────────────────
+// Section/invite-list detection
 
 /// Check whether a list (identified by its item-inner events) qualifies as an
 /// invite-list. Every item must parse successfully as an `InviteItem`.

@@ -33,7 +33,7 @@ use dsp_cli::render::{MetaContext, Renderer, ResourceListPagination, ResourceLis
 mod support;
 use support::{buf_to_string, shared_buf};
 
-// ── constants ─────────────────────────────────────────────────────────────────
+// constants
 
 /// Standard server label for all snapshot tests.
 const SERVER: &str = "api.dasch.swiss";
@@ -41,7 +41,7 @@ const SERVER: &str = "api.dasch.swiss";
 /// The resource type used in all fixtures (local name for the prose header).
 const RESOURCE_TYPE: &str = "page";
 
-// ── D3 filter_warning strings ─────────────────────────────────────────────────
+// D3 filter_warning strings
 
 /// D3 anonymous filter_warning: set on every instance-side read, anonymous path.
 const ANON_FILTER_WARNING: &str = "results may be filtered; login to see private resources";
@@ -49,7 +49,7 @@ const ANON_FILTER_WARNING: &str = "results may be filtered; login to see private
 /// D3 authenticated filter_warning: set on every instance-side read, auth path.
 const AUTH_FILTER_WARNING: &str = "results limited to your permissions";
 
-// ── MetaContext helpers ───────────────────────────────────────────────────────
+// MetaContext helpers
 
 /// Anonymous `MetaContext` with the D3 filter_warning set.
 ///
@@ -76,7 +76,7 @@ fn auth_meta() -> MetaContext {
     }
 }
 
-// ── fixtures ──────────────────────────────────────────────────────────────────
+// fixtures
 
 /// Helper to build a `ResourceSummary`.
 fn res(
@@ -192,7 +192,7 @@ fn more_results_view() -> ResourceListView {
     }
 }
 
-// ── main fixture × 5 formats (anonymous + D3 disclosure) ─────────────────────
+// main fixture × 5 formats (anonymous + D3 disclosure)
 
 /// Prose render of the main fixture (anonymous). Locks:
 /// - header `resources of type page on api.dasch.swiss (3):`.
@@ -327,7 +327,7 @@ fn resource_list_tsv() {
     insta::assert_snapshot!("resource_list_tsv_stderr", stderr);
 }
 
-// ── empty fixture × prose + json ─────────────────────────────────────────────
+// empty fixture × prose + json
 
 /// Prose render of the empty fixture. Locks the `(0):` header shape, the D3
 /// disclosure footer, and zero data rows between them.
@@ -370,7 +370,7 @@ fn resource_list_json_empty() {
     insta::assert_snapshot!(out);
 }
 
-// ── filter fixture × prose ────────────────────────────────────────────────────
+// filter fixture × prose
 
 /// Prose render with an active filter. The main fixture has 3 items; filtering by
 /// "folio 2" yields 1 match (`Folio 2r`). Total stays at 3.
@@ -394,7 +394,7 @@ fn resource_list_prose_filter() {
     insta::assert_snapshot!(out);
 }
 
-// ── `--all` json: AllPages _meta shape ───────────────────────────────────────
+// `--all` json: AllPages _meta shape
 
 /// JSON render with `AllPages { pages_fetched: 2 }`. Locks the D5 asymmetric
 /// `_meta` shape:
@@ -433,7 +433,7 @@ fn resource_list_json_all_pages() {
     insta::assert_snapshot!(out);
 }
 
-// ── D3 disclosure line: anonymous vs. authenticated ───────────────────────────
+// D3 disclosure line: anonymous vs. authenticated
 //
 // The anonymous case is already covered by `resource_list_prose` (which uses
 // `anon_meta()`). Only the authenticated case is snapshot-tested here to avoid
@@ -493,7 +493,7 @@ fn resource_list_disclosure_authenticated_csv_stderr() {
     insta::assert_snapshot!("resource_list_disclosure_authenticated_csv_stderr", stderr);
 }
 
-// ── "more results available" hint in prose (SinglePage, may_have_more: true) ──
+// "more results available" hint in prose (SinglePage, may_have_more: true)
 
 /// Prose with `may_have_more: true` must show the `more results available (use --all)` hint.
 #[test]
@@ -523,7 +523,7 @@ fn resource_list_prose_no_more_results_hint() {
     );
 }
 
-// ── stdout/stderr contract assertions (non-snapshot) ─────────────────────────
+// stdout/stderr contract assertions (non-snapshot)
 
 /// Lines: disclosure lands on stderr, NOT on stdout.
 #[test]
@@ -582,7 +582,7 @@ fn resource_list_tsv_disclosure_on_stderr_not_stdout() {
     );
 }
 
-// ── vocabulary guard (inline) ─────────────────────────────────────────────────
+// vocabulary guard (inline)
 
 /// Prose output must not contain DSP-API vocabulary leaks.
 /// Note: prose does NOT render IRIs (dsp-cli/ADR-0003), so "ontolog" must not appear.
@@ -623,7 +623,7 @@ fn resource_list_json_no_export_leak() {
     );
 }
 
-// ── existing callers: filter_warning=None → no D3 note in JSON ───────────────
+// existing callers: filter_warning=None → no D3 note in JSON
 
 /// Guard that existing callers that pass `filter_warning: None` to
 /// `Renderer::resources` (should there be any in tests) do NOT get a `note`

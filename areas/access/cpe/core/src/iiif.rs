@@ -319,7 +319,7 @@ pub fn iiif_confined_url(uri: &str, img_w: i64, img_h: i64, max_px: i64) -> Opti
 mod tests {
     use super::*;
 
-    // ── crop_region / iiif_region_url ────────────────────────────────────────
+    // crop_region / iiif_region_url
 
     const C1V: &str = "https://iiif.dasch.swiss/0803/IRyggQzjPMH-B93SNJ70OHN.jp2/full/max/0/default.jpg";
 
@@ -416,7 +416,7 @@ mod tests {
         assert_eq!(c1v_region().pixel_aspect(0, 5113), None);
     }
 
-    // ── iiif_thumb_url_clamped ───────────────────────────────────────────────
+    // iiif_thumb_url_clamped
 
     #[test]
     fn iiif_thumb_url_clamped_clamps_to_narrower_stored_width() {
@@ -456,7 +456,7 @@ mod tests {
         assert_eq!(iiif_thumb_url_clamped(plain, Some(100)).as_ref(), plain);
     }
 
-    // ── iiif_grid_tile_url_clamped ───────────────────────────────────────────
+    // iiif_grid_tile_url_clamped
 
     #[test]
     fn iiif_grid_tile_url_clamped_clamps_to_narrower_stored_width() {
@@ -486,7 +486,7 @@ mod tests {
         assert!(iiif_grid_tile_url_clamped(uri, Some(3322)).contains("/full/512,/"));
     }
 
-    // ── iiif_tall_tile_url ────────────────────────────────────────────────────
+    // iiif_tall_tile_url
 
     const STRIP: &str = "https://iiif.dasch.swiss/0803/l10.jp2/full/max/0/default.jpg";
 
@@ -531,7 +531,7 @@ mod tests {
         );
     }
 
-    // ── iiif_plate_url ────────────────────────────────────────────────────────
+    // iiif_plate_url
 
     #[test]
     fn iiif_plate_url_clamps_to_narrower_stored_width() {
@@ -571,7 +571,7 @@ mod tests {
         assert_eq!(iiif_plate_url(plain, Some(1000)), None);
     }
 
-    // ── iiif_strip_thumb_url ─────────────────────────────────────────────────
+    // iiif_strip_thumb_url
 
     #[test]
     fn iiif_strip_thumb_url_rewrites_size_segment() {
@@ -586,7 +586,7 @@ mod tests {
         assert_eq!(iiif_strip_thumb_url(plain), None);
     }
 
-    // ── iiif_info_json_url ───────────────────────────────────────────────────
+    // iiif_info_json_url
 
     #[test]
     fn iiif_info_json_url_derives_base_plus_info_json() {

@@ -71,7 +71,7 @@ mod tests {
     use crate::render::auth::{AuthLoginOutcome, AuthLogoutOutcome, AuthSetTokenOutcome, AuthStatusOutcome};
     use crate::render::{Format, MetaContext, Renderer};
 
-    // ── recording renderer ────────────────────────────────────────────────────
+    // recording renderer
 
     struct RecordingRenderer {
         logout_outcome: Option<(String, bool)>,
@@ -208,7 +208,7 @@ mod tests {
         }
     }
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    // helpers
 
     fn make_args(server: &str) -> (LogoutArgs, Config) {
         let args = LogoutArgs {
@@ -226,7 +226,7 @@ mod tests {
         (args, cfg)
     }
 
-    // ── tests ─────────────────────────────────────────────────────────────────
+    // tests
 
     #[test]
     fn logout_removes_entry_and_reports_was_cached() {

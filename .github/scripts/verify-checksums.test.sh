@@ -63,7 +63,7 @@ assert_eq() {
   fi
 }
 
-# --- Fixtures -------------------------------------------------------------
+# Fixtures
 
 VENDOR_DIR="modules/demo/public/vendor"
 
@@ -122,14 +122,14 @@ make_pins() {
   printf '%s' "$file"
 }
 
-# --- Unit: is_sha256 ------------------------------------------------------
+# Unit: is_sha256
 
 assert_ok   "is_sha256: 64 lowercase hex"      is_sha256 "$PIN_A"
 assert_fail "is_sha256: empty"                 is_sha256 ""
 assert_fail "is_sha256: 63 chars"              is_sha256 "${PIN_A%?}"
 assert_fail "is_sha256: uppercase hex"         is_sha256 "$(printf '%s' "$PIN_A" | tr 'a' 'A')"
 
-# --- Unit: verify_file ----------------------------------------------------
+# Unit: verify_file
 
 test_verify_file_match() {
   local f; f="$(mktemp "${TMPDIR:-/tmp}/verify-file.XXXXXX")"; printf 'payload\n' >"$f"
@@ -147,7 +147,7 @@ assert_ok   "verify_file: digest matches"          test_verify_file_match
 assert_fail "verify_file: one appended byte fails" test_verify_file_one_byte_changed
 assert_fail "verify_file: absent file fails"       verify_file "/nonexistent/none.js" "$PIN_A"
 
-# --- Unit: vendor_rows ----------------------------------------------------
+# Unit: vendor_rows
 
 test_rows_parses_both() {
   local repo out
@@ -170,7 +170,7 @@ test_rows_rejects_short_digest() {
 }
 assert_fail "vendor_rows: a 63-hex digest is reported, not skipped" test_rows_rejects_short_digest
 
-# --- Integration: verify_vendor_readme ------------------------------------
+# Integration: verify_vendor_readme
 
 test_vendor_clean() {
   local repo rc
@@ -249,7 +249,7 @@ test_vendor_git_failure_is_an_error() {
 }
 assert_fail "vendor: a failing git ls-files is an error, not a pass" test_vendor_git_failure_is_an_error
 
-# --- Unit: tailwind_version / tailwind_pin --------------------------------
+# Unit: tailwind_version / tailwind_pin
 
 test_pin_lookup() {
   local pins got
@@ -275,7 +275,7 @@ assert_ok   "tailwind_pin: finds an asset's digest"       test_pin_lookup
 assert_ok   "tailwind_version: reads the version line"    test_version_lookup
 assert_fail "tailwind_pin: unknown asset fails closed"    test_pin_unknown_asset
 
-# --- Integration: verify_tailwind_pins ------------------------------------
+# Integration: verify_tailwind_pins
 
 # complete_pins <digest-for-last-asset>: a pins file covering every asset in
 # TAILWIND_ASSETS, with the last one's digest overridable to inject a fault.
@@ -325,12 +325,12 @@ assert_fail "pins: a non-digest value fails"           test_pins_malformed_diges
 assert_fail "pins: no version line fails"              test_pins_no_version_line
 assert_fail "pins: absent file fails"                  env TAILWIND_PINS=/nonexistent/tailwind.pins bash -c 'source "'"$SCRIPT_DIR"'/verify-checksums.sh"; verify_tailwind_pins'
 
-# --- The repo's own pins are the ones that ship ---------------------------
+# The repo's own pins are the ones that ship
 
 assert_eq "repo pins: TAILWIND_ASSETS covers both architectures per OS" \
   "4" "$(count_assets)"
 
-# --- Integration: main (end to end) ---------------------------------------
+# Integration: main (end to end)
 
 test_main_clean() {
   local repo rc
@@ -379,7 +379,7 @@ assert_fail "main: vendor directory with files but no README fails" test_main_ve
 assert_fail "main: no vendor directory at all fails"             test_main_no_vendor_tree
 assert_fail "main: a tampered file in an area's vendor directory fails" test_main_area_vendor_dir_tampered
 
-# --- Summary --------------------------------------------------------------
+# Summary
 
 echo
 echo "verify-checksums tests: $PASS passed, $FAIL failed"

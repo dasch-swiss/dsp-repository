@@ -93,7 +93,7 @@ pub(crate) fn zoom_away_expr() -> String {
     format!("if (!evt.detail.atHome) {NOTE_CLEAR}")
 }
 
-// ── Interaction ─────────────────────────────────────
+// Interaction
 
 /// The id drawn emphasised, as a JS expression: the pin wins over a hover,
 /// which wins over the arrival emphasis. The viewer's `setOverlayState`
@@ -543,7 +543,7 @@ pub(crate) fn shape_word(shape: AnnotationShape) -> ChromeMsg {
     }
 }
 
-// ── Overlay ───────────────────────────────────────────────────────────────────
+// Overlay
 
 /// The zero-JS overlay's hide-while-off binding (media.css `.anno-off`): a
 /// class, never a reactively written `data-*` attribute.
@@ -699,7 +699,7 @@ pub(crate) fn view_box(v: f64) -> String {
     format!("{:.3}", v.clamp(0.0, 1.0) * 100.0 + 0.0)
 }
 
-// ── Colour ────────────────────────────────────────────────────────────────────
+// Colour
 
 /// The inline custom properties carrying an annotation's colour under the
 /// viewer overlay contract's names, read by the overlay, the swatch and the

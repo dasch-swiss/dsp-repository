@@ -528,7 +528,7 @@ fn render_detail(detail: &ShowcaseCrop, source: &AnnotationCrop, env: &Env<'_>) 
     }
 }
 
-// ── Edition cards and the strip row (`/narrenschiff`) ────────────
+// Edition cards and the strip row (`/narrenschiff`)
 
 /// The registered render function of `edition-cards` (row
 /// `("incunabula", "edition-cards")`). Renders nothing for a slot without
@@ -1404,7 +1404,7 @@ mod tests {
         assert_eq!(out.matches("<img").count(), 1, "{out}");
     }
 
-    // ── Edition cards and the strip row ──────────────────────────────────────
+    // Edition cards and the strip row
 
     use cpe_core::ir::{DatePrecision, EditionBook, MediaThumb, Property, PropertyValue, Resource};
 
@@ -1654,7 +1654,7 @@ mod tests {
         assert_eq!(out.matches("<img").count(), 1, "{out}");
     }
 
-    // ── Dataset-panel listing ─────────────────────────────────────
+    // Dataset-panel listing
 
     const ARK: &str = "https://ark.dasch.swiss/ark:/72163/1/0803/";
 

@@ -11,7 +11,7 @@
 //! No `kdl`/`miette` types appear in this module's public surface
 //! (per dsp-incubator cpe/docs/adr/0001-crate-layout.md boundary rule).
 
-// ── Query-layer domain types ──────────────────────────────────────────────────
+// Query-layer domain types
 
 /// A single Resource fetched from the project's SQLite, with all its typed
 /// properties. Returned by the query layer (`query::get_resource`); consumed
@@ -477,7 +477,7 @@ pub enum GroupKey {
     },
 }
 
-// ── Annotations ───────────────────────────────────────────────────────────────
+// Annotations
 // dsp-incubator cpe/docs/adr/0014-annotations-are-a-first-class-engine-store.md
 
 /// The drawn shape of an [`Annotation`] (`annotations.shape`).
@@ -660,7 +660,7 @@ pub struct ResourceLink {
     pub resource_label: String,
 }
 
-// ── Data ARKs ─────────────────────────────────────────────────────────────────
+// Data ARKs
 
 /// Every plain DSP data ARK URL starts with this: the fixed resolver, DaSCH's
 /// assigned number and dsp-api's ARK version. `dsp-incubator cpe/tools/dao-lift/src/ark.rs` and
@@ -706,7 +706,7 @@ impl DataArks {
     }
 }
 
-// ── Top-level ─────────────────────────────────────────────────────────────────
+// Top-level
 
 /// The fully-validated, typed IR produced by `validate::validate_with_data`.
 /// Replaces the loose `RawConfig` for rendering.
@@ -716,7 +716,7 @@ pub struct ValidatedConfig {
     pub pages: Vec<Page>,
 }
 
-// ── Site ──────────────────────────────────────────────────────────────────────
+// Site
 
 /// Project-level metadata and chrome, validated and typed.
 #[derive(Debug, PartialEq)]
@@ -1102,7 +1102,7 @@ pub struct ClassLabel {
     pub plural: Vec<(String, String)>,       // (lang, text), order preserved; empty ⇒ undeclared
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// Page
 
 /// A validated page: route, extracted params, and typed body components.
 #[derive(Debug, PartialEq)]
@@ -1168,7 +1168,7 @@ pub struct FigureMore {
     pub route: String,
 }
 
-// ── Component enum ────────────────────────────────────────────────────────────
+// Component enum
 
 /// One typed component variant. The six generic v1 body components (see
 /// `V1_COMPONENTS` in `validate.rs`) are represented, plus the per-project
@@ -1517,7 +1517,7 @@ impl Component {
     }
 }
 
-// ── Showcase figures (Incunabula) ─────────────────────────────────────────────
+// Showcase figures (Incunabula)
 
 /// How a `woodcut-cases` block sets its cases (`layout=`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1661,7 +1661,7 @@ pub struct StripRowPayload {
     pub class_total: usize,
 }
 
-// ── Timeline payload (Incunabula) ─────────────────────────────────────────────
+// Timeline payload (Incunabula)
 
 /// One lane of a `timeline`: a node of the lane property's list vocabulary,
 /// in vocabulary (`list_nodes.seq`) order.
@@ -1683,7 +1683,7 @@ pub struct TimelinePayload {
     pub lanes: Vec<LaneNode>,
 }
 
-// ── Row gloss ─────────────────────────────────────────────────────────────────
+// Row gloss
 
 /// A `resource-list` row gloss.
 #[derive(Debug, Clone, PartialEq)]
@@ -1714,7 +1714,7 @@ pub struct GlossPart {
     pub unit: Option<String>,
 }
 
-// ── Record header slots ───────────────────────────────────────────────────────
+// Record header slots
 
 /// A `resource-detail`'s optional header slots, rendered inside
 /// `header.record__head` after the title, in this order. Each slot property
@@ -1732,7 +1732,7 @@ pub struct HeadSlots {
     pub imprint: Vec<GlossPart>,
 }
 
-// ── Row chip shape ────────────────────────────────────────────────────────────
+// Row chip shape
 
 /// One configured row chip: the source property, plus an optional shape
 /// override. Maps repeatable `chip property="…" kind="…"` on `resource-list`.
@@ -1790,7 +1790,7 @@ pub enum ChipKind {
     Keyword,
 }
 
-// ── Scalar value type ─────────────────────────────────────────────────────────
+// Scalar value type
 
 /// A KDL scalar value, decoupled from `kdl::KdlValue` (per dsp-incubator
 /// cpe/docs/adr/0001-crate-layout.md boundary).
@@ -1806,7 +1806,7 @@ pub enum Value {
     Null,
 }
 
-// ── Child / support types ─────────────────────────────────────────────────────
+// Child / support types
 
 /// A stable, string-typed identifier for a `resource-list` component.
 /// Newtype so `target` references can be typed against it.
@@ -2100,7 +2100,7 @@ mod tests {
         assert!(!page.is_tall());
     }
 
-    // ── Sort::parse_wire ──────────────────────────────────────────────────────
+    // Sort::parse_wire
 
     #[test]
     fn parse_wire_name_is_property_asc() {
@@ -2152,7 +2152,7 @@ mod tests {
         assert_eq!(Sort::parse_wire(""), None);
     }
 
-    // ── date_is_range ─────────────────────────────────────────────────────────
+    // date_is_range
 
     #[test]
     fn date_is_range_table() {

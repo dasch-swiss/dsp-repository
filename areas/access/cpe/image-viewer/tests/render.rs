@@ -41,7 +41,7 @@ fn multiple_sources_are_json_encoded_in_order() {
     );
 }
 
-// ── Engine seam ─────────────────────────────────────────────────────────────
+// Engine seam
 // The point of these two is the *non-breaking* guarantee: a consumer that
 // never mentions an engine keeps getting a working viewer, and the engine slug
 // is spelled identically in the Rust markup and the JS.
@@ -144,7 +144,7 @@ fn quotes_in_a_source_cannot_break_out_of_the_attribute() {
     assert!(html.contains("&quot;"));
 }
 
-// ── Host-rendered chrome control surface ────────────────────────────────────
+// Host-rendered chrome control surface
 
 #[test]
 fn chrome_is_on_by_default_and_omitted_from_markup() {

@@ -82,7 +82,7 @@ use shared_datastar as datastar;
 use super::search_bar;
 use crate::chrome::{facet_empty_group_text, facet_group_remainder_text, remove_filter_label, ChromeMsg};
 
-// ── Per-group disclosure split ───────────────────────────────────────────
+// Per-group disclosure split
 
 /// A facet group with **more than** this many options collapses: only
 /// [`FACET_GROUP_VISIBLE_COUNT`] options stay in the flat list, the rest go
@@ -153,7 +153,7 @@ fn split_group_options(options: &[FacetOption]) -> (Vec<&FacetOption>, Vec<&Face
 /// `SEARCH_FRAGMENT_SEGMENT`.
 pub const FACET_FRAGMENT_SEGMENT: &str = "_facets";
 
-// ── Config borrow struct ──────────────────────────────────────────────────────
+// Config borrow struct
 
 /// Borrowed context needed by `render_facet_panel`.
 ///
@@ -175,7 +175,7 @@ pub struct FacetPanelCfg<'a> {
     pub current_query: Option<&'a str>,
 }
 
-// ── Public renderer ───────────────────────────────────────────────────────────
+// Public renderer
 
 /// Render a facet-panel as a `<section class="facet-panel page">`.
 ///
@@ -207,7 +207,7 @@ pub fn render_facet_panel(groups: &[FacetGroup], cfg: &FacetPanelCfg<'_>, lang: 
     let panel_label = ChromeMsg::FacetFiltersWord.text(lang);
     let panel_id = format!("facets-{}", cfg.list_id);
 
-    // ── Empty branch (a): no groups at all — render nothing ───────────
+    // Empty branch (a): no groups at all — render nothing
     if groups.is_empty() {
         return html! {};
     }
@@ -509,7 +509,7 @@ fn render_query_chip(cfg: &FacetPanelCfg<'_>, q: &str, lang: &Lang) -> Markup {
     }
 }
 
-// ── Query-string helpers ──────────────────────────────────────────────────────
+// Query-string helpers
 
 /// Extract the key portion of a `key=value` (or keyless) query-string pair.
 ///
@@ -682,7 +682,7 @@ fn clear_all_fragment_href(cfg: &FacetPanelCfg<'_>, facet_keys: &[&str]) -> Stri
     facet_href(cfg.current_path, true, qs.as_deref())
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
@@ -690,7 +690,7 @@ mod tests {
 
     use super::*;
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
+    // Test helpers
 
     fn make_lang(code: &str) -> Lang {
         use cpe_core::ir::SiteConfig;
@@ -761,7 +761,7 @@ mod tests {
         }
     }
 
-    // ── Layer-1: toggle_query_param ───────────────────────────────────────────
+    // Layer-1: toggle_query_param
 
     /// Adding a new key=value when the pair is absent.
     #[test]
@@ -829,7 +829,7 @@ mod tests {
         assert_eq!(qs, "");
     }
 
-    // ── Layer-1: kept_pairs / pair_key ─────────────────────────────────────────
+    // Layer-1: kept_pairs / pair_key
 
     #[test]
     fn kept_pairs_skips_empty_segments() {
@@ -848,7 +848,7 @@ mod tests {
         assert_eq!(pair_key("a=b=c"), "a");
     }
 
-    // ── Layer-1: empty branches ────────────────────────────────────────────────
+    // Layer-1: empty branches
 
     /// `groups` is empty — `render_facet_panel` renders literally
     /// nothing (no rail, no placeholder section, no `.page`). The "no rail"
@@ -912,7 +912,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: insta snapshots ──────────────────────────────────────────────
+    // Layer-3: insta snapshots
 
     /// (a) Populated multi-group panel with some options selected.
     #[test]
@@ -1001,7 +1001,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-2: per-group disclosure split ────────────────────────────────
+    // Layer-2: per-group disclosure split
 
     /// The 94-option season group: 12 visible, 82 behind the `<details>`.
     #[test]
@@ -1158,7 +1158,7 @@ mod tests {
         assert_eq!(rendered_split(&out), (14, 80), "got: {out}");
     }
 
-    // ── Layer-1: toggle link href correctness ─────────────────────────────────
+    // Layer-1: toggle link href correctness
 
     /// Toggling an unselected option appends the pair to the query.
     #[test]
@@ -1192,7 +1192,7 @@ mod tests {
         assert_eq!(fhref, "/alice/characters/_facets?lang=en&role=R_01");
     }
 
-    // ── Layer-1: selected option carries aria-current="true" ─────────────────
+    // Layer-1: selected option carries aria-current="true"
 
     #[test]
     fn selected_option_has_aria_current_true() {
@@ -1255,7 +1255,7 @@ mod tests {
         assert_eq!(result, Some("lang=de&view=grid".to_owned()));
     }
 
-    // ── Layer-1: clear_group_query (per-group clear) ─────────────────────────
+    // Layer-1: clear_group_query (per-group clear)
 
     /// clear_group_query drops only the named property's pairs + page,
     /// preserving other groups' selections and unrelated params.
@@ -1286,7 +1286,7 @@ mod tests {
         assert_eq!(result, None);
     }
 
-    // ── Layer-1: per-group clear presence ─────────────────────────────────────
+    // Layer-1: per-group clear presence
 
     /// Per-group clear link appears only for a group with ≥1 selected option.
     #[test]
@@ -1348,7 +1348,7 @@ mod tests {
         );
     }
 
-    // ── Layer-1: render_active_filters ────────────────────────────────────────
+    // Layer-1: render_active_filters
 
     /// Empty (childless) `div.filterbar` with the id when nothing is selected.
     #[test]
@@ -1428,7 +1428,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: insta snapshots — render_active_filters ──────────────────────
+    // Layer-3: insta snapshots — render_active_filters
 
     /// Populated filterbar: two chips (from two groups) + Clear all.
     #[test]
@@ -1461,7 +1461,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Layer-1/3: query chip ────────────────────────
+    // Layer-1/3: query chip
 
     /// An active query with NO facet selected still makes the filterbar
     /// non-empty (the query chip renders
@@ -1602,7 +1602,7 @@ mod tests {
         );
     }
 
-    // ── Layer-3: insta snapshots — query chip ─────────────────────────────────
+    // Layer-3: insta snapshots — query chip
 
     /// Query chip alone (no facet selected).
     #[test]

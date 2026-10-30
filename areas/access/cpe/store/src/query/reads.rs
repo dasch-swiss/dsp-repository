@@ -559,7 +559,7 @@ impl<'a> ProjectReads<'a> {
     }
 }
 
-// ── Pagination helpers ────────────────────────────────────────────────────────
+// Pagination helpers
 
 /// Compute the last (highest) valid page number for `total` items with `per_page`
 /// items per page.

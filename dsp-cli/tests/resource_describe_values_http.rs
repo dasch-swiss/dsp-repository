@@ -36,7 +36,7 @@ use serde_json::json;
 use wiremock::matchers::{method, path, path_regex, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-// ── Test constants ─────────────────────────────────────────────────────────────
+// Test constants
 
 const TOKEN: &str = "test-values-token";
 
@@ -55,7 +55,7 @@ const MYONTO_ALLENTITIES_PATH: &str =
 const NODE_IRI: &str = "http://rdfh.ch/lists/0803/genre-incunabula";
 const NODE_IRI_ENC: &str = "http%3A%2F%2Frdfh%2Ech%2Flists%2F0803%2Fgenre%2Dincunabula";
 
-// ── Fixture bodies ─────────────────────────────────────────────────────────────
+// Fixture bodies
 
 /// Resource body with a mix of value types.
 ///
@@ -235,7 +235,7 @@ fn node_body() -> serde_json::Value {
     })
 }
 
-// ── (1) + (2) + (3) + (4): happy-path multi-fetch ─────────────────────────────
+// (1) + (2) + (3) + (4): happy-path multi-fetch
 
 /// Happy-path: resource fetch + ontology allentities + list-node.
 ///
@@ -333,7 +333,7 @@ async fn multi_fetch_happy_path() {
     }
 }
 
-// ── (5) Dedup: same ontology → ONE allentities fetch ─────────────────────────
+// (5) Dedup: same ontology → ONE allentities fetch
 
 /// Two fields from the same project ontology (`myonto:hasText` and `myonto:hasFoo`)
 /// must trigger exactly ONE `/v2/ontologies/allentities/<myonto>` request.
@@ -381,7 +381,7 @@ async fn dedup_same_ontology_one_fetch() {
     // wiremock verifies .expect(1) on the allentities mock when the MockServer drops.
 }
 
-// ── (6) Degradation: ontology 404 ─────────────────────────────────────────────
+// (6) Degradation: ontology 404
 
 /// When the ontology allentities endpoint returns 404, `describe_resource` must
 /// still SUCCEED and field labels must fall back to the local name (not error).
@@ -513,7 +513,7 @@ async fn degradation_node_404_succeeds() {
     }
 }
 
-// ── (7) Standoff text: textValueAsXml is stripped ─────────────────────────────
+// (7) Standoff text: textValueAsXml is stripped
 
 /// A TextValue with `textValueAsXml` must have the XML tags stripped.
 /// The raw XML `<text>Some <strong>bold</strong> text</text>` should yield plain text.
@@ -572,7 +572,7 @@ async fn standoff_text_xml_is_stripped() {
     }
 }
 
-// ── (8) SSRF host-pinning: /v2/node hits the MOCK server host ─────────────────
+// (8) SSRF host-pinning: /v2/node hits the MOCK server host
 
 /// The `/v2/node/<enc-iri>` request must go to the MOCK SERVER's host,
 /// NOT to the host encoded in the node IRI (`rdfh.ch`).
@@ -683,7 +683,7 @@ async fn denylist_keys_not_surfaced_as_fields() {
     );
 }
 
-// ── (W2) Extended denylist coverage ──────────────────────────────────────────
+// (W2) Extended denylist coverage
 
 /// Extended denylist: `knora-api:hasStandoffLinkToValue` (a `*Value`-typed key)
 /// AND a value whose `@type` is `knora-api:DeletedValue` must NOT surface as
@@ -768,7 +768,7 @@ async fn denylist_extended_standoff_link_and_deleted_value() {
     );
 }
 
-// ── with_values=false: still only one request ────────────────────────────────
+// with_values=false: still only one request
 
 /// When `with_values=false`, only the resource fetch is made — NO ontology or
 /// node fetches.
@@ -820,7 +820,7 @@ async fn with_values_false_no_extra_fetches() {
     // wiremock checks .expect(0) on the allentities + node mocks at drop.
 }
 
-// ── (9) Per-value comment (`knora-api:valueHasComment`) ──────────────────────
+// (9) Per-value comment (`knora-api:valueHasComment`)
 
 /// A resource body whose single field is a `knora-api:`-prefixed scalar TextValue
 /// (a built-in field, so no ontology allentities fetch is triggered) carrying a

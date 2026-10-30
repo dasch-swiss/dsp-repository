@@ -8,7 +8,7 @@ use clap::{Args, Parser, Subcommand};
 use crate::diagnostic::Diagnostic;
 use crate::render::{Format, HeaderMode, TableOptions};
 
-// ── after_help column-doc strings ─────────────────────────────────────────────
+// after_help column-doc strings
 //
 // Each tabular leaf command carries a static `after_help` line that documents
 // its column set.  These literals are derived from the per-noun column-set
@@ -83,7 +83,7 @@ const AFTER_HELP_SPARQL_QUERY: &str = "--accept aliases: json (default, applicat
      full query text together with your username on every call. Prefer stdin or --query-file for \
      anything sensitive. See also: dsp docs sparql";
 
-// ── output format ─────────────────────────────────────────────────────────────
+// output format
 
 /// Output format selection for vre data commands.
 ///
@@ -364,7 +364,7 @@ pub enum TopLevel {
     Docs(DocsArgs),
 }
 
-// ── auth ─────────────────────────────────────────────────────────────────────
+// auth
 
 /// Auth subcommands.
 #[derive(Debug, Subcommand)]
@@ -471,7 +471,7 @@ pub struct TokenArgs {
     pub server: Option<String>,
 }
 
-// ── vre ───────────────────────────────────────────────────────────────────────
+// vre
 
 /// VRE noun-group subcommands.
 #[derive(Debug, Subcommand)]
@@ -539,7 +539,7 @@ pub enum VreCmd {
     },
 }
 
-// ── vre project ───────────────────────────────────────────────────────────────
+// vre project
 
 /// Project verb subcommands.
 #[derive(Debug, Subcommand)]
@@ -680,7 +680,7 @@ pub struct ProjectDumpArgs {
     pub format: FormatArgs,
 }
 
-// ── vre data-model ────────────────────────────────────────────────────────────
+// vre data-model
 
 /// Data-model verb subcommands.
 #[derive(Debug, Subcommand)]
@@ -775,7 +775,7 @@ pub struct DataModelStructureArgs {
     pub format: FormatArgs,
 }
 
-// ── vre resource-type ─────────────────────────────────────────────────────────
+// vre resource-type
 
 /// Resource-type verb subcommands.
 #[derive(Debug, Subcommand)]
@@ -866,7 +866,7 @@ pub struct ResourceTypeDescribeArgs {
     pub format: FormatArgs,
 }
 
-// ── vre resource ──────────────────────────────────────────────────────────────
+// vre resource
 
 /// Resource verb subcommands.
 #[derive(Debug, Subcommand)]
@@ -989,7 +989,7 @@ pub struct ResourceDescribeArgs {
     pub format: FormatArgs,
 }
 
-// ── vre vocabulary ───────────────────────────────────────────────────────────
+// vre vocabulary
 
 /// Vocabulary verb subcommands.
 #[derive(Debug, Subcommand)]
@@ -1066,7 +1066,7 @@ pub struct VocabularyDescribeArgs {
     pub format: FormatArgs,
 }
 
-// ── vre sparql ───────────────────────────────────────────────────────────────
+// vre sparql
 
 /// Sparql verb subcommands.
 #[derive(Debug, Subcommand)]
@@ -1119,7 +1119,7 @@ pub struct SparqlQueryArgs {
     pub timeout: u64,
 }
 
-// ── docs ──────────────────────────────────────────────────────────────────────
+// docs
 
 /// Arguments for `dsp docs [topic]`.
 #[derive(Debug, Args)]
@@ -1143,7 +1143,7 @@ pub struct DocsArgs {
     pub json: bool,
 }
 
-// ── Unit tests for FormatArgs::table_options and after_help drift guard ──────
+// Unit tests for FormatArgs::table_options and after_help drift guard
 
 #[cfg(test)]
 mod tests {
@@ -1176,7 +1176,7 @@ mod tests {
         }
     }
 
-    // ── format-combination validation ─────────────────────────────────────────
+    // format-combination validation
 
     #[test]
     fn columns_with_prose_default_rejected() {
@@ -1226,7 +1226,7 @@ mod tests {
         assert_eq!(opts.columns, Some(vec!["shortcode".to_string(), "iri".to_string()]));
     }
 
-    // ── header-flag validation ────────────────────────────────────────────────
+    // header-flag validation
 
     #[test]
     fn no_header_with_prose_rejected() {
@@ -1297,7 +1297,7 @@ mod tests {
         assert_eq!(opts.header, HeaderMode::On);
     }
 
-    // ── column syntax validation ──────────────────────────────────────────────
+    // column syntax validation
 
     #[test]
     fn empty_columns_value_rejected() {
@@ -1355,7 +1355,7 @@ mod tests {
         assert_eq!(opts.columns, None);
     }
 
-    // ── drift-guard: after_help column list must match per-noun consts ─────────
+    // drift-guard: after_help column list must match per-noun consts
     //
     // Each assertion checks that the corresponding AFTER_HELP_* constant's column
     // list exactly matches `<CONST>.join(", ")`.  Adding a column to the const
@@ -1518,7 +1518,7 @@ mod tests {
         );
     }
 
-    // ── Cli::output_format ────────────────────────────────────────────────────
+    // Cli::output_format
 
     #[test]
     fn output_format_vre_project_list_prose_default() {
@@ -1556,7 +1556,7 @@ mod tests {
         assert_eq!(cli.output_format(), None);
     }
 
-    // ── Cli::server_flag ──────────────────────────────────────────────────────
+    // Cli::server_flag
 
     #[test]
     fn server_flag_with_flag_supplied() {

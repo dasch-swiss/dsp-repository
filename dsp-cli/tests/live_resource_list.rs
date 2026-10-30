@@ -36,9 +36,7 @@ use dsp_cli::config::Config;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test — D4 schema checkpoint
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test for `dsp vre resource list` against a real DSP instance.
 ///
@@ -62,7 +60,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_list_schema_field_assertion() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -80,7 +78,7 @@ fn live_resource_list_schema_field_assertion() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve optional token ─────────────────────────────────────────────
+    // 2. Resolve optional token
     let token: Option<String> = optional_env("DSP_TOKEN");
     let token_ref: Option<&str> = token.as_deref();
 
@@ -90,10 +88,10 @@ fn live_resource_list_schema_field_assertion() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 3. Build client ───────────────────────────────────────────────────────
+    // 3. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 4. Resolve the project ────────────────────────────────────────────────
+    // 4. Resolve the project
     eprintln!("live test: resolving project '{}' on {}", project_shortcode, cfg.server);
 
     let proj = client.resolve_project(&cfg.server, &project_shortcode).expect(
@@ -103,7 +101,7 @@ fn live_resource_list_schema_field_assertion() {
 
     eprintln!("live test: resolved project '{}' (IRI: {})", proj.shortname, proj.iri);
 
-    // ── 5. Call list_resources — full-IRI bypass path ────────────────────────
+    // 5. Call list_resources — full-IRI bypass path
     // When DSP_TEST_CLASS_IRI is a full IRI (contains "://"), the production
     // action uses it directly without scanning data-models. This test mirrors
     // that path — D1 full-IRI bypass is exercised here, not the scan path.
@@ -130,7 +128,7 @@ fn live_resource_list_schema_field_assertion() {
         page.may_have_more_results
     );
 
-    // ── 6. D4 schema checkpoint: hard-assert envelope field presence ──────────
+    // 6. D4 schema checkpoint: hard-assert envelope field presence
     //
     // Updated 2026-06-17: the command now uses `schema=complex`, which carries
     // creation and last-modification dates (live-verified on `dev` 2026-06-17).
@@ -167,7 +165,7 @@ fn live_resource_list_schema_field_assertion() {
         page.resources.len()
     );
 
-    // -- IRI (hard assertion) --
+    // IRI (hard assertion)
     let all_iri_empty = page.resources.iter().all(|r| r.iri.is_empty());
     assert!(
         !all_iri_empty,
@@ -185,7 +183,7 @@ fn live_resource_list_schema_field_assertion() {
         page.resources.len()
     );
 
-    // -- label (hard assertion) --
+    // label (hard assertion)
     let all_label_empty = page.resources.iter().all(|r| r.label.is_empty());
     assert!(
         !all_label_empty,
@@ -202,7 +200,7 @@ fn live_resource_list_schema_field_assertion() {
         page.resources.len()
     );
 
-    // -- ark_url (report-only) --
+    // ark_url (report-only)
     let ark_present_count = page.resources.iter().filter(|r| r.ark_url.is_some()).count();
     eprintln!(
         "live test: D4 field 'ark_url': present on {}/{} resources (schema=complex)",
@@ -210,7 +208,7 @@ fn live_resource_list_schema_field_assertion() {
         page.resources.len()
     );
 
-    // -- creation_date (hard assertion — complex always carries it) --
+    // creation_date (hard assertion — complex always carries it)
     let cd_present_count = page.resources.iter().filter(|r| r.creation_date.is_some()).count();
     assert!(
         cd_present_count > 0,
@@ -229,7 +227,7 @@ fn live_resource_list_schema_field_assertion() {
         page.resources.len()
     );
 
-    // -- last_modified (report-only — server-side optional) --
+    // last_modified (report-only — server-side optional)
     let lm_present_count = page.resources.iter().filter(|r| r.last_modified.is_some()).count();
     if lm_present_count == 0 {
         eprintln!(
@@ -248,7 +246,7 @@ fn live_resource_list_schema_field_assertion() {
         );
     }
 
-    // ── 7. Per-resource structural invariants ─────────────────────────────────
+    // 7. Per-resource structural invariants
     for res in &page.resources {
         assert!(
             !res.iri.is_empty(),
@@ -283,9 +281,7 @@ fn live_resource_list_schema_field_assertion() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Live test — --order-by acceptance checkpoint
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test for `--order-by` on `dsp vre resource list`.
 ///
@@ -312,7 +308,7 @@ fn live_resource_list_schema_field_assertion() {
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_resource_list_order_by_acceptance() {
-    // ── 1. Collect required config ────────────────────────────────────────────
+    // 1. Collect required config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -326,7 +322,7 @@ fn live_resource_list_order_by_acceptance() {
         None => return,
     };
 
-    // ── 2. Collect optional order-by IRI ─────────────────────────────────────
+    // 2. Collect optional order-by IRI
     let order_by_iri = match optional_env("DSP_TEST_ORDER_BY_IRI") {
         Some(v) => v,
         None => {
@@ -352,7 +348,7 @@ fn live_resource_list_order_by_acceptance() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 3. Resolve optional token ─────────────────────────────────────────────
+    // 3. Resolve optional token
     let token: Option<String> = optional_env("DSP_TOKEN");
     let token_ref: Option<&str> = token.as_deref();
 
@@ -362,10 +358,10 @@ fn live_resource_list_order_by_acceptance() {
         eprintln!("live test: DSP_TOKEN not set — exercising anonymous path");
     }
 
-    // ── 4. Build client ───────────────────────────────────────────────────────
+    // 4. Build client
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
-    // ── 5. Resolve the project ────────────────────────────────────────────────
+    // 5. Resolve the project
     eprintln!("live test: resolving project '{}' on {}", project_shortcode, cfg.server);
 
     let proj = client.resolve_project(&cfg.server, &project_shortcode).expect(
@@ -375,7 +371,7 @@ fn live_resource_list_order_by_acceptance() {
 
     eprintln!("live test: resolved project '{}' (IRI: {})", proj.shortname, proj.iri);
 
-    // ── 6. Call list_resources with order_by set ─────────────────────────────
+    // 6. Call list_resources with order_by set
     //
     // Uses the full-IRI bypass path: DSP_TEST_ORDER_BY_IRI is a complex-schema
     // property IRI, passed directly to `orderByProperty` without resolution.
@@ -387,7 +383,7 @@ fn live_resource_list_order_by_acceptance() {
 
     let result = client.list_resources(&cfg.server, &proj.iri, &class_iri, Some(order_by_iri.as_str()), 0, token_ref);
 
-    // ── 7. Assert acceptance (200, no error) ─────────────────────────────────
+    // 7. Assert acceptance (200, no error)
     //
     // The key assertion: the DSP-API accepted the property IRI as a valid
     // `orderByProperty` (i.e. `iriConverter.asPropertyIri` did not return

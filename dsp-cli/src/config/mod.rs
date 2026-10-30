@@ -253,7 +253,7 @@ cache key lookups to work"
         );
     }
 
-    // ── --server scheme validation ────────────────────────────────────────────
+    // --server scheme validation
 
     #[test]
     fn https_is_always_accepted() {

@@ -34,9 +34,7 @@ use tempfile::tempfile;
 mod common;
 use common::{optional_env, require_env};
 
-// ---------------------------------------------------------------------------
 // Live test
-// ---------------------------------------------------------------------------
 
 /// End-to-end live test: trigger → poll → download → assert ZIP magic bytes.
 ///
@@ -45,7 +43,7 @@ use common::{optional_env, require_env};
 #[test]
 #[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
 fn live_project_dump_end_to_end() {
-    // ── 1. Collect config ─────────────────────────────────────────────────────
+    // 1. Collect config
     let server_raw = match require_env("DSP_TEST_SERVER") {
         Some(v) => v,
         None => return,
@@ -59,7 +57,7 @@ fn live_project_dump_end_to_end() {
     let cfg = Config::resolve(Some(server_raw.trim()), false)
         .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
 
-    // ── 2. Resolve token ──────────────────────────────────────────────────────
+    // 2. Resolve token
     // Prefer DSP_TOKEN; fall back to DSP_TEST_USER + DSP_TEST_PASSWORD via login.
     // Never log the token value.
     let token: String = if let Some(t) = optional_env("DSP_TOKEN") {
@@ -81,7 +79,7 @@ fn live_project_dump_end_to_end() {
         resp.token
     };
 
-    // ── 3. Build client and resolve the project ───────────────────────────────
+    // 3. Build client and resolve the project
     let client = HttpDspClient::new().expect("failed to build HTTP client");
 
     let proj = client
@@ -93,7 +91,7 @@ fn live_project_dump_end_to_end() {
         proj.iri, proj.shortcode, proj.shortname
     );
 
-    // ── 4. Trigger dump (skip assets to keep it small) ────────────────────────
+    // 4. Trigger dump (skip assets to keep it small)
     // create_project_dump returns CreateDumpOutcome — handle both the fresh case
     // and the "already exists" case (idempotent: adopt the existing dump).
     let outcome = client
@@ -118,7 +116,7 @@ skipping live test (manual --discard-other-project required)"
         }
     };
 
-    // ── 5. Poll to completion ─────────────────────────────────────────────────
+    // 5. Poll to completion
     // Use a generous wall-clock timeout so a slow server doesn't hang the test
     // suite forever. Cap at ~5 minutes with exponential backoff (same constants
     // as the action layer: BASE=1s, CAP=30s).
@@ -154,7 +152,7 @@ skipping live test (manual --discard-other-project required)"
         }
     }
 
-    // ── 6. Download into a tempfile and assert ZIP magic bytes ────────────────
+    // 6. Download into a tempfile and assert ZIP magic bytes
     eprintln!("live test: downloading dump {dump_id}");
 
     let mut tmp = tempfile().expect("failed to create tempfile for download");
@@ -180,7 +178,7 @@ skipping live test (manual --discard-other-project required)"
         magic
     );
 
-    // ── 7. Idempotent-adopt extension (best-effort, skip-safe) ───────────────
+    // 7. Idempotent-adopt extension (best-effort, skip-safe)
     // A second create on the same project should return Exists { id } — the
     // core of Amendment 1's "adopt" behaviour. This assertion exercises the
     // real server path; it is best-effort: if the server state changed between
@@ -213,7 +211,7 @@ skipping live test (manual --discard-other-project required)"
         }
     }
 
-    // ── 8. Cleanup via delete — exercises the --delete path ──────────────────
+    // 8. Cleanup via delete — exercises the --delete path
     // Best-effort: if cleanup fails, log a warning but do not fail the test.
     match client.delete_project_dump(&cfg.server, &proj.iri, &dump_id, &token) {
         Ok(()) => eprintln!("live test: cleaned up server-side dump {dump_id}"),

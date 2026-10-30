@@ -66,7 +66,7 @@ use cpe_core::narrative_outline::{
 use maud::{html, Markup, PreEscaped, Render};
 use pulldown_cmark::{Event, Tag};
 
-// ── href allowlist ─────────────────────────────────────────────────────────────
+// href allowlist
 
 /// Return `true` iff the href is allowed to be emitted in an editorial link.
 ///
@@ -76,7 +76,7 @@ fn href_is_allowed(href: &str) -> bool {
     href.starts_with("https://") || href.starts_with("http://") || href.starts_with('/')
 }
 
-// ── Drop-cap extraction ────────────────────────────────────────────────────────
+// Drop-cap extraction
 
 /// Simulate render.js `dropcapReady`: pull the first letter out of a leading
 /// inline tag (`<strong>`, `<em>`, `<b>`, `<i>`) so that `::first-letter`
@@ -128,7 +128,7 @@ fn is_dropcap_letter(c: char) -> bool {
     c.is_ascii_alphabetic() || ('\u{00C0}'..='\u{00FF}').contains(&c)
 }
 
-// ── Lede detection ─────────────────────────────────────────────────────────────
+// Lede detection
 
 /// Return `true` iff the events between `Start(Paragraph)` and `End(Paragraph)`
 /// (exclusive) consist of exactly one `Emphasis` span (i.e. `Start(Emphasis)`,
@@ -156,7 +156,7 @@ fn is_lede_paragraph(inner: &[Event<'_>]) -> bool {
     true
 }
 
-// ── Invite item Maud rendering ─────────────────────────────────────────────────
+// Invite item Maud rendering
 
 /// `ul.invite-list`: the one emission site of an invite list, for a
 /// section's own list and for each group's.
@@ -214,7 +214,7 @@ fn render_invite_item(item: &InviteItem) -> Markup {
     }
 }
 
-// ── Leading-kicker detection ───────────────────────────────────────────────────
+// Leading-kicker detection
 
 /// Recognise a **leading kicker** (the eyebrow) at `idx` and return
 /// the index of its closing `End` event, or `None` when this level-3 heading
@@ -261,7 +261,7 @@ fn is_subtitle_position(emitted: &str) -> bool {
     emitted.trim_end().ends_with("</h1>") && emitted.matches("</h1>").count() == 1
 }
 
-// ── Main rewrite pass ──────────────────────────────────────────────────────────
+// Main rewrite pass
 
 /// Apply the editorial rewrite to a buffered event slice.
 ///
@@ -332,7 +332,7 @@ fn rewrite_events(events: &[Event<'_>], suppress_drop_cap: bool, figures: &[Figu
         // The id this `##` renders: `None` for a nested one.
         let heading_id: Option<&str> = heading.and_then(|(authored, _, _)| authored.or(generated_id.as_deref()));
 
-        // ── Heading (## h2, id'd, top level) — a figure-mode part ──────────
+        // Heading (## h2, id'd, top level) — a figure-mode part
         let part = match heading {
             Some((Some(id), end_idx, false)) if figure_mode => Some((id, end_idx)),
             _ => None,
@@ -362,7 +362,7 @@ fn rewrite_events(events: &[Event<'_>], suppress_drop_cap: bool, figures: &[Figu
         }
 
         match &events[idx] {
-            // ── Heading (### h3) — leading kicker / eyebrow ────────────────
+            // Heading (### h3) — leading kicker / eyebrow
             Event::Start(Tag::Heading { level, .. }) if *level == pulldown_cmark::HeadingLevel::H3 => {
                 match leading_kicker_end(events, idx, &out) {
                     Some(end_idx) => {
@@ -400,7 +400,7 @@ fn rewrite_events(events: &[Event<'_>], suppress_drop_cap: bool, figures: &[Figu
                 }
             }
 
-            // ── Heading (## h2) — invite-section header ────────────────────
+            // Heading (## h2) — invite-section header
             Event::Start(Tag::Heading { level, .. }) if *level == pulldown_cmark::HeadingLevel::H2 => {
                 let end_idx = match find_end(events, idx) {
                     Some(i) => i,
@@ -436,7 +436,7 @@ fn rewrite_events(events: &[Event<'_>], suppress_drop_cap: bool, figures: &[Figu
                 }
             }
 
-            // ── Paragraph ─────────────────────────────────────────────────
+            // Paragraph
             Event::Start(Tag::Paragraph) => {
                 let end_idx = match find_end(events, idx) {
                     Some(i) => i,
@@ -475,7 +475,7 @@ fn rewrite_events(events: &[Event<'_>], suppress_drop_cap: bool, figures: &[Figu
                 idx = end_idx + 1;
             }
 
-            // ── BlockQuote → epigraph ──────────────────────────────────────
+            // BlockQuote → epigraph
             Event::Start(Tag::BlockQuote(_)) => {
                 let end_idx = match find_end(events, idx) {
                     Some(i) => i,
@@ -646,7 +646,7 @@ fn split_epigraph_html(inner_html: &str) -> (String, Option<String>) {
     (inner_html.to_owned(), None)
 }
 
-// ── Figure sections ────────────────────────────────────────────────────────────
+// Figure sections
 
 /// A rendered figure block for one narrative section: what `render_body`
 /// hands the narrative for a component with a figure-block slot, with the
@@ -673,7 +673,7 @@ fn generated_heading_id(number: usize) -> String {
     format!("sec-{number}")
 }
 
-// ── The page rail ─────────────────────────────────────────────────────────────
+// The page rail
 
 /// One entry of the page rail: a top-level `##` and the id it renders.
 #[derive(Debug, PartialEq)]
@@ -742,7 +742,7 @@ pub struct Editorial {
     pub rail_placed: bool,
 }
 
-// ── Segment detection for article wrapper ─────────────────────────────────────
+// Segment detection for article wrapper
 
 /// Describes the high-level segments found in an editorial document.
 ///
@@ -854,7 +854,7 @@ fn segment_html(full_html: &str) -> Option<EditorialSegments> {
     }
 }
 
-// ── Public entry point ─────────────────────────────────────────────────────────
+// Public entry point
 
 /// Transform Markdown source into the editorial article `Markup`.
 ///
@@ -973,9 +973,7 @@ pub(crate) fn render_editorial(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Tests
-// ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -984,13 +982,13 @@ mod tests {
 
     use super::*;
 
-    // ── Helper ───────────────────────────────────────────────────────────────
+    // Helper
 
     fn render(src: &str) -> String {
         render_editorial(&cpe_core::url::ROOT, src, &[], 0, None).markup.into_string()
     }
 
-    // ── Heading ids ──────────────────────────────────────────────────────────
+    // Heading ids
 
     #[test]
     fn heading_attribute_becomes_the_heading_id() {
@@ -1078,7 +1076,7 @@ mod tests {
         assert!(!out.contains("invite-list"), "{out}");
     }
 
-    // ── The page rail ────────────────────────────────────────────────────────
+    // The page rail
 
     fn entry(id: &str, text: &str) -> RailEntry {
         RailEntry { id: id.to_owned(), text: text.to_owned() }
@@ -1198,7 +1196,7 @@ mod tests {
         assert_eq!(named, [true, false, false]);
     }
 
-    // ── Invite groups ────────────────────────────────────────────────────────
+    // Invite groups
 
     const GROUPS_DOC: &str = "# T\n\nIntro.\n\n## Offices {#offices}\n\nThe section's sentence.\n\n\
                               ### Amerbach {#amerbach}\n\nA *gloss*.\n\n- [Book A](/a) \u{2014} first\n\n\
@@ -1347,7 +1345,7 @@ mod tests {
         assert_eq!(all, vec![Some("four".to_owned()), None, Some("between".to_owned())]);
     }
 
-    // ── Figure mode ──────────────────────────────────────────────────────────
+    // Figure mode
 
     const FIGURE_DOC: &str = "### Showcase\n\n# Woodcuts\n\n*The lede.*\n\nIntro body.\n\n\
                               ## Four {#four}\n\nFour prose.\n\n## Plain\n\nStill four.\n\n\
@@ -1486,7 +1484,7 @@ mod tests {
         assert!(out.contains(r#"<h2 id="four">Four</h2>"#), "got: {out}");
     }
 
-    // ── Lede recognition ─────────────────────────────────────────────────────
+    // Lede recognition
 
     #[test]
     fn lede_emphasis_only_gets_lede_class() {
@@ -1522,7 +1520,7 @@ mod tests {
         );
     }
 
-    // ── Drop-cap open ─────────────────────────────────────────────────────────
+    // Drop-cap open
 
     #[test]
     fn first_body_paragraph_gets_open_class() {
@@ -1687,7 +1685,7 @@ mod tests {
         );
     }
 
-    // ── Lede before open: both present ───────────────────────────────────────
+    // Lede before open: both present
 
     #[test]
     fn lede_before_open_both_rendered() {
@@ -1698,7 +1696,7 @@ mod tests {
         assert!(out.contains(r#"class="editorial__open""#), "open must be present, got: {out}");
     }
 
-    // ── Epigraph ──────────────────────────────────────────────────────────────
+    // Epigraph
 
     #[test]
     fn blockquote_becomes_epigraph() {
@@ -1753,7 +1751,7 @@ mod tests {
         );
     }
 
-    // ── Invite list ───────────────────────────────────────────────────────────
+    // Invite list
 
     #[test]
     fn invite_list_items_get_invite_classes() {
@@ -1859,7 +1857,7 @@ mod tests {
         assert!(out.contains(r#"class="invite-list""#), "must be an invite-list, got: {out}");
     }
 
-    // ── Plain paragraph fallback ──────────────────────────────────────────────
+    // Plain paragraph fallback
 
     #[test]
     fn plain_paragraph_after_first_is_just_p() {
@@ -1872,7 +1870,7 @@ mod tests {
         );
     }
 
-    // ── Article structure ─────────────────────────────────────────────────────
+    // Article structure
 
     /// An invite item's href is parsed from the event stream, a prose link is
     /// written by `push_html`: both read the stream the base was put into.
@@ -1902,7 +1900,7 @@ mod tests {
         );
     }
 
-    // ── segment_html: the four section shapes ─────────
+    // segment_html: the four section shapes
 
     const SEC: &str = r#"<section class="editorial__section"><h2>Ways in</h2></section>"#;
 
@@ -2073,7 +2071,7 @@ mod tests {
         assert!(out.ends_with("</div></div></article>"), "{out}");
     }
 
-    // ── Leading kicker (eyebrow) ──────────────────────────────────────────────
+    // Leading kicker (eyebrow)
 
     #[test]
     fn leading_h3_before_h1_becomes_eyebrow_kicker() {
@@ -2167,7 +2165,7 @@ mod tests {
         );
     }
 
-    // ── Subtitle (### directly after the h1) ──────────────────────────────────
+    // Subtitle (### directly after the h1)
 
     #[test]
     fn h3_directly_after_h1_becomes_subtitle_inside_head() {
@@ -2246,7 +2244,7 @@ mod tests {
         assert!(!out.contains("editorial__subtitle"), "got: {out}");
     }
 
-    // ── Snapshot: Alice EN ────────────────────────────────────────────────────
+    // Snapshot: Alice EN
 
     #[test]
     fn snapshot_editorial_alice_en() {
@@ -2256,7 +2254,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Snapshot: Alice DE ────────────────────────────────────────────────────
+    // Snapshot: Alice DE
 
     #[test]
     fn snapshot_editorial_alice_de() {
@@ -2266,7 +2264,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── Snapshot: Incunabula home DE (leading kicker) ─────────────────────────
+    // Snapshot: Incunabula home DE (leading kicker)
 
     #[test]
     fn snapshot_editorial_incunabula_home_de() {
@@ -2279,7 +2277,7 @@ mod tests {
         insta::assert_snapshot!(out);
     }
 
-    // ── split_epigraph_attribution unit test ─────────────────────────────────
+    // split_epigraph_attribution unit test
     //
     // This is a pure-text helper tested here. The production path uses
     // `split_epigraph_html` (operates on rendered HTML), but the attribution

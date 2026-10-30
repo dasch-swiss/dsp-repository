@@ -31,7 +31,7 @@ use crate::remodel::{
     RemodelIncomingCount, RemodelMemberCount,
 };
 
-// ── The outline ───────────────────────────────────────────────────────────────
+// The outline
 
 /// What these nodes need to know of the whole block.
 pub(super) struct Outline<'a> {
@@ -161,7 +161,7 @@ fn fit_for_an_id(property: &RawNode) -> Fit {
     }
 }
 
-// ── A class's structure ───────────────────────────────────────────────────────
+// A class's structure
 
 /// What these nodes and the `image` attribute give one class.
 pub(super) struct Structure {
@@ -325,7 +325,7 @@ enum IdFrom {
 }
 
 impl ClassStructure<'_> {
-    // ── id ────────────────────────────────────────────────────────────────────
+    // id
 
     fn lower_id(&self, node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationReport) -> Option<IdPolicy> {
         check_attrs(node, &["curated-key", "from", "property", "under-parent"], report);
@@ -413,7 +413,7 @@ impl ClassStructure<'_> {
         Ok(found.map(|(position, _)| PropertyIndex(position)))
     }
 
-    // ── member-of ─────────────────────────────────────────────────────────────
+    // member-of
 
     fn lower_member_of(
         &self,
@@ -468,7 +468,7 @@ impl ClassStructure<'_> {
         Some(Membership { parent: ClassIndex(parent?), seq: seq.ok()? })
     }
 
-    // ── member-count and incoming-count ───────────────────────────────────────
+    // member-count and incoming-count
 
     fn lower_member_count(
         &self,
@@ -578,7 +578,7 @@ impl ClassStructure<'_> {
         Some(PropertyIndex(position))
     }
 
-    // ── cover ─────────────────────────────────────────────────────────────────
+    // cover
 
     fn lower_cover(&self, node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationReport) -> Option<CuratedKey> {
         check_attrs(node, &["curated-key"], report);

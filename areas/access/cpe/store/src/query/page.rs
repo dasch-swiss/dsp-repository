@@ -160,7 +160,7 @@ fn build_components(
     let route_params = request.route_params;
     let params = request.params;
 
-    // ── Pass 1: build list_meta and facet_wheres maps ─────────────────────────
+    // Pass 1: build list_meta and facet_wheres maps
 
     // list_meta: list id → (class, config wheres), borrowed from page body.
     // Lifetime: borrows from `page` (which borrows from `Project`'s config).
@@ -209,7 +209,7 @@ fn build_components(
         }
     }
 
-    // ── Pass 1.5: pre-resolve every FacetPanel's groups ───────────────────────
+    // Pass 1.5: pre-resolve every FacetPanel's groups
     //
     // Computed ONCE, before pass 2, so the `ResourceList` arm below can gate
     // `has_active_facets` on the SAME resolved-selection data the
@@ -256,14 +256,14 @@ fn build_components(
         }
     }
 
-    // ── Pass 2: emit ComponentData per body slot ──────────────────────────────
+    // Pass 2: emit ComponentData per body slot
 
     let mut components: Vec<ComponentData> = Vec::with_capacity(page.body.len());
     let mut outcomes: Vec<FetchOutcome> = Vec::new();
 
     for component in &page.body {
         match component {
-            // ── ResourceDetail ────────────────────────────────────────────────
+            // ResourceDetail
             Component::ResourceDetail { id, .. } => {
                 let resource_id = match id {
                     None => {
@@ -312,7 +312,7 @@ fn build_components(
                 }
             }
 
-            // ── ResourceList ──────────────────────────────────────────────────
+            // ResourceList
             // gloss/chips are render-only config (consumed by render_resource_list,
             // not the data query), so they are not needed to build ComponentData.
             Component::ResourceList {
@@ -418,7 +418,7 @@ fn build_components(
                 }
             }
 
-            // ── CompoundViewer ────────────────────────────────────────────────
+            // CompoundViewer
             Component::CompoundViewer { source, media, annotations, .. } => {
                 // Resolve source: literal id or `$param` reference.
                 let source_id = if let Some(param_name) = source.strip_prefix('$') {
@@ -469,7 +469,7 @@ fn build_components(
                 }
             }
 
-            // ── FacetPanel ────────────────────────────────────────────────────
+            // FacetPanel
             // Groups (and any DB-error state) were already resolved once in
             // pass 1.5 above — this arm only emits the ComponentData, it
             // never re-queries `ProjectReads::facet_options`.
@@ -488,7 +488,7 @@ fn build_components(
                 }
             }
 
-            // ── Timeline ──────────────────────────────────────────────────────
+            // Timeline
             // Every resource of the class, sorted by the date property, plus
             // the lane vocabulary in `seq` order. No config wheres, no facets,
             // no `?sort=`/`?page=` — the timeline is not a browse surface.
@@ -538,7 +538,7 @@ fn build_components(
                 }
             }
 
-            // ── Woodcut cases ─────────────────────────────────────────────────
+            // Woodcut cases
             // Every crop and detail annotation the cases name (with its page,
             // book and image), every link they name (remarks, page cases),
             // and every page a page case names (with its book and image).
@@ -581,7 +581,7 @@ fn build_components(
                 }
             }
 
-            // ── Edition cards ─────────────────────────────────────────────────
+            // Edition cards
             // Each card's book that exists, in card order, with the first
             // image representation of its media property's first target.
             Component::EditionCards { media, books, .. } => {
@@ -618,7 +618,7 @@ fn build_components(
                 }
             }
 
-            // ── Strip row ─────────────────────────────────────────────────────
+            // Strip row
             // The class's resources used at least `min_uses` times, most-used
             // first (ties by id, the sort's own tie-break), capped at
             // `limit`; their tile images; and the class's unfiltered count,
@@ -658,7 +658,7 @@ fn build_components(
                 }
             }
 
-            // ── Non-data components ───────────────────────────────────────────
+            // Non-data components
             // Listed, not a `_` wildcard: a new `Component` variant fails to
             // compile here until it gets a fetch arm or joins this list.
             Component::Narrative { .. } | Component::SearchBar { .. } => {

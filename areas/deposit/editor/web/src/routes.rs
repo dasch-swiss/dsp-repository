@@ -72,7 +72,7 @@ pub(crate) fn routes() -> Vec<Route> {
                 "approved records"
             )),
         ),
-        // --- Authenticated routes ---
+        // Authenticated routes
         // Every handler below takes `Authenticated`, which is what performs the
         // check: a handler that omits it is public, visibly, in its signature.
         // They take [`crate::handlers::auth`]'s pair.
@@ -116,7 +116,7 @@ pub(crate) fn routes() -> Vec<Route> {
             "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove",
             post(crate::handlers::entities::remove_row),
         ),
-        // --- RDU-only routes ---
+        // RDU-only routes
         // `Rdu` composes `Authenticated`, so these are closed twice over: no
         // session redirects to login, and a depositor's session gets the 403
         // page. Each write shares a URL with the `GET` that renders its form, so

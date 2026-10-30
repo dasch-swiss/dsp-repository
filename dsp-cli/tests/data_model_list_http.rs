@@ -26,9 +26,7 @@ const TOKEN: &str = "test-token";
 // The project IRI used across all tests (BEOL project on api.dasch.swiss).
 const PROJECT_IRI: &str = "http://rdfh.ch/projects/yTerZGyxjZVqFMNNKXCDPF";
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 /// Build the expected URL path for the metadata endpoint (percent-encoded IRI).
 fn metadata_path() -> String {
@@ -61,9 +59,7 @@ async fn mount_200(server: &MockServer, body: serde_json::Value) {
         .await;
 }
 
-// ---------------------------------------------------------------------------
 // Multi — @graph with 2 ontologies
-// ---------------------------------------------------------------------------
 
 /// `@graph` with 2 items: one missing `rdfs:label`, one missing
 /// `knora-api:lastModificationDate`. Both must be `DataModel` values with
@@ -124,9 +120,7 @@ async fn multi_graph_returns_two_data_models() {
     assert!(!m2.is_builtin);
 }
 
-// ---------------------------------------------------------------------------
 // Graph of length 1 — @graph wrapping a single ontology
-// ---------------------------------------------------------------------------
 
 /// `@graph` with exactly one item. This guards against the reconciliation
 /// regressing: the `@graph` arm must be taken even for a length-1 array,
@@ -167,9 +161,7 @@ async fn graph_of_length_one_returns_one_data_model() {
     assert!(!models[0].is_builtin);
 }
 
-// ---------------------------------------------------------------------------
 // Single flattened — top-level @id, no @graph
-// ---------------------------------------------------------------------------
 
 /// The critical JSON-LD edge: when there is exactly one ontology, the server
 /// returns it flattened at the top level (no `@graph`). The reconciliation
@@ -209,9 +201,7 @@ async fn single_flattened_returns_one_data_model() {
     assert!(!models[0].is_builtin);
 }
 
-// ---------------------------------------------------------------------------
 // Zero — empty object {}
-// ---------------------------------------------------------------------------
 
 /// Verified shape from a project with no ontologies: the server returns `{}`.
 /// Must produce an empty `Vec` (not an error).
@@ -233,9 +223,7 @@ async fn zero_ontologies_returns_empty_vec() {
     assert!(result.unwrap().is_empty(), "empty object must yield empty Vec");
 }
 
-// ---------------------------------------------------------------------------
 // Bearer present
-// ---------------------------------------------------------------------------
 
 /// When `token = Some("test-token")` is passed, the request carries an
 /// `Authorization: Bearer test-token` header.
@@ -285,9 +273,7 @@ async fn bearer_present_when_token_is_some() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Bearer absent
-// ---------------------------------------------------------------------------
 
 /// When `token = None` is passed, NO `Authorization` header must be sent.
 /// Guards against a future refactor accidentally sending an unconditional bearer.
@@ -355,9 +341,7 @@ async fn no_token_does_not_match_bearer_gated_mock() {
     // The `expect(0)` on the bearer-gated mock is verified at drop.
 }
 
-// ---------------------------------------------------------------------------
 // 500 → ServerError
-// ---------------------------------------------------------------------------
 
 #[tokio::test]
 async fn server_error_500_returns_server_error_diagnostic() {
@@ -384,9 +368,7 @@ async fn server_error_500_returns_server_error_diagnostic() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // Malformed body → ServerError
-// ---------------------------------------------------------------------------
 
 /// A 200 response with an invalid JSON body must yield `ServerError` (not panic).
 #[tokio::test]
@@ -414,9 +396,7 @@ async fn malformed_body_returns_server_error() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // `data_model_name_from_iri` derivation
-// ---------------------------------------------------------------------------
 
 /// The `name` field is derived from the IRI, not a separate wire field.
 /// This test guards the derivation: a standard `…/ontology/{code}/{name}/v2`
@@ -450,9 +430,7 @@ async fn name_derived_from_iri_correctly() {
     );
 }
 
-// ---------------------------------------------------------------------------
 // URL construction — metadata_path() helper is coherent
-// ---------------------------------------------------------------------------
 
 /// Verify the URL path helper produces a non-empty path — this keeps the
 /// helper honest without duplicating percent-encoding logic.

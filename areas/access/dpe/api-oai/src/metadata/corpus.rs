@@ -237,7 +237,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
     let json_ld = project_to_schema_org(graph, &urls, SchemaOrgOptions { parts: PartLimit::Count(100) });
     let links = project_to_link_set(graph, &urls);
 
-    // --- the DataCite JSON representation is a DataCite document ---
+    // the DataCite JSON representation is a DataCite document
     // The one writer whose output a third party parses to a published schema
     // rather than to our own reading of it. Every error, not the first: a
     // rejected document usually breaks in more than one place, and one at a
@@ -252,7 +252,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
         violations.join("\n")
     );
 
-    // --- the identifier ---
+    // the identifier
     assert_eq!(json_ld["@id"], graph.ark.as_str(), "{file}: JSON-LD @id");
     // `identifier` holds two entries: the ARK as a `PropertyValue`, and the
     // landing page URL, which is the one a FAIR assessor pointed at the page
@@ -289,7 +289,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
         "{file}: cite-as is the ARK, exactly once"
     );
 
-    // --- titles ---
+    // titles
     let (title, alternatives) = graph.titles();
     let known: Vec<&str> = std::iter::once(title.as_str())
         .chain(alternatives.iter().map(String::as_str))
@@ -312,7 +312,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
         assert!(known.contains(&emitted.as_str()), "{file}: DC.title {emitted:?} invented");
     }
 
-    // --- creators ---
+    // creators
     let attributed: Vec<&str> = graph.creators.iter().map(|a| a.name.as_str()).collect();
     let credited: Vec<String> = graph.creators_with_fallback().iter().map(|a| a.name.clone()).collect();
     assert_eq!(
@@ -379,7 +379,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
         "{file}: DataCite ORCIDs"
     );
 
-    // --- licenses ---
+    // licenses
     let licensed: Vec<String> = distinct(
         graph
             .legal_info
@@ -423,7 +423,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
     };
     assert_eq!(hrefs(&links, "license"), expected_link, "{file}: license link");
 
-    // --- the publication year ---
+    // the publication year
     // DataCite's field is mandatory and falls back; schema.org's is optional
     // and omits rather than invents. Where the graph has a year, both carry it.
     match graph.publication_year {
@@ -440,7 +440,7 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
         }
     }
 
-    // --- access rights ---
+    // access rights
     assert_eq!(
         values(&meta, "DC.accessRights"),
         vec![coar_access_right(&graph.access_rights).to_string()],

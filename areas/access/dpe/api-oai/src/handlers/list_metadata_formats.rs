@@ -55,7 +55,7 @@ mod tests {
         }
     }
 
-    // ---- error cases ----
+    // error cases
 
     #[test]
     fn unexpected_argument_returns_bad_argument() {
@@ -74,7 +74,7 @@ mod tests {
         assert!(xml.contains("<error code=\"idDoesNotExist\">"), "got: {}", xml);
     }
 
-    // ---- golden tests ----
+    // golden tests
 
     #[test]
     fn golden_response() {
@@ -85,7 +85,7 @@ mod tests {
         assert_eq!(normalize(&xml), expected);
     }
 
-    // ---- schema validation tests ----
+    // schema validation tests
 
     #[test]
     fn list_metadata_formats_response_is_valid_oai_pmh() {

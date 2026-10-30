@@ -1,5 +1,80 @@
 # Changelog
 
+## [0.8.11](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.10...v0.8.11) (2026-10-30)
+
+
+### Features
+
+* **cpe-ports,media-store,cpe-store-build,sync-store,cpe-server:** Activate CPE from the archive projection and media's deposited files (DEV-7511, DEV-7512) ([5da01f2](https://github.com/dasch-swiss/dsp-repository/commit/5da01f26574b8ce48d288621b471fb824bc695a6))
+* **editor-collector:** Write a per-record run summary instead of reporting to the editor ([51f3364](https://github.com/dasch-swiss/dsp-repository/commit/51f3364fc7f694c585223b99ec79c97f5adddb7b))
+* **editor-web,editor-core,mosaic-tiles:** Edit keywords and alternative names one value per row with a language dropdown (DEV-7688) ([39ee04b](https://github.com/dasch-swiss/dsp-repository/commit/39ee04b22c338f97b275e95ca22fbb66a121168e))
+* **editor-web,editor-pull-requests:** Replace the collection vocabulary with pull requests and approved records ([5c522fb](https://github.com/dasch-swiss/dsp-repository/commit/5c522fb042f5d84f7fe8acdc23d90a1d0a26e9e7))
+* **editor-web,editor-store,deposit-server:** Drop the collection report and its token ([cf97bfe](https://github.com/dasch-swiss/dsp-repository/commit/cf97bfe9c2a89d89de3955c6329e643558adc841))
+* **editor-web,editor-store,editor-collector:** Approving a project always supersedes its earlier record ([fa49637](https://github.com/dasch-swiss/dsp-repository/commit/fa4963795aa06b5d7fa8f8c70407b5f525dd8525))
+* **identity-store,deposit-server:** DKIM-sign login mails sent through the unibas relay (DEV-7659) ([d300601](https://github.com/dasch-swiss/dsp-repository/commit/d300601a58fd953ffb79350237f6d0aae496cf3c))
+* **identity-web:** Explain an empty code page on a deployment that reveals the code (DEV-7675) ([ac5e04a](https://github.com/dasch-swiss/dsp-repository/commit/ac5e04afb90af9022a7b26b334d55d76e796c8f5))
+
+
+### Bug Fixes
+
+* **cpe-components:** Stop a boolean value's styling hook from reading as a key-less data-on (DEV-7369) ([39983f2](https://github.com/dasch-swiss/dsp-repository/commit/39983f200631ebe90dbb40d9054fff7cbfcf912b))
+* **editor-collector:** Skip a merged pull request only for the record it names ([638e66e](https://github.com/dasch-swiss/dsp-repository/commit/638e66e3dbb4105d195c4c0b2ffe6e72ed1e8cb3))
+* **editor-core,editor-web:** Bound a posted body's row keys and refuse an over-cap save before the conflict check (DEV-7688) ([6636804](https://github.com/dasch-swiss/dsp-repository/commit/6636804554c7366077af60579ccaa9112ac56f76))
+* **editor-web,editor-core:** Keep a row whose variant was just chosen through the autosave (DEV-7680) ([55bbb56](https://github.com/dasch-swiss/dsp-repository/commit/55bbb565ec96a685a77efd0106af7528abaf5847))
+* **editor-web:** Choose a picker's match with a button under its search box (DEV-7681) ([bd9111a](https://github.com/dasch-swiss/dsp-repository/commit/bd9111a48030fe81106372db0899ba1e70bc0d34))
+* **mosaic-tiles,editor-web:** Keep a table's sr-only header inside its scroll region ([05cab0d](https://github.com/dasch-swiss/dsp-repository/commit/05cab0d9695d8004563295cc9fb5d9543bdcf5c6))
+
+
+### Code Refactoring
+
+* **cpe-components:** Build CPE's Datastar actions with shared-datastar (DEV-7369) ([ed37569](https://github.com/dasch-swiss/dsp-repository/commit/ed375697503521052c30d226354a6843c44b906f))
+* **deposit-server,identity-web,identity-store:** Make deposit-server the area's composition root ([d6a467a](https://github.com/dasch-swiss/dsp-repository/commit/d6a467a8920d1116ed46dfaa77cf6cd559d5a384))
+* **deposit-shell,editor-server,editor-web:** Move the document shell and the sign-in link into the area shell ([5d7d626](https://github.com/dasch-swiss/dsp-repository/commit/5d7d6268ffddd0d4d1625cff90b950bf4ac40983))
+* **editor-core:** Decide the approve gates in editor-core ([124b086](https://github.com/dasch-swiss/dsp-repository/commit/124b0868c078feafc322a553847b6cc86df39f3d))
+* **editor-core:** Decide the depositor-side predicates in editor-core ([072fa8e](https://github.com/dasch-swiss/dsp-repository/commit/072fa8e9fa6cc2d6c4f92803051219fd37766cb7))
+* **editor-core:** Decide the submit gates in editor-core ([9a2819d](https://github.com/dasch-swiss/dsp-repository/commit/9a2819ddefbbb7111454c07525724e93c40ed3ed))
+* **editor-core:** Move the form registry, obligations and submit validation into editor-core ([7453d75](https://github.com/dasch-swiss/dsp-repository/commit/7453d7500c3505a9c649d968f087363aa36ba6f6))
+* **editor-ports,editor-web,identity-store:** Rename Principal to Actor ([4435908](https://github.com/dasch-swiss/dsp-repository/commit/443590875e4530823908a73f82ad27a0763415bc))
+* **editor-ports,identity-ports,identity-store,editor-store,editor-server:** Put the editor on Principal behind the capabilities' ports ([8e96cf0](https://github.com/dasch-swiss/dsp-repository/commit/8e96cf09229cd836d5cb6ac931bcf342f9dc067e))
+* **editor-server:** Build the page-URL normalizer from the route table ([62cb161](https://github.com/dasch-swiss/dsp-repository/commit/62cb16173de50df559143731443cdd71a6156858))
+* **editor-web,editor-server,editor-ports:** Move the editor's handlers, routes and startup into editor-web ([03e8120](https://github.com/dasch-swiss/dsp-repository/commit/03e812068cb651fa21a0cc25229d90fc38af25ed))
+* **editor-web:** Build the editor's Datastar actions with shared-datastar (DEV-7369) ([b55f542](https://github.com/dasch-swiss/dsp-repository/commit/b55f542d0fc656f8f636bdd409ddacbd919d3a2c))
+* **editor-web:** One storage_error for the editor's handlers ([76fa87f](https://github.com/dasch-swiss/dsp-repository/commit/76fa87fafbaaa0427571b9e1b5b3d89a254e54ee))
+* **identity-core,editor-core,editor-server:** Extract identity's domain into identity-core ([08630a9](https://github.com/dasch-swiss/dsp-repository/commit/08630a9cc12779923aad96157eae1da9715a1c7d))
+* **identity-ports,editor-store,identity-web:** Rename AuthoredWork to OpenWork ([142b099](https://github.com/dasch-swiss/dsp-repository/commit/142b099eec11accbb5d4c030cda637bd8670ad94))
+* **identity-store,editor-ports,editor-web:** Rename Assignment to Assigned project ([ea999b1](https://github.com/dasch-swiss/dsp-repository/commit/ea999b1edbe23cad0cd028ce84015344ae59d059))
+* **identity-store,editor-store,editor-server:** Split the store into two crates over two database files ([44dfb6e](https://github.com/dasch-swiss/dsp-repository/commit/44dfb6e425ec1ded3ffe9ab7391f3a3682425d85))
+* **identity-web,editor-server,editor-web:** Move identity's pages, handlers, routes and startup into identity-web ([e2dacde](https://github.com/dasch-swiss/dsp-repository/commit/e2dacde7b0d35d118f8d5617bb3cab7037bcf1be))
+* **shared-datastar,dpe-web:** Build DPE's Datastar actions with a typed builder (DEV-7369) ([b52b650](https://github.com/dasch-swiss/dsp-repository/commit/b52b65059b35b15b09454560d1d24c4c6999b239))
+* **shared-rate-limit:** One RightmostXffKeyExtractor for every per-IP rate limit ([abeed45](https://github.com/dasch-swiss/dsp-repository/commit/abeed45cfa4cbf3b7e764569fa6a7f6ec4f58611))
+
+
+### Documentation
+
+* **docs:** Add the just test-changed plan (DEV-7615) ([3ef06a9](https://github.com/dasch-swiss/dsp-repository/commit/3ef06a9d5db4f7ec395e5655c6a523ab7a54418c))
+* **docs:** Add the typed Datastar actions plan (DEV-7369) ([3686f3b](https://github.com/dasch-swiss/dsp-repository/commit/3686f3bb411c1012c8ba059988066b0bcdddbf71))
+* **docs:** Amend areas/deposit/ADR-0004 where the code disproved it, and plan the refactor ([32f57d6](https://github.com/dasch-swiss/dsp-repository/commit/32f57d6244932599aa86e678eb31d52f54182c09))
+* **docs:** Decide the two archive channels, deposited files through media, and one authorisation decision (DEV-7442, DEV-7488) ([c89f338](https://github.com/dasch-swiss/dsp-repository/commit/c89f338cb5259c1f5c3295782e1132ab53880b28))
+* **docs:** Keep only the current decision in an ADR, and its history in git ([f48fa0b](https://github.com/dasch-swiss/dsp-repository/commit/f48fa0be366b30fe588c2a84ecf9d6fb412b5324))
+* **docs:** Plan moving the editor's rules into editor-core ([6b87aea](https://github.com/dasch-swiss/dsp-repository/commit/6b87aeaac71b8b70e42fec2da5845bdec0ac176a))
+* **docs:** Retire three ADRs that no longer decide anything, keeping their numbers ([e9d6261](https://github.com/dasch-swiss/dsp-repository/commit/e9d6261b5a46a22b4b6f1ca2667455cbc701f71a))
+* **docs:** Rewrite every ADR to the decision in force, keeping what is still to come ([8565887](https://github.com/dasch-swiss/dsp-repository/commit/8565887b48416b44b5be57cc11d9c7f7c076e8bd))
+* **dsp-cli,docs:** Re-home the incubator's vision and conventions ([d89a65a](https://github.com/dasch-swiss/dsp-repository/commit/d89a65ab6ed45f1a9ff741fea45265c91d1a43f7))
+
+
+### Miscellaneous Chores
+
+* **ci:** Add just test-changed to test only the packages a change touches ([c25ca4e](https://github.com/dasch-swiss/dsp-repository/commit/c25ca4e429f43b66922f831c0a9a20f1d58cb1ac))
+* **ci:** Deploy the editor to the deposit stack's stage on every merge to main ([c0857bf](https://github.com/dasch-swiss/dsp-repository/commit/c0857bf95502737a5e4229f23e30b58296f24c42))
+* **ci:** Drop macOS split debug info so stale .o files stop piling up ([19434c6](https://github.com/dasch-swiss/dsp-repository/commit/19434c6a756d669ca15fa680d9d2407da04273fb))
+* **ci:** Fail a composition root that depends on another area's crate ([c3b74d4](https://github.com/dasch-swiss/dsp-repository/commit/c3b74d43dc41fc3b3ec8e4b43e52cbdb961ea75d))
+* **ci:** Fail a view of editor-web or identity-web that uses axum ([9ca1672](https://github.com/dasch-swiss/dsp-repository/commit/9ca1672bbc14ddf5d0703c895b09ce33543cef88))
+* **ci:** Gate the Deposit Area's crate graph with check-capability-deps.sh ([a659795](https://github.com/dasch-swiss/dsp-repository/commit/a659795d44c35d58d5e954fab8e532bc5b3eb897))
+* **ci:** Hold Datastar attribute names to a whitelist grammar and keep actions typed (DEV-7369) ([b538098](https://github.com/dasch-swiss/dsp-repository/commit/b53809857708307f669f89d42d1e5ef5df1bbb5a))
+* **ci:** Hold the Access Area's crates to their roles in check-capability-deps.sh ([daae0d0](https://github.com/dasch-swiss/dsp-repository/commit/daae0d035f17db9b1b8dae0e484c48e9d019002d))
+* **ci:** Pin nightly rustfmt to 2026-10-23 for CI, justfile and Nix ([93116e7](https://github.com/dasch-swiss/dsp-repository/commit/93116e7f06326450e283b1fb4a7e3fcaf558c763))
+* **ci:** Run the gate scripts' tests in CI ([abd76f3](https://github.com/dasch-swiss/dsp-repository/commit/abd76f3cc888d098be1dc32e3fee91862d3cda99))
+
 ## [0.8.10](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.9...v0.8.10) (2026-10-19)
 
 

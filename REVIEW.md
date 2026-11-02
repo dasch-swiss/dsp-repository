@@ -35,6 +35,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 
 ## Style
 
+- [ ] Comments follow `.claude/rules/comments.md`: none restates the code or narrates history, and a doc comment stays only where the rule's exception applies
 - [ ] Datastar attribute patterns match conventions (`_` prefix for signals); actions come from `shared-datastar`, not strings
 - [ ] Fragment handlers in `fragments/` module, not inline
 - [ ] Contract types in `shared-metadata`, DPE's view model in `dpe-core`, representation mappings in `shared-fair` — not in web or API crates

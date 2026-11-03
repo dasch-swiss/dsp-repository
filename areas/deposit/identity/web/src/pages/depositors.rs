@@ -54,9 +54,7 @@ pub fn list(rows: &[DepositorRow<'_>], projects_checked: bool) -> Markup {
                 })
             }
             p class="text-gray-600 mb-6" {
-                "RDU members come from the "
-                code class="font-mono" { "EDITOR_RDU_EMAILS" }
-                " setting and cannot be changed here. Depositors are created and removed on this page."
+                "RDU members are set up by DaSCH and can't be changed here. Depositors are created and removed on this page."
             }
             @if !projects_checked { (unchecked_notice()) }
             @if rows.is_empty() {
@@ -115,7 +113,7 @@ fn list_row(row: &DepositorRow<'_>) -> Markup {
             a href={ "/depositors/" (row.id) "/edit" } class="underline mr-3" { "Edit" }
             a href={ "/depositors/" (row.id) "/remove" } class="underline" { "Remove" }
         } @else {
-            span class="text-gray-500 text-sm" { "from configuration" }
+            span class="text-gray-500 text-sm" { "Set up by DaSCH" }
         }
     };
     html! {
@@ -385,7 +383,7 @@ mod tests {
         .into_string();
         assert!(!out.contains("/depositors/rdu-1/edit"), "{out}");
         assert!(!out.contains("/depositors/rdu-1/remove"), "{out}");
-        assert!(out.contains("from configuration"), "{out}");
+        assert!(out.contains("Set up by DaSCH"), "{out}");
     }
 
     #[test]

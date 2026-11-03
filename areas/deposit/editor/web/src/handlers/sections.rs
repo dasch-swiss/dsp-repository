@@ -1476,8 +1476,7 @@ async fn propose(
     }
 }
 
-/// A proposal was started: named with its kind and id, and linked to the entity form it will one
-/// day have.
+/// Answer a started entity proposal by re-rendering the section with a notice that links to it.
 ///
 /// Neither path redirects, unlike a save or a phase change. Datastar processes a body only on a
 /// 200, so a redirect the enhanced path followed would merge the entity form's whole page into the
@@ -5069,6 +5068,76 @@ mod tests {
             proposals[0].entity_id, "organization-008",
             "the clicked row's entity, not whichever rendered first"
         );
+    }
+
+    #[tokio::test]
+    async fn proposing_a_change_to_a_published_agent_names_it_by_its_name() {
+        let (state, _) = test_state("section-propose-changes-names-the-agent").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+        const ID: &str = "organization-008";
+        let name = state.agents.get(ID).expect("a published agent").label.clone();
+        assert!(!name.is_empty() && name != ID, "the fixture agent must carry a name: {name:?}");
+
+        as_session(
+            &app,
+            post(
+                CONTRIBUTORS,
+                &format!("attributions.row=r0&attributions.r0.contributor={ID}&attributions.r0.role=Funder"),
+            ),
+            &session,
+        )
+        .await;
+        let response = as_session(&app, post(CONTRIBUTORS, &format!("intent=propose-changes:{ID}")), &session).await;
+        let rendered = body_string(response).await;
+
+        let escaped = maud::html! {
+            (name)
+        }
+        .into_string();
+        let lead = format!("A change to {escaped} (organisation) has been started.");
+        assert!(rendered.contains(&lead), "{rendered}");
+        assert!(!rendered.contains(&format!("A change to {ID} has been started.")), "{rendered}");
+    }
+
+    #[tokio::test]
+    async fn the_proposals_box_names_a_renamed_agent_by_its_proposed_name() {
+        let (state, _) = test_state("section-proposals-box-proposed-name").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+        const ID: &str = "organization-008";
+        let old_name = state.agents.get(ID).expect("a published agent").label.clone();
+        assert!(
+            !old_name.is_empty() && old_name != ID,
+            "the fixture agent must carry a name: {old_name:?}"
+        );
+
+        as_session(&app, post(CONTRIBUTORS, &format!("intent=propose-changes:{ID}")), &session).await;
+        let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
+        let mut payload: Value = serde_json::from_str(&proposal.payload).expect("the seeded payload is JSON");
+        payload["name"] = json!("Renamed By The Depositor");
+        EntityProposalRepository::update_payload(&*state.editor, proposal.id, &payload.to_string(), Utc::now())
+            .await
+            .expect("the payload should update");
+
+        let rendered = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
+
+        let link = |name: &str| {
+            maud::html! {
+                (name)
+                " (organisation)"
+            }
+            .into_string()
+        };
+        assert!(
+            rendered.contains(&format!(">{}</a>", link("Renamed By The Depositor"))),
+            "{rendered}"
+        );
+        assert!(!rendered.contains(&format!(">{}</a>", link(&old_name))), "{rendered}");
     }
 
     #[tokio::test]

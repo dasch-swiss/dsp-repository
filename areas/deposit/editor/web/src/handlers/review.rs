@@ -992,10 +992,19 @@ fn review_rows<'a>(context: &'a Context<'a>) -> Vec<page::ReviewRow<'a>> {
 /// The parsed payload is owned by the returned row rather than borrowed: nothing else here needs
 /// it to outlive the call, and it is cheaper than threading a second lifetime through for it.
 fn entity_rows<'a>(context: &'a Context<'a>) -> Vec<page::EntityRow<'a>> {
+    let labels = crate::entity::entity_labels(
+        context
+            .entity_proposals
+            .iter()
+            .map(|proposal| (proposal.kind, proposal.entity_id.as_str())),
+        Some(&context.agents),
+        crate::entity::Precedence::Published,
+    );
     context
         .entity_proposals
         .iter()
-        .map(|proposal| {
+        .zip(labels)
+        .map(|(proposal, label)| {
             let payload: Value = serde_json::from_str(&proposal.payload).unwrap_or_else(|error| {
                 tracing::error!(
                     error = %error,
@@ -1006,6 +1015,7 @@ fn entity_rows<'a>(context: &'a Context<'a>) -> Vec<page::EntityRow<'a>> {
             });
             page::EntityRow {
                 proposal,
+                label,
                 payload,
                 // Only a `Change` has a published side to compare against — a `New` proposal is in
                 // the same position as an unpublished project.
@@ -2584,6 +2594,25 @@ mod tests {
             .unwrap()
             .expect("the proposal survives");
         assert_eq!(stored.decision, Some(ProposalDecision::Accept));
+    }
+
+    #[tokio::test]
+    async fn two_same_named_proposals_get_distinct_row_labels_and_decision_legends() {
+        let (state, _) = test_state("review-entity-same-name").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let first = a_person_proposal(&state, "0801d").await;
+        let second = a_person_proposal(&state, "0801d").await;
+        a_submission(&state, "0801d", None, json!({ "name": "A new name" })).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get("/review/0801d"), &session).await).await;
+
+        for proposal in [&first, &second] {
+            let label = format!("Ada Lovelace (person, {})", proposal.entity_id);
+            assert!(body.contains(&format!("<strong>{label}</strong>")), "{label} missing: {body}");
+            assert!(body.contains(&format!("{label} — decision")), "{label} legend missing: {body}");
+        }
+        assert!(!body.contains("<strong>Ada Lovelace (person)</strong>"), "{body}");
     }
 
     #[tokio::test]

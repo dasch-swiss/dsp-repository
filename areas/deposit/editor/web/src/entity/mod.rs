@@ -354,14 +354,88 @@ pub fn page(view: &EntityView<'_>) -> Markup {
     }
 }
 
+/// Which side of a `change` proposal supplies its name.
+#[derive(Clone, Copy)]
+pub(crate) enum Precedence {
+    /// The published name wins: RDU's review surface passes this and shows the proposed one beside
+    /// it.
+    Published,
+    /// The proposal's own name wins: depositor views pass this, since a depositor who saved a
+    /// rename expects to see it.
+    Proposed,
+}
+
+fn resolved_name(agents: Option<&AgentScope<'_>>, entity_id: &str, precedence: Precedence) -> Option<String> {
+    let agents = agents?;
+    let agent = match precedence {
+        Precedence::Published => agents.get(entity_id),
+        Precedence::Proposed => agents.get_proposed_first(entity_id),
+    }?;
+    usable_name(&agent.label, entity_id)
+}
+
+fn usable_name(label: &str, entity_id: &str) -> Option<String> {
+    let name = label.trim();
+    (!name.is_empty() && name != entity_id).then(|| name.to_string())
+}
+
+fn compose_label(kind: ProposalKind, entity_id: &str, name: Option<&str>, with_id: bool) -> String {
+    let noun = kind.label().to_lowercase();
+    match (name, with_id) {
+        (Some(name), false) => format!("{name} ({noun})"),
+        (Some(name), true) => format!("{name} ({noun}, {entity_id})"),
+        (None, _) => format!("{} {entity_id}", kind.label()),
+    }
+}
+
+/// The one owner of entity display text: what every view calls a person or organisation, so no
+/// screen shows a bare id. Depositor views pass [`Precedence::Proposed`], RDU's review passes
+/// [`Precedence::Published`].
+///
+/// A view listing several entities goes through [`entity_labels`], which tells equal names apart.
+pub(crate) fn entity_label(
+    kind: ProposalKind,
+    entity_id: &str,
+    agents: Option<&AgentScope<'_>>,
+    precedence: Precedence,
+) -> String {
+    let name = resolved_name(agents, entity_id, precedence);
+    compose_label(kind, entity_id, name.as_deref(), false)
+}
+
+/// [`entity_label`] for each of several entities shown together, in order. Where two would read
+/// the same, those carry their id as well ("Ada Lovelace (person, person-042)"); the rest do not.
+pub(crate) fn entity_labels<'a>(
+    entities: impl IntoIterator<Item = (ProposalKind, &'a str)>,
+    agents: Option<&AgentScope<'_>>,
+    precedence: Precedence,
+) -> Vec<String> {
+    let named: Vec<_> = entities
+        .into_iter()
+        .map(|(kind, id)| (kind, id, resolved_name(agents, id, precedence)))
+        .collect();
+    let plain: Vec<String> = named
+        .iter()
+        .map(|(kind, id, name)| compose_label(*kind, id, name.as_deref(), false))
+        .collect();
+    named
+        .iter()
+        .zip(&plain)
+        .map(|((kind, id, name), label)| {
+            if plain.iter().filter(|other| *other == label).count() > 1 {
+                compose_label(*kind, id, name.as_deref(), true)
+            } else {
+                label.clone()
+            }
+        })
+        .collect()
+}
+
 fn heading(view: &EntityView<'_>) -> Markup {
+    let label = entity_label(view.proposal.kind, &view.proposal.entity_id, view.agents, Precedence::Proposed);
     html! {
         div class="mb-6" {
-            h1 class="font-display text-2xl mb-1" {
-                (view.proposal.kind.label())
-                " "
-                (view.proposal.entity_id)
-            }
+            h1 class="font-display text-2xl mb-1" { (label) }
             p class="text-gray-600" {
                 a href={ "/projects/" (view.shortcode) } class="underline" { "Back to the project" }
             }
@@ -513,14 +587,16 @@ fn address_group(view: &EntityView<'_>, read_only: bool) -> Markup {
 /// Save, and Discard behind its confirmation — the two controls this entity form has, each a
 /// named submit on this one form, like the section form's own.
 fn controls(view: &EntityView<'_>) -> Markup {
+    let label = entity_label(view.proposal.kind, &view.proposal.entity_id, view.agents, Precedence::Proposed);
     html! {
         @if view.confirming == Some(Confirmation::Discard) {
             div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
                 p {
-                    "Discarding this proposal removes it. It cannot be undone, and the id "
-                    (view.proposal.entity_id)
-                    " is not reused for anything else — the row stays on record as a placeholder so nothing \
-                     published while this proposal was live can end up naming a different entity."
+                    "Discarding the proposal for "
+                    (label)
+                    " removes it. It cannot be undone. The record stays on \
+                     file as a placeholder, so nothing published while this proposal was live can end up naming \
+                     a different person or organisation."
                 }
                 div class="flex items-center gap-4" {
                     ({
@@ -551,12 +627,130 @@ fn controls(view: &EntityView<'_>) -> Markup {
 
 #[cfg(test)]
 mod tests {
+    use editor_core::agents::Agents;
+    use editor_core::proposals::{ProposalOperation, ProposalStatus};
     use shared_metadata::models::AuthorityFileReference;
     use shared_metadata::organization::Address;
     use shared_metadata::utils::Multilingual;
     use shared_metadata::{Organization, Person};
 
     use super::*;
+
+    fn a_proposal(kind: ProposalKind, entity_id: &str, payload: &str) -> EntityProposal {
+        EntityProposal {
+            id: Default::default(),
+            shortcode: "0801d".to_string(),
+            entity_id: entity_id.to_string(),
+            kind,
+            operation: ProposalOperation::New,
+            payload: payload.to_string(),
+            status: ProposalStatus::Draft,
+            decision: None,
+            proposed_by: None,
+            created_at: Default::default(),
+            updated_at: Default::default(),
+            decided_by: None,
+            decided_at: None,
+            retired_at: None,
+        }
+    }
+
+    const ADA: &str = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+
+    #[test]
+    fn a_name_that_is_empty_blank_or_the_id_is_not_a_name() {
+        assert_eq!(usable_name("", "person-042"), None);
+        assert_eq!(usable_name("  \t", "person-042"), None);
+        assert_eq!(usable_name("person-042", "person-042"), None);
+        assert_eq!(usable_name("  Ada Lovelace ", "person-042").as_deref(), Some("Ada Lovelace"));
+    }
+
+    #[test]
+    fn a_label_is_the_name_and_kind_else_kind_and_id() {
+        let published = Agents::default();
+        let proposals = [
+            a_proposal(ProposalKind::Person, "person-042", ADA),
+            a_proposal(
+                ProposalKind::Organization,
+                "organization-007",
+                r#"{"name":"Acme","url":"https://acme.example/"}"#,
+            ),
+            // Resolves to the id itself, as a person with no names does.
+            a_proposal(
+                ProposalKind::Person,
+                "person-043",
+                r#"{"givenNames":[],"familyNames":[],"jobTitles":[]}"#,
+            ),
+            a_proposal(
+                ProposalKind::Organization,
+                "organization-008",
+                r#"{"name":"   ","url":"https://x.example/"}"#,
+            ),
+        ];
+        let scope = AgentScope::with_proposals(&published, &proposals);
+        assert_eq!(
+            entity_label(ProposalKind::Person, "person-042", Some(&scope), Precedence::Published),
+            "Ada Lovelace (person)"
+        );
+        assert_eq!(
+            entity_label(
+                ProposalKind::Organization,
+                "organization-007",
+                Some(&scope),
+                Precedence::Published
+            ),
+            "Acme (organisation)"
+        );
+        assert_eq!(
+            entity_label(ProposalKind::Person, "person-043", Some(&scope), Precedence::Published),
+            "Person person-043"
+        );
+        assert_eq!(
+            entity_label(
+                ProposalKind::Organization,
+                "organization-008",
+                Some(&scope),
+                Precedence::Published
+            ),
+            "Organisation organization-008"
+        );
+        assert_eq!(
+            entity_label(ProposalKind::Person, "person-999", Some(&scope), Precedence::Published),
+            "Person person-999"
+        );
+        assert_eq!(
+            entity_label(ProposalKind::Person, "person-042", None, Precedence::Published),
+            "Person person-042"
+        );
+    }
+
+    #[test]
+    fn equal_labels_gain_their_id_and_distinct_ones_do_not() {
+        let published = Agents::default();
+        let proposals = [
+            a_proposal(ProposalKind::Person, "person-042", ADA),
+            a_proposal(ProposalKind::Person, "person-043", ADA),
+            a_proposal(
+                ProposalKind::Organization,
+                "organization-007",
+                r#"{"name":"Acme","url":"https://acme.example/"}"#,
+            ),
+        ];
+        let scope = AgentScope::with_proposals(&published, &proposals);
+        let labels = entity_labels(
+            proposals.iter().map(|proposal| (proposal.kind, proposal.entity_id.as_str())),
+            Some(&scope),
+            Precedence::Published,
+        );
+        assert_eq!(
+            labels,
+            [
+                "Ada Lovelace (person, person-042)",
+                "Ada Lovelace (person, person-043)",
+                "Acme (organisation)"
+            ]
+        );
+    }
 
     /// Every member of the contract type, read off a serialized instance so there
     /// is no second list to forget.

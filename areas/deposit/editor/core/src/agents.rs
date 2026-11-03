@@ -188,6 +188,16 @@ impl<'a> AgentScope<'a> {
             .or_else(|| self.proposed.iter().find(|agent| agent.id == id))
     }
 
+    /// One agent as its own project's proposal names it, ahead of the published
+    /// store, so a renamed proposal shows its new name. Falls back to [`Self::get`].
+    #[must_use]
+    pub fn get_proposed_first(&self, id: &str) -> Option<&Agent> {
+        self.proposed
+            .iter()
+            .find(|agent| agent.id == id)
+            .or_else(|| self.published.get(id))
+    }
+
     /// Whether this id refers to something that exists.
     #[must_use]
     pub fn has(&self, id: &str) -> bool {

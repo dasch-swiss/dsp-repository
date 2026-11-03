@@ -36,7 +36,7 @@ pub fn list(rows: &[ApprovedRow<'_>]) -> Markup {
         div class="py-8" {
             h1 class="font-display text-2xl mb-2" { "Approved records" }
             p class="text-gray-600 mb-6" {
-                "Status compares each approved record with the published set as of the last start. Whether its \
+                "Status compares each approved record with the published projects as of the last start. Whether its \
                  pull request is open, merged or closed is read on GitHub through the link."
             }
             @if rows.is_empty() {
@@ -71,7 +71,7 @@ fn approved_row(row: &ApprovedRow<'_>) -> Markup {
     let name = html! {
         @match row.project_name {
             Some(name) => (name)
-            None => span class="italic text-neutral-600" { "Not in the published set" }
+            None => span class="italic text-neutral-600" { "Not in the published projects" }
         }
     };
     html! {
@@ -176,7 +176,7 @@ pub fn confirm_discard(id: &str, impact: &DiscardImpact<'_>) -> Markup {
                 p class="font-bold mb-1" { "What is being destroyed" }
                 @match impact.project_name {
                     Some(name) => p { (name) }
-                    None => p class="italic text-neutral-600" { "Not in the published set" }
+                    None => p class="italic text-neutral-600" { "Not in the published projects" }
                 }
                 p class="font-mono text-sm" { (impact.shortcode) }
                 p class="text-gray-600 text-sm mt-1" { "Approved " (impact.approved_at) "." }

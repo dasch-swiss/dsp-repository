@@ -131,3 +131,70 @@ test.describe("at 320px wide", () => {
     ).toBeLessThanOrEqual(pageClient);
   });
 });
+
+// SC 2.4.11 Focus Not Obscured: a refused submit fills the status region, and a field the
+// reader returns to must not end up underneath it.
+test.describe("a refused submit", () => {
+  test.use({ storageState: DEPOSITOR_STATE });
+
+  for (const { width, sticky } of [
+    { width: 320, sticky: false },
+    { width: 1280, sticky: true },
+  ]) {
+    test(`does not cover a field focused afterwards at ${width}px wide`, async ({
+      page,
+    }) => {
+      test.skip(
+        test.info().project.name !== "chromium-js",
+        "the status region is only patched in place with JS",
+      );
+
+      await page.setViewportSize({ width, height: 800 });
+
+      // A malformed link in another section is what the refusal is about; a re-run
+      // finds the row already there.
+      await page.goto(`/projects/${NOTICE_SHORTCODE}/sections/dataset`);
+      const link = page.locator("#additionalMaterial input:not([type=hidden])");
+      if ((await link.count()) === 0) {
+        await page.locator("#additionalMaterial button.repeatable-add").click();
+      }
+      await expect(link.first()).toBeVisible();
+      await link.first().fill("www.dasch.swiss");
+      await page.getByRole("button", { name: "Save draft" }).click();
+      await expect(noticeOf(page)).not.toBeEmpty();
+
+      // Submit, then scroll the first field to the top edge of the viewport, where the
+      // sticky region sits: what an in-page link or a Shift+Tab from below does.
+      await page.goto(`/projects/${NOTICE_SHORTCODE}/sections/overview`);
+      await page.getByRole("button", { name: "Submit for review" }).click();
+      const status = noticeOf(page);
+      await expect(
+        status,
+        "the submit was not refused, so this exercises nothing",
+      ).toContainText("Fields in other sections need changing");
+
+      const field = page
+        .locator("#section-form input:not([type=hidden])")
+        .first();
+      await field.evaluate((el) => {
+        el.scrollIntoView({ block: "start" });
+        el.focus({ preventScroll: true });
+      });
+
+      const position = await status.evaluate(
+        (el) => getComputedStyle(el).position,
+      );
+      expect(position === "sticky", `status position is ${position}`).toBe(
+        sticky,
+      );
+
+      const fieldBox = await field.boundingBox();
+      const region = await status.boundingBox();
+      if (!fieldBox || !region) throw new Error("no layout box");
+      expect(
+        fieldBox.y,
+        `the focused field's top is ${fieldBox.y}, under the status region ending at ${region.y + region.height}`,
+      ).toBeGreaterThanOrEqual(region.y + region.height);
+    });
+  }
+});

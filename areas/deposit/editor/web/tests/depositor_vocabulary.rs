@@ -175,7 +175,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             focus_finding: false,
             agents: None,
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
-            // The waiting-for-release notice is depositor-facing text too.
+            // The approved box, shown while a release is awaited, is depositor-facing text too.
             awaiting_release: true,
         };
         let markup = section::page(&view).into_string();

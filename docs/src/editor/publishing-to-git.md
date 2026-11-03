@@ -93,6 +93,19 @@ Whether a pull request is open, merged or closed, and why a record failed, is re
 
 **One record per project.** Approving a project deletes every earlier approved record of it in the approving transaction, whatever its pull request's state: a record is whole-project, so the newest approval carries everything. The next run force-pushes it onto an open pull request, or opens a new one after a merge. A re-approval built from a discarded draft therefore drops the earlier approved changes, and the review diff, taken against the published set, does not show it.
 
+## Releasing approved changes
+
+DaSCH releases approved changes on demand. There is no schedule; depositors are told "usually on the same working day". That promise is worded in `editor_core::status::ProjectState::Approved` (`areas/deposit/editor/core/src/status.rs`), which owns the text; this page does not copy it.
+
+RDU's steps, in order:
+
+1. Collect the approved changes: the approved records on the Approved records page and the pull requests the workflow opened for them (see [What RDU sees in the editor](#what-rdu-sees-in-the-editor)).
+2. Merge those pull requests.
+3. Release the repository. The release carries the published set that the editor deployment bakes in, and the deployment's startup is what turns a record Published and discards it ([startup comparison](./status.md#what-the-pass-writes)).
+4. Tell the project. The editor sends no notification, so this is a human action outside the repo.
+
+A change is Approved for depositors until step 3 completes. A merged pull request alone does not make it Online.
+
 ## The token the workflow uses against GitHub
 
 `secrets.GH_TOKEN`, not `github.token`. A pull request opened with `GITHUB_TOKEN` does not trigger workflows, so a pull request opened by the run would arrive with no `check`, no `test` and no `commit-hygiene` run — looking green because nothing ran. `secrets.GH_TOKEN` is already used by `release-please.yml`, which is also the in-repo precedent for querying open pull requests rather than trusting local state.

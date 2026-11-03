@@ -57,7 +57,7 @@ mod tests {
         // The half nothing else in the codebase would notice the loss of.
         let out = explanation().into_string();
         assert!(
-            out.contains("few weeks"),
+            out.contains("same working day"),
             "REQ-2.6 requires the expected wait before Online: {out}"
         );
     }

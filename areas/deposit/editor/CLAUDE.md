@@ -86,7 +86,7 @@ Each store holds one baseline, `areas/deposit/identity/store/src/migrations/` an
 
 ## Depositor-facing vocabulary is normative
 
-REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, Approved, Online — and REQ-2.2 forbids the words "export", "JSON", "transfer", "commit" and "pull request" anywhere a depositor reads. Both live on `editor_core::status::ProjectState`, which is what the list column, the `/states` page and the waiting-for-release notice all read, so the three cannot drift.
+REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, Approved, Online — and REQ-2.2 forbids the words "export", "JSON", "transfer", "commit" and "pull request" anywhere a depositor reads. Both live on `editor_core::status::ProjectState`, which is what the list column, the `/states` page and the section page's approved box all read, so the three cannot drift.
 
 `areas/deposit/editor/web/tests/depositor_vocabulary.rs` asserts the forbidden words against **rendered markup with tags stripped**, and the E2E suite asserts them again against real pages. Both layers are needed, and the reason is structural: a rendering test exercises one view function in isolation and cannot see a string the server assembles into a slot that test left empty. Only the browser pass reads the assembled page. This is not hypothetical — it is how the "pull request" wording above survived until DEV-6917 added the browser pass.
 

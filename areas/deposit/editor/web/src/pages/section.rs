@@ -19,6 +19,7 @@
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
+use editor_core::form::format::Finding;
 use editor_core::form::obligation::{section_progress, SectionProgress};
 use editor_core::form::registry::{sections_for, Audience, Section};
 use editor_core::form::FormBody;
@@ -351,8 +352,12 @@ pub struct SectionView<'a> {
     /// repeatable fields read it, for the one thing the draft cannot hold: a row a
     /// depositor added but has not filled in, which is never stored. `None` after an
     /// explicit save, since a row with no text is not data; `Some` for a refusal,
-    /// for add/remove and for an autosave.
+    /// for add/remove, for an agent picker's choice and for an autosave.
     pub posted: Option<&'a FormBody>,
+    /// Values without the format their kind needs, each rendered on its own control
+    /// on every rendering of the draft that holds it. Separate from [`Self::errors`],
+    /// which a format refusal fills with one line per field holding a finding.
+    pub format_findings: Vec<Finding>,
     /// The field one more blank row was just asked for.
     pub adding_row: Option<&'a str>,
     /// The agents an id field may refer to, borrowed from `EditorState`'s snapshot.
@@ -438,6 +443,7 @@ impl SectionView<'_> {
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
+            format_findings: &self.format_findings,
             // The section form dispatches all three propose intents, unlike the entity
             // form's affiliations picker, which reuses these widgets.
             propose: true,
@@ -1000,6 +1006,7 @@ mod tests {
             // the suggestion list a depositor actually gets.
             agents: Some(agent_corpus()),
             posted: None,
+            format_findings: Vec::new(),
             adding_row: None,
             rows_action: format!("/projects/0801d/sections/{section_id}/fields"),
             awaiting_release: false,

@@ -302,6 +302,7 @@ impl EntityView<'_> {
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
+            format_findings: &[],
             // Never the propose controls: this route dispatches none of the propose
             // intents, so they would be dead controls; see Rows::propose.
             propose: false,

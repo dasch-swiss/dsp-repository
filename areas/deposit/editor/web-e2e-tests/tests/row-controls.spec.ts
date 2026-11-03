@@ -4,6 +4,7 @@ import {
   DEPOSITOR_SHORTCODE,
   DEPOSITOR_STATE,
   SWEEP_SHORTCODE,
+  TYPED_SHORTCODE,
   VARIANT_SHORTCODE,
 } from "../playwright.config";
 
@@ -135,6 +136,76 @@ test.describe("row controls resolve", () => {
         failures,
         `row controls that did not resolve:\n${failures.join("\n")}`,
       ).toEqual([]);
+    });
+  }
+});
+
+/**
+ * A link-shaped control in the first stored row of each row shape. "Basel" is
+ * not a web address, and a draft keeps it as typed all the same.
+ */
+const TYPED_LINKS = [
+  {
+    section: "dataset",
+    field: "spatialCoverage",
+    name: "spatialCoverage.r0.ref.url",
+  },
+  {
+    section: "dataset",
+    field: "temporalCoverage",
+    name: "temporalCoverage.r0.ref.url",
+  },
+  { section: "dataset", field: "disciplines", name: "disciplines.r0.ref.url" },
+  {
+    section: "publications",
+    field: "publications",
+    name: "publications.r0.pid",
+  },
+  { section: "access", field: "funding", name: "funding.r0.url" },
+];
+
+const TYPED = "Basel";
+
+test.describe("a typed value survives the row controls", () => {
+  for (const { section, field, name } of TYPED_LINKS) {
+    test(`${field}: Add and Remove keep what was typed`, async ({ page }) => {
+      await page.goto(sectionUrl(TYPED_SHORTCODE, section));
+      const before = await rowCount(page, field);
+      const control = page.locator(`[name="${name}"]`);
+      await control.fill(TYPED);
+
+      // The body tells "never posted" from "posted, then lost on the way back".
+      const posted = page.waitForRequest(
+        (request) =>
+          request.method() === "POST" &&
+          request.url().endsWith(`/fields/${field}/add`),
+      );
+      await page
+        .locator(`[formaction$="/fields/${field}/add"]`)
+        .first()
+        .click();
+      const body = new URLSearchParams((await posted).postData() ?? "");
+      expect(body.get(name), `${name} was not posted by Add`).toBe(TYPED);
+      // The count first: until the re-render lands, the control still shows
+      // what was typed into it.
+      await expect.poll(() => rowCount(page, field)).toBe(before + 1);
+      await expect(
+        control,
+        `${name} was posted, then emptied by the re-render`,
+      ).toHaveValue(TYPED);
+
+      await page
+        .locator(`[formaction*="/fields/${field}/"][formaction$="/remove"]`)
+        .last()
+        .click();
+      await expect.poll(() => rowCount(page, field)).toBe(before);
+      await expect(control, `${name} was emptied by Remove`).toHaveValue(TYPED);
+
+      await page.goto(sectionUrl(TYPED_SHORTCODE, section));
+      await expect(
+        page.locator(`[name="${name}"]`),
+        `${name} did not reach the stored draft`,
+      ).toHaveValue(TYPED);
     });
   }
 });

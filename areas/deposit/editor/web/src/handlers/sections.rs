@@ -25,7 +25,7 @@ use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::registry::{self, Audience, Section};
 use editor_core::form::submit::over_cap;
-use editor_core::form::{apply, FormBody, Shape};
+use editor_core::form::{apply, format, FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::{normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState};
 use editor_core::repository::{
@@ -129,6 +129,14 @@ fn unknown_agent_message(id: &str) -> String {
 const SUBMIT_REFUSED_SENTINEL: &str = "This project cannot be submitted yet: a field holds a word the repository \
                                        reserves for \"no value yet\". Your draft has been saved, and each one is \
                                        named below with a link to it.";
+
+const SUBMIT_REFUSED_FORMAT: &str = "This project cannot be submitted yet: some values are not in the format they \
+                                     need. Your draft has been saved, and each field that needs changing is named \
+                                     beside it, or below with a link when it is in another section.";
+
+/// The field-level error a field holding a format finding renders as. The control
+/// itself says which value and why, where the field has one.
+const FORMAT_FIELD_MESSAGE: &str = "A value in this field is not in the format it needs.";
 
 /// The refusal an unfinished entity proposal of this project's own renders as.
 const SUBMIT_REFUSED_PROPOSAL_INCOMPLETE: &str = "This project cannot be submitted yet: a person or organisation \
@@ -632,9 +640,13 @@ pub(crate) async fn act(
     };
     span.record("form.intent", tracing::field::display(intent.as_str()));
     // The autosave trigger has no submitter, so it alone posts no intent; see
-    // `Rendering::keep_posted` for what that changes. A picker's choice renders the
-    // same way: the rest of the form may hold a row that is not storable yet.
-    let autosave = body.get(INTENT).is_none_or(|intent| page::chosen_agent(intent).is_some());
+    // `Rendering::keep_posted` and `Rendering::before_autosave` for what that changes.
+    // A picker's choice keeps the body too, as the rest of the form may hold a row
+    // that is not storable yet.
+    let autosave = body.get(INTENT).is_none();
+    let keep_posted = autosave || body.get(INTENT).is_some_and(|intent| page::chosen_agent(intent).is_some());
+    // Taken before the write below changes the draft.
+    let before_autosave = autosave.then(|| context.draft.clone());
 
     if intent == Intent::Withdraw || intent == Intent::ConfirmWithdrawal {
         return withdraw(&state, &user, &shortcode, &context, headers, intent).await;
@@ -693,6 +705,7 @@ pub(crate) async fn act(
         let rendering = Rendering {
             notice: Some(page::Notice::Changed { by: context.last_editor.as_deref(), at: &conflict }),
             keep_posted: true,
+            before_autosave: before_autosave.as_ref(),
             ..Rendering::default()
         };
         return if is_enhanced(&headers) {
@@ -710,7 +723,16 @@ pub(crate) async fn act(
     if intent == Intent::Save {
         span.record("form.outcome", "saved");
         tracing::info!("saved a project draft");
-        return saved(&shortcode, &context, headers, autosave);
+        return saved(
+            &shortcode,
+            &context,
+            headers,
+            Rendering {
+                keep_posted,
+                before_autosave: before_autosave.as_ref(),
+                ..Rendering::default()
+            },
+        );
     }
 
     // A search stores the body exactly as a save does — so nothing typed is at risk of being
@@ -1129,6 +1151,24 @@ async fn submit(
                     .collect();
                 refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_SENTINEL, &errors)
             }
+            SubmitRefusal::Format(findings) => {
+                span.record("form.outcome", "format");
+                tracing::info!(
+                    fields.format = findings.len(),
+                    "refused a submission holding a value without its format"
+                );
+                // Only fields outside this section, each once: a field here shows its finding
+                // at its control. One RDU accepted has none, but its value passed this gate at
+                // the submit RDU accepted it from.
+                let shown: Vec<&str> = context.section.fields_for(context.audience).map(|field| field.id).collect();
+                let mut errors: Vec<(String, String)> = Vec::new();
+                for finding in findings.iter().filter(|finding| !shown.contains(&finding.field.id)) {
+                    if !errors.iter().any(|(named, _)| named == finding.field.id) {
+                        errors.push((finding.field.id.to_string(), FORMAT_FIELD_MESSAGE.to_string()));
+                    }
+                }
+                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_FORMAT, &errors)
+            }
             SubmitRefusal::Invalid(unresolved) => {
                 span.record("form.outcome", "invalid");
                 tracing::info!(
@@ -1535,8 +1575,8 @@ async fn withdraw(
 }
 
 /// A successful save: a redirect on the plain path, the patched region on the
-/// enhanced one.
-fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap, autosave: bool) -> Response {
+/// enhanced one, rendered as `rendering` with the saved notice.
+fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap, rendering: Rendering<'_>) -> Response {
     if !is_enhanced(&headers) {
         // POST-redirect-GET: a `POST` left in the history re-posts on
         // refresh. `apply_and_store` always sets `context.record` before this
@@ -1546,15 +1586,7 @@ fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap, autosave: b
             None => redirect_here(shortcode, context),
         };
     }
-    region(
-        shortcode,
-        context,
-        Rendering {
-            notice: Some(page::Notice::Saved),
-            keep_posted: autosave,
-            ..Rendering::default()
-        },
-    )
+    region(shortcode, context, Rendering { notice: Some(page::Notice::Saved), ..rendering })
 }
 
 /// A write that moved the project between phases: a submission recorded, one
@@ -1692,6 +1724,7 @@ fn refused_with(
         // A refusal re-renders what was typed, which for a repeatable field
         // includes a row that has been added but not filled in.
         keep_posted: true,
+        before_autosave: None,
     };
     if is_enhanced(&headers) {
         return region(shortcode, context, rendering);
@@ -1746,12 +1779,18 @@ struct Rendering<'a> {
     adding_row: Option<&'a str>,
     /// Whether this render must preserve the posted editing state.
     ///
-    /// Set for a refusal, a row action and an autosave, and deliberately **not**
-    /// for an explicit save: a save commits every row with any text in it, and a
-    /// row that still has none is not data, so dropping it is the point rather
-    /// than a loss. An autosave is the exception because it fires mid-edit: a row
+    /// Set for a refusal, a row action, an agent picker's choice and an autosave, and
+    /// deliberately **not** for an explicit save: a save commits every row with any
+    /// text in it, and a row that still has none is not data, so dropping it is the
+    /// point rather than a loss. An autosave is the exception because it fires mid-edit: a row
     /// whose variant was just chosen holds nothing storable yet.
     keep_posted: bool,
+    /// On the autosave's render, the draft as it stood before that write. The
+    /// autosave fires as a depositor moves on from a control, so it flags no value
+    /// typed since: a control keeps a finding only if its value was already stored,
+    /// failing, before the write. Rows match stored values by value, so a value typed
+    /// into a row that equals one the field already held failing is flagged too.
+    before_autosave: Option<&'a ProjectDraft>,
 }
 
 /// The section region, as the enhanced path's `datastar-patch-elements`.
@@ -1826,6 +1865,15 @@ fn view<'a>(
     stored: &'a Stored,
     rendering: Rendering<'a>,
 ) -> page::SectionView<'a> {
+    let posted = rendering.keep_posted.then_some(context.posted).flatten();
+    // From the draft at every render rather than from the write, so the redirect's
+    // `GET` and the patched region show the same findings.
+    let fields = || context.section.fields_for(context.audience);
+    let mut format_findings = format::findings(fields(), &context.draft, posted);
+    if let Some(before) = rendering.before_autosave {
+        let shown = format::findings(fields(), before, posted);
+        format_findings.retain(|finding| shown.iter().any(|earlier| earlier.control == finding.control));
+    }
     page::SectionView {
         shortcode,
         project_name: context.project_name,
@@ -1865,7 +1913,8 @@ fn view<'a>(
         signed_out_at: stored.signed_out_at.as_deref(),
         notice: rendering.notice,
         agents: Some(&context.agents),
-        posted: rendering.keep_posted.then_some(context.posted).flatten(),
+        posted,
+        format_findings,
         adding_row: rendering.adding_row,
         rows_action: format!("/projects/{shortcode}/sections/{}/fields", context.section.id),
     }

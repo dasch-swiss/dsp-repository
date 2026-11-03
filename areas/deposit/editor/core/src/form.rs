@@ -33,11 +33,12 @@
 //! three are pinned by `editor-core/tests/untouched_form_round_trip.rs`, which
 //! runs the form over the committed corpus.
 
+pub mod format;
 pub mod obligation;
 pub mod registry;
 pub mod submit;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use serde_json::{Map, Value};
 use shared_metadata::is_placeholder;
@@ -161,6 +162,20 @@ impl FormBody {
         keys
     }
 
+    /// The first value posted under each name starting with `prefix`, in one pass:
+    /// what a reader looking up many names under one field uses instead of a
+    /// [`Self::get`] per name, which is quadratic in the pairs.
+    #[must_use]
+    pub fn first_values(&self, prefix: &str) -> HashMap<&str, &str> {
+        let mut found: HashMap<&str, &str> = HashMap::new();
+        for (key, value) in &self.pairs {
+            if key.starts_with(prefix) {
+                found.entry(key.as_str()).or_insert(value.as_str());
+            }
+        }
+        found
+    }
+
     /// Whether more than `cap` values arrived under `name` itself: the
     /// repeated-name counterpart of [`Self::exceeds_entries`]. Counts every pair
     /// rather than distinct values, because a body carrying a thousand copies of
@@ -222,6 +237,14 @@ impl FormBody {
         }
         found
     }
+}
+
+/// The key a stored row renders under when no posted body names its rows: its
+/// position. The form and the format findings both name rows this way, so a finding
+/// lands on the control it is about.
+#[must_use]
+pub fn stored_row_key(position: usize) -> String {
+    format!("r{position}")
 }
 
 /// A name segment the server will use as a map key: a language tag or a row key.
@@ -1118,6 +1141,14 @@ mod tests {
         let body = body(&[("name", "first"), ("name", "second")]);
         assert_eq!(body.get("name"), Some("first"));
         assert_eq!(body.get("nope"), None);
+    }
+
+    #[test]
+    fn first_values_agrees_with_get_and_stays_under_its_prefix() {
+        let body = body(&[("a.r0.url", "first"), ("a.r0.url", "second"), ("b.r0.url", "other")]);
+        let found = body.first_values("a.");
+        assert_eq!(found.get("a.r0.url").copied(), body.get("a.r0.url"));
+        assert!(!found.contains_key("b.r0.url"), "{found:?}");
     }
 
     #[test]

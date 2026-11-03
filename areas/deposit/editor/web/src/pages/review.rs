@@ -263,7 +263,7 @@ fn project_cell(shortcode: &str, name: Option<&str>) -> Markup {
     let label = html! {
         @match name {
             Some(name) => (name)
-            None => span class="italic" { "Not in the published set (" (shortcode) ")" }
+            None => span class="italic" { "Not published yet (" (shortcode) ")" }
         }
     };
     html! {
@@ -378,6 +378,9 @@ impl ReviewRow<'_> {
 /// vocabulary ([`ProposalDecision`], not [`Decision`]).
 pub struct EntityRow<'a> {
     pub proposal: &'a EntityProposal,
+    /// What the row and its decision legend call the entity: [`crate::entity::entity_labels`]'s,
+    /// so two rows never read alike.
+    pub label: String,
     /// The proposed entity, parsed from [`EntityProposal::payload`]. Owned:
     /// nothing else needs the parsed value to outlive this row.
     pub payload: Value,
@@ -539,9 +542,8 @@ fn unpublished_banner(view: &ReviewView<'_>) -> Markup {
     html! {
         ({
             alert(
-                    "This project is not in the published set this deployment carries, so there is nothing to compare \
-                 against. Every field below is new, and no field can be reverted — there is no published value to \
-                 revert to.",
+                    "This project has not been published yet, so there is nothing to compare against. Every field \
+                 below is new, and no field can be reverted — there is no published value to revert to.",
                 )
                 .variant(AlertVariant::Info)
                 .title("Nothing published to compare against")
@@ -683,7 +685,7 @@ fn entity_row(row: &EntityRow<'_>) -> Markup {
     html! {
         div class="rounded border border-neutral-300 bg-white" {
             div class="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2" {
-                strong { (row.proposal.kind.label()) " " (row.proposal.entity_id) }
+                strong { (row.label) }
                 ({
                     badge(operation_label(row.proposal.operation))
                         .variant(BadgeVariant::Secondary)
@@ -772,7 +774,7 @@ fn cross_project_notice(row: &EntityRow<'_>) -> Markup {
 /// [`Decision`]'s: a proposed entity has no published value to revert to, so the only honest
 /// opposite of accepting one is rejecting it.
 fn entity_decision_control(row: &EntityRow<'_>) -> Markup {
-    let legend = format!("{} {} — decision", row.proposal.kind.label(), row.proposal.entity_id);
+    let legend = format!("{} — decision", row.label);
     let selected = row.proposal.decision.map_or("", ProposalDecision::as_str);
     let mut group = radio_group(format!("{ENTITY_DECISION_PREFIX}.{}", row.proposal.entity_id), legend)
         .inline()
@@ -1211,6 +1213,7 @@ mod tests {
             json!({"givenNames": ["Ada"], "familyNames": ["Lovelace"], "jobTitles": [], "email": "ada@example.org"});
         let row = EntityRow {
             proposal: &proposal,
+            label: "Person person-417".to_string(),
             payload,
             published: None,
             other_projects: &[],
@@ -1224,12 +1227,34 @@ mod tests {
     }
 
     #[test]
+    fn an_entity_row_names_the_entity_where_a_name_resolves_and_falls_back_to_kind_and_id() {
+        let proposal = an_entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-042");
+        let named = EntityRow {
+            proposal: &proposal,
+            label: "Ada Lovelace (person)".to_string(),
+            payload: json!({}),
+            published: None,
+            other_projects: &[],
+        };
+        let out = entity_row(&named).into_string();
+        assert!(out.contains("<strong>Ada Lovelace (person)</strong>"), "{out}");
+        assert!(out.contains("Ada Lovelace (person) — decision"), "{out}");
+        assert!(!out.contains("Person person-042"), "{out}");
+
+        let unnamed = EntityRow { label: "Person person-042".to_string(), ..named };
+        let out = entity_row(&unnamed).into_string();
+        assert!(out.contains("<strong>Person person-042</strong>"), "{out}");
+        assert!(out.contains("Person person-042 — decision"), "{out}");
+    }
+
+    #[test]
     fn a_change_proposal_shows_the_published_value_beside_the_proposed_one() {
         let proposal = an_entity_proposal(ProposalKind::Organization, ProposalOperation::Change, "organization-008");
         let published = json!({"id": "organization-008", "name": "Old Name", "url": "https://old.example/"});
         let payload = json!({"name": "New Name", "url": "https://old.example/"});
         let row = EntityRow {
             proposal: &proposal,
+            label: "Person person-417".to_string(),
             payload,
             published: Some(&published),
             other_projects: &[],
@@ -1245,6 +1270,7 @@ mod tests {
         let proposal = an_entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-417");
         let row = EntityRow {
             proposal: &proposal,
+            label: "Person person-417".to_string(),
             payload: json!({}),
             published: None,
             other_projects: &[],
@@ -1262,6 +1288,7 @@ mod tests {
         let others = vec!["0803".to_string()];
         let row = EntityRow {
             proposal: &proposal,
+            label: "Person person-417".to_string(),
             payload: json!({}),
             published: None,
             other_projects: &others,
@@ -1272,6 +1299,7 @@ mod tests {
 
         let alone = EntityRow {
             proposal: &proposal,
+            label: "Person person-417".to_string(),
             payload: json!({}),
             published: None,
             other_projects: &[],
@@ -1321,7 +1349,7 @@ mod tests {
         let cell = project_cell("0801d", None).into_string();
         assert!(cell.contains(r#"href="/projects/0801d""#), "{cell}");
         assert!(
-            cell.contains(r#"<span class="italic">Not in the published set (0801d)</span>"#),
+            cell.contains(r#"<span class="italic">Not published yet (0801d)</span>"#),
             "{cell}"
         );
         assert!(pending_row(&pending).into_string().contains(&cell));

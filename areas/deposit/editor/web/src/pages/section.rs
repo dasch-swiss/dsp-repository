@@ -32,6 +32,7 @@ use mosaic_tiles::link::link;
 use serde_json::Value;
 use shared_datastar as datastar;
 
+use crate::entity::{entity_label, entity_labels, Precedence};
 use crate::form::widgets::{field_row, Mode, Rows, FOCUS_AUTOFOCUS};
 use crate::form::INTENT;
 
@@ -533,8 +534,8 @@ fn heading(view: &SectionView<'_>) -> Markup {
                     // A project may exist only locally; a blank form with no explanation
                     // reads as a failure to load.
                     p class="text-gray-600" {
-                        "This project is not in the published set this deployment carries, so there was nothing \
-                         to pre-fill. Anything you enter is kept as a draft."
+                        "This project has not been published yet, so there was nothing to pre-fill. \
+                         Anything you enter is kept as a draft."
                     }
                 }
             }
@@ -865,9 +866,8 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// A proposal was just started, named by kind and id, with a link onward. Its
-/// own function per this repo's rule on a nested `html!` passed as a call
-/// argument (`maudfmt` skips it and `cargo fmt` mangles it).
+/// The link onward identifies the proposal: a new one is not named by an id, since it has no
+/// name yet.
 fn proposed_notice(
     view: &SectionView<'_>,
     kind: ProposalKind,
@@ -876,8 +876,13 @@ fn proposed_notice(
 ) -> Markup {
     let noun = kind.label().to_lowercase();
     let lead = match operation {
-        ProposalOperation::New => format!("A new {noun} has been started as {entity_id}."),
-        ProposalOperation::Change => format!("A change to {entity_id} has been started."),
+        ProposalOperation::New => format!("A new {noun} has been started."),
+        ProposalOperation::Change => {
+            format!(
+                "A change to {} has been started.",
+                entity_label(kind, entity_id, view.agents, Precedence::Proposed)
+            )
+        }
     };
     let body = html! {
         p { (lead) }
@@ -915,13 +920,18 @@ fn proposal_findings_elsewhere(view: &SectionView<'_>) -> Markup {
 /// block passed as a call argument and `cargo fmt` then flattens it, with `just
 /// check` green because it only verifies `maudfmt` is a no-op.
 fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
+    let labels = entity_labels(
+        view.proposal_findings.iter().map(|(id, kind, _)| (*kind, id.as_str())),
+        view.agents,
+        Precedence::Proposed,
+    );
     html! {
         ul class="flex flex-col gap-2" {
-            @for (entity_id, kind, message) in view.proposal_findings {
+            @for ((entity_id, _, message), label) in view.proposal_findings.iter().zip(labels) {
                 li {
                     a   href={ "/projects/" (view.shortcode) "/entities/" (entity_id) }
                         class="underline font-bold"
-                    { (kind.label()) " " (entity_id) }
+                    { (label) }
                     ": "
                     (message)
                 }
@@ -943,6 +953,11 @@ fn proposals_summary(view: &SectionView<'_>) -> Markup {
     if live.is_empty() {
         return html! {};
     }
+    let labels = entity_labels(
+        live.iter().map(|proposal| (proposal.kind, proposal.entity_id.as_str())),
+        view.agents,
+        Precedence::Proposed,
+    );
     html! {
         div class="rounded border border-neutral-300 bg-white p-4 mb-6" {
             // h2, not h3: this panel renders above the section form, whose title is
@@ -950,24 +965,11 @@ fn proposals_summary(view: &SectionView<'_>) -> Markup {
             // level.
             h2 class="font-display text-base mb-2" { "Proposed persons and organisations" }
             ul class="flex flex-col gap-1" {
-                @for proposal in &live {
-                    @let resolved = view
-                        .agents
-                        .and_then(|agents| agents.get(&proposal.entity_id));
+                @for (proposal, label) in live.iter().zip(labels) {
                     li {
-                        span class="text-xs font-bold uppercase tracking-wide text-neutral-600" {
-                            (proposal.kind.label())
-                        }
-                        " "
                         a   href={ "/projects/" (view.shortcode) "/entities/" (proposal.entity_id) }
                             class="underline font-bold"
-                        {
-                            @match resolved {
-                                Some(agent) => (agent.label)
-                                None => (proposal.entity_id)
-                            }
-                        }
-                        @if resolved.is_some() { " (" (proposal.entity_id) ")" }
+                        { (label) }
                     }
                 }
             }
@@ -1685,6 +1687,92 @@ mod tests {
         let out = page(&view).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
+    }
+
+    fn a_live_proposal(
+        kind: ProposalKind,
+        operation: ProposalOperation,
+        entity_id: &str,
+        payload: &str,
+    ) -> EntityProposal {
+        EntityProposal {
+            id: Default::default(),
+            shortcode: "0801d".to_string(),
+            entity_id: entity_id.to_string(),
+            kind,
+            operation,
+            payload: payload.to_string(),
+            status: editor_core::proposals::ProposalStatus::Draft,
+            decision: None,
+            proposed_by: None,
+            created_at: Default::default(),
+            updated_at: Default::default(),
+            decided_by: None,
+            decided_at: None,
+            retired_at: None,
+        }
+    }
+
+    const ADA: &str = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+
+    #[test]
+    fn the_proposals_box_and_the_findings_tell_two_same_named_proposals_apart() {
+        let draft = published_draft();
+        let proposals = [
+            a_live_proposal(ProposalKind::Person, ProposalOperation::New, "person-900", ADA),
+            a_live_proposal(ProposalKind::Person, ProposalOperation::New, "person-901", ADA),
+            a_live_proposal(
+                ProposalKind::Organization,
+                ProposalOperation::New,
+                "organization-900",
+                r#"{"name":"Acme","url":"https://acme.example/"}"#,
+            ),
+        ];
+        let scope = AgentScope::with_proposals(published_agents(), &proposals);
+        let findings: Vec<(String, ProposalKind, String)> = proposals
+            .iter()
+            .map(|proposal| (proposal.entity_id.clone(), proposal.kind, "needs finishing".to_string()))
+            .collect();
+        let mut view = view(&draft, "contributors", Audience::Everyone);
+        view.agents = Some(&scope);
+        view.proposals = &proposals;
+        view.proposal_findings = &findings;
+
+        for out in [
+            proposals_summary(&view).into_string(),
+            proposal_findings_list(&view).into_string(),
+        ] {
+            assert!(out.contains("Ada Lovelace (person, person-900)"), "{out}");
+            assert!(out.contains("Ada Lovelace (person, person-901)"), "{out}");
+            assert!(out.contains(">Acme (organisation)<"), "a name held once carries no id: {out}");
+            assert!(!out.contains("organization-900<"), "{out}");
+        }
+    }
+
+    #[test]
+    fn a_new_proposal_notice_names_no_id_and_a_change_notice_names_the_entity() {
+        let draft = published_draft();
+        let mut view = view(&draft, "contributors", Audience::Everyone);
+        let new = proposed_notice(&view, ProposalKind::Person, ProposalOperation::New, "person-900").into_string();
+        assert!(new.contains("A new person has been started."), "{new}");
+        assert!(!new.contains("started as"), "{new}");
+        // The id is in the link's target, not in anything read.
+        assert!(!new.replace("/entities/person-900", "").contains("person-900"), "{new}");
+
+        let proposals = [a_live_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-900",
+            ADA,
+        )];
+        let scope = AgentScope::with_proposals(published_agents(), &proposals);
+        view.agents = Some(&scope);
+        let change =
+            proposed_notice(&view, ProposalKind::Person, ProposalOperation::Change, "person-900").into_string();
+        assert!(
+            change.contains("A change to Ada Lovelace (person) has been started."),
+            "{change}"
+        );
     }
 }
 

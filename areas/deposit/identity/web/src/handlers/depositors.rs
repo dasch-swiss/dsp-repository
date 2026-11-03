@@ -51,7 +51,7 @@ const UNAVAILABLE_TITLE: &str = "Page unavailable — DaSCH Metadata Editor";
 const DUPLICATE_EMAIL: &str = "An account already uses that email address.";
 const GONE: &str = "That account no longer exists. It may have been removed in another window.";
 const STORAGE_FAILED: &str = "The change could not be saved. Try again.";
-const RDU_IMMUTABLE: &str = "RDU accounts come from the EDITOR_RDU_EMAILS setting and cannot be changed here.";
+const RDU_IMMUTABLE: &str = "RDU members are set up by DaSCH and can't be changed here.";
 
 /// The form behind create and edit alike.
 #[derive(Deserialize)]
@@ -932,7 +932,7 @@ mod route_tests {
     }
 
     #[tokio::test]
-    async fn test_the_list_shows_rdu_accounts_without_controls_and_names_the_setting() {
+    async fn test_the_list_shows_rdu_accounts_without_controls_and_says_dasch_sets_them_up() {
         // RDU has to see who administers the service; the controls just do not
         // act on them.
         let (state, _) = test_state("dep-list-render").await;
@@ -943,7 +943,11 @@ mod route_tests {
         let body = body_string(app.clone().oneshot(as_session(get("/depositors"), &session)).await.unwrap()).await;
         assert!(body.contains("rdu@dasch.swiss"), "{body}");
         assert!(body.contains(DEPOSITOR_EMAIL), "{body}");
-        assert!(body.contains("EDITOR_RDU_EMAILS"), "{body}");
+        assert!(
+            body.contains("RDU members are set up by DaSCH and can't be changed here."),
+            "{body}"
+        );
+        assert!(!body.contains("EDITOR_RDU_EMAILS"), "{body}");
         assert!(body.contains(&format!("/depositors/{}/edit", target.id)), "{body}");
         assert!(!body.contains(&format!("/depositors/{}/edit", admin.id)), "{body}");
     }

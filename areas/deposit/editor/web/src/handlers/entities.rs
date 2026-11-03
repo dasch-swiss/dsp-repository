@@ -626,11 +626,13 @@ fn render_page(
 ) -> Response {
     // Read before `rendering` moves into `view`; see `sections.rs::render_page`.
     let prefix = rendering.notice.and_then(|notice| notice.title_prefix());
-    let title = format!(
-        "{} {} — DaSCH Metadata Editor",
-        context.proposal.kind.label(),
-        context.proposal.entity_id
+    let label = crate::entity::entity_label(
+        context.proposal.kind,
+        &context.proposal.entity_id,
+        Some(&context.agents),
+        crate::entity::Precedence::Proposed,
     );
+    let title = format!("{label} — DaSCH Metadata Editor");
     let title = match prefix {
         Some(prefix) => format!("{prefix} — {title}"),
         None => title,
@@ -930,6 +932,41 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_renamed_published_organisation_shows_its_new_name_on_its_own_page_after_a_save() {
+        let (state, _) = test_state("entity-change-shows-new-name").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        const ID: &str = "organization-008";
+        let published_name = state.agents.get(ID).expect("a published agent").label.clone();
+        let contributors = "/projects/0801d/sections/contributors";
+        as_session(
+            &app,
+            post(
+                contributors,
+                &format!("attributions.row=r0&attributions.r0.contributor={ID}&attributions.r0.role=Funder"),
+            ),
+            &session,
+        )
+        .await;
+        as_session(&app, post(contributors, &format!("intent=propose-changes:{ID}")), &session).await;
+        let uri = format!("/projects/0801d/entities/{ID}");
+
+        let before = body_string(as_session(&app, get(&uri), &session).await).await;
+        assert!(
+            before.contains(&format!(">{published_name} (organisation)</h1>")),
+            "a change starts out under the published name: {before}"
+        );
+
+        as_session(&app, post(&uri, "name=Renamed+Organisation"), &session).await;
+
+        let after = body_string(as_session(&app, get(&uri), &session).await).await;
+        assert!(after.contains(">Renamed Organisation (organisation)</h1>"), "{after}");
+        assert!(after.contains("<title>Renamed Organisation (organisation) — "), "{after}");
+        assert!(!after.contains(&format!(">{published_name} (organisation)</h1>")), "{after}");
+    }
+
+    #[tokio::test]
     async fn emptying_every_address_member_drops_the_whole_group() {
         let (state, _) = test_state("entity-address-empty").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -1010,6 +1047,34 @@ mod tests {
         assert!(payload.get("id").is_none(), "id must never survive a save: {payload}");
     }
 
+    fn h1_of(body: &str) -> &str {
+        let start = body.find("<h1").expect("an h1");
+        &body[start..start + body[start..].find("</h1>").expect("h1 closes")]
+    }
+
+    #[tokio::test]
+    async fn the_heading_and_title_carry_the_name_once_one_resolves() {
+        let (state, _) = test_state("entity-heading-name").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+
+        let fresh = body_string(as_session(&app, get(&uri), &session).await).await;
+        let fallback = format!("Person {entity_id}");
+        assert!(h1_of(&fresh).contains(&fallback), "{}", h1_of(&fresh));
+        assert!(title_of(&fresh).starts_with(&fallback), "{}", title_of(&fresh));
+
+        as_session(&app, post(&uri, "givenNames.row=r0&givenNames.r0=Ada&familyNames.row=r0&familyNames.r0=Lovelace&jobTitles.row=r0&jobTitles.r0=Archivist"), &session)
+            .await;
+        let named = body_string(as_session(&app, get(&uri), &session).await).await;
+        assert!(h1_of(&named).contains("Ada Lovelace (person)"), "{}", h1_of(&named));
+        assert!(!h1_of(&named).contains(&entity_id), "{}", h1_of(&named));
+        assert!(title_of(&named).starts_with("Ada Lovelace (person) — "), "{}", title_of(&named));
+        assert!(!title_of(&named).contains(&entity_id), "{}", title_of(&named));
+    }
+
     #[tokio::test]
     async fn discard_asks_first_and_only_withdraws_once_confirmed() {
         let (state, _) = test_state("entity-discard-confirm").await;
@@ -1021,7 +1086,12 @@ mod tests {
 
         let confirm = as_session(&app, post(&uri, "intent=discard-confirm"), &session).await;
         assert_eq!(confirm.status(), StatusCode::OK);
-        assert!(body_string(confirm).await.contains("cannot be undone"));
+        let confirm = body_string(confirm).await;
+        assert!(confirm.contains("cannot be undone"), "{confirm}");
+        assert!(
+            confirm.contains(&format!("proposal for Person {entity_id} removes")),
+            "{confirm}"
+        );
         assert_eq!(
             proposals_for(&state, "0801d").await[0].status,
             ProposalStatus::Draft,

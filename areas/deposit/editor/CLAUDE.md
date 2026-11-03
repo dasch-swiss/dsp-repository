@@ -86,9 +86,11 @@ Each store holds one baseline, `areas/deposit/identity/store/src/migrations/` an
 
 ## Depositor-facing vocabulary is normative
 
-REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, Approved, Online — and REQ-2.2 forbids the words "export", "JSON", "transfer", "commit" and "pull request" anywhere a depositor reads. Both live on `editor_core::status::ProjectState`, which is what the list column, the `/states` page and the section page's approved box all read, so the three cannot drift.
+REQ-2.1 closes the state list to exactly five — Draft, Submitted, In review, Approved, Online — and REQ-2.2 forbids the words "export", "JSON", "transfer", "commit" and "pull request" anywhere a depositor reads. Both live on `editor_core::status::ProjectState`, which the list column, the `/states` page, the section page's approved box and RDU's locked box read. The depositor's locked box (`Locked::message`) and the submitted and withdrawn flash bodies are literal strings in `pages/section.rs`, so they are covered only by the vocabulary test and the E2E pass.
 
 `areas/deposit/editor/web/tests/depositor_vocabulary.rs` asserts the forbidden words against **rendered markup with tags stripped**, and the E2E suite asserts them again against real pages. Both layers are needed, and the reason is structural: a rendering test exercises one view function in isolation and cannot see a string the server assembles into a slot that test left empty. Only the browser pass reads the assembled page. This is not hypothetical — it is how the "pull request" wording above survived until DEV-6917 added the browser pass.
+
+No setting names on a depositor's screen, and no entity id except in two cases: an entity with no name yet is labelled with its id ("Person person-042"), and two entities whose labels collide in one list carry their id as a tiebreak ("Ada Lovelace (person, person-042)"). An entity is named through `entity::entity_label` or `entity_labels` with a precedence (depositor views `Proposed`, RDU review `Published`). The same test file rejects `person-NNN`, `organization-NNN` and `EDITOR_*` in rendered text, with no exception for those two cases: its fixture agents are named and distinct, so neither case is rendered there.
 
 RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism named.
 

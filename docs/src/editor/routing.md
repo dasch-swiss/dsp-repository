@@ -25,7 +25,7 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `…/entities/{proposal}/fields/{field}/{key}/remove` | POST | signed in + assigned | Drop one row, for the reason the section's own row path gives. |
 | `/projects/new` | GET, POST | RDU | The create-a-project form, and registering the project with its seeded draft. |
 | `/projects/{shortcode}/remove` | GET, POST | RDU | The confirmation, and deleting a created project with its draft and review rounds, and withdrawing its entity proposals not yet published, while it has no submission or approved record. |
-| `/review` | GET | RDU | The review queue: every pending submission oldest first, and every draft. |
+| `/review` | GET | RDU | The review queue: every pending submission oldest first, and the drafts in progress. |
 | `/review/{shortcode}` | GET, POST | RDU | The field-by-field diff, and the claim, decision save, approve, request-changes or reject it makes. |
 | `/depositors` | GET, POST | RDU | The account list, and creating a depositor. |
 | `/depositors/new` | GET | RDU | The create form. |

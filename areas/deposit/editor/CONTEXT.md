@@ -21,6 +21,9 @@ An Actor with its account id parsed once into the `Uuid` the editor's records ho
 The depositor's working copy of one project: a `drafts` row holding a `ProjectDraft`, which is the project's JSON members verbatim — a field not yet filled in is an absent key, an invalid value is kept as typed, and validity is decided once, at submit, by `editor_core::submission::check`. One draft per project, last write wins.
 _Avoid_: working copy, unsaved changes (a draft is saved), "the JSON" or "the export" anywhere a depositor reads (REQ-2.2).
 
+**Draft in progress**:
+A Draft with no Submission row, edited after the project's newest approved Review round, since submitting and approving both leave the `drafts` row in place. A save after approval, even one that changes nothing, lists the draft again. The review queue's second table lists these.
+
 **Submission**:
 A `submissions` row, at most one per project, created when a depositor submits a Draft and deleted by every review outcome; it carries the submitted payload untouched and, while a round runs, the Review state beside it.
 _Avoid_: SIP (the OAIS package; nothing here produces one yet), request, ticket.

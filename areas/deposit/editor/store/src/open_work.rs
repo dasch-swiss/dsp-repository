@@ -1,23 +1,35 @@
-//! [`LiveOpenWork`]: identity's [`OpenWork`] port, answered from the editor's tables.
+//! [`LiveOpenWork`]: identity's [`OpenWork`] port, answered from the editor's tables and the
+//! published set.
 
+use std::collections::BTreeSet;
+use std::path::Path;
 use std::sync::Arc;
 
-use editor_core::repository::{DraftRepository, EditorRepositories, SubmissionRepository};
+use editor_core::published::PublishedProjects;
+use editor_core::records::normalize_shortcode;
+use editor_core::repository::{CreatedProjectRepository, DraftRepository, EditorRepositories, SubmissionRepository};
 use identity_ports::{OpenWork, PortFuture, Unavailable};
 use uuid::Uuid;
 
 /// The editor work still open under an account, for the depositor-removal
-/// confirmation.
+/// confirmation, and the projects the editor knows, for the account screens.
 ///
 /// Over the editor's repository bundle rather than [`crate::Database`], so a test can put a
 /// fault-injecting store in front of it.
 pub struct LiveOpenWork {
     store: Arc<dyn EditorRepositories>,
+    published: PublishedProjects,
 }
 
 impl LiveOpenWork {
-    pub fn new(store: Arc<dyn EditorRepositories>) -> Self {
-        Self { store }
+    /// `data_dir` is the editor's data directory. Its published set is read once, here, as
+    /// `Editor::start` reads it, so both capabilities know the same projects until the next
+    /// restart. A file that fails to load is skipped; the editor's startup logs each one.
+    pub fn new(store: Arc<dyn EditorRepositories>, data_dir: Option<&Path>) -> Self {
+        let published = data_dir
+            .map(|dir| PublishedProjects::load_from(&dir.join("projects")).0)
+            .unwrap_or_default();
+        Self { store, published }
     }
 }
 
@@ -59,11 +71,30 @@ impl OpenWork for LiveOpenWork {
                 .collect())
         })
     }
+
+    fn unknown_projects<'a>(&'a self, shortcodes: &'a [String]) -> PortFuture<'a, Result<Vec<String>, Unavailable>> {
+        Box::pin(async move {
+            let created: BTreeSet<String> = CreatedProjectRepository::list(&*self.store)
+                .await
+                .map_err(Unavailable::new)?
+                .into_iter()
+                .map(|project| normalize_shortcode(&project.shortcode))
+                .collect();
+            Ok(shortcodes
+                .iter()
+                .filter(|shortcode| {
+                    self.published.get(shortcode).is_none() && !created.contains(&normalize_shortcode(shortcode))
+                })
+                .cloned()
+                .collect())
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
+    use editor_core::records::{CreatedProject, DraftRecord};
 
     use super::*;
     use crate::test_support::{open_for_test, seed_draft, seed_submission};
@@ -73,7 +104,49 @@ mod tests {
 
     async fn work(label: &str) -> (Arc<crate::Database>, LiveOpenWork) {
         let db = Arc::new(open_for_test(label).await);
-        (db.clone(), LiveOpenWork::new(db))
+        (db.clone(), LiveOpenWork::new(db, None))
+    }
+
+    fn codes(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    async fn create_project(db: &crate::Database, shortcode: &str) {
+        let now = Utc::now();
+        let project = CreatedProject {
+            shortcode: shortcode.to_string(),
+            name: "A created project".to_string(),
+            created_by: None,
+            created_at: now,
+        };
+        let draft = DraftRecord {
+            shortcode: shortcode.to_string(),
+            payload: "{}".to_string(),
+            updated_by: None,
+            created_at: now,
+            updated_at: now,
+        };
+        CreatedProjectRepository::create(db, &project, &draft).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_a_published_or_created_shortcode_is_known_whatever_its_case() {
+        let db = Arc::new(open_for_test("known-projects").await);
+        let work = LiveOpenWork::new(db.clone(), Some(&editor_core::checkout_dpe_data_dir()));
+        create_project(&db, "9a01").await;
+
+        // `080C` is in the committed corpus.
+        let asked = codes(&["080c", "9A01", "9999", "080C", "0zz0"]);
+        assert_eq!(work.unknown_projects(&asked).await.unwrap(), codes(&["9999", "0zz0"]));
+    }
+
+    #[tokio::test]
+    async fn test_without_a_data_directory_only_created_projects_are_known() {
+        let (db, work) = work("known-without-data").await;
+        create_project(&db, "9a01").await;
+
+        let asked = codes(&["080C", "9a01"]);
+        assert_eq!(work.unknown_projects(&asked).await.unwrap(), codes(&["080C"]));
     }
 
     #[tokio::test]

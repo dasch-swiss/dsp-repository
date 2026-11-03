@@ -18,8 +18,11 @@ _Avoid_: admin, reviewer as a role name (a reviewer is what RDU does on a given 
 A `user_shortcodes` row: one project a depositor may reach, matched on the case-folded Shortcode (`editor-ports`' `Actor::assigned_shortcodes` and `Actor::may_reach`, over what `LiveAuthenticator` hands the editor; `Actor` is defined in [`areas/deposit/editor/CONTEXT.md`](../editor/CONTEXT.md)).
 _Avoid_: permission, membership, assignment (the row is named for the project it grants, not the act).
 
+**Unknown shortcode**:
+An Assigned project whose shortcode names no project in the editor's **Published set** and no **Created project** (both in [`areas/deposit/editor/CONTEXT.md`](../editor/CONTEXT.md)). The account list and edit pages name it as a warning and the account saves regardless; identity learns it through `OpenWork::unknown_projects`, and when that read fails the two pages say the projects could not be checked.
+
 **Open work**:
-What identity asks of the editor through `identity-ports`' `OpenWork`: the drafts an account saved last and its submissions short of `Approved`, which the depositor-removal confirmation names before removal orphans them.
+What identity asks of the editor through `identity-ports`' `OpenWork` about an account's work, `drafts` and `submissions`: the drafts an account saved last and its submissions short of `Approved`, which the depositor-removal confirmation names before removal orphans them. The same port's `unknown_projects` answers the **Unknown shortcode** question, which is about projects rather than work.
 _Avoid_: authored work (a draft is last-write-wins, so the account saved it last, not necessarily created it), pending work ("pending" already qualifies a Submission in Withdrawal).
 
 **Login code**:

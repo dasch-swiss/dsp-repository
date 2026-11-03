@@ -315,6 +315,36 @@ mod depositors {
     }
 
     #[tokio::test]
+    async fn test_the_list_names_an_assigned_shortcode_only_until_rdu_creates_its_project() {
+        let (state, _) = test_state("dep-unknown-project").await;
+        let (_, session) = rdu(&state).await;
+        depositor(&state, DEPOSITOR_EMAIL, &["9a01"]).await;
+        let app = test_app(&state);
+        let list = || async {
+            let response = app.clone().oneshot(as_session(get("/depositors"), &session)).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            body_string(response).await
+        };
+        let warning = r#"Neither published nor created: <code class="font-mono">9a01</code>."#;
+
+        let before = list().await;
+        assert!(before.contains(warning), "{before}");
+
+        let created = app
+            .clone()
+            .oneshot(as_session(
+                post("/projects/new", "shortcode=9A01&name=A+created+project"),
+                &session,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(created.status(), StatusCode::SEE_OTHER, "RDU's project creation should succeed");
+
+        let after = list().await;
+        assert!(!after.contains("Neither published nor created"), "{after}");
+    }
+
+    #[tokio::test]
     async fn test_an_edit_changes_the_three_fields_and_leaves_everything_else_alone() {
         // The record is rebuilt from the stored one, so the fields this surface
         // does not own survive. Without that, correcting a name would silently

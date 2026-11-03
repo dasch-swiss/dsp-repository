@@ -16,6 +16,6 @@ Stated so a violation is describable: no column stores Online; nothing polls the
 
 - A change is Online at the next deployment, never before; `/states` shows the expected wait (REQ-2.6).
 - A record whose pull request merged with reviewer edits reads Waiting for release indefinitely, and RDU resolves it by discarding it from `/approved` (`docs/src/editor/publishing-to-git.md`, "What RDU sees in the editor").
-- The published set stays the editor's, loaded once at start by the `Editor` facade and held, not behind a port (`docs/src/editor/project-representation.md`, "The published set"; `areas/deposit/ADR-0004`, the `Editor` facade).
+- The published set stays the editor's, loaded once at start by the `Editor` facade and held, not behind a port (`docs/src/editor/project-representation.md`, "The published set"; `areas/deposit/ADR-0004`, the `Editor` facade). `editor-store`'s `LiveOpenWork` loads the same files a second time for identity's `OpenWork::unknown_projects`: `deposit-server`, which may not depend on `editor-core` (`areas/deposit/ADR-0004`), cannot hand it the `PublishedProjects` the facade holds, and both are snapshots of one directory, so the two agree until the next restart.
 
 Enforced by: the `reconcile` tests in `editor-web` pin the discard, the dropped-upstream case, the retirement and the end of a created project's registration (**static-analysis**); the single-comparison rule by **review**.

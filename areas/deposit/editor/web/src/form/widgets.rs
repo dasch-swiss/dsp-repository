@@ -87,10 +87,11 @@ pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>
 /// for a proposal that is no longer live.
 pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> Markup {
     let editable_but_unbuilt = !field.display_only && field.shape.is_none();
+    let label_id = format!("{}-label", field.id);
     html! {
         div class="field" {
-            p class="field-label" { (labelled(field)) }
-            (value_display(field, draft))
+            p class="field-label" id=(label_id) { (labelled(field)) }
+            (value_display(field, draft, &label_id))
             @if editable_but_unbuilt {
                 p class="field-hint" { (NOT_READ_YET) }
             } @else if let Some(why) = why {
@@ -104,9 +105,110 @@ pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> 
     }
 }
 
-/// The stored value, rendered for reading.
-fn value_display(field: &Field, draft: &ProjectDraft) -> Markup {
-    value_markup(draft.get(field.id))
+/// The stored value, rendered for reading. `label_id` is the id of the field's
+/// label, for a rendering that is a group the label names.
+fn value_display(field: &Field, draft: &ProjectDraft, label_id: &str) -> Markup {
+    match field.id {
+        "legalInfo" => legal_info_display(draft.get(field.id), label_id),
+        _ => value_markup(draft.get(field.id)),
+    }
+}
+
+const LICENCE_URI: &str = "Licence URI";
+
+/// The licence, copyright holder and authorship of each legal-info entry, read-only.
+///
+/// Lives here and not in [`value_markup`]: the review surface shares that and
+/// keeps "N entries" for every structured field.
+///
+/// Members are read from the JSON rather than through `LegalInfo`, which fails a
+/// whole entry on one missing member and would make it vanish.
+fn legal_info_display(value: Option<&Value>, label_id: &str) -> Markup {
+    let entries: Vec<Vec<(&str, String)>> = match value {
+        Some(Value::Array(items)) => items
+            .iter()
+            .filter(|item| item.as_object().is_some_and(|members| !members.is_empty()))
+            .map(legal_info_rows)
+            .collect(),
+        _ => Vec::new(),
+    };
+    html! {
+        div role="group" aria-labelledby=(label_id) {
+            @if entries.is_empty() {
+                p class="italic text-neutral-600" { (NO_VALUE) }
+            } @else if entries.len() == 1 { (legal_info_entry(&entries[0], 1)) } @else {
+                ul class="flex flex-col gap-3" {
+                    @for (index, rows) in entries.iter().enumerate() {
+                        li class="border-t border-neutral-300 pt-3 first:border-t-0 first:pt-0" {
+                            (legal_info_entry(rows, index + 1))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn legal_info_rows(item: &Value) -> Vec<(&'static str, String)> {
+    let license = item.get("license");
+    let from_license = |key: &str| license.and_then(|license| member_text(license, key));
+    let authorship = item.get("authorship").and_then(Value::as_array).map(|names| {
+        names
+            .iter()
+            .filter_map(Value::as_str)
+            .filter(|name| is_shown(name))
+            .collect::<Vec<_>>()
+            .join(", ")
+    });
+    [
+        ("Licence", from_license("licenseIdentifier")),
+        ("Licence date", from_license("licenseDate")),
+        (LICENCE_URI, from_license("licenseURI")),
+        ("Copyright holder", member_text(item, "copyrightHolder")),
+        ("Authorship", authorship.filter(|names| !names.is_empty())),
+    ]
+    .into_iter()
+    .filter_map(|(label, text)| Some((label, text?)))
+    .collect()
+}
+
+fn member_text(parent: &Value, key: &str) -> Option<String> {
+    parent
+        .get(key)
+        .and_then(Value::as_str)
+        .filter(|text| is_shown(text))
+        .map(str::to_owned)
+}
+
+fn is_shown(text: &str) -> bool {
+    !is_placeholder(text) && !text.trim().is_empty()
+}
+
+/// The address is a link only when it is a web address: a stored value is not
+/// trusted to be one, and `javascript:` in an `href` would run.
+fn legal_info_entry(rows: &[(&str, String)], number: usize) -> Markup {
+    html! {
+        @if rows.is_empty() {
+            p class="italic text-neutral-600" { "Entry " (number) " could not be read." }
+        } @else {
+            dl class="grid grid-cols-1 sm:grid-cols-[10rem_minmax(0,1fr)] gap-x-3 gap-y-1" {
+                @for (label, text) in rows {
+                    dt class="text-sm font-bold text-neutral-600" { (label) }
+                    dd class="break-words text-neutral-900" {
+                        @if {
+                            *label == LICENCE_URI
+                                && (text.starts_with("https://")
+                                    || text.starts_with("http://"))
+                        } {
+                            a class="break-all underline" href=(text) rel="noopener noreferrer" {
+                                (text)
+                            }
+                        } @else { (text) }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Any project member, rendered for reading. Takes a `Value` because the review
@@ -1723,6 +1825,183 @@ mod tests {
             .fields_for(audience)
             .map(|field| field_row(field, draft, Mode::Editable, Rows::default()).into_string())
             .collect()
+    }
+
+    fn legal_info_display_of(value: serde_json::Value) -> String {
+        let field = editor_core::form::registry::field("legalInfo").expect("legalInfo is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("legalInfo", value);
+        value_display(field, &draft, "legalInfo-label").into_string()
+    }
+
+    #[test]
+    fn a_legal_info_entry_shows_its_licence_holder_and_a_link_not_a_count() {
+        let out = legal_info_display_of(serde_json::json!([{
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-05-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "University of Basel",
+            "authorship": ["Jane Doe", "John Roe"]
+        }]));
+
+        assert!(out.contains("CC BY 4.0"), "{out}");
+        assert!(out.contains("2024-05-01"), "{out}");
+        assert!(out.contains(r#"href="https://creativecommons.org/licenses/by/4.0/""#), "{out}");
+        assert!(out.contains("University of Basel"), "{out}");
+        assert!(out.contains("Jane Doe, John Roe"), "{out}");
+        assert!(!out.contains("entr"), "{out}");
+    }
+
+    #[test]
+    fn a_serialised_legal_info_shows_all_five_members() {
+        let legal_info = shared_metadata::project::LegalInfo {
+            license: shared_metadata::project::License {
+                license_identifier: "CC BY 4.0".to_owned(),
+                license_date: "2024-05-01".to_owned(),
+                license_uri: "https://creativecommons.org/licenses/by/4.0/".to_owned(),
+            },
+            copyright_holder: "University of Basel".to_owned(),
+            authorship: vec!["Jane Doe".to_owned()],
+        };
+        let value = serde_json::to_value([legal_info]).expect("LegalInfo serialises");
+
+        let out = legal_info_display_of(value);
+
+        for label in ["Licence", "Licence date", LICENCE_URI, "Copyright holder", "Authorship"] {
+            assert!(out.contains(label), "{label}: {out}");
+        }
+        for text in [
+            "CC BY 4.0",
+            "2024-05-01",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "University of Basel",
+            "Jane Doe",
+        ] {
+            assert!(out.contains(text), "{text}: {out}");
+        }
+    }
+
+    #[test]
+    fn a_legal_info_placeholder_member_is_left_out_with_its_row() {
+        let out = legal_info_display_of(serde_json::json!([{
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "MISSING",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "University of Basel",
+            "authorship": ["CALCULATED"]
+        }]));
+
+        assert!(out.contains("CC BY 4.0"), "{out}");
+        for absent in ["MISSING", "CALCULATED", "Licence date", "Authorship"] {
+            assert!(!out.contains(absent), "{absent} in {out}");
+        }
+    }
+
+    #[test]
+    fn a_legal_info_that_is_only_the_missing_placeholder_reads_as_no_value() {
+        let out = legal_info_display_of(serde_json::json!(["MISSING"]));
+
+        assert!(out.contains(NO_VALUE), "{out}");
+    }
+
+    #[test]
+    fn a_legal_info_address_that_is_not_a_web_address_is_text_not_a_link() {
+        let out = legal_info_display_of(serde_json::json!([{
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-05-01",
+                "licenseURI": "javascript:alert(1)"
+            },
+            "copyrightHolder": "University of Basel",
+            "authorship": []
+        }]));
+
+        assert!(out.contains("javascript:alert(1)"), "{out}");
+        assert!(!out.contains("href"), "{out}");
+    }
+
+    #[test]
+    fn every_legal_info_entry_is_shown_in_a_list_and_a_link_opts_out_of_the_opener() {
+        let out = legal_info_display_of(serde_json::json!([
+            {
+                "license": {
+                    "licenseIdentifier": "CC BY 4.0",
+                    "licenseDate": "2024-05-01",
+                    "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+                },
+                "copyrightHolder": "University of Basel",
+                "authorship": ["Jane Doe"]
+            },
+            {
+                "license": {
+                    "licenseIdentifier": "CC0 1.0",
+                    "licenseDate": "2023-01-01",
+                    "licenseURI": "MISSING"
+                },
+                "copyrightHolder": "ETH Zurich",
+                "authorship": ["John Roe"]
+            }
+        ]));
+
+        for shown in [
+            "CC BY 4.0",
+            "University of Basel",
+            "Jane Doe",
+            "CC0 1.0",
+            "ETH Zurich",
+            "John Roe",
+        ] {
+            assert!(out.contains(shown), "{shown} in {out}");
+        }
+        assert_eq!(out.matches("<li").count(), 2, "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
+        assert!(out.contains(r#"aria-labelledby="legalInfo-label""#), "{out}");
+    }
+
+    #[test]
+    fn a_legal_info_entry_with_only_a_holder_shows_only_the_holder() {
+        let out = legal_info_display_of(serde_json::json!([{
+            "license": {
+                "licenseIdentifier": "MISSING",
+                "licenseDate": "MISSING",
+                "licenseURI": "MISSING"
+            },
+            "copyrightHolder": "University of Basel",
+            "authorship": ["MISSING"]
+        }]));
+
+        assert!(out.contains("University of Basel"), "{out}");
+        for absent in ["Licence", "Authorship", "MISSING", "could not be read"] {
+            assert!(!out.contains(absent), "{absent} in {out}");
+        }
+    }
+
+    #[test]
+    fn a_legal_info_entry_missing_a_member_still_shows_the_rest() {
+        let out = legal_info_display_of(serde_json::json!([{
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-05-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "University of Basel"
+        }]));
+
+        assert!(out.contains("CC BY 4.0"), "{out}");
+        assert!(out.contains("University of Basel"), "{out}");
+        assert!(!out.contains("Authorship"), "{out}");
+    }
+
+    #[test]
+    fn a_legal_info_entry_with_nothing_readable_is_said_so_not_dropped() {
+        let out = legal_info_display_of(serde_json::json!([{ "licence": "CC BY 4.0" }]));
+
+        assert!(out.contains("Entry 1 could not be read."), "{out}");
+        assert!(!out.contains(NO_VALUE), "{out}");
     }
 
     #[test]

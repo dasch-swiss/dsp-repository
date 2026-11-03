@@ -1062,6 +1062,7 @@ fn confirmation(heading: &str, consequence: &str, choices: Markup) -> Markup {
 /// `SubmitEvent.submitter`, while a `formaction` would be silently ignored on the
 /// enhanced path.
 fn controls(view: &SectionView<'_>) -> Markup {
+    let editable = view.section.has_editable_field(view.audience);
     html! {
         @if view.confirming == Some(Confirmation::Discard) {
             ({
@@ -1099,7 +1100,7 @@ fn controls(view: &SectionView<'_>) -> Markup {
                     })
                 }
             }
-        } @else {
+        } @else if editable {
             div class="flex flex-wrap items-center gap-4" {
                 ({
                     button("Save draft")
@@ -1366,6 +1367,36 @@ mod tests {
         assert!(!out.contains(r#"name="shortcode""#), "{out}");
         assert!(!out.contains(r#"name="pid""#), "{out}");
         assert!(!out.contains(r#"name="id""#), "{out}");
+    }
+
+    #[test]
+    fn a_section_with_nothing_editable_has_no_write_buttons() {
+        let draft = published_draft();
+        let legal = page(&view(&draft, "legal", Audience::RduOnly)).into_string();
+        assert!(legal.contains("CC BY-NC-SA 4.0"), "{legal}");
+        for button in ["Save draft", "Submit for review", "Discard draft"] {
+            assert!(!legal.contains(button), "{button} in {legal}");
+        }
+
+        let overview = page(&view(&draft, "overview", Audience::RduOnly)).into_string();
+        assert!(overview.contains("Save draft"), "{overview}");
+        assert!(overview.contains("Submit for review"), "{overview}");
+    }
+
+    #[test]
+    fn a_locked_section_with_nothing_editable_still_offers_the_withdrawal() {
+        let draft = published_draft();
+        let mut locked = view(&draft, "legal", Audience::RduOnly);
+        locked.locked = Some(Locked::Submitted);
+        locked.may_withdraw = true;
+        let out = page(&locked).into_string();
+        assert!(out.contains("Take the submission back"), "{out}");
+        assert!(!out.contains("Save draft"), "{out}");
+
+        locked.confirming = Some(Confirmation::Withdrawal);
+        let confirming = page(&locked).into_string();
+        assert!(confirming.contains("Yes, take it back"), "{confirming}");
+        assert!(!confirming.contains("Save draft"), "{confirming}");
     }
 
     #[test]

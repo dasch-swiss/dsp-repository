@@ -110,6 +110,7 @@ impl TextareaBuilder {
             label: &self.label,
             hint: self.hint.as_ref(),
             error: self.error.as_ref(),
+            label_hidden: false,
         };
         let described_by = shell.described_by();
         // See the module docs. The spare is `PreEscaped` because a newline has

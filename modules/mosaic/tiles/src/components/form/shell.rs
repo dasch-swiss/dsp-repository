@@ -20,6 +20,9 @@ pub(super) struct FieldShell<'a> {
     pub label: &'a Markup,
     pub hint: Option<&'a Markup>,
     pub error: Option<&'a Markup>,
+    /// Keep the label for assistive technology but take no row of the `.field`
+    /// flex column.
+    pub label_hidden: bool,
 }
 
 impl<'a> FieldShell<'a> {
@@ -71,9 +74,14 @@ impl<'a> FieldShell<'a> {
     /// public content slot.
     pub fn render(&self, control: Markup) -> Markup {
         let hint_id = self.hint_id();
+        let label_class = if self.label_hidden {
+            "field-label sr-only"
+        } else {
+            "field-label"
+        };
         html! {
             div class="field" {
-                label class="field-label" for=(self.id) { (self.label) }
+                label class=(label_class) for=(self.id) { (self.label) }
                 (control)
                 @if let Some(hint) = self.hint {
                     p class="field-hint" id=[hint_id.as_deref()] { (hint) }
@@ -108,7 +116,7 @@ pub(super) fn group_shell(
     error: Option<&Markup>,
     controls: Markup,
 ) -> Markup {
-    let shell = FieldShell { id, label: legend, hint, error };
+    let shell = FieldShell { id, label: legend, hint, error, label_hidden: false };
     let hint_id = shell.hint_id();
     let described_by = shell.described_by();
     html! {
@@ -148,7 +156,13 @@ mod tests {
 
     #[test]
     fn a_field_with_neither_hint_nor_error_describes_the_control_by_nothing() {
-        let shell = FieldShell { id: "name", label: &label(), hint: None, error: None };
+        let shell = FieldShell {
+            id: "name",
+            label: &label(),
+            hint: None,
+            error: None,
+            label_hidden: false,
+        };
         assert_eq!(shell.described_by(), None);
         assert_eq!(shell.aria_invalid(), None);
     }
@@ -162,6 +176,7 @@ mod tests {
             label: &label(),
             hint: Some(&hint),
             error: Some(&error),
+            label_hidden: false,
         };
         assert_eq!(shell.described_by().as_deref(), Some("codes-hint codes-error"));
         assert_eq!(shell.aria_invalid(), Some("true"));
@@ -169,7 +184,13 @@ mod tests {
 
     #[test]
     fn the_error_region_is_rendered_empty_so_a_live_update_has_a_region_to_change() {
-        let shell = FieldShell { id: "name", label: &label(), hint: None, error: None };
+        let shell = FieldShell {
+            id: "name",
+            label: &label(),
+            hint: None,
+            error: None,
+            label_hidden: false,
+        };
         let out = shell
             .render(html! {
                 input;
@@ -220,7 +241,13 @@ mod tests {
 
     #[test]
     fn the_label_points_at_the_control_id() {
-        let shell = FieldShell { id: "name", label: &label(), hint: None, error: None };
+        let shell = FieldShell {
+            id: "name",
+            label: &label(),
+            hint: None,
+            error: None,
+            label_hidden: false,
+        };
         let out = shell
             .render(html! {
                 input id="name";

@@ -72,6 +72,15 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "text_field-label_hidden",
+                "A hidden label",
+                "`.label_hidden()` keeps the label for a screen reader and takes it out of the layout, for a row \
+                 that a surrounding list already titles. The control is still named, and no line is left above it.",
+                label_hidden(),
+            )
+        })
+        ({
+            example(
                 "text_field-prefilled",
                 "Holding a rejected entry",
                 "A rejected form comes back showing what was typed, including the part that was wrong.",
@@ -186,6 +195,13 @@ fn dates_and_years() -> Markup {
         })
     };
     form_column(fields)
+}
+
+fn label_hidden() -> Markup {
+    form_column(html! {
+        (text_field("keywords.r0", "Keyword 1").label_hidden().value("archive"))
+        (text_field("keywords.r1", "Keyword 2").label_hidden().value("letters"))
+    })
 }
 
 fn prefilled() -> Markup {

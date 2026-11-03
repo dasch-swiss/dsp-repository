@@ -12,6 +12,7 @@ pub mod creation;
 pub mod draft;
 pub mod form;
 pub mod json;
+pub mod languages;
 pub mod multilingual;
 pub mod proposals;
 pub mod published;

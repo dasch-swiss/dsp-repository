@@ -403,11 +403,11 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "dataLanguage",
         "Data languages",
-        "The languages of the data itself. Pick from the list or add any other language. Needed before the \
+        "The languages of the data itself. Pick from the list, or type a language name below. Needed before the \
          project can be published.",
         Recommended,
         Everyone,
-        Some(StringList(ChoiceSet::Open(&UI_LANGUAGES))),
+        Some(StringList(ChoiceSet::Languages(&UI_LANGUAGES))),
     ),
     hinted(
         "disciplines",

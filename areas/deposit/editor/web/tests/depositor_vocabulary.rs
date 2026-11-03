@@ -171,6 +171,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             notice: created.then_some(section::Notice::Discarded),
             posted: None,
             format_findings: Vec::new(),
+            submitted: None,
             adding_row: None,
             focus_finding: false,
             agents: None,

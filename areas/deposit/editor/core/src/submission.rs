@@ -1,6 +1,6 @@
 //! The checks a draft must pass to become a pending submission.
 //!
-//! [`check`] runs eight gates in a fixed order and returns the first refusal as
+//! [`check`] runs nine gates in a fixed order and returns the first refusal as
 //! data, so the order is part of the contract: a draft failing two gates shows
 //! the depositor the earlier one.
 //!
@@ -10,10 +10,12 @@
 //! 4. the project's own live proposals are complete ([`SubmitRefusal::ProposalIncomplete`]);
 //! 5. no typed placeholder sentinel is left ([`SubmitRefusal::Sentinel`]);
 //! 6. every value has the format its kind needs ([`SubmitRefusal::Format`]);
-//! 7. every `temporalCoverage` entry resolves to a structured date ([`SubmitRefusal::Invalid`]);
-//! 8. something differs from the published project ([`SubmitRefusal::Unchanged`]).
+//! 7. every data language is a listed code or already published
+//!    ([`SubmitRefusal::UnlistedLanguage`]);
+//! 8. every `temporalCoverage` entry resolves to a structured date ([`SubmitRefusal::Invalid`]);
+//! 9. something differs from the published project ([`SubmitRefusal::Unchanged`]).
 //!
-//! The seventh rule is [`shared_metadata::temporal_coverage::completeness_gap`],
+//! The eighth rule is [`shared_metadata::temporal_coverage::completeness_gap`],
 //! the same function `access-server validate` and `dpe-api-oai` apply, so the
 //! three cannot drift on what counts as a gap. `access-server validate` does not
 //! block on it and OAI-PMH needs it, so a submission carrying an unresolvable
@@ -35,7 +37,7 @@ use crate::draft::{DraftError, ProjectDraft};
 use crate::form::format::{self, Finding};
 use crate::form::obligation::unsatisfied_required;
 use crate::form::registry::{sections_for, Audience, Field};
-use crate::form::submit::{typed_sentinels, unresolved_agents};
+use crate::form::submit::{typed_sentinels, unlisted_languages, unresolved_agents};
 use crate::proposals::{problems as proposal_problems, EntityProposal, ProposalProblem};
 use crate::review::diff;
 
@@ -57,6 +59,8 @@ pub enum SubmitRefusal {
     /// Values without the format their kind needs, in form order, each keyed by
     /// stored position.
     Format(Vec<Finding>),
+    /// Data-language values that are neither a listed code nor already published, with their field.
+    UnlistedLanguage(Vec<(&'static Field, String)>),
     /// `temporalCoverage` entries that cannot resolve to a structured date.
     Invalid(Vec<UnresolvedCoverage>),
     /// The draft is identical to the published project.
@@ -139,6 +143,11 @@ pub fn check(
     );
     if !findings.is_empty() {
         return Err(SubmitRefusal::Format(findings));
+    }
+
+    let unlisted = unlisted_languages(audience, draft, published);
+    if !unlisted.is_empty() {
+        return Err(SubmitRefusal::UnlistedLanguage(unlisted));
     }
 
     // Re-run on every submit, which is what makes a resubmission revalidated rather than trusted

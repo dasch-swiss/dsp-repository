@@ -330,6 +330,7 @@ impl EntityView<'_> {
     fn rows(&self) -> Rows<'_> {
         Rows {
             posted: self.posted,
+            submitted: None,
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,

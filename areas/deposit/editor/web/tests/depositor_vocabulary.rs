@@ -9,6 +9,7 @@
 //! [`visible_text`]. The browser-level half lives in the E2E suite.
 
 use editor_core::draft::ProjectDraft;
+use editor_core::form::format::ValueKind;
 use editor_core::form::registry::{self, Audience};
 use editor_core::published::{ProjectSummary, PublishedProjects};
 use editor_core::records::ReviewOutcome;
@@ -156,6 +157,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             saved_at: None,
             notice: None,
             posted: None,
+            format_findings: Vec::new(),
             adding_row: None,
             agents: None,
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
@@ -169,6 +171,15 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             forbidden_words_in(&markup),
             section_def.id
         );
+    }
+}
+
+#[test]
+fn no_format_message_uses_a_forbidden_word() {
+    // Rendered only beside a value that fails its rule, which no fixture above holds.
+    for kind in [ValueKind::Link, ValueKind::Doi] {
+        let message = editor_web::form::widgets::format_message(kind);
+        assert!(forbidden_words_in(message).is_empty(), "{kind:?}: {message}");
     }
 }
 

@@ -57,6 +57,7 @@ export const DEPOSITOR_SHORTCODES = [
   "0108",
   "0110",
   "0112",
+  "0117",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -97,6 +98,8 @@ export const STATUS_SHORTCODES: Partial<Record<string, string>> = {
 export const APPROVED_SHORTCODE = DEPOSITOR_SHORTCODES[7];
 /** Switching a row's variant ahead of the autosave. */
 export const VARIANT_SHORTCODE = DEPOSITOR_SHORTCODES[8];
+/** A typed value surviving a row control: the first row of every row shape holds a link. */
+export const TYPED_SHORTCODE = DEPOSITOR_SHORTCODES[9];
 
 const PORT = 4101;
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

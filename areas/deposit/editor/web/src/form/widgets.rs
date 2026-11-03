@@ -16,8 +16,11 @@
 
 use editor_core::agents::{Agent, AgentKind, AgentMatches, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
+use editor_core::form::format::{Finding, ValueKind};
 use editor_core::form::registry::{Field, Obligation};
-use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND};
+use editor_core::form::{
+    stored_row_key, ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND,
+};
 use editor_core::multilingual::{as_multilingual, is_language_map, is_language_tag, DraftMultilingual, UI_LANGUAGES};
 use maud::{html, Markup};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
@@ -25,7 +28,7 @@ use mosaic_tiles::checkbox_group::checkbox_group;
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::repeatable_list::repeatable_list;
 use mosaic_tiles::select::select;
-use mosaic_tiles::text_field::{text_field, InputType};
+use mosaic_tiles::text_field::{text_field, InputType, TextFieldBuilder};
 use mosaic_tiles::textarea::textarea;
 use mosaic_tiles::ComponentBuilder;
 use serde_json::Value;
@@ -185,7 +188,7 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         // the answer behind a click.
         "status" => radio(field, draft, choices(shape)),
         // type="text", for the reason dataManagementPlan gives.
-        "url" | "secondaryUrl" => url(field, draft, slot(shape)),
+        "url" | "secondaryUrl" => url(field, draft, slot(shape), rows),
         "typeOfData" | "dataLanguage" => string_list(field, draft, set(shape)),
         "keywords" | "alternativeNames" => multilingual_rows(field, draft, rows),
         "additionalMaterial" | "documentationMaterial" => string_rows(field, draft, rows),
@@ -213,9 +216,10 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
     }
 }
 
-/// What a repeatable field needs beyond the draft: the posted body, and where its
-/// add and remove controls submit to. A named type because both are `Option`-ish
-/// and a positional pair would let call sites scramble them silently.
+/// What a control needs beyond the draft: the posted body, where a repeatable
+/// field's add and remove controls submit to, and the format findings. A named type
+/// because several are `Option`-ish and a positional list would let call sites
+/// scramble them silently.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Rows<'a> {
     /// The posted body, when this render is answering a `POST`. What keeps a
@@ -230,6 +234,8 @@ pub struct Rows<'a> {
     /// The agents an id field may refer to. `None` renders the id bare, which is
     /// what a deployment with no data directory looks like.
     pub agents: Option<&'a AgentScope<'a>>,
+    /// Format findings, each keyed by the name of the control it renders on.
+    pub format_findings: &'a [Finding],
     /// Whether an agent id also renders the controls that start an entity
     /// proposal. Defaults to `false`: the entity form's `affiliations` field reuses
     /// this widget, and its route does not dispatch the propose intents, so a
@@ -246,12 +252,33 @@ fn row_keys(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Vec<String> 
     let row_name = format!("{}.row", field.id);
     let mut keys: Vec<String> = match rows.posted {
         Some(body) if body.has(&row_name) => body.rows(field.id).into_iter().map(str::to_string).collect(),
-        _ => (0..stored_rows(field, draft).len()).map(|n| format!("r{n}")).collect(),
+        _ => (0..stored_rows(field, draft).len()).map(stored_row_key).collect(),
     };
     if rows.adding == Some(field.id) {
         keys.push(next_row_key(&keys));
     }
     keys
+}
+
+/// A text control for a value that may carry a format (`editor_core::form::format`),
+/// posting under `name`. A finding on `name` renders through the tile's own error,
+/// so `aria-invalid` and `aria-describedby` come with it, and never in an alert.
+fn format_field(name: String, label: impl maud::Render, rows: Rows<'_>) -> TextFieldBuilder {
+    let finding = rows.format_findings.iter().find(|finding| finding.control == name);
+    let control = text_field(name, label).input_type(InputType::Text);
+    match finding {
+        Some(finding) => control.error(format_message(finding.kind)),
+        None => control,
+    }
+}
+
+/// What a value without its kind's format is told, standing alone: a screen reader
+/// reads it without the field's name.
+pub const fn format_message(kind: ValueKind) -> &'static str {
+    match kind {
+        ValueKind::Link => "This is not a full web address. Enter one starting with https://.",
+        ValueKind::Doi => "This is not a DOI. Enter one such as 10.1234/abcd, or its https://doi.org/ link.",
+    }
 }
 
 /// Focuses the row an Add just created where the enhanced path morphs it in, since
@@ -333,11 +360,11 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
             key,
             html! {
                 ({
-                    text_field(
+                    format_field(
                             format!("{}.{key}", field.id),
                             row_label(ROW_VALUE_LABEL, position),
+                            rows,
                         )
-                        .input_type(InputType::Text)
                         .value(value)
                 })
             },
@@ -752,16 +779,9 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
             Some(body) => body.get(&format!("{prefix}.kind")) == Some(REFERENCE_KIND),
             None => held.and_then(|row| row.get("url")).is_some(),
         };
-        let reference_value = |member: &str| -> String {
-            match posted {
-                Some(body) => body.get(&format!("{prefix}.ref.{member}")).unwrap_or_default().to_string(),
-                None => held
-                    .and_then(|row| row.get(if member == "label" { "text" } else { member }))
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_string(),
-            }
-        };
+        let reference = reference_controls(&prefix, types, rows, |member| {
+            reference_member(posted, held.copied(), &prefix, member)
+        });
         let texts = match posted {
             Some(body) => {
                 let mut value = DraftMultilingual::new();
@@ -791,26 +811,7 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
                             .hint(VARIANT_HINT)
                             .inline()
                     })
-                    div hidden[!is_reference] class="flex flex-col gap-2" {
-                        ({
-                            select(format!("{prefix}.ref.type"), REFERENCE_TYPE_LABEL)
-                                .options(types.iter().map(|kind| (*kind, *kind)))
-                                .selected(reference_value("type"))
-                        })
-                        ({
-                            text_field(format!("{prefix}.ref.url"), REFERENCE_URL_LABEL)
-                                .input_type(InputType::Text)
-                                .value(reference_value("url"))
-                        })
-                        ({
-                            text_field(
-                                    format!("{prefix}.ref.label"),
-                                    REFERENCE_LABEL_LABEL,
-                                )
-                                .input_type(InputType::Text)
-                                .value(reference_value("label"))
-                        })
-                    }
+                    div hidden[!is_reference] class="flex flex-col gap-2" { (reference) }
                     div hidden[is_reference] class="flex flex-col gap-2" {
                         @for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
                             ({
@@ -837,7 +838,7 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
 
 /// One row's three reference controls, shared by every field that renders a
 /// reference so their names and labels cannot drift.
-fn reference_controls(prefix: &str, types: &[&str], value: impl Fn(&str) -> String) -> Markup {
+fn reference_controls(prefix: &str, types: &[&str], rows: Rows<'_>, value: impl Fn(&str) -> String) -> Markup {
     html! {
         ({
             select(format!("{prefix}.ref.type"), REFERENCE_TYPE_LABEL)
@@ -845,8 +846,7 @@ fn reference_controls(prefix: &str, types: &[&str], value: impl Fn(&str) -> Stri
                 .selected(value("type"))
         })
         ({
-            text_field(format!("{prefix}.ref.url"), REFERENCE_URL_LABEL)
-                .input_type(InputType::Text)
+            format_field(format!("{prefix}.ref.url"), REFERENCE_URL_LABEL, rows)
                 .value(value("url"))
         })
         ({
@@ -854,6 +854,19 @@ fn reference_controls(prefix: &str, types: &[&str], value: impl Fn(&str) -> Stri
                 .input_type(InputType::Text)
                 .value(value("label"))
         })
+    }
+}
+
+/// One reference member as its control shows it: the posted `{prefix}.ref.<member>`
+/// on a re-render, else the stored row's, which holds `label` as `text`.
+fn reference_member(posted: Option<&FormBody>, held: Option<&Value>, prefix: &str, member: &str) -> String {
+    match posted {
+        Some(body) => body.get(&format!("{prefix}.ref.{member}")).unwrap_or_default().to_string(),
+        None => held
+            .and_then(|row| row.get(if member == "label" { "text" } else { member }))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
     }
 }
 
@@ -878,12 +891,12 @@ pub(crate) fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
     let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    let row_name = format!("{}.row", field.id);
+    let posted = rows.posted.filter(|body| body.has(&row_name));
     for (position, key) in keys.iter().enumerate() {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
-        let body = reference_controls(&prefix, types, |member| {
-            row_member(field, held, rows, &prefix, if member == "label" { "text" } else { member })
-        });
+        let body = reference_controls(&prefix, types, rows, |member| reference_member(posted, held, &prefix, member));
         list = list.row(
             key,
             html! {
@@ -934,11 +947,11 @@ fn publication_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                             .value(text)
                     })
                     ({
-                        text_field(
+                        format_field(
                                 format!("{prefix}.pid"),
                                 row_label(PID_LABEL, position),
+                                rows,
                             )
-                            .input_type(InputType::Text)
                             .value(pid)
                             .hint(PID_HINT)
                     })
@@ -1019,8 +1032,7 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
                             .value(row_member(field, held, rows, &prefix, "name"))
                     })
                     ({
-                        text_field(format!("{prefix}.url"), GRANT_URL_LABEL)
-                            .input_type(InputType::Text)
+                        format_field(format!("{prefix}.url"), GRANT_URL_LABEL, rows)
                             .value(row_member(field, held, rows, &prefix, "url"))
                     })
                 }
@@ -1344,9 +1356,9 @@ const fn slot(shape: Shape) -> UrlSlot {
 /// One of the project's two URLs, as a plain text control. Reads through
 /// [`ProjectDraft::url_slot`], so it renders whichever representation the project
 /// stores; a placeholder renders empty, as [`scalar_value`] does.
-fn url(field: &Field, draft: &ProjectDraft, slot: UrlSlot) -> Markup {
+fn url(field: &Field, draft: &ProjectDraft, slot: UrlSlot, rows: Rows<'_>) -> Markup {
     let value = draft.url_slot(slot).filter(|text| !is_placeholder(text)).unwrap_or_default();
-    let mut control = text_field(field.id, labelled(field)).input_type(InputType::Text).value(value);
+    let mut control = format_field(field.id.to_string(), labelled(field), rows).value(value);
     if let Some(hint) = field.hint {
         control = control.hint(hint);
     }
@@ -1704,6 +1716,7 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
+            format_findings: &[],
             propose: true,
         };
 
@@ -1733,6 +1746,7 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
+            format_findings: &[],
             propose: false,
         };
 
@@ -1764,6 +1778,7 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
+            format_findings: &[],
             propose: false,
         };
         let hidden = r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#;
@@ -1838,6 +1853,7 @@ mod tests {
                 action: "/x",
                 adding: None,
                 agents: Some(&scope),
+                format_findings: &[],
                 propose: false,
             },
         )
@@ -1858,6 +1874,7 @@ mod tests {
             action: "/x",
             adding: Some("contactPoint"),
             agents: Some(&scope),
+            format_findings: &[],
             propose: false,
         };
 
@@ -1896,6 +1913,7 @@ mod tests {
                 action: "/x",
                 adding: None,
                 agents: Some(&scope),
+                format_findings: &[],
                 propose: true,
             },
         )
@@ -1926,6 +1944,7 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
+            format_findings: &[],
             propose: true,
         };
 
@@ -1949,6 +1968,7 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
+            format_findings: &[],
             propose: true,
         };
 
@@ -1975,6 +1995,7 @@ mod tests {
             action: "/x",
             adding: None,
             agents: Some(&scope),
+            format_findings: &[],
             propose: true,
         };
 
@@ -1985,6 +2006,101 @@ mod tests {
         );
         // The role that was actually posted still renders, and still ticked.
         assert!(out.contains(r#"value="Author" checked"#), "{out}");
+    }
+
+    #[test]
+    fn a_reference_row_re_rendered_from_a_body_shows_what_was_posted() {
+        // A posted render that read the stored member names would show an empty
+        // control, and the next save would post the empty value back.
+        let body = editor_core::form::FormBody::from_pairs(vec![
+            ("spatialCoverage.row".to_string(), "r0".to_string()),
+            ("spatialCoverage.r0.ref.type".to_string(), "Pleiades".to_string()),
+            ("spatialCoverage.r0.ref.url".to_string(), "Basel".to_string()),
+            ("spatialCoverage.r0.ref.label".to_string(), "Basle".to_string()),
+        ]);
+        let field = editor_core::form::registry::field("spatialCoverage").expect("spatialCoverage is a known field");
+        let rows = Rows { posted: Some(&body), action: "/x", ..Rows::default() };
+
+        let out = reference_rows(field, &published_draft(), rows, &["Geonames", "Pleiades"]).into_string();
+        assert!(
+            out.contains(r#"name="spatialCoverage.r0.ref.url" type="text" value="Basel""#),
+            "{out}"
+        );
+        assert!(out.contains(r#"value="Basle""#), "{out}");
+        assert!(out.contains(r#"<option value="Pleiades" selected>"#), "{out}");
+    }
+
+    fn input_named<'a>(out: &'a str, control: &str) -> Option<&'a str> {
+        out.split("<input")
+            .find(|input| input.contains(&format!(r#"name="{control}""#)))
+    }
+
+    #[test]
+    fn a_format_finding_marks_only_the_control_it_names() {
+        let field = editor_core::form::registry::field("spatialCoverage").expect("spatialCoverage is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "spatialCoverage",
+            serde_json::json!([
+                { "type": "Geonames", "url": "https://www.geonames.org/1" },
+                { "type": "Geonames", "url": "Basel" },
+            ]),
+        );
+        let findings = [Finding {
+            field,
+            control: "spatialCoverage.r1.ref.url".to_string(),
+            kind: ValueKind::Link,
+        }];
+        let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
+
+        let out = reference_rows(field, &draft, rows, &["Geonames"]).into_string();
+        let input = input_named(&out, "spatialCoverage.r1.ref.url").expect("the second row's link control");
+        assert!(input.contains(r#"aria-invalid="true""#), "{input}");
+        assert_eq!(out.matches("aria-invalid").count(), 1, "only the flagged control: {out}");
+        assert!(out.contains(format_message(ValueKind::Link)), "{out}");
+        // On the control, never in an alert: an alert inside the polite status
+        // region interrupts.
+        assert!(!out.contains(r#"role="alert""#), "{out}");
+    }
+
+    /// Whether `field`, rendered from a body naming one row `r0`, marks the control
+    /// a finding on `member` names.
+    fn renders_finding(field: &'static Field, member: &editor_core::form::format::Member) -> bool {
+        let control = editor_core::form::format::control_name(field, "r0", member);
+        let body = editor_core::form::FormBody::from_pairs(vec![(format!("{}.row", field.id), "r0".to_string())]);
+        let findings = [Finding { field, control: control.clone(), kind: member.kind }];
+        let rows = Rows {
+            posted: Some(&body),
+            action: "/x",
+            format_findings: &findings,
+            ..Rows::default()
+        };
+        let out = field_row(field, &ProjectDraft::default(), Mode::Editable, rows).into_string();
+        input_named(&out, &control).is_some_and(|input| input.contains(r#"aria-invalid="true""#))
+    }
+
+    #[test]
+    fn every_format_member_renders_its_finding() {
+        // The member table names controls by hand; a name no widget posts, or a widget
+        // that does not mark its control, would refuse a submission with nothing shown.
+        let canary = editor_core::form::format::Member { posted: "ref.url", stored: &["url"], kind: ValueKind::Link };
+        let spatial = editor_core::form::registry::field("spatialCoverage").expect("spatialCoverage is a known field");
+        assert!(renders_finding(spatial, &canary), "the check itself must see a marked control");
+
+        let unmarked: Vec<String> = FIELDS
+            .iter()
+            .flat_map(|field| {
+                editor_core::form::format::members(field)
+                    .iter()
+                    .map(move |member| (field, member))
+            })
+            .filter(|(field, member)| !renders_finding(field, member))
+            .map(|(field, member)| format!("{} {}", field.id, member.posted))
+            .collect();
+        assert!(
+            unmarked.is_empty(),
+            "format members no control marks (render the control through `format_field`): {unmarked:?}"
+        );
     }
 
     #[test]
@@ -2013,6 +2129,7 @@ mod tests {
                 action: "/x",
                 adding: None,
                 agents: Some(&scope),
+                format_findings: &[],
                 propose: true,
             };
             let out = funding(field, &draft, rows).into_string();

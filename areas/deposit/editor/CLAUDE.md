@@ -28,7 +28,7 @@ Five crates: `editor-core` (`core/`, the draft model, the form's field registry 
 
 ### Views (`editor-web`)
 
-Views are `fn(...) -> maud::Markup`: pages in `web/src/pages/`, the form's widgets (the rendered controls) in `web/src/form/widgets.rs`; the field registry, obligations and per-field submit rules are `editor-core`'s (`editor_core::form::{registry, obligation, submit}`). They use no Axum; the handlers that call them are in `web/src/handlers/`. The document they are wrapped in (header, footer, the 403, 404 and problem pages) and the sign-in link are the area's, in `deposit-shell` (`areas/deposit/shell`), which depends on no capability crate. Accessibility is the **tile's** responsibility, not the caller's — an a11y failure here usually means a missing semantic method on a `mosaic-tiles` tile rather than a missing attribute at the call site.
+Views are `fn(...) -> maud::Markup`: pages in `web/src/pages/`, the form's widgets (the rendered controls) in `web/src/form/widgets.rs`; the field registry, obligations, per-field submit rules and format findings are `editor-core`'s (`editor_core::form::{registry, obligation, submit, format}`). They use no Axum; the handlers that call them are in `web/src/handlers/`. The document they are wrapped in (header, footer, the 403, 404 and problem pages) and the sign-in link are the area's, in `deposit-shell` (`areas/deposit/shell`), which depends on no capability crate. Accessibility is the **tile's** responsibility, not the caller's — an a11y failure here usually means a missing semantic method on a `mosaic-tiles` tile rather than a missing attribute at the call site.
 
 ### Routing (`editor-web`, `deposit-server`)
 

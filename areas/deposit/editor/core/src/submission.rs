@@ -1,6 +1,6 @@
 //! The checks a draft must pass to become a pending submission.
 //!
-//! [`check`] runs seven gates in a fixed order and returns the first refusal as
+//! [`check`] runs eight gates in a fixed order and returns the first refusal as
 //! data, so the order is part of the contract: a draft failing two gates shows
 //! the depositor the earlier one.
 //!
@@ -9,10 +9,11 @@
 //! 3. every agent reference resolves ([`SubmitRefusal::UnknownAgent`]);
 //! 4. the project's own live proposals are complete ([`SubmitRefusal::ProposalIncomplete`]);
 //! 5. no typed placeholder sentinel is left ([`SubmitRefusal::Sentinel`]);
-//! 6. every `temporalCoverage` entry resolves to a structured date ([`SubmitRefusal::Invalid`]);
-//! 7. something differs from the published project ([`SubmitRefusal::Unchanged`]).
+//! 6. every value has the format its kind needs ([`SubmitRefusal::Format`]);
+//! 7. every `temporalCoverage` entry resolves to a structured date ([`SubmitRefusal::Invalid`]);
+//! 8. something differs from the published project ([`SubmitRefusal::Unchanged`]).
 //!
-//! The sixth rule is [`shared_metadata::temporal_coverage::completeness_gap`],
+//! The seventh rule is [`shared_metadata::temporal_coverage::completeness_gap`],
 //! the same function `access-server validate` and `dpe-api-oai` apply, so the
 //! three cannot drift on what counts as a gap. `access-server validate` does not
 //! block on it and OAI-PMH needs it, so a submission carrying an unresolvable
@@ -31,8 +32,9 @@ use shared_metadata::w3cdtf::W3cdtfRange;
 
 use crate::agents::{AgentScope, Agents};
 use crate::draft::{DraftError, ProjectDraft};
+use crate::form::format::{self, Finding};
 use crate::form::obligation::unsatisfied_required;
-use crate::form::registry::{Audience, Field};
+use crate::form::registry::{sections_for, Audience, Field};
 use crate::form::submit::{typed_sentinels, unresolved_agents};
 use crate::proposals::{check_organization, check_person, EntityFinding, EntityProposal, ProposalKind};
 use crate::review::{diff, FieldDiff};
@@ -52,6 +54,9 @@ pub enum SubmitRefusal {
     ProposalIncomplete(Vec<ProposalProblem>),
     /// Fields holding a placeholder sentinel the depositor typed.
     Sentinel(Vec<&'static Field>),
+    /// Values without the format their kind needs, in form order, each keyed by
+    /// stored position.
+    Format(Vec<Finding>),
     /// `temporalCoverage` entries that cannot resolve to a structured date.
     Invalid(Vec<UnresolvedCoverage>),
     /// The draft is identical to the published project.
@@ -139,6 +144,17 @@ pub fn check(
     let sentinels = typed_sentinels(audience, draft);
     if !sentinels.is_empty() {
         return Err(SubmitRefusal::Sentinel(sentinels));
+    }
+
+    // Only the fields this audience sees: a depositor cannot fix an RDU-only field,
+    // and a refusal naming one would strand the submission.
+    let findings = format::findings(
+        sections_for(audience).flat_map(|section| section.fields_for(audience)),
+        draft,
+        None,
+    );
+    if !findings.is_empty() {
+        return Err(SubmitRefusal::Format(findings));
     }
 
     // Re-run on every submit, which is what makes a resubmission revalidated rather than trusted

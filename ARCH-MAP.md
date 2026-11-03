@@ -207,7 +207,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
   `editor-core` (the draft model, the form's field registry with its obligation and per-field
-  submit rules, the submit and approve gate sequences (`editor_core::submission`,
+  submit rules, the format findings computed from a draft at render (`editor_core::form::format`), the submit and approve gate sequences (`editor_core::submission`,
   `editor_core::review`), validation, the canonical project and entity writers, the persistence
   ports),
   `editor-ports` (what the editor asks of identity: `Actor`,

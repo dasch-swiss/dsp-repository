@@ -90,6 +90,10 @@ How a posted body is read back into a Draft for one Field (`form::Shape`): a sca
 **Obligation**:
 Whether a Field is required, and the count the rail shows; refusal happens at submit, never at save.
 
+**Format finding**:
+A stored value without the format its kind needs, a link or a DOI (`form::format::Finding`): computed from the Draft at every render and shown on its control, never stored, and refused only at submit.
+_Avoid_: validation error, format error (a finding stops no save).
+
 **Entity proposal**:
 An `entity_proposals` row through which a depositor proposes a new Person or Organization, or a change to one their project references; keyed by Shortcode, it outlives the Submission it rides in, and its allocated id is never reused.
 _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), person request.

@@ -232,6 +232,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
+  `Section::has_editable_field`, `form::ChoiceSet::Languages`, `editor_core::languages::{LANGUAGES, canonical_code}`,
+  `ProjectState::explanation_for`, `AgentScope::get_proposed_first`, `entity::{entity_label, entity_labels, Precedence}`,
   `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`, `editor_core::review::{approval, ApproveRefusal}`,
   `SubmissionState::is_pending`,
   `proposals::proposal_for`,
@@ -280,6 +282,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Used by:** areas/deposit/server (`editor-web`'s facade and `editor-store`; `editor-ports`
   in its tests), areas/deposit/identity (`identity-store` on `editor-ports`, the ports it answers)
 - **Boundary rules:**
+  - No setting name on a depositor's screen, and no entity id except for an entity with no name yet ("Person person-042") or as the tiebreak between two colliding labels ("Ada Lovelace (person, person-042)"); an entity is named through `entity::entity_label` or `entity_labels` with a precedence (depositor views `Proposed`, RDU review `Published`)
+    (**static-analysis** — `web/tests/depositor_vocabulary.rs` rejects `person-NNN`, `organization-NNN` and
+    `EDITOR_*` in rendered text, beside REQ-2.2's forbidden words; its fixtures name every entity and keep the names distinct, so the two id cases are not rendered there).
   - Never depends on a `dpe-*` crate (**static-analysis** — `check-capability-deps.sh` fails an edge to another
     area's crate; **structure** after ADR-0001).
     `core/src/agents.rs` states why it avoids `dpe-core`'s process-wide caches.
@@ -348,7 +353,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `687fa9e0b740`
+- **Fingerprint:** `311d445e6510`
 
 ### areas/deposit/shell
 
@@ -475,7 +480,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `b552c50b4d74`
+- **Fingerprint:** `066a546db150`
 
 ### areas/deposit/server
 
@@ -577,6 +582,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Every `css_class()` returns a complete literal class string so Tailwind's scan sees it;
     stated in six places, enforced by nothing — a violation surfaces as unstyled markup at
     runtime (**docs-only**; candidate for promotion).
+  - `Warning` variants only where the reader must act; a normal state uses `Info` or a
+    `Secondary` badge (**docs-only** — `modules/mosaic/CLAUDE.md` and the variant enums' docs).
   - Accessibility is the tile's responsibility, not the caller's; the working a11y gate is the
     editor's axe-core suite, which `a11y-editor.yml` triggers on `modules/mosaic/**`
     (**static-analysis**, indirectly).
@@ -586,7 +593,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `68a37c22eca5`
+- **Fingerprint:** `0f5ab607b19f`
 
 ### shared/fair
 

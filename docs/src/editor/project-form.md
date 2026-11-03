@@ -154,6 +154,8 @@ Two registry tests hold it to the data rather than to a list repeated in prose:
 
 A field with **no** shape is display-only, and written back unchanged. It used to also mean "a control that has not landed", of which there were eighteen; that set is now empty, and the registry test that pinned it exactly is what keeps it so — a new `ProjectRaw` member placed in a section without a shape fails there rather than rendering as a note nobody notices.
 
+`legalInfo` is the one display-only field whose content is shown on the section: the legal section renders each entry's licence, licence date and URI, copyright holder and authorship, and the review surface keeps the entry count. A section with no editable field for the viewer shows no Save draft, Submit for review or Discard draft.
+
 The note itself stays in `widgets::stated`, unreached by any field today and deliberately kept: it is the fallback such a field lands on, and a depositor who cannot find a field the published page shows would otherwise conclude the form lost it.
 
 `untouched_form_round_trip.rs` derives its table from `FIELDS` and posts pairs it writes by hand rather than rendering a control, so it lives in **`editor-core`**, next to the decoder and the registry it tests together; the controls are `editor-web`'s and are covered by `every_shaped_field_has_a_control`. Deriving the table is the point — a field whose shape is declared is covered automatically, where a hand-written table agrees with the registry only by inspection.

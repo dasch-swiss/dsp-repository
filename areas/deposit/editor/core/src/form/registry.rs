@@ -658,6 +658,13 @@ impl Section {
             }
         })
     }
+
+    /// Whether `audience` sees a field here that the form renders a control for.
+    /// False for a display-only section, which has nothing for a save to post.
+    #[must_use]
+    pub fn has_editable_field(&self, audience: Audience) -> bool {
+        self.fields_for(audience).any(Field::is_editable)
+    }
 }
 
 #[cfg(test)]
@@ -1171,6 +1178,15 @@ mod tests {
         assert!(!visible.contains(&"legal"), "{visible:?}");
         let rdu: Vec<&str> = sections_for(Audience::RduOnly).map(|s| s.id).collect();
         assert!(rdu.contains(&"legal"), "{rdu:?}");
+    }
+
+    #[test]
+    fn only_a_section_with_a_control_for_the_viewer_has_an_editable_field() {
+        let legal = section("legal").expect("legal");
+        assert!(!legal.has_editable_field(Audience::RduOnly));
+        let overview = section("overview").expect("overview");
+        assert!(overview.has_editable_field(Audience::Everyone));
+        assert!(overview.has_editable_field(Audience::RduOnly));
     }
 
     #[test]

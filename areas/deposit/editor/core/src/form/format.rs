@@ -8,7 +8,8 @@
 use std::collections::HashSet;
 
 use serde_json::Value;
-use shared_metadata::is_placeholder;
+use shared_metadata::{breaks_an_address, is_bare_doi, is_placeholder, DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE};
+use url::{Host, Url};
 
 use super::registry::Field;
 use super::{stored_row_key, FormBody, Shape};
@@ -18,20 +19,64 @@ use crate::draft::ProjectDraft;
 /// caller's wording, keyed by this.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValueKind {
-    /// A web address.
+    /// A full web address: `http://` or `https://`, then a host.
     Link,
-    /// A DOI, bare or as a resolver link.
-    Doi,
+    /// A DOI written bare (`10.1234/abcd`), or any [`Self::Link`], which is how a
+    /// resolver link such as `https://doi.org/10.1234/abcd` passes.
+    DoiOrLink,
+    /// A [`Self::Link`], or [`DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE`] exactly: the
+    /// public page links any other value.
+    LinkOrNotAccessible,
 }
 
 impl ValueKind {
-    /// Whether `value` has this kind's format.
+    /// Whether `value`, already trimmed, has this kind's format.
     #[must_use]
-    pub fn accepts(self, _value: &str) -> bool {
+    pub fn accepts(self, value: &str) -> bool {
         match self {
-            Self::Link | Self::Doi => true,
+            Self::Link => is_link(value),
+            Self::DoiOrLink => is_bare_doi(value) || is_link(value),
+            Self::LinkOrNotAccessible => value == DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE || is_link(value),
         }
     }
+
+    /// Whether `value` is one this kind's rule finds fault with: an empty value
+    /// and a placeholder are never checked.
+    #[must_use]
+    pub fn refuses(self, value: &str) -> bool {
+        checkable(value).is_some_and(|value| !self.accepts(value))
+    }
+}
+
+/// An absolute `http` or `https` address, written as a reader would copy it: a
+/// dotted domain or an IP address as host, no credentials, and no whitespace,
+/// control or bidirectional-formatting character. The URL standard the parser
+/// follows is more lenient than that (`https:example.org`, `https:///example.org`,
+/// `https://12345`), so each is checked on the text as typed.
+fn is_link(value: &str) -> bool {
+    let Some(rest) = ["http://", "https://"].iter().find_map(|scheme| {
+        let head = value.get(..scheme.len())?;
+        head.eq_ignore_ascii_case(scheme).then(|| &value[scheme.len()..])
+    }) else {
+        return false;
+    };
+    if rest.starts_with(['/', '\\']) || value.chars().any(breaks_an_address) {
+        return false;
+    }
+    let Ok(url) = Url::parse(value) else {
+        return false;
+    };
+    let host = match url.host() {
+        Some(Host::Domain(domain)) => {
+            let domain = domain.strip_suffix('.').unwrap_or(domain);
+            domain.contains('.') && !domain.split('.').any(str::is_empty)
+        }
+        // Written out, not a number the parser reads as an address.
+        Some(Host::Ipv4(address)) => rest.starts_with(&address.to_string()),
+        Some(Host::Ipv6(_)) => true,
+        None => false,
+    };
+    host && url.username().is_empty() && url.password().is_none()
 }
 
 /// Where a value with a format sits in one field.
@@ -47,12 +92,18 @@ pub struct Member {
     pub kind: ValueKind,
 }
 
-/// The members of `field` that carry a format: the registry hook the walk reads.
-/// Each member must name a control its field's widget posts and marks.
-#[must_use]
-pub fn members(_field: &Field) -> &'static [Member] {
-    &[]
-}
+/// A field, or each row of one, whose whole value is a web address.
+pub const LINK: &[Member] = &[Member { posted: "", stored: &[], kind: ValueKind::Link }];
+
+/// A data management plan's link, or its "not accessible".
+pub const PLAN_LINK: &[Member] = &[Member {
+    posted: "",
+    stored: &[],
+    kind: ValueKind::LinkOrNotAccessible,
+}];
+
+/// The address of each authority reference in a field's rows.
+pub const REFERENCE_LINK: &[Member] = &[Member { posted: "ref.url", stored: &["url"], kind: ValueKind::Link }];
 
 /// One value without the format its kind needs.
 #[derive(Debug, Clone)]
@@ -77,7 +128,7 @@ pub fn findings(
     draft: &ProjectDraft,
     posted: Option<&FormBody>,
 ) -> Vec<Finding> {
-    findings_by(fields, draft, posted, members, ValueKind::accepts)
+    findings_by(fields, draft, posted, |field| field.format, ValueKind::accepts)
 }
 
 /// The name of the control a row's `member` posts under, or, for a field without
@@ -183,9 +234,6 @@ mod tests {
     use super::*;
     use crate::form::registry::field;
 
-    const REFERENCE_URL: &[Member] = &[Member { posted: "ref.url", stored: &["url"], kind: ValueKind::Link }];
-    const WHOLE_VALUE: &[Member] = &[Member { posted: "", stored: &[], kind: ValueKind::Link }];
-
     /// A stand-in rule, since the real ones are not this module's subject: a value
     /// is a link when it contains `://`.
     fn rule(_kind: ValueKind, value: &str) -> bool {
@@ -226,7 +274,7 @@ mod tests {
             { "type": "Geonames", "url": "Basel" },
         ]));
         assert_eq!(
-            walk("spatialCoverage", REFERENCE_URL, &draft, None),
+            walk("spatialCoverage", REFERENCE_LINK, &draft, None),
             ["spatialCoverage.r1.ref.url"]
         );
     }
@@ -243,7 +291,7 @@ mod tests {
             ("spatialCoverage.r1.ref.url", " Basel "),
         ]);
         assert_eq!(
-            walk("spatialCoverage", REFERENCE_URL, &draft, Some(&posted)),
+            walk("spatialCoverage", REFERENCE_LINK, &draft, Some(&posted)),
             ["spatialCoverage.r1.ref.url"]
         );
     }
@@ -252,13 +300,13 @@ mod tests {
     fn test_a_posted_value_the_draft_does_not_hold_has_no_finding() {
         let draft = spatial(json!([{ "type": "Geonames", "url": "https://www.geonames.org/1" }]));
         let posted = body(&[("spatialCoverage.row", "r0"), ("spatialCoverage.r0.ref.url", "Basel")]);
-        assert!(walk("spatialCoverage", REFERENCE_URL, &draft, Some(&posted)).is_empty());
+        assert!(walk("spatialCoverage", REFERENCE_LINK, &draft, Some(&posted)).is_empty());
     }
 
     #[test]
     fn test_an_empty_value_and_a_placeholder_have_no_finding() {
         let draft = spatial(json!([{ "url": "MISSING" }, { "url": "  " }, { "text": "no url" }]));
-        assert!(walk("spatialCoverage", REFERENCE_URL, &draft, None).is_empty());
+        assert!(walk("spatialCoverage", REFERENCE_LINK, &draft, None).is_empty());
     }
 
     #[test]
@@ -266,10 +314,10 @@ mod tests {
         // The secondary URL is read through its slot, here the array's second element.
         let mut draft = ProjectDraft::default();
         draft.set("url", json!(["https://example.test", "Basel"]));
-        draft.set("dataManagementPlan", json!("not accessible"));
-        assert_eq!(walk("secondaryUrl", WHOLE_VALUE, &draft, None), ["secondaryUrl"]);
-        assert!(walk("url", WHOLE_VALUE, &draft, None).is_empty());
-        assert_eq!(walk("dataManagementPlan", WHOLE_VALUE, &draft, None), ["dataManagementPlan"]);
+        draft.set("dataManagementPlan", json!("on request"));
+        assert_eq!(walk("secondaryUrl", LINK, &draft, None), ["secondaryUrl"]);
+        assert!(walk("url", LINK, &draft, None).is_empty());
+        assert_eq!(walk("dataManagementPlan", LINK, &draft, None), ["dataManagementPlan"]);
     }
 
     #[test]
@@ -277,7 +325,7 @@ mod tests {
         let mut draft = ProjectDraft::default();
         draft.set("additionalMaterial", json!(["https://example.test", "Basel", "Basel"]));
         assert_eq!(
-            walk("additionalMaterial", WHOLE_VALUE, &draft, None),
+            walk("additionalMaterial", LINK, &draft, None),
             ["additionalMaterial.r1", "additionalMaterial.r2"]
         );
     }
@@ -289,8 +337,92 @@ mod tests {
         let draft = spatial(json!([{ "type": "Geonames", "url": "Basel" }]));
         let posted = body(&[("name", "A project")]);
         assert_eq!(
-            walk("spatialCoverage", REFERENCE_URL, &draft, Some(&posted)),
+            walk("spatialCoverage", REFERENCE_LINK, &draft, Some(&posted)),
             ["spatialCoverage.r0.ref.url"]
         );
+    }
+
+    #[test]
+    fn test_link_accepts_a_full_web_address() {
+        for value in [
+            "https://www.dasch.swiss",
+            "http://www.dasch.swiss",
+            "HTTPS://www.dasch.swiss/path?query=1#part",
+            "https://192.0.2.1/",
+            "https://[2001:db8::1]/",
+            "https://münchen.de/",
+            "https://www.dasch.swiss./",
+            "https://dasch.swiss/a%20b",
+        ] {
+            assert!(ValueKind::Link.accepts(value), "{value}");
+        }
+    }
+
+    #[test]
+    fn test_link_refuses_a_value_that_is_not_a_full_web_address() {
+        for value in [
+            "www.dasch.swiss",
+            "Basel",
+            "https:www.dasch.swiss",
+            "ftp://www.dasch.swiss",
+            "https://dasch",
+            "https://",
+            "https://www.dasch .swiss",
+            "https://dasch.swiss/a b",
+            "https://dasch.swiss/\ta",
+            "https://dasch..swiss",
+            "https://.dasch.swiss",
+            "https:///www.dasch.swiss",
+            "https://12345",
+            "https://10.1234/abcd",
+            "https://www.dasch.swiss@example.org/",
+            "https://admin:secret@www.dasch.swiss/",
+            "https://www.dasch.swiss/a\u{202E}fdp.exe",
+            "https://www.dasch.swiss/\u{0}",
+            "doi.asdasd..asdasd",
+        ] {
+            assert!(!ValueKind::Link.accepts(value), "{value}");
+        }
+    }
+
+    #[test]
+    fn test_a_plan_link_is_a_full_web_address_or_not_accessible() {
+        assert!(ValueKind::LinkOrNotAccessible.accepts("not accessible"));
+        assert!(ValueKind::LinkOrNotAccessible.accepts("https://doi.org/10.5281/zenodo.7038186"));
+        for value in ["Not accessible", "javascript:alert(1)", "on request"] {
+            assert!(!ValueKind::LinkOrNotAccessible.accepts(value), "{value}");
+        }
+    }
+
+    #[test]
+    fn test_doi_or_link_accepts_a_bare_doi_a_resolver_link_and_a_web_address() {
+        for value in [
+            "10.1234/abcd",
+            "10.1000.10/123(456)",
+            "https://doi.org/10.1234/abcd",
+            "https://dx.doi.org/10.1234/abcd",
+            "https://zenodo.org/record/7248296",
+        ] {
+            assert!(ValueKind::DoiOrLink.accepts(value), "{value}");
+        }
+    }
+
+    #[test]
+    fn test_doi_or_link_refuses_a_value_that_is_neither() {
+        for value in [
+            "doi.asdasd..asdasd",
+            "10.1234",
+            "10./abcd",
+            "10.12a4/abcd",
+            "10.1234/",
+            "10.1234/ab cd",
+            "10.1234/a\u{202E}fdp.exe",
+            "10.1234/ab\u{0007}cd",
+            "10.1234/a\u{00AD}b",
+            "doi:10.1234/abcd",
+            "www.dasch.swiss",
+        ] {
+            assert!(!ValueKind::DoiOrLink.accepts(value), "{value}");
+        }
     }
 }

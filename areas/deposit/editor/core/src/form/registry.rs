@@ -28,6 +28,7 @@ use Shape::{
 };
 
 use crate::draft::UrlSlot;
+use crate::form::format::{Member, ValueKind, LINK, PLAN_LINK, REFERENCE_LINK};
 use crate::form::{ChoiceSet, Shape, WhenCleared};
 use crate::multilingual::UI_LANGUAGES;
 
@@ -52,6 +53,14 @@ const PERIOD_SOURCES: &[&str] = &["Chronontology", "Periodo", "URL"];
 /// The authority sources a `disciplines` reference may come from. Every committed reference is
 /// `Skos` — the SNSF and UNESCO vocabularies are both published as SKOS.
 const DISCIPLINE_SOURCES: &[&str] = &["Skos"];
+
+const PUBLICATION_PID: &[Member] = &[Member {
+    posted: "pid",
+    stored: &["pid", "url"],
+    kind: ValueKind::DoiOrLink,
+}];
+
+const GRANT_LINK: &[Member] = &[Member { posted: "url", stored: &["url"], kind: ValueKind::Link }];
 
 /// How much a field is expected of a depositor: one required tier plus two
 /// degrees of encouragement, since a draft may be missing anything and
@@ -129,9 +138,16 @@ pub struct Field {
     /// applier touches. The single declaration of the field's contract shape and
     /// of what clearing it means; the round-trip test derives its table from here.
     pub shape: Option<Shape>,
+    /// Where this field holds a value with a format to check: the form marks a
+    /// failing one at its control and submit refuses it. Empty for most fields.
+    pub format: &'static [Member],
 }
 
 impl Field {
+    const fn formatted(self, format: &'static [Member]) -> Self {
+        Self { format, ..self }
+    }
+
     /// Whether a depositor may change this field.
     #[must_use]
     pub const fn editable_by_depositor(&self) -> bool {
@@ -178,6 +194,7 @@ const fn hinted(
         display_only: false,
         audience,
         shape,
+        format: &[],
     }
 }
 
@@ -193,6 +210,7 @@ const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>
         // Nothing reads a display-only field back: it is shown as a value and written back
         // unchanged.
         shape: None,
+        format: &[],
     }
 }
 
@@ -296,7 +314,8 @@ pub const FIELDS: &[Field] = &[
         Recommended,
         RduOnly,
         Some(Url(UrlSlot::Primary)),
-    ),
+    )
+    .formatted(LINK),
     hinted(
         "secondaryUrl",
         "External project website",
@@ -304,7 +323,8 @@ pub const FIELDS: &[Field] = &[
         Optional,
         Everyone,
         Some(Url(UrlSlot::Secondary)),
-    ),
+    )
+    .formatted(LINK),
     // --- Status, dates and access ------------------------------------------
     hinted(
         "status",
@@ -367,7 +387,8 @@ pub const FIELDS: &[Field] = &[
         Optional,
         Everyone,
         Some(OPTIONAL_STRING),
-    ),
+    )
+    .formatted(PLAN_LINK),
     // --- The dataset --------------------------------------------------------
     // `Recommended` for both: `082C_decoso` is published with neither, so a
     // submit gate on them would refuse it. See `Obligation`.
@@ -396,7 +417,8 @@ pub const FIELDS: &[Field] = &[
         Required,
         Everyone,
         Some(TextOrReferenceRows(DISCIPLINE_SOURCES)),
-    ),
+    )
+    .formatted(REFERENCE_LINK),
     hinted(
         "temporalCoverage",
         "Temporal coverage",
@@ -405,7 +427,8 @@ pub const FIELDS: &[Field] = &[
         Required,
         Everyone,
         Some(TextOrReferenceRows(PERIOD_SOURCES)),
-    ),
+    )
+    .formatted(REFERENCE_LINK),
     hinted(
         "spatialCoverage",
         "Spatial coverage",
@@ -413,7 +436,8 @@ pub const FIELDS: &[Field] = &[
         Required,
         Everyone,
         Some(ReferenceRows(PLACE_SOURCES)),
-    ),
+    )
+    .formatted(REFERENCE_LINK),
     hinted(
         "provenance",
         "Provenance",
@@ -431,7 +455,8 @@ pub const FIELDS: &[Field] = &[
         Recommended,
         RduOnly,
         Some(StringRows),
-    ),
+    )
+    .formatted(LINK),
     hinted(
         "additionalMaterial",
         "Additional material",
@@ -439,7 +464,8 @@ pub const FIELDS: &[Field] = &[
         Optional,
         Everyone,
         Some(StringRows),
-    ),
+    )
+    .formatted(LINK),
     // --- People and publications -------------------------------------------
     hinted(
         "attributions",
@@ -466,7 +492,8 @@ pub const FIELDS: &[Field] = &[
         Optional,
         Everyone,
         Some(PublicationRows),
-    ),
+    )
+    .formatted(PUBLICATION_PID),
     // --- Funding ------------------------------------------------------------
     hinted(
         "funding",
@@ -476,7 +503,8 @@ pub const FIELDS: &[Field] = &[
         Required,
         Everyone,
         Some(FundingRows),
-    ),
+    )
+    .formatted(GRANT_LINK),
     // --- Image and legal ----------------------------------------------------
     hinted(
         "imageCredit",

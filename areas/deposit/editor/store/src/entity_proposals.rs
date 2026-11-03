@@ -111,9 +111,18 @@ impl EntityProposalRepository for Database {
         let payload = payload.to_string();
         let updated = self
             .write(move |tx| {
+                // The status in the WHERE, not only in the caller's read: an edit racing the
+                // approve transaction must not land on a row approve has just made `accepted`.
                 tx.execute(
-                    "UPDATE entity_proposals SET payload = ?2, updated_at = ?3 WHERE id = ?1",
-                    params![id.to_string(), payload, at],
+                    "UPDATE entity_proposals SET payload = ?2, updated_at = ?3 \
+                     WHERE id = ?1 AND status IN (?4, ?5)",
+                    params![
+                        id.to_string(),
+                        payload,
+                        at,
+                        ProposalStatus::Draft.as_str(),
+                        ProposalStatus::Submitted.as_str(),
+                    ],
                 )
             })
             .await
@@ -557,6 +566,22 @@ mod tests {
         let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
         assert_eq!(found.payload, r#"{"name":"changed"}"#);
         assert_eq!(found.updated_at, at(13));
+    }
+
+    #[tokio::test]
+    async fn test_update_payload_leaves_a_decided_proposal_alone() {
+        let db = test_db("entity-proposals-update-payload-decided").await;
+        let mut proposal = a_proposal("0801", "person-417", ProposalKind::Person, ProposalOperation::New);
+        proposal.status = ProposalStatus::Accepted;
+        EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
+
+        let error = EntityProposalRepository::update_payload(&db, proposal.id, r#"{"name":"changed"}"#, at(13))
+            .await
+            .expect_err("an accepted proposal is not editable");
+
+        assert!(matches!(error, RepositoryError::NotFound { .. }), "{error}");
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(found.payload, proposal.payload);
     }
 
     #[tokio::test]

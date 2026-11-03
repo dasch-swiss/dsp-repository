@@ -12,6 +12,60 @@ use serde_json::Value;
 use crate::models::AuthorityFileReference;
 use crate::utils::Multilingual;
 
+/// The `dataManagementPlan` value saying the plan cannot be shared: the public page
+/// shows it as text, and any other value as a link.
+pub const DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE: &str = "not accessible";
+
+/// Whether `value` is a DOI written bare: `10.`, a registrant code of dot-separated digits, `/`,
+/// and a suffix holding no character an address cannot hold ([`breaks_an_address`]).
+#[must_use]
+pub fn is_bare_doi(value: &str) -> bool {
+    let Some((prefix, suffix)) = value.split_once('/') else {
+        return false;
+    };
+    let Some(registrant) = prefix.strip_prefix("10.") else {
+        return false;
+    };
+    registrant
+        .split('.')
+        .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_digit()))
+        && !suffix.is_empty()
+        && !suffix.chars().any(breaks_an_address)
+}
+
+/// Whether a link or a DOI holding `c` would read as something it is not, or not work as copied:
+/// whitespace, a control character, or one that hides or reorders text without showing itself.
+/// The one rule for every value with a format, so a new hidden class is added here once.
+#[must_use]
+pub fn breaks_an_address(c: char) -> bool {
+    c.is_whitespace()
+        || c.is_control()
+        || matches!(
+            c,
+            '\u{00AD}'
+                | '\u{061C}'
+                | '\u{115F}'
+                | '\u{200B}'..='\u{200F}'
+                | '\u{202A}'..='\u{202E}'
+                | '\u{2060}'..='\u{2064}'
+                | '\u{2066}'..='\u{2069}'
+                | '\u{3164}'
+                | '\u{FEFF}'
+                | '\u{E0001}'..='\u{E007F}'
+        )
+}
+
+/// Where a publication's `pid` resolves: a bare DOI, which the editor stores as typed, through
+/// `https://doi.org/`; any other value as it is. As a link or an `@id`, a bare DOI is a relative path.
+#[must_use]
+pub fn pid_href(pid: &str) -> String {
+    if is_bare_doi(pid) {
+        format!("https://doi.org/{pid}")
+    } else {
+        pid.to_string()
+    }
+}
+
 /// Whether `candidate` could be a project shortcode.
 ///
 /// Non-empty, ASCII alphanumeric, and at most [`MAX_SHORTCODE_LEN`] characters.

@@ -564,6 +564,18 @@ mod tests {
     }
 
     #[test]
+    fn a_citation_with_a_bare_doi_is_identified_through_the_doi_resolver() {
+        let raw = ProjectRaw {
+            publications: Some(vec![shared_metadata::Publication {
+                text: "A paper (2024)".to_string(),
+                pid: Some(shared_metadata::project::Pid { url: "10.1234/abcd".to_string(), text: None }),
+            }]),
+            ..project()
+        };
+        assert_eq!(render(&raw)["citation"]["@id"], "https://doi.org/10.1234/abcd");
+    }
+
+    #[test]
     fn several_licenses_become_an_array() {
         let raw = ProjectRaw {
             legal_info: vec![

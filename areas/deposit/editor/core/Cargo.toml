@@ -18,6 +18,8 @@ shared-metadata = { path = "../../../../shared/metadata" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+# The link format rule (`form::format`).
+url.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

@@ -418,7 +418,7 @@ because F-UJI's linked-data registry lists that namespace.
   `shared/fair/src/record_datacite.rs`).
 - The project's schema.org graph carries `hasPart` over record ARKs
   (`part_nodes`), `citation` nodes whose `@id` is a publication's PID when one is
-  recorded (`citation_nodes`), `spatialCoverage` `Place` nodes with `sameAs` to
+  recorded, a bare DOI through `https://doi.org/` (`citation_nodes`), `spatialCoverage` `Place` nodes with `sameAs` to
   an authority URL (`spatial_nodes`), agent nodes whose `@id` is the agent's
   ORCID (`agent_node`), `prov:wasAttributedTo` pointing at *those same nodes*
   rather than describing copies (`attributed_to`), `includedInDataCatalog`, and

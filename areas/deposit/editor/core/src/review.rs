@@ -27,10 +27,11 @@ use serde_json::Value;
 
 use crate::agents::{AgentScope, Agents};
 use crate::draft::{DraftError, ProjectDraft};
-use crate::form::registry::{self, Audience, Field};
+use crate::form::format::{self, Finding};
+use crate::form::registry::{self, sections_for, Audience, Field};
 use crate::form::submit::unresolved_agents;
 use crate::form::{apply, FormBody};
-use crate::proposals::{EntityProposal, ProposalDecision};
+use crate::proposals::{problems as proposal_problems, EntityProposal, ProposalDecision, ProposalProblem};
 
 /// The name every decision control on the diff form posts under, before the
 /// field id. Stated once, because the renderer and [`decisions`] both spell it.
@@ -374,6 +375,10 @@ pub enum ApproveRefusal {
     /// Fields referring to an entity this approval rejects or that does not exist, with the
     /// reference each holds.
     RejectedEntity(Vec<(&'static Field, String)>),
+    /// Proposals this approval keeps whose payload the entity form's rules refuse.
+    ProposalIncomplete(Vec<ProposalProblem>),
+    /// Values in the decided draft without the format their kind needs, RDU-only fields included.
+    Format(Vec<Finding>),
     /// The decided draft is not a [`ProjectRaw`](shared_metadata::project::ProjectRaw).
     Unpublishable(DraftError),
 }
@@ -390,7 +395,12 @@ pub enum ApproveRefusal {
 /// 3. the decided draft refers to no rejected or unknown entity
 ///    ([`ApproveRefusal::RejectedEntity`]): nothing is stripped silently, RDU substitutes the
 ///    referencing fields or requests changes instead;
-/// 4. the decided draft converts to a project file ([`ApproveRefusal::Unpublishable`]): a
+/// 4. every proposal this approval keeps passes the entity form's rules
+///    ([`ApproveRefusal::ProposalIncomplete`]): the depositor can still edit a submitted proposal,
+///    so the submit gate's check is not enough;
+/// 5. every value of the decided draft has its format ([`ApproveRefusal::Format`]), over every
+///    field: the depositor's submit skips the RDU-only ones, and nothing after approval checks;
+/// 6. the decided draft converts to a project file ([`ApproveRefusal::Unpublishable`]): a
 ///    permissive draft can pass every check above and still fail to become one.
 ///
 /// `proposals` are the project's [`Submitted`](crate::proposals::ProposalStatus::Submitted) ones
@@ -430,6 +440,20 @@ pub fn approval(
     let dangling = unresolved_agents(Audience::RduOnly, &decided, &scope);
     if !dangling.is_empty() {
         return Err(ApproveRefusal::RejectedEntity(dangling));
+    }
+
+    let problems = proposal_problems(&surviving, |id| scope.published_body(id));
+    if !problems.is_empty() {
+        return Err(ApproveRefusal::ProposalIncomplete(problems));
+    }
+
+    let findings = format::findings(
+        sections_for(Audience::RduOnly).flat_map(|section| section.fields_for(Audience::RduOnly)),
+        &decided,
+        None,
+    );
+    if !findings.is_empty() {
+        return Err(ApproveRefusal::Format(findings));
     }
 
     decided.to_raw().map_err(ApproveRefusal::Unpublishable)?;

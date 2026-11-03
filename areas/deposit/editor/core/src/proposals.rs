@@ -19,6 +19,7 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+use crate::form::format::ValueKind;
 use crate::records::UnknownVariant;
 
 /// Which entity store a proposal is about.
@@ -318,12 +319,13 @@ pub fn next_entity_id<'a>(kind: ProposalKind, taken: impl Iterator<Item = &'a st
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EntityFinding {
     /// The member as it is spelled in JSON: `"name"`, `"url"`, `"address"`,
-    /// `"jobTitles"`, `"givenNames"`, `"familyNames"`.
+    /// `"jobTitles"`, `"givenNames"`, `"familyNames"`, `"sameAs"`.
     pub field: &'static str,
     /// Position within a repeatable member, in document order; `None` for a
     /// scalar. Not an identity — same reasoning as
     /// [`shared_metadata::checks::Finding`], whose docs state it.
     pub index: Option<usize>,
+    /// Worded to follow the field's label, which the caller puts first: it names no member.
     pub message: String,
 }
 
@@ -338,8 +340,8 @@ pub struct EntityFinding {
 /// `country` or none, but six committed organizations satisfy neither, and
 /// judging an inherited value would make them unchangeable without inventing
 /// data. `tests::six_committed_organizations_carry_an_incomplete_address` pins
-/// them. `sameAs` carries no rule: the contract defaults an absent one, and no
-/// rule asks for one.
+/// them. `url` and each `sameAs` link must be a full web address; `sameAs`
+/// itself may be absent, which the contract defaults.
 #[must_use]
 pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_json::Value>) -> Vec<EntityFinding> {
     let mut findings = Vec::new();
@@ -348,16 +350,19 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
         findings.push(EntityFinding {
             field: "name",
             index: None,
-            message: "name is required".to_string(),
+            message: "is required".to_string(),
         });
     }
     if !holds_non_blank_string(payload, "url") {
         findings.push(EntityFinding {
             field: "url",
             index: None,
-            message: "url is required".to_string(),
+            message: "is required".to_string(),
         });
+    } else if payload["url"].as_str().is_some_and(|url| ValueKind::Link.refuses(url)) {
+        findings.push(EntityFinding { field: "url", index: None, message: NOT_A_LINK.to_string() });
     }
+    same_as_findings(payload, &mut findings);
 
     // `address` is optional, but once present each of the four is required even
     // if every one is blank: a section the depositor opened and left blank must
@@ -368,12 +373,17 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
             .and_then(|entity| entity.get("address"))
             .is_some_and(|prior| prior == address);
         if !inherited_unchanged {
-            for field in ["street", "postalCode", "locality", "country"] {
+            for (field, part) in [
+                ("street", "a street"),
+                ("postalCode", "a postal code"),
+                ("locality", "a locality"),
+                ("country", "a country"),
+            ] {
                 if !holds_non_blank_string(address, field) {
                     findings.push(EntityFinding {
                         field: "address",
                         index: None,
-                        message: format!("address.{field} is required once address is provided"),
+                        message: format!("needs {part} once any part of it is given"),
                     });
                 }
             }
@@ -385,7 +395,7 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
 
 /// Every rule a proposed person must satisfy, against the `Person` shape in
 /// `shared/metadata/src/person.rs`, including the project-role guard.
-/// `sameAs` carries no rule, as in [`check_organization`].
+/// Each `sameAs` link must be a full web address, as in [`check_organization`].
 #[must_use]
 pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
     let mut findings = Vec::new();
@@ -395,7 +405,7 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
             findings.push(EntityFinding {
                 field,
                 index: None,
-                message: format!("{field} must hold at least one non-blank entry"),
+                message: "needs at least one entry".to_string(),
             });
         }
     }
@@ -408,7 +418,7 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         findings.push(EntityFinding {
             field: "jobTitles",
             index: None,
-            message: "jobTitles must be present, though it may be empty".to_string(),
+            message: "must be present, though it may be empty".to_string(),
         });
     }
 
@@ -424,7 +434,7 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
                         field: "jobTitles",
                         index: Some(index),
                         message: format!(
-                            "{title:?} is a project-contribution role, not a job title; it belongs in the project's attributions (contributorType)"
+                            "{title:?} is a project role, not a job title; record it in the project's contributors instead"
                         ),
                     });
                 }
@@ -432,7 +442,84 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         }
     }
 
+    same_as_findings(payload, &mut findings);
+
     findings
+}
+
+/// One thing wrong with one of the project's own live proposals.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProposalProblem {
+    pub entity_id: String,
+    pub kind: ProposalKind,
+    pub fault: ProposalFault,
+}
+
+/// What [`check`] found wrong with a proposal.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProposalFault {
+    /// The stored payload is not JSON this build can parse.
+    Unreadable,
+    Finding(EntityFinding),
+}
+
+/// What the entity form's rules find wrong with each live proposal in `proposals`. Run again at
+/// approval: a submitted proposal stays editable until the round ends.
+///
+/// `published_body` answers an entity id with the committed store's body, for the address
+/// carve-out of [`check_organization`].
+pub fn problems<'a>(
+    proposals: &[EntityProposal],
+    published_body: impl Fn(&str) -> Option<&'a serde_json::Value>,
+) -> Vec<ProposalProblem> {
+    let mut problems = Vec::new();
+    for proposal in proposals.iter().filter(|proposal| proposal.is_live()) {
+        let problem = |fault| ProposalProblem {
+            entity_id: proposal.entity_id.clone(),
+            kind: proposal.kind,
+            fault,
+        };
+        let payload: serde_json::Value = match serde_json::from_str(&proposal.payload) {
+            Ok(payload) => payload,
+            // Cannot happen through the form — every writer stores what `serde_json::Value`
+            // itself produced — but a stored payload this build cannot parse is a reason to refuse,
+            // not to skip the check silently.
+            Err(_) => {
+                problems.push(problem(ProposalFault::Unreadable));
+                continue;
+            }
+        };
+        let findings = match proposal.kind {
+            ProposalKind::Person => check_person(&payload),
+            // The published side is what makes the address carve-out work: an incomplete address
+            // inherited unchanged from a published organisation is passed through, one the
+            // depositor wrote is refused. `None` for a `New` proposal, which has nothing to
+            // inherit — `published_body` answers only for the published store, so a proposal's own
+            // payload can never grandfather itself.
+            ProposalKind::Organization => check_organization(&payload, published_body(&proposal.entity_id)),
+        };
+        problems.extend(findings.into_iter().map(|finding| problem(ProposalFault::Finding(finding))));
+    }
+    problems
+}
+
+/// The message a link without the format the entity form marks it for renders as.
+const NOT_A_LINK: &str = "the link is not a full web address";
+
+/// One finding per `sameAs` reference whose link is not a full web address: the
+/// rule `form::format` applies to the same controls on the entity form, so a
+/// proposal is refused at submit for what its form shows.
+fn same_as_findings(payload: &serde_json::Value, findings: &mut Vec<EntityFinding>) {
+    let references = payload.get("sameAs").and_then(serde_json::Value::as_array);
+    for (index, reference) in references.into_iter().flatten().enumerate() {
+        if reference["url"].as_str().is_some_and(|url| ValueKind::Link.refuses(url)) {
+            findings.push(EntityFinding {
+                field: "sameAs",
+                index: Some(index),
+                message: NOT_A_LINK.to_string(),
+            });
+        }
+    }
 }
 
 /// Whether `payload`'s `field` member is a JSON string that is non-blank after
@@ -883,6 +970,58 @@ mod tests {
         });
         let findings = check_organization(&org, None);
         assert_eq!(findings.iter().filter(|f| f.field == "address").count(), 4, "{findings:?}");
+    }
+
+    #[test]
+    fn an_organisation_whose_url_is_not_a_full_web_address_is_a_finding() {
+        let mut org = valid_organization();
+        org["url"] = json!("www.unil.ch");
+        let findings = check_organization(&org, None);
+        assert!(
+            findings.iter().any(|f| f.field == "url" && f.message == NOT_A_LINK),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn a_same_as_link_that_is_not_a_full_web_address_is_a_finding_on_its_reference() {
+        let mut person = valid_person();
+        person["sameAs"] = json!([
+            { "type": "ORCID", "url": "https://orcid.org/0000-0002-1825-0097" },
+            { "type": "URL", "url": "orcid.org/0000-0002-1825-0097" },
+        ]);
+        let findings = check_person(&person);
+        let links: Vec<_> = findings.iter().filter(|f| f.field == "sameAs").collect();
+        assert_eq!(links.len(), 1, "{findings:?}");
+        assert_eq!(links[0].index, Some(1));
+    }
+
+    #[test]
+    fn no_committed_entity_carries_a_link_the_rule_refuses() {
+        // A change proposal starts from the committed entity, so a refused link there
+        // would block every proposal to change it.
+        let mut refused = Vec::new();
+        for (dir, kind) in [
+            ("persons", ProposalKind::Person),
+            ("organizations", ProposalKind::Organization),
+        ] {
+            for file in json_files(&data_dir().join(dir)) {
+                let entity: serde_json::Value =
+                    serde_json::from_str(&std::fs::read_to_string(&file).expect("an entity file reads"))
+                        .expect("an entity file parses");
+                let findings = match kind {
+                    ProposalKind::Person => check_person(&entity),
+                    ProposalKind::Organization => check_organization(&entity, Some(&entity)),
+                };
+                refused.extend(
+                    findings
+                        .into_iter()
+                        .filter(|finding| finding.message == NOT_A_LINK)
+                        .map(|finding| format!("{}: {}", file.display(), finding.field)),
+                );
+            }
+        }
+        assert!(refused.is_empty(), "{refused:#?}");
     }
 
     fn valid_person() -> serde_json::Value {

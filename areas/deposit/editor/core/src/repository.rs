@@ -176,7 +176,8 @@ pub trait EntityProposalRepository: Send + Sync {
     /// is the caller's; nothing is allocated.
     async fn create_change(&self, proposal: &EntityProposal) -> Result<()>;
 
-    /// Replace a proposal's payload, stamping `updated_at`.
+    /// Replace a proposal's payload, stamping `updated_at`, while it is `Draft` or `Submitted`:
+    /// [`RepositoryError::NotFound`] for any other status, as for an unknown id.
     async fn update_payload(&self, id: Uuid, payload: &str, at: DateTime<Utc>) -> Result<()>;
 
     /// Record what RDU decided about this proposal, or clear it. Leaves

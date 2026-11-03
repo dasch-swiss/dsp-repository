@@ -76,7 +76,7 @@ pub fn project_sidebar(proj: &Project, ctx: &RenderContext) -> Markup {
                 @if let Some(dmp) = &proj.data_management_plan {
                     div {
                         div class="dpe-subtitle" { "Data Management Plan" }
-                        @if dmp == "not accessible" {
+                        @if dmp == shared_metadata::DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE {
                             div { "Not accessible" }
                         } @else {
                             a   href=(dmp)

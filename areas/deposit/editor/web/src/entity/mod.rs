@@ -10,6 +10,7 @@
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
+use editor_core::form::format::{self, Finding};
 use editor_core::form::registry::{Audience, Field, Obligation};
 use editor_core::form::{FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind};
@@ -21,7 +22,7 @@ use mosaic_tiles::text_field::{text_field, InputType};
 use serde_json::Value;
 use shared_datastar as datastar;
 
-use crate::form::widgets::{agent_rows, labelled, multilingual, reference_rows, stated, string_rows, Mode, Rows};
+use crate::form::widgets::{agent_rows, formatted_text, multilingual, reference_rows, stated, string_rows, Mode, Rows};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets, and the anchor a save returns to
@@ -54,6 +55,7 @@ const PERSON_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::StringRows),
+        format: &[],
     },
     Field {
         id: "familyNames",
@@ -63,6 +65,7 @@ const PERSON_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::StringRows),
+        format: &[],
     },
     Field {
         id: "jobTitles",
@@ -75,6 +78,7 @@ const PERSON_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::StringRows),
+        format: &[],
     },
     Field {
         id: "affiliations",
@@ -84,6 +88,7 @@ const PERSON_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::AgentRows),
+        format: &[],
     },
     Field {
         id: "sameAs",
@@ -93,6 +98,7 @@ const PERSON_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::ReferenceRows(SAME_AS_TYPES)),
+        format: format::REFERENCE_LINK,
     },
     Field {
         id: "email",
@@ -104,6 +110,7 @@ const PERSON_FIELDS: &[Field] = &[
         // type="text", not type="email": a payload may hold a value that does not
         // validate, and a browser refusing a half-typed address would block the save.
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
+        format: &[],
     },
 ];
 
@@ -119,6 +126,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
+        format: &[],
     },
     Field {
         id: "url",
@@ -128,6 +136,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
+        format: format::LINK,
     },
     Field {
         id: "alternativeName",
@@ -137,6 +146,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::Multilingual),
+        format: &[],
     },
     Field {
         id: "sameAs",
@@ -146,6 +156,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::ReferenceRows(SAME_AS_TYPES)),
+        format: format::REFERENCE_LINK,
     },
     Field {
         id: "email",
@@ -155,6 +166,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         display_only: false,
         audience: Audience::Everyone,
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
+        format: &[],
     },
 ];
 
@@ -188,6 +200,22 @@ pub fn fields_for(kind: ProposalKind) -> &'static [Field] {
         ProposalKind::Person => PERSON_FIELDS,
         ProposalKind::Organization => ORGANIZATION_FIELDS,
     }
+}
+
+/// The address group's legend, which has no [`Field`] of its own.
+const ADDRESS_LABEL: &str = "Address";
+
+/// What a proposal finding on `member` (an [`editor_core::proposals::EntityFinding::field`]) is
+/// named by: the form's label for it, or `None` for a member this kind's form does not show.
+#[must_use]
+pub fn finding_label(kind: ProposalKind, member: &str) -> Option<&'static str> {
+    if member == "address" {
+        return (kind == ProposalKind::Organization).then_some(ADDRESS_LABEL);
+    }
+    fields_for(kind)
+        .iter()
+        .find(|field| field.id == member)
+        .map(|field| field.label)
 }
 
 /// Why the form is not offered: a proposal that is no longer
@@ -278,6 +306,9 @@ pub struct EntityView<'a> {
     pub posted: Option<&'a FormBody>,
     pub adding_row: Option<&'a str>,
     pub agents: Option<&'a AgentScope<'a>>,
+    /// Format findings on the proposed entity, each keyed by the control it renders
+    /// on, as the section form's are.
+    pub format_findings: Vec<Finding>,
     /// Base URL a repeatable field's add and remove controls submit to —
     /// `/projects/{shortcode}/entities/{entity_id}/fields`.
     pub rows_action: String,
@@ -302,10 +333,11 @@ impl EntityView<'_> {
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
-            format_findings: &[],
+            format_findings: &self.format_findings,
             // Never the propose controls: this route dispatches none of the propose
             // intents, so they would be dead controls; see Rows::propose.
             propose: false,
+            focus: None,
         }
     }
 
@@ -418,7 +450,7 @@ fn entity_field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<
         return stated(field, draft, None);
     }
     match field.shape {
-        Some(Shape::Text(_)) => scalar_text(field, draft),
+        Some(Shape::Text(_)) => scalar_text(field, draft, rows),
         Some(Shape::Multilingual) => multilingual(field, draft, 2),
         Some(Shape::StringRows) => string_rows(field, draft, rows),
         Some(Shape::AgentRows) => agent_rows(field, draft, rows),
@@ -430,17 +462,11 @@ fn entity_field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<
 /// A plain scalar text control: `name`, `url`, `email`. Not
 /// `crate::form::widgets::control`'s dispatch, for the reason
 /// [`entity_field_row`] gives.
-fn scalar_text(field: &Field, draft: &ProjectDraft) -> Markup {
+fn scalar_text(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let value = draft.get(field.id).and_then(Value::as_str).unwrap_or_default();
     // type="text": a payload may hold a value that does not validate, and a
     // browser refusing a half-typed one would block the save.
-    let mut control = text_field(field.id, labelled(field)).input_type(InputType::Text).value(value);
-    if let Some(hint) = field.hint {
-        control = control.hint(hint);
-    }
-    html! {
-        (control)
-    }
+    formatted_text(field, value, rows)
 }
 
 /// `address`: a flat group of six scalar members, which is why it is not one of
@@ -456,7 +482,7 @@ fn address_group(view: &EntityView<'_>, read_only: bool) -> Markup {
     // and checkbox_group but is pub(super) to that crate.
     html! {
         fieldset class="field field-group" aria-describedby=(ADDRESS_HINT_ID) {
-            legend class="field-label" { "Address" }
+            legend class="field-label" { (ADDRESS_LABEL) }
             div class="flex flex-col gap-3" {
                 @for (name, label) in ADDRESS_MEMBERS.iter().copied() {
                     @let value = member(name);
@@ -653,6 +679,7 @@ mod tests {
             posted: None,
             adding_row: None,
             agents: None,
+            format_findings: Vec::new(),
             rows_action: "/projects/0801d/entities/person-001/fields".to_string(),
         };
         let out = form(&view).into_string();
@@ -662,5 +689,159 @@ mod tests {
             ),
             "{out}"
         );
+    }
+
+    #[test]
+    fn a_format_finding_marks_the_organisations_url_and_same_as_link() {
+        let now = chrono::Utc::now();
+        let proposal = EntityProposal {
+            id: uuid::Uuid::nil(),
+            shortcode: "0801d".to_string(),
+            entity_id: "organization-900".to_string(),
+            kind: ProposalKind::Organization,
+            operation: editor_core::proposals::ProposalOperation::New,
+            payload: "{}".to_string(),
+            status: editor_core::proposals::ProposalStatus::Draft,
+            proposed_by: None,
+            created_at: now,
+            updated_at: now,
+            decision: None,
+            decided_by: None,
+            decided_at: None,
+            retired_at: None,
+        };
+        let mut draft = ProjectDraft::default();
+        draft.set("name", serde_json::json!("DaSCH"));
+        draft.set("url", serde_json::json!("www.dasch.swiss"));
+        draft.set(
+            "sameAs",
+            serde_json::json!([
+                { "type": "URL", "url": "https://www.dasch.swiss" },
+                { "type": "URL", "url": "dasch.swiss" },
+            ]),
+        );
+        let view = EntityView {
+            shortcode: "0801d",
+            proposal: &proposal,
+            over: None,
+            draft: &draft,
+            confirming: None,
+            notice: None,
+            posted: None,
+            adding_row: None,
+            agents: None,
+            format_findings: format::findings(ORGANIZATION_FIELDS.iter(), &draft, None),
+            rows_action: "/projects/0801d/entities/organization-900/fields".to_string(),
+        };
+        let out = form(&view).into_string();
+        let marked: Vec<&str> = out
+            .split("<input")
+            .filter(|input| input.contains(r#"aria-invalid="true""#))
+            .filter_map(|input| input.split(r#"name=""#).nth(1)?.split('"').next())
+            .collect();
+        assert_eq!(marked, ["url", "sameAs.r1.ref.url"], "{out}");
+    }
+
+    /// A payload holding `value` where `member` of `field` sits.
+    fn holding(field: &Field, member: &format::Member, value: &str) -> serde_json::Value {
+        let leaf = member
+            .stored
+            .iter()
+            .rev()
+            .fold(serde_json::json!(value), |inner, key| serde_json::json!({ *key: inner }));
+        let mut payload = serde_json::json!({ "name": "DaSCH", "url": "https://www.dasch.swiss" });
+        payload[field.id] = match field.shape {
+            Some(shape) if shape.has_rows() => serde_json::json!([leaf]),
+            _ => leaf,
+        };
+        payload
+    }
+
+    #[test]
+    fn every_entity_format_member_is_refused_at_submit_where_the_form_marks_it() {
+        // The form reads `Field::format`, the proposal gate its own rules; a member
+        // declared on one and not the other would show an error submit lets through.
+        for kind in [ProposalKind::Person, ProposalKind::Organization] {
+            for field in fields_for(kind) {
+                for member in field.format {
+                    let refused = |value: &str| {
+                        let payload = holding(field, member, value);
+                        let findings = match kind {
+                            ProposalKind::Person => editor_core::proposals::check_person(&payload),
+                            ProposalKind::Organization => editor_core::proposals::check_organization(&payload, None),
+                        };
+                        findings.iter().any(|finding| finding.field == field.id)
+                    };
+                    assert!(refused("www.example.org"), "{kind:?} {}", field.id);
+                    assert!(!refused("https://www.example.org"), "{kind:?} {}", field.id);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn every_entity_link_the_gate_refuses_is_one_the_form_marks() {
+        // The other direction: a gate rule on a field with no format would refuse a
+        // submission over a value its form shows no error for.
+        for kind in [ProposalKind::Person, ProposalKind::Organization] {
+            let mut payload = serde_json::json!({});
+            for field in fields_for(kind) {
+                payload[field.id] = match field.shape {
+                    Some(Shape::ReferenceRows(_)) => serde_json::json!([{ "type": "URL", "url": "www.example.org" }]),
+                    Some(Shape::Multilingual) => serde_json::json!({ "en": "www.example.org" }),
+                    Some(shape) if shape.has_rows() => serde_json::json!(["www.example.org"]),
+                    _ => serde_json::json!("www.example.org"),
+                };
+            }
+            let findings = match kind {
+                ProposalKind::Person => editor_core::proposals::check_person(&payload),
+                ProposalKind::Organization => editor_core::proposals::check_organization(&payload, None),
+            };
+            for finding in findings.iter().filter(|finding| finding.message.contains("web address")) {
+                let field = fields_for(kind).iter().find(|field| field.id == finding.field);
+                assert!(field.is_some_and(|field| !field.format.is_empty()), "{kind:?}: {finding:?}");
+            }
+            assert!(
+                findings.iter().any(|finding| finding.message.contains("web address")),
+                "{kind:?}: {findings:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_member_a_proposal_finding_names_has_a_label() {
+        // A payload failing every rule; a member without a label would reach the
+        // depositor as its JSON name.
+        let person = serde_json::json!({ "jobTitles": ["Project Leader"], "sameAs": [{ "type": "URL", "url": "x" }] });
+        let organization = serde_json::json!({ "address": {}, "sameAs": [{ "type": "URL", "url": "x" }] });
+        let mut findings: Vec<(ProposalKind, editor_core::proposals::EntityFinding)> = Vec::new();
+        findings.extend(
+            editor_core::proposals::check_person(&person)
+                .into_iter()
+                .map(|f| (ProposalKind::Person, f)),
+        );
+        findings.extend(
+            editor_core::proposals::check_organization(&organization, None)
+                .into_iter()
+                .map(|f| (ProposalKind::Organization, f)),
+        );
+        let members: std::collections::BTreeSet<&str> = findings.iter().map(|(_, finding)| finding.field).collect();
+        assert_eq!(
+            members,
+            [
+                "address",
+                "familyNames",
+                "givenNames",
+                "jobTitles",
+                "name",
+                "sameAs",
+                "url"
+            ]
+            .into(),
+            "every rule fired; a member added here needs a label in `finding_label`"
+        );
+        for (kind, finding) in &findings {
+            assert!(finding_label(*kind, finding.field).is_some(), "{kind:?}: {finding:?}");
+        }
     }
 }

@@ -32,7 +32,7 @@ use mosaic_tiles::link::link;
 use serde_json::Value;
 use shared_datastar as datastar;
 
-use crate::form::widgets::{field_row, Mode, Rows};
+use crate::form::widgets::{field_row, Mode, Rows, FOCUS_AUTOFOCUS};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
@@ -355,11 +355,16 @@ pub struct SectionView<'a> {
     /// for add/remove, for an agent picker's choice and for an autosave.
     pub posted: Option<&'a FormBody>,
     /// Values without the format their kind needs, each rendered on its own control
-    /// on every rendering of the draft that holds it. Separate from [`Self::errors`],
-    /// which a format refusal fills with one line per field holding a finding.
+    /// on every rendering of the draft that holds it, except the autosave's, which leaves
+    /// out a value typed since the last write. Separate from [`Self::errors`], which a format
+    /// refusal fills with one line per field holding a finding outside this section, or in it
+    /// with no control because RDU accepted it.
     pub format_findings: Vec<Finding>,
     /// The field one more blank row was just asked for.
     pub adding_row: Option<&'a str>,
+    /// Whether the first control holding a format finding takes focus: a refused submit's
+    /// re-render, as `/projects/new` focuses its refused field.
+    pub focus_finding: bool,
     /// The agents an id field may refer to, borrowed from `EditorState`'s snapshot.
     pub agents: Option<&'a AgentScope<'a>>,
     /// Base URL a repeatable field's add and remove controls submit to: `/fields`
@@ -447,6 +452,16 @@ impl SectionView<'_> {
             // The section form dispatches all three propose intents, unlike the entity
             // form's affiliations picker, which reuses these widgets.
             propose: true,
+            // A field RDU accepted renders no control to focus.
+            focus: self
+                .focus_finding
+                .then(|| {
+                    self.format_findings
+                        .iter()
+                        .find(|finding| !self.accepted_fields.iter().any(|accepted| accepted == finding.field.id))
+                })
+                .flatten()
+                .map(|finding| finding.control.as_str()),
         }
     }
 }
@@ -464,7 +479,11 @@ pub fn page(view: &SectionView<'_>) -> Markup {
 /// for the plain one, so the two cannot drift.
 pub fn region(view: &SectionView<'_>) -> Markup {
     html! {
-        section id=(REGION_ID) class="grid gap-6 md:grid-cols-[16rem_1fr] items-start" {
+        section
+            id=(REGION_ID)
+            class="grid gap-6 md:grid-cols-[16rem_1fr] items-start"
+            data-init=[view.focus_finding.then_some(FOCUS_AUTOFOCUS)]
+        {
             (rail(view))
             div { (status(view)) (proposals_summary(view)) (form(view)) }
         }
@@ -1008,6 +1027,7 @@ mod tests {
             posted: None,
             format_findings: Vec::new(),
             adding_row: None,
+            focus_finding: false,
             rows_action: format!("/projects/0801d/sections/{section_id}/fields"),
             awaiting_release: false,
             shortcode: "0801d",

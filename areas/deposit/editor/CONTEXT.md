@@ -91,7 +91,7 @@ How a posted body is read back into a Draft for one Field (`form::Shape`): a sca
 Whether a Field is required, and the count the rail shows; refusal happens at submit, never at save.
 
 **Format finding**:
-A stored value without the format its kind needs, a link or a DOI (`form::format::Finding`): computed from the Draft at every render and shown on its control, never stored, and refused only at submit.
+A stored value without the format its kind needs, a web address, a DOI or web address, or a plan link or `not accessible` (`form::format::Finding`): computed from the Draft at every render and shown on its control, never stored, and refused only at submit and, over every field, at approve.
 _Avoid_: validation error, format error (a finding stops no save).
 
 **Entity proposal**:

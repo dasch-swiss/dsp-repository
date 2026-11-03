@@ -32,8 +32,9 @@ pub use models::AuthorityFileReference;
 pub use organization::{Address, Organization};
 pub use person::{is_role_job_title, Person, JOB_TITLE_ROLE_WORDS};
 pub use project::{
-    is_valid_shortcode, AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License,
-    ProjectRaw, ProjectStatus, Publication, TemporalCoverage, ACCESS_RIGHTS_VALUES, MAX_SHORTCODE_LEN,
+    breaks_an_address, is_bare_doi, is_valid_shortcode, pid_href, AccessRights, AccessRightsType, Attribution,
+    Discipline, Funding, Grant, LegalInfo, License, ProjectRaw, ProjectStatus, Publication, TemporalCoverage,
+    ACCESS_RIGHTS_VALUES, DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE, MAX_SHORTCODE_LEN,
 };
 pub use record::{
     record_datestamp, strip_ark_timestamp, with_ark_host, Pid as RecordPid, Record, RecordFile, RecordLegalInfo,

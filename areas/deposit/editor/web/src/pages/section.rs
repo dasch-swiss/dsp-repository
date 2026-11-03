@@ -145,14 +145,10 @@ pub enum Locked {
 }
 
 impl Locked {
-    /// What the reader is told, and what they can do about it.
+    /// RDU's wording is [`rdu_locked_body`].
     const fn message(self) -> &'static str {
         match self {
-            Self::Submitted => {
-                "This project has been submitted for review, so the form is read-only until RDU \
-                                picks it up or returns it to you. Ask RDU if you need to change something in \
-                                the meantime."
-            }
+            Self::Submitted => "In review. You can't edit until RDU has looked at it.",
             Self::InReview => {
                 "RDU is reviewing this project, so the form is read-only. It becomes editable \
                                again when the review finishes or the record is returned to you."
@@ -182,43 +178,64 @@ pub struct RoundSummary<'a> {
     pub substitutions: &'a [(String, Value)],
 }
 
-impl RoundSummary<'_> {
-    /// The heading, and what it means for the depositor now.
-    fn wording(&self) -> (&'static str, &'static str) {
-        match self.outcome {
-            ReviewOutcome::ChangesRequested => (
-                "RDU asked for changes",
+/// The heading of a round box, what it means for the viewer now, and for a
+/// depositor's approval what editing does next, which is a second paragraph.
+fn round_wording(outcome: ReviewOutcome, audience: Audience) -> (&'static str, &'static str, Option<&'static str>) {
+    let rdu = audience == Audience::RduOnly;
+    match outcome {
+        ReviewOutcome::ChangesRequested => (
+            if rdu {
+                "A reviewer asked for changes"
+            } else {
+                "RDU asked for changes"
+            },
+            if rdu {
+                "The depositor can change the project and submit it again; fields RDU accepted stay fixed until \
+                 then."
+            } else {
                 "This project is a draft again. Fields RDU accepted are fixed until you submit it again; \
-                 everything else is yours to edit.",
-            ),
-            // A rejection discards the submission and notifications are out of
-            // scope, so this is the only thing that says why.
-            ReviewOutcome::Rejected => (
-                "RDU rejected this submission",
+                 everything else is yours to edit."
+            },
+            None,
+        ),
+        // This box is the only place that says a rejection discarded the submission.
+        ReviewOutcome::Rejected => (
+            if rdu {
+                "A reviewer rejected this submission"
+            } else {
+                "RDU rejected this submission"
+            },
+            if rdu {
+                "The submission was discarded and the published project is unchanged. The depositor's draft is \
+                 kept, so they can change it and submit again."
+            } else {
                 "The submission was discarded and the published project is unchanged. Your draft is still here, \
-                 so you can change it and submit again.",
-            ),
-            // Depositor-facing, so the mechanism is not named; the wait matches
-            // ProjectState::Approved, the normative wording.
-            ReviewOutcome::Approved => (
-                "RDU approved this project",
-                "Your changes will appear on the public site with the next repository release — usually within a \
-                 few weeks. Editing again starts the next round.",
-            ),
-            ReviewOutcome::Withdrawn => (
-                "The submission was taken back",
-                "It is no longer in RDU's queue. Your draft is unchanged, so you can keep editing and submit \
-                 again.",
-            ),
-        }
+                 so you can change it and submit again."
+            },
+            None,
+        ),
+        // Depositor-facing, so the mechanism is not named; the wait is read
+        // from ProjectState::Approved, the normative wording.
+        ReviewOutcome::Approved => (
+            "RDU approved this project",
+            editor_core::status::ProjectState::Approved.explanation_for(audience),
+            (!rdu).then_some("You can keep editing; your next changes go to RDU as a new submission."),
+        ),
+        // `persistent_box` shows no Withdrawn round: the withdraw flash says it.
+        ReviewOutcome::Withdrawn => (
+            "The submission was taken back",
+            "It is no longer in RDU's queue. Your draft is unchanged, so you can keep editing and submit \
+             again.",
+            None,
+        ),
     }
+}
 
-    fn variant(&self) -> AlertVariant {
-        match self.outcome {
-            ReviewOutcome::Approved => AlertVariant::Success,
-            ReviewOutcome::Rejected => AlertVariant::Warning,
-            ReviewOutcome::ChangesRequested | ReviewOutcome::Withdrawn => AlertVariant::Info,
-        }
+fn round_variant(outcome: ReviewOutcome) -> AlertVariant {
+    match outcome {
+        ReviewOutcome::Approved => AlertVariant::Success,
+        ReviewOutcome::Rejected => AlertVariant::Warning,
+        ReviewOutcome::ChangesRequested | ReviewOutcome::Withdrawn => AlertVariant::Info,
     }
 }
 
@@ -377,7 +394,9 @@ pub struct SectionView<'a> {
     /// Whether an approved change is waiting for the repository release that
     /// carries it. Not a [`Locked`] variant: approve is the only outcome that does
     /// not hand the project back, so the form stays editable and what the
-    /// depositor types is the next cycle.
+    /// depositor types is the next cycle. It is also the only thing that shows an
+    /// approved round (see [`persistent_box`]), so the box stops promising a
+    /// release once the record is gone.
     pub awaiting_release: bool,
 }
 
@@ -487,7 +506,11 @@ pub fn region(view: &SectionView<'_>) -> Markup {
             data-init=[view.focus_finding.then_some(FOCUS_AUTOFOCUS)]
         {
             (rail(view))
-            div { (status(view)) (proposals_summary(view)) (form(view)) }
+            div class="md:[&_:is(input,select,textarea,fieldset)]:scroll-mt-[33vh]" {
+                (status(view))
+                (proposals_summary(view))
+                (form(view))
+            }
         }
     }
 }
@@ -569,6 +592,41 @@ fn rail(view: &SectionView<'_>) -> Markup {
     }
 }
 
+fn submitted_body(audience: Audience) -> Markup {
+    match audience {
+        Audience::Everyone => html! {
+            "Submitted for review. The form is read-only until RDU returns the project to you, and your draft \
+             is kept either way."
+        },
+        Audience::RduOnly => html! {
+            "Sent to the review queue. The form is read-only until a reviewer returns the project, and the \
+             draft is kept either way. "
+            (review_queue_link())
+        },
+    }
+}
+
+fn withdrawn_body(audience: Audience) -> Markup {
+    html! {
+        @match audience {
+            Audience::Everyone => {
+                "The submission has been taken back and is no longer in RDU's queue. Your draft is \
+                 unchanged, so you can keep editing and submit again."
+            }
+            Audience::RduOnly => {
+                "The submission has been taken back and is no longer in the review queue. The draft is \
+                 unchanged."
+            }
+        }
+    }
+}
+
+fn review_queue_link() -> Markup {
+    html! {
+        a href="/review" class="underline" { "Open the review queue" }
+    }
+}
+
 /// The live region a save writes its outcome into. Always present, see the module
 /// docs; `empty:hidden` keeps an always-present region free of a line box.
 ///
@@ -577,29 +635,31 @@ fn rail(view: &SectionView<'_>) -> Markup {
 /// notice rendered at the top of the column is invisible to a depositor who
 /// clicked several screens down. Screen readers hear it through `aria-live`;
 /// this is the sighted half.
+///
+/// Capped at a third of the viewport and scrollable (hence focusable) from `md`, with
+/// the section column's fields given a matching scroll margin, so a focused field lands
+/// below it (WCAG 2.4.11). Not sticky below `md`: a refusal there fills the screen and
+/// would cover the field it is about.
 fn status(view: &SectionView<'_>) -> Markup {
     html! {
-        div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
+        div class="empty:hidden md:sticky md:top-0 md:z-10 md:max-h-[33vh] md:overflow-y-auto"
+            tabindex="0"
+            aria-live="polite"
+        {
             @match view.notice {
                 Some(Notice::Saved) => {
                     (alert(format!("{SAVED_TITLE}.")).variant(AlertVariant::Success))
                 }
                 Some(Notice::Submitted) => {
                     ({
-                        alert(
-                                "Submitted for review. The form is read-only until RDU returns the project to \
-                                 you, and your draft is kept either way.",
-                            )
+                        alert(submitted_body(view.audience))
                             .variant(AlertVariant::Success)
                             .title(SUBMITTED_TITLE)
                     })
                 }
                 Some(Notice::Withdrawn) => {
                     ({
-                        alert(
-                                "The submission has been taken back and is no longer in RDU's queue. Your draft \
-                                 is unchanged, so you can keep editing and submit again.",
-                            )
+                        alert(withdrawn_body(view.audience))
                             .variant(AlertVariant::Success)
                             .title(WITHDRAWN_TITLE)
                     })
@@ -632,15 +692,7 @@ fn form(view: &SectionView<'_>) -> Markup {
     let autosave = view.locked.is_none().then(|| datastar::post(view.action()).form());
     let action = view.action();
     html! {
-        @if let Some(round) = view.round.as_ref() { (review_round(round)) }
-        @if view.awaiting_release { (awaiting_release_notice()) }
-        @if let Some(locked) = view.locked {
-            ({
-                alert(locked.message())
-                    .variant(AlertVariant::Warning)
-                    .title(locked.heading())
-            })
-        }
+        (persistent_box(view))
         h2 class="font-display text-xl mb-4" { (view.section.title) }
         // The action is the URL this form was fetched from, so a rejected save
         // re-renders somewhere that answers GET. No __prevent: Datastar calls
@@ -679,27 +731,111 @@ fn form(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// The latest review round: what RDU decided, when, its note, and anything RDU
-/// put in place of the depositor's own values.
-fn review_round(round: &RoundSummary<'_>) -> Markup {
-    let (heading, meaning) = round.wording();
+/// A flash right after an action is rendered by [`status`], so none here. An
+/// approved round outside the wait would promise a release that is not coming;
+/// `Saved` is no flash here because it renders on every autosave and must not
+/// hide a standing round note.
+///
+/// Precedence: the Submitted/Withdrawn/Discarded flash, else the locked box,
+/// else a ChangesRequested/Rejected round when it is the latest, else the
+/// approved box while a release is awaited.
+fn persistent_box(view: &SectionView<'_>) -> Markup {
+    if matches!(view.notice, Some(Notice::Submitted | Notice::Withdrawn | Notice::Discarded)) {
+        return html! {};
+    }
+    if let Some(locked) = view.locked {
+        return locked_box(locked, view.audience);
+    }
+    let round = view.round.as_ref();
+    if let Some(round) =
+        round.filter(|r| matches!(r.outcome, ReviewOutcome::ChangesRequested | ReviewOutcome::Rejected))
+    {
+        return review_round(round.outcome, Some(round), view.audience);
+    }
+    if view.awaiting_release {
+        let approved = round.filter(|r| r.outcome == ReviewOutcome::Approved);
+        return review_round(ReviewOutcome::Approved, approved, view.audience);
+    }
+    html! {}
+}
+
+fn locked_box(locked: Locked, audience: Audience) -> Markup {
+    match audience {
+        Audience::Everyone => html! {
+            ({
+                alert(locked.message())
+                    .variant(AlertVariant::Info)
+                    .title(locked.heading())
+            })
+        },
+        Audience::RduOnly => html! {
+            ({
+                alert(rdu_locked_body(locked))
+                    .variant(AlertVariant::Info)
+                    .title(locked.heading())
+            })
+        },
+    }
+}
+
+fn rdu_locked_body(locked: Locked) -> Markup {
+    let state = match locked {
+        Locked::Submitted => editor_core::status::ProjectState::Submitted,
+        Locked::InReview => editor_core::status::ProjectState::InReview,
+    };
+    html! {
+        (state.explanation_for(Audience::RduOnly))
+        " "
+        (review_queue_link())
+    }
+}
+
+/// `round` adds the date, RDU's note and any values RDU put in place of the
+/// depositor's own; it is `None` for an approval waiting on a release whose latest
+/// round is a later one.
+fn review_round(outcome: ReviewOutcome, round: Option<&RoundSummary<'_>>, audience: Audience) -> Markup {
+    let (heading, meaning, next) = round_wording(outcome, audience);
     html! {
         ({
             let body = html! {
-                p { (meaning) } p class = "text-sm mt-2" { (round.at) } @ if let
-                Some(note) = round.note { div class = "mt-3" { p class =
-                "text-xs font-bold uppercase tracking-wide" { "What RDU wrote" } p class
-                = "whitespace-pre-line" { (note) } } } @ if ! round.substitutions
-                .is_empty() { div class = "mt-3" { p class =
-                "text-xs font-bold uppercase tracking-wide" {
-                "Values RDU changed before deciding" } ul class =
-                "flex flex-col gap-2 mt-1" { @ for (field, value) in round.substitutions
-                { li { strong { (editor_core::form::registry::field(field).map_or(field
-                .as_str(), | f | f.label)) } ": "(crate
-                ::form::widgets::value_markup(Some(value))) } } } } }
+                p { (meaning) } @ if let Some(next) = next { p { (next) } } @ if let
+                Some(round) = round { (round_details(round)) }
             };
-            alert(body).variant(round.variant()).title(heading)
+            alert(body).variant(round_variant(outcome)).title(heading)
         })
+    }
+}
+
+fn round_details(round: &RoundSummary<'_>) -> Markup {
+    html! {
+        p class="text-sm mt-2" { (round.at) }
+        @if let Some(note) = round.note {
+            div class="mt-3" {
+                p class="text-xs font-bold uppercase tracking-wide" { "What RDU wrote" }
+                p class="whitespace-pre-line" { (note) }
+            }
+        }
+        @if !round.substitutions.is_empty() {
+            div class="mt-3" {
+                p class="text-xs font-bold uppercase tracking-wide" {
+                    "Values RDU changed before deciding"
+                }
+                ul class="flex flex-col gap-2 mt-1" {
+                    @for (field, value) in round.substitutions {
+                        li {
+                            strong {
+                                ({
+                                    editor_core::form::registry::field(field)
+                                        .map_or(field.as_str(), |f| f.label)
+                                })
+                            }
+                            ": "
+                            (crate::form::widgets::value_markup(Some(value)))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -721,20 +857,6 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
             alert(body)
                 .variant(AlertVariant::Warning)
                 .title("Fields in other sections need changing")
-        })
-    }
-}
-
-/// An approved change is waiting for the release that carries it.
-/// Informational: nothing is wrong and there is nothing to do. The wording comes
-/// from [`ProjectState::Approved`](editor_core::status::ProjectState), which the
-/// list column and the `/states` page also read, so the three cannot drift.
-fn awaiting_release_notice() -> Markup {
-    html! {
-        ({
-            alert(editor_core::status::ProjectState::Approved.explanation())
-                .variant(AlertVariant::Info)
-                .title("Waiting for the next release")
         })
     }
 }

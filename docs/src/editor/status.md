@@ -24,6 +24,10 @@ It deletes an approved record whose data the published set now carries (REQ-2.4)
 
 A failure here is deliberately not fatal, unlike the RDU account bootstrap. Every project keeps working and the only symptom is a stale label; refusing to start would take the service down to avoid one.
 
+## How long Approved lasts
+
+Approved lasts until the release that carries the change is deployed. DaSCH releases on demand, usually on the same working day; the wording shown to depositors lives in `ProjectState::Approved`, and the steps RDU takes are in [Releasing approved changes](./publishing-to-git.md#releasing-approved-changes).
+
 ## Online is a resting state
 
 Online is what a published project with nothing pending *is*, not the instant of a transition. It has to be: REQ-2.4 discards the local record and a review round does not keep the approved payload, so after the discard nothing anywhere records that a change shipped. Were Online only the moment of the transition, no depositor would ever see it. A project leaves Online as soon as there is something pending again, and returns when that lands — which is also what makes the five states total over every project.

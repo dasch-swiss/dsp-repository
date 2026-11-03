@@ -496,18 +496,15 @@ async fn project_state(state: &EditorState, shortcode: &str) -> Result<ProjectSt
 }
 
 /// How a project's newest approved record compares against the published set,
-/// and whether it holds one at all.
-///
-/// Shared with the form (`crate::handlers::sections`), which needs the same answer for the
-/// waiting-for-release notice. A project holds at most one approved record, since an
-/// approval supersedes the earlier one.
+/// and whether it holds one at all. `last()` is the newest: an approval
+/// supersedes the earlier record.
 ///
 /// `key` is a normalized shortcode. A record whose payload cannot be parsed is
 /// treated as no record rather than as an error: the page's job is to render a
 /// state, and refusing the whole list over one unreadable row would take every
 /// other project down with it. The startup pass is where an unreadable payload
 /// is reported.
-pub(crate) async fn approved_comparison(state: &EditorState, key: &str) -> Result<(bool, Comparison), RepositoryError> {
+async fn approved_comparison(state: &EditorState, key: &str) -> Result<(bool, Comparison), RepositoryError> {
     let approved = ApprovedRecordRepository::find_by_shortcode(&*state.editor, key).await?;
     let local = approved
         .last()
@@ -854,7 +851,7 @@ mod tests {
         for label in ["Draft", "Submitted", "In review", "Approved", "Online"] {
             assert!(body.contains(label), "{label} is missing from the explanation page: {body}");
         }
-        assert!(body.contains("few weeks"), "REQ-2.6 requires the expected wait: {body}");
+        assert!(body.contains("same working day"), "REQ-2.6 requires the expected wait: {body}");
     }
 
     #[tokio::test]

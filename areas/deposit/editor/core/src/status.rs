@@ -17,6 +17,7 @@ use std::collections::BTreeSet;
 use shared_metadata::project::ProjectRaw;
 
 use crate::draft::ProjectDraft;
+use crate::form::registry::Audience;
 use crate::records::{normalize_shortcode, ApprovedRecord, SubmissionState};
 use crate::review::diff;
 
@@ -80,13 +81,29 @@ impl ProjectState {
                  different wording, or send the project back to you with a note."
             }
             Self::Approved => {
-                "DaSCH has accepted your changes. They will appear on the public site with the \
-                 next repository release — usually within a few weeks."
+                "DaSCH has accepted your changes. DaSCH publishes approved changes on demand, \
+                 usually on the same working day; they then appear on the public site."
             }
             Self::Online => {
                 "Your changes are live on the public site. The project now shows what you \
                  submitted, and you can start editing it again whenever you like."
             }
+        }
+    }
+
+    /// [`Self::explanation`] worded for `audience`: RDU members are told what the
+    /// state means for the review queue.
+    #[must_use]
+    pub const fn explanation_for(self, audience: Audience) -> &'static str {
+        match (audience, self) {
+            (Audience::Everyone, _) => self.explanation(),
+            (Audience::RduOnly, Self::Submitted) => "This project is waiting in the review queue.",
+            (Audience::RduOnly, Self::InReview) => "A reviewer has this project open in the review queue.",
+            (Audience::RduOnly, Self::Approved) => {
+                "Approved and waiting for a release. RDU releases approved changes on demand; until then the \
+                 public site shows the previous version."
+            }
+            (Audience::RduOnly, Self::Draft | Self::Online) => self.explanation(),
         }
     }
 }
@@ -502,9 +519,19 @@ mod tests {
             assert!(!state.explanation().is_empty(), "{state:?} needs an explanation");
         }
         assert!(
-            ProjectState::Approved.explanation().contains("few weeks"),
+            ProjectState::Approved.explanation().contains("same working day"),
             "REQ-2.6: the Approved explanation states the expected wait"
         );
+    }
+
+    #[test]
+    fn rdu_is_told_the_queue_wording_where_it_differs_and_never_to_ask_rdu() {
+        for state in [ProjectState::Submitted, ProjectState::InReview, ProjectState::Approved] {
+            let rdu = state.explanation_for(Audience::RduOnly);
+            assert_ne!(rdu, state.explanation(), "{state:?}");
+            assert!(!rdu.contains("Ask RDU"), "{state:?}: {rdu}");
+            assert_eq!(state.explanation_for(Audience::Everyone), state.explanation(), "{state:?}");
+        }
     }
 
     #[test]

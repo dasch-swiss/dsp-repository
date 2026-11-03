@@ -7,7 +7,7 @@ import {
 } from "../playwright.config";
 
 /**
- * The depositor-visible states, the waiting-for-release notice, the
+ * The depositor-visible states, the approved box, the
  * state-explanation page and the forbidden vocabulary — driven through a real
  * browser.
  *
@@ -120,7 +120,7 @@ test.describe("depositor-visible status", () => {
         await expect(main, `${label} is not explained`).toContainText(label);
       }
       await expect(main, "REQ-2.6 requires the expected wait").toContainText(
-        /few weeks/i,
+        /same working day/i,
       );
       await expectNoForbiddenVocabulary(page, "/states");
     } finally {
@@ -232,10 +232,10 @@ test.describe("depositor-visible status", () => {
       await page.goto(overview());
       const main = page.locator("main");
       await expect(main, "REQ-2.5 notice is missing").toContainText(
-        "Waiting for the next release",
+        "RDU approved this project",
       );
       await expect(main, "REQ-2.6 wait is missing from it").toContainText(
-        /few weeks/i,
+        /same working day/i,
       );
       // Informational, not a lock: the form has to stay editable.
       await expect(
@@ -243,7 +243,7 @@ test.describe("depositor-visible status", () => {
         "an approval must not lock the form",
       ).toHaveCount(1);
 
-      await expectNoForbiddenVocabulary(page, "the waiting-for-release form");
+      await expectNoForbiddenVocabulary(page, "the approved form");
     } finally {
       await rdu.close();
       await depositor.close();

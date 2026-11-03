@@ -78,7 +78,7 @@ export const NOTICE_SHORTCODE = DEPOSITOR_SHORTCODES[3];
  */
 export const JOURNEY_SHORTCODE = DEPOSITOR_SHORTCODES[4];
 /**
- * The depositor-visible state sequence and the waiting-for-release notice —
+ * The depositor-visible state sequence and the approved box —
  * **one project per pass**, not one per spec.
  *
  * Every other mutating spec is idempotent enough to run twice against one

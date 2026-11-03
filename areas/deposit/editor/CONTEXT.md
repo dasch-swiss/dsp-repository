@@ -57,7 +57,7 @@ _Avoid_: sync, export, deploy, publish (publication is the merge plus a release,
 _Avoid_: record branch (it is keyed on the project, not the record), collection branch, feature branch, `editor-collect/` (the earlier prefix).
 
 **Waiting for release**:
-The RDU-facing classification of an Approved record whose data the published set does not carry yet, shown as a badge on the Approved records page. Distinct from the depositor-facing waiting-for-release notice, which `areas/deposit/editor/CLAUDE.md` names.
+The RDU-facing classification of an Approved record whose data the published set does not carry yet, shown as a badge on the Approved records page. The depositor sees the same wait in the approved box on the section page (`ProjectState::Approved`).
 _Avoid_: pending, not yet opened (the record may already have a pull request).
 
 **Approved records page**:

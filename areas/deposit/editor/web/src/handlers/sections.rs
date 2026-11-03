@@ -31,10 +31,11 @@ use editor_core::records::{
     normalize_shortcode, CreatedProject, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState,
 };
 use editor_core::repository::{
-    CreatedProjectRepository, DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository,
-    SubmissionRepository, Transition,
+    ApprovedRecordRepository, CreatedProjectRepository, DraftRepository, EntityProposalRepository, RepositoryError,
+    ReviewRoundRepository, SubmissionRepository, Transition,
 };
 use editor_core::review::ReviewState;
+use editor_core::status::{classify_record, RecordClassification};
 use editor_core::submission::SubmitRefusal;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
@@ -277,11 +278,7 @@ struct Context<'a> {
     /// both. A save therefore cannot disturb it, which is what the column on
     /// `drafts` needed a rule to guarantee.
     ///
-    /// Every outcome shows, not only the one that asked for changes: a
-    /// rejection is otherwise invisible (a rejection discards the submission and notifications are
-    /// out of scope), and an approval is where the depositor is shown what RDU
-    /// substituted for their values. It shows until the next submission, which
-    /// starts the next cycle.
+    /// Which outcomes render is decided in `page::section::persistent_box`.
     round: Option<RoundStrings>,
     /// The published project's name, for the heading and the tab title.
     project_name: Option<&'a str>,
@@ -417,14 +414,26 @@ async fn context<'a>(
         SubmissionState::InReview => Some(page::Locked::InReview),
         SubmissionState::Approved => None,
     });
-    // An approved record that the published set does not yet carry is
-    // waiting for a release; one it does carry is already Online, and the
-    // startup pass will discard it. Read here rather than derived from `locked`
-    // because an approval leaves no submission row to read it from.
-    let awaiting_release = match crate::handlers::projects::approved_comparison(state, &key).await {
-        // A record the published set already carries is Online, not waiting —
-        // the startup pass will discard it.
-        Ok((held, comparison)) => held && !comparison.permits_online(),
+    let created = match CreatedProjectRepository::find(&*state.editor, &key).await {
+        Ok(created) => created,
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's registration", &error)),
+    };
+
+    // Only a record classified WaitingForRelease carries the "same working day"
+    // promise: one the published set dropped or whose payload cannot be read never
+    // releases, and one it already carries is Online. Not derived from `locked`:
+    // an approval leaves no submission row.
+    let awaiting_release = match ApprovedRecordRepository::find_by_shortcode(&*state.editor, &key).await {
+        Ok(approved) => approved.last().is_some_and(|record| {
+            matches!(
+                classify_record(
+                    record,
+                    state.published.get(&key),
+                    &created.iter().map(|_| key.clone()).collect()
+                ),
+                RecordClassification::WaitingForRelease { .. }
+            )
+        }),
         Err(error) => {
             return Err(storage_error(
                 state,
@@ -512,11 +521,6 @@ async fn context<'a>(
                 &error,
             ))
         }
-    };
-
-    let created = match CreatedProjectRepository::find(&*state.editor, &key).await {
-        Ok(created) => created,
-        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's registration", &error)),
     };
 
     let published = state.published.get(shortcode);
@@ -2392,6 +2396,30 @@ mod tests {
         assert_eq!(applied, Transition::Applied, "the fixture's round should be recorded");
     }
 
+    /// A box is an alert with a title. Matched by title, not text: a flash's body
+    /// can quote a heading ("Submitted for review. The form is read-only...").
+    fn has_box(body: &str, title: &str) -> bool {
+        body.contains(&format!(r#"<p class="alert-title">{title}</p>"#))
+    }
+
+    async fn a_record_waiting_for_a_release(state: &EditorState, approved_by: Uuid) {
+        let published = state.published.get("0801d").expect("a published fixture");
+        let mut approved = ProjectDraft::from_raw(published);
+        approved.set("name", serde_json::json!("What RDU Approved"));
+        ApprovedRecordRepository::create(
+            &*state.editor,
+            &editor_core::records::ApprovedRecord {
+                id: uuid::Uuid::new_v4(),
+                shortcode: "0801d".to_string(),
+                payload: serde_json::to_string(&approved).expect("serializes"),
+                approved_by: Some(approved_by),
+                approved_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .expect("create");
+    }
+
     #[tokio::test]
     async fn a_returned_project_shows_the_depositor_what_rdu_asked_for() {
         // The reviewer note has no other home. The form is where the depositor
@@ -2412,6 +2440,13 @@ mod tests {
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
         assert!(body.contains("RDU asked for changes"), "{body}");
         assert!(body.contains("Please add a German description."), "{body}");
+
+        let rdu = a_user(&state, "rdu@example.test", "An RDU Member", Role::Rdu, &[]).await;
+        let rdu_session = a_session(&state, rdu.id).await;
+        let seen_by_rdu = body_string(as_session(&app, get(OVERVIEW), &rdu_session).await).await;
+        assert!(seen_by_rdu.contains("A reviewer asked for changes"), "{seen_by_rdu}");
+        assert!(!seen_by_rdu.contains("Your draft"), "{seen_by_rdu}");
+        assert!(!seen_by_rdu.contains("until you submit"), "{seen_by_rdu}");
     }
 
     #[tokio::test]
@@ -2440,19 +2475,28 @@ mod tests {
         assert!(body.contains("Please add a German description."), "{body}");
         let stored = DraftRepository::find(&*state.editor, "0801d").await.unwrap().unwrap();
         assert!(stored.payload.contains("A name"), "the save landed: {}", stored.payload);
+
+        // The autosave's region carries the Saved notice, which is not a flash
+        // that owns the page: the standing note stays beside it.
+        let region = body_string(as_session(&app, enhanced(OVERVIEW, "name=Another%20name"), &session).await).await;
+        assert!(region.contains("Draft saved."), "{region}");
+        assert!(has_box(&region, "RDU asked for changes"), "{region}");
+        assert!(region.contains("Please add a German description."), "{region}");
     }
 
     #[tokio::test]
-    async fn each_outcome_gets_its_own_wording() {
-        // One banner reading "RDU asked for changes" whatever happened would
-        // tell a depositor whose work was rejected to go and answer a round
-        // that is closed, and tell one whose work was approved to edit it.
-        for (outcome, heading) in [
-            (ReviewOutcome::ChangesRequested, "RDU asked for changes"),
-            (ReviewOutcome::Rejected, "RDU rejected this submission"),
-            (ReviewOutcome::Approved, "RDU approved this project"),
-            (ReviewOutcome::Withdrawn, "The submission was taken back"),
-        ] {
+    async fn only_a_round_that_asks_something_of_the_depositor_gets_a_box() {
+        // A banner reading "RDU asked for changes" for a rejection would tell the
+        // depositor to answer a closed round. A withdrawal was the depositor's own
+        // act, and an approval shows only while its release is awaited
+        // (`an_approved_round_shows_one_box_while_its_release_is_awaited`).
+        let outcomes = [
+            (ReviewOutcome::ChangesRequested, "RDU asked for changes", true),
+            (ReviewOutcome::Rejected, "RDU rejected this submission", true),
+            (ReviewOutcome::Approved, "RDU approved this project", false),
+            (ReviewOutcome::Withdrawn, "The submission was taken back", false),
+        ];
+        for (outcome, heading, shown) in outcomes {
             let (state, _) = test_state(&format!("section-wording-{outcome}")).await;
             let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
             let session = a_session(&state, user.id).await;
@@ -2460,18 +2504,41 @@ mod tests {
             let app = test_app(&state);
 
             let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
-            assert!(body.contains(heading), "{outcome}: {body}");
-            for (_, other) in [
-                (ReviewOutcome::ChangesRequested, "RDU asked for changes"),
-                (ReviewOutcome::Rejected, "RDU rejected this submission"),
-                (ReviewOutcome::Approved, "RDU approved this project"),
-                (ReviewOutcome::Withdrawn, "The submission was taken back"),
-            ] {
+            assert_eq!(has_box(&body, heading), shown, "{outcome}: {body}");
+            for (_, other, _) in outcomes {
                 if other != heading {
-                    assert!(!body.contains(other), "{outcome} also rendered {other:?}");
+                    assert!(!has_box(&body, other), "{outcome} also rendered {other:?}");
                 }
             }
         }
+    }
+
+    #[tokio::test]
+    async fn an_approved_round_shows_one_box_while_its_release_is_awaited() {
+        let (state, _) = test_state("section-approved-box").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        a_round(&state, user.id, ReviewOutcome::Approved, "Looks good.").await;
+        a_record_waiting_for_a_release(&state, user.id).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert_eq!(body.matches("RDU approved this project").count(), 1, "{body}");
+        assert!(body.contains("same working day"), "{body}");
+        assert!(body.contains("Looks good."), "the round's note rides in the same box: {body}");
+        assert!(!body.contains("Waiting for the next release"), "{body}");
+
+        let region = body_string(as_session(&app, enhanced(OVERVIEW, "name=A%20name"), &session).await).await;
+        assert_eq!(region.matches("RDU approved this project").count(), 1, "{region}");
+        assert!(region.contains("Draft saved."), "{region}");
+
+        // A later round that is not an approval leaves the wait: the box stays,
+        // without that round's details.
+        a_round(&state, user.id, ReviewOutcome::Withdrawn, "Taken back.").await;
+        let later = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert_eq!(later.matches("RDU approved this project").count(), 1, "{later}");
+        assert!(!later.contains("Looks good."), "{later}");
+        assert!(!has_box(&later, "The submission was taken back"), "{later}");
     }
 
     #[tokio::test]
@@ -2511,6 +2578,7 @@ mod tests {
             Some(r#"{"name":{"decision":"accept","value":"The title RDU wrote"}}"#),
         )
         .await;
+        a_record_waiting_for_a_release(&state, user.id).await;
         let app = test_app(&state);
 
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
@@ -2626,6 +2694,65 @@ mod tests {
         let stale = body_string(as_session(&app, get(&target), &session).await).await;
         assert!(!stale.contains("Sent to RDU"), "{stale}");
         assert!(!title_of(&stale).starts_with("Sent to RDU — "), "{}", title_of(&stale));
+    }
+
+    #[tokio::test]
+    async fn after_submitting_the_page_shows_the_flash_and_a_later_visit_the_locked_box() {
+        let (state, _) = test_state("section-submit-one-box").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+
+        let region =
+            body_string(as_session(&app, enhanced(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await).await;
+        assert!(has_box(&region, "Sent to RDU"), "{region}");
+        assert!(!has_box(&region, "Submitted for review"), "{region}");
+
+        let landed = body_string(as_session(&app, get(&format!("{OVERVIEW}?done=submitted")), &session).await).await;
+        assert!(has_box(&landed, "Sent to RDU"), "{landed}");
+        assert!(!has_box(&landed, "Submitted for review"), "{landed}");
+
+        let later = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(has_box(&later, "Submitted for review"), "{later}");
+        assert!(!has_box(&later, "Sent to RDU"), "{later}");
+    }
+
+    #[tokio::test]
+    async fn an_rdu_member_and_a_depositor_read_different_words_on_a_submitted_project() {
+        let (state, _) = test_state("section-submitted-audiences").await;
+        let depositor = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let depositor_session = a_session(&state, depositor.id).await;
+        let rdu = a_user(&state, "rdu@example.test", "An RDU Member", Role::Rdu, &[]).await;
+        let rdu_session = a_session(&state, rdu.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &depositor_session).await;
+        as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &depositor_session).await;
+
+        let seen_by_rdu = body_string(as_session(&app, get(OVERVIEW), &rdu_session).await).await;
+        assert!(seen_by_rdu.contains("waiting in the review queue"), "{seen_by_rdu}");
+        assert!(seen_by_rdu.contains(r#"href="/review""#), "{seen_by_rdu}");
+        assert!(!seen_by_rdu.contains("Ask RDU"), "{seen_by_rdu}");
+
+        let seen_by_depositor = body_string(as_session(&app, get(OVERVIEW), &depositor_session).await).await;
+        assert!(seen_by_depositor.contains("until RDU has looked at it"), "{seen_by_depositor}");
+        assert!(!seen_by_depositor.contains("review queue"), "{seen_by_depositor}");
+    }
+
+    #[tokio::test]
+    async fn an_rdu_member_reads_the_approved_wording_without_the_depositors_next_step() {
+        let (state, _) = test_state("section-approved-rdu").await;
+        let depositor = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let rdu = a_user(&state, "rdu@example.test", "An RDU Member", Role::Rdu, &[]).await;
+        let rdu_session = a_session(&state, rdu.id).await;
+        a_round(&state, depositor.id, ReviewOutcome::Approved, "Looks good.").await;
+        a_record_waiting_for_a_release(&state, depositor.id).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &rdu_session).await).await;
+        assert!(body.contains("Approved and waiting for a release"), "{body}");
+        assert!(!body.contains("your next changes go to RDU"), "{body}");
+        assert!(!body.contains("Ask RDU"), "{body}");
     }
 
     #[tokio::test]
@@ -3841,6 +3968,30 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn after_withdrawing_only_the_flash_shows_and_no_box_for_the_round_it_wrote() {
+        // The withdrawal writes a Withdrawn round; a box for it would repeat
+        // the flash now and report nothing on a later visit.
+        let (state, _) = test_state("section-withdraw-one-box").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+        as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
+
+        let region = body_string(as_session(&app, enhanced(OVERVIEW, "intent=withdraw"), &session).await).await;
+        assert!(has_box(&region, "Submission withdrawn"), "{region}");
+        assert!(!has_box(&region, "The submission was taken back"), "{region}");
+
+        let landed = body_string(as_session(&app, get(&format!("{OVERVIEW}?done=withdrawn")), &session).await).await;
+        assert!(has_box(&landed, "Submission withdrawn"), "{landed}");
+        assert!(!has_box(&landed, "The submission was taken back"), "{landed}");
+
+        let later = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(!has_box(&later, "Submission withdrawn"), "{later}");
+        assert!(!has_box(&later, "The submission was taken back"), "{later}");
+    }
+
+    #[tokio::test]
     async fn the_form_is_editable_again_after_a_withdrawal() {
         // The observable point of a withdrawal: the depositor got their form back.
         // A withdrawal that left the lock in place would be indistinguishable
@@ -4127,6 +4278,9 @@ mod tests {
         let (state, _) = test_state("section-discard-notice").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
+        // An earlier approval that is already published: its round is stale and
+        // must not sit beside the flash.
+        a_round(&state, user.id, ReviewOutcome::Approved, "Looks good.").await;
         let app = test_app(&state);
         a_changed_draft(&state, &app, &session).await;
 
@@ -4139,6 +4293,8 @@ mod tests {
         let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
         assert!(reloaded[live..].contains("Draft discarded"), "{reloaded}");
         assert!(title_of(&reloaded).starts_with("Draft discarded — "), "{}", title_of(&reloaded));
+        assert!(has_box(&reloaded, "Draft discarded"), "{reloaded}");
+        assert!(!has_box(&reloaded, "RDU approved this project"), "{reloaded}");
 
         as_session(&app, post(OVERVIEW, "name=A+Later+Title"), &session).await;
         let stale = body_string(as_session(&app, get(&target), &session).await).await;
@@ -4156,6 +4312,7 @@ mod tests {
         let (state, _) = test_state("section-discard-enhanced").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
+        a_round(&state, user.id, ReviewOutcome::Rejected, "Out of scope.").await;
         let app = test_app(&state);
         a_changed_draft(&state, &app, &session).await;
 
@@ -4167,7 +4324,11 @@ mod tests {
         );
         let body = body_string(response).await;
         assert!(!body.starts_with("<!DOCTYPE html>"), "a region, not a document: {body}");
-        assert!(body.contains("Draft discarded"), "{body}");
+        assert!(has_box(&body, "Draft discarded"), "{body}");
+        assert!(
+            !has_box(&body, "RDU rejected this submission"),
+            "the flash stands alone: {body}"
+        );
         assert!(!body.contains("Discard draft"), "the control is gone with the draft: {body}");
         assert!(body.contains("Nothing saved yet"), "{body}");
         assert_eq!(DraftRepository::find(&*state.editor, "0801d").await.unwrap(), None);
@@ -5550,29 +5711,12 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        let published = state.published.get("0801d").expect("a published fixture");
-        let mut approved = ProjectDraft::from_raw(published);
-        approved.set("name", serde_json::json!("What RDU Approved"));
-        ApprovedRecordRepository::create(
-            &*state.editor,
-            &editor_core::records::ApprovedRecord {
-                id: uuid::Uuid::new_v4(),
-                shortcode: "0801d".to_string(),
-                payload: serde_json::to_string(&approved).expect("serializes"),
-                approved_by: Some(user.id),
-                approved_at: chrono::Utc::now(),
-            },
-        )
-        .await
-        .expect("create");
+        a_record_waiting_for_a_release(&state, user.id).await;
 
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
 
-        assert!(
-            body.contains("Waiting for the next release"),
-            "REQ-2.5 notice is missing: {body}"
-        );
-        assert!(body.contains("few weeks"), "REQ-2.6 wait must be stated with it: {body}");
+        assert!(has_box(&body, "RDU approved this project"), "REQ-2.5 notice is missing: {body}");
+        assert!(body.contains("same working day"), "REQ-2.6 wait must be stated with it: {body}");
         assert!(
             body.contains("Save draft"),
             "the form must stay editable after an approval: {body}"
@@ -5580,10 +5724,36 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_newer_round_that_asks_something_of_the_depositor_hides_the_awaited_approval() {
+        // Approval leaves the form editable and a later request_changes or discard
+        // keeps the approved record, so both boxes are reachable at once.
+        let rounds = [
+            (
+                ReviewOutcome::ChangesRequested,
+                "RDU asked for changes",
+                "Please add a German description.",
+            ),
+            (ReviewOutcome::Rejected, "RDU rejected this submission", "This is out of scope."),
+        ];
+        for (outcome, heading, note) in rounds {
+            let (state, _) = test_state(&format!("section-awaiting-then-{outcome}")).await;
+            let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+            let session = a_session(&state, user.id).await;
+            a_round(&state, user.id, ReviewOutcome::Approved, "Looks good.").await;
+            a_record_waiting_for_a_release(&state, user.id).await;
+            a_round(&state, user.id, outcome, note).await;
+            let app = test_app(&state);
+
+            let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+            assert!(has_box(&body, heading), "{outcome}: {body}");
+            assert!(body.contains(note), "{outcome}: the round's note: {body}");
+            assert!(!has_box(&body, "RDU approved this project"), "{outcome}: {body}");
+        }
+    }
+
+    #[tokio::test]
     async fn an_approved_change_already_published_does_not_claim_to_be_waiting() {
-        // The same record, but matching published data: it is Online, and the
-        // startup pass will discard it. Saying "waiting" here would be the
-        // stale label this phase exists to remove.
+        // Matches published data, so Online; "Waiting" here would be a stale label.
         let (state, _) = test_state("section-awaiting-online").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
@@ -5605,7 +5775,103 @@ mod tests {
 
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
 
-        assert!(!body.contains("Waiting for the next release"), "already published: {body}");
+        assert!(!body.contains("RDU approved this project"), "already published: {body}");
+    }
+
+    #[tokio::test]
+    async fn an_unreadable_approved_record_makes_no_release_promise() {
+        let (state, _) = test_state("section-awaiting-unreadable").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        ApprovedRecordRepository::create(
+            &*state.editor,
+            &editor_core::records::ApprovedRecord {
+                id: uuid::Uuid::new_v4(),
+                shortcode: "0801d".to_string(),
+                payload: "{ not json".to_string(),
+                approved_by: Some(user.id),
+                approved_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .expect("create");
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+
+        assert!(body.contains("Save draft"), "the form rendered: {body}");
+        assert!(!body.contains("RDU approved this project"), "unreadable record: {body}");
+        assert!(!body.contains("same working day"), "unreadable record: {body}");
+    }
+
+    #[tokio::test]
+    async fn an_approved_record_the_published_set_dropped_makes_no_release_promise() {
+        // Once published (`id` and `pid` set) but gone from the published set.
+        let (state, _) = test_state("section-awaiting-removed").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        assert!(
+            state.published.get("9999").is_none(),
+            "the shortcode must be outside the published set"
+        );
+        let mut dropped = ProjectDraft::default();
+        dropped.set("id", serde_json::json!("https://ark.example.test/ark:/72163/1/9999"));
+        dropped.set("pid", serde_json::json!("ark:/72163/1/9999"));
+        ApprovedRecordRepository::create(
+            &*state.editor,
+            &editor_core::records::ApprovedRecord {
+                id: uuid::Uuid::new_v4(),
+                shortcode: "9999".to_string(),
+                payload: serde_json::to_string(&dropped).expect("serializes"),
+                approved_by: Some(user.id),
+                approved_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .expect("create");
+
+        let body = body_string(as_session(&app, get("/projects/9999/sections/overview"), &session).await).await;
+
+        assert!(body.contains("Save draft"), "the form rendered: {body}");
+        assert!(!body.contains("RDU approved this project"), "dropped upstream: {body}");
+        assert!(!body.contains("same working day"), "dropped upstream: {body}");
+    }
+
+    #[tokio::test]
+    async fn an_approved_created_project_says_it_is_waiting_for_its_first_release() {
+        // Its seed carries `id` and `pid` like a dropped project, but it was never published.
+        let (state, _) = test_state("section-awaiting-created").await;
+        let rdu = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let rdu_session = a_session(&state, rdu.id).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["08ab"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        as_session(
+            &app,
+            post("/projects/new", "shortcode=08AB&name=Basler+Fotoarchiv"),
+            &rdu_session,
+        )
+        .await;
+        ApprovedRecordRepository::create(
+            &*state.editor,
+            &editor_core::records::ApprovedRecord {
+                id: uuid::Uuid::new_v4(),
+                shortcode: "08ab".to_string(),
+                payload: serde_json::to_string(&stored_draft(&state, "08ab").await).expect("serializes"),
+                approved_by: Some(rdu.id),
+                approved_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .expect("create");
+
+        let body = body_string(as_session(&app, get("/projects/08AB/sections/overview"), &session).await).await;
+
+        assert!(has_box(&body, "RDU approved this project"), "{body}");
+        assert!(body.contains("same working day"), "{body}");
     }
 
     #[tokio::test]

@@ -114,7 +114,7 @@ export const CREATED_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-nojs": DEPOSITOR_SHORTCODES[11],
 };
 
-const PORT = 4101;
+const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({

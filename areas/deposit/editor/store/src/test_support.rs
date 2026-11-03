@@ -11,10 +11,10 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use editor_core::proposals::{EntityProposal, ProposalDecision};
-use editor_core::records::{ApprovedRecord, DraftRecord, ReviewRound, Submission};
+use editor_core::records::{ApprovedRecord, CreatedProject, DraftRecord, ReviewRound, Submission};
 use editor_core::repository::{
-    ApprovedRecordRepository, DraftRepository, EntityProposalRepository, RepositoryError, Result,
-    ReviewRoundRepository, SubmissionRepository, Transition,
+    ApprovedRecordRepository, CreatedProjectRepository, DraftRepository, EntityProposalRepository, Removal,
+    RepositoryError, Result, ReviewRoundRepository, SubmissionRepository, Transition,
 };
 use rusqlite::params;
 use uuid::Uuid;
@@ -229,6 +229,9 @@ pub struct Faults {
     /// that could not be retired is counted so the next start retries it rather than passing
     /// silently.
     pub entity_proposals_retire: bool,
+    /// `CreatedProjectRepository::list`: the startup sweep's enumeration, and the branch where a
+    /// created project's record must be kept and reported rather than read as a first release.
+    pub created_projects_list: bool,
 }
 
 /// A store that delegates every call to a real [`Database`] and fails the ones [`Faults`] names.
@@ -421,5 +424,35 @@ impl EntityProposalRepository for FaultyStore {
             return Err(injected("EntityProposalRepository::retire"));
         }
         EntityProposalRepository::retire(&*self.inner, id, at).await
+    }
+}
+
+#[async_trait]
+impl CreatedProjectRepository for FaultyStore {
+    async fn create(&self, project: &CreatedProject, draft: &DraftRecord) -> Result<()> {
+        CreatedProjectRepository::create(&*self.inner, project, draft).await
+    }
+
+    async fn find(&self, shortcode: &str) -> Result<Option<CreatedProject>> {
+        CreatedProjectRepository::find(&*self.inner, shortcode).await
+    }
+
+    async fn list(&self) -> Result<Vec<CreatedProject>> {
+        if self.faults.created_projects_list {
+            return Err(injected("CreatedProjectRepository::list"));
+        }
+        CreatedProjectRepository::list(&*self.inner).await
+    }
+
+    async fn delete_registration(&self, shortcode: &str) -> Result<bool> {
+        CreatedProjectRepository::delete_registration(&*self.inner, shortcode).await
+    }
+
+    async fn removable(&self, shortcode: &str) -> Result<bool> {
+        CreatedProjectRepository::removable(&*self.inner, shortcode).await
+    }
+
+    async fn remove(&self, shortcode: &str, at: DateTime<Utc>) -> Result<Removal> {
+        CreatedProjectRepository::remove(&*self.inner, shortcode, at).await
     }
 }

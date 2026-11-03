@@ -135,6 +135,15 @@ pub(crate) fn routes() -> Vec<Route> {
             "/approved/{id}/discard",
             get(crate::handlers::approved::discard_form).post(crate::handlers::approved::discard),
         ),
+        // Matched before `/projects/{shortcode}`: a static segment outranks a parameter.
+        (
+            "/projects/new",
+            get(crate::handlers::projects::new_form).post(crate::handlers::projects::create),
+        ),
+        (
+            "/projects/{shortcode}/remove",
+            get(crate::handlers::projects::remove_form).post(crate::handlers::projects::remove),
+        ),
     ]
 }
 

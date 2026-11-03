@@ -28,6 +28,7 @@
 //! across an `.await` to starve WAL checkpointing and let `-wal` grow without bound.
 
 mod approved_records;
+mod created_projects;
 mod drafts;
 mod entity_proposals;
 mod mapping;

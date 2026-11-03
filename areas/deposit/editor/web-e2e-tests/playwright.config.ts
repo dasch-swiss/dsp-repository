@@ -39,7 +39,8 @@ export const RDU_EMAIL = "rdu@dasch.swiss";
 /** Created by `auth.setup.ts` through the RDU interface — nothing seeds it. */
 export const DEPOSITOR_EMAIL = "depositor@example.test";
 /**
- * Projects the depositor may edit. All exist in `areas/access/dpe/server/data/projects`.
+ * Projects the depositor may edit. All exist in `areas/access/dpe/server/data/projects`, except
+ * the two `CREATED_SHORTCODES`, which RDU creates during the run.
  *
  * One per mutating purpose, and that is not spare capacity: a draft is per
  * (user, project), so two tests editing the same project share one draft. The
@@ -58,6 +59,8 @@ export const DEPOSITOR_SHORTCODES = [
   "0110",
   "0112",
   "0117",
+  "E2E1",
+  "E2E2",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -100,6 +103,16 @@ export const APPROVED_SHORTCODE = DEPOSITOR_SHORTCODES[7];
 export const VARIANT_SHORTCODE = DEPOSITOR_SHORTCODES[8];
 /** A typed value surviving a row control: the first row of every row shape holds a link. */
 export const TYPED_SHORTCODE = DEPOSITOR_SHORTCODES[9];
+
+/**
+ * The project RDU creates and the depositor then edits, one per pass for the reason
+ * `STATUS_SHORTCODES` gives: the second pass would find the first one's project already created.
+ * Keyed by Playwright project name.
+ */
+export const CREATED_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[10],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[11],
+};
 
 const PORT = 4101;
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

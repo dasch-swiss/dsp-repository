@@ -16,6 +16,7 @@ use std::path::Path;
 use editor_core::agents::Agents;
 use editor_core::approved_records_api::{ApprovedRecordView, ProposedEntityView};
 use editor_core::canonical::{write_entity, write_project};
+use editor_core::form::registry::GIT_OWNED;
 use editor_core::proposals::{entity_id_number, ProposalKind, ProposalOperation};
 use serde_json::Value;
 use shared_metadata::project::{is_valid_shortcode, ProjectRaw};
@@ -215,7 +216,19 @@ fn handle_record(
     let project: ProjectRaw = serde_json::from_value(value)
         .map_err(|error| format!("renumbering produced an unreadable project: {error}"))?;
 
-    let path = layout::project_path(&config.data_dir, &record.shortcode, &project.name);
+    // The record's shortcode is the editor's folded key; a new file is named with the project's own
+    // spelling, as the committed files are. Equal up to case, so it is as safe in a path.
+    let stem = if project.shortcode.eq_ignore_ascii_case(&record.shortcode) {
+        &project.shortcode
+    } else {
+        &record.shortcode
+    };
+    let path = layout::project_path(&config.data_dir, stem, &project.name);
+    let project = if path.exists() {
+        with_git_owned(project, &path)?
+    } else {
+        project
+    };
     let rendered = write_project(&project).map_err(|error| format!("could not write {}: {error}", record.shortcode))?;
     write_file(&path, &rendered)?;
     written.push(path);
@@ -261,6 +274,28 @@ fn handle_record(
     let title = subject(record);
     let url = forge.open_pull_request(&branch, &title, &body)?;
     Ok(Outcome::Opened { url })
+}
+
+/// `project` with the members git owns taken from the published file at `path`, so a record whose
+/// copies predate RDU's edits in the repository never writes them back.
+fn with_git_owned(project: ProjectRaw, path: &Path) -> Result<ProjectRaw, String> {
+    let published: Value = std::fs::read(path)
+        .map_err(|error| error.to_string())
+        .and_then(|bytes| serde_json::from_slice(&bytes).map_err(|error| error.to_string()))
+        .map_err(|error| format!("could not read the published file {}: {error}", path.display()))?;
+    let mut value =
+        serde_json::to_value(project).map_err(|error| format!("could not read the published project: {error}"))?;
+    for member in GIT_OWNED {
+        if let Some(owned) = published.get(member) {
+            value[member] = owned.clone();
+        }
+    }
+    serde_json::from_value(value).map_err(|error| {
+        format!(
+            "the published file {} holds a git-owned member the project cannot carry: {error}",
+            path.display()
+        )
+    })
 }
 
 /// Whether every entity in a record can be written, checked in one pass.
@@ -1324,6 +1359,74 @@ mod tests {
         let written =
             std::fs::read_to_string(config.data_dir.join("persons/person-417.json")).expect("the entity is written");
         assert!(written.contains("Lovelace"), "{written}");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn a_created_projects_approved_record_is_collected_as_a_new_canonical_file_and_counted() {
+        // A project created in the editor, once its depositor filled it in: the members creation
+        // derived, the rest from a committed project so it converts.
+        let config = fixture("created");
+        let mut draft = editor_core::draft::ProjectDraft::from_raw(&committed_project());
+        let seed = editor_core::creation::seed("08AB", "Basler Fotoarchiv");
+        for member in seed.fields() {
+            draft.set(member, seed.get(member).cloned().expect("a seeded member"));
+        }
+        let approved = editor_core::records::ApprovedRecord {
+            id: Uuid::new_v4(),
+            shortcode: "08ab".to_string(),
+            payload: serde_json::to_string(&draft).expect("a draft serializes"),
+            approved_by: None,
+            approved_at: Utc::now(),
+        };
+        let record = ApprovedRecordView::from_record(&approved, &[]);
+        let project = record.project.clone().expect("a filled-in created project converts");
+        let forge = FakeForge::default();
+
+        let outcome = handle_record(&config, &forge, &record, &[]).expect("the record is handled");
+
+        assert_eq!(outcome, Outcome::Opened { url: CREATED_URL.to_string() });
+        let path = config.data_dir.join("projects/08AB_basler-fotoarchiv.json");
+        let written = std::fs::read_to_string(&path).unwrap_or_else(|_| panic!("{} is written", path.display()));
+        assert_eq!(written, write_project(&project).expect("renders"), "canonical form");
+        assert!(
+            written.contains(r#""pid": "https://ark.dasch.swiss/ark:/72163/1/08AB""#),
+            "{written}"
+        );
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(config.data_dir.join(MANIFEST_FILE)).expect("the manifest is written"),
+        )
+        .expect("the manifest parses");
+        assert_eq!(manifest["projects"], 1, "{manifest}");
+        let _ = std::fs::remove_dir_all(&config.data_dir);
+    }
+
+    #[test]
+    fn a_published_projects_git_owned_members_are_taken_from_its_file() {
+        // RDU added the licence and completed the citation in the repository; the record holds the
+        // copies from before, and a later submission must not write them back.
+        let config = fixture("git-owned");
+        let published = committed_project();
+        assert!(!published.legal_info.is_empty(), "the fixture must carry a licence");
+        std::fs::write(
+            config.data_dir.join("projects/0803_incunabula.json"),
+            write_project(&published).expect("renders"),
+        )
+        .expect("the published file is written");
+        let mut stale = published.clone();
+        stale.legal_info = Vec::new();
+        stale.how_to_cite = "A seeded citation.".to_string();
+        stale.name = "Incunabula, edited".to_string();
+
+        handle_record(&config, &FakeForge::default(), &record("0803", Some(stale.clone()), None), &[])
+            .expect("the record is handled");
+
+        let written = std::fs::read_to_string(config.data_dir.join("projects/0803_incunabula.json"))
+            .expect("the file is rewritten in place");
+        let mut expected = stale;
+        expected.legal_info = published.legal_info;
+        expected.how_to_cite = published.how_to_cite;
+        assert_eq!(written, write_project(&expected).expect("renders"));
         let _ = std::fs::remove_dir_all(&config.data_dir);
     }
 }

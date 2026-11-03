@@ -27,9 +27,12 @@ use editor_core::form::registry::{self, Audience, Section};
 use editor_core::form::submit::over_cap;
 use editor_core::form::{apply, format, FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalFault, ProposalKind, ProposalOperation, ProposalStatus};
-use editor_core::records::{normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState};
+use editor_core::records::{
+    normalize_shortcode, CreatedProject, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState,
+};
 use editor_core::repository::{
-    DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition,
+    CreatedProjectRepository, DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository,
+    SubmissionRepository, Transition,
 };
 use editor_core::review::ReviewState;
 use editor_core::submission::SubmitRefusal;
@@ -93,6 +96,8 @@ fn over_cap_message(label: &str) -> String {
 
 const DISCARD_REFUSED_GONE: &str = "There is no draft to discard — this form is already showing the project's \
                                     published metadata.";
+const DISCARD_REFUSED_SEED: &str = "There is nothing to discard: this form is already showing the project with \
+                                    only its shortcode and identifiers.";
 const DISCARD_REFUSED_LOCKED: &str = "This project is in review, so its draft cannot be discarded. Take the \
                                       submission back first if you want to start over.";
 const DISCARD_REFUSED_STORAGE: &str = "The draft could not be discarded, so it is still there. Try again, and if \
@@ -280,6 +285,8 @@ struct Context<'a> {
     round: Option<RoundStrings>,
     /// The published project's name, for the heading and the tab title.
     project_name: Option<&'a str>,
+    /// The registration, for a project RDU created and the published set does not carry yet.
+    created: Option<CreatedProject>,
 }
 
 /// One round's owned strings and values, so the view can borrow them.
@@ -291,6 +298,34 @@ struct RoundStrings {
 }
 
 impl Context<'_> {
+    /// The name the heading and the tab title show: the published one, or a created project's as
+    /// [`editor_core::creation::shown`] gives it, the rule the project list uses.
+    fn name(&self) -> Option<&str> {
+        self.project_name.or_else(|| {
+            self.created
+                .as_ref()
+                .map(|created| editor_core::creation::shown(Some(&self.draft), "name", &created.name))
+        })
+    }
+
+    /// What "Discard draft" leaves of a created project, and `None` for any other. Built from
+    /// the stored spelling of the shortcode, which is display-only.
+    fn created_seed(&self, shortcode: &str) -> Option<ProjectDraft> {
+        let created = self.created.as_ref()?;
+        let spelling = self
+            .draft
+            .get("shortcode")
+            .and_then(|value| value.as_str())
+            .unwrap_or(shortcode);
+        Some(editor_core::creation::reseed(spelling, &created.name))
+    }
+
+    /// Whether the draft holds nothing beyond what a created project is reseeded with, so there
+    /// is nothing for a discard to remove.
+    fn is_created_seed(&self, shortcode: &str) -> bool {
+        self.created_seed(shortcode).is_some_and(|seed| seed == self.draft)
+    }
+
     /// The submission a withdrawal would take back, if there is one.
     ///
     /// `Approved` is excluded: that record is on its way to a pull request and
@@ -479,6 +514,11 @@ async fn context<'a>(
         }
     };
 
+    let created = match CreatedProjectRepository::find(&*state.editor, &key).await {
+        Ok(created) => created,
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's registration", &error)),
+    };
+
     let published = state.published.get(shortcode);
     let draft = match &record {
         // A stored draft supersedes the published metadata: the form pre-fills from what is
@@ -515,6 +555,7 @@ async fn context<'a>(
         proposals,
         posted: None,
         project_name: published.map(|project| project.name.as_str()),
+        created,
     })
 }
 
@@ -544,7 +585,7 @@ pub(crate) async fn show(
         .as_ref()
         .filter(|record| params.saved.as_deref() == Some(record.updated_at.to_rfc3339().as_str()))
         .map(|_| page::Notice::Saved)
-        .or_else(|| done_notice(&context, params.done.as_deref()));
+        .or_else(|| done_notice(&context, &shortcode, params.done.as_deref()));
     render_page(
         &state,
         &user,
@@ -557,7 +598,7 @@ pub(crate) async fn show(
 /// The phase notice a `?done=...` marker names, rendered only while the project is still in the
 /// phase it describes — see [`ShowParams`]. `None` for an unrecognized value, or one whose phase
 /// has since moved on.
-fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice<'static>> {
+fn done_notice(context: &Context<'_>, shortcode: &str, done: Option<&str>) -> Option<page::Notice<'static>> {
     match done {
         Some("submitted") if context.locked.is_some() => Some(page::Notice::Submitted),
         Some("withdrawn")
@@ -569,7 +610,11 @@ fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice
         {
             Some(page::Notice::Withdrawn)
         }
-        Some("discarded") if context.locked.is_none() && context.record.is_none() => Some(page::Notice::Discarded),
+        Some("discarded")
+            if context.locked.is_none() && (context.record.is_none() || context.is_created_seed(shortcode)) =>
+        {
+            Some(page::Notice::Discarded)
+        }
         _ => None,
     }
 }
@@ -1475,6 +1520,11 @@ async fn discard(
         tracing::info!("refused a discard of a project with no draft");
         return refused_with(state, user, shortcode, context, headers, DISCARD_REFUSED_GONE, &[]);
     }
+    if context.is_created_seed(shortcode) {
+        span.record("form.outcome", "gone");
+        tracing::info!("refused a discard of a created project that holds only its seed");
+        return refused_with(state, user, shortcode, context, headers, DISCARD_REFUSED_SEED, &[]);
+    }
 
     // Re-checked here as well as when the form was rendered, for the reason the
     // save path re-checks it: the render is a `GET`, so nothing stops a `POST`
@@ -1492,10 +1542,28 @@ async fn discard(
         return confirming(state, user, shortcode, context, headers, page::Confirmation::Discard);
     }
 
-    match DraftRepository::delete(&*state.editor, &normalize_shortcode(shortcode)).await {
+    // A created project is reseeded rather than left without a draft: its shortcode, `id`, `pid`
+    // and citation are display-only, so nobody could enter them again.
+    let discarded = match context.created_seed(shortcode) {
+        Some(seed) => {
+            let now = Utc::now();
+            let reseeded = DraftRecord {
+                shortcode: normalize_shortcode(shortcode),
+                payload: serde_json::to_string(&seed).expect("a draft always serializes"),
+                updated_by: Some(user.id),
+                created_at: now,
+                updated_at: now,
+            };
+            DraftRepository::upsert(&*state.editor, &reseeded).await
+        }
         // `false` means it went between the read above and this write, which is
         // the outcome the depositor asked for either way.
-        Ok(_) => {
+        None => DraftRepository::delete(&*state.editor, &normalize_shortcode(shortcode))
+            .await
+            .map(|_| ()),
+    };
+    match discarded {
+        Ok(()) => {
             span.record("form.outcome", "discarded");
             tracing::info!(auth.role = %user.actor.role, "discarded a project draft");
             phase_changed(
@@ -1845,7 +1913,7 @@ fn render_page(
     // The published name in the tab title where there is one: a browser with
     // eleven tabs open shows about twenty characters, and five of them being
     // "Proje" helps nobody.
-    let title = match context.project_name {
+    let title = match context.name() {
         Some(name) => format!("{} — {name} — DaSCH Metadata Editor", context.section.title),
         None => format!("{} — Project {shortcode} — DaSCH Metadata Editor", context.section.title),
     };
@@ -1904,7 +1972,8 @@ fn view<'a>(
     }
     page::SectionView {
         shortcode,
-        project_name: context.project_name,
+        project_name: context.name(),
+        created: context.created.is_some(),
         section: context.section,
         audience: context.audience,
         draft: &context.draft,
@@ -1920,7 +1989,7 @@ fn view<'a>(
         // Both halves matter: without a draft the form already shows published
         // metadata, and while a submission is pending the draft is what the
         // depositor comes back to.
-        may_discard: context.record.is_some() && context.locked.is_none(),
+        may_discard: context.record.is_some() && context.locked.is_none() && !context.is_created_seed(shortcode),
         confirming: rendering.confirming,
         errors: rendering.errors,
         proposal_findings: rendering.proposal_findings,
@@ -2704,6 +2773,33 @@ mod tests {
             body.contains("identical to what is published"),
             "the refusal it does earn is the unchanged one: {body}"
         );
+    }
+
+    #[tokio::test]
+    async fn a_draft_differing_only_in_git_owned_members_has_nothing_to_submit() {
+        // A released created project's kept draft: its licence and citation predate RDU's in git.
+        let (state, _) = test_state("section-submit-git-owned-only").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let mut draft = ProjectDraft::from_raw(state.published.get("0801d").expect("a published project"));
+        draft.set("legalInfo", json!([]));
+        draft.set("howToCite", json!("A seeded citation."));
+        DraftRepository::upsert(
+            &*state.editor,
+            &DraftRecord {
+                shortcode: "0801d".to_string(),
+                payload: serde_json::to_string(&draft).unwrap(),
+                updated_by: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+
+        let body = body_string(as_session(&app, post(OVERVIEW, "intent=submit"), &session).await).await;
+        assert!(body.contains("identical to what is published"), "{body}");
     }
 
     const DATASET: &str = "/projects/0801d/sections/dataset";
@@ -3985,6 +4081,12 @@ mod tests {
         // Backing out has to write nothing, so it is a link and not a button
         // that would fall through to `save`.
         assert!(body.contains("Keep the draft"), "{body}");
+        // A named group, focused on the safe choice: the enhanced path morphs the panel in, where
+        // focus would otherwise stay on the control that asked.
+        assert!(body.contains(r#"role="group" aria-labelledby="confirm-heading""#), "{body}");
+        let keep = body.find(">Keep the draft</a>").expect("the keep link");
+        let anchor = &body[body[..keep].rfind("<a ").expect("its anchor")..keep];
+        assert!(anchor.contains("autofocus"), "{anchor}");
         assert!(
             DraftRepository::find(&*state.editor, "0801d").await.unwrap().is_some(),
             "asking must not delete"
@@ -4178,6 +4280,10 @@ mod tests {
         // which the form's own `action` already carries either way.
         assert!(body.contains(">Keep waiting</a>"), "{body}");
         assert!(!body.contains(">Keep waiting</button>"), "{body}");
+        assert!(body.contains(r#"role="group" aria-labelledby="confirm-heading""#), "{body}");
+        let keep = body.find(">Keep waiting</a>").expect("the keep link");
+        let anchor = &body[body[..keep].rfind("<a ").expect("its anchor")..keep];
+        assert!(anchor.contains("autofocus"), "the safe choice takes focus: {anchor}");
 
         // What the button shape would have posted, and what it would have got:
         // the form is read-only while a submission is pending, so backing out
@@ -5500,5 +5606,114 @@ mod tests {
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
 
         assert!(!body.contains("Waiting for the next release"), "already published: {body}");
+    }
+
+    #[tokio::test]
+    async fn discarding_a_created_projects_draft_reseeds_it_rather_than_emptying_it() {
+        let (state, _) = test_state("section-discard-created").await;
+        let rdu = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let rdu_session = a_session(&state, rdu.id).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["08ab"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        as_session(
+            &app,
+            post("/projects/new", "shortcode=08AB&name=Basler+Fotoarchiv"),
+            &rdu_session,
+        )
+        .await;
+        const CREATED: &str = "/projects/08AB/sections/overview";
+
+        let fresh = body_string(as_session(&app, get(CREATED), &session).await).await;
+        assert!(fresh.contains("Basler Fotoarchiv"), "{fresh}");
+        as_session(&app, post(CREATED, "name=Renamed+by+the+depositor"), &session).await;
+
+        let opened = body_string(as_session(&app, get(CREATED), &session).await).await;
+        assert!(opened.contains("Discard draft"), "{opened}");
+        assert!(
+            opened.contains("<title>Overview — Renamed by the depositor — "),
+            "the heading follows the draft's name, as the project list does: {opened}"
+        );
+        let confirm = body_string(as_session(&app, post(CREATED, "intent=discard-confirm"), &session).await).await;
+        assert!(confirm.contains("since the project was created"), "{confirm}");
+
+        let response = as_session(&app, post(CREATED, "intent=discard"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let notice = location(&response).expect("a redirect");
+        assert!(notice.contains("done=discarded"), "{notice}");
+        assert_eq!(
+            stored_draft(&state, "08ab").await,
+            editor_core::creation::reseed("08AB", "Basler Fotoarchiv"),
+            "shortcode, id, pid and citation are kept; the name is not"
+        );
+        assert!(CreatedProjectRepository::find(&*state.editor, "08ab").await.unwrap().is_some());
+
+        let after = body_string(as_session(&app, get(&notice), &session).await).await;
+        assert!(after.contains("with only its shortcode and identifiers"), "{after}");
+        assert!(
+            after.contains("Basler Fotoarchiv"),
+            "the heading falls back to the registered name: {after}"
+        );
+        assert!(
+            !after.contains(r#"value="Basler Fotoarchiv""#) && !after.contains(r#"value="Renamed by the depositor""#),
+            "the name field is empty: {after}"
+        );
+        assert!(!after.contains("Discard draft"), "{after}");
+
+        let again = body_string(as_session(&app, post(CREATED, "intent=discard"), &session).await).await;
+        assert!(again.contains("already showing the project with only its shortcode"), "{again}");
+    }
+
+    #[tokio::test]
+    async fn a_created_project_opens_saves_and_submits() {
+        let (state, _) = test_state("section-created-submit").await;
+        let rdu = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let rdu_session = a_session(&state, rdu.id).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["08ab"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        as_session(
+            &app,
+            post("/projects/new", "shortcode=08AB&name=Basler+Fotoarchiv"),
+            &rdu_session,
+        )
+        .await;
+        const CREATED: &str = "/projects/08AB/sections/overview";
+
+        assert_eq!(as_session(&app, get(CREATED), &session).await.status(), StatusCode::OK);
+        let saved = as_session(&app, post(CREATED, "name=Basler+Fotoarchiv+online"), &session).await;
+        assert_eq!(saved.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            stored_draft(&state, "08ab").await.get("name"),
+            Some(&json!("Basler Fotoarchiv online"))
+        );
+
+        // What the depositor fills in across the other sections, taken from a committed project so
+        // every obligation is met; the members creation derived stay as seeded.
+        let mut filled = ProjectDraft::from_raw(state.published.get("0803").expect("a committed project"));
+        let current = stored_draft(&state, "08ab").await;
+        for member in current.fields() {
+            filled.set(member, current.get(member).cloned().expect("a stored member"));
+        }
+        let record = DraftRepository::find(&*state.editor, "08ab")
+            .await
+            .unwrap()
+            .expect("the seeded draft");
+        DraftRepository::upsert(
+            &*state.editor,
+            &DraftRecord { payload: serde_json::to_string(&filled).unwrap(), ..record },
+        )
+        .await
+        .unwrap();
+
+        let response = as_session(&app, post(CREATED, "name=Basler+Fotoarchiv+online&intent=submit"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER, "{}", body_string(response).await);
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, "08ab")
+            .await
+            .unwrap()
+            .expect("a pending submission");
+        let submitted: ProjectDraft = serde_json::from_str(&submission.payload).unwrap();
+        assert_eq!(submitted.get("pid"), Some(&json!("https://ark.dasch.swiss/ark:/72163/1/08AB")));
+        assert_eq!(submitted.get("legalInfo"), Some(&json!([])));
     }
 }

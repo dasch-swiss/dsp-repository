@@ -75,6 +75,10 @@ The three stored values of a Submission (`SubmissionState`: Submitted, In review
 The `projects/*.json` files baked into the editor image (`PublishedProjects`), keyed by the case-folded `shortcode` field — not the filename stem, which disagrees with the field in five files.
 _Avoid_: corpus (fine for DPE's directory; here the set is the image-baked snapshot), the DPE data.
 
+**Created project**:
+A project RDU created in the editor (`created_projects`, `CreatedProject`) that the published set does not carry yet; its draft is seeded with a derived `id` and `pid`. RDU removes it while it has no submission and no approved record, which deletes its draft and review rounds and withdraws its unpublished entity proposals; otherwise the registration ends when the published set carries the shortcode, and the draft stays as that published project's draft.
+_Avoid_: local project.
+
 ### The form
 
 **Section**:
@@ -126,7 +130,7 @@ _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), 
 - **"State"** names three types plus a page (`/states`). Resolution: never say "state" alone; say Project state, Submission state or Review state.
 - **"Section"** is a form grouping, a handler module (`web/src/handlers/sections.rs`), a view module and a path segment. Resolution: the domain term is the grouping; the others are named after it.
 - **"Collection"** is the metadata model's (`ProjectRaw.collections`, defined in `areas/access/CONTEXT.md`), not editor vocabulary: the form does not offer it (`registry::OMITTED`) and drafts carry it through verbatim; no editor term uses the word.
-- **"Retire"** is the system stamping `entity_proposals.retired_at` once an accepted `new`-entity proposal's entity appears in the published set, so it stops riding along with later approved records. _Avoid_ for **Withdrawal**, which is the depositor abandoning their own proposal before a decision. Retirement is never a person's action and never applies to a `change`.
+- **"Retire"** is the system stamping `entity_proposals.retired_at` once an accepted `new`-entity proposal's entity appears in the published set, so it stops riding along with later approved records. _Avoid_ for withdrawing a proposal, which is the depositor abandoning their own before a decision, or RDU removing the created project it belongs to. Retirement is never a person's action and never applies to a `change`.
 - **"Submission" vs "SIP"**: see the root `CONTEXT.md`. Nothing in the editor produces a SIP today.
 - **Depositor-facing vocabulary is normative (REQ-2.2)**: "export", "JSON", "transfer", "commit" and "pull request" may not appear where a depositor reads; `depositor_vocabulary.rs` and the E2E suite assert it against rendered markup. RDU-facing strings are exempt.
 - **"Deposition"** is the platform's domain word for the act of depositing (depositor, DepositAgreement, ADR-0002) and named the editor capability in DEV-7374's first draft. Resolution (2026-09-25): the capability is **editor** (`areas/deposit/editor/`, `editor-*` crates, ADR-0002); "deposition" never names a crate, a directory or a capability.

@@ -45,6 +45,8 @@ Not a shell or JavaScript script. REQ-5.4's entity renumbering can only run wher
 
 The payload carries no file paths. Path resolution belongs with the data, in this repository.
 
+When the project already has a file, the run writes that file's `howToCite` and `legalInfo` (`editor_core::form::registry::GIT_OWNED`) rather than the record's: RDU maintains both in the repository, and the record's copies may predate that, such as a created project's seeded citation and empty licence.
+
 ## Deriving pull-request state from GitHub, keyed on the project
 
 **Pull-request state is keyed on the project's shortcode, never on the record id.** The branch is `editor/<shortcode>`. The record id only tells which merged pull request landed which record (below).

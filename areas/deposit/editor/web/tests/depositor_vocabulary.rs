@@ -92,11 +92,21 @@ fn the_project_list_carries_none_of_the_forbidden_words_in_any_state() {
     // Every state, because the column's text is the state's own label and a
     // list rendered in one state says nothing about the other four.
     for state in ProjectState::ALL {
-        let rows = [AssignedProject {
-            summary: ProjectSummary { shortcode: "0801d", name: "A Project", status: "ongoing" },
-            state,
-        }];
-        let markup = projects::assigned(&rows, 1).into_string();
+        let rows = [
+            AssignedProject {
+                summary: ProjectSummary { shortcode: "0801d", name: "A Project", status: "ongoing" },
+                state,
+            },
+            AssignedProject {
+                summary: ProjectSummary {
+                    shortcode: "08AB",
+                    name: "A Created Project",
+                    status: projects::NOT_PUBLISHED_YET,
+                },
+                state,
+            },
+        ];
+        let markup = projects::assigned(&rows, &["9999"]).into_string();
         assert!(
             forbidden_words_in(&markup).is_empty(),
             "{:?} in the list for {}:\n{markup}",
@@ -105,8 +115,8 @@ fn the_project_list_carries_none_of_the_forbidden_words_in_any_state() {
         );
     }
     // And the two empty states, which are prose rather than a table.
-    for assigned_count in [0, 2] {
-        let markup = projects::assigned(&[], assigned_count).into_string();
+    for unknown in [&[][..], &["9999"][..]] {
+        let markup = projects::assigned(&[], unknown).into_string();
         assert!(forbidden_words_in(&markup).is_empty(), "{:?}", forbidden_words_in(&markup));
     }
 }
@@ -127,8 +137,10 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
         Some(ReviewOutcome::Rejected),
         Some(ReviewOutcome::Withdrawn),
     ];
-    for (section_def, outcome) in registry::sections_for(Audience::Everyone)
+    // A created project's discard confirmation and notice have their own copy.
+    for ((section_def, outcome), created) in registry::sections_for(Audience::Everyone)
         .flat_map(|section| rounds.iter().map(move |outcome| (section, *outcome)))
+        .flat_map(|pair| [(pair, false), (pair, true)])
     {
         let round = outcome.map(|outcome| section::RoundSummary {
             outcome,
@@ -139,6 +151,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
         let view = section::SectionView {
             shortcode: "0801d",
             project_name: Some("A Project"),
+            created,
             section: section_def,
             audience: Audience::Everyone,
             draft: &draft,
@@ -146,7 +159,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             accepted_fields: &[],
             may_withdraw: false,
             may_discard: true,
-            confirming: None,
+            confirming: created.then_some(section::Confirmation::Discard),
             errors: &[],
             proposal_findings: &[],
             proposals: &[],
@@ -155,7 +168,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             signed_out_at: None,
             baseline: None,
             saved_at: None,
-            notice: None,
+            notice: created.then_some(section::Notice::Discarded),
             posted: None,
             format_findings: Vec::new(),
             adding_row: None,
@@ -168,10 +181,16 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
         let markup = section::page(&view).into_string();
         assert!(
             forbidden_words_in(&markup).is_empty(),
-            "{:?} in section {} with round {outcome:?}:\n{markup}",
+            "{:?} in section {} with round {outcome:?}, created {created}:\n{markup}",
             forbidden_words_in(&markup),
             section_def.id
         );
+        if created {
+            assert!(
+                markup.contains("since the project was created"),
+                "the created copy renders: {markup}"
+            );
+        }
     }
 }
 

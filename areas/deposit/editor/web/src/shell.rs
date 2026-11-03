@@ -75,17 +75,40 @@ pub(crate) fn format_instant(at: chrono::DateTime<chrono::Utc>) -> String {
     at.format("%Y-%m-%d %H:%M UTC").to_string()
 }
 
-/// The published spelling of a shortcode (`080C`), falling back to the stored, folded key
-/// (`080c`). Shared by `review` and `approved` so the fold has one copy.
-pub(crate) fn shortcode_as_published<'a>(state: &'a EditorState, stored: &'a str) -> String {
-    state
-        .published
-        .get(stored)
-        .map_or_else(|| stored.to_string(), |project| project.shortcode.clone())
+/// Every created project's registration, by its stored key.
+pub(crate) async fn created_projects(
+    state: &EditorState,
+) -> Result<
+    std::collections::BTreeMap<String, editor_core::records::CreatedProject>,
+    editor_core::repository::RepositoryError,
+> {
+    Ok(editor_core::repository::CreatedProjectRepository::list(&*state.editor)
+        .await?
+        .into_iter()
+        .map(|project| (project.shortcode.clone(), project))
+        .collect())
 }
 
-pub(crate) fn project_name<'a>(state: &'a EditorState, shortcode: &str) -> Option<&'a str> {
-    state.published.get(shortcode).map(|project| project.name.as_str())
+/// A project's shortcode spelling (`080C`) and name as RDU's lists and pages show them, from the
+/// stored, folded key (`080c`): the published set's; for a created project, the rule `/projects`
+/// uses ([`editor_core::creation::shown`]) over `draft`, the payload the row is about, and the
+/// registration; otherwise the key and no name. One copy, shared by `review` and `approved`.
+pub(crate) fn project_label(
+    state: &EditorState,
+    created: &std::collections::BTreeMap<String, editor_core::records::CreatedProject>,
+    stored: &str,
+    draft: Option<&editor_core::draft::ProjectDraft>,
+) -> (String, Option<String>) {
+    if let Some(project) = state.published.get(stored) {
+        return (project.shortcode.clone(), Some(project.name.clone()));
+    }
+    match created.get(stored) {
+        Some(project) => (
+            editor_core::creation::shown(draft, "shortcode", &project.shortcode).to_string(),
+            Some(editor_core::creation::shown(draft, "name", &project.name).to_string()),
+        ),
+        None => (stored.to_string(), None),
+    }
 }
 
 /// A 404 for a project or account id that names nothing. Always renders signed out, as the

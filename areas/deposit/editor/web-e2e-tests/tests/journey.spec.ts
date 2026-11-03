@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  CREATED_SHORTCODES,
   DEPOSITOR_STATE,
   JOURNEY_SHORTCODE,
   RDU_STATE,
@@ -91,3 +92,78 @@ test.describe("edit, submit, review, approve", () => {
     }
   });
 });
+
+test.describe("RDU creates a project, a depositor edits it", () => {
+  const createdName = "Created by the E2E suite";
+
+  function createdShortcode(): string {
+    const code = CREATED_SHORTCODES[test.info().project.name];
+    if (!code) {
+      throw new Error(
+        `no created project for Playwright project ${test.info().project.name}; ` +
+          "add one to CREATED_SHORTCODES in playwright.config.ts",
+      );
+    }
+    return code;
+  }
+
+  test("RDU creates it and lands on its overview", async ({ browser }) => {
+    const code = createdShortcode();
+    const context = await browser.newContext({ storageState: RDU_STATE });
+    try {
+      const page = await context.newPage();
+      await page.goto("/projects");
+      await page.getByRole("link", { name: "Create a project" }).click();
+      await page.getByLabel("Shortcode", { exact: true }).fill(code);
+      await page.getByLabel("Name", { exact: true }).fill(createdName);
+      await page
+        .locator("main")
+        .getByRole("button", { name: "Create project" })
+        .click();
+
+      // A retry finds the project already created; that refusal is the only other outcome.
+      const created = page.url().includes(`/projects/${code}/sections/`);
+      if (!created) {
+        await expect(page.locator("main")).toContainText(
+          "has already been created",
+        );
+        await page.goto(`/projects/${code}/sections/overview`);
+      }
+      await expect(page.locator("h1")).toContainText(createdName);
+
+      await page.goto("/projects");
+      await expect(
+        page.locator("tr", { hasText: code }),
+        "the created project is not listed under New projects",
+      ).toContainText(createdName);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test("the depositor sees it and saves a change", async ({ browser }) => {
+    const code = createdShortcode();
+    const context = await browser.newContext({ storageState: DEPOSITOR_STATE });
+    try {
+      const page = await context.newPage();
+      await page.goto("/projects");
+      const row = page.locator("tr", { hasText: code });
+      await expect(row).toContainText("Not published yet");
+      await expect(row).toContainText("Draft");
+
+      await row.getByRole("link", { name: code }).click();
+      await expect(page).toHaveURL(
+        new RegExp(`/projects/${code}/sections/overview`),
+      );
+      const edited = `${createdName}, edited`;
+      await page.fill('input[name="name"]', edited);
+      await page.getByRole("button", { name: "Save draft" }).click();
+
+      await page.goto(`/projects/${code}/sections/overview`);
+      await expect(page.locator('input[name="name"]')).toHaveValue(edited);
+    } finally {
+      await context.close();
+    }
+  });
+});
+

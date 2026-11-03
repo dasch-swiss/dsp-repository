@@ -104,6 +104,14 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         Ok(names) => names,
         Err(error) => return storage_error(&state, &user, SURFACE, "read the accounts", &error),
     };
+    let created = match crate::shell::created_projects(&state).await {
+        Ok(created) => created,
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the created projects", &error),
+    };
+    let label = |stored: &str, payload: &str| {
+        let draft = serde_json::from_str::<ProjectDraft>(payload).ok();
+        crate::shell::project_label(&state, &created, stored, draft.as_ref())
+    };
 
     // Owned first, borrowed second: a row borrows its formatted instant and its
     // account name, and neither can be produced inside the `map` that builds it.
@@ -113,22 +121,28 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         // be carried into a pull request, not for a reviewer, so a row for it
         // here would be a queue entry nobody can clear.
         .filter(|submission| submission.state.is_pending())
-        .map(|submission| PendingRow {
-            shortcode: crate::shell::shortcode_as_published(&state, &submission.shortcode),
-            project_name: crate::shell::project_name(&state, &submission.shortcode).map(str::to_string),
-            last_editor: name_of(&names, submission.submitted_by).map(str::to_string),
-            submitted_at: crate::shell::format_instant(submission.submitted_at),
-            reviewer: name_of(&names, submission.reviewed_by).map(str::to_string),
-            state: submission.state,
+        .map(|submission| {
+            let (shortcode, project_name) = label(&submission.shortcode, &submission.payload);
+            PendingRow {
+                shortcode,
+                project_name,
+                last_editor: name_of(&names, submission.submitted_by).map(str::to_string),
+                submitted_at: crate::shell::format_instant(submission.submitted_at),
+                reviewer: name_of(&names, submission.reviewed_by).map(str::to_string),
+                state: submission.state,
+            }
         })
         .collect();
     let draft_rows: Vec<DraftStrings> = drafts
         .iter()
-        .map(|draft| DraftStrings {
-            shortcode: crate::shell::shortcode_as_published(&state, &draft.shortcode),
-            project_name: crate::shell::project_name(&state, &draft.shortcode).map(str::to_string),
-            last_editor: name_of(&names, draft.updated_by).map(str::to_string),
-            updated_at: crate::shell::format_instant(draft.updated_at),
+        .map(|draft| {
+            let (shortcode, project_name) = label(&draft.shortcode, &draft.payload);
+            DraftStrings {
+                shortcode,
+                project_name,
+                last_editor: name_of(&names, draft.updated_by).map(str::to_string),
+                updated_at: crate::shell::format_instant(draft.updated_at),
+            }
         })
         .collect();
 
@@ -642,7 +656,7 @@ fn finished(state: &EditorState, user: &Account, context: &Context<'_>, outcome:
         &page_title(context),
         StatusCode::OK,
         Some(&user.actor.display_name),
-        page::finished(context.project_name, context.shortcode, finished),
+        page::finished(context.project_name.as_deref(), context.shortcode, finished),
     )
 }
 
@@ -656,7 +670,7 @@ struct Context<'a> {
     submitted: ProjectDraft,
     /// The published project, `None` for a local-only one.
     published: Option<ProjectDraft>,
-    project_name: Option<&'a str>,
+    project_name: Option<String>,
     rows: Vec<FieldDiff>,
     state: ReviewState,
     submitter_name: Option<String>,
@@ -740,6 +754,11 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
         Err(error) => return Err(storage_error(state, user, SURFACE, "read the accounts", &error)),
     };
 
+    let created = match crate::shell::created_projects(state).await {
+        Ok(created) => created,
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read the created projects", &error)),
+    };
+
     // The entity half of the review: a proposed person or organisation is not a project field, so
     // it gets no row in `rows` above — it gets one of its own, built from this submission's own
     // proposals. `Draft` and the two terminal statuses are excluded: a `Draft` belongs to a
@@ -778,7 +797,7 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
         let others: Vec<String> = live
             .into_iter()
             .filter(|other| other.shortcode != key)
-            .map(|other| crate::shell::shortcode_as_published(state, &other.shortcode))
+            .map(|other| crate::shell::project_label(state, &created, &other.shortcode, None).0)
             .collect();
         if !others.is_empty() {
             entity_cross_project.insert(proposal.entity_id.clone(), others);
@@ -786,6 +805,8 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
     }
 
     let agents = AgentScope::with_proposals(&state.agents, &entity_proposals);
+
+    let (_, project_name) = crate::shell::project_label(state, &created, &key, Some(&submitted));
 
     Ok(Context {
         shortcode,
@@ -796,7 +817,7 @@ async fn context<'a>(state: &'a EditorState, user: &Account, shortcode: &'a str)
         submission,
         submitted,
         published,
-        project_name: published_raw.map(|project| project.name.as_str()),
+        project_name,
         rows,
         state: review_state,
         entity_proposals,
@@ -894,7 +915,7 @@ fn render_page(
 /// What a review page is called. One decision, shared by the diff, the
 /// confirmation and the finished page.
 fn page_title(context: &Context<'_>) -> String {
-    match context.project_name {
+    match &context.project_name {
         Some(name) => format!("Review {name} — DaSCH Metadata Editor"),
         None => format!("Review project {} — DaSCH Metadata Editor", context.shortcode),
     }
@@ -969,7 +990,7 @@ fn view<'a>(
 ) -> page::ReviewView<'a> {
     page::ReviewView {
         shortcode: context.shortcode,
-        project_name: context.project_name,
+        project_name: context.project_name.as_deref(),
         published: context.published.is_some(),
         submitted_by: context.submitter_name.as_deref(),
         submitted_at: &context.submitted_at,
@@ -1834,6 +1855,67 @@ mod tests {
         let body = body_string(as_session(&app, get("/review"), &session).await).await;
         assert!(body.contains("080C"), "{body}");
         assert!(!body.contains(">080c<"), "{body}");
+    }
+
+    /// Register `08AB` "Basler Fotoarchiv" with its seeded draft, as `/projects/new` does.
+    async fn a_created_project(state: &EditorState) -> ProjectDraft {
+        let seed = editor_core::creation::seed("08AB", "Basler Fotoarchiv");
+        editor_core::repository::CreatedProjectRepository::create(
+            &*state.editor,
+            &editor_core::records::CreatedProject {
+                shortcode: "08ab".to_string(),
+                name: "Basler Fotoarchiv".to_string(),
+                created_by: None,
+                created_at: Utc::now(),
+            },
+            &DraftRecord {
+                shortcode: "08ab".to_string(),
+                payload: serde_json::to_string(&seed).unwrap(),
+                updated_by: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        seed
+    }
+
+    #[tokio::test]
+    async fn the_queue_and_the_review_page_name_a_created_project_from_its_registration() {
+        // The published set does not carry a created project, so it alone would leave the row
+        // nameless and spelled with the folded key.
+        let (state, _) = test_state("review-queue-created").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        let app = test_app(&state);
+        let seed = a_created_project(&state).await;
+
+        let drafts = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(drafts.contains("Basler Fotoarchiv"), "the draft row is named: {drafts}");
+        assert!(drafts.contains(">08AB<"), "{drafts}");
+
+        let submission = Submission {
+            id: Uuid::new_v4(),
+            shortcode: "08ab".to_string(),
+            payload: serde_json::to_string(&seed).unwrap(),
+            state: SubmissionState::Submitted,
+            submitted_by: None,
+            submitted_at: Utc::now(),
+            reviewed_by: None,
+            reviewed_at: None,
+            reviewer_note: None,
+            review_state: None,
+        };
+        SubmissionRepository::create(&*state.editor, &submission).await.unwrap();
+        DraftRepository::delete(&*state.editor, "08ab").await.unwrap();
+
+        let pending = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(pending.contains("Basler Fotoarchiv"), "the pending row is named: {pending}");
+        assert!(pending.contains(">08AB<"), "{pending}");
+        assert!(!pending.contains(">08ab<"), "{pending}");
+
+        let page = body_string(as_session(&app, get("/review/08AB"), &session).await).await;
+        assert!(page.contains("Review Basler Fotoarchiv"), "the heading names it: {page}");
     }
 
     #[tokio::test]

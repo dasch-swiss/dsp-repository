@@ -86,6 +86,8 @@ The only thing in the service that removes one. A review that rejects a submissi
 
 "Discard" rather than "delete", on the control and on the wire: what goes is the draft and never the project, and the form re-opens pre-filled from the published metadata. Refused without a stored draft, and refused while a submission is pending — the draft is what the depositor comes back to when RDU returns the project, so it must not vanish from under a live review; the refusal names the way out, which is to take the submission back first.
 
+A created project is the exception: it has no published metadata to re-open from, so a discard rewrites its draft to the seed instead (shortcode, `id`, `pid`, citation and an empty licence, without the name), and is refused when the draft already holds nothing more. Its draft is deleted only by RDU's removal of the project ([Project representation](./project-representation.md#created-projects)).
+
 ## A concurrent save is refused once, not silently applied
 
 Two members of one project team is the normal case, the draft is one row, and `upsert` is last-write-wins. The form posts the revision it was rendered from, under `baseline`, and a save whose baseline no longer matches the stored row is refused with the other editor's name and the time they saved.

@@ -85,7 +85,7 @@ pub(crate) async fn reconcile(
     published: &editor_core::published::PublishedProjects,
     agents: &editor_core::agents::Agents,
 ) {
-    match reconcile_published(store, store, published, agents).await {
+    match reconcile_published(store, store, store, published, agents).await {
         // Two spelled-out arms rather than one parameterised call: `tracing`
         // resolves the level at compile time, so it cannot be a variable.
         Ok(summary) if summary.needs_attention() => tracing::warn!(
@@ -96,6 +96,8 @@ pub(crate) async fn reconcile(
             records.retry_failed = summary.retry_failed,
             proposals.retired = summary.proposals_retired,
             proposals.retire_failed = summary.proposals_retire_failed,
+            created.published = summary.created_published,
+            created.sweep_failed = summary.created_sweep_failed,
             "compared the published set against local records; some records need an RDU decision"
         ),
         Ok(summary) => tracing::info!(
@@ -106,6 +108,8 @@ pub(crate) async fn reconcile(
             records.retry_failed = summary.retry_failed,
             proposals.retired = summary.proposals_retired,
             proposals.retire_failed = summary.proposals_retire_failed,
+            created.published = summary.created_published,
+            created.sweep_failed = summary.created_sweep_failed,
             "compared the published set against local records"
         ),
         Err(e) => tracing::error!(

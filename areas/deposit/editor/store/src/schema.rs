@@ -78,6 +78,7 @@ mod tests {
     /// Every table the persistence layer is responsible for.
     const EXPECTED_TABLES: &[&str] = &[
         "approved_records",
+        "created_projects",
         "drafts",
         "entity_proposals",
         "review_rounds",

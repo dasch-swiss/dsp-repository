@@ -57,6 +57,21 @@ pub struct DraftRecord {
     pub updated_at: DateTime<Utc>,
 }
 
+/// A project RDU created in the editor, before the published set carries it.
+///
+/// The registration, not the draft: discarding the draft must not delete the project, and a
+/// seeded `id`/`pid` alone reads as "published once" to the startup comparison. `shortcode` is
+/// the [`normalize_shortcode`] key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CreatedProject {
+    pub shortcode: String,
+    /// The name RDU entered at creation; the draft's `name` may since have changed.
+    pub name: String,
+    /// The creating RDU member's account id, kept when the account is removed.
+    pub created_by: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+}
+
 /// Where a submission sits in review.
 ///
 /// `Draft` and `Online`, the two remaining lifecycle states, are deliberately absent: a draft is a

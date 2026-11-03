@@ -107,16 +107,14 @@ pub struct DraftRow<'a> {
     pub updated_at: &'a str,
 }
 
-/// `GET /review`: every pending submission, then every draft. Every RDU member
-/// sees every draft, so RDU can help a depositor stuck before submitting. A
-/// draft is not reviewable, so it is a separate table rather than a row with no
-/// controls.
+/// `GET /review`: every pending submission, then the drafts in progress. A draft is
+/// not reviewable, so it is a separate table rather than a row with no controls.
 pub fn queue(pending: &[QueueRow<'_>], drafts: &[DraftRow<'_>]) -> Markup {
     html! {
         div class="py-8" {
             h1 class="font-display text-2xl mb-2" { "Review queue" }
             p class="text-gray-600 mb-6" {
-                "Oldest first. Every RDU member sees every pending submission and every draft — access here is \
+                "Oldest first. Every RDU member sees every pending submission and every draft in progress — access here is \
                  role-based, not per project."
             }
             @if pending.is_empty() {
@@ -128,7 +126,7 @@ pub fn queue(pending: &[QueueRow<'_>], drafts: &[DraftRow<'_>]) -> Markup {
                  somebody who is stuck."
             }
             @if drafts.is_empty() {
-                p class="text-gray-600" { "No drafts have been saved." }
+                p class="text-gray-600" { "No drafts are in progress." }
             } @else { (drafts_table(drafts)) }
         }
     }
@@ -157,12 +155,7 @@ fn pending_table(rows: &[QueueRow<'_>]) -> Markup {
 }
 
 fn pending_row(row: &QueueRow<'_>) -> Markup {
-    let name = html! {
-        @match row.project_name {
-            Some(name) => (name)
-            None => span class="italic text-neutral-600" { "Not in the published set" }
-        }
-    };
+    let name = project_cell(row.shortcode, row.project_name);
     html! {
         tr {
             ({
@@ -242,12 +235,7 @@ fn drafts_table(rows: &[DraftRow<'_>]) -> Markup {
 }
 
 fn draft_row(row: &DraftRow<'_>) -> Markup {
-    let name = html! {
-        @match row.project_name {
-            Some(name) => (link(name, format!("/projects/{}", row.shortcode)))
-            None => (link("Not in the published set", format!("/projects/{}", row.shortcode)))
-        }
-    };
+    let name = project_cell(row.shortcode, row.project_name);
     html! {
         tr {
             ({
@@ -267,6 +255,19 @@ fn draft_row(row: &DraftRow<'_>) -> Markup {
                 )
             })
         }
+    }
+}
+
+/// The Project cell of both queue tables, so a name renders identically in either.
+fn project_cell(shortcode: &str, name: Option<&str>) -> Markup {
+    let label = html! {
+        @match name {
+            Some(name) => (name)
+            None => span class="italic" { "Not in the published set (" (shortcode) ")" }
+        }
+    };
+    html! {
+        (link(label, format!("/projects/{shortcode}")))
     }
 }
 
@@ -1293,6 +1294,38 @@ mod tests {
         assert!(out.contains("Drafts in progress"), "{out}");
         assert!(out.contains(r#"href="/projects/080C""#), "{out}");
         assert!(out.contains("No submissions are waiting for review"), "{out}");
+    }
+
+    #[test]
+    fn a_project_name_renders_the_same_in_both_tables() {
+        let mut pending = queue_row();
+        pending.shortcode = "0801d";
+        let mut draft = draft_row();
+        draft.shortcode = "0801d";
+        draft.project_name = pending.project_name;
+        let cell = project_cell("0801d", pending.project_name).into_string();
+        assert!(cell.contains(r#"href="/projects/0801d""#), "{cell}");
+        assert!(cell.contains("Bernoulli-Euler Online"), "{cell}");
+        assert!(!cell.contains("aria-label"), "{cell}");
+        assert!(pending_row(&pending).into_string().contains(&cell));
+        assert!(super::draft_row(&draft).into_string().contains(&cell));
+    }
+
+    #[test]
+    fn a_project_missing_from_the_published_set_is_italic_inside_the_link_in_both_tables() {
+        let mut pending = queue_row();
+        pending.project_name = None;
+        let mut draft = draft_row();
+        draft.shortcode = pending.shortcode;
+        draft.project_name = None;
+        let cell = project_cell("0801d", None).into_string();
+        assert!(cell.contains(r#"href="/projects/0801d""#), "{cell}");
+        assert!(
+            cell.contains(r#"<span class="italic">Not in the published set (0801d)</span>"#),
+            "{cell}"
+        );
+        assert!(pending_row(&pending).into_string().contains(&cell));
+        assert!(super::draft_row(&draft).into_string().contains(&cell));
     }
 
     #[test]

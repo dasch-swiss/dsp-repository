@@ -217,7 +217,8 @@ impl ReviewRoundRepository for Database {
     }
 
     async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<ReviewRound>> {
-        let shortcode = shortcode.to_string();
+        // Folded like the writes, which key `review_rounds.shortcode` on the normalized form.
+        let shortcode = normalize_shortcode(shortcode);
         Ok(self
             .read(move |conn| {
                 // Newest first: the head is the round the depositor's form shows.

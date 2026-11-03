@@ -22,7 +22,7 @@
 //! - **The enhanced path answers 200 even when it refuses**, and the plain path redirects after a
 //!   write. Same two rules as the project form, for the same two reasons.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -86,7 +86,7 @@ const FINISH_REFUSED_UNWRITABLE: &str = "The approved record could not be built 
 const APPROVE_REFUSED_UNPUBLISHABLE: &str = "This project, as decided, cannot become a publishable project file, so \
                                              it cannot be approved:";
 
-/// `GET /review` — the queue and the drafts.
+/// `GET /review` — the queue and the drafts in progress.
 pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> Response {
     let submissions = match SubmissionRepository::list(&*state.editor).await {
         Ok(submissions) => submissions,
@@ -96,6 +96,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         Ok(drafts) => drafts,
         Err(error) => return storage_error(&state, &user, SURFACE, "read the drafts", &error),
     };
+    let drafts = drafts_in_progress(&state, drafts, &submissions).await;
     let ids = submissions
         .iter()
         .flat_map(|submission| [submission.submitted_by, submission.reviewed_by])
@@ -174,6 +175,45 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         Some(&user.actor.display_name),
         page::queue(&pending_view, &drafts_view),
     )
+}
+
+/// The drafts somebody is still working on: no submission, edited after the project's newest
+/// approval. Submission and approval both leave the draft row in place, so the row alone does not
+/// say.
+///
+/// The newest approved round is the source for "edited since approval", not the approved record:
+/// rounds survive the record's release.
+async fn drafts_in_progress(
+    state: &EditorState,
+    drafts: Vec<DraftRecord>,
+    submissions: &[Submission],
+) -> Vec<DraftRecord> {
+    let submitted: HashSet<String> = submissions.iter().map(|s| normalize_shortcode(&s.shortcode)).collect();
+    let mut kept = Vec::with_capacity(drafts.len());
+    for draft in drafts {
+        // Computed once: the submitted set is keyed on the folded form. The store folds the key of
+        // its own read, so the draft's shortcode goes to it as stored.
+        let key = normalize_shortcode(&draft.shortcode);
+        if submitted.contains(&key) {
+            continue;
+        }
+        // A rounds read that fails keeps the draft listed: the queue is the page RDU opens to find
+        // work, and one unreadable project must not take the pending table down with it.
+        let approved_before = match ReviewRoundRepository::list_for_shortcode(&*state.editor, &draft.shortcode).await {
+            Ok(rounds) => rounds
+                .iter()
+                .find(|round| round.outcome == ReviewOutcome::Approved)
+                .map(|round| round.at),
+            Err(error) => {
+                tracing::warn!(shortcode = %draft.shortcode, error = %error, "could not read the review rounds of a draft");
+                None
+            }
+        };
+        if approved_before.is_none_or(|at| draft.updated_at > at) {
+            kept.push(draft);
+        }
+    }
+    kept
 }
 
 /// One pending row's owned strings, so the view can borrow them.
@@ -1918,30 +1958,136 @@ mod tests {
         assert!(page.contains("Review Basler Fotoarchiv"), "the heading names it: {page}");
     }
 
-    #[tokio::test]
-    async fn the_queue_shows_every_draft_as_well() {
-        // Drafts are visible to RDU so it can help a depositor who is stuck
-        // before submitting. The account below is assigned nothing.
-        let (state, _) = test_state("review-queue-drafts").await;
-        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
-        let author = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+    async fn a_draft(state: &EditorState, shortcode: &str, updated_at: DateTime<Utc>) {
         DraftRepository::upsert(
             &*state.editor,
             &DraftRecord {
-                shortcode: "0801d".to_string(),
+                shortcode: shortcode.to_string(),
                 payload: "{}".to_string(),
-                updated_by: Some(author.id),
-                created_at: Utc::now(),
-                updated_at: Utc::now(),
+                updated_by: None,
+                created_at: updated_at,
+                updated_at,
             },
         )
         .await
         .unwrap();
+    }
+
+    /// As the handler's approval: the submission is deleted, the draft stays.
+    async fn approved_at(state: &EditorState, shortcode: &str, at: DateTime<Utc>) {
+        let submission = a_submission(state, shortcode, None, json!({ "name": "New" })).await;
+        let record = ApprovedRecord {
+            id: Uuid::new_v4(),
+            shortcode: submission.shortcode.clone(),
+            payload: submission.payload.clone(),
+            approved_by: None,
+            approved_at: at,
+        };
+        let round = ReviewRound {
+            id: Uuid::new_v4(),
+            shortcode: submission.shortcode.clone(),
+            submission_id: submission.id,
+            outcome: ReviewOutcome::Approved,
+            note: None,
+            review_state: None,
+            actor: None,
+            at,
+        };
+        ReviewRoundRepository::approve(&*state.editor, submission.id, &record, &round)
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn the_queue_shows_a_draft_nobody_has_submitted() {
+        // The reviewer account is assigned no projects.
+        let (state, _) = test_state("review-queue-drafts").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        a_draft(&state, "0801d", Utc::now()).await;
         let app = test_app(&state);
 
         let body = body_string(as_session(&app, get("/review"), &session).await).await;
         assert!(body.contains("Drafts in progress"), "{body}");
         assert!(body.contains(r#"href="/projects/0801d""#), "{body}");
+        assert!(!body.contains("No drafts are in progress."), "{body}");
+    }
+
+    #[tokio::test]
+    async fn a_submitted_project_is_not_listed_as_a_draft() {
+        // Submitting keeps the draft row.
+        let (state, _) = test_state("review-queue-submitted-draft").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        a_draft(&state, "0801d", Utc::now()).await;
+        a_submission(&state, "0801d", None, json!({ "name": "New" })).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(body.contains("No drafts are in progress."), "{body}");
+    }
+
+    #[tokio::test]
+    async fn an_approved_project_is_not_listed_as_a_draft_until_it_is_edited_again() {
+        let (state, _) = test_state("review-queue-approved-draft").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        let approved = Utc::now() - chrono::Duration::hours(1);
+        a_draft(&state, "0801d", approved - chrono::Duration::minutes(5)).await;
+        approved_at(&state, "0801d", approved).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(body.contains("No drafts are in progress."), "{body}");
+
+        a_draft(&state, "0801d", approved + chrono::Duration::minutes(5)).await;
+
+        let body = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(!body.contains("No drafts are in progress."), "{body}");
+        assert!(body.contains(r#"href="/projects/0801d""#), "{body}");
+    }
+
+    #[tokio::test]
+    async fn a_draft_stored_unfolded_is_matched_to_its_folded_approval_and_submission() {
+        // `drafts.shortcode` keeps the published case (`080C`); submissions and review rounds are
+        // keyed on the folded form.
+        let (state, _) = test_state("review-queue-unfolded-draft").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        let approved = Utc::now() - chrono::Duration::hours(1);
+        a_draft(&state, "080C", approved - chrono::Duration::minutes(5)).await;
+        approved_at(&state, "080C", approved).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(body.contains("No drafts are in progress."), "{body}");
+
+        let (state, _) = test_state("review-queue-unfolded-submitted").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        a_draft(&state, "080C", Utc::now()).await;
+        a_submission(&state, "080C", None, json!({ "name": "New" })).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get("/review"), &session).await).await;
+        assert!(body.contains("No drafts are in progress."), "{body}");
+    }
+
+    #[tokio::test]
+    async fn a_rounds_read_failure_keeps_the_draft_listed_and_the_queue_up() {
+        let db = open_test_db("review-queue-rounds-fault").await;
+        let sound = state_over(db.editor.clone());
+        let (_, session) = a_reviewer(&sound, "rdu@dasch.swiss", "A Reviewer").await;
+        a_submission(&sound, "0802a", None, json!({ "name": "New" })).await;
+        a_draft(&sound, "0801d", Utc::now()).await;
+        let faulty = sound.with_store(std::sync::Arc::new(FaultyStore::new(
+            db.editor.clone(),
+            Faults { review_rounds_list: true, ..Faults::default() },
+        )));
+        let app = test_app(&faulty);
+
+        let response = as_session(&app, get("/review"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("Pending submissions"), "{body}");
+        assert!(body.contains(r#"href="/projects/0802a""#), "{body}");
+        assert!(body.contains(r#"href="/projects/0801d""#), "{body}");
+        assert!(!body.contains("No drafts are in progress."), "{body}");
     }
 
     #[tokio::test]

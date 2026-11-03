@@ -46,6 +46,7 @@ use uuid::Uuid;
 
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Rdu};
+use crate::handlers::sections::proposal_fault_message;
 use crate::handlers::{is_enhanced, storage_error, StorageSurface};
 use crate::pages::review as page;
 use crate::shell::EditorState;
@@ -67,6 +68,13 @@ const APPROVE_REFUSED_UNDECIDED_PROPOSAL: &str = "Every proposed person or organ
 const APPROVE_REFUSED_REJECTED_ENTITY: &str = "This project still refers to a proposed person or organisation that \
                                                is being rejected. Substitute another entity, or accept the \
                                                proposal instead, before approving. Referenced by:";
+/// Not the whole message: each proposal and what is wrong with it are appended.
+const APPROVE_REFUSED_PROPOSAL: &str = "A proposed person or organisation this approval keeps does not pass the \
+                                        rules of its form, so this cannot be approved. Reject the proposal or \
+                                        request changes:";
+/// Not the whole message: the fields holding the values are appended.
+const APPROVE_REFUSED_FORMAT: &str = "Some values are not in the format they need, so this cannot be approved. \
+                                      Substitute a corrected value, revert the field, or request changes. Fields:";
 const NOTE_REQUIRED: &str = "A note is required: it is the only thing the depositor will see. Nothing was changed.";
 const FINISH_REFUSED_STORAGE: &str = "The review could not be recorded, so this submission is still in the queue. \
                                       Nothing was changed — try again, and if it keeps happening the service needs \
@@ -412,18 +420,37 @@ async fn finish(
                     APPROVE_REFUSED_UNDECIDED_PROPOSAL.to_string()
                 }
                 ApproveRefusal::RejectedEntity(dangling) => {
-                    let mut fields: Vec<&str> = Vec::new();
-                    for (field, _) in &dangling {
-                        if !fields.contains(&field.label) {
-                            fields.push(field.label);
-                        }
-                    }
+                    let fields = labels_once(dangling.iter().map(|(field, _)| *field));
                     span.record("review.outcome", "dangling_reference");
                     tracing::info!(
                         review.dangling_fields = ?fields,
                         "refused an approval whose payload still references a rejected entity"
                     );
                     format!("{APPROVE_REFUSED_REJECTED_ENTITY} {}.", fields.join(", "))
+                }
+                ApproveRefusal::ProposalIncomplete(problems) => {
+                    span.record("review.outcome", "proposal_incomplete");
+                    tracing::info!(
+                        review.proposal_findings = problems.len(),
+                        "refused an approval keeping a proposal its form's rules refuse"
+                    );
+                    let lines: Vec<String> = problems
+                        .into_iter()
+                        .map(|problem| {
+                            let entity = context
+                                .agents
+                                .get(&problem.entity_id)
+                                .map_or(problem.entity_id.as_str(), |agent| agent.label.as_str());
+                            format!("{entity}, {}", proposal_fault_message(problem.kind, problem.fault))
+                        })
+                        .collect();
+                    format!("{APPROVE_REFUSED_PROPOSAL} {}.", lines.join("; "))
+                }
+                ApproveRefusal::Format(findings) => {
+                    let fields = labels_once(findings.iter().map(|finding| finding.field));
+                    span.record("review.outcome", "format");
+                    tracing::info!(review.format_fields = ?fields, "refused an approval holding a value without its format");
+                    format!("{APPROVE_REFUSED_FORMAT} {}.", fields.join(", "))
                 }
                 ApproveRefusal::Unpublishable(error) => {
                     span.record("review.outcome", "unpublishable");
@@ -507,6 +534,17 @@ async fn finish(
             refused(state, user, context, filter, headers, FINISH_REFUSED_STORAGE)
         }
     }
+}
+
+/// Each field's label once, in the order given.
+fn labels_once(fields: impl Iterator<Item = &'static registry::Field>) -> Vec<&'static str> {
+    let mut labels = Vec::new();
+    for field in fields {
+        if !labels.contains(&field.label) {
+            labels.push(field.label);
+        }
+    }
+    labels
 }
 
 /// The note the reviewer is working on: what this body carries, or what a
@@ -2514,6 +2552,81 @@ mod tests {
 
         assert_ne!(first.id, second.id, "the newer record replaced the older one");
         assert!(second.payload.contains("Second approval"), "{}", second.payload);
+    }
+
+    #[tokio::test]
+    async fn approve_is_refused_when_a_kept_proposal_was_edited_to_a_script_link_after_submit() {
+        // A submitted proposal stays editable, so a value the submit gate never saw reaches
+        // approval; accepted, it renders as an `href` on the public page.
+        let (state, _) = test_state("review-approve-proposal-link").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let proposal = a_person_proposal(&state, "0801d").await;
+        a_submission(
+            &state,
+            "0801d",
+            None,
+            json!({ "attributions": [{ "contributor": proposal.entity_id, "contributorType": ["Author"] }] }),
+        )
+        .await;
+        let edited = json!({
+            "givenNames": ["Ada"],
+            "familyNames": ["Lovelace"],
+            "jobTitles": [],
+            "sameAs": [{ "type": "URL", "url": "javascript:alert(1)" }],
+        });
+        EntityProposalRepository::update_payload(&*state.editor, proposal.id, &edited.to_string(), Utc::now())
+            .await
+            .unwrap();
+        let app = test_app(&state);
+
+        let approve = format!(
+            "{}&{}.{}=accept",
+            finishing(page::APPROVE, &[("attributions", "accept")], ""),
+            page::ENTITY_DECISION_PREFIX,
+            proposal.entity_id
+        );
+        let body = body_string(as_session(&app, post("/review/0801d", &approve), &session).await).await;
+
+        assert!(body.contains(APPROVE_REFUSED_PROPOSAL), "{body}");
+        assert!(body.contains("Ada Lovelace"), "the proposal is named: {body}");
+        assert!(
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
+                .await
+                .unwrap()
+                .is_empty(),
+            "no approved record was created"
+        );
+    }
+
+    #[tokio::test]
+    async fn approve_is_refused_while_a_value_lacks_its_format_in_an_rdu_only_field() {
+        let (state, _) = test_state("review-approve-format").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", None, json!({ "documentationMaterial": ["www.dasch.swiss"] })).await;
+        let app = test_app(&state);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post(
+                    "/review/0801d",
+                    &finishing(page::APPROVE, &[("documentationMaterial", "accept")], ""),
+                ),
+                &session,
+            )
+            .await,
+        )
+        .await;
+
+        assert!(body.contains(APPROVE_REFUSED_FORMAT), "{body}");
+        assert!(body.contains("Documentation material."), "the field is named: {body}");
+        assert!(
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.editor, "0801d")
+                .await
+                .unwrap()
+                .is_empty(),
+            "no approved record was created"
+        );
     }
 
     #[tokio::test]

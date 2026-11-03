@@ -45,14 +45,17 @@ A proposed organisation is asked for all four of `street`, `postalCode`, `locali
 
 So `check_organization` judges what the depositor wrote, not what they inherited: an `address` byte-equal to the published one passes, and any other incomplete one is refused. This is the carve-out `form::submit::typed_sentinels` already makes for a reference's `url` — `0110_h-steiner` holds `{"url": "MISSING"}` — and for the same stated reason: a live record must not become unsubmittable over data it did not write. `proposals::tests::six_committed_organizations_carry_an_incomplete_address` enumerates the six and fails if the corpus stops needing the carve-out.
 
+The link rules have no such carve-out: an organisation's `url` and every `sameAs` link, a person's included, must be a full web address by the rule the entity form marks them with (`form::format`'s `Link`), and `proposals::tests::no_committed_entity_carries_a_link_the_rule_refuses` keeps every committed entity passing it, so a change proposal never starts refused.
+
 ## The review surface gives a proposal its own rows
 
 The review surface compares changed project *fields*, and a proposed person is not one, so entity proposals would otherwise reach an approval without ever being displayed — and the referential-integrity question could not even arise, there being no per-entity action to invoke. Proposed entities therefore get their own rows below the field diff, each with an accept/reject control posting under `entity.{entity_id}`. That namespace cannot collide with the field surface's `decision.{field}` or with a member name.
 
-`editor_core::review::approval` gives approve two refusals beside the undecided-fields one:
+`editor_core::review::approval` gives approve three refusals beside the undecided-fields one:
 
 - **while any proposal is undecided**, for the reason the field gate exists: approving an undecided row commits bytes nobody looked at. `review_rounds`' `approve` leaves an undecided proposal `submitted` and names this gate as what prevents that, so the two halves are one coupling.
 - **while the payload still references a rejected entity.** The approval is blocked and the referencing fields are named, so RDU substitutes them in place or requests changes; nothing is stripped silently.
+- **while a proposal it keeps fails the entity form's rules** (`check_person`, `check_organization`). A submitted proposal stays editable until the round ends, so the submit gate's check does not cover what RDU approves; the refusal names each proposal and field, and RDU rejects the proposal or requests changes.
 
 The second gate, which `editor_core::review::approval` runs, has a trap worth stating, because getting it wrong disables it without any test failing. At approve time every proposal's `status` is still `submitted` — the statuses change inside `approve`'s own transaction — so `is_referenceable`, which is status-based, answers **true** for a proposal RDU has just rejected. The scope the check runs against is therefore built from only the proposals that will *survive* the approval, filtered on `decision`, and the check runs over the **decided** payload rather than the submitted one, since a revert can remove a reference and a substitution can add one. It reuses `form::submit::unresolved_agents` rather than walking references a second way.
 

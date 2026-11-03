@@ -21,7 +21,7 @@ use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape, WhenCleared};
 use editor_core::proposals::{proposal_for, EntityProposal, ProposalKind, ProposalStatus};
 use editor_core::records::normalize_shortcode;
-use editor_core::repository::EntityProposalRepository;
+use editor_core::repository::{EntityProposalRepository, RepositoryError};
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 
@@ -230,6 +230,11 @@ pub(crate) async fn act(
             context.proposal.updated_at = now;
             saved(&shortcode, &context, headers)
         }
+        // Decided since `context` read it: the store refuses the write.
+        Err(RepositoryError::NotFound { .. }) => {
+            span.record("form.outcome", "not_live");
+            refused(&state, &user, &shortcode, &context, headers, SAVE_REFUSED_NOT_LIVE)
+        }
         Err(error) => {
             span.record("form.outcome", "store_failed");
             tracing::error!(error = %error, "could not save an entity proposal");
@@ -328,11 +333,15 @@ async fn row_action(
 
     apply_posted(&mut context.draft, context.proposal.kind, &body);
     let payload = serde_json::to_string(&context.draft).unwrap_or_default();
-    if let Err(error) =
-        EntityProposalRepository::update_payload(&*state.editor, context.proposal.id, &payload, Utc::now()).await
-    {
-        tracing::error!(error = %error, "could not save an entity proposal row action");
-        return refused(state, user, shortcode, &context, headers, SAVE_REFUSED_STORAGE);
+    match EntityProposalRepository::update_payload(&*state.editor, context.proposal.id, &payload, Utc::now()).await {
+        Ok(()) => {}
+        Err(RepositoryError::NotFound { .. }) => {
+            return refused(state, user, shortcode, &context, headers, SAVE_REFUSED_NOT_LIVE);
+        }
+        Err(error) => {
+            tracing::error!(error = %error, "could not save an entity proposal row action");
+            return refused(state, user, shortcode, &context, headers, SAVE_REFUSED_STORAGE);
+        }
     }
 
     let rendering = Rendering {
@@ -637,6 +646,11 @@ fn render_page(
 }
 
 fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'a>) -> crate::entity::EntityView<'a> {
+    let posted = rendering.keep_posted.then_some(context.posted).flatten();
+    // From the stored payload at every render, as the section form does, so a
+    // save's redirect and a refusal's re-render show the same findings.
+    let fields = crate::entity::fields_for(context.proposal.kind);
+    let format_findings = editor_core::form::format::findings(fields.iter(), &context.draft, posted);
     crate::entity::EntityView {
         shortcode,
         proposal: &context.proposal,
@@ -644,9 +658,10 @@ fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'
         draft: &context.draft,
         confirming: rendering.confirming,
         notice: rendering.notice,
-        posted: rendering.keep_posted.then_some(context.posted).flatten(),
+        posted,
         adding_row: rendering.adding_row,
         agents: Some(&context.agents),
+        format_findings,
         rows_action: format!("/projects/{shortcode}/entities/{}/fields", context.proposal.entity_id),
     }
 }
@@ -859,6 +874,29 @@ mod tests {
         let body = body_string(response).await;
         assert!(body.contains("Test Org"), "{body}");
         assert!(body.contains("https://example.org/"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn a_saved_url_without_its_format_is_stored_and_marked_on_the_reloaded_form() {
+        let (state, _) = test_state("entity-save-format").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = an_organization_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+
+        let saved = as_session(&app, post(&uri, "name=Test+Org&url=www.example.org"), &session).await;
+        assert_eq!(saved.status(), StatusCode::SEE_OTHER);
+        assert_eq!(stored_payload(&state, "0801d").await["url"], "www.example.org");
+
+        let target = location(&saved).expect("a redirect location");
+        let body = body_string(as_session(&app, get(&target), &session).await).await;
+        let input = body
+            .split("<input")
+            .find(|input| input.contains(r#"name="url""#))
+            .expect("the url control");
+        assert!(input.contains(r#"aria-invalid="true""#), "{input}");
+        assert!(body.contains(crate::form::widgets::format_message(editor_core::form::format::ValueKind::Link)));
     }
 
     #[tokio::test]

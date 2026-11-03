@@ -211,7 +211,8 @@ cardinality between the archival and in-progress stages.
 - `legalInfo`: Legal information about the project. Calculated from records;
   cannot be specified explicitly on the project.
 - `dataManagementPlan`: A data management plan (string or URL); use "not
-  accessible" if not available.
+  accessible" if not available. The page links any other value, so the editor
+  accepts only a full web address or exactly `not accessible`.
 - `typeOfData`: The type(s) of data — "XML", "Text", "Image", "Video", "Audio".
   Computed from the records where available and optionally added manually.
 - `dataLanguage`: Languages contained in the project. Computed from the records
@@ -488,7 +489,7 @@ A persistent identifier — may be an ARK or a DOI. Used e.g. on publications.
 | `pid`  | pid    | 0-1   |
 
 - `text`: The text of the publication.
-- `pid`: A URL to the publication, e.g. a DOI, if available.
+- `pid`: A URL to the publication, e.g. a DOI, if available. A bare DOI (`10.1234/abcd`) is resolved through `https://doi.org/` wherever it is linked or used as an identifier (`shared_metadata::pid_href`).
 
 ### Address
 

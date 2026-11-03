@@ -113,6 +113,8 @@ pub struct FundingRef {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PublicationRef {
     pub text: String,
+    /// Where the publication resolves, a bare DOI already through `https://doi.org/`
+    /// ([`shared_metadata::pid_href`]), so no writer resolves it again.
     pub pid: Option<String>,
 }
 
@@ -249,7 +251,7 @@ impl ProjectGraph {
                 .flatten()
                 .map(|publication| PublicationRef {
                     text: publication.text.clone(),
-                    pid: publication.pid.as_ref().map(|pid| pid.url.clone()),
+                    pid: publication.pid.as_ref().map(|pid| shared_metadata::pid_href(&pid.url)),
                 })
                 .collect(),
             status: raw.status.clone(),

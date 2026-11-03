@@ -1,7 +1,7 @@
 use maud::{html, Markup};
 use mosaic_tiles::icon::{icon, Export};
 use mosaic_tiles::link::link;
-use shared_metadata::Publication;
+use shared_metadata::{pid_href, Publication};
 
 use crate::pages::project::components::info_card::info_card;
 
@@ -32,7 +32,7 @@ fn publication_card(pub_: &Publication) -> Markup {
                             html! {
                                 (text) (icon(Export, "w-3 h-3"))
                             },
-                            pid.url.as_str(),
+                            pid_href(&pid.url),
                         )
                         .external()
                 })
@@ -64,6 +64,17 @@ mod tests {
         assert!(out.contains("DOI"), "{out}");
         assert!(out.contains(r#"target="_blank""#), "{out}");
         assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
+    }
+
+    #[test]
+    fn a_bare_doi_links_through_the_doi_resolver() {
+        let pubs = vec![Publication {
+            text: "A paper (2024)".to_string(),
+            pid: Some(Pid { url: "10.1234/abcd".to_string(), text: None }),
+        }];
+        let out = publications_section(&pubs).into_string();
+        assert!(out.contains(r#"href="https://doi.org/10.1234/abcd""#), "{out}");
+        assert!(out.contains(">10.1234/abcd<"), "the identifier is shown as stored: {out}");
     }
 
     #[test]

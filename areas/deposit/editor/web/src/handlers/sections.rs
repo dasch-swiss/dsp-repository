@@ -26,13 +26,13 @@ use editor_core::draft::ProjectDraft;
 use editor_core::form::registry::{self, Audience, Section};
 use editor_core::form::submit::over_cap;
 use editor_core::form::{apply, format, FormBody, Shape};
-use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
+use editor_core::proposals::{EntityProposal, ProposalFault, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::{normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState};
 use editor_core::repository::{
     DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition,
 };
 use editor_core::review::ReviewState;
-use editor_core::submission::{ProposalFault, SubmitRefusal};
+use editor_core::submission::SubmitRefusal;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
@@ -104,15 +104,15 @@ const SUBMIT_REFUSED_UNKNOWN_AGENT: &str = "This project cannot be submitted yet
                                             and each one is named below with a link to it.";
 
 /// What a proposal problem renders as beside the proposal it names.
-fn proposal_fault_message(fault: ProposalFault) -> String {
+pub(crate) fn proposal_fault_message(kind: ProposalKind, fault: ProposalFault) -> String {
     match fault {
         ProposalFault::Unreadable => "its stored data could not be read".to_string(),
         ProposalFault::Finding(finding) => {
-            let field = match finding.index {
-                Some(index) => format!("{}[{index}]", finding.field),
-                None => finding.field.to_string(),
-            };
-            format!("{field}: {}", finding.message)
+            let label = crate::entity::finding_label(kind, finding.field).unwrap_or(finding.field);
+            match finding.index {
+                Some(index) => format!("{label}, entry {}: {}", index + 1, finding.message),
+                None => format!("{label}: {}", finding.message),
+            }
         }
     }
 }
@@ -1130,7 +1130,13 @@ async fn submit(
             SubmitRefusal::ProposalIncomplete(problems) => {
                 let proposal_findings: Vec<(String, ProposalKind, String)> = problems
                     .into_iter()
-                    .map(|problem| (problem.entity_id, problem.kind, proposal_fault_message(problem.fault)))
+                    .map(|problem| {
+                        (
+                            problem.entity_id,
+                            problem.kind,
+                            proposal_fault_message(problem.kind, problem.fault),
+                        )
+                    })
                     .collect();
                 span.record("form.outcome", "proposal_incomplete");
                 tracing::info!(
@@ -1157,17 +1163,28 @@ async fn submit(
                     fields.format = findings.len(),
                     "refused a submission holding a value without its format"
                 );
-                // Only fields outside this section, each once: a field here shows its finding
-                // at its control. One RDU accepted has none, but its value passed this gate at
-                // the submit RDU accepted it from.
-                let shown: Vec<&str> = context.section.fields_for(context.audience).map(|field| field.id).collect();
+                // Each field once, unless this section shows the finding at its control. One RDU
+                // accepted renders as text with no control, so it gets the error here too.
+                let shown: Vec<&str> = context
+                    .section
+                    .fields_for(context.audience)
+                    .map(|field| field.id)
+                    .filter(|id| !context.accepted_fields.iter().any(|accepted| accepted == id))
+                    .collect();
                 let mut errors: Vec<(String, String)> = Vec::new();
                 for finding in findings.iter().filter(|finding| !shown.contains(&finding.field.id)) {
                     if !errors.iter().any(|(named, _)| named == finding.field.id) {
                         errors.push((finding.field.id.to_string(), FORMAT_FIELD_MESSAGE.to_string()));
                     }
                 }
-                refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_FORMAT, &errors)
+                let rendering = Rendering {
+                    notice: Some(page::Notice::Refused(SUBMIT_REFUSED_FORMAT)),
+                    errors: &errors,
+                    keep_posted: true,
+                    focus_finding: true,
+                    ..Rendering::default()
+                };
+                respond(state, user, shortcode, context, &headers, rendering)
             }
             SubmitRefusal::Invalid(unresolved) => {
                 span.record("form.outcome", "invalid");
@@ -1718,15 +1735,24 @@ fn refused_with(
     let rendering = Rendering {
         notice: Some(page::Notice::Refused(message)),
         errors,
-        proposal_findings: &[],
-        confirming: None,
-        adding_row: None,
         // A refusal re-renders what was typed, which for a repeatable field
         // includes a row that has been added but not filled in.
         keep_posted: true,
-        before_autosave: None,
+        ..Rendering::default()
     };
-    if is_enhanced(&headers) {
+    respond(state, user, shortcode, context, &headers, rendering)
+}
+
+/// A refusal's answer: the region on the enhanced path, the whole page on the plain one.
+fn respond(
+    state: &EditorState,
+    user: &Account,
+    shortcode: &str,
+    context: &Context<'_>,
+    headers: &HeaderMap,
+    rendering: Rendering<'_>,
+) -> Response {
+    if is_enhanced(headers) {
         return region(shortcode, context, rendering);
     }
     render_page(state, user, shortcode, context, rendering)
@@ -1751,10 +1777,7 @@ fn refused_with_proposal_findings(
         keep_posted: true,
         ..Rendering::default()
     };
-    if is_enhanced(&headers) {
-        return region(shortcode, context, rendering);
-    }
-    render_page(state, user, shortcode, context, rendering)
+    respond(state, user, shortcode, context, &headers, rendering)
 }
 
 /// What a rendering adds on top of the resolved request.
@@ -1791,6 +1814,9 @@ struct Rendering<'a> {
     /// failing, before the write. Rows match stored values by value, so a value typed
     /// into a row that equals one the field already held failing is flagged too.
     before_autosave: Option<&'a ProjectDraft>,
+    /// Whether the first control holding a format finding takes focus: set by the format
+    /// refusal, whose fix is at that control.
+    focus_finding: bool,
 }
 
 /// The section region, as the enhanced path's `datastar-patch-elements`.
@@ -1867,7 +1893,9 @@ fn view<'a>(
 ) -> page::SectionView<'a> {
     let posted = rendering.keep_posted.then_some(context.posted).flatten();
     // From the draft at every render rather than from the write, so the redirect's
-    // `GET` and the patched region show the same findings.
+    // `GET` and the patched region show the same findings. The one exception is the
+    // autosave's render, which hides a finding on a value typed since the last write;
+    // a `GET` or a reload of the same draft shows it.
     let fields = || context.section.fields_for(context.audience);
     let mut format_findings = format::findings(fields(), &context.draft, posted);
     if let Some(before) = rendering.before_autosave {
@@ -1916,6 +1944,7 @@ fn view<'a>(
         posted,
         format_findings,
         adding_row: rendering.adding_row,
+        focus_finding: rendering.focus_finding,
         rows_action: format!("/projects/{shortcode}/sections/{}/fields", context.section.id),
     }
 }
@@ -2756,6 +2785,217 @@ mod tests {
             "the row stays, on the branch just chosen: {body}"
         );
         assert_eq!(stored_draft(&state, "0801d").await.get("disciplines"), None);
+    }
+
+    #[test]
+    fn a_proposal_finding_names_the_field_by_its_label_and_counts_rows_from_one() {
+        let finding = |field, index| {
+            ProposalFault::Finding(editor_core::proposals::EntityFinding {
+                field,
+                index,
+                message: "the link is not a full web address".to_string(),
+            })
+        };
+        assert_eq!(
+            proposal_fault_message(ProposalKind::Person, finding("sameAs", Some(1))),
+            "Authority records, entry 2: the link is not a full web address"
+        );
+        assert_eq!(
+            proposal_fault_message(ProposalKind::Organization, finding("url", None)),
+            "URL: the link is not a full web address"
+        );
+        let address = serde_json::json!({
+            "name": "N",
+            "url": "https://www.example.org",
+            "address": { "street": "S", "locality": "L", "country": "C" },
+        });
+        let [only] = editor_core::proposals::check_organization(&address, None)
+            .try_into()
+            .expect("one finding");
+        assert_eq!(
+            proposal_fault_message(ProposalKind::Organization, ProposalFault::Finding(only)),
+            "Address: needs a postal code once any part of it is given"
+        );
+    }
+
+    /// An Additional material row holding a value without its format.
+    const UNFORMATTED_LINK: &str = "additionalMaterial.row=r0&additionalMaterial.r0=www.dasch.swiss";
+
+    /// Whether `body` marks the control posting as `control` invalid.
+    fn marks(body: &str, control: &str) -> bool {
+        body.split("<input")
+            .find(|input| input.contains(&format!(r#"name="{control}""#)))
+            .is_some_and(|input| input.contains(r#"aria-invalid="true""#))
+    }
+
+    #[tokio::test]
+    async fn save_add_and_submit_show_the_same_format_error_on_both_paths() {
+        let (state, app, session) = a_depositor_on("section-format-parity").await;
+        let message = crate::form::widgets::format_message(editor_core::form::format::ValueKind::Link);
+        let add = format!("{DATASET}/fields/additionalMaterial/add");
+        let save = format!("{UNFORMATTED_LINK}&{INTENT}={}", page::SAVE);
+        let submit = format!("{UNFORMATTED_LINK}&{INTENT}={}", page::SUBMIT);
+
+        // The plain save answers with a redirect, and its `GET` is what shows the error.
+        let saved = as_session(&app, post(DATASET, &save), &session).await;
+        assert_eq!(saved.status(), StatusCode::SEE_OTHER);
+        let target = location(&saved).expect("a redirect location");
+        let mut renders = vec![("plain save", body_string(as_session(&app, get(&target), &session).await).await)];
+        for (path, request) in [
+            ("enhanced save", enhanced(DATASET, &save)),
+            ("plain add", post(&add, UNFORMATTED_LINK)),
+            ("enhanced add", enhanced(&add, UNFORMATTED_LINK)),
+            ("plain submit", post(DATASET, &submit)),
+            ("enhanced submit", enhanced(DATASET, &submit)),
+        ] {
+            renders.push((path, body_string(as_session(&app, request, &session).await).await));
+        }
+
+        for (path, body) in &renders {
+            assert!(marks(body, "additionalMaterial.r0"), "{path}: {body}");
+            assert!(body.contains(message), "{path}: {body}");
+        }
+        for (path, body) in renders.iter().filter(|(path, _)| path.ends_with("submit")) {
+            assert!(body.contains(SUBMIT_REFUSED_FORMAT), "{path}: {body}");
+            assert!(
+                !body.contains(FORMAT_FIELD_MESSAGE),
+                "shown at the control only: {path}: {body}"
+            );
+        }
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("additionalMaterial"),
+            Some(&serde_json::json!(["www.dasch.swiss"])),
+            "the value is stored as typed"
+        );
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_format_refusal_names_a_field_of_another_section_with_a_link_to_it() {
+        let (_, app, session) = a_depositor_on("section-format-elsewhere").await;
+        let save = format!("{UNFORMATTED_LINK}&{INTENT}={}", page::SAVE);
+        as_session(&app, post(DATASET, &save), &session).await;
+
+        let elsewhere = body_string(
+            as_session(
+                &app,
+                post(OVERVIEW, &format!("name=A+New+Title&{INTENT}={}", page::SUBMIT)),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(elsewhere.contains(SUBMIT_REFUSED_FORMAT), "{elsewhere}");
+        assert!(
+            elsewhere.contains(FORMAT_FIELD_MESSAGE),
+            "named in another section's list: {elsewhere}"
+        );
+        assert!(elsewhere.contains(DATASET), "with a link to its section: {elsewhere}");
+    }
+
+    #[tokio::test]
+    async fn a_refused_submit_focuses_the_first_control_holding_a_finding_and_a_save_does_not() {
+        let (_, app, session) = a_depositor_on("section-format-focus").await;
+        let submit = format!("{UNFORMATTED_LINK}&{INTENT}={}", page::SUBMIT);
+        let save = format!("{UNFORMATTED_LINK}&{INTENT}={}", page::SAVE);
+
+        for (path, request) in [
+            ("plain", post(DATASET, &submit)),
+            ("enhanced", enhanced(DATASET, &submit)),
+        ] {
+            let body = body_string(as_session(&app, request, &session).await).await;
+            let input = body
+                .split("<input")
+                .find(|input| input.contains(r#"name="additionalMaterial.r0""#))
+                .expect("the control");
+            assert!(input.contains("autofocus"), "{path}: {input}");
+            assert_eq!(body.matches(" autofocus").count(), 1, "{path}: one control only");
+        }
+        let saved = body_string(as_session(&app, enhanced(DATASET, &save), &session).await).await;
+        assert!(!saved.contains(" autofocus"), "a save moves no focus: {saved}");
+    }
+
+    #[tokio::test]
+    async fn a_refused_submit_focuses_past_a_field_rdu_accepted() {
+        // `url` comes before `secondaryUrl` and, accepted, renders no control; a scalar's finding
+        // is read from the draft, not from the posted body.
+        let (state, _) = test_state("section-format-focus-accepted").await;
+        let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let session = a_session(&state, user.id).await;
+        returned_with_accepted(&state, user.id, "url").await;
+        let mut draft = stored_draft(&state, "0801d").await;
+        draft.set_url_slot(editor_core::draft::UrlSlot::Primary, Some("www.dasch.swiss"));
+        DraftRepository::upsert(
+            &*state.editor,
+            &DraftRecord {
+                shortcode: "0801d".to_string(),
+                payload: serde_json::to_string(&draft).unwrap(),
+                updated_by: Some(user.id),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let app = test_app(&state);
+
+        let submit = format!("secondaryUrl=www.example.org&{INTENT}={}", page::SUBMIT);
+        let body = body_string(as_session(&app, post(OVERVIEW, &submit), &session).await).await;
+
+        assert!(body.contains(SUBMIT_REFUSED_FORMAT), "{body}");
+        let input = body
+            .split("<input")
+            .find(|input| input.contains(r#"name="secondaryUrl""#))
+            .expect("the control");
+        assert!(input.contains("autofocus"), "{input}");
+    }
+
+    #[tokio::test]
+    async fn a_format_refusal_names_a_field_here_that_rdu_accepted() {
+        // An accepted field renders as text, so this section has no control to show it at.
+        let (state, _) = test_state("section-format-accepted").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        returned_with_accepted(&state, user.id, "additionalMaterial").await;
+        let mut draft = stored_draft(&state, "0801d").await;
+        draft.set("additionalMaterial", serde_json::json!(["www.dasch.swiss"]));
+        DraftRepository::upsert(
+            &*state.editor,
+            &DraftRecord {
+                shortcode: "0801d".to_string(),
+                payload: serde_json::to_string(&draft).unwrap(),
+                updated_by: Some(user.id),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let app = test_app(&state);
+
+        let body =
+            body_string(as_session(&app, post(DATASET, &format!("{INTENT}={}", page::SUBMIT)), &session).await).await;
+
+        assert!(body.contains(SUBMIT_REFUSED_FORMAT), "{body}");
+        assert!(body.contains(FORMAT_FIELD_MESSAGE), "named beside its value: {body}");
+    }
+
+    #[tokio::test]
+    async fn an_autosave_stores_a_value_without_its_format_and_shows_no_error_for_it() {
+        let (state, app, session) = a_depositor_on("section-format-autosave").await;
+
+        let body = body_string(as_session(&app, enhanced(DATASET, UNFORMATTED_LINK), &session).await).await;
+
+        assert!(body.contains(r#"name="additionalMaterial.r0""#), "the control renders: {body}");
+        assert!(!marks(&body, "additionalMaterial.r0"), "{body}");
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("additionalMaterial"),
+            Some(&serde_json::json!(["www.dasch.swiss"]))
+        );
     }
 
     #[tokio::test]

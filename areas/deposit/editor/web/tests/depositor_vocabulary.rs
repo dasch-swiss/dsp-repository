@@ -159,6 +159,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             posted: None,
             format_findings: Vec::new(),
             adding_row: None,
+            focus_finding: false,
             agents: None,
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
             // The waiting-for-release notice is depositor-facing text too.
@@ -175,11 +176,15 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
 }
 
 #[test]
-fn no_format_message_uses_a_forbidden_word() {
-    // Rendered only beside a value that fails its rule, which no fixture above holds.
-    for kind in [ValueKind::Link, ValueKind::Doi] {
-        let message = editor_web::form::widgets::format_message(kind);
-        assert!(forbidden_words_in(message).is_empty(), "{kind:?}: {message}");
+fn no_format_message_or_hint_uses_a_forbidden_word() {
+    // A message renders only beside a value that fails its rule, which no fixture above holds.
+    for kind in [ValueKind::Link, ValueKind::DoiOrLink, ValueKind::LinkOrNotAccessible] {
+        for text in [
+            editor_web::form::widgets::format_message(kind),
+            editor_web::form::widgets::format_hint(kind),
+        ] {
+            assert!(forbidden_words_in(text).is_empty(), "{kind:?}: {text}");
+        }
     }
 }
 

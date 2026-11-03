@@ -53,6 +53,10 @@ All four end the round the same way — the `submissions` row is deleted — so 
 
 `editor_core::review::approval` holds the approve gates and returns the first refusal as data; the handler maps it to wording, span outcome and log line.
 
+**Approve re-checks the proposals it keeps.** A submitted proposal stays editable until the round ends, so `approval` runs the entity form's rules (`proposals::problems`) over every proposal not being rejected and names each one and its field; the store refuses a payload write to a proposal that is no longer `Draft` or `Submitted`, so an edit racing approve cannot land on the accepted row ([Entity proposals](./entity-proposals.md)).
+
+**Approve re-checks every format finding, RDU-only fields included.** The depositor's submit checks only the fields a depositor sees, and a reviewer's substitute is typed after it, so `approval` runs `form::format::findings` over the decided draft and every field; the refusal names each field, and RDU substitutes a corrected value, reverts the field or requests changes.
+
 **Request-changes and reject both require a note; approve does not.** The rule is `ReviewOutcome::requires_note` (`editor_core::records`), checked before `approval`. For reject the note is the entire signal: the submission is discarded, notifications are out of scope, and the depositor-facing state list has no Rejected — so without a note the work vanishes with nothing saying why. For request-changes it is the only thing telling the depositor what to change. An approval needs none, because the depositor is *shown* what changed rather than told about it.
 
 **Reject and withdraw both leave the draft.** Reject must not destroy work RDU merely declined, and a withdrawal reads as "take it back so I can keep editing" — request-changes already establishes submission-becomes-draft as the direction. The abandoned-draft problem belongs to [discarding a draft](./project-form.md#discarding-a-draft), not to these.

@@ -36,7 +36,7 @@ use crate::form::format::{self, Finding};
 use crate::form::obligation::unsatisfied_required;
 use crate::form::registry::{sections_for, Audience, Field};
 use crate::form::submit::{typed_sentinels, unresolved_agents};
-use crate::proposals::{check_organization, check_person, EntityFinding, EntityProposal, ProposalKind};
+use crate::proposals::{problems as proposal_problems, EntityProposal, ProposalProblem};
 use crate::review::{diff, FieldDiff};
 
 /// The first gate a draft failed, and what it found there.
@@ -61,22 +61,6 @@ pub enum SubmitRefusal {
     Invalid(Vec<UnresolvedCoverage>),
     /// The draft is identical to the published project.
     Unchanged,
-}
-
-/// One thing wrong with one of the project's own live proposals.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProposalProblem {
-    pub entity_id: String,
-    pub kind: ProposalKind,
-    pub fault: ProposalFault,
-}
-
-/// What [`check`] found wrong with a proposal.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ProposalFault {
-    /// The stored payload is not JSON this build can parse.
-    Unreadable,
-    Finding(EntityFinding),
 }
 
 /// Run the submit gates in order and return the first refusal.
@@ -131,7 +115,7 @@ pub fn check(
     // `Draft`/`Submitted` proposal riding into review with an incomplete payload would let RDU
     // accept it into a broken committed file, with no field-level check left to stop
     // it once this project is approved. After the agent gate, which resolves them.
-    let problems = proposal_problems(proposals, &scope);
+    let problems = proposal_problems(proposals, |id| scope.published_body(id));
     if !problems.is_empty() {
         return Err(SubmitRefusal::ProposalIncomplete(problems));
     }
@@ -173,38 +157,6 @@ pub fn check(
     }
 
     Ok(())
-}
-
-fn proposal_problems(proposals: &[EntityProposal], scope: &AgentScope) -> Vec<ProposalProblem> {
-    let mut problems = Vec::new();
-    for proposal in proposals.iter().filter(|proposal| proposal.is_live()) {
-        let problem = |fault| ProposalProblem {
-            entity_id: proposal.entity_id.clone(),
-            kind: proposal.kind,
-            fault,
-        };
-        let payload: serde_json::Value = match serde_json::from_str(&proposal.payload) {
-            Ok(payload) => payload,
-            // Cannot happen through the form — every writer stores what `serde_json::Value`
-            // itself produced — but a stored payload this build cannot parse is a reason to refuse,
-            // not to skip the check silently.
-            Err(_) => {
-                problems.push(problem(ProposalFault::Unreadable));
-                continue;
-            }
-        };
-        let findings = match proposal.kind {
-            ProposalKind::Person => check_person(&payload),
-            // The published side is what makes the address carve-out work: an incomplete address
-            // inherited unchanged from a published organisation is passed through, one the
-            // depositor wrote is refused. `None` for a `New` proposal, which has nothing to
-            // inherit — `published_body` answers only for the published store, so a proposal's own
-            // payload can never grandfather itself.
-            ProposalKind::Organization => check_organization(&payload, scope.published_body(&proposal.entity_id)),
-        };
-        problems.extend(findings.into_iter().map(|finding| problem(ProposalFault::Finding(finding))));
-    }
-    problems
 }
 
 /// A `temporalCoverage` entry that cannot resolve to a structured date.
@@ -259,7 +211,7 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
-    use crate::proposals::{ProposalOperation, ProposalStatus};
+    use crate::proposals::{ProposalFault, ProposalKind, ProposalOperation, ProposalStatus};
     use crate::test_support::sample_raw;
 
     fn project_with(coverage: Vec<TemporalCoverage>) -> ProjectRaw {
@@ -472,5 +424,26 @@ mod tests {
                 fault: ProposalFault::Unreadable,
             }]
         );
+    }
+
+    #[test]
+    fn a_value_without_its_format_is_refused_for_the_audience_that_sees_it() {
+        let mut draft = ProjectDraft::from_raw(&sample_raw());
+        draft.set("additionalMaterial", json!(["www.dasch.swiss"]));
+        draft.set("documentationMaterial", json!(["www.dasch.swiss"]));
+        let agents = committed_agents();
+
+        for (audience, expected) in [
+            (Audience::Everyone, &["additionalMaterial.r0"][..]),
+            (Audience::RduOnly, &["documentationMaterial.r0", "additionalMaterial.r0"][..]),
+        ] {
+            let refusal = check(audience, &draft, &agents, &[], &periods(), &HashMap::new(), None)
+                .expect_err("a value without its format is refused");
+            let SubmitRefusal::Format(findings) = refusal else {
+                panic!("expected Format, got {refusal:?}");
+            };
+            let controls: Vec<&str> = findings.iter().map(|finding| finding.control.as_str()).collect();
+            assert_eq!(controls, expected, "{audience:?}");
+        }
     }
 }

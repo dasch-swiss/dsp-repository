@@ -1146,6 +1146,7 @@ dependencies = [
  "serde_json",
  "shared-metadata",
  "thiserror 2.0.18",
+ "url",
  "uuid",
 ]
 

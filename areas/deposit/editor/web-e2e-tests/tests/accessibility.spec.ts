@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import {
+  A11Y_STATES_SHORTCODE,
   DEPOSITOR_SHORTCODE,
   DEPOSITOR_STATE,
   RDU_STATE,
@@ -91,6 +92,94 @@ test.describe("RDU — the review screens", () => {
       await expectNoViolations(page);
     });
   }
+});
+
+test.describe("depositor — the section page in later states", () => {
+  // The second test reads the record the first one submitted.
+  test.describe.configure({ mode: "serial" });
+
+  const overview = `/projects/${A11Y_STATES_SHORTCODE}/sections/overview`;
+
+  test("the submitted, locked section has no violations", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ storageState: DEPOSITOR_STATE });
+    try {
+      const page = await context.newPage();
+      await page.goto(overview);
+      // Absent on a re-run or CI retry: already submitted, so edit and submit are skipped.
+      const saveDraft = page.getByRole("button", { name: "Save draft" });
+      if ((await saveDraft.count()) > 0) {
+        await page.fill(
+          'input[name="name"]',
+          `A11y states ${A11Y_STATES_SHORTCODE}`,
+        );
+        await saveDraft.click();
+        await page.getByRole("button", { name: "Submit for review" }).click();
+      }
+
+      // A fresh load, so the scan reads the locked page and not the submit flash.
+      await page.goto(overview);
+      await expect(page.locator("main")).toContainText(
+        "You can't edit until RDU has looked at it",
+      );
+      await expect(
+        page.getByRole("button", { name: "Save draft" }),
+        "the form must be locked before it is scanned",
+      ).toHaveCount(0);
+      await expectNoViolations(page);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test("the awaiting-release section has no violations", async ({
+    browser,
+  }) => {
+    const rdu = await browser.newContext({ storageState: RDU_STATE });
+    const depositor = await browser.newContext({
+      storageState: DEPOSITOR_STATE,
+    });
+    try {
+      const rduPage = await rdu.newPage();
+      await rduPage.goto("/review");
+      const startReview = rduPage
+        .locator("tr", { hasText: A11Y_STATES_SHORTCODE })
+        .getByRole("button", { name: /start review/i });
+      // Absent on a re-run: already claimed and approved, so claim and approve are skipped.
+      if ((await startReview.count()) > 0) {
+        // The queue with a Waiting row, before the claim removes it.
+        await expectNoViolations(rduPage);
+        await startReview.click();
+        await expect(rduPage).toHaveURL(
+          new RegExp(`/review/${A11Y_STATES_SHORTCODE}`),
+        );
+        const acceptAll = rduPage.getByRole("button", { name: /accept all/i });
+        if ((await acceptAll.count()) > 0) {
+          await acceptAll.first().click();
+        }
+        await rduPage
+          .getByRole("button", { name: "Approve", exact: true })
+          .first()
+          .click();
+        await rduPage.getByRole("button", { name: "Yes, approve" }).click();
+      }
+
+      const page = await depositor.newPage();
+      await expect(async () => {
+        await page.goto(overview);
+        await expect(page.locator("main")).toContainText(
+          "RDU approved this project",
+          { timeout: 1000 },
+        );
+      }).toPass();
+      await expect(page.locator("main")).toContainText(/same working day/i);
+      await expectNoViolations(page);
+    } finally {
+      await rdu.close();
+      await depositor.close();
+    }
+  });
 });
 
 test.describe("error announcement", () => {

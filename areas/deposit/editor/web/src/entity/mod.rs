@@ -409,7 +409,7 @@ fn status(view: &EntityView<'_>) -> Markup {
 /// rendering of every field, and the reason nothing here can be changed.
 fn locked(view: &EntityView<'_>, over: Over) -> Markup {
     html! {
-        (alert(over.message()).variant(AlertVariant::Warning).title(over.heading()))
+        (alert(over.message()).variant(AlertVariant::Info).title(over.heading()))
         div class="flex flex-col gap-6 mt-6" {
             @for field in view.fields() {
                 (entity_field_row(field, view.draft, Mode::ReadOnly, view.rows()))
@@ -648,12 +648,9 @@ mod tests {
         assert_eq!(declared, members(&serialized));
     }
 
-    /// The enhanced path posts the submitter's `formaction` before the form's own: without it,
-    /// every add and remove control acts as a plain save once JavaScript is on.
-    #[test]
-    fn the_enhanced_path_posts_the_submitters_formaction_and_the_form_body() {
+    fn person_proposal() -> EntityProposal {
         let now = chrono::Utc::now();
-        let proposal = EntityProposal {
+        EntityProposal {
             id: uuid::Uuid::nil(),
             shortcode: "0801d".to_string(),
             entity_id: "person-001".to_string(),
@@ -668,13 +665,15 @@ mod tests {
             decided_by: None,
             decided_at: None,
             retired_at: None,
-        };
-        let draft = ProjectDraft::default();
-        let view = EntityView {
+        }
+    }
+
+    fn view_of<'a>(proposal: &'a EntityProposal, draft: &'a ProjectDraft, over: Option<Over>) -> EntityView<'a> {
+        EntityView {
             shortcode: "0801d",
-            proposal: &proposal,
-            over: None,
-            draft: &draft,
+            proposal,
+            over,
+            draft,
             confirming: None,
             notice: None,
             posted: None,
@@ -682,7 +681,16 @@ mod tests {
             agents: None,
             format_findings: Vec::new(),
             rows_action: "/projects/0801d/entities/person-001/fields".to_string(),
-        };
+        }
+    }
+
+    /// Without the submitter's `formaction`, every add and remove control acts as a plain save
+    /// once JavaScript is on.
+    #[test]
+    fn the_enhanced_path_posts_the_submitters_formaction_and_the_form_body() {
+        let proposal = person_proposal();
+        let draft = ProjectDraft::default();
+        let view = view_of(&proposal, &draft, None);
         let out = form(&view).into_string();
         assert!(
             out.contains(
@@ -843,6 +851,18 @@ mod tests {
         );
         for (kind, finding) in &findings {
             assert!(finding_label(*kind, finding.field).is_some(), "{kind:?}: {finding:?}");
+        }
+    }
+
+    #[test]
+    fn a_finished_proposal_says_so_in_an_info_alert_and_not_a_warning() {
+        let proposal = person_proposal();
+        let draft = ProjectDraft::default();
+        for over in [Over::Accepted, Over::Terminal] {
+            let view = view_of(&proposal, &draft, Some(over));
+            let out = locked(&view, over).into_string();
+            assert!(out.contains("alert-info"), "{out}");
+            assert!(!out.contains("alert-warning"), "{out}");
         }
     }
 }

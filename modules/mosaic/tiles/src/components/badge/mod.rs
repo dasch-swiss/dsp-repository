@@ -9,6 +9,7 @@ use maud::{html, Markup, Render};
 
 use crate::builder::ComponentBuilder;
 
+/// Warning only where the reader must act; a normal state uses Info or Secondary.
 #[derive(Clone, Copy, Debug, Default)]
 pub enum BadgeVariant {
     #[default]

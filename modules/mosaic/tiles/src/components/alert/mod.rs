@@ -18,6 +18,7 @@ use maud::{html, Markup, Render};
 
 use crate::builder::ComponentBuilder;
 
+/// Warning only where the reader must act; a normal state uses Info.
 #[derive(Clone, Copy, Debug, Default)]
 pub enum AlertVariant {
     #[default]

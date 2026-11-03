@@ -61,6 +61,7 @@ export const DEPOSITOR_SHORTCODES = [
   "0117",
   "E2E1",
   "E2E2",
+  "0111",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -113,6 +114,11 @@ export const CREATED_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-js": DEPOSITOR_SHORTCODES[10],
   "chromium-nojs": DEPOSITOR_SHORTCODES[11],
 };
+/**
+ * The accessibility sweep's submitted-locked and awaiting-release pages. Not
+ * shared: submitting locks the form, so any other spec would find it read-only.
+ */
+export const A11Y_STATES_SHORTCODE = DEPOSITOR_SHORTCODES[12];
 
 const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

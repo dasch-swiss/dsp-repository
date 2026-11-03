@@ -1,23 +1,24 @@
+/* Each variant's text/background pair must keep 4.5:1 (WCAG AA) in default and hover. */
 @layer components {
   .btn {
-    @apply inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm shadow-xs cursor-pointer;
+    @apply inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600;
   }
   .btn:disabled{
     @apply opacity-50 cursor-not-allowed
   }
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-300 focus-visible:outline-2 dark:bg-primary-500 dark:text-white dark:shadow-none dark:hover:bg-primary-400 dark:focus-visible:outline-primary-500;
+    @apply bg-primary-600 text-white not-disabled:hover:bg-primary-400 not-disabled:hover:text-primary-950;
   }
   .btn-secondary {
-    @apply bg-secondary-300 text-secondary-900 hover:bg-secondary-600 focus-visible:outline-2;
+    @apply bg-secondary-300 text-secondary-900 not-disabled:hover:bg-secondary-200;
   }
   .btn-outline {
-    @apply bg-transparent text-black ring-1 ring-inset ring-neutral-800 hover:bg-neutral-50 focus-visible:outline-2;
+    @apply bg-transparent text-black ring-1 ring-inset ring-neutral-800 not-disabled:hover:bg-neutral-50;
   }
   .btn-ghost {
-    @apply bg-transparent text-neutral-600 shadow-none hover:bg-neutral-100 focus-visible:outline-2;
+    @apply bg-transparent text-neutral-600 shadow-none not-disabled:hover:bg-neutral-100;
   }
   .btn-soft {
-    @apply bg-neutral-100 text-neutral-600 shadow-none hover:bg-neutral-200 focus-visible:outline-2;
+    @apply bg-neutral-100 text-neutral-600 shadow-none not-disabled:hover:bg-neutral-200 not-disabled:hover:text-neutral-700;
   }
 }

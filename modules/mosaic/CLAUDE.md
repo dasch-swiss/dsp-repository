@@ -37,6 +37,7 @@ The `/add-mosaic-component` skill walks through this. In short:
 - Brand colors and typography are defined via `@theme static` in `tiles/src/components/theme_provider/tokens.css` — the single token source.
 - `tokens.css` is `@import`ed by every consuming Tailwind entry — DPE's `style/main.css`, the playground's `style/main.css`, and the editor's `areas/deposit/editor/style/main.css` — so all three pipelines share the same tokens. A change here must be checked against all of them.
 - Tokens use OKLCH with 11-stop scales (50–950) per semantic color. Use semantic token classes (`primary-*`, `neutral-*`, `danger-*`, …) instead of hardcoded Tailwind colors (`blue-*`, `gray-*`, `red-*`).
+- Warning only where the reader must act; a normal state uses Info or Secondary (alert and badge variants alike).
 - `info` tokens reference `secondary` via `var()` — intentionally identical. The neutral scale is experimental and subject to design review.
 - Consuming apps load fonts (Lora/Lato) themselves; the tiles library is font-loading-agnostic.
 

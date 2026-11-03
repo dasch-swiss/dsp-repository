@@ -188,7 +188,7 @@ fn queue_status(row: &QueueRow<'_>) -> Markup {
                 (badge(format!("With {reviewer}")).variant(BadgeVariant::Info))
             }
             (SubmissionState::InReview, None) => (badge("In review").variant(BadgeVariant::Info))
-            _ => (badge("Waiting").variant(BadgeVariant::Warning))
+            _ => (badge("Waiting").variant(BadgeVariant::Secondary))
         }
     }
 }
@@ -1529,6 +1529,14 @@ mod tests {
         let out = region(&view).into_string();
         assert!(out.contains("alert-warning"), "{out}");
         assert!(!out.contains(r#"role="alert""#), "{out}");
+    }
+
+    #[test]
+    fn a_waiting_submission_is_a_secondary_badge_and_not_a_warning() {
+        let out = queue_status(&queue_row()).into_string();
+        assert!(out.contains("Waiting"), "{out}");
+        assert!(out.contains("badge-secondary"), "{out}");
+        assert!(!out.contains("badge-warning"), "{out}");
     }
 
     #[test]

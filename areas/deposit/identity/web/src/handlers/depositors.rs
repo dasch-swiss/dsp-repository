@@ -120,6 +120,18 @@ fn parse_shortcodes(field: &str) -> Result<Vec<String>, String> {
     Ok(assigned_shortcodes)
 }
 
+/// Which of `shortcodes` name no known project, or `None`, logged, when that cannot be read: the
+/// warning is advisory, so the page renders without it and says so.
+async fn unknown_projects(state: &IdentityState, shortcodes: &[String]) -> Option<Vec<String>> {
+    match state.open_work.unknown_projects(shortcodes).await {
+        Ok(unknown) => Some(unknown),
+        Err(error) => {
+            tracing::error!(error = %error, "could not check the assigned projects");
+            None
+        }
+    }
+}
+
 /// `GET /depositors` — every account.
 pub(crate) async fn list(State(state): State<IdentityState>, Rdu(viewer): Rdu) -> Response {
     let users = match UserRepository::list(&*state.store).await {
@@ -127,21 +139,31 @@ pub(crate) async fn list(State(state): State<IdentityState>, Rdu(viewer): Rdu) -
         Err(error) => return storage_error(&state, &viewer, "list the accounts", &error),
     };
 
+    // Every account's shortcodes in one read, then split back per account.
+    let assigned: Vec<String> = users.iter().flat_map(|user| user.shortcodes.iter().cloned()).collect();
+    let unknown = unknown_projects(&state, &assigned).await;
+    let projects_checked = unknown.is_some();
+    let unknown = unknown.unwrap_or_default();
+
     // Rendered in two passes because the view rows borrow the formatted
-    // timestamps and the ids, and both have to outlive the borrow.
-    let formatted: Vec<(String, Option<String>)> = users
+    // timestamps, the ids and the unknown shortcodes, which have to outlive the borrow.
+    let formatted: Vec<(String, Option<String>, Vec<String>)> = users
         .iter()
-        .map(|user| (user.id.to_string(), user.last_code_at.map(format_instant)))
+        .map(|user| {
+            let unknown_here = user.shortcodes.iter().filter(|code| unknown.contains(code)).cloned().collect();
+            (user.id.to_string(), user.last_code_at.map(format_instant), unknown_here)
+        })
         .collect();
     let rows: Vec<page::DepositorRow<'_>> = users
         .iter()
         .zip(&formatted)
-        .map(|(user, (id, last_code_at))| page::DepositorRow {
+        .map(|(user, (id, last_code_at, unknown_shortcodes))| page::DepositorRow {
             id,
             name: &user.name,
             email: &user.email,
             role: user.role.as_str(),
             shortcodes: &user.shortcodes,
+            unknown_shortcodes,
             last_code_at: last_code_at.as_deref(),
             // RDU membership comes from configuration, so the controls
             // here would be lying about what they can change.
@@ -149,7 +171,13 @@ pub(crate) async fn list(State(state): State<IdentityState>, Rdu(viewer): Rdu) -
         })
         .collect();
 
-    crate::shell::render(&state, LIST_TITLE, StatusCode::OK, Some(&viewer.name), page::list(&rows))
+    crate::shell::render(
+        &state,
+        LIST_TITLE,
+        StatusCode::OK,
+        Some(&viewer.name),
+        page::list(&rows, projects_checked),
+    )
 }
 
 /// `GET /depositors/new` — the empty create form.
@@ -237,6 +265,7 @@ pub(crate) async fn edit_form(
         Ok(user) => user,
         Err(response) => return response,
     };
+    let unknown = unknown_projects(&state, &target.shortcodes).await;
     let shortcodes = target.shortcodes.join(", ");
     let fields = page::DepositorFields {
         name: &target.name,
@@ -248,7 +277,7 @@ pub(crate) async fn edit_form(
         EDIT_TITLE,
         StatusCode::OK,
         Some(&viewer.name),
-        page::edit(&target.id.to_string(), &fields, None),
+        page::edit(&target.id.to_string(), &fields, None, unknown.as_deref()),
     )
 }
 
@@ -460,7 +489,7 @@ fn rejected_edit(state: &IdentityState, viewer: &User, id: Uuid, form: &Deposito
         EDIT_TITLE,
         StatusCode::OK,
         Some(&viewer.name),
-        page::edit(&id.to_string(), &form.as_fields(), Some(message)),
+        page::edit(&id.to_string(), &form.as_fields(), Some(message), Some(&[])),
     )
 }
 
@@ -739,6 +768,92 @@ mod route_tests {
             1,
             "only the RDU account"
         );
+    }
+
+    // ---- Unknown shortcodes -------------------------------------------------
+
+    /// Identity state whose editor knows the projects `known` and no other.
+    async fn knowing(label: &str, known: &[&str]) -> IdentityState {
+        let (mut state, _) = test_state(label).await;
+        state.open_work = std::sync::Arc::new(identity_ports::FakeOpenWork::new().with_known_projects(known));
+        state
+    }
+
+    async fn page(app: &axum::Router, uri: &str, session: &str) -> String {
+        let response = app.clone().oneshot(as_session(get(uri), session)).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        body_string(response).await
+    }
+
+    #[tokio::test]
+    async fn test_an_unknown_shortcode_saves_and_the_list_names_it() {
+        let state = knowing("dep-unknown", &["0801"]).await;
+        let (_, session) = rdu(&state).await;
+        let app = test_app(&state);
+
+        let body = form_body("A Depositor", DEPOSITOR_EMAIL, "0801, 9999");
+        let response = app
+            .clone()
+            .oneshot(as_session(post("/depositors", &body), &session))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(location(&response).as_deref(), Some("/depositors"));
+        let saved = UserRepository::list(&*state.store)
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|user| user.email == DEPOSITOR_EMAIL)
+            .expect("a warning, not a refusal: the account is saved");
+        assert_eq!(saved.shortcodes, vec!["0801".to_string(), "9999".to_string()]);
+
+        let list = page(&app, "/depositors", &session).await;
+        assert!(
+            list.contains(r#"Neither published nor created: <code class="font-mono">9999</code>."#),
+            "{list}"
+        );
+        let edit = page(&app, &format!("/depositors/{}/edit", saved.id), &session).await;
+        assert!(
+            edit.contains(r#"Neither published nor created: <code class="font-mono">9999</code>."#),
+            "{edit}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_a_known_shortcode_saves_with_no_warning() {
+        let state = knowing("dep-known", &["0801"]).await;
+        let (_, session) = rdu(&state).await;
+        let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
+        let app = test_app(&state);
+
+        let body = form_body("A Depositor", DEPOSITOR_EMAIL, "0801");
+        let response = app
+            .clone()
+            .oneshot(as_session(post(&format!("/depositors/{}/edit", target.id), &body), &session))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+
+        for uri in ["/depositors".to_string(), format!("/depositors/{}/edit", target.id)] {
+            let rendered = page(&app, &uri, &session).await;
+            assert!(!rendered.contains("Neither published nor created"), "{uri}: {rendered}");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_a_failed_project_read_is_reported_rather_than_shown_as_no_warning() {
+        let (mut state, _) = test_state("dep-projects-down").await;
+        state.open_work = std::sync::Arc::new(identity_ports::FakeOpenWork::new().failing_projects());
+        let (_, session) = rdu(&state).await;
+        let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
+        let app = test_app(&state);
+
+        for uri in ["/depositors".to_string(), format!("/depositors/{}/edit", target.id)] {
+            let response = app.clone().oneshot(as_session(get(&uri), &session)).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{uri}");
+            let body = body_string(response).await;
+            assert!(body.contains(page::PROJECTS_UNCHECKED), "{uri}: {body}");
+        }
     }
 
     // ---- Update -------------------------------------------------------------

@@ -1,7 +1,7 @@
 //! The editor's SQLite store, `editor.sqlite`: the connection pools, the PRAGMAs, the schema,
 //! and the two entry points every query goes through. It implements `editor-core`'s repository
-//! ports, and [`LiveOpenWork`] answers identity's `OpenWork` port from them; identity's
-//! tables are in `identity-store`, in a database file of their own.
+//! ports, and [`LiveOpenWork`] answers identity's `OpenWork` port from them and the published set;
+//! identity's tables are in `identity-store`, in a database file of their own.
 //!
 //! [`Database`] holds a **writer** pool of exactly one connection and a **reader** pool of
 //! several, which makes the two rules this layer must not get wrong structural rather than

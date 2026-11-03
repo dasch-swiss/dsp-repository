@@ -111,7 +111,8 @@ pub(crate) fn test_app(state: &TestState) -> axum::Router {
 pub(crate) fn identity_router(state: &TestState) -> axum::Router {
     identity_web::Identity::for_test(
         state.identity.store.clone(),
-        Arc::new(editor_store::LiveOpenWork::new(state.editor.clone())),
+        // No published set: a project is known to identity here only by being created.
+        Arc::new(editor_store::LiveOpenWork::new(state.editor.clone(), None)),
         Arc::new(state.identity.mailer.clone()),
         state.identity.settings.auth(),
     )

@@ -26,6 +26,8 @@ pub struct DepositorRow<'a> {
     /// The stored role, for display.
     pub role: &'a str,
     pub shortcodes: &'a [String],
+    /// Those of `shortcodes` that name a project neither published nor created.
+    pub unknown_shortcodes: &'a [String],
     /// When a code was last successfully handed to the relay, already formatted,
     /// or `None` if none ever was.
     pub last_code_at: Option<&'a str>,
@@ -35,8 +37,13 @@ pub struct DepositorRow<'a> {
     pub manageable: bool,
 }
 
-/// `GET /depositors` — every account, with the controls for managing one.
-pub fn list(rows: &[DepositorRow<'_>]) -> Markup {
+/// Shown instead of the unknown-shortcode warnings when the projects could not be read: a page
+/// without a warning would read as every shortcode being known.
+pub const PROJECTS_UNCHECKED: &str = "Could not check the assigned projects.";
+
+/// `GET /depositors` — every account, with the controls for managing one. `projects_checked` is
+/// false when the unknown shortcodes could not be read, so the rows name none.
+pub fn list(rows: &[DepositorRow<'_>], projects_checked: bool) -> Markup {
     html! {
         div class="py-8" {
             div class="flex items-center gap-4 mb-2" {
@@ -51,6 +58,7 @@ pub fn list(rows: &[DepositorRow<'_>]) -> Markup {
                 code class="font-mono" { "EDITOR_RDU_EMAILS" }
                 " setting and cannot be changed here. Depositors are created and removed on this page."
             }
+            @if !projects_checked { (unchecked_notice()) }
             @if rows.is_empty() {
                 p class="text-gray-600" { "There are no accounts yet." }
             } @else { (accounts_table(rows)) }
@@ -87,7 +95,12 @@ fn list_row(row: &DepositorRow<'_>) -> Markup {
     let projects = html! {
         @if row.shortcodes.is_empty() {
             span class="text-gray-500" { "—" }
-        } @else { (row.shortcodes.join(", ")) }
+        } @else {
+            (row.shortcodes.join(", "))
+            @if !row.unknown_shortcodes.is_empty() {
+                span class="block text-sm" { (unknown_projects(row.unknown_shortcodes)) }
+            }
+        }
     };
     // Absent means no code was ever handed to the relay, a different problem
     // from one sent and not arrived.
@@ -142,7 +155,11 @@ pub fn create(fields: &DepositorFields<'_>, error: Option<&str>) -> Markup {
 /// `GET /depositors/{id}/edit`, which is also where it posts: a rejected
 /// submission re-renders at the path it posted to, so that path has to answer
 /// `GET` or a reload lands on a bare 405.
-pub fn edit(id: &str, fields: &DepositorFields<'_>, error: Option<&str>) -> Markup {
+///
+/// `unknown` are the stored shortcodes that name a project neither published nor created, `None`
+/// when they could not be read; a re-rendered rejection passes none, since its fields are what
+/// was typed, not what is stored.
+pub fn edit(id: &str, fields: &DepositorFields<'_>, error: Option<&str>, unknown: Option<&[String]>) -> Markup {
     let form = depositor_form(&format!("/depositors/{id}/edit"), "Save changes", fields, error);
     html! {
         div class="max-w-lg py-8" {
@@ -151,27 +168,72 @@ pub fn edit(id: &str, fields: &DepositorFields<'_>, error: Option<&str>) -> Mark
                 "Changing the address changes how this person signs in. Removing a project takes away their \
                  access to it; the project's own draft is unaffected."
             }
+            @match unknown {
+                Some(unknown) if !unknown.is_empty() => (unknown_notice(unknown))
+                Some(_) => {}
+                None => (unchecked_notice())
+            }
             (form)
         }
+    }
+}
+
+/// [`PROJECTS_UNCHECKED`], on the list and the edit page alike.
+fn unchecked_notice() -> Markup {
+    html! {
+        div class="mb-4" { (alert(PROJECTS_UNCHECKED).variant(AlertVariant::Warning)) }
+    }
+}
+
+/// The edit page's warning about assigned shortcodes no project carries. A warning, not a
+/// refusal: the account saves either way, and the project may be created later.
+fn unknown_notice(unknown: &[String]) -> Markup {
+    let message = html! {
+        (unknown_projects(unknown))
+        " Check for a typo."
+    };
+    html! {
+        div class="mb-4" { (alert(message).variant(AlertVariant::Warning)) }
+    }
+}
+
+/// "Neither published nor created: `0801`, `080C`.", each shortcode in a span of its own so
+/// the separators stay in the body font.
+fn unknown_projects(unknown: &[String]) -> Markup {
+    html! {
+        "Neither published nor created: "
+        @for (index, shortcode) in unknown.iter().enumerate() {
+            @if index > 0 { ", " }
+            code class="font-mono" { (shortcode) }
+        }
+        "."
     }
 }
 
 /// The create and edit forms, which differ only in where they post and what the
 /// submit button says.
 fn depositor_form(action: &str, submit_label: &str, fields: &DepositorFields<'_>, error: Option<&str>) -> Markup {
+    // One `<code>` per shortcode: inside a monospace span the comma and space take a full
+    // character width each, which reads as a gap.
     let shortcodes_hint = html! {
         "Separated by commas, for example "
-        code class="font-mono" { "0801, 080C" }
+        code class="font-mono" { "0801" }
+        ", "
+        code class="font-mono" { "080C" }
         ". Leave empty to assign none."
     };
-    let name_field = text_field("name", "Name").value(fields.name).required();
+    let name_field = text_field("name", "Name")
+        .value(fields.name)
+        .required()
+        .hint("How the editor shows this person, for example in the page header after sign-in.");
     // `autocomplete("off")`: whoever fills this in is entering somebody else's
     // address, so offering their own is a wrong answer one keystroke away.
     let email_field = text_field("email", "Email address")
         .input_type(InputType::Email)
         .autocomplete("off")
         .value(fields.email)
-        .required();
+        .required()
+        .hint("The sign-in code is sent here, so use a mailbox the person reads. One account per address.");
     let shortcodes_field = text_field("shortcodes", "Project shortcodes")
         .value(fields.shortcodes)
         .hint(shortcodes_hint);
@@ -290,6 +352,7 @@ mod tests {
             email: "a.depositor@example.test",
             role: "depositor",
             shortcodes,
+            unknown_shortcodes: &[],
             last_code_at,
             manageable: true,
         }
@@ -298,7 +361,7 @@ mod tests {
     #[test]
     fn test_the_list_offers_edit_and_remove_for_a_depositor() {
         let shortcodes = codes(&["0801"]);
-        let out = list(&[depositor_row("abc", &shortcodes, None)]).into_string();
+        let out = list(&[depositor_row("abc", &shortcodes, None)], true).into_string();
         assert!(out.contains(r#"href="/depositors/abc/edit""#), "{out}");
         assert!(out.contains(r#"href="/depositors/abc/remove""#), "{out}");
         assert!(out.contains(r#"href="/depositors/new""#), "{out}");
@@ -306,15 +369,19 @@ mod tests {
 
     #[test]
     fn test_an_account_from_configuration_has_no_controls() {
-        let out = list(&[DepositorRow {
-            id: "rdu-1",
-            name: "An Admin",
-            email: "rdu@dasch.swiss",
-            role: "rdu",
-            shortcodes: &[],
-            last_code_at: None,
-            manageable: false,
-        }])
+        let out = list(
+            &[DepositorRow {
+                id: "rdu-1",
+                name: "An Admin",
+                email: "rdu@dasch.swiss",
+                role: "rdu",
+                shortcodes: &[],
+                unknown_shortcodes: &[],
+                last_code_at: None,
+                manageable: false,
+            }],
+            true,
+        )
         .into_string();
         assert!(!out.contains("/depositors/rdu-1/edit"), "{out}");
         assert!(!out.contains("/depositors/rdu-1/remove"), "{out}");
@@ -324,10 +391,10 @@ mod tests {
     #[test]
     fn test_the_list_distinguishes_a_code_never_sent_from_one_that_was() {
         // The support answer to "I never got a code", without an address in a log.
-        let none = list(&[depositor_row("a", &[], None)]).into_string();
+        let none = list(&[depositor_row("a", &[], None)], true).into_string();
         assert!(none.contains("never"), "{none}");
 
-        let sent = list(&[depositor_row("a", &[], Some("2026-08-25 09:14 UTC"))]).into_string();
+        let sent = list(&[depositor_row("a", &[], Some("2026-08-25 09:14 UTC"))], true).into_string();
         assert!(sent.contains("2026-08-25 09:14 UTC"), "{sent}");
         assert!(!sent.contains(">never<"), "{sent}");
     }
@@ -336,7 +403,7 @@ mod tests {
     fn test_the_accounts_table_says_what_it_lists_and_what_its_columns_are() {
         // A name for the table and its scroll region, and headers that declare the
         // cells they govern.
-        let out = list(&[depositor_row("abc", &[], None)]).into_string();
+        let out = list(&[depositor_row("abc", &[], None)], true).into_string();
         assert!(out.contains(r#"<caption class="sr-only">Accounts</caption>"#), "{out}");
         assert!(out.contains(r#"aria-label="Accounts""#), "{out}");
         assert!(out.contains(r#"scope="col""#), "{out}");
@@ -345,19 +412,72 @@ mod tests {
     }
 
     #[test]
-    fn test_the_shortcodes_hint_is_announced_with_the_field_it_explains() {
+    fn test_every_hint_is_announced_with_the_field_it_explains() {
         // Loose prose under an input is prose a screen reader reaches after the
         // field it was meant to explain, if at all.
         let fields = DepositorFields { name: "", email: "", shortcodes: "" };
+        for out in [
+            create(&fields, None).into_string(),
+            edit("abc", &fields, None, Some(&[])).into_string(),
+        ] {
+            for field in ["name", "email", "shortcodes"] {
+                assert!(out.contains(&format!(r#"aria-describedby="{field}-hint""#)), "{field}: {out}");
+                assert!(out.contains(&format!(r#"id="{field}-hint""#)), "{field}: {out}");
+            }
+            assert!(out.contains("Leave empty to assign none."), "{out}");
+        }
+    }
+
+    #[test]
+    fn test_the_shortcodes_hint_keeps_the_separator_out_of_the_monospace_span() {
+        let fields = DepositorFields { name: "", email: "", shortcodes: "" };
         let out = create(&fields, None).into_string();
-        assert!(out.contains(r#"aria-describedby="shortcodes-hint""#), "{out}");
-        assert!(out.contains(r#"id="shortcodes-hint""#), "{out}");
-        assert!(out.contains("Leave empty to assign none."), "{out}");
+        assert!(
+            out.contains(r#"<code class="font-mono">0801</code>, <code class="font-mono">080C</code>"#),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn test_the_list_names_each_unknown_shortcode_of_the_account_holding_it() {
+        let shortcodes = codes(&["0801", "9999", "0ZZ0"]);
+        let unknown = codes(&["9999", "0ZZ0"]);
+        let row = DepositorRow {
+            unknown_shortcodes: &unknown,
+            ..depositor_row("abc", &shortcodes, None)
+        };
+        let out = list(&[row], true).into_string();
+        assert!(
+            out.contains(
+                r#"Neither published nor created: <code class="font-mono">9999</code>, <code class="font-mono">0ZZ0</code>."#
+            ),
+            "{out}"
+        );
+
+        let known = list(&[depositor_row("abc", &shortcodes, None)], true).into_string();
+        assert!(!known.contains("Neither published nor created"), "{known}");
+    }
+
+    #[test]
+    fn test_the_edit_page_names_an_unknown_shortcode() {
+        let fields = DepositorFields {
+            name: "A Depositor",
+            email: "a@example.test",
+            shortcodes: "0801, 9999",
+        };
+        let out = edit("abc", &fields, None, Some(&codes(&["9999"]))).into_string();
+        assert!(
+            out.contains(r#"Neither published nor created: <code class="font-mono">9999</code>."#),
+            "{out}"
+        );
+
+        let known = edit("abc", &fields, None, Some(&[])).into_string();
+        assert!(!known.contains("Neither published nor created"), "{known}");
     }
 
     #[test]
     fn test_an_empty_list_says_so_rather_than_rendering_an_empty_table() {
-        let out = list(&[]).into_string();
+        let out = list(&[], true).into_string();
         assert!(out.contains("no accounts yet"), "{out}");
         assert!(!out.contains("<table"), "{out}");
     }
@@ -397,7 +517,7 @@ mod tests {
             email: "a@example.test",
             shortcodes: "0801",
         };
-        let out = edit("abc", &fields, None).into_string();
+        let out = edit("abc", &fields, None, Some(&[])).into_string();
         assert!(out.contains(r#"<form method="post" action="/depositors/abc/edit""#), "{out}");
         assert!(out.contains("Save changes"), "{out}");
     }
@@ -470,6 +590,7 @@ mod tests {
             email: hostile,
             role: hostile,
             shortcodes: &shortcodes,
+            unknown_shortcodes: &shortcodes,
             last_code_at: Some(hostile),
             manageable: true,
         };
@@ -481,9 +602,9 @@ mod tests {
             submission_shortcodes: &shortcodes,
         };
         for out in [
-            list(&[row]).into_string(),
+            list(&[row], true).into_string(),
             create(&fields, Some(hostile)).into_string(),
-            edit(hostile, &fields, None).into_string(),
+            edit(hostile, &fields, None, Some(&shortcodes)).into_string(),
             confirm_removal(hostile, &impact).into_string(),
         ] {
             assert!(!out.contains("<script>alert(1)</script>"), "{out}");

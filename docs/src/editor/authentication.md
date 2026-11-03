@@ -192,6 +192,8 @@ Removal is exactly what was asked for — the row and every session belonging to
 
 Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assigned-project change takes away access and nothing else, RDU still sees the draft, and another assigned depositor can continue it.
 
+An assigned shortcode that names no published or created project is **warned about, not refused**: the list and the edit page name it, recomputed from the stored shortcodes on every render, and the account saves, since the project may be created later.
+
 **Update is not a requirement.** Create and remove are the whole of what was asked for. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assigned projects and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.
 
 ### Addresses on screen, and keeping them out of logs

@@ -12,7 +12,7 @@ The three `#[serde(untagged)]` enums therefore need no stored variant tag. Untag
 
 ## The published set
 
-`editor_core::published::PublishedProjects` reads `$EDITOR_DATA_DIR/projects/*.json` once at startup and holds them in memory, keyed by case-folded shortcode. The set cannot change without a redeployment, so nothing polls and nothing invalidates. It is not behind a repository port: the ports exist because the editor writes through them and a test has to be able to make a write fail, and this is a read of an immutable snapshot, so a trait would buy an indirection with one implementation.
+`editor_core::published::PublishedProjects` reads `$EDITOR_DATA_DIR/projects/*.json` once at startup and holds them in memory, keyed by case-folded shortcode. The set cannot change without a redeployment, so nothing polls and nothing invalidates. It is not behind a repository port: the ports exist because the editor writes through them and a test has to be able to make a write fail, and this is a read of an immutable snapshot, so a trait would buy an indirection with one implementation. `editor-store`'s `LiveOpenWork` reads the same files once more at startup, for identity's `OpenWork::unknown_projects`: `deposit-server`, which may not depend on `editor-core` (`areas/deposit/ADR-0004`), cannot hand it the `PublishedProjects` the `Editor` facade holds, and both snapshots come from one directory, so they agree until the next restart.
 
 Three properties of the committed corpus decide the shape, each measured over all 85 files rather than sampled:
 

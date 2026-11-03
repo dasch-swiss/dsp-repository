@@ -1,5 +1,6 @@
 //! What identity needs from the editor (`areas/deposit/ADR-0004`, "The shape"): the
-//! work an account still has open, which the depositor-removal confirmation lists. `editor-store`
+//! work an account still has open, which the depositor-removal confirmation lists, and which
+//! assigned shortcodes name no project, which the account screens warn about. `editor-store`
 //! implements [`OpenWork`] beside the editor's data; identity's tests use
 //! `FakeOpenWork` (feature `test-support`).
 //!
@@ -51,9 +52,9 @@ impl Error for Unavailable {
     }
 }
 
-/// The editor work still open under an account.
+/// The editor work still open under an account, and the projects the editor knows.
 ///
-/// Two reads rather than one, because the removal page names which one failed.
+/// The two open-work reads are separate because the removal page names which one failed.
 pub trait OpenWork: Send + Sync {
     /// Shortcodes of the drafts this account saved last.
     fn drafts<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
@@ -61,4 +62,8 @@ pub trait OpenWork: Send + Sync {
     /// Shortcodes of this account's submissions short of `Approved`: work that can no longer be
     /// returned to its depositor once the account is gone.
     fn submissions<'a>(&'a self, account_id: &'a str) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
+
+    /// Those of `shortcodes` that name a project neither published nor created, each as given and
+    /// in the order given. Compared without regard to case, as access is.
+    fn unknown_projects<'a>(&'a self, shortcodes: &'a [String]) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
 }
